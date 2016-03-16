@@ -174,11 +174,11 @@ var MyProjects = {
 
         // Load 'All my Projects' and 'All my Registrations'
         self.systemCollections = options.systemCollections || [
-            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'page[size]'  : 60, 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All My Projects'),
-            new LinkObject('collection', { path : 'users/me/registrations/', query : { 'related_counts' : 'children', 'page[size]'  : 60, 'embed' : 'contributors'}, systemCollection : 'registrations'}, 'All My Registrations')
+            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'page[size]'  : 60, 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All my projects'),
+            new LinkObject('collection', { path : 'users/me/registrations/', query : { 'related_counts' : 'children', 'page[size]'  : 60, 'embed' : 'contributors'}, systemCollection : 'registrations'}, 'All my registrations')
         ];
         // Initial Breadcrumb for All my projects
-        var initialBreadcrumbs = options.initialBreadcrumbs || [new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All My Projects')];
+        var initialBreadcrumbs = options.initialBreadcrumbs || [new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All my projects')];
         self.breadcrumbs = m.prop(initialBreadcrumbs);
         // Calculate name filters
         self.nameFilters = [];
@@ -894,7 +894,7 @@ var Collections = {
                 'Collections ',
                 m('i.fa.fa-question-circle.text-muted', {
                     'data-toggle':  'tooltip',
-                    'title':  'Collections are groups of projects. You can create new collections and add any project you are a collaborator on or a public project.',
+                    'title':  'Collections are groups of projects. You can create custom collections. Drag and drop your projects or bookmarked projects to add them.',
                     'data-placement' : 'bottom'
                 }, ''),
                 m('.pull-right', [
@@ -946,9 +946,9 @@ var Collections = {
                         m('h3.modal-title', 'Add new collection')
                     ]),
                     body : m('.modal-body', [
-                        m('p', 'Collections are groups of projects that help you organize your work. After you create your collection you can add projects by dragging and dropping projects to the collection. '),
+                        m('p', 'Collections are groups of projects that help you organize your work. After you create your collection, you can add projects by dragging them into the collection.'),
                         m('.form-group', [
-                            m('label[for="addCollInput].f-w-lg.text-bigger', 'Collection Name'),
+                            m('label[for="addCollInput].f-w-lg.text-bigger', 'Collection name'),
                             m('input[type="text"].form-control#addCollInput', {
                                 onkeyup: function (ev){
                                     var val = $(this).val();
@@ -1028,7 +1028,7 @@ var Collections = {
                         m('h3.modal-title', 'Delete collection "' + ctrl.collectionMenuObject().item.label + '"?')
                     ]),
                     body: m('.modal-body', [
-                        m('p', 'This will delete your collection but your projects will not be deleted.'),
+                        m('p', 'This will delete your collection, but your projects will not be deleted.'),
 
                     ]),
                     footer : m('.modal-footer', [
@@ -1283,7 +1283,7 @@ var Information = {
                                 m('', 'Last Modified on: ' + (item.date ? item.date.local : ''))
                             ]),
                             m('p', [
-                                m('span', item.attributes.description)
+                                m('span', {style: 'white-space:pre-wrap'}, item.attributes.description)
                             ]),
                             item.attributes.tags.length > 0 ?
                             m('p.m-t-md', [
