@@ -13,6 +13,11 @@
     </p>
 </div>
 %endif
+%if existing_user:
+    <div class="text-center m-t-lg">
+        <h3>Please sign in to continue.</h3>
+    </div>
+%endif
 
 %if campaign == "institution" and enable_institutions:
 <div class="text-center m-t-lg">
@@ -98,7 +103,7 @@
             </div>
         </form>
     </div>
-    %if existing_user:
+    %if not existing_user:
         <div id="signUpScope" class="col-sm-5 toggle-box toggle-box-right toggle-box-muted p-h-lg" style="height: auto;">
             <form data-bind="submit: submit" class="form-horizontal">
                 <h3 class="m-b-lg"> Create a free account </h3>
@@ -225,7 +230,8 @@
     ${parent.javascript_bottom()}
     <script type="text/javascript">
         window.contextVars = $.extend(true, {}, window.contextVars, {
-            'campaign': ${campaign or '' | sjson, n}
+            'campaign': ${campaign or '' | sjson, n},
+            'existing_user': ${existing_user or '' | sjson, n}
         });
     </script>
     <script src=${"/static/public/js/login-page.js" | webpack_asset}></script>

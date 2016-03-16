@@ -215,7 +215,7 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
                                 title: 'Confirmation email sent',
                                 message: '<em>' + addrText + '</em>' + ' was added to your account.' +
                                 ' You will receive a confirmation email at ' + '<em>' + addrText + '</em>.' +
-                                ' Please log out of this account and check your email to confirm this action.',
+                                ' Please check your email to confirm this action.',
                                 buttons: {
                                     ok: {
                                         label: 'Close',
@@ -247,7 +247,7 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
                         $osf.growl(
                             'Email confirmation resent to <em>' + addrText + '</em>',
                             'You will receive a new confirmation email at <em>' + addrText  + '</em>.' +
-                            ' Please log out of this account and check your email to confirm this action.',
+                            ' Please check your email to confirm this action.',
                             'success');
                     });
                 }

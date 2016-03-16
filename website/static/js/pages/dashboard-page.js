@@ -47,9 +47,16 @@ var removeConfirmedEmailURL = window.contextVars.removeConfirmedEmailURL;
 function confirm_emails(emails) {
     if (emails.length > 0) {
         var email = emails.splice(0,1);
+
+        var title = email[0]['user_merge'] ? 'Merge account' : 'Add email';
+
+        var merge_message = email[0]['user_merge'] ? 'Would you like to merge ' + email[0].address +
+        ' into your account?  This action is irreversable.' : 'Would you like to add ' + email[0].address +
+        ' to your account?';
+
         bootbox.confirm({
-            title: 'Merge Account?',
-            message: 'You want to merge, ' + email[0].address + ' motherscratcher?',
+            title: title,
+            message: merge_message,
             callback: function(confirmed) {
                 if (confirmed) {
                     $osf.putJSON(
