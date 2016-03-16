@@ -249,7 +249,8 @@ def node_setting(auth, node, **kwargs):
 
     #check institutions:
     try:
-        inst = Institution.find_one(Q('email_domain', 'eq', auth.user.username.split('@')[1]))
+        email_domains = [email.split('@')[1] for email in auth.user.emails]
+        inst = Institution.find_one(Q('email_domain', 'in', email_domains))
         if inst not in auth.user.affiliated_institutions:
             auth.user.affiliated_institutions.append(inst)
             auth.user.save()
