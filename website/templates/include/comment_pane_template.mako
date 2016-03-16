@@ -15,9 +15,12 @@
                 <i class="fa fa-times"></i>
             </button>
             <h4>
-                <span data-bind="if: page() == 'node' ">${node['title']} Discussion</span>
                 %if file_name:
                     <span data-bind="if: page() == 'files'">Files | ${file_name} Discussion</span>
+                %elif wiki_name:
+                    <span data-bind="if: page() == 'wiki'">Wiki | ${wiki_name} Discussion</span>
+                %else:
+                    <span data-bind="if: page() == 'node' ">${node['title']} Discussion</span>
                 %endif
             </h4>
 

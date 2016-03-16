@@ -27,6 +27,7 @@ var ABUSE_CATEGORIES = {
 };
 
 var FILES = 'files';
+var WIKI = 'wiki';
 
 /*
  * Format UTC datetime relative to current datetime, ensuring that time
@@ -199,7 +200,9 @@ var getTargetType = function(self) {
         return 'nodes';
     } else if (self.id() === self.$root.rootId() && self.page() === FILES) {
         return 'files';
-    } else{
+    } else if (self.id() === self.$root.rootId() && self.page() === WIKI) {
+        return 'wiki';
+    } else {
         return 'comments';
     }
 };
