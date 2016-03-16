@@ -384,8 +384,10 @@ var MyProjects = {
                                 stayCallback : function _stayCallback_inPanel() {
                                     self.allProjectsLoaded(false);
                                     self.updateList(lastcrumb);
-                                }
-                            }, 'myProjects', 'add-component')
+                                },
+                                trackingCategory: 'myProjects',
+                                trackingAction: 'add-component'
+                            })
                         ]));
                     } else {
                         self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box',
@@ -1200,8 +1202,11 @@ var Breadcrumbs = {
                             stayCallback: function () {
                                 args.allProjectsLoaded(false);
                                 args.updateList(args.breadcrumbs()[args.breadcrumbs().length - 1]);
-                            }
-                        }, 'myProjects', 'add-' + objectType);
+
+                            },
+                            trackingCategory: 'myProjects',
+                            trackingAction: 'add-' + objectType
+                        });
                     }
                     return [
                         m('li', [

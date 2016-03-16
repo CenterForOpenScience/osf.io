@@ -61,8 +61,10 @@ $(document).ready(function(){
                                     categoryList : ctrl.categoryList,
                                     stayCallback : function _stayCallback_inPanel() {
                                         document.location.reload(true);
-                                    }
-                                },'quickSearch', 'add-project')
+                                    },
+                                    trackingCategory: 'quickSearch',
+                                    trackingAction: 'add-project'
+                                })
                             ))
                         ]),
                         m('.row.m-t-lg', [
