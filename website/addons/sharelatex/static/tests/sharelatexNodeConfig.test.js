@@ -308,13 +308,9 @@ describe('sharelatexNodeConfigViewModel', () => {
             var vm = new sharelatexNodeConfigVM('', {url: '/api/v1/12345/sharelatex/settings/' });
             vm.updateFromData()
                 .always(function() {
-                    vm.showSelect(false);
-                    vm.loadedBucketList(false);
-                    var spy = sinon.spy(vm, 'fetchBucketList');
+                    var spy = sinon.spy(vm, 'fetchProjectList');
                     var promise = vm.toggleSelect();
                     promise.always(function() {
-                        assert.isTrue(vm.showSelect());
-                        assert.isTrue(vm.loadedBucketList());
                         assert.isAbove(vm.projectList().length, 0);
                         assert(spy.calledOnce);
                         spy.restore();
