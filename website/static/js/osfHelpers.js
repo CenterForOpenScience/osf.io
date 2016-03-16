@@ -873,8 +873,6 @@ var findContribName = function (userAttributes) {
 
 var trackClick = function(category, action, label){
     window.ga('send', 'event', category, action, label);
-    // TODO remove after event tracking has been reviewed
-    console.log(category, action, label);
     //in order to make the href redirect work under knockout onclick binding
     return true;
 };

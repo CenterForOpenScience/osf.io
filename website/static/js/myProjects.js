@@ -1410,8 +1410,8 @@ var ActivityLogs = {
     view : function (ctrl, args) {
         return m('.db-activity-list.m-t-md', [
             args.activityLogs() ? args.activityLogs().map(function(item){
-                item['trackingCategory'] = 'myProjects'
-                item['trackingAction'] = 'information-panel'
+                item.trackingCategory = 'myProjects';
+                item.trackingAction = 'information-panel';
                 return m('.db-activity-item', [
                     m('', [ m('.db-log-avatar.m-r-xs', m('img', { src : item.embeds.user.data.links.profile_image})),
                         m.component(LogText, item)]),
