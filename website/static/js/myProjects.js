@@ -894,7 +894,7 @@ var Collections = {
                 'Collections ',
                 m('i.fa.fa-question-circle.text-muted', {
                     'data-toggle':  'tooltip',
-                    'title':  'Collections are groups of projects. You can create new collections and add any project you are a collaborator on or a public project.',
+                    'title':  'Collections are groups of projects. You can create custom collections. Drag and drop your projects or bookmarked projects to add them.',
                     'data-placement' : 'bottom'
                 }, ''),
                 m('.pull-right', [
