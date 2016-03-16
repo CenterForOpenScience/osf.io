@@ -34,7 +34,10 @@ function _poTitleColumn(item) {
     if (item.data.archiving) { // TODO check if this variable will be available
         return  m('span', {'class': 'registration-archiving'}, node.attributes.title + ' [Archiving]');
     } else if(node.links.html){
-        return [ m('a.fg-file-links', { 'class' : css, href : node.links.html, 'data-nodeID' : node.id, onclick : preventSelect}, node.attributes.title) ];
+        return [ m('a.fg-file-links', { 'class' : css, href : node.links.html, 'data-nodeID' : node.id, onclick : function(event) {
+            preventSelect.call(this, event);
+            $osf.trackClick('myProjects', 'projectOrganizer', 'navigate-to-specific-project');
+        }}, node.attributes.title) ];
     } else {
         return  m('span', { 'class' : css, 'data-nodeID' : node.id }, node.attributes.title);
     }
@@ -133,7 +136,9 @@ function _poResolveRows(item) {
             filter : false,
             custom : function (row){
                 return m('.btn.btn-default.btn-sm[data-toggle="modal"][data-target="#infoModal"]', {
-                }, m('i.fa.fa-ellipsis-h'));
+                }, m('i.fa.fa-ellipsis-h', {onclick: function() {
+                    $osf.trackClick('myProjects', 'mobile', 'open-information-panel');
+                }}));
             }
         });
     }
@@ -239,7 +244,11 @@ function _poMultiselect(event, tree) {
     tb.options.updateSelected(tb.multiselected());
     if (tb.multiselected().length === 1) {
         tb.select('#tb-tbody').removeClass('unselectable');
+        if (event.currentTarget != null) {
+            $osf.trackClick('myProjects', 'projectOrganizer', 'single-project-selected');
+        }
     } else if (tb.multiselected().length > 1) {
+        $osf.trackClick('myProjects', 'projectOrganizer', 'multiple-projects-selected');
         tb.select('#tb-tbody').addClass('unselectable');
     }
     m.redraw();
@@ -310,6 +319,7 @@ var tbOptions = {
         m.render($(tb.options.dragContainment + ' .db-poFilter').get(0), tb.options.filterTemplate.call(this));
     },
     ontogglefolder : function (item, event) {
+        $osf.trackClick('myProjects', 'projectOrganizer', 'expand-collapse-project-children');
         if (!item.open) {
             item.load = false;
         }
@@ -336,6 +346,7 @@ var tbOptions = {
     },
     ondblclickrow : function(item, event){
         var tb = this;
+        $osf.trackClick('myProjects', 'projectOrganizer', 'double-click-project');
         var node = item.data;
         var linkObject = new LinkObject('node', node, node.attributes.title);
         // Get ancestors
@@ -364,10 +375,14 @@ var tbOptions = {
                     }
                     tb.filter(event);
                 },
-                onchange: m.withAttr('value', tb.filterText),
+                onchange: function(event) {
+                    tb.filterText(event.value)
+                    $osf.trackClick('myProjects', 'filter', 'search-projects');
+                },
                 value: tb.filterText()
             }),
             m('.filterReset', { onclick : function () {
+                $osf.trackClick('myProjects', 'filter', 'clear-search');
                 tb.resetFilter.call(tb);
                 $('.db-poFilter>input').val('');
             } }, tb.options.removeIcon())

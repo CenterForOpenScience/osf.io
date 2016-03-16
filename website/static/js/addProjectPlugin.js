@@ -90,8 +90,11 @@ var AddProject = {
         var templates = {
             form : m('.modal-content', [
                 m('.modal-header', [
-                    m('button.close[data-dismiss="modal"][aria-label="Close"]',{ onclick : ctrl.reset}, [
-                        m('span[aria-hidden="true"]','×'),
+                    m('button.close[data-dismiss="modal"][aria-label="Close"]',{ onclick : function() {
+                        ctrl.reset();
+                        $osf.trackClick(options.trackingCategory, options.trackingAction, 'click-close-add-project-modal');
+                    }}, [
+                        m('span[aria-hidden="true"]','×')
                     ]),
                     m('h3.modal-title', ctrl.options.title)
                 ]),
@@ -107,12 +110,16 @@ var AddProject = {
                                     ctrl.newProjectName($(this).val());
                                     ctrl.checkValid();
                                 },
+                                onchange: function() {
+                                    $osf.trackClick(options.trackingCategory, options.trackingAction, 'type-project-name');
+                                },
                                 value : ctrl.newProjectName(),
                                 placeholder : 'Enter ' + ctrl.nodeType + ' title'
                             })
                         ]),
                         m('.text-muted.pointer', { onclick : function(){
                             ctrl.showMore(!ctrl.showMore());
+                            $osf.trackClick(options.trackingCategory, options.trackingAction, 'show-more-or-less');
                         }},[
                             ctrl.showMore() ? m('i.fa.fa-caret-down', { style: 'width: 10px;'}) : m('i.fa.fa-caret-right', { style: 'width: 10px;'}),
                             ' More'
@@ -121,7 +128,10 @@ var AddProject = {
                             m('.form-group.m-v-sm', [
                                 m('label[for="projectDesc].f-w-lg.text-bigger', 'Description'),
                                 m('textarea.form-control.noresize', {
-                                    onchange: m.withAttr('value', ctrl.newProjectDesc),
+                                    onchange: function(event) {
+                                        ctrl.newProjectDesc(event.value);
+                                        $osf.trackClick(options.trackingCategory, options.trackingAction, 'type-project-description');
+                                    },
                                     value : ctrl.newProjectDesc(),
                                     placeholder : 'Enter ' + ctrl.nodeType + ' description'
                                 })
@@ -135,7 +145,10 @@ var AddProject = {
                                             name: 'projectCategory',
                                             value: cat.value,
                                             checked: ctrl.newProjectCategory() === cat.value,
-                                            onchange : m.withAttr('value', ctrl.newProjectCategory)
+                                            onchange : function(event) {
+                                                ctrl.newProjectCategory(event.value);
+                                                $osf.trackClick(options.trackingCategory, options.trackingAction, 'select-project-category');
+                                            }
                                         }), cat.display_name|| m('i.text-muted', '(Empty category)') ]));
 
                                     })
@@ -145,16 +158,22 @@ var AddProject = {
                     ])
                 ]),
                 m('.modal-footer', [
-                    m('button[type="button"].btn.btn-default[data-dismiss="modal"]', { onclick : ctrl.reset},  'Cancel'),
-                    ctrl.isValid() ? m('button[type="button"].btn.btn-success', { onclick : ctrl.add },'Create') : m('button[type="button"].btn.btn-success[disabled]','Create')
+                    m('button[type="button"].btn.btn-default[data-dismiss="modal"]', { onclick : function(){
+                        ctrl.reset();
+                        $osf.trackClick(options.trackingCategory, options.trackingAction, 'click-cancel-button');
+                    }},  'Cancel'),
+                    ctrl.isValid() ? m('button[type="button"].btn.btn-success', { onclick : function(){
+                        ctrl.add();
+                        $osf.trackClick(options.trackingCategory, options.trackingAction, 'click-create-button');
+                    }},'Create') : m('button[type="button"].btn.btn-success[disabled]','Create')
                 ])
             ]),
             processing : m('.modal-content',
                 m('.modal-content',
                     m('.modal-header', [
                         m('button.close[data-dismiss="modal"][aria-label="Close"]',{ onclick : ctrl.reset}, [
-                            m('span[aria-hidden="true"]','×'),
-                        ]),
+                            m('span[aria-hidden="true"]','×')
+                        ])
                     ]),
                     m('.modal-body.text-left', [
                             m('.add-project-processing', 'Saving your ' + ctrl.nodeType + '...')
@@ -165,8 +184,11 @@ var AddProject = {
             success : m('.modal-content', [
                 m('.modal-content',
                     m('.modal-body.text-left', [
-                            m('button.close[data-dismiss="modal"][aria-label="Close"]',{ onclick : ctrl.reset}, [
-                                m('span[aria-hidden="true"]','×'),
+                            m('button.close[data-dismiss="modal"][aria-label="Close"]',{ onclick : function() {
+                                ctrl.reset();
+                                $osf.trackClick(options.trackingCategory, options.trackingAction, 'click-close-success-modal');
+                            }}, [
+                                m('span[aria-hidden="true"]','×')
                             ]),
                             m('h4.add-project-success.text-success', 'New ' + ctrl.nodeType + ' created successfully!')
                         ]
@@ -176,24 +198,35 @@ var AddProject = {
                             onclick : function() {
                                 ctrl.reset();
                                 ctrl.options.stayCallback.call(ctrl); // results are at ctrl.saveResult
+                                $osf.trackClick(options.trackingCategory, options.trackingAction, 'keep-working-here');
                             }
                         },  'Keep working here'),
-                        m('a.btn.btn-success', { href : ctrl.goToProjectLink() },'Go to new ' + ctrl.nodeType + '')
+                        m('a.btn.btn-success', {
+                            href : ctrl.goToProjectLink(),
+                            onclick: function(){
+                            $osf.trackClick(options.trackingCategory, options.trackingAction, 'go-to-new-project');
+                            }
+                        },'Go to new ' + ctrl.nodeType + '')
                     ])
                 )
             ]),
             error : m('.modal-content', [
                 m('.modal-content',
                     m('.modal-body.text-left', [
-                            m('button.close[data-dismiss="modal"][aria-label="Close"]',{ onclick : ctrl.reset}, [
-                                m('span[aria-hidden="true"]','×'),
+                            m('button.close[data-dismiss="modal"][aria-label="Close"]',{ onclick : function() {
+                                ctrl.reset();
+                                $osf.trackClick(options.trackingCategory, options.trackingAction, 'close-couldn\'t-create-your-project');
+                                }}, [
+                                m('span[aria-hidden="true"]','×')
                             ]),
                             m('h4.add-project-error.text-danger', 'Couldn\'t create your ' + ctrl.nodeType + ''),
                             m('p', ctrl.errorMessage[ctrl.errorMessageType()])
                         ]
                     ),
                     m('.modal-footer', [
-                        m('button[type="button"].btn.btn-default[data-dismiss="modal"]',  'OK')
+                        m('button[type="button"].btn.btn-default[data-dismiss="modal"]', {onclick: function() {
+                            $osf.trackClick(options.trackingCategory, options.trackingAction, 'click-OK-couldn\'t-create-your-project');
+                        }},  'OK')
                     ])
                 )
             ])
