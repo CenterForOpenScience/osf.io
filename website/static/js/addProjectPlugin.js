@@ -28,7 +28,7 @@ var AddProject = {
 
         self.viewState = m.prop('form'); // 'processing', 'success', 'error';
         self.options = $.extend({}, self.defaults, options);
-        self.nodeLanguage = self.options.parentID === null ? 'project' : 'component';
+        self.nodeType = self.options.parentID === null ? 'project' : 'component';
         self.defaultCat = self.options.parentID === null ? 'project' : '';
         self.showMore = m.prop(false);
         self.newProjectName = m.prop('');
@@ -114,7 +114,7 @@ var AddProject = {
                                     $osf.trackClick(options.trackingCategory, options.trackingAction, 'type-project-name');
                                 },
                                 value : ctrl.newProjectName(),
-                                placeholder : 'Enter project title'
+                                placeholder : 'Enter ' + ctrl.nodeType + ' title'
                             })
                         ]),
                         m('.text-muted.pointer', { onclick : function(){
@@ -133,7 +133,7 @@ var AddProject = {
                                         $osf.trackClick(options.trackingCategory, options.trackingAction, 'type-project-description');
                                     },
                                     value : ctrl.newProjectDesc(),
-                                    placeholder : 'Enter project description'
+                                    placeholder : 'Enter ' + ctrl.nodeType + ' description'
                                 })
                             ]),
                             ctrl.options.parentID !== null ? [
@@ -176,7 +176,7 @@ var AddProject = {
                         ])
                     ]),
                     m('.modal-body.text-left', [
-                            m('.add-project-processing', 'Saving your ' + ctrl.nodeLanguage + '...')
+                            m('.add-project-processing', 'Saving your ' + ctrl.nodeType + '...')
                         ]
                     )
                 )
@@ -190,7 +190,7 @@ var AddProject = {
                             }}, [
                                 m('span[aria-hidden="true"]','×')
                             ]),
-                            m('h4.add-project-success.text-success', 'New ' + ctrl.nodeLanguage + ' created successfully!')
+                            m('h4.add-project-success.text-success', 'New ' + ctrl.nodeType + ' created successfully!')
                         ]
                     ),
                     m('.modal-footer', [
@@ -201,9 +201,9 @@ var AddProject = {
                                 $osf.trackClick(options.trackingCategory, options.trackingAction, 'keep-working-here');
                             }
                         },  'Keep working here'),
-                        m('a.btn.btn-success', { href : ctrl.goToProjectLink(), onclick: function(){
+                        m('a.btn.btn-success', { href : ctrl.goToProjectLink(), onclick: function() {
                             $osf.trackClick(options.trackingCategory, options.trackingAction, 'go-to-new-project');
-                        }},'Go to new ' + ctrl.nodeLanguage + '')
+                        }},'Go to new ' + ctrl.nodeType + '')
                     ])
                 )
             ]),
@@ -216,7 +216,7 @@ var AddProject = {
                                 }}, [
                                 m('span[aria-hidden="true"]','×')
                             ]),
-                            m('h4.add-project-error.text-danger', 'Couldn\'t create your ' + ctrl.nodeLanguage + ''),
+                            m('h4.add-project-error.text-danger', 'Couldn\'t create your ' + ctrl.nodeType + ''),
                             m('p', ctrl.errorMessage[ctrl.errorMessageType()])
                         ]
                     ),

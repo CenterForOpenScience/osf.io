@@ -174,11 +174,11 @@ var MyProjects = {
 
         // Load 'All my Projects' and 'All my Registrations'
         self.systemCollections = options.systemCollections || [
-            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'page[size]'  : 60, 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All My Projects'),
-            new LinkObject('collection', { path : 'users/me/registrations/', query : { 'related_counts' : 'children', 'page[size]'  : 60, 'embed' : 'contributors'}, systemCollection : 'registrations'}, 'All My Registrations')
+            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'page[size]'  : 60, 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All my projects'),
+            new LinkObject('collection', { path : 'users/me/registrations/', query : { 'related_counts' : 'children', 'page[size]'  : 60, 'embed' : 'contributors'}, systemCollection : 'registrations'}, 'All my registrations')
         ];
         // Initial Breadcrumb for All my projects
-        var initialBreadcrumbs = options.initialBreadcrumbs || [new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All My Projects')];
+        var initialBreadcrumbs = options.initialBreadcrumbs || [new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All my projects')];
         self.breadcrumbs = m.prop(initialBreadcrumbs);
         // Calculate name filters
         self.nameFilters = [];
@@ -252,7 +252,7 @@ var MyProjects = {
                 var id = item.data.id;
                 if(!item.data.attributes.retracted){
                     var urlPrefix = item.data.attributes.registration ? 'registrations' : 'nodes';
-                    var url = $osf.apiV2Url(urlPrefix + '/' + id + '/logs/', { query : { 'page[size]' : 6, 'embed' : ['nodes', 'user', 'linked_node', 'template_node']}});
+                    var url = $osf.apiV2Url(urlPrefix + '/' + id + '/logs/', { query : { 'page[size]' : 6, 'embed' : ['nodes', 'user', 'linked_node', 'template_node', 'contributors']}});
                     var promise = self.getLogs(url);
                     return promise;
                 }
@@ -372,7 +372,6 @@ var MyProjects = {
                     }
                     if(showAddProject){
                         self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box.text-center', [
-                            'This project has no components.',
                             m.component(AddProject, {
                                 buttonTemplate : m('.btn.btn-link[data-toggle="modal"][data-target="#addSubcomponent"]', {onclick: function() {
                                     $osf.trackClick('myProjects', 'add-component', 'open-add-component-modal');
@@ -389,9 +388,6 @@ var MyProjects = {
                                 trackingAction: 'add-component'
                             })
                         ]));
-                    } else {
-                        self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box',
-                            'This project has no components.'));
                     }
                 }
                 self.selected([]); // Empty selected
@@ -914,7 +910,7 @@ var Collections = {
                 'Collections ',
                 m('i.fa.fa-question-circle.text-muted', {
                     'data-toggle':  'tooltip',
-                    'title':  'Collections are groups of projects. You can create new collections and add any project you are a collaborator on or a public project.',
+                    'title':  'Collections are groups of projects. You can create custom collections. Drag and drop your projects or bookmarked projects to add them.',
                     'data-placement' : 'bottom'
                 }, ''),
                 m('.pull-right', [
@@ -973,29 +969,27 @@ var Collections = {
                         m('h3.modal-title', 'Add new collection')
                     ]),
                     body : m('.modal-body', [
-                        m('p', 'Collections are groups of projects that help you organize your work. After you create your collection you can add projects by dragging and dropping projects to the collection. '),
-                        m('.form-inline', [
-                            m('.form-group', [
-                                m('label[for="addCollInput]', 'Collection Name'),
-                                m('input[type="text"].form-control.m-l-sm#addCollInput', {
-                                    onkeyup: function (ev){
-                                        var val = $(this).val();
-                                        ctrl.validateName(val);
-                                        if(ctrl.isValid()){
-                                            if(ev.which === 13){
-                                                ctrl.addCollection();
-                                            }
+                        m('p', 'Collections are groups of projects that help you organize your work. After you create your collection, you can add projects by dragging them into the collection.'),
+                        m('.form-group', [
+                            m('label[for="addCollInput].f-w-lg.text-bigger', 'Collection name'),
+                            m('input[type="text"].form-control#addCollInput', {
+                                onkeyup: function (ev){
+                                    var val = $(this).val();
+                                    ctrl.validateName(val);
+                                    if(ctrl.isValid()){
+                                        if(ev.which === 13){
+                                            ctrl.addCollection();
                                         }
-                                        ctrl.newCollectionName(val);
-                                    },
-                                    onchange: function() {
-                                      $osf.trackClick('myProjects', 'add-collection', 'type-collection-name');
-                                    },
-                                    placeholder : 'e.g.  My Replications',
-                                    value : ctrl.newCollectionName()
-                                }),
-                                m('span.help-block', ctrl.validationError())
-                            ])
+                                    }
+                                    ctrl.newCollectionName(val);
+                                },
+                                onchange: function() {
+                                    $osf.trackClick('myProjects', 'add-collection', 'type-collection-name');
+                                },
+                                placeholder : 'e.g.  My Replications',
+                                value : ctrl.newCollectionName()
+                            }),
+                            m('span.help-block', ctrl.validationError())
                         ])
                     ]),
                     footer: m('.modal-footer', [
@@ -1075,7 +1069,7 @@ var Collections = {
                         m('h3.modal-title', 'Delete collection "' + ctrl.collectionMenuObject().item.label + '"?')
                     ]),
                     body: m('.modal-body', [
-                        m('p', 'This will delete your collection but your projects will not be deleted.')
+                        m('p', 'This will delete your collection, but your projects will not be deleted.'),
 
                     ]),
                     footer : m('.modal-footer', [
@@ -1179,7 +1173,7 @@ var Breadcrumbs = {
         return m('.db-breadcrumbs', m('ul', [
             items.map(function(item, index, array){
                 if(index === array.length-1){
-                    var label = item.type === 'node' ? ' Add component' : ' Add project';
+                    var label = item.type === 'node' ? ' Create component' : ' Create project';
                     var title = item.type === 'node' ? 'Create new component' : 'Create new project';
                     var parentID = item.type === 'node' ? args.breadcrumbs()[args.breadcrumbs().length - 1].data.id : null;
                     var showAddProject = true;
@@ -1338,6 +1332,9 @@ var Information = {
         }
         if (args.selected().length === 1) {
             var item = args.selected()[0].data;
+            if(item.attributes.category === ''){
+                item.attributes.category = 'Uncategorized';
+            }
             template = m('.p-sm', [
                 filter.type === 'collection' && !filter.data.systemCollection ? m('.clearfix', m('.btn.btn-default.btn-sm.btn.p-xs.text-danger.pull-right', {onclick : function() {
                     args.removeProjectFromCollections();
@@ -1365,7 +1362,7 @@ var Information = {
                                 m('', 'Last Modified on: ' + (item.date ? item.date.local : ''))
                             ]),
                             m('p', [
-                                m('span', item.attributes.description)
+                                m('span', {style: 'white-space:pre-wrap'}, item.attributes.description)
                             ]),
                             item.attributes.tags.length > 0 ?
                             m('p.m-t-md', [
