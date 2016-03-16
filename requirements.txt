@@ -3,7 +3,7 @@
 # To install addon requirements: inv requirements --addons
 # To install dev requirements: inv requirements --dev
 
-invoke==0.11.0
+invoke==0.12.2
 Werkzeug==0.10.4
 Flask==0.10.1
 gevent==1.0.2
