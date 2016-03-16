@@ -10,7 +10,7 @@
     <div id="inst">
 <div class="dashboard-header" style="background: white">
     <div class="row" style="text-align: center">
-        <div class="col-sm-2"></div>
+        <div class="col-sm-3"></div>
         % if banner_path:
             <div class="col-sm-6"><img src="${ banner_path }"></div>
         % else:    
@@ -22,7 +22,7 @@
                 % endif
             </div>
         % endif
-        <div class="col-sm-2"></div>
+        <div class="col-sm-3"></div>
     </div>
 </div>
   <div id="fileBrowser" class="fileBrowser clearfix" >

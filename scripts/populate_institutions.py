@@ -55,6 +55,16 @@ def main(env):
             'domain': ['osf.nd.edu:5000'],
             'description': 'this is nd',
             'email_domain': ['nd.edu'],
+        },
+        {
+            'name': 'Center For Open Science',
+            '_id': 'cos',
+            'logo_name': 'cos.png',
+            'auth_url': None,
+            'domain': ['staging-osf.cos.io'],
+            'description': None,
+            'email_domain': ['cos.io'],
+            'banner_name': 'cos-banner.png'
         }
     ]
 
