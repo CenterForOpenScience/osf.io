@@ -145,8 +145,8 @@ var AddProject = {
                                             name: 'projectCategory',
                                             value: cat.value,
                                             checked: ctrl.newProjectCategory() === cat.value,
-                                            onchange : function() {
-                                                m.withAttr('value', ctrl.newProjectCategory);
+                                            onchange : function(event) {
+                                                ctrl.newProjectCategory(event.value);
                                                 $osf.trackClick(options.trackingCategory, options.trackingAction, 'select-project-category');
                                             }
                                         }), cat.display_name || m('i.text-muted', '(Empty category)') ]));
