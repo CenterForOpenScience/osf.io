@@ -1,27 +1,30 @@
 # -*- coding: utf-8 -*-
 
-import os
 import importlib
-from collections import OrderedDict
 import json
+import os
+from collections import OrderedDict
 
-from modularodm import storage
+import django
 from werkzeug.contrib.fixers import ProxyFix
+
 import framework
+import website.models
+from framework.addons.utils import render_addon_capabilities
 from framework.flask import app, add_handlers
 from framework.logging import logger
-from framework.mongo import set_up_storage
-from framework.addons.utils import render_addon_capabilities
-from framework.sentry import sentry
 from framework.mongo import handlers as mongo_handlers
-from framework.tasks import handlers as task_handlers
+from framework.mongo import set_up_storage
+from framework.postcommit_tasks import handlers as postcommit_handlers
+from framework.sentry import sentry
+from framework.celery_tasks import handlers as celery_task_handlers
 from framework.transactions import handlers as transaction_handlers
-
-import website.models
-from website.routes import make_url_map
+from modularodm import storage
 from website.addons.base import init_addon
-from website.project.model import ensure_schemas, Node
 from website.project.licenses import ensure_licenses
+from website.project.model import ensure_schemas, Node
+from website.routes import make_url_map
+
 # This import is necessary to set up the archiver signal listeners
 from website.archiver import listeners  # noqa
 from website.mails import listeners  # noqa
@@ -53,8 +56,9 @@ def attach_handlers(app, settings):
     """Add callback handlers to ``app`` in the correct order."""
     # Add callback handlers to application
     add_handlers(app, mongo_handlers.handlers)
-    add_handlers(app, task_handlers.handlers)
+    add_handlers(app, celery_task_handlers.handlers)
     add_handlers(app, transaction_handlers.handlers)
+    add_handlers(app, postcommit_handlers.handlers)
 
     # Attach handler for checking view-only link keys.
     # NOTE: This must be attached AFTER the TokuMX to avoid calling
@@ -118,6 +122,9 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
     build_log_templates(settings)
     init_addons(settings, routes)
     build_js_config_files(settings)
+
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.base.settings')
+    django.setup()
 
     app.debug = settings.DEBUG_MODE
 
