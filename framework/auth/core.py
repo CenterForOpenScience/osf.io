@@ -657,20 +657,21 @@ class User(GuidStoredObject, AddonModelMixin):
         return '{base_url}user/{uid}/{project_id}/claim/?token={token}'\
                     .format(**locals())
 
-    def set_password(self, raw_password):
+    def set_password(self, raw_password, suppress_notification=False):
         """Set the password for this user to the hash of ``raw_password``.
         If this is a new user, we're done. If this is a password change,
         then email the user about the change and clear all the old sessions
         so that users will have to log in again with the new password.
 
         :param raw_password: the plaintext value of the new password
+        :param suppress_notification: Only meant for unit tests to keep extra notifications from being sent
         :rtype: list
         :returns: Changed fields from the user save
         """
         had_existing_password = bool(self.password)
         self.password = generate_password_hash(raw_password)
         return_value = self.save()
-        if had_existing_password:
+        if had_existing_password and not suppress_notification:
             mails.send_mail(
                 to_addr=self.username,
                 mail=mails.PASSWORD_RESET,
