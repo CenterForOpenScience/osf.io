@@ -147,8 +147,14 @@ class Institution(object):
 
     @property
     def logo_path(self):
-        return '/static/img/institutions/{}/'.format(self.logo_name)
+        if self.logo_name:
+            return '/static/img/institutions/{}/'.format(self.logo_name)
+        else:
+            return None
 
     @property
     def banner_path(self):
-        return '/static/img/institutions/{}/'.format(self.banner_name)
+        if self.banner_name:
+            return '/static/img/institutions/{}/'.format(self.banner_name)
+        else:
+            return None
