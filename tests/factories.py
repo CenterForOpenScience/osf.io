@@ -519,7 +519,6 @@ class CommentFactory(ModularOdmFactory):
 
 class InstitutionFactory(ProjectFactory):
 
-
     def _build(cls, target_class, *args, **kwargs):
         from random import randint
         '''Build an object without saving it.'''
