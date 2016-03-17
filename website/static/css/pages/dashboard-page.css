@@ -5,6 +5,10 @@
     padding-right:0;
 }
 
+.dashboard-header.dashboard-header-institution {
+    background: none;
+}
+
 .dashboard-header {
     background: url('/static/img/bg6.jpg') top no-repeat;
     border-bottom: 1px solid #eee;

@@ -22,7 +22,7 @@
                 % endif
                 <h2 class="node-title">
                     % if node['institution']['name'] and enable_institutions:
-                        <img class="img-circle" height="75" width="75" id="instLogo" src="${node['institution']['logo_path']}">
+                        <a href="/institutions/${node['institution']['id']}"><img class="img-circle" height="75" width="75" id="instLogo" src="${node['institution']['logo_path']}"></a>
                     % endif
                     <span id="nodeTitleEditable" class="overflow">${node['title']}</span>
                 </h2>
@@ -129,7 +129,7 @@
                     % else:
                         Affiliated institution:
                     % endif
-                    <span class="text-muted"> ${node['institution']['name']} </span>
+                    <a href="/institutions/${node['institution']['id']}">${node['institution']['name']}</a>
                 % endif
                 % if node['is_fork']:
                     <p>

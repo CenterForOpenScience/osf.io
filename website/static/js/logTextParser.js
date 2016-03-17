@@ -1,12 +1,12 @@
 /**
  * Parses text to return to the log items
  * Created by cos-caner on 12/4/15.
- * Remeber to embed nodes, user, linked_node and template_node in api call i.e. var url = $osf.apiV2Url('nodes/' + nodeId + '/logs/', { query : { 'embed' : ['nodes', 'user']}});
+ * Remember to embed nodes, user, linked_node and template_node in api call i.e. var url = $osf.apiV2Url('nodes/' + nodeId + '/logs/', { query : { 'embed' : ['nodes', 'user']}});
  */
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
 var logActions = require('json!js/_allLogTexts.json');
 var $ = require('jquery');  // jQuery
-
+var $osf = require('js/osfHelpers');
 
 var ravenMessagesCache = []; // Cache messages to avoid sending multiple times in one page view
 /**
@@ -45,7 +45,7 @@ var paramIsReturned = function _paramIsReturned (param, logObject){
 /**
  * Returns the text parameters since their formatting is mainly the same
  * @param param {string} The parameter to be used, has to be available under logObject.attributes.param
- * @param text {string'} The text to be used if param is not available
+ * @param text {string} The text to be used if param is not available
  * @param logObject {Object} the entire log object returned from the api
  * @returns {*}
  */
@@ -111,7 +111,9 @@ var LogPieces = {
         view: function (ctrl, logObject) {
             var userObject = logObject.embeds.user;
             if(paramIsReturned(userObject, logObject) && userObject.data) {
-                return m('a', {href: userObject.data.links.html}, userObject.data.attributes.full_name);
+                return m('a', {href: userObject.data.links.html, onclick: function() {
+                    $osf.trackClick(logObject.trackingCategory, logObject.trackingAction, 'navigate-to-user-from-logs');
+                }}, userObject.data.attributes.full_name);
             } else {
                 return m('span', 'A user');
             }
@@ -122,7 +124,9 @@ var LogPieces = {
         view: function (ctrl, logObject) {
             var nodeObject = logObject.embeds.nodes;
             if(paramIsReturned(nodeObject, logObject) && nodeObject.data[0]){
-                return m('a', {href: nodeObject.data[0].links.html}, nodeObject.data[0].attributes.title);
+                return m('a', {href: nodeObject.data[0].links.html, onclick: function() {
+                    $osf.trackClick(logObject.trackingCategory, logObject.trackingAction, 'navigate-to-project-from-logs');
+                }}, nodeObject.data[0].attributes.title);
             } else {
                 return m('span', 'a project');
             }
@@ -133,9 +137,16 @@ var LogPieces = {
         view: function (ctrl, logObject) {
             var contributors = logObject.embeds.contributors;
             if(paramIsReturned(contributors, logObject)) {
-                return contributors.map(function(item){
-                    return m('a', {href: item.data.links.html}, item.data.attributes.full_name);
-                });
+                return m('span', contributors.data.map(function(item, index, arr){
+                    var comma = ' ';
+                    if(index !== arr.length - 1){
+                        comma = ', ';
+                    }
+                    if(index === arr.length-2){
+                        comma = ' and ';
+                    }
+                    return [ m('a', {href: item.links.html}, item.attributes.full_name), comma];
+                }));
             }
             return m('span', 'some users');
         }

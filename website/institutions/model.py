@@ -63,11 +63,12 @@ class Institution(object):
     attribute_map = {
         '_id': 'institution_id',
         'auth_url': 'institution_auth_url',
-        'domain': 'institution_domain',
+        'domains': 'institution_domains',
         'name': 'title',
         'logo_name': 'institution_logo_name',
         'description': 'description',
-        'email_domain': 'institution_email_domain'
+        'email_domains': 'institution_email_domains',
+        'banner_name': 'institution_banner_name',
     }
 
     def __init__(self, node=None):
@@ -147,3 +148,7 @@ class Institution(object):
     @property
     def logo_path(self):
         return '/static/img/institutions/{}/'.format(self.logo_name)
+
+    @property
+    def banner_path(self):
+        return '/static/img/institutions/{}/'.format(self.banner_name)
