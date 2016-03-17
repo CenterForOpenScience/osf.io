@@ -13,3 +13,5 @@ $(function(){
         $adBlock.show();
     }
 });
+
+var Statistics = require('js/statistics');
