@@ -376,7 +376,7 @@ var tbOptions = {
                     tb.filter(event);
                 },
                 onchange: function(event) {
-                    tb.filterText(event.value)
+                    tb.filterText(event.value);
                     $osf.trackClick('myProjects', 'filter', 'search-projects');
                 },
                 value: tb.filterText()
