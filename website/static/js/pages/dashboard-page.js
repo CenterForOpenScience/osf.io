@@ -65,7 +65,7 @@ function confirm_emails(emails) {
                     ).done(function() {
                         confirm_emails(emails);
                     }).fail(function() {
-                        console.log("api call failed");
+                        console.log('api call failed');
                         confirm_emails(emails);
                     });
                 }
@@ -76,7 +76,7 @@ function confirm_emails(emails) {
                     ).done(function() {
                         confirm_emails(emails);
                     }).fail(function() {
-                        console.log("api call failed");
+                        console.log('api call failed');
                         confirm_emails(emails);
                     });
                 }
