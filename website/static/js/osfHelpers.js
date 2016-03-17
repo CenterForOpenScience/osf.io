@@ -22,8 +22,8 @@ var GrowlBox = require('js/growlBox');
  * @param {String} type One of 'success', 'info', 'warning', or 'danger'. Defaults to danger.
  *
  */
-var growl = function(title, message, type) {
-    new GrowlBox(title, message, type || 'danger');
+var growl = function(title, message, type, delay) {
+    new GrowlBox(title, message, type || 'danger', delay);
 };
 
 
