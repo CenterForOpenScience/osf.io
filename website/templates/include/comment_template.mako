@@ -83,7 +83,7 @@
                         -->
                         <div data-bind="template {if: editing, afterRender: autosizeText}">
                             <div class="form-group" style="padding-top: 10px">
-                                <textarea class="form-control" data-bind="value: content, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
+                                <textarea class="form-control atwho-inputer" data-bind="value: content, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
                             </div>
                             <div class="clearfix">
                                 <div class="form-inline pull-right">
@@ -161,7 +161,7 @@
 
                 <div>
                     <div class="form-group" style="padding-top: 10px">
-                        <textarea class="form-control" placeholder="Add a comment" data-bind="value: replyContent, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
+                        <textarea class="form-control atwho-inputer" placeholder="Add a comment" data-bind="value: replyContent, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
                     </div>
                     <div class="clearfix">
                         <div class="pull-right">
