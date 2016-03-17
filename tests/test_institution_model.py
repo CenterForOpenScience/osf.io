@@ -1,4 +1,4 @@
-from nose.tools import *  #  noqa
+from nose.tools import *  # flake8: noqa
 from tests.base import OsfTestCase
 from tests.factories import InstitutionFactory
 
@@ -38,7 +38,16 @@ class TestInstitution(OsfTestCase):
         assert_equal(node.piwik_site_id, old['piwik_site_id'])
         assert_not_equal(node.piwik_site_id, new['piwik_site_id'])
 
-
     def test_institution_mappings(self):
         for key, val in self.institution.attribute_map.iteritems():
             assert_equal(getattr(self.institution, key), getattr(self.institution.node, val))
+
+    def test_institution_banner_path_none(self):
+        inst = InstitutionFactory()
+        inst.banner_name = None
+        assert_is_none(inst.banner_path, None)
+
+    def test_institution_logo_path_none(self):
+        inst = InstitutionFactory()
+        inst.logo_name = None
+        assert_is_none(inst.logo_path, None)
