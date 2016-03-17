@@ -18,11 +18,27 @@ var ViewModel = function() {
                 isCors: true
             }
         ).done(function (response) {
-            self.instNames(response.data.map(function(item){
+            var validInsts = response.data.filter(function(item){
+                return item.attributes.auth_url;
+            });
+            self.instNames(
+                validInsts.map(function(item){
+                    return item.attributes.name;
+                })
+            );
+            validInsts.forEach(function(item){
                 var name = item.attributes.name;
                 self.insts[name] = item.attributes.auth_url + '&target=' + encodeURIComponent(window.contextVars.institution_redirect);
-                return name;
-            }));
+                self.insts[item.id] = name;
+            });
+            var instRedirect = decodeURIComponent(decodeURIComponent(window.contextVars.institution_redirect));
+            if (instRedirect){
+                var instId = instRedirect.split('institutions')[1];
+                instId = instId ? instId.split('/')[1] : false;
+                if (instId){
+                    self.selectedInst(self.insts[instId]);
+                }
+            }
         }).fail(function (xhr, status, error) {
             Raven.captureMessage('Unable to fetch institutions', {
                 url: url,

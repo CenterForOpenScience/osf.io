@@ -249,7 +249,8 @@ def node_setting(auth, node, **kwargs):
 
     #check institutions:
     try:
-        inst = Institution.find_one(Q('email_domain', 'eq', auth.user.username.split('@')[1]))
+        email_domains = [email.split('@')[1] for email in auth.user.emails]
+        inst = Institution.find_one(Q('email_domains', 'in', email_domains))
         if inst not in auth.user.affiliated_institutions:
             auth.user.affiliated_institutions.append(inst)
             auth.user.save()
@@ -712,6 +713,7 @@ def _view_project(node, auth, primary=False):
             'institution': {
                 'name': node.primary_institution.name if node.primary_institution else None,
                 'logo_path': node.primary_institution.logo_path if node.primary_institution else None,
+                'id': node.primary_institution._id if node.primary_institution else None
             },
             'alternative_citations': [citation.to_json() for citation in node.alternative_citations],
             'has_draft_registrations': node.has_active_draft_registrations,
