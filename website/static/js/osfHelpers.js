@@ -22,8 +22,8 @@ var GrowlBox = require('js/growlBox');
  * @param {String} type One of 'success', 'info', 'warning', or 'danger'. Defaults to danger.
  *
  */
-var growl = function(title, message, type) {
-    new GrowlBox(title, message, type || 'danger');
+var growl = function(title, message, type, delay) {
+    new GrowlBox(title, message, type || 'danger', delay);
 };
 
 
@@ -871,6 +871,12 @@ var findContribName = function (userAttributes) {
     }
 };
 
+var trackClick = function(category, action, label){
+    window.ga('send', 'event', category, action, label);
+    //in order to make the href redirect work under knockout onclick binding
+    return true;
+};
+
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
 module.exports = window.$.osf = {
@@ -909,5 +915,6 @@ module.exports = window.$.osf = {
     any: any,
     dialog: dialog,
     contribNameFormat: contribNameFormat,
+    trackClick: trackClick,
     findContribName: findContribName
 };

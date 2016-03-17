@@ -3,6 +3,7 @@
  */
 
 var m = require('mithril');
+var $osf = require('js/osfHelpers');
 
 // CSS
 require('css/meetings-and-conferences.css');
@@ -21,7 +22,9 @@ var MeetingsAndConferences = {
                         ]
                     ),
                     m('.col-md-4.text-center',
-                        m('div',  m('a.btn.btn-info.btn-lg.m-v-xl', { style : 'box-shadow: 0 0 9px -4px #000;', type:'button',  href:'/meetings/'}, 'View meetings'))
+                        m('div',  m('a.btn.btn-info.btn-lg.m-v-xl', { style : 'box-shadow: 0 0 9px -4px #000;', type:'button',  href:'/meetings/', onclick: function() {
+                            $osf.trackClick('meetingsAndConferences', 'navigate', 'navigate-to-view-meetings');
+                        }}, 'View meetings'))
                     )
                 ]
             )

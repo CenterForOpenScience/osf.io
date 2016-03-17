@@ -1271,6 +1271,10 @@ class User(GuidStoredObject, AddonModelMixin):
                 self.email_verifications[k] = v
         user.email_verifications = {}
 
+        for institution in user.affiliated_institutions:
+            self.affiliated_institutions.append(institution)
+        user._affiliated_institutions = []
+
         # FOREIGN FIELDS
         for watched in user.watched:
             if watched not in self.watched:
@@ -1381,13 +1385,19 @@ class User(GuidStoredObject, AddonModelMixin):
         return inst in self.affiliated_institutions
 
     def remove_institution(self, inst_id):
-        try:
-            self.affiliated_institutions.remove(inst_id)
-        except ValueError:
-            return False
-        return True
+        removed = False
+        for inst in self.affiliated_institutions:
+            if inst._id == inst_id:
+                self.affiliated_institutions.remove(inst)
+                removed = True
+        return removed
 
-    affiliated_institutions = fields.ForeignField('institution', list=True)
+    _affiliated_institutions = fields.ForeignField('node', list=True)
+
+    @property
+    def affiliated_institutions(self):
+        from website.institutions.model import Institution, AffiliatedInstitutionsList
+        return AffiliatedInstitutionsList([Institution(inst) for inst in self._affiliated_institutions], obj=self, private_target='_affiliated_institutions')
 
     def get_node_comment_timestamps(self, node, page, file_id=None):
         """ Returns the timestamp for when comments were last viewed on a node or
