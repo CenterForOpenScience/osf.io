@@ -6,18 +6,17 @@ import mendeley
 from mendeley.exception import MendeleyApiException
 from modularodm import fields
 
-from website.addons.base import AddonOAuthNodeSettingsBase
 from website.addons.base import AddonOAuthUserSettingsBase
-from website.addons.citations.utils import serialize_folder
-from website.addons.mendeley import serializer
+from website.addons.mendeley.serializer import MendeleySerializer
 from website.addons.mendeley import settings
 from website.addons.mendeley.api import APISession
-from website.oauth.models import ExternalProvider
+from website.citations.models import AddonCitationsNodeSettings
+from website.citations.providers import CitationsOauthProvider
 from website.util import web_url_for
 
 from framework.exceptions import HTTPError
 
-class Mendeley(ExternalProvider):
+class Mendeley(CitationsOauthProvider):
     name = 'Mendeley'
     short_name = 'mendeley'
 
@@ -28,10 +27,10 @@ class Mendeley(ExternalProvider):
     callback_url = 'https://api.mendeley.com/oauth/token'
     default_scopes = ['all']
 
-    _client = None
+    serializer = MendeleySerializer
 
     def handle_callback(self, response):
-        client = self._get_client(response)
+        client = self._get_client(credentials=response)
 
         # make a second request for the Mendeley user's ID and name
         profile = client.profiles.me
@@ -42,84 +41,45 @@ class Mendeley(ExternalProvider):
             'profile_url': profile.link,
         }
 
-    def _get_client(self, credentials):
-        if not self._client:
-            partial = mendeley.Mendeley(
-                client_id=self.client_id,
-                client_secret=self.client_secret,
-                redirect_uri=web_url_for('oauth_callback',
-                                         service_name='mendeley',
-                                         _absolute=True),
-            )
-            self._client = APISession(partial, credentials)
-
-        return self._client
-
     def _get_folders(self):
         """Get a list of a user's folders"""
 
         client = self.client
-
         return client.folders.list().items
 
-    @property
-    def client(self):
-        """An API session with Mendeley"""
-        if not self._client:
-            self._client = self._get_client({
-                'access_token': self.account.oauth_key,
-                'refresh_token': self.account.refresh_token,
-                'expires_at': time.mktime(self.account.expires_at.timetuple()),
-                'token_type': 'bearer',
-            })
-
-            #Check if Mendeley can be accessed
-            try:
-                self._client.folders.list()
-            except MendeleyApiException as error:
-                self._client = None
-                if error.status == 403:
-                    raise HTTPError(403)
-                else:
-                    raise HTTPError(error.status)
-
-        return self._client
-
-    def citation_lists(self, extract_folder):
-        """List of CitationList objects, derived from Mendeley folders"""
-
-        folders = self._get_folders()
-        # TODO: Verify OAuth access to each folder
-        all_documents = serialize_folder(
-            'All Documents',
-            id='ROOT',
-            parent_id='__'
+    def _get_client(self, credentials=None):
+        partial = mendeley.Mendeley(
+            client_id=self.client_id,
+            client_secret=self.client_secret,
+            redirect_uri=web_url_for('oauth_callback',
+                                     service_name='mendeley',
+                                     _absolute=True),
         )
-        serialized_folders = [
-            extract_folder(each)
-            for each in folders
-        ]
-        return [all_documents] + serialized_folders
+        credentials = credentials or {
+            'access_token': self.account.oauth_key,
+            'refresh_token': self.account.refresh_token,
+            'expires_at': time.mktime(self.account.expires_at.timetuple()),
+            'token_type': 'bearer',
+        }
+        return APISession(partial, credentials)
 
-    def get_list(self, list_id='ROOT'):
-        """Get a single CitationList
-        :param str list_id: ID for a Mendeley folder. Optional.
-        :return CitationList: CitationList for the folder, or for all documents
-        """
-        if list_id == 'ROOT':
-            folder = None
-        else:
-            folder = self.client.folders.get(list_id)
-
-        if folder:
-            return self._citations_for_mendeley_folder(folder)
-        return self._citations_for_mendeley_user()
+    def _verify_client_validity(self):
+        #Check if Mendeley can be accessed
+        try:
+            self._client.folders.list()
+        except MendeleyApiException as error:
+            self._client = None
+            if error.status == 403:
+                raise HTTPError(403)
+            else:
+                raise HTTPError(error.status)
 
     def _folder_metadata(self, folder_id):
         folder = self.client.folders.get(folder_id)
         return folder
 
-    def _citations_for_mendeley_folder(self, folder):
+    def _citations_for_folder(self, list_id):
+        folder = self.client.folders.get(list_id)
 
         document_ids = [
             document.id
@@ -127,11 +87,11 @@ class Mendeley(ExternalProvider):
         ]
         citations = {
             citation['id']: citation
-            for citation in self._citations_for_mendeley_user()
+            for citation in self._citations_for_user()
         }
         return map(lambda id: citations[id], document_ids)
 
-    def _citations_for_mendeley_user(self):
+    def _citations_for_user(self):
 
         documents = self.client.documents.iter(page_size=500)
         return [
@@ -278,120 +238,18 @@ class Mendeley(ExternalProvider):
 
 class MendeleyUserSettings(AddonOAuthUserSettingsBase):
     oauth_provider = Mendeley
-    serializer = serializer.MendeleySerializer
+    serializer = MendeleySerializer
 
 
-class MendeleyNodeSettings(AddonOAuthNodeSettingsBase):
+class MendeleyNodeSettings(AddonCitationsNodeSettings):
+    provider_name = 'mendeley'
     oauth_provider = Mendeley
-    serializer = serializer.MendeleySerializer
+    serializer = MendeleySerializer
 
-    mendeley_list_id = fields.StringField()
-
+    list_id = fields.StringField()
     _api = None
 
     @property
-    def api(self):
-        """authenticated ExternalProvider instance"""
-        if self._api is None:
-            self._api = Mendeley()
-            self._api.account = self.external_account
-        return self._api
-
-    @property
-    def complete(self):
-        return bool(self.has_auth and self.user_settings.verify_oauth_access(
-            node=self.owner,
-            external_account=self.external_account,
-            metadata={'folder': self.mendeley_list_id},
-        ))
-
-    @property
-    def selected_folder_name(self):
-        if self.mendeley_list_id is None:
-            return ''
-        elif self.mendeley_list_id == 'ROOT':
-            return 'All Documents'
-        else:
-            folder = self.api._folder_metadata(self.mendeley_list_id)
-            return folder.name
-
-    @property
-    def root_folder(self):
-        root = serialize_folder(
-            'All Documents',
-            id='ROOT',
-            parent_id='__'
-        )
-        root['kind'] = 'folder'
-        return root
-
-    @property
-    def provider_name(self):
-        return 'mendeley'
-
-    @property
-    def folder_id(self):
-        return self.mendeley_list_id
-
-    @property
-    def folder_name(self):
-        return self.selected_folder_name
-
-    @property
-    def folder_path(self):
-        return self.selected_folder_name
-
-    def clear_auth(self):
-        self.mendeley_list_id = None
-        return super(MendeleyNodeSettings, self).clear_auth()
-
-    def deauthorize(self, auth=None, add_log=True):
-        """Remove user authorization from this node and log the event."""
-        if add_log:
-            self.owner.add_log(
-                'mendeley_node_deauthorized',
-                params={
-                    'project': self.owner.parent_id,
-                    'node': self.owner._id,
-                },
-                auth=auth,
-            )
-
-        self.clear_auth()
-
-        self.save()
-
-    def set_auth(self, *args, **kwargs):
-        self.mendeley_list_id = None
-        return super(MendeleyNodeSettings, self).set_auth(*args, **kwargs)
-
-    def set_target_folder(self, mendeley_list_id, mendeley_list_name, auth):
-        """Configure this addon to point to a Mendeley folder
-
-        :param str mendeley_list_id:
-        :param ExternalAccount external_account:
-        :param User user:
-        """
-
-        # Tell the user's addon settings that this node is connecting
-        self.user_settings.grant_oauth_access(
-            node=self.owner,
-            external_account=self.external_account,
-            metadata={'folder': mendeley_list_id}
-        )
-        self.user_settings.save()
-
-        # update this instance
-        self.mendeley_list_id = mendeley_list_id
-        self.save()
-
-        self.owner.add_log(
-            'mendeley_folder_selected',
-            params={
-                'project': self.owner.parent_id,
-                'node': self.owner._id,
-                'folder_id': mendeley_list_id,
-                'folder_name': mendeley_list_name,
-            },
-            auth=auth,
-        )
+    def _fetch_folder_name(self):
+        folder = self.api._folder_metadata(self.list_id)
+        return folder.name

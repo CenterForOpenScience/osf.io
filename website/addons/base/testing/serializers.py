@@ -210,3 +210,24 @@ class StorageAddonSerializerTestSuiteMixin(OAuthAddonSerializerTestSuiteMixin):
                 serialized = self.ser.serialize_settings(self.node_settings, self.user, self.client)
         assert_in('folder', serialized)
         assert_true(mock_serialized_folder.called)
+
+
+class CitationAddonSerializerTestSuiteMixin(OAuthAddonSerializerTestSuiteMixin):
+    required_settings = ('userIsOwner', 'nodeHasAuth', 'urls', 'userHasAuth')
+    required_settings_authorized = ('ownerName', )
+
+    @abc.abstractproperty
+    def folder(self):
+        pass
+
+    def test_serialize_folder(self):
+        serialized_folder = self.ser.serialize_folder(self.folder)
+        assert_equal(serialized_folder['id'], self.folder['id'])
+        assert_equal(serialized_folder['name'], self.folder.name)
+        assert_equal(serialized_folder['kind'], 'folder')
+
+    def test_serialize_citation(self):
+        serialized_citation = self.ser.serialize_citation(self.folder)
+        assert_equal(serialized_citation['csl'], self.folder)
+        assert_equal(serialized_citation['id'], self.folder['id'])
+        assert_equal(serialized_citation['kind'], 'file')
