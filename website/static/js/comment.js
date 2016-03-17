@@ -3,6 +3,9 @@
  */
 'use strict';
 
+var caret = require('Caret.js');
+var atWho = require('At.js');
+
 var $ = require('jquery');
 var ko = require('knockout');
 var moment = require('moment');
@@ -637,7 +640,7 @@ var onOpen = function(page, rootId, nodeApiUrl) {
             page: page,
             rootId: rootId
         }
-    );    
+    );
     request.fail(function(xhr, textStatus, errorThrown) {
         Raven.captureMessage('Could not update comment timestamp', {
             url: timestampUrl,
@@ -656,7 +659,7 @@ var onOpen = function(page, rootId, nodeApiUrl) {
  *      rootId: Node._id,
  *      fileId: StoredFileNode._id,
  *      canComment: User.canComment,
- *      hasChildren: Node.hasChildren, 
+ *      hasChildren: Node.hasChildren,
  *      currentUser: {
  *          id: User._id,
  *          url: User.url,
