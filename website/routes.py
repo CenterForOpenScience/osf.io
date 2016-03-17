@@ -339,7 +339,6 @@ def make_url_map(app):
         Rule('/dashboard/remove_confirmed_emails/', 'put', auth_views.confirm_email_remove, json_renderer)
     ], prefix='/api/v1')
 
-
     ### Metadata ###
 
     process_rules(app, [
