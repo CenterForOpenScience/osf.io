@@ -362,7 +362,7 @@ var MyProjects = {
                             options.institutionId ? 'This institution has no registrations yet.':'You have not made any registrations yet.'));
                     } else {
                         self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box',
-                            'This collection has no projects.' +  (options.institutionId ? '' : ' To add projects go to "All My Projects" collection; drag and drop projects into the collection link')));
+                            'This collection has no projects.' +  (options.institutionId ? '' : ' To add projects go to "All my projects" collection; drag and drop projects into the collection link')));
                     }
                 } else {
                     var showAddProject = true;
