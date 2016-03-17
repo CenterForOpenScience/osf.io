@@ -25,20 +25,14 @@ var EvernoteWidget = function(urls) {
 
 
       var notes = self.notes();
-      console.log(notes);
-
-      var notes_list = $.map(notes, function(o){
-        return [[o.guid, o.title]];
-      })
-
-      console.log(notes_list);
 
       self.notes_dt = $('#evernote-notes-list').DataTable( {
         responsive: true,
-        data: notes_list,
+        data: notes,
+        rowId: 'guid',
         columns: [
-            { title: "guid" },
-            { title: "title" }
+            { data: "guid" , title: "guid"},
+            { data: "title", title: "title" }
         ]
 
        } );
@@ -47,7 +41,9 @@ var EvernoteWidget = function(urls) {
 
     // on selecting a row -- I think there should be a better way
     $('#evernote-notes-list').on( 'click', 'tr', function () {
-       console.log( 'Row index: '+self.notes_dt.row( this ).index() );
+       console.log( 'Row id: '+self.notes_dt.row( this ).id() );
+       $("#evernote-notedisplay").html("<b>Loading note</b>");
+       self.displayNote(self.notes_dt.row( this ).id());
     } );
 
     self.fetchNotes = $.getJSON.bind(null, urls.notes, function(notes) {
@@ -62,6 +58,20 @@ var EvernoteWidget = function(urls) {
     this.fetchNotes();
     console.log("fetchNotes done: notes: " + self.notes());
 
+
+ };
+
+ EvernoteWidget.prototype.displayNote = function (note_guid) {
+
+
+   // make ajax call to note to retrieve some basic info about note
+   // ultimately, rendered html
+
+   var note = $.getJSON(this.urls.note + note_guid +"/");
+
+   note.done(function(data) {
+     $("#evernote-notedisplay").html(data.html);
+   });
 
  };
 
