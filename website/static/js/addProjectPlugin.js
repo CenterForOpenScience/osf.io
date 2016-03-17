@@ -178,7 +178,9 @@ var AddProject = {
                                     'structure in the new project without importing the content of that project.'),
                                 m.component(Select2Template, {
                                     data: ctrl.userProjects,
-                                    value: ctrl.newProjectTemplate
+                                    value: ctrl.newProjectTemplate,
+                                    trackingCategory: options.trackingCategory,
+                                    trackingAction: options.trackingAction
                                 })
                             ])
                         ] : ''
@@ -271,13 +273,12 @@ var AddProject = {
 };
 
 var Select2Template = {
-    view: function(ctrl, attrs) {
-        return m('select', {config: Select2Template.config(attrs), onchange: function(){
-            //$osf.trackClick(options.trackingCategory, options.trackingAction, 'select-project-category')
-            console.log('hey')
+    view: function(ctrl, options) {
+        return m('select', {config: Select2Template.config(options), onchange: function(){
+            $osf.trackClick(options.trackingCategory, options.trackingAction, 'select-project-template');
         }}, [
             m('option', {value: ''}, ''),
-            attrs.data.map(function(node) {
+            options.data.map(function(node) {
                 var args = {value: node.id};
                 return m('option', args, node.title);
             })
