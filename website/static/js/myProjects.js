@@ -913,12 +913,11 @@ var Collections = {
                     'title':  'Collections are groups of projects. You can create custom collections. Drag and drop your projects or bookmarked projects to add them.',
                     'data-placement' : 'bottom'
                 }, ''),
-                m('.pull-right', [
-                    !viewOnly ? m('button.btn.btn-xs.btn-success[data-toggle="modal"][data-target="#addColl"]', {onclick: function() {
+                !viewOnly ? m('button.btn.btn-xs.btn-default[data-toggle="modal"][data-target="#addColl"].m-h-xs', {onclick: function() {
                         $osf.trackClick('myProjects', 'add-collection', 'open-add-collection-modal');
                     }}, m('i.fa.fa-plus')) : '',
+                m('.pull-right',
                     m.component(MicroPagination, { currentPage : ctrl.currentPage, totalPages : ctrl.totalPages })
-                    ]
                 )
             ]),
             m('ul', { config: ctrl.applyDroppable },[
