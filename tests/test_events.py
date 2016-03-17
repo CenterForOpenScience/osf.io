@@ -255,6 +255,11 @@ class TestFolderCreated(OsfTestCase):
         self.user = factories.UserFactory()
         self.consolidate_auth = Auth(user=self.user)
         self.project = factories.ProjectFactory()
+
+        # Remove default subscriptions
+        for sub in NotificationSubscription.find():
+            sub.remove()
+
         self.project_subscription = factories.NotificationSubscriptionFactory(
             _id=self.project._id + '_file_updated',
             owner=self.project,
@@ -526,6 +531,10 @@ class TestCategorizeUsers(OsfTestCase):
             payload=file_moved_payload
         )
         # Subscriptions
+        # Remove default subscriptions
+        for sub in NotificationSubscription.find():
+            sub.remove()
+
         # for parent node
         self.sub = factories.NotificationSubscriptionFactory(
             _id=self.project._id + '_file_updated',
