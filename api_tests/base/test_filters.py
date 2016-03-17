@@ -3,6 +3,8 @@ import datetime
 import re
 from dateutil import parser
 
+import json
+
 from nose.tools import *  # flake8: noqa
 
 from rest_framework import serializers as ser
@@ -11,16 +13,16 @@ from tests.base import ApiTestCase
 
 from api.base.filters import FilterMixin
 
+from api.base.filters import ODMOrderingFilter
+
+import api.base.filters as filters 
+
 from api.base.exceptions import (
     InvalidFilterError,
     InvalidFilterOperator,
     InvalidFilterComparisonType,
     InvalidFilterMatchType,
 )
-from modularodm.query import queryset as modularodm_queryset
-from rest_framework.filters import OrderingFilter
-from modularodm import Q
-from modularodm.query import queryset as modularodm_queryset
 
 class FakeSerializer(ser.Serializer):
 
@@ -34,9 +36,10 @@ class FakeSerializer(ser.Serializer):
     float_field = ser.FloatField()
     bool_field = ser.BooleanField(source='foobar')
 
-class FakeView(FilterMixin):
+class FakeView(FilterMixin, ODMOrderingFilter):
 
     serializer_class = FakeSerializer
+
 
 class TestFilterMixin(ApiTestCase):
 
@@ -227,56 +230,70 @@ class TestFilterMixin(ApiTestCase):
         value = self.view.convert_value(value, field)
         assert_equal(value, 42.0)
 
-def sort_multiple(fields):
-    fields = list(fields)
-    def sort_fn(a, b):
-        while fields:
-            field = fields[0]
-            if field[0] == '-':
-                field = field[1:]
-                a_field = getattr(a, field)
-                b_field = getattr(b, field)
-                if a_field > b_field:
-                    return -1
-                elif a_field < b_field:
-                    return 1
-            else:
-                a_field = getattr(a, field)
-                b_field = getattr(b, field)
-                if a_field > b_field:
-                    return 1
-                elif a_field < b_field:
-                    return -1
-        return 0
-    return sort_fn
 
 
-class TestODMOrderingFilter(OrderingFilter):
-    """Adaptation of rest_framework.filters.OrderingFilter to work with modular-odm."""
+"""
+class FakeSerialize(ser.Serializer):
+
+    filterable_fields = ('string_field', 'list_field', 'date_field', 'int_field', 'bool_field')
+
+    string_field = ser.CharField()
+    list_field = ser.ListField()
+    date_field = ser.DateField()
+    datetime_field = ser.DateTimeField()
+    int_field = ser.IntegerField()
+    float_field = ser.FloatField()
+    bool_field = ser.BooleanField(source='foobar')
+
+class FakeView(ODMOrderingFilter):
+
+    serializer_class = FakeSerialize
+
+"""
+
+#regrgession test for issue: https://openscience.atlassian.net/browse/OSF-5237
+class TestODMOrderingFilter(ApiTestCase):
 
     def setUp(self):
-        super(TestODMOrderingFilter, self).setUp()
-        self.view = FakeView()
+        class query:
+            title = ' '
+            def __init__(self, title):
+                self.title = title
+            def __str__(self):
+                return self.title
+        query_s = []
+        q1 = query('NewProj')
+        query_s.append(str(q1))
+        q2 = query('Zip')
+        query_s.append(str(q2))
+        q3 = query('Proj')
+        query_s.append(str(q3))
+        q4 = query('Activity')
+        query_s.append(str(q4))
+        print query_s
+        sort_q = sorted(query_s, cmp=filters.sort_multiple(['-title']))
+        #sort_q = self.view.filter_queryset(requests.request('GET','http://127.0.0.1:8000/v2/users/me/nodes/?sort=-title'), query_s, self.view)
+        assert_equal(sort_q, ['Zip', 'Proj', 'NewProj', 'Activity'])
+    
+    def test_filter_queryset_duplicate_fails(self):
+        class query:
+            title = ' '
+            def __init__(self, title):
+                self.title = title
+            def __str__(self):
+                return self.title
+        query_s = []
+        q1 = query('NewProj')
+        query_s.append(str(q1))
+        q2 = query('Zip')
+        query_s.append(str(q2))
+        q3 = query('Activity')
+        query_s.append(str(q3))
+        q4 = query('Activity')
+        query_s.append(str(q4))
+        print query_s
+        sort_q = sorted(query_s, cmp=filters.sort_multiple(['-title']))
+        #sort_q = self.view.filter_queryset(requests.request('GET','http://127.0.0.1:8000/v2/users/me/nodes/?sort=-title'), query_s, self.view)
+        assert_equal(sort_q, ['Zip', 'NewProj', 'Activity', 'Activity'])
 
-    def test_filter_queryset(self):
-        query_s =[
-            {"title": "NewProj"},
-
-            {"title": "Zip"},
-
-            {"title": "Proj"},
-
-            {"title": "Activity"},
-        ]
-
-        sorted_list = sorted(query_s, cmp=sort_multiple('-title'))
-        assert_equal(sorted_list, [
-        {"title": "Zip"},
-
-        {"title": "Proj"},
-
-        {"title": "NewProj"},
-
-        {"title": "Activity"},
-    ])
 
