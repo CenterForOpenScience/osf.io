@@ -70,7 +70,7 @@
             %if institution:
                  <li class="dropdown sign-in" data-bind="with: $root.signIn">
                   <div class="btn-group">
-                      <a href="${domain}login/?redirect_url=${redirect_url}">
+                      <a href="${domain}login/?campaign=institution&redirect_url=${redirect_url}">
                         <button type="button" class="btn btn-info btn-top-login">
                           Sign in <span class="hidden-xs"><i class="fa fa-arrow-right"></i></span>
                         </button>

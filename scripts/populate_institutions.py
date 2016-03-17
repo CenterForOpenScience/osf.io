@@ -35,27 +35,47 @@ def update_or_create(inst_data):
 def main(env):
     INSTITUTIONS = [
         {
-            'name': 'Virginia Tech',
-            '_id': 'vt',
-            'logo_name': 'virginia-tech.jpg',
-            'auth_url': SHIBBOLETH_SP.format(
-                urllib.quote('https://shib-pprd.middleware.vt.edu', safe='~()*!.\'')
-            ),
-            'domain': ['osf.vt.edu:5000'],
-            'description': 'this is vt',
-            'email_domain': ['vt.edu'],
-        },
-        {
-            'name': 'Notre Dame',
+            'name': 'University of Notre Dame',
             '_id': 'nd',
             'logo_name': 'notre-dame.jpg',
             'auth_url': SHIBBOLETH_SP.format(
                 urllib.quote('https://login.nd.edu/idp/shibboleth', safe='~()*!.\'') if env == 'prod' else urllib.quote('https://login-test.cc.nd.edu/idp/shibboleth', safe='~()*!.\'')
             ),
-            'domain': ['osf.nd.edu:5000'],
-            'description': 'this is nd',
-            'email_domain': ['nd.edu'],
-        }
+            'domains': [
+                'osf.nd.edu' if env == 'prod' else 'staging-osf-nd.cos.io',
+            ],
+            'description': 'University of Notre Dame',
+            'email_domains': [],
+        },
+        {
+            'name': 'Center For Open Science',
+            '_id': 'cos',
+            'logo_name': 'cos.png',
+            'auth_url': None,
+            'domains': [
+                'osf.cos.io' if env == 'prod' else 'staging-osf.cos.io',
+            ],
+            'description': 'Center for Open Science',
+            'email_domains': [
+                'cos.io',
+            ],
+            'banner_name': 'cos-banner.png'
+        },
+        {
+            'name': 'University of Southern California',
+            '_id': 'usc',
+            'logo_name': 'usc-shield.jpg',
+            'auth_url': SHIBBOLETH_SP.format(
+                urllib.quote('https://shibboleth.usc.edu/shibboleth-idp', safe='~()*!.\'') if env == 'prod' else urllib.quote('https://shibboleth-test.usc.edu/shibboleth-idp', safe='~()*!.\'')
+            ),
+            'domains': [
+                'osf.nd.edu' if env == 'prod' else 'staging-osf-usc.cos.io',
+            ],
+            'description': 'University of Southern California',
+            'email_domains': [],
+            'banner_name': 'usc-banner.png'
+        },
+
     ]
 
     init_app(routes=False)
