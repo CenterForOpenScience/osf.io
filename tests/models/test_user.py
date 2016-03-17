@@ -11,7 +11,7 @@ from website import models, project
 from tests import base
 from tests.base import fake
 from tests import factories
-from framework.tasks import handlers
+from framework.celery_tasks import handlers
 
 
 class TestUser(base.OsfTestCase):
@@ -324,7 +324,7 @@ class TestUserMerging(base.OsfTestCase):
             'username',
             'mailing_lists',
             'verification_key',
-            'affiliated_institutions',
+            '_affiliated_institutions',
             'contributor_added_email_records'
         ]
 

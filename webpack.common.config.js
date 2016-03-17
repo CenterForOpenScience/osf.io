@@ -59,6 +59,7 @@ var entry = {
     'faq-page' : staticPath('js/pages/faq-page.js'),
     'share-embed-page': staticPath('js/pages/share-embed-page.js'),
     'render-nodes': staticPath('js/pages/render-nodes.js'),
+    'institution-page': staticPath('js/pages/institution-page.js'),
     // Commons chunk
     'vendor': [
         // Vendor libraries
@@ -72,6 +73,7 @@ var entry = {
         'select2',
         'dropzone',
         'knockout-sortable',
+        'loaders.css',
         'treebeard',
         'jquery.cookie',
         'URIjs',

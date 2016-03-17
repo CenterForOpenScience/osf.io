@@ -422,7 +422,6 @@ class UserRegistrations(UserNodes):
             Q('is_registration', 'eq', True) &
             Q('contributors', 'eq', user._id)
         )
-
         permission_query = Q('is_public', 'eq', True)
         if not current_user.is_anonymous():
             permission_query = (permission_query | Q('contributors', 'eq', current_user._id))

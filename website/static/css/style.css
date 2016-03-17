@@ -623,3 +623,9 @@ button.close {
     background-color: #f0ad4e;
     padding: .5em;
 }
+
+/* Override insane add tag font 
+-------------------------------------------------- */
+.tagsinput input {
+    font-family : 'Open Sans', Helvetica, sans-serif;
+}

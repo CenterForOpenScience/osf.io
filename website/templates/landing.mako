@@ -39,7 +39,7 @@
         <div id="hero-signup" class="container">
           <div class="row">
             <div class="col-sm-6 hidden-xs">
-              <a class="youtube" href="//www.youtube.com/watch?v=2TV21gOzfhw"><i class="icon icon-play"></i></a>
+              <a class="youtube" href="//www.youtube.com/watch?v=2TV21gOzfhw" aria-label="OSF YouTube Video"><i class="icon icon-play"></i></a>
               <img src="/static/img/front-page/screenshot.png" class="img-responsive" id="screenshot" alt="Screenshot of OSF" />
             </div>
             <div class="col-sm-6">
@@ -325,5 +325,5 @@
 
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
+    <script src=${"/static/public/js/landing-page.js" | webpack_asset}></script>
 </%def>
-

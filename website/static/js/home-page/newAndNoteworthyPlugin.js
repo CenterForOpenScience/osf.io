@@ -9,6 +9,8 @@ var Raven = require('raven-js');
 
 // CSS
 require('css/new-and-noteworthy-plugin.css');
+require('loaders.css/loaders.min.css');
+
 
 // XHR config for apiserver connection
 var xhrconfig = function(xhr) {
@@ -91,7 +93,7 @@ var NewAndNoteworthy = {
         }
 
         if (!ctrl.someDataLoaded()) {
-            return m('.text-center', m('.logo-spin.logo-xl.m-v-xl'));
+            return m('.loader-inner.ball-scale.text-center.m-v-xl', m(''));
         }
 
         function newAndNoteworthyProjectsTemplate () {
@@ -115,7 +117,9 @@ var NewAndNoteworthy = {
         }
 
         function findMoreProjectsButton () {
-            return m('a.btn.btn-default.m-v-lg', {type:'button', href:'/search'}, 'Search for more projects');
+            return m('a.btn.btn-default.m-v-lg', {type:'button', href:'/search', onclick: function() {
+                $osf.trackClick('discoverPublicProjects', 'navigate', 'navigate-to-search-for-more-projects');
+            }}, 'Search for more projects');
         }
 
 
@@ -142,16 +146,17 @@ var NoteworthyNodeDisplay = {
     },
     view: function(ctrl, args) {
         var description = args.node.embeds.target_node.data.attributes.description;
+        var tooltipDescription = description ? description.split(' ').splice(0,30).join(' ') + '...' : '';
         var title = args.node.embeds.target_node.data.attributes.title;
         var contributors = $osf.contribNameFormat(args.node, args.contributorsMapping[args.node.id].total, args.getFamilyName);
         var destination = '/' + args.node.embeds.target_node.data.id;
 
-        return m('a', {href: destination}, m('.public-projects-item',[
+        return m('a', {href: destination, onclick: function() {
+            $osf.trackClick('discoverPublicProjects', 'navigate', 'navigate-to-specific-project');
+        }}, m('.public-projects-item',[
             m('h5', title),
-            m('span.prevent-overflow',  {'data-title': contributors, 'data-location': 'top', onmouseover: function() {
-                ctrl.addToolTip(this);
-            }}, m('i', 'by ' + contributors)),
-            description ? m('p.prevent-overflow', {'data-title': description, 'data-location': 'top', onmouseover: function(){
+            m('span.prevent-overflow', m('i', 'by ' + contributors)),
+            description ? m('p.prevent-overflow', {'data-title': tooltipDescription, 'data-location': 'top', onmouseover: function(){
                 ctrl.addToolTip(this);
             }}, description) : ''
         ]));

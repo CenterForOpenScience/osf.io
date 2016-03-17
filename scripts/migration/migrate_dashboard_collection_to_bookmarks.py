@@ -1,9 +1,10 @@
 import logging
+import sys
 
 from framework.mongo import database
 from framework.transactions.context import TokuTransaction
-
 from website.app import init_app
+from scripts import utils as script_utils
 
 logger = logging.getLogger(__name__)
 
@@ -58,8 +59,8 @@ def reverse_migration():
     }, multi=True)
 
 if __name__ == '__main__':
-    import sys
     init_app(set_backends=True, routes=False)
+    script_utils.add_file_logger(logger, __file__)
 
     if 'reverse' in sys.argv:
         with TokuTransaction():

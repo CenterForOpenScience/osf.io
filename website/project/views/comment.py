@@ -1,7 +1,12 @@
 # -*- coding: utf-8 -*-
+from functools import partial
+
 import pytz
 from datetime import datetime
 from flask import request
+
+from api.caching.tasks import ban_url
+from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from modularodm import Q
 
 from framework.auth.decorators import must_be_logged_in
@@ -28,7 +33,6 @@ def update_file_guid_referent(self, node, event_type, payload, user=None):
         file_guids = FileNode.resolve_class(source['provider'], FileNode.ANY).get_file_guids(
             materialized_path=source['materialized'] if source['provider'] != 'osfstorage' else source['path'],
             provider=source['provider'],
-            guids=[],
             node=source_node)
 
         if event_type == 'addon_file_renamed' and source['provider'] in settings.ADDONS_BASED_ON_IDS:
@@ -61,7 +65,7 @@ def create_new_file(obj, source, destination, destination_node):
             else:
                 new_path = obj.referent.materialized_path.replace(source['materialized'], destination['materialized'])
             new_file = FileNode.resolve_class(destination['provider'], FileNode.FILE).get_or_create(destination_node, new_path)
-            new_file.name = obj.referent.name
+            new_file.name = new_path.split('/')[-1]
             new_file.materialized_path = new_path
             new_file.save()
     return new_file
@@ -85,8 +89,6 @@ def find_and_create_file_from_metadata(children, source, destination, destinatio
 
 def update_comment_node(root_target_id, source_node, destination_node):
     Comment.update(Q('root_target', 'eq', root_target_id), data={'node': destination_node})
-    destination_node.commented_files[root_target_id] = source_node.commented_files[root_target_id]
-    del source_node.commented_files[root_target_id]
     source_node.save()
     destination_node.save()
 
@@ -137,6 +139,7 @@ def _update_comments_timestamp(auth, node, page=Comment.OVERVIEW, root_id=None):
         if not node_timestamp:
             user_timestamp[node._id] = dict()
         timestamps = auth.user.comments_viewed_timestamp[node._id]
+        enqueue_postcommit_task(partial(ban_url, node, []))
 
         # update node timestamp
         if page == Comment.OVERVIEW:

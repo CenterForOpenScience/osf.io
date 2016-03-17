@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import furl
 import json
+import urllib
 import requests
 import httplib as http
 from lxml import etree
@@ -195,6 +196,9 @@ def get_login_url(*args, **kwargs):
     :param kwargs: Same kwargs that `CasClient.get_login_url` receives
     """
     return get_client().get_login_url(*args, **kwargs)
+
+def get_institution_target(redirect_url):
+    return '/login?service={}&auto=true'.format(urllib.quote(redirect_url, safe='~()*!.\''))
 
 def get_logout_url(*args, **kwargs):
     """Convenience function for getting a logout URL for a service.

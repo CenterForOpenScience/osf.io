@@ -7,15 +7,12 @@ from modularodm.exceptions import ValidationValueError
 
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
-from framework.guid.model import Guid
 
 from website.models import Node, User, Comment, Institution
 from website.exceptions import NodeStateError, UserNotAffiliatedError
-from website.files.models.base import FileNode
 from website.util import permissions as osf_permissions
 from website.project.model import NodeUpdateError
 
-from api.nodes.utils import get_file_object
 from api.base.utils import get_object_or_error, absolute_reverse
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
                                   TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly,
@@ -47,7 +44,8 @@ class NodeSerializer(JSONAPISerializer):
         'date_created',
         'date_modified',
         'root',
-        'parent'
+        'parent',
+        'contributors'
     ])
 
     non_anonymized_fields = [
@@ -74,8 +72,8 @@ class NodeSerializer(JSONAPISerializer):
     id = IDField(source='_id', read_only=True)
     type = TypeField()
 
-    category_choices = Node.CATEGORY_MAP.keys()
-    category_choices_string = ', '.join(["'{}'".format(choice) for choice in category_choices])
+    category_choices = Node.CATEGORY_MAP.items()
+    category_choices_string = ', '.join(["'{}'".format(choice[0]) for choice in category_choices])
 
     title = ser.CharField(required=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
@@ -217,27 +215,10 @@ class NodeSerializer(JSONAPISerializer):
     def get_unread_comments_count(self, obj):
         user = self.get_user_auth(self.context['request']).user
         node_comments = Comment.find_n_unread(user=user, node=obj, page='node')
-        file_comments = self.get_unread_file_comments(obj)
 
         return {
-            'total': node_comments + file_comments,
-            'node': node_comments,
-            'files': file_comments
+            'node': node_comments
         }
-
-    def get_unread_file_comments(self, obj):
-        user = self.get_user_auth(self.context['request']).user
-        n_unread = 0
-        commented_file_guids = Guid.find(Q('_id', 'in', obj.commented_files.keys()))
-        for target in commented_file_guids:
-            file_obj = FileNode.resolve_class(target.referent.provider, FileNode.FILE).load(target.referent._id)
-            if obj.get_addon(file_obj.provider):
-                try:
-                    get_file_object(node=obj, path=file_obj.path, provider=file_obj.provider, request=self.context['request'])
-                except (exceptions.NotFound, exceptions.PermissionDenied):
-                    continue
-                n_unread += Comment.find_n_unread(user, obj, page='files', root_id=target._id)
-        return n_unread
 
     def create(self, validated_data):
         if 'template_from' in validated_data:
@@ -526,10 +507,11 @@ class NodeInstitutionRelationshipSerializer(ser.Serializer):
         type_ = getattr(meta, 'type_', None)
         assert type_ is not None, 'Must define Meta.type_'
         relation_id_field = self.fields['id']
-        attribute = relation_id_field.get_attribute(obj)
-        relationship = relation_id_field.to_representation(attribute)
-
-        data['data'] = {'type': type_, 'id': relationship} if relationship else None
+        data['data'] = None
+        if obj.primary_institution:
+            attribute = obj.primary_institution._id
+            relationship = relation_id_field.to_representation(attribute)
+            data['data'] = {'type': type_, 'id': relationship}
         data['links'] = {key: val for key, val in self.fields.get('links').to_representation(obj).iteritems()}
 
         return data
