@@ -1267,7 +1267,7 @@ var Filters = {
                 selectedCSS = item.id === args.activeFilter().id ? '.active' : '';
                 list.push(m('li' + selectedCSS,
                     m('a[role="button"]', {onclick : filterContributor.bind(null, item)},
-                        item.label + ' (' + item.data.count + ')')
+                        item.label)
                 ));
             }
             return list;
@@ -1287,7 +1287,7 @@ var Filters = {
                 selectedCSS = item.id === args.activeFilter().id ? '.active' : '';
                 list.push(m('li' + selectedCSS,
                     m('a[role="button"]', {onclick : filterTag.bind(null, item)},
-                        item.label + ' (' + item.data.count + ')'
+                        item.label
                     )
                 ));
             }
