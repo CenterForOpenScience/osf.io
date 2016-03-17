@@ -465,7 +465,10 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             if href and not href == '{}':
                 if self.always_embed:
                     envelope = 'data'
-                esi_url = extend_querystring_params(href, dict(format=['jsonapi', ], envelope=[envelope, ]))
+                query_dict = dict(format=['jsonapi', ], envelope=[envelope, ])
+                if 'view_only' in self.parent.context['request'].query_params.keys():
+                    query_dict.update(view_only=[self.parent.context['request'].query_params['view_only']])
+                esi_url = extend_querystring_params(href, query_dict)
                 return '<esi:include src="{}"/>'.format(esi_url)
         else:
             raise SkipField
