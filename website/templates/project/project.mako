@@ -129,7 +129,11 @@
                     % else:
                         Affiliated institution:
                     % endif
-                    <a href="/institutions/${node['institution']['id']}">${node['institution']['name']}</a>
+                    % if node['institution']['id']:
+                        <a href="/institutions/${node['institution']['id']}">${node['institution']['name']}</a>
+                    % else:
+                        <span> None </span>
+                    % endif
                 % endif
                 % if node['is_fork']:
                     <p>
