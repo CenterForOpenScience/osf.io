@@ -1,12 +1,10 @@
  <div id="s3Scope" class="scripted">
     <h4 class="addon-title">
-        <img class="addon-icon" src="${addon_icon_url}"></img>
+        <img class="addon-icon" src="${addon_icon_url}">
         Amazon S3
         <small class="authorized-by">
             <span data-bind="if: nodeHasAuth">
-                authorized by <a data-bind="attr.href: urls().owner">
-                {{ownerName}}
-                </a>
+                authorized by <a data-bind="attr.href: urls().owner, text: ownerName"></a>
                 % if not is_registration:
                     <a data-bind="click: deauthorizeNode" class="text-danger pull-right addon-auth">
                       Disconnect Account
@@ -28,9 +26,7 @@
           <span data-bind="ifnot: currentBucket">
             None
           </span>
-          <a data-bind="if: currentBucket, attr.href: urls().files">
-            {{currentBucket}}
-          </a>
+          <a data-bind="if: currentBucket, attr.href: urls().files, text: currentBucket"></a>
         </p>
         <div data-bind="attr.disabled: creating">
           <button data-bind="visible: canChange, click: toggleSelect,
