@@ -360,7 +360,7 @@
         </div>
     % endif
         <div data-bind="foreach: messages">
-            <div data-bind="css: cssClass">{{ text }}</div>
+            <div data-bind="css: cssClass, text: text"></div>
         </div>
 </%def>
 

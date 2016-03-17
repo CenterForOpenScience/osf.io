@@ -142,7 +142,7 @@
         <label>
           <input type="radio" name="selectedDraftSchema"
                  data-bind="attr {value: id}, checked: $root.selectedSchemaId" />
-          {{ schema.title }}
+          <span data-bind="text: schema.title"></span>
           <!-- ko if: schema.description -->
           <i data-bind="tooltip: {title: schema.description}" class="fa fa-info-circle"> </i>
           <!-- /ko -->

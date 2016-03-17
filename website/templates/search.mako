@@ -18,15 +18,15 @@
                                 <ul class="nav nav-pills nav-stacked" data-bind="foreach: allCategories">
 
                                     <!-- ko if: $parent.category().name === name -->
-                                            <li class="active">
-                                                <a data-bind="click: $parent.filter.bind($data)">{{ display }}<span class="badge pull-right">{{count}}</span></a>
-                                            </li>
-                                        <!-- /ko -->
-                                        <!-- ko if: $parent.category().name !== name -->
-                                            <li>
-                                                <a data-bind="click: $parent.filter.bind($data)">{{ display }}<span class="badge pull-right">{{count}}</span></a>
-                                            </li>
-                                        <!-- /ko -->
+                                        <li class="active"> <!-- TODO: simplify markup; only the active class really needs to be conditional -->
+                                            <a data-bind="click: $parent.filter.bind($data)"><span data-bind="text: display"></span><span class="badge pull-right" data-bind="text: count"></span></a>
+                                        </li>
+                                    <!-- /ko -->
+                                    <!-- ko if: $parent.category().name !== name -->
+                                        <li>
+                                            <a data-bind="click: $parent.filter.bind($data)"><span data-bind="text: display"></span><span class="badge pull-right" data-bind="text: count"></span></a>
+                                        </li>
+                                    <!-- /ko -->
                                 </ul>
                             </div>
                         </div>
@@ -38,9 +38,7 @@
                                     <!-- ko if: count === $parent.tagMaxCount() && count > $parent.tagMaxCount()/2  -->
                                     <span class="tag tag-big tag-container"
                                           data-bind="click: $root.addTag.bind($parentContext, tag.name)">
-                                        <span class="cloud-text">
-                                            {{name}}
-                                        </span>
+                                        <span class="cloud-text" data-bind="text: name"></span>
                                         <i class="fa fa-times-circle remove-tag big"
                                            data-bind="click: $root.removeTag.bind($parentContext, tag.name)"></i>
                                     </span>
@@ -48,9 +46,7 @@
                                     <!-- ko if: count < $parent.tagMaxCount() && count > $parent.tagMaxCount()/2 -->
                                     <span class="tag tag-med tag-container"
                                           data-bind="click: $root.addTag.bind($parentContext, tag.name)">
-                                        <span class="cloud-text">
-                                            {{name}}
-                                        </span>
+                                        <span class="cloud-text" data-bind="text: name"></span>
                                         <i class="fa fa-times-circle remove-tag med"
                                            data-bind="click: $root.removeTag.bind($parentContext, tag.name)"></i>
                                     </span>
@@ -58,9 +54,7 @@
                                     <!-- ko if: count <= $parent.tagMaxCount()/2-->
                                     <span class="tag tag-sm tag-container"
                                           data-bind="click: $root.addTag.bind($parentContext, tag.name)">
-                                        <span class="cloud-text">
-                                            {{name}}
-                                        </span>
+                                        <span class="cloud-text" data-bind="text: name"></span>
                                         <i class="fa fa-times-circle remove-tag"
                                            data-bind="click: $root.removeTag.bind($parentContext, tag.name)"></i>
                                     </span>
@@ -78,7 +72,7 @@
                                     data-bind="foreach: {data: licenses, as: 'license'}">
                                   <li data-bind="css: {'active': license.active(), 'disabled': !license.count()}">
                                     <a data-bind="click: license.toggleActive">
-                                      <span style="display: inline-block; max-width: 85%;">{{license.name}}</span>
+                                      <span style="display: inline-block; max-width: 85%;" data-bind="text: license.name"></span>
                                       <span data-bind="text: license.count" class="badge pull-right"></span>
                                     </a>
                                   </li>
@@ -118,26 +112,27 @@
 
     <script type="text/html" id="SHARE">
         <!-- ko if: $data.links -->
-            <h4><a data-bind="attr.href: links[0].url">{{ title }}</a></h4>
+            <h4><a data-bind="attr.href: links[0].url, text: title"></a></h4>
         <!-- /ko -->
 
         <!-- ko ifnot: $data.links -->
-            <h4><a data-bind="attr.href: id.url">{{ title }}</a></h4>
+            <h4><a data-bind="attr.href: id.url, text: title"></a></h4>
         <!-- /ko -->
 
-        <h5>Description: <small>{{ description | default:"No Description" | fit:500}}</small></h5>
+        <!-- TODO: Add a "trimText" filter to replace the one we're losing from KO.punches; this display value should be a 500 char max limit-->
+        <h5>Description: <small data-bind="text: description || 'No Description'"></small></h5>
 
         <!-- ko if: contributors.length > 0 -->
         <h5>
             Contributors: <small data-bind="foreach: contributors">
-                <span>{{ $data.given + " " + $data.family}}</span>
+                <span data-bind="text: $data.given + ' ' + $data.family"></span>
             <!-- ko if: ($index()+1) < ($parent.contributors.length) -->&nbsp;- <!-- /ko -->
             </small>
         </h5>
         <!-- /ko -->
 
         <!-- ko if: $data.source -->
-        <h5>Source: <small>{{ source }}</small></h5>
+        <h5>Source: <small data-bind="text: source"></small></h5>
         <!-- /ko -->
 
         <!-- ko if: $data.isResource -->
@@ -146,11 +141,11 @@
         <!-- /ko -->
     </script>
     <script type="text/html" id="file">
-        <h4><a href="{{ deep_url }}">{{ name }}</a> (<span data-bind="if: is_registration">Registration </span>File)</h4>
+        <h4><a data-bind="attr: {href: deep_url}, text: name"></a> (<span data-bind="if: is_registration">Registration </span>File)</h4>
         <h5>
-            <!-- ko if: parent_url --> From: <a data-bind="attr.href: parent_url">{{ parent_title }} /</a> <!-- /ko -->
-            <!-- ko if: !parent_url --> From: <span data-bind="if: parent_title">{{ parent_title }} /</span> <!-- /ko -->
-            <a data-bind="attr.href: node_url">{{ node_title }}</a>
+            <!-- ko if: parent_url --> From: <a data-bind="attr.href: parent_url, text: parent_title || '' + ' /'"></a> <!-- /ko -->
+            <!-- ko if: !parent_url --> From: <span data-bind="if: parent_title"><span data-bind="text: parent_title"></span> /</span> <!-- /ko -->
+            <a data-bind="attr.href: node_url, text: node_title"></a>
         </h5>
         <!-- ko if: tags.length > 0 --> <div data-bind="template: 'tag-cloud'"></div> <!-- /ko -->
     </script>
@@ -161,7 +156,7 @@
                 <img class="social-gravatar" data-bind="visible: gravatarUrl(), attr.src: gravatarUrl()">
             </div>
             <div class="col-md-10">
-                <h4><a data-bind="attr.href: url"><span>{{ user }}</span></a></h4>
+                <h4><a data-bind="attr.href: url, text: user"></a></h4>
                 <p>
                     <span data-bind="visible: job_title, text: job_title"></span><!-- ko if: job_title && job --> at <!-- /ko -->
                     <span data-bind="visible: job, text: job"></span><!-- ko if: job_title || job --><br /><!-- /ko -->
@@ -234,22 +229,23 @@
     </script>
     <script type="text/html" id="node">
       <!-- ko if: parent_url -->
-      <h4><a data-bind="attr.href: parent_url">{{ parent_title}}</a> / <a data-bind="attr.href: url">{{title }}</a></h4>
+      <h4><a data-bind="attr.href: parent_url, text: parent_title"></a> / <a data-bind="attr.href: url, text: title"></a></h4>
         <!-- /ko -->
         <!-- ko if: !parent_url -->
-        <h4><span data-bind="if: parent_title">{{ parent_title }} /</span> <a data-bind="attr.href: url">{{title }}</a></h4>
+        <h4><span data-bind="if: parent_title"><span data-bind="text: parent_title"></span> /</span> <a data-bind="attr.href: url, text: title"></a></h4>
         <!-- /ko -->
 
-        <p data-bind="visible: description"><strong>Description:</strong> {{ description | fit:500 }}</p>
+        <!-- TODO: Write and use a replacement for the trimText filter here. Limit 500 characters -->
+        <p data-bind="visible: description"><strong>Description:</strong> <span data-bind="text: description"></span></p>
 
         <!-- ko if: contributors.length > 0 -->
         <p>
             <strong>Contributors:</strong> <span data-bind="foreach: contributors">
                 <!-- ko if: url -->
-                    <a data-bind="attr.href: url">{{ fullname }}</a>
+                    <a data-bind="attr.href: url, text: fullname"></a>
                 <!-- /ko-->
                 <!-- ko ifnot: url -->
-                    {{ fullname }}
+                    <span data-bind="text: fullname"></span>
                 <!-- /ko -->
             <!-- ko if: ($index()+1) < ($parent.contributors.length) -->&nbsp;- <!-- /ko -->
             </span>
@@ -273,23 +269,24 @@
     </script>
     <script type="text/html" id="registration">
         <!-- ko if: parent_url -->
-        <h4><a data-bind="attr.href: parent_url">{{ parent_title}}</a> / <a data-bind="attr.href: url">{{ title }}</a>  (<span class="text-danger" data-bind="if: is_retracted">Retracted </span>Registration)</h4>
+        <h4><a data-bind="attr.href: parent_url, text: parent_title"></a> / <a data-bind="attr.href: url, text: title"></a>  (<span class="text-danger" data-bind="if: is_retracted">Retracted </span>Registration)</h4>
         <!-- /ko -->
         <!-- ko if: !parent_url -->
-        <h4><span data-bind="if: parent_title">{{ parent_title }} /</span> <a data-bind="attr.href: url">{{ title }}</a>  (<span class="text-danger" data-bind="if: is_retracted">Retracted </span>Registration)</h4>
+        <h4><span data-bind="if: parent_title"><span data-bind="text: parent_title"></span> /</span> <a data-bind="attr.href: url, text: title"></a>  (<span class="text-danger" data-bind="if: is_retracted">Retracted </span>Registration)</h4>
         <!-- /ko -->
         <strong><span data-bind="text: 'Date Registered: ' + dateRegistered['local'], tooltip: {title: dateRegistered['utc']}"></span></strong>
 
-        <p data-bind="visible: description"><strong>Description:</strong> {{ description | fit:500 }}</p>
+        <!-- TODO: Add trimText filter to restrict length to 500 chars -->
+        <p data-bind="visible: description"><strong>Description:</strong> <span data-bind="text: description>"></span></p>
 
         <!-- ko if: contributors.length > 0 -->
         <p>
             <strong>Contributors:</strong> <span data-bind="foreach: contributors">
                 <!-- ko if: url -->
-                    <a data-bind="attr.href: url">{{ fullname }}</a>
+                    <a data-bind="attr.href: url, text: fullname"></a>
                 <!-- /ko-->
                 <!-- ko ifnot: url -->
-                    {{ fullname }}
+                    <span data-bind="text: fullname"></span>
                 <!-- /ko -->
 
 

@@ -54,11 +54,11 @@
             <tbody>
                 <tr>
                     <td>APA</td>
-                    <td class="overflow-block" width="30%">{{ citeApa }}</td>
+                    <td class="overflow-block" width="30%"><span data-bind="text: citeApa"></span></td>
                 </tr>
                 <tr>
                     <td>MLA</td>
-                    <td class="overflow-block" width="30%">{{ citeMla }}</td>
+                    <td class="overflow-block" width="30%"><span data-bind="citeMla"></span></td>
                 </tr>
             </tbody>
         </table>
