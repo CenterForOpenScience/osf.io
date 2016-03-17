@@ -905,7 +905,12 @@ class JSONAPISerializer(ser.Serializer):
                         except SkipField:
                             continue
                     else:
-                        result = self.context['embed'][field.field_name](obj)
+                        try:
+                            # If a field has an empty representation, it should not be embedded.
+                            field.to_representation(attribute)
+                            result = self.context['embed'][field.field_name](obj)
+                        except SkipField:
+                            result = None
 
                     if result:
                         data['embeds'][field.field_name] = result
