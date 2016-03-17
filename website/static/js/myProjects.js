@@ -141,8 +141,8 @@ var MyProjects = {
 
         // Load 'All my Projects' and 'All my Registrations'
         self.systemCollections = options.systemCollections || [
-            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'page[size]'  : 60, 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All my projects'),
-            new LinkObject('collection', { path : 'users/me/registrations/', query : { 'related_counts' : 'children', 'page[size]'  : 60, 'embed' : 'contributors'}, systemCollection : 'registrations'}, 'All my registrations')
+            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All my projects'),
+            new LinkObject('collection', { path : 'users/me/registrations/', query : { 'related_counts' : 'children', 'embed' : 'contributors'}, systemCollection : 'registrations'}, 'All my registrations')
         ];
         // Initial Breadcrumb for All my projects
         var initialBreadcrumbs = options.initialBreadcrumbs || [new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All my projects')];
@@ -349,6 +349,7 @@ var MyProjects = {
         self.updateListSuccess = function _updateListSuccess (value) {
             self.loadCounter(self.loadCounter() + value.data.length);
             self.loadValue(Math.round(self.loadCounter() / value.links.meta.total * 100));
+            console.log(self.loadValue());
             if(self.loadingNodePages){
                 self.data(self.data().concat(value.data));
             } else {
@@ -598,7 +599,8 @@ var MyProjects = {
                 allProjects : ctrl.allProjects,
                 reload : ctrl.reload,
                 resetUi : ctrl.resetUi,
-                showSidebar : ctrl.showSidebar
+                showSidebar : ctrl.showSidebar,
+                loadValue : ctrl.loadValue
             },
             ctrl.projectOrganizerOptions
         );
@@ -641,7 +643,11 @@ var MyProjects = {
                 })
             ]) : '',
             mobile && ctrl.showSidebar() ? '' : m('.db-main', { style : poStyle },[
-                ctrl.refreshView() ? m('.spinner-div', m('i.fa.fa-refresh.fa-spin')) : '',
+                ctrl.loadValue() < 100 ? m('.line-loader', [
+                    m('.line-empty'),
+                    m('.line-full.bg-color-blue', { style : 'width: ' + ctrl.loadValue() +'%'}),
+                    m('.load-message', 'Fetching more projects')
+                ]) : '',
                 ctrl.data().length === 0 ? ctrl.nonLoadTemplate() : m('.db-poOrganizer',  m.component( ProjectOrganizer, projectOrganizerOptions))
             ]),
             mobile ? '' : m('.db-info-toggle',{
