@@ -793,7 +793,7 @@ var Collections = {
                     if (args.selected().length > 1) {
                         args.selected().map(function(item){
                             dataArray.push(buildCollectionNodeData(item.data.id));
-                             $osf.trackClick('myProjects', 'projectOrganizer', 'multiple-projects-dragged-to-collection');
+                            $osf.trackClick('myProjects', 'projectOrganizer', 'multiple-projects-dragged-to-collection');
                         });
                     } else {
                         // if single items are passed use the event information
