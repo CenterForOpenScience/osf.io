@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-First run 
-    rm -rf website/addons/box/views/
-to remove old .pyc files that would interfere.
+Migration to add a confirmed boolean to User.email_verifications
 """
 import sys
 import logging
@@ -20,7 +18,6 @@ logger = logging.getLogger(__name__)
 
 def do_migration():
     for user in User.find(Q('email_verifications', 'ne', {})):
-        import ipdb;  ipdb.set_trace()
         for token in user.email_verifications:
             if 'confirmed' not in token:
                 user.email_verifications[token]['confirmed'] = False
