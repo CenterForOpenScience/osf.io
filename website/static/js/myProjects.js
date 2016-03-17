@@ -793,10 +793,12 @@ var Collections = {
                     if (args.selected().length > 1) {
                         args.selected().map(function(item){
                             dataArray.push(buildCollectionNodeData(item.data.id));
+                             $osf.trackClick('myProjects', 'projectOrganizer', 'multiple-projects-dragged-to-collection');
                         });
                     } else {
                         // if single items are passed use the event information
                         dataArray.push(buildCollectionNodeData(ui.draggable.find('.title-text>a').attr('data-nodeID'))); // data-nodeID attribute needs to be set in project organizer building title column
+                        $osf.trackClick('myProjects', 'projectOrganizer', 'single-project-dragged-to-collection');
                     }
                     function saveNodetoCollection (index) {
                         function doNext (skipCount){
