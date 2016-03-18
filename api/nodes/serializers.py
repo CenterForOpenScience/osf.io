@@ -559,8 +559,8 @@ class NodeInstitutionsRelationshipSerializer(ser.Serializer):
     def get_institutions_to_add_remove(self, institutions, new_institutions):
         # TODO: figure out how new_institutions is formatted
         diff = relationship_diff(
-            current_items={inst._id for inst in institutions},
-            new_items={}
+            current_items={inst._id: inst for inst in institutions},
+            new_items={inst['_id']: inst for inst in new_institutions}
         )
 
         insts_to_add = []
@@ -603,7 +603,6 @@ class NodeInstitutionsRelationshipSerializer(ser.Serializer):
             institutions=node.affiliated_institutions,
             new_institutions=validated_data['data']
         )
-
         if not len(add):
             raise RelationshipPostMakesNoChanges
 
