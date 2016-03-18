@@ -812,7 +812,9 @@ var Collections = {
                             url : collection.data.node.links.self + 'node_links/', //collection.data.node.relationships.linked_nodes.links.related.href,
                             config : xhrconfig,
                             data : dataArray[index]
-                        }).then(doNext, function(result){
+                        }).then(function(){
+                            doNext(false);
+                        }, function(result){
                             var message = '';
                             var name = args.selected()[index] ? args.selected()[index].data.name : 'Item ';
                             if (result.errors.length > 0) {
