@@ -2,7 +2,8 @@ import collections
 import re
 
 import furl
-from django.core.urlresolvers import resolve, reverse
+from django.core.urlresolvers import resolve, reverse, NoReverseMatch
+from django.core.exceptions import ImproperlyConfigured
 from django.http.request import QueryDict
 from rest_framework import exceptions
 from rest_framework import serializers as ser
@@ -490,17 +491,54 @@ class RelationshipField(ser.HyperlinkedIdentityField):
 
     # Overrides HyperlinkedIdentityField
     def to_representation(self, value):
-        urls = super(RelationshipField, self).to_representation(value)
-        if not urls:
-            raise SkipField
-        else:
-            related_url = urls['related']
-            related_meta = self.get_meta_information(self.related_meta, value)
-            self_url = urls['self']
-            self_meta = self.get_meta_information(self.self_meta, value)
+        request = self.context.get('request', None)
+        format = self.context.get('format', None)
 
-            ret = format_relationship_links(related_url, self_url, related_meta, self_meta)
-        return ret
+        assert request is not None, (
+            "`%s` requires the request in the serializer"
+            " context. Add `context={'request': request}` when instantiating "
+            "the serializer." % self.__class__.__name__
+        )
+
+        # By default use whatever format is given for the current context
+        # unless the target is a different type to the source.
+        #
+        # Eg. Consider a HyperlinkedIdentityField pointing from a json
+        # representation to an html property of that representation...
+        #
+        # '/snippets/1/' should link to '/snippets/1/highlight/'
+        # ...but...
+        # '/snippets/1/.json' should link to '/snippets/1/highlight/.html'
+        if format and self.format and self.format != format:
+            format = self.format
+
+        # Return the hyperlink, or error if incorrectly configured.
+        try:
+            url = self.get_url(value, self.view_name, request, format)
+        except NoReverseMatch:
+            msg = (
+                'Could not resolve URL for hyperlinked relationship using '
+                'view name "%s". You may have failed to include the related '
+                'model in your API, or incorrectly configured the '
+                '`lookup_field` attribute on this field.'
+            )
+            if value in ('', None):
+                value_string = {'': 'the empty string', None: 'None'}[value]
+                msg += (
+                    " WARNING: The value of the field on the model instance "
+                    "was %s, which may be why it didn't match any "
+                    "entries in your URL conf." % value_string
+                )
+            raise ImproperlyConfigured(msg % self.view_name)
+
+        if url is None:
+            raise SkipField
+
+        related_url = url['related']
+        related_meta = self.get_meta_information(self.related_meta, value)
+        self_url = url['self']
+        self_meta = self.get_meta_information(self.self_meta, value)
+        return format_relationship_links(related_url, self_url, related_meta, self_meta)
 
 
 class FileCommentRelationshipField(RelationshipField):
