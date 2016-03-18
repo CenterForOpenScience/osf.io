@@ -13,7 +13,7 @@ from framework.auth.decorators import must_be_logged_in
 from framework.guid.model import Guid
 
 from website.addons.base.signals import file_updated
-from website.files.models import FileNode
+from website.files.models import FileNode, TrashedFileNode
 from website.notifications.constants import PROVIDERS
 from website.notifications.emails import notify
 from website.models import Comment
@@ -47,8 +47,11 @@ def update_file_guid_referent(self, node, event_type, payload, user=None):
                 update_comment_node(guid, source_node, destination_node)
 
             if source['provider'] != destination['provider'] or source['provider'] != 'osfstorage':
+                old_file = FileNode.load(obj.referent._id)
                 obj.referent = create_new_file(obj, source, destination, destination_node)
                 obj.save()
+                if not TrashedFileNode.load(old_file._id):
+                    old_file.delete()
 
 
 def create_new_file(obj, source, destination, destination_node):
