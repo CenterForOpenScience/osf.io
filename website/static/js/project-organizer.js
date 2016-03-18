@@ -376,37 +376,27 @@ var tbOptions = {
     hScroll : 300,
     filterTemplate : function() {
         var tb = this;
-        var disabledTemplate = m('input.form-control[placeholder="loading projects to search..."][type="text"][disabled]', {
-            style: 'display:inline;'
-        });
-        var enabledTemplate =  [
-            m('input.form-control[placeholder="Search all my projects"][type="text"]', {
-                style: 'display:inline;',
-                onkeyup: function(event){
-                    if ($(this).val().length === 1){
-                        tb.updateFolder(allProjectsCache(), tb.treeData);
-                        tb.options.showSidebar(false);
-                        tb.options.resetUi();
-                    }
-                    tb.filter(event);
-                },
-                onchange: function(event) {
-                    tb.filterText(event.value);
-                    $osf.trackClick('myProjects', 'filter', 'search-projects');
-                },
-                value: tb.filterText()
-            }),
-            m('.filterReset', { onclick : function () {
-                $osf.trackClick('myProjects', 'filter', 'clear-search');
-                tb.resetFilter.call(tb);
-                $('.db-poFilter>input').val('');
-            } }, tb.options.removeIcon())
-        ];
-
-        if(tb.options.loadValue() < 100){
-            return disabledTemplate;
-        }
-        return enabledTemplate;
+        return [ m('input.form-control[placeholder="Search all my projects"][type="text"]', {
+            style: 'display:inline;',
+            onkeyup: function(event){
+                if ($(this).val().length === 1){
+                    tb.updateFolder(allProjectsCache(), tb.treeData);
+                    tb.options.showSidebar(false);
+                    tb.options.resetUi();
+                }
+                tb.filter(event);
+            },
+            onchange: function(event) {
+                tb.filterText(event.value);
+                $osf.trackClick('myProjects', 'filter', 'search-projects');
+            },
+            value: tb.filterText()
+        }),
+        m('.filterReset', { onclick : function () {
+            $osf.trackClick('myProjects', 'filter', 'clear-search');
+            tb.resetFilter.call(tb);
+            $('.db-poFilter>input').val('');
+        } }, tb.options.removeIcon())];
     },
     hiddenFilterRows : ['tags']
 };
