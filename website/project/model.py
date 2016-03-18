@@ -3375,8 +3375,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             save=True,
         )
 
-    is_institution = fields.BooleanField(default=False, index=True)
-
     institution_id = fields.StringField(unique=True)
     institution_domains = fields.StringField(list=True)
     institution_auth_url = fields.StringField(validate=URLValidator())
@@ -3387,13 +3385,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     @classmethod
     def find(cls, query=None, allow_institution=False, **kwargs):
         if not allow_institution:
-            query = (query & Q('is_institution', 'ne', True)) if query else Q('is_institution', 'ne', True)
+            query = (query & Q('institution_id', 'ne', None)) if query else Q('institution_id', 'ne', None)
         return super(Node, cls).find(query, **kwargs)
 
     @classmethod
     def find_one(cls, query=None, allow_institution=False, **kwargs):
         if not allow_institution:
-            query = (query & Q('is_institution', 'ne', True)) if query else Q('is_institution', 'ne', True)
+            query = (query & Q('institution_id', 'ne', None)) if query else Q('institution_id', 'ne', None)
         return super(Node, cls).find_one(query, **kwargs)
 
     @classmethod

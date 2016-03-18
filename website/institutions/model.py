@@ -56,7 +56,7 @@ class InstitutionQuerySet(MongoQuerySet):
 class Institution(object):
     '''
     "wrapper" class for Node. Together with the find and institution attributes & methods in Node,
-    this is to be used to allow interaction with Institutions, which are Nodes (with ' is_institution ' == True),
+    this is to be used to allow interaction with Institutions, which are Nodes (with ' institution_id ' != None),
     as if they were a wholly separate collection. To find an institution, use the find methods here,
     and to use a Node as Institution, instantiate an Institution with ' Institution(node) '
     '''
@@ -102,7 +102,7 @@ class Institution(object):
         elif isinstance(query, RawQuery):
             replacement_attr = cls.attribute_map.get(query.attribute, False)
             query.attribute = replacement_attr or query.attribute
-        query = query & Q('is_institution', 'eq', True) if query else Q('is_institution', 'eq', True)
+        query = query & Q('institution_id', 'ne', None) if query else Q('institution_id', 'ne', None)
         nodes = Node.find(query, allow_institution=True, **kwargs)
         return InstitutionQuerySet(nodes)
 
@@ -116,15 +116,15 @@ class Institution(object):
         elif isinstance(query, RawQuery):
             replacement_attr = cls.attribute_map.get(query.attribute, False)
             query.attribute = replacement_attr if replacement_attr else query.attribute
-        query = query & Q('is_institution', 'eq', True) if query else Q('is_institution', 'eq', True)
+        query = query & Q('institution_id', 'ne', None) if query else Q('institution_id', 'ne', None)
         node = Node.find_one(query, allow_institution=True, **kwargs)
         return cls(node)
 
     @classmethod
-    def load(cls, id):
+    def load(cls, key):
         from website.models import Node
         try:
-            node = Node.find_one(Q('institution_id', 'eq', id) & Q('is_institution', 'eq', True), allow_institution=True)
+            node = Node.find_one(Q('institution_id', 'eq', key), allow_institution=True)
             return cls(node)
         except NoResultsFound:
             return None
