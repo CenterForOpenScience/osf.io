@@ -321,7 +321,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <button data-bind="click: submitInst" class="btn btn-success">Affiliate</button>
+                            <button data-bind="click: submitInst, css: {disabled: selectedInstitution() == null}" class="btn btn-success">Affiliate</button>
                             <!-- /ko -->
                             <!-- ko ifnot: availableInstitutions-->
                             <div class="help-block">
