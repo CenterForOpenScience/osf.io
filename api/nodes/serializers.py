@@ -20,8 +20,8 @@ from api.nodes.utils import get_file_object
 from api.base.utils import get_object_or_error, absolute_reverse
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
                                   TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly,
-                                  HideIfRegistration, JSONAPIRelationshipSerializer)
-from api.base.exceptions import InvalidModelValueError
+                                  HideIfRegistration, JSONAPIRelationshipSerializer, relationship_diff)
+from api.base.exceptions import InvalidModelValueError, RelationshipPostMakesNoChanges
 
 
 class NodeTagField(ser.Field):
@@ -555,6 +555,63 @@ class NodeInstitutionsRelationshipSerializer(ser.Serializer):
 
     class Meta:
         type_ = 'institutions'
+
+    def get_institutions_to_add_remove(self, institutions, new_institutions):
+        # TODO: figure out how new_institutions is formatted
+        diff = relationship_diff(
+            current_items={inst._id for inst in institutions},
+            new_items={}
+        )
+
+        insts_to_add = []
+        for inst_id in diff['add']:
+            inst = Institution.load(inst_id)
+            if not inst:
+                raise exceptions.NotFound(detail='Institution with id "{}" was not found'.format(inst_id))
+            insts_to_add.append(inst)
+
+        return insts_to_add, diff['remove'].values()
+
+    def make_instance_obj(self, obj):
+        return {
+            'data': obj.affiliated_institutions,
+            'self': obj
+        }
+
+    def update(self, instance, validated_data):
+        node = instance['self']
+        user = self.context['request'].user
+
+        add, remove = self.get_institutions_to_add_remove(
+            institutions=node.affiliated_institutions,
+            new_institutions=validated_data['data']
+        )
+
+        for inst in remove:
+            node.remove_affiliated_institution(inst, user)
+        for inst in add:
+            node.add_affiliated_institution(inst, user)
+
+        return self.make_instance_obj(node)
+
+    def create(self, validated_data):
+        instance = self.context['view'].get_object()
+        user = self.context['request'].user
+        node = instance['self']
+
+        add, remove = self.get_institutions_to_add_remove(
+            institutions=node.affiliated_institutions,
+            new_institutions=validated_data['data']
+        )
+
+        if not len(add):
+            raise RelationshipPostMakesNoChanges
+
+        for inst in add:
+            node.add_affiliated_institution(inst, user)
+
+        return self.make_instance_obj(node)
+
 
 class NodeAlternativeCitationSerializer(JSONAPISerializer):
 

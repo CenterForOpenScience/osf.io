@@ -3521,6 +3521,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             )
         return True
 
+    def remove_affiliated_institution(self, user, inst):
+        if not user.is_affiliated_with_institution(inst):
+            raise UserNotAffiliatedError('User is not affiliated with {}'.format(inst.name))
+        self.primary_institution = inst
+        if inst not in self.affiliated_institutions:
+            self.affiliated_institutions.append(inst)
+        return True
+
     def institution_url(self):
         return self.absolute_api_v2_url + 'institution/'
 

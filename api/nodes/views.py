@@ -20,6 +20,7 @@ from api.base.parsers import (
     JSONAPIOnetoOneRelationshipParser,
     JSONAPIOnetoOneRelationshipParserForRegularJSON
 )
+from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
 from api.files.serializers import FileSerializer
 from api.comments.serializers import CommentSerializer, CommentCreateSerializer
@@ -2061,3 +2062,19 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
         self.check_object_permissions(self.request, obj)
         return obj
 
+    def perform_destroy(self, instance):
+        data = self.request.data['data']
+        user = self.request.user
+        current_insts = {inst._id: inst for inst in instance['data']}
+        node = instance['self']
+        for val in data:
+            if val['id'] in current_insts:
+                node.remove_affiliated_institution(user, current_insts[val['id']])
+        node.save()
+
+    def create(self, *args, **kwargs):
+        try:
+            ret = super(NodeInstitutionsRelationship, self).create(*args, **kwargs)
+        except RelationshipPostMakesNoChanges:
+            return Response(status=HTTP_204_NO_CONTENT)
+        return ret
