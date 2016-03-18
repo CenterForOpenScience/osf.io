@@ -837,10 +837,21 @@ class TestAddonFileViews(OsfTestCase):
         assert_true(TrashedFileNode.load(file_node._id))
         assert_false(StoredFileNode.load(subfolder._id))
 
+    def test_archived_from_url(self):
+        file_node = self.get_test_file()
+        file_node.copied_from_id = '12345'
+        registered_node = self.project.register_node(
+            schema=get_default_metaschema(),
+            auth=Auth(self.user),
+            data=None,
+        )
+        archived_from_url = views.get_archived_from_url(registered_node, file_node)
+        view_url = self.project.web_url_for('addon_view_or_download_file', provider=file_node.provider, path=file_node.copied_from_id)
+        assert_urls_equal(archived_from_url, view_url)
 
     def test_archived_from_url_with_id(self):
         file_node = self.get_test_file()
-        file_node.archived_from_id = '12345'
+        file_node.copied_from_id = '12345'
         registered_node = self.project.register_node(
             schema=get_default_metaschema(),
             auth=Auth(self.user),
@@ -858,6 +869,17 @@ class TestAddonFileViews(OsfTestCase):
         )
         archived_from_url = views.get_archived_from_url(registered_node, file_node)
         assert_false(archived_from_url)
+
+    def test_copied_from_id_trashed(self):
+        file_node = self.get_test_file()
+        file_node.copied_from_id = '12345'
+        self.project.register_node(
+            schema=get_default_metaschema(),
+            auth=Auth(self.user),
+            data=None,
+        )
+        trashed_node = file_node.delete()
+        assert_false(trashed_node.copied_from_id)
 
 
 class TestLegacyViews(OsfTestCase):

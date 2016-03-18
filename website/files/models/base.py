@@ -60,7 +60,7 @@ class TrashedFileNode(StoredObject):
     deleted_on = fields.DateTimeField(auto_now_add=True)
     tags = fields.ForeignField('Tag', list=True)
 
-    archived_from_id = fields.StringField(default=None)
+    copied_from_id = fields.StringField(default=None)
 
     @property
     def deep_url(self):
@@ -139,7 +139,7 @@ class StoredFileNode(StoredObject):
     node = fields.ForeignField('Node', required=True)
     parent = fields.ForeignField('StoredFileNode', default=None)
 
-    archived_from_id = fields.StringField(default=None)
+    copied_from_id = fields.StringField(default=None)
 
     is_file = fields.BooleanField(default=True)
     provider = fields.StringField(required=True)
