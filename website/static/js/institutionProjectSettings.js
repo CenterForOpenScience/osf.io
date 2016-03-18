@@ -8,6 +8,7 @@ var $osf = require('js/osfHelpers');
 var ViewModel = function(data) {
     var self = this;
     self.primaryInstitution = ko.observable('Loading...');
+    self.loading = ko.observable(true);
     self.institutionHref = ko.observable('');
     self.availableInstitutions = ko.observable(false);
     self.selectedInstitution = ko.observable();
@@ -21,6 +22,7 @@ var ViewModel = function(data) {
         ).done(function (response) {
             if (response.data.embeds.institutions.data.length){
                 self.availableInstitutions(response.data.embeds.institutions.data);
+                self.loading(false);
             }
         }).fail(function (xhr, status, error) {
             Raven.captureMessage('Unable to fetch user with embedded institutions', {
