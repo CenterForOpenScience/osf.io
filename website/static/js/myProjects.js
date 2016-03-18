@@ -128,24 +128,29 @@ var MyProjects = {
         self.reload = m.prop(false); // Gets set to true when treebeard link changes and it needs to be redrawn
         self.nonLoadTemplate = m.prop(''); // Template for when data is not available or error happens
         self.logUrlCache = {}; // dictionary of load urls to avoid multiple calls with little refactor
+        self.nodeUrlCache = {}; // Cached returns of the project related urls
         // VIEW STATES
         self.showInfo = m.prop(true); // Show the info panel
         self.showSidebar = m.prop(false); // Show the links with collections etc. used in narrow views
         self.allProjectsLoaded = m.prop(false);
         self.allProjects = m.prop([]);
-        self.loadingNodePages = false; // Since API returns pages of items, this state shows whether filebrowser is still loading the next pages.
         self.loadingAllNodes = false; // True if we are loading all nodes
+        self.loadingNodePages = false;
         self.categoryList = [];
         self.loadValue = m.prop(0); // What percentage of the project loading is done
         self.loadCounter = m.prop(0); // Count how many items are received from the server
+        // Treebeard functions looped through project organizer
+        self.treeData = m.prop({});
+        self.buildTree = m.prop(null);
+        self.updateFolder = m.prop(null);
 
         // Load 'All my Projects' and 'All my Registrations'
         self.systemCollections = options.systemCollections || [
-            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All my projects'),
+            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors', 'filter[parent]' : 'null' }, systemCollection : 'nodes'}, 'All my projects'),
             new LinkObject('collection', { path : 'users/me/registrations/', query : { 'related_counts' : 'children', 'embed' : 'contributors'}, systemCollection : 'registrations'}, 'All my registrations')
         ];
         // Initial Breadcrumb for All my projects
-        var initialBreadcrumbs = options.initialBreadcrumbs || [new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All my projects')];
+        var initialBreadcrumbs = options.initialBreadcrumbs || [new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors', 'filter[parent]' : 'null' }, systemCollection : 'nodes'}, 'All my projects')];
         self.breadcrumbs = m.prop(initialBreadcrumbs);
         // Calculate name filters
         self.nameFilters = [];
@@ -328,11 +333,6 @@ var MyProjects = {
         self.updateList = function _updateList (linkObject){
             var success;
             var error;
-            if(linkObject.data.systemCollection === 'nodes' && self.allProjectsLoaded()){
-                self.data(self.allProjects());
-                self.reload(true);
-                return;
-            }
             success = self.updateListSuccess;
             if(linkObject.data.systemCollection === 'nodes'){
                 self.loadingAllNodes = true;
@@ -342,14 +342,19 @@ var MyProjects = {
             if (typeof url !== 'string'){
                 throw new Error('Url argument for updateList needs to be string');
             }
+
+            if(self.nodeUrlCache[url]){
+                success(self.nodeUrlCache[url]);
+                return;
+            }
             var promise = m.request({method : 'GET', url : url, config : xhrconfig, background: true});
-            promise.then(success, error);
+            promise.then(function(value){ success(value, url); }, error);
             return promise;
         };
-        self.updateListSuccess = function _updateListSuccess (value) {
+        self.updateListSuccess = function _updateListSuccess (value, url) {
+            self.nodeUrlCache[url] = value;
             self.loadCounter(self.loadCounter() + value.data.length);
             self.loadValue(Math.round(self.loadCounter() / value.links.meta.total * 100));
-            console.log(self.loadValue());
             if(self.loadingNodePages){
                 self.data(self.data().concat(value.data));
             } else {
@@ -397,18 +402,34 @@ var MyProjects = {
                 self.selected([]); // Empty selected
             }
             if(self.loadingAllNodes) {
-                self.data(self.makeTree(self.data(), self.breadcrumbs()[self.breadcrumbs().length-1]));
                 self.allProjects(self.data());
                 self.generateFiltersList();
                 if(self.loadValue() === 100){
                     self.allProjectsLoaded(true);
                 }
-            } else {
-                self.data().forEach(function(item){
-                    _formatDataforPO(item);
-                });
             }
-            sortProjects(self.data());
+            self.data().forEach(function(item){
+                _formatDataforPO(item);
+            });
+
+            if(self.loadCounter() > 0 && self.treeData().data){
+                var begin;
+                if(self.loadCounter() < 11){
+                    begin = 0;
+                    self.treeData().children = [];
+                }
+                if(self.loadCounter() > 10){
+                    begin = self.treeData().children.length;
+                }
+                for (var i = begin; i < self.data().length; i++){
+                    var item = self.data()[i];
+                    var child = self.buildTree()(item, self.treeData());
+                    self.treeData().add(child);
+                }
+                self.updateFolder()(null, self.treeData());
+            }
+
+            //sortProjects(self.data());
             // if we have more pages keep loading the pages
             if (value.links.next) {
                 self.loadingNodePages = true;
@@ -416,18 +437,11 @@ var MyProjects = {
                 if(!self.allProjectsLoaded()) {
                     collData = { systemCollection : 'nodes' };
                 }
-                // TODO: This is a hack, to avoid flashing caused by redraws, need to look into it
-                if(self.loadCounter() > 30){
-                    self.reload(true);
-                }
                 self.updateList({link : value.links.next, data : collData });
             } else {
                 self.loadingNodePages = false;
                 self.loadingAllNodes = false;
-                self.reload(true);
             }
-            //console.log(self.loadCounter());
-            m.redraw();
         };
         self.reloadOnClick = function (item) {
             self.updateFilter(item);
@@ -600,7 +614,11 @@ var MyProjects = {
                 reload : ctrl.reload,
                 resetUi : ctrl.resetUi,
                 showSidebar : ctrl.showSidebar,
-                loadValue : ctrl.loadValue
+                loadValue : ctrl.loadValue,
+                loadCounter : ctrl.loadCounter,
+                treeData : ctrl.treeData,
+                buildTree : ctrl.buildTree,
+                updateFolder : ctrl.updateFolder
             },
             ctrl.projectOrganizerOptions
         );

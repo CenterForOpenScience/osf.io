@@ -18,6 +18,15 @@ var $osf = require('js/osfHelpers');
 
 var LinkObject;
 var allProjectsCache;
+/* This sort projects is specific to data type used here for updates */
+function sortProjects (flatList) {
+    // Sorts by last modified
+    flatList.sort(function(a,b){
+        return new Date(b.data.attributes.date_modified) - new Date(a.data.attributes.date_modified);
+    });
+}
+
+
 /**
  * Edits the template for the column titles.
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
@@ -317,6 +326,9 @@ var tbOptions = {
             tb.select('.tb-row').removeClass('po-hover');
         });
         m.render($(tb.options.dragContainment + ' .db-poFilter').get(0), tb.options.filterTemplate.call(this));
+        tb.options.mpTreeData(tb.treeData);
+        tb.options.mpBuildTree(tb.buildTree);
+        tb.options.mpUpdateFolder(tb.updateFolder);
     },
     ontogglefolder : function (item, event) {
         $osf.trackClick('myProjects', 'projectOrganizer', 'expand-collapse-project-children');
@@ -412,7 +424,10 @@ var ProjectOrganizer = {
                     dragContainment : args.wrapperSelector,
                     resetUi : args.resetUi,
                     showSidebar : args.showSidebar,
-                    loadValue : args.loadValue
+                    loadValue : args.loadValue,
+                    mpTreeData : args.treeData,
+                    mpBuildTree : args.buildTree,
+                    mpUpdateFolder : args.updateFolder
                 },
                 tbOptions
             );
@@ -420,20 +435,13 @@ var ProjectOrganizer = {
                 poOptions.resolveToggle = args.resolveToggle;
             }
             var tb = new Treebeard(poOptions, true);
-            m.redraw.strategy('all');
             return tb;
         };
         allProjectsCache = args.allProjects;
         self.tb = self.updateTB();
     },
     view : function (ctrl, args) {
-        var tb = ctrl.tb;
-        //console.log(args.reload(), args.filesData().length);
-        if (args.reload()) {
-            tb = ctrl.updateTB();
-            args.reload(false);
-        }
-        return m('.fb-project-organizer#projectOrganizer',tb );
+        return m('.fb-project-organizer#projectOrganizer', ctrl.tb );
     }
 };
 
