@@ -60,10 +60,10 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
 
     var onSelectRow = function(item) {
         if (item.kind === 'file') {
-            viewModel.selectedFile(item);
+            viewModel.selectedFiles.push(item);
             item.css = 'fangorn-selected';
         } else {
-            viewModel.selectedFile(null);
+            viewModel.selectedFiles([]);
         }
     };
     var fw = new FilesWidget(
@@ -136,7 +136,7 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
                         if (item.data.path === viewModel.value()) {
                             item.css = 'fangorn-selected';
                             item.data.nodeId = tree.data.nodeId;
-                            viewModel.selectedFile(item);
+                            viewModel.selectedFiles.push(item);
                         }
                     }
                     Fangorn.Utils.inheritFromParent(item, tree);
@@ -169,25 +169,30 @@ var Uploader = function(question) {
     question.showUploader = ko.observable(false);
     question.uid = 'uploader_' + uploaderCount;
     uploaderCount++;
-    self.selectedFile = ko.observable({});
-    self.selectedFile.subscribe(function(file) {
-        if (file) {
-            question.extra({
+    self.selectedFiles = ko.observableArray([]);
+    self.selectedFiles.subscribe(function(file) {
+        if (file && !self.fileAlreadySelected(file)) {
+            question.extra().push({
                 selectedFileName: file.data.name,
                 nodeId: file.data.nodeId,
                 viewUrl: '/project/' + file.data.nodeId + '/files/osfstorage' + file.data.path,
                 sha256: file.data.extra.hashes.sha256,
                 hasSelectedFile: true
             });
-            question.value(file.data.name);
-        }
-        else {
-            question.extra({
-                selectedFileName: NO_FILE
-            });
-            question.value(NO_FILE);
+            question.value(question.formattedFileList);
         }
     });
+
+
+    self.fileAlreadySelected = ko.observable(function(file) {
+        $.each(question.extra(), function(idx, selectedFile) {
+            if(selectedFile.extra.hashes.sha256 === file.extra.hashes.sha256) {
+                return true;
+            }
+            return false;
+        });
+    });
+
     self.hasSelectedFile = ko.computed(function() {
         return !!(question.extra().viewUrl);
     });

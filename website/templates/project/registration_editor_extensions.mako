@@ -4,8 +4,8 @@
 </script>
 
 <script type="text/html" id="osf-upload-open">
-  <div id="selectedFile">File selected for upload:
-    <span data-bind="text: extra().selectedFileName">no file selected</span>
+    <div id="selectedFile">File selected for upload:
+      <span data-bind="text: formattedFileList">no file selected</span>
     <button data-bind="visible: hasSelectedFile,
                        click: unselectFile"
             style="margin-left: 5px;"
@@ -20,8 +20,8 @@
 </script>
 
 <script type="text/html" id="osf-upload-toggle">
-  <div id="selectedFile">File selected for upload:
-    <span id="fileName" data-bind="text: extra().selectedFileName">no file selected</span>
+    <div id="selectedFile">File selected for upload:
+        <span data-bind="text: formattedFileList">no file selected</span>
     <button data-bind="visible: hasSelectedFile,
                        click: unselectFile"
             style="margin-left: 5px;"

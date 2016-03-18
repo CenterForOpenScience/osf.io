@@ -182,7 +182,19 @@ var Question = function(questionSchema, data) {
     self.properties = questionSchema.properties || [];
     self.match = questionSchema.match || '';
 
-    self.extra = ko.observable(self.data.extra || {});
+    // if(typeof(self.data.extra) === 'object'){
+    //     self.extra = ko.observableArray([self.data.extra] || []);
+    // } else {
+    //     self.extra = ko.observableArray(self.data.extra || []);
+    // }
+
+    self.extra = ko.observableArray(self.data.extra || []);
+
+    self.formattedFileList = ko.computed(function() {
+        return self.extra().map(function(elem) {
+            return elem.selectedFileName;
+        }).join(', ');
+    });
     self.showExample = ko.observable(false);
 
     self.comments = ko.observableArray(
