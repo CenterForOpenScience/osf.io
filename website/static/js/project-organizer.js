@@ -18,6 +18,7 @@ var $osf = require('js/osfHelpers');
 
 var LinkObject;
 var allProjectsCache;
+var allTopLevelProjectsCache;
 /* This sort projects is specific to data type used here for updates */
 function sortProjects (flatList) {
     // Sorts by last modified
@@ -376,6 +377,13 @@ var tbOptions = {
     hScroll : 300,
     filterTemplate : function() {
         var tb = this;
+        function resetFilter () {
+            $osf.trackClick('myProjects', 'filter', 'clear-search');
+            tb.filterText('');
+            tb.resetFilter.call(tb);
+            tb.updateFolder(allTopLevelProjectsCache(), tb.treeData);
+            $('.db-poFilter>input').val('');
+        }
         return [ m('input.form-control[placeholder="Search all my projects"][type="text"]', {
             style: 'display:inline;',
             onkeyup: function(event){
@@ -383,6 +391,9 @@ var tbOptions = {
                     tb.updateFolder(allProjectsCache(), tb.treeData);
                     tb.options.showSidebar(false);
                     tb.options.resetUi();
+                }
+                if($(this).val().length === 0){
+                    resetFilter();
                 }
                 tb.filter(event);
             },
@@ -392,11 +403,7 @@ var tbOptions = {
             },
             value: tb.filterText()
         }),
-        m('.filterReset', { onclick : function () {
-            $osf.trackClick('myProjects', 'filter', 'clear-search');
-            tb.resetFilter.call(tb);
-            $('.db-poFilter>input').val('');
-        } }, tb.options.removeIcon())];
+        m('.filterReset', { onclick : resetFilter }, tb.options.removeIcon())];
     },
     hiddenFilterRows : ['tags']
 };
@@ -428,6 +435,7 @@ var ProjectOrganizer = {
             return tb;
         };
         allProjectsCache = args.allProjects;
+        allTopLevelProjectsCache = args.allTopLevelProjects;
         self.tb = self.updateTB();
     },
     view : function (ctrl, args) {
