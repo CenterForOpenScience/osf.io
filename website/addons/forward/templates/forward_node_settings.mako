@@ -47,7 +47,7 @@
 
             <div class="row">
                 <div class="col-md-10 overflow">
-                    <p data-bind="html: message, attr.class: messageClass"></p>
+                    <p data-bind="html: message, attr: {class: messageClass}"></p>
                 </div>
                 <div class="col-md-2">
                     <input type="submit"
