@@ -665,17 +665,25 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         {
             'unique': False,
             'key_or_list': [
+                ('date_modified', pymongo.DESCENDING),
+            ]
+        },
+        {
+            'unique': False,
+            'key_or_list': [
                 ('tags.$', pymongo.ASCENDING),
                 ('is_public', pymongo.ASCENDING),
                 ('is_deleted', pymongo.ASCENDING),
+                ('institution_id', pymongo.ASCENDING),
             ]
         },
         {
             'unique': False,
             'key_or_list': [
                 ('is_deleted', pymongo.ASCENDING),
-                ('is_folder', pymongo.ASCENDING),
+                ('is_collection', pymongo.ASCENDING),
                 ('is_public', pymongo.ASCENDING),
+                ('institution_id', pymongo.ASCENDING),
                 ('is_registration', pymongo.ASCENDING),
                 ('date_modified', pymongo.ASCENDING),
             ]
