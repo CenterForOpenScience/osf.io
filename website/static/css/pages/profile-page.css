@@ -26,6 +26,11 @@ table.table.table-plain th, table.table.table-plain td {
     overflow: hidden;
 }
 
+.flashed-message {
+    display: inline-block;
+    padding-left: 10px;
+}
+
 /* Profile gravatar
 -------------------------------------------------- */
 .profile-gravatar {

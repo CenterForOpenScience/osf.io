@@ -23,8 +23,7 @@ var socialRules = {
     github: /github\.com\/(\w+)/i,
     researchGate: /researchgate\.net\/profile\/(\w+)/i,
     academia: /(\w+)\.academia\.edu\/(\w+)/i,
-    baiduScholar: /xueshu\.baidu\.com\/scholarID\/(\w+)/i
-    github: /github\.com\/(\w+)/i,
+    baiduScholar: /xueshu\.baidu\.com\/scholarID\/(\w+)/i,
     url: '^(https?:\\/\\/)?'+ // protocol
             '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|'+ // domain name
             '((\\d{1,3}\\.){3}\\d{1,3}))'+ // OR ip (v4) address
@@ -346,14 +345,7 @@ BaseViewModel.prototype.cancel = function(data, event) {
 };
 
 BaseViewModel.prototype.submit = function() {
-    if (!this.hasValidWebsites()) {
-        this.changeMessage(
-            'Please update your website',
-            'text-danger',
-            5000
-        );
-    }
-    else if (this.hasValidProperty() && this.isValid()) {
+     if (this.hasValidProperty() && this.isValid()) {
         $osf.putJSON(
             this.urls.crud,
             this.serialize()
@@ -367,7 +359,6 @@ BaseViewModel.prototype.submit = function() {
     } else {
         this.showMessages(true);
     }
-
 };
 
 var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
@@ -512,7 +503,7 @@ var SocialViewModel = function(urls, modes) {
     self.addons = ko.observableArray();
 
     self.profileWebsite = ko.observable('').extend({
-        ensureHttp: true,
+        ensureHttp: true
     });
 
     // Start with blank profileWebsite for new users without a profile.
@@ -711,6 +702,30 @@ SocialViewModel.prototype.unserialize = function(data) {
         }
     });
     return self;
+};
+
+SocialViewModel.prototype.submit = function() {
+    if (!this.hasValidWebsites()) {
+        this.changeMessage(
+            'Please update your website',
+            'text-danger',
+            5000
+        );
+    }
+    else if (this.hasValidProperty() && this.isValid()) {
+        $osf.putJSON(
+            this.urls.crud,
+            this.serialize()
+        ).done(
+            this.handleSuccess.bind(this)
+        ).done(
+            this.setOriginal.bind(this)
+        ).fail(
+            this.handleError.bind(this)
+        );
+    } else {
+        this.showMessages(true);
+    }
 };
 
 var ListViewModel = function(ContentModel, urls, modes) {
