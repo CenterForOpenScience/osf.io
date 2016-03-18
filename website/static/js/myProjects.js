@@ -1493,7 +1493,5 @@ module.exports = {
     Collections : Collections,
     MicroPagination : MicroPagination,
     ActivityLogs : ActivityLogs,
-    LinkObject: LinkObject,
-    PrivateFunctions : {}
-
+    LinkObject: LinkObject
 };
