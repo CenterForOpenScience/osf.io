@@ -813,7 +813,7 @@ var Collections = {
                             config : xhrconfig,
                             data : dataArray[index]
                         }).then(function(){
-                            doNext();
+                            doNext(false);
                         }, function(result){
                             var message = '';
                             var name = args.selected()[index] ? args.selected()[index].data.name : 'Item ';
