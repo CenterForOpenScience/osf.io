@@ -299,8 +299,8 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin
     def get_default_odm_query(self):
         user = self.get_user()
         query = Q('contributors', 'eq', user) & default_node_list_query()
-        if user == self.request.user:
-            query &= default_node_list_query(self.request.user)
+        if user != self.request.user:
+            query &= default_node_permission_query(self.request.user)
         return query
 
     # overrides ListAPIView
