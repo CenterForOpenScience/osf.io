@@ -680,6 +680,20 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 ('date_modified', pymongo.ASCENDING),
             ]
         },
+        {
+            'unique': False,
+            'key_or_list': [
+                ('institution_id', pymongo.ASCENDING),
+                ('institution_domains', pymongo.ASCENDING),
+            ]
+        },
+        {
+            'unique': False,
+            'key_or_list': [
+                ('institution_id', pymongo.ASCENDING),
+                ('institution_email_domains', pymongo.ASCENDING),
+            ]
+        },
     ]
 
     # Node fields that trigger an update to Solr on save
@@ -3377,7 +3391,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     is_institution = fields.BooleanField(default=False, index=True)
 
-    institution_id = fields.StringField(unique=True)
+    institution_id = fields.StringField(unique=True, index=True)
     institution_domains = fields.StringField(list=True)
     institution_auth_url = fields.StringField(validate=URLValidator())
     institution_logo_name = fields.StringField()
