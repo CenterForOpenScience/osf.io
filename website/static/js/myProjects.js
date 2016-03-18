@@ -13,6 +13,7 @@ var AddProject = require('js/addProjectPlugin');
 var mC = require('js/mithrilComponents');
 
 var MOBILE_WIDTH = 767; // Mobile view break point for responsiveness
+var NODE_PAGE_SIZE = 10; // Load 10 nodes at a time from server
 
 if (!window.fileBrowserCounter) {
     window.fileBrowserCounter = 0;
@@ -139,10 +140,12 @@ var MyProjects = {
         self.categoryList = [];
         self.loadValue = m.prop(0); // What percentage of the project loading is done
         self.loadCounter = m.prop(0); // Count how many items are received from the server
-        // Treebeard functions looped through project organizer
-        self.treeData = m.prop({});
-        self.buildTree = m.prop(null);
-        self.updateFolder = m.prop(null);
+
+        // Treebeard functions looped through project organizer.
+        // We need to pass these in to avoid reinstantiating treebeard but instead repurpose (update) the top level folder
+        self.treeData = m.prop({}); // Top level object that houses all the rows
+        self.buildTree = m.prop(null); // Preprocess function that adds to each item TB specific attributes
+        self.updateFolder = m.prop(null); // Updates view to redraw without messing up scroll location
 
         // Load 'All my Projects' and 'All my Registrations'
         self.systemCollections = options.systemCollections || [
@@ -414,11 +417,10 @@ var MyProjects = {
 
             if(self.loadCounter() > 0 && self.treeData().data){
                 var begin;
-                if(self.loadCounter() < 11){
+                if(self.loadCounter() <= NODE_PAGE_SIZE){
                     begin = 0;
                     self.treeData().children = [];
-                }
-                if(self.loadCounter() > 10){
+                } else {
                     begin = self.treeData().children.length;
                 }
                 for (var i = begin; i < self.data().length; i++){
