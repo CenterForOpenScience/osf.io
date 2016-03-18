@@ -13,6 +13,7 @@ var AddProject = require('js/addProjectPlugin');
 var mC = require('js/mithrilComponents');
 
 var MOBILE_WIDTH = 767; // Mobile view break point for responsiveness
+var NODE_PAGE_SIZE = 10; // Load 10 nodes at a time from server
 
 if (!window.fileBrowserCounter) {
     window.fileBrowserCounter = 0;
@@ -76,7 +77,7 @@ var LinkObject = function _LinkObject (type, data, label, institutionId) {
             return $osf.apiV2Url('users/' + self.data.id + '/nodes/', { query : {'related_counts' : 'children', 'embed' : 'contributors' }});
         }
         else if (self.type === 'node') {
-            return $osf.apiV2Url('nodes/' + self.data.id + '/children/', { query : { 'related_counts' : 'children', 'page[size]'  : 60, 'embed' : 'contributors' }});
+            return $osf.apiV2Url('nodes/' + self.data.id + '/children/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
         }
         // If nothing
         throw new Error('Link could not be generated from linkObject data');
@@ -92,40 +93,6 @@ function sortProjects (flatList) {
     });
 }
 
-function _makeTree (flatData, lastcrumb) {
-    var root = {id:0, children: [], data : {} };
-    var node_list = { 0 : root};
-    var parentID;
-    var crumbParent = lastcrumb ? lastcrumb.data.id : null;
-    for (var i = 0; i < flatData.length; i++) {
-        if(flatData[i].errors){
-            continue;
-        }
-        var n = _formatDataforPO(flatData[i]);
-        if (!node_list[n.id]) { // If this node is not in the object list, add it
-            node_list[n.id] = n;
-            node_list[n.id].children = [];
-        } else { // If this node is in object list it's likely because it was created as a parent so fill out the rest of the information
-            n.children = node_list[n.id].children;
-            node_list[n.id] = n;
-        }
-
-        if (n.relationships.parent){
-            parentID = n.relationships.parent.links.related.href.split('/')[5]; // Find where parent id string can be extracted
-        } else {
-            parentID = null;
-        }
-        if(parentID && !n.attributes.registration && parentID !== crumbParent ) {
-            if(!node_list[parentID]){
-                node_list[parentID] = { children : [] };
-            }
-            node_list[parentID].children.push(node_list[n.id]);
-        } else {
-            node_list[0].children.push(node_list[n.id]);
-        }
-    }
-    return root.children;
-}
 
 /**
  * Returns the object to send to the API to end a node_link to collection
@@ -160,25 +127,33 @@ var MyProjects = {
         self.viewOnly = options.viewOnly || false;
         self.currentLink = ''; // Save the link to compare if a new link is being requested and avoid multiple calls
         self.reload = m.prop(false); // Gets set to true when treebeard link changes and it needs to be redrawn
-        self.nonLoadTemplate = m.prop(m('.db-non-load-template.m-md.p-md.osf-box', 'Loading...')); // Template for when data is not available or error happens
+        self.nonLoadTemplate = m.prop(''); // Template for when data is not available or error happens
         self.logUrlCache = {}; // dictionary of load urls to avoid multiple calls with little refactor
+        self.nodeUrlCache = {}; // Cached returns of the project related urls
         // VIEW STATES
         self.showInfo = m.prop(true); // Show the info panel
         self.showSidebar = m.prop(false); // Show the links with collections etc. used in narrow views
-        self.refreshView = m.prop(true); // Internal loading indicator
         self.allProjectsLoaded = m.prop(false);
         self.allProjects = m.prop([]);
-        self.loadingNodePages = false; // Since API returns pages of items, this state shows whether filebrowser is still loading the next pages.
         self.loadingAllNodes = false; // True if we are loading all nodes
+        self.loadingNodePages = false;
         self.categoryList = [];
+        self.loadValue = m.prop(0); // What percentage of the project loading is done
+        self.loadCounter = m.prop(0); // Count how many items are received from the server
+
+        // Treebeard functions looped through project organizer.
+        // We need to pass these in to avoid reinstantiating treebeard but instead repurpose (update) the top level folder
+        self.treeData = m.prop({}); // Top level object that houses all the rows
+        self.buildTree = m.prop(null); // Preprocess function that adds to each item TB specific attributes
+        self.updateFolder = m.prop(null); // Updates view to redraw without messing up scroll location
 
         // Load 'All my Projects' and 'All my Registrations'
         self.systemCollections = options.systemCollections || [
-            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'page[size]'  : 60, 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All my projects'),
-            new LinkObject('collection', { path : 'users/me/registrations/', query : { 'related_counts' : 'children', 'page[size]'  : 60, 'embed' : 'contributors'}, systemCollection : 'registrations'}, 'All my registrations')
+            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors', 'filter[parent]' : 'null' }, systemCollection : 'nodes'}, 'All my projects'),
+            new LinkObject('collection', { path : 'users/me/registrations/', query : { 'related_counts' : 'children', 'embed' : 'contributors'}, systemCollection : 'registrations'}, 'All my registrations')
         ];
         // Initial Breadcrumb for All my projects
-        var initialBreadcrumbs = options.initialBreadcrumbs || [new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All my projects')];
+        var initialBreadcrumbs = options.initialBreadcrumbs || [new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors', 'filter[parent]' : 'null' }, systemCollection : 'nodes'}, 'All my projects')];
         self.breadcrumbs = m.prop(initialBreadcrumbs);
         // Calculate name filters
         self.nameFilters = [];
@@ -204,6 +179,42 @@ var MyProjects = {
                 Raven.captureMessage(message, {requestReturn: results});
             });
             return promise;
+        };
+
+
+        self.makeTree = function _makeTree(flatData, lastcrumb) {
+            var root = {id:0, children: [], data : {} };
+            var node_list = { 0 : root};
+            var parentID;
+            var crumbParent = lastcrumb ? lastcrumb.data.id : null;
+            for (var i = 0; i < flatData.length; i++) {
+                if(flatData[i].errors){
+                    continue;
+                }
+                var n = _formatDataforPO(flatData[i]);
+                if (!node_list[n.id]) { // If this node is not in the object list, add it
+                    node_list[n.id] = n;
+                    node_list[n.id].children = [];
+                } else { // If this node is in object list it's likely because it was created as a parent so fill out the rest of the information
+                    n.children = node_list[n.id].children;
+                    node_list[n.id] = n;
+                }
+
+                if (n.relationships.parent){
+                    parentID = n.relationships.parent.links.related.href.split('/')[5]; // Find where parent id string can be extracted
+                } else {
+                    parentID = null;
+                }
+                if(parentID && !n.attributes.registration && parentID !== crumbParent ) {
+                    if(!node_list[parentID]){
+                        node_list[parentID] = { children : [] };
+                    }
+                    node_list[parentID].children.push(node_list[n.id]);
+                } else {
+                    node_list[0].children.push(node_list[n.id]);
+                }
+            }
+            return root.children;
         };
 
         // Activity Logs
@@ -265,6 +276,7 @@ var MyProjects = {
                 return;
             }
             if (linkObject.link !== self.currentLink) {
+                self.loadCounter(0);
                 self.updateBreadcrumbs(linkObject);
                 self.updateList(linkObject);
                 self.currentLink = linkObject.link;
@@ -308,6 +320,7 @@ var MyProjects = {
                 data : data
             }).then(function _removeProjectFromCollectionsSuccess(result){
                 self.currentLink = null; // To bypass the check when updating file list
+                self.nodeUrlCache[self.activeFilter().link] = null;
                 self.updateFilter(self.activeFilter());
                 self.activeFilter().data.count(self.activeFilter().data.count() - data.data.length);
             }, function _removeProjectFromCollectionsFail(result){
@@ -324,14 +337,6 @@ var MyProjects = {
         self.updateList = function _updateList (linkObject){
             var success;
             var error;
-            if(linkObject.data.systemCollection === 'nodes' && self.allProjectsLoaded()){
-                self.data(self.allProjects());
-                self.reload(true);
-                self.refreshView(false);
-                return;
-            }
-            self.refreshView(true);
-            m.redraw();
             success = self.updateListSuccess;
             if(linkObject.data.systemCollection === 'nodes'){
                 self.loadingAllNodes = true;
@@ -341,11 +346,19 @@ var MyProjects = {
             if (typeof url !== 'string'){
                 throw new Error('Url argument for updateList needs to be string');
             }
-            var promise = m.request({method : 'GET', url : url, config : xhrconfig});
-            promise.then(success, error);
+
+            if(self.nodeUrlCache[url]){
+                success(self.nodeUrlCache[url]);
+                return;
+            }
+            var promise = m.request({method : 'GET', url : url, config : xhrconfig, background: true});
+            promise.then(function(value){ success(value, url); }, error);
             return promise;
         };
-        self.updateListSuccess = function _updateListSuccess (value) {
+        self.updateListSuccess = function _updateListSuccess (value, url) {
+            self.nodeUrlCache[url] = value;
+            self.loadCounter(self.loadCounter() + value.data.length);
+            self.loadValue(Math.round(self.loadCounter() / value.links.meta.total * 100));
             if(self.loadingNodePages){
                 self.data(self.data().concat(value.data));
             } else {
@@ -392,6 +405,34 @@ var MyProjects = {
                 }
                 self.selected([]); // Empty selected
             }
+            if(self.loadingAllNodes) {
+                self.allProjects(self.data());
+                self.generateFiltersList();
+                if(self.loadValue() === 100){
+                    self.allProjectsLoaded(true);
+                }
+            }
+            self.data().forEach(function(item){
+                _formatDataforPO(item);
+            });
+
+            if(self.loadCounter() > 0 && self.treeData().data){
+                var begin;
+                if(self.loadCounter() <= NODE_PAGE_SIZE){
+                    begin = 0;
+                    self.treeData().children = [];
+                } else {
+                    begin = self.treeData().children.length;
+                }
+                for (var i = begin; i < self.data().length; i++){
+                    var item = self.data()[i];
+                    var child = self.buildTree()(item, self.treeData());
+                    self.treeData().add(child);
+                }
+                self.updateFolder()(null, self.treeData());
+            }
+
+            //sortProjects(self.data());
             // if we have more pages keep loading the pages
             if (value.links.next) {
                 self.loadingNodePages = true;
@@ -400,24 +441,10 @@ var MyProjects = {
                     collData = { systemCollection : 'nodes' };
                 }
                 self.updateList({link : value.links.next, data : collData });
-                return; // stop here so the reloads below don't run
             } else {
                 self.loadingNodePages = false;
-            }
-            if(self.loadingAllNodes) {
-                self.data(_makeTree(self.data(), self.breadcrumbs()[self.breadcrumbs().length-1]));
-                self.allProjects(self.data());
-                self.generateFiltersList();
                 self.loadingAllNodes = false;
-                self.allProjectsLoaded(true);
-            } else {
-                self.data().forEach(function(item){
-                    _formatDataforPO(item);
-                });
             }
-            sortProjects(self.data());
-            self.reload(true);
-            self.refreshView(false);
         };
         self.reloadOnClick = function (item) {
             self.updateFilter(item);
@@ -432,7 +459,6 @@ var MyProjects = {
                 },' Reload \'All my projects\''))
             ]));
             self.data([]);
-            self.refreshView(false);
             throw new Error('Receiving initial data for File Browser failed. Please check your url');
         };
         self.generateFiltersList = function _generateFilterList () {
@@ -549,6 +575,7 @@ var MyProjects = {
             self.activeFilter(linkObject);
         };
 
+
         self.init = function _init_fileBrowser() {
             self.loadCategories().then(function(){
                 self.updateList(self.systemCollections[0]);
@@ -559,6 +586,7 @@ var MyProjects = {
             }
             self.activeFilter(self.collections()[0]);
         };
+
         self.init();
     },
     view : function (ctrl, args) {
@@ -588,7 +616,12 @@ var MyProjects = {
                 allProjects : ctrl.allProjects,
                 reload : ctrl.reload,
                 resetUi : ctrl.resetUi,
-                showSidebar : ctrl.showSidebar
+                showSidebar : ctrl.showSidebar,
+                loadValue : ctrl.loadValue,
+                loadCounter : ctrl.loadCounter,
+                treeData : ctrl.treeData,
+                buildTree : ctrl.buildTree,
+                updateFolder : ctrl.updateFolder
             },
             ctrl.projectOrganizerOptions
         );
@@ -631,7 +664,11 @@ var MyProjects = {
                 })
             ]) : '',
             mobile && ctrl.showSidebar() ? '' : m('.db-main', { style : poStyle },[
-                ctrl.refreshView() ? m('.spinner-div', m('i.fa.fa-refresh.fa-spin')) : '',
+                ctrl.loadValue() < 100 ? m('.line-loader', [
+                    m('.line-empty'),
+                    m('.line-full.bg-color-blue', { style : 'width: ' + ctrl.loadValue() +'%'}),
+                    m('.load-message', 'Fetching more projects')
+                ]) : '',
                 ctrl.data().length === 0 ? ctrl.nonLoadTemplate() : m('.db-poOrganizer',  m.component( ProjectOrganizer, projectOrganizerOptions))
             ]),
             mobile ? '' : m('.db-info-toggle',{
@@ -788,6 +825,7 @@ var Collections = {
                 hoverClass: 'bg-color-hover',
                 drop: function( event, ui ) {
                     var collection = self.collections()[$(this).attr('data-index')];
+                    args.nodeUrlCache[collection.link] = null;
                     var dataArray = [];
                     // If multiple items are dragged they have to be selected to make it work
                     if (args.selected().length > 1) {
@@ -1457,8 +1495,5 @@ module.exports = {
     Collections : Collections,
     MicroPagination : MicroPagination,
     ActivityLogs : ActivityLogs,
-    LinkObject: LinkObject,
-    PrivateFunctions : {
-        makeTree : _makeTree
-    }
+    LinkObject: LinkObject
 };
