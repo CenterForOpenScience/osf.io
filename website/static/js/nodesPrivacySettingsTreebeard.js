@@ -80,8 +80,15 @@ function NodesPrivacyTreebeard(divID, data, nodesState, nodesOriginal) {
             return columns;
         }
     });
-    var grid = new Treebeard(tbOptions);
-    projectSettingsTreebeardBase.expandOnLoad.call(grid.tbController);
+
+    var treebeardPromise = new Promise(function(resolve) {
+      resolve(new Treebeard(tbOptions));
+    });
+
+    treebeardPromise.then(function(grid) {
+        projectSettingsTreebeardBase.expandOnLoad.call(grid.tbController);
+    });
+
 }
 module.exports = NodesPrivacyTreebeard;
 

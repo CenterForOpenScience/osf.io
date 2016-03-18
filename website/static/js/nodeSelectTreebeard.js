@@ -77,8 +77,15 @@ function NodeSelectTreebeard(divID, data, nodesState) {
             return columns;
         }
     });
-    var grid = new Treebeard(tbOptions);
-    projectSettingsTreebeardBase.expandOnLoad.call(grid.tbController);
+
+    var treebeardPromise = new Promise(function(resolve) {
+      resolve(new Treebeard(tbOptions));
+    });
+
+    treebeardPromise.then(function(grid) {
+        projectSettingsTreebeardBase.expandOnLoad.call(grid.tbController);
+    });
+
 }
 module.exports = NodeSelectTreebeard;
 
