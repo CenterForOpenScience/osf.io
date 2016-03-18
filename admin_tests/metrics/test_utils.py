@@ -2,9 +2,11 @@ from nose import tools as nt
 from datetime import timedelta, datetime
 
 from tests.base import AdminTestCase
-from tests.factories import NodeFactory, RegistrationFactory
+from tests.factories import (
+    NodeFactory, RegistrationFactory, AuthUserFactory, ProjectFactory)
 
-from website.project.model import Node
+from website.project.model import Node, User
+from framework.auth import Auth
 
 from admin.metrics.utils import (
     get_projects,
@@ -12,7 +14,9 @@ from admin.metrics.utils import (
     get_list_of_dates,
     get_previous_midnight,
     get_days_statistics,
-    DAY_LEEWAY
+    DAY_LEEWAY,
+    get_all_user_count,
+    get_unregistered_users,
 )
 from admin.metrics.models import OSFStatistic
 
@@ -150,3 +154,30 @@ class TestMetricPreviousMidnight(AdminTestCase):
         time_now = datetime.utcnow()
         midnight = get_previous_midnight()
         nt.assert_equal(midnight.date(), time_now.date())
+
+
+class TestUserGet(AdminTestCase):
+    def setUp(self):
+        super(TestUserGet, self).setUp()
+        User.remove()
+        self.user_1 = AuthUserFactory()
+        self.auth = Auth(user=self.user_1)
+        self.project = ProjectFactory(creator=self.user_1)
+        self.project.add_unregistered_contributor(
+            email='foo@bar.com',
+            fullname='Weezy F. Baby',
+            auth=self.auth
+        )
+        self.user_3 = AuthUserFactory()
+        self.user_3.date_confirmed = None
+        self.user_3.save()
+        self.user_4 = AuthUserFactory()
+
+    def test_get_all_user_count(self):
+        time_now = datetime.utcnow()
+        count = get_all_user_count(time_now)
+        nt.assert_equal(count, 4)
+
+    def test_get_unregistered_users(self):
+        count = get_unregistered_users()
+        nt.assert_equal(count, 1)
