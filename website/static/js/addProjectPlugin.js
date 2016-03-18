@@ -172,7 +172,7 @@ var AddProject = {
                                     })
                                 ])
                             ] : '',
-                            m('.form-group.m-v-md', [
+                             ctrl.options.parentID === null ? m('.form-group.m-v-md', [
                                 m('label[for="projectTemplate].f-w-lg.text-bigger', 'Template (optional)'),
                                 m('p.f-w-xs.help-text', 'Start typing to search. Selecting project as template will duplicate its ' +
                                     'structure in the new project without importing the content of that project.'),
@@ -182,7 +182,7 @@ var AddProject = {
                                     trackingCategory: options.trackingCategory,
                                     trackingAction: options.trackingAction
                                 })
-                            ])
+                            ]) : ''
                         ] : ''
                     ])
                 ]),
