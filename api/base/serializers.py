@@ -77,7 +77,10 @@ class HideIfRegistration(ser.Field):
 
     def get_attribute(self, instance):
         if instance.is_registration:
-            return None
+            if isinstance(self.field, RelationshipField):
+                raise SkipField
+            else:
+                return None
         return self.field.get_attribute(instance)
 
     def bind(self, field_name, parent):
@@ -109,7 +112,10 @@ class HideIfRetraction(HideIfRegistration):
 
     def get_attribute(self, instance):
         if instance.is_retracted:
-            return None
+            if isinstance(self.field, RelationshipField):
+                raise SkipField
+            else:
+                return None
         return self.field.get_attribute(instance)
 
 
@@ -892,47 +898,48 @@ class JSONAPISerializer(ser.Serializer):
                 continue
 
             nested_field = getattr(field, 'field', None)
-
-            if getattr(field, 'json_api_link', False) or getattr(nested_field, 'json_api_link', False):
-                # If embed=field_name is appended to the query string or 'always_embed' flag is True, directly embed the
-                # results rather than adding a relationship link
-                if attribute is None:
+            if attribute is None:
+                # We skip `to_representation` for `None` values so that
+                # fields do not have to explicitly deal with that case.
+                data['attributes'][field.field_name] = None
+            else:
+                try:
+                    representation = field.to_representation(attribute)
+                except SkipField:
                     continue
-                if embeds and (field.field_name in embeds or getattr(field, 'always_embed', None)):
-                    if enable_esi:
-                        try:
-                            result = field.to_esi_representation(attribute, envelope=envelope)
-                        except SkipField:
-                            continue
+                if getattr(field, 'json_api_link', False) or getattr(nested_field, 'json_api_link', False):
+                    # If embed=field_name is appended to the query string or 'always_embed' flag is True, directly embed the
+                    # results rather than adding a relationship link
+                    if embeds and (field.field_name in embeds or getattr(field, 'always_embed', None)):
+                        if enable_esi:
+                            try:
+                                result = field.to_esi_representation(attribute, envelope=envelope)
+                            except SkipField:
+                                continue
+                        else:
+                            try:
+                                # If a field has an empty representation, it should not be embedded.
+                                field.to_representation(attribute)
+                                result = self.context['embed'][field.field_name](obj)
+                            except SkipField:
+                                result = None
+
+                        if result:
+                            data['embeds'][field.field_name] = result
                     else:
                         try:
-                            # If a field has an empty representation, it should not be embedded.
-                            field.to_representation(attribute)
-                            result = self.context['embed'][field.field_name](obj)
+                            if not (is_anonymous and
+                                        hasattr(field, 'view_name') and
+                                            field.view_name in self.views_to_hide_if_anonymous):
+                                data['relationships'][field.field_name] = representation
                         except SkipField:
-                            result = None
-
-                    if result:
-                        data['embeds'][field.field_name] = result
+                            continue
+                elif field.field_name == 'id':
+                    data['id'] = representation
+                elif field.field_name == 'links':
+                    data['links'] = representation
                 else:
-                    try:
-                        if not (is_anonymous and
-                                    hasattr(field, 'view_name') and
-                                        field.view_name in self.views_to_hide_if_anonymous):
-                            data['relationships'][field.field_name] = field.to_representation(attribute)
-                    except SkipField:
-                        continue
-            elif field.field_name == 'id':
-                data['id'] = field.to_representation(attribute)
-            elif field.field_name == 'links':
-                data['links'] = field.to_representation(attribute)
-            else:
-                if attribute is None:
-                    # We skip `to_representation` for `None` values so that
-                    # fields do not have to explicitly deal with that case.
-                    data['attributes'][field.field_name] = None
-                else:
-                    data['attributes'][field.field_name] = field.to_representation(attribute)
+                    data['attributes'][field.field_name] = representation
 
         if not data['relationships']:
             del data['relationships']
@@ -1043,3 +1050,7 @@ def relationship_diff(current_items, new_items):
         'add': {k: new_items[k] for k in (set(new_items.keys()) - set(current_items.keys()))},
         'remove': {k: current_items[k] for k in (set(current_items.keys()) - set(new_items.keys()))}
     }
+
+
+def skip_field():
+    raise SkipField

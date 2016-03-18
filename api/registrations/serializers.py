@@ -6,7 +6,7 @@ from api.base.utils import absolute_reverse
 from api.nodes.serializers import NodeSerializer
 from api.nodes.serializers import NodeLinksSerializer
 from api.nodes.serializers import NodeContributorsSerializer
-from api.base.serializers import IDField, RelationshipField, LinksField, HideIfRetraction, DevOnly
+from api.base.serializers import IDField, RelationshipField, LinksField, HideIfRetraction, DevOnly, HideIfRegistration
 
 
 class RegistrationSerializer(NodeSerializer):
@@ -90,6 +90,10 @@ class RegistrationSerializer(NodeSerializer):
         related_view='registrations:registration-institution-detail',
         related_view_kwargs={'node_id': '<pk>'}
     )
+    registrations = HideIfRegistration(RelationshipField(
+        related_view='nodes:node-registrations',
+        related_view_kwargs={'node_id': '<pk>'}
+    ))
 
     # TODO: Finish me
 
