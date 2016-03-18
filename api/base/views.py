@@ -1,3 +1,4 @@
+import weakref
 from django.http import JsonResponse
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -11,6 +12,9 @@ from django.conf import settings as django_settings
 from .utils import absolute_reverse, is_truthy
 
 from .requests import EmbeddedRequest
+
+
+CACHE = weakref.WeakKeyDictionary()
 
 
 class JSONAPIBaseView(generics.GenericAPIView):
@@ -41,7 +45,10 @@ class JSONAPIBaseView(generics.GenericAPIView):
                 'request': request,
                 'is_embedded': True
             })
-            response = view(*view_args, **view_kwargs)
+            if (view, item) in CACHE.setdefault(self.request.user, {}):
+                response = CACHE[self.request.user][(view, item)]
+            else:
+                response = CACHE[self.request.user][(view, item)] = view(*view_args, **view_kwargs)
             return response.data
         return partial
 
