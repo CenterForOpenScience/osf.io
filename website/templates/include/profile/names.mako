@@ -58,7 +58,7 @@
                 </tr>
                 <tr>
                     <td>MLA</td>
-                    <td class="overflow-block" width="30%"><span data-bind="citeMla"></span></td>
+                    <td class="overflow-block" width="30%"><span data-bind="text: citeMla"></span></td>
                 </tr>
             </tbody>
         </table>

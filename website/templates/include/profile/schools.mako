@@ -16,7 +16,7 @@
                 <div>
 
                     <div class="well well-sm sort-handle">
-                        <span>Position <span data-bind="$index() + 1"></span></span>
+                        <span>Position <span data-bind="text: $index() + 1"></span></span>
                         <span data-bind="visible: $parent.contentsLength() > 1">
                             [ drag to reorder ]
                         </span>
@@ -137,7 +137,7 @@
                         <div class="panel panel-default">
                             <div class="panel-heading card-heading" data-bind="click: toggle(), attr: {id: 'schoolHeading' + $index(), href: '#schoolCard' + $index()}" role="button" data-toggle="collapse" aria-controls="card" aria-expanded="false">
                                 <div class="header-content">
-                                    <h5 class="institution" data-bind="institution"></h5>
+                                    <h5 class="institution" data-bind="text: institution"></h5>
                                     <span data-bind="if: startYear()" class="subheading">
                                         <span data-bind="text: startMonth"></span> <span data-bind="text: startYear"></span> - <span data-bind="text: endView"></span>
                                     </span>
