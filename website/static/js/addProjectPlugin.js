@@ -55,6 +55,7 @@ var AddProject = {
             result.data.forEach(function (node) {
                 self.userProjects.push({'title': node.attributes.title, 'id': node.id});
             });
+            return promise
         }
         );
 
