@@ -20,14 +20,14 @@
             <table class="table table-hover">
                 <thead>
                     <tr class="user-settings-addon-auth">
-                        <th class="text-muted default-authorized-by">Authorized on <a data-bind="attr.href: dataverseUrl"><em data-bind="text: dataverseHost"></em></a></th>
+                        <th class="text-muted default-authorized-by">Authorized on <a data-bind="attr: {href: dataverseUrl}"><em data-bind="text: dataverseHost"></em></a></th>
                     </tr>
                 </thead>
                 <!-- ko if: connectedNodes().length > 0 -->
                 <tbody data-bind="foreach: connectedNodes()">
                     <tr>
                         <td class="authorized-nodes">
-                            <!-- ko if: title --><a data-bind="attr.href: urls.view, text: title"></a><!-- /ko -->
+                            <!-- ko if: title --><a data-bind="attr: {href: urls.view}, text: title"></a><!-- /ko -->
                             <!-- ko if: !title --><em>Private project</em><!-- /ko -->
                         </td>
                         <td>

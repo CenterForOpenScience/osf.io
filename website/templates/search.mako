@@ -112,11 +112,11 @@
 
     <script type="text/html" id="SHARE">
         <!-- ko if: $data.links -->
-            <h4><a data-bind="attr.href: links[0].url, text: title"></a></h4>
+            <h4><a data-bind="attr: {href: links[0].url}, text: title"></a></h4>
         <!-- /ko -->
 
         <!-- ko ifnot: $data.links -->
-            <h4><a data-bind="attr.href: id.url, text: title"></a></h4>
+            <h4><a data-bind="attr: {href: id.url}, text: title"></a></h4>
         <!-- /ko -->
 
         <!-- TODO: Add a "trimText" filter to replace the one we're losing from KO.punches; this display value should be a 500 char max limit-->
@@ -143,9 +143,9 @@
     <script type="text/html" id="file">
         <h4><a data-bind="attr: {href: deep_url}, text: name"></a> (<span data-bind="if: is_registration">Registration </span>File)</h4>
         <h5>
-            <!-- ko if: parent_url --> From: <a data-bind="attr.href: parent_url, text: parent_title || '' + ' /'"></a> <!-- /ko -->
+            <!-- ko if: parent_url --> From: <a data-bind="attr: {href: parent_url}, text: parent_title || '' + ' /'"></a> <!-- /ko -->
             <!-- ko if: !parent_url --> From: <span data-bind="if: parent_title"><span data-bind="text: parent_title"></span> /</span> <!-- /ko -->
-            <a data-bind="attr.href: node_url, text: node_title"></a>
+            <a data-bind="attr: {href: node_url}, text: node_title"></a>
         </h5>
         <!-- ko if: tags.length > 0 --> <div data-bind="template: 'tag-cloud'"></div> <!-- /ko -->
     </script>
@@ -153,10 +153,10 @@
 
         <div class="row">
             <div class="col-md-2">
-                <img class="social-gravatar" data-bind="visible: gravatarUrl(), attr.src: gravatarUrl()">
+                <img class="social-gravatar" data-bind="visible: gravatarUrl(), attr: {src: gravatarUrl()}">
             </div>
             <div class="col-md-10">
-                <h4><a data-bind="attr.href: url, text: user"></a></h4>
+                <h4><a data-bind="attr: {href: url}, text: user"></a></h4>
                 <p>
                     <span data-bind="visible: job_title, text: job_title"></span><!-- ko if: job_title && job --> at <!-- /ko -->
                     <span data-bind="visible: job, text: job"></span><!-- ko if: job_title || job --><br /><!-- /ko -->
@@ -166,58 +166,58 @@
                 <!-- ko if: social -->
                 <ul class="list-inline">
                     <li data-bind="visible: social.personal">
-                        <a data-bind="attr.href: social.personal">
+                        <a data-bind="attr: {href: social.personal}">
                             <i class="fa fa-globe social-icons" data-toggle="tooltip" title="Personal Website"></i>
                         </a>
                     </li>
 
                     <li data-bind="visible: social.twitter">
-                        <a data-bind="attr.href: social.twitter">
+                        <a data-bind="attr: {href: social.twitter}">
                             <i class="fa fa-twitter social-icons" data-toggle="tooltip" title="Twitter"></i>
                         </a>
                     </li>
                     <li data-bind="visible: social.github">
-                        <a data-bind="attr.href: social.github">
+                        <a data-bind="attr: {href: social.github}">
                             <i class="fa fa-github-alt social-icons" data-toggle="tooltip" title="Github"></i>
                         </a>
                     </li>
                     <li data-bind="visible: social.linkedIn">
-                        <a data-bind="attr.href: social.linkedIn">
+                        <a data-bind="attr: {href: social.linkedIn}">
                             <i class="fa fa-linkedin social-icons" data-toggle="tooltip" title="LinkedIn"></i>
                         </a>
                     </li>
                     <li data-bind="visible: social.scholar">
-                        <a data-bind="attr.href: social.scholar">
+                        <a data-bind="attr: {href: social.scholar}">
                             <img class="social-icons" src="/static/img/googlescholar.png"data-toggle="tooltip" title="Google Scholar">
                         </a>
                     </li>
                     <li data-bind="visible: social.impactStory">
-                        <a data-bind="attr.href: social.impactStory">
+                        <a data-bind="attr: {href: social.impactStory}">
                             <i class="fa fa-info-circle social-icons" data-toggle="tooltip" title="ImpactStory"></i>
                         </a>
                     </li>
                     <li data-bind="visible: social.orcid">
-                        <a data-bind="attr.href: social.orcid">
+                        <a data-bind="attr: {href: social.orcid}">
                             <i class="fa social-icons" data-toggle="tooltip" title="ORCiD">iD</i>
                         </a>
                     </li>
                     <li data-bind="visible: social.researcherId">
-                        <a data-bind="attr.href: social.researcherId">
+                        <a data-bind="attr: {href: social.researcherId}">
                             <i class="fa social-icons" data-toggle="tooltip" title="ResearcherID">R</i>
                         </a>
                     </li>
                     <li data-bind="visible: social.researchGate">
-                        <a data-bind="attr.href: social.researchGate">
+                        <a data-bind="attr: {href: social.researchGate}">
                             <img class="social-icons" src="/static/img/researchgate.jpg" style="PADDING-BOTTOM: 7px" data-toggle="tooltip" title="ResearchGate"></i>
                         </a>
                     </li>
                     <li data-bind="visible: social.academiaInstitution + social.academiaProfileID">
-                        <a data-bind="attr.href: social.academiaInstitution + social.academiaProfileID">
+                        <a data-bind="attr: {href: social.academiaInstitution + social.academiaProfileID}">
                             <i class="fa social-icons" data-toggle="tooltip" title="Academia">A</i>
                         </a>
                     </li>
                     <li data-bind="visible: social.baiduScholar">
-                        <a data-bind="attr.href: social.baiduScholar">
+                        <a data-bind="attr: {href: social.baiduScholar}">
                             <img class="social-icons" src="/static/img/baiduscholar.png"data-toggle="tooltip" style="PADDING-BOTTOM: 5px" title="Baidu Scholar">
                         </a>
                     </li>
@@ -229,10 +229,10 @@
     </script>
     <script type="text/html" id="node">
       <!-- ko if: parent_url -->
-      <h4><a data-bind="attr.href: parent_url, text: parent_title"></a> / <a data-bind="attr.href: url, text: title"></a></h4>
+      <h4><a data-bind="attr: {href: parent_url}, text: parent_title"></a> / <a data-bind="attr: {href: url}, text: title"></a></h4>
         <!-- /ko -->
         <!-- ko if: !parent_url -->
-        <h4><span data-bind="if: parent_title"><span data-bind="text: parent_title"></span> /</span> <a data-bind="attr.href: url, text: title"></a></h4>
+        <h4><span data-bind="if: parent_title"><span data-bind="text: parent_title"></span> /</span> <a data-bind="attr: {href: url}, text: title"></a></h4>
         <!-- /ko -->
 
         <!-- TODO: Write and use a replacement for the trimText filter here. Limit 500 characters -->
@@ -242,7 +242,7 @@
         <p>
             <strong>Contributors:</strong> <span data-bind="foreach: contributors">
                 <!-- ko if: url -->
-                    <a data-bind="attr.href: url, text: fullname"></a>
+                    <a data-bind="attr: {href: url}, text: fullname"></a>
                 <!-- /ko-->
                 <!-- ko ifnot: url -->
                     <span data-bind="text: fullname"></span>
@@ -256,9 +256,9 @@
         <!-- /ko -->
         <p><strong>Jump to:</strong>
             <!-- ko if: n_wikis > 0 -->
-            <a data-bind="attr.href: wikiUrl">Wiki</a> -
+            <a data-bind="attr: {href: wikiUrl}">Wiki</a> -
             <!-- /ko -->
-            <a data-bind="attr.href: filesUrl">Files</a>
+            <a data-bind="attr: {href: filesUrl}">Files</a>
         </p>
     </script>
     <script type="text/html" id="project">
@@ -269,10 +269,10 @@
     </script>
     <script type="text/html" id="registration">
         <!-- ko if: parent_url -->
-        <h4><a data-bind="attr.href: parent_url, text: parent_title"></a> / <a data-bind="attr.href: url, text: title"></a>  (<span class="text-danger" data-bind="if: is_retracted">Retracted </span>Registration)</h4>
+        <h4><a data-bind="attr: {href: parent_url}, text: parent_title"></a> / <a data-bind="attr: {href: url}, text: title"></a>  (<span class="text-danger" data-bind="if: is_retracted">Retracted </span>Registration)</h4>
         <!-- /ko -->
         <!-- ko if: !parent_url -->
-        <h4><span data-bind="if: parent_title"><span data-bind="text: parent_title"></span> /</span> <a data-bind="attr.href: url, text: title"></a>  (<span class="text-danger" data-bind="if: is_retracted">Retracted </span>Registration)</h4>
+        <h4><span data-bind="if: parent_title"><span data-bind="text: parent_title"></span> /</span> <a data-bind="attr: {href: url}, text: title"></a>  (<span class="text-danger" data-bind="if: is_retracted">Retracted </span>Registration)</h4>
         <!-- /ko -->
         <strong><span data-bind="text: 'Date Registered: ' + dateRegistered['local'], tooltip: {title: dateRegistered['utc']}"></span></strong>
 
@@ -283,7 +283,7 @@
         <p>
             <strong>Contributors:</strong> <span data-bind="foreach: contributors">
                 <!-- ko if: url -->
-                    <a data-bind="attr.href: url, text: fullname"></a>
+                    <a data-bind="attr: {href: url}, text: fullname"></a>
                 <!-- /ko-->
                 <!-- ko ifnot: url -->
                     <span data-bind="text: fullname"></span>
@@ -299,9 +299,9 @@
         <!-- /ko -->
         <p><strong>Jump to:</strong>
             <!-- ko if: n_wikis > 0 -->
-            <a data-bind="attr.href: wikiUrl">Wiki</a> -
+            <a data-bind="attr: {href: wikiUrl}">Wiki</a> -
             <!-- /ko -->
-            <a data-bind="attr.href: filesUrl">Files</a>
+            <a data-bind="attr: {href: filesUrl}">Files</a>
         </p>
     </script>
     <script id="tag-cloud" type="text/html">
