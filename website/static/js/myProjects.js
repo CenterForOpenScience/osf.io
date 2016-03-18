@@ -320,6 +320,7 @@ var MyProjects = {
                 data : data
             }).then(function _removeProjectFromCollectionsSuccess(result){
                 self.currentLink = null; // To bypass the check when updating file list
+                self.nodeUrlCache[self.activeFilter().link] = null;
                 self.updateFilter(self.activeFilter());
                 self.activeFilter().data.count(self.activeFilter().data.count() - data.data.length);
             }, function _removeProjectFromCollectionsFail(result){
@@ -824,6 +825,7 @@ var Collections = {
                 hoverClass: 'bg-color-hover',
                 drop: function( event, ui ) {
                     var collection = self.collections()[$(this).attr('data-index')];
+                    args.nodeUrlCache[collection.link] = null;
                     var dataArray = [];
                     // If multiple items are dragged they have to be selected to make it work
                     if (args.selected().length > 1) {
