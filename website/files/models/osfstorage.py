@@ -4,8 +4,9 @@ import os
 
 from modularodm import Q
 
+from framework.guid.model import Guid
 from website.files import exceptions
-from website.files.models.base import File, Folder, FileNode, FileVersion
+from website.files.models.base import File, Folder, FileNode, FileVersion, TrashedFileNode
 
 
 __all__ = ('OsfStorageFile', 'OsfStorageFolder', 'OsfStorageFileNode')
@@ -32,6 +33,26 @@ class OsfStorageFileNode(FileNode):
 
         # Dont raise anything a 404 will be raised later
         return cls.create(node=node, path=path)
+
+    @classmethod
+    def get_file_guids(cls, materialized_path, provider, node=None, guids=None):
+        guids = guids or []
+        path = materialized_path.strip('/')
+        file_obj = cls.load(path)
+        if not file_obj:
+            file_obj = TrashedFileNode.load(path)
+
+        if not file_obj.is_file:
+            for item in file_obj.children:
+                cls.get_file_guids(item.path, provider, guids, node)
+        else:
+            try:
+                guid = Guid.find(Q('referent', 'eq', file_obj))[0]
+            except IndexError:
+                guid = None
+            if guid:
+                guids.append(guid._id)
+        return guids
 
     @property
     def kind(self):
@@ -67,10 +88,24 @@ class OsfStorageFileNode(FileNode):
         """
         return '/' + self._id + ('' if self.is_file else '/')
 
+    @property
+    def is_checked_out(self):
+        return self.checkout is not None
+
+    def delete(self, user=None, parent=None):
+        if self.is_checked_out:
+            raise exceptions.FileNodeCheckedOutError()
+        return super(OsfStorageFileNode, self).delete(user=user, parent=parent)
+
+    def move_under(self, destination_parent, name=None):
+        if self.is_checked_out:
+            raise exceptions.FileNodeCheckedOutError()
+        return super(OsfStorageFileNode, self).move_under(destination_parent, name)
+
     def save(self):
         self.path = ''
         self.materialized_path = ''
-        super(OsfStorageFileNode, self).save()
+        return super(OsfStorageFileNode, self).save()
 
 
 class OsfStorageFile(OsfStorageFileNode, File):
@@ -129,8 +164,28 @@ class OsfStorageFile(OsfStorageFileNode, File):
                 raise exceptions.VersionNotFoundError(version)
             return None
 
+    def delete(self, user=None, parent=None):
+        from website.search import search
+        search.update_file(self, delete=True)
+        return super(OsfStorageFile, self).delete(user, parent)
+
+    def save(self, skip_search=False):
+        from website.search import search
+        ret = super(OsfStorageFile, self).save()
+        if not skip_search:
+            search.update_file(self)
+        return ret
 
 class OsfStorageFolder(OsfStorageFileNode, Folder):
+
+    @property
+    def is_checked_out(self):
+        if self.checkout:
+            return True
+        for child in self.children:
+            if child.is_checked_out:
+                return True
+        return False
 
     def serialize(self, include_full=False, version=None):
         # Versions just for compatability

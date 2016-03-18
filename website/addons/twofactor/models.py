@@ -5,7 +5,6 @@ from random import SystemRandom
 from modularodm.fields import BooleanField, StringField, IntegerField
 from oath import accept_totp
 
-from framework.status import push_status_message
 from website.addons.base import AddonUserSettingsBase
 
 class TwoFactorUserSettings(AddonUserSettingsBase):
@@ -50,18 +49,12 @@ class TwoFactorUserSettings(AddonUserSettingsBase):
     #############
 
     def on_add(self):
-        push_status_message('Please <u><a href="#TfaVerify">activate your'
-                            ' device</a></u> before continuing.', 'info')
         super(TwoFactorUserSettings, self).on_add()
         self.totp_secret = _generate_seed()
         self.totp_drift = 0
         self.is_confirmed = False
 
     def on_delete(self):
-        if self.is_confirmed:
-            push_status_message('Successfully deauthorized two-factor'
-                                ' authentication. Please delete the'
-                                ' verification code on your device.', 'success')
         super(TwoFactorUserSettings, self).on_delete()
         self.totp_secret = None
         self.totp_drift = 0

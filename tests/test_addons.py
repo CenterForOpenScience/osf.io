@@ -5,11 +5,13 @@ import mock
 import datetime
 import unittest
 from nose.tools import *  # noqa
+import httplib as http
 
+import jwe
 import jwt
 import furl
 import itsdangerous
-from modularodm import storage
+from modularodm import storage, Q
 
 from framework.auth import cas
 from framework.auth import signing
@@ -17,10 +19,12 @@ from framework.auth.core import Auth
 from framework.exceptions import HTTPError
 from framework.sessions.model import Session
 from framework.mongo import set_up_storage
+from tests import factories
 
 from website import settings
 from website.files import models
-from website.files.models.base import PROVIDER_MAP
+from website.files.models.base import PROVIDER_MAP, StoredFileNode, TrashedFileNode
+from website.project.model import MetaSchema, ensure_schemas
 from website.util import api_url_for, rubeus
 from website.project import new_private_link
 from website.project.views.node import _view_project as serialize_node
@@ -84,6 +88,7 @@ class TestAddonAuth(OsfTestCase):
         self.session.save()
         self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session._id)
         self.configure_addon()
+        self.JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
 
     def configure_addon(self):
         self.user.add_addon('github')
@@ -101,19 +106,19 @@ class TestAddonAuth(OsfTestCase):
         self.node_addon.save()
 
     def build_url(self, **kwargs):
-        options = {'payload': jwt.encode({'data': dict(dict(
+        options = {'payload': jwe.encrypt(jwt.encode({'data': dict(dict(
             action='download',
             nid=self.node._id,
             provider=self.node_addon.config.short_name,
             ), **kwargs),
             'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
-        }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)}
+        }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), self.JWE_KEY)}
         return api_url_for('get_auth', **options)
 
     def test_auth_download(self):
         url = self.build_url()
         res = self.app.get(url, auth=self.user.auth)
-        data = jwt.decode(res.json, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)['data']
+        data = jwt.decode(jwe.decrypt(res.json['payload'].encode('utf-8'), self.JWE_KEY), settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)['data']
         assert_equal(data['auth'], views.make_auth(self.user))
         assert_equal(data['credentials'], self.node_addon.serialize_waterbutler_credentials())
         assert_equal(data['settings'], self.node_addon.serialize_waterbutler_settings())
@@ -131,7 +136,7 @@ class TestAddonAuth(OsfTestCase):
         url = self.build_url(cookie=self.cookie)
         res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, 200)
-        data = jwt.decode(res.json, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)['data']
+        data = jwt.decode(jwe.decrypt(res.json['payload'].encode('utf-8'), self.JWE_KEY), settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)['data']
         assert_equal(data['auth'], views.make_auth(self.user))
         assert_equal(data['credentials'], self.node_addon.serialize_waterbutler_credentials())
         assert_equal(data['settings'], self.node_addon.serialize_waterbutler_settings())
@@ -371,6 +376,63 @@ class TestCheckAuth(OsfTestCase):
         res = views.check_access(component, Auth(user=self.user), 'copyfrom', None)
         assert_true(res)
 
+class TestCheckPreregAuth(OsfTestCase):
+
+    def setUp(self):
+        super(TestCheckPreregAuth, self).setUp()
+
+        ensure_schemas()
+        self.prereg_challenge_admin_user = AuthUserFactory()
+        self.prereg_challenge_admin_user.system_tags.append(settings.PREREG_ADMIN_TAG)
+        self.prereg_challenge_admin_user.save()
+        prereg_schema = MetaSchema.find_one(
+                Q('name', 'eq', 'Prereg Challenge') &
+                Q('schema_version', 'eq', 2)
+        )
+
+        self.user = AuthUserFactory()
+        self.node = factories.ProjectFactory(creator=self.user)
+
+        self.parent = factories.ProjectFactory()
+        self.child = factories.NodeFactory(parent=self.parent)
+
+        self.draft_registration = factories.DraftRegistrationFactory(
+            initiator=self.user,
+            registration_schema=prereg_schema,
+            branched_from=self.parent
+        )
+
+    def test_has_permission_download_prereg_challenge_admin(self):
+        res = views.check_access(self.draft_registration.branched_from,
+            Auth(user=self.prereg_challenge_admin_user), 'download', None)
+        assert_true(res)
+
+    def test_has_permission_download_on_component_prereg_challenge_admin(self):
+        try:
+            res = views.check_access(self.draft_registration.branched_from.nodes[0],
+                                     Auth(user=self.prereg_challenge_admin_user), 'download', None)
+        except Exception:
+            self.fail()
+        assert_true(res)
+
+    def test_has_permission_download_not_prereg_challenge_admin(self):
+        new_user = AuthUserFactory()
+        with assert_raises(HTTPError) as exc_info:
+            views.check_access(self.draft_registration.branched_from,
+                 Auth(user=new_user), 'download', None)
+            assert_equal(exc_info.exception.code, http.FORBIDDEN)
+
+    def test_has_permission_download_prereg_challenge_admin_not_draft(self):
+        with assert_raises(HTTPError) as exc_info:
+            views.check_access(self.node,
+                 Auth(user=self.prereg_challenge_admin_user), 'download', None)
+            assert_equal(exc_info.exception.code, http.FORBIDDEN)
+
+    def test_has_permission_write_prereg_challenge_admin(self):
+        with assert_raises(HTTPError) as exc_info:
+            views.check_access(self.draft_registration.branched_from,
+                Auth(user=self.prereg_challenge_admin_user), 'write', None)
+            assert_equal(exc_info.exception.code, http.FORBIDDEN)
 
 class TestCheckOAuth(OsfTestCase):
 
@@ -524,6 +586,7 @@ class TestAddonFileViews(OsfTestCase):
         super(TestAddonFileViews, cls).tearDownClass()
         PROVIDER_MAP['github'] = [models.GithubFolder, models.GithubFile, models.GithubFileNode]
         del PROVIDER_MAP['test_addons']
+        TrashedFileNode.remove()
 
     def get_test_file(self):
         version = models.FileVersion(identifier='1')
@@ -558,6 +621,7 @@ class TestAddonFileViews(OsfTestCase):
             'extra': '',
             'file_name': '',
             'materialized_path': '',
+            'file_id': '',
         })
         ret.update(rubeus.collect_addon_assets(self.project))
         return ret
@@ -613,7 +677,7 @@ class TestAddonFileViews(OsfTestCase):
 
         args, kwargs = mock_view_file.call_args
         assert_equals(kwargs, {})
-        assert_equals(args[0].user, self.user)
+        assert_equals(args[0].user._id, self.user._id)
         assert_equals(args[1], self.project)
         assert_equals(args[2], file_node)
         assert_true(isinstance(args[3], file_node.touch(None).__class__))
@@ -632,7 +696,7 @@ class TestAddonFileViews(OsfTestCase):
 
         args, kwargs = mock_view_file.call_args
         assert_equals(kwargs, {})
-        assert_equals(args[0].user, self.user)
+        assert_equals(args[0].user._id, self.user._id)
         assert_equals(args[1], self.project)
         assert_equals(args[2], file_node)
         assert_true(isinstance(args[3], file_node.touch(None).__class__))
@@ -736,6 +800,42 @@ class TestAddonFileViews(OsfTestCase):
         )
 
         assert_equals(resp.status_code, 401)
+
+    def test_delete_action_creates_trashed_file_node(self):
+        file_node = self.get_test_file()
+        payload = {
+            'provider': file_node.provider,
+            'metadata': {
+                'path': '/test/Test',
+                'materialized': '/test/Test'
+            }
+        }
+        views.addon_delete_file_node(self=None, node=self.project, event_type='file_removed', payload=payload)
+        assert_false(StoredFileNode.load(file_node._id))
+        assert_true(TrashedFileNode.load(file_node._id))
+
+    def test_delete_action_for_folder_deletes_subfolders_and_creates_trashed_file_nodes(self):
+        file_node = self.get_test_file()
+        subfolder = TestFolder(
+            name='folder',
+            node=self.project,
+            path='/test/folder/',
+            materialized_path='/test/folder/',
+            versions=[]
+        )
+        subfolder.save()
+        payload = {
+            'provider': file_node.provider,
+            'metadata': {
+                'path': '/test/',
+                'materialized': '/test/'
+            }
+        }
+        views.addon_delete_file_node(self=None, node=self.project, event_type='file_removed', payload=payload)
+        assert_false(StoredFileNode.load(file_node._id))
+        assert_true(TrashedFileNode.load(file_node._id))
+        assert_false(StoredFileNode.load(subfolder._id))
+
 
 class TestLegacyViews(OsfTestCase):
 

@@ -17,8 +17,8 @@
     <div id="home-hero">
       <div class="container text-center">
         <div class="visible-xs-block visible-sm-block visible-md-block network-bg"></div>
-        <h1><strong>Simplified</strong> scientific collaboration</h1>
-        <h3>Powerful end-to-end support for your research.</h3>
+        <h1 class="hero-brand">Open Science Framework</h1>
+        <h3 class="hero-tagline">A scholarly commons to connect the entire research cycle</h3>
 
         <div id="canvas-container">
           <canvas id="demo-canvas"></canvas>
@@ -38,27 +38,27 @@
         <div id="hero-signup" class="container">
           <div class="row">
             <div class="col-sm-6 hidden-xs">
-              <a class="youtube" href="//www.youtube.com/watch?v=2TV21gOzfhw"><i class="icon icon-play"></i></a>
+              <a class="youtube" href="//www.youtube.com/watch?v=2TV21gOzfhw" aria-label="OSF YouTube Video"><i class="icon icon-play"></i></a>
               <img src="/static/img/front-page/screenshot.png" class="img-responsive" id="screenshot" alt="Screenshot of OSF" />
             </div>
             <div class="col-sm-6">
-              <h2>Free. Get started today.</h2>
+              <h2>Free and open source. Start now.</h2>
 
              <div id="signUp" class="anchor"></div>
                 <div id="signUpScope">
                     <form data-bind="submit: submit">
                         <div class="form-group" data-bind="css: {'has-error': fullName() && !fullName.isValid(), 'has-success': fullName() && fullName.isValid()}">
-                              <label class="placeholder-replace" style="display:none">Full Name</label>
+                              <label class="placeholder-replace" style="display:none">Full name</label>
                               <input class="form-control" placeholder="Full Name" data-bind=" value: fullName, disable: submitted(), event: { blur: trim.bind($data, fullName)}">
                               <p class="help-block osf-box-lt" data-bind="validationMessage: fullName" style="display: none;"></p>
                           </div>
                           <div class="form-group" data-bind="css: {'has-error': email1() && !email1.isValid(), 'has-success': email1() && email1.isValid()}">
-                              <label class="placeholder-replace" style="display:none">Contact Email</label>
+                              <label class="placeholder-replace" style="display:none">Contact email</label>
                               <input class="form-control" placeholder="Contact Email" data-bind=" value: email1, disable: submitted(), event: { blur: trim.bind($data, email1)}">
                               <p class="help-block osf-box-lt" data-bind="validationMessage: email1" style="display: none;"></p>
                           </div>
                           <div class="form-group" data-bind="css: {'has-error': email2() && !email2.isValid(),'has-success': email2() && email2.isValid()}">
-                              <label class="placeholder-replace" style="display:none">Confirm Email</label>
+                              <label class="placeholder-replace" style="display:none">Confirm email</label>
                               <input class="form-control" placeholder="Confirm Email" data-bind="value: email2, disable: submitted(), event: { blur: trim.bind($data, email2)}">
                               <p class="help-block osf-box-lt" data-bind="validationMessage: email2" style="display: none;"></p>
                           </div>
@@ -72,6 +72,11 @@
                           <div class="help-block osf-box-lt" >
                               <p data-bind="html: flashMessage, attr.class: flashMessageClass" class=""></p>
                           </div>
+                          <!-- ko ifnot: submitted -->
+                          <div>
+                              <small> By clicking "Sign up free", you agree to our <a style="color:#5BC0DE" href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md">Terms</a> and that you have read our <a style="color:#5BC0DE" href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>, including our information on <a style="color:#5BC0DE" href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md#f-cookies">Cookie Use</a>.</small>
+                          </div>
+                          <!-- /ko -->
                           <div>
                               <button type="submit" class="btn btn-warning" data-bind="visible: !submitted()" id="signupSubmit">Sign up free</button>
                           </div>
@@ -90,7 +95,7 @@
 
       <div class="row space-bottom">
         <div class="col-xs-12 text-center">
-          <h2><strong>Open Science Framework</strong></h2>
+            <h2><strong>Simplified Scholarly Collaboration</strong></h2>
           <h3>Cloud-based management for your projects.</h3>
         </div>
       </div>
@@ -285,7 +290,7 @@
           <div class="col-md-8">
             <h2><strong>Free and open source.</strong></h2>
             <h4>The OSF is a public good built to support your research.</h4>
-            <a href="#" class="btn btn-info btn-lg">Get Started</a>
+            <a href="#" class="btn btn-info btn-lg">Get started</a>
           </div>
           <div class="col-md-4 hidden-xs hidden-sm">
             <div id="logo">

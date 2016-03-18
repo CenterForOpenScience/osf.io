@@ -81,7 +81,7 @@ class CasClient(object):
         url.path.segments.extend(('oauth2', 'profile',))
         return url.url
 
-    def get_application_revocation_url(self):
+    def get_auth_token_revocation_url(self):
         url = furl.furl(self.BASE_URL)
         url.path.segments.extend(('oauth2', 'revoke'))
         return url.url
@@ -160,16 +160,17 @@ class CasClient(object):
 
     def revoke_application_tokens(self, client_id, client_secret):
         """Revoke all tokens associated with a given CAS client_id"""
-        url = self.get_application_revocation_url()
-        data = {'client_id': client_id,
-                'client_secret': client_secret}
+        return self.revoke_tokens(payload={'client_id': client_id, 'client_secret': client_secret})
 
-        resp = requests.post(url, data=data)
+    def revoke_tokens(self, payload):
+        """Revoke a tokens based on payload"""
+        url = self.get_auth_token_revocation_url()
+
+        resp = requests.post(url, data=payload)
         if resp.status_code == 204:
             return True
         else:
             self._handle_error(resp)
-
 
 def parse_auth_header(header):
     """Given a Authorization header string, e.g. 'Bearer abc123xyz', return a token

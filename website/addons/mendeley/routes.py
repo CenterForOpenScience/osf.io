@@ -2,7 +2,7 @@
 
 from framework.routing import Rule, json_renderer
 
-from website.addons.mendeley import views
+from website.addons.mendeley.views import mendeley_views
 
 api_routes = {
     'rules': [
@@ -11,7 +11,7 @@ api_routes = {
                 '/settings/mendeley/accounts/',
             ],
             'get',
-            views.mendeley_get_user_accounts,
+            mendeley_views.account_list(),
             json_renderer,
         ),
         Rule(
@@ -20,7 +20,7 @@ api_routes = {
                 '/project/<pid>/node/<nid>/mendeley/settings/',
             ],
             'get',
-            views.mendeley_get_config,
+            mendeley_views.get_config(),
             json_renderer,
         ),
         Rule(
@@ -29,7 +29,7 @@ api_routes = {
                 '/project/<pid>/node/<nid>/mendeley/settings/',
             ],
             'put',
-            views.mendeley_set_config,
+            mendeley_views.set_config(),
             json_renderer,
         ),
         Rule(
@@ -38,7 +38,7 @@ api_routes = {
                 '/project/<pid>/node/<nid>/mendeley/user_auth/',
             ],
             'put',
-            views.mendeley_add_user_auth,
+            mendeley_views.import_auth(),
             json_renderer,
         ),
         Rule(
@@ -47,7 +47,7 @@ api_routes = {
                 '/project/<pid>/node/<nid>/mendeley/user_auth/',
             ],
             'delete',
-            views.mendeley_remove_user_auth,
+            mendeley_views.deauthorize_node(),
             json_renderer,
         ),
         Rule(
@@ -56,18 +56,18 @@ api_routes = {
                 '/project/<pid>/node/<nid>/mendeley/widget/',
             ],
             'get',
-            views.mendeley_widget,
+            mendeley_views.widget(),
             json_renderer,
         ),
         Rule(
             [
                 '/project/<pid>/mendeley/citations/',
                 '/project/<pid>/node/<nid>/mendeley/citations/',
-                '/project/<pid>/mendeley/citations/<mendeley_list_id>/',
-                '/project/<pid>/node/<nid>/mendeley/citations/<mendeley_list_id>/',
+                '/project/<pid>/mendeley/citations/<list_id>/',
+                '/project/<pid>/node/<nid>/mendeley/citations/<list_id>/',
             ],
             'get',
-            views.mendeley_citation_list,
+            mendeley_views.citation_list(),
             json_renderer,
         ),
     ],

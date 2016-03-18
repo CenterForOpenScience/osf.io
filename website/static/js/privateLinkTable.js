@@ -27,7 +27,6 @@ function LinkViewModel(data, $root) {
         return self.$root.nodeUrl() + '?view_only=' + data.key;
     });
     self.nodesList = ko.observableArray(data.nodes);
-    self.removeLink = 'Remove this link';
 
     self.anonymousDisplay = ko.computed(function() {
         var openTag = '<span>';
@@ -46,14 +45,27 @@ function LinkViewModel(data, $root) {
         return [openTag, text, closeTag].join('');
     });
 
+    self.toggle = function(data, event) {
+        event.target.select();
+    };
+
+    self.toggleExpand = function() {
+        self.expanded(!self.expanded());
+    };
+
+    self.expanded = ko.observable(false);
 }
 
-function ViewModel(url, nodeIsPublic) {
+function ViewModel(url, nodeIsPublic, table) {
     var self = this;
     self.nodeIsPublic = nodeIsPublic || false;
     self.url = url;
     self.privateLinks = ko.observableArray();
     self.nodeUrl = ko.observable(null);
+
+    self.visible = ko.computed(function() {
+        return self.privateLinks().length > 0;
+    });
 
     function onFetchSuccess(response) {
         var node = response.node;
@@ -65,7 +77,7 @@ function ViewModel(url, nodeIsPublic) {
 
     function onFetchError() {
         $osf.growl('Could not retrieve view-only links.', 'Please refresh the page or ' +
-                'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
+                'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
                 'problem persists.');
     }
 
@@ -141,20 +153,31 @@ function ViewModel(url, nodeIsPublic) {
         });
     };
 
+    self.collapsed = ko.observable();
+
     self.afterRenderLink = function(elm, data) {
         var $tr = $(elm);
-        var target = $tr.find('.copy-button');
-        clipboard(target[0]);
+        if (self.privateLinks().indexOf(ko.dataFor($tr[1])) === 0) {
+            self.onWindowResize();
+        }
+        var target = $tr.find('button>i.fa.fa-copy')[0].parentElement;
+        clipboard(target);
         $tr.find('.remove-private-link').tooltip();
         self.setupEditable(elm, data);
         $('.private-link-list').osfToggleHeight({height: 50});
     };
 
+    self.table = $(table);
+
+    self.onWindowResize = function () {
+        self.collapsed(self.table.children().filter('thead').is(':hidden'));
+    };
+
 }
 
-function PrivateLinkTable (selector, url, nodeIsPublic) {
+function PrivateLinkTable (selector, url, nodeIsPublic, table) {
     var self = this;
-    self.viewModel = new ViewModel(url, nodeIsPublic);
+    self.viewModel = new ViewModel(url, nodeIsPublic, table);
     $osf.applyBindings(self.viewModel, selector);
 
 }

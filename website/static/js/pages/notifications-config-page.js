@@ -2,7 +2,7 @@ var $ = require('jquery');
 
 // initialize view model for configuring mailchimp subscriptions
 var NotificationsConfig =  require('../notificationsConfig.js');
-new NotificationsConfig('#selectLists', window.contextVars.mailingList);
+new NotificationsConfig('#selectLists', window.contextVars.mailingLists);
 
 //initialize treebeard for notification subscriptions
 var ProjectNotifications = require('../notificationsTreebeard.js');

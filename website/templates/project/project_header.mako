@@ -29,10 +29,17 @@
                         % endif
 
                     % endif
-                        <li><a href="${node['url']}"  class="project-title"> ${ node['title'] }  </a></li>
-
+                        <li>
+                            <a href="${node['url']}"  class="project-title"> 
+                                ${ node['title'] }
+                            </a>
+                        </li>
                     % if not node['is_retracted']:
-                        <li id="projectNavFiles"><a href="${node['url']}files/">Files</a></li>
+                        <li id="projectNavFiles">
+                            <a href="${node['url']}files/">
+                                Files
+                            </a>
+                        </li>
                         <!-- Add-on tabs -->
                         % for addon in addons_enabled:
 
@@ -53,11 +60,14 @@
                             <li><a href="${node['url']}analytics/">Analytics</a></li>
                         % endif
 
-                        % if not node['is_registration']:
+                        % if not node['is_registration'] and not node['anonymous']:
                             <li><a href="${node['url']}registrations/">Registrations</a></li>
                         % endif
 
-                        <li><a href="${node['url']}forks/">Forks</a></li>
+                        % if not node['anonymous']:
+                            <li><a href="${node['url']}forks/">Forks</a></li>
+                        %endif
+                        
                         % if user['is_contributor']:
                             <li><a href="${node['url']}contributors/">Contributors</a></li>
                         % endif
@@ -65,8 +75,18 @@
                         % if user['has_read_permissions'] and not node['is_registration'] or (node['is_registration'] and 'admin' in user['permissions']):
                             <li><a href="${node['url']}settings/">Settings</a></li>
                         % endif
-
                     % endif
+                    % if user['can_comment'] or node['has_comments']:
+                       <li>
+                           <a id="commentsLink" class="visible-xs cp-handle" data-bind="click:removeCount" data-toggle="collapse" data-target="#projectSubnav .navbar-collapse">
+                                Comments
+                                <span data-bind="if: unreadComments() !== 0">
+                                    <span data-bind="text: displayCount" class="badge"></span>
+                                </span>
+                           </a>
+                       </li>
+                    % endif
+
 
                     </ul>
                 </div>
@@ -114,7 +134,7 @@
         % endif
 
         % if  node['embargo_end_date']:
-            <div class="alert alert-danger">This ${node['node_type']} is currently embargoed. It will remain private until its embargo date, ${ node['embargo_end_date'] }, passes or an admin manually makes it public.</div>
+            <div class="alert alert-danger">This ${node['node_type']} is currently embargoed. It will remain private until its embargo date, ${ node['embargo_end_date'] }.</div>
         % endif
 
     % endif  ## End registration undismissable labels

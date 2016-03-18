@@ -4,7 +4,7 @@ import mock
 import unittest
 
 from nose.tools import *  # noqa (PEP8 asserts)
-from tests.base import OsfTestCase
+from tests.base import OsfTestCase, get_default_metaschema
 from tests.factories import ProjectFactory, UserFactory, AuthUserFactory
 
 from github3.repos.branch import Branch
@@ -107,25 +107,6 @@ class TestGithubViews(OsfTestCase):
             branches,
             github_mock.branches.return_value
         )
-
-    def test_before_remove_contributor_authenticator(self):
-        url = self.project.api_url + 'beforeremovecontributors/'
-        res = self.app.post_json(
-            url,
-            {'id': self.project.creator._id},
-            auth=self.user.auth,
-        ).maybe_follow()
-        # One prompt for transferring auth, one for removing self
-        assert_equal(len(res.json['prompts']), 2)
-
-    def test_before_remove_contributor_not_authenticator(self):
-        url = self.project.api_url + 'beforeremovecontributors/'
-        res = self.app.post_json(
-            url,
-            {'id': self.non_authenticator._id},
-            auth=self.user.auth,
-        ).maybe_follow()
-        assert_equal(len(res.json['prompts']), 0)
 
     def test_before_fork(self):
         url = self.project.api_url + 'fork/before/'
@@ -477,7 +458,9 @@ class TestGithubSettings(OsfTestCase):
         ]
 
         registration = self.project.register_node(
-            None, self.consolidated_auth, '', ''
+            schema=get_default_metaschema(),
+            auth=self.consolidated_auth,
+            data=''
         )
 
         url = registration.api_url + 'github/settings/'

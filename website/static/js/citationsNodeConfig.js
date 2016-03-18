@@ -122,7 +122,9 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         ).then(self.onImportSuccess.bind(self), self.onImportError.bind(self));
     },
     _updateCustomFields: function(settings){
-        this.userAccountId(settings.userAccountId);
+        var self = this;
+        self.userAccountId(settings.userAccountId);
+        self.validCredentials(settings.validCredentials);
     },
     _serializeSettings: function(){
         return {
@@ -177,6 +179,19 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                     });
                 }
             });
+    },
+    afterUpdate: function() {
+        var self = this;
+        if (self.nodeHasAuth() && !self.validCredentials()) {
+            var message;
+            if (self.userIsOwner()) {
+                message = self.messages.invalidCredOwner();
+            }
+            else {
+                message = self.messages.invalidCredNotOwner();
+            }
+            self.changeMessage(message, 'text-danger');
+        }
     }
 });
 // Public API

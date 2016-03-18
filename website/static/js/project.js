@@ -235,9 +235,16 @@ NodeActions.openCloseNode = function(nodeId) {
 // TODO: remove this
 $(document).ready(function() {
     var permissionInfoHtml = '<dl>' +
-        '<dt>Read</dt><dd>View project content and comment</dd>' +
-        '<dt>Read + Write</dt><dd>Read privileges plus add and configure components; add and edit content</dd>' +
-        '<dt>Administrator</dt><dd>Read and write privileges; manage contributors; delete and register project; public-private settings</dd>' +
+        '<dt>Read</dt>' +
+            '<dd><ul><li>View project content and comment</li></ul></dd>' +
+        '<dt>Read + Write</dt>' +
+            '<dd><ul><li>Read privileges</li> ' +
+                '<li>Add and configure components</li> ' +
+                '<li>Add and edit content</li></ul></dd>' +
+        '<dt>Administrator</dt><dd><ul>' +
+            '<li>Read and write privileges</li>' +
+            '<li>Manage contributor</li>' +
+            '<li>Delete and register project</li><li>Public-private settings</li></ul></dd>' +
         '</dl>';
 
     $('.permission-info').attr(
@@ -293,7 +300,7 @@ $(document).ready(function() {
     });
 
     $('body').on('click', '.tagsinput .tag > span', function(e) {
-        window.location = '/search/?q=(tags:' + $(e.target).text().toString().trim()+ ')';
+        window.location = '/search/?q=(tags:"' + $(e.target).text().toString().trim()+ '")';
     });
 
 
@@ -308,7 +315,7 @@ $(document).ready(function() {
     // Adds active class to current menu item
     $(function () {
         var path = window.location.pathname;
-        $('.project-nav a').each(function () {
+        $('.project-nav a:not(#commentsLink)').each(function () {
             var href = $(this).attr('href');
             if (path === href ||
                (path.indexOf('files') > -1 && href.indexOf('files') > -1) ||
@@ -316,6 +323,14 @@ $(document).ready(function() {
                 $(this).closest('li').addClass('active');
             }
         });
+
+        // If not viewing the project or file detail page, remove the Comments Link
+        var excluded = ['files', 'wiki', 'analytics', 'registrations', 'forks', 'contributors', 'settings'];
+        for (var i=0; i < excluded.length; i++) {
+            if (path.indexOf(excluded[i]) > -1) {
+                $('.project-nav #commentsLink').remove();
+            }
+        }
     });
 });
 

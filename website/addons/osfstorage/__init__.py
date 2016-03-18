@@ -2,6 +2,7 @@
 # encoding: utf-8
 
 from . import routes, views, model
+from . import listeners  # noqa
 
 MODELS = [model.OsfStorageNodeSettings]
 NODE_SETTINGS_MODEL = model.OsfStorageNodeSettings
@@ -32,7 +33,7 @@ INCLUDE_JS = {
 HAS_HGRID_FILES = True
 GET_HGRID_DATA = views.osf_storage_root
 
-MAX_FILE_SIZE = 128  # 128 MB
+MAX_FILE_SIZE = 5 * 1024  # 5 GB
 HIGH_MAX_FILE_SIZE = 5 * 1024  # 5 GB
 
 # HERE = os.path.dirname(os.path.abspath(__file__))

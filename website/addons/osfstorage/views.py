@@ -14,12 +14,13 @@ from framework.auth.decorators import must_be_signed
 
 from website.models import User
 from website.project.decorators import (
-    must_not_be_registration, must_have_addon,
+    must_not_be_registration, must_have_addon, must_have_permission
 )
 from website.util import rubeus
-from website.project.model import has_anonymous_link
+from website.project.model import has_anonymous_link, Tag
 
 from website.files import models
+from website.files import exceptions
 from website.addons.osfstorage import utils
 from website.addons.osfstorage import decorators
 from website.addons.osfstorage import settings as osf_storage_settings
@@ -92,8 +93,12 @@ def osfstorage_copy_hook(source, destination, name=None, **kwargs):
 
 @decorators.waterbutler_opt_hook
 def osfstorage_move_hook(source, destination, name=None, **kwargs):
-    return source.move_under(destination, name=name).serialize(), httplib.OK
-
+    try:
+        return source.move_under(destination, name=name).serialize(), httplib.OK
+    except exceptions.FileNodeCheckedOutError:
+        raise HTTPError(httplib.METHOD_NOT_ALLOWED, data={
+            'message_long': 'Cannot move file as it is checked out.'
+        })
 
 @must_be_signed
 @decorators.autoload_filenode(default_root=True)
@@ -117,7 +122,7 @@ def osfstorage_get_metadata(file_node, **kwargs):
         # TODO This should change to version as its internal it can be changed anytime
         version = int(request.args.get('revision'))
     except (ValueError, TypeError):  # If its not a number
-        version = -1
+        version = None
     return file_node.serialize(version=version, include_full=True)
 
 
@@ -160,18 +165,23 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
 
     if not is_folder:
         try:
-            version = file_node.create_version(
-                user,
-                dict(payload['settings'], **dict(
-                    payload['worker'], **{
-                        'object': payload['metadata']['name'],
-                        'service': payload['metadata']['provider'],
-                    })
-                ),
-                dict(payload['metadata'], **payload['hashes'])
-            )
-            version_id = version._id
-            archive_exists = version.archive is not None
+            if file_node.checkout is None or file_node.checkout._id == user._id:
+                version = file_node.create_version(
+                    user,
+                    dict(payload['settings'], **dict(
+                        payload['worker'], **{
+                            'object': payload['metadata']['name'],
+                            'service': payload['metadata']['provider'],
+                        })
+                    ),
+                    dict(payload['metadata'], **payload['hashes'])
+                )
+                version_id = version._id
+                archive_exists = version.archive is not None
+            else:
+                raise HTTPError(httplib.FORBIDDEN, data={
+                    'message_long': 'File cannot be updated due to checkout status.'
+                })
         except KeyError:
             raise HTTPError(httplib.BAD_REQUEST)
     else:
@@ -199,7 +209,11 @@ def osfstorage_delete(file_node, payload, node_addon, **kwargs):
     if file_node == node_addon.get_root():
         raise HTTPError(httplib.BAD_REQUEST)
 
-    file_node.delete()
+    try:
+        file_node.delete()
+
+    except exceptions.FileNodeCheckedOutError:
+        raise HTTPError(httplib.FORBIDDEN)
 
     return {'status': 'success'}
 
@@ -229,3 +243,31 @@ def osfstorage_download(file_node, payload, node_addon, **kwargs):
             osf_storage_settings.WATERBUTLER_RESOURCE: version.location[osf_storage_settings.WATERBUTLER_RESOURCE],
         },
     }
+
+@must_have_permission('write')
+@decorators.autoload_filenode(must_be='file')
+def osfstorage_add_tag(file_node, **kwargs):
+    data = request.get_json()
+    print data
+    tag = data['tag']
+    if tag not in file_node.tags and not file_node.node.is_registration:
+        new_tag = Tag.load(tag)
+        if not new_tag:
+            new_tag = Tag(_id=tag)
+        new_tag.save()
+        file_node.tags.append(new_tag)
+        file_node.save()
+        return {'status': 'success'}, httplib.OK
+    return {'status': 'failure'}, httplib.BAD_REQUEST
+
+@must_have_permission('write')
+@decorators.autoload_filenode(must_be='file')
+def osfstorage_remove_tag(file_node, **kwargs):
+    data = request.get_json()
+    tag = data['tag']
+    tag = Tag.load(tag)
+    if tag and tag in file_node.tags and not file_node.node.is_registration:
+        file_node.tags.remove(tag)
+        file_node.save()
+        return {'status': 'success'}, httplib.OK
+    return {'status': 'failure'}, httplib.BAD_REQUEST

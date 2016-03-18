@@ -1,4 +1,5 @@
 <%inherit file="project/project_base.mako"/>
+<%include file="project/nodes_privacy.mako"/>
 
 <%
     is_project = node['node_type'] == 'project'
@@ -20,6 +21,9 @@
                     % endif
                 % endif
                 <h2 class="node-title">
+                    % if node['institution']['name'] and enable_institutions:
+                        <img class="img-circle" height="75" width="75" id="instLogo" src="${node['institution']['logo_path']}">
+                    % endif
                     <span id="nodeTitleEditable" class="overflow">${node['title']}</span>
                 </h2>
             </div>
@@ -32,12 +36,12 @@
                     <div class="btn-group">
                     % if not node["is_public"]:
                         <button class='btn btn-default disabled'>Private</button>
-                        % if 'admin' in user['permissions'] and not node['is_pending_embargo']:
-                            <a class="btn btn-default" data-bind="click: makePublic">Make Public</a>
+                        % if 'admin' in user['permissions'] and not node['is_pending_registration'] and not node['embargo_end_date']:
+                            <a class="btn btn-default"  href="#nodesPrivacy" data-toggle="modal" >Make Public</a>
                         % endif
                     % else:
                         % if 'admin' in user['permissions'] and not node['is_registration']:
-                            <a class="btn btn-default" data-bind="click: makePrivate">Make Private</a>
+                            <a class="btn btn-default" href="#nodesPrivacy" data-toggle="modal">Make Private</a>
                         % endif
                         <button class="btn btn-default disabled">Public</button>
                     % endif
@@ -46,14 +50,14 @@
                     <div class="btn-group" style="display: none;" data-bind="visible: true">
 
                         <!-- ko ifnot: inDashboard -->
-                           <a id="addDashboardFolder" data-bind="click: addToDashboard, tooltip: {title: 'Add to Dashboard Folder',
+                           <a id="addDashboardFolder" data-bind="click: addToDashboard, tooltip: {title: 'Add to dashboard folder',
                             placement: 'bottom', container : 'body'}" class="btn btn-default">
                                <i class="fa fa-folder-open"></i>
                                <i class="fa fa-plus"></i>
                            </a>
                         <!-- /ko -->
                         <!-- ko if: inDashboard -->
-                           <a id="removeDashboardFolder" data-bind="click: removeFromDashboard, tooltip: {title: 'Remove from Dashboard Folder',
+                           <a id="removeDashboardFolder" data-bind="click: removeFromDashboard, tooltip: {title: 'Remove from dashboard folder',
                             placement: 'bottom', container : 'body'}" class="btn btn-default">
                                <i class="fa fa-folder-open"></i>
                                <i class="fa fa-minus"></i>
@@ -107,7 +111,7 @@
                     Contributors:
                 % endif
 
-                % if node['anonymous'] and not node['is_public']:
+                % if node['anonymous']:
                     <ol>Anonymous Contributors</ol>
                 % else:
                     <ol>
@@ -119,27 +123,39 @@
                     </ol>
                 % endif
                 </div>
+                % if enable_institutions:
+                    % if user['is_contributor']:
+                        <a class="link-dashed" href="${node['url']}settings/#configureInstitutionAnchor" id="institution">Affiliated Institution:</a>
+                    % else:
+                        Affiliated institution:
+                    % endif
+                    <span class="text-muted"> ${node['institution']['name']} </span>
+                % endif
                 % if node['is_fork']:
                     <p>
                     Forked from <a class="node-forked-from" href="/${node['forked_from_id']}/">${node['forked_from_display_absolute_url']}</a> on
                     <span data-bind="text: dateForked.local, tooltip: {title: dateForked.utc}"></span>
                     </p>
                 % endif
-                % if node['is_registration'] and node['registered_meta']:
-                    <p>Registration Supplement:
-                    % for meta in node['registered_meta']:
-                        <a href="${node['url']}register/${meta['name_no_ext']}">${meta['name_clean']}</a>
+                % if node['is_registration']:
+                    <p>
+                    Registration Supplement:
+                    % for meta_schema in node['registered_schemas']:
+                    <a href="${node['url']}register/${meta_schema['id']}">${meta_schema['schema_name']}</a>
+                      % if len(node['registered_schemas']) > 1:
+                      ,
+                      % endif
                     % endfor
                     </p>
                 % endif
                 % if node['is_registration']:
                     <p>
-                    Date Registered:
+                    Date registered:
                     <span data-bind="text: dateRegistered.local, tooltip: {title: dateRegistered.utc}" class="date node-date-registered"></span>
                     </p>
                 % endif
                     <p>
-                    Date Created:
+                    Date created:
                     <span data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}" class="date node-date-created"></span>
                     % if not node['is_registration']:
                         | Last Updated:
@@ -149,8 +165,8 @@
                 <span data-bind="if: hasIdentifiers()" class="scripted">
                   <br />
                     Identifiers:
-                    DOI <span data-bind="text: doi"></span> |
-                    ARK <span data-bind="text: ark"></span>
+                  DOI <span data-bind="text: doi"></span> |
+                  ARK <span data-bind="text: ark"></span>
                 </span>
                 <span data-bind="if: canCreateIdentifiers()" class="scripted">
                   <!-- ko if: idCreationInProgress() -->
@@ -172,11 +188,24 @@
                 <span data-bind="css: icon"></span>
                 </p>
 
-                % if node['description'] or 'write' in user['permissions']:
+                % if (node['description']) or (not node['description'] and 'write' in user['permissions'] and not node['is_registration']):
                     <p>
                     <span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">${node['description']}</span>
                     </p>
                 % endif
+                % if ('admin' in user['permissions'] or node['license'].get('name', 'No license') != 'No license'):
+                    <p>
+                      <license-picker params="saveUrl: '${node['update_url']}',
+                                              saveMethod: 'PUT',
+                                              license: window.contextVars.node.license,
+                                              saveLicenseKey: 'node_license',
+                                              readonly: ${ node['is_registration'] | sjson, n}">
+                        <span id="license">License:</span>
+                        <span class="text-muted"> ${node['license'].get('name', 'No license')} </span>
+                      </license-picker>
+                    </p>
+                 % endif
+
             </div>
         </div>
 
@@ -191,7 +220,7 @@
 <%include file="project/modal_add_component.mako"/>
 
 % if user['can_comment'] or node['has_comments']:
-    <%include file="include/comment_template.mako"/>
+    <%include file="include/comment_pane_template.mako"/>
 % endif
 
 <div class="row">
@@ -205,6 +234,7 @@
         }'></div>
         %endif
 
+        <!-- Files -->
         <div class="panel panel-default">
             <div class="panel-heading clearfix">
                 <h3 class="panel-title">Files</h3>
@@ -254,15 +284,50 @@
                 </div>
             </div>
             <div class="panel-body" style="display:none">
-                <dl id="citationList" class="citation-list">
-                    <dt>APA</dt>
-                        <dd class="citation-text" data-bind="text: apa"></dd>
-                    <dt>MLA</dt>
-                        <dd class="citation-text" data-bind="text: mla"></dd>
-                    <dt>Chicago</dt>
-                        <dd class="citation-text" data-bind="text: chicago"></dd>
-                </dl>
-                <p><strong>More</strong></p>
+                <div id="citationList" class="m-b-md">
+                    <div class="citation-list">
+                        <div class="f-w-xl">APA</div>
+                            <span data-bind="text: apa"></span>
+                        <div class="f-w-xl m-t-md">MLA</div>
+                            <span data-bind="text: mla"></span>
+                        <div class="f-w-xl m-t-md">Chicago</div>
+                            <span data-bind="text: chicago"></span>
+                        <div data-bind="validationOptions: {insertMessages: false, messagesOnModified: false}, foreach: citations">
+                            <!-- ko if: view() === 'view' -->
+                                <div class="f-w-xl m-t-md">{{name}}
+                                    % if 'admin' in user['permissions'] and not node['is_registration']:
+                                        <!-- ko ifnot: $parent.editing() -->
+                                            <button class="btn btn-default btn-sm" data-bind="click: function() {edit($parent)}"><i class="fa fa-edit"></i> Edit</button>
+                                            <button class="btn btn-danger btn-sm" data-bind="click: function() {removeSelf($parent)}"><i class="fa fa-trash-o"></i> Remove</button>
+                                        <!-- /ko -->
+                                    % endif
+                                </div>
+                                <span data-bind="text: text"></span>
+                            <!-- /ko -->
+                            <!-- ko if: view() === 'edit' -->
+                                <div class="f-w-xl m-t-md">Citation name</div>
+                                <input data-bind="if: name !== undefined, value: name" placeholder="Required" class="form-control"/>
+                                <div class="f-w-xl m-t-sm">Citation</div>
+                                <textarea data-bind="if: text !== undefined, value: text" placeholder="Required" class="form-control" rows="4"></textarea>
+                                <div data-bind="visible: showMessages, css: 'text-danger'">
+                                    <p class="m-t-sm" data-bind="validationMessage: name"></p>
+                                    <p class="m-t-sm" data-bind="validationMessage: text"></p>
+                                </div>
+                                <div class="m-t-md">
+                                    <button class="btn btn-default" data-bind="click: function() {cancel($parent)}">Cancel</button>
+                                    <button class="btn btn-success" data-bind="click: function() {save($parent)}">Save</button>
+                                </div>
+                            <!-- /ko -->
+                        </div>
+                    </div>
+                    ## Disable custom citations for now
+                    ## % if 'admin' in user['permissions'] and not node['is_registration']:
+                    ##     <!-- ko ifnot: editing() -->
+                    ##     <button data-bind="ifnot: editing(), click: addAlternative" class="btn btn-default btn-sm m-t-md"><i class="fa fa-plus"></i> Add Citation</button>
+                    ##     <!-- /ko -->
+                    ## % endif
+                </div>
+                <p><strong>Get more citations</strong></p>
                 <div id="citationStylePanel" class="citation-picker">
                     <input id="citationStyleInput" type="hidden" />
                 </div>
@@ -356,7 +421,6 @@ ${parent.javascript_bottom()}
     // Hack to allow mako variables to be accessed to JS modules
     window.contextVars = $.extend(true, {}, window.contextVars, {
         currentUser: {
-            name: ${ user_full_name | sjson, n },
             canComment: ${ user['can_comment'] | sjson, n },
             canEdit: ${ user['can_edit'] | sjson, n }
         },

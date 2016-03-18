@@ -1,0 +1,77 @@
+{
+    "name": "EGAP Project",
+    "version": 2,
+    "pages": [{
+        "id": "page1",
+        "title": "General",
+        "questions": [{
+            "qid": "name",
+            "title": "Name",
+            "type": "string",
+            "format": "text"
+        }, {
+            "qid": "position",
+            "title": "Position",
+            "type": "string",
+            "format": "text"
+        }, {
+            "qid": "affiliation",
+            "title": "Affiliation",
+            "type": "string",
+            "format": "text"
+        }, {
+            "qid": "contactemailaddress",
+            "title": "Contact email address",
+            "type": "string",
+            "format": "text"
+        }, {
+            "qid": "projecttitle",
+            "title": "Title of Project",
+            "type": "string",
+            "format": "text"
+        }, {
+            "qid": "authors",
+            "title": "Authors",
+            "type": "string",
+            "format": "text"
+        }, {
+            "qid": "background",
+            "title": "Background and explanation of rationale",
+            "type": "string",
+            "format": "textarea",
+            "description": "Brief description of goals of project"
+        }, {
+            "qid": "hypotheseswhat",
+            "title": "What are the hypotheses to be tested?",
+            "type": "string",
+            "format": "textarea",
+            "description": "Please list the hypotheses including hypotheses on heterogeneous effects"
+        }, {
+            "qid": "hypotheses",
+            "title": "How will these hypotheses be tested?",
+            "type": "string",
+            "format": "textarea",
+            "description": "Describe formal tests"
+        }, {
+            "qid": "yesno1",
+            "title": "Has this research received Insitutional Review Board (IRB) or ethics committee approval?",
+            "type": "choose",
+            "options": ["Yes", "No"]
+        }, {
+            "qid": "yesno2",
+            "title": "Was a power analysis conducted prior to data collection?",
+            "type": "choose",
+            "options": ["Yes", "No"]
+        }, {
+            "qid": "yesno3",
+            "title": "Did any of the research team receive remuneration from the implementing agency for taking part in this research?",
+            "type": "choose",
+            "options": ["Yes", "No"]
+        }, {
+            "qid": "yesno4",
+            "title": "If relevant, is there an advance agreement with the implementation group that all results can be published?",
+            "type": "choose",
+            "options": ["Yes", "No"]
+        }]
+    }]
+}

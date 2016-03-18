@@ -53,6 +53,7 @@ var ApplicationData = oop.defclass({
         this.clientSecret = ko.observable(attributes.client_secret);
         this.webDetailUrl = data.links ? data.links.html : undefined;
         this.apiDetailUrl = data.links ? data.links.self : undefined;
+        this.apiResetUrl = data.links ? data.links.reset : undefined;
 
         // Enable value validation in form
         this.validated =  ko.validatedObservable(this);
@@ -137,6 +138,10 @@ var ApplicationDataClient = oop.defclass({
     deleteOne: function (appData) {
         var url = appData.apiDetailUrl;
         return $osf.ajaxJSON('DELETE', url, {isCors: true});
+    },
+    resetOne: function (appData){
+        var url = appData.apiResetUrl;
+        return this._sendData(appData, url, 'POST');
     },
     unserialize: function (apiData) {
         var result;
@@ -377,6 +382,44 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
                 confirm:{
                     label:'Deactivate',
                     className:'btn-danger'
+                }
+            }
+        });
+    },
+    resetSecret: function () {
+        var appData = this.appData();
+        var self = this;
+        bootbox.confirm({
+            title: 'Reset client secret?',
+            message: language.apiOauth2Application.resetSecretConfirm,
+            callback: function (confirmed) {
+                if (confirmed){
+                    var request = self.client.resetOne(appData);
+                    request.done(function (dataObj) {
+                        self.appData().clientSecret(dataObj.clientSecret());
+                        self.originalValues(self.appData().serialize());
+                        self.changeMessage(
+                            language.apiOauth2Application.dataUpdated,
+                            'text-success',
+                            5000);
+                    }.bind(self));
+                    request.fail(function (xhr, status, error) {
+                        $osf.growl('Error',
+                            language.apiOauth2Application.resetSecretError,
+                            'danger');
+
+                        Raven.captureMessage('Error resetting instance secret', {
+                            url: appData.apiResetUrl,
+                            status: status,
+                            error: error
+                        });
+                    }.bind(self));
+                }
+            },
+            buttons: {
+                confirm: {
+                    label: 'Reset Secret',
+                    className: 'btn-danger'
                 }
             }
         });

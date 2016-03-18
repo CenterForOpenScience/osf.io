@@ -343,14 +343,25 @@ MEETING_DATA = {
         'talk': True,
     },
     'PsiChiRepository': {
-        'name': 'Psi Chi Repository',
-        'info_url': None,
+        'name': 'Psi Chi',
+        'info_url': 'http://psichi.org',
         'logo_url': None,
         'active': True,
         'admins': [],
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'field_names': {
+            'submission1': 'measures',
+            'submission2': 'materials',
+            'submission1_plural': 'measures/scales',
+            'submission2_plural': 'study materials',
+            'meeting_title_type': 'Repository',
+            'add_submission': 'materials',
+            'mail_subject': 'Title',
+            'mail_message_body': 'Measure or material short description',
+            'mail_attachment': 'Your measure/scale or material file(s)'
+        }
     },
     'R2RC': {
         'name': 'Right to Research Coalition',
@@ -422,22 +433,52 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
+    'TESS': {
+        'name': 'Time-sharing Experiments for the Social Sciences',
+        'info_url': 'http://www.tessexperiments.org',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': False,
+        'talk': True,
+        'field_names': {
+            'submission1': 'poster',
+            'submission2': 'study',
+            'submission1_plural': 'posters',
+            'submission2_plural': 'studies',
+            'meeting_title_type': 'Studies',
+            'add_submission': 'studies',
+        }
+    },
 }
 
 
+# NOTE: admins field is ignored
 def populate_conferences():
     for meeting, attrs in MEETING_DATA.iteritems():
+        custom_fields = attrs.pop('field_names', {})
+
         conf = Conference(
             endpoint=meeting, **attrs
         )
+        conf.field_names.update(custom_fields)
         try:
             conf.save()
         except ModularOdmException:
-            print('{0} Conference already exists. Updating existing record...'.format(meeting))
             conf = Conference.find_one(Q('endpoint', 'eq', meeting))
             for key, value in attrs.items():
-                setattr(conf, key, value)
-            conf.save()
+                if isinstance(value, dict):
+                    current = getattr(conf, key)
+                    current.update(value)
+                    setattr(conf, key, current)
+                else:
+                    setattr(conf, key, value)
+            changed_fields = conf.save()
+            if changed_fields:
+                print('Updated {}: {}'.format(meeting, changed_fields))
+        else:
+            print('Added new Conference: {}'.format(meeting))
 
 
 if __name__ == '__main__':

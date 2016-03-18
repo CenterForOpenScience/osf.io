@@ -265,70 +265,6 @@ class TestAUser(OsfTestCase):
         # URL is /forgotpassword
         assert_equal(res.request.path, web_url_for('forgot_password_post'))
 
-
-class TestRegistrations(OsfTestCase):
-
-    def setUp(self):
-        super(TestRegistrations, self).setUp()
-        ensure_schemas()
-        self.user = AuthUserFactory()
-        self.auth = self.user.auth
-        self.original = ProjectFactory(creator=self.user, is_public=True)
-        # A registration
-        self.project = RegistrationFactory(
-            creator=self.user,
-            project=self.original,
-            user=self.user,
-        )
-
-    def test_can_see_contributor(self):
-        # Goes to project's page
-        res = self.app.get(self.project.url, auth=self.auth).maybe_follow()
-        # Settings is not in the project navigation bar
-        subnav = res.html.select('#projectSubnav')[0]
-        assert_in('Contributors', subnav.text)
-
-    def test_sees_registration_templates(self):
-        # Browse to original project
-        res = self.app.get(
-            '{}register/'.format(self.original.url),
-            auth=self.auth
-        ).maybe_follow()
-
-        # Find registration options
-        options = res.html.find(
-            'select', id='select-registration-template'
-        ).find_all('option')
-
-        # Should see number of options equal to number of registration
-        # templates, plus one for 'Select...'
-        assert_equal(
-            len(options),
-            len(OSF_META_SCHEMAS) + 1
-        )
-
-        # First option should have empty value
-        assert_equal(options[0].get('value'), '')
-
-        # All registration templates should be listed in <option>
-        option_values = [
-            option.get('value')
-            for option in options[1:]
-        ]
-        for schema in OSF_META_SCHEMAS:
-            assert_in(
-                schema['name'],
-                option_values
-            )
-
-    def test_registration_nav_not_seen(self):
-        # Goes to project's page
-        res = self.app.get(self.project.url, auth=self.auth).maybe_follow()
-        # Settings is not in the project navigation bar
-        subnav = res.html.select('#projectSubnav')[0]
-        assert_not_in('Registrations', subnav.text)
-
-
 class TestComponents(OsfTestCase):
 
     def setUp(self):
@@ -395,7 +331,7 @@ class TestComponents(OsfTestCase):
             self.component.url + 'settings/',
             auth=self.user.auth,
         ).maybe_follow()
-        assert_in('Configure Commenting', res)
+        assert_in('Commenting', res)
 
     def test_cant_configure_comments_if_not_admin(self):
         non_admin = AuthUserFactory()
@@ -409,18 +345,11 @@ class TestComponents(OsfTestCase):
             self.component.url + 'settings/',
             auth=non_admin.auth
         ).maybe_follow()
-        assert_not_in('Configure commenting', res)
+        assert_not_in('Commenting', res)
 
     def test_components_should_have_component_list(self):
         res = self.app.get(self.component.url, auth=self.user.auth)
         assert_in('Components', res)
-
-    def test_does_show_registration_button(self):
-        # No registrations on the component
-        url = self.component.web_url_for('node_registrations')
-        res = self.app.get(url, auth=self.user.auth)
-        # New registration button is hidden
-        assert_in('New Registration', res)
 
 
 class TestPrivateLinkView(OsfTestCase):

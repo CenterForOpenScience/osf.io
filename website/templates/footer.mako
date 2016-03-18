@@ -21,7 +21,7 @@
             <div class="col-sm-3 col-md-2">
                 <h4>Help</h4>
                 <ul>
-                    <li><a href="/getting-started">Getting Started</a></li>
+                    <li><a href="/getting-started">Getting started</a></li>
                     <li><a href="/faq">FAQ</a></li>
                     <li><script type="text/javascript">document.write("<n uers=\"znvygb:fhccbeg@bfs.vb\" ery=\"absbyybj\">Uryc/Fhccbeg</n>".replace(/[a-zA-Z]/g,function(e){return String.fromCharCode((e<="Z"?90:122)>=(e=e.charCodeAt(0)+13)?e:e-26)}));</script><noscript>Help Desk: <span class="obfuscated-email-noscript"><strong><u>supp<span style="display:none;">null</span>ort@<span style="display:none;">null</span>osf.<span style="display:none;">null</span>io</u></strong></span></noscript></li>
 
@@ -29,11 +29,11 @@
             </div>
             <div class="col-sm-3 col-md-2">
                 <h4>Socialize</h4>
-                <a href="http://twitter.com/OSFramework"><i class="fa fa-twitter fa-2x"></i></a>
-                <a href="https://www.facebook.com/OpenScienceFramework"><i class="fa fa-facebook fa-2x"></i></a>
-                <a href="https://groups.google.com/forum/#!forum/openscienceframework"><i class="fa fa-group fa-2x"></i></a>
-                <a href="https://www.github.com/centerforopenscience"><i class="fa fa-github fa-2x"></i></a>
-                <a href="https://plus.google.com/103557785986281627994" rel="publisher"><i class="fa fa-google-plus fa-2x"></i></a>
+                <a href="http://twitter.com/OSFramework" aria-label="Twitter"><i class="fa fa-twitter fa-2x"></i></a>
+                <a href="https://www.facebook.com/OpenScienceFramework" aria-label="Facebook"><i class="fa fa-facebook fa-2x"></i></a>
+                <a href="https://groups.google.com/forum/#!forum/openscienceframework" aria-label="Google Group"><i class="fa fa-group fa-2x"></i></a>
+                <a href="https://www.github.com/centerforopenscience" aria-label="GitHub"><i class="fa fa-github fa-2x"></i></a>
+                <a href="https://plus.google.com/103557785986281627994" aria-label="Google Plus" rel="publisher"><i class="fa fa-google-plus fa-2x"></i></a>
             </div> <!-- column -->
         </div>
     </div>

@@ -1,5 +1,5 @@
-var SignUp = require('../signUp.js');
-new SignUp('#signUpScope', '/api/v1/register/');
+var SignUp = require('js/signUp');
+new SignUp('#signUpScope', window.contextVars.registerUrl);
 var TweenLite = require('TweenLite');
 require('EasePack');
 require('vendor/youtube');

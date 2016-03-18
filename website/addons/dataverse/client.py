@@ -27,9 +27,12 @@ def connect_from_settings(node_settings):
         return None
 
 
-def connect_or_401(host, token):
+def connect_or_error(host, token):
     try:
-        return _connect(host, token)
+        connection = _connect(host, token)
+        if not connection:
+            raise HTTPError(http.SERVICE_UNAVAILABLE)
+        return connection
     except UnauthorizedError:
         raise HTTPError(http.UNAUTHORIZED)
 
@@ -41,7 +44,7 @@ def connect_from_settings_or_401(node_settings):
     host = node_settings.external_account.oauth_key
     token = node_settings.external_account.oauth_secret
 
-    return connect_or_401(host, token)
+    return connect_or_error(host, token)
 
 
 def get_files(dataset, published=False):

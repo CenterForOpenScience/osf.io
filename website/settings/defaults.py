@@ -27,6 +27,9 @@ ASSET_HASH_PATH = os.path.join(APP_PATH, 'webpack-assets.json')
 ROOT = os.path.join(BASE_PATH, '..')
 BCRYPT_LOG_ROUNDS = 12
 
+with open(os.path.join(APP_PATH, 'package.json'), 'r') as fobj:
+    VERSION = json.load(fobj)['version']
+
 # Hours before email confirmation tokens expire
 EMAIL_TOKEN_EXPIRATION = 24
 CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'static', 'vendor', 'bower_components', 'styles')
@@ -88,20 +91,30 @@ USE_CDN_FOR_CLIENT_LIBS = True
 USE_EMAIL = True
 FROM_EMAIL = 'openscienceframework-noreply@osf.io'
 SUPPORT_EMAIL = 'support@osf.io'
+
+# SMTP Settings
 MAIL_SERVER = 'smtp.sendgrid.net'
 MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = ''  # Set this in local.py
 
-# Mandrill
-MANDRILL_USERNAME = None
-MANDRILL_PASSWORD = None
-MANDRILL_MAIL_SERVER = None
+# OR, if using Sendgrid's API
+SENDGRID_API_KEY = None
 
 # Mailchimp
 MAILCHIMP_API_KEY = None
 MAILCHIMP_WEBHOOK_SECRET_KEY = 'CHANGEME'  # OSF secret key to ensure webhook is secure
 ENABLE_EMAIL_SUBSCRIPTIONS = True
 MAILCHIMP_GENERAL_LIST = 'Open Science Framework General'
+
+#Triggered emails
+OSF_HELP_LIST = 'Open Science Framework Help'
+WAIT_BETWEEN_MAILS = timedelta(days=7)
+NO_ADDON_WAIT_TIME = timedelta(weeks=8)
+NO_LOGIN_WAIT_TIME = timedelta(weeks=4)
+WELCOME_OSF4M_WAIT_TIME = timedelta(weeks=2)
+NO_LOGIN_OSF4M_WAIT_TIME = timedelta(weeks=6)
+NEW_PUBLIC_PROJECT_WAIT_TIME = timedelta(hours=24)
+WELCOME_OSF4M_WAIT_TIME_GRACE = timedelta(days=12)
 
 # TODO: Override in local.py
 MAILGUN_API_KEY = None
@@ -149,7 +162,7 @@ PROFILE_IMAGE_MEDIUM = 40
 PROFILE_IMAGE_SMALL = 20
 
 # Conference options
-CONFERNCE_MIN_COUNT = 5
+CONFERENCE_MIN_COUNT = 5
 
 WIKI_WHITELIST = {
     'tags': [
@@ -182,6 +195,8 @@ with open(os.path.join(ROOT, 'addons.json')) as fp:
     addon_settings = json.load(fp)
     ADDONS_REQUESTED = addon_settings['addons']
     ADDONS_ARCHIVABLE = addon_settings['addons_archivable']
+    ADDONS_COMMENTABLE = addon_settings['addons_commentable']
+    ADDONS_BASED_ON_IDS = addon_settings['addons_based_on_ids']
 
 ADDON_CATEGORIES = [
     'documentation',
@@ -204,6 +219,9 @@ SYSTEM_ADDED_ADDONS = {
 PIWIK_HOST = None
 PIWIK_ADMIN_TOKEN = None
 PIWIK_SITE_ID = None
+
+KEEN_PROJECT_ID = None
+KEEN_WRITE_KEY = None
 
 SENTRY_DSN = None
 SENTRY_DSN_JS = None
@@ -257,7 +275,7 @@ MFR_SERVER_URL = 'http://localhost:7778'
 ###### ARCHIVER ###########
 ARCHIVE_PROVIDER = 'osfstorage'
 
-MAX_ARCHIVE_SIZE = 1024 ** 3  # == math.pow(1024, 3) == 1 GB
+MAX_ARCHIVE_SIZE = 5 * 1024 ** 3  # == math.pow(1024, 3) == 1 GB
 MAX_FILE_SIZE = MAX_ARCHIVE_SIZE  # TODO limit file size?
 
 ARCHIVE_TIMEOUT_TIMEDELTA = timedelta(1)  # 24 hours
@@ -277,13 +295,14 @@ CELERY_RESULT_BACKEND = 'amqp://'
 
 #  Modules to import when celery launches
 CELERY_IMPORTS = (
-    'framework.tasks',
-    'framework.tasks.signals',
+    'framework.celery_tasks',
+    'framework.celery_tasks.signals',
     'framework.email.tasks',
     'framework.analytics.tasks',
     'website.mailchimp_utils',
     'website.notifications.tasks',
-    'website.archiver.tasks'
+    'website.archiver.tasks',
+    'website.search.search'
 )
 
 # celery.schedule will not be installed when running invoke requirements the first time.
@@ -306,6 +325,21 @@ else:
         },
     }
 
+WATERBUTLER_JWE_SALT = 'yusaltydough'
+WATERBUTLER_JWE_SECRET = 'CirclesAre4Squares'
+
 WATERBUTLER_JWT_SECRET = 'ILiekTrianglesALot'
 WATERBUTLER_JWT_ALGORITHM = 'HS256'
 WATERBUTLER_JWT_EXPIRATION = 15
+
+DRAFT_REGISTRATION_APPROVAL_PERIOD = datetime.timedelta(days=10)
+assert (DRAFT_REGISTRATION_APPROVAL_PERIOD > EMBARGO_END_DATE_MIN), 'The draft registration approval period should be more than the minimum embargo end date.'
+
+PREREG_ADMIN_TAG = "prereg_admin"
+
+ENABLE_INSTITUTIONS = False
+
+ENABLE_VARNISH = False
+ENABLE_ESI = False
+VARNISH_SERVERS = []  # This should be set in local.py or cache invalidation won't work
+ESI_MEDIA_TYPES = {'application/vnd.api+json', 'application/json'}

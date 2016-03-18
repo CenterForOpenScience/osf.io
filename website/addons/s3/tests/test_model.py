@@ -2,7 +2,7 @@ from nose.tools import *  # noqa
 import mock
 from boto.s3.connection import *  # noqa
 
-from tests.base import OsfTestCase
+from tests.base import OsfTestCase, get_default_metaschema
 from tests.factories import UserFactory, ProjectFactory
 
 from framework.auth import Auth
@@ -177,9 +177,8 @@ class TestCallbacks(OsfTestCase):
     @mock.patch('website.archiver.tasks.archive')
     def test_does_not_get_copied_to_registrations(self, mock_archive):
         registration = self.project.register_node(
-            schema=None,
+            schema=get_default_metaschema(),
             auth=Auth(user=self.project.creator),
-            template='Template1',
-            data='hodor'
+            data='hodor',
         )
         assert_false(registration.has_addon('s3'))

@@ -1,6 +1,6 @@
 import celery
 
-from framework.tasks import handlers
+from framework.celery_tasks import handlers
 
 from website.archiver import utils as archiver_utils
 from website.archiver import (
@@ -43,10 +43,10 @@ def archive_callback(dst):
         return
     if root_job.sent:
         return
-    root_job.sent = True
-    root_job.save()
     if root_job.success:
-        dst.sanction.ask(root.active_contributors())
+        # Prevent circular import with app.py
+        from website.archiver import tasks
+        tasks.archive_success.delay(dst_pk=root._id, job_pk=root_job._id)
     else:
         archiver_utils.handle_archive_fail(
             ARCHIVER_UNCAUGHT_ERROR,

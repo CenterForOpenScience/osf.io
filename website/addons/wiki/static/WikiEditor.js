@@ -14,15 +14,19 @@ require('imports?Markdown=pagedown-ace-converter!pagedown-ace-editor');
  * Example: <div data-bind="ace: currentText" id="editor"></div>
  */
 var editor;
+
 ko.bindingHandlers.ace = {
     init: function (element, valueAccessor) {
         editor = ace.edit(element.id);  // jshint ignore: line
+        editor.renderer.setShowGutter(true);
+        editor.renderer.setOption('showLineNumbers', true);
 
         // Updates the view model based on changes to the editor
         editor.getSession().on('change', function () {
             valueAccessor()(editor.getValue());
         });
     },
+
     update: function (element, valueAccessor) {
         var content = editor.getValue();        // Content of ace editor
         var value = ko.unwrap(valueAccessor()); // Value from view model
@@ -44,6 +48,7 @@ function ViewModel(url, viewText) {
     self.activeUsers = ko.observableArray([]);
     self.status = ko.observable('connecting');
     self.throttledStatus = ko.observable(self.status());
+    self.autocom = ko.observable(false);
 
     self.displayCollaborators = ko.computed(function() {
        return self.activeUsers().length > 1;
@@ -113,9 +118,9 @@ function ViewModel(url, viewText) {
 
     self.wikisDiffer = function(wiki1, wiki2) {
         // Handle inconsistencies in newline notation
-        var clean1 = typeof wiki1 === 'string' ?
+        var clean1 = typeof wiki1 === 'string' ? 
             wiki1.replace(/(\r\n|\n|\r)/gm, '\n') : '';
-        var clean2 = typeof wiki2 === 'string' ?
+         var clean2 = typeof wiki2 === 'string' ? 
             wiki2.replace(/(\r\n|\n|\r)/gm, '\n') : '';
 
         return clean1 !== clean2;
@@ -161,6 +166,12 @@ function ViewModel(url, viewText) {
             return 'There are unsaved changes to your wiki. If you exit ' +
                 'the page now, those changes may be lost.';
         }
+    });
+
+    $(document).ready(function() {
+        $('#autocom').on('change', function() {
+            self.autocom($(this).is(':checked'));
+        });
     });
 
 }

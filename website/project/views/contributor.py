@@ -137,81 +137,6 @@ def get_contributors_from_parent(auth, node, **kwargs):
     return {'contributors': contribs}
 
 
-@must_be_valid_project  # returns project
-@must_be_contributor
-@must_not_be_registration
-def project_before_remove_contributor(auth, node, **kwargs):
-
-    contributor = User.load(request.json.get('id'))
-
-    # Forbidden unless user is removing herself
-    if not node.has_permission(auth.user, 'admin'):
-        if auth.user != contributor:
-            raise HTTPError(http.FORBIDDEN)
-
-    if len(node.visible_contributor_ids) == 1 \
-            and node.visible_contributor_ids[0] == contributor._id:
-        raise HTTPError(http.FORBIDDEN, data={
-            'message_long': 'Must have at least one bibliographic contributor'
-        })
-
-    prompts = node.callback(
-        'before_remove_contributor', removed=contributor,
-    )
-
-    if auth.user == contributor:
-        prompts.insert(
-            0,
-            'Are you sure you want to remove yourself from this project?'
-        )
-
-    return {'prompts': prompts}
-
-
-@must_be_valid_project  # returns project
-@must_be_contributor
-@must_not_be_registration
-def project_removecontributor(auth, node, **kwargs):
-
-    contributor = User.load(request.json['id'])
-    if contributor is None:
-        raise HTTPError(http.BAD_REQUEST)
-
-    # Forbidden unless user is removing herself
-    if not node.has_permission(auth.user, 'admin'):
-        if auth.user != contributor:
-            raise HTTPError(http.FORBIDDEN)
-
-    if len(node.visible_contributor_ids) == 1 \
-            and node.visible_contributor_ids[0] == contributor._id:
-        raise HTTPError(http.FORBIDDEN, data={
-            'message_long': 'Must have at least one bibliographic contributor'
-        })
-
-    outcome = node.remove_contributor(
-        contributor=contributor, auth=auth,
-    )
-
-    if outcome:
-        if auth.user == contributor:
-            status.push_status_message('Removed self from project', kind='success', trust=False)
-            return {'redirectUrl': web_url_for('dashboard')}
-        status.push_status_message('Contributor removed', kind='success', trust=False)
-        return {}
-
-    raise HTTPError(
-        http.BAD_REQUEST,
-        data={
-            'message_long': (
-                '{0} must have at least one contributor with admin '
-                'rights'.format(
-                    node.project_or_component.capitalize()
-                )
-            )
-        }
-    )
-
-
 def deserialize_contributors(node, user_dicts, auth, validate=False):
     """View helper that returns a list of User objects from a list of
     serialized users (dicts). The users in the list may be registered or
@@ -292,6 +217,8 @@ def project_contributors_post(auth, node, **kwargs):
 
     user_dicts = request.json.get('users')
     node_ids = request.json.get('node_ids')
+    if node._id in node_ids:
+        node_ids.remove(node._id)
 
     if user_dicts is None or node_ids is None:
         raise HTTPError(http.BAD_REQUEST)
@@ -323,7 +250,13 @@ def project_contributors_post(auth, node, **kwargs):
     # Reconnect listeners
     unreg_contributor_added.connect(finalize_invitation)
 
-    return {'status': 'success'}, 201
+    return {
+        'status': 'success',
+        'contributors': profile_utils.serialize_contributors(
+            node.visible_contributors,
+            node=node,
+        )
+    }, 201
 
 
 @no_auto_transaction
@@ -369,6 +302,59 @@ def project_manage_contributors(auth, node, **kwargs):
             trust=False
         )
     # Else stay on current page
+    return {}
+
+
+@must_be_valid_project  # returns project
+@must_be_contributor
+@must_not_be_registration
+def project_remove_contributor(auth, **kwargs):
+    """Remove a contributor from a list of nodes.
+
+    :param Auth auth: Consolidated authorization
+    :raises: HTTPError(400) if contributors to be removed are not in list
+        or if no admin users would remain after changes were applied
+
+    """
+    contributor_id = request.get_json()['contributorID']
+    node_ids = request.get_json()['nodeIDs']
+    contributor = User.load(contributor_id)
+    if contributor is None:
+        raise HTTPError(http.BAD_REQUEST, data={'message_long': 'Contributor not found.'})
+
+    for node_id in node_ids:
+        # Update permissions and order
+        node = Node.load(node_id)
+
+        # Forbidden unless user is removing herself
+        if not node.has_permission(auth.user, 'admin'):
+            if auth.user != contributor:
+                raise HTTPError(http.FORBIDDEN)
+
+        if len(node.visible_contributor_ids) == 1 \
+                and node.visible_contributor_ids[0] == contributor._id:
+            raise HTTPError(http.FORBIDDEN, data={
+                'message_long': 'Must have at least one bibliographic contributor'
+            })
+
+        nodes_removed = node.remove_contributor(contributor, auth=auth)
+        # remove_contributor returns false if there is not one admin or visible contributor left after the move.
+        if not nodes_removed:
+            raise HTTPError(http.BAD_REQUEST, data={
+                'message_long': 'Could not remove contributor.'})
+
+        # If user has removed herself from project, alert; redirect to user
+        # dashboard if node is private, else node dashboard
+        if not node.is_contributor(auth.user):
+            status.push_status_message(
+                'You have removed yourself as a contributor from this project',
+                kind='success',
+                trust=False
+            )
+            if node.is_public:
+                return {'redirectUrl': node.url}
+            return {'redirectUrl': web_url_for('dashboard')}
+        # Else stay on current page
     return {}
 
 
@@ -483,7 +469,7 @@ def send_claim_email(email, user, node, notify=True, throttle=24 * 3600):
 
 
 @contributor_added.connect
-def notify_added_contributor(node, contributor, throttle=None):
+def notify_added_contributor(node, contributor, auth=None, throttle=None):
     throttle = throttle or settings.CONTRIBUTOR_ADDED_EMAIL_THROTTLE
 
     # Exclude forks and templates because the user forking/templating the project gets added
@@ -505,7 +491,8 @@ def notify_added_contributor(node, contributor, throttle=None):
             contributor.username,
             mails.CONTRIBUTOR_ADDED,
             user=contributor,
-            node=node
+            node=node,
+            referrer_name=auth.user.fullname if auth else ''
         )
 
         contributor.contributor_added_email_records[node._id]['last_sent'] = get_timestamp()

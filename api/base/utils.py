@@ -17,6 +17,15 @@ from api.base.exceptions import Gone
 TRUTHY = set(('t', 'T', 'true', 'True', 'TRUE', '1', 1, True))
 FALSY = set(('f', 'F', 'false', 'False', 'FALSE', '0', 0, 0.0, False))
 
+UPDATE_METHODS = ['PUT', 'PATCH']
+
+def is_bulk_request(request):
+    """
+    Returns True if bulk request.  Can be called as early as the parser.
+    """
+    content_type = request.content_type
+    return 'ext=bulk' in content_type
+
 def is_truthy(value):
     return value in TRUTHY
 
@@ -28,10 +37,11 @@ def get_user_auth(request):
     authenticated user attached to it.
     """
     user = request.user
+    private_key = request.query_params.get('view_only', None)
     if user.is_anonymous():
-        auth = Auth(None)
+        auth = Auth(None, private_key=private_key)
     else:
-        auth = Auth(user)
+        auth = Auth(user, private_key=private_key)
     return auth
 
 
@@ -103,10 +113,5 @@ def waterbutler_url_for(request_type, provider, path, node_id, token, obj_args=N
     url.args.update(query)
     return url.url
 
-def add_dev_only_items(items, dev_only_items):
-    """Add some items to a dictionary if in ``DEV_MODE``.
-    """
-    items = items.copy()
-    if website_settings.DEV_MODE:
-        items.update(dev_only_items)
-    return items
+def extend_querystring_params(url, params):
+    return furl.furl(url).add(args=params).url

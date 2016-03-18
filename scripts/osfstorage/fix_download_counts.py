@@ -64,6 +64,17 @@ def do_migration():
         # 2015 Sept 18
         current_version_keys = get_keys_after(current_version, *CUT_OFF_DATE)
 
+        if current_version_keys:
+            if not database['pagecounters'].find_one({'_id': ':'.join(['download', nid, fid, str(version - 1)])}):
+                previous_version = {'_id': ':'.join(['download', nid, fid, str(version - 1)]), 'date': {}, 'total': 0, 'unique': 0}
+                for key in current_version_keys:
+                    date = current_version['date'][key]
+                    previous_version['date'][key] = date
+                    previous_version['total'] += date['total']
+                    previous_version['unique'] += date['unique']
+
+                database[NEW_COLLECTION].insert(previous_version)
+
         for key in current_version_keys:
             date = current_version['date'].pop(key)
             current_version['total'] -= date['total']

@@ -143,7 +143,7 @@ def search_projects_by_title(**kwargs):
     if include_contributed == "yes":
         my_projects = Node.find(
             matching_title &
-            Q('contributors', 'contains', user._id)  # user is a contributor
+            Q('contributors', 'eq', user._id)  # user is a contributor
         ).limit(max_results)
         my_project_count = my_project_count
 
