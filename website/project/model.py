@@ -665,19 +665,38 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         {
             'unique': False,
             'key_or_list': [
+                ('date_modified', pymongo.DESCENDING),
+            ]
+        },
+        {
+            'unique': False,
+            'key_or_list': [
                 ('tags.$', pymongo.ASCENDING),
                 ('is_public', pymongo.ASCENDING),
                 ('is_deleted', pymongo.ASCENDING),
+                ('is_institution', pymongo.ASCENDING),
             ]
         },
         {
             'unique': False,
             'key_or_list': [
                 ('is_deleted', pymongo.ASCENDING),
-                ('is_folder', pymongo.ASCENDING),
+                ('is_collection', pymongo.ASCENDING),
                 ('is_public', pymongo.ASCENDING),
+                ('is_institution', pymongo.ASCENDING),
                 ('is_registration', pymongo.ASCENDING),
                 ('date_modified', pymongo.ASCENDING),
+            ]
+        },
+        {
+            'unique': False,
+            'key_or_list': [
+                ('is_deleted', pymongo.ASCENDING),
+                ('is_collection', pymongo.ASCENDING),
+                ('is_public', pymongo.ASCENDING),
+                ('is_institution', pymongo.ASCENDING),
+                ('is_registration', pymongo.ASCENDING),
+                ('contributors', pymongo.ASCENDING),
             ]
         },
     ]
@@ -792,7 +811,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     file_guid_to_share_uuids = fields.DictionaryField()
 
     creator = fields.ForeignField('user', index=True)
-    contributors = fields.ForeignField('user', list=True)
+    contributors = fields.ForeignField('user', index=True, list=True)
     users_watching_node = fields.ForeignField('user', list=True, backref='watched')
 
     logs = fields.ForeignField('nodelog', list=True, backref='logged')
