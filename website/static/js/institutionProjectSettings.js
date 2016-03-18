@@ -7,7 +7,7 @@ var $osf = require('js/osfHelpers');
 
 var ViewModel = function(data) {
     var self = this;
-    self.primaryInstitution = ko.observable('None');
+    self.primaryInstitution = ko.observable('Loading...');
     self.institutionHref = ko.observable('');
     self.availableInstitutions = ko.observable(false);
     self.selectedInstitution = ko.observable();

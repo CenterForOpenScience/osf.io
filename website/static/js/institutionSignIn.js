@@ -8,6 +8,7 @@ var ViewModel = function() {
     var self = this;
     self.instNames = ko.observableArray([]);
     self.selectedInst = ko.observable();
+    self.loading = ko.observable(true);
     self.insts = {};
     self.fetchInstitutions = function() {
         var url = window.contextVars.apiV2Prefix + 'institutions/';
@@ -24,7 +25,7 @@ var ViewModel = function() {
             self.instNames(
                 validInsts.map(function(item){
                     return item.attributes.name;
-                })
+                }).sort()
             );
             validInsts.forEach(function(item){
                 var name = item.attributes.name;
@@ -39,6 +40,7 @@ var ViewModel = function() {
                     self.selectedInst(self.insts[instId]);
                 }
             }
+            self.loading(false);
         }).fail(function (xhr, status, error) {
             Raven.captureMessage('Unable to fetch institutions', {
                 url: url,
