@@ -9,6 +9,12 @@
     % endif
 </div>
 
+<div id="more_link">
+    % if more:
+        <a href="${node['url']}${short_name}/">Read More</a>
+    % endif
+</div>
+
 <% import json %>
 <script>
     window.contextVars = $.extend(true, {}, window.contextVars, {

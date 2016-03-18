@@ -10,10 +10,8 @@ from dateutil.parser import parse as parse_date
 import urlparse
 from collections import OrderedDict
 import warnings
-import requests
 
 import pytz
-from flask import request
 from django.core.urlresolvers import reverse
 
 from modularodm import Q
@@ -24,8 +22,6 @@ from modularodm.exceptions import ValidationValueError
 
 from api.base.utils import absolute_reverse
 from framework import status
-
-
 from framework.mongo import ObjectId
 from framework.mongo import StoredObject
 from framework.mongo import validators
@@ -33,7 +29,7 @@ from framework.addons import AddonModelMixin
 from framework.auth import get_user, User, Auth
 from framework.auth import signals as auth_signals
 from framework.exceptions import PermissionsError
-from framework.guid.model import GuidStoredObject
+from framework.guid.model import GuidStoredObject, Guid
 from framework.auth.utils import privacy_info_handle
 from framework.analytics import tasks as piwik_tasks
 from framework.mongo.utils import to_mongo_key, unique_on
@@ -55,7 +51,7 @@ from website.exceptions import (
 )
 from website.citations.utils import datetime_to_csl
 from website.identifiers.model import IdentifierMixin
-from website.files.models.base import File, StoredFileNode
+from website.files.models.base import StoredFileNode
 from website.util.permissions import expand_permissions
 from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS, ADMIN
 from website.project.metadata.schemas import OSF_META_SCHEMAS
@@ -78,16 +74,9 @@ def has_anonymous_link(node, auth):
     :param str link: any view-only link in the current url
     :return bool anonymous: Whether the node is anonymous to the user or not
     """
-    view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
-    if not view_only_link:
-        return False
-    if node.is_public:
-        return False
-    return any(
-        link.anonymous
-        for link in node.private_links_active
-        if link.key == view_only_link
-    )
+    if auth.private_link:
+        return auth.private_link.anonymous
+    return False
 
 @unique_on(['name', 'schema_version', '_id'])
 class MetaSchema(StoredObject):
@@ -202,8 +191,8 @@ class Comment(GuidStoredObject, SpamMixin):
         return self.absolute_api_v2_url
 
     def get_comment_page_url(self):
-        if isinstance(self.root_target, StoredFileNode):
-            file_guid = self.root_target.get_guid()._id
+        if isinstance(self.root_target.referent, StoredFileNode):
+            file_guid = self.root_target._id
             return settings.DOMAIN + str(file_guid) + '/'
         else:
             return self.node.absolute_url
@@ -221,53 +210,24 @@ class Comment(GuidStoredObject, SpamMixin):
         return self.content
 
     @classmethod
-    def find_n_unread(cls, user, node, page=None, root_id=None):
+    def find_n_unread(cls, user, node, page, root_id=None):
         if node.is_contributor(user):
-            if not page:
-                return cls.n_unread_node_comments(user, node) + cls.n_unread_file_comments(user, node)
-            elif page == Comment.OVERVIEW:
-                return cls.n_unread_node_comments(user, node)
+            if page == Comment.OVERVIEW:
+                view_timestamp = user.get_node_comment_timestamps(node, 'node')
+                root_target = Guid.load(node._id)
             elif page == Comment.FILES:
-                if root_id is None:
-                    return cls.n_unread_file_comments(user, node)
-                else:
-                    view_timestamp = user.get_node_comment_timestamps(node, page, file_id=root_id)
-                    root_target = File.load(root_id)
-                    return Comment.find(Q('node', 'eq', node) &
-                                        Q('user', 'ne', user) &
-                                        Q('is_deleted', 'eq', False) &
-                                        (Q('date_created', 'gt', view_timestamp) |
-                                        Q('date_modified', 'gt', view_timestamp)) &
-                                        Q('root_target', 'eq', root_target)).count()
+                view_timestamp = user.get_node_comment_timestamps(node, page, file_id=root_id)
+                root_target = Guid.load(root_id)
+            else:
+                raise ValueError('Invalid page')
+            return Comment.find(Q('node', 'eq', node) &
+                                Q('user', 'ne', user) &
+                                Q('is_deleted', 'eq', False) &
+                                (Q('date_created', 'gt', view_timestamp) |
+                                Q('date_modified', 'gt', view_timestamp)) &
+                                Q('root_target', 'eq', root_target)).count()
 
         return 0
-
-    @classmethod
-    def n_unread_node_comments(cls, user, node):
-        view_timestamp = user.get_node_comment_timestamps(node, 'node')
-        return Comment.find(Q('node', 'eq', node) &
-                            Q('user', 'ne', user) &
-                            (Q('date_created', 'gt', view_timestamp) |
-                            Q('date_modified', 'gt', view_timestamp)) &
-                            Q('is_deleted', 'eq', False) &
-                            Q('root_target', 'eq', node)).count()
-
-    @classmethod
-    def n_unread_file_comments(cls, user, node):
-        n_unread = 0
-        commented_files = File.find(Q('_id', 'in', node.commented_files.keys()))
-        for file_obj in commented_files:
-            if node.get_addon(file_obj.provider):
-                try:
-                    exists = file_obj and file_obj.touch(request.headers.get('Authorization'),
-                                                         cookie=request.cookies.get(settings.COOKIE_NAME))
-                except requests.ConnectionError:
-                    return 0
-                if not exists:
-                    Comment.update(Q('root_target', 'eq', file_obj), data={'root_target': None})
-                    continue
-                n_unread += cls.find_n_unread(user, node, page=Comment.FILES, root_id=file_obj._id)
-        return n_unread
 
     @classmethod
     def create(cls, auth, **kwargs):
@@ -280,18 +240,16 @@ class Comment(GuidStoredObject, SpamMixin):
             'user': comment.user._id,
             'comment': comment._id,
         }
-        if isinstance(comment.target, Comment):
-            comment.root_target = comment.target.root_target
+        if isinstance(comment.target.referent, Comment):
+            comment.root_target = comment.target.referent.root_target
         else:
             comment.root_target = comment.target
 
-        if isinstance(comment.root_target, Node):
+        if isinstance(comment.root_target.referent, Node):
             comment.page = Comment.OVERVIEW
-        elif isinstance(comment.root_target, StoredFileNode):
-            log_dict['file'] = {'name': comment.root_target.name, 'url': comment.get_comment_page_url()}
+        elif isinstance(comment.root_target.referent, StoredFileNode):
+            log_dict['file'] = {'name': comment.root_target.referent.name, 'url': comment.get_comment_page_url()}
             comment.page = Comment.FILES
-            file_key = comment.root_target._id
-            comment.node.commented_files[file_key] = comment.node.commented_files.get(file_key, 0) + 1
         else:
             raise ValueError('Invalid root target.')
         comment.save()
@@ -317,8 +275,8 @@ class Comment(GuidStoredObject, SpamMixin):
             'user': self.user._id,
             'comment': self._id,
         }
-        if isinstance(self.root_target, StoredFileNode):
-            log_dict['file'] = {'name': self.root_target.name, 'url': self.get_comment_page_url()}
+        if isinstance(self.root_target.referent, StoredFileNode):
+            log_dict['file'] = {'name': self.root_target.referent.name, 'url': self.get_comment_page_url()}
         self.content = content
         self.modified = True
         if save:
@@ -341,11 +299,8 @@ class Comment(GuidStoredObject, SpamMixin):
             'comment': self._id,
         }
         self.is_deleted = True
-        if isinstance(self.root_target, StoredFileNode):
-            log_dict['file'] = {'name': self.root_target.name, 'url': self.get_comment_page_url()}
-            self.node.commented_files[self.root_target._id] -= 1
-            if self.node.commented_files[self.root_target._id] == 0:
-                del self.node.commented_files[self.root_target._id]
+        if isinstance(self.root_target.referent, StoredFileNode):
+            log_dict['file'] = {'name': self.root_target.referent.name, 'url': self.get_comment_page_url()}
         if save:
             self.save()
             self.node.add_log(
@@ -366,10 +321,8 @@ class Comment(GuidStoredObject, SpamMixin):
             'user': self.user._id,
             'comment': self._id,
         }
-        if isinstance(self.root_target, StoredFileNode):
-            log_dict['file'] = {'name': self.root_target.name, 'url': self.get_comment_page_url()}
-            file_key = self.root_target._id
-            self.node.commented_files[file_key] = self.node.commented_files.get(file_key, 0) + 1
+        if isinstance(self.root_target.referent, StoredFileNode):
+            log_dict['file'] = {'name': self.root_target.referent.name, 'url': self.get_comment_page_url()}
         if save:
             self.save()
             self.node.add_log(
@@ -718,6 +671,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 ('is_deleted', pymongo.ASCENDING),
             ]
         },
+        {
+            'unique': False,
+            'key_or_list': [
+                ('is_deleted', pymongo.ASCENDING),
+                ('is_folder', pymongo.ASCENDING),
+                ('is_public', pymongo.ASCENDING),
+                ('is_registration', pymongo.ASCENDING),
+                ('date_modified', pymongo.ASCENDING),
+            ]
+        },
     ]
 
     # Node fields that trigger an update to Solr on save
@@ -921,10 +884,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
     # {<User.id>: [<Node._id>, <Node2._id>, ...] }
     child_node_subscriptions = fields.DictionaryField(default=dict)
-
-    # Files that contains comments and the number of comments each contains
-    # {<File1.id>: int, <File2.id>: int}
-    commented_files = fields.DictionaryField(default=dict)
 
     alternative_citations = fields.ForeignField('alternativecitation', list=True, backref='citations')
 
@@ -1145,6 +1104,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return False
 
     def can_view(self, auth):
+        if auth and getattr(auth.private_link, 'anonymous', False):
+            return self._id in auth.private_link.nodes
+
         if not auth and not self.is_public:
             return False
 
@@ -1401,7 +1363,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             )
         return self.is_contributor(auth.user)
 
-    def set_node_license(self, license_id, year, copyright_holders, auth, save=True):
+    def set_node_license(self, license_id, year, copyright_holders, auth, save=False):
         if not self.has_permission(auth.user, ADMIN):
             raise PermissionsError("Only admins can change a project's license.")
         try:
@@ -1430,6 +1392,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             auth=auth,
             save=False,
         )
+
         if save:
             self.save()
 
@@ -1440,14 +1403,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param Auth auth: Auth object for the user making the update.
         :param bool save: Whether to save after updating the object.
         """
-        if self.is_registration:
-            raise NodeUpdateError(reason="Registered content cannot be updated")
         if not fields:  # Bail out early if there are no fields to update
             return False
         values = {}
         for key, value in fields.iteritems():
             if key not in self.WRITABLE_WHITELIST:
                 continue
+            if self.is_registration and key != 'is_public':
+                raise NodeUpdateError(reason="Registered content cannot be updated", key=key)
             # Title and description have special methods for logging purposes
             if key == 'title':
                 self.set_title(title=value, auth=auth, save=False)
@@ -1466,7 +1429,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                     value.get('year'),
                     value.get('copyright_holders'),
                     auth,
-                    save=False
+                    save=save
                 )
             else:
                 with warnings.catch_warnings():
@@ -2722,12 +2685,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             return False
 
         # Node must have at least one registered admin user
-        # TODO: Move to validator or helper
-        admins = [
-            user for user in self.contributors
-            if self.has_permission(user, 'admin')
-            and user.is_registered
-        ]
+        admins = list(self.get_admin_contributors(self.contributors))
         if not admins:
             return False
 
@@ -2887,12 +2845,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 else:
                     to_remove.append(user)
 
-            # TODO: Move to validator or helper @jmcarp
-            admins = [
-                user for user in users
-                if self.has_permission(user, 'admin')
-                and user.is_registered
-            ]
+            admins = list(self.get_admin_contributors(users))
             if users is None or not admins:
                 raise ValueError(
                     'Must have at least one registered admin contributor'
@@ -3462,6 +3415,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                             yield (contrib, node)
                     else:
                         yield (contrib, node)
+
+    def get_admin_contributors(self, users):
+        """Return a set of all admin contributors for this node. Excludes contributors on node links and
+        inactive users.
+        """
+        return (
+            user for user in users
+            if self.has_permission(user, 'admin') and
+            user.is_active)
 
     def _initiate_approval(self, user, notify_initiator_on_complete=False):
         end_date = datetime.datetime.now() + settings.REGISTRATION_APPROVAL_TIME
@@ -4512,7 +4474,7 @@ class DraftRegistration(StoredObject):
             else:
                 return self.approval.is_approved
         else:
-            return True
+            return False
 
     @property
     def is_rejected(self):
@@ -4536,6 +4498,9 @@ class DraftRegistration(StoredObject):
         return draft
 
     def update_metadata(self, metadata):
+        if self.is_approved:
+            return []
+
         changes = []
         for question_id, value in metadata.iteritems():
             old_value = self.registration_metadata.get(question_id)
