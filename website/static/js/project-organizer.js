@@ -384,9 +384,11 @@ var tbOptions = {
             tb.updateFolder(allTopLevelProjectsCache(), tb.treeData);
             $('.db-poFilter>input').val('');
         }
+        var filter = $osf.debounce(tb.filter, 800);
         return [ m('input.form-control[placeholder="Search all my projects"][type="text"]', {
             style: 'display:inline;',
             onkeyup: function(event){
+                var newEvent = $.extend({}, event); // because currentTarget changes with debounce.
                 if ($(this).val().length === 1){
                     tb.updateFolder(allProjectsCache(), tb.treeData);
                     tb.options.showSidebar(false);
@@ -395,7 +397,9 @@ var tbOptions = {
                 if($(this).val().length === 0){
                     resetFilter();
                 }
-                tb.filter(event);
+                if($(this).val().length > 1){
+                    filter(newEvent);
+                }
             },
             onchange: function(event) {
                 tb.filterText(event.value);
