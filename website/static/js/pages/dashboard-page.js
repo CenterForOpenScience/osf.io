@@ -11,6 +11,7 @@ var jstz = require('jstimezonedetect');
 var $osf = require('js/osfHelpers');
 var MyProjects = require('js/myProjects.js').MyProjects;
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
+require('loaders.css/loaders.min.css');
 
 var ensureUserTimezone = function(savedTimezone, savedLocale, id) {
     var clientTimezone = jstz.determine().name();
