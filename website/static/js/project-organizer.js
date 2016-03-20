@@ -427,12 +427,16 @@ var ProjectOrganizer = {
         self.updateTB = function(){
             var poOptions = $.extend(
                 {
+                    divID : 'projectOrganizer',
+                    dragOptions : {
+                        containment : '#dashboard'
+                    },
                     updateSelected : args.updateSelected,
                     updateFilesData : args.updateFilesData,
                     filesData: args.filesData(),
                     dragContainment : args.wrapperSelector,
                     resetUi : args.resetUi,
-                    showSidebar : args.showSidebar,
+                    showSidebar : args.howSidebar,
                     loadValue : args.loadValue,
                     mpTreeData : args.treeData,
                     mpBuildTree : args.buildTree,
