@@ -117,7 +117,9 @@ var NewAndNoteworthy = {
         }
 
         function findMoreProjectsButton () {
-            return m('a.btn.btn-default.m-v-lg', {type:'button', href:'/search'}, 'Search for more projects');
+            return m('a.btn.btn-default.m-v-lg', {type:'button', href:'/search', onclick: function() {
+                $osf.trackClick('discoverPublicProjects', 'navigate', 'navigate-to-search-for-more-projects');
+            }}, 'Search for more projects');
         }
 
 
@@ -149,7 +151,9 @@ var NoteworthyNodeDisplay = {
         var contributors = $osf.contribNameFormat(args.node, args.contributorsMapping[args.node.id].total, args.getFamilyName);
         var destination = '/' + args.node.embeds.target_node.data.id;
 
-        return m('a', {href: destination}, m('.public-projects-item',[
+        return m('a', {href: destination, onclick: function() {
+            $osf.trackClick('discoverPublicProjects', 'navigate', 'navigate-to-specific-project');
+        }}, m('.public-projects-item',[
             m('h5', title),
             m('span.prevent-overflow', m('i', 'by ' + contributors)),
             description ? m('p.prevent-overflow', {'data-title': tooltipDescription, 'data-location': 'top', onmouseover: function(){

@@ -8,6 +8,7 @@ from datetime import datetime
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
 
+from framework.auth import get_or_create_user
 from framework.exceptions import HTTPError
 from framework.flask import redirect
 from framework.transactions.context import TokuTransaction
@@ -74,7 +75,7 @@ def add_poster_by_email(conference, message):
     created = []
 
     with TokuTransaction():
-        user, user_created = utils.get_or_create_user(
+        user, user_created = get_or_create_user(
             message.sender_display,
             message.sender_email,
             message.is_spam,

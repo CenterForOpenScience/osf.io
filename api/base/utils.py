@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from rest_framework.exceptions import NotFound
@@ -53,7 +52,7 @@ def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
     return url
 
 
-def get_object_or_error(model_cls, query_or_pk, display_name=None):
+def get_object_or_error(model_cls, query_or_pk, display_name=None, **kwargs):
     display_name = display_name or None
 
     if isinstance(query_or_pk, basestring):
@@ -62,7 +61,7 @@ def get_object_or_error(model_cls, query_or_pk, display_name=None):
         query = query_or_pk
 
     try:
-        obj = model_cls.find_one(query)
+        obj = model_cls.find_one(query, **kwargs)
         if getattr(obj, 'is_deleted', False) is True:
             if display_name is None:
                 raise Gone

@@ -11,7 +11,7 @@ var KeenTracker = oop.defclass({
             projectId: keenProjectId,
             writeKey: keenWriteKey
         });
-        this.currentUser = params.user || null;
+        this.currentUser = params.currentUser || null;
         this.node = params.node || null;
         this.init();
     },
@@ -80,6 +80,13 @@ var KeenTracker = oop.defclass({
                             'url' : 'pageUrl'
                         },
                         'output' : 'parsedPageUrl'
+                    },
+                    {
+                        'name' : 'keen:url_parser',
+                        'input' : {
+                            'url' : 'referrer.url'
+                        },
+                        'output' : 'parsedReferrerUrl'
                     }
                 ]
             }
@@ -103,7 +110,7 @@ var KeenTracker = oop.defclass({
 
         this.keenClient.addEvent('pageviews', pageView, function(err){
             if(err){
-                throw new Error('Error sending Keen data: ' + err);
+                throw new Error('Error sending Keen data: ' + err, pageView);
             }
         });
     },

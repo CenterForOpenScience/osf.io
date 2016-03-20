@@ -19,6 +19,8 @@ var $osf = require('js/osfHelpers');
 var LinkObject;
 var allProjectsCache;
 var formatDataforPO;
+var allTopLevelProjectsCache;
+
 /**
  * Edits the template for the column titles.
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
@@ -35,7 +37,10 @@ function _poTitleColumn(item) {
     if (item.data.archiving) { // TODO check if this variable will be available
         return  m('span', {'class': 'registration-archiving'}, node.attributes.title + ' [Archiving]');
     } else if(node.links.html){
-        return [ m('a.fg-file-links', { 'class' : css, href : node.links.html, 'data-nodeID' : node.id, onclick : preventSelect}, node.attributes.title) ];
+        return [ m('a.fg-file-links', { 'class' : css, href : node.links.html, 'data-nodeID' : node.id, onclick : function(event) {
+            preventSelect.call(this, event);
+            $osf.trackClick('myProjects', 'projectOrganizer', 'navigate-to-specific-project');
+        }}, node.attributes.title) ];
     } else {
         return  m('span', { 'class' : css, 'data-nodeID' : node.id }, node.attributes.title);
     }
@@ -134,7 +139,9 @@ function _poResolveRows(item) {
             filter : false,
             custom : function (row){
                 return m('.btn.btn-default.btn-sm[data-toggle="modal"][data-target="#infoModal"]', {
-                }, m('i.fa.fa-ellipsis-h'));
+                }, m('i.fa.fa-ellipsis-h', {onclick: function() {
+                    $osf.trackClick('myProjects', 'mobile', 'open-information-panel');
+                }}));
             }
         });
     }
@@ -240,7 +247,11 @@ function _poMultiselect(event, tree) {
     tb.options.updateSelected(tb.multiselected());
     if (tb.multiselected().length === 1) {
         tb.select('#tb-tbody').removeClass('unselectable');
+        if (event.currentTarget != null) {
+            $osf.trackClick('myProjects', 'projectOrganizer', 'single-project-selected');
+        }
     } else if (tb.multiselected().length > 1) {
+        $osf.trackClick('myProjects', 'projectOrganizer', 'multiple-projects-selected');
         tb.select('#tb-tbody').addClass('unselectable');
     }
     m.redraw();
@@ -309,8 +320,12 @@ var tbOptions = {
             tb.select('.tb-row').removeClass('po-hover');
         });
         m.render($(tb.options.dragContainment + ' .db-poFilter').get(0), tb.options.filterTemplate.call(this));
+        tb.options.mpTreeData(tb.treeData);
+        tb.options.mpBuildTree(tb.buildTree);
+        tb.options.mpUpdateFolder(tb.updateFolder);
     },
     ontogglefolder : function (item, event) {
+        $osf.trackClick('myProjects', 'projectOrganizer', 'expand-collapse-project-children');
         if (!item.open) {
             item.load = false;
         }
@@ -337,6 +352,7 @@ var tbOptions = {
     },
     ondblclickrow : function(item, event){
         var tb = this;
+        $osf.trackClick('myProjects', 'projectOrganizer', 'double-click-project');
         var node = item.data;
         var linkObject = new LinkObject('node', node, node.attributes.title);
         // Get ancestors
@@ -354,25 +370,37 @@ var tbOptions = {
     hScroll : 300,
     filterTemplate : function() {
         var tb = this;
-        return [
-            m('input.form-control[placeholder="Search all my projects"][type="text"]', {
-                style: 'display:inline;',
-                onkeyup: function(event){
-                    if ($(this).val().length === 1){
-                        tb.updateFolder(allProjectsCache(), tb.treeData);
-                        tb.options.showSidebar(false);
-                        tb.options.resetUi();
-                    }
-                    tb.filter(event);
-                },
-                onchange: m.withAttr('value', tb.filterText),
-                value: tb.filterText()
-            }),
-            m('.filterReset', { onclick : function () {
-                tb.resetFilter.call(tb);
-                $('.db-poFilter>input').val('');
-            } }, tb.options.removeIcon())
-        ];
+        function resetFilter () {
+            $osf.trackClick('myProjects', 'filter', 'clear-search');
+            tb.filterText('');
+            tb.resetFilter.call(tb);
+            tb.updateFolder(allTopLevelProjectsCache(), tb.treeData);
+            $('.db-poFilter>input').val('');
+        }
+        var filter = $osf.debounce(tb.filter, 800);
+        return [ m('input.form-control[placeholder="Search all my projects"][type="text"]', {
+            style: 'display:inline;',
+            onkeyup: function(event){
+                var newEvent = $.extend({}, event); // because currentTarget changes with debounce.
+                if ($(this).val().length === 1){
+                    tb.updateFolder(allProjectsCache(), tb.treeData);
+                    tb.options.showSidebar(false);
+                    tb.options.resetUi();
+                }
+                if($(this).val().length === 0){
+                    resetFilter();
+                }
+                if($(this).val().length > 1){
+                    filter(newEvent);
+                }
+            },
+            onchange: function(event) {
+                tb.filterText(event.value);
+                $osf.trackClick('myProjects', 'filter', 'search-projects');
+            },
+            value: tb.filterText()
+        }),
+        m('.filterReset', { onclick : resetFilter }, tb.options.removeIcon())];
     },
     hiddenFilterRows : ['tags'],
     lazyLoadOnLoad : function (tree, event) {
@@ -404,24 +432,26 @@ var ProjectOrganizer = {
                     filesData: args.filesData(),
                     dragContainment : args.wrapperSelector,
                     resetUi : args.resetUi,
-                    showSidebar : args.showSidebar
+                    showSidebar : args.showSidebar,
+                    loadValue : args.loadValue,
+                    mpTreeData : args.treeData,
+                    mpBuildTree : args.buildTree,
+                    mpUpdateFolder : args.updateFolder
                 },
                 tbOptions
             );
+            if (args.resolveToggle){
+                poOptions.resolveToggle = args.resolveToggle;
+            }
             var tb = new Treebeard(poOptions, true);
-            m.redraw.strategy('all');
             return tb;
         };
         allProjectsCache = args.allProjects;
+        allTopLevelProjectsCache = args.allTopLevelProjects;
         self.tb = self.updateTB();
     },
     view : function (ctrl, args) {
-        var tb = ctrl.tb;
-        if (args.reload()) {
-            tb = ctrl.updateTB();
-            args.reload(false);
-        }
-        return m('.fb-project-organizer#projectOrganizer', tb );
+        return m('.fb-project-organizer#projectOrganizer', ctrl.tb );
     }
 };
 

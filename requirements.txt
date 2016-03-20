@@ -57,7 +57,7 @@ django-cors-headers==1.1.0
 django-rest-swagger==0.3.2
 djangorestframework-bulk==0.2.1
 pyjwt==1.4.0
-pyjwe==0.1.6
+pyjwe==1.0.0
 
 # Admin requirements
 django-webpack-loader==0.2.3

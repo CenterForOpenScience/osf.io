@@ -1,7 +1,12 @@
 # -*- coding: utf-8 -*-
+from functools import partial
+
 import pytz
 from datetime import datetime
 from flask import request
+
+from api.caching.tasks import ban_url
+from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from modularodm import Q
 
 from framework.auth.decorators import must_be_logged_in
@@ -134,6 +139,7 @@ def _update_comments_timestamp(auth, node, page=Comment.OVERVIEW, root_id=None):
         if not node_timestamp:
             user_timestamp[node._id] = dict()
         timestamps = auth.user.comments_viewed_timestamp[node._id]
+        enqueue_postcommit_task(partial(ban_url, node, []))
 
         # update node timestamp
         if page == Comment.OVERVIEW:

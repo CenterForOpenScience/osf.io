@@ -327,6 +327,7 @@ var QuickSearchProject = {
             if (ctrl.pendingNodes()){
                 return m('button.col-sm-12.text-muted', {onclick: function(){
                     ctrl.loadUpToTen();
+                    $osf.trackClick('quickSearch', 'view', 'load-more');
                 }},
                     m('i.fa.fa-caret-down.load-nodes.m-b-xl'));
             }
@@ -336,6 +337,7 @@ var QuickSearchProject = {
             if (ctrl.loadingComplete()) {
                 return m('button', {'class': ctrl.colorSortButtons('alphaAsc'), onclick: function() {
                     ctrl.sortBySortState(ctrl.sortState('alphaAsc'));
+                    $osf.trackClick('quickSearch', 'view', 'sort-' + ctrl.sortState());
                 }},
                     m('i.fa.fa-angle-up'));
             }
@@ -345,6 +347,7 @@ var QuickSearchProject = {
             if (ctrl.loadingComplete()){
                 return m('button', {'class': ctrl.colorSortButtons('alphaDesc'), onclick: function() {
                     ctrl.sortBySortState(ctrl.sortState('alphaDesc'));
+                    $osf.trackClick('quickSearch', 'view', 'sort-' + ctrl.sortState());
                 }},
                     m('i.fa.fa-angle-down'));
             }
@@ -354,6 +357,7 @@ var QuickSearchProject = {
             if (ctrl.loadingComplete()){
                  return m('button', {'class': ctrl.colorSortButtons('dateAsc'), onclick: function() {
                      ctrl.sortBySortState(ctrl.sortState('dateAsc'));
+                     $osf.trackClick('quickSearch', 'view', 'sort-' + ctrl.sortState());
                  }},
                      m('i.fa.fa-angle-up'));
             }
@@ -363,6 +367,7 @@ var QuickSearchProject = {
             if (ctrl.loadingComplete()){
                 return m('button', {'class': ctrl.colorSortButtons('dateDesc'), onclick: function() {
                     ctrl.sortBySortState(ctrl.sortState('dateDesc'));
+                    $osf.trackClick('quickSearch', 'view', 'sort-' + ctrl.sortState());
                }},
                     m('i.fa.fa-angle-down'));
             }
@@ -374,6 +379,7 @@ var QuickSearchProject = {
                 return m('button', {'class': ctrl.colorSortButtonsXS('Asc'), onclick: function() {
                      ctrl.directionSort('Asc');
                      ctrl.sortDirectionGivenField();
+                     $osf.trackClick('quickSearch', 'view', 'sort-' + ctrl.sortState());
                 }},
                      m('i.fa.fa-angle-up'));
             }
@@ -385,6 +391,7 @@ var QuickSearchProject = {
                 return m('button', {'class': ctrl.colorSortButtonsXS('Desc'), onclick: function() {
                     ctrl.directionSort('Desc');
                     ctrl.sortDirectionGivenField();
+                    $osf.trackClick('quickSearch', 'view', 'sort-' + ctrl.sortState());
                 }},
                      m('i.fa.fa-angle-down'));
             }
@@ -403,9 +410,11 @@ var QuickSearchProject = {
 
         function searchBar() {
             return m('div.m-v-sm.quick-search-input', [
-                m('input[type=search]', {'id': 'searchQuery', 'class': 'form-control', placeholder: 'Quick search projects', onkeyup: function(search) {
+                m('input[type=search]', {'id': 'searchQuery', 'class': 'form-control', placeholder: 'Quick search your projects', onkeyup: function(search) {
                     ctrl.filter(search.target.value);
                     ctrl.quickSearch();
+                }, onchange: function() {
+                    $osf.trackClick('quickSearch', 'filter', 'search-projects');
                 }})
             ]);
             }
@@ -417,6 +426,7 @@ var QuickSearchProject = {
                     m('label', [
                         m('select.form-control', {'id': 'sortDropDown', onchange: function(dropdown){
                             ctrl.fieldSort(dropdown.target.value);
+                            $osf.trackClick('quickSearch', 'view', 'sort-' + ctrl.sortState());
                             ctrl.sortFieldGivenDirection();
                         }}, defaultSelected())
                     ])
@@ -439,7 +449,8 @@ var QuickSearchProject = {
                     m('.m-b-sm.text-center', [
                         searchBar()
                     ]),
-                    m('p.text-center', [ 'Go to ', m('a', {href:'/myprojects/'}, 'My Projects'),  ' to organize your work or ', m('a', {href: '/search/'}, 'search'), ' the OSF' ]),
+                    m('p.text-center', [ 'Go to ', m('a', {href:'/myprojects/'}, 'My Projects'),  ' to organize your work or ',
+                        m('a', {href: '/search/', onclick: function(){ $osf.trackClick('quickSearch', 'navigate', 'navigate-to-search-the-OSF'); }}, 'search'), ' all projects on the OSF' ]),
                     m('.quick-search-table', [
                         m('.row.node-col-headers.m-t-md', [
                             m('.col-sm-4.col-md-5', m('.quick-search-col', 'Title', sortAlphaAsc(), sortAlphaDesc())),
@@ -482,7 +493,9 @@ var QuickSearchNodeDisplay = {
             return m('.', args.eligibleNodes().slice(0, args.countDisplayed()).map(function(n){
                 var project = args.nodes()[n];
                 var numContributors = project.embeds.contributors.links.meta.total;
-                return m('a', {href: '/' + project.id}, m('.m-v-sm.node-styling',  m('.row', m('div',
+                return m('a', {href: '/' + project.id, onclick: function() {
+                    $osf.trackClick('quickSearch', 'navigate', 'navigate-to-specific-project');
+                }}, m('.m-v-sm.node-styling',  m('.row', m('div',
                     [
                         m('.col-sm-4.col-md-5.p-v-xs', m('.quick-search-col',  project.attributes.title)),
                         m('.col-sm-4.col-md-4.p-v-xs', m('.quick-search-col', $osf.contribNameFormat(project, numContributors, args.getFamilyName))),

@@ -325,4 +325,5 @@
 
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
+    <script src=${"/static/public/js/landing-page.js" | webpack_asset}></script>
 </%def>
