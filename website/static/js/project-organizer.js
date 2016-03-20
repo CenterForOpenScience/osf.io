@@ -69,10 +69,13 @@ function _poContributors(item) {
         var name;
         var familyName = person.embeds.users.data.attributes.family_name;
         var givenName = person.embeds.users.data.attributes.given_name;
+        var fullName = person.embeds.users.data.attributes.full_name;
         if (familyName) {
             name = familyName;
         } else if(givenName){
             name = givenName;
+        } else if(fullName){
+            name = fullName;
         } else {
             name = 'A contributor';
         }
