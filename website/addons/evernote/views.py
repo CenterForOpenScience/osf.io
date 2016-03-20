@@ -113,8 +113,8 @@ def evernote_notes(node_addon, **kwargs):
 
     results = [{'title': note.title,
               'guid': note.guid,
-              'created': note.updated,
-              'updated': note.created}
+              'created': utils.timestamp_iso(note.created),
+              'updated': utils.timestamp_iso(note.updated)}
               for note in notes]
 
     return results

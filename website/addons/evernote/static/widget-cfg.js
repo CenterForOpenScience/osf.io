@@ -25,7 +25,15 @@ var EvernoteWidget = function(urls) {
       //console.log(changes);
 
 
-      var notes = self.notes();
+      //var notes = self.notes();
+      var notes = $.map(self.notes(),  function(o){
+        return {
+          title: o['title'],
+          guid: o['guid'],
+          created: new $osf.FormattableDate(o['created']).local,
+          updated: new $osf.FormattableDate(o['updated']).local
+        }
+      });
 
       self.notes_dt = $('#evernote-notes-list').DataTable( {
         responsive: true,
@@ -90,7 +98,7 @@ var EvernoteWidget = function(urls) {
  //     $("#evernote-notedisplay").html(data.html);
  //   });
  //
- // };
+ //};
 
 // Skip if widget is not correctly configured
 if ($('#evernoteWidget').length) {
@@ -105,7 +113,7 @@ if ($('#evernoteWidget').length) {
     $osf.applyBindings(ew, '#evernoteWidget');
 
     // apply tooltip to all btn-evernote
-    $(".btn-evernote").tooltip();
+    // $(".btn-evernote").tooltip();
 
   });
 

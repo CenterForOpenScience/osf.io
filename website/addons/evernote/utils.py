@@ -1,4 +1,5 @@
 
+import datetime
 import settings
 from evernote.api.client import EvernoteClient
 from evernote.edam.notestore.ttypes import (NoteFilter, NotesMetadataResultSpec)
@@ -106,6 +107,12 @@ def get_note(client, guid,
     noteStore = client.get_note_store()
     return noteStore.getNote(guid, withContent, withResourcesData,
                                  withResourcesRecognition, withResourcesAlternateData)
+
+def timestamp_iso(ts):
+    """
+    ts in ms since 1970
+    """
+    return datetime.datetime.utcfromtimestamp(ts/1000.).isoformat()
 
 
 class MyMediaStore(MediaStore):
