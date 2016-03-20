@@ -18,6 +18,7 @@ var $osf = require('js/osfHelpers');
 
 var LinkObject;
 var allProjectsCache;
+var allTopLevelProjectsCache;
 /* This sort projects is specific to data type used here for updates */
 function sortProjects (flatList) {
     // Sorts by last modified
@@ -376,15 +377,29 @@ var tbOptions = {
     hScroll : 300,
     filterTemplate : function() {
         var tb = this;
+        function resetFilter () {
+            $osf.trackClick('myProjects', 'filter', 'clear-search');
+            tb.filterText('');
+            tb.resetFilter.call(tb);
+            tb.updateFolder(allTopLevelProjectsCache(), tb.treeData);
+            $('.db-poFilter>input').val('');
+        }
+        var filter = $osf.debounce(tb.filter, 800);
         return [ m('input.form-control[placeholder="Search all my projects"][type="text"]', {
             style: 'display:inline;',
             onkeyup: function(event){
+                var newEvent = $.extend({}, event); // because currentTarget changes with debounce.
                 if ($(this).val().length === 1){
                     tb.updateFolder(allProjectsCache(), tb.treeData);
                     tb.options.showSidebar(false);
                     tb.options.resetUi();
                 }
-                tb.filter(event);
+                if($(this).val().length === 0){
+                    resetFilter();
+                }
+                if($(this).val().length > 1){
+                    filter(newEvent);
+                }
             },
             onchange: function(event) {
                 tb.filterText(event.value);
@@ -392,11 +407,7 @@ var tbOptions = {
             },
             value: tb.filterText()
         }),
-        m('.filterReset', { onclick : function () {
-            $osf.trackClick('myProjects', 'filter', 'clear-search');
-            tb.resetFilter.call(tb);
-            $('.db-poFilter>input').val('');
-        } }, tb.options.removeIcon())];
+        m('.filterReset', { onclick : resetFilter }, tb.options.removeIcon())];
     },
     hiddenFilterRows : ['tags']
 };
@@ -428,6 +439,7 @@ var ProjectOrganizer = {
             return tb;
         };
         allProjectsCache = args.allProjects;
+        allTopLevelProjectsCache = args.allTopLevelProjects;
         self.tb = self.updateTB();
     },
     view : function (ctrl, args) {
