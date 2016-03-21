@@ -14,7 +14,17 @@ var $osf = require('js/osfHelpers');
 var commandKeys = [224, 17, 91, 93];
 
 function _uploadUrl(item, file) {
-    return waterbutler.buildTreeBeardUpload(item, file, {branch: item.data.branch});
+    // WB v1 update syntax is file_path/?kind=file
+    // WB v1 upload syntax is parent_path/?kind=file&name=filename
+    // If upload target file name already exists don't pass file.name
+    var updateUrl;
+    $.each(item.children, function( index, value ) {
+        if (file.name === value.data.name) {
+            updateUrl = waterbutler.buildTreeBeardUpload(value, {branch: value.data.branch}); 
+            return false;
+        }
+    });
+    return updateUrl || waterbutler.buildTreeBeardUpload(item, {name: file.name, branch: item.data.branch});
 }
 
 // TODO: Refactor, repeating from core function too much
@@ -25,7 +35,7 @@ function _removeEvent (event, items) {
     }
 
     function runDelete (item) {
-        tb.select('.tb-modal-footer .text-danger').html('<i> Deleting...</i>').css('color', 'grey');;
+        tb.select('.tb-modal-footer .text-danger').html('<i> Deleting...</i>').css('color', 'grey');
         // delete from server, if successful delete from view
         $.ajax({
             url: waterbutler.buildTreeBeardDelete(item, {branch: item.data.branch, sha: item.data.extra.fileSha}),
@@ -303,7 +313,7 @@ function _fangornGithubTitle(item, col)  {
         var urlParams = $osf.urlParams();
         
         if (!item.data.branch) {
-            if (urlParams.branch && urlParams.branch != item.data.branch) {
+            if (urlParams.branch && urlParams.branch !== item.data.branch) {
                 item.data.branch = urlParams.branch;
             }
         }
