@@ -49,13 +49,15 @@ class SpamMixin(StoredObject):
     reports = fields.DictionaryField(
         default=dict, validate=validate_reports
     )
+    def save_spam(self):
+        self.save()
 
     def flag_spam(self, save=False):
         # If ham and unedited then tell user that they should read it again
         if self.spam_status == self.UNKNOWN:
             self.spam_status = self.FLAGGED
         if save:
-            self.save()
+            self.save_spam()
 
     def remove_flag(self, save=False):
         if self.spam_status != self.FLAGGED:
@@ -65,17 +67,17 @@ class SpamMixin(StoredObject):
                 return
         self.spam_status = self.UNKNOWN
         if save:
-            self.save()
+            self.save_spam()
 
     def confirm_ham(self, save=False):
         self.spam_status = self.HAM
         if save:
-            self.save()
+            self.save_spam()
 
     def confirm_spam(self, save=False):
         self.spam_status = self.SPAM
         if save:
-            self.save()
+            self.save_spam()
 
     @property
     def is_spam(self):
@@ -99,7 +101,7 @@ class SpamMixin(StoredObject):
             report['text'] = None
         self.reports[user._id] = report
         if save:
-            self.save()
+            self.save_spam()
 
     def retract_report(self, user, save=False):
         """Retract last report by user
@@ -117,4 +119,4 @@ class SpamMixin(StoredObject):
         else:
             raise ValueError('User has not reported this content')
         if save:
-            self.save()
+            self.save_spam()

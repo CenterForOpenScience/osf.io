@@ -168,6 +168,7 @@ class Comment(GuidStoredObject, SpamMixin):
 
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
     date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
+    date_updated = fields.DateTimeField()
     modified = fields.BooleanField(default=False)
     is_deleted = fields.BooleanField(default=False)
     # The type of root_target: node/files
@@ -226,7 +227,7 @@ class Comment(GuidStoredObject, SpamMixin):
                                 Q('user', 'ne', user) &
                                 Q('is_deleted', 'eq', False) &
                                 (Q('date_created', 'gt', view_timestamp) |
-                                Q('date_modified', 'gt', view_timestamp)) &
+                                Q('date_updated', 'gt', view_timestamp)) &
                                 Q('root_target', 'eq', root_target)).count()
 
         return 0
@@ -334,6 +335,14 @@ class Comment(GuidStoredObject, SpamMixin):
                 save=False,
             )
             self.node.save()
+
+    def save_spam(self):
+        self.save(skip_update=True)
+
+    def save(self, skip_update=False, *args, **kwargs):
+        if not skip_update:
+            self.date_updated = datetime.datetime.utcnow()
+        return super(Comment, self).save(*args, **kwargs)
 
 
 @unique_on(['params.node', '_id'])
