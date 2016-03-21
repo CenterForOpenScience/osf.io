@@ -1324,6 +1324,30 @@ var Filters = {
  */
 var Information = {
     view : function (ctrl, args) {
+        function categoryMap(category) {
+            switch (category) {
+                case 'analysis':
+                    return 'Analysis';
+                case 'communication':
+                    return 'Communication';
+                case 'data':
+                    return 'Data';
+                case 'hypothesis':
+                    return 'Hypothesis';
+                case 'methods and measures':
+                    return 'Methods and Measures';
+                case 'procedure':
+                    return 'Procedure';
+                case 'project':
+                    return 'Project';
+                case 'software':
+                    return 'Software';
+                case 'other':
+                    return 'Other';
+                default:
+                    return 'Uncategorized';
+            }
+        }
         var template = '';
         var filter = args.activeFilter();
         if (args.selected().length === 0) {
@@ -1357,7 +1381,7 @@ var Information = {
                         m('[role="tabpanel"].tab-pane.active#tab-information',[
                             m('p.db-info-meta.text-muted', [
                                 m('', 'Visibility : ' + (item.attributes.public ? 'Public' : 'Private')),
-                                m('', 'Category: ' + item.attributes.category[0].toUpperCase() + item.attributes.category.slice(1)),
+                                m('', 'Category: ' + categoryMap(item.attributes.category)),
                                 m('', 'Last Modified on: ' + (item.date ? item.date.local : ''))
                             ]),
                             m('p', [
