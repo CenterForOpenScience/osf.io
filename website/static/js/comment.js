@@ -158,6 +158,7 @@ BaseComment.prototype.fetchNext = function(url, comments) {
             deferred.resolve(self.comments());
             self.configureCommentsVisibility();
             self._loaded = true;
+            self.loadingComments(false);
         }
     });
     return deferred.promise();
@@ -590,6 +591,7 @@ var CommentListModel = function(options) {
     self.canComment = ko.observable(options.canComment);
     self.hasChildren = ko.observable(options.hasChildren);
     self.author = options.currentUser;
+    self.loadingComments = ko.observable(true);
 
     self.togglePane = options.togglePane;
 
