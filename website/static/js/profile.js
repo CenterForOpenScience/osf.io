@@ -345,7 +345,7 @@ BaseViewModel.prototype.cancel = function(data, event) {
 };
 
 BaseViewModel.prototype.submit = function() {
-     if (this.hasValidProperty() && this.isValid()) {
+    if (this.hasValidProperty() && this.isValid()) {
         $osf.putJSON(
             this.urls.crud,
             this.serialize()
