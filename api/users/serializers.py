@@ -29,6 +29,7 @@ class UserSerializer(JSONAPISerializer):
     family_name = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
     suffix = HideIfDisabled(ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations'))
     date_registered = HideIfDisabled(ser.DateTimeField(read_only=True))
+    active = HideIfDisabled(ser.BooleanField(read_only=True, source='is_active'))
 
     # Social Fields are broken out to get around DRF complex object bug and to make API updating more user friendly.
     gitHub = HideIfDisabled(DevOnly(AllowMissing(ser.CharField(required=False, source='social.github',
@@ -55,6 +56,9 @@ class UserSerializer(JSONAPISerializer):
                                                       allow_blank=True, help_text='AcademiaProfileID Field'), required=False, source='social.academiaProfileID')))
     baiduScholar = HideIfDisabled(DevOnly(AllowMissing(ser.CharField(required=False, source='social.baiduScholar',
                                                            allow_blank=True, help_text='Baidu Scholar Account'), required=False, source='social.baiduScholar')))
+    timezone = HideIfDisabled(ser.CharField(required=False, help_text="User's timezone, e.g. 'Etc/UTC"))
+    locale = HideIfDisabled(ser.CharField(required=False, help_text="User's locale, e.g.  'en_US'"))
+
     links = HideIfDisabled(LinksField(
         {
             'html': 'absolute_url',

@@ -3,7 +3,12 @@
 
 <%def name="content_wrap()">
     <div class="watermarked">
-            ${self.content()}
+        <div class="container ${self.container_class()}">
+            % if status:
+                ${self.alert()}
+            % endif
+        </div><!-- end container -->
+        ${self.content()}
     </div><!-- end watermarked -->
 </%def>
 

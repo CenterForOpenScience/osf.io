@@ -18,10 +18,7 @@
 
 
   <div id="dashboard" class="dashboard clearfix" >
-    <div class="spinner-loading-wrapper">
-       <div class="logo-spin logo-lg"></div>
-       <p class="m-t-sm fg-load-message"> Loading projects...  </p>
-    </div>
+    <div class="ball-scale text-center m-v-xl"><div></div></div>
   </div>
 
 
