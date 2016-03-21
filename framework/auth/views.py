@@ -164,7 +164,7 @@ def auth_logout(redirect_url=None):
 
 
 def auth_email_logout(token, user):
-    """Log out and delete cookie.
+    """When a user is adding an email or merging an account, add the email to the user and log them out.
     """
     redirect_url = web_url_for('auth_login') + '?existing_user=True'
     if user.confirm_token(token):
@@ -192,6 +192,7 @@ def confirm_email_get(token, auth=None, **kwargs):
     existing_user = request.args.get('existing_user')
     if user is None:
         raise HTTPError(http.NOT_FOUND)
+    # if the user is merging or adding an email (they already are an osf user)
     elif existing_user:
         return auth_email_logout(token, user)
 
@@ -248,10 +249,7 @@ def confirm_email_get(token, auth=None, **kwargs):
 
 @collect_auth
 def confirm_user_get(auth=None, **kwargs):
-    """View for email confirmation links.
-    Authenticates and redirects to user settings page if confirmation is
-    successful, otherwise shows an "Expired Link" error.
-
+    """Called at login to see if there are emails to add or users to merge.
     methods: GET
     """
     # user = User.load(kwargs['uid'])
@@ -279,6 +277,9 @@ def confirm_user_get(auth=None, **kwargs):
 
 @collect_auth
 def confirm_email_remove(auth=None, **kwargs):
+    """Called at login if user cancels their merge or email add.
+    methods: PUT
+    """
     user = auth.user
     confirmed_email = request.json.get('address')
     email_verifications = user.email_verifications.copy()
@@ -292,11 +293,8 @@ def confirm_email_remove(auth=None, **kwargs):
 
 @collect_auth
 def add_confirmed_emails(auth=None, **kwargs):
-    """View for email confirmation links.
-    Authenticates and redirects to user settings page if confirmation is
-    successful, otherwise shows an "Expired Link" error.
-
-    methods: GET
+    """Called at login if user confirms their merge or email add.
+    methods: PUT
     """
     user = auth.user
     confirmed_email = request.json.get('address')
@@ -377,7 +375,7 @@ def send_confirm_email(user, email):
         merge_target = None
 
     campaign = campaigns.campaign_for_user(user)
-    # Choose the appropriate email template to use
+    # Choose the appropriate email template to use and add existing_user flag if a merge or adding an email.
     if merge_target:
         mail_template = mails.CONFIRM_MERGE
         confirmation_url += '?existing_user=True'

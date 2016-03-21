@@ -750,6 +750,7 @@ class User(GuidStoredObject, AddonModelMixin):
         if not self.email_verifications:
             self.email_verifications = {}
 
+        # confirmed used to check if link has been clicked
         self.email_verifications[token] = {'email': email,
                                            'confirmed': False}
         self._set_email_token_expiration(token, expiration=expiration)
@@ -822,8 +823,11 @@ class User(GuidStoredObject, AddonModelMixin):
         return "{0}confirm/{1}/{2}/".format(base, self._primary_key, token)
 
     def _get_unconfirmed_email_for_token(self, token):
-        """Return whether or not a confirmation token is valid for this user.
+        """Return email if valid.
         :rtype: bool
+        :raises: ExpiredTokenError if trying to access a token that is expired.
+        :raises: InvalidTokenError if trying to access a token that is invalid.
+
         """
         if token not in self.email_verifications:
             raise InvalidTokenError

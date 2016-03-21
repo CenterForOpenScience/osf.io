@@ -44,6 +44,8 @@ request.fail(function(xhr, textStatus, error) {
 var confirmedEmailURL = window.contextVars.confirmedEmailURL;
 var removeConfirmedEmailURL = window.contextVars.removeConfirmedEmailURL;
 
+
+//choose which emails/users to add to an account and which to deny
 function confirm_emails(emails) {
     if (emails.length > 0) {
         var email = emails.splice(0,1);
