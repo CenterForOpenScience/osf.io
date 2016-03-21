@@ -339,7 +339,10 @@ var tbOptions = {
     },
     onmultiselect : _poMultiselect,
     resolveIcon : function _poIconView(item) { // Project Organizer doesn't use icons
-        return false;
+        if (item.data.attributes.registration){
+            return m('i.fa.fa-cube.text-muted-more');
+        }
+        return m('i.fa.fa-cube');
     },
     resolveToggle : _poResolveToggle,
     resolveLazyloadUrl : _poResolveLazyLoad,
