@@ -9,7 +9,6 @@ from api.caching.tasks import ban_url
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from modularodm import Q
 
-from framework.auth.decorators import must_be_logged_in
 from framework.guid.model import Guid
 
 from website.addons.base.signals import file_updated
