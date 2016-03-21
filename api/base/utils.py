@@ -53,37 +53,29 @@ def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
 
 
 def get_object_or_error(model_cls, query_or_pk, display_name=None, **kwargs):
-    display_name = display_name or None
-
     if isinstance(query_or_pk, basestring):
-        query = Q('_id', 'eq', query_or_pk)
+        obj = model_cls.load(query_or_pk)
+        if obj is None:
+            raise NotFound
     else:
-        query = query_or_pk
+        try:
+            obj = model_cls.find_one(query_or_pk, **kwargs)
+        except NoResultsFound:
+            raise NotFound
 
-    try:
-        obj = model_cls.find_one(query, **kwargs)
-        if getattr(obj, 'is_deleted', False) is True:
-            if display_name is None:
-                raise Gone
-            else:
-                raise Gone(detail='The requested {name} is no longer available.'.format(name=display_name))
-        # For objects that have been disabled (is_active is False), return a 410.
-        # The User model is an exception because we still want to allow
-        # users who are unconfirmed or unregistered, but not users who have been
-        # disabled.
-        if model_cls is User:
-            if obj.is_disabled:
-                raise Gone(detail='The requested user is no longer available.')
+    # For objects that have been disabled (is_active is False), return a 410.
+    # The User model is an exception because we still want to allow
+    # users who are unconfirmed or unregistered, but not users who have been
+    # disabled.
+    if model_cls is User and obj.is_disabled:
+        raise Gone(detail='The requested user is no longer available.')
+    elif not getattr(obj, 'is_active', True) or getattr(obj, 'is_deleted', False):
+        if display_name is None:
+            raise Gone
         else:
-            if not getattr(obj, 'is_active', True) or getattr(obj, 'is_deleted', False):
-                if display_name is None:
-                    raise Gone
-                else:
-                    raise Gone(detail='The requested {name} is no longer available.'.format(name=display_name))
-        return obj
+            raise Gone(detail='The requested {name} is no longer available.'.format(name=display_name))
+    return obj
 
-    except NoResultsFound:
-        raise NotFound
 
 def waterbutler_url_for(request_type, provider, path, node_id, token, obj_args=None, **query):
     """Reverse URL lookup for WaterButler routes
