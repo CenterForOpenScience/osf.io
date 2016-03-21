@@ -436,7 +436,7 @@ var ProjectOrganizer = {
                     filesData: args.filesData(),
                     dragContainment : args.wrapperSelector,
                     resetUi : args.resetUi,
-                    showSidebar : args.howSidebar,
+                    showSidebar : args.showSidebar,
                     loadValue : args.loadValue,
                     mpTreeData : args.treeData,
                     mpBuildTree : args.buildTree,
