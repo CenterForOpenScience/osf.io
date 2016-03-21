@@ -32,7 +32,12 @@ Embargo for
 
 <script type="text/html" id="embargo_initiated">
 initiated an embargoed registration of
+<!-- ko if: !registrationCancelled -->
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: projectUrl}"></a>
+<!-- /ko -->
+<!-- ko if: registrationCancelled -->
+<span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
+<!-- /ko -->
 </script>
 
 ## Retraction related logs
@@ -55,9 +60,13 @@ initiated retraction of registration of
 <script type="text/html" id="registration_initiated">
 initiated registration of
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: projectUrl}"></a>
+<!-- ko if: !registrationCancelled -->
 </script>
-
+<!-- /ko -->
 <script type="text/html" id="registration_cancelled">
+<!-- ko if: registrationCancelled -->
+<span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
+<!-- /ko -->
 cancelled registration of
 <span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
 </script>
