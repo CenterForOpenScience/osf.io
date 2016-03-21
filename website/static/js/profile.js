@@ -1061,6 +1061,8 @@ module.exports = {
     Jobs: Jobs,
     Schools: Schools,
     // Expose private viewmodels
-    _NameViewModel: NameViewModel
+    _NameViewModel: NameViewModel,
+    SocialViewModel: SocialViewModel,
+    BaseViewModel: BaseViewModel
 };
 

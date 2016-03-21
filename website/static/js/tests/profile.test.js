@@ -83,6 +83,45 @@ describe('profile', () => {
                 });
             });
 
+        describe('SocialViewModel', () => {
+            var vm;
+            var changeMessageSpy;
+            beforeEach(() => {
+                vm = new profile.SocialViewModel(nameURLs, ['view', 'edit']) ;
+                changeMessageSpy = new sinon.spy(vm, 'changeMessage');
+            });
+
+            it('inherit from BaseViewModel', () => {
+               assert.instanceOf(vm, profile.BaseViewModel);
+            });
+
+            describe('hasValidWebsites', () => {
+                it('should reject invalid website', () => {
+                    vm.profileWebsites(['definitelynotawebsite']) ;
+                    assert.isFalse(vm.hasValidWebsites()) ;
+                });
+                it('should accept valid website', () => {
+                    vm.profileWebsites(['definitelyawebsite.com']) ;
+                    assert.isTrue(vm.hasValidWebsites()) ;
+                });
+            });
+
+            describe('submit', () => {
+                it('error message for invalid website', () => {
+                    vm.profileWebsites(['definitelynotawebsite']) ;
+                    vm.submit();
+                    assert.called(changeMessageSpy);
+                    assert.equal(vm.message(), 'Please update your website') ;
+                });
+                it('no error message for valid website', () => {
+                    vm.profileWebsites(['definitelyawebsite.com']) ;
+                    vm.submit();
+                    assert.notCalled(changeMessageSpy);
+                });
+            });
+
+        });
+
             // TODO: Test citation computes
         });
 
