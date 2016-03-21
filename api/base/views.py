@@ -49,9 +49,9 @@ class JSONAPIBaseView(generics.GenericAPIView):
                 'is_embedded': True
             })
             if (view, item) in CACHE.setdefault(request._request._request, {}):
-                response = CACHE[request._request._request][(view, item)]
+                response = CACHE[request._request._request][(view, field_name, item)]
             else:
-                response = CACHE[request._request._request][(view, item)] = view(*view_args, **view_kwargs)
+                response = CACHE[request._request._request][(view, field_name, item)] = view(*view_args, **view_kwargs)
             return response.data
         return partial
 
