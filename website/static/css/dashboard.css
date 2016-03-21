@@ -317,6 +317,10 @@ div[data-growl="container"] {
 #dashboard>.ball-pulse-sync>div, #dashboard>.ball-pulse>div, #dashboard>.ball-scale>div {
     background-color: #BED1E2;
 }
+
+.text-muted-more {
+    color: #999;
+}
 /* Responsive Style */
 @media only screen and (min-width : 1200px) {
 
