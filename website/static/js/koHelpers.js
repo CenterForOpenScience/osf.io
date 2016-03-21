@@ -230,11 +230,11 @@ var fitHelper = function(value, length, replacement, trimWhere) {
 /**
     Trim the text to a specified width. Adapted from knockout.punches "fit" filter
     Behavior can be modified by the presence of additional related bindings on the same element:
-
- // TODO: Document hash of inputs
-    - fitLength : specifies the maximum number of characters to include (default no limit)
-    - fitReplacement : Specifies the sequence to use in place of trimmed characters (default `...`)
-    - fitTrimWhere : Trim extra characters from the left, middle, or right side. (default right)
+    @param value {Object} A hash of options describing the text to truncate, and how
+    @param value.text {String} The string to truncate
+    @param value.length {Integer}  Specifies the maximum length of the truncated string (default no limit)
+    @param [value.replacement='...'] {String} Specifies the sequence to use in place of trimmed characters
+    @param [value.trimWhere='right'] {String} Trim extra characters from the left, middle, or right side
 */
 ko.bindingHandlers.fitText = {
     update: function(element, valueAccessor, allBindings) {
