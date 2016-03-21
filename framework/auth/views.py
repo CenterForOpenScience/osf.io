@@ -205,8 +205,8 @@ def confirm_email_get(token, auth=None, **kwargs):
 
             if token in auth.user.email_verifications:
                 status.push_status_message(language.CONFIRM_ALTERNATE_EMAIL_ERROR, 'danger')
-            # Go to dashboard
-            return redirect(web_url_for('dashboard'))
+            # Go to home page
+            return redirect(web_url_for('index'))
 
         status.push_status_message(language.MERGE_COMPLETE, 'success')
         return redirect(web_url_for('user_account'))
