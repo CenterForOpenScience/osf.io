@@ -13,7 +13,7 @@
                     <div data-bind='if:page() === REMOVE'>
                         <div class="form-group">
                             <span>Do you want to remove <b data-bind="text:removeSelf() ? 'yourself' : contributorToRemove()['fullname']"></b> from
-                                <b>{{title}}</b>, or from <b>{{title}}</b> and every component in it?</span>
+                                <b data-bind="text: title"></b>, or from <b data-bind="text: title"></b> and every component in it?</span>
                         </div>
                         <div id="remove-page-radio-buttons" class="col-md-8" align="left">
                             <div class="radio">
@@ -34,7 +34,7 @@
                     <!-- removeNoChildren page -->
                     <div data-bind='if:page() === REMOVE_NO_CHILDREN'>
                         <div class="form-group" data-bind="if:contributorToRemove">
-                            <span>Remove <b data-bind="text:removeSelf() ? 'yourself' : contributorToRemove()['fullname']"></b> from {{title}}?</span>
+                            <span>Remove <b data-bind="text:removeSelf() ? 'yourself' : contributorToRemove()['fullname']"></b> from <span data-bind="text: title"></span>?</span>
                         </div>
 
                     </div><!-- end removeNoChildren page -->
