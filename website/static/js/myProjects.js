@@ -447,6 +447,7 @@ var MyProjects = {
                 self.loadingNodePages = false;
                 self.loadingAllNodes = false;
             }
+            m.redraw();
         };
         self.reloadOnClick = function (item) {
             self.updateFilter(item);
@@ -461,6 +462,7 @@ var MyProjects = {
                 },' Reload \'All my projects\''))
             ]));
             self.data([]);
+            m.redraw();
             throw new Error('Receiving initial data for File Browser failed. Please check your url');
         };
         self.generateFiltersList = function _generateFilterList () {
