@@ -62,8 +62,6 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
         if (item.kind === 'file') {
             viewModel.selectedFiles.push(item);
             item.css = 'fangorn-selected';
-        } else {
-            viewModel.selectedFiles([]);
         }
     };
     var fw = new FilesWidget(
@@ -170,36 +168,46 @@ var Uploader = function(question) {
     question.uid = 'uploader_' + uploaderCount;
     uploaderCount++;
     self.selectedFiles = ko.observableArray([]);
-    self.selectedFiles.subscribe(function(file) {
-        if (file && !self.fileAlreadySelected(file)) {
-            question.extra().push({
-                selectedFileName: file.data.name,
-                nodeId: file.data.nodeId,
-                viewUrl: '/project/' + file.data.nodeId + '/files/osfstorage' + file.data.path,
-                sha256: file.data.extra.hashes.sha256,
-                hasSelectedFile: true
-            });
-            question.value(question.formattedFileList);
-        }
-    });
-
-
-    self.fileAlreadySelected = ko.observable(function(file) {
-        $.each(question.extra(), function(idx, selectedFile) {
-            if(selectedFile.extra.hashes.sha256 === file.extra.hashes.sha256) {
-                return true;
+    self.selectedFiles.subscribe(function(fileList) {
+        $.each(fileList, function(idx, file) {
+            if (file && !self.fileAlreadySelected(file)) {
+                question.extra().push({
+                    data: file.data,
+                    selectedFileName: file.data.name,
+                    nodeId: file.data.nodeId,
+                    viewUrl: '/project/' + file.data.nodeId + '/files/osfstorage' + file.data.path,
+                    sha256: file.data.extra.hashes.sha256
+                });
             }
-            return false;
         });
+        question.value(question.formattedFileList());
     });
+
+
+    self.fileAlreadySelected = function(file) {
+        var selected = false;
+        $.each(question.extra(), function(idx, alreadyFile) {
+            if(alreadyFile.sha256 === file.data.extra.hashes.sha256){
+                selected = true;
+                return;
+            }
+        });
+        return selected;
+    };
 
     self.hasSelectedFile = ko.computed(function() {
-        return !!(question.extra().viewUrl);
+        return question.extra().length !== 0;
     });
-    self.unselectFile = function() {
-        self.selectedFile(null);
-        question.extra({
-            selectedFileName: NO_FILE
+    self.unselectFile = function(file) {
+        var fileToRemove = this;
+        var files = question.extra();
+
+        $.each(files, function(idx, file){
+            if(files[idx].sha256 === file.data.extra.hashes.sha256) {
+                files.splice(idx, 1);
+                self.selectedFiles.splice(idx, 1);
+                question.extra.splice(idx, 1);
+            }
         });
     };
 
@@ -211,8 +219,12 @@ var Uploader = function(question) {
             return 'no file selected';
         }
         else {
-            var extra = question.extra();
-            return $('<a target="_blank" href="' + extra.viewUrl + '">' + $osf.htmlEscape(extra.selectedFileName) + '</a>');
+            var files = question.extra();
+            var elem = '';
+            $.each(files, function(idx, file) {
+                elem += '<a target="_blank" href="' + files[idx].viewUrl + '">' + $osf.htmlEscape(files[idx].selectedFileName) + ' </a>';
+            });
+            return $(elem);
         }
     };
 
