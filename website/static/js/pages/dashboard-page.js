@@ -52,8 +52,19 @@ function confirm_emails(emails) {
         var title = email[0].user_merge ? 'Merge account' : 'Add email';
 
         var merge_message = email[0].user_merge ? 'Would you like to merge ' + email[0].address +
-        ' into your account?  This action is irreversable.' : 'Would you like to add ' + email[0].address +
-        ' to your account?';
+        ' into your account?  This action is irreversable.' : 'Would you like to add the email address ' +
+        email[0].address + ' to your account?';
+
+        var confirm_message = email[0].user_merge ? email[0].address + ' has been merged into your account.' : +
+            email[0].address + ' has been added to your account.';
+
+        var nope_message = email[0].user_merge ? 'You have chosen to not merge '+ email[0].address +
+        '  into your account. If you change your mind, visit the <a href="/settings/account/">user settings page</a>.' : +
+            'You have chosen not to add ' + email[0].address + ' to your account.' +
+             'If you change your mind, visit the <a href="/settings/account/">user settings page</a>.';
+
+        var fail_message = 'There was a problem.  ' +
+            'Please contact <a href="mailto: support@osf.io">support@osf.io</a> if the problem persists.';
 
         bootbox.confirm({
             title: title,
@@ -64,9 +75,13 @@ function confirm_emails(emails) {
                         confirmedEmailURL,
                         email[0]
                     ).done(function() {
+                        $osf.growl('Success',confirm_message, 'success', 3000);
                         confirm_emails(emails);
                     }).fail(function() {
-                        console.log('api call failed');
+                        $osf.growl('Error',
+                            fail_message,
+                            'danger'
+                        );
                         confirm_emails(emails);
                     });
                 }
@@ -75,17 +90,22 @@ function confirm_emails(emails) {
                         removeConfirmedEmailURL,
                         email[0]
                     ).done(function() {
+                        $osf.growl('Warning', nope_message, 'warning');
                         confirm_emails(emails);
                     }).fail(function() {
-                        console.log('api call failed');
+                        $osf.growl('Error',
+                            fail_message,
+                            'danger'
+                        );
                         confirm_emails(emails);
                     });
+
                 }
             },
             buttons:{
                 confirm:{
                     label:'Add email',
-                    className:'btn-danger'
+                    className:'btn-success'
                 }
             }
         });
