@@ -254,7 +254,7 @@ class FakeView(ODMOrderingFilter):
 #regrgession test for issue: https://openscience.atlassian.net/browse/OSF-5237
 class TestODMOrderingFilter(ApiTestCase):
 
-    def setUp(self):
+    def test_filter_queryset_fails(self):
         class query:
             title = ' '
             def __init__(self, title):
@@ -263,17 +263,18 @@ class TestODMOrderingFilter(ApiTestCase):
                 return self.title
         query_s = []
         q1 = query('NewProj')
-        query_s.append(str(q1))
+        query_s.append((q1))
         q2 = query('Zip')
-        query_s.append(str(q2))
+        query_s.append((q2))
         q3 = query('Proj')
-        query_s.append(str(q3))
+        query_s.append((q3))
         q4 = query('Activity')
-        query_s.append(str(q4))
-        print query_s
+        query_s.append((q4))
         sort_q = sorted(query_s, cmp=filters.sort_multiple(['-title']))
-        #sort_q = self.view.filter_queryset(requests.request('GET','http://127.0.0.1:8000/v2/users/me/nodes/?sort=-title'), query_s, self.view)
-        assert_equal(sort_q, ['Zip', 'Proj', 'NewProj', 'Activity'])
+        sortt = []
+        for i in sort_q:
+            sortt.append(str(i))
+        assert_equal((sortt) , ['Zip', 'Proj', 'NewProj', 'Activity'])
     
     def test_filter_queryset_duplicate_fails(self):
         class query:
@@ -284,16 +285,17 @@ class TestODMOrderingFilter(ApiTestCase):
                 return self.title
         query_s = []
         q1 = query('NewProj')
-        query_s.append(str(q1))
+        query_s.append((q1))
         q2 = query('Zip')
-        query_s.append(str(q2))
+        query_s.append((q2))
         q3 = query('Activity')
-        query_s.append(str(q3))
+        query_s.append((q3))
         q4 = query('Activity')
-        query_s.append(str(q4))
-        print query_s
+        query_s.append((q4))
         sort_q = sorted(query_s, cmp=filters.sort_multiple(['-title']))
-        #sort_q = self.view.filter_queryset(requests.request('GET','http://127.0.0.1:8000/v2/users/me/nodes/?sort=-title'), query_s, self.view)
-        assert_equal(sort_q, ['Zip', 'NewProj', 'Activity', 'Activity'])
+        sortt = []
+        for i in sort_q:
+            sortt.append(str(i))
+        assert_equal((sortt) , ['Zip', 'NewProj', 'Activity', 'Activity'])
 
 
