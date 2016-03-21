@@ -114,7 +114,11 @@ var LogPieces = {
                 return m('a', {href: userObject.data.links.html, onclick: function() {
                     $osf.trackClick(logObject.trackingCategory, logObject.trackingAction, 'navigate-to-user-from-logs');
                 }}, userObject.data.attributes.full_name);
-            } else {
+            }
+            else if (userObject.errors) {
+                return m('span', userObject.errors[0].meta.full_name);
+            }
+            else {
                 return m('span', 'A user');
             }
         }

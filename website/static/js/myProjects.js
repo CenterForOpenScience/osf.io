@@ -37,8 +37,15 @@ function _formatDataforPO(item) {
     item.contributors = '';
     if (item.embeds.contributors.data){
         item.embeds.contributors.data.forEach(function(c){
-            var attr = c.embeds.users.data.attributes;
+            var attr;
+            if (c.embeds.users.data) {
+                attr = c.embeds.users.data.attributes;
+            }
+            else {
+                attr = c.embeds.users.errors[0].meta;
+            }
             item.contributors += attr.full_name + ' ' + attr.middle_names + ' ' + attr.given_name + ' ' + attr.family_name + ' ' ;
+
         });
     }
     item.date = new $osf.FormattableDate(item.attributes.date_modified);
@@ -480,7 +487,9 @@ var MyProjects = {
             self.nameFilters = [];
             for (var user in self.users){
                 var u2 = self.users[user];
-                self.nameFilters.push(new LinkObject('name', { id : u2.data.id, count : u2.count, query : { 'related_counts' : 'children' }}, u2.data.embeds.users.data.attributes.full_name, options.institutionId || false));
+                if (u2.data.embeds.users.data) {
+                    self.nameFilters.push(new LinkObject('name', { id : u2.data.id, count : u2.count, query : { 'related_counts' : 'children' }}, u2.data.embeds.users.data.attributes.full_name, options.institutionId || false));
+                }
             }
             // order names
             self.nameFilters.sort(sortByCountDesc);
@@ -1410,11 +1419,18 @@ var ActivityLogs = {
             args.activityLogs() ? args.activityLogs().map(function(item){
                 item.trackingCategory = 'myProjects';
                 item.trackingAction = 'information-panel';
+                var image = m('i.fa.fa-question');
+                if (item.embeds.user.data) {
+                    image = m('img', { src : item.embeds.user.data.links.profile_image});
+                }
+                else if (item.embeds.user.errors){
+                    image = m('img', { src : item.embeds.user.errors[0].meta.profile_image});
+                }
                 return m('.db-activity-item', [
-                    m('', [ m('.db-log-avatar.m-r-xs', m('img', { src : item.embeds.user.data.links.profile_image})),
-                        m.component(LogText, item)]),
-                    m('.text-right', m('span.text-muted.m-r-xs', item.attributes.formattableDate.local))
-                ]);
+                m('', [ m('.db-log-avatar.m-r-xs', image),
+                    m.component(LogText, item)]),
+                m('.text-right', m('span.text-muted.m-r-xs', item.attributes.formattableDate.local))]);
+
             }) : '',
             m('.db-activity-nav.text-center', [
                 args.showMoreActivityLogs() ? m('.btn.btn-sm.btn-link', { onclick: function(){
