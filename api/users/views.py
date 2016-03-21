@@ -1,3 +1,4 @@
+
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 from rest_framework.exceptions import NotAuthenticated
@@ -5,7 +6,6 @@ from django.contrib.auth.models import AnonymousUser
 
 from modularodm import Q
 
-from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
 
 from website.models import User, Node
@@ -19,13 +19,14 @@ from api.base.parsers import JSONAPIRelationshipParser, JSONAPIRelationshipParse
 from api.nodes.serializers import NodeSerializer
 from api.institutions.serializers import InstitutionSerializer
 from api.registrations.serializers import RegistrationSerializer
+from api.base.utils import default_node_list_query, default_node_permission_query
 
 from .serializers import UserSerializer, UserDetailSerializer, UserInstitutionsRelationshipSerializer
 from .permissions import ReadOnlyOrCurrentUser, ReadOnlyOrCurrentUserRelationship
 
 
 class UserMixin(object):
-    """Mixin with convenience methods for retrieving the current node based on the
+    """Mixin with convenience methods for retrieving the current user based on the
     current URL. By default, fetches the user based on the user_id kwarg.
     """
 
@@ -231,10 +232,11 @@ class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
 class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin):
     """List of nodes that the user contributes to. *Read-only*.
 
-    Paginated list of nodes that the user contributes to.  Each resource contains the full representation of the node,
-    meaning additional requests to an individual node's detail view are not necessary. If the user id in the path is the
-    same as the logged-in user, all nodes will be visible.  Otherwise, you will only be able to see the other user's
-    publicly-visible nodes.  The special user id `me` can be used to represent the currently logged-in user.
+    Paginated list of nodes that the user contributes to ordered by `date_modified`.  Each resource contains the
+    full representation of the node, meaning additional requests to an individual node's detail view are not necessary.
+    If the user id in the path is the same as the logged-in user, all nodes will be visible.  Otherwise, you will only be
+    able to see the other user's publicly-visible nodes.  The special user id `me` can be used to represent the currently
+    logged-in user.
 
     ##Node Attributes
 
@@ -253,7 +255,6 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin
         fork           boolean            is this project a fork?
         registration   boolean            has this project been registered?
         fork           boolean            is this node a fork of another node?
-        dashboard      boolean            is this node visible on the user dashboard?
         public         boolean            has this node been made publicly-visible?
 
     ##Links
@@ -292,26 +293,19 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin
     view_category = 'users'
     view_name = 'user-nodes'
 
+    ordering = ('-date_modified',)
+
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
         user = self.get_user()
-        return (
-            Q('contributors', 'eq', user) &
-            Q('is_folder', 'ne', True) &
-            Q('is_deleted', 'ne', True)
-        )
+        query = Q('contributors', 'eq', user) & default_node_list_query()
+        if user != self.request.user:
+            query &= default_node_permission_query(self.request.user)
+        return query
 
     # overrides ListAPIView
     def get_queryset(self):
-        current_user = self.request.user
-        if current_user.is_anonymous():
-            auth = Auth(None)
-        else:
-            auth = Auth(current_user)
-        query = self.get_query_from_request()
-        raw_nodes = Node.find(self.get_default_odm_query() & query)
-        nodes = [each for each in raw_nodes if each.is_public or each.can_view(auth)]
-        return nodes
+        return Node.find(self.get_query_from_request())
 
 
 class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
@@ -361,7 +355,6 @@ class UserRegistrations(UserNodes):
         tags                            array of strings   list of tags that describe the registered node
         fork                            boolean            is this project a fork?
         registration                    boolean            has this project been registered?
-        dashboard                       boolean            is this registered node visible on the user dashboard?
         public                          boolean            has this registration been made publicly-visible?
         retracted                       boolean            has this registration been retracted?
         date_registered                 iso8601 timestamp  timestamp that the registration was created
@@ -421,12 +414,19 @@ class UserRegistrations(UserNodes):
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
         user = self.get_user()
-        return (
-            Q('contributors', 'eq', user) &
-            Q('is_folder', 'ne', True) &
+        current_user = self.request.user
+
+        query = (
+            Q('is_collection', 'ne', True) &
             Q('is_deleted', 'ne', True) &
-            Q('is_registration', 'eq', True)
+            Q('is_registration', 'eq', True) &
+            Q('contributors', 'eq', user._id)
         )
+        permission_query = Q('is_public', 'eq', True)
+        if not current_user.is_anonymous():
+            permission_query = (permission_query | Q('contributors', 'eq', current_user._id))
+        query = query & permission_query
+        return query
 
 
 class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIView, UserMixin):

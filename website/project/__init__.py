@@ -61,30 +61,26 @@ def new_node(category, title, user, description=None, parent=None):
     return node
 
 
-def new_dashboard(user):
-    """Create a new dashboard project.
+def new_bookmark_collection(user):
+    """Create a new bookmark collection project.
 
     :param User user: User object
     :return Node: Created node
 
     """
-    existing_dashboards = Node.find_for_user(
-        user,
-        subquery=(
-            Q('category', 'eq', 'project') &
-            Q('is_dashboard', 'eq', True)
-        )
+    existing_bookmark_collection = Node.find(
+        Q('is_bookmark_collection', 'eq', True) & Q('contributors', 'eq', user._id)
     )
 
-    if existing_dashboards.count() > 0:
-        raise NodeStateError("Users may only have one dashboard")
+    if existing_bookmark_collection.count() > 0:
+        raise NodeStateError("Users may only have one bookmark collection")
 
     node = Node(
-        title='Dashboard',
+        title='Bookmarks',
         creator=user,
         category='project',
-        is_dashboard=True,
-        is_folder=True
+        is_bookmark_collection=True,
+        is_collection=True
     )
 
     node.save()
@@ -92,7 +88,7 @@ def new_dashboard(user):
     return node
 
 
-def new_folder(title, user):
+def new_collection(title, user):
     """Create a new folder project.
 
     :param str title: Node title
@@ -106,7 +102,7 @@ def new_folder(title, user):
         title=title,
         creator=user,
         category='project',
-        is_folder=True
+        is_collection=True
     )
 
     node.save()

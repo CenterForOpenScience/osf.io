@@ -6,7 +6,7 @@ from website.models import Node
 from website.util.sanitize import strip_html
 
 from tests.base import ApiTestCase
-from tests.factories import AuthUserFactory, DashboardFactory, FolderFactory, ProjectFactory
+from tests.factories import AuthUserFactory, BookmarkCollectionFactory, CollectionFactory, ProjectFactory
 
 from api.base.settings.defaults import API_BASE
 
@@ -42,6 +42,13 @@ class TestUserDetail(ApiTestCase):
         res = self.app.get(url)
         user_json = res.json['data']
         assert_not_equal(user_json['attributes']['full_name'], self.user_one.fullname)
+
+    def test_returns_timezone_and_locale(self):
+        url = "/{}users/{}/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url)
+        attributes = res.json['data']['attributes']
+        assert_equal(attributes['timezone'], self.user_one.timezone)
+        assert_equal(attributes['locale'], self.user_one.locale)
 
     def test_get_new_users(self):
         url = "/{}users/{}/".format(API_BASE, self.user_two._id)
@@ -92,11 +99,11 @@ class TestUserRoutesNodeRoutes(ApiTestCase):
         self.private_project_user_one = ProjectFactory(title="Private Project User One", is_public=False, creator=self.user_one)
         self.public_project_user_two = ProjectFactory(title="Public Project User Two", is_public=True, creator=self.user_two)
         self.private_project_user_two = ProjectFactory(title="Private Project User Two", is_public=False, creator=self.user_two)
-        self.deleted_project_user_one = FolderFactory(title="Deleted Project User One", is_public=False, creator=self.user_one, is_deleted=True)
+        self.deleted_project_user_one = CollectionFactory(title="Deleted Project User One", is_public=False, creator=self.user_one, is_deleted=True)
 
-        self.folder = FolderFactory()
-        self.deleted_folder = FolderFactory(title="Deleted Folder User One", is_public=False, creator=self.user_one, is_deleted=True)
-        self.dashboard = DashboardFactory()
+        self.folder = CollectionFactory()
+        self.deleted_folder = CollectionFactory(title="Deleted Folder User One", is_public=False, creator=self.user_one, is_deleted=True)
+        self.bookmark_collection = BookmarkCollectionFactory()
 
     def tearDown(self):
         super(TestUserRoutesNodeRoutes, self).tearDown()
