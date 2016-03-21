@@ -1051,6 +1051,3 @@ def relationship_diff(current_items, new_items):
         'remove': {k: current_items[k] for k in (set(current_items.keys()) - set(new_items.keys()))}
     }
 
-
-def skip_field():
-    raise SkipField
