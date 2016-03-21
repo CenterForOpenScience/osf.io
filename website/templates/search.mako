@@ -120,7 +120,7 @@
         <!-- /ko -->
 
         <!-- TODO: Add a "trimText" filter to replace the one we're losing from KO.punches; this display value should be a 500 char max limit-->
-        <h5>Description: <small data-bind="text: description || 'No Description'"></small></h5>
+        <h5>Description: <small data-bind="fitText: {text: description || 'No Description', length: 500}"></small></h5>
 
         <!-- ko if: contributors.length > 0 -->
         <h5>
@@ -235,8 +235,7 @@
         <h4><span data-bind="if: parent_title"><span data-bind="text: parent_title"></span> /</span> <a data-bind="attr: {href: url}, text: title"></a></h4>
         <!-- /ko -->
 
-        <!-- TODO: Write and use a replacement for the trimText filter here. Limit 500 characters -->
-        <p data-bind="visible: description"><strong>Description:</strong> <span data-bind="text: description"></span></p>
+        <p data-bind="visible: description"><strong>Description:</strong> <span data-bind="fitText: {text: description, length: 500}"></span></p>
 
         <!-- ko if: contributors.length > 0 -->
         <p>
@@ -276,8 +275,7 @@
         <!-- /ko -->
         <strong><span data-bind="text: 'Date Registered: ' + dateRegistered['local'], tooltip: {title: dateRegistered['utc']}"></span></strong>
 
-        <!-- TODO: Add trimText filter to restrict length to 500 chars -->
-        <p data-bind="visible: description"><strong>Description:</strong> <span data-bind="text: description>"></span></p>
+        <p data-bind="visible: description"><strong>Description:</strong> <span data-bind="fitText: {text: description, length: 500}"></span></p>
 
         <!-- ko if: contributors.length > 0 -->
         <p>
