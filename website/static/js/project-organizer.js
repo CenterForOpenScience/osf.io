@@ -62,6 +62,7 @@ function _poContributors(item) {
         var name;
         var familyName;
         var givenName;
+        var fullName;
         if (person.embeds.users.data) {
             familyName = person.embeds.users.data.attributes.family_name;
             givenName = person.embeds.users.data.attributes.given_name;

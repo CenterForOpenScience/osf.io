@@ -638,6 +638,18 @@ class TestDeactivatedUser(ApiTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'Making API requests with credentials associated with a deactivated account is not allowed.')
 
+    def test_unconfirmed_users_return_entire_user_object(self):
+        url = '/{}users/{}/'.format(API_BASE, self.user._id)
+        res = self.app.get(url, auth=self.user2.auth, expect_errors=True)
+        assert_equal(res.status_code, 200)
+        self.user.is_registered = False
+        self.user.save()
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 200)
+        attr = res.json['data']['attributes']
+        assert_equal(attr['active'], False)
+        assert_equal(res.json['data']['id'], self.user._id)
+
     def test_requesting_deactivated_user_returns_410_response_and_meta_info(self):
         url = '/{}users/{}/'.format(API_BASE, self.user._id)
         res = self.app.get(url, auth=self.user2.auth, expect_errors=True)
