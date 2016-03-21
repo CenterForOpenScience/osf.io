@@ -4,13 +4,13 @@ var $ = require('jquery');
 var m = require('mithril');
 var ko = require('knockout');
 var Treebeard = require('treebeard');
-var $osf = require('js/osfHelpers');
 var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 
-function NodesPrivacyTreebeard(divID, data, nodesState, nodesOriginal) {
+function NodeSelectTreebeard(divID, data, nodesState) {
     /**
-     * nodesChanged and nodesState are knockout variables.  nodesChanged will keep track of the nodes that have
-     *  changed state.  nodeState is all the nodes in their current state.
+     *  nodesState is a knockout variable that syncs the mithril checkbox list with information on the view.  The
+     *  changed boolean parameter is used to sync the checkbox with changes, the canWrite boolean parameter is used
+     *  to disable the checkbox
      * */
     var tbOptions = $.extend({}, projectSettingsTreebeardBase.defaults, {
         divID: divID,
@@ -34,13 +34,11 @@ function NodesPrivacyTreebeard(divID, data, nodesState, nodesOriginal) {
                 }
             ];
         },
-        resolveRows: function nodesPrivacyResolveRows(item){
+        resolveRows: function nodeSelectResolveRows(item){
             var tb = this;
             var columns = [];
             var id = item.data.node.id;
             var nodesStateLocal = ko.toJS(nodesState());
-            //this lets treebeard know when changes come from the knockout side (select all or select none)
-            item.data.node.is_public = nodesStateLocal[id].public;
             columns.push(
                 {
                     data : 'action',
@@ -48,21 +46,15 @@ function NodesPrivacyTreebeard(divID, data, nodesState, nodesOriginal) {
                     filter : false,
                     custom : function () {
                         return m('input[type=checkbox]', {
-                            disabled : !item.data.node.can_write,
+                            disabled : !nodesStateLocal[id].enabled,
                             onclick : function() {
-                                item.data.node.is_public = !item.data.node.is_public;
+                                item.data.node.checked = !item.data.node.checked;
                                 item.open = true;
-                                nodesStateLocal[id].public = item.data.node.is_public;
-                                if (nodesStateLocal[id].public !== nodesOriginal[id].local) {
-                                    nodesStateLocal[id].changed = true;
-                                }
-                                else {
-                                    nodesStateLocal[id].changed = false;
-                                }
+                                nodesStateLocal[id].checked = !nodesStateLocal[id].checked;
                                 nodesState(nodesStateLocal);
                                 tb.updateFolder(null, item);
                             },
-                            checked: nodesState()[id].public
+                            checked: nodesState()[id].checked
                         });
                     }
                 },
@@ -73,7 +65,12 @@ function NodesPrivacyTreebeard(divID, data, nodesState, nodesOriginal) {
                     sortInclude: false,
                     hideColumnTitles: false,
                     custom: function () {
-                        return m('span', item.data.node.title);
+                        if (nodesStateLocal[id].enabled) {
+                            return m('span', item.data.node.title);
+                        }
+                        else {
+                            return m('span', {class: 'text-muted'}, item.data.node.title);
+                        }
                     }
                 }
             );
@@ -82,7 +79,6 @@ function NodesPrivacyTreebeard(divID, data, nodesState, nodesOriginal) {
     });
     var grid = new Treebeard(tbOptions);
     projectSettingsTreebeardBase.expandOnLoad.call(grid.tbController);
-
 }
-module.exports = NodesPrivacyTreebeard;
+module.exports = NodeSelectTreebeard;
 
