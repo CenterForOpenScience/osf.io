@@ -4,7 +4,6 @@ from rest_framework import permissions
 from website.models import Node, NodeLog
 
 from api.nodes.permissions import ContributorOrPublic
-from api.base.utils import get_object_or_error
 
 
 class ContributorOrPublicForLogs(permissions.BasePermission):
