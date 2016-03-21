@@ -35,6 +35,7 @@ initiated an embargoed registration of
 <!-- ko if: !registrationCancelled -->
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: projectUrl}"></a>
 <!-- /ko -->
+
 <!-- ko if: registrationCancelled -->
 <span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
 <!-- /ko -->
@@ -59,14 +60,16 @@ initiated retraction of registration of
 ## Registration related Logs
 <script type="text/html" id="registration_initiated">
 initiated registration of
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: projectUrl}"></a>
 <!-- ko if: !registrationCancelled -->
-</script>
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: projectUrl}"></a>
 <!-- /ko -->
-<script type="text/html" id="registration_cancelled">
+
 <!-- ko if: registrationCancelled -->
 <span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
 <!-- /ko -->
+</script>
+
+<script type="text/html" id="registration_cancelled">
 cancelled registration of
 <span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
 </script>
