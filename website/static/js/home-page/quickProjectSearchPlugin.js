@@ -147,16 +147,36 @@ var QuickSearchProject = {
         self.mapNodeToContributors = function (node, contributors){
             var contributorList = [];
             contributors.data.forEach(function(contrib){
-                fullName = contrib.embeds.users.data.attributes.full_name;
-                contributorList.push(fullName);
+                var fullName;
+                if (contrib.embeds.users.data) {
+                    fullName = contrib.embeds.users.data.attributes.full_name;
+                    contributorList.push(fullName);
+                }
+                else if (contrib.embeds.users.errors) {
+                    fullName = contrib.embeds.users.errors[0].meta.full_name;
+                    contributorList.push(fullName);
+                }
+
             });
             self.contributorMapping[node.id] = contributorList;
         };
 
         // Gets contrib family name for display
         self.getFamilyName = function(i, node) {
-            var attributes = node.embeds.contributors.data[i].embeds.users.data.attributes;
-            return $osf.findContribName(attributes);
+            var contributor = node.embeds.contributors.data[i];
+            var attributes;
+
+            if (contributor) {
+                 if (contributor.embeds.users.data) {
+                    attributes = contributor.embeds.users.data.attributes;
+                 }
+                 else if (contributor.embeds.users.errors) {
+                    attributes = contributor.embeds.users.errors[0].meta;
+                 }
+                return $osf.findContribName(attributes);
+            }
+            return 'a contributor';
+
         };
 
          // Formats date for display
