@@ -24,7 +24,7 @@
                 <form class="form">
                     <div class="form-group">
                         <span>
-                            <textarea class="form-control" placeholder="Add a comment" data-bind="value: replyContent, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
+                            <textarea class="form-control atwho-inputor" placeholder="Add a comment" data-bind="value: replyContent, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
                         </span>
                     </div>
                     <div data-bind="if: replyNotEmpty" class="form-group">
