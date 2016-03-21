@@ -1387,24 +1387,25 @@ var Filters = {
 var Information = {
     view : function (ctrl, args) {
         var template = '';
+        var showRemoveFromCollection;
         var filter = args.activeFilter();
         if (args.selected().length === 0) {
             template = m('.db-info-empty.text-muted.p-lg', 'Select a row to view project details.');
         }
         if (args.selected().length === 1) {
             var item = args.selected()[0].data;
+            showRemoveFromCollection = filter.type === 'collection' && !filter.data.systemCollection && !item.relationships.parent;
             if(item.attributes.category === ''){
                 item.attributes.category = 'Uncategorized';
             }
             template = m('.p-sm', [
-                filter.type === 'collection' && !filter.data.systemCollection ? m('.clearfix', m('.btn.btn-default.btn-sm.btn.p-xs.text-danger.pull-right', {onclick : function() {
+                showRemoveFromCollection ? m('.clearfix', m('.btn.btn-default.btn-sm.btn.p-xs.text-danger.pull-right', { onclick : function() {
                     args.removeProjectFromCollections();
                     $osf.trackClick('myProjects', 'information-panel', 'remove-project-from-collection');
-                }
-                }, 'Remove from collection')) : '',
-                m('h3', m('a', { href : item.links.html, onclick: function(){
-                    $osf.trackClick('myProjects', 'information-panel', 'navigate-to-project');
-                }}, item.attributes.title)),
+                } }, 'Remove from collection')) : '',
+                    m('h3', m('a', { href : item.links.html, onclick: function(){
+                        $osf.trackClick('myProjects', 'information-panel', 'navigate-to-project');
+                    }}, item.attributes.title)),
                 m('[role="tabpanel"]', [
                     m('ul.nav.nav-tabs.m-b-md[role="tablist"]', [
                         m('li[role="presentation"].active', m('a[href="#tab-information"][aria-controls="information"][role="tab"][data-toggle="tab"]', {onclick: function(){
@@ -1443,11 +1444,13 @@ var Information = {
             ]);
         }
         if (args.selected().length > 1) {
+            var firstItem = args.selected()[0].data;
+            showRemoveFromCollection = filter.type === 'collection' && !filter.data.systemCollection && !firstItem.relationships.parent;
             template = m('.p-sm', [
-                filter.type === 'collection' && !filter.data.systemCollection ? m('.clearfix', m('.btn.btn-default.btn-sm.p-xs.text-danger.pull-right', {onclick : function() {
+                showRemoveFromCollection ? m('.clearfix', m('.btn.btn-default.btn-sm.p-xs.text-danger.pull-right', { onclick : function() {
                     args.removeProjectFromCollections();
                     $osf.trackClick('myProjects', 'information-panel', 'remove-multiple-projects-from-collections');
-                }}, 'Remove selected from collection')) : '',
+                } }, 'Remove selected from collection')) : '',
                 args.selected().map(function(item){
                     return m('.db-info-multi', [
                         m('h4', m('a', { href : item.data.links.html}, item.data.attributes.title)),

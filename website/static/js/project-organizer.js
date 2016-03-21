@@ -18,15 +18,8 @@ var $osf = require('js/osfHelpers');
 
 var LinkObject;
 var allProjectsCache;
+var formatDataforPO;
 var allTopLevelProjectsCache;
-/* This sort projects is specific to data type used here for updates */
-function sortProjects (flatList) {
-    // Sorts by last modified
-    flatList.sort(function(a,b){
-        return new Date(b.data.attributes.date_modified) - new Date(a.data.attributes.date_modified);
-    });
-}
-
 
 /**
  * Edits the template for the column titles.
@@ -412,22 +405,41 @@ var tbOptions = {
         }),
         m('.filterReset', { onclick : resetFilter }, tb.options.removeIcon())];
     },
-    hiddenFilterRows : ['tags']
+    hiddenFilterRows : ['tags'],
+    lazyLoadOnLoad : function (tree, event) {
+        var tb = this;
+        function formatItems (arr) {
+            var item;
+            for(var i = 0; i < arr.length; i++){
+                item = arr[i];
+                formatDataforPO(item.data);
+                if(item.children.length > 0){
+                    formatItems(item.children);
+                }
+            }
+        }
+        formatItems(tree.children);
+    }
 };
 
 var ProjectOrganizer = {
     controller : function (args) {
         LinkObject = args.LinkObject;
+        formatDataforPO = args.formatDataforPO;
         var self = this;
         self.updateTB = function(){
             var poOptions = $.extend(
                 {
+                    divID : 'projectOrganizer',
+                    dragOptions : {
+                        containment : '#dashboard'
+                    },
                     updateSelected : args.updateSelected,
                     updateFilesData : args.updateFilesData,
                     filesData: args.filesData(),
                     dragContainment : args.wrapperSelector,
                     resetUi : args.resetUi,
-                    showSidebar : args.showSidebar,
+                    showSidebar : args.howSidebar,
                     loadValue : args.loadValue,
                     mpTreeData : args.treeData,
                     mpBuildTree : args.buildTree,

@@ -94,9 +94,7 @@
 .db-collections ul>li, .db-filters ul>li {
     padding: 5px;
 }
-.db-collections h5 , .db-filters h5 {
-    line-height: 25px;
-}
+
 .collectionMenu {
     position: absolute;
     top: 0;
@@ -314,6 +312,10 @@ div[data-growl="container"] {
     font-weight: bold;
     color: #C98509;
     text-align: center;
+}
+
+#dashboard>.ball-pulse-sync>div, #dashboard>.ball-pulse>div, #dashboard>.ball-scale>div {
+    background-color: #BED1E2;
 }
 /* Responsive Style */
 @media only screen and (min-width : 1200px) {
