@@ -1,13 +1,10 @@
 'use strict';
 
 var ko = require('knockout');
-require('knockout.punches');
 var $ = require('jquery');
 var Raven = require('raven-js');
 var koHelpers = require('js/koHelpers');
 var $osf = require('js/osfHelpers');
-
-ko.punches.enableAll();
 
 var MESSAGE_TIMEOUT = 5000;
 var MIN_FORWARD_TIME = 5;
