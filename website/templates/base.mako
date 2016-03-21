@@ -46,6 +46,7 @@
     ${self.javascript()}
 
     <link href='//fonts.googleapis.com/css?family=Carrois+Gothic|Inika|Patua+One' rel='stylesheet' type='text/css'>
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,600,300,700' rel='stylesheet' type='text/css'>
 
 </head>
 <body data-spy="scroll" data-target=".scrollspy">
@@ -109,6 +110,21 @@
             </script>
         % endif
 
+        <%!
+            import hashlib
+
+            def user_hash(user_id):
+                token = hashlib.md5()
+                token.update(user_id)
+                return token.hexdigest()
+        %>
+
+        <%!
+            import datetime
+            def create_timestamp():
+                return str(datetime.datetime.utcnow())
+        %>
+
         % if settings.GOOGLE_ANALYTICS_ID:
             <script>
             (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
@@ -119,8 +135,11 @@
             ga('create', ${ settings.GOOGLE_ANALYTICS_ID | sjson, n }, 'auto', {'allowLinker': true});
             ga('require', 'linker');
             ga('linker:autoLink', ['centerforopenscience.org'] );
+            ga('set', 'dimension1', ${user_hash(user_id) | sjson, n});
+            ga('set', 'dimension2', ${create_timestamp() | sjson, n});
             ga('send', 'pageview');
             </script>
+
         % else:
             <script>
                 window.ga = function(source) {
@@ -145,7 +164,12 @@
                 waterbutlerURL: ${ waterbutler_url if waterbutler_url.endswith('/') else waterbutler_url + '/' | sjson, n },
                 cookieName: ${ cookie_name | sjson, n },
                 apiV2Prefix: ${ api_v2_base | sjson, n },
-                registerUrl: ${ api_url_for('register_user') | sjson, n}
+                registerUrl: ${ api_url_for('register_user') | sjson, n},
+                currentUser: {
+                    id: ${ user_id | sjson, n }
+                },
+                popular: ${ popular_links_node | sjson, n},
+                newAndNoteworthy: ${ noteworthy_links_node | sjson, n}
             });
         </script>
 

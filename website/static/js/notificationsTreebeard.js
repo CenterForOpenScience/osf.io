@@ -210,7 +210,7 @@ function ProjectNotifications(data) {
         }
     });
     var grid = new Treebeard(tbOptions);
-    expandOnLoad.call(grid.tbController);
+    expandOnLoad.call(grid);
 }
 
 module.exports = ProjectNotifications;

@@ -34,11 +34,10 @@ from website.oauth.models import (
     ExternalAccount,
     ExternalProvider
 )
-from website.models import Institution
 from website.project.model import (
     Comment, DraftRegistration, Embargo, MetaSchema, Node, NodeLog, Pointer,
     PrivateLink, RegistrationApproval, Retraction, Sanction, Tag, WatchConfig, AlternativeCitation,
-    ensure_schemas
+    ensure_schemas, Institution
 )
 from website.notifications.model import NotificationSubscription, NotificationDigest
 from website.archiver.model import ArchiveTarget, ArchiveJob
@@ -185,12 +184,12 @@ class ProjectFactory(AbstractNodeFactory):
     category = 'project'
 
 
-class FolderFactory(ProjectFactory):
-    is_folder = True
+class CollectionFactory(ProjectFactory):
+    is_collection = True
 
 
-class DashboardFactory(FolderFactory):
-    is_dashboard = True
+class BookmarkCollectionFactory(CollectionFactory):
+    is_bookmark_collection = True
 
 
 class NodeFactory(AbstractNodeFactory):
@@ -257,7 +256,7 @@ class RegistrationFactory(AbstractNodeFactory):
             reg = register()
             add_approval_step(reg)
         else:
-            with patch('framework.tasks.handlers.enqueue_task'):
+            with patch('framework.celery_tasks.handlers.enqueue_task'):
                 reg = register()
                 add_approval_step(reg)
             with patch.object(reg.archive_job, 'archive_tree_finished', Mock(return_value=True)):
@@ -495,9 +494,6 @@ class CommentFactory(ModularOdmFactory):
             instance.root_target = target.referent.root_target
         else:
             instance.root_target = target
-            if isinstance(instance.root_target.referent, StoredFileNode):
-                file_id = instance.root_target._id
-                instance.node.commented_files[file_id] = instance.node.commented_files.get(file_id, 0) + 1
         return instance
 
     @classmethod
@@ -517,20 +513,32 @@ class CommentFactory(ModularOdmFactory):
             instance.root_target = target.referent.root_target
         else:
             instance.root_target = target
-            if isinstance(instance.root_target.referent, StoredFileNode):
-                file_id = instance.root_target._id
-                instance.node.commented_files[file_id] = instance.node.commented_files.get(file_id, 0) + 1
-                instance.node.save()
         instance.save()
         return instance
 
 
-class InstitutionFactory(ModularOdmFactory):
-    FACTORY_FOR = Institution
-    _id = Sequence(lambda n: "S{}".format(n))
-    name = Sequence(lambda n: "School{}".format(n))
-    logo_name = 'logo.img'
-    auth_url = 'http://thisIsUrl.biz'
+class InstitutionFactory(ProjectFactory):
+
+    def _build(cls, target_class, *args, **kwargs):
+        from random import randint
+        '''Build an object without saving it.'''
+        inst = ProjectFactory._build(target_class, *args, **kwargs)
+        inst.institution_id = str(randint(1, 20000))
+        inst.institution_name = str(randint(10, 20000))
+        inst.institution_logo_name = 'logo.img'
+        inst.institution_auth_url = 'http://thisIsUrl.biz'
+        return Institution(inst)
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        from random import randint
+        inst = ProjectFactory._create(target_class, *args, **kwargs)
+        inst.institution_id = str(randint(1, 20000))
+        inst.institution_name = str(randint(10, 20000))
+        inst.institution_logo_name = 'logo.img'
+        inst.institution_auth_url = 'http://thisIsUrl.biz'
+        inst.save()
+        return Institution(inst)
 
 
 class NotificationSubscriptionFactory(ModularOdmFactory):

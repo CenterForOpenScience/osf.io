@@ -5,7 +5,7 @@ from nose.tools import *  # flake8: noqa
 from framework.auth.core import Auth
 
 from website.models import NodeLog
-from website.views import find_dashboard
+from website.views import find_bookmark_collection
 from website.util import permissions
 from website.util.sanitize import strip_html
 
@@ -18,7 +18,7 @@ from tests.factories import (
     ProjectFactory,
     RegistrationFactory,
     AuthUserFactory,
-    FolderFactory,
+    CollectionFactory,
     CommentFactory,
     RetractedRegistrationFactory
 )
@@ -155,35 +155,18 @@ class TestNodeDetail(ApiTestCase):
         comment = CommentFactory(node=self.public_project, user=contributor, page='node')
         res = self.app.get(self.public_url + '?related_counts=True', auth=self.user.auth)
         unread = res.json['data']['relationships']['comments']['links']['related']['meta']['unread']
-        unread_comments_total = unread['total']
         unread_comments_node = unread['node']
-        assert_equal(unread_comments_total, 1)
         assert_equal(unread_comments_node, 1)
-
-    def test_node_has_correct_unread_file_comments_count(self):
-        contributor = AuthUserFactory()
-        self.public_project.add_contributor(contributor=contributor, auth=Auth(self.user))
-        test_file = test_utils.create_test_file(self.public_project, self.user)
-        comment = CommentFactory(node=self.public_project, target=test_file.get_guid(), user=contributor, page='files')
-        comment.node.commented_files[comment.root_target._id] = 1
-        self.public_project.save()
-        res = self.app.get(self.public_url + '?related_counts=True', auth=self.user.auth)
-        unread = res.json['data']['relationships']['comments']['links']['related']['meta']['unread']
-        unread_comments_total = unread['total']
-        unread_comments_files = unread['files']
-        assert_equal(unread_comments_total, 1)
-        assert_equal(unread_comments_files, 1)
 
     def test_node_properties(self):
         res = self.app.get(self.public_url)
         assert_equal(res.json['data']['attributes']['public'], True)
         assert_equal(res.json['data']['attributes']['registration'], False)
         assert_equal(res.json['data']['attributes']['collection'], False)
-        assert_equal(res.json['data']['attributes']['dashboard'], False)
         assert_equal(res.json['data']['attributes']['tags'], [])
 
     def test_requesting_folder_returns_error(self):
-        folder = NodeFactory(is_folder=True, creator=self.user)
+        folder = NodeFactory(is_collection=True, creator=self.user)
         res = self.app.get(
             '/{}nodes/{}/'.format(API_BASE, folder._id),
             auth=self.user.auth,
@@ -197,7 +180,7 @@ class TestNodeDetail(ApiTestCase):
         assert_equal(res.status_code, 404)
 
     def test_cannot_return_folder_at_node_detail_endpoint(self):
-        folder = FolderFactory(creator=self.user)
+        folder = CollectionFactory(creator=self.user)
         res = self.app.get('/{}nodes/{}/'.format(API_BASE, folder._id), auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
@@ -843,14 +826,14 @@ class TestNodeDelete(NodeCRUDTestCase):
             'Any child components must be deleted prior to deleting this project.'
         )
 
-    def test_delete_dashboard_returns_error(self):
-        dashboard_node = find_dashboard(self.user)
+    def test_delete_bookmark_collection_returns_error(self):
+        bookmark_collection = find_bookmark_collection(self.user)
         res = self.app.delete_json_api(
-            '/{}nodes/{}/'.format(API_BASE, dashboard_node._id),
+            '/{}nodes/{}/'.format(API_BASE, bookmark_collection._id),
             auth=self.user.auth,
             expect_errors=True
         )
-        # Dashboards are a folder, so a 404 is returned
+        # Bookmark collections are collections, so a 404 is returned
         assert_equal(res.status_code, 404)
 
     def test_cannot_delete_a_retraction(self):

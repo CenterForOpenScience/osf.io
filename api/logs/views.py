@@ -59,7 +59,6 @@ class LogNodeList(JSONAPIBaseView, generics.ListAPIView, LogMixin, ODMFilterMixi
         tags           array of strings   list of tags that describe the node
         registration   boolean            has this project been registered?
         collection     boolean            is this node a collection of other nodes?
-        dashboard      boolean            is this node visible on the user dashboard?
         public         boolean            has this node been made publicly-visible?
 
     ##Links
@@ -136,7 +135,6 @@ class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView, LogMixin):
         tags           array of strings   list of tags that describe the node
         registration   boolean            has this project been registered?
         collection     boolean            is this node a collection of other nodes?
-        dashboard      boolean            is this node visible on the user dashboard?
         public         boolean            has this node been made publicly-visible?
 
     ##Links

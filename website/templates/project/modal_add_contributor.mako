@@ -62,12 +62,12 @@
                                                     data-bind="visible: !contributor.added,
                                                                click:$root.add,
                                                                tooltip: {title: 'Add contributor'}"
-                                                ><i class="fa fa-fw fa-plus"></i></a>
+                                                ><i class="fa fa-plus"></i></a>
                                             <div data-bind="visible: contributor.added,
                                                             tooltip: {title: 'Already added'}"
                                                 ><div
                                                     class="btn btn-default contrib-button btn-mini disabled"
-                                                    ><i class="fa fa-fw fa-check"></i></div></div>
+                                                    ><i class="fa fa-check"></i></div></div>
                                         </td>
                                         <td>
                                             <!-- height and width are explicitly specified for faster rendering -->
