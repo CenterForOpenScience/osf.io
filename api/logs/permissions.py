@@ -14,7 +14,7 @@ class ContributorOrPublicForLogs(permissions.BasePermission):
 
         if obj._backrefs.get('logged'):
             for node_id in obj._backrefs['logged']['node']['logs']:
-                node = get_object_or_error(Node, node_id, display_name='node')
+                node = Node.load(node_id)
                 if ContributorOrPublic().has_object_permission(request, view, node):
                     return True
 
