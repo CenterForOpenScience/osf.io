@@ -60,6 +60,8 @@
                     width = options.toggleWidth * bodyWidth;
                 }
                 options.onOpen.call(self);
+                // @ mention: call here if reloading on toggle
+                // $('.atwho-inputor').atwho(at_config);
             }
             $handle.tooltip('hide');
             $toggleElm.animate(
