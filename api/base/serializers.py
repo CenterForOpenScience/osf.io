@@ -1050,4 +1050,3 @@ def relationship_diff(current_items, new_items):
         'add': {k: new_items[k] for k in (set(new_items.keys()) - set(current_items.keys()))},
         'remove': {k: current_items[k] for k in (set(current_items.keys()) - set(new_items.keys()))}
     }
-
