@@ -632,6 +632,7 @@ var MyProjects = {
                 updateSelected : ctrl.updateSelected,
                 updateFilesData : ctrl.updateFilesData,
                 LinkObject : LinkObject,
+                formatDataforPO : _formatDataforPO,
                 wrapperSelector : args.wrapperSelector,
                 allProjects : ctrl.allProjects,
                 allTopLevelProjects : ctrl.allTopLevelProjects,
