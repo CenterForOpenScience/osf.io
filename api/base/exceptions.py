@@ -106,7 +106,7 @@ class JSONAPIException(APIException):
 
 
 # Custom Exceptions the Django Rest Framework does not support
-class Gone(APIException):
+class Gone(JSONAPIException):
     status_code = status.HTTP_410_GONE
     default_detail = ('The requested resource is no longer available.')
 
