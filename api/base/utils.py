@@ -71,7 +71,7 @@ def get_object_or_error(model_cls, query_or_pk, display_name=None, **kwargs):
         raise Gone(detail='The requested user is no longer available.',
                    meta={'full_name': obj.fullname, 'family_name': obj.family_name, 'given_name': obj.given_name,
                          'middle_names': obj.middle_names, 'profile_image': obj.profile_image_url()})
-    elif not model_cls is User and not getattr(obj, 'is_active', True) or getattr(obj, 'is_deleted', False):
+    elif model_cls is not User and not getattr(obj, 'is_active', True) or getattr(obj, 'is_deleted', False):
         if display_name is None:
             raise Gone
         else:

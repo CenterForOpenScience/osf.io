@@ -111,6 +111,9 @@ class HideIfDisabled(ser.Field):
     def __init__(self, field, **kwargs):
         super(HideIfDisabled, self).__init__(**kwargs)
         self.field = field
+        self.source = field.source
+        self.required = field.required
+        self.read_only = field.read_only
 
     def get_attribute(self, instance):
         if instance.is_disabled:
