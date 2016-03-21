@@ -161,7 +161,6 @@ def _update_comments_timestamp(auth, node, page=Comment.OVERVIEW, root_id=None):
     else:
         return {}
 
-@must_be_logged_in
 @must_be_contributor_or_public
 def update_comments_timestamp(auth, node, **kwargs):
     timestamp_info = request.get_json()
