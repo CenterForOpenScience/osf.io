@@ -12,8 +12,8 @@ from tests.factories import (
     ProjectFactory,
     RegistrationFactory,
     AuthUserFactory,
-    FolderFactory,
-    DashboardFactory
+    CollectionFactory,
+    BookmarkCollectionFactory
 )
 
 
@@ -107,8 +107,8 @@ class TestRegistrationFiltering(ApiTestCase):
         self.private_project_user_one_reg = RegistrationFactory(creator=self.user_one, project=self.private_project_user_one, is_public=False)
         self.private_project_user_two_reg = RegistrationFactory(creator=self.user_two, project=self.private_project_user_two, is_public=False)
 
-        self.folder = FolderFactory()
-        self.dashboard = DashboardFactory()
+        self.folder = CollectionFactory()
+        self.bookmark_collection = BookmarkCollectionFactory()
 
         self.url = "/{}registrations/".format(API_BASE)
 
@@ -204,7 +204,7 @@ class TestRegistrationFiltering(ApiTestCase):
         assert_not_in(self.private_project_user_one._id, ids)
         assert_not_in(self.private_project_user_two._id, ids)
         assert_not_in(self.folder._id, ids)
-        assert_not_in(self.dashboard._id, ids)
+        assert_not_in(self.bookmark_collection._id, ids)
 
     def test_get_all_registrations_with_no_filter_not_logged_in(self):
         res = self.app.get(self.url)
@@ -223,7 +223,7 @@ class TestRegistrationFiltering(ApiTestCase):
         assert_not_in(self.private_project_user_one._id, ids)
         assert_not_in(self.private_project_user_two._id, ids)
         assert_not_in(self.folder._id, ids)
-        assert_not_in(self.dashboard._id, ids)
+        assert_not_in(self.bookmark_collection._id, ids)
 
     def test_get_one_registration_with_exact_filter_logged_in(self):
         url = "/{}registrations/?filter[title]=Project%20One".format(API_BASE)
@@ -239,7 +239,7 @@ class TestRegistrationFiltering(ApiTestCase):
         assert_not_in(self.private_project_user_two_reg._id, ids)
 
         assert_not_in(self.folder._id, ids)
-        assert_not_in(self.dashboard._id, ids)
+        assert_not_in(self.bookmark_collection._id, ids)
 
     def test_get_one_registration_with_exact_filter_not_logged_in(self):
         url = "/{}registrations/?filter[title]=Private%20Project%20User%20One".format(API_BASE)
@@ -255,7 +255,7 @@ class TestRegistrationFiltering(ApiTestCase):
         assert_not_in(self.private_project_user_two_reg._id, ids)
 
         assert_not_in(self.folder._id, ids)
-        assert_not_in(self.dashboard._id, ids)
+        assert_not_in(self.bookmark_collection._id, ids)
 
     def test_get_some_registrations_with_substring_logged_in(self):
         url = "/{}registrations/?filter[title]=Two".format(API_BASE)
@@ -271,7 +271,7 @@ class TestRegistrationFiltering(ApiTestCase):
         assert_not_in(self.private_project_user_two_reg._id, ids)
 
         assert_not_in(self.folder._id, ids)
-        assert_not_in(self.dashboard._id, ids)
+        assert_not_in(self.bookmark_collection._id, ids)
 
     def test_get_some_registrations_with_substring_not_logged_in(self):
         url = "/{}registrations/?filter[title]=One".format(API_BASE)
@@ -287,7 +287,7 @@ class TestRegistrationFiltering(ApiTestCase):
         assert_not_in(self.private_project_user_two_reg._id, ids)
 
         assert_not_in(self.folder._id, ids)
-        assert_not_in(self.dashboard._id, ids)
+        assert_not_in(self.bookmark_collection._id, ids)
 
     def test_get_only_public_or_my_registrations_with_filter_logged_in(self):
         url = "/{}registrations/?filter[title]=Project".format(API_BASE)
@@ -303,7 +303,7 @@ class TestRegistrationFiltering(ApiTestCase):
         assert_not_in(self.private_project_user_two_reg._id, ids)
 
         assert_not_in(self.folder._id, ids)
-        assert_not_in(self.dashboard._id, ids)
+        assert_not_in(self.bookmark_collection._id, ids)
 
     def test_get_only_public_registrations_with_filter_not_logged_in(self):
         url = "/{}registrations/?filter[title]=Project".format(API_BASE)
@@ -319,7 +319,7 @@ class TestRegistrationFiltering(ApiTestCase):
         assert_not_in(self.private_project_user_two_reg._id, ids)
 
         assert_not_in(self.folder._id, ids)
-        assert_not_in(self.dashboard._id, ids)
+        assert_not_in(self.bookmark_collection._id, ids)
 
     def test_alternate_filtering_field_logged_in(self):
         url = "/{}registrations/?filter[description]=Three".format(API_BASE)
@@ -335,7 +335,7 @@ class TestRegistrationFiltering(ApiTestCase):
         assert_not_in(self.private_project_user_two_reg._id, ids)
 
         assert_not_in(self.folder._id, ids)
-        assert_not_in(self.dashboard._id, ids)
+        assert_not_in(self.bookmark_collection._id, ids)
 
     def test_alternate_filtering_field_not_logged_in(self):
         url = "/{}registrations/?filter[description]=Two".format(API_BASE)
@@ -351,7 +351,7 @@ class TestRegistrationFiltering(ApiTestCase):
         assert_not_in(self.private_project_user_two_reg._id, ids)
 
         assert_not_in(self.folder._id, ids)
-        assert_not_in(self.dashboard._id, ids)
+        assert_not_in(self.bookmark_collection._id, ids)
 
     def test_incorrect_filtering_field_not_logged_in(self):
         url = '/{}registrations/?filter[notafield]=bogus'.format(API_BASE)

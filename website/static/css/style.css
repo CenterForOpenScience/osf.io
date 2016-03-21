@@ -604,6 +604,13 @@ button.close {
     display: inline-block
 }
 
+/* Navigation -- general style should be in style guide
+-------------------------------------------------- */
+#navbarScope a.nav-user-dropdown {
+    padding-top: 12px;
+    padding-bottom: 11px;
+}
+
 /* Anonymous-mode notification bar
 -------------------------------------------------- */
 #anonymous-mode {
@@ -615,4 +622,10 @@ button.close {
     text-align: center;
     background-color: #f0ad4e;
     padding: .5em;
+}
+
+/* Override insane add tag font 
+-------------------------------------------------- */
+.tagsinput input {
+    font-family : 'Open Sans', Helvetica, sans-serif;
 }

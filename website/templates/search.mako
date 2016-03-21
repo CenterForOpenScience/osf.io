@@ -255,6 +255,9 @@
             </span>
         </p>
         <!-- /ko -->
+      <!-- ko if: primary_institution -->
+        <p><strong>Primary institution:</strong> {{ primary_institution }} </p>
+        <!-- /ko -->
         <!-- ko if: tags.length > 0 -->
         <div data-bind="template: 'tag-cloud'"></div>
         <!-- /ko -->

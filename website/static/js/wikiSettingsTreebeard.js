@@ -128,7 +128,7 @@ function ProjectWiki(data) {
         }
     });
     var wgrid = new Treebeard(tbOptions);
-    expandOnLoad.call(wgrid.tbController);
+    expandOnLoad.call(wgrid);
 }
 
 module.exports = ProjectWiki;

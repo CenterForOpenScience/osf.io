@@ -110,8 +110,12 @@ MIDDLEWARE_CLASSES = (
     'api.base.middleware.TokuTransactionMiddleware',
     'api.base.middleware.PostcommitTaskMiddleware',
 
+    # A profiling middleware. ONLY FOR DEV USE
+    # Uncomment and add "prof" to url params to recieve a profile for that url
+    # 'api.base.middleware.ProfileMiddleware',
+
     # 'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
+    'api.base.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     # 'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -176,6 +180,9 @@ SWAGGER_SETTINGS = {
 }
 
 DEBUG_TRANSACTIONS = DEBUG
+
+JWT_SECRET = 'osf_api_cas_login_jwt_secret_32b'
+JWE_SECRET = 'osf_api_cas_login_jwe_secret_32b'
 
 ENABLE_VARNISH = osf_settings.ENABLE_VARNISH
 ENABLE_ESI = osf_settings.ENABLE_ESI

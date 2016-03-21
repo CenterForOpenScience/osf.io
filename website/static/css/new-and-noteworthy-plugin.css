@@ -1,0 +1,27 @@
+.prevent-overflow {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.public-projects-box {
+    background: rgba(255, 255, 255, 0.22);
+    padding: 10px 15px;
+    border-radius: 2px;
+    margin-top: 20px;
+}
+.public-projects-item {
+    background-color: #fff;
+    box-shadow: 1px 1px 1px #898787;
+    padding: 8px 15px;
+    color: #555;
+    margin-bottom: 5px;
+}
+.public-projects-item:hover {
+    cursor: pointer;
+    background-color: #337AB7;
+    color: #fff;
+}
+.public-projects-box > a:hover {
+    text-decoration: none;
+}
