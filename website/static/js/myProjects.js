@@ -648,6 +648,27 @@ var MyProjects = {
             ctrl.projectOrganizerOptions
         );
         return [
+            m('.dashboard-header', m('.row', [
+                m('.col-xs-8', m('h3', [
+                    'My Projects ',
+                    m('small.hidden-xs', 'Browse and organize all your projects')
+                ])),
+                m('.col-xs-4.p-sm', m('.pull-right', m.component(AddProject, {
+                    buttonTemplate: m('.btn.btn-success[data-toggle="modal"][data-target="#addProject"]', {onclick: function() {
+                        $osf.trackClick('myProjects', 'add-project', 'open-add-project' + '-modal');
+                    }}, 'Create Project'),
+                    parentID: null,
+                    modalID: 'addProject',
+                    title: 'Create new project',
+                    categoryList: ctrl.categoryList,
+                    stayCallback: function () {
+                        ctrl.allProjectsLoaded(false);
+                        ctrl.updateList(ctrl.breadcrumbs()[ctrl.breadcrumbs().length - 1]);
+                    },
+                    trackingCategory: 'myProjects',
+                    trackingAction: 'add-project'
+                })))
+            ])),
             m('.db-header.row', [
                 m('.col-xs-12.col-sm-8.col-lg-9', m.component(Breadcrumbs,ctrl)),
                 m('.db-buttonRow.col-xs-12.col-sm-4.col-lg-3', [
