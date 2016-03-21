@@ -160,6 +160,8 @@ BaseComment.prototype.fetchNext = function(url, comments) {
             self._loaded = true;
             self.loadingComments(false);
         }
+    }).fail(function () {
+        self.loadingComments(false);
     });
     return deferred.promise();
 };
