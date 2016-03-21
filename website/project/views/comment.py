@@ -5,7 +5,6 @@ from datetime import datetime
 from flask import request
 from modularodm import Q
 
-from framework.auth.decorators import must_be_logged_in
 from framework.guid.model import Guid
 
 from website.addons.base.signals import file_updated
