@@ -77,12 +77,6 @@ class TestUrlForHelpers(unittest.TestCase):
                               base_prefix='v2/')
         assert_equal(full_url, "http://localhost:8000/v2/nodes/abcd3/contributors/")
 
-        # User is still responsible for the trailing slash. If they omit it, it doesn't appear at end of URL
-        full_url = api_v2_url('/nodes/abcd3/contributors',
-                              base_route='http://localhost:8000/',
-                              base_prefix='v2/')
-        assert_not_equal(full_url, "http://localhost:8000/v2/nodes/abcd3/contributors/")
-
     def test_api_v2_url_with_params(self):
         """Handles- and encodes- URLs with parameters (dict and kwarg) correctly"""
         full_url = api_v2_url('/nodes/abcd3/contributors/',
