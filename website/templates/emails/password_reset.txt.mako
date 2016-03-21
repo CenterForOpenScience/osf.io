@@ -1,4 +1,13 @@
-DRAFT EMAIL MESSAGE - Do not go to production with this.
+Hello ${user.fullname},
 
-Your password has been reset. If you did not reset your password, go to the Open Science Framework
-at https://osf.io/ and reset your password.
+The password for your OSF account has successfully changed. 
+
+If you did not request this action or you believe an unauthorized person has accessed your account, reset your password immediately by visiting:
+
+http://osf.io/settings/account/
+
+If you need additional help or have questions, let us know at contact@cos.io.
+
+Sincerely yours,
+
+The OSF Robot
