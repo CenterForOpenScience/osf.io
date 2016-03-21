@@ -630,6 +630,9 @@ CommentListModel.prototype.initListeners = function() {
 };
 
 var onOpen = function(page, rootId, nodeApiUrl) {
+    if (window.contextVars.node.anonymous){
+        return null;
+    }
     var timestampUrl = nodeApiUrl + 'comments/timestamps/';
     var request = osfHelpers.putJSON(
         timestampUrl,
