@@ -94,7 +94,6 @@ var TitleBar = {
     }
 };
 
-/* Render the description of a single result. Will highlight the matched text */
 var Description = {
     controller: function(vm) {
         var self = this;
@@ -105,14 +104,12 @@ var Description = {
         var showOnClick = function() {
             ctrl.showAll(!ctrl.showAll());
         };
-        //if its long and does not contain any math then you can truncate it
         if ((result.description || '').length > 350 && result.description.indexOf('$') === -1) {
             return m('', [
                 m('p.readable.pointer', {onclick: showOnClick},
                     ctrl.showAll() ? result.description : $.truncate(result.description, {length: 350})
                 ),
                 m('a.sr-only', {href: '#', onclick: showOnClick}, ctrl.showAll() ? 'See less' : 'See more')]);
-        //otherwise run MathJax and display the entire description
         } else {
             return m('p.readable', MathJax.Hub.Queue(['Typeset', MathJax.Hub]), result.description);
         }
