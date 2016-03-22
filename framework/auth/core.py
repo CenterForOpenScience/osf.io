@@ -397,15 +397,11 @@ class User(GuidStoredObject, AddonModelMixin):
     # When the user was disabled.
     date_disabled = fields.DateTimeField(index=True)
 
-    # when comments for a node were last viewed
+    # when comments were last viewed
     comments_viewed_timestamp = fields.DictionaryField()
     # Format: {
-    #   'node_id': {
-    #     'node': 'timestamp',
-    #     'files': {
-    #        'file_id': 'timestamp'
-    #     }
-    #   }
+    #   'Comment.root_target._id': 'timestamp',
+    #   ...
     # }
 
     # timezone for user's locale (e.g. 'America/New_York')
@@ -1256,11 +1252,11 @@ class User(GuidStoredObject, AddonModelMixin):
             # clear subscriptions for merged user
             signals.user_merged.send(user, list_name=key, subscription=False, send_goodbye=False)
 
-        for node_id, timestamp in user.comments_viewed_timestamp.iteritems():
-            if not self.comments_viewed_timestamp.get(node_id):
-                self.comments_viewed_timestamp[node_id] = timestamp
-            elif timestamp > self.comments_viewed_timestamp[node_id]:
-                self.comments_viewed_timestamp[node_id] = timestamp
+        for target_id, timestamp in user.comments_viewed_timestamp.iteritems():
+            if not self.comments_viewed_timestamp.get(target_id):
+                self.comments_viewed_timestamp[target_id] = timestamp
+            elif timestamp > self.comments_viewed_timestamp[target_id]:
+                self.comments_viewed_timestamp[target_id] = timestamp
 
         self.emails.extend(user.emails)
         user.emails = []
@@ -1399,19 +1395,11 @@ class User(GuidStoredObject, AddonModelMixin):
         from website.institutions.model import Institution, AffiliatedInstitutionsList
         return AffiliatedInstitutionsList([Institution(inst) for inst in self._affiliated_institutions], obj=self, private_target='_affiliated_institutions')
 
-    def get_node_comment_timestamps(self, node, page, file_id=None):
-        """ Returns the timestamp for when comments were last viewed on a node or
-            a dictionary of timestamps for when comments were last viewed on files.
+    def get_node_comment_timestamps(self, target_id):
+        """ Returns the timestamp for when comments were last viewed on a node or file.
         """
         default_timestamp = dt.datetime(1970, 1, 1, 12, 0, 0)
-        timestamps = self.comments_viewed_timestamp.get(node._id, {})
-        if page == 'node':
-            page_timestamps = timestamps.get(page, default_timestamp)
-        elif page == 'files':
-            page_timestamps = timestamps.get(page, {})
-            if file_id:
-                page_timestamps = page_timestamps.get(file_id, default_timestamp)
-        return page_timestamps
+        return self.comments_viewed_timestamp.get(target_id, default_timestamp)
 
 
 def _merge_into_reversed(*iterables):

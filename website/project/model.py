@@ -215,10 +215,10 @@ class Comment(GuidStoredObject, SpamMixin):
     def find_n_unread(cls, user, node, page, root_id=None):
         if node.is_contributor(user):
             if page == Comment.OVERVIEW:
-                view_timestamp = user.get_node_comment_timestamps(node, 'node')
+                view_timestamp = user.get_node_comment_timestamps(target_id=node._id)
                 root_target = Guid.load(node._id)
             elif page == Comment.FILES:
-                view_timestamp = user.get_node_comment_timestamps(node, page, file_id=root_id)
+                view_timestamp = user.get_node_comment_timestamps(target_id=root_id)
                 root_target = Guid.load(root_id)
             else:
                 raise ValueError('Invalid page')
