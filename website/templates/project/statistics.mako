@@ -12,17 +12,16 @@
         </div>
     </div>
 % else:
-    <script src="${"/static/public/js/statistics-page.js" | webpack_asset}"> </script>
     <div id="adBlock" class="scripted alert alert-info text-center alert-dismissible" role="alert">
       <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
       The use of adblocking software may prevent site analytics from loading properly.
     </div>
 
-<div class="row">
+<div class="row m-lg">
     <div class="col-sm-4">
         <div class="panel panel-default">
             <div class="panel-heading clearfix">
-                <h3 class="panel-title">Analytics</h3>
+                <h3 class="panel-title">Visits</h3>
             </div>
             <div id="visits" class="panel-body">
             </div>
@@ -31,18 +30,18 @@
     <div class="col-sm-4">
         <div class="panel panel-default">
             <div class="panel-heading clearfix">
-                <h3 class="panel-title">Analytics</h3>
+                <h3 class="panel-title">Top Referrers</h3>
             </div>
-            <div id="referrers" class="panel-body">
+            <div id="topReferrers" class="panel-body">
             </div>
         </div>
     </div>
     <div class="col-sm-4">
         <div class="panel panel-default">
             <div class="panel-heading clearfix">
-                <h3 class="panel-title">Analytics</h3>
+                <h3 class="panel-title">Visits by Server Time</h3>
             </div>
-            <div id="serverVisits" class="panel-body">
+            <div id="serverTimeVisits" class="panel-body">
             </div>
         </div>
     </div>
@@ -50,4 +49,7 @@
 % endif
 
 <%def name="javascript_bottom()">
+  ${parent.javascript_bottom()}
+  <script src="${'/static/public/js/statistics-page.js' | webpack_asset}"></script>
 </%def>
+

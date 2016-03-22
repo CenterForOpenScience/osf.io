@@ -1,6 +1,8 @@
 'use strict';
 var $  = require('jquery');
 var Cookie = require('js-cookie');
+var keen = require('keen-js');
+var Statistics = require('js/statistics');
 
 $(function(){
     // Make adblock message permanently dismissible
@@ -14,4 +16,6 @@ $(function(){
     }
 });
 
-var Statistics = require('js/statistics');
+keen.ready(function(){
+    new Statistics();
+});
