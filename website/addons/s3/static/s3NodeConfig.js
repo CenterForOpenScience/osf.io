@@ -1,6 +1,5 @@
 'use strict';
 var ko = require('knockout');
-require('knockout.punches');
 var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
@@ -8,8 +7,6 @@ var Raven = require('raven-js');
 var $osf = require('js/osfHelpers');
 
 var s3Settings = require('json!./settings.json');
-
-ko.punches.enableAll();
 
 var defaultSettings = {
     url: '',

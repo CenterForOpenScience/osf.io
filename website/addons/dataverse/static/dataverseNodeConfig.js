@@ -5,14 +5,12 @@
 
 var ko = require('knockout');
 var bootbox = require('bootbox');
-require('knockout.punches');
 var Raven = require('raven-js');
 
 var $osf = require('js/osfHelpers');
 
 var $modal = $('#dataverseInputCredentials');
 
-ko.punches.enableAll();
 
 function ViewModel(url) {
     var self = this;
