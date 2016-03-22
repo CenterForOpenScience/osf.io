@@ -385,7 +385,8 @@ var MyProjects = {
                                     self.updateList(lastcrumb);
                                 },
                                 trackingCategory: 'myProjects',
-                                trackingAction: 'add-component'
+                                trackingAction: 'add-component',
+                                templates: self.data()
                             })
                         ]));
                     }
@@ -1198,7 +1199,8 @@ var Breadcrumbs = {
 
                             },
                             trackingCategory: 'myProjects',
-                            trackingAction: 'add-' + objectType
+                            trackingAction: 'add-' + objectType,
+                            templates: args.data()
                         });
                     }
                     return [
