@@ -12,6 +12,11 @@ var LogText = require('js/logTextParser');
 var AddProject = require('js/addProjectPlugin');
 var mC = require('js/mithrilComponents');
 
+//There are three predefined collections.  Bookmarks, All My Projects, and
+//All My Components.  This index shows where to start categorizing the user made
+//collections.
+var PREDEFINED_COLLECTIONS_NUMBER = 3;
+
 var MOBILE_WIDTH = 767; // Mobile view break point for responsiveness
 var NODE_PAGE_SIZE = 10; // Load 10 nodes at a time from server
 
@@ -38,8 +43,15 @@ function _formatDataforPO(item) {
     item.contributors = '';
     if (item.embeds.contributors.data){
         item.embeds.contributors.data.forEach(function(c){
-            var attr = c.embeds.users.data.attributes;
+            var attr;
+            if (c.embeds.users.data) {
+                attr = c.embeds.users.data.attributes;
+            }
+            else {
+                attr = c.embeds.users.errors[0].meta;
+            }
             item.contributors += attr.full_name + ' ' + attr.middle_names + ' ' + attr.given_name + ' ' + attr.family_name + ' ' ;
+
         });
     }
     item.date = new $osf.FormattableDate(item.attributes.date_modified);
@@ -447,6 +459,7 @@ var MyProjects = {
                 self.loadingNodePages = false;
                 self.loadingAllNodes = false;
             }
+            m.redraw();
         };
         self.reloadOnClick = function (item) {
             self.updateFilter(item);
@@ -461,6 +474,7 @@ var MyProjects = {
                 },' Reload \'All my projects\''))
             ]));
             self.data([]);
+            m.redraw();
             throw new Error('Receiving initial data for File Browser failed. Please check your url');
         };
         self.generateFiltersList = function _generateFilterList () {
@@ -508,7 +522,9 @@ var MyProjects = {
             self.nameFilters = [];
             for (var user in self.users){
                 var u2 = self.users[user];
-                self.nameFilters.push(new LinkObject('name', { id : u2.data.id, count : u2.count, query : { 'related_counts' : 'children' }}, u2.data.embeds.users.data.attributes.full_name, options.institutionId || false));
+                if (u2.data.embeds.users.data) {
+                    self.nameFilters.push(new LinkObject('name', { id : u2.data.id, count : u2.count, query : { 'related_counts' : 'children' }}, u2.data.embeds.users.data.attributes.full_name, options.institutionId || false));
+                }
             }
             // order names
             self.nameFilters.sort(sortByCountDesc);
@@ -543,6 +559,27 @@ var MyProjects = {
             self.breadcrumbs().push(linkObject);
         };
 
+        var sortCollections = function(collections) {
+            var collectionsToSort = [];
+            var bookmarkIndex = -1;
+            for (var i=0; i<collections.length; i++) {
+                //Keep Bookmarks at top
+                if (collections[i].attributes.title !== 'Bookmarks') {
+                    collectionsToSort.push(collections[i]);
+                }
+                else {
+                    bookmarkIndex = i;
+                }
+            }
+            collectionsToSort.sort(function(a, b) {
+                return (b.attributes.date_modified > a.attributes.date_modified);
+            });
+            if (bookmarkIndex >= 0) {
+                collectionsToSort.unshift(collections[bookmarkIndex]);
+            }
+            return collectionsToSort;
+        };
+
         // GET COLLECTIONS
         // Default system collections
         self.collections = m.prop([].concat(self.systemCollections));
@@ -551,7 +588,7 @@ var MyProjects = {
         self.loadCollections = function _loadCollections (url){
             var promise = m.request({method : 'GET', url : url, config : xhrconfig});
             promise.then(function(result){
-                result.data.forEach(function(node){
+                sortCollections(result.data).forEach(function(node){
                     var count = node.relationships.linked_nodes.links.related.meta.count;
                     self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors' }, systemCollection : false, node : node, count : m.prop(count) }, node.attributes.title));
                 });
@@ -648,6 +685,27 @@ var MyProjects = {
             ctrl.projectOrganizerOptions
         );
         return [
+            m('.dashboard-header', m('.row', [
+                m('.col-xs-8', m('h3', [
+                    'My Projects ',
+                    m('small.hidden-xs', 'Browse and organize all your projects')
+                ])),
+                m('.col-xs-4.p-sm', m('.pull-right', m.component(AddProject, {
+                    buttonTemplate: m('.btn.btn-success[data-toggle="modal"][data-target="#addProject"]', {onclick: function() {
+                        $osf.trackClick('myProjects', 'add-project', 'open-add-project' + '-modal');
+                    }}, 'Create Project'),
+                    parentID: null,
+                    modalID: 'addProject',
+                    title: 'Create new project',
+                    categoryList: ctrl.categoryList,
+                    stayCallback: function () {
+                        ctrl.allProjectsLoaded(false);
+                        ctrl.updateList(ctrl.breadcrumbs()[ctrl.breadcrumbs().length - 1]);
+                    },
+                    trackingCategory: 'myProjects',
+                    trackingAction: 'add-project'
+                })))
+            ])),
             m('.db-header.row', [
                 m('.col-xs-12.col-sm-8.col-lg-9', m.component(Breadcrumbs,ctrl)),
                 m('.db-buttonRow.col-xs-12.col-sm-4.col-lg-3', [
@@ -779,11 +837,13 @@ var Collections = {
             var promise = m.request({method : 'POST', url : url, config : xhrconfig, data : data});
             promise.then(function(result){
                 var node = result.data;
+                var collections = self.collections();
                 var count = node.relationships.linked_nodes.links.related.meta.count || 0;
-                self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : 'children' }, systemCollection : false, node : node, count : m.prop(count) }, node.attributes.title));
+                //Place after Bookmarks, Registrations, and Projects
+                collections.splice(PREDEFINED_COLLECTIONS_NUMBER, 0, new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : 'children' }, systemCollection : false, node : node, count : m.prop(count) }, node.attributes.title));
+                self.collections(collections);
                 self.newCollectionName('');
-                self.calculateTotalPages();
-                self.currentPage(self.totalPages()); // Go to last page
+                self.currentPage(1); // Go to first page
                 args.sidebarInit();
             }, function(){
                 var name = self.newCollectionName();
@@ -1499,11 +1559,18 @@ var ActivityLogs = {
             args.activityLogs() ? args.activityLogs().map(function(item){
                 item.trackingCategory = 'myProjects';
                 item.trackingAction = 'information-panel';
+                var image = m('i.fa.fa-question');
+                if (item.embeds.user.data) {
+                    image = m('img', { src : item.embeds.user.data.links.profile_image});
+                }
+                else if (item.embeds.user.errors){
+                    image = m('img', { src : item.embeds.user.errors[0].meta.profile_image});
+                }
                 return m('.db-activity-item', [
-                    m('', [ m('.db-log-avatar.m-r-xs', m('img', { src : item.embeds.user.data.links.profile_image})),
-                        m.component(LogText, item)]),
-                    m('.text-right', m('span.text-muted.m-r-xs', item.attributes.formattableDate.local))
-                ]);
+                m('', [ m('.db-log-avatar.m-r-xs', image),
+                    m.component(LogText, item)]),
+                m('.text-right', m('span.text-muted.m-r-xs', item.attributes.formattableDate.local))]);
+
             }) : '',
             m('.db-activity-nav.text-center', [
                 args.showMoreActivityLogs() ? m('.btn.btn-sm.btn-link', { onclick: function(){

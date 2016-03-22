@@ -147,16 +147,36 @@ var QuickSearchProject = {
         self.mapNodeToContributors = function (node, contributors){
             var contributorList = [];
             contributors.data.forEach(function(contrib){
-                fullName = contrib.embeds.users.data.attributes.full_name;
-                contributorList.push(fullName);
+                var fullName;
+                if (contrib.embeds.users.data) {
+                    fullName = contrib.embeds.users.data.attributes.full_name;
+                    contributorList.push(fullName);
+                }
+                else if (contrib.embeds.users.errors) {
+                    fullName = contrib.embeds.users.errors[0].meta.full_name;
+                    contributorList.push(fullName);
+                }
+
             });
             self.contributorMapping[node.id] = contributorList;
         };
 
         // Gets contrib family name for display
         self.getFamilyName = function(i, node) {
-            var attributes = node.embeds.contributors.data[i].embeds.users.data.attributes;
-            return $osf.findContribName(attributes);
+            var contributor = node.embeds.contributors.data[i];
+            var attributes;
+
+            if (contributor) {
+                 if (contributor.embeds.users.data) {
+                    attributes = contributor.embeds.users.data.attributes;
+                 }
+                 else if (contributor.embeds.users.errors) {
+                    attributes = contributor.embeds.users.errors[0].meta;
+                 }
+                return $osf.findContribName(attributes);
+            }
+            return 'a contributor';
+
         };
 
          // Formats date for display
@@ -449,7 +469,7 @@ var QuickSearchProject = {
                     m('.m-b-sm.text-center', [
                         searchBar()
                     ]),
-                    m('p.text-center', [ 'Go to ', m('a', {href:'/myprojects/'}, 'My Projects'),  ' to organize your work or ',
+                    m('h4.text-center.f-w-lg', [ 'Go to ', m('a', {href:'/myprojects/'}, 'My Projects'),  ' to organize your work or ',
                         m('a', {href: '/search/', onclick: function(){ $osf.trackClick('quickSearch', 'navigate', 'navigate-to-search-the-OSF'); }}, 'search'), ' the OSF' ]),
                     m('.quick-search-table', [
                         m('.row.node-col-headers.m-t-md', [

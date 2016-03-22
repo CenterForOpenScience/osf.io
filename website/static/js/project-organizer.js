@@ -60,9 +60,20 @@ function _poContributors(item) {
 
     return contributorList.map(function (person, index, arr) {
         var name;
-        var familyName = person.embeds.users.data.attributes.family_name;
-        var givenName = person.embeds.users.data.attributes.given_name;
-        var fullName = person.embeds.users.data.attributes.full_name;
+        var familyName;
+        var givenName;
+        var fullName;
+        if (person.embeds.users.data) {
+            familyName = person.embeds.users.data.attributes.family_name;
+            givenName = person.embeds.users.data.attributes.given_name;
+            fullName = person.embeds.users.data.attributes.full_name;
+
+        }
+        if (person.embeds.users.errors) {
+            familyName = person.embeds.users.errors[0].meta.family_name;
+            givenName = person.embeds.users.errors[0].meta.given_name;
+            fullName = person.embeds.users.errors[0].meta.full_name;
+        }
         if (familyName) {
             name = familyName;
         } else if(givenName){
@@ -339,7 +350,10 @@ var tbOptions = {
     },
     onmultiselect : _poMultiselect,
     resolveIcon : function _poIconView(item) { // Project Organizer doesn't use icons
-        return false;
+        if (item.data.attributes.registration){
+            return m('i.fa.fa-cube.text-muted-more');
+        }
+        return m('i.fa.fa-cube');
     },
     resolveToggle : _poResolveToggle,
     resolveLazyloadUrl : _poResolveLazyLoad,
