@@ -30,8 +30,3 @@ h3, h4 {
 .footer {
     margin-top: 0; /* Override footer margin for this page only */
 }
-
-.btn-success-high-contrast {
-    background-color: #52A452;
-    border-color: #54AC54;
-}

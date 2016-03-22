@@ -629,3 +629,9 @@ button.close {
 .tagsinput input {
     font-family : 'Open Sans', Helvetica, sans-serif;
 }
+
+/* Bootstrap Accesibility Override */
+.btn-success-high-contrast {
+    background-color: #52A452;
+    border-color: #54AC54;
+}

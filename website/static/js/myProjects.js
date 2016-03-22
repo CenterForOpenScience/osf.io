@@ -668,7 +668,7 @@ var MyProjects = {
                     m('small.hidden-xs', 'Browse and organize all your projects')
                 ])),
                 m('.col-xs-4.p-sm', m('.pull-right', m.component(AddProject, {
-                    buttonTemplate: m('.btn.btn-success[data-toggle="modal"][data-target="#addProject"]', {onclick: function() {
+                    buttonTemplate: m('.btn.btn-success.btn-success-high-contrast.f-w-xl[data-toggle="modal"][data-target="#addProject"]', {onclick: function() {
                         $osf.trackClick('myProjects', 'add-project', 'open-add-project' + '-modal');
                     }}, 'Create Project'),
                     parentID: null,
