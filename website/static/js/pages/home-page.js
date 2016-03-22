@@ -51,9 +51,9 @@ $(document).ready(function(){
                 m('.quickSearch', m('.container.p-t-lg',
                     [
                         m('.row', [
-                            m(columnSizeClass, m('.pull-right',
+                            m(columnSizeClass, m('h2.col-sm-9', 'My Dashboard'), m('.pull-right.col-sm-3',
                                 m.component(AddProject, {
-                                    buttonTemplate : m('button.btn.btn-success.m-t-md[data-toggle="modal"][data-target="#addProjectFromHome"]', {onclick: function(){
+                                    buttonTemplate : m('button.btn.btn-success.m-t-md.btn-new-project.f-w-xl[data-toggle="modal"][data-target="#addProjectFromHome"]', {onclick: function(){
                                         $osf.trackClick('quickSearch', 'add-project', 'open-add-project-modal');
                                     }}, 'Create New Project'),
                                     modalID : 'addProjectFromHome',

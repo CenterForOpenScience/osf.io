@@ -40,8 +40,14 @@
                     <div class="text-danger">{{errorMessage}}</div>
                 </form>
             </div>
-
+            <!-- ko if: loadingComments -->
+            <div style="text-align: center;">
+                <div class="logo-spin logo-lg"></div>
+            </div>
+            <!-- /ko -->
+            <!-- ko ifnot: loadingComments -->
             <div data-bind="template: {name: 'commentTemplate', foreach: comments}"></div>
+            <!-- /ko -->
         </div>
     </div>
 

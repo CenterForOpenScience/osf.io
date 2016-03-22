@@ -13,12 +13,6 @@
     color: #333;
 }
 
-a.support-col:hover {
-    background: #E0EBF3;
-    text-decoration: none;
-    box-shadow: 0px 0px 1px #999;
-
-}
 
 .support-icon {
     font-size: 40px;

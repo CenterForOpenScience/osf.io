@@ -8,20 +8,9 @@
     <div class="alert alert-info alert-flat"><strong>NOTICE: </strong>Forks, registrations, and uploads will be temporarily disabled while the OSF undergoes a hardware upgrade. These features will return shortly. Thank you for your patience.</div>
 % endif
 
-<div class="dashboard-header">
-    <div class="row">
-        <div class="col-xs-12">
-            <h3>My Projects <small class="hidden-xs">Browse and organize all your projects </small></h3>
-        </div>
-    </div>
-</div>
-
 
   <div id="dashboard" class="dashboard clearfix" >
-    <div class="spinner-loading-wrapper">
-       <div class="logo-spin logo-lg"></div>
-       <p class="m-t-sm fg-load-message"> Loading projects...  </p>
-    </div>
+    <div class="ball-scale text-center m-v-xl"><div></div></div>
   </div>
 
 
@@ -54,13 +43,6 @@
 </%def>
 
 <%def name="javascript_bottom()">
-<script>
-    window.contextVars = $.extend(true, {}, window.contextVars, {
-        currentUser: {
-            'id': '${user_id}'
-        }
-    });
-</script>
 <script src=${"/static/public/js/dashboard-page.js" | webpack_asset}></script>
 
 </%def>

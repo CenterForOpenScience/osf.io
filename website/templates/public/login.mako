@@ -36,7 +36,7 @@
             </div>
             <div class="form-group">
                 <div class="col-sm-offset-3 col-sm-9">
-                    <button data-bind="click: instLogin" class="btn btn-success pull-right">Sign in</button>
+                    <button data-bind="click: instLogin, css: {disabled: loading}" class="btn btn-success pull-right">Sign in</button>
                 </div>
             </div>
             <div class="form-group" style="padding-top: 15px">

@@ -538,7 +538,7 @@ class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bu
 
     def get_default_queryset(self):
         node = self.get_node()
-        visible_contributors = node.visible_contributor_ids
+        visible_contributors = set(node.visible_contributor_ids)
         contributors = []
         for contributor in node.contributors:
             contributor.bibliographic = contributor._id in visible_contributors
