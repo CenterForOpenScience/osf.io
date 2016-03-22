@@ -47,7 +47,7 @@ var Results = {
                                 utils.updateVM(vm, data);
                             });
                     }
-                }, 'More') : [])
+                }, 'More'): [])
             ))
         ]);
 
@@ -105,14 +105,16 @@ var Description = {
         var showOnClick = function() {
             ctrl.showAll(!ctrl.showAll());
         };
-        if ((result.description || '').length > 350) {
+        //if its long and does not contain any math then you can truncate it
+        if ((result.description || '').length > 350 && result.description.indexOf('$') === -1) {
             return m('', [
                 m('p.readable.pointer', {onclick: showOnClick},
                     ctrl.showAll() ? result.description : $.truncate(result.description, {length: 350})
                 ),
                 m('a.sr-only', {href: '#', onclick: showOnClick}, ctrl.showAll() ? 'See less' : 'See more')]);
+        //otherwise run MathJax and display the entire description
         } else {
-            return m('p.readable', result.description);
+            return m('p.readable', MathJax.Hub.Queue(['Typeset', MathJax.Hub]), result.description);
         }
     }
 };
