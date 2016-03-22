@@ -22,16 +22,6 @@ h3, h4 {
     box-shadow: 0 0 9px -4px #000;
 }
 
-.meetings .btn:hover {
-    background: #eee;
-    color: #000;
-}
-
 .footer {
     margin-top: 0; /* Override footer margin for this page only */
-}
-
-.btn-success-high-contrast {
-    background-color: #52A452;
-    border-color: #54AC54;
 }
