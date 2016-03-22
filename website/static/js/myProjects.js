@@ -1397,8 +1397,7 @@ var Filters = {
                     'Contributors ',
                     m('i.fa.fa-question-circle.text-muted', {
                         'data-toggle':  'tooltip',
-                        'title':  'You can see the number of projects shared between ' +
-                        'a contributor and you. Click a name to display all the selected contributor’s projects which you can view, including any public projects.',
+                        'title': 'Click a name to display the selected contributor’s public projects, as well as their private projects on which you are at least a read contributor.',
                         'data-placement' : 'bottom'
                     }, ''),
                     m('.pull-right', m.component(MicroPagination, { currentPage : ctrl.nameCurrentPage, totalPages : ctrl.nameTotalPages, type: 'contributors'}))
