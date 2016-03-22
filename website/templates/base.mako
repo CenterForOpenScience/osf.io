@@ -222,7 +222,8 @@
             <script>
                 window.contextVars = $.extend(true, {}, window.contextVars, {
                     keenProjectId: ${keen_project_id | sjson, n},
-                    keenWriteKey: ${keen_write_key | sjson, n}
+                    keenWriteKey: ${keen_write_key | sjson, n},
+                    keenReadKey: ${keen_read_key | sjson, n}
                 })
             </script>
         %endif
