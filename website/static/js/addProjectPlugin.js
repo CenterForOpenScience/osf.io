@@ -127,9 +127,11 @@ var AddProject = {
                         ctrl.showMore() ? [
                             m('.form-group.m-v-sm', [
                                 m('label[for="projectDesc].f-w-lg.text-bigger', 'Description'),
-                                m('textarea.form-control.noresize', {
-                                    onchange: function(event) {
-                                        ctrl.newProjectDesc(event.value);
+                                m('input[type="text"].form-control.noresize', {
+                                    onkeyup: function (ev){
+                                        ctrl.newProjectDesc($(this).val());
+                                    },
+                                    onchange: function() {
                                         $osf.trackClick(options.trackingCategory, options.trackingAction, 'type-project-description');
                                     },
                                     value : ctrl.newProjectDesc(),
