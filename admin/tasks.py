@@ -14,7 +14,7 @@ WHEELHOUSE_PATH = os.environ.get('WHEELHOUSE')
 def manage(cmd_str):
     """Take command string for manage commands
 
-    :param cmd_str: ex. runserver, migrate, "crontab add"
+    :param cmd_str: ex. runserver, migrate, "migrate module"
     """
     manage_cmd = os.path.join(HERE, '..', 'manage.py')
     env = 'DJANGO_SETTINGS_MODULE="admin.base.settings"'
