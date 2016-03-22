@@ -55,7 +55,7 @@ $(document).ready(function(){
                                 m.component(AddProject, {
                                     buttonTemplate : m('button.btn.btn-success.m-t-md.btn-new-project.f-w-xl[data-toggle="modal"][data-target="#addProjectFromHome"]', {onclick: function(){
                                         $osf.trackClick('quickSearch', 'add-project', 'open-add-project-modal');
-                                    }}, 'Create New Project'),
+                                    }}, 'Create new project'),
                                     modalID : 'addProjectFromHome',
                                     categoryList : ctrl.categoryList,
                                     stayCallback : function _stayCallback_inPanel() {
