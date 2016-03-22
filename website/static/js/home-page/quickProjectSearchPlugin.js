@@ -53,7 +53,6 @@ var QuickSearchProject = {
             // NOTE: This manual redraw is necessary because we set background: true on
             // the request, which prevents a redraw. This redraw allows the loading
             // indicator to go away and the first 10 nodes to be rendered
-            m.redraw();
         }, function _error(result){
             self.requestError(result);
             m.redraw();
@@ -65,6 +64,7 @@ var QuickSearchProject = {
                 }
                 else {
                     self.loadingComplete(true);
+                    m.redraw();
                 }
             }, function _error(result){
                 self.requestError(result);
