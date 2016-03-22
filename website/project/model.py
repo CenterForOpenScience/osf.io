@@ -165,7 +165,7 @@ class Comment(GuidStoredObject, SpamMixin):
     root_target = fields.AbstractForeignField()
 
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
-    date_modified = fields.DateTimeField()
+    date_modified = fields.DateTimeField(default=lambda: datetime.datetime.utcnow())
     modified = fields.BooleanField(default=False)
     is_deleted = fields.BooleanField(default=False)
     # The type of root_target: node/files
@@ -252,7 +252,6 @@ class Comment(GuidStoredObject, SpamMixin):
             comment.page = Comment.FILES
         else:
             raise ValueError('Invalid root target.')
-        comment.date_modified = datetime.datetime.utcnow()
         comment.save()
 
         comment.node.add_log(
