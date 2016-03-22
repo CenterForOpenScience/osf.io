@@ -364,6 +364,7 @@ var MyProjects = {
             return promise;
         };
         self.updateListSuccess = function _updateListSuccess (value, url) {
+            var lastcrumb = self.breadcrumbs()[self.breadcrumbs().length-1];
             self.nodeUrlCache[url] = value;
             self.loadCounter(self.loadCounter() + value.data.length);
             self.loadValue(Math.round(self.loadCounter() / value.links.meta.total * 100));
@@ -373,7 +374,6 @@ var MyProjects = {
                 self.data(value.data);
             }
             if(!value.data[0]){
-                var lastcrumb = self.breadcrumbs()[self.breadcrumbs().length-1];
                 if(lastcrumb.type === 'collection'){
                     if(lastcrumb.data.systemCollection === 'nodes'){
                         self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box',
@@ -413,7 +413,6 @@ var MyProjects = {
                 }
                 self.selected([]); // Empty selected
             }
-
             if(self.loadingAllNodes) {
                 self.allTopLevelProjects(self.data());
                 self.generateFiltersList();
@@ -435,8 +434,12 @@ var MyProjects = {
                 }
                 for (var i = begin; i < self.data().length; i++){
                     var item = self.data()[i];
-                    var child = self.buildTree()(item, self.treeData());
-                    self.treeData().add(child);
+                    if (!(lastcrumb.data.systemCollection === 'registrations' && (item.attributes.retracted === true || item.attributes.pending_registration_approval === true))){
+                        // Filter Retractions and Pending Registrations from the "All my registrations" view.
+                        var child = self.buildTree()(item, self.treeData());
+                        self.treeData().add(child);
+                    }
+                    
                 }
                 self.updateFolder()(null, self.treeData());
             }
