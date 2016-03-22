@@ -31,12 +31,7 @@ h3, h4 {
     margin-top: 0; /* Override footer margin for this page only */
 }
 
-.btn-new-project {
-    background-color: #52A452;
-    border-color: #54AC54;
-}
-
-.btn-view-meetings {
+.btn-success-high-contrast {
     background-color: #52A452;
     border-color: #54AC54;
 }
