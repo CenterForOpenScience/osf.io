@@ -286,10 +286,10 @@ var Select2Template = {
     /**Select2 config factory - adapted from https://lhorie.github.io/mithril/integration.html **/
     config: function(ctrl) {
         return function(element, isInitialized) {
-            var el = $(element);
+            var $el = $(element);
             if (!isInitialized) {
-                el.select2({placeholder: 'Select a project to use as a template', allowClear: true, width: '100%'}).on('change', function(e) {
-                    var id = el.select2('val');
+                $el.select2({placeholder: 'Select a project to use as a template', allowClear: true, width: '100%'}).on('change', function(e) {
+                    var id = $el.select2('val');
                     m.startComputation();
                     //Set the value to the selected option
                     ctrl.data.map(function(node){
