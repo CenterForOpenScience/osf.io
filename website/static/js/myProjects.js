@@ -84,7 +84,11 @@ var LinkObject = function _LinkObject (type, data, label, institutionId) {
             return $osf.apiV2Url('users/' + self.data.id + '/nodes/', { query : {'related_counts' : 'children', 'embed' : 'contributors' }});
         }
         else if (self.type === 'node') {
-            return $osf.apiV2Url('nodes/' + self.data.id + '/children/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
+            if (self.data.type === 'registrations') {
+                return $osf.apiV2Url('registrations/' + self.data.id + '/children/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
+            } else {
+                return $osf.apiV2Url('nodes/' + self.data.id + '/children/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
+            }
         }
         // If nothing
         throw new Error('Link could not be generated from linkObject data');
@@ -390,6 +394,9 @@ var MyProjects = {
                     if(lastcrumb.type === 'node'){
                         var permissions = lastcrumb.data.attributes.current_user_permissions;
                         showAddProject = permissions.indexOf('admin') > -1 || permissions.indexOf('write') > -1;
+                    }
+                    if (lastcrumb.type === 'registration' || lastcrumb.data.type === 'registrations' || lastcrumb.data.systemCollection === 'registrations'){
+                        showAddProject = false;
                     }
                     if(showAddProject){
                         self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box.text-center', [
@@ -1280,6 +1287,9 @@ var Breadcrumbs = {
                         var permissions = item.data.attributes.current_user_permissions;
                         showAddProject = permissions.indexOf('admin') > -1 || permissions.indexOf('write') > -1;
                         objectType = 'component';
+                    }
+                    if (item.type === 'registration' || item.data.type === 'registrations' || item.data.systemCollection === 'registrations'){
+                        showAddProject = false;
                     }
                     if(showAddProject && !viewOnly){
                         addProjectTemplate = m.component(AddProject, {
