@@ -383,7 +383,6 @@ var MyProjects = {
                 self.data(value.data);
             }
             if(!value.data[0]){
-                debugger;
                 if(lastcrumb.type === 'collection'){
                     if(lastcrumb.data.systemCollection === 'nodes'){
                         self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box',
