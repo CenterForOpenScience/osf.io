@@ -5,6 +5,7 @@
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
+var AddProject = require('js/addProjectPlugin');
 
 // CSS
 require('css/quick-project-search-plugin.css');
@@ -444,35 +445,49 @@ var QuickSearchProject = {
             );
         }
         else {
-            return m('.row.quick-project',
+            return m('.row',
                 m('.col-xs-12',[
-                    m('.m-b-sm.text-center', [
-                        searchBar()
-                    ]),
-                    m('p.text-center', [ 'Go to ', m('a', {href:'/myprojects/'}, 'My Projects'),  ' to organize your work or ',
-                        m('a', {href: '/search/', onclick: function(){ $osf.trackClick('quickSearch', 'navigate', 'navigate-to-search-the-OSF'); }}, 'search'), ' all projects on the OSF' ]),
-                    m('.quick-search-table', [
-                        m('.row.node-col-headers.m-t-md', [
-                            m('.col-sm-4.col-md-5', m('.quick-search-col', 'Title', sortAlphaAsc(), sortAlphaDesc())),
-                            m('.col-sm-4.col-md-4', m('.quick-search-col', 'Contributors')),
-                            m('.col-sm-4.col-md-3', m('.quick-search-col','Modified', m('span.sort-group', sortDateAsc(), sortDateDesc())))
+                    m('.pull-right.m-b-lg', m.component(AddProject, {
+                        buttonTemplate : m('button.btn.btn-success.m-t-md[data-toggle="modal"][data-target="#addProjectFromHome"]', {onclick: function(){
+                            $osf.trackClick('quickSearch', 'add-project', 'open-add-project-modal');
+                        }}, 'Create New Project'),
+                        modalID : 'addProjectFromHome',
+                        stayCallback : function _stayCallback_inPanel() {
+                            document.location.reload(true);
+                        },
+                        trackingCategory: 'quickSearch',
+                        trackingAction: 'add-project',
+                        templates: ctrl.nodes()
+                    })),
+                    m('.row.quick-project', m('.col-xs-12',
+                        m('.m-b-sm.text-center', [
+                            searchBar()
                         ]),
-                        xsDropdown(),
-                        m.component(QuickSearchNodeDisplay, {
-                            eligibleNodes: ctrl.eligibleNodes,
-                            nodes: ctrl.nodes,
-                            filter: ctrl.filter,
-                            countDisplayed: ctrl.countDisplayed,
-                            getFamilyName: ctrl.getFamilyName,
-                            formatDate: function(node) {
-                                return ctrl.formatDate(node);
-                            },
-                            loadingComplete: ctrl.loadingComplete
-                        }),
-                        !ctrl.loadingComplete() && ctrl.filter() ? m('.loader-inner.ball-scale.text-center', m('')) : m('.m-v-md')
+                        m('p.text-center', [ 'Go to ', m('a', {href:'/myprojects/'}, 'My Projects'),  ' to organize your work or ',
+                            m('a', {href: '/search/', onclick: function(){ $osf.trackClick('quickSearch', 'navigate', 'navigate-to-search-the-OSF'); }}, 'search'), ' all projects on the OSF' ]),
+                        m('.quick-search-table', [
+                            m('.row.node-col-headers.m-t-md', [
+                                m('.col-sm-4.col-md-5', m('.quick-search-col', 'Title', sortAlphaAsc(), sortAlphaDesc())),
+                                m('.col-sm-4.col-md-4', m('.quick-search-col', 'Contributors')),
+                                m('.col-sm-4.col-md-3', m('.quick-search-col','Modified', m('span.sort-group', sortDateAsc(), sortDateDesc())))
+                            ]),
+                            xsDropdown(),
+                            m.component(QuickSearchNodeDisplay, {
+                                eligibleNodes: ctrl.eligibleNodes,
+                                nodes: ctrl.nodes,
+                                filter: ctrl.filter,
+                                countDisplayed: ctrl.countDisplayed,
+                                getFamilyName: ctrl.getFamilyName,
+                                formatDate: function(node) {
+                                    return ctrl.formatDate(node);
+                                },
+                                loadingComplete: ctrl.loadingComplete
+                            }),
+                            !ctrl.loadingComplete() && ctrl.filter() ? m('.loader-inner.ball-scale.text-center', m('')) : m('.m-v-md')
 
-                    ]),
-                    m('.text-center', loadMoreButton())
+                        ]),
+                        m('.text-center', loadMoreButton())
+                    ))
                 ])
             );
         }
