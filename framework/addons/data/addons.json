@@ -153,7 +153,7 @@
         "Evernote": {
             "Permissions": {
                 "status": "partial",
-                "text": "??? Making an OSF project public or private is independent of making an Evernote folder public or private. The OSF does not alter the permissions of a linked Evernote folder."
+                "text": "Making an OSF project public or private is independent of making an Evernote notebook public or private. The OSF does not alter the permissions of a linked Evernote notebook."
             },
             "View / download file versions": {
                 "status": "NA"
@@ -169,13 +169,13 @@
             },
             "Forking": {
                 "status": "partial",
-                "text": "??? Forking a project or component does not copy Evernote authorization unless the user forking the project is the same user who authorized the Evernote add-on in the source project being forked."
+                "text": "Forking a project or component does not copy Evernote authorization unless the user forking the project is the same user who authorized the Evernote add-on in the source project being forked."
             },
             "Registering": {
                 "status": "none",
-                "text": "??? Evernote content will not be registered."
+                "text": "Evernote content will not be registered."
             }
-        }, 
+        },
         "Google Drive": {
             "Permissions": {
                 "status": "partial",

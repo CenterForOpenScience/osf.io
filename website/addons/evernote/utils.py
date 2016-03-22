@@ -112,7 +112,7 @@ def timestamp_iso(ts):
     """
     ts in ms since 1970
     """
-    return datetime.datetime.utcfromtimestamp(ts/1000.).isoformat()
+    return datetime.datetime.utcfromtimestamp(ts / 1000.).isoformat()
 
 
 class MyMediaStore(MediaStore):
