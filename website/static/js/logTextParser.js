@@ -145,7 +145,13 @@ var LogPieces = {
                     if(index === arr.length-2){
                         comma = ' and ';
                     }
-                    return [ m('a', {href: item.links.html}, item.attributes.full_name), comma];
+                    if (item.attributes.active) {
+                        return [ m('a', {href: item.links.html}, item.attributes.full_name), comma];
+                    }
+                    else {
+                        return [item.attributes.full_name, comma];
+
+                    }
                 }));
             }
             return m('span', 'some users');

@@ -447,7 +447,7 @@ var QuickSearchProject = {
         else {
             return m('.row',
                 m('.col-xs-12',[
-                    m('.pull-right.m-b-lg', m.component(AddProject, {
+                     m('.pull-right.m-b-lg', m.component(AddProject, {
                         buttonTemplate : m('button.btn.btn-success.m-t-md[data-toggle="modal"][data-target="#addProjectFromHome"]', {onclick: function(){
                             $osf.trackClick('quickSearch', 'add-project', 'open-add-project-modal');
                         }}, 'Create New Project'),
@@ -464,7 +464,7 @@ var QuickSearchProject = {
                             searchBar()
                         ]),
                         m('p.text-center', [ 'Go to ', m('a', {href:'/myprojects/'}, 'My Projects'),  ' to organize your work or ',
-                            m('a', {href: '/search/', onclick: function(){ $osf.trackClick('quickSearch', 'navigate', 'navigate-to-search-the-OSF'); }}, 'search'), ' all projects on the OSF' ]),
+                            m('a', {href: '/search/', onclick: function(){ $osf.trackClick('quickSearch', 'navigate', 'navigate-to-search-the-OSF'); }}, 'search'), ' the OSF' ]),
                         m('.quick-search-table', [
                             m('.row.node-col-headers.m-t-md', [
                                 m('.col-sm-4.col-md-5', m('.quick-search-col', 'Title', sortAlphaAsc(), sortAlphaDesc())),
@@ -485,8 +485,8 @@ var QuickSearchProject = {
                             }),
                             !ctrl.loadingComplete() && ctrl.filter() ? m('.loader-inner.ball-scale.text-center', m('')) : m('.m-v-md')
 
-                        ]),
-                        m('.text-center', loadMoreButton())
+                            ]),
+                            m('.text-center', loadMoreButton())
                     ))
                 ])
             );

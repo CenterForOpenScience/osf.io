@@ -1,3 +1,4 @@
+import weakref
 from django.http import JsonResponse
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -11,6 +12,9 @@ from django.conf import settings as django_settings
 from .utils import absolute_reverse, is_truthy
 
 from .requests import EmbeddedRequest
+
+
+CACHE = weakref.WeakKeyDictionary()
 
 
 class JSONAPIBaseView(generics.GenericAPIView):
@@ -36,12 +40,18 @@ class JSONAPIBaseView(generics.GenericAPIView):
             view, view_args, view_kwargs = field.resolve(item)
             if issubclass(view.cls, ListModelMixin) and field.always_embed:
                 raise Exception("Cannot auto-embed a list view.")
-            request = EmbeddedRequest(self.request)
+            if isinstance(self.request._request, EmbeddedRequest):
+                request = self.request._request
+            else:
+                request = EmbeddedRequest(self.request)
             view_kwargs.update({
                 'request': request,
                 'is_embedded': True
             })
-            response = view(*view_args, **view_kwargs)
+            if (view, item) in CACHE.setdefault(request._request._request, {}):
+                response = CACHE[request._request._request][(view, field_name, item)]
+            else:
+                response = CACHE[request._request._request][(view, field_name, item)] = view(*view_args, **view_kwargs)
             return response.data
         return partial
 

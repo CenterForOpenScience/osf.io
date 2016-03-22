@@ -50,7 +50,7 @@ describe('fileBrowser', function() {
                 assert.equal(name.link, 'users/8q36f/nodes/?related_counts=children&embed=contributors');
             });
             it('should return correct node link', function () {
-                assert.equal(node.link, 'nodes/qwerty/children/?related_counts=children&page%5Bsize%5D=60&embed=contributors');
+                assert.equal(node.link, 'nodes/qwerty/children/?related_counts=children&embed=contributors');
             });
         });
     });

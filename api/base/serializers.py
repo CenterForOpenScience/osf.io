@@ -814,10 +814,10 @@ class JSONAPISerializer(ser.Serializer):
 
     # Don't serialize relationships that use these views
     # when viewing thru an anonymous VOL
-    views_to_hide_if_anonymous = [
+    views_to_hide_if_anonymous = {
         'users:user-detail',
         'nodes:node-registrations',
-    ]
+    }
 
     # overrides Serializer
     @classmethod
@@ -857,14 +857,14 @@ class JSONAPISerializer(ser.Serializer):
         type_ = getattr(meta, 'type_', None)
         assert type_ is not None, 'Must define Meta.type_'
 
-        data = collections.OrderedDict([
-            ('id', ''),
-            ('type', type_),
-            ('attributes', collections.OrderedDict()),
-            ('relationships', collections.OrderedDict()),
-            ('embeds', {}),
-            ('links', {}),
-        ])
+        data = {
+            'id': '',
+            'type': type_,
+            'attributes': {},
+            'relationships': {},
+            'embeds': {},
+            'links': {},
+        }
 
         embeds = self.context.get('embed', {})
         context_envelope = self.context.get('envelope', envelope)
@@ -872,7 +872,7 @@ class JSONAPISerializer(ser.Serializer):
             context_envelope = None
         enable_esi = self.context.get('enable_esi', False)
         is_anonymous = is_anonymized(self.context['request'])
-        to_be_removed = []
+        to_be_removed = set()
         if is_anonymous and hasattr(self, 'non_anonymized_fields'):
             # Drop any fields that are not specified in the `non_anonymized_fields` variable.
             allowed = set(self.non_anonymized_fields)
@@ -881,8 +881,9 @@ class JSONAPISerializer(ser.Serializer):
 
         fields = [field for field in self.fields.values() if
                   not field.write_only and field.field_name not in to_be_removed]
+
         invalid_embeds = self.invalid_embeds(fields, embeds)
-        invalid_embeds = invalid_embeds - set(to_be_removed)
+        invalid_embeds = invalid_embeds - to_be_removed
         if invalid_embeds:
             raise InvalidQueryStringError(parameter='embed',
                                           detail='The following fields are not embeddable: {}'.format(
@@ -901,7 +902,7 @@ class JSONAPISerializer(ser.Serializer):
                 # results rather than adding a relationship link
                 if attribute is None:
                     continue
-                if embeds and (field.field_name in embeds or getattr(field, 'always_embed', None)):
+                if getattr(field, 'always_embed', None) or field.field_name in embeds:
                     if enable_esi:
                         try:
                             result = field.to_esi_representation(attribute, envelope=envelope)
@@ -914,9 +915,7 @@ class JSONAPISerializer(ser.Serializer):
                         data['embeds'][field.field_name] = result
                 else:
                     try:
-                        if not (is_anonymous and
-                                    hasattr(field, 'view_name') and
-                                        field.view_name in self.views_to_hide_if_anonymous):
+                        if not (is_anonymous and hasattr(field, 'view_name') and field.view_name in self.views_to_hide_if_anonymous):
                             data['relationships'][field.field_name] = field.to_representation(attribute)
                     except SkipField:
                         continue

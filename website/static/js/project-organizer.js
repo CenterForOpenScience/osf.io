@@ -18,6 +18,9 @@ var $osf = require('js/osfHelpers');
 
 var LinkObject;
 var allProjectsCache;
+var formatDataforPO;
+var allTopLevelProjectsCache;
+
 /**
  * Edits the template for the column titles.
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
@@ -59,10 +62,13 @@ function _poContributors(item) {
         var name;
         var familyName = person.embeds.users.data.attributes.family_name;
         var givenName = person.embeds.users.data.attributes.given_name;
+        var fullName = person.embeds.users.data.attributes.full_name;
         if (familyName) {
             name = familyName;
         } else if(givenName){
             name = givenName;
+        } else if(fullName){
+            name = fullName;
         } else {
             name = 'A contributor';
         }
@@ -317,6 +323,9 @@ var tbOptions = {
             tb.select('.tb-row').removeClass('po-hover');
         });
         m.render($(tb.options.dragContainment + ' .db-poFilter').get(0), tb.options.filterTemplate.call(this));
+        tb.options.mpTreeData(tb.treeData);
+        tb.options.mpBuildTree(tb.buildTree);
+        tb.options.mpUpdateFolder(tb.updateFolder);
     },
     ontogglefolder : function (item, event) {
         $osf.trackClick('myProjects', 'projectOrganizer', 'expand-collapse-project-children');
@@ -364,46 +373,77 @@ var tbOptions = {
     hScroll : 300,
     filterTemplate : function() {
         var tb = this;
-        return [
-            m('input.form-control[placeholder="Search all my projects"][type="text"]', {
-                style: 'display:inline;',
-                onkeyup: function(event){
-                    if ($(this).val().length === 1){
-                        tb.updateFolder(allProjectsCache(), tb.treeData);
-                        tb.options.showSidebar(false);
-                        tb.options.resetUi();
-                    }
-                    tb.filter(event);
-                },
-                onchange: function(event) {
-                    tb.filterText(event.value);
-                    $osf.trackClick('myProjects', 'filter', 'search-projects');
-                },
-                value: tb.filterText()
-            }),
-            m('.filterReset', { onclick : function () {
-                $osf.trackClick('myProjects', 'filter', 'clear-search');
-                tb.resetFilter.call(tb);
-                $('.db-poFilter>input').val('');
-            } }, tb.options.removeIcon())
-        ];
+        function resetFilter () {
+            $osf.trackClick('myProjects', 'filter', 'clear-search');
+            tb.filterText('');
+            tb.resetFilter.call(tb);
+            tb.updateFolder(allTopLevelProjectsCache(), tb.treeData);
+            $('.db-poFilter>input').val('');
+        }
+        var filter = $osf.debounce(tb.filter, 800);
+        return [ m('input.form-control[placeholder="Search all my projects"][type="text"]', {
+            style: 'display:inline;',
+            onkeyup: function(event){
+                var newEvent = $.extend({}, event); // because currentTarget changes with debounce.
+                if ($(this).val().length === 1){
+                    tb.updateFolder(allProjectsCache(), tb.treeData);
+                    tb.options.showSidebar(false);
+                    tb.options.resetUi();
+                }
+                if($(this).val().length === 0){
+                    resetFilter();
+                }
+                if($(this).val().length > 1){
+                    filter(newEvent);
+                }
+            },
+            onchange: function(event) {
+                tb.filterText(event.value);
+                $osf.trackClick('myProjects', 'filter', 'search-projects');
+            },
+            value: tb.filterText()
+        }),
+        m('.filterReset', { onclick : resetFilter }, tb.options.removeIcon())];
     },
-    hiddenFilterRows : ['tags']
+    hiddenFilterRows : ['tags'],
+    lazyLoadOnLoad : function (tree, event) {
+        var tb = this;
+        function formatItems (arr) {
+            var item;
+            for(var i = 0; i < arr.length; i++){
+                item = arr[i];
+                formatDataforPO(item.data);
+                if(item.children.length > 0){
+                    formatItems(item.children);
+                }
+            }
+        }
+        formatItems(tree.children);
+    }
 };
 
 var ProjectOrganizer = {
     controller : function (args) {
         LinkObject = args.LinkObject;
+        formatDataforPO = args.formatDataforPO;
         var self = this;
         self.updateTB = function(){
             var poOptions = $.extend(
                 {
+                    divID : 'projectOrganizer',
+                    dragOptions : {
+                        containment : '#dashboard'
+                    },
                     updateSelected : args.updateSelected,
                     updateFilesData : args.updateFilesData,
                     filesData: args.filesData(),
                     dragContainment : args.wrapperSelector,
                     resetUi : args.resetUi,
-                    showSidebar : args.showSidebar
+                    showSidebar : args.showSidebar,
+                    loadValue : args.loadValue,
+                    mpTreeData : args.treeData,
+                    mpBuildTree : args.buildTree,
+                    mpUpdateFolder : args.updateFolder
                 },
                 tbOptions
             );
@@ -411,19 +451,14 @@ var ProjectOrganizer = {
                 poOptions.resolveToggle = args.resolveToggle;
             }
             var tb = new Treebeard(poOptions, true);
-            m.redraw.strategy('all');
             return tb;
         };
         allProjectsCache = args.allProjects;
+        allTopLevelProjectsCache = args.allTopLevelProjects;
         self.tb = self.updateTB();
     },
     view : function (ctrl, args) {
-        var tb = ctrl.tb;
-        if (args.reload()) {
-            tb = ctrl.updateTB();
-            args.reload(false);
-        }
-        return m('.fb-project-organizer#projectOrganizer', tb );
+        return m('.fb-project-organizer#projectOrganizer', ctrl.tb );
     }
 };
 

@@ -4,6 +4,7 @@ import unittest
 from nose.tools import *  # noqa; PEP8 asserts
 from webtest_plus import TestApp
 import mock
+import urlparse
 import httplib as http
 
 from flask import Flask
@@ -81,7 +82,7 @@ class TestAuthUtils(OsfTestCase):
         res = res.follow()
 
         assert_equal(res.status_code, 302)
-        assert_in('myprojects', res.location)
+        assert_equal('/', urlparse.urlparse(res.location).path)
         assert_equal(len(mock_mail.call_args_list), 1)
         session = Session.find(
             Q('data.auth_user_id', 'eq', user._id)

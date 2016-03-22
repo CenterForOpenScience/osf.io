@@ -20,18 +20,21 @@
 
         <div class="row m-b-lg">
             <div class="col-sm-4">
-                <a href="/faq" class="support-col">
-                    <div class="text-center support-icon"><i class="fa fa-question "></i></div>
+                <div class="support-col">
+                    <div class="text-center support-icon"><a href="/faq"><i class="fa fa-question"></i> </a></div>
                     <h4 class="f-w-lg"> Frequently Asked Questions</h4>
-                    <p>Find out more about the Open Science Framework </p>
-                </a>
+                    <p> How can it be free? How will the OSF be useful to my research? What is a registration?
+                        Get your questions about the Open Science Framework answered on our <a href="/faq"> FAQ page. </a></p>
+               </div>
             </div>
             <div class="col-sm-4">
-                <a href="/getting-started" class="support-col">
-                    <div class="text-center support-icon"><i class="fa fa-video-camera"></i></div>
+                <div class="support-col">
+                    <div class="text-center support-icon"><a href="/getting-started"><i class="fa fa-video-camera"></i></a></div>
                     <h4 class="f-w-lg">Getting Started</h4>
-                    <p>Learn more about how to use the OSF for your research workflow with screenshots and videos </p>
-                </a>
+                    <p> Learn how to use the OSF for improving your research workflow. <a href="/getting-started">
+                        Getting Started </a> has step-by-step video tutorials and screenshots that show you the basics
+                        of project structures, version control, privacy, files, add-on support, and more! </p>
+                </div>
             </div>
             <div class="col-sm-4">
                 <div class="support-col">

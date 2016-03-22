@@ -110,6 +110,10 @@ MIDDLEWARE_CLASSES = (
     'api.base.middleware.TokuTransactionMiddleware',
     'api.base.middleware.PostcommitTaskMiddleware',
 
+    # A profiling middleware. ONLY FOR DEV USE
+    # Uncomment and add "prof" to url params to recieve a profile for that url
+    # 'api.base.middleware.ProfileMiddleware',
+
     # 'django.contrib.sessions.middleware.SessionMiddleware',
     'api.base.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',

@@ -43,6 +43,13 @@ class TestUserDetail(ApiTestCase):
         user_json = res.json['data']
         assert_not_equal(user_json['attributes']['full_name'], self.user_one.fullname)
 
+    def test_returns_timezone_and_locale(self):
+        url = "/{}users/{}/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url)
+        attributes = res.json['data']['attributes']
+        assert_equal(attributes['timezone'], self.user_one.timezone)
+        assert_equal(attributes['locale'], self.user_one.locale)
+
     def test_get_new_users(self):
         url = "/{}users/{}/".format(API_BASE, self.user_two._id)
         res = self.app.get(url)

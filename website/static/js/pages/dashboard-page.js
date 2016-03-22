@@ -11,6 +11,7 @@ var jstz = require('jstimezonedetect');
 var $osf = require('js/osfHelpers');
 var MyProjects = require('js/myProjects.js').MyProjects;
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
+require('loaders.css/loaders.min.css');
 
 var ensureUserTimezone = function(savedTimezone, savedLocale, id) {
     var clientTimezone = jstz.determine().name();
@@ -44,7 +45,7 @@ $(document).ready(function() {
 
     // Appears in 10 second if the spinner is still there.
     setTimeout(function(){
-        if($('#dashboard .spinner-loading-wrapper').length > 0) {
+        if($('#dashboard .ball-scale').length > 0) {
             $('#dashboard').append('<div class="text-danger text-center text-bigger">This is taking longer than normal. <br>  Try reloading the page. If the problem persist contact us at support@cos.io.</div>');
         }
     }, 10000);

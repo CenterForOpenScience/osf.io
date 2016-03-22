@@ -17,7 +17,6 @@ def update_or_create(inst_data):
     if inst:
         for key, val in inst_data.iteritems():
             setattr(inst.node, inst.attribute_map[key], val)
-        inst.node.is_institution = True
         changed_fields = inst.node.save()
         if changed_fields:
             print('Updated {}: {}'.format(inst.name, changed_fields))
@@ -25,7 +24,6 @@ def update_or_create(inst_data):
     else:
         inst = Institution(None)
         inst_data = {inst.attribute_map[k]: v for k, v in inst_data.iteritems()}
-        inst_data.update({'is_institution': True})
         new_inst = Node(**inst_data)
         new_inst.save()
         print('Added new institution: {}'.format(new_inst.institution_id))
