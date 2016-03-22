@@ -565,7 +565,7 @@ var MyProjects = {
             for (var i=0; i<collections.length; i++) {
                 //Keep Bookmarks on top of collections
                 if (collections[i].attributes.bookmarks) {
-                    var bookmarksCollection = collections.splice(i, 1);
+                    bookmarksCollection = collections.splice(i, 1);
                 }
             }
             collectionsToSort.sort(function(a, b) {
@@ -922,6 +922,7 @@ var Collections = {
                             }
                             if(!skipCount){
                                 collection.data.count(collection.data.count()+1);
+                                self.loadCollections;
                             }
                         }
                         m.request({
