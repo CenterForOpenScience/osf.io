@@ -1,2 +1,2 @@
 evernote==1.25.1
-git+https://github.com/rdhyee/ENML_PY.git
+git+https://github.com/rdhyee/ENML_PY.git@0.0.1

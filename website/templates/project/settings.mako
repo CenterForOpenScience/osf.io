@@ -181,7 +181,6 @@
                         <div class="panel-body">
 
                         % for node_settings_dict in addon_enabled_settings or []:
-                            <br>HELLO: ${node_settings_dict['addon_short_name']}</br>
                             ${render_node_settings(node_settings_dict)}
 
                                 % if not loop.last:
