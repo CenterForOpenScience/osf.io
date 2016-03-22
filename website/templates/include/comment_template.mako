@@ -135,7 +135,7 @@
 
             <!-- ko if: replying -->
 
-                <div>
+                <div data-bind="template {afterRender: autosizeText}">
                     <div class="form-group" style="padding-top: 10px">
                         <textarea class="form-control atwho-input" placeholder="Add a comment" data-bind="value: replyContent, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
                     </div>

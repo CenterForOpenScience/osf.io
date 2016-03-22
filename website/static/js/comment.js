@@ -25,6 +25,13 @@ var at_config = {
     displayTpl: '<li>${name} <small>${fullName}</small></li>',
     limit: 6
 };
+var plus_config = {
+    at: '+',
+    headerTpl: '<div class="atwho-header">Contributors<small>&nbsp;↑&nbsp;↓&nbsp;</small></div>',
+    insertTpl: '+${name}',
+    displayTpl: '<li>${name} <small>${fullName}</small></li>',
+    limit: 6
+};
 
 var input = $('.atwho-input');
 var nodeId = window.nodeId;
@@ -43,9 +50,10 @@ var getContributorList = function(input, nodeId) {
             };
         });
         // for any input areas that currently exist on page
-        input.atwho('load','@', data).atwho('run');
+        input.atwho('load','@', data).atwho('load', '+', data).atwho('run');
         // for future input areas so that data doesn't need to be reloaded
         at_config.data = data;
+        plus_config.data = data;
     });
     request.fail(function(xhr, status, error) {
         Raven.captureMessage('Error getting contributors', {
@@ -59,7 +67,7 @@ var getContributorList = function(input, nodeId) {
 
 // should only need to do this once
 getContributorList(input, nodeId);
-input.atwho(at_config);
+input.atwho(at_config).atwho(plus_config);
 
 
 // Maximum length for comments, in characters
@@ -404,7 +412,7 @@ CommentModel.prototype.edit = function() {
 
 CommentModel.prototype.autosizeText = function(elm) {
     $(elm).find('textarea').autosize().focus();
-    $(elm).find('.atwho-input').atwho(at_config);
+    $(elm).find('.atwho-input').atwho(at_config).atwho(plus_config);
 };
 
 CommentModel.prototype.cancelEdit = function() {
