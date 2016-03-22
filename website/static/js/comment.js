@@ -147,18 +147,19 @@ BaseComment.prototype.fetchNext = function(url, comments) {
         {'isCors': true});
     request.done(function(response) {
         comments = comments.concat(response.data);
-        if (response.links.next !== null) {
-            self.fetchNext(response.links.next, comments);
-        } else {
-            self.comments(
-                ko.utils.arrayMap(comments, function(comment) {
-                    return new CommentModel(comment, self, self.$root);
-                })
-            );
-            deferred.resolve(self.comments());
-            self.configureCommentsVisibility();
+        if (self._loaded !== true) {
             self._loaded = true;
             self.loadingComments(false);
+        }
+        self.comments(
+            ko.utils.arrayMap(comments, function(comment) {
+                return new CommentModel(comment, self, self.$root);
+            })
+        );
+        deferred.resolve(self.comments());
+        self.configureCommentsVisibility();
+        if (response.links.next !== null) {
+            self.fetchNext(response.links.next, comments);
         }
     }).fail(function () {
         self.loadingComments(false);
