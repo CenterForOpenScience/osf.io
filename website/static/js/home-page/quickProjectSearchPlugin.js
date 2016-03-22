@@ -469,7 +469,7 @@ var QuickSearchProject = {
                     m('.m-b-sm.text-center', [
                         searchBar()
                     ]),
-                    m('h4.text-center.f-w-lg', [ 'Go to ', m('a', {href:'/myprojects/'}, 'My Projects'),  ' to organize your work or ',
+                    m('p.text-center.f-w-lg', [ 'Go to ', m('a', {href:'/myprojects/'}, 'My Projects'),  ' to organize your work or ',
                         m('a', {href: '/search/', onclick: function(){ $osf.trackClick('quickSearch', 'navigate', 'navigate-to-search-the-OSF'); }}, 'search'), ' the OSF' ]),
                     m('.quick-search-table', [
                         m('.row.node-col-headers.m-t-md', [
