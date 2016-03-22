@@ -675,7 +675,7 @@ var MyProjects = {
                     m('small.hidden-xs', 'Browse and organize all your projects')
                 ])),
                 m('.col-xs-4.p-sm', m('.pull-right', m.component(AddProject, {
-                    buttonTemplate: m('.btn.btn-success[data-toggle="modal"][data-target="#addProject"]', {onclick: function() {
+                    buttonTemplate: m('.btn.btn-success.btn-success-high-contrast.f-w-xl[data-toggle="modal"][data-target="#addProject"]', {onclick: function() {
                         $osf.trackClick('myProjects', 'add-project', 'open-add-project' + '-modal');
                     }}, 'Create Project'),
                     parentID: null,
@@ -1404,8 +1404,7 @@ var Filters = {
                     'Contributors ',
                     m('i.fa.fa-question-circle.text-muted', {
                         'data-toggle':  'tooltip',
-                        'title':  'You can see the number of projects shared between ' +
-                        'a contributor and you. Click a name to display all the selected contributor’s projects which you can view, including any public projects.',
+                        'title': 'Click a name to display the selected contributor’s public projects, as well as their private projects on which you are at least a read contributor.',
                         'data-placement' : 'bottom'
                     }, ''),
                     m('.pull-right', m.component(MicroPagination, { currentPage : ctrl.nameCurrentPage, totalPages : ctrl.nameTotalPages, type: 'contributors'}))
