@@ -2098,16 +2098,83 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
 class TestCollectionLinkedNodes(ApiTestCase):
     def setUp(self):
         super(TestCollectionLinkedNodes, self).setUp()
+        self.user = AuthUserFactory()
+        self.auth = Auth(self.user)
+        self.collection = CollectionFactory(creator=self.user)
+        self.linked_node = NodeFactory(creator=self.user)
+        self.linked_node2 = NodeFactory(creator=self.user)
+        self.public_node = NodeFactory(is_public=True, creator=self.user)
+        self.collection.add_pointer(self.linked_node, auth=self.auth)
+        self.collection.add_pointer(self.linked_node2, auth=self.auth)
+        self.collection.add_pointer(self.public_node, auth=self.auth)
+        self.collection.save()
+        self.url = '/{}collections/{}/linked_nodes/'.format(API_BASE, self.collection._id)
+        self.node_ids = [pointer.node._id for pointer in self.collection.nodes_pointer]
+
+    def test_linked_nodes_returns_everything(self):
+        res = self.app.get(self.url, auth=self.user.auth)
+
+        assert_equal(res.status_code, 200)
+        nodes_returned = [linked_node['id'] for linked_node in res.json['data']]
+        assert_equal(len(nodes_returned), len(self.node_ids))
+
+        for node_id in self.node_ids:
+            assert_in(node_id, nodes_returned)
 
     def test_linked_nodes_only_return_viewable_nodes(self):
-        pass
+        user = AuthUserFactory()
+        collection = CollectionFactory(creator=user)
+        self.linked_node.add_contributor(user, auth=self.auth, save=True)
+        self.linked_node2.add_contributor(user, auth=self.auth, save=True)
+        self.public_node.add_contributor(user, auth=self.auth, save=True)
+        collection.add_pointer(self.linked_node, auth=Auth(user))
+        collection.add_pointer(self.linked_node2, auth=Auth(user))
+        collection.add_pointer(self.public_node, auth=Auth(user))
+        collection.save()
 
-    def test_linked_nodes_does_not_contain_pointers(self):
-        pass
+        res = self.app.get(
+            '/{}collections/{}/linked_nodes/'.format(API_BASE, collection._id),
+            auth=user.auth
+        )
 
-    def test_return_public_linked_nodes_logged_out(self):
-        pass
+        assert_equal(res.status_code, 200)
+        nodes_returned = [linked_node['id'] for linked_node in res.json['data']]
+        assert_equal(len(nodes_returned), len(self.node_ids))
 
-    def test_return_public_linked_nodes_logged_in(self):
-        pass
+        for node_id in self.node_ids:
+            assert_in(node_id, nodes_returned)
 
+        self.linked_node2.remove_contributor(user, auth=self.auth)
+        self.public_node.remove_contributor(user, auth=self.auth)
+
+        res = self.app.get(
+            '/{}collections/{}/linked_nodes/'.format(API_BASE, collection._id),
+            auth=user.auth
+        )
+        nodes_returned = [linked_node['id'] for linked_node in res.json['data']]
+        assert_equal(len(nodes_returned), len(self.node_ids) - 1)
+
+        assert_in(self.linked_node._id, nodes_returned)
+        assert_in(self.public_node._id, nodes_returned)
+        assert_not_in(self.linked_node2._id, nodes_returned)
+
+    def test_linked_nodes_doesnt_return_deleted_nodes(self):
+        self.linked_node.is_deleted = True
+        self.linked_node.save()
+        res = self.app.get(self.url, auth=self.user.auth)
+
+        assert_equal(res.status_code, 200)
+        nodes_returned = [linked_node['id'] for linked_node in res.json['data']]
+        assert_equal(len(nodes_returned), len(self.node_ids) - 1)
+
+        assert_not_in(self.linked_node._id, nodes_returned)
+        assert_in(self.linked_node2._id, nodes_returned)
+        assert_in(self.public_node._id, nodes_returned)
+
+    def test_attempt_to_return_linked_nodes_logged_out(self):
+        res = self.app.get(
+            self.url, auth=None,
+            expect_errors=True
+        )
+
+        assert_equal(res.status_code, 401)
