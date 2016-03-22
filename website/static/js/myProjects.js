@@ -561,23 +561,18 @@ var MyProjects = {
 
         var sortCollections = function(collections) {
             var collectionsToSort = [];
-            var bookmarkIndex = -1;
+            var bookmarksCollection = {};
             for (var i=0; i<collections.length; i++) {
-                //Keep Bookmarks at top
-                if (collections[i].attributes.title !== 'Bookmarks') {
-                    collectionsToSort.push(collections[i]);
-                }
-                else {
-                    bookmarkIndex = i;
+                //Keep Bookmarks on top of collections
+                if (collections[i].attributes.bookmarks) {
+                    var bookmarksCollection = collections.splice(i, 1);
                 }
             }
             collectionsToSort.sort(function(a, b) {
                 return (b.attributes.date_modified > a.attributes.date_modified);
             });
-            if (bookmarkIndex >= 0) {
-                collectionsToSort.unshift(collections[bookmarkIndex]);
-            }
-            return collectionsToSort;
+                collections.unshift(bookmarksCollection[0]);
+            return collections;
         };
 
         // GET COLLECTIONS
@@ -636,7 +631,7 @@ var MyProjects = {
             self.loadCategories().then(function(){
                 self.updateList(self.systemCollections[0]);
             });
-            var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : 'linked_nodes', 'page[size]' : self.collectionsPageSize(), 'sort' : 'date_created', 'embed' : 'node_links'}});
+            var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : 'linked_nodes', 'page[size]' : self.collectionsPageSize(), 'sort' : '-date_modified', 'embed' : 'node_links'}});
             if (!self.viewOnly){
                 self.loadCollections(collectionsUrl);
             }
