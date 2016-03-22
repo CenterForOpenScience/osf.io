@@ -3,9 +3,6 @@
  */
 'use strict';
 
-var caret = require('Caret.js');
-var atWho = require('At.js');
-
 var $ = require('jquery');
 var ko = require('knockout');
 var moment = require('moment');
@@ -16,6 +13,53 @@ require('jquery-autosize');
 var osfHelpers = require('js/osfHelpers');
 var CommentPane = require('js/commentpane');
 var markdown = require('js/markdown');
+
+var caret = require('Caret.js');
+var atWho = require('At.js');
+
+// @ mention prototyping
+var at_config = {
+    at: '@',
+    headerTpl: '<div class="atwho-header">Contributors<small>&nbsp;↑&nbsp;↓&nbsp;</small></div>',
+    insertTpl: '@${name}',
+    displayTpl: '<li>${name} <small>${fullName}</small></li>',
+    limit: 6
+};
+
+var input = $('.atwho-input');
+var nodeId = window.nodeId;
+
+var getContributorList = function(input, nodeId) {
+    var url = osfHelpers.apiV2Url('nodes/' + nodeId + '/contributors/', {});
+    var request = osfHelpers.ajaxJSON(
+        'GET',
+        url,
+        {'isCors': true});
+    request.done(function(response) {
+        var data = response.data.map(function(item) {
+            return {
+                'name': item.embeds.users.data.attributes.given_name,
+                'fullName': item.embeds.users.data.attributes.full_name
+            };
+        });
+        // for any input areas that currently exist on page
+        input.atwho('load','@', data).atwho('run');
+        // for future input areas so that data doesn't need to be reloaded
+        at_config.data = data;
+    });
+    request.fail(function(xhr, status, error) {
+        Raven.captureMessage('Error getting contributors', {
+            url: url,
+            status: status,
+            error: error
+        });
+    });
+    return request;
+};
+
+// should only need to do this once
+getContributorList(input, nodeId);
+input.atwho(at_config);
 
 
 // Maximum length for comments, in characters
@@ -68,6 +112,7 @@ var exclusifyGroup = function() {
 var BaseComment = function() {
 
     var self = this;
+
     self.abuseOptions = Object.keys(ABUSE_CATEGORIES);
 
     self._loaded = false;
@@ -359,6 +404,7 @@ CommentModel.prototype.edit = function() {
 
 CommentModel.prototype.autosizeText = function(elm) {
     $(elm).find('textarea').autosize().focus();
+    $(elm).find('.atwho-input').atwho(at_config);
 };
 
 CommentModel.prototype.cancelEdit = function() {
