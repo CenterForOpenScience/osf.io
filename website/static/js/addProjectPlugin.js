@@ -52,12 +52,10 @@ var AddProject = {
         var url = $osf.apiV2Url('users/me/nodes/', {query : {'page[size]': 1000}});
         var promise = m.request({method: 'GET', url : url, config : xhrconfig, background: true});
         promise.then(function(result) {
-            result.data.forEach(function (node) {
-                self.userProjects.push({'title': node.attributes.title, 'id': node.id});
+            result.data.map(function(node){
+                self.userProjects.push({title: node.attributes.title, id: node.id});
             });
-            return promise
-        }
-        );
+        });
 
         self.add = function _add () {
             var url;
