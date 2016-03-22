@@ -71,7 +71,13 @@ var NewAndNoteworthy = {
             promise.then(function(result){
                 var contribNames = [];
                 result.data.forEach(function (contrib){
-                    contribNames.push($osf.findContribName(contrib.embeds.users.data.attributes));
+                    if (contrib.embeds.users.data){
+                        contribNames.push($osf.findContribName(contrib.embeds.users.data.attributes));
+                    }
+                    else if (contrib.embeds.users.errors) {
+                        contribNames.push($osf.findContribName(contrib.embeds.users.errors[0].meta));
+                    }
+
                 });
                 var numContrib = result.links.meta.total;
                 var nodeId = nodeLink.id;

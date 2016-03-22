@@ -446,8 +446,8 @@ class User(GuidStoredObject, AddonModelMixin):
 
     @property
     def absolute_api_v2_url(self):
-        from api.base.utils import absolute_reverse  # Avoid circular dependency
-        return absolute_reverse('users:user-detail', kwargs={'user_id': self.pk})
+        from website import util
+        return util.api_v2_url('users/{}/'.format(self.pk))
 
     # used by django and DRF
     def get_absolute_url(self):
