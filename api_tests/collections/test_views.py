@@ -2093,3 +2093,21 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
         )
 
         assert_equal(res.status_code, 404)
+
+
+class TestCollectionLinkedNodes(ApiTestCase):
+    def setUp(self):
+        super(TestCollectionLinkedNodes, self).setUp()
+
+    def test_linked_nodes_only_return_viewable_nodes(self):
+        pass
+
+    def test_linked_nodes_does_not_contain_pointers(self):
+        pass
+
+    def test_return_public_linked_nodes_logged_out(self):
+        pass
+
+    def test_return_public_linked_nodes_logged_in(self):
+        pass
+
