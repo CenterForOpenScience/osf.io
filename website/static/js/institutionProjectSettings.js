@@ -20,10 +20,8 @@ var ViewModel = function(data) {
             url,
             {isCors: true}
         ).done(function (response) {
-            if (response.data.embeds.institutions.data.length){
-                self.availableInstitutions(response.data.embeds.institutions.data);
-                self.loading(false);
-            }
+            self.availableInstitutions(response.data.embeds.institutions.data.length ? response.data.embeds.institutions.data: []);
+            self.loading(false);
         }).fail(function (xhr, status, error) {
             Raven.captureMessage('Unable to fetch user with embedded institutions', {
                 url: url,
