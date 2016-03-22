@@ -36,7 +36,7 @@ class FakeSerializer(ser.Serializer):
     float_field = ser.FloatField()
     bool_field = ser.BooleanField(source='foobar')
 
-class FakeView(FilterMixin, ODMOrderingFilter):
+class FakeView(FilterMixin):
 
     serializer_class = FakeSerializer
 
@@ -232,28 +232,7 @@ class TestFilterMixin(ApiTestCase):
 
 
 
-"""
-class FakeSerialize(ser.Serializer):
-
-    filterable_fields = ('string_field', 'list_field', 'date_field', 'int_field', 'bool_field')
-
-    string_field = ser.CharField()
-    list_field = ser.ListField()
-    date_field = ser.DateField()
-    datetime_field = ser.DateTimeField()
-    int_field = ser.IntegerField()
-    float_field = ser.FloatField()
-    bool_field = ser.BooleanField(source='foobar')
-
-class FakeView(ODMOrderingFilter):
-
-    serializer_class = FakeSerialize
-
-"""
-
-#regrgession test for issue: https://openscience.atlassian.net/browse/OSF-5237
 class TestODMOrderingFilter(ApiTestCase):
-
     def test_filter_queryset_fails(self):
         class query:
             title = ' '
