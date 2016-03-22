@@ -356,7 +356,7 @@ var MyProjects = {
             }
 
             if(self.nodeUrlCache[url]){
-                success(self.nodeUrlCache[url]);
+                success(self.nodeUrlCache[url], url);
                 return;
             }
             var promise = m.request({method : 'GET', url : url, config : xhrconfig, background: true});
@@ -368,8 +368,13 @@ var MyProjects = {
             self.nodeUrlCache[url] = value;
             self.loadCounter(self.loadCounter() + value.data.length);
             self.loadValue(Math.round(self.loadCounter() / value.links.meta.total * 100));
-            if(self.loadingNodePages){
-                self.data(self.data().concat(value.data));
+            if(self.loadingNodePages) {
+                var tmp = value.data;
+                while(self.nodeUrlCache[value.links.next]) {
+                    value = self.nodeUrlCache[value.links.next];
+                    tmp = tmp.concat(value.data);
+                }
+                self.data(self.data().concat(tmp));
             } else {
                 self.data(value.data);
             }
@@ -482,6 +487,8 @@ var MyProjects = {
                 var contributors = item.embeds.contributors.data || [];
                 for(var i = 0; i < contributors.length; i++) {
                     var u = contributors[i];
+                    if (u.id === window.contextVars.currentUser.id)
+                        continue
                     if(self.users[u.id] === undefined) {
                         self.users[u.id] = {
                             data : u,
