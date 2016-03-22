@@ -102,6 +102,49 @@ class HideIfRegistration(ser.Field):
         return self.field.to_esi_representation(value, envelope)
 
 
+class HideIfDisabled(ser.Field):
+    """
+    If the user is disabled, returns None for attribute fields, or skips
+    if a RelationshipField.
+    """
+
+    def __init__(self, field, **kwargs):
+        super(HideIfDisabled, self).__init__(**kwargs)
+        self.field = field
+        self.source = field.source
+        self.required = field.required
+        self.read_only = field.read_only
+
+    def get_attribute(self, instance):
+        if instance.is_disabled:
+            if isinstance(self.field, RelationshipField):
+                raise SkipField
+            else:
+                return None
+        return self.field.get_attribute(instance)
+
+    def bind(self, field_name, parent):
+        super(HideIfDisabled, self).bind(field_name, parent)
+        self.field.bind(field_name, self)
+
+    def to_internal_value(self, data):
+        return self.field.to_internal_value(data)
+
+    def to_representation(self, value):
+        if getattr(self.field.root, 'child', None):
+            self.field.parent = self.field.root.child
+        else:
+            self.field.parent = self.field.root
+        return self.field.to_representation(value)
+
+    def to_esi_representation(self, value, envelope='data'):
+        if getattr(self.field.root, 'child', None):
+            self.field.parent = self.field.root.child
+        else:
+            self.field.parent = self.field.root
+        return self.field.to_esi_representation(value, envelope)
+
+
 class HideIfRetraction(HideIfRegistration):
     """
     If node is retracted, this field will return None.
