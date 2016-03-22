@@ -167,7 +167,7 @@ class Comment(GuidStoredObject, SpamMixin):
     root_target = fields.AbstractForeignField()
 
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
-    date_modified = fields.DateTimeField(default=lambda: datetime.datetime.utcnow())
+    date_modified = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow, editable=True)
     modified = fields.BooleanField(default=False)
     is_deleted = fields.BooleanField(default=False)
     # The type of root_target: node/files
