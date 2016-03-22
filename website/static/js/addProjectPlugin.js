@@ -49,12 +49,9 @@ var AddProject = {
             self.isValid(self.newProjectName().trim().length > 0);
         };
 
-        var url = $osf.apiV2Url('users/me/nodes/', {query : {'page[size]': 1000}});
-        var promise = m.request({method: 'GET', url : url, config : xhrconfig, background: true});
-        promise.then(function(result) {
-            result.data.map(function(node){
-                self.userProjects.push({title: node.attributes.title, id: node.id});
-            });
+        // Generate list of objects containing user node ids and titles
+        options.templates.map(function(node){
+            self.userProjects.push({title: node.attributes.title, id: node.id});
         });
 
         self.add = function _add () {
