@@ -23,29 +23,6 @@ var columnSizeClass = '.col-md-10 col-md-offset-1 col-lg-8 col-lg-offset-2';
 
 $(document).ready(function(){
     var osfHome = {
-        controller : function(){
-            var self = this;
-            self.categoryList = [];
-            self.loadCategories = function _loadCategories () {
-                var promise = m.request({method : 'OPTIONS', url : $osf.apiV2Url('nodes/', { query : {}}), config : xhrconfig});
-                promise.then(function _success(results){
-                    if(results.actions.POST.category){
-                        self.categoryList = results.actions.POST.category.choices;
-                        self.categoryList.sort(function(a, b){ // Quick alphabetical sorting
-                            if(a.value < b.value) return -1;
-                            if(a.value > b.value) return 1;
-                            return 0;
-                        });
-                    }
-                }, function _error(results){
-                    var message = 'Error loading project category names for the home page.';
-                    Raven.captureMessage(message, {requestReturn: results});
-                });
-                return promise;
-            };
-            self.loadCategories();
-
-        },
         view : function(ctrl, args) {
             return [
                 m('.quickSearch', m('.container.p-t-lg',
