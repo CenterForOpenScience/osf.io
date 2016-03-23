@@ -155,11 +155,11 @@ var MyProjects = {
         self.categoryList = [];
         self.loadValue = m.prop(0); // What percentage of the project loading is done
         //self.loadCounter = m.prop(0); // Count how many items are received from the server
-        self.currentView = {
+        self.currentView = m.prop({
             collection : null,
             contributor : [],
             tag : [],
-        };
+        });
 
         // Treebeard functions looped through project organizer.
         // We need to pass these in to avoid reinstantiating treebeard but instead repurpose (update) the top level folder
@@ -195,7 +195,7 @@ var MyProjects = {
                 typeObject.loaded += result.data.length;
                 typeObject.total = result.links.meta.total;
                 typeObject.nextLink = result.links.next;
-                if(self.currentView.collection === type) {
+                if(self.currentView().collection === type) {
                     self.loadValue(typeObject.loaded / typeObject.total * 100);
                     m.redraw();
                 }
@@ -375,15 +375,15 @@ var MyProjects = {
             var filterIndex;
             // if collection, reset currentView otherwise toggle the item in the list of currentview items
             if(filter.type === 'collection'){
-                self.currentView.collection = filter;
-                self.currentView.contributor = [];
-                self.currentView.tag = [];
+                self.currentView().collection = filter;
+                self.currentView().contributor = [];
+                self.currentView().tag = [];
             } else {
-                filterIndex = self.currentView[filter.type].indexOf(filter);
+                filterIndex = self.currentView()[filter.type].indexOf(filter);
                 if(filterIndex !== -1){ // if filter already in
-                    self.currentView[filter.type].splice(filterIndex,1);
+                    self.currentView()[filter.type].splice(filterIndex,1);
                 } else {
-                    self.currentView[filter.type].push(filter);
+                    self.currentView()[filter.type].push(filter);
                 }
             }
             //self.updateFilesData(filter);
@@ -391,7 +391,7 @@ var MyProjects = {
 
         self.removeProjectFromCollections = function _removeProjectFromCollection () {
             // Removes selected items from collect
-            var currentCollection = self.currentView.collection;
+            var currentCollection = self.currentView().collection;
             var collectionNode = currentCollection.data.node; // If it's not a system collection like projects or registrations this will have a node
             var data = {
                 data : []
@@ -683,7 +683,7 @@ var MyProjects = {
         self.resetUi = function _resetUi(){
             var linkObject = self.systemCollections[0];
             self.updateBreadcrumbs(linkObject);
-            self.activeFilter(linkObject);
+            self.updateFilter(linkObject);
         };
 
         self.loadSearchProjects = function (link) {
@@ -705,7 +705,7 @@ var MyProjects = {
         };
 
         self.init = function _init_fileBrowser() {
-            self.currentView.collection = self.systemCollections[0]; // Add linkObject to the currentView
+            self.currentView().collection = self.systemCollections[0]; // Add linkObject to the currentView
             self.loadCategories().then(function(){
                 // start loading nodes at the same time
                 self.loadNodes('projects', 'treeData');
@@ -717,7 +717,7 @@ var MyProjects = {
             if (!self.viewOnly){
                 self.loadCollections(collectionsUrl);
             }
-            self.activeFilter(self.collections()[0]);
+            self.updateFilter(self.collections()[0]);
             self.loadSearchProjects();
         };
 
@@ -814,7 +814,6 @@ var MyProjects = {
                 ] : '',
                 m.component(Collections, ctrl),
                 m.component(Filters, {
-                    activeFilter : ctrl.activeFilter,
                     updateFilter : ctrl.updateFilter,
                     nameFilters : ctrl.nameFilters,
                     tagFilters : ctrl.tagFilters
@@ -1078,7 +1077,7 @@ var Collections = {
                 index = i;
                 dropAcceptClass = index > 1 ? 'acceptDrop' : '';
                 childCount = item.data.count ? ' (' + item.data.count() + ')' : '';
-                if (item.id === args.activeFilter().id) {
+                if (args.currentView().collection === item) {
                     selectedCSS = 'active';
                 } else if (item.id === ctrl.collectionMenuObject().item.id) {
                     selectedCSS = 'bg-color-hover';
@@ -1466,7 +1465,7 @@ var Filters = {
             }
             for (i = begin; i < end; i++) {
                 item = args.nameFilters[i];
-                selectedCSS = item.id === args.activeFilter().id ? '.active' : '';
+                selectedCSS = args.currentView().contributor.indexOf(item) !== -1 ? '.active' : '';
                 list.push(m('li' + selectedCSS,
                     m('a[role="button"]', {onclick : filterContributor.bind(null, item)},
                         item.label)
@@ -1486,7 +1485,7 @@ var Filters = {
             }
             for (i = begin; i < end; i++) {
                 item = args.tagFilters[i];
-                selectedCSS = item.id === args.activeFilter().id ? '.active' : '';
+                selectedCSS = args.currentView().tag.indexOf(item) !== -1  ? '.active' : '';
                 list.push(m('li' + selectedCSS,
                     m('a[role="button"]', {onclick : filterTag.bind(null, item)},
                         item.label
@@ -1553,13 +1552,13 @@ var Information = {
         }
         var template = '';
         var showRemoveFromCollection;
-        var filter = args.activeFilter();
+        var collectionFilter = args.currentView().collection;
         if (args.selected().length === 0) {
             template = m('.db-info-empty.text-muted.p-lg', 'Select a row to view project details.');
         }
         if (args.selected().length === 1) {
             var item = args.selected()[0].data;
-            showRemoveFromCollection = filter.type === 'collection' && !filter.data.systemCollection && !item.relationships.parent;
+            showRemoveFromCollection = !collectionFilter.data.systemCollection && !item.relationships.parent;
             if(item.attributes.category === ''){
                 item.attributes.category = 'Uncategorized';
             }
@@ -1610,7 +1609,7 @@ var Information = {
         }
         if (args.selected().length > 1) {
             var firstItem = args.selected()[0].data;
-            showRemoveFromCollection = filter.type === 'collection' && !filter.data.systemCollection && !firstItem.relationships.parent;
+            showRemoveFromCollection = !collectionFilter.data.systemCollection && !firstItem.relationships.parent;
             template = m('.p-sm', [
                 showRemoveFromCollection ? m('.clearfix', m('.btn.btn-default.btn-sm.p-xs.text-danger.pull-right', { onclick : function() {
                     args.removeProjectFromCollections();
