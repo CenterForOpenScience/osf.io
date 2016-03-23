@@ -10,11 +10,10 @@
     <div id="inst">
         <div class="dashboard-header dashboard-header-institution">
             <div class="row" style="text-align: center">
-                <div class="col-sm-3"></div>
                 % if banner_path:
-                    <div class="col-sm-6"><img src="${ banner_path }"></div>
+                    <div class="col-sm-6 col-sm-offset-3"><img src="${ banner_path }"></div>
                 % else:
-                    <div class="col-sm-3"><img class="img-circle" height="110" width="110" src=${ logo_path }></div>
+                    <div class="col-sm-3 col-sm-offset-2"><img class="img-circle" height="110" width="110" src=${ logo_path }></div>
                     <div class="col-sm-3">
                         <h2>${ name }</h2>
                         % if description:
@@ -22,7 +21,6 @@
                         % endif
                     </div>
                 % endif
-                <div class="col-sm-3"></div>
             </div>
         </div>
       <div id="fileBrowser" class="dashboard clearfix" >
