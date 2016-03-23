@@ -834,7 +834,7 @@ describe('RegistrationEditor', () => {
                 data[q.id] = {
                     value: q.value(),
                     comments: [],
-                    extra: {}
+                    extra: []
                 };
             });
 

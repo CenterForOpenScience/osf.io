@@ -60,7 +60,7 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
 
     var onSelectRow = function(item) {
         if (item.kind === 'file') {
-            viewModel.selectedFiles.push(item);
+            viewModel.addFile(item);
             item.css = 'fangorn-selected';
         }
     };
@@ -134,7 +134,7 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
                         if (item.data.path === viewModel.value()) {
                             item.css = 'fangorn-selected';
                             item.data.nodeId = tree.data.nodeId;
-                            viewModel.selectedFiles.push(item);
+                            viewModel.addFile(item);
                         }
                     }
                     Fangorn.Utils.inheritFromParent(item, tree);
@@ -167,21 +167,29 @@ var Uploader = function(question) {
     question.showUploader = ko.observable(false);
     question.uid = 'uploader_' + uploaderCount;
     uploaderCount++;
-    self.selectedFiles = ko.observableArray([]);
+    self.selectedFiles = ko.observableArray(question.extra() || []);
     self.selectedFiles.subscribe(function(fileList) {
         $.each(fileList, function(idx, file) {
             if (file && !self.fileAlreadySelected(file)) {
-                question.extra().push({
-                    data: file.data,
-                    selectedFileName: file.data.name,
-                    nodeId: file.data.nodeId,
-                    viewUrl: '/project/' + file.data.nodeId + '/files/osfstorage' + file.data.path,
-                    sha256: file.data.extra.hashes.sha256
-                });
+                question.extra().push(file);
             }
         });
         question.value(question.formattedFileList());
     });
+
+    self.addFile = function(file) {
+        if(self.fileAlreadySelected(file))
+            return false;
+
+        self.selectedFiles.push({
+            data: file.data,
+            selectedFileName: file.data.name,
+            nodeId: file.data.nodeId,
+            viewUrl: '/project/' + file.data.nodeId + '/files/osfstorage' + file.data.path,
+            sha256: file.data.extra.hashes.sha256
+        });
+        return true;
+    };
 
 
     self.fileAlreadySelected = function(file) {
@@ -198,15 +206,14 @@ var Uploader = function(question) {
     self.hasSelectedFile = ko.computed(function() {
         return question.extra().length !== 0;
     });
-    self.unselectFile = function(file) {
-        var fileToRemove = this;
+    self.unselectFile = function(fileToRemove) {
         var files = question.extra();
 
-        $.each(files, function(idx, file){
-            if(files[idx].sha256 === file.data.extra.hashes.sha256) {
-                files.splice(idx, 1);
+        $.each(files, function(idx, file) {
+            if(file.sha256 === fileToRemove.sha256) {
                 self.selectedFiles.splice(idx, 1);
                 question.extra.splice(idx, 1);
+                question.value(question.formattedFileList());
             }
         });
     };
@@ -221,8 +228,8 @@ var Uploader = function(question) {
         else {
             var files = question.extra();
             var elem = '';
-            $.each(files, function(idx, file) {
-                elem += '<a target="_blank" href="' + files[idx].viewUrl + '">' + $osf.htmlEscape(files[idx].selectedFileName) + ' </a>';
+            $.each(files, function(_, file) {
+                elem += '<a target="_blank" href="' + file.viewUrl + '">' + $osf.htmlEscape(file.selectedFileName) + ' </a>';
             });
             return $(elem);
         }
