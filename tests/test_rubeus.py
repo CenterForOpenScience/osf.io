@@ -36,6 +36,7 @@ class TestRubeus(OsfTestCase):
             auth=self.consolidated_auth,
         )
         self.project.add_addon('s3', self.consolidated_auth)
+        self.project.add_addon('s3', self.consolidated_auth)
         self.project.creator.add_addon('s3', self.consolidated_auth)
         self.node_settings = self.project.get_addon('s3')
         self.user_settings = self.project.creator.get_addon('s3')
