@@ -460,7 +460,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         return urls
 
     def to_esi_representation(self, value, envelope='data'):
-        relationships = super(RelationshipField, self).to_representation(value)
+        relationships = self.to_representation(value)
         if relationships is not None and 'related' in relationships.keys():
             href = relationships['related']
             if href and not href == '{}':
