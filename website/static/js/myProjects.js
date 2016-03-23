@@ -677,7 +677,6 @@ var MyProjects = {
             },
             ctrl.projectOrganizerOptions
         );
-        console.log(ctrl.data())
         return [
             m('.dashboard-header', m('.row', [
                 m('.col-xs-8', m('h3', [
