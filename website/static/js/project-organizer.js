@@ -393,6 +393,7 @@ var tbOptions = {
             tb.resetFilter.call(tb);
             tb.updateFolder(allTopLevelProjectsCache(), tb.treeData);
             $('.db-poFilter>input').val('');
+            tb.options.resetUi();
         }
         var filter = $osf.debounce(tb.filter, 800);
         return [ m('input.form-control[placeholder="Search all my projects"][type="text"]', {
