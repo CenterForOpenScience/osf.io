@@ -118,7 +118,9 @@ var MyProjects = {
             collection : null,
             contributor : [],
             tag : [],
+            totalRows: 0
         });
+        self.filesData = m.prop();
 
         // Treebeard functions looped through project organizer.
         // We need to pass these in to avoid reinstantiating treebeard but instead repurpose (update) the top level folder
@@ -167,6 +169,7 @@ var MyProjects = {
                 promise.then(success, error);
             }
             function success (result) {
+                m.redraw(true);
                 typeObject.data = typeObject.data.concat(result.data);
                 typeObject.loaded += result.data.length;
                 typeObject.total = result.links.meta.total;
@@ -174,7 +177,6 @@ var MyProjects = {
                 if(self.currentView().collection.data.nodeType === nodeType && dataType === 'treeData') {
                     self.loadValue(typeObject.loaded / typeObject.total * 100);
                     self.updateList();
-                    m.redraw();
                 }
                 if(nodeType === 'projects' && dataType === 'flatData' && typeObject.loaded === typeObject.total ){
                     self.generateFiltersList();
@@ -208,8 +210,6 @@ var MyProjects = {
         // Calculate tag filters
         self.tagFilters = [];
 
-        // Placeholder for node data
-        self.data = m.prop([]);
 
         // Load categories to pass in to create project
         self.loadCategories = function _loadCategories () {
@@ -408,7 +408,8 @@ var MyProjects = {
             var nodeObject = self.nodes[nodeType];
             var nodeData = nodeObject.treeData.data;
             var begin;
-            if(nodeObject.loaded > 0 && self.treeData().data){
+            if(nodeObject.treeData.loaded > 0 && self.treeData().data){
+                console.log('asda');
                 if(nodeObject.loaded <= NODE_PAGE_SIZE){
                     begin = 0;
                     self.treeData().children = [];
@@ -426,8 +427,7 @@ var MyProjects = {
                 }
                 self.updateFolder()(null, self.treeData());
             }
-
-
+            self.currentView().totalRows = nodeObject.loaded;
         };
         self.updateListSuccess = function _updateListSuccess (value, url) {
             var lastcrumb = self.breadcrumbs()[self.breadcrumbs().length-1];
@@ -728,7 +728,7 @@ var MyProjects = {
         }
         var projectOrganizerOptions = $.extend(
             {}, {
-                filesData : ctrl.data,
+                filesData : [],
                 updateSelected : ctrl.updateSelected,
                 updateFilesData : ctrl.updateFilesData,
                 LinkObject : LinkObject,
@@ -812,7 +812,7 @@ var MyProjects = {
                     m('.line-full.bg-color-blue', { style : 'width: ' + ctrl.loadValue() +'%'}),
                     m('.load-message', 'Fetching more projects')
                 ]) : '',
-                ctrl.data().length === 0 ? ctrl.nonLoadTemplate() : m('.db-poOrganizer',  m.component( ProjectOrganizer, projectOrganizerOptions))
+                ctrl.currentView().totalRows === 0 ? ctrl.nonLoadTemplate() : m('.db-poOrganizer',  m.component( ProjectOrganizer, projectOrganizerOptions))
             ]),
             mobile ? '' : m('.db-info-toggle',{
                     onclick : function _showInfoOnclick(){

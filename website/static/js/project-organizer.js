@@ -450,7 +450,7 @@ var ProjectOrganizer = {
                     },
                     updateSelected : args.updateSelected,
                     updateFilesData : args.updateFilesData,
-                    filesData: args.filesData(),
+                    filesData: args.filesData,
                     dragContainment : args.wrapperSelector,
                     resetUi : args.resetUi,
                     showSidebar : args.showSidebar,
@@ -472,6 +472,7 @@ var ProjectOrganizer = {
         self.tb = self.updateTB();
     },
     view : function (ctrl, args) {
+        console.log(ctrl.tb, args.filesData);
         return m('.fb-project-organizer#projectOrganizer', ctrl.tb );
     }
 };
