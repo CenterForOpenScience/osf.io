@@ -10,34 +10,27 @@ from scripts import utils as script_utils
 logger = logging.getLogger(__name__)
 
 
-def migrate_comment(comment):
-    output = 'Comment fine.'
-    try:
-        temp = comment.spam_status
-    except:
-        if len(comment.reports) > 0:
-            comment.spam_status = Comment.FLAGGED
-    if comment.spam_status not in (Comment.FLAGGED, Comment.SPAM,
-                                   Comment.UNKNOWN, Comment.HAM):
-        comment.spam_status = Comment.UNKNOWN
-    try:
-        temp = comment.latest_report
-    except:
+def migrate_status(records):
+    for record in records:
+        if len(record.reports) > 0:
+            record.spam_status = Comment.FLAGGED
+        else:
+            record.spam_status = Comment.UNKNOWN
+        record.save()
+        logger.info('Migrated spam_status for comment {}'.format(record._id))
+
+
+def migrate_latest(records):
+    for record in records:
         date = None
-        for user, report in comment.reports.iteritems():
-            report_date = report.get('date')
-            if date is None or report_date > date:
-                date = report_date
-        comment.latest_report = date
-    comment.save()
-
-
-def migrate_status(records, dry=True):
-    pass
-
-
-def migrate_latest(records, dry=True):
-    pass
+        for user, report in record.reports.iteritems():
+            if date is None:
+                date = report.get('date')
+            elif date < report.get('date'):
+                date = report.get('date')
+        record.latest_report = date
+        record.save()
+        logger.info('Migrated latest_report for comment {}'.format(record._id))
 
 
 def get_no_status_targets():
@@ -65,6 +58,18 @@ def main():
         status = False
     if '--no_latest' in sys.argv:
         latest = False
+    if not dry_run:
+        script_utils.add_file_logger(logger, __file__)
+    if status:
+        with TokuTransaction():
+            migrate_status(get_no_status_targets())
+            if dry_run:
+                raise Exception('Dry Run -- Aborting Transaction')
+    if latest:
+        with TokuTransaction():
+            migrate_latest(get_no_latest_targets())
+            if dry_run:
+                raise Exception('Dry Run -- Aborting Transaction')
     init_app(set_backends=True, routes=False)
 
 
