@@ -142,6 +142,10 @@ def _update_comments_timestamp(auth, node, page=Comment.OVERVIEW, root_id=None):
             user_timestamp[node._id] = dict()
         timestamps = auth.user.comments_viewed_timestamp[node._id]
         enqueue_postcommit_task(partial(ban_url, node, []))
+        if root_id is not None:
+            guid_obj = Guid.load(root_id)
+            if guid_obj is not None:
+                enqueue_postcommit_task(partial(ban_url, guid_obj.referent, []))
 
         # update node timestamp
         if page == Comment.OVERVIEW:
