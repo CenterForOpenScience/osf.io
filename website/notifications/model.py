@@ -19,9 +19,9 @@ class NotificationSubscription(StoredObject):
     owner = fields.AbstractForeignField()
 
     # Notification types
-    none = fields.ForeignField('user', list=True, backref='none')
-    email_digest = fields.ForeignField('user', list=True, backref='email_digest')
-    email_transactional = fields.ForeignField('user', list=True, backref='email_transactional')
+    none = fields.ForeignField('user', list=True)
+    email_digest = fields.ForeignField('user', list=True)
+    email_transactional = fields.ForeignField('user', list=True)
 
     def add_user_to_subscription(self, user, notification_type, save=True):
         for nt in NOTIFICATION_TYPES:
