@@ -8,29 +8,26 @@
     <div class="alert alert-info"><strong>NOTICE: </strong>Forks, registrations, and uploads will be temporarily disabled while the OSF undergoes a hardware upgrade. These features will return shortly. Thank you for your patience.</div>
 % endif
     <div id="inst">
-<div class="dashboard-header dashboard-header-institution">
-    <div class="row" style="text-align: center">
-        <div class="col-sm-3"></div>
-        % if banner_path:
-            <div class="col-sm-6"><img src="${ banner_path }"></div>
-        % else:    
-            <div class="col-sm-3"><img class="img-circle" height="110" width="110" src=${ logo_path }></div>
-            <div class="col-sm-3">
-                <h2>${ name }</h2>
-                % if description:
-                    <h4><small class="hidden-sm">${description}</small></h4>
+        <div class="dashboard-header dashboard-header-institution">
+            <div class="row" style="text-align: center">
+                <div class="col-sm-3"></div>
+                % if banner_path:
+                    <div class="col-sm-6"><img src="${ banner_path }"></div>
+                % else:
+                    <div class="col-sm-3"><img class="img-circle" height="110" width="110" src=${ logo_path }></div>
+                    <div class="col-sm-3">
+                        <h2>${ name }</h2>
+                        % if description:
+                            <h4><small class="hidden-sm">${description}</small></h4>
+                        % endif
+                    </div>
                 % endif
+                <div class="col-sm-3"></div>
             </div>
-        % endif
-        <div class="col-sm-3"></div>
-    </div>
-</div>
-  <div id="fileBrowser" class="fileBrowser clearfix" >
-    <div class="spinner-loading-wrapper">
-       <div class="logo-spin logo-lg"></div>
-       <p class="m-t-sm fg-load-message"> Loading projects...  </p>
-    </div>
-  </div>
+        </div>
+      <div id="fileBrowser" class="dashboard clearfix" >
+        <div class="ball-scale text-center m-v-xl"><div></div></div>
+      </div>
     </div>
 </%def>
 
