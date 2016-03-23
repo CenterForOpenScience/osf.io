@@ -182,12 +182,6 @@ var Question = function(questionSchema, data) {
     self.properties = questionSchema.properties || [];
     self.match = questionSchema.match || '';
 
-    // if(typeof(self.data.extra) === 'object'){
-    //     self.extra = ko.observableArray([self.data.extra] || []);
-    // } else {
-    //     self.extra = ko.observableArray(self.data.extra || []);
-    // }
-
     self.extra = ko.observableArray(self.data.extra || []);
 
     self.formattedFileList = ko.computed(function() {

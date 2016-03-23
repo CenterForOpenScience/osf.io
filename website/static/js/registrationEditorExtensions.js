@@ -207,22 +207,24 @@ var Uploader = function(question) {
         return question.extra().length !== 0;
     });
     self.unselectFile = function(fileToRemove) {
+
         var files = question.extra();
 
-        $.each(files, function(idx, file) {
+        for (var i = 0; i < files.length - 1; i++) {
+            var file = files[i];
             if(file.sha256 === fileToRemove.sha256) {
-                self.selectedFiles.splice(idx, 1);
-                question.extra.splice(idx, 1);
+                self.selectedFiles.splice(i, 1);
                 question.value(question.formattedFileList());
+                break;
             }
-        });
+        }
     };
 
     self.filePicker = null;
 
     self.preview = function() {
         var value = question.value();
-        if (!value || value === NO_FILE) {
+        if (!value || value === NO_FILE || question.extra().length === 0) {
             return 'no file selected';
         }
         else {
