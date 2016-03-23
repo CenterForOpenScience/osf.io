@@ -847,18 +847,8 @@ class TestAddonFileViews(OsfTestCase):
         )
         archived_from_url = views.get_archived_from_url(registered_node, file_node)
         view_url = self.project.web_url_for('addon_view_or_download_file', provider=file_node.provider, path=file_node.copied_from_id)
-        assert_urls_equal(archived_from_url, view_url)
-
-    def test_archived_from_url_with_id(self):
-        file_node = self.get_test_file()
-        file_node.copied_from_id = '12345'
-        registered_node = self.project.register_node(
-            schema=get_default_metaschema(),
-            auth=Auth(self.user),
-            data=None,
-        )
-        archived_from_url = views.get_archived_from_url(registered_node, file_node)
         assert_true(archived_from_url)
+        assert_urls_equal(archived_from_url, view_url)
 
     def test_archived_from_url_without_id(self):
         file_node = self.get_test_file()
