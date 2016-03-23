@@ -327,7 +327,6 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
     return ret
 
 
-
 @must_be_valid_project  # injects node or project
 @must_have_write_permission_or_public_wiki  # injects user
 @must_not_be_registration
