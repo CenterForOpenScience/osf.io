@@ -3,6 +3,7 @@ from django.http import JsonResponse
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import generics
+# from rest_framework.serializers
 from rest_framework.mixins import ListModelMixin
 
 from api.users.serializers import UserSerializer
@@ -34,25 +35,64 @@ class JSONAPIBaseView(generics.GenericAPIView):
         :return function object -> dict:
         """
         if getattr(field, 'field', None):
-                field = field.field
+            field = field.field
         def partial(item):
             # resolve must be implemented on the field
-            view, view_args, view_kwargs = field.resolve(item)
-            if issubclass(view.cls, ListModelMixin) and field.always_embed:
-                raise Exception("Cannot auto-embed a list view.")
+            v, view_args, view_kwargs = field.resolve(item)
+
             if isinstance(self.request._request, EmbeddedRequest):
                 request = self.request._request
             else:
                 request = EmbeddedRequest(self.request)
+
             view_kwargs.update({
                 'request': request,
                 'is_embedded': True
             })
-            if (view, item) in CACHE.setdefault(request._request._request, {}):
-                response = CACHE[request._request._request][(view, field_name, item)]
-            else:
-                response = CACHE[request._request._request][(view, field_name, item)] = view(*view_args, **view_kwargs)
-            return response.data
+
+            # Setup a view ourselves to avoid all the junk DRF throws in
+            # v is a function that hides everything v.cls is the actual view class
+            view = v.cls()
+            view.args = view_args
+            view.kwargs = view_kwargs
+            view.request = request
+            view.request.parser_context['kwargs'] = view_kwargs
+            view.format_kwarg = view.get_format_suffix(**view_kwargs)
+
+            if (v.cls, field_name, view.get_serializer_class(), item) in CACHE.setdefault(request._request._request, {}):
+                # We already have the result for this embed, return it
+                return CACHE[request._request._request][(v.cls, field_name, view.get_serializer_class(), item)]
+
+            # Cache serializers. to_representation of a serializer should NOT augment it's fields so resetting the context
+            # should be sufficient for reuse
+            if not view.get_serializer_class() in CACHE.setdefault(request._request._request, {}):
+                CACHE[request._request._request][view.get_serializer_class()] = view.get_serializer_class()(many=isinstance(view, ListModelMixin))
+            ser = CACHE[request._request._request][view.get_serializer_class()]
+
+            try:
+                if not isinstance(view, ListModelMixin):
+                    ser._context.update(view.get_serializer_context())
+                    ret = ser.to_representation(view.get_object())
+                else:
+                    ser._context = view.get_serializer_context()
+                    queryset = view.filter_queryset(view.get_queryset())
+                    page = view.paginate_queryset(queryset)
+
+                    ret = ser.to_representation(page or queryset)
+
+                    if page is not None:
+                        request.parser_context['view'] = view
+                        request.parser_context['kwargs'].pop('request')
+                        view.paginator.request = request
+                        ret = view.paginator.get_paginated_response(ret).data
+            except Exception as e:
+                ret = view.handle_exception(e).data
+
+            # Cache our final result
+            CACHE[request._request._request][(v.cls, field_name, view.get_serializer_class(), item)] = ret
+
+            return ret
+
         return partial
 
     def get_serializer_context(self):
