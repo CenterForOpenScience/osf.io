@@ -127,6 +127,12 @@ var MyProjects = {
         self.buildTree = m.prop(null); // Preprocess function that adds to each item TB specific attributes
         self.updateFolder = m.prop(null); // Updates view to redraw without messing up scroll location
 
+        // Add All my Projects and All my registrations to collections
+        self.systemCollections = options.systemCollections || [
+                new LinkObject('collection', { nodeType : 'projects'}, 'All my projects'),
+                new LinkObject('collection', { nodeType : 'registrations'}, 'All my registrations')
+            ];
+
         self.nodes = {};
         ['projects', 'registrations', 'bookmarks'].forEach(function(item){
             self.nodes[item] = {
@@ -166,7 +172,7 @@ var MyProjects = {
                 typeObject.loaded += result.data.length;
                 typeObject.total = result.links.meta.total;
                 typeObject.nextLink = result.links.next;
-                if(self.currentView().collection === nodeType && dataType === 'treeData') {
+                if(self.currentView().collection.data.nodeType === nodeType && dataType === 'treeData') {
                     self.loadValue(typeObject.loaded / typeObject.total * 100);
                     m.redraw();
                 }
@@ -189,15 +195,11 @@ var MyProjects = {
         };
 
 
-        // Add All my Projects and All my registrations to collections
-        self.systemCollections = options.systemCollections || [
-            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors', 'filter[parent]' : 'null' }, systemCollection : 'projects'}, 'All my projects'),
-            new LinkObject('collection', { path : 'users/me/registrations/', query : { 'related_counts' : 'children', 'embed' : 'contributors', 'filter[parent]' : 'null' }, systemCollection : 'registrations'}, 'All my registrations')
-        ];
+
 
 
         // Initial Breadcrumb for All my projects
-        var initialBreadcrumbs = options.initialBreadcrumbs || [new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors', 'filter[parent]' : 'null' }, systemCollection : 'nodes'}, 'All my projects')];
+        var initialBreadcrumbs = options.initialBreadcrumbs || [new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors', 'filter[parent]' : 'null' }}, 'All my projects')];
         self.breadcrumbs = m.prop(initialBreadcrumbs);
         // Calculate name filters
         self.nameFilters = [];
@@ -398,10 +400,28 @@ var MyProjects = {
             });
         };
 
-        // GETTING THE NODES
-        self.updateList = function _updateList (linkObject){
+        // Update what is viewed
+        self.updateList = function _updateList (){
+            var nodeType = self.currentView.collection.data.nodeType;
+            var nodeObject = self.nodes[nodeType];
+            var nodeData = nodeObject.data;
+            var begin;
+            if(self.loaded <= NODE_PAGE_SIZE){
+                begin = 0;
+                self.treeData().children = [];
+            } else {
+                begin = self.treeData().children.length;
+            }
+            for (var i = begin; i < nodeData.length; i++){
+                var item = nodeData[i];
+                if (!(nodeType === 'registrations' && (item.attributes.retracted === true || item.attributes.pending_registration_approval === true))){
+                    // Filter Retractions and Pending Registrations from the "All my registrations" view.
+                    var child = self.buildTree()(item, self.treeData());
+                    self.treeData().add(child);
+                }
 
-            
+            }
+            self.updateFolder()(null, self.treeData());
 
         };
         self.updateListSuccess = function _updateListSuccess (value, url) {
@@ -421,10 +441,10 @@ var MyProjects = {
             }
             if(!value.data[0]){
                 if(lastcrumb.type === 'collection'){
-                    if(lastcrumb.data.systemCollection === 'nodes'){
+                    if(lastcrumb.data.nodeType === 'nodes'){
                         self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box',
                             options.institutionId ? 'This institution has no projects yet.':'You have not created any projects yet.'));
-                    } else if (lastcrumb.data.systemCollection === 'registrations'){
+                    } else if (lastcrumb.data.nodeType === 'registrations'){
                         self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box',
                             options.institutionId ? 'This institution has no registrations yet.':'You have not made any registrations yet.'));
                     } else {
@@ -437,7 +457,7 @@ var MyProjects = {
                         var permissions = lastcrumb.data.attributes.current_user_permissions;
                         showAddProject = permissions.indexOf('admin') > -1 || permissions.indexOf('write') > -1;
                     }
-                    if (lastcrumb.type === 'registration' || lastcrumb.data.type === 'registrations' || lastcrumb.data.systemCollection === 'registrations'){
+                    if (lastcrumb.type === 'registration' || lastcrumb.data.type === 'registrations' || lastcrumb.data.nodeType === 'registrations'){
                         showAddProject = false;
                     }
                     if(showAddProject){
@@ -483,7 +503,7 @@ var MyProjects = {
                 }
                 for (var i = begin; i < self.data().length; i++){
                     var item = self.data()[i];
-                    if (!(lastcrumb.data.systemCollection === 'registrations' && (item.attributes.retracted === true || item.attributes.pending_registration_approval === true))){
+                    if (!(lastcrumb.data.nodeType === 'registrations' && (item.attributes.retracted === true || item.attributes.pending_registration_approval === true))){
                         // Filter Retractions and Pending Registrations from the "All my registrations" view.
                         var child = self.buildTree()(item, self.treeData());
                         self.treeData().add(child);
@@ -499,7 +519,7 @@ var MyProjects = {
                 self.loadingNodePages = true;
                 var collData = {};
                 if(!self.allProjectsLoaded()) {
-                    collData = { systemCollection : 'nodes' };
+                    collData = { nodeType : 'nodes' };
                 }
                 self.updateList({link : value.links.next, data : collData });
             } else {
@@ -621,7 +641,7 @@ var MyProjects = {
             promise.then(function(result){
                 result.data.forEach(function(node){
                     var count = node.relationships.linked_nodes.links.related.meta.count;
-                    self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors' }, systemCollection : false, node : node, count : m.prop(count) }, node.attributes.title));
+                    self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors' }, nodeType : 'collection', node : node, count : m.prop(count) }, node.attributes.title));
                 });
                 if(result.links.next){
                     self.loadCollections(result.links.next);
@@ -874,7 +894,7 @@ var Collections = {
             promise.then(function(result){
                 var node = result.data;
                 var count = node.relationships.linked_nodes.links.related.meta.count || 0;
-                self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : 'children' }, systemCollection : false, node : node, count : m.prop(count) }, node.attributes.title));
+                self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : 'children' }, node : node, count : m.prop(count) }, node.attributes.title));
                 self.newCollectionName('');
                 self.calculateTotalPages();
                 self.currentPage(self.totalPages()); // Go to last page
@@ -1044,7 +1064,7 @@ var Collections = {
                 } else {
                     selectedCSS = '';
                 }
-                if (!item.data.systemCollection && !item.data.node.attributes.bookmarks) {
+                if (!item.data.nodeType && !item.data.node.attributes.bookmarks) {
                     submenuTemplate = m('i.fa.fa-ellipsis-v.pull-right.text-muted.p-xs.pointer', {
                         'data-index' : i,
                         onclick : openCollectionMenu
@@ -1341,7 +1361,7 @@ var Breadcrumbs = {
                         showAddProject = permissions.indexOf('admin') > -1 || permissions.indexOf('write') > -1;
                         objectType = 'component';
                     }
-                    if (item.type === 'registration' || item.data.type === 'registrations' || item.data.systemCollection === 'registrations'){
+                    if (item.type === 'registration' || item.data.type === 'registrations' || item.data.nodeType === 'registrations'){
                         showAddProject = false;
                     }
                     if(showAddProject && !viewOnly){
@@ -1367,7 +1387,7 @@ var Breadcrumbs = {
                             m('span.btn', item.label),
                             m('i.fa.fa-angle-right')
                         ]),
-                        (item.type === 'node' || (item.data.systemCollection === 'nodes' )) ? addProjectTemplate : ''
+                        (item.type === 'node' || (item.data.nodeType === 'projects' )) ? addProjectTemplate : ''
                     ];
                 }
                 item.index = index; // Add index to update breadcrumbs
@@ -1518,7 +1538,7 @@ var Information = {
         }
         if (args.selected().length === 1) {
             var item = args.selected()[0].data;
-            showRemoveFromCollection = !collectionFilter.data.systemCollection && !item.relationships.parent;
+            showRemoveFromCollection = !collectionFilter.data.nodeType && !item.relationships.parent;
             if(item.attributes.category === ''){
                 item.attributes.category = 'Uncategorized';
             }
@@ -1569,7 +1589,7 @@ var Information = {
         }
         if (args.selected().length > 1) {
             var firstItem = args.selected()[0].data;
-            showRemoveFromCollection = !collectionFilter.data.systemCollection && !firstItem.relationships.parent;
+            showRemoveFromCollection = !collectionFilter.data.nodeType && !firstItem.relationships.parent;
             template = m('.p-sm', [
                 showRemoveFromCollection ? m('.clearfix', m('.btn.btn-default.btn-sm.p-xs.text-danger.pull-right', { onclick : function() {
                     args.removeProjectFromCollections();
