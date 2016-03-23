@@ -15,7 +15,6 @@ var mC = require('js/mithrilComponents');
 var MOBILE_WIDTH = 767; // Mobile view break point for responsiveness
 var NODE_PAGE_SIZE = 10; // Load 10 nodes at a time from server
 
-
 /* Counter for unique ids for link objects */
 if (!window.fileBrowserCounter) {
     window.fileBrowserCounter = 0;
@@ -170,46 +169,58 @@ var MyProjects = {
         self.nodes = {};
         ['projects', 'registrations', 'bookmarks'].forEach(function(item){
             self.nodes[item] = {
-                flatData : [],
-                treeData : [],
-                loaded : 0,
-                total : 0,
-                loadMode : 'load', // Can be load, pause, or done  load will continue loading next, pause will pause loading next, done is when everything is loaded.
-                firstLink : '',
-                nextLink : ''
+                flatData : {
+                    data : [],
+                    loaded : 0,
+                    total : 0,
+                    firstLink : '',
+                    nextLink : '',
+                },
+                treeData : {
+                    data : [],
+                    loaded : 0,
+                    total : 0,
+                    firstLink : '',
+                    nextLink : ''
+                },
+                loadMode : 'load', // Can be load, pause, or done load will continue loading next, pause will pause loading next, done is when everything is loaded.
             };
         });
-        self.nodes.projects.firstLink = $osf.apiV2Url('users/me/nodes/', { query : { 'related_counts' : 'children', 'embed' : 'contributors', 'filter[parent]' : 'null' }});
-        self.nodes.registrations.firstLink = $osf.apiV2Url('users/me/registrations/', { query : { 'related_counts' : 'children', 'embed' : 'contributors', 'filter[parent]' : 'null' }});
+        self.nodes.projects.flatData.firstLink = $osf.apiV2Url('users/me/nodes/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
+        self.nodes.registrations.flatData.firstLink = $osf.apiV2Url('users/me/registrations/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
+        self.nodes.projects.treeData.firstLink = $osf.apiV2Url('users/me/nodes/', { query : { 'related_counts' : 'children', 'embed' : 'contributors', 'filter[parent]' : null}});
+        self.nodes.registrations.treeData.firstLink = $osf.apiV2Url('users/me/registrations/', { query : { 'related_counts' : 'children', 'embed' : 'contributors', 'filter[parent]' : null}});
 
 
-        self.loadNodes = function (type, hierarchy){
-            var typeObject = self.nodes[type];
+        self.loadNodes = function (nodeType, dataType){
+            var nodeObject = self.nodes[nodeType]
+            var typeObject = nodeObject[dataType];
             var url = typeObject.loaded === 0 ? typeObject.firstLink : typeObject.nextLink;
-            if(typeObject.loadMode === 'load' && url){
+            if(url){
                 var promise = m.request({method : 'GET', url : url, config : xhrconfig, background: true});
                 promise.then(success, error);
             }
             function success (result) {
-                typeObject[hierarchy] = typeObject[hierarchy].concat(result.data);
+                typeObject.data = typeObject.data.concat(result.data);
                 typeObject.loaded += result.data.length;
                 typeObject.total = result.links.meta.total;
                 typeObject.nextLink = result.links.next;
-                if(self.currentView().collection === type) {
+                if(self.currentView().collection === nodeType && dataType === 'treeData') {
                     self.loadValue(typeObject.loaded / typeObject.total * 100);
                     m.redraw();
                 }
+                self.generateFiltersList();
                 if(typeObject.nextLink){
-                    self.loadNodes(type, hierarchy);
+                    self.loadNodes(nodeType, dataType);
                 }
-                if(!typeObject.nextLink && typeObject.loaded === typeObject.total){
-                    typeObject.loadMode = 'done';
+                if(dataType === 'flatData' && !typeObject.nextLink && typeObject.loaded === typeObject.total){
+                    nodeObject.loadMode = 'done';
                 }
 
             console.log(type, typeObject.loaded, typeObject.loadMode);
             }
             function error (result){
-                var message = 'Error loading nodes';
+                var message = 'Error loading nodes with nodeType ' + nodeType + ' and dataType ' + dataType;
                 Raven.captureMessage(message, {requestReturn: result});
             }
 
@@ -378,6 +389,7 @@ var MyProjects = {
                 self.currentView().collection = filter;
                 self.currentView().contributor = [];
                 self.currentView().tag = [];
+                self.generateFiltersList();
             } else {
                 filterIndex = self.currentView()[filter.type].indexOf(filter);
                 if(filterIndex !== -1){ // if filter already in
