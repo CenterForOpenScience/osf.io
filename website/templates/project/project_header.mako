@@ -122,11 +122,11 @@
         % endif
 
         % if node['is_pending_retraction']:
-            <div class="alert alert-info">This ${node['node_type']} is currently pending entering into a retracted state.</div>
+            <div class="alert alert-info">This ${node['node_type']} is currently pending entering into a withdrawn state.</div>
         % endif
 
         % if  node['is_retracted']:
-            <div class="alert alert-danger">This ${node['node_type']} is a retracted registration of <a class="link-solid" href="${node['registered_from_url']}">this ${node['node_type']}</a>; the content of the ${node['node_type']} has been taken down for the reason(s) stated below.</div>
+            <div class="alert alert-danger">This ${node['node_type']} is a withdrawn registration of <a class="link-solid" href="${node['registered_from_url']}">this ${node['node_type']}</a>; the content of the ${node['node_type']} has been taken down for the reason(s) stated below.</div>
         % endif
 
         % if  node['is_pending_embargo']:
