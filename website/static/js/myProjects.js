@@ -157,7 +157,7 @@ var MyProjects = {
         self.loadValue = m.prop(0); // What percentage of the project loading is done
         //self.loadCounter = m.prop(0); // Count how many items are received from the server
         self.currentView = {
-            collection : ['projects'],
+            collection : null,
             contributor : [],
             tag : [],
         };
@@ -196,7 +196,7 @@ var MyProjects = {
                 typeObject.loaded += result.data.length;
                 typeObject.total = result.links.meta.total;
                 typeObject.nextLink = result.links.next;
-                if(self.currentView.collection.indexOf(type) > -1) {
+                if(self.currentView.collection === type) {
                     self.loadValue(typeObject.loaded / typeObject.total * 100);
                     m.redraw();
                 }
@@ -220,7 +220,7 @@ var MyProjects = {
 
         // Add All my Projects and All my registrations to collections
         self.systemCollections = options.systemCollections || [
-            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors', 'filter[parent]' : 'null' }, systemCollection : 'nodes'}, 'All my projects'),
+            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors', 'filter[parent]' : 'null' }, systemCollection : 'projects'}, 'All my projects'),
             new LinkObject('collection', { path : 'users/me/registrations/', query : { 'related_counts' : 'children', 'embed' : 'contributors', 'filter[parent]' : 'null' }, systemCollection : 'registrations'}, 'All my registrations')
         ];
 
@@ -372,15 +372,28 @@ var MyProjects = {
         };
 
         // USER FILTER
-        self.activeFilter = m.prop({});
         self.updateFilter = function _updateFilter (filter) {
-            self.activeFilter(filter);
-            self.updateFilesData(filter);
+            var filterIndex;
+            // if collection, reset currentView otherwise toggle the item in the list of currentview items
+            if(filter.type === 'collection'){
+                self.currentView.collection = filter;
+                self.currentView.contributor = [];
+                self.currentView.tag = [];
+            } else {
+                filterIndex = self.currentView[filter.type].indexOf(filter);
+                if(filterIndex !== -1){ // if filter already in
+                    self.currentView[filter.type].splice(filterIndex,1);
+                } else {
+                    self.currentView[filter.type].push(filter);
+                }
+            }
+            //self.updateFilesData(filter);
         };
 
         self.removeProjectFromCollections = function _removeProjectFromCollection () {
             // Removes selected items from collect
-            var collection = self.activeFilter().data.node;
+            var currentCollection = self.currentView.collection;
+            var collectionNode = currentCollection.data.node; // If it's not a system collection like projects or registrations this will have a node
             var data = {
                 data : []
             };
@@ -394,14 +407,14 @@ var MyProjects = {
             });
             m.request({
                 method : 'DELETE',
-                url : collection.links.self + 'relationships/' + 'linked_nodes/',  //collection.links.self + 'node_links/' + item.data.id + '/', //collection.links.self + relationship/ + linked_nodes/
+                url : collectionNode.links.self + 'relationships/' + 'linked_nodes/',  //collection.links.self + 'node_links/' + item.data.id + '/', //collection.links.self + relationship/ + linked_nodes/
                 config : xhrconfig,
                 data : data
             }).then(function _removeProjectFromCollectionsSuccess(result){
                 self.currentLink = null; // To bypass the check when updating file list
-                self.nodeUrlCache[self.activeFilter().link] = null;
-                self.updateFilter(self.activeFilter());
-                self.activeFilter().data.count(self.activeFilter().data.count() - data.data.length);
+                self.nodeUrlCache[currentCollection.link] = null;
+                //self.updateFilter(self.activeFilter());
+                currentCollection.data.count(currentCollection.data.count() - data.data.length);
             }, function _removeProjectFromCollectionsFail(result){
                 var message = 'Some projects';
                 if(data.data.length === 1) {
@@ -693,6 +706,7 @@ var MyProjects = {
         };
 
         self.init = function _init_fileBrowser() {
+            self.currentView.collection = self.systemCollections[0]; // Add linkObject to the currentView
             self.loadCategories().then(function(){
                 // start loading nodes at the same time
                 self.loadNodes('projects', 'treeData');
@@ -1514,6 +1528,7 @@ var Filters = {
 var Information = {
     view : function (ctrl, args) {
         function categoryMap(category) {
+            // TODO, you don't need to do this, CSS will do this case change
             switch (category) {
                 case 'analysis':
                     return 'Analysis';
