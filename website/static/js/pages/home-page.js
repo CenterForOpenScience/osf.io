@@ -51,11 +51,11 @@ $(document).ready(function(){
                 m('.quickSearch', m('.container.p-t-lg',
                     [
                         m('.row', [
-                            m(columnSizeClass, m('h2.col-sm-9', 'My Dashboard'), m('.pull-right.col-sm-3',
+                            m(columnSizeClass, m('h2.col-sm-9', 'Dashboard'), m('.pull-right.col-sm-3',
                                 m.component(AddProject, {
-                                    buttonTemplate : m('button.btn.btn-success.m-t-md[data-toggle="modal"][data-target="#addProjectFromHome"]', {onclick: function(){
+                                    buttonTemplate : m('button.btn.btn-success.btn-success-high-contrast.m-t-md.f-w-xl[data-toggle="modal"][data-target="#addProjectFromHome"]', {onclick: function(){
                                         $osf.trackClick('quickSearch', 'add-project', 'open-add-project-modal');
-                                    }}, 'Create New Project'),
+                                    }}, 'Create new project'),
                                     modalID : 'addProjectFromHome',
                                     categoryList : ctrl.categoryList,
                                     stayCallback : function _stayCallback_inPanel() {
@@ -95,6 +95,7 @@ $(document).ready(function(){
     };
     // If logged in...
     m.mount(document.getElementById('osfHome'), m.component(osfHome, {}));
+    $('#osfNavDashboard').addClass('active');
 
 
 

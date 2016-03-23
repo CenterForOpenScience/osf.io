@@ -18,6 +18,20 @@ FALSY = set(('f', 'F', 'false', 'False', 'FALSE', '0', 0, 0.0, False))
 
 UPDATE_METHODS = ['PUT', 'PATCH']
 
+def decompose_field(field):
+    from api.base.serializers import (
+        HideIfRetraction, HideIfRegistration,
+        HideIfDisabled, AllowMissing
+    )
+    WRAPPER_FIELDS = (HideIfRetraction, HideIfRegistration, HideIfDisabled, AllowMissing)
+
+    while isinstance(field, WRAPPER_FIELDS):
+        try:
+            field = getattr(field, 'field')
+        except AttributeError:
+            break
+    return field
+
 def is_bulk_request(request):
     """
     Returns True if bulk request.  Can be called as early as the parser.

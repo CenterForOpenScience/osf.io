@@ -84,7 +84,11 @@ var LinkObject = function _LinkObject (type, data, label, institutionId) {
             return $osf.apiV2Url('users/' + self.data.id + '/nodes/', { query : {'related_counts' : 'children', 'embed' : 'contributors' }});
         }
         else if (self.type === 'node') {
-            return $osf.apiV2Url('nodes/' + self.data.id + '/children/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
+            if (self.data.type === 'registrations') {
+                return $osf.apiV2Url('registrations/' + self.data.id + '/children/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
+            } else {
+                return $osf.apiV2Url('nodes/' + self.data.id + '/children/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
+            }
         }
         // If nothing
         throw new Error('Link could not be generated from linkObject data');
@@ -158,7 +162,7 @@ var MyProjects = {
         // Load 'All my Projects' and 'All my Registrations'
         self.systemCollections = options.systemCollections || [
             new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors', 'filter[parent]' : 'null' }, systemCollection : 'nodes'}, 'All my projects'),
-            new LinkObject('collection', { path : 'users/me/registrations/', query : { 'related_counts' : 'children', 'embed' : 'contributors'}, systemCollection : 'registrations'}, 'All my registrations')
+            new LinkObject('collection', { path : 'users/me/registrations/', query : { 'related_counts' : 'children', 'embed' : 'contributors', 'filter[parent]' : 'null' }, systemCollection : 'registrations'}, 'All my registrations')
         ];
         // Initial Breadcrumb for All my projects
         var initialBreadcrumbs = options.initialBreadcrumbs || [new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors', 'filter[parent]' : 'null' }, systemCollection : 'nodes'}, 'All my projects')];
@@ -356,7 +360,7 @@ var MyProjects = {
             }
 
             if(self.nodeUrlCache[url]){
-                success(self.nodeUrlCache[url]);
+                success(self.nodeUrlCache[url], url);
                 return;
             }
             var promise = m.request({method : 'GET', url : url, config : xhrconfig, background: true});
@@ -364,16 +368,21 @@ var MyProjects = {
             return promise;
         };
         self.updateListSuccess = function _updateListSuccess (value, url) {
+            var lastcrumb = self.breadcrumbs()[self.breadcrumbs().length-1];
             self.nodeUrlCache[url] = value;
             self.loadCounter(self.loadCounter() + value.data.length);
             self.loadValue(Math.round(self.loadCounter() / value.links.meta.total * 100));
-            if(self.loadingNodePages){
-                self.data(self.data().concat(value.data));
+            if(self.loadingNodePages) {
+                var tmp = value.data;
+                while(self.nodeUrlCache[value.links.next]) {
+                    value = self.nodeUrlCache[value.links.next];
+                    tmp = tmp.concat(value.data);
+                }
+                self.data(self.data().concat(tmp));
             } else {
                 self.data(value.data);
             }
             if(!value.data[0]){
-                var lastcrumb = self.breadcrumbs()[self.breadcrumbs().length-1];
                 if(lastcrumb.type === 'collection'){
                     if(lastcrumb.data.systemCollection === 'nodes'){
                         self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box',
@@ -390,6 +399,9 @@ var MyProjects = {
                     if(lastcrumb.type === 'node'){
                         var permissions = lastcrumb.data.attributes.current_user_permissions;
                         showAddProject = permissions.indexOf('admin') > -1 || permissions.indexOf('write') > -1;
+                    }
+                    if (lastcrumb.type === 'registration' || lastcrumb.data.type === 'registrations' || lastcrumb.data.systemCollection === 'registrations'){
+                        showAddProject = false;
                     }
                     if(showAddProject){
                         self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box.text-center', [
@@ -413,7 +425,6 @@ var MyProjects = {
                 }
                 self.selected([]); // Empty selected
             }
-
             if(self.loadingAllNodes) {
                 self.allTopLevelProjects(self.data());
                 self.generateFiltersList();
@@ -435,8 +446,12 @@ var MyProjects = {
                 }
                 for (var i = begin; i < self.data().length; i++){
                     var item = self.data()[i];
-                    var child = self.buildTree()(item, self.treeData());
-                    self.treeData().add(child);
+                    if (!(lastcrumb.data.systemCollection === 'registrations' && (item.attributes.retracted === true || item.attributes.pending_registration_approval === true))){
+                        // Filter Retractions and Pending Registrations from the "All my registrations" view.
+                        var child = self.buildTree()(item, self.treeData());
+                        self.treeData().add(child);
+                    }
+                    
                 }
                 self.updateFolder()(null, self.treeData());
             }
@@ -479,6 +494,9 @@ var MyProjects = {
                 var contributors = item.embeds.contributors.data || [];
                 for(var i = 0; i < contributors.length; i++) {
                     var u = contributors[i];
+                    if (u.id === window.contextVars.currentUser.id) {
+                        continue;
+                    }
                     if(self.users[u.id] === undefined) {
                         self.users[u.id] = {
                             data : u,
@@ -665,7 +683,7 @@ var MyProjects = {
                     m('small.hidden-xs', 'Browse and organize all your projects')
                 ])),
                 m('.col-xs-4.p-sm', m('.pull-right', m.component(AddProject, {
-                    buttonTemplate: m('.btn.btn-success[data-toggle="modal"][data-target="#addProject"]', {onclick: function() {
+                    buttonTemplate: m('.btn.btn-success.btn-success-high-contrast.f-w-xl[data-toggle="modal"][data-target="#addProject"]', {onclick: function() {
                         $osf.trackClick('myProjects', 'add-project', 'open-add-project' + '-modal');
                     }}, 'Create Project'),
                     parentID: null,
@@ -1269,6 +1287,7 @@ var Breadcrumbs = {
                 if(index === array.length-1){
                     var label = item.type === 'node' ? ' Create component' : ' Create project';
                     var title = item.type === 'node' ? 'Create new component' : 'Create new project';
+                    var divID = item.type === 'node' ? 'addSubComponent' : 'addProject';
                     var parentID = item.type === 'node' ? args.breadcrumbs()[args.breadcrumbs().length - 1].data.id : null;
                     var showAddProject = true;
                     var addProjectTemplate = '';
@@ -1278,13 +1297,16 @@ var Breadcrumbs = {
                         showAddProject = permissions.indexOf('admin') > -1 || permissions.indexOf('write') > -1;
                         objectType = 'component';
                     }
+                    if (item.type === 'registration' || item.data.type === 'registrations' || item.data.systemCollection === 'registrations'){
+                        showAddProject = false;
+                    }
                     if(showAddProject && !viewOnly){
                         addProjectTemplate = m.component(AddProject, {
-                            buttonTemplate: m('.btn.btn-sm.text-muted[data-toggle="modal"][data-target="#addProject"]', {onclick: function() {
+                            buttonTemplate: m('.btn.btn-sm.text-muted[data-toggle="modal"][data-target="#' + divID + '"]', {onclick: function() {
                                 $osf.trackClick('myProjects', 'add-' + objectType, 'open-add-' + objectType + '-modal');
                             }}, [m('i.fa.fa-plus', {style: 'font-size: 10px;'}), label]),
                             parentID: parentID,
-                            modalID: 'addProject',
+                            modalID: divID,
                             title: title,
                             categoryList: args.categoryList,
                             stayCallback: function () {
@@ -1394,8 +1416,7 @@ var Filters = {
                     'Contributors ',
                     m('i.fa.fa-question-circle.text-muted', {
                         'data-toggle':  'tooltip',
-                        'title':  'You can see the number of projects shared between ' +
-                        'a contributor and you. Click a name to display all the selected contributor’s projects which you can view, including any public projects.',
+                        'title': 'Click a name to display the selected contributor’s public projects, as well as their private projects on which you are at least a read contributor.',
                         'data-placement' : 'bottom'
                     }, ''),
                     m('.pull-right', m.component(MicroPagination, { currentPage : ctrl.nameCurrentPage, totalPages : ctrl.nameTotalPages, type: 'contributors'}))
