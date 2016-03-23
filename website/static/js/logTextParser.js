@@ -127,7 +127,7 @@ var LogPieces = {
     node: {
         view: function (ctrl, logObject) {
             var nodeObject = logObject.embeds.nodes;
-            if (logObject.attributes.action === 'node_removed'){
+            if (logObject.attributes.action === 'node_removed') {
                 if (logObject.attributes.params.params_node) {
                 return m('span', logObject.attributes.params.params_node.title);
             }}
