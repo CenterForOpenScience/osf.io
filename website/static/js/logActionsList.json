@@ -46,7 +46,7 @@
     "retraction_initiated":     "A Retraction of a Registration is proposed",
     "retraction_approved":  "${user} approved retraction of registration of ${node}",
     "retraction_cancelled":     "${user} cancelled retraction of registration of ${node}",
-    "registration_initiated":   "${user} initiated retraction of registration of ${node}",
+    "registration_initiated":   "${user} initiated registration of ${node}",
     "registration_approved":    "${user} approved registration of ${node}",
     "registration_cancelled":   "${user} cancelled registration of ${node}",
     "node_created":     "${user} created ${node}",

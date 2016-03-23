@@ -127,7 +127,11 @@ var LogPieces = {
     node: {
         view: function (ctrl, logObject) {
             var nodeObject = logObject.embeds.nodes;
-            if(paramIsReturned(nodeObject, logObject) && nodeObject.data[0]){
+            if (logObject.attributes.action === 'node_removed') {
+                if (logObject.attributes.params.params_node) {
+                return m('span', logObject.attributes.params.params_node.title);
+            }}
+            else if(paramIsReturned(nodeObject, logObject) && nodeObject.data[0]){
                 return m('a', {href: nodeObject.data[0].links.html, onclick: function() {
                     $osf.trackClick(logObject.trackingCategory, logObject.trackingAction, 'navigate-to-project-from-logs');
                 }}, nodeObject.data[0].attributes.title);
