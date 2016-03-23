@@ -308,7 +308,7 @@
                             <div data-bind="visible: !loading()">
                                 <div data-bind="visible: error()">
                                     <div class="help-block">
-                                        Failed to load up your institutions. Please try again.
+                                        Could not load up available institutions. Please wait a few minutes and try again, or contact <a href="mailto:support@osf.io">support@osf.io</a> if the problem persists.
                                     </div>
                                 </div>
                                 <div data-bind="visible: !error()">
