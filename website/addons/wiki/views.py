@@ -213,9 +213,6 @@ def project_wiki_delete(auth, wname, **kwargs):
     return {}
 
 
-@must_be_valid_project  # returns project
-@must_be_contributor_or_public
-@must_have_addon('wiki', 'node')
 def project_wiki_view(auth, wname, path=None, **kwargs):
     node = kwargs['node'] or kwargs['project']
     anonymous = has_anonymous_link(node, auth)
@@ -293,6 +290,10 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
             raise HTTPError(http.FORBIDDEN)
         sharejs_uuid = None
 
+    # Opens 'edit' panel when home wiki is empty
+    if not content and can_edit and wiki_name=='home':
+        panels_used.append('edit')
+
     ret = {
         'wiki_id': wiki_page._primary_key if wiki_page else None,
         'wiki_name': wiki_page.page_name if wiki_page else wiki_name,
@@ -321,6 +322,7 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
     ret.update(_view_project(node, auth, primary=True))
     ret['user']['can_edit_wiki_body'] = can_edit
     return ret
+
 
 
 @must_be_valid_project  # injects node or project
