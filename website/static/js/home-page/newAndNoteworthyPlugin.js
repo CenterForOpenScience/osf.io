@@ -71,7 +71,13 @@ var NewAndNoteworthy = {
             promise.then(function(result){
                 var contribNames = [];
                 result.data.forEach(function (contrib){
-                    contribNames.push($osf.findContribName(contrib.embeds.users.data.attributes));
+                    if (contrib.embeds.users.data){
+                        contribNames.push($osf.findContribName(contrib.embeds.users.data.attributes));
+                    }
+                    else if (contrib.embeds.users.errors) {
+                        contribNames.push($osf.findContribName(contrib.embeds.users.errors[0].meta));
+                    }
+
                 });
                 var numContrib = result.links.meta.total;
                 var nodeId = nodeLink.id;
@@ -83,6 +89,9 @@ var NewAndNoteworthy = {
 
         // Gets contrib family name for display
         self.getFamilyName = function(i, node) {
+            if (!(Boolean(self.contributorsMapping) && Boolean(self.contributorsMapping[node.id])))  {
+                return null;
+            }
             return self.contributorsMapping[node.id].names[i];
         };
 
@@ -148,7 +157,8 @@ var NoteworthyNodeDisplay = {
         var description = args.node.embeds.target_node.data.attributes.description;
         var tooltipDescription = description ? description.split(' ').splice(0,30).join(' ') + '...' : '';
         var title = args.node.embeds.target_node.data.attributes.title;
-        var contributors = $osf.contribNameFormat(args.node, args.contributorsMapping[args.node.id].total, args.getFamilyName);
+        var numContrib = args.contributorsMapping[args.node.id] ? args.contributorsMapping[args.node.id].total : 0;
+        var contributors = $osf.contribNameFormat(args.node, numContrib, args.getFamilyName);
         var destination = '/' + args.node.embeds.target_node.data.id;
 
         return m('a', {href: destination, onclick: function() {

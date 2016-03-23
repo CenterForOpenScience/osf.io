@@ -27,7 +27,7 @@ class JSONAPIPagination(pagination.PageNumberPagination):
         """
         Builds uri and adds page param.
         """
-        url = self.request.build_absolute_uri(url)
+        url = remove_query_param(self.request.build_absolute_uri(url), '_')
         paginated_url = replace_query_param(url, self.page_query_param, page_number)
 
         if page_number == 1:

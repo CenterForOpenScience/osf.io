@@ -18,6 +18,20 @@ FALSY = set(('f', 'F', 'false', 'False', 'FALSE', '0', 0, 0.0, False))
 
 UPDATE_METHODS = ['PUT', 'PATCH']
 
+def decompose_field(field):
+    from api.base.serializers import (
+        HideIfRetraction, HideIfRegistration,
+        HideIfDisabled, AllowMissing
+    )
+    WRAPPER_FIELDS = (HideIfRetraction, HideIfRegistration, HideIfDisabled, AllowMissing)
+
+    while isinstance(field, WRAPPER_FIELDS):
+        try:
+            field = getattr(field, 'field')
+        except AttributeError:
+            break
+    return field
+
 def is_bulk_request(request):
     """
     Returns True if bulk request.  Can be called as early as the parser.
@@ -68,8 +82,10 @@ def get_object_or_error(model_cls, query_or_pk, display_name=None, **kwargs):
     # users who are unconfirmed or unregistered, but not users who have been
     # disabled.
     if model_cls is User and obj.is_disabled:
-        raise Gone(detail='The requested user is no longer available.')
-    elif not getattr(obj, 'is_active', True) or getattr(obj, 'is_deleted', False):
+        raise Gone(detail='The requested user is no longer available.',
+                   meta={'full_name': obj.fullname, 'family_name': obj.family_name, 'given_name': obj.given_name,
+                         'middle_names': obj.middle_names, 'profile_image': obj.profile_image_url()})
+    elif model_cls is not User and not getattr(obj, 'is_active', True) or getattr(obj, 'is_deleted', False):
         if display_name is None:
             raise Gone
         else:

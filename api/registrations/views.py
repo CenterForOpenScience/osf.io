@@ -20,7 +20,7 @@ from api.nodes.views import (
     NodeAlternativeCitationsList, NodeAlternativeCitationDetail, NodeLogList,
     NodeInstitutionDetail, WaterButlerMixin)
 
-from api.registrations.serializers import RegistrationNodeLinksSerializer
+from api.registrations.serializers import RegistrationNodeLinksSerializer, RegistrationFileSerializer
 
 from api.nodes.permissions import (
     ContributorOrPublic,
@@ -305,11 +305,13 @@ class RegistrationRegistrationsList(NodeRegistrationsList, RegistrationMixin):
 class RegistrationFilesList(NodeFilesList, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-files'
+    serializer_class = RegistrationFileSerializer
 
 
 class RegistrationFileDetail(NodeFileDetail, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-file-detail'
+    serializer_class = RegistrationFileSerializer
 
 
 class RegistrationAlternativeCitationsList(NodeAlternativeCitationsList, RegistrationMixin):

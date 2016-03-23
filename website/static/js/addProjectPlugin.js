@@ -34,17 +34,29 @@ var AddProject = {
         self.newProjectName = m.prop('');
         self.newProjectDesc = m.prop('');
         self.newProjectCategory = m.prop(self.defaultCat);
+        self.newProjectTemplate = m.prop('');
         self.goToProjectLink = m.prop('');
         self.saveResult = m.prop({});
         self.errorMessageType = m.prop('unknown');
         self.errorMessage = {
             'unknown' : 'There was an unknown error. Please try again later.'
         };
+        self.userProjects =  []; // User nodes
+
         // Validation
         self.isValid = m.prop(false);
         self.checkValid = function _checkValid() {
             self.isValid(self.newProjectName().trim().length > 0);
         };
+
+        self.mapTemplates = function() {
+             // Generate list of objects containing user node ids and titles
+            options.templates().map(function(node){
+                self.userProjects.push({title: node.attributes.title, id: node.id});
+        });
+
+        };
+
         self.add = function _add () {
             var url;
             var data;
@@ -64,6 +76,11 @@ var AddProject = {
                         }
                     }
                 };
+
+            if (self.newProjectTemplate()) {
+                data.data.attributes.template_from = self.newProjectTemplate();
+            }
+
             var success = function _success (result) {
                 self.viewState('success');
                 self.goToProjectLink(result.data.links.html);
@@ -120,6 +137,7 @@ var AddProject = {
                         m('.text-muted.pointer', { onclick : function(){
                             ctrl.showMore(!ctrl.showMore());
                             $osf.trackClick(options.trackingCategory, options.trackingAction, 'show-more-or-less');
+                            ctrl.mapTemplates();
                         }},[
                             ctrl.showMore() ? m('i.fa.fa-caret-down', { style: 'width: 10px;'}) : m('i.fa.fa-caret-right', { style: 'width: 10px;'}),
                             ' More'
@@ -127,9 +145,11 @@ var AddProject = {
                         ctrl.showMore() ? [
                             m('.form-group.m-v-sm', [
                                 m('label[for="projectDesc].f-w-lg.text-bigger', 'Description'),
-                                m('textarea.form-control.noresize', {
-                                    onchange: function(event) {
-                                        ctrl.newProjectDesc(event.value);
+                                m('input[type="text"].form-control.noresize', {
+                                    onkeyup: function (ev){
+                                        ctrl.newProjectDesc($(this).val());
+                                    },
+                                    onchange: function() {
                                         $osf.trackClick(options.trackingCategory, options.trackingAction, 'type-project-description');
                                     },
                                     value : ctrl.newProjectDesc(),
@@ -146,14 +166,25 @@ var AddProject = {
                                             value: cat.value,
                                             checked: ctrl.newProjectCategory() === cat.value,
                                             onchange : function(event) {
-                                                ctrl.newProjectCategory(event.value);
+                                                ctrl.newProjectCategory(cat.value);
                                                 $osf.trackClick(options.trackingCategory, options.trackingAction, 'select-project-category');
                                             }
                                         }), cat.display_name|| m('i.text-muted', '(Empty category)') ]));
 
                                     })
                                 ])
-                            ] : ''
+                            ] : '',
+                             ctrl.options.parentID === null ? m('.form-group.m-v-md', [
+                                m('label[for="projectTemplate].f-w-lg.text-bigger', 'Template (optional)'),
+                                m('p.f-w-xs.help-text', 'Start typing to search. Selecting project as template will duplicate its ' +
+                                    'structure in the new project without importing the content of that project.'),
+                                m.component(Select2Template, {
+                                    data: ctrl.userProjects,
+                                    value: ctrl.newProjectTemplate,
+                                    trackingCategory: options.trackingCategory,
+                                    trackingAction: options.trackingAction
+                                })
+                            ]) : ''
                         ] : ''
                     ])
                 ]),
@@ -240,6 +271,39 @@ var AddProject = {
                 )
             )
         ]);
+    }
+};
+
+var Select2Template = {
+    view: function(ctrl, options) {
+        return m('select', {config: Select2Template.config(options), onchange: function(){
+            $osf.trackClick(options.trackingCategory, options.trackingAction, 'select-project-template');
+        }}, [
+            m('option', {value: ''}, ''),
+            options.data.map(function(node) {
+                var args = {value: node.id};
+                return m('option', args, node.title);
+            })
+        ]);
+    },
+    /**Select2 config factory - adapted from https://lhorie.github.io/mithril/integration.html **/
+    config: function(ctrl) {
+        return function(element, isInitialized) {
+            var $el = $(element);
+            if (!isInitialized) {
+                $el.select2({placeholder: 'Select a project to use as a template', allowClear: true, width: '100%'}).on('change', function(e) {
+                    var id = $el.select2('val');
+                    m.startComputation();
+                    //Set the value to the selected option
+                    ctrl.data.map(function(node){
+                        if(node.id === id) {
+                            ctrl.value(node.id);
+                        }
+                    });
+                    m.endComputation();
+                });
+            }
+        };
     }
 };
 

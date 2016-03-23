@@ -626,21 +626,41 @@ class TestDeactivatedUser(ApiTestCase):
     def setUp(self):
         super(TestDeactivatedUser, self).setUp()
         self.user = AuthUserFactory()
+        self.user2 = AuthUserFactory()
 
     def test_requesting_as_deactivated_user_returns_400_response(self):
         url = '/{}users/{}/'.format(API_BASE, self.user._id)
-        res = self.app.get(url, auth=self.user.auth , expect_errors=True)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 200)
         self.user.is_disabled = True
         self.user.save()
-        res = self.app.get(url, auth=self.user.auth , expect_errors=True)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Making API requests with credentials associated with a deactivated account is not allowed.')
 
-    def test_requesting_deactivated_user_returns_410_response(self):
+    def test_unconfirmed_users_return_entire_user_object(self):
         url = '/{}users/{}/'.format(API_BASE, self.user._id)
-        res = self.app.get(url, auth=self.user.auth , expect_errors=True)
+        res = self.app.get(url, auth=self.user2.auth, expect_errors=True)
+        assert_equal(res.status_code, 200)
+        self.user.is_registered = False
+        self.user.save()
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 200)
+        attr = res.json['data']['attributes']
+        assert_equal(attr['active'], False)
+        assert_equal(res.json['data']['id'], self.user._id)
+
+    def test_requesting_deactivated_user_returns_410_response_and_meta_info(self):
+        url = '/{}users/{}/'.format(API_BASE, self.user._id)
+        res = self.app.get(url, auth=self.user2.auth, expect_errors=True)
         assert_equal(res.status_code, 200)
         self.user.is_disabled = True
         self.user.save()
         res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, 410)
+        assert_equal(res.json['errors'][0]['meta']['family_name'], self.user.family_name)
+        assert_equal(res.json['errors'][0]['meta']['given_name'], self.user.given_name)
+        assert_equal(res.json['errors'][0]['meta']['middle_names'], self.user.middle_names)
+        assert_equal(res.json['errors'][0]['meta']['full_name'], self.user.fullname)
+        assert_equal(urlparse.urlparse(res.json['errors'][0]['meta']['profile_image']).netloc, 'secure.gravatar.com')
+        assert_equal(res.json['errors'][0]['detail'], 'The requested user is no longer available.')

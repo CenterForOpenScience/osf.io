@@ -209,6 +209,7 @@ class FilterMixin(object):
         :param basestring field_name: text representation of the field name
         :param rest_framework.fields.Field field: Field instance
         """
+        field = utils.decompose_field(field)
         source = field.source
         if source == '*':
             source = getattr(field, 'filter_key', None)
@@ -219,6 +220,7 @@ class FilterMixin(object):
         :param basestring value: value to be resolved
         :param rest_framework.fields.Field field: Field instance
         """
+        field = utils.decompose_field(field)
         if isinstance(field, ser.BooleanField):
             if utils.is_truthy(value):
                 return True
