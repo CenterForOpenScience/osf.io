@@ -136,6 +136,7 @@ var MyProjects = {
         self.wrapperSelector = options.wrapperSelector;  // For encapsulating each implementation of this component in multiple use
         self.projectOrganizerOptions = options.projectOrganizerOptions || {};
         self.viewOnly = options.viewOnly || false;
+        self.institutionId = options.institutionId || false;
         self.currentLink = ''; // Save the link to compare if a new link is being requested and avoid multiple calls
         self.reload = m.prop(false); // Gets set to true when treebeard link changes and it needs to be redrawn
         self.nonLoadTemplate = m.prop(''); // Template for when data is not available or error happens
@@ -677,7 +678,7 @@ var MyProjects = {
             ctrl.projectOrganizerOptions
         );
         return [
-            !options.institutionId ? m('.dashboard-header', m('.row', [
+            !ctrl.institutionId ? m('.dashboard-header', m('.row', [
                 m('.col-xs-8', m('h3', [
                     'My Projects ',
                     m('small.hidden-xs', 'Browse and organize all your projects')
