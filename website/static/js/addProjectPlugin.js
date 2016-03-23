@@ -52,7 +52,7 @@ var AddProject = {
         self.mapTemplates = function() {
             console.log(options)
              // Generate list of objects containing user node ids and titles
-            options.templates.map(function(node){
+            options.templates().map(function(node){
                 self.userProjects.push({title: node.attributes.title, id: node.id});
         });
 

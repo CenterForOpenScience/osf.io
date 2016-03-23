@@ -419,7 +419,7 @@ var MyProjects = {
                                 },
                                 trackingCategory: 'myProjects',
                                 trackingAction: 'add-component',
-                                templates: self.data()
+                                templates: self.data
                             })
                         ]));
                     }
@@ -698,7 +698,7 @@ var MyProjects = {
                     },
                     trackingCategory: 'myProjects',
                     trackingAction: 'add-project',
-                    templates: ctrl.data()
+                    templates: ctrl.data
                 })))
             ])),
             m('.db-header.row', [
@@ -1319,7 +1319,7 @@ var Breadcrumbs = {
                             },
                             trackingCategory: 'myProjects',
                             trackingAction: 'add-' + objectType,
-                            templates: args.data()
+                            templates: args.data
                         });
                     }
                     return [
