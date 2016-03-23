@@ -188,12 +188,12 @@ var MyProjects = {
         });
         self.nodes.projects.flatData.firstLink = $osf.apiV2Url('users/me/nodes/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
         self.nodes.registrations.flatData.firstLink = $osf.apiV2Url('users/me/registrations/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
-        self.nodes.projects.treeData.firstLink = $osf.apiV2Url('users/me/nodes/', { query : { 'related_counts' : 'children', 'embed' : 'contributors', 'filter[parent]' : null}});
-        self.nodes.registrations.treeData.firstLink = $osf.apiV2Url('users/me/registrations/', { query : { 'related_counts' : 'children', 'embed' : 'contributors', 'filter[parent]' : null}});
+        self.nodes.projects.treeData.firstLink = $osf.apiV2Url('users/me/nodes/', { query : { 'related_counts' : 'children', 'embed' : 'contributors', 'filter[parent]' : 'null' }});
+        self.nodes.registrations.treeData.firstLink = $osf.apiV2Url('users/me/registrations/', { query : { 'related_counts' : 'children', 'embed' : 'contributors', 'filter[parent]' : 'null' }});
 
 
         self.loadNodes = function (nodeType, dataType){
-            var nodeObject = self.nodes[nodeType]
+            var nodeObject = self.nodes[nodeType];
             var typeObject = nodeObject[dataType];
             var url = typeObject.loaded === 0 ? typeObject.firstLink : typeObject.nextLink;
             if(url){
@@ -215,16 +215,16 @@ var MyProjects = {
                 }
                 if(dataType === 'flatData' && !typeObject.nextLink && typeObject.loaded === typeObject.total){
                     nodeObject.loadMode = 'done';
+                    nodeObject.treeData.data = self.makeTree(nodeObject.flatData.data);
+                    console.log(nodeObject.treeData.data);
                 }
 
-            console.log(type, typeObject.loaded, typeObject.loadMode);
+            console.log(nodeType, dataType, typeObject.loaded, nodeObject.loadMode);
             }
             function error (result){
                 var message = 'Error loading nodes with nodeType ' + nodeType + ' and dataType ' + dataType;
                 Raven.captureMessage(message, {requestReturn: result});
             }
-
-
         };
 
 
@@ -439,22 +439,8 @@ var MyProjects = {
 
         // GETTING THE NODES
         self.updateList = function _updateList (linkObject){
-            //var success;
-            //var error;
-            //success = self.updateListSuccess;
-            //if(linkObject.data.systemCollection === 'nodes'){
-            //    self.loadingAllNodes = true;
-            //}
-            //error = self.updateListError;
-            //var url = linkObject.link;
-            //if (typeof url !== 'string'){
-            //    throw new Error('Url argument for updateList needs to be string');
-            //}
-            //
-            //if(self.nodeUrlCache[url]){
-            //    success(self.nodeUrlCache[url], url);
-            //    return;
-            //}
+
+            
 
         };
         self.updateListSuccess = function _updateListSuccess (value, url) {
@@ -722,7 +708,8 @@ var MyProjects = {
                 // start loading nodes at the same time
                 self.loadNodes('projects', 'treeData');
                 self.loadNodes('registrations', 'treeData');
-
+                self.loadNodes('projects', 'flatData');
+                self.loadNodes('registrations', 'flatData');
                 //self.updateList(self.systemCollections[0]);
             });
             var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : 'linked_nodes', 'page[size]' : self.collectionsPageSize(), 'sort' : 'date_created', 'embed' : 'node_links'}});
