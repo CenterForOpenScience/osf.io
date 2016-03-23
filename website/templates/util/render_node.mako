@@ -21,9 +21,9 @@
                   % if summary['is_pending_registration']:
                     <span class="label label-info"><strong>Pending registration</strong></span> |
                   % elif summary['is_retracted']:
-                    <span class="label label-danger"><strong>Retracted</strong></span> |
+                    <span class="label label-danger"><strong>Withdrawn</strong></span> |
                   % elif summary['is_pending_retraction']:
-                    <span class="label label-info"><strong>Pending retraction</strong></span> |
+                    <span class="label label-info"><strong>Pending withdrawal</strong></span> |
                   % elif summary['embargo_end_date']:
                     <span class="label label-info"><strong>Embargoed</strong></span> |
                   % elif summary['is_pending_embargo']:
@@ -97,7 +97,7 @@
             <div class="body hide" id="body-${summary['id']}" style="overflow:hidden;">
             <hr />
             % if summary['is_retracted']:
-                <h4>Recent activity information has been retracted.</h4>
+                <h4>Recent activity information has been withdrawn.</h4>
             % else:
                 Recent activity
                 <!-- ko stopBinding: true -->
