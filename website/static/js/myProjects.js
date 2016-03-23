@@ -1473,7 +1473,8 @@ var Information = {
         }
         if (args.selected().length === 1) {
             var item = args.selected()[0].data;
-            showRemoveFromCollection = filter.type === 'collection' && !filter.data.systemCollection && !item.relationships.parent;
+            var depth = args.selected()[0].depth;
+            showRemoveFromCollection = filter.type === 'collection' && !filter.data.systemCollection && depth === 1;
             if(item.attributes.category === ''){
                 item.attributes.category = 'Uncategorized';
             }
