@@ -23,7 +23,7 @@ from website import settings
 
 
 @file_updated.connect
-def update_file_guid_referent(self, node, event_type, payload, user=None):
+def update_file_guid_referent(self, node, user, event_type, payload):
     if event_type == 'addon_file_moved' or event_type == 'addon_file_renamed':
         source = payload['source']
         destination = payload['destination']
@@ -43,7 +43,7 @@ def update_file_guid_referent(self, node, event_type, payload, user=None):
         for guid in file_guids:
             obj = Guid.load(guid)
             if source_node != destination_node and Comment.find(Q('root_target', 'eq', guid)).count() != 0:
-                update_comment_node(guid, source_node, destination_node)
+                update_comment_node(guid, user, source_node, destination_node)
 
             if source['provider'] != destination['provider'] or source['provider'] != 'osfstorage':
                 old_file = FileNode.load(obj.referent._id)
@@ -89,10 +89,18 @@ def find_and_create_file_from_metadata(children, source, destination, destinatio
             return new_file
 
 
-def update_comment_node(root_target_id, source_node, destination_node):
+def update_comment_node(root_target_id, user, source_node, destination_node):
     Comment.update(Q('root_target', 'eq', root_target_id), data={'node': destination_node})
-    source_node.save()
-    destination_node.save()
+
+    file_timestamp = user.comments_viewed_timestamp[source_node._id]['files'][root_target_id]
+    node_timestamp = user.comments_viewed_timestamp.get(destination_node._id, None)
+    if not node_timestamp:
+        user.comments_viewed_timestamp[destination_node._id] = {}
+    if not user.comments_viewed_timestamp[destination_node._id].get('files', None):
+        user.comments_viewed_timestamp[destination_node._id]['files'] = dict()
+    user.comments_viewed_timestamp[destination_node._id]['files'][root_target_id] = file_timestamp
+    del user.comments_viewed_timestamp[source_node._id]['files'][root_target_id]
+    user.save()
 
 
 @comment_added.connect
