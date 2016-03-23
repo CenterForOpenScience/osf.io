@@ -548,10 +548,9 @@ class ApiOAuth2PersonalToken(StoredObject):
     # Name of the field being `token_id` is a CAS requirement.
     # This is the actual value of the token that's used to authenticate
     token_id = fields.StringField(default=functools.partial(random_string, length=70),
-                               unique=True)
+                                  unique=True)
 
     owner = fields.ForeignField('User',
-                                backref='created',
                                 index=True,
                                 required=True)
 
