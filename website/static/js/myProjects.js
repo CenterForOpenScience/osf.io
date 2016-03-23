@@ -65,47 +65,7 @@ var LinkObject = function _LinkObject (type, data, label, institutionId) {
     self.type = type;
     self.data = data;
     self.label = label;
-    // Generate links, we should ideally not need this as data is loaded differently but we can implement it as a fall back
-    self.generateLink = function () {
-        if (self.type === 'collection'){
-                return $osf.apiV2Url(self.data.path, {
-                        query : self.data.query
-                    }
-                );
-        }
-        /// THIS NEEDS TO FILTER ON CURRENTLY FOUND THINGS INSTEAD
-        else if (self.type === 'tag') {
-            if (institutionId){
-                return $osf.apiV2Url('institutions/' + institutionId + '/nodes/', { query : {'filter[tags]' : self.data.tag , 'related_counts' : 'children', 'embed' : 'contributors'}});
-            }
-            return $osf.apiV2Url('nodes/', { query : {'filter[tags]' : self.data.tag , 'related_counts' : 'children', 'embed' : 'contributors'}});
-        }
-        else if (self.type === 'name') {
-            if (institutionId){
-                return $osf.apiV2Url('institutions/' + institutionId + '/nodes/', { query : {'related_counts' : 'children', 'embed' : 'contributors', 'filter[contributors]': self.data.id }});
-            }
-            return $osf.apiV2Url('users/' + self.data.id + '/nodes/', { query : {'related_counts' : 'children', 'embed' : 'contributors' }});
-        }
-        else if (self.type === 'node') {
-            if (self.data.type === 'registrations') {
-                return $osf.apiV2Url('registrations/' + self.data.id + '/children/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
-            } else {
-                return $osf.apiV2Url('nodes/' + self.data.id + '/children/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
-            }
-        }
-        // If nothing
-        throw new Error('Link could not be generated from linkObject data');
-    };
-    self.link = self.generateLink();
 };
-
-//function sortProjects (flatList) {
-//    // Sorts by last modified
-//    flatList.sort(function(a,b){
-//        return new Date(b.attributes.date_modified) - new Date(a.attributes.date_modified);
-//    });
-//}
-
 
 /**
  * Returns the object to send to the API to send a node_link to collection
