@@ -566,12 +566,10 @@ var MyProjects = {
                 //Keep Bookmarks on top of collections
                 if (collections[i].attributes.bookmarks) {
                     bookmarksCollection = collections.splice(i, 1);
+                    collections.unshift(bookmarksCollection[0]);
+                    break;
                 }
             }
-            collectionsToSort.sort(function(a, b) {
-                return (b.attributes.date_modified > a.attributes.date_modified);
-            });
-                collections.unshift(bookmarksCollection[0]);
             return collections;
         };
 
