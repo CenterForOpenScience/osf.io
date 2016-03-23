@@ -366,10 +366,12 @@ class LinkedNodesList(JSONAPIBaseView, generics.ListAPIView, CollectionMixin):
     model_class = Pointer
 
     def get_queryset(self):
+        auth = Auth(self.request.user)
         return [
             pointer.node for pointer in
             self.get_node().nodes_pointer
-            if not pointer.node.is_deleted and not pointer.node.is_collection
+            if not pointer.node.is_deleted and not pointer.node.is_collection and
+            pointer.node.can_view(auth)
         ]
 
     # overrides APIView
