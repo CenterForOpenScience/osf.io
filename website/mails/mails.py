@@ -175,11 +175,11 @@ TRANSACTIONAL = Mail(
 # Retraction related Mail objects
 PENDING_RETRACTION_ADMIN = Mail(
     'pending_retraction_admin',
-    subject='Retraction pending for one of your projects.'
+    subject='Withdrawal pending for one of your projects.'
 )
 PENDING_RETRACTION_NON_ADMIN = Mail(
     'pending_retraction_non_admin',
-    subject='Retraction pending for one of your projects.'
+    subject='Withdrawal pending for one of your projects.'
 )
 # Embargo related Mail objects
 PENDING_EMBARGO_ADMIN = Mail(

@@ -6,6 +6,9 @@
 .panel-heading.no-background {
     background: transparent;
 }
+.wiki-panel-header {
+    height: 50px;
+}
 .markdown-it-view {
     padding: 10px;
     height: auto;
