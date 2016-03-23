@@ -474,7 +474,6 @@ class ApiOAuth2Application(StoredObject):
                                     index=True)
 
     owner = fields.ForeignField('User',
-                                backref='created',
                                 index=True,
                                 required=True)
 
