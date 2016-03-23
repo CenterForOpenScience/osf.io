@@ -155,7 +155,12 @@ var MyProjects = {
         self.loadingNodePages = false;
         self.categoryList = [];
         self.loadValue = m.prop(0); // What percentage of the project loading is done
-        self.loadCounter = m.prop(0); // Count how many items are received from the server
+        //self.loadCounter = m.prop(0); // Count how many items are received from the server
+        self.currentView = {
+            collection : [],
+            contributor : [],
+            tag : [],
+        };
 
         // Treebeard functions looped through project organizer.
         // We need to pass these in to avoid reinstantiating treebeard but instead repurpose (update) the top level folder
@@ -163,21 +168,49 @@ var MyProjects = {
         self.buildTree = m.prop(null); // Preprocess function that adds to each item TB specific attributes
         self.updateFolder = m.prop(null); // Updates view to redraw without messing up scroll location
 
-        var nodes = {};
+        self.nodes = {};
         ['projects', 'registrations', 'bookmarks'].forEach(function(item){
-            nodes[item] = {
+            self.nodes[item] = {
                 flatData : [],
-                treeData : {},
+                treeData : [],
                 loaded : 0,
                 total : 0,
+                loadMode : 'load', // Can be load, pause, or done  load will continue loading next, pause will pause loading next, done is when everything is loaded.
                 firstLink : '',
                 nextLink : ''
             };
         });
-        nodes.projects.firstLink = $osf.apiV2Url('users/me/nodes/', { query : { 'related_counts' : 'children', 'embed' : 'contributors', 'filter[parent]' : 'null' }};
-        nodes.registrations.firstLink = $osf.apiV2Url('users/me/registrations/', { query : { 'related_counts' : 'children', 'embed' : 'contributors', 'filter[parent]' : 'null' }};
+        self.nodes.projects.firstLink = $osf.apiV2Url('users/me/nodes/', { query : { 'related_counts' : 'children', 'embed' : 'contributors', 'filter[parent]' : 'null' }});
+        self.nodes.registrations.firstLink = $osf.apiV2Url('users/me/registrations/', { query : { 'related_counts' : 'children', 'embed' : 'contributors', 'filter[parent]' : 'null' }});
 
-        
+
+        self.loadNodes = function (type, hierarchy){
+            var typeObject = self.nodes[type];
+            var url = typeObject.loaded === 0 ? typeObject.firstLink : typeObject.nextLink;
+            if(typeObject.loadMode === 'load' && url){
+                var promise = m.request({method : 'GET', url : url, config : xhrconfig, background: true});
+                promise.then(success, error);
+            }
+            function success (result) {
+                typeObject[hierarchy] = typeObject[hierarchy].concat(result.data);
+                typeObject.loaded += result.data.length;
+                typeObject.total = result.links.meta.total;
+                typeObject.nextLink = result.links.next;
+                if(typeObject.nextLink){
+                    self.loadNodes(type, hierarchy);
+                }
+                if(!typeObject.nextLink && typeObject.loaded === typeObject.total){
+                    typeObject.loadMode = 'done';
+                }
+            console.log(type, typeObject.loaded, typeObject.loadMode);
+            }
+            function error (result){
+                var message = 'Error loading nodes';
+                Raven.captureMessage(message, {requestReturn: result});
+            }
+
+
+        };
 
 
         // Add All my Projects and All my registrations to collections
@@ -393,9 +426,7 @@ var MyProjects = {
                 success(self.nodeUrlCache[url], url);
                 return;
             }
-            var promise = m.request({method : 'GET', url : url, config : xhrconfig, background: true});
-            promise.then(function(value){ success(value, url); }, error);
-            return promise;
+
         };
         self.updateListSuccess = function _updateListSuccess (value, url) {
             var lastcrumb = self.breadcrumbs()[self.breadcrumbs().length-1];
@@ -658,7 +689,11 @@ var MyProjects = {
 
         self.init = function _init_fileBrowser() {
             self.loadCategories().then(function(){
-                self.updateList(self.systemCollections[0]);
+                // start loading nodes at the same time
+                self.loadNodes('projects', 'treeData');
+                self.loadNodes('registrations', 'treeData');
+
+                //self.updateList(self.systemCollections[0]);
             });
             var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : 'linked_nodes', 'page[size]' : self.collectionsPageSize(), 'sort' : 'date_created', 'embed' : 'node_links'}});
             if (!self.viewOnly){
