@@ -677,7 +677,7 @@ var MyProjects = {
             ctrl.projectOrganizerOptions
         );
         return [
-            m('.dashboard-header', m('.row', [
+            !options.institutionId ? m('.dashboard-header', m('.row', [
                 m('.col-xs-8', m('h3', [
                     'My Projects ',
                     m('small.hidden-xs', 'Browse and organize all your projects')
@@ -697,7 +697,7 @@ var MyProjects = {
                     trackingCategory: 'myProjects',
                     trackingAction: 'add-project'
                 })))
-            ])),
+            ])) : '',
             m('.db-header.row', [
                 m('.col-xs-12.col-sm-8.col-lg-9', m.component(Breadcrumbs,ctrl)),
                 m('.db-buttonRow.col-xs-12.col-sm-4.col-lg-3', [
