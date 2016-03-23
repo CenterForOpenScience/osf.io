@@ -157,7 +157,7 @@ var MyProjects = {
         self.loadValue = m.prop(0); // What percentage of the project loading is done
         //self.loadCounter = m.prop(0); // Count how many items are received from the server
         self.currentView = {
-            collection : [],
+            collection : ['projects'],
             contributor : [],
             tag : [],
         };
@@ -196,12 +196,17 @@ var MyProjects = {
                 typeObject.loaded += result.data.length;
                 typeObject.total = result.links.meta.total;
                 typeObject.nextLink = result.links.next;
+                if(self.currentView.collection.indexOf(type) > -1) {
+                    self.loadValue(typeObject.loaded / typeObject.total * 100);
+                    m.redraw();
+                }
                 if(typeObject.nextLink){
                     self.loadNodes(type, hierarchy);
                 }
                 if(!typeObject.nextLink && typeObject.loaded === typeObject.total){
                     typeObject.loadMode = 'done';
                 }
+
             console.log(type, typeObject.loaded, typeObject.loadMode);
             }
             function error (result){
@@ -350,7 +355,7 @@ var MyProjects = {
                 return;
             }
             if (linkObject.link !== self.currentLink) {
-                self.loadCounter(0);
+                //self.loadCounter(0);
                 self.updateBreadcrumbs(linkObject);
                 self.updateList(linkObject);
                 self.currentLink = linkObject.link;
@@ -410,22 +415,22 @@ var MyProjects = {
 
         // GETTING THE NODES
         self.updateList = function _updateList (linkObject){
-            var success;
-            var error;
-            success = self.updateListSuccess;
-            if(linkObject.data.systemCollection === 'nodes'){
-                self.loadingAllNodes = true;
-            }
-            error = self.updateListError;
-            var url = linkObject.link;
-            if (typeof url !== 'string'){
-                throw new Error('Url argument for updateList needs to be string');
-            }
-
-            if(self.nodeUrlCache[url]){
-                success(self.nodeUrlCache[url], url);
-                return;
-            }
+            //var success;
+            //var error;
+            //success = self.updateListSuccess;
+            //if(linkObject.data.systemCollection === 'nodes'){
+            //    self.loadingAllNodes = true;
+            //}
+            //error = self.updateListError;
+            //var url = linkObject.link;
+            //if (typeof url !== 'string'){
+            //    throw new Error('Url argument for updateList needs to be string');
+            //}
+            //
+            //if(self.nodeUrlCache[url]){
+            //    success(self.nodeUrlCache[url], url);
+            //    return;
+            //}
 
         };
         self.updateListSuccess = function _updateListSuccess (value, url) {
