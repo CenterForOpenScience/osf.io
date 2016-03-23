@@ -15,27 +15,6 @@ var mC = require('js/mithrilComponents');
 var MOBILE_WIDTH = 767; // Mobile view break point for responsiveness
 var NODE_PAGE_SIZE = 10; // Load 10 nodes at a time from server
 
-var nodes = {
-    projects : {
-        flatData : [],
-        treeData : {},
-        total : 0,
-        nextLink : ''
-    },
-    registrations : {
-        flatData : [],
-        treeData : {},
-        total : 0,
-        nextLink : ''
-    },
-    bookmarks : {
-        flatData : [],
-        treeData : {},
-        total : 0,
-        nextLink : ''
-    }
-};
-
 
 /* Counter for unique ids for link objects */
 if (!window.fileBrowserCounter) {
@@ -183,6 +162,23 @@ var MyProjects = {
         self.treeData = m.prop({}); // Top level object that houses all the rows
         self.buildTree = m.prop(null); // Preprocess function that adds to each item TB specific attributes
         self.updateFolder = m.prop(null); // Updates view to redraw without messing up scroll location
+
+        var nodes = {};
+        ['projects', 'registrations', 'bookmarks'].forEach(function(item){
+            nodes[item] = {
+                flatData : [],
+                treeData : {},
+                loaded : 0,
+                total : 0,
+                firstLink : '',
+                nextLink : ''
+            };
+        });
+        nodes.projects.firstLink = $osf.apiV2Url('users/me/nodes/', { query : { 'related_counts' : 'children', 'embed' : 'contributors', 'filter[parent]' : 'null' }};
+        nodes.registrations.firstLink = $osf.apiV2Url('users/me/registrations/', { query : { 'related_counts' : 'children', 'embed' : 'contributors', 'filter[parent]' : 'null' }};
+
+        
+
 
         // Add All my Projects and All my registrations to collections
         self.systemCollections = options.systemCollections || [
