@@ -452,7 +452,7 @@ var MyProjects = {
                         var child = self.buildTree()(item, self.treeData());
                         self.treeData().add(child);
                     }
-                    
+
                 }
                 self.updateFolder()(null, self.treeData());
             }
@@ -1290,6 +1290,7 @@ var Breadcrumbs = {
                 if(index === array.length-1){
                     var label = item.type === 'node' ? ' Create component' : ' Create project';
                     var title = item.type === 'node' ? 'Create new component' : 'Create new project';
+                    var divID = item.type === 'node' ? 'addSubComponent' : 'addProject';
                     var parentID = item.type === 'node' ? args.breadcrumbs()[args.breadcrumbs().length - 1].data.id : null;
                     var showAddProject = true;
                     var addProjectTemplate = '';
@@ -1304,11 +1305,11 @@ var Breadcrumbs = {
                     }
                     if(showAddProject && !viewOnly){
                         addProjectTemplate = m.component(AddProject, {
-                            buttonTemplate: m('.btn.btn-sm.text-muted[data-toggle="modal"][data-target="#addProject"]', {onclick: function() {
+                            buttonTemplate: m('.btn.btn-sm.text-muted[data-toggle="modal"][data-target="#' + divID + '"]', {onclick: function() {
                                 $osf.trackClick('myProjects', 'add-' + objectType, 'open-add-' + objectType + '-modal');
                             }}, [m('i.fa.fa-plus', {style: 'font-size: 10px;'}), label]),
                             parentID: parentID,
-                            modalID: 'addProject',
+                            modalID: divID,
                             title: title,
                             categoryList: args.categoryList,
                             stayCallback: function () {

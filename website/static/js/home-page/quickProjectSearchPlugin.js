@@ -480,30 +480,30 @@ var QuickSearchProject = {
                         templates: ctrl.nodes()
                     })),
                     m('.row.quick-project', m('.col-xs-12',
-                        m('.m-b-sm.text-center', [
-                            searchBar()
+                    m('.m-b-sm.text-center', [
+                        searchBar()
+                    ]),
+                    m('p.text-center.f-w-lg', [ 'Go to ', m('a', {href:'/myprojects/'}, 'My Projects'),  ' to organize your work or ',
+                        m('a', {href: '/search/', onclick: function(){ $osf.trackClick('quickSearch', 'navigate', 'navigate-to-search-the-OSF'); }}, 'search'), ' the OSF' ]),
+                    m('.quick-search-table', [
+                        m('.row.node-col-headers.m-t-md', [
+                            m('.col-sm-4.col-md-5', m('.quick-search-col', 'Title', sortAlphaAsc(), sortAlphaDesc())),
+                            m('.col-sm-4.col-md-4', m('.quick-search-col', 'Contributors')),
+                            m('.col-sm-4.col-md-3', m('.quick-search-col','Modified', m('span.sort-group', sortDateAsc(), sortDateDesc())))
                         ]),
-                        m('p.text-center.f-w-lg', [ 'Go to ', m('a', {href:'/myprojects/'}, 'My Projects'),  ' to organize your work or ',
-                            m('a', {href: '/search/', onclick: function(){ $osf.trackClick('quickSearch', 'navigate', 'navigate-to-search-the-OSF'); }}, 'search'), ' the OSF' ]),
-                        m('.quick-search-table', [
-                            m('.row.node-col-headers.m-t-md', [
-                                m('.col-sm-4.col-md-5', m('.quick-search-col', 'Title', sortAlphaAsc(), sortAlphaDesc())),
-                                m('.col-sm-4.col-md-4', m('.quick-search-col', 'Contributors')),
-                                m('.col-sm-4.col-md-3', m('.quick-search-col','Modified', m('span.sort-group', sortDateAsc(), sortDateDesc())))
-                            ]),
-                            xsDropdown(),
-                            m.component(QuickSearchNodeDisplay, {
-                                eligibleNodes: ctrl.eligibleNodes,
-                                nodes: ctrl.nodes,
-                                filter: ctrl.filter,
-                                countDisplayed: ctrl.countDisplayed,
-                                getFamilyName: ctrl.getFamilyName,
-                                formatDate: function(node) {
-                                    return ctrl.formatDate(node);
-                                },
-                                loadingComplete: ctrl.loadingComplete
-                            }),
-                            !ctrl.loadingComplete() && ctrl.filter() ? m('.loader-inner.ball-scale.text-center', m('')) : m('.m-v-md')
+                        xsDropdown(),
+                        m.component(QuickSearchNodeDisplay, {
+                            eligibleNodes: ctrl.eligibleNodes,
+                            nodes: ctrl.nodes,
+                            filter: ctrl.filter,
+                            countDisplayed: ctrl.countDisplayed,
+                            getFamilyName: ctrl.getFamilyName,
+                            formatDate: function(node) {
+                                return ctrl.formatDate(node);
+                            },
+                            loadingComplete: ctrl.loadingComplete
+                        }),
+                        !ctrl.loadingComplete() && ctrl.filter() ? m('.loader-inner.ball-scale.text-center', m('')) : m('.m-v-md')
 
                                 ]),
                                 m('.text-center', loadMoreButton())

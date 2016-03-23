@@ -27,7 +27,7 @@ $(document).ready(function(){
                 m('.newAndNoteworthy', m('.container',
                     [
                         m('.row', [
-                            m(columnSizeClass,m('h3', 'Discover Public Projects'))
+                            m(columnSizeClass, m('h3', 'Discover Public Projects'))
                         ]),
                         m('.row', [
                             m(columnSizeClass, m.component(NewAndNoteworthy, {}))
