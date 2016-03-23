@@ -15,6 +15,29 @@ var mC = require('js/mithrilComponents');
 var MOBILE_WIDTH = 767; // Mobile view break point for responsiveness
 var NODE_PAGE_SIZE = 10; // Load 10 nodes at a time from server
 
+var nodes = {
+    projects : {
+        flatData : [],
+        treeData : {},
+        total : 0,
+        nextLink : ''
+    },
+    registrations : {
+        flatData : [],
+        treeData : {},
+        total : 0,
+        nextLink : ''
+    },
+    bookmarks : {
+        flatData : [],
+        treeData : {},
+        total : 0,
+        nextLink : ''
+    }
+};
+
+
+/* Counter for unique ids for link objects */
 if (!window.fileBrowserCounter) {
     window.fileBrowserCounter = 0;
 }
@@ -23,13 +46,14 @@ function getUID() {
     return window.fileBrowserCounter;
 }
 
+/* Send with ajax calls to work with api2 */
 var xhrconfig = function (xhr) {
     xhr.withCredentials = true;
     xhr.setRequestHeader('Content-Type', 'application/vnd.api+json;');
     xhr.setRequestHeader('Accept', 'application/vnd.api+json; ext=bulk');
 };
 
-// Refactor the information needed for filtering rows
+/* Adjust item data for treebeard to be able to filter tags and contributors not in the view */
 function _formatDataforPO(item) {
     item.kind = 'folder';
     item.uid = item.id;
@@ -53,16 +77,17 @@ function _formatDataforPO(item) {
     return item;
 }
 
+/* Small constructor for creating same type of links */
 var LinkObject = function _LinkObject (type, data, label, institutionId) {
     if (type === undefined || data === undefined || label === undefined) {
         throw new Error('LinkObject expects type, data and label to be defined.');
     }
-
     var self = this;
     self.id = getUID();
     self.type = type;
     self.data = data;
     self.label = label;
+    // Generate links, we should ideally not need this as data is loaded differently but we can implement it as a fall back
     self.generateLink = function () {
         if (self.type === 'collection'){
                 return $osf.apiV2Url(self.data.path, {
@@ -96,17 +121,16 @@ var LinkObject = function _LinkObject (type, data, label, institutionId) {
     self.link = self.generateLink();
 };
 
-
-function sortProjects (flatList) {
-    // Sorts by last modified
-    flatList.sort(function(a,b){
-        return new Date(b.attributes.date_modified) - new Date(a.attributes.date_modified);
-    });
-}
+//function sortProjects (flatList) {
+//    // Sorts by last modified
+//    flatList.sort(function(a,b){
+//        return new Date(b.attributes.date_modified) - new Date(a.attributes.date_modified);
+//    });
+//}
 
 
 /**
- * Returns the object to send to the API to end a node_link to collection
+ * Returns the object to send to the API to send a node_link to collection
  * @param id {String} unique id of the node like 'ez8f3'
  * @returns {{data: {type: string, relationships: {nodes: {data: {type: string, id: *}}}}}}
  */
@@ -159,11 +183,13 @@ var MyProjects = {
         self.buildTree = m.prop(null); // Preprocess function that adds to each item TB specific attributes
         self.updateFolder = m.prop(null); // Updates view to redraw without messing up scroll location
 
-        // Load 'All my Projects' and 'All my Registrations'
+        // Add All my Projects and All my registrations to collections
         self.systemCollections = options.systemCollections || [
             new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors', 'filter[parent]' : 'null' }, systemCollection : 'nodes'}, 'All my projects'),
             new LinkObject('collection', { path : 'users/me/registrations/', query : { 'related_counts' : 'children', 'embed' : 'contributors', 'filter[parent]' : 'null' }, systemCollection : 'registrations'}, 'All my registrations')
         ];
+
+
         // Initial Breadcrumb for All my projects
         var initialBreadcrumbs = options.initialBreadcrumbs || [new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors', 'filter[parent]' : 'null' }, systemCollection : 'nodes'}, 'All my projects')];
         self.breadcrumbs = m.prop(initialBreadcrumbs);
@@ -175,6 +201,7 @@ var MyProjects = {
         // Placeholder for node data
         self.data = m.prop([]);
 
+        // Load categories to pass in to create project
         self.loadCategories = function _loadCategories () {
             var promise = m.request({method : 'OPTIONS', url : $osf.apiV2Url('nodes/', { query : {}}), config : xhrconfig});
             promise.then(function _success(results){
@@ -193,7 +220,12 @@ var MyProjects = {
             return promise;
         };
 
-
+        /**
+         * Turn flat node array into a hierarchical structure
+         * @param flatData {Array} List of items returned from survey
+         * @param lastcrumb {Object} Right most selected breadcrumb linkobject
+         * @returns {Array} A new list with hierarchical structure
+         */
         self.makeTree = function _makeTree(flatData, lastcrumb) {
             var root = {id:0, children: [], data : {} };
             var node_list = { 0 : root};
@@ -345,6 +377,7 @@ var MyProjects = {
                 $osf.growl(message, 'Please try again.', 'danger', 5000);
             });
         };
+
         // GETTING THE NODES
         self.updateList = function _updateList (linkObject){
             var success;
@@ -471,11 +504,6 @@ var MyProjects = {
             }
             m.redraw();
         };
-        self.reloadOnClick = function (item) {
-            self.updateFilter(item);
-            $osf.trackClick('myProjects', 'projectOrganizer', 'reload-all-my-projects');
-        };
-
         self.updateListError = function _updateListError (result){
             self.nonLoadTemplate(m('.db-error.text-danger.m-t-lg', [
                 m('p', m('i.fa.fa-exclamation-circle')),
@@ -487,6 +515,16 @@ var MyProjects = {
             m.redraw();
             throw new Error('Receiving initial data for File Browser failed. Please check your url');
         };
+
+        // click tracking
+        self.reloadOnClick = function (item) {
+            self.updateFilter(item);
+            $osf.trackClick('myProjects', 'projectOrganizer', 'reload-all-my-projects');
+        };
+
+        /**
+         * Generate this list from user's projects
+         */
         self.generateFiltersList = function _generateFilterList () {
             self.users = {};
             self.tags = {};
@@ -530,7 +568,6 @@ var MyProjects = {
                 return 0;
             }
 
-
             // Add to lists with numbers
             self.nameFilters = [];
             for (var user in self.users){
@@ -549,8 +586,6 @@ var MyProjects = {
             }
             // order tags
             self.tagFilters.sort(sortByCountDesc);
-
-
         };
 
         // BREADCRUMBS
