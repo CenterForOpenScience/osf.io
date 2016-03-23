@@ -1,15 +1,27 @@
 # -*- coding: utf-8 -*-
-import mock
-from contextlib import contextmanager
-
 from modularodm import storage
 
 from framework.mongo import set_up_storage
 
-from website.addons.base.testing import AddonTestCase
+from website.addons.base.testing import OAuthAddonTestCaseMixin, AddonTestCase
+from website.addons.base.testing.utils import MockFolder
+from website.addons.mendeley.tests.factories import MendeleyAccountFactory
+from website.addons.mendeley.model import Mendeley
+
 from website.addons.mendeley import MODELS
 
 from json import dumps
+
+class MendeleyTestCase(OAuthAddonTestCaseMixin, AddonTestCase):
+    ADDON_SHORT_NAME = 'mendeley'
+    ExternalAccountFactory = MendeleyAccountFactory
+    Provider = Mendeley
+
+    def set_node_settings(self, settings):
+        super(MendeleyTestCase, self).set_node_settings(settings)
+        settings.list_id = MockFolder().json['id']
+        settings.external_account = self.external_account
+        settings.save()
 
 def init_storage():
     set_up_storage(MODELS, storage_class=storage.MongoStorage)

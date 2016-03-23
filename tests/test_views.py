@@ -1047,6 +1047,13 @@ class TestProjectViews(OsfTestCase):
         assert_equal(res.status_code, 302)
         assert_in(self.project.web_url_for('project_statistics', _guid=True), res.location)
 
+    def test_registration_retraction_redirect(self):
+        url = self.project.web_url_for('node_registration_retraction_redirect')
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(res.status_code, 302)
+        assert_in(self.project.web_url_for('node_registration_retraction_get', _guid=True), res.location)
+
+
     def test_update_node(self):
         url = self.project.api_url_for('update_node')
         res = self.app.put_json(url, {'title': 'newtitle'}, auth=self.auth)
