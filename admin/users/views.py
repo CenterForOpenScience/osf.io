@@ -3,9 +3,12 @@ from django.views.defaults import page_not_found
 
 from website.project.model import User
 from website.mailchimp_utils import subscribe_on_confirm
+from website.search.elastic_search import search
+from website.search.util import build_query
 
 from admin.base.views import GuidFormView, GuidView
 from admin.users.templatetags.user_extras import reverse_user
+from admin.users.forms import UserForm
 from .serializers import serialize_user
 
 
@@ -35,6 +38,19 @@ def remove_2_factor(request, guid):
 class UserFormView(GuidFormView):
     template_name = 'users/search.html'
     object_type = 'user'
+    form_class = UserForm
+
+    def form_valid(self, form):
+        guid = form.cleaned_data.get('guid')
+        name = form.cleaned_data.get('name')
+        email = form.cleaned_data.get('email')
+        if not name:
+            name = '*'
+        if not email:
+            email = '*'
+        search_string = '{} AND {} AND {}'.format(guid, name, email)
+        query = build_query(search_string)
+
 
     @property
     def success_url(self):
