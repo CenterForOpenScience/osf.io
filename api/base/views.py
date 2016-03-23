@@ -59,19 +59,20 @@ class JSONAPIBaseView(generics.GenericAPIView):
             view.request.parser_context['kwargs'] = view_kwargs
             view.format_kwarg = view.get_format_suffix(**view_kwargs)
 
-            if (v.cls, field_name, view.get_serializer_class(), item) in CACHE.setdefault(request._request._request, {}):
+            _cache_key = (v.cls, field_name, view.get_serializer_class(), item)
+            if _cache_key in CACHE.setdefault(self.request._request, {}):
                 # We already have the result for this embed, return it
-                return CACHE[request._request._request][(v.cls, field_name, view.get_serializer_class(), item)]
+                return CACHE[self.request._request][_cache_key]
 
             # Cache serializers. to_representation of a serializer should NOT augment it's fields so resetting the context
             # should be sufficient for reuse
-            if not view.get_serializer_class() in CACHE.setdefault(request._request._request, {}):
-                CACHE[request._request._request][view.get_serializer_class()] = view.get_serializer_class()(many=isinstance(view, ListModelMixin))
-            ser = CACHE[request._request._request][view.get_serializer_class()]
+            if not view.get_serializer_class() in CACHE.setdefault(self.request._request, {}):
+                CACHE[self.request._request][view.get_serializer_class()] = view.get_serializer_class()(many=isinstance(view, ListModelMixin))
+            ser = CACHE[self.request._request][view.get_serializer_class()]
 
             try:
                 if not isinstance(view, ListModelMixin):
-                    ser._context.update(view.get_serializer_context())
+                    ser._context = view.get_serializer_context()
                     ret = ser.to_representation(view.get_object())
                 else:
                     ser._context = view.get_serializer_context()
@@ -88,8 +89,11 @@ class JSONAPIBaseView(generics.GenericAPIView):
             except Exception as e:
                 ret = view.handle_exception(e).data
 
+            # Allow request to be gc'd
+            ser._context = None
+
             # Cache our final result
-            CACHE[request._request._request][(v.cls, field_name, view.get_serializer_class(), item)] = ret
+            CACHE[self.request._request][_cache_key] = ret
 
             return ret
 
