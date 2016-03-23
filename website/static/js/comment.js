@@ -142,15 +142,15 @@ BaseComment.prototype.fetchNext = function(url, comments) {
         url,
         {'isCors': true});
     request.done(function(response) {
-        comments = comments.concat(response.data);
+        comments = response.data;
         if (self._loaded !== true) {
             self._loaded = true;
         }
-        self.comments(
-            ko.utils.arrayMap(comments, function(comment) {
-                return new CommentModel(comment, self, self.$root);
-            })
-        );
+        comments.forEach(function(comment) {
+            self.comments.push(
+                new CommentModel(comment, self, self.$root)
+            );
+        });
         self.configureCommentsVisibility();
         if (response.links.next !== null) {
             self.fetchNext(response.links.next, comments);
