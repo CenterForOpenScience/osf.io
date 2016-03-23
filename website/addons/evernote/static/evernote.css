@@ -15,12 +15,17 @@
 }
 
 .evernote-test {
-  color: green;
+  font-weight: bold;
 }
 
 #evernote-notedisplay {
   border-color: #ccc;
 }
+
+#evernote-note-title {
+  font-weight: bold;
+}
+
 
 .btn-evernote {
     color: #333;

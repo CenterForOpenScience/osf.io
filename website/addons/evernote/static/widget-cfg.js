@@ -2,15 +2,15 @@
 
 require('./evernote.css');
 require('datatables.net-dt/css/jquery.dataTables.css');
+require('datatables-select/dist/css/select.dataTables.min.css');
+//require('datatables-select/dist/css/select.dataTables.css');
 
 var $ = require('jquery');
 // http://stackoverflow.com/a/34255097/7782 --> why datatables.net and not datatables-dt
 var dt = require( 'datatables.net' )();
-require('datatables-select');
+var dts = require('datatables-select')();
 var ko = require('knockout');
 var $osf = require('js/osfHelpers');
-
-//var moment = require('moment');
 
 
 var EvernoteWidget = function(urls) {
@@ -37,6 +37,10 @@ var EvernoteWidget = function(urls) {
 
       self.notes_dt = $('#evernote-notes-list').DataTable( {
         responsive: true,
+        select: {
+           style: 'single'
+        },
+        "lengthMenu": [ 5, 10, 25, 50],
         data: notes,
         rowId: 'guid',
         columns: [
@@ -51,9 +55,16 @@ var EvernoteWidget = function(urls) {
 
     // on selecting a row -- I think there should be a better way
     $('#evernote-notes-list').on( 'click', 'tr', function () {
-       console.log( 'Row id: '+self.notes_dt.row( this ).id() );
-       $("#evernote-notedisplay").html("<b>Loading note...</b>");
-       self.displayNote(self.notes_dt.row( this ).id());
+
+       var row = self.notes_dt.row( this );
+
+       $("#evernote-notedisplay").html("<i>Loading note...</i>");
+       // display title and note body
+       $('#evernote-note-title').html(
+          row.data()['title']
+        );
+       self.displayNote(row.id());
+
     } );
 
     self.fetchNotes = $.getJSON.bind(null, urls.notes, function(notes) {
@@ -86,20 +97,6 @@ var EvernoteWidget = function(urls) {
  };
 
 
- // EvernoteWidget.prototype.openEditDialog = function (note, event) {
- //
- //
- //   // make ajax call to note to retrieve some basic info about note
- //   // ultimately, rendered html
- //
- //   var note = $.getJSON(this.urls.note + note.guid +"/");
- //
- //   note.done(function(data) {
- //     $("#evernote-notedisplay").html(data.html);
- //   });
- //
- //};
-
 // Skip if widget is not correctly configured
 if ($('#evernoteWidget').length) {
   var settingsUrl = window.contextVars.node.urls.api + 'evernote/settings/';
@@ -111,9 +108,6 @@ if ($('#evernoteWidget').length) {
     var urls = data.result.urls;
     var ew = new EvernoteWidget(urls);
     $osf.applyBindings(ew, '#evernoteWidget');
-
-    // apply tooltip to all btn-evernote
-    // $(".btn-evernote").tooltip();
 
   });
 
