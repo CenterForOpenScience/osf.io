@@ -60,6 +60,7 @@ class TestCallbacks(OsfTestCase):
             auth=Auth(self.project.creator),
         )
         self.project.save()
+        self.project.reload()
 
         self.project.add_addon('s3', auth=self.consolidated_auth)
         self.project.creator.add_addon('s3')
