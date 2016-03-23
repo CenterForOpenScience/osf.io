@@ -7,6 +7,7 @@ var $osf = require('js/osfHelpers');
 var utils = require('./utils');
 require('truncate');
 
+
 var LoadingIcon = {
     view: function(ctrl) {
         return m('img', {src: '/static/img/loading.gif', alt: 'loading spinner'});
