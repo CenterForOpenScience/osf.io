@@ -616,3 +616,7 @@ button.close {
     background-color: #f0ad4e;
     padding: .5em;
 }
+
+.breaklines {
+    white-space: pre-wrap;
+}

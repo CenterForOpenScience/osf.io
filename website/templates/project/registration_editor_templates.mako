@@ -72,7 +72,7 @@
     <div class="row">
       <div class="col-md-12">
         <div class="form-group">
-          <label class="control-label" data-bind="text: title"></label>
+          <label class="control-label breaklines" data-bind="text: title"></label>
           <span class="text-muted" data-bind="if: required, tooltip: {title: 'This field is required for submission. If this field is not applicable to your study, you may state so.'}">
             (required)
           </span>
