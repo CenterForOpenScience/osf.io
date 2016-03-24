@@ -13,7 +13,7 @@ import string
 from dateutil import parser
 
 from modularodm import Q
-from modularodm.exceptions import ValidationError, ValidationValueError, ValidationTypeError
+from modularodm.exceptions import ValidationError, ValidationValueError
 
 
 from framework.analytics import get_total_activity_count
@@ -33,7 +33,7 @@ from website.profile.utils import serialize_user
 from website.project.signals import contributor_added
 from website.project.model import (
     Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link,
-    get_pointer_parent, Embargo, MetaSchema, DraftRegistration
+    get_pointer_parent, MetaSchema, DraftRegistration
 )
 from website.util.permissions import (
     CREATOR_PERMISSIONS,
@@ -3106,19 +3106,19 @@ class TestProject(OsfTestCase):
         assert_false(self.project.is_public)
         assert_equal(self.project.logs[-1].action, NodeLog.MADE_PRIVATE)
 
-    @mock.patch('website.project.model.mails.queue_mail')
+    @mock.patch('website.mails.queue_mail')
     def test_set_privacy_sends_mail_default(self, mock_queue):
         self.project.set_privacy('private', auth=self.auth)
         self.project.set_privacy('public', auth=self.auth)
         assert_true(mock_queue.called_once())
 
-    @mock.patch('website.project.model.mails.queue_mail')
+    @mock.patch('website.mails.queue_mail')
     def test_set_privacy_sends_mail(self, mock_queue):
         self.project.set_privacy('private', auth=self.auth)
         self.project.set_privacy('public', auth=self.auth, meeting_creation=False)
         assert_true(mock_queue.called_once())
 
-    @mock.patch('website.project.model.mails.queue_mail')
+    @mock.patch('website.mails.queue_mail')
     def test_set_privacy_skips_mail(self, mock_queue):
         self.project.set_privacy('private', auth=self.auth)
         self.project.set_privacy('public', auth=self.auth, meeting_creation=True)
