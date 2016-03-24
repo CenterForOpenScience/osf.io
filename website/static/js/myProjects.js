@@ -137,7 +137,7 @@ var MyProjects = {
             ];
 
         self.nodes = {};
-        ['projects', 'registrations', 'bookmarks'].forEach(function(item){
+        ['projects', 'registrations'].forEach(function(item){
             self.nodes[item] = {
                 flatData : {
                     data : [],
@@ -416,17 +416,24 @@ var MyProjects = {
         self.updateList = function _updateList (reset, itemId, collectionObject){
             if(collectionObject){ // A regular collection including bookmarks
                 console.log(collectionObject);
+                var collectionData = [];
                 var linkedNodesUrl = $osf.apiV2Url(collectionObject.data.path, { query : collectionObject.data.query});
                 m.request({method : 'GET', url : linkedNodesUrl, config : xhrconfig}).then(function(result){
                     console.log(result);
+                    result.data.forEach(function(node){
+                        var indexedNode = self.indexes()[node.id];
+                        if(indexedNode){
+                            collectionData.push(indexedNode);
+                        }
+                    });
                     self.treeData().children = [];
-                    updateTreeData(0,result.data);
+                    updateTreeData(0,collectionData);
                 }, function(result){
                     var message = 'Error loading nodes from collection id  ' + collectionObject.data.node.id;
                     Raven.captureMessage(message, {requestReturn: result});
                     $osf.growl(' "' + collectionObject + '" contents couldn\'t load', 'Please try again later.');
                 });
-
+                return;
             }
             if(itemId){ // Being called from inside project  organizer
                 var data = self.indexes()[itemId].children;
@@ -728,7 +735,7 @@ var MyProjects = {
             promise.then(function(result){
                 result.data.forEach(function(node){
                     var count = node.relationships.linked_nodes.links.related.meta.count;
-                    self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors' }, nodeType : 'collection', node : node, count : m.prop(count) }, node.attributes.title));
+                    self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/relationships/linked_nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors' }, nodeType : 'collection', node : node, count : m.prop(count) }, node.attributes.title));
                 });
                 if(result.links.next){
                     self.loadCollections(result.links.next);
