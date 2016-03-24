@@ -328,15 +328,14 @@ var MyProjects = {
         };
 
         /* filesData is the link that loads tree data. This function refreshes that information. */
-        self.updateFilesData = function _updateFilesData (linkObject) {
+        self.updateFilesData = function _updateFilesData (linkObject, itemId) {
             if ((linkObject.type === 'node') && self.viewOnly){
                 return;
             }
-            if (linkObject.link !== self.currentLink) {
-                //self.loadCounter(0);
+            if (linkObject.id !== self.currentLink) {
                 self.updateBreadcrumbs(linkObject);
-                self.updateList(linkObject);
-                self.currentLink = linkObject.link;
+                self.updateList(false, itemId); // Don't reset but load item
+                self.currentLink = linkObject.id;
             }
             self.showSidebar(false);
         };
@@ -409,7 +408,19 @@ var MyProjects = {
         };
 
         // Update what is viewed
-        self.updateList = function _updateList (reset){
+        self.updateList = function _updateList (reset, itemId){
+            if(itemId){
+                var data = self.indexes()[itemId].children;
+                self.currentView({
+                    collection : self.systemCollections[0],
+                    contributor : [],
+                    tag : [],
+                    totalRows: data.length
+                });
+                self.treeData().children = [];
+                updateTreeData(0,data);
+                return;
+            }
             var hasFilters = self.currentView().contributor.length || self.currentView().tag.length;
             var nodeType = self.currentView().collection.data.nodeType;
             var nodeObject = self.nodes[nodeType];

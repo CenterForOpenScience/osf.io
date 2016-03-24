@@ -400,7 +400,7 @@ var tbOptions = {
             }
         }
         getAncestors(item);
-        tb.options.updateFilesData(linkObject);
+        tb.options.updateFilesData(linkObject, item.data.id);
     },
     hScroll : 300,
     filterTemplate : function() {
