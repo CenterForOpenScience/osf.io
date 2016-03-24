@@ -306,32 +306,39 @@
                     <div class="panel-body">
                         % if not node['institution']['name']:
                             <div data-bind="visible: !loading()">
-                                <div data-bind="visible: availableInstitutions().length">
+                                <div data-bind="visible: error()">
                                     <div class="help-block">
-                                        Projects affiliated with institutions will show some institutional branding (such as logos) and if public, will be discoverable on OSF institutional landing pages.
-
-                                        You are authorized to affiliate your projects with the following institutions:
+                                        Could not load up available institutions. Please wait a few minutes and try again, or contact <a href="mailto:support@osf.io">support@osf.io</a> if the problem persists.
                                     </div>
-                                    <div class="radio">
-                                        <div data-bind="foreach: {data: availableInstitutions, as: 'item'}">
-                                            <div>
-                                            <label>
-                                                <input type="radio" data-bind="value: item.id, checked: $parent.selectedInstitution" name="primaryInst">
-                                                <p data-bind="text: item.attributes.name"></p>
-                                            </label>
+                                </div>
+                                <div data-bind="visible: !error()">
+                                    <div data-bind="visible: availableInstitutions().length">
+                                        <div class="help-block">
+                                            Projects affiliated with institutions will show some institutional branding (such as logos) and if public, will be discoverable on OSF institutional landing pages.
+
+                                            You are authorized to affiliate your projects with the following institutions:
+                                        </div>
+                                        <div class="radio">
+                                            <div data-bind="foreach: {data: availableInstitutions, as: 'item'}">
+                                                <div>
+                                                <label>
+                                                    <input type="radio" data-bind="value: item.id, checked: $parent.selectedInstitution" name="primaryInst">
+                                                    <p data-bind="text: item.attributes.name"></p>
+                                                </label>
+                                                </div>
                                             </div>
                                         </div>
+                                        <button data-bind="click: submitInst, css: {disabled: selectedInstitution() == null}" class="btn btn-success">Affiliate</button>
                                     </div>
-                                    <button data-bind="click: submitInst, css: {disabled: selectedInstitution() == null}" class="btn btn-success">Affiliate</button>
-                                </div>
-                                <div data-bind="visible: !availableInstitutions().length">
-                                    <div class="help-block">
-                                        Projects can be affiliated with institutions that have created OSF for Institution accounts. This allows:
-                                        <ul>
-                                            <li>institutional logos to be displayed on public projects</li>
-                                            <li>public projects to be discoverable on specific institutional landing pages</li>
-                                            <li>single-sign on to the OSF with institutional credentials</li>
-                                        </ul>
+                                    <div data-bind="visible: !availableInstitutions().length">
+                                        <div class="help-block">
+                                            Projects can be affiliated with institutions that have created OSF for Institution accounts. This allows:
+                                            <ul>
+                                                <li>institutional logos to be displayed on public projects</li>
+                                                <li>public projects to be discoverable on specific institutional landing pages</li>
+                                                <li>single-sign on to the OSF with institutional credentials</li>
+                                            </ul>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
