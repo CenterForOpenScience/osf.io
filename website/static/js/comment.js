@@ -18,19 +18,34 @@ var caret = require('Caret.js');
 var atWho = require('At.js');
 
 // @ mention prototyping
+var callbacks = {
+    beforeInsert: function(value, $li) {
+        var data = $li.data('item-data');
+        var model = ko.dataFor(this.$inputor[0]);
+        if (model.replyMentions().indexOf(data.id) === -1) {
+            model.replyMentions().push(data.id);
+        }
+        this.query.el.attr('data-atwho-guid', '' + data.id);
+        return value;
+    }
+};
+
 var at_config = {
     at: '@',
     headerTpl: '<div class="atwho-header">Contributors<small>&nbsp;↑&nbsp;↓&nbsp;</small></div>',
     insertTpl: '@${name}',
     displayTpl: '<li>${name} <small>${fullName}</small></li>',
-    limit: 6
+    limit: 6,
+    callbacks: callbacks,
 };
+
 var plus_config = {
     at: '+',
     headerTpl: '<div class="atwho-header">Contributors<small>&nbsp;↑&nbsp;↓&nbsp;</small></div>',
     insertTpl: '+${name}',
     displayTpl: '<li>${name} <small>${fullName}</small></li>',
-    limit: 6
+    limit: 6,
+    callbacks: callbacks
 };
 
 var input = $('.atwho-input');
@@ -45,8 +60,10 @@ var getContributorList = function(input, nodeId) {
     request.done(function(response) {
         var data = response.data.map(function(item) {
             return {
+                'id': item.id,
                 'name': item.embeds.users.data.attributes.given_name,
-                'fullName': item.embeds.users.data.attributes.full_name
+                'fullName': item.embeds.users.data.attributes.full_name,
+                'link': item.embeds.users.data.links.html
             };
         });
         // for any input areas that currently exist on page
@@ -68,6 +85,10 @@ var getContributorList = function(input, nodeId) {
 // should only need to do this once
 getContributorList(input, nodeId);
 input.atwho(at_config).atwho(plus_config);
+// input.on('inserted.atwho', function(event, flag, query) {
+//     console.log(flag);
+//     console.log(event, 'matched ' + flag + ' and the result is ' + query);
+// });
 
 
 // Maximum length for comments, in characters
@@ -133,6 +154,7 @@ var BaseComment = function() {
 
     self.replying = ko.observable(false);
     self.replyContent = ko.observable('');
+    self.replyMentions = ko.observableArray([]);
 
     self.submittingReply = ko.observable(false);
 

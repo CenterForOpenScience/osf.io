@@ -436,6 +436,33 @@ ko.bindingHandlers.datePicker = {
 };
 
  /**
+ * Content editable.
+ * Example:
+ * <div contenteditable="true" data-bind="editableHTML: html"></div>
+ */
+ko.bindingHandlers.editableHTML = {
+  init: function(element, valueAccessor) {
+    var $element = $(element);
+    var initialValue = ko.utils.unwrapObservable(valueAccessor());
+    $element.html(initialValue);
+    $element.on('keyup', function() {
+        var observable = valueAccessor();
+        // limit input to maxlength
+        var charLimit = $element.attr('maxlength');
+        if (charLimit) {
+            if ($element.text().length < charLimit) {
+
+            } else {
+                $element.html(observable());
+            }
+        } else {
+            observable($element.html());
+        }
+    });
+  }
+};
+
+ /**
  * Adds class returned from iconmap to the element. The value accessor should be the
  * category of the node.
  * Example:
