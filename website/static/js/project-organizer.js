@@ -416,8 +416,8 @@ var tbOptions = {
         //var filter = $osf.debounce(tb.filter, 800);
         return [ m('input.form-control[placeholder="Filter displayed projects"][type="text"]', {
             style: 'display:inline;',
-            onkeyup: function(event){
-                if($(this).val().length === 0){
+            onkeyup: function(event) {
+                if ($(this).val().length === 0) {
                     resetFilter();
                 } else {
                     tb.filter();
