@@ -331,7 +331,11 @@ var MyProjects = {
             if (linkObject.id !== self.currentLink) {
                 self.updateFilter(linkObject);
                 self.updateBreadcrumbs(linkObject);
-                self.updateList(false, itemId); // Don't reset but load item
+                if(linkObject.data.nodeType === 'collection'){
+                    self.updateList(false, null, linkObject);
+                } else {
+                    self.updateList(false, itemId); // Don't reset but load item
+                }
                 self.currentLink = linkObject.id;
             }
             self.showSidebar(false);
@@ -408,8 +412,22 @@ var MyProjects = {
         };
 
         // Update what is viewed
-        self.updateList = function _updateList (reset, itemId){
-            if(itemId){
+        self.updateList = function _updateList (reset, itemId, collectionObject){
+            if(collectionObject){ // A regular collection including bookmarks
+                console.log(collectionObject);
+                var linkedNodesUrl = $osf.apiV2Url(collectionObject.data.path, { query : collectionObject.data.query});
+                m.request({method : 'GET', url : linkedNodesUrl, config : xhrconfig}).then(function(result){
+                    console.log(result);
+                    self.treeData().children = [];
+                    updateTreeData(0,result.data);
+                }, function(result){
+                    var message = 'Error loading nodes from collection id  ' + collectionObject.data.node.id;
+                    Raven.captureMessage(message, {requestReturn: result});
+                    $osf.growl(' "' + collectionObject + '" contents couldn\'t load', 'Please try again later.');
+                });
+
+            }
+            if(itemId){ // Being called from inside project  organizer
                 var data = self.indexes()[itemId].children;
                 self.currentView({
                     collection : self.systemCollections[0],
