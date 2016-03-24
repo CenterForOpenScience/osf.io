@@ -143,7 +143,7 @@ var NewAndNoteworthy = {
         ]);
 
         }
-        return m('')
+        return m('');
     }
 };
 
