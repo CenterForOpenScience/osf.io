@@ -1,14 +1,10 @@
-import requests
-
 from modularodm import Q
-from modularodm.exceptions import NoResultsFound
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
 from rest_framework.status import HTTP_204_NO_CONTENT
 from rest_framework.response import Response
 
 from framework.auth.oauth_scopes import CoreScopes
-from framework.mongo import utils as mongo_utils
 
 from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
@@ -46,14 +42,11 @@ from api.nodes.permissions import (
 )
 from api.logs.serializers import NodeLogSerializer
 
-from website.addons.wiki.model import NodeWikiPage
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
 from website.models import Node, Pointer, Comment, Institution, NodeLog
-from website.files.models import StoredFileNode, FileNode, TrashedFileNode
-from website.files.models.dropbox import DropboxFile
+from website.files.models import FileNode
 from framework.auth.core import User
-from website.util import waterbutler_api_url_for
 
 
 class NodeMixin(object):

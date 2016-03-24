@@ -5,9 +5,8 @@ from modularodm import Q
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 from framework.guid.model import Guid
-from website.addons.wiki.model import NodeWikiPage
 from website.files.models import StoredFileNode
-from website.project.model import Comment, Node
+from website.project.model import Comment
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from api.base.exceptions import InvalidModelValueError, Conflict
 from api.base.utils import absolute_reverse

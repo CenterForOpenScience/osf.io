@@ -1,13 +1,10 @@
-import requests
-
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import NotFound, ValidationError, PermissionDenied
-from rest_framework.status import is_server_error
 
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
-from api.base.exceptions import Gone, ServiceUnavailableError
+from api.base.exceptions import Gone
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
 from api.comments.permissions import (
@@ -24,12 +21,7 @@ from api.comments.serializers import (
 from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
 from framework.exceptions import PermissionsError
-from framework.mongo import utils as mongo_utils
-from website.addons.wiki.model import NodeWikiPage
 from website.project.model import Comment
-from website.files.models import StoredFileNode, TrashedFileNode
-from website.files.models.dropbox import DropboxFile
-from website.util import waterbutler_api_url_for
 
 
 class CommentMixin(object):
