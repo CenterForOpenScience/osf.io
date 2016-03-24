@@ -52,7 +52,13 @@ def transaction_after_request(response, base_status_code_error=500):
     if view_has_annotation(NO_AUTO_TRANSACTION_ATTR):
         return response
     if response.status_code >= base_status_code_error:
-        commands.rollback()
+        try:
+            commands.rollback()
+        except OperationFailure as ex:
+            logger.exception('Operation Failure during rollback: {}'.format(ex.message), exc_info=ex)
+            return response
+        else:
+            return response
     else:
         try:
             commands.commit()
