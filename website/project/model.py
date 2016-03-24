@@ -53,6 +53,7 @@ from website.citations.utils import datetime_to_csl
 from website.identifiers.model import IdentifierMixin
 from website.util.permissions import expand_permissions
 from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS, ADMIN
+from website.project.commentable import Commentable
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.project.licenses import (
     NodeLicense,
@@ -146,7 +147,7 @@ class MetaData(GuidStoredObject):
     date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
 
 
-class Comment(GuidStoredObject, SpamMixin):
+class Comment(GuidStoredObject, SpamMixin, Commentable):
 
     __guid_min_length__ = 12
 
@@ -185,6 +186,18 @@ class Comment(GuidStoredObject, SpamMixin):
     @property
     def absolute_api_v2_url(self):
         return absolute_reverse('comments:comment-detail', kwargs={'comment_id': self._id})
+
+    @property
+    def page(self):
+        return None
+
+    # For comment API compatibility
+    @property
+    def is_deleted(self):
+        return self.is_deleted
+
+    def belongs_to_node(self, node):
+        return self._id == node._id
 
     # used by django and DRF
     def get_absolute_url(self):
@@ -667,7 +680,7 @@ class NodeUpdateError(Exception):
         self.reason = reason
 
 
-class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
+class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
     #: Whether this is a pointer or not
     primary = True
@@ -929,6 +942,18 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     @property
     def pk(self):
         return self._id
+
+    @property
+    def page(self):
+        return 'nodes'
+
+    # For comment API compatibility
+    @property
+    def is_deleted(self):
+        return self.is_deleted
+
+    def belongs_to_node(self, node):
+        return node._id == self.node._id
 
     @property
     def license(self):
