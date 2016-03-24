@@ -148,6 +148,10 @@ class MetaData(GuidStoredObject):
 class Commentable(object):
 
     @property
+    def target_type(self):
+        raise NotImplementedError
+
+    @property
     def root_target_page(self):
         raise NotImplementedError
 
@@ -157,6 +161,7 @@ class Commentable(object):
 
     def belongs_to_node(self, node):
         raise NotImplementedError
+
 
 class Comment(GuidStoredObject, SpamMixin, Commentable):
 
@@ -197,6 +202,10 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
     @property
     def absolute_api_v2_url(self):
         return absolute_reverse('comments:comment-detail', kwargs={'comment_id': self._id})
+
+    @property
+    def target_type(self):
+        return 'comments'
 
     @property
     def root_target_page(self):
@@ -960,6 +969,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     @property
     def pk(self):
         return self._id
+
+    # For Comment API compatibility
+    @property
+    def target_type(self):
+        return 'nodes'
 
     @property
     def root_target_page(self):

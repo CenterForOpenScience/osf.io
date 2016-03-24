@@ -179,6 +179,11 @@ class NodeWikiPage(GuidStoredObject, Commentable):
     def rendered_before_update(self):
         return self.date < WIKI_CHANGE_DATE
 
+    # For Comment API compatibility
+    @property
+    def target_type(self):
+        return 'wiki'
+
     @property
     def root_target_page(self):
         return 'wiki'

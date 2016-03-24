@@ -103,19 +103,12 @@ class CommentSerializer(JSONAPISerializer):
         return comment
 
     def get_target_type(self, obj):
-        if isinstance(obj.referent, Node):
-            return 'nodes'
-        elif isinstance(obj.referent, Comment):
-            return 'comments'
-        elif isinstance(obj.referent, StoredFileNode):
-            return 'files'
-        elif isinstance(obj.referent, NodeWikiPage):
-            return 'wiki'
-        else:
+        if not getattr(obj.referent, 'target_type'):
             raise InvalidModelValueError(
                 source={'pointer': '/data/relationships/target/links/related/meta/type'},
                 detail='Invalid comment target type.'
             )
+        return obj.referent.target_type
 
     def sanitize_data(self):
         ret = super(CommentSerializer, self).sanitize_data()

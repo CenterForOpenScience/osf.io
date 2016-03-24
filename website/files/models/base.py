@@ -68,6 +68,11 @@ class TrashedFileNode(StoredObject, Commentable):
         """
         return self.node.web_url_for('addon_deleted_file', trashed_id=self._id)
 
+    # For Comment API compatibility
+    @property
+    def target_type(self):
+        return 'files'
+
     @property
     def root_target_page(self):
         return 'files'
@@ -181,6 +186,11 @@ class StoredFileNode(StoredObject, Commentable):
     @property
     def absolute_api_v2_url(self):
         return absolute_reverse('files:file-detail', kwargs={'file_id': self._id})
+
+    # For Comment API compatibility
+    @property
+    def target_type(self):
+        return 'files'
 
     @property
     def root_target_page(self):
