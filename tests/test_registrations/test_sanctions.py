@@ -12,7 +12,8 @@ from tests import factories
 
 from framework.mongo import handlers
 
-from website.project.model import Sanction, TokenApprovableSanction, EmailApprovableSanction, ensure_schemas, PreregCallbackMixin
+from website.project.model import ensure_schemas
+from website.project.sanctions import Sanction, TokenApprovableSanction, EmailApprovableSanction, PreregCallbackMixin
 
 def valid_user():
     return factories.UserFactory(system_tags=['flag'])

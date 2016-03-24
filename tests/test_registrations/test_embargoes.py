@@ -21,7 +21,8 @@ from website.exceptions import (
 )
 from website import tokens
 from website.models import Embargo, Node
-from website.project.model import ensure_schemas, PreregCallbackMixin
+from website.project.model import ensure_schemas
+from website.project.sanctions import PreregCallbackMixin
 
 
 DUMMY_TOKEN = tokens.encode({
