@@ -143,6 +143,7 @@ FORWARD_INVITE = Mail('forward_invite', subject='Please forward to ${fullname}')
 FORWARD_INVITE_REGISTERED = Mail('forward_invite_registered', subject='Please forward to ${fullname}')
 
 FORGOT_PASSWORD = Mail('forgot_password', subject='Reset Password')
+PASSWORD_RESET = Mail('password_reset', subject='Your OSF password has been reset')
 PENDING_VERIFICATION = Mail('pending_invite', subject='Your account is almost ready!')
 PENDING_VERIFICATION_REGISTERED = Mail('pending_registered', subject='Received request to be a contributor')
 
