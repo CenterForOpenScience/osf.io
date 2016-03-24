@@ -26,17 +26,19 @@ class CommentDetailMixin(object):
         self.contributor = AuthUserFactory()
         self.non_contributor = AuthUserFactory()
 
-    def _set_up_payload(self, target_id):
-        return {
+    def _set_up_payload(self, target_id, content='test', has_content=True):
+        payload = {
             'data': {
                 'id': target_id,
                 'type': 'comments',
                 'attributes': {
-                    'content': 'Updating this comment',
                     'deleted': False
                 }
             }
         }
+        if has_content:
+            payload['data']['attributes']['content'] = content
+        return payload
 
     def _set_up_private_project_with_comment(self):
         raise NotImplementedError
@@ -200,16 +202,8 @@ class CommentDetailMixin(object):
 
     def test_update_comment_cannot_exceed_max_length(self):
         self._set_up_private_project_with_comment()
-        payload = {
-            'data': {
-                'id': self.comment._id,
-                'type': 'comments',
-                'attributes': {
-                    'content': ''.join(['c' for c in range(osf_settings.COMMENT_MAXLENGTH + 1)]),
-                    'deleted': False
-                }
-            }
-        }
+        content = ''.join(['c' for c in range(osf_settings.COMMENT_MAXLENGTH + 1)])
+        payload = self._set_up_payload(self.comment._id, content=content)
         res = self.app.put_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'],
@@ -217,16 +211,7 @@ class CommentDetailMixin(object):
 
     def test_update_comment_cannot_be_empty(self):
         self._set_up_private_project_with_comment()
-        payload = {
-            'data': {
-                'id': self.comment._id,
-                'type': 'comments',
-                'attributes': {
-                    'content': '',
-                    'deleted': False
-                }
-            }
-        }
+        payload = self._set_up_payload(self.comment._id, content='')
         res = self.app.put_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'This field may not be blank.')
@@ -266,15 +251,7 @@ class CommentDetailMixin(object):
         self.comment.is_deleted = True
         self.comment.save()
         url = '/{}comments/{}/'.format(API_BASE, self.comment._id)
-        payload = {
-            'data': {
-                'id': self.comment._id,
-                'type': 'comments',
-                'attributes': {
-                    'deleted': False
-                }
-            }
-        }
+        payload = self._set_up_payload(self.comment._id, has_content=False)
         res = self.app.patch_json_api(url, payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_false(res.json['data']['attributes']['deleted'])
@@ -285,15 +262,7 @@ class CommentDetailMixin(object):
         self.comment.is_deleted = True
         self.comment.save()
         url = '/{}comments/{}/'.format(API_BASE, self.comment._id)
-        payload = {
-            'data': {
-                'id': self.comment._id,
-                'type': 'comments',
-                'attributes': {
-                    'deleted': False
-                }
-            }
-        }
+        payload = self._set_up_payload(self.comment._id, has_content=False)
         res = self.app.patch_json_api(url, payload, auth=self.contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
@@ -302,15 +271,7 @@ class CommentDetailMixin(object):
         self.comment.is_deleted = True
         self.comment.save()
         url = '/{}comments/{}/'.format(API_BASE, self.comment._id)
-        payload = {
-            'data': {
-                'id': self.comment._id,
-                'type': 'comments',
-                'attributes': {
-                    'deleted': False
-                }
-            }
-        }
+        payload = self._set_up_payload(self.comment._id, has_content=False)
         res = self.app.patch_json_api(url, payload, auth=self.non_contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
@@ -319,15 +280,7 @@ class CommentDetailMixin(object):
         self.comment.is_deleted = True
         self.comment.save()
         url = '/{}comments/{}/'.format(API_BASE, self.comment._id)
-        payload = {
-            'data': {
-                'id': self.comment._id,
-                'type': 'comments',
-                'attributes': {
-                    'deleted': False
-                }
-            }
-        }
+        payload = self._set_up_payload(self.comment._id, has_content=False)
         res = self.app.patch_json_api(url, payload, expect_errors=True)
         assert_equal(res.status_code, 401)
 
@@ -501,16 +454,7 @@ class TestCommentDetailView(CommentDetailMixin, ApiTestCase):
         project = ProjectFactory(is_public=True, comment_level='public')
         comment = CommentFactory(node=project, user=self.non_contributor)
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
-        payload = {
-            'data': {
-                'id': comment._id,
-                'type': 'comments',
-                'attributes': {
-                    'content': 'Updating this comment',
-                    'deleted': False
-                }
-            }
-        }
+        payload = self._set_up_payload(comment._id)
         res = self.app.put_json_api(url, payload, auth=self.non_contributor.auth)
         assert_equal(res.status_code, 200)
         assert_equal(payload['data']['attributes']['content'], res.json['data']['attributes']['content'])
@@ -521,16 +465,7 @@ class TestCommentDetailView(CommentDetailMixin, ApiTestCase):
         project.comment_level = 'private'
         project.save()
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
-        payload = {
-            'data': {
-                'id': comment._id,
-                'type': 'comments',
-                'attributes': {
-                    'content': 'Updating this comment',
-                    'deleted': False
-                }
-            }
-        }
+        payload = self._set_up_payload(comment._id)
         res = self.app.put_json_api(url, payload, auth=self.non_contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
