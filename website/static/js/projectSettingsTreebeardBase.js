@@ -9,6 +9,20 @@ var m = require('mithril');
 var Fangorn = require('js/fangorn');
 
 
+function resolveToggle(item) {
+    var toggleMinus = m('i.fa.fa-minus', ' '),
+        togglePlus = m('i.fa.fa-plus', ' ');
+
+    if (item.children.length > 0) {
+        if (item.open) {
+            return toggleMinus;
+        }
+        return togglePlus;
+    }
+    item.open = true;
+    return '';
+}
+
 /**
  * take treebeard tree structure of nodes and get a dictionary of parent node and all its
  * children
