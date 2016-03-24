@@ -1,16 +1,12 @@
-from abc import ABCMeta, abstractmethod, abstractproperty
-
-
 class Commentable(object):
-    __metaclass__ = ABCMeta
 
+    @property
     def root_target_page(self):
-        return False
+        raise NotImplementedError
 
-    @abstractproperty
+    @property
     def is_deleted(self):
-        return False
+        raise NotImplementedError
 
-    @abstractmethod
     def belongs_to_node(self, node):
-        return False
+        raise NotImplementedError
