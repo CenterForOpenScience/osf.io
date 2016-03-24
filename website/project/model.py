@@ -3714,6 +3714,18 @@ class PrivateLink(StoredObject):
             "anonymous": self.anonymous
         }
 
+class AlternativeCitation(StoredObject):
+    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+    name = fields.StringField(required=True, validate=MaxLengthValidator(256))
+    text = fields.StringField(required=True, validate=MaxLengthValidator(2048))
+
+    def to_json(self):
+        return {
+            "id": self._id,
+            "name": self.name,
+            "text": self.text
+        }
+
 class DraftRegistration(StoredObject):
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
