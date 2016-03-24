@@ -84,8 +84,8 @@ class SpamDetail(FormView):
             return page_not_found(
                 request,
                 AttributeError(
-                    'Spam with id "{}" not found.'.format(kwargs.get('spam_id',
-                                                                     'None'))
+                    'Spam with id "{}" not found.'.format(
+                        kwargs.get('spam_id', 'None'))
                 )
             )
         self.page = request.GET.get('page', 1)
@@ -100,8 +100,10 @@ class SpamDetail(FormView):
         except AttributeError:
             return page_not_found(
                 request,
-                'Spam with id "{}" not found.'.format(kwargs.get('spam_id',
-                                                                 'None'))
+                AttributeError(
+                    'Spam with id "{}" not found.'.format(
+                        kwargs.get('spam_id', 'None'))
+                )
             )
         self.page = request.GET.get('page', 1)
         context['page_number'] = self.page
