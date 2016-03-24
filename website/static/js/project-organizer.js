@@ -230,11 +230,16 @@ function _poResolveToggle(item) {
  * @private
  */
 function _poResolveLazyLoad(item) {
+    var tb = this;
     var node = item.data;
     if(item.children.length > 0) {
         return false;
     }
     if(node.relationships.children){
+        // If flatData is loaded use that
+        if(tb.options.nodes.projects.flatData.loaded === tb.options.nodes.projects.flatData.total && tb.options.indexes()[node.id]){
+            return false;
+        }
         //return node.relationships.children.links.related.href;
         var urlPrefix = node.attributes.registration ? 'registrations' : 'nodes';
         return $osf.apiV2Url(urlPrefix + '/' + node.id + '/children/', {
@@ -337,13 +342,26 @@ var tbOptions = {
         tb.options.mpTreeData(tb.treeData);
         tb.options.mpBuildTree(tb.buildTree);
         tb.options.mpUpdateFolder(tb.updateFolder);
+        console.log('onload');
     },
     ontogglefolder : function (item, event) {
+        var tb = this;
         $osf.trackClick('myProjects', 'projectOrganizer', 'expand-collapse-project-children');
         if (!item.open) {
             item.load = false;
         }
         $('[data-toggle="tooltip"]').tooltip();
+        if (item.children.length === 0 && tb.options.nodes.projects.flatData.loaded === tb.options.nodes.projects.flatData.total && tb.options.indexes()[item.data.id]) {
+            var childrenToAdd = tb.options.indexes()[item.data.id].children;
+            var child, i;
+            for (i = 0; i < childrenToAdd.length; i++) {
+                child = tb.buildTree(childrenToAdd[i], parent);
+                item.add(child);
+            }
+            tb.redraw();
+            tb.updateFolder(null, item);
+        }
+
     },
     onscrollcomplete : function () {
         $('[data-toggle="tooltip"]').tooltip();
@@ -457,7 +475,10 @@ var ProjectOrganizer = {
                     loadValue : args.loadValue,
                     mpTreeData : args.treeData,
                     mpBuildTree : args.buildTree,
-                    mpUpdateFolder : args.updateFolder
+                    mpUpdateFolder : args.updateFolder,
+                    currentView: args.currentView,
+                    nodes : args.nodes,
+                    indexes : args.indexes
                 },
                 tbOptions
             );
@@ -472,7 +493,6 @@ var ProjectOrganizer = {
         self.tb = self.updateTB();
     },
     view : function (ctrl, args) {
-        console.log(ctrl.tb, args.filesData);
         return m('.fb-project-organizer#projectOrganizer', ctrl.tb );
     }
 };
