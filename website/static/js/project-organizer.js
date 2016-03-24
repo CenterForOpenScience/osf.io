@@ -409,24 +409,17 @@ var tbOptions = {
             $osf.trackClick('myProjects', 'filter', 'clear-search');
             tb.filterText('');
             tb.resetFilter.call(tb);
-            tb.updateFolder(allTopLevelProjectsCache(), tb.treeData);
+            //tb.updateFolder(allTopLevelProjectsCache(), tb.treeData);
             $('.db-poFilter>input').val('');
         }
-        var filter = $osf.debounce(tb.filter, 800);
-        return [ m('input.form-control[placeholder="Search all my projects"][type="text"]', {
+        //var filter = $osf.debounce(tb.filter, 800);
+        return [ m('input.form-control[placeholder="Filter displayed projects"][type="text"]', {
             style: 'display:inline;',
             onkeyup: function(event){
-                var newEvent = $.extend({}, event); // because currentTarget changes with debounce.
-                if ($(this).val().length === 1){
-                    tb.updateFolder(allProjectsCache(), tb.treeData);
-                    tb.options.showSidebar(false);
-                    tb.options.resetUi();
-                }
                 if($(this).val().length === 0){
                     resetFilter();
-                }
-                if($(this).val().length > 1){
-                    filter(newEvent);
+                } else {
+                    tb.filter();
                 }
             },
             onchange: function(event) {
