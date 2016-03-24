@@ -49,57 +49,69 @@ var removeConfirmedEmailURL = window.contextVars.removeConfirmedEmailURL;
 function confirm_emails(emails) {
     if (emails.length > 0) {
         var email = emails.splice(0,1);
-        var title = email[0].user_merge ? 'Merge account' : 'Add email';
-
-        var merge_message = email[0].user_merge ? 'Would you like to merge ' + email[0].address +
-        ' into your account?  This action is irreversable.' : 'Would you like to add the email address ' +
-        email[0].address + ' to your account?';
-
-        var confirm_message = email[0].user_merge ? email[0].address + ' has been merged into your account.' : +
-            email[0].address + ' has been added to your account.';
-
-        var nope_message = email[0].user_merge ? 'You have chosen to not merge '+ email[0].address +
-        '  into your account. If you change your mind, visit the <a href="/settings/account/">user settings page</a>.' : +
-            'You have chosen not to add ' + email[0].address + ' to your account.' +
-             'If you change your mind, visit the <a href="/settings/account/">user settings page</a>.';
-
-        var fail_message = 'There was a problem.  ' +
-            'Please contact <a href="mailto: support@osf.io">support@osf.io</a> if the problem persists.';
+        var title;
+        var mergeMessage;
+        var confirmMessage;
+        var nopeMessage;
+        if (email[0].user_merge) {
+            title =  'Merge account';
+            mergeMessage = 'Would you like to merge \<b>' + email[0].address + '\</b> into your account?  ' +
+                'This action is irreversable.';
+            confirmMessage = '\<b>' + email[0].address + '\</b> has been merged into your account.';
+            nopeMessage =  'You have chosen to not merge \<b>'+ email[0].address + '\</b>  into your account. ' +
+                'If you change your mind, visit the \<a href="/settings/account/">user settings page</a>.';
+        }
+        else {
+            title = 'Add email';
+            mergeMessage = 'Would you like to add \<b>' + email[0].address + '\</b> to your account?';
+            confirmMessage = '\<b>' + email[0].address + '\</b> has been added into your account.';
+            nopeMessage = 'You have chosen not to add \<b>' + email[0].address + '\</b> to your account.' +
+             'If you change your mind, visit the \<a href="/settings/account/">user settings page</a>.';
+        }
+        var failMessage = 'There was a problem. Please contact <a href="mailto: support@osf.io">support@osf.io</a> ' +
+        'if the problem persists.';
 
         bootbox.confirm({
             title: title,
-            message: merge_message,
+            message: mergeMessage,
             callback: function(confirmed) {
                 if (confirmed) {
                     $osf.putJSON(
                         confirmedEmailURL,
                         email[0]
                     ).done(function() {
-                        $osf.growl('Success',confirm_message, 'success', 3000);
-                        confirm_emails(emails);
-                    }).fail(function() {
+                        $osf.growl('Success',confirmMessage, 'success', 3000);
+                    }).fail(function(xhr, textStatus, error) {
+                        Raven.captureMessage('Could not set user timezone or locale', {
+                            url: url,
+                            textStatus: textStatus,
+                            error: error
+                        });
                         $osf.growl('Error',
-                            fail_message,
+                            failMessage,
                             'danger'
                         );
-                        confirm_emails(emails);
                     });
+                    confirm_emails(emails);
                 }
                 else {
                     $osf.putJSON(
                         removeConfirmedEmailURL,
                         email[0]
                     ).done(function() {
-                        $osf.growl('Warning', nope_message, 'warning');
-                        confirm_emails(emails);
-                    }).fail(function() {
+                        $osf.growl('Warning', nopeMessage, 'warning');
+                    }).fail(function(xhr, textStatus, error) {
+                       Raven.captureMessage('Could not set user timezone or locale', {
+                            url: url,
+                            textStatus: textStatus,
+                            error: error
+                        });
                         $osf.growl('Error',
-                            fail_message,
+                            failMessage,
                             'danger'
                         );
-                        confirm_emails(emails);
                     });
-
+                    confirm_emails(emails);
                 }
             },
             buttons:{

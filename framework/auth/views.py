@@ -17,6 +17,7 @@ from framework.auth import exceptions
 from framework.exceptions import HTTPError
 from framework.auth import (logout, get_user, DuplicateEmailError)
 from framework.auth.decorators import collect_auth, must_be_logged_in
+from framework.sessions.utils import remove_sessions_for_user
 from framework.auth.forms import (
     MergeAccountForm, RegistrationForm, ResendConfirmationForm,
     ResetPasswordForm, ForgotPasswordForm
@@ -168,9 +169,15 @@ def auth_email_logout(token, user):
     """
     redirect_url = web_url_for('auth_login') + '?existing_user=True'
     if user.confirm_token(token):
+        try:
+            user_merge = User.find_one(Q('emails', 'iexact', user.email_verifications[token]['email']))
+        except NoResultsFound:
+            user_merge = False
+        if user_merge:
+            remove_sessions_for_user(user_merge)
         user.email_verifications[token]['confirmed'] = True
         user.save()
-        logout()
+        remove_sessions_for_user(user)
     else:
         status.push_status_message('The private link you used is expired.')
     resp = redirect(redirect_url)
@@ -289,6 +296,10 @@ def confirm_email_remove(auth=None, **kwargs):
                 del email_verifications[token]
     user.email_verifications = email_verifications
     user.save()
+    return {
+        'status': 'success',
+        'removed_email': confirmed_email
+    }, 200
 
 
 @collect_auth
@@ -333,7 +344,13 @@ def add_confirmed_emails(auth=None, **kwargs):
             'message_long': e.message_long
         })
 
-    if is_initial_confirmation:
+    if confirmed_email:
+        user.save()
+        return {
+            'status': 'success',
+            'removed_email': confirmed_email
+        }, 200
+    elif is_initial_confirmation:
         user.date_last_login = datetime.datetime.utcnow()
         user.save()
 
