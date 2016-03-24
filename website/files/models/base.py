@@ -69,7 +69,7 @@ class TrashedFileNode(StoredObject, Commentable):
         return self.node.web_url_for('addon_deleted_file', trashed_id=self._id)
 
     @property
-    def page(self):
+    def root_target_page(self):
         return 'files'
 
     @property
@@ -183,7 +183,7 @@ class StoredFileNode(StoredObject, Commentable):
         return absolute_reverse('files:file-detail', kwargs={'file_id': self._id})
 
     @property
-    def page(self):
+    def root_target_page(self):
         return 'files'
 
     @property

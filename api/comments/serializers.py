@@ -163,21 +163,6 @@ class CommentCreateSerializer(CommentSerializer):
 
         return target
 
-    def get_root_target(self, target):
-        if isinstance(target.referent, Comment):
-            return target.referent.root_target
-        return target
-
-    def get_page(self, root_target):
-        if isinstance(root_target.referent, Node):
-            return Comment.OVERVIEW
-        elif isinstance(root_target.referent, StoredFileNode):
-            return Comment.FILES
-        elif isinstance(root_target.referent, NodeWikiPage):
-            return Comment.WIKI
-        else:
-            raise ValueError('Invalid root target.')
-
     def create(self, validated_data):
         user = validated_data['user']
         auth = Auth(user)
@@ -191,10 +176,7 @@ class CommentCreateSerializer(CommentSerializer):
                 source={'pointer': '/data/relationships/target/data/id'},
                 detail='Invalid comment target \'{}\'.'.format(target_id)
             )
-        root_target = self.get_root_target(target)
         validated_data['target'] = target
-        validated_data['root_target'] = root_target
-        validated_data['page'] = self.get_page(root_target)
         validated_data['content'] = validated_data.pop('get_content')
         try:
             comment = Comment.create(auth=auth, **validated_data)

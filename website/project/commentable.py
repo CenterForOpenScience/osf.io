@@ -4,7 +4,7 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 class Commentable(object):
     __metaclass__ = ABCMeta
 
-    def page(self):
+    def root_target_page(self):
         return False
 
     @abstractproperty

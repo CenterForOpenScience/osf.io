@@ -188,7 +188,7 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
         return absolute_reverse('comments:comment-detail', kwargs={'comment_id': self._id})
 
     @property
-    def page(self):
+    def root_target_page(self):
         return None
 
     # For comment API compatibility
@@ -265,6 +265,15 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
             'user': comment.user._id,
             'comment': comment._id,
         }
+        if isinstance(comment.target.referent, Comment):
+            comment.root_target = comment.target.referent.root_target
+        else:
+            comment.root_target = comment.target
+
+        page = getattr(comment.root_target, 'root_target_page', None)
+        if not page:
+            raise ValueError('Invalid root target.')
+        comment.page = page
 
         if comment.page == Comment.FILES:
             log_dict['file'] = {'name': comment.root_target.referent.name, 'url': comment.get_comment_page_url()}
@@ -944,8 +953,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         return self._id
 
     @property
-    def page(self):
-        return 'nodes'
+    def root_target_page(self):
+        return Comment.OVERVIEW
 
     # For comment API compatibility
     @property

@@ -180,7 +180,7 @@ class NodeWikiPage(GuidStoredObject, Commentable):
         return self.date < WIKI_CHANGE_DATE
 
     @property
-    def page(self):
+    def root_target_page(self):
         return 'wiki'
 
     @property
