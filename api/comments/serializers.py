@@ -139,28 +139,12 @@ class CommentCreateSerializer(CommentSerializer):
 
     def get_target(self, node_id, target_id):
         target = Guid.load(target_id)
-        if not target:
+        if not target or not getattr(target.referent, 'belongs_to_node'):
             raise ValueError('Invalid comment target.')
-
-        referent = target.referent
-
-        if isinstance(referent, Node):
-            if node_id != target_id:
-                raise ValueError('Cannot post comment to another node.')
-        elif isinstance(referent, Comment):
-            if referent.node._id != node_id:
-                raise ValueError('Cannot post reply to comment on another node.')
-        elif isinstance(referent, StoredFileNode):
-            if referent.provider not in osf_settings.ADDONS_COMMENTABLE:
+        elif not target.referent.belongs_to_node(node_id):
+            raise ValueError('Cannot post to comment target on another node.')
+        elif isinstance(target.referent, StoredFileNode) and target.referent.provider not in osf_settings.ADDONS_COMMENTABLE:
                 raise ValueError('Comments are not supported for this file provider.')
-            elif referent.node._id != node_id:
-                raise ValueError('Cannot post comment to file on another node.')
-        elif isinstance(referent, NodeWikiPage):
-            if referent.node._id != node_id:
-                raise ValueError('Cannot post comment to wiki page on another node.')
-        else:
-            raise ValueError('Invalid comment target.')
-
         return target
 
     def create(self, validated_data):
