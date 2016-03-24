@@ -355,7 +355,7 @@ var tbOptions = {
             var childrenToAdd = tb.options.indexes()[item.data.id].children;
             var child, i;
             for (i = 0; i < childrenToAdd.length; i++) {
-                child = tb.buildTree(childrenToAdd[i], parent);
+                child = tb.buildTree(childrenToAdd[i], item);
                 item.add(child);
             }
             tb.redraw();
