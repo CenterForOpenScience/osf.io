@@ -233,47 +233,22 @@ class TestFilterMixin(ApiTestCase):
 
 
 class TestODMOrderingFilter(ApiTestCase):
+    class query:
+        title = ' '
+        def __init__(self, title):
+            self.title = title
+        def __str__(self):
+            return self.title
+
     def test_filter_queryset_fails(self):
-        class query:
-            title = ' '
-            def __init__(self, title):
-                self.title = title
-            def __str__(self):
-                return self.title
-        query_s = []
-        q1 = query('NewProj')
-        query_s.append((q1))
-        q2 = query('Zip')
-        query_s.append((q2))
-        q3 = query('Proj')
-        query_s.append((q3))
-        q4 = query('Activity')
-        query_s.append((q4))
+        query_s = [self.query(x) for x in 'NewProj Zip Proj Activity'.split()]
         sort_q = sorted(query_s, cmp=filters.sort_multiple(['-title']))
-        sortt = []
-        for i in sort_q:
-            sortt.append(str(i))
+        sortt = [str(i) for i in sort_q]
         assert_equal((sortt) , ['Zip', 'Proj', 'NewProj', 'Activity'])
     
     def test_filter_queryset_duplicate_fails(self):
-        class query:
-            title = ' '
-            def __init__(self, title):
-                self.title = title
-            def __str__(self):
-                return self.title
-        query_s = []
-        q1 = query('NewProj')
-        query_s.append((q1))
-        q2 = query('Zip')
-        query_s.append((q2))
-        q3 = query('Activity')
-        query_s.append((q3))
-        q4 = query('Activity')
-        query_s.append((q4))
+        query_s = [self.query(x) for x in 'NewProj Activity Zip Activity'.split()]
         sort_q = sorted(query_s, cmp=filters.sort_multiple(['-title']))
-        sortt = []
-        for i in sort_q:
-            sortt.append(str(i))
+        sortt = [str(i) for i in sort_q]
         assert_equal((sortt) , ['Zip', 'NewProj', 'Activity', 'Activity'])
 

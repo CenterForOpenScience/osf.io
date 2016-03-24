@@ -24,26 +24,19 @@ from api.base.serializers import RelationshipField, TargetField
 def sort_multiple(fields):
     fields = list(fields)
     def sort_fn(a, b):
+        rev = 1
         for field in fields:
             if field[0] == '-':
+                rev = -1
                 field = field[1:]
-                a_field = getattr(a, field)
-                b_field = getattr(b, field)
-                if a_field > b_field:
-                    return -1
-                elif a_field < b_field:
-                    return 1
-                elif a_field == b_field:
-                    return 1
-            else:
-                a_field = getattr(a, field)
-                b_field = getattr(b, field)
-                if a_field > b_field:
-                    return 1
-                elif a_field < b_field:
-                    return -1
-                elif a_field == b_field:
-                    return 1
+            a_field = getattr(a, field)
+            b_field = getattr(b, field)
+            if a_field > b_field:
+                return 1 * rev
+            elif a_field < b_field:
+                return -1 * rev
+            elif a_field == b_field:
+                return 0
         return 0
     return sort_fn
 
