@@ -2,6 +2,7 @@
 Utilities to help run Django tests
 * setup_view - replaces as_view
 """
+from admin_tests.factories import UserFactory
 
 
 def setup_view(view, request, *args, **kwargs):
@@ -21,8 +22,7 @@ def setup_form_view(view, request, form, *args, **kwargs):
     try:
         view.request.user = request.user
     except AttributeError:
-        view.request.user = request.wsgi_request.user
-    view.request.user.id = 999
+        view.request.user = UserFactory()
     view.args = args
     view.kwargs = kwargs
     view.form = form
