@@ -54,6 +54,9 @@ function _poTitleColumn(item) {
  */
 function _poContributors(item) {
     var contributorList = item.data.embeds.contributors.data;
+    if(!contributorList){
+        return '';
+    }
     if (contributorList.length === 0) {
         return '';
     }
