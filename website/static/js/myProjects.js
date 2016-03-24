@@ -189,10 +189,8 @@ var MyProjects = {
                     nodeObject.loadMode = 'done';
                     nodeObject.treeData.data = self.makeTree(nodeObject.flatData.data, null, self.indexes);
                     //self.updateList(true);
-                    console.log(nodeObject.treeData.data);
                 }
 
-            console.log(nodeType, dataType, typeObject.loaded, nodeObject.loadMode);
             }
             function error (result){
                 var message = 'Error loading nodes with nodeType ' + nodeType + ' and dataType ' + dataType;
@@ -436,14 +434,11 @@ var MyProjects = {
                 for(var j = 0; j < nodeData.length; j++){
                     item = nodeData[j];
                     var matchesContributors = self.currentView().contributor.length === 0;
-                    console.log(item.contributorIds);
                     self.currentView().contributor.forEach(function(c){
                        if(item.contributorIds.indexOf(c.data.id) !== -1){
                            matchesContributors = true;
                        }
                     });
-                    console.log(item.attributes.tags);
-
                     var matchesTags = self.currentView().tag.length === 0;
                     self.currentView().tag.forEach(function(t){
                         if(item.attributes.tags.indexOf(t) !== -1){
@@ -667,7 +662,7 @@ var MyProjects = {
 
         // BREADCRUMBS
         self.updateBreadcrumbs = function _updateBreadcrumbs (linkObject){
-            if (linkObject.type === 'collection' || linkObject.type === 'contributor' || linkObject.type === 'tag'){
+            if (linkObject.type === 'collection'){
                 self.breadcrumbs([linkObject]);
                 return;
             }
@@ -1355,7 +1350,20 @@ var Breadcrumbs = {
                 args.updateFilesData(item);
                 $osf.trackClick('myProjects', 'projectOrganizer', 'click-on-breadcrumbs');
         };
-
+        var contributors = [];
+        var tags = [];
+        if(args.currentView().contributor.length) {
+            contributors.push(m('span.text-muted', 'with '));
+            args.currentView().contributor.forEach(function (c) {
+                contributors.push(m('span.comma-separated', c.label));
+            });
+        }
+        if(args.currentView().tag.length){
+            contributors.push(m('span.text-muted', 'tagged '));
+            args.currentView().tag.forEach(function(t){
+                tags.push(m('span.comma-separated', t.label));
+            });
+        }
         var items = args.breadcrumbs();
         if (mobile && items.length > 1) {
             return m('.db-breadcrumbs', [
@@ -1385,7 +1393,7 @@ var Breadcrumbs = {
                                     }
                                     item.index = index; // Add index to update breadcrumbs
                                     item.placement = 'breadcrumb'; // differentiate location for proper breadcrumb actions
-                                    return m('.db-parent-row',
+                                    return m('.db-parent-row',[
                                         m('span.btn.btn-link', {
                                             style : 'margin-left:' + (index*20) + 'px;',
                                             onclick : function() {
@@ -1395,7 +1403,10 @@ var Breadcrumbs = {
                                         },  [
                                             m('i.fa.fa-angle-right.m-r-xs'),
                                             item.label
-                                        ])
+                                        ]),
+                                        contributors,
+                                        tags
+                                        ]
                                     );
                                 })
                             ])
@@ -1443,6 +1454,8 @@ var Breadcrumbs = {
                     return [
                         m('li', [
                             m('span.btn', item.label),
+                            contributors,
+                            tags,
                             m('i.fa.fa-angle-right')
                         ]),
                         (item.type === 'node' || (item.data.nodeType === 'projects' )) ? addProjectTemplate : ''
@@ -1450,9 +1463,12 @@ var Breadcrumbs = {
                 }
                 item.index = index; // Add index to update breadcrumbs
                 item.placement = 'breadcrumb'; // differentiate location for proper breadcrumb actions
-                return m('li',
+                return m('li',[
                     m('span.btn.btn-link', {onclick : updateFilesOnClick.bind(null, item)},  item.label),
+                    contributors,
+                    tags,
                     m('i.fa.fa-angle-right')
+                    ]
                 );
             })
         ]));
