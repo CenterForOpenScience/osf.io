@@ -36,7 +36,7 @@ var at_config = {
     insertTpl: '@${name}',
     displayTpl: '<li>${name} <small>${fullName}</small></li>',
     limit: 6,
-    callbacks: callbacks,
+    callbacks: callbacks
 };
 
 var plus_config = {
