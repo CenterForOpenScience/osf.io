@@ -116,12 +116,13 @@ var MyProjects = {
         self.loadValue = m.prop(0); // What percentage of the project loading is done
         //self.loadCounter = m.prop(0); // Count how many items are received from the server
         self.currentView = m.prop({
-            collection : null,
+            collection : null, // Linkobject
             contributor : [],
             tag : [],
             totalRows: 0
         });
         self.filesData = m.prop();
+        self.indexes = m.prop({}); // Container of tree indexes for the items
 
         // Treebeard functions looped through project organizer.
         // We need to pass these in to avoid reinstantiating treebeard but instead repurpose (update) the top level folder
@@ -187,7 +188,8 @@ var MyProjects = {
                 }
                 if(dataType === 'flatData' && !typeObject.nextLink && typeObject.loaded === typeObject.total){
                     nodeObject.loadMode = 'done';
-                    nodeObject.treeData.data = self.makeTree(nodeObject.flatData.data);
+                    nodeObject.treeData.data = self.makeTree(nodeObject.flatData.data, null, self.indexes);
+                    //self.updateList(true);
                     console.log(nodeObject.treeData.data);
                 }
 
@@ -234,10 +236,11 @@ var MyProjects = {
         /**
          * Turn flat node array into a hierarchical structure
          * @param flatData {Array} List of items returned from survey
-         * @param lastcrumb {Object} Right most selected breadcrumb linkobject
+         * @param [lastcrumb] {Object} Right most selected breadcrumb linkobject
+         * @param [indexes] {Object} Object to save the tree index structure for quick find
          * @returns {Array} A new list with hierarchical structure
          */
-        self.makeTree = function _makeTree(flatData, lastcrumb) {
+        self.makeTree = function _makeTree(flatData, lastcrumb, indexes) {
             var root = {id:0, children: [], data : {} };
             var node_list = { 0 : root};
             var parentID;
@@ -269,6 +272,7 @@ var MyProjects = {
                     node_list[0].children.push(node_list[n.id]);
                 }
             }
+            indexes(node_list);
             return root.children;
         };
 
@@ -347,7 +351,10 @@ var MyProjects = {
             self.getCurrentLogs();
         };
 
-        // USER FILTER
+        /**
+         * Update the currentView
+         * @param filter
+         */
         self.updateFilter = function _updateFilter (filter) {
             var filterIndex;
             // if collection, reset currentView otherwise toggle the item in the list of currentview items
@@ -364,7 +371,7 @@ var MyProjects = {
                     self.currentView()[filter.type].push(filter);
                 }
             }
-            //self.updateFilesData(filter);
+            self.updateList();
         };
 
         self.removeProjectFromCollections = function _removeProjectFromCollection () {
@@ -404,147 +411,189 @@ var MyProjects = {
         };
 
         // Update what is viewed
-        self.updateList = function _updateList (){
+        self.updateList = function _updateList (reset){
+            var hasFilters = self.currentView().contributor.length || self.currentView().tag.length;
             var nodeType = self.currentView().collection.data.nodeType;
             var nodeObject = self.nodes[nodeType];
-            var nodeData = nodeObject.treeData.data;
-            var begin;
-            if(nodeObject.treeData.loaded > 0 && self.treeData().data){
-                console.log('asda');
-                if(nodeObject.loaded <= NODE_PAGE_SIZE){
-                    begin = 0;
-                    self.treeData().children = [];
-                } else {
-                    begin = self.treeData().children.length;
-                }
-                for (var i = begin; i < nodeData.length; i++){
-                    var item = nodeData[i];
-                    if (!(nodeType === 'registrations' && (item.attributes.retracted === true || item.attributes.pending_registration_approval === true))){
-                        // Filter Retractions and Pending Registrations from the "All my registrations" view.
-                        var child = self.buildTree()(item, self.treeData());
-                        self.treeData().add(child);
-                    }
-
-                }
-                self.updateFolder()(null, self.treeData());
-            }
-            self.currentView().totalRows = nodeObject.loaded;
-        };
-        self.updateListSuccess = function _updateListSuccess (value, url) {
-            var lastcrumb = self.breadcrumbs()[self.breadcrumbs().length-1];
-            self.nodeUrlCache[url] = value;
-            self.loadCounter(self.loadCounter() + value.data.length);
-            self.loadValue(Math.round(self.loadCounter() / value.links.meta.total * 100));
-            if(self.loadingNodePages) {
-                var tmp = value.data;
-                while(self.nodeUrlCache[value.links.next]) {
-                    value = self.nodeUrlCache[value.links.next];
-                    tmp = tmp.concat(value.data);
-                }
-                self.data(self.data().concat(tmp));
-            } else {
-                self.data(value.data);
-            }
-            if(!value.data[0]){
-                if(lastcrumb.type === 'collection'){
-                    if(lastcrumb.data.nodeType === 'nodes'){
-                        self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box',
-                            options.institutionId ? 'This institution has no projects yet.':'You have not created any projects yet.'));
-                    } else if (lastcrumb.data.nodeType === 'registrations'){
-                        self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box',
-                            options.institutionId ? 'This institution has no registrations yet.':'You have not made any registrations yet.'));
-                    } else {
-                        self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box',
-                            'This collection has no projects.' +  (options.institutionId ? '' : ' To add projects go to "All my projects" collection; drag and drop projects into the collection link')));
-                    }
-                } else {
-                    var showAddProject = true;
-                    if(lastcrumb.type === 'node'){
-                        var permissions = lastcrumb.data.attributes.current_user_permissions;
-                        showAddProject = permissions.indexOf('admin') > -1 || permissions.indexOf('write') > -1;
-                    }
-                    if (lastcrumb.type === 'registration' || lastcrumb.data.type === 'registrations' || lastcrumb.data.nodeType === 'registrations'){
-                        showAddProject = false;
-                    }
-                    if(showAddProject){
-                        self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box.text-center', [
-                            m.component(AddProject, {
-                                buttonTemplate : m('.btn.btn-link[data-toggle="modal"][data-target="#addSubcomponent"]', {onclick: function() {
-                                    $osf.trackClick('myProjects', 'add-component', 'open-add-component-modal');
-                                }}, 'Add new component'),
-                                parentID : lastcrumb.data.id,
-                                modalID : 'addSubcomponent',
-                                title: 'Create new component',
-                                categoryList : self.categoryList,
-                                stayCallback : function _stayCallback_inPanel() {
-                                    self.allProjectsLoaded(false);
-                                    self.updateList(lastcrumb);
-                                },
-                                trackingCategory: 'myProjects',
-                                trackingAction: 'add-component'
-                            })
-                        ]));
-                    }
-                }
-                self.selected([]); // Empty selected
-            }
-            if(self.loadingAllNodes) {
-                self.allTopLevelProjects(self.data());
-                self.generateFiltersList();
-                if(self.loadValue() === 100){
-                    self.allProjectsLoaded(true);
-                }
-            }
-            self.data().forEach(function(item){
-                _formatDataforPO(item);
-            });
-
-            if(self.loadCounter() > 0 && self.treeData().data){
+            var nodeData;
+            var item;
+            var viewData = [];
+            if(!hasFilters){
+                nodeData = nodeObject.treeData.data;
                 var begin;
-                if(self.loadCounter() <= NODE_PAGE_SIZE){
-                    begin = 0;
-                    self.treeData().children = [];
-                } else {
-                    begin = self.treeData().children.length;
+                if(nodeObject.treeData.loaded > 0 && self.treeData().data){
+                    if(nodeObject.treeData.loaded <= NODE_PAGE_SIZE){
+                        begin = 0;
+                        self.treeData().children = [];
+                    } else {
+                        begin = self.treeData().children.length;
+                    }
+                    if (reset){ begin = 0;}
+                    updateTreeData(begin, nodeData);
+                    self.currentView().totalRows = nodeObject.loaded;
                 }
-                for (var i = begin; i < self.data().length; i++){
-                    var item = self.data()[i];
-                    if (!(lastcrumb.data.nodeType === 'registrations' && (item.attributes.retracted === true || item.attributes.pending_registration_approval === true))){
+            } else {
+                nodeData = nodeObject.flatData.data;
+                for(var j = 0; j < nodeData.length; j++){
+                    item = nodeData[j];
+                    var matchesContributors = self.currentView().contributor.length === 0;
+                    console.log(item.contributorIds);
+                    self.currentView().contributor.forEach(function(c){
+                       if(item.contributorIds.indexOf(c.data.id) !== -1){
+                           matchesContributors = true;
+                       }
+                    });
+                    console.log(item.attributes.tags);
+
+                    var matchesTags = self.currentView().tag.length === 0;
+                    self.currentView().tag.forEach(function(t){
+                        if(item.attributes.tags.indexOf(t) !== -1){
+                            matchesTags = true;
+                        }
+                    });
+                    if(matchesContributors && matchesTags){
+                        viewData.push(item);
+                    }
+                }
+                self.treeData().children = [];
+                updateTreeData(0, viewData);
+                self.currentView().totalRows = viewData.length;
+
+            }
+
+            function updateTreeData (begin, data) {
+                for (var i = begin; i < data.length; i++){
+                    item = data[i];
+                    if (!(item.attributes.retracted === true || item.attributes.pending_registration_approval === true)){
                         // Filter Retractions and Pending Registrations from the "All my registrations" view.
+                        _formatDataforPO(item);
                         var child = self.buildTree()(item, self.treeData());
                         self.treeData().add(child);
                     }
+<<<<<<< HEAD
 
+=======
+>>>>>>> f48d9e1... Complete working fetch on toggle from flatdata
                 }
                 self.updateFolder()(null, self.treeData());
             }
 
-            //sortProjects(self.data());
-            // if we have more pages keep loading the pages
-            if (value.links.next) {
-                self.loadingNodePages = true;
-                var collData = {};
-                if(!self.allProjectsLoaded()) {
-                    collData = { nodeType : 'nodes' };
-                }
-                self.updateList({link : value.links.next, data : collData });
-            } else {
-                self.loadingNodePages = false;
-                self.loadingAllNodes = false;
-            }
-            m.redraw();
         };
-        self.updateListError = function _updateListError (result){
-            self.nonLoadTemplate(m('.db-error.text-danger.m-t-lg', [
-                m('p', m('i.fa.fa-exclamation-circle')),
-                m('p','Projects for this selection couldn\'t load.'),
-                m('p', m('.btn.btn-default', {onclick : self.reloadOnClick.bind(null, self.systemCollections[0])
-                },' Reload \'All my projects\''))
-            ]));
-            self.data([]);
-            m.redraw();
-            throw new Error('Receiving initial data for File Browser failed. Please check your url');
-        };
+        //self.updateListSuccess = function _updateListSuccess (value, url) {
+        //    var lastcrumb = self.breadcrumbs()[self.breadcrumbs().length-1];
+        //    self.nodeUrlCache[url] = value;
+        //    self.loadCounter(self.loadCounter() + value.data.length);
+        //    self.loadValue(Math.round(self.loadCounter() / value.links.meta.total * 100));
+        //    if(self.loadingNodePages) {
+        //        var tmp = value.data;
+        //        while(self.nodeUrlCache[value.links.next]) {
+        //            value = self.nodeUrlCache[value.links.next];
+        //            tmp = tmp.concat(value.data);
+        //        }
+        //        self.data(self.data().concat(tmp));
+        //    } else {
+        //        self.data(value.data);
+        //    }
+        //    if(!value.data[0]){
+        //        if(lastcrumb.type === 'collection'){
+        //            if(lastcrumb.data.nodeType === 'nodes'){
+        //                self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box',
+        //                    options.institutionId ? 'This institution has no projects yet.':'You have not created any projects yet.'));
+        //            } else if (lastcrumb.data.nodeType === 'registrations'){
+        //                self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box',
+        //                    options.institutionId ? 'This institution has no registrations yet.':'You have not made any registrations yet.'));
+        //            } else {
+        //                self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box',
+        //                    'This collection has no projects.' +  (options.institutionId ? '' : ' To add projects go to "All my projects" collection; drag and drop projects into the collection link')));
+        //            }
+        //        } else {
+        //            var showAddProject = true;
+        //            if(lastcrumb.type === 'node'){
+        //                var permissions = lastcrumb.data.attributes.current_user_permissions;
+        //                showAddProject = permissions.indexOf('admin') > -1 || permissions.indexOf('write') > -1;
+        //            }
+        //            if (lastcrumb.type === 'registration' || lastcrumb.data.type === 'registrations' || lastcrumb.data.nodeType === 'registrations'){
+        //                showAddProject = false;
+        //            }
+        //            if(showAddProject){
+        //                self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box.text-center', [
+        //                    m.component(AddProject, {
+        //                        buttonTemplate : m('.btn.btn-link[data-toggle="modal"][data-target="#addSubcomponent"]', {onclick: function() {
+        //                            $osf.trackClick('myProjects', 'add-component', 'open-add-component-modal');
+        //                        }}, 'Add new component'),
+        //                        parentID : lastcrumb.data.id,
+        //                        modalID : 'addSubcomponent',
+        //                        title: 'Create new component',
+        //                        categoryList : self.categoryList,
+        //                        stayCallback : function _stayCallback_inPanel() {
+        //                            self.allProjectsLoaded(false);
+        //                            self.updateList(lastcrumb);
+        //                        },
+        //                        trackingCategory: 'myProjects',
+        //                        trackingAction: 'add-component'
+        //                    })
+        //                ]));
+        //            }
+        //        }
+        //        self.selected([]); // Empty selected
+        //    }
+        //    if(self.loadingAllNodes) {
+        //        self.allTopLevelProjects(self.data());
+        //        self.generateFiltersList();
+        //        if(self.loadValue() === 100){
+        //            self.allProjectsLoaded(true);
+        //        }
+        //    }
+        //    self.data().forEach(function(item){
+        //        _formatDataforPO(item);
+        //    });
+        //
+        //    if(self.loadCounter() > 0 && self.treeData().data){
+        //        var begin;
+        //        if(self.loadCounter() <= NODE_PAGE_SIZE){
+        //            begin = 0;
+        //            self.treeData().children = [];
+        //        } else {
+        //            begin = self.treeData().children.length;
+        //        }
+        //        for (var i = begin; i < self.data().length; i++){
+        //            var item = self.data()[i];
+        //            if (!(lastcrumb.data.nodeType === 'registrations' && (item.attributes.retracted === true || item.attributes.pending_registration_approval === true))){
+        //                // Filter Retractions and Pending Registrations from the "All my registrations" view.
+        //                var child = self.buildTree()(item, self.treeData());
+        //                self.treeData().add(child);
+        //            }
+        //
+        //        }
+        //        self.updateFolder()(null, self.treeData());
+        //    }
+        //
+        //    //sortProjects(self.data());
+        //    // if we have more pages keep loading the pages
+        //    if (value.links.next) {
+        //        self.loadingNodePages = true;
+        //        var collData = {};
+        //        if(!self.allProjectsLoaded()) {
+        //            collData = { nodeType : 'nodes' };
+        //        }
+        //        self.updateList({link : value.links.next, data : collData });
+        //    } else {
+        //        self.loadingNodePages = false;
+        //        self.loadingAllNodes = false;
+        //    }
+        //    m.redraw();
+        //};
+        //self.updateListError = function _updateListError (result){
+        //    self.nonLoadTemplate(m('.db-error.text-danger.m-t-lg', [
+        //        m('p', m('i.fa.fa-exclamation-circle')),
+        //        m('p','Projects for this selection couldn\'t load.'),
+        //        m('p', m('.btn.btn-default', {onclick : self.reloadOnClick.bind(null, self.systemCollections[0])
+        //        },' Reload \'All my projects\''))
+        //    ]));
+        //    self.data([]);
+        //    m.redraw();
+        //    throw new Error('Receiving initial data for File Browser failed. Please check your url');
+        //};
 
         // click tracking
         self.reloadOnClick = function (item) {
@@ -561,8 +610,10 @@ var MyProjects = {
             var data = self.nodes.projects.flatData.data;
             data.map(function _generateFiltersListMap(item){
                 var contributors = item.embeds.contributors.data || [];
+                item.contributorIds = [];
                 for(var i = 0; i < contributors.length; i++) {
                     var u = contributors[i];
+                    item.contributorIds.push(u.id);
                     if (u.id === window.contextVars.currentUser.id) {
                         continue;
                     }
@@ -604,7 +655,7 @@ var MyProjects = {
             for (var user in self.users){
                 var u2 = self.users[user];
                 if (u2.data.embeds.users.data) {
-                    self.nameFilters.push(new LinkObject('name', { id : u2.data.id, count : u2.count, query : { 'related_counts' : 'children' }}, u2.data.embeds.users.data.attributes.full_name, options.institutionId || false));
+                    self.nameFilters.push(new LinkObject('contributor', { id : u2.data.id, count : u2.count, query : { 'related_counts' : 'children' }}, u2.data.embeds.users.data.attributes.full_name, options.institutionId || false));
                 }
             }
             // order names
@@ -621,7 +672,7 @@ var MyProjects = {
 
         // BREADCRUMBS
         self.updateBreadcrumbs = function _updateBreadcrumbs (linkObject){
-            if (linkObject.type === 'collection' || linkObject.type === 'name' || linkObject.type === 'tag'){
+            if (linkObject.type === 'collection' || linkObject.type === 'contributor' || linkObject.type === 'tag'){
                 self.breadcrumbs([linkObject]);
                 return;
             }
@@ -744,7 +795,10 @@ var MyProjects = {
                 loadCounter : ctrl.loadCounter,
                 treeData : ctrl.treeData,
                 buildTree : ctrl.buildTree,
-                updateFolder : ctrl.updateFolder
+                updateFolder : ctrl.updateFolder,
+                currentView: ctrl.currentView,
+                nodes : ctrl.nodes,
+                indexes : ctrl.indexes
             },
             ctrl.projectOrganizerOptions
         );
@@ -813,7 +867,8 @@ var MyProjects = {
                     m('.line-full.bg-color-blue', { style : 'width: ' + ctrl.loadValue() +'%'}),
                     m('.load-message', 'Fetching more projects')
                 ]) : '',
-                ctrl.currentView().totalRows === 0 ? ctrl.nonLoadTemplate() : m('.db-poOrganizer',  m.component( ProjectOrganizer, projectOrganizerOptions))
+                // TODO Add back nothing to show scenario template
+                 m('.db-poOrganizer',  m.component( ProjectOrganizer, projectOrganizerOptions))
             ]),
             mobile ? '' : m('.db-info-toggle',{
                     onclick : function _showInfoOnclick(){
