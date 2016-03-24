@@ -5,57 +5,8 @@
 
 'use strict';
 
-var $ = require('jquery');
 var m = require('mithril');
-var Treebeard = require('treebeard');
 var Fangorn = require('js/fangorn');
-
-
-
-
-function expandOnLoad() {
-    var tb = this;  // jshint ignore: line
-    for (var i = 0; i < tb.treeData.children.length; i++) {
-        var parent = tb.treeData.children[i];
-        tb.updateFolder(null, parent);
-        expandChildren(tb, parent.children);
-    }
-}
-
-function expandChildren(tb, children) {
-    var openParent = false;
-    for (var i = 0; i < children.length; i++) {
-        var child = children[i];
-        if (child.children.length > 0) {
-            expandChildren(tb, child.children);
-        }
-    }
-    if (openParent) {
-        openAncestors(tb, children[0]);
-    }
-}
-
-function openAncestors (tb, item) {
-    var parent = item.parent();
-    if(parent && parent.id > 0) {
-        tb.updateFolder(null, parent);
-        openAncestors(tb, parent);
-    }
-}
-
-function resolveToggle(item) {
-    var toggleMinus = m('i.fa.fa-minus', ' '),
-        togglePlus = m('i.fa.fa-plus', ' ');
-
-    if (item.children.length > 0) {
-        if (item.open) {
-            return toggleMinus;
-        }
-        return togglePlus;
-    }
-    item.open = true;
-    return '';
-}
 
 
 /**
@@ -140,6 +91,5 @@ module.exports = {
           return m('i.fa.fa-refresh.fa-spin');
         }
     },
-    expandOnLoad: expandOnLoad,
     getNodesOriginal: getNodesOriginal
 };
