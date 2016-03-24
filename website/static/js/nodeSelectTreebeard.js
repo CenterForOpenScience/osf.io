@@ -1,6 +1,7 @@
 'use strict';
 
 var $ = require('jquery');
+var $osf = require('js/osfHelpers');
 var m = require('mithril');
 var ko = require('knockout');
 var Treebeard = require('treebeard');
