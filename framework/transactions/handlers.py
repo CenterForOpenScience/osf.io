@@ -55,7 +55,7 @@ def transaction_after_request(response, base_status_code_error=500):
         try:
             commands.rollback()
         except OperationFailure as ex:
-            logger.exception('Operation Failure during rollback: {}'.format(ex.message), exc_info=ex)
+            logger.exception('Operation Failure during rollback')
             return response
         else:
             return response
