@@ -13,7 +13,7 @@ from website.exceptions import (
     InvalidSanctionRejectionToken, InvalidSanctionApprovalToken, NodeStateError,
 )
 from website import tokens
-from website.project.model import (
+from website.project.sanctions import (
     Sanction,
     PreregCallbackMixin,
     RegistrationApproval,
