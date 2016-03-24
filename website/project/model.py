@@ -4063,7 +4063,7 @@ class Retraction(EmailApprovableSanction):
     APPROVE_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
     REJECT_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
 
-    initiated_by = fields.ForeignField('user', backref='initiated')
+    initiated_by = fields.ForeignField('user')
     justification = fields.StringField(default=None, validate=MaxLengthValidator(2048))
 
     def __repr__(self):
