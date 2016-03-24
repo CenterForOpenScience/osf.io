@@ -191,13 +191,8 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
     def root_target_page(self):
         return None
 
-    # For comment API compatibility
-    @property
-    def is_deleted(self):
-        return self.is_deleted
-
-    def belongs_to_node(self, node):
-        return self._id == node._id
+    def belongs_to_node(self, node_id):
+        return self.node._id == node_id
 
     # used by django and DRF
     def get_absolute_url(self):
@@ -270,7 +265,7 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
         else:
             comment.root_target = comment.target
 
-        page = getattr(comment.root_target, 'root_target_page', None)
+        page = getattr(comment.root_target.referent, 'root_target_page', None)
         if not page:
             raise ValueError('Invalid root target.')
         comment.page = page
@@ -959,13 +954,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     def root_target_page(self):
         return Comment.OVERVIEW
 
-    # For comment API compatibility
-    @property
-    def is_deleted(self):
-        return self.is_deleted
-
-    def belongs_to_node(self, node):
-        return node._id == self.node._id
+    def belongs_to_node(self, node_id):
+        return self._id == node_id
 
     @property
     def license(self):

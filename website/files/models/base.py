@@ -76,8 +76,8 @@ class TrashedFileNode(StoredObject, Commentable):
     def is_deleted(self):
         return True
 
-    def belongs_to_node(self, node):
-        return self.node._id == node._id
+    def belongs_to_node(self, node_id):
+        return self.node._id == node_id
 
     def restore(self, recursive=True, parent=None):
         """Recreate a StoredFileNode from the data in this object
@@ -191,8 +191,8 @@ class StoredFileNode(StoredObject, Commentable):
         if self.provider == 'osfstorage':
             return False
 
-    def belongs_to_node(self, node):
-        return self.node._id == node._id
+    def belongs_to_node(self, node_id):
+        return self.node._id == node_id
 
     # used by django and DRF
     def get_absolute_url(self):

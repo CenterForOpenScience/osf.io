@@ -186,10 +186,10 @@ class NodeWikiPage(GuidStoredObject, Commentable):
     @property
     def is_deleted(self):
         key = mongo_utils.to_mongo_key(self.page_name)
-        return key in self.node.wiki_pages_current
+        return key not in self.node.wiki_pages_current
 
-    def belongs_to_node(self, node):
-        return self.node._id == node._id
+    def belongs_to_node(self, node_id):
+        return self.node._id == node_id
 
     # used by django and DRF - use v1 url since there are no v2 wiki routes
     def get_absolute_url(self):
