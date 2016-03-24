@@ -177,6 +177,10 @@ class NodeWikiPage(GuidStoredObject):
     def rendered_before_update(self):
         return self.date < WIKI_CHANGE_DATE
 
+    # used by django and DRF - use v1 url since there are no v2 wiki routes
+    def get_absolute_url(self):
+        return '{}wiki/{}/'.format(self.node.absolute_url, self.page_name)
+
     def html(self, node):
         """The cleaned HTML of the page"""
         sanitized_content = render_content(self.content, node=node)

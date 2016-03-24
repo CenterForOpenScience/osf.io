@@ -8,6 +8,7 @@ from rest_framework.status import HTTP_204_NO_CONTENT
 from rest_framework.response import Response
 
 from framework.auth.oauth_scopes import CoreScopes
+from framework.mongo import utils as mongo_utils
 
 from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
@@ -45,6 +46,7 @@ from api.nodes.permissions import (
 )
 from api.logs.serializers import NodeLogSerializer
 
+from website.addons.wiki.model import NodeWikiPage
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
 from website.models import Node, Pointer, Comment, Institution, NodeLog
@@ -1890,7 +1892,13 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
         for comment in comments:
             # Deleted root targets still appear as tuples in the database,
             # but need to be None in order for the query to be correct.
-            if isinstance(comment.root_target.referent, TrashedFileNode):
+            if isinstance(comment.root_target.referent, NodeWikiPage):
+                key = mongo_utils.to_mongo_key(comment.root_target.referent.page_name)
+                if key not in comment.node.wiki_pages_current:
+                    comment.root_target = None
+                    comment.save()
+
+            elif isinstance(comment.root_target.referent, TrashedFileNode):
                 comment.root_target = None
                 comment.save()
 
