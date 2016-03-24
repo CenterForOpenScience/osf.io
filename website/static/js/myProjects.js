@@ -274,7 +274,7 @@ var MyProjects = {
             if(self.selected().length === 1 && !self.logRequestPending){
                 var item = self.selected()[0];
                 var id = item.data.id;
-                if(!item.data.attributes.retracted){
+                if(!item.data.attributes.withdrawn){
                     var urlPrefix = item.data.attributes.registration ? 'registrations' : 'nodes';
                     var url = $osf.apiV2Url(urlPrefix + '/' + id + '/logs/', { query : { 'page[size]' : 6, 'embed' : ['nodes', 'user', 'linked_node', 'template_node', 'contributors']}});
                     var promise = self.getLogs(url);
@@ -447,7 +447,7 @@ var MyProjects = {
                 }
                 for (var i = begin; i < self.data().length; i++){
                     var item = self.data()[i];
-                    if (!(lastcrumb.data.systemCollection === 'registrations' && (item.attributes.retracted === true || item.attributes.pending_registration_approval === true))){
+                    if (!(lastcrumb.data.systemCollection === 'registrations' && (item.attributes.withdrawn === true || item.attributes.pending_registration_approval === true))){
                         // Filter Retractions and Pending Registrations from the "All my registrations" view.
                         var child = self.buildTree()(item, self.treeData());
                         self.treeData().add(child);
