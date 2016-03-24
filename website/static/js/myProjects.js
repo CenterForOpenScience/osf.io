@@ -559,20 +559,6 @@ var MyProjects = {
             self.breadcrumbs().push(linkObject);
         };
 
-        var sortCollections = function(collections) {
-            var collectionsToSort = [];
-            var bookmarksCollection = {};
-            for (var i=0; i<collections.length; i++) {
-                //Keep Bookmarks on top of collections
-                if (collections[i].attributes.bookmarks) {
-                    bookmarksCollection = collections.splice(i, 1);
-                    collections.unshift(bookmarksCollection[0]);
-                    break;
-                }
-            }
-            return collections;
-        };
-
         // GET COLLECTIONS
         // Default system collections
         self.collections = m.prop([].concat(self.systemCollections));
@@ -581,7 +567,11 @@ var MyProjects = {
         self.loadCollections = function _loadCollections (url){
             var promise = m.request({method : 'GET', url : url, config : xhrconfig});
             promise.then(function(result){
-                sortCollections(result.data).forEach(function(node){
+                var sortedResults =  result.data.sort(function(x,y){
+                    return x.attributes.bookmarks ? -1 : y.attributes.bookmarks ? 1 : 0;
+                });
+                sortedResults.forEach(function(node){
+                //sortCollections(result.data).forEach(function(node){
                     var count = node.relationships.linked_nodes.links.related.meta.count;
                     self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors' }, systemCollection : false, node : node, count : m.prop(count) }, node.attributes.title));
                 });
@@ -836,6 +826,7 @@ var Collections = {
                 collections.splice(PREDEFINED_COLLECTIONS_NUMBER, 0, new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : 'children' }, systemCollection : false, node : node, count : m.prop(count) }, node.attributes.title));
                 self.collections(collections);
                 self.newCollectionName('');
+                self.calculateTotalPages();
                 self.currentPage(1); // Go to first page
                 args.sidebarInit();
             }, function(){
