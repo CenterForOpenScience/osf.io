@@ -1,4 +1,4 @@
-from django.test import RequestFactory
+from django.test import RequestFactory, Client
 from django.db import transaction
 from nose import tools as nt
 import mock
@@ -18,8 +18,7 @@ class TestSpamDetail(AdminTestCase):
         super(TestSpamDetail, self).setUp()
         self.comment = CommentFactory()
         self.user = MyUser.objects.create_user('abc@email.org', 'password')
-        self.client.login(email='abc@email.org', password='password')
-        self.request = self.client.get('/admin/id-{}'.format(self.comment._id))
+        self.request = Client().post('/admin/spam/id-{}'.format(self.comment._id))
 
     @mock.patch('admin.spam.views.SpamDetail.success_url')
     def test_add_log(self, mock_success_url):
