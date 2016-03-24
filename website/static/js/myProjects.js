@@ -199,9 +199,6 @@ var MyProjects = {
         };
 
 
-
-
-
         // Initial Breadcrumb for All my projects
         var initialBreadcrumbs = options.initialBreadcrumbs || [new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors', 'filter[parent]' : 'null' }}, 'All my projects')];
         self.breadcrumbs = m.prop(initialBreadcrumbs);
@@ -332,6 +329,7 @@ var MyProjects = {
                 return;
             }
             if (linkObject.id !== self.currentLink) {
+                self.updateFilter(linkObject);
                 self.updateBreadcrumbs(linkObject);
                 self.updateList(false, itemId); // Don't reset but load item
                 self.currentLink = linkObject.id;
@@ -354,6 +352,11 @@ var MyProjects = {
         self.updateFilter = function _updateFilter (filter) {
             var filterIndex;
             // if collection, reset currentView otherwise toggle the item in the list of currentview items
+            if(filter.type === 'node'){
+                self.currentView().contributor = [];
+                self.currentView().tag = [];
+                return;
+            }
             if(filter.type === 'collection'){
                 self.currentView().collection = filter;
                 self.currentView().contributor = [];
@@ -367,7 +370,6 @@ var MyProjects = {
                     self.currentView()[filter.type].push(filter);
                 }
             }
-            self.updateList();
         };
 
         self.removeProjectFromCollections = function _removeProjectFromCollection () {
@@ -393,7 +395,6 @@ var MyProjects = {
             }).then(function _removeProjectFromCollectionsSuccess(result){
                 self.currentLink = null; // To bypass the check when updating file list
                 self.nodeUrlCache[currentCollection.link] = null;
-                //self.updateFilter(self.activeFilter());
                 currentCollection.data.count(currentCollection.data.count() - data.data.length);
             }, function _removeProjectFromCollectionsFail(result){
                 var message = 'Some projects';
@@ -597,10 +598,10 @@ var MyProjects = {
         //};
 
         // click tracking
-        self.reloadOnClick = function (item) {
-            self.updateFilter(item);
-            $osf.trackClick('myProjects', 'projectOrganizer', 'reload-all-my-projects');
-        };
+        //self.reloadOnClick = function (item) {
+        //    self.updateFilter(item);
+        //    $osf.trackClick('myProjects', 'projectOrganizer', 'reload-all-my-projects');
+        //};
 
         /**
          * Generate this list from user's projects
@@ -669,6 +670,7 @@ var MyProjects = {
             }
             // order tags
             self.tagFilters.sort(sortByCountDesc);
+            m.redraw(true);
         };
 
         // BREADCRUMBS
@@ -677,11 +679,14 @@ var MyProjects = {
                 self.breadcrumbs([linkObject]);
                 return;
             }
+            if (linkObject.type === 'contributor' || linkObject.type === 'tag'){
+                return;
+            }
             if (linkObject.placement === 'breadcrumb'){
                 self.breadcrumbs().splice(linkObject.index+1, self.breadcrumbs().length-linkObject.index-1);
                 return;
             }
-            if(linkObject.ancestors.length > 0){
+            if(linkObject.ancestors && linkObject.ancestors.length > 0){
                 linkObject.ancestors.forEach(function(item){
                     var ancestorLink = new LinkObject('node', item.data, item.data.name);
                     self.breadcrumbs().push(ancestorLink);
@@ -855,12 +860,7 @@ var MyProjects = {
                     ])
                 ] : '',
                 m.component(Collections, ctrl),
-                m.component(Filters, {
-                    currentView : ctrl.currentView,
-                    updateFilter : ctrl.updateFilter,
-                    nameFilters : ctrl.nameFilters,
-                    tagFilters : ctrl.tagFilters
-                })
+                m.component(Filters, ctrl)
             ]) : '',
             mobile && ctrl.showSidebar() ? '' : m('.db-main', { style : poStyle },[
                 ctrl.loadValue() < 100 ? m('.line-loader', [
@@ -1092,7 +1092,7 @@ var Collections = {
         ctrl.calculateTotalPages();
 
         var collectionOnclick = function (item){
-            args.updateFilter(item);
+            args.updateFilesData(item);
             $osf.trackClick('myProjects', 'projectOrganizer', 'open-collection');
         };
         var collectionList = function () {
@@ -1509,12 +1509,12 @@ var Filters = {
             ctrl.tagTotalPages(Math.ceil(args.tagFilters.length/ctrl.tagPageSize()));
         }
         var filterContributor = function(item, tracking) {
-            args.updateFilter(item);
+            args.updateFilesData(item);
             $osf.trackClick('myProjects', 'filter', 'filter-by-contributor');
         };
 
         var filterTag = function(item, tracking) {
-            args.updateFilter(item);
+            args.updateFilesData(item);
             $osf.trackClick('myProjects', 'filter', 'filter-by-tag');
         };
 
@@ -1571,13 +1571,13 @@ var Filters = {
                     m('.pull-right', m.component(MicroPagination, { currentPage : ctrl.nameCurrentPage, totalPages : ctrl.nameTotalPages, type: 'contributors'}))
                 ]),
                 m('ul', [
-                    returnNameFilters()
+                    args.nodes.projects.flatData.loaded !== args.nodes.projects.flatData.total ? m('.ball-beat.text-center.m-t-md', m('')) : returnNameFilters()
                 ]),
                 m('h5', [
                     'Tags',
                     m('.pull-right',m.component(MicroPagination, { currentPage : ctrl.tagCurrentPage, totalPages : ctrl.tagTotalPages, type: 'tags' }))
                 ]), m('ul', [
-                    returnTagFilters()
+                    args.nodes.projects.flatData.loaded !== args.nodes.projects.flatData.total ? m('.ball-beat.text-center.m-t-md', m('')) : returnTagFilters()
                 ])
             ]
         );
