@@ -17,15 +17,15 @@ class RegistrationSerializer(NodeSerializer):
         help_text='The associated Embargo is awaiting approval by project admins.'))
     pending_registration_approval = HideIfRetraction(ser.BooleanField(source='is_pending_registration', read_only=True,
         help_text='The associated RegistrationApproval is awaiting approval by project admins.'))
-    pending_retraction = HideIfRetraction(ser.BooleanField(source='is_pending_retraction', read_only=True,
-        help_text='The registration is awaiting retraction approval by project admins.'))
-    retracted = ser.BooleanField(source='is_retracted', read_only=True,
-                                 help_text='The registration has been retracted.')
+    pending_withdrawal = HideIfRetraction(ser.BooleanField(source='is_pending_retraction', read_only=True,
+        help_text='The registration is awaiting withdrawal approval by project admins.'))
+    withdrawn = ser.BooleanField(source='is_retracted', read_only=True,
+                                 help_text='The registration has been withdrawn.')
 
     date_registered = ser.DateTimeField(source='registered_date', read_only=True, help_text='Date time of registration.')
     embargo_end_date = HideIfRetraction(ser.SerializerMethodField(help_text='When the embargo on this registration will be lifted.'))
 
-    retraction_justification = ser.CharField(source='retraction.justification', read_only=True)
+    withdrawal_justification = ser.CharField(source='retraction.justification', read_only=True)
     registration_supplement = ser.SerializerMethodField()
     registered_meta = HideIfRetraction(ser.SerializerMethodField(
         help_text='A dictionary with supplemental registration questions and responses.'))

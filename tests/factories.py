@@ -131,7 +131,7 @@ class AuthUserFactory(UserFactory):
 
     @post_generation
     def add_auth(self, create, extracted):
-        self.set_password('password')
+        self.set_password('password', notify=False)
         self.save()
         self.auth = (self.username, 'password')
 
