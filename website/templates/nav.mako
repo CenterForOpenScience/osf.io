@@ -1,3 +1,4 @@
+<%block name="nav">
 <div class="osf-nav-wrapper">
 
 <nav class="navbar navbar-inverse navbar-fixed-top" id="navbarScope" role="navigation">
@@ -99,3 +100,4 @@
         <%include file='./search_bar.mako' />
     <!-- /ko -->
 </div>
+</%block>
