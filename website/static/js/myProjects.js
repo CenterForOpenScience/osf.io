@@ -127,7 +127,7 @@ function buildCollectionNodeData (id) {
 }
 
 /**
- * Initialize File Browser. Prepeares an option object within FileBrowser
+ * Initialize File Browser. Prepares an option object within FileBrowser
  * @constructor
  */
 var MyProjects = {
