@@ -911,7 +911,6 @@ var Collections = {
                             }
                             if(!skipCount){
                                 collection.data.count(collection.data.count()+1);
-                                self.loadCollections;
                             }
                         }
                         m.request({
