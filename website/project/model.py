@@ -53,7 +53,6 @@ from website.citations.utils import datetime_to_csl
 from website.identifiers.model import IdentifierMixin
 from website.util.permissions import expand_permissions
 from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS, ADMIN
-from website.project.commentable import Commentable
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.project.licenses import (
     NodeLicense,
@@ -146,6 +145,18 @@ class MetaData(GuidStoredObject):
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
     date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
 
+class Commentable(object):
+
+    @property
+    def root_target_page(self):
+        raise NotImplementedError
+
+    @property
+    def is_deleted(self):
+        raise NotImplementedError
+
+    def belongs_to_node(self, node):
+        raise NotImplementedError
 
 class Comment(GuidStoredObject, SpamMixin, Commentable):
 
