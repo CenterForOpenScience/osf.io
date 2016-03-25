@@ -391,6 +391,53 @@ var CommentModel = function(data, $parent, $root) {
         self.author = self.$root.author;
     }
 
+    self.editableContent = ko.computed(function() {
+        var content = self.content();
+        if (!content) {
+            content = '';
+        }
+        var regex = /\[(.)(.*?)\]\(localhost:5000\/([a-z\d]{5})\)/;
+        var matches = content.match(/\[(.)(.*?)\]\(localhost:5000\/([a-z\d]{5})\)/g);
+        if (matches) {
+            for (var i = 0; i < matches.length; i++) {
+                let match = regex.exec(matches[i]);
+                var atwho = match[1];
+                let guid = match[3];
+                let mention = match[2];
+
+                content = content.replace(match[0], '<span class="atwho-inserted" data-atwho-guid="'+ guid + '" data-atwho-at-query="' + atwho + '">' + atwho + mention + '</span>');
+            }
+            return content;
+        } else {
+            return content;
+        }
+    });
+
+    self.editedContent = ko.computed(function() {
+        var content = self.content();
+        if (!content) {
+            content = '';
+        }
+        var regex = /<span.*?data-atwho-guid="([a-z\d]{5})".*?>(@[a-zA-Z]+)<\/span>/;
+        var matches = content.match(/<span.*?data-atwho-guid="([a-z\d]{5})".*?>(@[a-zA-Z]+)<\/span>/g);
+        if (matches) {
+            for (var i = 0; i < matches.length; i++) {
+                let match = regex.exec(matches[i]);
+                let guid = match[1];
+                let mention = match[2];
+                let url = 'localhost:5000/' + guid; // TODO: change the url to not localhost
+                content = content.replace(match[0], '['+ mention + '](' + url + ')');
+
+                if (guid && self.replyMentions.indexOf(guid) === -1) {
+                    self.replyMentions.push('guid');
+                }
+            }
+            return content;
+        } else {
+            return content;
+        }
+    });
+
     self.contentDisplay = ko.observable(markdown.full.render(self.content()));
 
     // Update contentDisplay with rendered markdown whenever content changes
@@ -449,6 +496,8 @@ CommentModel.prototype = new BaseComment();
 CommentModel.prototype.edit = function() {
     if (this.canEdit()) {
         this._content = this.content();
+        // TODO: make sure setting this when edit will work
+        this.content(this.editableContent());
         this.editing(true);
         this.$root.editors += 1;
     }
@@ -486,14 +535,14 @@ CommentModel.prototype.submitEdit = function(data, event) {
                     'id': self.id(),
                     'type': 'comments',
                     'attributes': {
-                        'content': self.content(),
+                        'content': self.editedContent(), // TODO: change what is being saved...make it like submitReply and bind it to the div
                         'deleted': false
                     }
                 }
             }
         });
     request.done(function(response) {
-        self.content(response.data.attributes.content);
+        self.content(response.data.attributes.content); // TODO: unsure if this needs to be changed
         self.dateModified(response.data.attributes.date_modified);
         self.editing(false);
         self.modified(true);
