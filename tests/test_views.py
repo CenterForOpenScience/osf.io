@@ -43,7 +43,7 @@ from website.util import rubeus
 from website.project.views.node import _view_project, abbrev_authors, _should_show_wiki_widget
 from website.project.decorators import check_can_access
 from website.project.signals import contributor_added
-from website.addons.github.model import AddonGitHubOauthSettings
+from website.addons.github.tests.factories import GitHubAccountFactory
 from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, _name_to_id
 
 from tests.base import (
@@ -1047,6 +1047,13 @@ class TestProjectViews(OsfTestCase):
         assert_equal(res.status_code, 302)
         assert_in(self.project.web_url_for('project_statistics', _guid=True), res.location)
 
+    def test_registration_retraction_redirect(self):
+        url = self.project.web_url_for('node_registration_retraction_redirect')
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(res.status_code, 302)
+        assert_in(self.project.web_url_for('node_registration_retraction_get', _guid=True), res.location)
+
+
     def test_update_node(self):
         url = self.project.api_url_for('update_node')
         res = self.app.put_json(url, {'title': 'newtitle'}, auth=self.auth)
@@ -1343,14 +1350,10 @@ class TestUserProfile(OsfTestCase):
 
     def test_serialize_social_addons_editable(self):
         self.user.add_addon('github')
-        user_github = self.user.get_addon('github')
-        oauth_settings = AddonGitHubOauthSettings()
-        oauth_settings.github_user_id = 'testuser'
+        oauth_settings = GitHubAccountFactory()
         oauth_settings.save()
-        user_github.oauth_settings = oauth_settings
-        user_github.save()
-        user_github.github_user_name = 'howtogithub'
-        oauth_settings.save()
+        self.user.external_accounts.append(oauth_settings)
+        self.user.save()
         url = api_url_for('serialize_social')
         res = self.app.get(
             url,
@@ -1358,20 +1361,16 @@ class TestUserProfile(OsfTestCase):
         )
         assert_equal(
             res.json['addons']['github'],
-            'howtogithub'
+            'abc'
         )
 
     def test_serialize_social_addons_not_editable(self):
         user2 = AuthUserFactory()
         self.user.add_addon('github')
-        user_github = self.user.get_addon('github')
-        oauth_settings = AddonGitHubOauthSettings()
-        oauth_settings.github_user_id = 'testuser'
+        oauth_settings = GitHubAccountFactory()
         oauth_settings.save()
-        user_github.oauth_settings = oauth_settings
-        user_github.save()
-        user_github.github_user_name = 'howtogithub'
-        oauth_settings.save()
+        self.user.external_accounts.append(oauth_settings)
+        self.user.save()
         url = api_url_for('serialize_social', uid=self.user._id)
         res = self.app.get(
             url,

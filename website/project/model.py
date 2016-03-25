@@ -392,6 +392,9 @@ class NodeLog(StoredObject):
     TAG_ADDED = 'tag_added'
     TAG_REMOVED = 'tag_removed'
 
+    FILE_TAG_ADDED = 'file_tag_added'
+    FILE_TAG_REMOVED = 'file_tag_removed'
+
     EDITED_TITLE = 'edit_title'
     EDITED_DESCRIPTION = 'edit_description'
     CHANGED_LICENSE = 'license_changed'
@@ -440,7 +443,7 @@ class NodeLog(StoredObject):
     PRIMARY_INSTITUTION_CHANGED = 'primary_institution_changed'
     PRIMARY_INSTITUTION_REMOVED = 'primary_institution_removed'
 
-    actions = [CREATED_FROM, PROJECT_CREATED, PROJECT_REGISTERED, PROJECT_DELETED, NODE_CREATED, NODE_FORKED, NODE_REMOVED, POINTER_CREATED, POINTER_FORKED, POINTER_REMOVED, WIKI_UPDATED, WIKI_DELETED, WIKI_RENAMED, MADE_WIKI_PUBLIC, MADE_WIKI_PRIVATE, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED, PERMISSIONS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, TAG_ADDED, TAG_REMOVED, EDITED_TITLE, EDITED_DESCRIPTION, UPDATED_FIELDS, FILE_MOVED, FILE_COPIED, FOLDER_CREATED, FILE_ADDED, FILE_UPDATED, FILE_REMOVED, FILE_RESTORED, ADDON_ADDED, ADDON_REMOVED, COMMENT_ADDED, COMMENT_REMOVED, COMMENT_UPDATED, MADE_CONTRIBUTOR_VISIBLE, MADE_CONTRIBUTOR_INVISIBLE, EXTERNAL_IDS_ADDED, EMBARGO_APPROVED, EMBARGO_CANCELLED, EMBARGO_COMPLETED, EMBARGO_INITIATED, RETRACTION_APPROVED, RETRACTION_CANCELLED, RETRACTION_INITIATED, REGISTRATION_APPROVAL_CANCELLED, REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED, CITATION_ADDED, CITATION_EDITED, CITATION_REMOVED, PRIMARY_INSTITUTION_CHANGED, PRIMARY_INSTITUTION_REMOVED]
+    actions = [FILE_TAG_REMOVED, FILE_TAG_ADDED, CREATED_FROM, PROJECT_CREATED, PROJECT_REGISTERED, PROJECT_DELETED, NODE_CREATED, NODE_FORKED, NODE_REMOVED, POINTER_CREATED, POINTER_FORKED, POINTER_REMOVED, WIKI_UPDATED, WIKI_DELETED, WIKI_RENAMED, MADE_WIKI_PUBLIC, MADE_WIKI_PRIVATE, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED, PERMISSIONS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, TAG_ADDED, TAG_REMOVED, EDITED_TITLE, EDITED_DESCRIPTION, UPDATED_FIELDS, FILE_MOVED, FILE_COPIED, FOLDER_CREATED, FILE_ADDED, FILE_UPDATED, FILE_REMOVED, FILE_RESTORED, ADDON_ADDED, ADDON_REMOVED, COMMENT_ADDED, COMMENT_REMOVED, COMMENT_UPDATED, MADE_CONTRIBUTOR_VISIBLE, MADE_CONTRIBUTOR_INVISIBLE, EXTERNAL_IDS_ADDED, EMBARGO_APPROVED, EMBARGO_CANCELLED, EMBARGO_COMPLETED, EMBARGO_INITIATED, RETRACTION_APPROVED, RETRACTION_CANCELLED, RETRACTION_INITIATED, REGISTRATION_APPROVAL_CANCELLED, REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED, CITATION_ADDED, CITATION_EDITED, CITATION_REMOVED, PRIMARY_INSTITUTION_CHANGED, PRIMARY_INSTITUTION_REMOVED]
 
     def __repr__(self):
         return ('<NodeLog({self.action!r}, params={self.params!r}) '
@@ -3043,7 +3046,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             self.is_public = True
         elif permissions == 'private' and self.is_public:
             if self.is_registration and not self.is_pending_embargo:
-                raise NodeStateError("Public registrations must be retracted, not made private.")
+                raise NodeStateError("Public registrations must be withdrawn, not made private.")
             else:
                 self.is_public = False
         else:
@@ -3302,10 +3305,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         """
 
         if not self.is_registration or (not self.is_public and not (self.embargo_end_date or self.is_pending_embargo)):
-            raise NodeStateError('Only public or embargoed registrations may be retracted.')
+            raise NodeStateError('Only public or embargoed registrations may be withdrawn.')
 
         if self.root is not self:
-            raise NodeStateError('Retraction of non-parent registrations is not permitted.')
+            raise NodeStateError('Withdrawal of non-parent registrations is not permitted.')
 
         retraction = self._initiate_retraction(user, justification)
         self.registered_from.add_log(
@@ -4044,7 +4047,11 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
 
 
 class Retraction(EmailApprovableSanction):
-    """Retraction object for public registrations."""
+    """
+    Retraction object for public registrations.
+    Externally (specifically in user-facing language) retractions should be referred to as "Withdrawals", i.e.
+    "Retract Registration" -> "Withdraw Registration", "Retracted" -> "Withdrawn", etc.
+    """
 
     DISPLAY_NAME = 'Retraction'
     SHORT_NAME = 'retraction'

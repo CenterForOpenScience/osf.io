@@ -25,7 +25,7 @@
 
             <!-- Menu with toggle normal -->
             <div class="osf-panel panel panel-default reset-height ${'' if 'menu' in panels_used else 'hidden visible-xs' | n}" data-bind="css: {  'osf-panel-flex': !$root.singleVis() }">
-                <div class="panel-heading clearfix" data-bind="css: {  'osf-panel-heading-flex': !$root.singleVis()}">
+                <div class="panel-heading wiki-panel-header clearfix" data-bind="css: {  'osf-panel-heading-flex': !$root.singleVis()}">
                     % if user['can_edit']:
                         <div class="wiki-toolbar-icon text-success" data-toggle="modal" data-target="#newWiki">
                             <i class="fa fa-plus text-success"></i><span>New</span>
@@ -71,7 +71,7 @@
                class="${'col-sm-{0}'.format(12 / num_columns) | n}"
                style="${'' if 'view' in panels_used else 'display: none' | n}">
               <div class="osf-panel panel panel-default no-border" data-bind="css: { 'no-border reset-height': $root.singleVis() === 'view', 'osf-panel-flex': $root.singleVis() !== 'view' }">
-                <div class="panel-heading wiki-single-heading" data-bind="css: { 'osf-panel-heading-flex': $root.singleVis() !== 'view', 'wiki-single-heading': $root.singleVis() === 'view' }">
+                <div class="panel-heading wiki-panel-header wiki-single-heading" data-bind="css: { 'osf-panel-heading-flex': $root.singleVis() !== 'view', 'wiki-single-heading': $root.singleVis() === 'view' }">
                     <div class="row">
                         <div class="col-sm-4">
                             <span class="panel-title" > <i class="fa fa-eye"> </i>  View</span>
@@ -121,7 +121,7 @@
                  style="${'' if 'edit' in panels_used else 'display: none' | n}">
               <form id="wiki-form" action="${urls['web']['edit']}" method="POST">
                 <div class="osf-panel panel panel-default" data-bind="css: { 'no-border': $root.singleVis() === 'edit' }">
-                  <div class="panel-heading clearfix" data-bind="css : { 'wiki-single-heading': $root.singleVis() === 'edit' }">
+                  <div class="panel-heading wiki-panel-header clearfix" data-bind="css : { 'wiki-single-heading': $root.singleVis() === 'edit' }">
                     <div class="row">
                       <div class="col-md-6">
                            <h3 class="panel-title" > <i class="fa fa-pencil-square-o"> </i>   Edit </h3>

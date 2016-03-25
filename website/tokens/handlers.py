@@ -26,8 +26,8 @@ def embargo_handler(action, registration, registered_from):
 
 def retraction_handler(action, registration, registered_from):
     status.push_status_message({
-        'approve': 'Your retraction approval has been accepted.',
-        'reject': 'Your disapproval has been accepted and the retraction has been cancelled.'
+        'approve': 'Your withdrawal approval has been accepted.',
+        'reject': 'Your disapproval has been accepted and the withdrawal has been cancelled.'
     }[action], kind='success', trust=False)
     # Allow decorated view function to return response
     return None
