@@ -1564,7 +1564,7 @@ var Information = {
         }
         if (args.selected().length === 1) {
             var item = args.selected()[0].data;
-            showRemoveFromCollection = !collectionFilter.data.nodeType && !item.relationships.parent;
+            showRemoveFromCollection = collectionFilter.data.nodeType === 'collection' && !item.relationships.parent;
             if(item.attributes.category === ''){
                 item.attributes.category = 'Uncategorized';
             }
