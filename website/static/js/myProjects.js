@@ -1189,7 +1189,7 @@ var Collections = {
                         $osf.trackClick('myProjects', 'add-collection', 'open-add-collection-modal');
                     }}, m('i.fa.fa-plus')) : '',
                 m('.pull-right',
-                    m.component(MicroPagination, { currentPage : ctrl.currentPage, totalPages : ctrl.totalPages })
+                    ctrl.totalPages > 1 ? m.component(MicroPagination, { currentPage : ctrl.currentPage, totalPages : ctrl.totalPages }) : ''
                 )
             ]),
             m('ul', { config: ctrl.applyDroppable },[
@@ -1549,6 +1549,9 @@ var Filters = {
         };
 
         var returnNameFilters = function _returnNameFilters(){
+            if(args.nodes.projects.flatData.total && args.nameFilters.length === 0){
+                return m('.text-muted.text-smaller', 'There are no collaborators in your projects yet.');
+            }
             var list = [];
             var item;
             var i;
@@ -1569,6 +1572,9 @@ var Filters = {
             return list;
         };
         var returnTagFilters = function _returnTagFilters(){
+            if(args.nodes.projects.flatData.total && args.tagFilters.length === 0){
+                return m('.text-muted.text-smaller', 'Your projects don\'t have any tags yet.');
+            }
             var list = [];
             var selectedCSS;
             var item;
@@ -1599,7 +1605,7 @@ var Filters = {
                         'data-placement' : 'bottom'
                     }, ''),
                     m('.pull-right',
-                        args.nameFilters.length ? m.component(MicroPagination, { currentPage : ctrl.nameCurrentPage, totalPages : ctrl.nameTotalPages, type: 'contributors'}) : ''
+                        args.nameFilters.length && ctrl.nameTotalPages > 1 ? m.component(MicroPagination, { currentPage : ctrl.nameCurrentPage, totalPages : ctrl.nameTotalPages, type: 'contributors'}) : ''
                         )
                 ]),
                 m('ul', [
@@ -1608,7 +1614,7 @@ var Filters = {
                 m('h5', [
                     'Tags',
                     m('.pull-right',
-                        args.tagFilters.length ? m.component(MicroPagination, { currentPage : ctrl.tagCurrentPage, totalPages : ctrl.tagTotalPages, type: 'tags' }) : ''
+                        args.tagFilters.length && ctrl.tagTotalPages > 1 ? m.component(MicroPagination, { currentPage : ctrl.tagCurrentPage, totalPages : ctrl.tagTotalPages, type: 'tags' }) : ''
                         )
                 ]), m('ul', [
                     args.nodes.projects.flatData.loaded !== args.nodes.projects.flatData.total ? m('.ball-beat.text-center.m-t-md', m('')) : returnTagFilters()
