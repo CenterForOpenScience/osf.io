@@ -207,9 +207,12 @@ def project_new_node(auth, node, **kwargs):
             'Your component was created successfully. You can keep working on the project page below, '
             'or go to the new <u><a href={component_url}>component</a></u>.'
         ).format(component_url=new_component.url)
-        if form.inherit_contributors.data and node.has_permission(user, ADMIN):
+        if form.inherit_contributors.data and (node.has_permission(user, ADMIN) or node.has_permission(user, WRITE)):
             for contributor in node.contributors:
                 new_component.add_contributor(contributor, permissions=node.get_permissions(contributor), auth=auth)
+                if contributor is user and not node.has_permission(contributor, 'admin'):
+                    new_component.set_permissions(contributor, ['read', 'write', 'admin'])
+
             new_component.save()
             redirect_url = new_component.url + 'contributors/'
             message = (
