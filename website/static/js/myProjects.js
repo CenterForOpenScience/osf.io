@@ -1575,7 +1575,7 @@ var Information = {
         }
         if (args.selected().length === 1) {
             var item = args.selected()[0].data;
-            showRemoveFromCollection = collectionFilter.data.nodeType === 'collection' && !item.relationships.parent;
+            showRemoveFromCollection = collectionFilter.data.nodeType === 'collection' && args.selected()[0].parentID === 0; // Be able to remove top level items but not their children
             if(item.attributes.category === ''){
                 item.attributes.category = 'Uncategorized';
             }
