@@ -524,7 +524,11 @@ var MyProjects = {
                         self.treeData().add(child);
                     }
                 }
+                self.selected([]);
                 self.updateFolder()(null, self.treeData());
+                if(self.treeData().children[0]){
+                    $('.tb-row').first().trigger('click');
+                }
             }
 
         };
