@@ -9,7 +9,7 @@ from tests.base import OsfTestCase
 
 from website.addons.github import utils
 from website.addons.base.exceptions import HookError
-from website.addons.github.model import AddonGitHubNodeSettings
+from website.addons.github.model import GitHubNodeSettings
 
 
 def make_signature(secret, data):
@@ -25,7 +25,7 @@ class TestHookVerify(OsfTestCase):
 
     def setUp(self):
         super(TestHookVerify, self).setUp()
-        self.node_settings = AddonGitHubNodeSettings(
+        self.node_settings = GitHubNodeSettings(
             hook_secret='speakfriend',
         )
 
