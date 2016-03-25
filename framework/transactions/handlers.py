@@ -3,6 +3,7 @@
 import httplib
 import logging
 
+import sys
 from flask import request, current_app
 from pymongo.errors import OperationFailure
 
@@ -52,7 +53,14 @@ def transaction_after_request(response, base_status_code_error=500):
     if view_has_annotation(NO_AUTO_TRANSACTION_ATTR):
         return response
     if response.status_code >= base_status_code_error:
-        commands.rollback()
+        original_exception = sys.exc_info()
+        try:
+            commands.rollback()
+        except OperationFailure:
+            logger.error(original_exception, exc_info=1)
+            return response
+        else:
+            return response
     else:
         try:
             commands.commit()
