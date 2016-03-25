@@ -528,7 +528,11 @@ var MyProjects = {
 =======
 >>>>>>> f48d9e1... Complete working fetch on toggle from flatdata
                 }
+                self.selected([]);
                 self.updateFolder()(null, self.treeData());
+                if(self.treeData().children[0]){
+                    $('.tb-row').first().trigger('click');
+                }
             }
 
         };
