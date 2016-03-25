@@ -950,7 +950,8 @@ var Collections = {
                 hoverClass: 'bg-color-hover',
                 drop: function( event, ui ) {
                     var collection = self.collections()[$(this).attr('data-index')];
-                    args.nodeUrlCache[collection.link] = null;
+                    var collectionLink = $osf.apiV2Url(collection.data.path, { query : collection.data.query});
+                    args.nodeUrlCache[collectionLink] = null;
                     var dataArray = [];
                     // If multiple items are dragged they have to be selected to make it work
                     if (args.selected().length > 1) {
