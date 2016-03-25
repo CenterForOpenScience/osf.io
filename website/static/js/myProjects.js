@@ -500,7 +500,7 @@ var MyProjects = {
                     });
                     var matchesTags = self.currentView().tag.length === 0;
                     self.currentView().tag.forEach(function(t){
-                        if(item.attributes.tags.indexOf(t) !== -1){
+                        if(item.attributes.tags.indexOf(t.label) !== -1){
                             matchesTags = true;
                         }
                     });
