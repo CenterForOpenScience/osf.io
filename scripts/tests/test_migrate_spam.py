@@ -55,16 +55,22 @@ class TestMigrateSpam(OsfTestCase):
 
     def test_migrate_status(self):
         migrate_spam.migrate_status(migrate_spam.get_no_status_targets())
-        comment_1 = Comment.load(self.comment_1._id)
-        comment_2 = Comment.load(self.comment_2._id)
-        nt.assert_equal(comment_1.spam_status, Comment.FLAGGED)
-        nt.assert_equal(comment_2.spam_status, Comment.FLAGGED)
+        self.comment_2.reload()
+        self.comment_1.reload()
+        nt.assert_equal(self.comment_1.spam_status, Comment.FLAGGED)
+        nt.assert_equal(self.comment_2.spam_status, Comment.FLAGGED)
 
     def test_migrate_latest(self):
         migrate_spam.migrate_status(migrate_spam.get_no_status_targets())
         migrate_spam.migrate_latest(migrate_spam.get_no_latest_targets())
         date = self.generic_report['date']
-        comment_1 = Comment.load(self.comment_4._id)
-        comment_2 = Comment.load(self.comment_6._id)
-        nt.assert_almost_equal(comment_1.latest_report, date, delta=timedelta(microseconds=1000))
-        nt.assert_almost_equal(comment_2.latest_report, date, delta=timedelta(microseconds=1000))
+        self.comment_4.reload()
+        self.comment_6.reload()
+        nt.assert_almost_equal(
+            self.comment_4.latest_report, date,
+            delta=timedelta(microseconds=1000)
+        )
+        nt.assert_almost_equal(
+            self.comment_6.latest_report, date,
+            delta=timedelta(microseconds=1000)
+        )

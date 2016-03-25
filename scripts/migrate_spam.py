@@ -34,7 +34,7 @@ def migrate_latest(records):
 
 
 def get_no_status_targets():
-    return [c for c in Comment.find(Q('spam_status', 'eq', None))]
+    return Comment.find(Q('spam_status', 'eq', None))
 
 
 def get_no_latest_targets():
@@ -43,7 +43,7 @@ def get_no_latest_targets():
         Q('spam_status', 'ne', Comment.UNKNOWN) &
         Q('spam_status', 'ne', None)
     )
-    return [c for c in Comment.find(query)]
+    return Comment.find(query)
 
 
 def main():
@@ -60,17 +60,14 @@ def main():
         latest = False
     if not dry_run:
         script_utils.add_file_logger(logger, __file__)
-    if status:
-        with TokuTransaction():
-            migrate_status(get_no_status_targets())
-            if dry_run:
-                raise Exception('Dry Run -- Aborting Transaction')
-    if latest:
-        with TokuTransaction():
-            migrate_latest(get_no_latest_targets())
-            if dry_run:
-                raise Exception('Dry Run -- Aborting Transaction')
     init_app(set_backends=True, routes=False)
+    with TokuTransaction():
+        if status:
+            migrate_status(get_no_status_targets())
+        if latest:
+            migrate_latest(get_no_latest_targets())
+        if dry_run:
+            raise Exception('Dry Run -- Aborting Transaction')
 
 
 if __name__ == '__main__':

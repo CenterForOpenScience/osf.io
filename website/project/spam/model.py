@@ -99,7 +99,7 @@ class SpamMixin(StoredObject):
         if 'text' not in report:
             report['text'] = None
         self.reports[user._id] = report
-        self.latest_report = date
+        self.latest_report = report['date']
         if save:
             self.save()
 
