@@ -168,14 +168,7 @@ def auth_email_logout(token, user):
     """When a user is adding an email or merging an account, add the email to the user and log them out.
     """
     redirect_url = web_url_for('auth_login') + '?existing_user=True'
-    try:
-        user.confirm_token(token)
-    except:
-        raise AttributeError(
-            '{} has no confirm_token'.format(
-                user.fullname
-            ))
-
+    if user.confirm_token(token):
         try:
             user_merge = User.find_one(Q('emails', 'iexact', user.email_verifications[token]['email']))
         except NoResultsFound:

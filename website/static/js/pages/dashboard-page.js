@@ -71,53 +71,57 @@ function confirm_emails(emails) {
         var failMessage = 'There was a problem. Please contact <a href="mailto: support@osf.io">support@osf.io</a> ' +
         'if the problem persists.';
 
-        bootbox.confirm({
+        bootbox.dialog({
             title: title,
             message: mergeMessage,
-            callback: function(confirmed) {
-                if (confirmed) {
-                    $osf.putJSON(
-                        confirmedEmailURL,
-                        email[0]
-                    ).done(function() {
-                        $osf.growl('Success',confirmMessage, 'success', 3000);
-                    }).fail(function(xhr, textStatus, error) {
-                        Raven.captureMessage('Could not set user timezone or locale', {
-                            url: url,
-                            textStatus: textStatus,
-                            error: error
+            onEscape: function() {},
+            closeButton: true,
+            buttons: {
+                confirm: {
+                    label: 'Add email',
+                    className: 'btn-success',
+                    callback: function () {
+                        $osf.putJSON(
+                            confirmedEmailURL,
+                            email[0]
+                        ).done(function () {
+                            $osf.growl('Success', confirmMessage, 'success', 3000);
+                        }).fail(function (xhr, textStatus, error) {
+                            Raven.captureMessage('Could not set user timezone or locale', {
+                                url: url,
+                                textStatus: textStatus,
+                                error: error
+                            });
+                            $osf.growl('Error',
+                                failMessage,
+                                'danger'
+                            );
                         });
-                        $osf.growl('Error',
-                            failMessage,
-                            'danger'
-                        );
-                    });
-                    confirm_emails(emails);
-                }
-                else {
-                    $osf.putJSON(
-                        removeConfirmedEmailURL,
-                        email[0]
-                    ).done(function() {
-                        $osf.growl('Warning', nopeMessage, 'warning');
-                    }).fail(function(xhr, textStatus, error) {
-                       Raven.captureMessage('Could not set user timezone or locale', {
-                            url: url,
-                            textStatus: textStatus,
-                            error: error
+                        confirm_emails(emails);
+                    }
+                },
+                cancel: {
+                    label: 'Cancel',
+                    className: 'btn-default',
+                    callback: function () {
+                        $osf.putJSON(
+                            removeConfirmedEmailURL,
+                            email[0]
+                        ).done(function () {
+                            $osf.growl('Warning', nopeMessage, 'warning', 8000);
+                        }).fail(function (xhr, textStatus, error) {
+                            Raven.captureMessage('Could not set user timezone or locale', {
+                                url: url,
+                                textStatus: textStatus,
+                                error: error
+                            });
+                            $osf.growl('Error',
+                                failMessage,
+                                'danger'
+                            );
                         });
-                        $osf.growl('Error',
-                            failMessage,
-                            'danger'
-                        );
-                    });
-                    confirm_emails(emails);
-                }
-            },
-            buttons:{
-                confirm:{
-                    label:'Add email',
-                    className:'btn-success'
+                        confirm_emails(emails);
+                    }
                 }
             }
         });
