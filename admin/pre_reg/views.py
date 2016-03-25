@@ -4,7 +4,7 @@ import json
 import operator
 from copy import deepcopy
 
-from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.decorators import user_passes_test
 from django.core.paginator import Paginator, EmptyPage
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseBadRequest
@@ -14,7 +14,10 @@ from django.views.decorators.csrf import csrf_exempt
 from modularodm import Q
 
 from admin.common_auth.logs import (
-    update_admin_log, ACCEPT_PREREG, REJECT_PREREG, COMMENT_PREREG
+    update_admin_log,
+    ACCEPT_PREREG,
+    REJECT_PREREG,
+    COMMENT_PREREG,
 )
 from admin.pre_reg import serializers
 from admin.pre_reg.forms import DraftRegistrationForm
@@ -56,7 +59,6 @@ def is_in_prereg_group(user):
     return user.is_in_group('prereg_group')
 
 
-@login_required
 @user_passes_test(is_in_prereg_group)
 def prereg(request):
     """Redirects to prereg page if user has prereg access
@@ -88,7 +90,6 @@ def prereg(request):
     return render(request, 'pre_reg/prereg.html', context)
 
 
-@login_required
 @user_passes_test(is_in_prereg_group)
 def view_draft(request, draft_pk):
     """Redirects to prereg form review page if user has prereg access
@@ -101,15 +102,15 @@ def view_draft(request, draft_pk):
     }
     return render(request, 'pre_reg/edit_draft_registration.html', context)
 
-@login_required
+
 @user_passes_test(is_in_prereg_group)
 def view_file(request, node_id, provider, file_id):
     file = FileNode.load(file_id)
     wb_url = file.generate_waterbutler_url()
     return redirect(wb_url)
 
+
 @csrf_exempt
-@login_required
 @user_passes_test(is_in_prereg_group)
 def approve_draft(request, draft_pk):
     """Approves current draft
@@ -123,13 +124,12 @@ def approve_draft(request, draft_pk):
     draft.approve(user)
     update_admin_log(
         request.user.id, draft._id, 'Draft Registration',
-        'approved', ACCEPT_PREREG
+        'approved', action_flag=ACCEPT_PREREG
     )
     return redirect(reverse('pre_reg:prereg') + "?page={0}".format(request.POST.get('page', 1)), permanent=True)
 
 
 @csrf_exempt
-@login_required
 @user_passes_test(is_in_prereg_group)
 def reject_draft(request, draft_pk):
     """Rejects current draft
@@ -143,12 +143,12 @@ def reject_draft(request, draft_pk):
     draft.reject(user)
     update_admin_log(
         request.user.id, draft._id, 'Draft Registration',
-        'rejected', REJECT_PREREG)
+        'rejected', action_flag=REJECT_PREREG
+    )
     return redirect(reverse('pre_reg:prereg') + "?page={0}".format(request.POST.get('page', 1)), permanent=True)
 
 
 @csrf_exempt
-@login_required
 def update_draft(request, draft_pk):
     """Updates current draft to save admin comments
 
@@ -172,10 +172,9 @@ def update_draft(request, draft_pk):
         data = deepcopy(draft.registration_metadata)
         log_message = list()
         for key, value in data.items():
-            comment = schema_data.get(key, {}).get('comments', [])
-            data[key]['comments'] = comment
-            if comment != []:
-                log_message.append('{}: {}'.format(key, comment[0]['value']))
+            comments = schema_data.get(key, {}).get('comments', [])
+            for comment in comments:
+                log_message.append('{}: {}'.format(key, comment['value']))
         try:
             draft.update_metadata(data)
             draft.save()

@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from django.contrib import admin
 from django.contrib.admin.models import DELETION
 from django.contrib.auth.admin import UserAdmin
@@ -6,9 +8,9 @@ from django.contrib.auth.models import Permission
 from django.core.urlresolvers import reverse
 from django.utils.html import escape
 
-from .logs import OSFLogEntry
-from forms import CustomUserRegistrationForm
-from .models import MyUser
+from admin.common_auth.logs import OSFLogEntry
+from admin.common_auth.forms import CustomUserRegistrationForm
+from admin.common_auth.models import MyUser
 
 
 class PermissionAdmin(admin.ModelAdmin):

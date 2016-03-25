@@ -4,9 +4,15 @@ from admin.common_auth.models import MyUser
 
 
 class UserFactory(factory.Factory):
-    FACTORY_FOR = MyUser
+    class Meta:
+        model = MyUser
 
     id = 123
     email = 'cello@email.org'
     first_name = 'Yo-yo'
     last_name = 'Ma'
+    osf_user = 'abc12'
+
+    @classmethod
+    def is_in_group(cls, value):
+        return True
