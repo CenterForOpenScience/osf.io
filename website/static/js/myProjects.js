@@ -1594,14 +1594,18 @@ var Filters = {
                         'title': 'Click a name to display the selected contributor’s public projects, as well as their private projects on which you are at least a read contributor.',
                         'data-placement' : 'bottom'
                     }, ''),
-                    m('.pull-right', m.component(MicroPagination, { currentPage : ctrl.nameCurrentPage, totalPages : ctrl.nameTotalPages, type: 'contributors'}))
+                    m('.pull-right',
+                        args.nameFilters.length ? m.component(MicroPagination, { currentPage : ctrl.nameCurrentPage, totalPages : ctrl.nameTotalPages, type: 'contributors'}) : ''
+                        )
                 ]),
                 m('ul', [
                     args.nodes.projects.flatData.loaded !== args.nodes.projects.flatData.total ? m('.ball-beat.text-center.m-t-md', m('')) : returnNameFilters()
                 ]),
                 m('h5', [
                     'Tags',
-                    m('.pull-right',m.component(MicroPagination, { currentPage : ctrl.tagCurrentPage, totalPages : ctrl.tagTotalPages, type: 'tags' }))
+                    m('.pull-right',
+                        args.tagFilters.length ? m.component(MicroPagination, { currentPage : ctrl.tagCurrentPage, totalPages : ctrl.tagTotalPages, type: 'tags' }) : ''
+                        )
                 ]), m('ul', [
                     args.nodes.projects.flatData.loaded !== args.nodes.projects.flatData.total ? m('.ball-beat.text-center.m-t-md', m('')) : returnTagFilters()
                 ])
