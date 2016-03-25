@@ -98,6 +98,7 @@ var MyProjects = {
         self.wrapperSelector = options.wrapperSelector;  // For encapsulating each implementation of this component in multiple use
         self.projectOrganizerOptions = options.projectOrganizerOptions || {};
         self.viewOnly = options.viewOnly || false;
+        self.institutionId = options.institutionId || false;
         self.currentLink = ''; // Save the link to compare if a new link is being requested and avoid multiple calls
         self.reload = m.prop(false); // Gets set to true when treebeard link changes and it needs to be redrawn
         self.nonLoadTemplate = m.prop(''); // Template for when data is not available or error happens
@@ -314,7 +315,7 @@ var MyProjects = {
             if(self.selected().length === 1 && !self.logRequestPending){
                 var item = self.selected()[0];
                 var id = item.data.id;
-                if(!item.data.attributes.retracted){
+                if(!item.data.attributes.withdrawn){
                     var urlPrefix = item.data.attributes.registration ? 'registrations' : 'nodes';
                     var url = $osf.apiV2Url(urlPrefix + '/' + id + '/logs/', { query : { 'page[size]' : 6, 'embed' : ['nodes', 'user', 'linked_node', 'template_node', 'contributors']}});
                     var promise = self.getLogs(url);
@@ -758,7 +759,7 @@ var MyProjects = {
             ctrl.projectOrganizerOptions
         );
         return [
-            m('.dashboard-header', m('.row', [
+            !ctrl.institutionId ? m('.dashboard-header', m('.row', [
                 m('.col-xs-8', m('h3', [
                     'My Projects ',
                     m('small.hidden-xs', 'Browse and organize all your projects')
@@ -778,7 +779,7 @@ var MyProjects = {
                     trackingCategory: 'myProjects',
                     trackingAction: 'add-project'
                 })))
-            ])),
+            ])) : '',
             m('.db-header.row', [
                 m('.col-xs-12.col-sm-8.col-lg-9', m.component(Breadcrumbs,ctrl)),
                 m('.db-buttonRow.col-xs-12.col-sm-4.col-lg-3', [

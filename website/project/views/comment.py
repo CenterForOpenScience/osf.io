@@ -137,27 +137,18 @@ def is_reply(target):
 
 def _update_comments_timestamp(auth, node, page=Comment.OVERVIEW, root_id=None):
     if node.is_contributor(auth.user):
-        user_timestamp = auth.user.comments_viewed_timestamp
-        node_timestamp = user_timestamp.get(node._id, None)
-        if not node_timestamp:
-            user_timestamp[node._id] = dict()
-        timestamps = auth.user.comments_viewed_timestamp[node._id]
         enqueue_postcommit_task(partial(ban_url, node, []))
+        if root_id is not None:
+            guid_obj = Guid.load(root_id)
+            if guid_obj is not None:
+                enqueue_postcommit_task(partial(ban_url, guid_obj.referent, []))
 
         # update node timestamp
         if page == Comment.OVERVIEW:
-            timestamps[Comment.OVERVIEW] = datetime.utcnow()
-            auth.user.save()
-            return {node._id: auth.user.comments_viewed_timestamp[node._id][Comment.OVERVIEW].isoformat()}
-
-        # set up timestamp dictionary for files page
-        if not timestamps.get(page, None):
-            timestamps[page] = dict()
-
-        # if updating timestamp on a specific file page
-        timestamps[page][root_id] = datetime.utcnow()
+            root_id = node._id
+        auth.user.comments_viewed_timestamp[root_id] = datetime.utcnow()
         auth.user.save()
-        return {node._id: auth.user.comments_viewed_timestamp[node._id][page][root_id].isoformat()}
+        return {root_id: auth.user.comments_viewed_timestamp[root_id].isoformat()}
     else:
         return {}
 
