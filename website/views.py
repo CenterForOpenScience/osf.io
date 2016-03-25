@@ -258,3 +258,6 @@ def redirect_howosfworks(**kwargs):
 def redirect_to_home():
     # Redirect to support page
     return redirect('/')
+
+def redirect_meetings_analytics_link(**kwargs):
+    return redirect('/getting-started/?utm_source=osf4m&utm_medium=email&utm_campaign=success')

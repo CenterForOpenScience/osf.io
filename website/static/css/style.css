@@ -635,3 +635,13 @@ button.close {
     background-color: #52A452;
     border-color: #54AC54;
 }
+
+
+/* Trying out to move to osf-style */
+.comma-separated:after {
+    content: ", ";
+}
+
+.comma-separated:last-of-type:after {
+    content: "";
+}
