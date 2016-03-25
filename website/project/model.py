@@ -1024,7 +1024,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     @property
     def private_links(self):
-        return self.privatelink__shared
+        # TODO: Consumer code assumes this is a list. Hopefully there aren't many links?
+        return list(PrivateLink.find(Q('nodes', 'eq', self._id)))
 
     @property
     def private_links_active(self):
@@ -3524,8 +3525,8 @@ class PrivateLink(StoredObject):
     is_deleted = fields.BooleanField(default=False)
     anonymous = fields.BooleanField(default=False)
 
-    nodes = fields.ForeignField('node', list=True, backref='shared')
-    creator = fields.ForeignField('user', backref='created')
+    nodes = fields.ForeignField('node', list=True)
+    creator = fields.ForeignField('user')
 
     @property
     def node_ids(self):

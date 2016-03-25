@@ -2629,7 +2629,7 @@ class TestProject(OsfTestCase):
         link = PrivateLinkFactory()
         link.nodes.append(self.project)
         link.save()
-        assert_in(link, self.project.private_links)
+        assert_in(link._id, [e._id for e in self.project.private_links])
 
     @mock.patch('framework.auth.core.Auth.private_link')
     def test_has_anonymous_link(self, mock_property):
