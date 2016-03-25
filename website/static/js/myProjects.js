@@ -416,19 +416,26 @@ var MyProjects = {
 
             function collectionSuccess (result){
                 console.log(result);
-                result.data.forEach(function(node){
+                var displayError = false;
+                result.data.forEach(function(node, index){
                     var indexedNode = self.indexes()[node.id];
                     if(indexedNode){
                         collectionData.push(indexedNode);
                     } else {
                         var url = $osf.apiV2Url('nodes/' + node.id + '/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
-                        m.request({method : 'GET', url : url, config : xhrconfig}).then(function(result){
-                            collectionData.push(result.data);
-                            self.indexes()[node.id] = result.data;
-                        }, function(result){
+                        m.request({method : 'GET', url : url, config : xhrconfig}).then(function(r){
+                            collectionData.push(r.data);
+                            self.indexes()[node.id] = r.data;
+                            if(index === result.data.length - 1 && displayError){
+                                $osf.growl(' Some projects for this collection could not be loaded', 'Please try again later.');
+                            }
+                        }, function(r){
                             var message = 'Error loading node not belonging to user for collections with node id  ' + node.id;
-                            Raven.captureMessage(message, {requestReturn: result});
-                            $osf.growl(' Some projects for this collection could not be loaded', 'Please try again later.');
+                            displayError = true;
+                            Raven.captureMessage(message, {requestReturn: r});
+                            if(index === result.data.length -1 && displayError){
+                                $osf.growl(' Some projects for this collection could not be loaded', 'Please try again later.');
+                            }
                         });
                     }
                 });
