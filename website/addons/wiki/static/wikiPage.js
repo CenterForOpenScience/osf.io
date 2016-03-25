@@ -160,7 +160,7 @@ var defaultOptions = {
 
 function ViewModel(options){
     var self = this;
-
+    
     // enabled?
     self.editVis = ko.observable(options.editVisible);
     self.viewVis = ko.observable(options.viewVisible);

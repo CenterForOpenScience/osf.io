@@ -4,6 +4,7 @@ var WikiEditor = require('./WikiEditor.js');
 var LanguageTools = ace.require('ace/ext/language_tools');
 
 var activeUsers = [];
+
 var collaborative = (typeof WebSocket !== 'undefined' && typeof sharejs !== 'undefined');
 
 var ShareJSDoc = function(url, metadata, viewText, editor) {
@@ -78,6 +79,7 @@ var ShareJSDoc = function(url, metadata, viewText, editor) {
             doc.create('text');
         }
 
+        /* This hook does not run without ShareJS connected */
         viewModel.fetchData().done(function(response) {
             doc.attachAce(self.editor);
             if (viewModel.wikisDiffer(viewModel.currentText(), response.wiki_draft)) {
@@ -186,7 +188,7 @@ var ShareJSDoc = function(url, metadata, viewText, editor) {
             viewModel.status('connected');
         }
     };
-
+    
     // This will be called on both connect and reconnect
     doc.on('subscribe', register);
 

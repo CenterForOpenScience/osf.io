@@ -42,18 +42,35 @@ ko.bindingHandlers.ace = {
 
 function ViewModel(url, viewText) {
     var self = this;
-
+    
     self.initText = ko.observable('');
     self.currentText = viewText; //from wikiPage's VM
     self.activeUsers = ko.observableArray([]);
+    
     self.status = ko.observable('connecting');
     self.throttledStatus = ko.observable(self.status());
     self.autocom = ko.observable(false);
 
-    self.displayCollaborators = ko.computed(function() {
-       return self.activeUsers().length > 1;
+   self.displayCollaborators = ko.computed(function() {
+       return (self.activeUsers().length > 1);
     });
-
+    
+    // Display the icons of up to the first 18 collaborators on a page
+    self.showCollaborators = ko.computed(function() {
+        if (self.activeUsers().length > 18) {
+            return self.activeUsers().slice(0,18);
+        }
+        return self.activeUsers();
+    });
+    
+    // Show text that says "and # more" collaborators
+    self.andOthersMessage = ko.computed(function() {
+        if (self.activeUsers().length > 18) {
+            var leftovers = self.activeUsers().slice(18, self.activeUsers().length);
+            return '...and ' + leftovers.length + ' more';
+        }
+    });
+    
     // Throttle the display when updating status.
     self.updateStatus = function() {
         self.throttledStatus(self.status());
