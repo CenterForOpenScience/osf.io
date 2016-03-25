@@ -565,7 +565,7 @@ class Pointer(StoredObject):
     primary = False
 
     _id = fields.StringField()
-    node = fields.ForeignField('node', backref='_pointed')
+    node = fields.ForeignField('node')
 
     _meta = {'optimistic': True}
 
@@ -1832,7 +1832,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     @property
     def pointed(self):
-        return getattr(self, '_pointed', [])
+        return Pointer.find(Q('node', 'eq', self._id))
 
     def pointing_at(self, pointed_node_id):
         """This node is pointed at another node.
