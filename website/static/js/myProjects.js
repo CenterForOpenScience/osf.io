@@ -414,25 +414,46 @@ var MyProjects = {
 
         // Update what is viewed
         self.updateList = function _updateList (reset, itemId, collectionObject){
+
+            function collectionSuccess (result){
+                console.log(result);
+                result.data.forEach(function(node){
+                    var indexedNode = self.indexes()[node.id];
+                    if(indexedNode){
+                        collectionData.push(indexedNode);
+                    } else {
+                        var url = $osf.apiV2Url('nodes/' + node.id + '/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
+                        m.request({method : 'GET', url : url, config : xhrconfig}).then(function(result){
+                            collectionData.push(result.data);
+                            self.indexes()[node.id] = result.data;
+                        }, function(result){
+                            var message = 'Error loading node not belonging to user for collections with node id  ' + node.id;
+                            Raven.captureMessage(message, {requestReturn: result});
+                            $osf.growl(' Some projects for this collection could not be loaded', 'Please try again later.');
+                        });
+                    }
+                });
+                self.treeData().children = [];
+                updateTreeData(0,collectionData);
+            }
+
             if(collectionObject){ // A regular collection including bookmarks
                 console.log(collectionObject);
                 var collectionData = [];
                 var linkedNodesUrl = $osf.apiV2Url(collectionObject.data.path, { query : collectionObject.data.query});
-                m.request({method : 'GET', url : linkedNodesUrl, config : xhrconfig}).then(function(result){
-                    console.log(result);
-                    result.data.forEach(function(node){
-                        var indexedNode = self.indexes()[node.id];
-                        if(indexedNode){
-                            collectionData.push(indexedNode);
-                        }
+                if(self.nodeUrlCache[linkedNodesUrl]){
+                    collectionSuccess(self.nodeUrlCache[linkedNodesUrl]);
+                } else {
+                    m.request({method : 'GET', url : linkedNodesUrl, config : xhrconfig}).then(function(result){
+                        self.nodeUrlCache[linkedNodesUrl] = result;
+                        collectionSuccess(result);
+                    }, function(result){
+                        var message = 'Error loading nodes from collection id  ' + collectionObject.data.node.id;
+                        Raven.captureMessage(message, {requestReturn: result});
+                        $osf.growl(' "' + collectionObject + '" contents couldn\'t load', 'Please try again later.');
                     });
-                    self.treeData().children = [];
-                    updateTreeData(0,collectionData);
-                }, function(result){
-                    var message = 'Error loading nodes from collection id  ' + collectionObject.data.node.id;
-                    Raven.captureMessage(message, {requestReturn: result});
-                    $osf.growl(' "' + collectionObject + '" contents couldn\'t load', 'Please try again later.');
-                });
+                }
+
                 return;
             }
             if(itemId){ // Being called from inside project  organizer
