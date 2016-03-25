@@ -85,11 +85,6 @@ var getContributorList = function(input, nodeId) {
 // should only need to do this once
 getContributorList(input, nodeId);
 input.atwho(at_config).atwho(plus_config);
-// input.on('inserted.atwho', function(event, flag, query) {
-//     console.log(flag);
-//     console.log(event, 'matched ' + flag + ' and the result is ' + query);
-// });
-
 
 // Maximum length for comments, in characters
 var MAXLENGTH = 500;
@@ -155,6 +150,31 @@ var BaseComment = function() {
     self.replying = ko.observable(false);
     self.replyContent = ko.observable('');
     self.replyMentions = ko.observableArray([]);
+
+    self.saveContent = ko.computed(function() {
+        var content = self.replyContent();
+        if (!content) {
+            content = '';
+        }
+        var regex = /<span.*?data-atwho-guid="([a-z\d]{5})".*?>(@[a-zA-Z]+)<\/span>/;
+        var matches = content.match(/<span.*?data-atwho-guid="([a-z\d]{5})".*?>(@[a-zA-Z]+)<\/span>/g);
+        if (matches) {
+            for (var i = 0; i < matches.length; i++) {
+                let match = regex.exec(matches[i]);
+                let guid = match[1];
+                let mention = match[2];
+                let url = 'localhost:5000/' + guid; // TODO: change the url to not localhost
+                content = content.replace(match[0], '['+ mention + '](' + url + ')');
+
+                if (guid && self.replyMentions.indexOf(guid) === -1) {
+                    self.replyMentions.push('guid');
+                }
+            }
+            return content;
+        } else {
+            return content;
+        }
+    });
 
     self.submittingReply = ko.observable(false);
 
@@ -291,7 +311,7 @@ BaseComment.prototype.submitReply = function() {
                 'data': {
                     'type': 'comments',
                     'attributes': {
-                        'content': self.replyContent()
+                        'content': self.saveContent()
                     },
                     'relationships': {
                         'target': {
@@ -307,6 +327,8 @@ BaseComment.prototype.submitReply = function() {
     request.done(function(response) {
         self.cancelReply();
         self.replyContent(null);
+        // do something with the mentions before resetting
+        self.replyMentions(null);
         var newComment = new CommentModel(response.data, self, self.$root);
         newComment.loading(false);
         self.comments.unshift(newComment);
