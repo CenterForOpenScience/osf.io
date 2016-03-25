@@ -531,7 +531,7 @@ def watch_post(auth, node, **kwargs):
 
     return {
         'status': 'success',
-        'watchCount': len(node.watchconfig__watched)
+        'watchCount': node.watches.count()
     }
 
 
@@ -550,7 +550,7 @@ def unwatch_post(auth, node, **kwargs):
 
     return {
         'status': 'success',
-        'watchCount': len(node.watchconfig__watched)
+        'watchCount': node.watches.count()
     }
 
 
@@ -578,7 +578,7 @@ def togglewatch_post(auth, node, **kwargs):
 
     return {
         'status': 'success',
-        'watchCount': len(node.watchconfig__watched),
+        'watchCount': node.watches.count(),
         'watched': user.is_watching(node)
     }
 
@@ -775,7 +775,7 @@ def _view_project(node, auth, primary=False):
             'forked_date': iso8601format(node.forked_date) if node.is_fork else '',
             'fork_count': len(node.forks),
             'templated_count': len(node.templated_list),
-            'watched_count': len(node.watchconfig__watched),
+            'watched_count': node.watches.count(),
             'private_links': [x.to_json() for x in node.private_links_active],
             'link': view_only_link,
             'anonymous': anonymous,

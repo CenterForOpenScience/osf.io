@@ -2499,7 +2499,7 @@ class TestProject(OsfTestCase):
         config1 = WatchConfigFactory(node=self.project)
         user.watched.append(config1)
         user.save()
-        assert_in(config1._id, self.project.watchconfig__watched)
+        assert_in(config1._id, [e._id for e in self.project.watches])
 
     def test_add_contributor(self):
         # A user is added as a contributor

@@ -3460,6 +3460,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             save=True,
         )
 
+    @property
+    def watches(self):
+        return WatchConfig.find(Q('node', 'eq', self._id))
+
 
 @Node.subscribe('before_save')
 def validate_permissions(schema, instance):
@@ -3508,7 +3512,7 @@ def validate_visible_contributors(schema, instance):
 class WatchConfig(StoredObject):
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
-    node = fields.ForeignField('Node', backref='watched')
+    node = fields.ForeignField('Node')
     digest = fields.BooleanField(default=False)
     immediate = fields.BooleanField(default=False)
 
