@@ -1085,7 +1085,7 @@ var Collections = {
                         $osf.trackClick('myProjects', 'add-collection', 'open-add-collection-modal');
                     }}, m('i.fa.fa-plus')) : '',
                 m('.pull-right',
-                    ctrl.totalPages > 1 ? m.component(MicroPagination, { currentPage : ctrl.currentPage, totalPages : ctrl.totalPages }) : ''
+                    ctrl.totalPages() > 1 ? m.component(MicroPagination, { currentPage : ctrl.currentPage, totalPages : ctrl.totalPages }) : ''
                 )
             ]),
             m('ul', { config: ctrl.applyDroppable },[
@@ -1501,7 +1501,7 @@ var Filters = {
                         'data-placement' : 'bottom'
                     }, ''),
                     m('.pull-right',
-                        args.nameFilters.length && ctrl.nameTotalPages > 1 ? m.component(MicroPagination, { currentPage : ctrl.nameCurrentPage, totalPages : ctrl.nameTotalPages, type: 'contributors'}) : ''
+                        args.nameFilters.length && ctrl.nameTotalPages() > 1 ? m.component(MicroPagination, { currentPage : ctrl.nameCurrentPage, totalPages : ctrl.nameTotalPages, type: 'contributors'}) : ''
                         )
                 ]),
                 m('ul', [
@@ -1510,7 +1510,7 @@ var Filters = {
                 m('h5', [
                     'Tags',
                     m('.pull-right',
-                        args.tagFilters.length && ctrl.tagTotalPages > 1 ? m.component(MicroPagination, { currentPage : ctrl.tagCurrentPage, totalPages : ctrl.tagTotalPages, type: 'tags' }) : ''
+                        args.tagFilters.length && ctrl.tagTotalPages() > 1 ? m.component(MicroPagination, { currentPage : ctrl.tagCurrentPage, totalPages : ctrl.tagTotalPages, type: 'tags' }) : ''
                         )
                 ]), m('ul', [
                     args.nodes.projects.flatData.loaded !== args.nodes.projects.flatData.total ? m('.ball-beat.text-center.m-t-md', m('')) : returnTagFilters()
