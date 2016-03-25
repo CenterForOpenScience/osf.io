@@ -424,17 +424,21 @@ var MyProjects = {
                     } else {
                         var url = $osf.apiV2Url('nodes/' + node.id + '/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
                         m.request({method : 'GET', url : url, config : xhrconfig}).then(function(r){
+                            self.generateContributorIds(r.data);
                             collectionData.push(r.data);
                             self.indexes()[node.id] = r.data;
                             if(index === result.data.length - 1 && displayError){
-                                $osf.growl(' Some projects for this collection could not be loaded', 'Please try again later.');
+                                $osf.growl(' Some projects for this collection could not be loaded', 'Please try again later.', 5000);
+                            }
+                            if(index === result.data.length - 1){
+                                self.nodes[self.currentView().collection.data.node.id] = collectionData;
                             }
                         }, function(r){
                             var message = 'Error loading node not belonging to user for collections with node id  ' + node.id;
                             displayError = true;
                             Raven.captureMessage(message, {requestReturn: r});
                             if(index === result.data.length -1 && displayError){
-                                $osf.growl(' Some projects for this collection could not be loaded', 'Please try again later.');
+                                $osf.growl(' Some projects for this collection could not be loaded', 'Please try again later.', 5000);
                             }
                         });
                     }
@@ -495,7 +499,7 @@ var MyProjects = {
                     self.currentView().totalRows = nodeObject.loaded;
                 }
             } else {
-                nodeData = nodeObject.flatData.data;
+                nodeData = nodeObject ? nodeObject.treeData.data : self.nodes[self.currentView().collection.data.node.id];
                 for(var j = 0; j < nodeData.length; j++){
                     item = nodeData[j];
                     var matchesContributors = self.currentView().contributor.length === 0;
@@ -539,6 +543,16 @@ var MyProjects = {
 
         };
 
+        self.generateContributorIds = function (item){
+            var contributors = item.embeds.contributors.data || [];
+            item.contributorIds = [];
+            for(var i = 0; i < contributors.length; i++) {
+                var u = contributors[i];
+                item.contributorIds.push(u.id);
+            }
+            return item.contributorIds;
+        };
+
         /**
          * Generate this list from user's projects
          */
@@ -548,10 +562,9 @@ var MyProjects = {
             var data = self.nodes.projects.flatData.data;
             data.map(function _generateFiltersListMap(item){
                 var contributors = item.embeds.contributors.data || [];
-                item.contributorIds = [];
+                self.generateContributorIds(item);
                 for(var i = 0; i < contributors.length; i++) {
                     var u = contributors[i];
-                    item.contributorIds.push(u.id);
                     if (u.id === window.contextVars.currentUser.id) {
                         continue;
                     }
