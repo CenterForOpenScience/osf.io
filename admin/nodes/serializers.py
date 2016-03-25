@@ -17,7 +17,7 @@ def serialize_node(node):
         'root': node.root._id,
         'is_registration': node.is_registration,
         'date_created': node.date_created,
-        'retraction': node.is_retracted,
+        'withdrawal': node.is_retracted,
         'embargo': embargo,
         'contributors': map(serialize_simple_user,
                             node.permissions.iteritems()),
