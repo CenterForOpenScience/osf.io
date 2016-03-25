@@ -52,8 +52,6 @@ def main():
     latest = True
     if '--dry' in sys.argv:
         dry_run = True
-    if not dry_run:
-        script_utils.add_file_logger(logger, __file__)
     if '--no_status' in sys.argv:
         status = False
     if '--no_latest' in sys.argv:
