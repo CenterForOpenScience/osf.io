@@ -1,0 +1,118 @@
+# OS generated files
+######################
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Icon?
+ehthumbs.db
+Thumbs.db
+*.swp
+*~
+
+# R
+#######################
+.Rhistory
+
+# Python
+#######################
+*.py[cod]
+*.so
+*.egg
+*.egg-info
+build
+eggs
+parts
+bin
+var
+sdist
+develop-eggs
+.installed.cfg
+lib64
+__pycache__
+pip-log.txt
+.coverage
+.tox
+nosetests.xml
+*.mo
+.idea
+.hg
+.hgignore
+env/
+mathenv
+cover/
+.konchrc
+
+# Assets
+########
+.webassets-cache
+website/static/public/
+website/static/mfr/
+website/static/vendor/node_modules/
+website/static/vendor/bower_components/
+node_modules
+# Allow robots.txt to be deployment-specific
+website/static/robots.local.txt
+
+# OSF-specific
+##############
+
+api/static/vendor
+
+# Local settings files
+local.py
+local.json
+
+website/uploads/
+website/mfrcache/
+website/mfrtemp/
+website/osfstoragecache/
+website/gpg/
+webpack-assets.json
+sauce.json
+
+# Built log templates
+website/templates/_log_templates.mako
+
+# Build JS files
+website/static/built/*
+
+# Logs
+logs/*
+
+# Add-ons
+#########
+.cache/
+.project
+.pydevproject
+.settings/
+src/
+website/mfrtemp/
+docs/_build
+website/static/img/badges
+
+# Scripts
+scripts/guid_blacklist.txt
+scripts/hide_extra_registration_logs.json
+scripts/osfstorage/usage_whitelist.json
+
+# Celery dbs
+celerybeat-schedule*
+celery_beat.py.db
+
+# Diff (used during merge resolution)
+*.orig
+
+# GUIDS
+scripts/guid_blacklist.txt
+
+# Admin Specific
+#################
+admin/static/public/
+# web_loader stat file
+admin/webpack-stats.json
+# bower
+admin/static/vendor/
+admin/db.sqlite3
+admin/db.sqlite3-journal
