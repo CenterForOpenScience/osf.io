@@ -430,10 +430,15 @@ var MyProjects = {
 
         // Update what is viewed
         self.updateList = function _updateList (reset, itemId, collectionObject){
+            function collectionUpdateActions (collectionData) {
+                self.nodes[self.currentView().collection.data.node.id] = collectionData;
+                self.generateFiltersList(collectionData);
+                self.currentView().totalRows = collectionData.length;
+            }
             function collectionSuccess (result){
                 var displayError = false;
                 if(result.data.length === 0 ){
-                    self.generateFiltersList(collectionData);
+                    collectionUpdateActions(collectionData);
                 }
                 result.data.forEach(function(node, index){
                     var indexedNode = self.indexes()[node.id];
@@ -441,9 +446,7 @@ var MyProjects = {
                         collectionData.push(indexedNode);
                         // Update node information here too
                         if(index === result.data.length - 1){
-                            self.nodes[self.currentView().collection.data.node.id] = collectionData;
-                            self.generateFiltersList(collectionData);
-                            self.currentView().totalRows = collectionData.length;
+                            collectionUpdateActions(collectionData);
                         }
                     } else {
                         var url = $osf.apiV2Url('nodes/' + node.id + '/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
@@ -456,9 +459,7 @@ var MyProjects = {
                             }
                             // Update node information
                             if(index === result.data.length - 1){
-                                self.nodes[self.currentView().collection.data.node.id] = collectionData;
-                                self.generateFiltersList(collectionData);
-                                self.currentView().totalRows = collectionData.length;
+                                collectionUpdateActions(collectionData);
                             }
                         }, function(r){
                             var message = 'Error loading node not belonging to user for collections with node id  ' + node.id;
