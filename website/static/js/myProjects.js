@@ -807,13 +807,16 @@ var MyProjects = {
         var sidebarButtonClass = 'btn-default';
         if (ctrl.showInfo() && !mobile){
             infoPanel = m('.db-infobar', m.component(Information, ctrl));
-            poStyle = 'width : 47%';
+            poStyle = 'width : 47%; display: block';
         }
         if(ctrl.showSidebar()){
             sidebarButtonClass = 'btn-primary';
         }
         if (mobile) {
-            poStyle = 'width : 100%';
+            poStyle = 'width : 100%; display: block';
+            if(ctrl.showSidebar()){
+                poStyle = 'display: none';
+            }
         } else {
             ctrl.showSidebar(true);
         }
@@ -894,7 +897,7 @@ var MyProjects = {
                 m.component(Collections, ctrl),
                 m.component(Filters, ctrl)
             ]) : '',
-            mobile && ctrl.showSidebar() ? '' : m('.db-main', { style : poStyle },[
+            m('.db-main', { style : poStyle },[
                 ctrl.loadValue() < 100 ? m('.line-loader', [
                     m('.line-empty'),
                     m('.line-full.bg-color-blue', { style : 'width: ' + ctrl.loadValue() +'%'}),

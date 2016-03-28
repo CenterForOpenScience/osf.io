@@ -402,7 +402,7 @@ var tbOptions = {
         getAncestors(item);
         tb.options.updateFilesData(linkObject, item.data.id);
     },
-    hScroll : 300,
+    hScroll : null,
     filterTemplate : function() {
         var tb = this;
         function resetFilter () {
