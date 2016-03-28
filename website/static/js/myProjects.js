@@ -329,8 +329,8 @@ var MyProjects = {
             if ((linkObject.type === 'node') && self.viewOnly){
                 return;
             }
+            self.updateFilter(linkObject);
             if (linkObject.id !== self.currentLink) {
-                self.updateFilter(linkObject);
                 self.updateBreadcrumbs(linkObject);
                 if(linkObject.data.nodeType === 'collection'){
                     self.updateList(false, null, linkObject);
