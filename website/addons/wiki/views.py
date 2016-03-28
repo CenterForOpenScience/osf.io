@@ -294,7 +294,7 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
         sharejs_uuid = None
 
     # Opens 'edit' panel when home wiki is empty
-    if not content and can_edit and wiki_name=='home':
+    if not content and can_edit and wiki_name == 'home':
         panels_used.append('edit')
 
     ret = {
