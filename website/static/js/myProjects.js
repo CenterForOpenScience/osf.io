@@ -471,16 +471,15 @@ var MyProjects = {
                 result.data.forEach(function(node, index){
                     var indexedNode = self.indexes()[node.id];
                     if(indexedNode){
+                        self.loadValue(++collectionObject.data.loaded / collectionObject.data.count() * 100);
                         collectionData.push(indexedNode);
                         // Update node information here too
                         if(index === result.data.length - 1){
                             collectionUpdateActions(collectionData);
                         }
-
-                      updateTreeData(0, collectionData, true);
                     } else {
                         var url = $osf.apiV2Url('nodes/' + node.id + '/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
-                        m.request({method : 'GET', url : url, config : xhrconfig}).then(function(r){
+                        m.request({method : 'GET', url : url, config : xhrconfig, background: true}).then(function(r){
                             self.generateSets(r.data);
                             collectionData.push(r.data);
                             self.indexes()[node.id] = r.data;
@@ -492,6 +491,7 @@ var MyProjects = {
                                 collectionUpdateActions(collectionData);
                             }
 
+                            self.loadValue(++collectionObject.data.loaded / collectionObject.data.count() * 100);
                             updateTreeData(0, collectionData, true);
                         }, function(r){
                             var message = 'Error loading node not belonging to user for collections with node id  ' + node.id;
@@ -503,15 +503,19 @@ var MyProjects = {
                         });
                     }
                 });
+
+                updateTreeData(0, collectionData, true);
             }
 
             if(collectionObject){ // A regular collection including bookmarks
+                self.loadValue(collectionObject.data.loaded / collectionObject.data.count() * 100);
+
                 var collectionData = [];
                 var linkedNodesUrl = $osf.apiV2Url(collectionObject.data.path, { query : collectionObject.data.query});
                 if(self.nodeUrlCache[linkedNodesUrl]){
                     collectionSuccess(self.nodeUrlCache[linkedNodesUrl]);
                 } else {
-                    m.request({method : 'GET', url : linkedNodesUrl, config : xhrconfig}).then(function(result){
+                    m.request({method : 'GET', url : linkedNodesUrl, config : xhrconfig, background: true}).then(function(result){
                         self.nodeUrlCache[linkedNodesUrl] = result;
                         collectionSuccess(result);
                     }, function(result){
@@ -550,6 +554,11 @@ var MyProjects = {
                 }
                 return;
             }
+
+            // Reset the progress bar
+            var progress = self.nodes[self.currentView().collection.data.nodeType].treeData;
+            self.loadValue(progress.loaded / progress.total * 100);
+
             var hasFilters = self.currentView().contributor.length || self.currentView().tag.length;
             var nodeType = self.currentView().collection.data.nodeType;
             var nodeObject = self.nodes[nodeType] === 'collection' ? self.nodes[self.currentView().collection.data.node.id] : self.nodes[nodeType];
@@ -659,7 +668,7 @@ var MyProjects = {
                         );
                     } else {
                         template = m('.db-non-load-template.m-md.p-md.osf-box.text-center', [
-                            'This project has no components.'
+                            'This project either has no components or you do not have permission to view them.'
                         ]);
                     }
                 }
@@ -770,7 +779,7 @@ var MyProjects = {
             promise.then(function(result){
                 result.data.forEach(function(node){
                     var count = node.relationships.linked_nodes.links.related.meta.count;
-                    self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/relationships/linked_nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors' }, nodeType : 'collection', node : node, count : m.prop(count) }, node.attributes.title));
+                    self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/relationships/linked_nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors' }, nodeType : 'collection', node : node, count : m.prop(count), loaded: 1 }, node.attributes.title));
                 });
                 if(result.links.next){
                     self.loadCollections(result.links.next);
@@ -1510,7 +1519,7 @@ var Breadcrumbs = {
                             addProjectTemplate = m.component(AddProject, {
                                 buttonTemplate: m('.btn.btn-sm.text-muted[data-toggle="modal"][data-target="#addSubComponent"]', {onclick: function() {
                                     $osf.trackClick('myProjects', 'add-component', 'open-add-component-modal');
-                                }}, [m('i.fa.fa-plus', {style: 'font-size: 10px;'}), ' Create component']),
+                                }}, [m('i.fa.fa-plus.m-r-xs', {style: 'font-size: 10px;'}), 'Create component']),
                                 parentID: parentID,
                                 modalID: 'addSubComponent',
                                 title: 'Create new component',
