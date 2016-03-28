@@ -432,6 +432,9 @@ var MyProjects = {
         self.updateList = function _updateList (reset, itemId, collectionObject){
             function collectionSuccess (result){
                 var displayError = false;
+                if(result.data.length === 0 ){
+                    self.generateFiltersList(collectionData);
+                }
                 result.data.forEach(function(node, index){
                     var indexedNode = self.indexes()[node.id];
                     if(indexedNode){
