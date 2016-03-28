@@ -1,18 +1,22 @@
-from django.forms import ModelForm
-from .models import Conference, ConferenceFieldNames
+from django import forms
 
+class ConferenceForm(forms.Form):
+    name = forms.CharField(max_length=30, required=True, widget=forms.TextInput(attrs={'placeholder': 'Required'}))
+    endpoint = forms.CharField(required=True, widget=forms.TextInput(attrs={'placeholder': 'Required'}))
+    info_url = forms.CharField(required=False)
+    logo_url = forms.CharField(required=False)
+    active = forms.BooleanField(required=False, initial=True)
+    public_projects = forms.BooleanField(required=False, initial=True)
+    poster = forms.BooleanField(required=False, initial=True)
+    talk = forms.BooleanField(required=False, initial=True)
 
-class ConferenceFieldNamesForm(ModelForm):
-    class Meta:
-            model = ConferenceFieldNames
-            fields = ['submission1', 'submission2', 'submission1_plural', 'submission2_plural',
-            'meeting_title_type', 'add_submission', 'mail_subject', 'mail_message_body', 'mail_attachment', ]
-    def __init__(self, *args, **kwargs):
-        super(ConferenceFieldNamesForm, self).__init__(*args, **kwargs)
-
-class ConferenceForm(ModelForm):
-    class Meta:
-            model = Conference
-            fields = ['endpoint', 'name', 'info_url', 'logo_url', 'active', 'public_projects', 'admins', 'talk', 'num_submissions', ]
-    def __init__(self, *args, **kwargs):
-        super(ConferenceForm, self).__init__(*args, **kwargs)
+class ConferenceFieldNamesForm(forms.Form):
+    submission1 = forms.CharField(required=False)
+    submission2 = forms.CharField(required=False)
+    submission1_plural = forms.CharField(required=False)
+    submission2_plural = forms.CharField(required=False)
+    meeting_title_type = forms.CharField(required=False)
+    add_submission = forms.CharField(required=False)
+    mail_subject = forms.CharField(required=False)
+    mail_message_body = forms.CharField(required=False)
+    mail_attachment = forms.CharField(required=False)

@@ -84,8 +84,6 @@
             {% endif %}
             {% if  request.user.is_staff %}
             <li><a href="{% url 'conferences:create_conference' %}"><i class='fa fa-link'></i> <span>Create Conference</span></a></li>
-            <li><a href="{% url 'conferences:conference_list' %}"><i class='fa fa-link'></i> <span>View OSF Conference List</span></a></li>
-            <li><a href="{% url 'conferences:add_conference_to_OSF' %}"><i class='fa fa-link'></i> <span>Create OSF Conferences</span></a></li>
             {% endif %}
           </ul><!-- /.sidebar-menu -->
         </section>

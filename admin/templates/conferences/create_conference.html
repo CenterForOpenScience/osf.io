@@ -12,6 +12,7 @@
             <form action="" method="post">
                 {% csrf_token %}
 
+
                 {% if conf_form.non_field_errors %}
                 <ul>
                 {% for error in conf_form.non_field_errors %}
@@ -22,26 +23,31 @@
 
                 {% for field in conf_form %}
                     <div class="form-group">
-                        <p><b>{{ field.name }}: </b></p><p class="">{{ field }}</p>
-                        {% if field.errors %}<span class="text-danger"> {{ field.errors }}</span>{% endif %}
+                    {{ field.label_tag }}
+                    <p>{{ field }}</p>
+                    {% if field.errors %}
+                        <p class="text-danger"> {{ field.errors | striptags }}</p>
+                    {% endif %}
                     </div>
                 {% endfor %}
-                <p class="register-box-msg">Edit this conference's field names:</p>
-                {% for field in conf_field_names_form %}
-                    <div class="form-group">
-                        <p><b>{{ field.name }}: </b></p><span class="text-danger"><p>{{ field }}</p></span>
-                        {% if field.errors %}<span class="text-danger"> {{ field.errors }}</span>{% endif %}
-                    </div>
-                {% endfor %}
-                <!-- errors persist unwantingly ^ -->
-
-                <div class="row">
-                    <div>
-                        <button type="submit" class="btn btn-primary btn-block btn-flat">Create Conference</button>
-                    </div><!-- /.col -->
+                <div class="form-group">
+                    <p class="register-box-msg">Edit this conference's field names:</p>
+                    {% for field in conf_field_names_form %}
+                        <div class="form-group">
+                            <p><b>{{ field.name }}: </b></p><span class="text-danger"><p>{{ field }}</p></span>
+                            {% if field.errors %}
+                            <span class="text-danger"> {{ field.errors | striptags }}</span>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                    <!-- errors persist unwantingly ^ -->
                 </div>
+                    <div class="row">
+                        <div>
+                            <button type="submit" class="btn btn-primary btn-block btn-flat">Create Conference</button>
+                        </div><!-- /.col -->
+                    </div>
             </form>
-            <a href="{% url 'home' %}">Return to home page</a>
             <div>
               {% if messages %}
                 <ul>
