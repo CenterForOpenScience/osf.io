@@ -412,9 +412,8 @@ var tbOptions = {
             tb.filterText('');
             tb.resetFilter.call(tb);
             $('.db-poFilter>input').val('');
-            tb.options.resetUi();
         }
-        return [ m('input.form-control[placeholder="Filter displayed projects"][type="text"]', {
+        return [ m('input.form-control[placeholrder="Filter displayed projects"][type="text"]', {
             style: 'display:inline;',
             onkeyup: function(event) {
                 tb.options.showSidebar(false);
