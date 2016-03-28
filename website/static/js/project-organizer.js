@@ -17,9 +17,7 @@ var $osf = require('js/osfHelpers');
 
 
 var LinkObject;
-var allProjectsCache;
 var formatDataforPO;
-var allTopLevelProjectsCache;
 
 /**
  * Edits the template for the column titles.
@@ -411,11 +409,9 @@ var tbOptions = {
             $osf.trackClick('myProjects', 'filter', 'clear-search');
             tb.filterText('');
             tb.resetFilter.call(tb);
-            //tb.updateFolder(allTopLevelProjectsCache(), tb.treeData);
             $('.db-poFilter>input').val('');
             tb.options.resetUi();
         }
-        //var filter = $osf.debounce(tb.filter, 800);
         return [ m('input.form-control[placeholder="Filter displayed projects"][type="text"]', {
             style: 'display:inline;',
             onkeyup: function(event) {
@@ -484,8 +480,6 @@ var ProjectOrganizer = {
             var tb = new Treebeard(poOptions, true);
             return tb;
         };
-        allProjectsCache = args.allProjects;
-        allTopLevelProjectsCache = args.allTopLevelProjects;
         self.tb = self.updateTB();
     },
     view : function (ctrl, args) {

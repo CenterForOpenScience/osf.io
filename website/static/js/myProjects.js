@@ -107,8 +107,6 @@ var MyProjects = {
         self.showInfo = m.prop(true); // Show the info panel
         self.showSidebar = m.prop(false); // Show the links with collections etc. used in narrow views
         self.allProjectsLoaded = m.prop(false);
-        self.allProjects = m.prop([]); // Caching of all my projects for search only
-        self.allTopLevelProjects = m.prop([]); // Caching to return things to top level all my projects
         self.loadingAllNodes = false; // True if we are loading all nodes
         self.loadingNodePages = false;
         self.categoryList = [];
@@ -746,24 +744,6 @@ var MyProjects = {
             self.updateFilter(linkObject);
         };
 
-        self.loadSearchProjects = function (link) {
-            var url = link || $osf.apiV2Url('users/me/nodes/', { query : { 'related_counts' : 'children', 'embed' : 'contributors', 'page[size]' : 60 }});
-            var promise = m.request({method : 'GET', url : url, config : xhrconfig, background: true});
-            promise.then(function(result){
-                result.data.forEach(function(item){
-                    _formatDataforPO(item);
-                });
-                self.allProjects(self.allProjects().concat(result.data));
-                if(result.links.next){
-                    self.loadSearchProjects(result.links.next);
-                }
-            }, function(error){
-                var message = 'Some Projects couldn\'t be loaded for filtering';
-                Raven.captureMessage(message, { url: url });
-            });
-            return promise;
-        };
-
         self.init = function _init_fileBrowser() {
             self.currentView().collection = self.systemCollections[0]; // Add linkObject to the currentView
             self.loadCategories().then(function(){
@@ -778,7 +758,6 @@ var MyProjects = {
                 self.loadCollections(collectionsUrl);
             }
             self.updateFilter(self.collections()[0]);
-            self.loadSearchProjects();
         };
 
         self.init();
@@ -808,8 +787,6 @@ var MyProjects = {
                 LinkObject : LinkObject,
                 formatDataforPO : _formatDataforPO,
                 wrapperSelector : args.wrapperSelector,
-                allProjects : ctrl.allProjects,
-                allTopLevelProjects : ctrl.allTopLevelProjects,
                 reload : ctrl.reload,
                 resetUi : ctrl.resetUi,
                 showSidebar : ctrl.showSidebar,
