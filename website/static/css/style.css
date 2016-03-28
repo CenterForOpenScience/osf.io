@@ -7,6 +7,7 @@ body {
     padding-top: 50px; /* body padding for fixed top nav */
     position: relative; /* for bootstrap affix */
     -webkit-font-smoothing: antialiased;
+    font-family: 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 
 a {
@@ -615,7 +616,7 @@ button.close {
 -------------------------------------------------- */
 #anonymous-mode {
     position: fixed;
-    bottom: 30px; 
+    bottom: 30px;
     left: 0;
     z-index: 8;
     width: 100%;
@@ -624,7 +625,7 @@ button.close {
     padding: .5em;
 }
 
-/* Override insane add tag font 
+/* Override insane add tag font
 -------------------------------------------------- */
 .tagsinput input {
     font-family : 'Open Sans', Helvetica, sans-serif;
