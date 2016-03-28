@@ -1474,7 +1474,7 @@ var Filters = {
 
         var returnNameFilters = function _returnNameFilters(){
             if(args.nodes.projects.flatData.total && args.nameFilters.length === 0){
-                return m('.text-muted.text-smaller', 'There are no collaborators in your projects yet.');
+                return m('.text-muted.text-smaller', 'There are no collaborators in this collection yet.');
             }
             var list = [];
             var item;
@@ -1497,7 +1497,7 @@ var Filters = {
         };
         var returnTagFilters = function _returnTagFilters(){
             if(args.nodes.projects.flatData.total && args.tagFilters.length === 0){
-                return m('.text-muted.text-smaller', 'Your projects don\'t have any tags yet.');
+                return m('.text-muted.text-smaller', 'Projects in this collection don\'t have any tags yet.');
             }
             var list = [];
             var selectedCSS;
