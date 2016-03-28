@@ -1,3 +1,4 @@
+<%block name="nav">
 <link rel="stylesheet" href='/static/css/nav.css'>
 <div class="osf-nav-wrapper">
 
@@ -110,3 +111,4 @@
         <%include file='./search_bar.mako' />
     <!-- /ko -->
 </div>
+</%block>

@@ -23,11 +23,11 @@ if (!window.fileBrowserCounter) {
 //Backport of Set
 if (!window.Set) {
   window.Set = function Set(initial) {
-    this.data = {}
+    this.data = {};
     initial = initial || [];
     for(var i = 0; i < initial.length; i++)
       this.add(initial[i]);
-  }
+  };
 
   Set.prototype = {
     has: function(item) {
@@ -126,7 +126,6 @@ var MyProjects = {
         self.viewOnly = options.viewOnly || false;
         self.institutionId = options.institutionId || false;
         self.reload = m.prop(false); // Gets set to true when treebeard link changes and it needs to be redrawn
-        self.nonLoadTemplate = m.prop(''); // Template for when data is not available or error happens
         self.logUrlCache = {}; // dictionary of load urls to avoid multiple calls with little refactor
         self.nodeUrlCache = {}; // Cached returns of the project related urls
         // VIEW STATES
@@ -362,7 +361,7 @@ var MyProjects = {
             if(linkObject.data.nodeType === 'collection'){
                 self.updateList(false, null, linkObject);
             } else {
-                self.updateList(false, itemId); // Don't reset but load item
+                self.updateList(true, itemId); // Reset and load item
             }
             self.showSidebar(false);
         };
@@ -548,13 +547,12 @@ var MyProjects = {
             if(!hasFilters && nodeObject){
                 var begin;
                 if((nodeObject.treeData.loaded > 0 || nodeObject.loadMode === 'done') && self.treeData().data) {
-                    if(nodeObject.treeData.loaded <= NODE_PAGE_SIZE){
+                    if(reset || nodeObject.treeData.loaded <= NODE_PAGE_SIZE){
                         begin = 0;
                         self.treeData().children = [];
                     } else {
                         begin = self.treeData().children.length;
                     }
-                    if (reset){ begin = 0;}
                     updateTreeData(begin, nodeData);
                     self.currentView().totalRows = nodeObject.loaded;
                 }
@@ -576,8 +574,8 @@ var MyProjects = {
                   break;
                 }
 
-              for (var i = 0; i < tags.length; i++)
-                if (node.tagSet.has(tags[i].label)) {
+              for (var j = 0; j < tags.length; j++)
+                if (node.tagSet.has(tags[j].label)) {
                   tagMatch = true;
                   break;
                 }
@@ -1375,6 +1373,9 @@ var Collections = {
  */
 var MicroPagination = {
     view : function(ctrl, args) {
+      if (args.currentPage() > args.totalPages()) {
+        args.currentPage(args.totalPages());
+      }
         return m('span.osf-micro-pagination.m-l-xs', [
             args.currentPage() > 1 ? m('span.m-r-xs.arrow.left.live', { onclick : function(){
                     args.currentPage(args.currentPage() - 1);
@@ -1759,10 +1760,10 @@ var ActivityLogs = {
                 item.trackingCategory = 'myProjects';
                 item.trackingAction = 'information-panel';
                 var image = m('i.fa.fa-question');
-                if (item.embeds.user.data) {
+                if (item.embeds.user && item.embeds.user.data) {
                     image = m('img', { src : item.embeds.user.data.links.profile_image});
                 }
-                else if (item.embeds.user.errors){
+                else if (item.embeds.user && item.embeds.user.errors){
                     image = m('img', { src : item.embeds.user.errors[0].meta.profile_image});
                 }
                 return m('.db-activity-item', [
