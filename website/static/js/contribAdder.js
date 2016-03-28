@@ -111,9 +111,9 @@ AddContributorViewModel = oop.extend(Paginator, {
                 return user.id;
             });
             var contributors = self.contributors();
-            return !($osf.any(
+            return ($osf.any(
                 $.map(self.results(), function (result) {
-                    return contributors.indexOf(result.id) === -1 && selected_ids.indexOf(result.id === -1);
+                    return contributors.indexOf(result.id) === -1 && selected_ids.indexOf(result.id) === -1;
                 })
             ));
         });
@@ -328,6 +328,7 @@ AddContributorViewModel = oop.extend(Paginator, {
                 self.add(result);
             }
         });
+        self.contributors();
     },
     removeAll: function () {
         var self = this;
