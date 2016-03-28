@@ -21,29 +21,42 @@
         <div class="row m-b-lg">
             <div class="col-sm-4">
                 <div class="support-col">
-                    <div class="text-center support-icon"><a href="/faq"><i class="fa fa-question"></i> </a></div>
-                    <h4 class="f-w-lg"> Frequently Asked Questions</h4>
-                    <p> How can it be free? How will the OSF be useful to my research? What is a registration?
+                    <div class="support-col-header bg-color-select">
+                        <h4 class="f-w-lg"><a href="/faq"> Frequently Asked Questions</a></h4>
+                    </div>
+                    <div class="support-col-body clearfix">
+                        <p> How can it be free? How will the OSF be useful to my research? What is a registration?
                         Get your questions about the Open Science Framework answered on our <a href="/faq"> FAQ page. </a></p>
+                        <a href="/faq" class="btn btn-info m-t-lg pull-right" > Visit FAQ <i class="fa fa-angle-right"></i></a>
+                    </div>
+
                </div>
             </div>
             <div class="col-sm-4">
                 <div class="support-col">
-                    <div class="text-center support-icon"><a href="/getting-started"><i class="fa fa-video-camera"></i></a></div>
-                    <h4 class="f-w-lg">Getting Started</h4>
-                    <p> Learn how to use the OSF for improving your research workflow. <a href="/getting-started">
-                        Getting Started </a> has step-by-step video tutorials and screenshots that show you the basics
-                        of project structures, version control, privacy, files, add-on support, and more! </p>
+                    <div class="support-col-header bg-color-select">
+                        <h4 class="f-w-lg"><a href="/getting-started">Getting Started</a></h4>
+                    </div>
+                    <div class="support-col-body clearfix">
+                        <p> Learn how to use the OSF for improving your research workflow. <a href="/getting-started">
+                            Getting Started </a> has step-by-step video tutorials and screenshots that show you the basics
+                            of project structures, version control, privacy, files, add-on support, and more! </p>
+                            <a href="/getting-started" class="btn btn-info m-t-lg pull-right" > Visit Getting Started <i class="fa fa-angle-right"></i> </a>
+
+                    </div>
                 </div>
             </div>
             <div class="col-sm-4">
                 <div class="support-col">
-                    <div class="text-center support-icon"><i class="fa fa-life-ring"></i></div>
-                    <h4 class="f-w-lg">Get in Touch</h4>
+                    <div class="support-col-header bg-color-select">
+                        <h4 class="f-w-lg">Get in Touch</h4>
+                    </div>
+                    <div class="support-col-body">
                         <p> For emails about technical support:</p>
                         <p> <a href="mailto:support@cos.io" class="text-bigger">support@cos.io</a></p>
                         <p> For all other questions or comments: </p>
                         <p><a href="mailto:contact@cos.io" class="text-bigger">contact@cos.io</a></p>
+                    </div>
                 </div>
             </div>
         </div>
