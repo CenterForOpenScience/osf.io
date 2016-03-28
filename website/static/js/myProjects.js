@@ -201,7 +201,6 @@ var MyProjects = {
                 typeObject.nextLink = result.links.next;
                 if(self.currentView().collection.data.nodeType === nodeType && dataType === 'treeData') {
                     self.loadValue(typeObject.loaded / typeObject.total * 100);
-                    console.log('bread', self.breadcrumbs());
                     if(self.breadcrumbs().length === 1){
                         self.updateList();
                     }
@@ -220,7 +219,6 @@ var MyProjects = {
                     nodeObject.loadMode = 'done';
                     nodeObject.treeData.data = self.makeTree(nodeObject.flatData.data, null, self.indexes);
                 }
-
             }
             function error (result){
                 var message = 'Error loading nodes with nodeType ' + nodeType + ' and dataType ' + dataType;
