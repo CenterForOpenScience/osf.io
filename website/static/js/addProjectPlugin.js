@@ -54,6 +54,7 @@ var AddProject = {
             options.templates().map(function(node){
                 self.userProjects.push({title: node.attributes.title, id: node.id});
             });
+            return self.userProjects
 
         };
 
@@ -178,7 +179,6 @@ var AddProject = {
                                 m('p.f-w-xs.help-text', 'Start typing to search. Selecting project as template will duplicate its ' +
                                     'structure in the new project without importing the content of that project.'),
                                 m.component(Select2Template, {
-                                    data: ctrl.userProjects,
                                     value: ctrl.newProjectTemplate,
                                     trackingCategory: options.trackingCategory,
                                     trackingAction: options.trackingAction,
@@ -278,10 +278,9 @@ var Select2Template = {
     view: function(ctrl, options) {
         return m('select', {config: Select2Template.config(options), onchange: function(){
             $osf.trackClick(options.trackingCategory, options.trackingAction, 'select-project-template');
-        }, onclick: options.mapTemplates()
-        }, [
+        }}, [
             m('option', {value: ''}, ''),
-            options.data.map(function(node) {
+            options.mapTemplates().map(function(node) {
                 var args = {value: node.id};
                 return m('option', args, node.title);
             })
@@ -296,7 +295,7 @@ var Select2Template = {
                     var id = $el.select2('val');
                     m.startComputation();
                     //Set the value to the selected option
-                    ctrl.data.map(function(node){
+                    ctrl.mapTemplates().map(function(node){
                         if(node.id === id) {
                             ctrl.value(node.id);
                         }
