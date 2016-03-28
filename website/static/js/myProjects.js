@@ -534,7 +534,6 @@ var MyProjects = {
                         var child = self.buildTree()(item, self.treeData());
                         self.treeData().add(child);
                     }
-
                 }
                 self.selected([]);
                 self.updateFolder()(null, self.treeData());
