@@ -354,13 +354,16 @@ var tbOptions = {
         $('[data-toggle="tooltip"]').tooltip();
         if (item.children.length === 0 && tb.options.nodes.projects.flatData.loaded === tb.options.nodes.projects.flatData.total && tb.options.indexes()[item.data.id]) {
             var childrenToAdd = tb.options.indexes()[item.data.id].children;
-            var child, i;
-            for (i = 0; i < childrenToAdd.length; i++) {
-                child = tb.buildTree(childrenToAdd[i], item);
-                item.add(child);
+            if(childrenToAdd.length){
+                var child, i;
+                for (i = 0; i < childrenToAdd.length; i++) {
+                    child = tb.buildTree(childrenToAdd[i], item);
+                    item.add(child);
+                }
+                tb.redraw();
+                tb.updateFolder(null, item);
             }
-            tb.redraw();
-            tb.updateFolder(null, item);
+
         }
 
     },
@@ -431,7 +434,7 @@ var tbOptions = {
         }),
         m('.filterReset', { onclick : resetFilter }, tb.options.removeIcon())];
     },
-    hiddenFilterRows : ['tags'],
+    hiddenFilterRows : ['tags', 'contributors'],
     lazyLoadOnLoad : function (tree, event) {
         var tb = this;
         function formatItems (arr) {

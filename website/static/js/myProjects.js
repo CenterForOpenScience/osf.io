@@ -530,14 +530,10 @@ var MyProjects = {
 
             if(itemId) { // A project has been selected. Move context to it.
                 var processChildren = function (data) {
-                    self.currentView({
-                        collection : self.systemCollections[0], // Linkobject
-                        contributor : [],
-                        tag : [],
-                        totalRows: data.length
-                    });
-                    updateTreeData(0, data, true);
+                    self.currentView().contributor = [];
+                    self.currentView().tag = [];
                     self.currentView().totalRows = data.length;
+                    updateTreeData(0, data, true);
                 };
                 if(!self.indexes()[itemId]){
                     var itemUrl = $osf.apiV2Url('nodes/' + itemId + '/children/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
