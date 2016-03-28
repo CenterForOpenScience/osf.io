@@ -201,7 +201,9 @@ var MyProjects = {
                 typeObject.nextLink = result.links.next;
                 if(self.currentView().collection.data.nodeType === nodeType && dataType === 'treeData') {
                     self.loadValue(typeObject.loaded / typeObject.total * 100);
-                    self.updateList();
+                    if(self.breadcrumbs().length === 1){
+                        self.updateList();
+                    }
                 }
                 if(nodeType === 'projects' && dataType === 'flatData' && typeObject.loaded === typeObject.total ){
                     self.generateFiltersList();
@@ -216,9 +218,7 @@ var MyProjects = {
                 if(dataType === 'flatData' && !typeObject.nextLink && typeObject.loaded === typeObject.total){
                     nodeObject.loadMode = 'done';
                     nodeObject.treeData.data = self.makeTree(nodeObject.flatData.data, null, self.indexes);
-                    //self.updateList(true);
                 }
-
             }
             function error (result){
                 var message = 'Error loading nodes with nodeType ' + nodeType + ' and dataType ' + dataType;
@@ -471,16 +471,15 @@ var MyProjects = {
                 result.data.forEach(function(node, index){
                     var indexedNode = self.indexes()[node.id];
                     if(indexedNode){
+                        self.loadValue(++collectionObject.data.loaded / collectionObject.data.count() * 100);
                         collectionData.push(indexedNode);
                         // Update node information here too
                         if(index === result.data.length - 1){
                             collectionUpdateActions(collectionData);
                         }
-
-                      updateTreeData(0, collectionData, true);
                     } else {
                         var url = $osf.apiV2Url('nodes/' + node.id + '/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
-                        m.request({method : 'GET', url : url, config : xhrconfig}).then(function(r){
+                        m.request({method : 'GET', url : url, config : xhrconfig, background: true}).then(function(r){
                             self.generateSets(r.data);
                             collectionData.push(r.data);
                             self.indexes()[node.id] = r.data;
@@ -492,6 +491,7 @@ var MyProjects = {
                                 collectionUpdateActions(collectionData);
                             }
 
+                            self.loadValue(++collectionObject.data.loaded / collectionObject.data.count() * 100);
                             updateTreeData(0, collectionData, true);
                         }, function(r){
                             var message = 'Error loading node not belonging to user for collections with node id  ' + node.id;
@@ -503,15 +503,19 @@ var MyProjects = {
                         });
                     }
                 });
+
+                updateTreeData(0, collectionData, true);
             }
 
             if(collectionObject){ // A regular collection including bookmarks
+                self.loadValue(collectionObject.data.loaded / collectionObject.data.count() * 100);
+
                 var collectionData = [];
                 var linkedNodesUrl = $osf.apiV2Url(collectionObject.data.path, { query : collectionObject.data.query});
                 if(self.nodeUrlCache[linkedNodesUrl]){
                     collectionSuccess(self.nodeUrlCache[linkedNodesUrl]);
                 } else {
-                    m.request({method : 'GET', url : linkedNodesUrl, config : xhrconfig}).then(function(result){
+                    m.request({method : 'GET', url : linkedNodesUrl, config : xhrconfig, background: true}).then(function(result){
                         self.nodeUrlCache[linkedNodesUrl] = result;
                         collectionSuccess(result);
                     }, function(result){
@@ -525,17 +529,36 @@ var MyProjects = {
             }
 
             if(itemId) { // A project has been selected. Move context to it.
-                var data = self.indexes()[itemId].children;
-                self.currentView({
-                    collection : self.systemCollections[0], // Linkobject
-                    contributor : [],
-                    tag : [],
-                    totalRows: data.length
-                });
-                updateTreeData(0, data, true);
-                self.currentView().totalRows = data.length;
+                var processChildren = function (data) {
+                    self.currentView({
+                        collection : self.systemCollections[0], // Linkobject
+                        contributor : [],
+                        tag : [],
+                        totalRows: data.length
+                    });
+                    updateTreeData(0, data, true);
+                    self.currentView().totalRows = data.length;
+                };
+                if(!self.indexes()[itemId]){
+                    var itemUrl = $osf.apiV2Url('nodes/' + itemId + '/children/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
+                    m.request({method : 'GET', url : itemUrl, config : xhrconfig}).then(function(result){
+                        console.log(result);
+                        processChildren(result.data);
+                    }, function(result){
+                        var message = 'Error loading node children from server for node  ' + itemId;
+                        Raven.captureMessage(message, {requestReturn: result});
+                        $osf.growl('Project or subcomponent details couldn\'t load', 'Please try again later.', 'warning', 5000);
+                    });
+                } else {
+                    processChildren(self.indexes()[itemId].children);
+                }
                 return;
             }
+
+            // Reset the progress bar
+            var progress = self.nodes[self.currentView().collection.data.nodeType].treeData;
+            self.loadValue(progress.loaded / progress.total * 100);
+
             var hasFilters = self.currentView().contributor.length || self.currentView().tag.length;
             var nodeType = self.currentView().collection.data.nodeType;
             var nodeObject = self.nodes[nodeType] === 'collection' ? self.nodes[self.currentView().collection.data.node.id] : self.nodes[nodeType];
@@ -639,13 +662,13 @@ var MyProjects = {
                             'This collection is empty. To add projects or registrations, click "All my projects" or "All my registrations" in the sidebar, and then drag and drop items into the collection link.');
                     }
                 } else {
-                    if(self.nodes.projects.loadMode !== 'done' && self.nodes.registration.loadMode !== 'done'){
+                    if(self.nodes.projects.loadMode !== 'done' && self.nodes.registrations.loadMode !== 'done'){
                         template = m('.db-non-load-template.m-md.p-md.osf-box.text-center',
                             m('.ball-scale.text-center', m(''))
                         );
                     } else {
                         template = m('.db-non-load-template.m-md.p-md.osf-box.text-center', [
-                            'This project has no components.'
+                            'This project either has no components or you do not have permission to view them.'
                         ]);
                     }
                 }
@@ -756,7 +779,7 @@ var MyProjects = {
             promise.then(function(result){
                 result.data.forEach(function(node){
                     var count = node.relationships.linked_nodes.links.related.meta.count;
-                    self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/relationships/linked_nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors' }, nodeType : 'collection', node : node, count : m.prop(count) }, node.attributes.title));
+                    self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/relationships/linked_nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors' }, nodeType : 'collection', node : node, count : m.prop(count), loaded: 1 }, node.attributes.title));
                 });
                 if(result.links.next){
                     self.loadCollections(result.links.next);
@@ -805,13 +828,16 @@ var MyProjects = {
         var sidebarButtonClass = 'btn-default';
         if (ctrl.showInfo() && !mobile){
             infoPanel = m('.db-infobar', m.component(Information, ctrl));
-            poStyle = 'width : 47%';
+            poStyle = 'width : 47%; display: block';
         }
         if(ctrl.showSidebar()){
             sidebarButtonClass = 'btn-primary';
         }
         if (mobile) {
-            poStyle = 'width : 100%';
+            poStyle = 'width : 100%; display: block';
+            if(ctrl.showSidebar()){
+                poStyle = 'display: none';
+            }
         } else {
             ctrl.showSidebar(true);
         }
@@ -892,7 +918,7 @@ var MyProjects = {
                 m.component(Collections, ctrl),
                 m.component(Filters, ctrl)
             ]) : '',
-            mobile && ctrl.showSidebar() ? '' : m('.db-main', { style : poStyle },[
+            m('.db-main', { style : poStyle },[
                 ctrl.loadValue() < 100 ? m('.line-loader', [
                     m('.line-empty'),
                     m('.line-full.bg-color-blue', { style : 'width: ' + ctrl.loadValue() +'%'}),
@@ -1493,7 +1519,7 @@ var Breadcrumbs = {
                             addProjectTemplate = m.component(AddProject, {
                                 buttonTemplate: m('.btn.btn-sm.text-muted[data-toggle="modal"][data-target="#addSubComponent"]', {onclick: function() {
                                     $osf.trackClick('myProjects', 'add-component', 'open-add-component-modal');
-                                }}, [m('i.fa.fa-plus', {style: 'font-size: 10px;'}), 'Create component']),
+                                }}, [m('i.fa.fa-plus.m-r-xs', {style: 'font-size: 10px;'}), 'Create component']),
                                 parentID: parentID,
                                 modalID: 'addSubComponent',
                                 title: 'Create new component',
