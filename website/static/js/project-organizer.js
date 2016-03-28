@@ -18,6 +18,7 @@ var $osf = require('js/osfHelpers');
 
 var LinkObject;
 var formatDataforPO;
+var MOBILE_WIDTH = 767;
 
 /**
  * Edits the template for the column titles.
@@ -119,7 +120,7 @@ function _poModified(item) {
  * @private
  */
 function _poResolveRows(item) {
-    var mobile = window.innerWidth < 767; // true if mobile view
+    var mobile = window.innerWidth < MOBILE_WIDTH; // true if mobile view
     var tb = this;
     var folderIcons = !tb.filterOn;
     var defaultColumns = [];
@@ -171,7 +172,7 @@ function _poResolveRows(item) {
  */
 function _poColumnTitles() {
     var columns = [];
-    var mobile = window.innerWidth < 767; // true if mobile view
+    var mobile = window.innerWidth < MOBILE_WIDTH; // true if mobile view
     if(!mobile){
         columns.push({
             title: 'Name',
@@ -405,6 +406,7 @@ var tbOptions = {
     hScroll : 'auto',
     filterTemplate : function() {
         var tb = this;
+        var mobile = window.innerWidth < MOBILE_WIDTH; // true if mobile view
         function resetFilter () {
             $osf.trackClick('myProjects', 'filter', 'clear-search');
             tb.filterText('');
@@ -415,6 +417,7 @@ var tbOptions = {
         return [ m('input.form-control[placeholder="Filter displayed projects"][type="text"]', {
             style: 'display:inline;',
             onkeyup: function(event) {
+                tb.options.showSidebar(false);
                 if ($(this).val().length === 0) {
                     resetFilter();
                 } else {
