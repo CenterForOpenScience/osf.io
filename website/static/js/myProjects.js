@@ -429,7 +429,7 @@ var MyProjects = {
                             collectionData.push(r.data);
                             self.indexes()[node.id] = r.data;
                             if(index === result.data.length - 1 && displayError){
-                                $osf.growl(' Some projects for this collection could not be loaded', 'Please try again later.', 5000);
+                                $osf.growl(' Some projects for this collection could not be loaded', 'Please try again later.', 'warning', 5000);
                             }
                             if(index === result.data.length - 1){
                                 self.nodes[self.currentView().collection.data.node.id] = collectionData;
@@ -439,7 +439,7 @@ var MyProjects = {
                             displayError = true;
                             Raven.captureMessage(message, {requestReturn: r});
                             if(index === result.data.length -1 && displayError){
-                                $osf.growl(' Some projects for this collection could not be loaded', 'Please try again later.', 5000);
+                                $osf.growl(' Some projects for this collection could not be loaded', 'Please try again later.', 'warning', 5000);
                             }
                         });
                     }
