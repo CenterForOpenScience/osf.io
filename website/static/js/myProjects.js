@@ -1386,48 +1386,43 @@ var Breadcrumbs = {
         return m('.db-breadcrumbs', m('ul', [
             items.map(function(item, index, array){
                 if(index === array.length-1){
-                    var label = item.type === 'node' ? ' Create component' : ' Create project';
-                    var title = item.type === 'node' ? 'Create new component' : 'Create new project';
-                    var divID = item.type === 'node' ? 'addSubComponent' : 'addProject';
-                    var parentID = item.type === 'node' ? args.breadcrumbs()[args.breadcrumbs().length - 1].data.id : null;
-                    var showAddProject = true;
-                    var addProjectTemplate = '';
-                    var objectType = 'project';
                     if(item.type === 'node'){
+                        var parentID = args.breadcrumbs()[args.breadcrumbs().length - 1].data.id;
+                        var showAddProject = true;
+                        var addProjectTemplate = '';
                         var permissions = item.data.attributes.current_user_permissions;
                         showAddProject = permissions.indexOf('admin') > -1 || permissions.indexOf('write') > -1;
-                        objectType = 'component';
-                    }
-                    if (item.type === 'registration' || item.data.type === 'registrations' || item.data.nodeType === 'registrations'){
-                        showAddProject = false;
-                    }
-                    if(showAddProject && !viewOnly){
-                        addProjectTemplate = m.component(AddProject, {
-                            buttonTemplate: m('.btn.btn-sm.text-muted[data-toggle="modal"][data-target="#' + divID + '"]', {onclick: function() {
-                                $osf.trackClick('myProjects', 'add-' + objectType, 'open-add-' + objectType + '-modal');
-                            }}, [m('i.fa.fa-plus', {style: 'font-size: 10px;'}), label]),
-                            parentID: parentID,
-                            modalID: divID,
-                            title: title,
-                            categoryList: args.categoryList,
-                            stayCallback: function () {
-                                args.allProjectsLoaded(false);
-                                args.updateList(args.breadcrumbs()[args.breadcrumbs().length - 1]);
+                        if (item.type === 'registration' || item.data.type === 'registrations' || item.data.nodeType === 'registrations'){
+                            showAddProject = false;
+                        }
+                        if(showAddProject && !viewOnly){
+                            addProjectTemplate = m.component(AddProject, {
+                                buttonTemplate: m('.btn.btn-sm.text-muted[data-toggle="modal"][data-target="#addSubComponent"]', {onclick: function() {
+                                    $osf.trackClick('myProjects', 'add-component', 'open-add-component-modal');
+                                }}, [m('i.fa.fa-plus', {style: 'font-size: 10px;'}), 'Create component']),
+                                parentID: parentID,
+                                modalID: 'addSubComponent',
+                                title: 'Create new component',
+                                categoryList: args.categoryList,
+                                stayCallback: function () {
+                                    args.allProjectsLoaded(false);
+                                    args.updateList(args.breadcrumbs()[args.breadcrumbs().length - 1]);
 
-                            },
-                            trackingCategory: 'myProjects',
-                            trackingAction: 'add-' + objectType
-                        });
+                                },
+                                trackingCategory: 'myProjects',
+                                trackingAction: 'add-component'
+                            });
+                        }
+                        return [
+                            m('li', [
+                                m('span.btn', item.label),
+                                contributors,
+                                tags,
+                                m('i.fa.fa-angle-right')
+                            ]),
+                            addProjectTemplate
+                        ];
                     }
-                    return [
-                        m('li', [
-                            m('span.btn', item.label),
-                            contributors,
-                            tags,
-                            m('i.fa.fa-angle-right')
-                        ]),
-                        (item.type === 'node' || (item.data.nodeType === 'projects' )) ? addProjectTemplate : ''
-                    ];
                 }
                 item.index = index; // Add index to update breadcrumbs
                 item.placement = 'breadcrumb'; // differentiate location for proper breadcrumb actions
