@@ -582,7 +582,7 @@ var SocialViewModel = function(urls, modes) {
         return [
             {label: 'ORCID', text: self.orcid(), value: self.orcid.url()},
             {label: 'ResearcherID', text: self.researcherId(), value: self.researcherId.url()},
-            {label: 'Twitter', text: self.twitter(), value: self.twitter.url()},
+            {label: 'Twitter', text: self.twitter(), value: self.twitter.url().replace(/@/g, "")},
             {label: 'GitHub', text: self.github(), value: self.github.url()},
             {label: 'LinkedIn', text: self.linkedIn(), value: self.linkedIn.url()},
             {label: 'ImpactStory', text: self.impactStory(), value: self.impactStory.url()},
