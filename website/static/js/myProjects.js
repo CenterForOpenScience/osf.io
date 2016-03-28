@@ -23,11 +23,11 @@ if (!window.fileBrowserCounter) {
 //Backport of Set
 if (!window.Set) {
   window.Set = function Set(initial) {
-    this.data = {}
+    this.data = {};
     initial = initial || [];
     for(var i = 0; i < initial.length; i++)
       this.add(initial[i]);
-  }
+  };
 
   Set.prototype = {
     has: function(item) {
@@ -576,8 +576,8 @@ var MyProjects = {
                   break;
                 }
 
-              for (var i = 0; i < tags.length; i++)
-                if (node.tagSet.has(tags[i].label)) {
+              for (var j = 0; i < tags.length; i++)
+                if (node.tagSet.has(tags[j].label)) {
                   tagMatch = true;
                   break;
                 }

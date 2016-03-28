@@ -54,7 +54,7 @@ var AddProject = {
             options.templates().map(function(node){
                 self.userProjects.push({title: node.attributes.title, id: node.id});
             });
-            return self.userProjects
+            return self.userProjects;
 
         };
 
