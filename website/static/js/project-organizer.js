@@ -431,7 +431,7 @@ var tbOptions = {
         }),
         m('.filterReset', { onclick : resetFilter }, tb.options.removeIcon())];
     },
-    hiddenFilterRows : ['tags'],
+    hiddenFilterRows : ['tags', 'contributors'],
     lazyLoadOnLoad : function (tree, event) {
         var tb = this;
         function formatItems (arr) {
