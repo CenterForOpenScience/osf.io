@@ -115,7 +115,7 @@ function buildCollectionNodeData (id) {
 }
 
 /**
- * Initialize File Browser. Prepeares an option object within FileBrowser
+ * Initialize File Browser. Prepares an option object within FileBrowser
  * @constructor
  */
 var MyProjects = {
@@ -133,8 +133,6 @@ var MyProjects = {
         self.showInfo = m.prop(true); // Show the info panel
         self.showSidebar = m.prop(false); // Show the links with collections etc. used in narrow views
         self.allProjectsLoaded = m.prop(false);
-        self.allProjects = m.prop([]); // Caching of all my projects for search only
-        self.allTopLevelProjects = m.prop([]); // Caching to return things to top level all my projects
         self.loadingAllNodes = false; // True if we are loading all nodes
         self.loadingNodePages = false;
         self.categoryList = [];
@@ -154,6 +152,7 @@ var MyProjects = {
         self.treeData = m.prop({}); // Top level object that houses all the rows
         self.buildTree = m.prop(null); // Preprocess function that adds to each item TB specific attributes
         self.updateFolder = m.prop(null); // Updates view to redraw without messing up scroll location
+        self.projectsForTemplates = m.prop([]);
 
         // Add All my Projects and All my registrations to collections
         self.systemCollections = options.systemCollections || [
@@ -208,6 +207,10 @@ var MyProjects = {
                 if(nodeType === 'projects' && dataType === 'flatData' && typeObject.loaded === typeObject.total ){
                     self.generateFiltersList();
                 }
+                if(nodeType === 'projects' && dataType === 'flatData'){
+                    self.projectsForTemplates(self.nodes.projects.flatData.data);
+                }
+
                 if(typeObject.nextLink){
                     self.loadNodes(nodeType, dataType);
                 }
@@ -617,6 +620,9 @@ var MyProjects = {
 
         self.nonLoadTemplate = function (){
             var template = '';
+            if(self.currentView().totalRows !== 0 ){
+                return;
+            }
             var lastcrumb = self.breadcrumbs()[self.breadcrumbs().length-1];
             var hasFilters = self.currentView().contributor.length || self.currentView().tag.length;
             if(hasFilters){
@@ -634,9 +640,15 @@ var MyProjects = {
                             'This collection is empty. To add projects or registrations, click "All my projects" or "All my registrations" in the sidebar, and then drag and drop items into the collection link.');
                     }
                 } else {
-                    template = m('.db-non-load-template.m-md.p-md.osf-box.text-center', [
-                        'This project has no components.'
-                    ]);
+                    if(self.nodes.projects.loadMode !== 'done' && self.nodes.registration.loadMode !== 'done'){
+                        template = m('.db-non-load-template.m-md.p-md.osf-box.text-center',
+                            m('.ball-scale.text-center', m(''))
+                        );
+                    } else {
+                        template = m('.db-non-load-template.m-md.p-md.osf-box.text-center', [
+                            'This project has no components.'
+                        ]);
+                    }
                 }
             }
 
@@ -769,24 +781,6 @@ var MyProjects = {
             self.updateFilter(linkObject);
         };
 
-        self.loadSearchProjects = function (link) {
-            var url = link || $osf.apiV2Url('users/me/nodes/', { query : { 'related_counts' : 'children', 'embed' : 'contributors', 'page[size]' : 60 }});
-            var promise = m.request({method : 'GET', url : url, config : xhrconfig, background: true});
-            promise.then(function(result){
-                result.data.forEach(function(item){
-                    _formatDataforPO(item);
-                });
-                self.allProjects(self.allProjects().concat(result.data));
-                if(result.links.next){
-                    self.loadSearchProjects(result.links.next);
-                }
-            }, function(error){
-                var message = 'Some Projects couldn\'t be loaded for filtering';
-                Raven.captureMessage(message, { url: url });
-            });
-            return promise;
-        };
-
         self.init = function _init_fileBrowser() {
             self.currentView().collection = self.systemCollections[0]; // Add linkObject to the currentView
             self.loadCategories().then(function(){
@@ -801,7 +795,6 @@ var MyProjects = {
                 self.loadCollections(collectionsUrl);
             }
             self.updateFilter(self.collections()[0]);
-            self.loadSearchProjects();
         };
 
         self.init();
@@ -831,8 +824,6 @@ var MyProjects = {
                 LinkObject : LinkObject,
                 formatDataforPO : _formatDataforPO,
                 wrapperSelector : args.wrapperSelector,
-                allProjects : ctrl.allProjects,
-                allTopLevelProjects : ctrl.allTopLevelProjects,
                 reload : ctrl.reload,
                 resetUi : ctrl.resetUi,
                 showSidebar : ctrl.showSidebar,
@@ -866,7 +857,8 @@ var MyProjects = {
                         ctrl.updateList(ctrl.breadcrumbs()[ctrl.breadcrumbs().length - 1]);
                     },
                     trackingCategory: 'myProjects',
-                    trackingAction: 'add-project'
+                    trackingAction: 'add-project',
+                    templates: ctrl.projectsForTemplates
                 })))
             ])) : '',
             m('.db-header.row', [
@@ -907,9 +899,12 @@ var MyProjects = {
                     m('.line-full.bg-color-blue', { style : 'width: ' + ctrl.loadValue() +'%'}),
                     m('.load-message', 'Fetching more projects')
                 ]) : '',
-                // TODO Add back nothing to show scenario template
-                ctrl.currentView().totalRows === 0 ? ctrl.nonLoadTemplate()  : m('.db-poOrganizer',  m.component( ProjectOrganizer, projectOrganizerOptions))
-            ]),
+                ctrl.nonLoadTemplate(),
+                m('.db-poOrganizer', {
+                    style : ctrl.currentView().totalRows === 0 ? 'display: none' : 'display: block'
+                },  m.component( ProjectOrganizer, projectOrganizerOptions))
+            ]
+            ),
             mobile ? '' : m('.db-info-toggle',{
                     onclick : function _showInfoOnclick(){
                         ctrl.showInfo(!ctrl.showInfo());
@@ -1170,7 +1165,7 @@ var Collections = {
                 } else {
                     selectedCSS = '';
                 }
-                if (!item.data.nodeType && !item.data.node.attributes.bookmarks) {
+                if (item.data.nodeType === 'collection' && !item.data.node.attributes.bookmarks) {
                     submenuTemplate = m('i.fa.fa-ellipsis-v.pull-right.text-muted.p-xs.pointer', {
                         'data-index' : i,
                         onclick : openCollectionMenu
@@ -1627,7 +1622,7 @@ var Filters = {
                         )
                 ]),
                 m('ul', [
-                    args.nodes.projects.flatData.loaded !== args.nodes.projects.flatData.total ? m('.ball-beat.text-center.m-t-md', m('')) : returnNameFilters()
+                    args.nodes.projects.flatData.loaded === 0 ? m('.ball-beat.text-center.m-t-md', m('')) : returnNameFilters()
                 ]),
                 m('h5.m-t-sm', [
                     'Tags',
@@ -1635,7 +1630,7 @@ var Filters = {
                         args.tagFilters.length && ctrl.tagTotalPages() > 1 ? m.component(MicroPagination, { currentPage : ctrl.tagCurrentPage, totalPages : ctrl.tagTotalPages, type: 'tags' }) : ''
                         )
                 ]), m('ul', [
-                    args.nodes.projects.flatData.loaded !== args.nodes.projects.flatData.total ? m('.ball-beat.text-center.m-t-md', m('')) : returnTagFilters()
+                    args.nodes.projects.flatData.loaded === 0 ? m('.ball-beat.text-center.m-t-md', m('')) : returnTagFilters()
                 ])
             ]
         );

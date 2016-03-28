@@ -429,6 +429,9 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         for key in meta_data or {}:
             if key == 'count' or key == 'unread':
                 show_related_counts = self.context['request'].query_params.get('related_counts', False)
+                if self.context['request'].parser_context.get('kwargs'):
+                    if self.context['request'].parser_context['kwargs'].get('is_embedded'):
+                        show_related_counts = False
                 field_counts_requested = self.process_related_counts_parameters(show_related_counts, value)
 
                 if utils.is_truthy(show_related_counts):
