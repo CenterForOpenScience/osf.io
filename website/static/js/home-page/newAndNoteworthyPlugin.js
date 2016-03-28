@@ -27,6 +27,7 @@ var NewAndNoteworthy = {
         self.SHOW_TOTAL = 5; // Number of new and noteworthy projects displayed in each column
         self.errorLoading = m.prop(false);  // True if error retrieving projects or contributors.
         self.someDataLoaded = m.prop(false);
+        self.someContributorsLoaded = m.prop(false);
 
         // Switches errorLoading to true
         self.requestError = function(result){
@@ -79,6 +80,7 @@ var NewAndNoteworthy = {
                     }
 
                 });
+                self.someContributorsLoaded(true);
                 var numContrib = result.links.meta.total;
                 var nodeId = nodeLink.id;
                 self.contributorsMapping[nodeId] = {'names': contribNames, 'total': numContrib};
@@ -131,14 +133,17 @@ var NewAndNoteworthy = {
             }}, 'Search for more projects');
         }
 
-
-        return m('',[
-            m('.row',[
-                m('.col-xs-12.col-md-6', m('.public-projects-box.', m('h4.m-b-md','New and Noteworthy'), newAndNoteworthyProjectsTemplate())),
-                m('.col-xs-12.col-md-6', m('.public-projects-box.', m('h4.m-b-md','Most Popular'), popularProjectsTemplate ()))
-            ]),
-            m('.row', m('.text-center.col-sm-12', findMoreProjectsButton()))
+        if (ctrl.someContributorsLoaded()){
+            return m('',[
+                m('.row',[
+                    m('.col-xs-12.col-md-6', m('.public-projects-box.', m('h4.m-b-md','New and Noteworthy'), newAndNoteworthyProjectsTemplate())),
+                    m('.col-xs-12.col-md-6', m('.public-projects-box.', m('h4.m-b-md','Most Popular'), popularProjectsTemplate ()))
+                ]),
+                m('.row', m('.text-center.col-sm-12', findMoreProjectsButton()))
         ]);
+
+        }
+        return m('');
     }
 };
 

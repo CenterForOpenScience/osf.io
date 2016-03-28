@@ -54,6 +54,9 @@ function _poTitleColumn(item) {
  */
 function _poContributors(item) {
     var contributorList = item.data.embeds.contributors.data;
+    if(!contributorList){
+        return '';
+    }
     if (contributorList.length === 0) {
         return '';
     }
@@ -230,11 +233,16 @@ function _poResolveToggle(item) {
  * @private
  */
 function _poResolveLazyLoad(item) {
+    var tb = this;
     var node = item.data;
     if(item.children.length > 0) {
         return false;
     }
     if(node.relationships.children){
+        // If flatData is loaded use that
+        if(tb.options.nodes.projects.flatData.loaded === tb.options.nodes.projects.flatData.total && tb.options.indexes()[node.id]){
+            return false;
+        }
         //return node.relationships.children.links.related.href;
         var urlPrefix = node.attributes.registration ? 'registrations' : 'nodes';
         return $osf.apiV2Url(urlPrefix + '/' + node.id + '/children/', {
@@ -337,13 +345,26 @@ var tbOptions = {
         tb.options.mpTreeData(tb.treeData);
         tb.options.mpBuildTree(tb.buildTree);
         tb.options.mpUpdateFolder(tb.updateFolder);
+        console.log('onload');
     },
     ontogglefolder : function (item, event) {
+        var tb = this;
         $osf.trackClick('myProjects', 'projectOrganizer', 'expand-collapse-project-children');
         if (!item.open) {
             item.load = false;
         }
         $('[data-toggle="tooltip"]').tooltip();
+        if (item.children.length === 0 && tb.options.nodes.projects.flatData.loaded === tb.options.nodes.projects.flatData.total && tb.options.indexes()[item.data.id]) {
+            var childrenToAdd = tb.options.indexes()[item.data.id].children;
+            var child, i;
+            for (i = 0; i < childrenToAdd.length; i++) {
+                child = tb.buildTree(childrenToAdd[i], item);
+                item.add(child);
+            }
+            tb.redraw();
+            tb.updateFolder(null, item);
+        }
+
     },
     onscrollcomplete : function () {
         $('[data-toggle="tooltip"]').tooltip();
@@ -382,7 +403,7 @@ var tbOptions = {
             }
         }
         getAncestors(item);
-        tb.options.updateFilesData(linkObject);
+        tb.options.updateFilesData(linkObject, item.data.id);
     },
     hScroll : 300,
     filterTemplate : function() {
@@ -391,24 +412,18 @@ var tbOptions = {
             $osf.trackClick('myProjects', 'filter', 'clear-search');
             tb.filterText('');
             tb.resetFilter.call(tb);
-            tb.updateFolder(allTopLevelProjectsCache(), tb.treeData);
+            //tb.updateFolder(allTopLevelProjectsCache(), tb.treeData);
             $('.db-poFilter>input').val('');
+            tb.options.resetUi();
         }
-        var filter = $osf.debounce(tb.filter, 800);
-        return [ m('input.form-control[placeholder="Search all my projects"][type="text"]', {
+        //var filter = $osf.debounce(tb.filter, 800);
+        return [ m('input.form-control[placeholder="Filter displayed projects"][type="text"]', {
             style: 'display:inline;',
-            onkeyup: function(event){
-                var newEvent = $.extend({}, event); // because currentTarget changes with debounce.
-                if ($(this).val().length === 1){
-                    tb.updateFolder(allProjectsCache(), tb.treeData);
-                    tb.options.showSidebar(false);
-                    tb.options.resetUi();
-                }
-                if($(this).val().length === 0){
+            onkeyup: function(event) {
+                if ($(this).val().length === 0) {
                     resetFilter();
-                }
-                if($(this).val().length > 1){
-                    filter(newEvent);
+                } else {
+                    tb.filter();
                 }
             },
             onchange: function(event) {
@@ -450,14 +465,17 @@ var ProjectOrganizer = {
                     },
                     updateSelected : args.updateSelected,
                     updateFilesData : args.updateFilesData,
-                    filesData: args.filesData(),
+                    filesData: args.filesData,
                     dragContainment : args.wrapperSelector,
                     resetUi : args.resetUi,
                     showSidebar : args.showSidebar,
                     loadValue : args.loadValue,
                     mpTreeData : args.treeData,
                     mpBuildTree : args.buildTree,
-                    mpUpdateFolder : args.updateFolder
+                    mpUpdateFolder : args.updateFolder,
+                    currentView: args.currentView,
+                    nodes : args.nodes,
+                    indexes : args.indexes
                 },
                 tbOptions
             );

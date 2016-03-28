@@ -6,6 +6,7 @@ from api.base.serializers import (
     RestrictedDictSerializer,
     LinksField,
 )
+from website.project.model import Node
 
 
 class NodeLogIdentifiersSerializer(RestrictedDictSerializer):
@@ -40,9 +41,11 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     folder = ser.CharField(read_only=True)
     folder_name = ser.CharField(read_only=True)
     identifiers = NodeLogIdentifiersSerializer(read_only=True)
+    params_node = ser.SerializerMethodField(read_only=True)
     old_page = ser.CharField(read_only=True)
     page = ser.CharField(read_only=True)
     path = ser.CharField(read_only=True)
+    params_project = ser.SerializerMethodField(read_only=True)
     source = NodeLogFileParamsSerializer(read_only=True)
     destination = NodeLogFileParamsSerializer(read_only=True)
     study = ser.CharField(read_only=True)
@@ -56,6 +59,20 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     citation_name = ser.CharField(read_only=True, source='citation.name')
     institution = NodeLogInstitutionSerializer(read_only=True)
     previous_institution = NodeLogInstitutionSerializer(read_only=True)
+
+    def get_params_node(self, obj):
+        node_id = obj.get('node', None)
+        if node_id:
+            node = Node.load(node_id)
+            return {'id': node_id, 'title': node.title}
+        return {}
+
+    def get_params_project(self, obj):
+        project_id = obj.get('project', None)
+        if project_id:
+            node = Node.load(project_id)
+            return {'id': project_id, 'title': node.title}
+        return {}
 
 class NodeLogSerializer(JSONAPISerializer):
 
