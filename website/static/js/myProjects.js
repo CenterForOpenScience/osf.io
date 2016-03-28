@@ -438,6 +438,7 @@ var MyProjects = {
                         if(index === result.data.length - 1){
                             self.nodes[self.currentView().collection.data.node.id] = collectionData;
                             self.generateFiltersList(collectionData);
+                            self.currentView().totalRows = collectionData.length;
                         }
                     } else {
                         var url = $osf.apiV2Url('nodes/' + node.id + '/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
@@ -452,6 +453,7 @@ var MyProjects = {
                             if(index === result.data.length - 1){
                                 self.nodes[self.currentView().collection.data.node.id] = collectionData;
                                 self.generateFiltersList(collectionData);
+                                self.currentView().totalRows = collectionData.length;
                             }
                         }, function(r){
                             var message = 'Error loading node not belonging to user for collections with node id  ' + node.id;
@@ -495,6 +497,7 @@ var MyProjects = {
                 });
                 self.treeData().children = [];
                 updateTreeData(0,data);
+                self.currentView().totalRows = data.length;
                 return;
             }
             var hasFilters = self.currentView().contributor.length || self.currentView().tag.length;
@@ -518,6 +521,7 @@ var MyProjects = {
                     self.currentView().totalRows = nodeObject.loaded;
                 }
                 self.generateFiltersList(nodeData);
+                self.currentView().totalRows = nodeData.length;
             } else {
                 nodeData = nodeObject ? nodeObject.treeData.data : self.nodes[self.currentView().collection.data.node.id];
                 var checkContributorMatch = function (c){
@@ -545,7 +549,6 @@ var MyProjects = {
                 self.treeData().children = [];
                 updateTreeData(0, viewData);
                 self.currentView().totalRows = viewData.length;
-
             }
 
             function updateTreeData (begin, data) {
@@ -575,6 +578,35 @@ var MyProjects = {
                 item.contributorIds.push(u.id);
             }
             return item.contributorIds;
+        };
+
+        self.nonLoadTemplate = function (){
+            var template = '';
+            var lastcrumb = self.breadcrumbs()[self.breadcrumbs().length-1];
+            var hasFilters = self.currentView().contributor.length || self.currentView().tag.length;
+            if(hasFilters){
+                template = m('.db-non-load-template.m-md.p-md.osf-box', 'No projects match this filter.');
+            } else {
+                if(lastcrumb.type === 'collection'){
+                    if(lastcrumb.data.nodeType === 'projects'){
+                        template = m('.db-non-load-template.m-md.p-md.osf-box',
+                            'You have not created any projects yet.');
+                    } else if (lastcrumb.data.nodeType === 'registrations'){
+                        template = m('.db-non-load-template.m-md.p-md.osf-box',
+                            'You have not made any registrations yet.');
+                    } else {
+                        template = m('.db-non-load-template.m-md.p-md.osf-box',
+                            'This collection has no projects. To add projects go to "All My Projects" collection; drag and drop projects into the collection link');
+                    }
+                } else {
+                    template = m('.db-non-load-template.m-md.p-md.osf-box.text-center', [
+                        'This project has no components.'
+                    ]);
+                }
+            }
+
+
+            return template;
         };
 
         /**
@@ -841,7 +873,7 @@ var MyProjects = {
                     m('.load-message', 'Fetching more projects')
                 ]) : '',
                 // TODO Add back nothing to show scenario template
-                 m('.db-poOrganizer',  m.component( ProjectOrganizer, projectOrganizerOptions))
+                ctrl.currentView().totalRows === 0 ? ctrl.nonLoadTemplate()  : m('.db-poOrganizer',  m.component( ProjectOrganizer, projectOrganizerOptions))
             ]),
             mobile ? '' : m('.db-info-toggle',{
                     onclick : function _showInfoOnclick(){
@@ -1349,9 +1381,8 @@ var Breadcrumbs = {
             });
         }
         if(args.currentView().tag.length){
-            tagsTemplate.push(m('span.text-muted', ' tagged '));
+            tagsTemplate.push(m('span.text-muted.m-l-sm', 'tagged '));
             args.currentView().tag.forEach(function(t){
-                console.log(t);
                 tagsTemplate.push(m('span.comma-separated.filter-breadcrumb', [
                     t.label,
                     ' ',
