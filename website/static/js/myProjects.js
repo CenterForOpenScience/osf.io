@@ -414,14 +414,16 @@ var MyProjects = {
 
         // Update what is viewed
         self.updateList = function _updateList (reset, itemId, collectionObject){
-
             function collectionSuccess (result){
-                console.log(result);
                 var displayError = false;
                 result.data.forEach(function(node, index){
                     var indexedNode = self.indexes()[node.id];
                     if(indexedNode){
                         collectionData.push(indexedNode);
+                        // Update node information here too
+                        if(index === result.data.length - 1){
+                            self.nodes[self.currentView().collection.data.node.id] = collectionData;
+                        }
                     } else {
                         var url = $osf.apiV2Url('nodes/' + node.id + '/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
                         m.request({method : 'GET', url : url, config : xhrconfig}).then(function(r){
@@ -431,6 +433,7 @@ var MyProjects = {
                             if(index === result.data.length - 1 && displayError){
                                 $osf.growl(' Some projects for this collection could not be loaded', 'Please try again later.', 'warning', 5000);
                             }
+                            // Update node information
                             if(index === result.data.length - 1){
                                 self.nodes[self.currentView().collection.data.node.id] = collectionData;
                             }
@@ -447,7 +450,6 @@ var MyProjects = {
                 self.treeData().children = [];
                 updateTreeData(0,collectionData);
             }
-
             if(collectionObject){ // A regular collection including bookmarks
                 console.log(collectionObject);
                 var collectionData = [];
@@ -481,7 +483,7 @@ var MyProjects = {
             }
             var hasFilters = self.currentView().contributor.length || self.currentView().tag.length;
             var nodeType = self.currentView().collection.data.nodeType;
-            var nodeObject = self.nodes[nodeType];
+            var nodeObject = self.nodes[nodeType] === 'collection' ? self.nodes[self.currentView().collection.data.node.id] : self.nodes[nodeType];
             var nodeData;
             var item;
             var viewData = [];
