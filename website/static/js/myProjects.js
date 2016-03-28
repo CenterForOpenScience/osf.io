@@ -1422,7 +1422,7 @@ var Breadcrumbs = {
                             },
                             trackingCategory: 'myProjects',
                             trackingAction: 'add-' + objectType,
-                            templates: ctrl.projectsForTemplates
+                            templates: args.projectsForTemplates
                         });
                     }
                     return [
