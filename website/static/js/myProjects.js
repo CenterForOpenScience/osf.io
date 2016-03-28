@@ -503,20 +503,24 @@ var MyProjects = {
                 }
             } else {
                 nodeData = nodeObject ? nodeObject.treeData.data : self.nodes[self.currentView().collection.data.node.id];
+                var checkContributorMatch = function (c){
+                    var item = this;
+                    if(item.contributorIds.indexOf(c.data.id) !== -1){
+                       matchesContributors = true;
+                   }
+                };
+                var checkTagMatch = function(t){
+                    var item = this;
+                    if(item.attributes.tags.indexOf(t.label) !== -1){
+                        matchesTags = true;
+                    }
+                };
                 for(var j = 0; j < nodeData.length; j++){
                     item = nodeData[j];
                     var matchesContributors = self.currentView().contributor.length === 0;
-                    self.currentView().contributor.forEach(function(c){
-                       if(item.contributorIds.indexOf(c.data.id) !== -1){
-                           matchesContributors = true;
-                       }
-                    });
+                    self.currentView().contributor.forEach(checkContributorMatch.bind(item));
                     var matchesTags = self.currentView().tag.length === 0;
-                    self.currentView().tag.forEach(function(t){
-                        if(item.attributes.tags.indexOf(t.label) !== -1){
-                            matchesTags = true;
-                        }
-                    });
+                    self.currentView().tag.forEach(checkTagMatch.bind(item));
                     if(matchesContributors && matchesTags){
                         viewData.push(item);
                     }
