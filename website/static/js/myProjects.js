@@ -423,6 +423,7 @@ var MyProjects = {
                         // Update node information here too
                         if(index === result.data.length - 1){
                             self.nodes[self.currentView().collection.data.node.id] = collectionData;
+                            self.generateFiltersList(collectionData);
                         }
                     } else {
                         var url = $osf.apiV2Url('nodes/' + node.id + '/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
@@ -436,6 +437,7 @@ var MyProjects = {
                             // Update node information
                             if(index === result.data.length - 1){
                                 self.nodes[self.currentView().collection.data.node.id] = collectionData;
+                                self.generateFiltersList(collectionData);
                             }
                         }, function(r){
                             var message = 'Error loading node not belonging to user for collections with node id  ' + node.id;
@@ -563,10 +565,10 @@ var MyProjects = {
         /**
          * Generate this list from user's projects
          */
-        self.generateFiltersList = function _generateFilterList () {
+        self.generateFiltersList = function _generateFilterList (nodeList) {
             self.users = {};
             self.tags = {};
-            var data = self.nodes.projects.flatData.data;
+            var data = nodeList || self.nodes.projects.flatData.data;
             data.map(function _generateFiltersListMap(item){
                 var contributors = item.embeds.contributors.data || [];
                 self.generateContributorIds(item);
@@ -711,7 +713,6 @@ var MyProjects = {
                 self.loadNodes('registrations', 'treeData');
                 self.loadNodes('projects', 'flatData');
                 self.loadNodes('registrations', 'flatData');
-                //self.updateList(self.systemCollections[0]);
             });
             var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : 'linked_nodes', 'page[size]' : self.collectionsPageSize(), 'sort' : 'date_created', 'embed' : 'node_links'}});
             if (!self.viewOnly){
