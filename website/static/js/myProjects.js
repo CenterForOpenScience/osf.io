@@ -126,7 +126,6 @@ var MyProjects = {
         self.viewOnly = options.viewOnly || false;
         self.institutionId = options.institutionId || false;
         self.reload = m.prop(false); // Gets set to true when treebeard link changes and it needs to be redrawn
-        self.nonLoadTemplate = m.prop(''); // Template for when data is not available or error happens
         self.logUrlCache = {}; // dictionary of load urls to avoid multiple calls with little refactor
         self.nodeUrlCache = {}; // Cached returns of the project related urls
         // VIEW STATES
@@ -575,7 +574,7 @@ var MyProjects = {
                   break;
                 }
 
-              for (var j = 0; i < tags.length; i++)
+              for (var j = 0; j < tags.length; j++)
                 if (node.tagSet.has(tags[j].label)) {
                   tagMatch = true;
                   break;
@@ -620,6 +619,9 @@ var MyProjects = {
 
         self.nonLoadTemplate = function (){
             var template = '';
+            if(self.currentView().totalRows !== 0 ){
+                return;
+            }
             var lastcrumb = self.breadcrumbs()[self.breadcrumbs().length-1];
             var hasFilters = self.currentView().contributor.length || self.currentView().tag.length;
             if(hasFilters){
@@ -637,7 +639,7 @@ var MyProjects = {
                             'This collection is empty. To add projects or registrations, click "All my projects" or "All my registrations" in the sidebar, and then drag and drop items into the collection link.');
                     }
                 } else {
-                    if(self.currentView().projects.loadMode !== 'done' && self.currentView().registration.loadMode !== 'done'){
+                    if(self.nodes.projects.loadMode !== 'done' && self.nodes.registration.loadMode !== 'done'){
                         template = m('.db-non-load-template.m-md.p-md.osf-box.text-center',
                             m('.ball-scale.text-center', m(''))
                         );
@@ -896,9 +898,12 @@ var MyProjects = {
                     m('.line-full.bg-color-blue', { style : 'width: ' + ctrl.loadValue() +'%'}),
                     m('.load-message', 'Fetching more projects')
                 ]) : '',
-                // TODO Add back nothing to show scenario template
-                ctrl.currentView().totalRows === 0 ? ctrl.nonLoadTemplate()  : m('.db-poOrganizer',  m.component( ProjectOrganizer, projectOrganizerOptions))
-            ]),
+                ctrl.nonLoadTemplate(),
+                m('.db-poOrganizer', {
+                    style : ctrl.currentView().totalRows === 0 ? 'display: none' : 'display: block'
+                },  m.component( ProjectOrganizer, projectOrganizerOptions))
+            ]
+            ),
             mobile ? '' : m('.db-info-toggle',{
                     onclick : function _showInfoOnclick(){
                         ctrl.showInfo(!ctrl.showInfo());
@@ -1365,6 +1370,9 @@ var Collections = {
  */
 var MicroPagination = {
     view : function(ctrl, args) {
+      if (args.currentPage() > args.totalPages()) {
+        args.currentPage(args.totalPages());
+      }
         return m('span.osf-micro-pagination.m-l-xs', [
             args.currentPage() > 1 ? m('span.m-r-xs.arrow.left.live', { onclick : function(){
                     args.currentPage(args.currentPage() - 1);
@@ -1616,7 +1624,7 @@ var Filters = {
                         )
                 ]),
                 m('ul', [
-                    args.nodes.projects.flatData.loaded !== args.nodes.projects.flatData.total ? m('.ball-beat.text-center.m-t-md', m('')) : returnNameFilters()
+                    args.nodes.projects.flatData.loaded === 0 ? m('.ball-beat.text-center.m-t-md', m('')) : returnNameFilters()
                 ]),
                 m('h5.m-t-sm', [
                     'Tags',
@@ -1624,7 +1632,7 @@ var Filters = {
                         args.tagFilters.length && ctrl.tagTotalPages() > 1 ? m.component(MicroPagination, { currentPage : ctrl.tagCurrentPage, totalPages : ctrl.tagTotalPages, type: 'tags' }) : ''
                         )
                 ]), m('ul', [
-                    args.nodes.projects.flatData.loaded !== args.nodes.projects.flatData.total ? m('.ball-beat.text-center.m-t-md', m('')) : returnTagFilters()
+                    args.nodes.projects.flatData.loaded === 0 ? m('.ball-beat.text-center.m-t-md', m('')) : returnTagFilters()
                 ])
             ]
         );
