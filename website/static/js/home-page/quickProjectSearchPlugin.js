@@ -477,7 +477,7 @@ var QuickSearchProject = {
                         },
                         trackingCategory: 'quickSearch',
                         trackingAction: 'add-project',
-                        templates: ctrl.nodes
+                        templates: ctrl.nodes()
                     })),
                     m('.row.quick-project', m('.col-xs-12',
                     m('.m-b-sm.text-center', [

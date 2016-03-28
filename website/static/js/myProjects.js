@@ -784,7 +784,7 @@ var MyProjects = {
                     },
                     trackingCategory: 'myProjects',
                     trackingAction: 'add-project',
-                    templates: ctrl.allProjects
+                    templates: ctrl.nodes.projects.flatData
                 })))
             ])) : '',
             m('.db-header.row', [
@@ -1418,7 +1418,7 @@ var Breadcrumbs = {
                             },
                             trackingCategory: 'myProjects',
                             trackingAction: 'add-' + objectType,
-                            templates: args.allProjects
+                            templates: args.nodes.projects.flatData
                         });
                     }
                     return [
