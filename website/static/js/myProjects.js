@@ -19,6 +19,32 @@ var NODE_PAGE_SIZE = 10; // Load 10 nodes at a time from server
 if (!window.fileBrowserCounter) {
     window.fileBrowserCounter = 0;
 }
+
+//Backport of Set
+if (!window.Set) {
+  window.Set = function Set(initial) {
+    this.data = {}
+    initial = initial || [];
+    for(var i = 0; i < initial.length; i++)
+      this.add(initial[i]);
+  }
+
+  Set.prototype = {
+    has: function(item) {
+      return this.data[item] === true;
+    },
+    clear: function() {
+      this.data = {};
+    },
+    add:function(item) {
+      this.data[item] = true;
+    },
+    delete: function(item) {
+      delete this.data[item];
+    }
+  };
+}
+
 function getUID() {
     window.fileBrowserCounter = window.fileBrowserCounter + 1;
     return window.fileBrowserCounter;
@@ -446,10 +472,12 @@ var MyProjects = {
                         if(index === result.data.length - 1){
                             collectionUpdateActions(collectionData);
                         }
+
+                      updateTreeData(0, collectionData, true);
                     } else {
                         var url = $osf.apiV2Url('nodes/' + node.id + '/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
                         m.request({method : 'GET', url : url, config : xhrconfig}).then(function(r){
-                            self.generateContributorIds(r.data);
+                            self.generateSets(r.data);
                             collectionData.push(r.data);
                             self.indexes()[node.id] = r.data;
                             if(index === result.data.length - 1 && displayError){
@@ -459,6 +487,8 @@ var MyProjects = {
                             if(index === result.data.length - 1){
                                 collectionUpdateActions(collectionData);
                             }
+
+                            updateTreeData(0, collectionData, true);
                         }, function(r){
                             var message = 'Error loading node not belonging to user for collections with node id  ' + node.id;
                             displayError = true;
@@ -469,11 +499,9 @@ var MyProjects = {
                         });
                     }
                 });
-                self.treeData().children = [];
-                updateTreeData(0,collectionData);
             }
+
             if(collectionObject){ // A regular collection including bookmarks
-                console.log(collectionObject);
                 var collectionData = [];
                 var linkedNodesUrl = $osf.apiV2Url(collectionObject.data.path, { query : collectionObject.data.query});
                 if(self.nodeUrlCache[linkedNodesUrl]){
@@ -491,7 +519,8 @@ var MyProjects = {
 
                 return;
             }
-            if(itemId){ // Being called from inside project  organizer
+
+            if(itemId) { // A project has been selected. Move context to it.
                 var data = self.indexes()[itemId].children;
                 self.currentView({
                     collection : self.systemCollections[0], // Linkobject
@@ -499,21 +528,21 @@ var MyProjects = {
                     tag : [],
                     totalRows: data.length
                 });
-                self.treeData().children = [];
-                updateTreeData(0,data);
+                updateTreeData(0, data, true);
                 self.currentView().totalRows = data.length;
                 return;
             }
             var hasFilters = self.currentView().contributor.length || self.currentView().tag.length;
             var nodeType = self.currentView().collection.data.nodeType;
             var nodeObject = self.nodes[nodeType] === 'collection' ? self.nodes[self.currentView().collection.data.node.id] : self.nodes[nodeType];
-            var nodeData;
             var item;
             var viewData = [];
-            if(!hasFilters){
-                nodeData = nodeObject.treeData.data;
+
+            var nodeData = nodeObject ? nodeObject.treeData.data : self.nodes[self.currentView().collection.data.node.id];
+
+            if(!hasFilters && nodeObject){
                 var begin;
-                if(nodeObject.treeData.loaded > 0 && self.treeData().data){
+                if((nodeObject.treeData.loaded > 0 || nodeObject.loadMode === 'done') && self.treeData().data) {
                     if(nodeObject.treeData.loaded <= NODE_PAGE_SIZE){
                         begin = 0;
                         self.treeData().children = [];
@@ -526,36 +555,38 @@ var MyProjects = {
                 }
                 self.generateFiltersList(nodeData);
                 self.currentView().totalRows = nodeData.length;
-            } else {
-                nodeData = nodeObject ? nodeObject.treeData.data : self.nodes[self.currentView().collection.data.node.id];
-                var checkContributorMatch = function (c){
-                    var item = this;
-                    if(item.contributorIds.indexOf(c.data.id) !== -1){
-                       matchesContributors = true;
-                   }
-                };
-                var checkTagMatch = function(t){
-                    var item = this;
-                    if(item.attributes.tags.indexOf(t.label) !== -1){
-                        matchesTags = true;
-                    }
-                };
-                for(var j = 0; j < nodeData.length; j++){
-                    item = nodeData[j];
-                    var matchesContributors = self.currentView().contributor.length === 0;
-                    self.currentView().contributor.forEach(checkContributorMatch.bind(item));
-                    var matchesTags = self.currentView().tag.length === 0;
-                    self.currentView().tag.forEach(checkTagMatch.bind(item));
-                    if(matchesContributors && matchesTags){
-                        viewData.push(item);
-                    }
-                }
-                self.treeData().children = [];
-                updateTreeData(0, viewData);
-                self.currentView().totalRows = viewData.length;
+                return;
             }
 
-            function updateTreeData (begin, data) {
+            var tags = self.currentView().tag;
+            var contributors = self.currentView().contributor;
+
+            viewData = nodeData.filter(function(node) {
+              var tagMatch = tags.length === 0;
+              var contribMatch = contributors.length === 0;
+
+              for (var i = 0; i < contributors.length; i++)
+                if (node.contributorSet.has(contributors[i].data.id)) {
+                  contribMatch = true;
+                  break;
+                }
+
+              for (var i = 0; i < tags.length; i++)
+                if (node.tagSet.has(tags[i].label)) {
+                  tagMatch = true;
+                  break;
+                }
+
+              return tagMatch && contribMatch;
+            });
+
+            updateTreeData(0, viewData, true);
+            self.currentView().totalRows = viewData.length;
+
+            function updateTreeData (begin, data, clear) {
+                if (clear)
+                  self.treeData().children = [];
+
                 for (var i = begin; i < data.length; i++){
                     item = data[i];
                     if (!(item.attributes.retracted === true || item.attributes.pending_registration_approval === true)){
@@ -574,14 +605,13 @@ var MyProjects = {
 
         };
 
-        self.generateContributorIds = function (item){
+        self.generateSets = function (item){
+            item.tagSet = new Set(item.attributes.tags || []);
+
             var contributors = item.embeds.contributors.data || [];
-            item.contributorIds = [];
-            for(var i = 0; i < contributors.length; i++) {
-                var u = contributors[i];
-                item.contributorIds.push(u.id);
-            }
-            return item.contributorIds;
+            item.contributorSet= new Set(contributors.map(function(contrib) {
+              return contrib.id;
+            }));
         };
 
         self.nonLoadTemplate = function (){
@@ -628,7 +658,7 @@ var MyProjects = {
             var data = nodeList || self.nodes.projects.flatData.data;
             data.map(function _generateFiltersListMap(item){
                 var contributors = item.embeds.contributors.data || [];
-                self.generateContributorIds(item);
+                self.generateSets(item);
                 for(var i = 0; i < contributors.length; i++) {
                     var u = contributors[i];
                     if (u.id === window.contextVars.currentUser.id) {
