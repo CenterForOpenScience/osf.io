@@ -503,6 +503,7 @@ var MyProjects = {
                     updateTreeData(begin, nodeData);
                     self.currentView().totalRows = nodeObject.loaded;
                 }
+                self.generateFiltersList(nodeData);
             } else {
                 nodeData = nodeObject ? nodeObject.treeData.data : self.nodes[self.currentView().collection.data.node.id];
                 var checkContributorMatch = function (c){
