@@ -210,7 +210,7 @@ var Uploader = function(question) {
 
         var files = question.extra();
 
-        for (var i = 0; i < files.length - 1; i++) {
+        for (var i = 0; i < files.length; i++) {
             var file = files[i];
             if(file.sha256 === fileToRemove.sha256) {
                 self.selectedFiles.splice(i, 1);

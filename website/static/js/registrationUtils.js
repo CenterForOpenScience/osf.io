@@ -184,7 +184,7 @@ var Question = function(questionSchema, data) {
 
     self.extra = ko.observableArray(self.data.extra || []);
 
-    self.formattedFileList = ko.computed(function() {
+    self.formattedFileList = ko.pureComputed(function() {
         return self.extra().map(function(elem) {
             return elem.selectedFileName;
         }).join(', ');
