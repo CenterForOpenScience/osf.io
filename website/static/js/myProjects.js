@@ -201,7 +201,9 @@ var MyProjects = {
                 typeObject.nextLink = result.links.next;
                 if(self.currentView().collection.data.nodeType === nodeType && dataType === 'treeData') {
                     self.loadValue(typeObject.loaded / typeObject.total * 100);
-                    self.updateList();
+                    if(self.breadcrumbs().length === 1){
+                        self.updateList();
+                    }
                 }
                 if(nodeType === 'projects' && dataType === 'flatData' && typeObject.loaded === typeObject.total ){
                     self.generateFiltersList();
@@ -216,9 +218,7 @@ var MyProjects = {
                 if(dataType === 'flatData' && !typeObject.nextLink && typeObject.loaded === typeObject.total){
                     nodeObject.loadMode = 'done';
                     nodeObject.treeData.data = self.makeTree(nodeObject.flatData.data, null, self.indexes);
-                    //self.updateList(true);
                 }
-
             }
             function error (result){
                 var message = 'Error loading nodes with nodeType ' + nodeType + ' and dataType ' + dataType;
@@ -529,15 +529,29 @@ var MyProjects = {
             }
 
             if(itemId) { // A project has been selected. Move context to it.
-                var data = self.indexes()[itemId].children;
-                self.currentView({
-                    collection : self.systemCollections[0], // Linkobject
-                    contributor : [],
-                    tag : [],
-                    totalRows: data.length
-                });
-                updateTreeData(0, data, true);
-                self.currentView().totalRows = data.length;
+                var processChildren = function (data) {
+                    self.currentView({
+                        collection : self.systemCollections[0], // Linkobject
+                        contributor : [],
+                        tag : [],
+                        totalRows: data.length
+                    });
+                    updateTreeData(0, data, true);
+                    self.currentView().totalRows = data.length;
+                };
+                if(!self.indexes()[itemId]){
+                    var itemUrl = $osf.apiV2Url('nodes/' + itemId + '/children/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
+                    m.request({method : 'GET', url : itemUrl, config : xhrconfig}).then(function(result){
+                        console.log(result);
+                        processChildren(result.data);
+                    }, function(result){
+                        var message = 'Error loading node children from server for node  ' + itemId;
+                        Raven.captureMessage(message, {requestReturn: result});
+                        $osf.growl('Project or subcomponent details couldn\'t load', 'Please try again later.', 'warning', 5000);
+                    });
+                } else {
+                    processChildren(self.indexes()[itemId].children);
+                }
                 return;
             }
 
@@ -648,7 +662,7 @@ var MyProjects = {
                             'This collection is empty. To add projects or registrations, click "All my projects" or "All my registrations" in the sidebar, and then drag and drop items into the collection link.');
                     }
                 } else {
-                    if(self.nodes.projects.loadMode !== 'done' && self.nodes.registration.loadMode !== 'done'){
+                    if(self.nodes.projects.loadMode !== 'done' && self.nodes.registrations.loadMode !== 'done'){
                         template = m('.db-non-load-template.m-md.p-md.osf-box.text-center',
                             m('.ball-scale.text-center', m(''))
                         );
@@ -814,13 +828,16 @@ var MyProjects = {
         var sidebarButtonClass = 'btn-default';
         if (ctrl.showInfo() && !mobile){
             infoPanel = m('.db-infobar', m.component(Information, ctrl));
-            poStyle = 'width : 47%';
+            poStyle = 'width : 47%; display: block';
         }
         if(ctrl.showSidebar()){
             sidebarButtonClass = 'btn-primary';
         }
         if (mobile) {
-            poStyle = 'width : 100%';
+            poStyle = 'width : 100%; display: block';
+            if(ctrl.showSidebar()){
+                poStyle = 'display: none';
+            }
         } else {
             ctrl.showSidebar(true);
         }
@@ -901,7 +918,7 @@ var MyProjects = {
                 m.component(Collections, ctrl),
                 m.component(Filters, ctrl)
             ]) : '',
-            mobile && ctrl.showSidebar() ? '' : m('.db-main', { style : poStyle },[
+            m('.db-main', { style : poStyle },[
                 ctrl.loadValue() < 100 ? m('.line-loader', [
                     m('.line-empty'),
                     m('.line-full.bg-color-blue', { style : 'width: ' + ctrl.loadValue() +'%'}),
