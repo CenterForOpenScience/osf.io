@@ -1750,10 +1750,10 @@ var ActivityLogs = {
                 item.trackingCategory = 'myProjects';
                 item.trackingAction = 'information-panel';
                 var image = m('i.fa.fa-question');
-                if (item.embeds.user.data) {
+                if (item.embeds.user && item.embeds.user.data) {
                     image = m('img', { src : item.embeds.user.data.links.profile_image});
                 }
-                else if (item.embeds.user.errors){
+                else if (item.embeds.user && item.embeds.user.errors){
                     image = m('img', { src : item.embeds.user.errors[0].meta.profile_image});
                 }
                 return m('.db-activity-item', [
