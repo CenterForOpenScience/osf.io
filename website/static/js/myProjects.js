@@ -1582,7 +1582,7 @@ var Filters = {
         };
         return m('.db-filters.m-t-lg',
             [
-                m('h5', [
+                m('h5.m-t-sm', [
                     'Contributors ',
                     m('i.fa.fa-question-circle.text-muted', {
                         'data-toggle':  'tooltip',
@@ -1596,7 +1596,7 @@ var Filters = {
                 m('ul', [
                     args.nodes.projects.flatData.loaded !== args.nodes.projects.flatData.total ? m('.ball-beat.text-center.m-t-md', m('')) : returnNameFilters()
                 ]),
-                m('h5', [
+                m('h5.m-t-sm', [
                     'Tags',
                     m('.pull-right',
                         args.tagFilters.length && ctrl.tagTotalPages() > 1 ? m.component(MicroPagination, { currentPage : ctrl.tagCurrentPage, totalPages : ctrl.tagTotalPages, type: 'tags' }) : ''
