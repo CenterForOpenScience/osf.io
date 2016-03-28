@@ -35,11 +35,6 @@
     </div>
 </div>
 
-<%def name="javascript_bottom()">
-${parent.javascript_bottom()}
-    <script src="${'/static/public/js/statistics-page.js' | webpack_asset}"></script>
-
-</%def>
 
 <%
     if user['is_contributor']:
@@ -68,6 +63,21 @@ ${parent.javascript_bottom()}
     % endif
     <iframe style="overflow-y:scroll;border:none;" width="100%" height="600" src="${ piwik_url }"></iframe>
 % endif
+
+%if keen_project_id:
+        <script>
+            window.contextVars = $.extend(true, {}, window.contextVars, {
+                keenReadKey: ${node['keenio_read_key'] | sjson, n},
+            })
+        </script>
+%endif
+
+<%def name="javascript_bottom()">
+${parent.javascript_bottom()}
+    <script src="${'/static/public/js/statistics-page.js' | webpack_asset}"></script>
+
+</%def>
+
 
 
 

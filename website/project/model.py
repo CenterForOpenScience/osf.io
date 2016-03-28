@@ -65,6 +65,9 @@ from website.project import signals as project_signals
 from website.project.spam.model import SpamMixin
 from website.prereg import utils as prereg_utils
 
+from keen.client import KeenClient
+from keen import scoped_keys
+
 logger = logging.getLogger(__name__)
 
 VIEW_PROJECT_URL_TEMPLATE = settings.DOMAIN + '{node_id}/'
@@ -1386,6 +1389,25 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
         if save:
             self.save()
+
+    def create_keenio_readkey(self):
+        api_readkey = scoped_keys.encrypt(settings.KEEN_MASTER_KEY, options= {
+            "filters": [{
+                "property_name": "node.id",
+                "operator": "eq",
+                "property_value": str(self._id)
+            }],
+            "allowed_operations": ["read"]
+        })
+        self.keenio_read_key = api_readkey
+        self.save()
+        return self.keenio_read_key
+
+    def get_or_create_keenio_readkey(self):
+        if self.is_public:
+            return self.keenio_read_key if self.keenio_read_key else self.create_keenio_readkey()
+        else:
+            return None
 
     def update(self, fields, auth=None, save=True):
         """Update the node with the given fields.
@@ -3069,11 +3091,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 elif self.embargo_end_date:
                     raise NodeStateError("An embargoed registration cannot be made public.")
             self.is_public = True
+            self.keenio_read_key = self.create_keenio_readkey()
         elif permissions == 'private' and self.is_public:
             if self.is_registration and not self.is_pending_embargo:
                 raise NodeStateError("Public registrations must be withdrawn, not made private.")
             else:
                 self.is_public = False
+                self.keenio_read_key = ''
         else:
             return False
 
