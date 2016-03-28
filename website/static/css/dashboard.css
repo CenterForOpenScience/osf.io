@@ -63,11 +63,12 @@
 }
 
 .filter-breadcrumb {
-    border: 1px solid #ccc;
-    padding: 1px 5px;
+border-bottom: 1px solid #ddd;
+    padding: 2px 5px;
     border-radius: 5px;
-    background: #E0EBF3;
+    background: #F4F4F4;
     font-size: 13px;
+    margin-right: 3px;
 }
 
 /* Sidebar with Collections and filters*/
