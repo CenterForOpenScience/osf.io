@@ -605,9 +605,15 @@ var MyProjects = {
                             'This collection is empty. To add projects or registrations, click "All my projects" or "All my registrations" in the sidebar, and then drag and drop items into the collection link.');
                     }
                 } else {
-                    template = m('.db-non-load-template.m-md.p-md.osf-box.text-center', [
-                        'This project has no components.'
-                    ]);
+                    if(self.currentView().projects.loadMode !== 'done' && self.currentView().registration.loadMode !== 'done'){
+                        template = m('.db-non-load-template.m-md.p-md.osf-box.text-center',
+                            m('.ball-scale.text-center', m(''))
+                        );
+                    } else {
+                        template = m('.db-non-load-template.m-md.p-md.osf-box.text-center', [
+                            'This project has no components.'
+                        ]);
+                    }
                 }
             }
 
