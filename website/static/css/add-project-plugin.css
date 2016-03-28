@@ -5,3 +5,15 @@
     margin: 5px;
     float: left;
 }
+
+.template-placeholder {
+    color: grey;
+}
+
+select option:first-child {
+    color: grey;
+}
+
+.help-text {
+    color: grey;
+}
