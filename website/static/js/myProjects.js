@@ -1141,7 +1141,7 @@ var Collections = {
                 } else {
                     selectedCSS = '';
                 }
-                if (!item.data.nodeType && !item.data.node.attributes.bookmarks) {
+                if (item.data.nodeType === 'collection' && !item.data.node.attributes.bookmarks) {
                     submenuTemplate = m('i.fa.fa-ellipsis-v.pull-right.text-muted.p-xs.pointer', {
                         'data-index' : i,
                         onclick : openCollectionMenu
