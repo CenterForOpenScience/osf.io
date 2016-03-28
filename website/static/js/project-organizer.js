@@ -345,7 +345,6 @@ var tbOptions = {
         tb.options.mpTreeData(tb.treeData);
         tb.options.mpBuildTree(tb.buildTree);
         tb.options.mpUpdateFolder(tb.updateFolder);
-        console.log('onload');
     },
     ontogglefolder : function (item, event) {
         var tb = this;
