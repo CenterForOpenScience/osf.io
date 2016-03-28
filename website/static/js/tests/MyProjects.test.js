@@ -38,20 +38,5 @@ describe('fileBrowser', function() {
                 assert.throws(function(){ var missing = new LinkObject(); }, Error);
             });
         });
-
-        describe('#generateLinks', function () {
-            it('should return correct collection link', function () {
-                assert.equal(collection.link, 'users/me/nodes/?related_counts=children');
-            });
-            it('should return correct tag link', function () {
-                assert.equal(tag.link, 'nodes/?filter%5Btags%5D=something&related_counts=children&embed=contributors');
-            });
-            it('should return correct name link', function () {
-                assert.equal(name.link, 'users/8q36f/nodes/?related_counts=children&embed=contributors');
-            });
-            it('should return correct node link', function () {
-                assert.equal(node.link, 'nodes/qwerty/children/?related_counts=children&embed=contributors');
-            });
-        });
     });
 });
