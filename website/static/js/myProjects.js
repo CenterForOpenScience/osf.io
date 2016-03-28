@@ -1370,6 +1370,9 @@ var Collections = {
  */
 var MicroPagination = {
     view : function(ctrl, args) {
+      if (args.currentPage() > args.totalPages()) {
+        args.currentPage(args.totalPages());
+      }
         return m('span.osf-micro-pagination.m-l-xs', [
             args.currentPage() > 1 ? m('span.m-r-xs.arrow.left.live', { onclick : function(){
                     args.currentPage(args.currentPage() - 1);
