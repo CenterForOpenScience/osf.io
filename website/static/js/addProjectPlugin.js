@@ -50,13 +50,10 @@ var AddProject = {
         };
 
         self.mapTemplates = function() {
-            if (options.templates.data) {
-                options.templates = options.templates.data;
-            }
-             // Generate list of objects containing user node ids and titles
-            options.templates.map(function(node){
+            self.userProjects = [];
+            options.templates().map(function(node){
                 self.userProjects.push({title: node.attributes.title, id: node.id});
-        });
+            });
 
         };
 
@@ -140,7 +137,6 @@ var AddProject = {
                         m('.text-muted.pointer', { onclick : function(){
                             ctrl.showMore(!ctrl.showMore());
                             $osf.trackClick(options.trackingCategory, options.trackingAction, 'show-more-or-less');
-                            ctrl.mapTemplates();
                         }},[
                             ctrl.showMore() ? m('i.fa.fa-caret-down', { style: 'width: 10px;'}) : m('i.fa.fa-caret-right', { style: 'width: 10px;'}),
                             ' More'
@@ -185,7 +181,8 @@ var AddProject = {
                                     data: ctrl.userProjects,
                                     value: ctrl.newProjectTemplate,
                                     trackingCategory: options.trackingCategory,
-                                    trackingAction: options.trackingAction
+                                    trackingAction: options.trackingAction,
+                                    mapTemplates: ctrl.mapTemplates
                                 })
                             ]) : ''
                         ] : ''
@@ -281,7 +278,8 @@ var Select2Template = {
     view: function(ctrl, options) {
         return m('select', {config: Select2Template.config(options), onchange: function(){
             $osf.trackClick(options.trackingCategory, options.trackingAction, 'select-project-template');
-        }}, [
+        }, onclick: options.mapTemplates()
+        }, [
             m('option', {value: ''}, ''),
             options.data.map(function(node) {
                 var args = {value: node.id};
