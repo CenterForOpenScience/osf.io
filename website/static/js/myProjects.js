@@ -201,7 +201,10 @@ var MyProjects = {
                 typeObject.nextLink = result.links.next;
                 if(self.currentView().collection.data.nodeType === nodeType && dataType === 'treeData') {
                     self.loadValue(typeObject.loaded / typeObject.total * 100);
-                    self.updateList();
+                    console.log('bread', self.breadcrumbs());
+                    if(self.breadcrumbs().length === 1){
+                        self.updateList();
+                    }
                 }
                 if(nodeType === 'projects' && dataType === 'flatData' && typeObject.loaded === typeObject.total ){
                     self.generateFiltersList();
@@ -216,7 +219,6 @@ var MyProjects = {
                 if(dataType === 'flatData' && !typeObject.nextLink && typeObject.loaded === typeObject.total){
                     nodeObject.loadMode = 'done';
                     nodeObject.treeData.data = self.makeTree(nodeObject.flatData.data, null, self.indexes);
-                    //self.updateList(true);
                 }
 
             }
@@ -525,7 +527,6 @@ var MyProjects = {
             }
 
             if(itemId) { // A project has been selected. Move context to it.
-                var data;
                 var processChildren = function (data) {
                     self.currentView({
                         collection : self.systemCollections[0], // Linkobject
@@ -536,21 +537,18 @@ var MyProjects = {
                     updateTreeData(0, data, true);
                     self.currentView().totalRows = data.length;
                 };
-
                 if(!self.indexes()[itemId]){
                     var itemUrl = $osf.apiV2Url('nodes/' + itemId + '/children/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
                     m.request({method : 'GET', url : itemUrl, config : xhrconfig}).then(function(result){
                         console.log(result);
-                        data = result.data;
-                        processChildren(data);
+                        processChildren(result.data);
                     }, function(result){
                         var message = 'Error loading node children from server for node  ' + itemId;
                         Raven.captureMessage(message, {requestReturn: result});
                         $osf.growl('Project or subcomponent details couldn\'t load', 'Please try again later.', 'warning', 5000);
                     });
                 } else {
-                    data = self.indexes()[itemId].children;
-                    processChildren(data);
+                    processChildren(self.indexes()[itemId].children);
                 }
                 return;
             }
@@ -657,7 +655,7 @@ var MyProjects = {
                             'This collection is empty. To add projects or registrations, click "All my projects" or "All my registrations" in the sidebar, and then drag and drop items into the collection link.');
                     }
                 } else {
-                    if(self.nodes.projects.loadMode !== 'done' && self.nodes.registration.loadMode !== 'done'){
+                    if(self.nodes.projects.loadMode !== 'done' && self.nodes.registrations.loadMode !== 'done'){
                         template = m('.db-non-load-template.m-md.p-md.osf-box.text-center',
                             m('.ball-scale.text-center', m(''))
                         );
