@@ -525,15 +525,33 @@ var MyProjects = {
             }
 
             if(itemId) { // A project has been selected. Move context to it.
-                var data = self.indexes()[itemId].children;
-                self.currentView({
-                    collection : self.systemCollections[0], // Linkobject
-                    contributor : [],
-                    tag : [],
-                    totalRows: data.length
-                });
-                updateTreeData(0, data, true);
-                self.currentView().totalRows = data.length;
+                var data;
+                var processChildren = function (data) {
+                    self.currentView({
+                        collection : self.systemCollections[0], // Linkobject
+                        contributor : [],
+                        tag : [],
+                        totalRows: data.length
+                    });
+                    updateTreeData(0, data, true);
+                    self.currentView().totalRows = data.length;
+                };
+
+                if(!self.indexes()[itemId]){
+                    var itemUrl = $osf.apiV2Url('nodes/' + itemId + '/children/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
+                    m.request({method : 'GET', url : itemUrl, config : xhrconfig}).then(function(result){
+                        console.log(result);
+                        data = result.data;
+                        processChildren(data);
+                    }, function(result){
+                        var message = 'Error loading node children from server for node  ' + itemId;
+                        Raven.captureMessage(message, {requestReturn: result});
+                        $osf.growl('Project or subcomponent details couldn\'t load', 'Please try again later.', 'warning', 5000);
+                    });
+                } else {
+                    data = self.indexes()[itemId].children;
+                    processChildren(data);
+                }
                 return;
             }
             var hasFilters = self.currentView().contributor.length || self.currentView().tag.length;
@@ -1496,7 +1514,7 @@ var Breadcrumbs = {
                             addProjectTemplate = m.component(AddProject, {
                                 buttonTemplate: m('.btn.btn-sm.text-muted[data-toggle="modal"][data-target="#addSubComponent"]', {onclick: function() {
                                     $osf.trackClick('myProjects', 'add-component', 'open-add-component-modal');
-                                }}, [m('i.fa.fa-plus', {style: 'font-size: 10px;'}), 'Create component']),
+                                }}, [m('i.fa.fa-plus', {style: 'font-size: 10px;'}), ' Create component']),
                                 parentID: parentID,
                                 modalID: 'addSubComponent',
                                 title: 'Create new component',
