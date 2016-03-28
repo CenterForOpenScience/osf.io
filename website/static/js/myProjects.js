@@ -362,7 +362,7 @@ var MyProjects = {
             if(linkObject.data.nodeType === 'collection'){
                 self.updateList(false, null, linkObject);
             } else {
-                self.updateList(false, itemId); // Don't reset but load item
+                self.updateList(true, itemId); // Reset and load item
             }
             self.showSidebar(false);
         };
@@ -548,13 +548,12 @@ var MyProjects = {
             if(!hasFilters && nodeObject){
                 var begin;
                 if((nodeObject.treeData.loaded > 0 || nodeObject.loadMode === 'done') && self.treeData().data) {
-                    if(nodeObject.treeData.loaded <= NODE_PAGE_SIZE){
+                    if(reset || nodeObject.treeData.loaded <= NODE_PAGE_SIZE){
                         begin = 0;
                         self.treeData().children = [];
                     } else {
                         begin = self.treeData().children.length;
                     }
-                    if (reset){ begin = 0;}
                     updateTreeData(begin, nodeData);
                     self.currentView().totalRows = nodeObject.loaded;
                 }
