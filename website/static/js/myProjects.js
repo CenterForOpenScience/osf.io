@@ -654,7 +654,7 @@ var MyProjects = {
                         );
                     } else {
                         template = m('.db-non-load-template.m-md.p-md.osf-box.text-center', [
-                            'This project has no components.'
+                            'This project either has no components or you do not have permission to view them.'
                         ]);
                     }
                 }
@@ -1502,7 +1502,7 @@ var Breadcrumbs = {
                             addProjectTemplate = m.component(AddProject, {
                                 buttonTemplate: m('.btn.btn-sm.text-muted[data-toggle="modal"][data-target="#addSubComponent"]', {onclick: function() {
                                     $osf.trackClick('myProjects', 'add-component', 'open-add-component-modal');
-                                }}, [m('i.fa.fa-plus', {style: 'font-size: 10px;'}), 'Create component']),
+                                }}, [m('i.fa.fa-plus.m-r-xs', {style: 'font-size: 10px;'}), 'Create component']),
                                 parentID: parentID,
                                 modalID: 'addSubComponent',
                                 title: 'Create new component',
