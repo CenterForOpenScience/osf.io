@@ -99,7 +99,6 @@ var MyProjects = {
         self.projectOrganizerOptions = options.projectOrganizerOptions || {};
         self.viewOnly = options.viewOnly || false;
         self.institutionId = options.institutionId || false;
-        self.currentLink = ''; // Save the link to compare if a new link is being requested and avoid multiple calls
         self.reload = m.prop(false); // Gets set to true when treebeard link changes and it needs to be redrawn
         self.nonLoadTemplate = m.prop(''); // Template for when data is not available or error happens
         self.logUrlCache = {}; // dictionary of load urls to avoid multiple calls with little refactor
@@ -330,14 +329,11 @@ var MyProjects = {
                 return;
             }
             self.updateFilter(linkObject);
-            if (linkObject.id !== self.currentLink) {
-                self.updateBreadcrumbs(linkObject);
-                if(linkObject.data.nodeType === 'collection'){
-                    self.updateList(false, null, linkObject);
-                } else {
-                    self.updateList(false, itemId); // Don't reset but load item
-                }
-                self.currentLink = linkObject.id;
+            self.updateBreadcrumbs(linkObject);
+            if(linkObject.data.nodeType === 'collection'){
+                self.updateList(false, null, linkObject);
+            } else {
+                self.updateList(false, itemId); // Don't reset but load item
             }
             self.showSidebar(false);
         };
@@ -398,7 +394,6 @@ var MyProjects = {
                 config : xhrconfig,
                 data : data
             }).then(function _removeProjectFromCollectionsSuccess(result){
-                self.currentLink = null; // To bypass the check when updating file list
                 self.nodeUrlCache[currentCollection.link] = null;
                 currentCollection.data.count(currentCollection.data.count() - data.data.length);
             }, function _removeProjectFromCollectionsFail(result){
