@@ -1485,7 +1485,7 @@ var Breadcrumbs = {
                             addProjectTemplate = m.component(AddProject, {
                                 buttonTemplate: m('.btn.btn-sm.text-muted[data-toggle="modal"][data-target="#addSubComponent"]', {onclick: function() {
                                     $osf.trackClick('myProjects', 'add-component', 'open-add-component-modal');
-                                }}, [m('i.fa.fa-plus', {'class': 'm-r-xs', style: 'font-size: 10px;'}), 'Create component']),
+                                }}, [m('i.fa.fa-plus.m-r-xs', {style: 'font-size: 10px;'}), 'Create component']),
                                 parentID: parentID,
                                 modalID: 'addSubComponent',
                                 title: 'Create new component',
