@@ -575,7 +575,7 @@ var MyProjects = {
                   break;
                 }
 
-              for (var j = 0; i < tags.length; i++)
+              for (var j = 0; j < tags.length; j++)
                 if (node.tagSet.has(tags[j].label)) {
                   tagMatch = true;
                   break;
