@@ -3668,7 +3668,10 @@ class TestFileViews(OsfTestCase):
         self.project.add_contributor(self.user)
         self.project.save()
 
-    def test_files_get(self):
+    @mock.patch('website.project.model.Node.get_or_create_keenio_readkey')
+    def test_files_get(self, mock_get_or_create_keenio_readkey):
+
+        mock_get_or_create_keenio_readkey.return_value = '123456'
         url = self.project.api_url_for('collect_file_trees')
         res = self.app.get(url, auth=self.user.auth)
         expected = _view_project(self.project, auth=Auth(user=self.user))

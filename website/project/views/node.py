@@ -725,6 +725,7 @@ def _view_project(node, auth, primary=False):
             'anonymous': anonymous,
             'points': len(node.get_points(deleted=False, folders=False)),
             'piwik_site_id': node.piwik_site_id,
+            'keenio_read_key': node.get_or_create_keenio_readkey(),
             'comment_level': node.comment_level,
             'has_comments': bool(Comment.find(Q('node', 'eq', node))),
             'has_children': bool(Comment.find(Q('node', 'eq', node))),

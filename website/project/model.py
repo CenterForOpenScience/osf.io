@@ -70,6 +70,9 @@ from website.project.sanctions import (
     Retraction,
 )
 
+from keen.client import KeenClient
+from keen import scoped_keys
+
 logger = logging.getLogger(__name__)
 
 
@@ -885,6 +888,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     template_node = fields.ForeignField('node', index=True)
 
     piwik_site_id = fields.StringField()
+    keenio_read_key = fields.StringField()
 
     # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
     # {<User.id>: [<Node._id>, <Node2._id>, ...] }
@@ -1444,6 +1448,25 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
         if save:
             self.save()
+
+    def create_keenio_readkey(self):
+        api_readkey = scoped_keys.encrypt(settings.KEEN_MASTER_KEY, options= {
+            'filters': [{
+                'property_name': 'node.id',
+                'operator': 'eq',
+                'property_value': str(self._id)
+            }],
+            'allowed_operations': ['read']
+        })
+        self.keenio_read_key = api_readkey
+        self.save()
+        return self.keenio_read_key
+
+    def get_or_create_keenio_readkey(self):
+        if self.is_public:
+            return self.keenio_read_key if self.keenio_read_key else self.create_keenio_readkey()
+        else:
+            return None
 
     def update(self, fields, auth=None, save=True):
         """Update the node with the given fields.
@@ -3146,11 +3169,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                     self.request_embargo_termination(auth=auth)
                     return False
             self.is_public = True
+            self.keenio_read_key = self.create_keenio_readkey()
         elif permissions == 'private' and self.is_public:
             if self.is_registration and not self.is_pending_embargo:
                 raise NodeStateError('Public registrations must be withdrawn, not made private.')
             else:
                 self.is_public = False
+                self.keenio_read_key = ''
         else:
             return False
 

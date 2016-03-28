@@ -48,8 +48,15 @@
 </div>
 % endif
 
+% if keen_project_id:
+  <script>
+   window.contextVars = $.extend(true, {}, window.contextVars, {
+       keenReadKey: ${node['keenio_read_key'] | sjson, n},
+   })
+  </script>
+% endif
+
 <%def name="javascript_bottom()">
   ${parent.javascript_bottom()}
   <script src="${'/static/public/js/statistics-page.js' | webpack_asset}"></script>
 </%def>
-
