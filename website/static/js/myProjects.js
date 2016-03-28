@@ -601,7 +601,7 @@ var MyProjects = {
                             'You have not made any registrations yet.');
                     } else {
                         template = m('.db-non-load-template.m-md.p-md.osf-box',
-                            'This collection has no projects. To add projects go to "All My Projects" collection; drag and drop projects into the collection link');
+                            'This collection is empty. To add projects or registrations, click "All my projects" or "All my registrations" in the sidebar, and then drag and drop items into the collection link.');
                     }
                 } else {
                     template = m('.db-non-load-template.m-md.p-md.osf-box.text-center', [
