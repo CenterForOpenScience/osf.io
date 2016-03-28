@@ -394,8 +394,10 @@ var MyProjects = {
                 config : xhrconfig,
                 data : data
             }).then(function _removeProjectFromCollectionsSuccess(result){
-                self.nodeUrlCache[currentCollection.link] = null;
+                var linkedNodesUrl = $osf.apiV2Url(currentCollection.data.path, { query : currentCollection.data.query});
+                self.nodeUrlCache[linkedNodesUrl] = null;
                 currentCollection.data.count(currentCollection.data.count() - data.data.length);
+                self.updateList(false, null, currentCollection);
             }, function _removeProjectFromCollectionsFail(result){
                 var message = 'Some projects';
                 if(data.data.length === 1) {
@@ -1047,6 +1049,8 @@ var Collections = {
                         function doNext (skipCount){
                             if(dataArray[index+1]){
                                 saveNodetoCollection(index+1);
+                            } else {
+                                self.updateList(false, null, collection);
                             }
                             if(!skipCount){
                                 collection.data.count(collection.data.count()+1);
