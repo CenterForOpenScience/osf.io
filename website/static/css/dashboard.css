@@ -31,7 +31,6 @@
     z-index: 99;
 }
 .db-breadcrumbs {
-    display : inline-block;
     padding: 7px;
     margin-left:-20px;
 }
@@ -63,6 +62,13 @@
     top: 1px;
 }
 
+.filter-breadcrumb {
+    border: 1px solid #ccc;
+    padding: 1px 5px;
+    border-radius: 5px;
+    background: #E0EBF3;
+    font-size: 13px;
+}
 
 /* Sidebar with Collections and filters*/
 .db-sidebar {

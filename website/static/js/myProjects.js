@@ -407,6 +407,25 @@ var MyProjects = {
             });
         };
 
+        // remove this contributor from list of contributors
+        self.unselectContributor = function (id){
+            self.currentView().contributor.forEach(function (c, index, arr) {
+                if(c.data.id === id){
+                    arr.splice(index, 1);
+                    self.updateList();
+                }
+            });
+        };
+
+        self.unselectTag = function (tag){
+            self.currentView().tag.forEach(function (c, index, arr) {
+                if(c.data.tag === tag){
+                    arr.splice(index, 1);
+                    self.updateList();
+                }
+            });
+        };
+
         // Update what is viewed
         self.updateList = function _updateList (reset, itemId, collectionObject){
             function collectionSuccess (result){
@@ -469,7 +488,7 @@ var MyProjects = {
             if(itemId){ // Being called from inside project  organizer
                 var data = self.indexes()[itemId].children;
                 self.currentView({
-                    collection : self.systemCollections[0],
+                    collection : self.systemCollections[0], // Linkobject
                     contributor : [],
                     tag : [],
                     totalRows: data.length
@@ -1315,18 +1334,31 @@ var Breadcrumbs = {
                 args.updateFilesData(item);
                 $osf.trackClick('myProjects', 'projectOrganizer', 'click-on-breadcrumbs');
         };
-        var contributors = [];
-        var tags = [];
+        var contributorsTemplate = [];
+        var tagsTemplate = [];
         if(args.currentView().contributor.length) {
-            contributors.push(m('span.text-muted', 'with '));
+            contributorsTemplate.push(m('span.text-muted', 'with '));
             args.currentView().contributor.forEach(function (c) {
-                contributors.push(m('span.comma-separated', c.label));
+                contributorsTemplate.push(m('span.comma-separated.filter-breadcrumb', [
+                    c.label,
+                    ' ',
+                    m('i.fa.fa-times-circle-o.text-muted', { onclick: function(){
+                        args.unselectContributor(c.data.id);
+                    }})
+                ]));
             });
         }
         if(args.currentView().tag.length){
-            contributors.push(m('span.text-muted', 'tagged '));
+            tagsTemplate.push(m('span.text-muted', ' tagged '));
             args.currentView().tag.forEach(function(t){
-                tags.push(m('span.comma-separated', t.label));
+                console.log(t);
+                tagsTemplate.push(m('span.comma-separated.filter-breadcrumb', [
+                    t.label,
+                    ' ',
+                    m('i.fa.fa-times-circle-o.text-muted', { onclick: function(){
+                        args.unselectTag(t.data.tag);
+                    }})
+                ]));
             });
         }
         var items = args.breadcrumbs();
@@ -1369,8 +1401,8 @@ var Breadcrumbs = {
                                             m('i.fa.fa-angle-right.m-r-xs'),
                                             item.label
                                         ]),
-                                        contributors,
-                                        tags
+                                        contributorsTemplate,
+                                        tagsTemplate
                                         ]
                                     );
                                 })
@@ -1404,7 +1436,6 @@ var Breadcrumbs = {
                                 stayCallback: function () {
                                     args.allProjectsLoaded(false);
                                     args.updateList(args.breadcrumbs()[args.breadcrumbs().length - 1]);
-
                                 },
                                 trackingCategory: 'myProjects',
                                 trackingAction: 'add-component'
@@ -1413,8 +1444,8 @@ var Breadcrumbs = {
                         return [
                             m('li', [
                                 m('span.btn', item.label),
-                                contributors,
-                                tags,
+                                contributorsTemplate,
+                                tagsTemplate,
                                 m('i.fa.fa-angle-right')
                             ]),
                             addProjectTemplate
@@ -1425,8 +1456,8 @@ var Breadcrumbs = {
                 item.placement = 'breadcrumb'; // differentiate location for proper breadcrumb actions
                 return m('li',[
                     m('span.btn.btn-link', {onclick : updateFilesOnClick.bind(null, item)},  item.label),
-                    contributors,
-                    tags,
+                    contributorsTemplate,
+                    tagsTemplate,
                     m('i.fa.fa-angle-right')
                     ]
                 );
