@@ -643,7 +643,7 @@ var MyProjects = {
                         );
                     } else {
                         template = m('.db-non-load-template.m-md.p-md.osf-box.text-center', [
-                            'This project has no components.'
+                            'This project either has no components or you do not have permission to view them.'
                         ]);
                     }
                 }
