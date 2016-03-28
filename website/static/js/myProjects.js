@@ -19,6 +19,32 @@ var NODE_PAGE_SIZE = 10; // Load 10 nodes at a time from server
 if (!window.fileBrowserCounter) {
     window.fileBrowserCounter = 0;
 }
+
+//Backport of Set
+if (!window.Set) {
+  window.Set = function Set(initial) {
+    this.data = {}
+    initial = initial || [];
+    for(var i = 0; i < initial.length; i++)
+      this.add(initial[i]);
+  }
+
+  Set.prototype = {
+    has: function(item) {
+      return this.data[item] === true;
+    },
+    clear: function() {
+      this.data = {};
+    },
+    add:function(item) {
+      this.data[item] = true;
+    },
+    delete: function(item) {
+      delete this.data[item];
+    }
+  };
+}
+
 function getUID() {
     window.fileBrowserCounter = window.fileBrowserCounter + 1;
     return window.fileBrowserCounter;
@@ -107,8 +133,6 @@ var MyProjects = {
         self.showInfo = m.prop(true); // Show the info panel
         self.showSidebar = m.prop(false); // Show the links with collections etc. used in narrow views
         self.allProjectsLoaded = m.prop(false);
-        self.allProjects = m.prop([]); // Caching of all my projects for search only
-        self.allTopLevelProjects = m.prop([]); // Caching to return things to top level all my projects
         self.loadingAllNodes = false; // True if we are loading all nodes
         self.loadingNodePages = false;
         self.categoryList = [];
@@ -399,8 +423,10 @@ var MyProjects = {
                 config : xhrconfig,
                 data : data
             }).then(function _removeProjectFromCollectionsSuccess(result){
-                self.nodeUrlCache[currentCollection.link] = null;
+                var linkedNodesUrl = $osf.apiV2Url(currentCollection.data.path, { query : currentCollection.data.query});
+                self.nodeUrlCache[linkedNodesUrl] = null;
                 currentCollection.data.count(currentCollection.data.count() - data.data.length);
+                self.updateList(false, null, currentCollection);
             }, function _removeProjectFromCollectionsFail(result){
                 var message = 'Some projects';
                 if(data.data.length === 1) {
@@ -412,23 +438,51 @@ var MyProjects = {
             });
         };
 
+        // remove this contributor from list of contributors
+        self.unselectContributor = function (id){
+            self.currentView().contributor.forEach(function (c, index, arr) {
+                if(c.data.id === id){
+                    arr.splice(index, 1);
+                    self.updateList();
+                }
+            });
+        };
+
+        self.unselectTag = function (tag){
+            self.currentView().tag.forEach(function (c, index, arr) {
+                if(c.data.tag === tag){
+                    arr.splice(index, 1);
+                    self.updateList();
+                }
+            });
+        };
+
         // Update what is viewed
         self.updateList = function _updateList (reset, itemId, collectionObject){
+            function collectionUpdateActions (collectionData) {
+                self.nodes[self.currentView().collection.data.node.id] = collectionData;
+                self.generateFiltersList(collectionData);
+                self.currentView().totalRows = collectionData.length;
+            }
             function collectionSuccess (result){
                 var displayError = false;
+                if(result.data.length === 0 ){
+                    collectionUpdateActions(collectionData);
+                }
                 result.data.forEach(function(node, index){
                     var indexedNode = self.indexes()[node.id];
                     if(indexedNode){
                         collectionData.push(indexedNode);
                         // Update node information here too
                         if(index === result.data.length - 1){
-                            self.nodes[self.currentView().collection.data.node.id] = collectionData;
-                            self.generateFiltersList(collectionData);
+                            collectionUpdateActions(collectionData);
                         }
+
+                      updateTreeData(0, collectionData, true);
                     } else {
                         var url = $osf.apiV2Url('nodes/' + node.id + '/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
                         m.request({method : 'GET', url : url, config : xhrconfig}).then(function(r){
-                            self.generateContributorIds(r.data);
+                            self.generateSets(r.data);
                             collectionData.push(r.data);
                             self.indexes()[node.id] = r.data;
                             if(index === result.data.length - 1 && displayError){
@@ -436,9 +490,10 @@ var MyProjects = {
                             }
                             // Update node information
                             if(index === result.data.length - 1){
-                                self.nodes[self.currentView().collection.data.node.id] = collectionData;
-                                self.generateFiltersList(collectionData);
+                                collectionUpdateActions(collectionData);
                             }
+
+                            updateTreeData(0, collectionData, true);
                         }, function(r){
                             var message = 'Error loading node not belonging to user for collections with node id  ' + node.id;
                             displayError = true;
@@ -449,9 +504,8 @@ var MyProjects = {
                         });
                     }
                 });
-                self.treeData().children = [];
-                updateTreeData(0,collectionData);
             }
+
             if(collectionObject){ // A regular collection including bookmarks
                 var collectionData = [];
                 var linkedNodesUrl = $osf.apiV2Url(collectionObject.data.path, { query : collectionObject.data.query});
@@ -470,28 +524,30 @@ var MyProjects = {
 
                 return;
             }
-            if(itemId){ // Being called from inside project  organizer
+
+            if(itemId) { // A project has been selected. Move context to it.
                 var data = self.indexes()[itemId].children;
                 self.currentView({
-                    collection : self.systemCollections[0],
+                    collection : self.systemCollections[0], // Linkobject
                     contributor : [],
                     tag : [],
                     totalRows: data.length
                 });
-                self.treeData().children = [];
-                updateTreeData(0,data);
+                updateTreeData(0, data, true);
+                self.currentView().totalRows = data.length;
                 return;
             }
             var hasFilters = self.currentView().contributor.length || self.currentView().tag.length;
             var nodeType = self.currentView().collection.data.nodeType;
             var nodeObject = self.nodes[nodeType] === 'collection' ? self.nodes[self.currentView().collection.data.node.id] : self.nodes[nodeType];
-            var nodeData;
             var item;
             var viewData = [];
-            if(!hasFilters){
-                nodeData = nodeObject.treeData.data;
+
+            var nodeData = nodeObject ? nodeObject.treeData.data : self.nodes[self.currentView().collection.data.node.id];
+
+            if(!hasFilters && nodeObject){
                 var begin;
-                if(nodeObject.treeData.loaded > 0 && self.treeData().data){
+                if((nodeObject.treeData.loaded > 0 || nodeObject.loadMode === 'done') && self.treeData().data) {
                     if(nodeObject.treeData.loaded <= NODE_PAGE_SIZE){
                         begin = 0;
                         self.treeData().children = [];
@@ -503,37 +559,39 @@ var MyProjects = {
                     self.currentView().totalRows = nodeObject.loaded;
                 }
                 self.generateFiltersList(nodeData);
-            } else {
-                nodeData = nodeObject ? nodeObject.treeData.data : self.nodes[self.currentView().collection.data.node.id];
-                var checkContributorMatch = function (c){
-                    var item = this;
-                    if(item.contributorIds.indexOf(c.data.id) !== -1){
-                       matchesContributors = true;
-                   }
-                };
-                var checkTagMatch = function(t){
-                    var item = this;
-                    if(item.attributes.tags.indexOf(t.label) !== -1){
-                        matchesTags = true;
-                    }
-                };
-                for(var j = 0; j < nodeData.length; j++){
-                    item = nodeData[j];
-                    var matchesContributors = self.currentView().contributor.length === 0;
-                    self.currentView().contributor.forEach(checkContributorMatch.bind(item));
-                    var matchesTags = self.currentView().tag.length === 0;
-                    self.currentView().tag.forEach(checkTagMatch.bind(item));
-                    if(matchesContributors && matchesTags){
-                        viewData.push(item);
-                    }
-                }
-                self.treeData().children = [];
-                updateTreeData(0, viewData);
-                self.currentView().totalRows = viewData.length;
-
+                self.currentView().totalRows = nodeData.length;
+                return;
             }
 
-            function updateTreeData (begin, data) {
+            var tags = self.currentView().tag;
+            var contributors = self.currentView().contributor;
+
+            viewData = nodeData.filter(function(node) {
+              var tagMatch = tags.length === 0;
+              var contribMatch = contributors.length === 0;
+
+              for (var i = 0; i < contributors.length; i++)
+                if (node.contributorSet.has(contributors[i].data.id)) {
+                  contribMatch = true;
+                  break;
+                }
+
+              for (var i = 0; i < tags.length; i++)
+                if (node.tagSet.has(tags[i].label)) {
+                  tagMatch = true;
+                  break;
+                }
+
+              return tagMatch && contribMatch;
+            });
+
+            updateTreeData(0, viewData, true);
+            self.currentView().totalRows = viewData.length;
+
+            function updateTreeData (begin, data, clear) {
+                if (clear)
+                  self.treeData().children = [];
+
                 for (var i = begin; i < data.length; i++){
                     item = data[i];
                     if (!(item.attributes.retracted === true || item.attributes.pending_registration_approval === true)){
@@ -552,14 +610,48 @@ var MyProjects = {
 
         };
 
-        self.generateContributorIds = function (item){
+        self.generateSets = function (item){
+            item.tagSet = new Set(item.attributes.tags || []);
+
             var contributors = item.embeds.contributors.data || [];
-            item.contributorIds = [];
-            for(var i = 0; i < contributors.length; i++) {
-                var u = contributors[i];
-                item.contributorIds.push(u.id);
+            item.contributorSet= new Set(contributors.map(function(contrib) {
+              return contrib.id;
+            }));
+        };
+
+        self.nonLoadTemplate = function (){
+            var template = '';
+            var lastcrumb = self.breadcrumbs()[self.breadcrumbs().length-1];
+            var hasFilters = self.currentView().contributor.length || self.currentView().tag.length;
+            if(hasFilters){
+                template = m('.db-non-load-template.m-md.p-md.osf-box', 'No projects match this filter.');
+            } else {
+                if(lastcrumb.type === 'collection'){
+                    if(lastcrumb.data.nodeType === 'projects'){
+                        template = m('.db-non-load-template.m-md.p-md.osf-box',
+                            'You have not created any projects yet.');
+                    } else if (lastcrumb.data.nodeType === 'registrations'){
+                        template = m('.db-non-load-template.m-md.p-md.osf-box',
+                            'You have not made any registrations yet.');
+                    } else {
+                        template = m('.db-non-load-template.m-md.p-md.osf-box',
+                            'This collection is empty. To add projects or registrations, click "All my projects" or "All my registrations" in the sidebar, and then drag and drop items into the collection link.');
+                    }
+                } else {
+                    if(self.currentView().projects.loadMode !== 'done' && self.currentView().registration.loadMode !== 'done'){
+                        template = m('.db-non-load-template.m-md.p-md.osf-box.text-center',
+                            m('.ball-scale.text-center', m(''))
+                        );
+                    } else {
+                        template = m('.db-non-load-template.m-md.p-md.osf-box.text-center', [
+                            'This project has no components.'
+                        ]);
+                    }
+                }
             }
-            return item.contributorIds;
+
+
+            return template;
         };
 
         /**
@@ -571,7 +663,7 @@ var MyProjects = {
             var data = nodeList || self.nodes.projects.flatData.data;
             data.map(function _generateFiltersListMap(item){
                 var contributors = item.embeds.contributors.data || [];
-                self.generateContributorIds(item);
+                self.generateSets(item);
                 for(var i = 0; i < contributors.length; i++) {
                     var u = contributors[i];
                     if (u.id === window.contextVars.currentUser.id) {
@@ -687,24 +779,6 @@ var MyProjects = {
             self.updateFilter(linkObject);
         };
 
-        self.loadSearchProjects = function (link) {
-            var url = link || $osf.apiV2Url('users/me/nodes/', { query : { 'related_counts' : 'children', 'embed' : 'contributors', 'page[size]' : 60 }});
-            var promise = m.request({method : 'GET', url : url, config : xhrconfig, background: true});
-            promise.then(function(result){
-                result.data.forEach(function(item){
-                    _formatDataforPO(item);
-                });
-                self.allProjects(self.allProjects().concat(result.data));
-                if(result.links.next){
-                    self.loadSearchProjects(result.links.next);
-                }
-            }, function(error){
-                var message = 'Some Projects couldn\'t be loaded for filtering';
-                Raven.captureMessage(message, { url: url });
-            });
-            return promise;
-        };
-
         self.init = function _init_fileBrowser() {
             self.currentView().collection = self.systemCollections[0]; // Add linkObject to the currentView
             self.loadCategories().then(function(){
@@ -719,7 +793,6 @@ var MyProjects = {
                 self.loadCollections(collectionsUrl);
             }
             self.updateFilter(self.collections()[0]);
-            self.loadSearchProjects();
         };
 
         self.init();
@@ -749,8 +822,6 @@ var MyProjects = {
                 LinkObject : LinkObject,
                 formatDataforPO : _formatDataforPO,
                 wrapperSelector : args.wrapperSelector,
-                allProjects : ctrl.allProjects,
-                allTopLevelProjects : ctrl.allTopLevelProjects,
                 reload : ctrl.reload,
                 resetUi : ctrl.resetUi,
                 showSidebar : ctrl.showSidebar,
@@ -827,7 +898,7 @@ var MyProjects = {
                     m('.load-message', 'Fetching more projects')
                 ]) : '',
                 // TODO Add back nothing to show scenario template
-                 m('.db-poOrganizer',  m.component( ProjectOrganizer, projectOrganizerOptions))
+                ctrl.currentView().totalRows === 0 ? ctrl.nonLoadTemplate()  : m('.db-poOrganizer',  m.component( ProjectOrganizer, projectOrganizerOptions))
             ]),
             mobile ? '' : m('.db-info-toggle',{
                     onclick : function _showInfoOnclick(){
@@ -1001,6 +1072,8 @@ var Collections = {
                         function doNext (skipCount){
                             if(dataArray[index+1]){
                                 saveNodetoCollection(index+1);
+                            } else {
+                                self.updateList(false, null, collection);
                             }
                             if(!skipCount){
                                 collection.data.count(collection.data.count()+1);
@@ -1087,7 +1160,7 @@ var Collections = {
                 } else {
                     selectedCSS = '';
                 }
-                if (!item.data.nodeType && !item.data.node.attributes.bookmarks) {
+                if (item.data.nodeType === 'collection' && !item.data.node.attributes.bookmarks) {
                     submenuTemplate = m('i.fa.fa-ellipsis-v.pull-right.text-muted.p-xs.pointer', {
                         'data-index' : i,
                         onclick : openCollectionMenu
@@ -1320,18 +1393,30 @@ var Breadcrumbs = {
                 args.updateFilesData(item);
                 $osf.trackClick('myProjects', 'projectOrganizer', 'click-on-breadcrumbs');
         };
-        var contributors = [];
-        var tags = [];
+        var contributorsTemplate = [];
+        var tagsTemplate = [];
         if(args.currentView().contributor.length) {
-            contributors.push(m('span.text-muted', 'with '));
+            contributorsTemplate.push(m('span.text-muted', 'with '));
             args.currentView().contributor.forEach(function (c) {
-                contributors.push(m('span.comma-separated', c.label));
+                contributorsTemplate.push(m('span.comma-separated.filter-breadcrumb', [
+                    c.label,
+                    ' ',
+                    m('i.fa.fa-times-circle-o.text-muted', { onclick: function(){
+                        args.unselectContributor(c.data.id);
+                    }})
+                ]));
             });
         }
         if(args.currentView().tag.length){
-            contributors.push(m('span.text-muted', 'tagged '));
+            tagsTemplate.push(m('span.text-muted.m-l-sm', 'tagged '));
             args.currentView().tag.forEach(function(t){
-                tags.push(m('span.comma-separated', t.label));
+                tagsTemplate.push(m('span.comma-separated.filter-breadcrumb', [
+                    t.label,
+                    ' ',
+                    m('i.fa.fa-times-circle-o.text-muted', { onclick: function(){
+                        args.unselectTag(t.data.tag);
+                    }})
+                ]));
             });
         }
         var items = args.breadcrumbs();
@@ -1374,8 +1459,8 @@ var Breadcrumbs = {
                                             m('i.fa.fa-angle-right.m-r-xs'),
                                             item.label
                                         ]),
-                                        contributors,
-                                        tags
+                                        contributorsTemplate,
+                                        tagsTemplate
                                         ]
                                     );
                                 })
@@ -1409,7 +1494,6 @@ var Breadcrumbs = {
                                 stayCallback: function () {
                                     args.allProjectsLoaded(false);
                                     args.updateList(args.breadcrumbs()[args.breadcrumbs().length - 1]);
-
                                 },
                                 trackingCategory: 'myProjects',
                                 trackingAction: 'add-component'
@@ -1418,8 +1502,8 @@ var Breadcrumbs = {
                         return [
                             m('li', [
                                 m('span.btn', item.label),
-                                contributors,
-                                tags,
+                                contributorsTemplate,
+                                tagsTemplate,
                                 m('i.fa.fa-angle-right')
                             ]),
                             addProjectTemplate
@@ -1430,8 +1514,8 @@ var Breadcrumbs = {
                 item.placement = 'breadcrumb'; // differentiate location for proper breadcrumb actions
                 return m('li',[
                     m('span.btn.btn-link', {onclick : updateFilesOnClick.bind(null, item)},  item.label),
-                    contributors,
-                    tags,
+                    contributorsTemplate,
+                    tagsTemplate,
                     m('i.fa.fa-angle-right')
                     ]
                 );
@@ -1521,7 +1605,7 @@ var Filters = {
         };
         return m('.db-filters.m-t-lg',
             [
-                m('h5', [
+                m('h5.m-t-sm', [
                     'Contributors ',
                     m('i.fa.fa-question-circle.text-muted', {
                         'data-toggle':  'tooltip',
@@ -1535,7 +1619,7 @@ var Filters = {
                 m('ul', [
                     args.nodes.projects.flatData.loaded !== args.nodes.projects.flatData.total ? m('.ball-beat.text-center.m-t-md', m('')) : returnNameFilters()
                 ]),
-                m('h5', [
+                m('h5.m-t-sm', [
                     'Tags',
                     m('.pull-right',
                         args.tagFilters.length && ctrl.tagTotalPages() > 1 ? m.component(MicroPagination, { currentPage : ctrl.tagCurrentPage, totalPages : ctrl.tagTotalPages, type: 'tags' }) : ''
@@ -1587,7 +1671,7 @@ var Information = {
         }
         if (args.selected().length === 1) {
             var item = args.selected()[0].data;
-            showRemoveFromCollection = collectionFilter.data.nodeType === 'collection' && args.selected()[0].parentID === 0; // Be able to remove top level items but not their children
+            showRemoveFromCollection = collectionFilter.data.nodeType === 'collection' && args.selected()[0].depth === 1; // Be able to remove top level items but not their children
             if(item.attributes.category === ''){
                 item.attributes.category = 'Uncategorized';
             }
@@ -1637,8 +1721,7 @@ var Information = {
             ]);
         }
         if (args.selected().length > 1) {
-            var firstItem = args.selected()[0].data;
-            showRemoveFromCollection = !collectionFilter.data.nodeType && !firstItem.relationships.parent;
+            showRemoveFromCollection = collectionFilter.data.nodeType === 'collection'  && args.selected()[0].depth === 1;
             template = m('.p-sm', [
                 showRemoveFromCollection ? m('.clearfix', m('.btn.btn-default.btn-sm.p-xs.text-danger.pull-right', { onclick : function() {
                     args.removeProjectFromCollections();
