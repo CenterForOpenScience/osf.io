@@ -115,7 +115,7 @@ function buildCollectionNodeData (id) {
 }
 
 /**
- * Initialize File Browser. Prepeares an option object within FileBrowser
+ * Initialize File Browser. Prepares an option object within FileBrowser
  * @constructor
  */
 var MyProjects = {
@@ -152,6 +152,7 @@ var MyProjects = {
         self.treeData = m.prop({}); // Top level object that houses all the rows
         self.buildTree = m.prop(null); // Preprocess function that adds to each item TB specific attributes
         self.updateFolder = m.prop(null); // Updates view to redraw without messing up scroll location
+        self.projectsForTemplates = m.prop([]);
 
         // Add All my Projects and All my registrations to collections
         self.systemCollections = options.systemCollections || [
@@ -206,6 +207,10 @@ var MyProjects = {
                 if(nodeType === 'projects' && dataType === 'flatData' && typeObject.loaded === typeObject.total ){
                     self.generateFiltersList();
                 }
+                if(nodeType === 'projects' && dataType === 'flatData'){
+                    self.projectsForTemplates(self.nodes.projects.flatData.data);
+                }
+
                 if(typeObject.nextLink){
                     self.loadNodes(nodeType, dataType);
                 }
@@ -850,7 +855,8 @@ var MyProjects = {
                         ctrl.updateList(ctrl.breadcrumbs()[ctrl.breadcrumbs().length - 1]);
                     },
                     trackingCategory: 'myProjects',
-                    trackingAction: 'add-project'
+                    trackingAction: 'add-project',
+                    templates: ctrl.projectsForTemplates
                 })))
             ])) : '',
             m('.db-header.row', [
