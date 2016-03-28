@@ -5,8 +5,8 @@ from tests.factories import ModularOdmFactory, FakerAttribute
 from website.addons.github import model
 
 class GitHubOauthSettingsFactory(ModularOdmFactory):
-
-    FACTORY_FOR = model.AddonGitHubOauthSettings
+    class Meta:
+        model = model.AddonGitHubOauthSettings
 
     oauth_access_token = FakerAttribute('md5')
     oauth_token_type = None
