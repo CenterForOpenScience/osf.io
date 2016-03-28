@@ -534,10 +534,7 @@ var MyProjects = {
                         var child = self.buildTree()(item, self.treeData());
                         self.treeData().add(child);
                     }
-<<<<<<< HEAD
 
-=======
->>>>>>> f48d9e1... Complete working fetch on toggle from flatdata
                 }
                 self.selected([]);
                 self.updateFolder()(null, self.treeData());
