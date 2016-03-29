@@ -1100,7 +1100,10 @@ var Collections = {
                             if(dataArray[index+1]){
                                 saveNodetoCollection(index+1);
                             } else {
-                                self.updateList(false, null, collection);
+                                args.currentView().collection = collection;
+                                args.currentView().contributor = [];
+                                args.currentView().tag = [];
+                                args.updateList(false, null, collection);
                             }
                             if(!skipCount){
                                 collection.data.count(collection.data.count()+1);
