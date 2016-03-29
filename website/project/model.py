@@ -1437,7 +1437,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                     # Of more admins than just the current user
                     if len(admins) > 1:
                         self.request_embargo_termination(auth=auth)
-                        status.push_status_message("Your request to end this registration's embargo early has been received, and project administrators will be notified that their approval is requested.", kind='info', trust=False)
                     else:
                         self.terminate_embargo(auth=auth)
                 else:
@@ -3444,7 +3443,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             self.set_privacy('private', Auth(user))
 
     def request_embargo_termination(self, auth):
-        if not self.embargoed:
+        if not self.is_embargoed:
             raise NodeStateError("This node is not under active embargo")
 
         approval = EmbargoTerminationApproval(
@@ -3455,7 +3454,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         for (admin, node) in admins:
             approval.add_authorizer(admin, node=node)
         approval.save()
-        approval.ask()
+        approval.ask(admins)
 
     def terminate_embargo(self, auth):
         if not self.is_embargoed:
