@@ -11,6 +11,7 @@ var Raven = require('raven-js');
 var oop = require('./oop');
 var $osf = require('./osfHelpers');
 var Paginator = require('./paginator');
+var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 
 function removeNodesContributors(contributor, nodes) {
 
@@ -201,7 +202,7 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
             type: 'GET',
             dataType: 'json'
         }).done(function(response) {
-            nodesOriginal = $osf.getNodesOriginal(response[0], nodesOriginal);
+            nodesOriginal = projectSettingsTreebeardBase.getNodesOriginal(response[0], nodesOriginal);
             self.nodesOriginal(nodesOriginal);
         }).fail(function(xhr, status, error) {
             $osf.growl('Error', 'Unable to retrieve projects and components');

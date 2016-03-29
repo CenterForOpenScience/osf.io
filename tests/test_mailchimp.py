@@ -6,7 +6,7 @@ from nose.tools import *  # noqa; PEP8 asserts
 from tests.factories import UserFactory
 import mailchimp
 
-from framework.tasks import handlers
+from framework.celery_tasks import handlers
 
 class TestMailChimpHelpers(OsfTestCase):
 

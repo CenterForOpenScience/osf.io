@@ -2,7 +2,7 @@ import smtplib
 import logging
 from email.mime.text import MIMEText
 
-from framework.tasks import app
+from framework.celery_tasks import app
 from website import settings
 import sendgrid
 

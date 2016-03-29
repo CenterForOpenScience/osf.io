@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import pytz
+import markdown
 from datetime import datetime
 from flask import request
 from modularodm import Q
@@ -60,7 +61,7 @@ def create_new_file(obj, source, destination, destination_node):
             else:
                 new_path = obj.referent.materialized_path.replace(source['materialized'], destination['materialized'])
             new_file = FileNode.resolve_class(destination['provider'], FileNode.FILE).get_or_create(destination_node, new_path)
-            new_file.name = obj.referent.name
+            new_file.name = new_path.split('/')[-1]
             new_file.materialized_path = new_path
             new_file.save()
     return new_file
@@ -95,7 +96,7 @@ def send_comment_added_notification(comment, auth):
 
     context = dict(
         gravatar_url=auth.user.profile_image_url(),
-        content=comment.content,
+        content=markdown.markdown(comment.content, ['del_ins', 'markdown.extensions.tables', 'markdown.extensions.fenced_code']),
         page_type='file' if comment.page == Comment.FILES else node.project_or_component,
         page_title=comment.root_target.referent.name if comment.page == Comment.FILES else '',
         provider=PROVIDERS[comment.root_target.referent.provider] if comment.page == Comment.FILES else '',
