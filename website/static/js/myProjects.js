@@ -665,7 +665,7 @@ var MyProjects = {
                         );
                     } else {
                         template = m('.db-non-load-template.m-md.p-md.osf-box.text-center', [
-                            'This project either has no components or you do not have permission to view them.'
+                            'No components to display. Either there are no components, or there are private components in which you are not a contributor.'
                         ]);
                     }
                 }
