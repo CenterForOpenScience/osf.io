@@ -1548,8 +1548,6 @@ var Breadcrumbs = {
                                     }, function(r){
                                         Raven.captureMessage('New project did not return api with embeds', { url: url, data : r });
                                     });
-
-                                    args.updateList(args.breadcrumbs()[args.breadcrumbs().length - 1]);
                                 },
                                 trackingCategory: 'myProjects',
                                 trackingAction: 'add-component'
