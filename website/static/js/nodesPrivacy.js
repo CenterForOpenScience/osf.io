@@ -280,6 +280,7 @@ NodesPrivacyViewModel.prototype.makeEmbargoPublic = function() {
         $.map(self.nodesOriginal, function(node) {return node;})
     ).then(function (res) {
         $osf.unblock();
+        $('.modal-dialog').modal('hide');
         // Non-error response with Nodes still private implies more than one
         // admin in this registration tree, and approval is needed before the
         // embargo is lifted.
