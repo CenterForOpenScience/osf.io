@@ -127,6 +127,7 @@ var LogPieces = {
     node: {
         view: function (ctrl, logObject) {
             var nodeObject = logObject.embeds.nodes;
+
             if (logObject.attributes.action === 'node_removed') {
                 if (logObject.attributes.params.params_node) {
                 return m('span', logObject.attributes.params.params_node.title);
@@ -138,7 +139,7 @@ var LogPieces = {
                     }}, nodeObject.data[0].attributes.title);
                 }
                 else if (nodeObject.data[0].attributes) {
-                    return m('span', nodeObject.data[0].attributes.title)
+                    return m('span', nodeObject.data[0].attributes.title);
                 }
             } else {
                 return m('span', 'a project');
