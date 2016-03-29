@@ -15,15 +15,15 @@ class RegistrationSerializer(NodeSerializer):
         help_text='The associated Embargo is awaiting approval by project admins.'))
     pending_registration_approval = HideIfRetraction(ser.BooleanField(source='is_pending_registration', read_only=True,
         help_text='The associated RegistrationApproval is awaiting approval by project admins.'))
-    pending_retraction = HideIfRetraction(ser.BooleanField(source='is_pending_retraction', read_only=True,
-        help_text='The registration is awaiting retraction approval by project admins.'))
-    retracted = ser.BooleanField(source='is_retracted', read_only=True,
-                                 help_text='The registration has been retracted.')
+    pending_withdrawal = HideIfRetraction(ser.BooleanField(source='is_pending_retraction', read_only=True,
+        help_text='The registration is awaiting withdrawal approval by project admins.'))
+    withdrawn = ser.BooleanField(source='is_retracted', read_only=True,
+                                 help_text='The registration has been withdrawn.')
 
     date_registered = ser.DateTimeField(source='registered_date', read_only=True, help_text='Date time of registration.')
     embargo_end_date = HideIfRetraction(ser.SerializerMethodField(help_text='When the embargo on this registration will be lifted.'))
 
-    retraction_justification = ser.CharField(source='retraction.justification', read_only=True)
+    withdrawal_justification = ser.CharField(source='retraction.justification', read_only=True)
     registration_supplement = ser.SerializerMethodField()
     registered_meta = HideIfRetraction(ser.SerializerMethodField(
         help_text='A dictionary with supplemental registration questions and responses.'))
@@ -86,17 +86,22 @@ class RegistrationSerializer(NodeSerializer):
         related_view_kwargs={'node_id': '<root._id>'}
     ))
 
+    primary_institution = RelationshipField(
+        related_view='registrations:registration-institution-detail',
+        related_view_kwargs={'node_id': '<pk>'}
+    )
+
     # TODO: Finish me
 
     # TODO: Override create?
 
-    links = LinksField({'self': 'get_registration_url', 'html': 'get_absolute_url'})
+    links = LinksField({'self': 'get_registration_url', 'html': 'get_absolute_html_url'})
 
     def get_registration_url(self, obj):
         return absolute_reverse('registrations:registration-detail', kwargs={'node_id': obj._id})
 
     def get_absolute_url(self, obj):
-        return obj.absolute_url
+        return self.get_registration_url(obj)
 
     def get_registered_meta(self, obj):
         if obj.registered_meta:
@@ -152,7 +157,7 @@ class RegistrationContributorsSerializer(NodeContributorsSerializer):
     def get_absolute_url(self, obj):
         node_id = self.context['request'].parser_context['kwargs']['node_id']
         return absolute_reverse(
-            'registrations:node-contributor-detail',
+            'registrations:registration-contributor-detail',
             kwargs={
                 'node_id': node_id,
                 'user_id': obj._id

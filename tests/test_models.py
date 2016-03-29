@@ -25,7 +25,7 @@ from framework.auth import exceptions as auth_exc
 from framework.auth.exceptions import ChangePasswordError, ExpiredTokenError
 from framework.auth.utils import impute_names_model
 from framework.auth.signals import user_merged
-from framework.tasks import handlers
+from framework.celery_tasks import handlers
 from framework.bcrypt import check_password_hash
 from website import filters, language, settings, mailchimp_utils
 from website.exceptions import NodeStateError
@@ -60,7 +60,7 @@ from tests.factories import (
     NodeWikiFactory, RegistrationFactory, UnregUserFactory,
     ProjectWithAddonFactory, UnconfirmedUserFactory, PrivateLinkFactory,
     AuthUserFactory, DashboardFactory, FolderFactory,
-    NodeLicenseRecordFactory
+    NodeLicenseRecordFactory, InstitutionFactory
 )
 from tests.test_features import requires_piwik
 from tests.utils import mock_archive
@@ -933,6 +933,11 @@ class TestDisablingUsers(OsfTestCase):
         assert_true(isinstance(self.user.date_disabled, datetime.datetime))
         assert_false(self.user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST])
 
+    def test_disable_account_api(self):
+        settings.ENABLE_EMAIL_SUBSCRIPTIONS = True
+        with assert_raises(mailchimp_utils.mailchimp.InvalidApiKeyError):
+            self.user.disable_account()
+
 
 class TestMergingUsers(OsfTestCase):
 
@@ -1599,7 +1604,7 @@ class TestNode(OsfTestCase):
             NodeLog.ADDON_REMOVED
         )
 
-    @mock.patch('website.addons.github.model.AddonGitHubNodeSettings.config')
+    @mock.patch('website.addons.github.model.GitHubNodeSettings.config')
     def test_delete_mandatory_addon(self, mock_config):
         mock_config.added_mandatory = ['node']
         self.node.add_addon('github', self.auth)
@@ -2022,6 +2027,14 @@ class TestNodeUpdate(OsfTestCase):
         self.node.update({'is_public': False}, auth=Auth(self.user), save=True)
         last_log = self.node.logs[-1]
         assert_equal(last_log.action, NodeLog.MADE_PRIVATE)
+
+    def test_update_can_make_registration_public(self):
+        reg = RegistrationFactory(is_public=False)
+        reg.update({'is_public': True})
+
+        assert_true(reg.is_public)
+        last_log = reg.logs[-1]
+        assert_equal(last_log.action, NodeLog.MADE_PUBLIC)
 
     def test_updating_title_twice_with_same_title(self):
         original_n_logs = len(self.node.logs)
@@ -2618,18 +2631,32 @@ class TestProject(OsfTestCase):
         link.save()
         assert_in(link, self.project.private_links)
 
-    def test_has_anonymous_link(self):
-        link1 = PrivateLinkFactory(anonymous=True, key="link1")
+    @mock.patch('framework.auth.core.Auth.private_link')
+    def test_has_anonymous_link(self, mock_property):
+        mock_property.return_value(mock.MagicMock())
+        mock_property.anonymous = True
+
+        link1 = PrivateLinkFactory(key="link1")
         link1.nodes.append(self.project)
         link1.save()
+
         user2 = UserFactory()
         auth2 = Auth(user=user2, private_key="link1")
+
+        assert_true(has_anonymous_link(self.project, auth2))
+
+    @mock.patch('framework.auth.core.Auth.private_link')
+    def test_has_no_anonymous_link(self, mock_property):
+        mock_property.return_value(mock.MagicMock())
+        mock_property.anonymous = False
+
         link2 = PrivateLinkFactory(key="link2")
         link2.nodes.append(self.project)
         link2.save()
+
         user3 = UserFactory()
         auth3 = Auth(user=user3, private_key="link2")
-        assert_true(has_anonymous_link(self.project, auth2))
+
         assert_false(has_anonymous_link(self.project, auth3))
 
     def test_remove_unregistered_conributor_removes_unclaimed_record(self):
@@ -2857,7 +2884,7 @@ class TestProject(OsfTestCase):
         creator = UserFactory()
         project = ProjectFactory(creator=creator)
         contrib = UserFactory()
-        project.add_contributor(contrib, auth=Auth(user=creator))
+        project.add_contributor(contrib, permissions=['read', 'write', 'admin'], auth=Auth(user=creator))
         project.save()
         assert_in(creator, project.contributors)
         # Creator is removed from project
@@ -3968,6 +3995,15 @@ class TestRegisterNode(OsfTestCase):
 
     def test_registration_list(self):
         assert_in(self.registration._id, self.project.node__registrations)
+
+    def test_registration_gets_institution_affiliation(self):
+        node = NodeFactory()
+        institution = InstitutionFactory()
+        node.primary_institution = institution
+        node.save()
+        registration = RegistrationFactory(project=node)
+        assert_equal(registration.primary_institution._id, node.primary_institution._id)
+        assert_equal(set(registration.affiliated_institutions), set(node.affiliated_institutions))
 
 class TestNodeLog(OsfTestCase):
 

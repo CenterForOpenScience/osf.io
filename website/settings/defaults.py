@@ -27,6 +27,9 @@ ASSET_HASH_PATH = os.path.join(APP_PATH, 'webpack-assets.json')
 ROOT = os.path.join(BASE_PATH, '..')
 BCRYPT_LOG_ROUNDS = 12
 
+with open(os.path.join(APP_PATH, 'package.json'), 'r') as fobj:
+    VERSION = json.load(fobj)['version']
+
 # Hours before email confirmation tokens expire
 EMAIL_TOKEN_EXPIRATION = 24
 CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'static', 'vendor', 'bower_components', 'styles')
@@ -193,6 +196,7 @@ with open(os.path.join(ROOT, 'addons.json')) as fp:
     ADDONS_REQUESTED = addon_settings['addons']
     ADDONS_ARCHIVABLE = addon_settings['addons_archivable']
     ADDONS_COMMENTABLE = addon_settings['addons_commentable']
+    ADDONS_BASED_ON_IDS = addon_settings['addons_based_on_ids']
 
 ADDON_CATEGORIES = [
     'documentation',
@@ -215,6 +219,9 @@ SYSTEM_ADDED_ADDONS = {
 PIWIK_HOST = None
 PIWIK_ADMIN_TOKEN = None
 PIWIK_SITE_ID = None
+
+KEEN_PROJECT_ID = None
+KEEN_WRITE_KEY = None
 
 SENTRY_DSN = None
 SENTRY_DSN_JS = None
@@ -288,15 +295,14 @@ CELERY_RESULT_BACKEND = 'amqp://'
 
 #  Modules to import when celery launches
 CELERY_IMPORTS = (
-    'framework.tasks',
-    'framework.tasks.signals',
+    'framework.celery_tasks',
+    'framework.celery_tasks.signals',
     'framework.email.tasks',
     'framework.analytics.tasks',
     'website.mailchimp_utils',
     'website.notifications.tasks',
     'website.archiver.tasks',
-    'website.search.search',
-    'api.caching.tasks'
+    'website.search.search'
 )
 
 # celery.schedule will not be installed when running invoke requirements the first time.
@@ -330,3 +336,10 @@ DRAFT_REGISTRATION_APPROVAL_PERIOD = datetime.timedelta(days=10)
 assert (DRAFT_REGISTRATION_APPROVAL_PERIOD > EMBARGO_END_DATE_MIN), 'The draft registration approval period should be more than the minimum embargo end date.'
 
 PREREG_ADMIN_TAG = "prereg_admin"
+
+ENABLE_INSTITUTIONS = False
+
+ENABLE_VARNISH = False
+ENABLE_ESI = False
+VARNISH_SERVERS = []  # This should be set in local.py or cache invalidation won't work
+ESI_MEDIA_TYPES = {'application/vnd.api+json', 'application/json'}

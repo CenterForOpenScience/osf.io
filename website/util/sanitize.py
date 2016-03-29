@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import collections
+import re
 
 import bleach
 import json
@@ -128,3 +129,9 @@ def safe_json(value):
     :return: A JSON-formatted string that explicitly escapes forward slashes when needed
     """
     return json.dumps(value).replace('</', '<\\/')  # Fix injection of closing markup in strings
+
+def strip_ko(value):
+    """Filter that prevents display of Knockout punches syntax when rendering variables.
+    e.g. {{expression}}
+    """
+    return re.sub(r'}\s*}', '', re.sub(r'{\s*{', '', value))

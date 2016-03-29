@@ -31,7 +31,7 @@ from framework.guid.model import Guid
 from framework.mongo import client as client_proxy
 from framework.mongo import database as database_proxy
 from framework.transactions import commands, messages, utils
-from framework.tasks.handlers import celery_before_request
+from framework.celery_tasks.handlers import celery_before_request
 
 from website.project.model import (
     Node, NodeLog, Tag, WatchConfig, MetaSchema,
@@ -336,6 +336,7 @@ class ApiTestCase(DbTestCase, ApiAppTestCase, UploadTestCase, MockRequestTestCas
 
 class AdminTestCase(DbTestCase, AdminAppTestCase, UploadTestCase, MockRequestTestCase):
     pass
+
 
 # From Flask-Security: https://github.com/mattupstate/flask-security/blob/develop/flask_security/utils.py
 class CaptureSignals(object):

@@ -83,7 +83,6 @@ class TestNodeRegistrationSerializer(DbTestCase):
         should_not_relate_to_registrations = [
             'registered_from',
             'registered_by',
-            'primary_institution'
         ]
 
         # Attributes
@@ -92,7 +91,7 @@ class TestNodeRegistrationSerializer(DbTestCase):
             parse_date(attributes['date_registered']),
             reg.registered_date
         )
-        assert_equal(attributes['retracted'], reg.is_retracted)
+        assert_equal(attributes['withdrawn'], reg.is_retracted)
 
         # Relationships
         relationships = data['relationships']

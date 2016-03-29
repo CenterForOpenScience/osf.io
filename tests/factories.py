@@ -24,6 +24,7 @@ from modularodm.exceptions import NoResultsFound
 from framework.mongo import StoredObject
 from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
+from framework.guid.model import Guid
 from framework.sessions.model import Session
 from website.addons import base as addons_base
 from website.files.models import StoredFileNode
@@ -131,7 +132,7 @@ class AuthUserFactory(UserFactory):
 
     @post_generation
     def add_auth(self, create, extracted):
-        self.set_password('password')
+        self.set_password('password', notify=False)
         self.save()
         self.auth = (self.username, 'password')
 
@@ -256,7 +257,7 @@ class RegistrationFactory(AbstractNodeFactory):
             reg = register()
             add_approval_step(reg)
         else:
-            with patch('framework.tasks.handlers.enqueue_task'):
+            with patch('framework.celery_tasks.handlers.enqueue_task'):
                 reg = register()
                 add_approval_step(reg)
             with patch.object(reg.archive_job, 'archive_tree_finished', Mock(return_value=True)):
@@ -481,7 +482,7 @@ class CommentFactory(ModularOdmFactory):
     def _build(cls, target_class, *args, **kwargs):
         node = kwargs.pop('node', None) or NodeFactory()
         user = kwargs.pop('user', None) or node.creator
-        target = kwargs.pop('target', None) or node
+        target = kwargs.pop('target', None) or Guid.load(node._id)
         content = kwargs.pop('content', None) or 'Test comment.'
         instance = target_class(
             node=node,
@@ -490,20 +491,17 @@ class CommentFactory(ModularOdmFactory):
             content=content,
             *args, **kwargs
         )
-        if isinstance(target, target_class):
-            instance.root_target = target.root_target
+        if isinstance(target.referent, target_class):
+            instance.root_target = target.referent.root_target
         else:
             instance.root_target = target
-            if isinstance(instance.root_target, StoredFileNode):
-                file_id = instance.root_target._id
-                instance.node.commented_files[file_id] = instance.node.commented_files.get(file_id, 0) + 1
         return instance
 
     @classmethod
     def _create(cls, target_class, *args, **kwargs):
         node = kwargs.pop('node', None) or NodeFactory()
         user = kwargs.pop('user', None) or node.creator
-        target = kwargs.pop('target', None) or node
+        target = kwargs.pop('target', None) or Guid.load(node._id)
         content = kwargs.pop('content', None) or 'Test comment.'
         instance = target_class(
             node=node,
@@ -512,14 +510,10 @@ class CommentFactory(ModularOdmFactory):
             content=content,
             *args, **kwargs
         )
-        if isinstance(target, target_class):
-            instance.root_target = target.root_target
+        if isinstance(target.referent, target_class):
+            instance.root_target = target.referent.root_target
         else:
             instance.root_target = target
-            if isinstance(instance.root_target, StoredFileNode):
-                file_id = instance.root_target._id
-                instance.node.commented_files[file_id] = instance.node.commented_files.get(file_id, 0) + 1
-                instance.node.save()
         instance.save()
         return instance
 
@@ -528,25 +522,8 @@ class InstitutionFactory(ModularOdmFactory):
     FACTORY_FOR = Institution
     _id = Sequence(lambda n: "S{}".format(n))
     name = Sequence(lambda n: "School{}".format(n))
-
-    @classmethod
-    def _create(cls, target_class, _id, name):
-        instance = target_class(
-            _id=_id,
-            name=name,
-            logo_name='logo.img',
-        )
-        instance.save()
-        return instance
-
-    @classmethod
-    def _build(cls, target_class, _id, name):
-        instance = target_class(
-            _id=_id,
-            name=name,
-            logo_name='logo.img',
-        )
-        return instance
+    logo_name = 'logo.img'
+    auth_url = 'http://thisIsUrl.biz'
 
 
 class NotificationSubscriptionFactory(ModularOdmFactory):
