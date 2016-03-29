@@ -221,7 +221,7 @@ class TwoFactorRequiredError(AuthenticationFailed):
 
 class InvalidModelValueError(JSONAPIException):
     status_code = 400
-    default_detail = _('Invalid value in POST/PUT/PATCH request.')
+    default_detail = ('Invalid value in POST/PUT/PATCH request.')
 
 
 class TargetNotSupportedError(Exception):
