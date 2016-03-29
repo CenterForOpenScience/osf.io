@@ -1,7 +1,4 @@
-import requests
-
 from modularodm import Q
-from modularodm.exceptions import NoResultsFound
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
 from rest_framework.status import HTTP_204_NO_CONTENT
@@ -48,10 +45,8 @@ from api.logs.serializers import NodeLogSerializer
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
 from website.models import Node, Pointer, Comment, Institution, NodeLog
-from website.files.models import StoredFileNode, FileNode, TrashedFileNode
-from website.files.models.dropbox import DropboxFile
+from website.files.models import FileNode
 from framework.auth.core import User
-from website.util import waterbutler_api_url_for
 
 
 class NodeMixin(object):
@@ -1885,41 +1880,13 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
         return Q('node', 'eq', self.get_node()) & Q('root_target', 'ne', None)
 
     def get_queryset(self):
-        commented_files = []
         comments = Comment.find(self.get_query_from_request())
         for comment in comments:
             # Deleted root targets still appear as tuples in the database,
             # but need to be None in order for the query to be correct.
-            if isinstance(comment.root_target.referent, TrashedFileNode):
+            if comment.root_target.referent.is_deleted:
                 comment.root_target = None
                 comment.save()
-
-            elif isinstance(comment.root_target.referent, StoredFileNode) and comment.root_target.referent not in commented_files:
-                commented_files.append(comment.root_target)
-
-        for root_target in commented_files:
-            if root_target.referent.provider == 'osfstorage':
-                try:
-                    StoredFileNode.find(
-                        Q('node', 'eq', self.get_node()._id) &
-                        Q('_id', 'eq', root_target.referent._id) &
-                        Q('is_file', 'eq', True)
-                    )
-                except NoResultsFound:
-                    Comment.update(Q('root_target', 'eq', root_target), data={'root_target': None})
-            else:
-                referent = root_target.referent
-                if referent.provider == 'dropbox':
-                    # referent.path is the absolute path for the db file, but wb requires the relative path
-                    referent = DropboxFile.load(root_target.referent._id)
-                url = waterbutler_api_url_for(self.get_node()._id, referent.provider, referent.path, meta=True)
-                waterbutler_request = requests.get(
-                    url,
-                    cookies=self.request.COOKIES,
-                    headers={'Authorization': self.request.META.get('HTTP_AUTHORIZATION')},
-                )
-                if waterbutler_request.status_code == 404:
-                    Comment.update(Q('root_target', 'eq', root_target), data={'root_target': None})
 
         return Comment.find(self.get_query_from_request())
 

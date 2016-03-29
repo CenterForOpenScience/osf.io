@@ -34,6 +34,8 @@ class JSONAPIBaseView(generics.GenericAPIView):
         def partial(item):
             # resolve must be implemented on the field
             view, view_args, view_kwargs = field.resolve(item)
+            if not view:
+                return None
             if issubclass(view.cls, ListModelMixin) and field.always_embed:
                 raise Exception("Cannot auto-embed a list view.")
             request = EmbeddedRequest(self.request)

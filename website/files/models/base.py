@@ -20,6 +20,7 @@ from framework.analytics import get_basic_counters
 from website import util
 from website.files import utils
 from website.files import exceptions
+from website.project.model import Commentable
 
 
 __all__ = (
@@ -36,7 +37,7 @@ PROVIDER_MAP = {}
 logger = logging.getLogger(__name__)
 
 
-class TrashedFileNode(StoredObject):
+class TrashedFileNode(StoredObject, Commentable):
     """The graveyard for all deleted FileNodes"""
     _id = fields.StringField(primary=True)
 
@@ -66,6 +67,22 @@ class TrashedFileNode(StoredObject):
         """
         return self.node.web_url_for('addon_deleted_file', trashed_id=self._id)
 
+    # For Comment API compatibility
+    @property
+    def target_type(self):
+        return 'files'
+
+    @property
+    def root_target_page(self):
+        return 'files'
+
+    @property
+    def is_deleted(self):
+        return True
+
+    def belongs_to_node(self, node_id):
+        return self.node._id == node_id
+
     def restore(self, recursive=True, parent=None):
         """Recreate a StoredFileNode from the data in this object
         Will re-point all guids and finally remove itself
@@ -93,7 +110,7 @@ class TrashedFileNode(StoredObject):
 
 
 @unique_on(['node', 'name', 'parent', 'is_file', 'provider', 'path'])
-class StoredFileNode(StoredObject):
+class StoredFileNode(StoredObject, Commentable):
     """The storage backend for FileNode objects.
     This class should generally not be used or created manually as FileNode
     contains all the helpers required.
@@ -169,6 +186,23 @@ class StoredFileNode(StoredObject):
     def absolute_api_v2_url(self):
         path = '/files/{}/'.format(self._id)
         return util.api_v2_url(path)
+
+    # For Comment API compatibility
+    @property
+    def target_type(self):
+        return 'files'
+
+    @property
+    def root_target_page(self):
+        return 'files'
+
+    @property
+    def is_deleted(self):
+        if self.provider == 'osfstorage':
+            return False
+
+    def belongs_to_node(self, node_id):
+        return self.node._id == node_id
 
     # used by django and DRF
     def get_absolute_url(self):

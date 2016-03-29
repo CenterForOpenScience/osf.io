@@ -14,11 +14,13 @@ from modularodm import fields
 
 from framework.forms.utils import sanitize
 from framework.guid.model import GuidStoredObject
+from framework.mongo import utils as mongo_utils
 
 from website import settings
 from website.addons.base import AddonNodeSettingsBase
 from website.addons.wiki import utils as wiki_utils
 from website.addons.wiki.settings import WIKI_CHANGE_DATE
+from website.project.model import Commentable
 from website.project.signals import write_permissions_revoked
 
 from website.exceptions import NodeStateError
@@ -152,7 +154,7 @@ def render_content(content, node):
     return sanitized_content
 
 
-class NodeWikiPage(GuidStoredObject):
+class NodeWikiPage(GuidStoredObject, Commentable):
 
     _id = fields.StringField(primary=True)
 
@@ -176,6 +178,27 @@ class NodeWikiPage(GuidStoredObject):
     @property
     def rendered_before_update(self):
         return self.date < WIKI_CHANGE_DATE
+
+    # For Comment API compatibility
+    @property
+    def target_type(self):
+        return 'wiki'
+
+    @property
+    def root_target_page(self):
+        return 'wiki'
+
+    @property
+    def is_deleted(self):
+        key = mongo_utils.to_mongo_key(self.page_name)
+        return key not in self.node.wiki_pages_current
+
+    def belongs_to_node(self, node_id):
+        return self.node._id == node_id
+
+    # used by django and DRF - use v1 url since there are no v2 wiki routes
+    def get_absolute_url(self):
+        return '{}wiki/{}/'.format(self.node.absolute_url, self.page_name)
 
     def html(self, node):
         """The cleaned HTML of the page"""
