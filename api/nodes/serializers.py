@@ -1,5 +1,6 @@
 from rest_framework import serializers as ser
 from rest_framework import exceptions
+from rest_framework.exceptions import ValidationError
 
 from modularodm import Q
 from modularodm.exceptions import ValidationValueError
@@ -261,7 +262,9 @@ class NodeSerializer(JSONAPISerializer):
             except PermissionsError:
                 raise exceptions.PermissionDenied
             except NodeUpdateError as e:
-                raise exceptions.ValidationError(detail=e.reason)
+                raise ValidationError(detail=e.reason)
+            except NodeStateError as e:
+                raise InvalidModelValueError(detail=e.message)
 
         return node
 
