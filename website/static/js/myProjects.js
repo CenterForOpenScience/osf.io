@@ -1420,7 +1420,10 @@ var Breadcrumbs = {
         var viewOnly = args.viewOnly;
         var mobile = window.innerWidth < MOBILE_WIDTH; // true if mobile view
         var updateFilesOnClick = function (item) {
-                args.updateFilesData(item);
+                if (item.type === 'node')
+                  args.updateFilesData(item, item.data.id);
+                else
+                  args.updateFilesData(item);
                 $osf.trackClick('myProjects', 'projectOrganizer', 'click-on-breadcrumbs');
         };
         var contributorsTemplate = [];
