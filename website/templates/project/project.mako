@@ -36,7 +36,7 @@
                     <div class="btn-group">
                     % if not node["is_public"]:
                         <button class='btn btn-default disabled'>Private</button>
-                        % if 'admin' in user['permissions'] and not node['is_pending_registration'] and not node['embargo_end_date']:
+                        % if 'admin' in user['permissions'] and not node['is_pending_registration'] and not node['is_pending_embargo']:
                             <a class="btn btn-default"  href="#nodesPrivacy" data-toggle="modal" >Make Public</a>
                         % endif
                     % else:
