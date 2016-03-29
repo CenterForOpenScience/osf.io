@@ -131,12 +131,13 @@ BaseComment.prototype.fetch = function() {
             query += '&filter[target]=' + self.id();
         }
         var url = osfHelpers.apiV2Url(self.$root.nodeType + '/' + window.contextVars.node.id + '/comments/', {query: query});
-        self.fetchNext(url, []);
+        var setUnread = true;
+        self.fetchNext(url, [], setUnread);
     }
 };
 
 /* Go through the paginated API response to fetch all comments for the specified target */
-BaseComment.prototype.fetchNext = function(url, comments) {
+BaseComment.prototype.fetchNext = function(url, comments, setUnread) {
     var self = this;
     var deferred = $.Deferred();
     if (self._loaded) {
@@ -148,8 +149,12 @@ BaseComment.prototype.fetchNext = function(url, comments) {
         {'isCors': true});
     request.done(function(response) {
         comments = comments.concat(response.data);
+        if (!osfHelpers.urlParams().view_only && setUnread) {
+            self.unreadComments(response.links.meta.unread);
+            setUnread = false;
+        }
         if (response.links.next !== null) {
-            self.fetchNext(response.links.next, comments);
+            self.fetchNext(response.links.next, comments, setUnread);
         } else {
             self.comments(
                 ko.utils.arrayMap(comments, function(comment) {
@@ -163,29 +168,6 @@ BaseComment.prototype.fetchNext = function(url, comments) {
     });
     return deferred.promise();
 };
-
-BaseComment.prototype.setUnreadCommentCount = function() {
-    var self = this;
-    var url;
-    if (self.page() === FILES) {
-        url = osfHelpers.apiV2Url('files/' + self.$root.fileId + '/', {query: 'related_counts=True'});
-    } else {
-        url = osfHelpers.apiV2Url(self.$root.nodeType + '/' + window.contextVars.node.id + '/', {query: 'related_counts=True'});
-    }
-    var request = osfHelpers.ajaxJSON(
-        'GET',
-        url,
-        {'isCors': true});
-    request.done(function(response) {
-        if (self.page() === FILES) {
-            self.unreadComments(response.data.relationships.comments.links.related.meta.unread);
-        } else {
-            self.unreadComments(response.data.relationships.comments.links.related.meta.unread.node);
-        }
-    });
-    return request;
-};
-
 
 BaseComment.prototype.configureCommentsVisibility = function() {
     var self = this;
@@ -597,10 +579,6 @@ var CommentListModel = function(options) {
     self.togglePane = options.togglePane;
 
     self.unreadComments = ko.observable(0);
-    if (!osfHelpers.urlParams().view_only) {
-        self.setUnreadCommentCount();
-    }
-
     self.displayCount = ko.pureComputed(function() {
         if (self.unreadComments() !== 0) {
             return self.unreadComments().toString();
