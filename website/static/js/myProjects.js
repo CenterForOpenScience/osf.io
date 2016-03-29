@@ -1431,24 +1431,24 @@ var Breadcrumbs = {
         if(args.currentView().contributor.length) {
             contributorsTemplate.push(m('span.text-muted', 'with '));
             args.currentView().contributor.forEach(function (c) {
-                contributorsTemplate.push(m('span.comma-separated.filter-breadcrumb', [
+                contributorsTemplate.push(m('span.comma-separated.filter-breadcrumb.myprojects', [
                     c.label,
                     ' ',
-                    m('i.fa.fa-times-circle-o.text-muted', { onclick: function(){
+                    m('button', { onclick: function(){
                         args.unselectContributor(c.data.id);
-                    }})
+                    }}, m('span', '×'))
                 ]));
             });
         }
         if(args.currentView().tag.length){
             tagsTemplate.push(m('span.text-muted.m-l-sm', 'tagged '));
             args.currentView().tag.forEach(function(t){
-                tagsTemplate.push(m('span.comma-separated.filter-breadcrumb', [
+                tagsTemplate.push(m('span.comma-separated.filter-breadcrumb.myprojects', [
                     t.label,
                     ' ',
-                    m('i.fa.fa-times-circle-o.text-muted', { onclick: function(){
+                    m('button', { onclick: function(){
                         args.unselectTag(t.data.tag);
-                    }})
+                    }}, m('span', '×'))
                 ]));
             });
         }
