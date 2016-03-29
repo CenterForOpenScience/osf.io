@@ -228,7 +228,7 @@ var MyProjects = {
 
 
         // Initial Breadcrumb for All my projects
-        var initialBreadcrumbs = options.initialBreadcrumbs || [new LinkObject('collection', { nodeType : 'projects'}, 'All my projects')];
+        var initialBreadcrumbs = options.initialBreadcrumbs || [self.systemCollections[0]];
         self.breadcrumbs = m.prop(initialBreadcrumbs);
         // Calculate name filters
         self.nameFilters = [];
