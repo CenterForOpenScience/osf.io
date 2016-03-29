@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='OSFStatistic',
+            name='OSFWebsiteStatistics',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('users', models.IntegerField(default=0, verbose_name=b'OSF users')),

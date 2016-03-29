@@ -18,7 +18,7 @@ from admin.metrics.utils import (
     get_all_user_count,
     get_unregistered_users,
 )
-from admin.metrics.models import OSFStatistic
+from admin.metrics.models import OSFWebsiteStatistics
 
 
 class TestMetricsGetProjects(AdminTestCase):
@@ -58,16 +58,16 @@ class TestMetricsGetDaysStatistics(AdminTestCase):
 
     def test_time_now(self):
         get_days_statistics(datetime.utcnow())
-        nt.assert_equal(OSFStatistic.objects.count(), 1)
-        nt.assert_equal(OSFStatistic.objects.latest('date').projects, 3)
+        nt.assert_equal(OSFWebsiteStatistics.objects.count(), 1)
+        nt.assert_equal(OSFWebsiteStatistics.objects.latest('date').projects, 3)
 
     def test_delta(self):
         get_days_statistics(datetime.utcnow())
         NodeFactory(category='project')  # makes 2 nodes
         NodeFactory(category='project')  # makes 2 more nodes
-        latest = OSFStatistic.objects.latest('date')
+        latest = OSFWebsiteStatistics.objects.latest('date')
         get_days_statistics(datetime.utcnow(), latest)
-        even_later = OSFStatistic.objects.latest('date')
+        even_later = OSFWebsiteStatistics.objects.latest('date')
         nt.assert_equal(even_later.delta_projects, 4)
 
 
@@ -86,16 +86,16 @@ class TestMetricsGetOSFStatistics(AdminTestCase):
         self.time = time_now + timedelta(seconds=1)
 
     def test_get_two_more_days(self):
-        nt.assert_equal(OSFStatistic.objects.count(), 1)
+        nt.assert_equal(OSFWebsiteStatistics.objects.count(), 1)
         get_osf_statistics()
-        nt.assert_equal(OSFStatistic.objects.count(), 3)
+        nt.assert_equal(OSFWebsiteStatistics.objects.count(), 3)
 
     def test_dont_add_another(self):
-        nt.assert_equal(OSFStatistic.objects.count(), 1)
+        nt.assert_equal(OSFWebsiteStatistics.objects.count(), 1)
         get_osf_statistics()
-        nt.assert_equal(OSFStatistic.objects.count(), 3)
+        nt.assert_equal(OSFWebsiteStatistics.objects.count(), 3)
         get_osf_statistics()
-        nt.assert_equal(OSFStatistic.objects.count(), 3)
+        nt.assert_equal(OSFWebsiteStatistics.objects.count(), 3)
 
 
 class TestMetricListDays(AdminTestCase):

@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from modularodm import Q
 from website.project.model import User, Node
 
-from .models import OSFStatistic
+from .models import OSFWebsiteStatistics
 
 DAY_LEEWAY = 86400 - 60  # How many seconds are counted as a full day for the
 # last day
@@ -37,17 +37,17 @@ def get_osf_statistics(time=None):
     """
     time = get_previous_midnight(time)
     latest = None
-    if OSFStatistic.objects.count() != 0:
-        latest = OSFStatistic.objects.latest('date')
+    if OSFWebsiteStatistics.objects.count() != 0:
+        latest = OSFWebsiteStatistics.objects.latest('date')
         if latest.date.date() == time.date():
             return  # Don't add another
     for date in get_list_of_dates(latest.date, time):
         get_days_statistics(date, latest)
-        latest = OSFStatistic.objects.latest('date')
+        latest = OSFWebsiteStatistics.objects.latest('date')
 
 
 def get_days_statistics(time, latest=None):
-    statistic = OSFStatistic(date=time)
+    statistic = OSFWebsiteStatistics(date=time)
     # Basic user count
     statistic.users = get_all_user_count(time)
     # Users who are currently unregistered

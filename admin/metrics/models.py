@@ -1,7 +1,7 @@
 from django.db import models
 
 
-class OSFStatistic(models.Model):
+class OSFWebsiteStatistics(models.Model):
     users = models.IntegerField(verbose_name='OSF users', default=0)
     delta_users = models.IntegerField(default=0)
     unregistered_users = models.IntegerField(verbose_name='Unregistered users',

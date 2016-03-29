@@ -3,8 +3,8 @@ from django.shortcuts import redirect
 from django.core.urlresolvers import reverse
 from djqscsv import render_to_csv_response
 
-from .models import OSFStatistic
-from .utils import get_osf_statistics
+from admin.metrics.models import OSFWebsiteStatistics
+from admin.metrics.utils import get_osf_statistics
 
 
 def update_metrics(request):
@@ -13,12 +13,12 @@ def update_metrics(request):
 
 
 def download_csv(request):
-    queryset = OSFStatistic.objects.all()
+    queryset = OSFWebsiteStatistics.objects.all().order_by('-date')
     return render_to_csv_response(queryset)
 
 
 class OSFStatisticsListView(ListView):
-    model = OSFStatistic
+    model = OSFWebsiteStatistics
     template_name = 'metrics/osf_statistics.html'
     context_object_name = 'metrics'
     paginate_by = 50
