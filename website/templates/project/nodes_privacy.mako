@@ -10,7 +10,7 @@
                 <div class="modal-body">
                     <!-- warning page -->
                     <div data-bind="if: page() == WARNING">
-                        <span data-bind="html:message"></span>
+                      <span data-bind="html:message"></span>
                     </div>
                     <!-- end warning page -->
 
@@ -101,19 +101,23 @@
 
                     <a href="#" class="btn btn-default" data-bind="click: clear" data-dismiss="modal">Cancel</a>
 
-                <span data-bind="if: page() == WARNING">
+                    <span data-bind="if: page() == WARNING">
+                      <span data-bind="if: parentIsEmbargoed">
+                        <a class="btn btn-primary" data-bind="click: makeEmbargoPublic">Confirm</a>
+                      </span>
+                      <span data-bind="ifnot: parentIsEmbargoed">
                         <a class="btn btn-primary" data-bind="visible: hasChildren(), click:selectProjects">Continue</a>
                         <a class="btn btn-primary" data-bind="visible: !hasChildren(), click:confirmChanges">Confirm</a>
-                </span>
+                      </span>
+                    </span>
 
-                <span data-bind="if: page() == SELECT">
-                    <a class="btn btn-primary" data-bind="click:confirmWarning">Continue</a>
-                </span>
+                    <span data-bind="if: page() == SELECT">
+                      <a class="btn btn-primary" data-bind="click:confirmWarning">Continue</a>
+                    </span>
 
-                <span data-bind="if: page() == CONFIRM && (nodesChangedPublic().length + nodesChangedPrivate().length <= 100)">
-                    <a href="#" class="btn btn-primary" data-bind="click: confirmChanges, visible: nodesChanged()" data-dismiss="modal">Confirm</a>
-                </span>
-
+                    <span data-bind="if: page() == CONFIRM && (nodesChangedPublic().length + nodesChangedPrivate().length <= 100)">
+                      <a href="#" class="btn btn-primary" data-bind="click: confirmChanges, visible: nodesChanged()" data-dismiss="modal">Confirm</a>
+                    </span>
                 </div><!-- end modal-footer -->
             </div><!-- end modal-content -->
         </div>
