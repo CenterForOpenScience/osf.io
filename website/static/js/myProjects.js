@@ -874,7 +874,6 @@ var MyProjects = {
                     title: 'Create new project',
                     categoryList: ctrl.categoryList,
                     stayCallback: function () {
-                        console.log(this.saveResult());
                         var savedItem = this.saveResult().data;
                         var url = $osf.apiV2Url('nodes/' + savedItem.id + '/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
                         m.request({method : 'GET', url : url, config : xhrconfig, background: true}).then(function(r){
@@ -889,8 +888,6 @@ var MyProjects = {
                         }, function(r){
                             Raven.captureMessage('New project did not return api with embeds', { url: url, data : r });
                         });
-
-
                     },
                     trackingCategory: 'myProjects',
                     trackingAction: 'add-project',
@@ -1536,6 +1533,18 @@ var Breadcrumbs = {
                                 title: 'Create new component',
                                 categoryList: args.categoryList,
                                 stayCallback: function () {
+                                    var savedItem = this.saveResult().data;
+                                    var url = $osf.apiV2Url('nodes/' + savedItem.id + '/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
+                                    m.request({method : 'GET', url : url, config : xhrconfig, background: true}).then(function(r){
+                                        var item = r.data;
+                                        // ctrl.currentView().contributor = [];
+                                        // ctrl.currentView().tag = [];
+                                        args.indexes()[parentID].children.unshift(item);
+                                        args.updateList(false,parentID);
+                                    }, function(r){
+                                        Raven.captureMessage('New project did not return api with embeds', { url: url, data : r });
+                                    });
+
                                     args.updateList(args.breadcrumbs()[args.breadcrumbs().length - 1]);
                                 },
                                 trackingCategory: 'myProjects',
