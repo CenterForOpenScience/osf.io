@@ -20,7 +20,6 @@ from modularodm.validators import MaxLengthValidator
 from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationValueError
 
-from api.base.utils import absolute_reverse
 from framework import status
 from framework.mongo import ObjectId
 from framework.mongo import StoredObject
@@ -43,6 +42,7 @@ from framework.utils import iso8601format
 from website import language, mails, settings, tokens
 from website.util import web_url_for
 from website.util import api_url_for
+from website.util import api_v2_url
 from website.util import sanitize
 from website.exceptions import (
     NodeStateError,
@@ -184,7 +184,8 @@ class Comment(GuidStoredObject, SpamMixin):
 
     @property
     def absolute_api_v2_url(self):
-        return absolute_reverse('comments:comment-detail', kwargs={'comment_id': self._id})
+        path = '/comments/{}/'.format(self._id)
+        return api_v2_url(path)
 
     # used by django and DRF
     def get_absolute_url(self):
@@ -528,9 +529,8 @@ class NodeLog(StoredObject):
 
     @property
     def absolute_api_v2_url(self):
-        from api.logs.views import NodeLogDetail
-
-        return absolute_reverse('{}:{}'.format(NodeLogDetail.view_category, NodeLogDetail.view_name), kwargs={'log_id': self._id})
+        path = '/logs/{}/'.format(self._id)
+        return api_v2_url(path)
 
     def get_absolute_url(self):
         return self.absolute_api_v2_url
@@ -2421,10 +2421,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     @property
     def absolute_api_v2_url(self):
         if self.is_registration:
-            return absolute_reverse('registrations:registration-detail', kwargs={'node_id': self._id})
+            path = '/registrations/{}/'.format(self._id)
+            return api_v2_url(path)
         if self.is_folder:
-            return absolute_reverse('collections:collection-detail', kwargs={'collection_id': self._id})
-        return absolute_reverse('nodes:node-detail', kwargs={'node_id': self._id})
+            path = '/collections/{}/'.format(self._id)
+            return api_v2_url(path)
+        path = '/nodes/{}/'.format(self._id)
+        return api_v2_url(path)
 
     # used by django and DRF
     def get_absolute_url(self):
