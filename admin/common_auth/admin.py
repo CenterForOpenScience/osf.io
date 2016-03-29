@@ -1,7 +1,8 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import Permission
-from django.contrib.auth.forms import PasswordResetForm, UserCreationForm
+from forms import CustomUserRegistrationForm
+from django.contrib.auth.forms import PasswordResetForm
 
 from .models import MyUser
 
@@ -11,7 +12,7 @@ class PermissionAdmin(admin.ModelAdmin):
 
 
 class CustomUserAdmin(UserAdmin):
-    add_form = UserCreationForm
+    add_form = CustomUserRegistrationForm
     list_display = ['email', 'first_name', 'last_name', 'is_active', 'confirmed', 'osf_id']
     fieldsets = (
         (None, {'fields': ('email', 'password',)}),
