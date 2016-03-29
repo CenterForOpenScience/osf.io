@@ -93,6 +93,7 @@ class TestFileView(ApiTestCase):
         )
         self.file.reload()
         self.file.save()
+        self.node.reload()
         assert_equal(res.status_code, 200)
         assert_equal(self.file.checkout, self.user)
 
