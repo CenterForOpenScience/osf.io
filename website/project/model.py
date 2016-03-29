@@ -1449,7 +1449,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             self.save()
 
     def create_keenio_readkey(self):
-        api_readkey = scoped_keys.encrypt(settings.KEEN_MASTER_KEY, options= {
+        api_readkey = scoped_keys.encrypt(settings.KEEN_MASTER_KEY, options={
             'filters': [{
                 'property_name': 'node.id',
                 'operator': 'eq',
