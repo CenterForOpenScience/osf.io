@@ -348,23 +348,20 @@ var tbOptions = {
     ontogglefolder : function (item, event) {
         var tb = this;
         $osf.trackClick('myProjects', 'projectOrganizer', 'expand-collapse-project-children');
-        if (!item.open) {
-            item.load = false;
-        }
         $('[data-toggle="tooltip"]').tooltip();
-        if (item.children.length === 0 && tb.options.nodes.projects.flatData.loaded === tb.options.nodes.projects.flatData.total && tb.options.indexes()[item.data.id]) {
-            var childrenToAdd = tb.options.indexes()[item.data.id].children;
-            if(childrenToAdd.length){
-                var child, i;
-                for (i = 0; i < childrenToAdd.length; i++) {
-                    child = tb.buildTree(childrenToAdd[i], item);
-                    item.add(child);
-                }
-                tb.redraw();
-                tb.updateFolder(null, item);
-            }
+        // if (item.children.length === 0 && tb.options.nodes.projects.flatData.loaded === tb.options.nodes.projects.flatData.total && tb.options.indexes()[item.data.id]) {
+        //     var childrenToAdd = tb.options.indexes()[item.data.id].children;
+        //     if(childrenToAdd.length){
+        //         var child, i;
+        //         for (i = 0; i < childrenToAdd.length; i++) {
+        //             child = tb.buildTree(childrenToAdd[i], item);
+        //             item.add(child);
+        //         }
+        //         tb.redraw();
+        //         tb.updateFolder(null, item);
+        //     }
 
-        }
+        // }
 
     },
     onscrollcomplete : function () {
@@ -378,7 +375,28 @@ var tbOptions = {
         return m('i.fa.fa-cube');
     },
     resolveToggle : _poResolveToggle,
-    resolveLazyloadUrl : _poResolveLazyLoad,
+    // resolveLazyloadUrl : _poResolveLazyLoad,
+    resolveLazyloadUrl : function(item) {
+      console.log(item.open);
+      if (item.children.length > 0)
+        return null;
+      var tb = this;
+      var deferred = $.Deferred();
+
+      var key = this.options.currentView().collection.data.nodeType
+      this.options.fetchers[key].getChildren(item.data.id)
+        .then(function(children) {
+          // item.open = false;
+          // HACK to use promises with TB
+          tb.updateFolder(children, item);
+            // for (var i = 0; i < children.length; i++)
+            //     item.add(tb.buildTree(children[i], item));
+            // tb.updateFolder(null, item);
+
+            return deferred.resolve(null);
+        });
+      return deferred;
+    },
     resolveRefreshIcon : function () {
         return m('i.fa.fa-refresh.fa-spin');
     }, naturalScrollLimit : 0,
@@ -475,6 +493,7 @@ var ProjectOrganizer = {
                     mpUpdateFolder : args.updateFolder,
                     currentView: args.currentView,
                     nodes : args.nodes,
+                    fetchers : args.fetchers,
                     indexes : args.indexes
                 },
                 tbOptions

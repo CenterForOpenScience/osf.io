@@ -45,6 +45,132 @@ if (!window.Set) {
   };
 }
 
+
+function NodeFetcher(type) {
+  this.type = type || 'nodes';
+  this.loaded = 0;
+  this.total = 1;
+  this._flat = [];
+  this._orphans = [];
+  this._cache = {};
+  this._promise = null;
+  this._continue = true;
+  this.tree = {
+      0: {
+        id: 0,
+        data: {},
+        children: []
+      }
+  };
+  this._callbacks = {
+    done: [],
+    page: [],
+    children: [],
+  }
+  this.nextLink = $osf.apiV2Url('users/me/' + this.type + '/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
+}
+
+NodeFetcher.prototype = {
+  isFinished: function() {
+    return Object.keys(this._cache).length >= this.total;
+  },
+  progress: function() {
+    return Math.ceil(Object.keys(this._cache).length / this.total * 100);
+  },
+  start: function() {
+    return this.resume();
+  },
+  pause: function() {
+    this._continue = false;
+  },
+  resume: function() {
+    if (!this.nextLink) return this._promise = null;
+    if (this._promise) return this._promise;
+    return this._promise = m.request({method: 'GET', url: this.nextLink, config: xhrconfig, background: true})
+      .then(this._success.bind(this), this._fail.bind(this))
+      .then((function() {
+          m.redraw(true);
+          this._promise = null;
+          if(this.nextLink && this._continue) return this.resume();
+      }).bind(this));
+  },
+  get: function(id) {
+    if (!this._cache[id])
+      return this.fetch(id);
+    var deferred = m.deferred();
+    deferred.resolve(this._cache[id]);
+    return deferred.promise;
+  },
+  getChildren: function(id) {
+    //TODO Load via rootNode
+    if (this._cache[id].relationships.children.links.related.meta.count != this._cache[id].children.length) {
+      return this.fetchChildren(this._cache[id]);
+    }
+    var deferred = m.deferred();
+    deferred.resolve(this._cache[id].children);
+    return deferred.promise;
+  },
+  fetch: function(id) {
+    return m.request({method: 'GET', url: url, config: xhrconfig, background: true})
+      .then((function(results) {
+        debugger;
+      }));
+  },
+  fetchChildren: function(parent) {
+    console.log('FETCH CHILDREN', parent);
+    //TODO Allow suspending of children
+    return m.request({method: 'GET', url: parent.relationships.children.links.related.href + '?embed=contributors', config: xhrconfig, background: true})
+      .then(this._childrenSuccess.bind(this, parent), this._fail.bind(this));
+  },
+  _success: function(results) {
+    // Only reset if we're lower as loading children will increment this number
+    if (this.total < results.links.meta.total)
+      this.total = results.links.meta.total;
+
+    this.nextLink = results.links.next;
+
+    for(var i = 0; i < results.data.length; i++) {
+      if (results.data[i].relationships.parent)
+        this._orphans.push(results.data[i]); //TODO run through orphans
+      else
+        this._flat.push(results.data[i]);
+
+      if (this._cache[results.data[i].id]) continue;
+      this._cache[results.data[i].id] = _formatDataforPO(results.data[i]);
+      this._cache[results.data[i].id].children = [];
+
+      // if (results.data[i].relationships.children.links.related.meta.count > 0)
+      //   this.fetchChildren(results.data[i]);
+    }
+
+    this._callbacks.page.forEach((function(cb) {
+      cb(this);
+    }).bind(this))
+
+    if (!this.nextLink)
+      this._callbacks.done.forEach((function(cb) {
+        cb(this);
+      }).bind(this))
+  },
+  _childrenSuccess: function(parent, results) {
+    this.total += results.links.meta.total;
+    for(var i = 0; i < results.data.length; i++) {
+      this._cache[results.data[i].id] = results.data[i];
+      this._cache[parent.id].children.push(_formatDataforPO(results.data[i]));
+    }
+
+    return this._cache[parent.id];
+  },
+  _fail: function(results) {
+    debugger;
+  },
+  on: function(type, func) {
+    //Valid types are children, page, done
+    this._callbacks[type].push(func);
+  }
+}
+
+
 function getUID() {
     window.fileBrowserCounter = window.fileBrowserCounter + 1;
     return window.fileBrowserCounter;
@@ -179,10 +305,14 @@ var MyProjects = {
                 loadMode : 'load', // Can be load, pause, or done load will continue loading next, pause will pause loading next, done is when everything is loaded.
             };
         });
-        self.nodes.projects.flatData.firstLink = $osf.apiV2Url('users/me/nodes/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
-        self.nodes.registrations.flatData.firstLink = $osf.apiV2Url('users/me/registrations/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
-        self.nodes.projects.treeData.firstLink = $osf.apiV2Url('users/me/nodes/', { query : { 'related_counts' : 'children', 'embed' : 'contributors', 'filter[parent]' : 'null' }});
-        self.nodes.registrations.treeData.firstLink = $osf.apiV2Url('users/me/registrations/', { query : { 'related_counts' : 'children', 'embed' : 'contributors', 'filter[parent]' : 'null' }});
+        self.fetchers = {
+          projects: new NodeFetcher('nodes'),
+          registrations: new NodeFetcher('registrations'),
+        };
+        // self.nodes.projects.flatData.firstLink = $osf.apiV2Url('users/me/nodes/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
+        // self.nodes.registrations.flatData.firstLink = $osf.apiV2Url('users/me/registrations/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
+        // self.nodes.projects.treeData.firstLink = $osf.apiV2Url('users/me/nodes/', { query : { 'related_counts' : 'children', 'embed' : 'contributors', 'filter[parent]' : 'null' }});
+        // self.nodes.registrations.treeData.firstLink = $osf.apiV2Url('users/me/registrations/', { query : { 'related_counts' : 'children', 'embed' : 'contributors', 'filter[parent]' : 'null' }});
 
 
         self.loadNodes = function (nodeType, dataType){
@@ -190,11 +320,39 @@ var MyProjects = {
             var typeObject = nodeObject[dataType];
             var url = typeObject.loaded === 0 ? typeObject.firstLink : typeObject.nextLink;
             if(url){
-                var promise = m.request({method : 'GET', url : url, config : xhrconfig, background: true});
-                promise.then(success, error);
+                m.request({method : 'GET', url : url, config : xhrconfig, background: true})
+                .then(function(result) {
+                  typeObject.data = typeObject.data.concat(result.data);
+                  typeObject.loaded += result.data.length;
+                  typeObject.total = result.links.meta.total;
+                  typeObject.nextLink = result.links.next;
+
+                  if(self.currentView().collection.data.nodeType === nodeType) {
+                      self.loadValue(typeObject.loaded / typeObject.total * 100);
+                      if(self.breadcrumbs().length === 1)
+                          self.updateList();
+                  }
+
+                  if(nodeType === 'projects' && typeObject.loaded === typeObject.total )
+                      self.generateFiltersList();
+
+                  if(nodeType === 'projects')
+                      self.projectsForTemplates(self.nodes.projects.flatData.data);
+
+                  m.redraw(true);
+
+
+                  if(typeObject.nextLink)
+                      return self.loadNodes(nodeType, dataType);
+
+                  nodeObject.loadMode = 'done';
+                  nodeObject.treeData.data = self.makeTree(nodeObject.flatData.data, null, self.indexes);
+                }, function(result) {
+                  var message = 'Error loading nodes with nodeType ' + nodeType + ' and dataType ' + dataType;
+                  Raven.captureMessage(message, {requestReturn: result});
+                });
             }
             function success (result) {
-                m.redraw(true);
                 typeObject.data = typeObject.data.concat(result.data);
                 typeObject.loaded += result.data.length;
                 typeObject.total = result.links.meta.total;
@@ -219,10 +377,6 @@ var MyProjects = {
                     nodeObject.loadMode = 'done';
                     nodeObject.treeData.data = self.makeTree(nodeObject.flatData.data, null, self.indexes);
                 }
-            }
-            function error (result){
-                var message = 'Error loading nodes with nodeType ' + nodeType + ' and dataType ' + dataType;
-                Raven.captureMessage(message, {requestReturn: result});
             }
         };
 
@@ -553,31 +707,32 @@ var MyProjects = {
             }
 
             // Reset the progress bar
-            var progress = self.nodes[self.currentView().collection.data.nodeType].treeData;
-            if (progress) self.loadValue(progress.loaded / progress.total * 100);
+            // var progress = self.nodes[self.currentView().collection.data.nodeType].treeData;
+            // if (progress) self.loadValue(progress.loaded / progress.total * 100);
 
             var hasFilters = self.currentView().contributor.length || self.currentView().tag.length;
             var nodeType = self.currentView().collection.data.nodeType;
-            var nodeObject = self.nodes[nodeType] === 'collection' ? self.nodes[self.currentView().collection.data.node.id] : self.nodes[nodeType];
+            var nodeObject = self.nodes[nodeType] === 'collection' ? self.nodes[self.currentView().collection.data.node.id] : self.fetchers[nodeType];
             var item;
             var viewData = [];
 
-            var nodeData = nodeObject ? nodeObject.treeData.data : self.nodes[self.currentView().collection.data.node.id];
+            // var nodeData = nodeObject ? nodeObject.treeData.data : self.nodes[self.currentView().collection.data.node.id];
 
             if(!hasFilters && nodeObject){
                 var begin;
-                if((nodeObject.treeData.loaded > 0 || nodeObject.loadMode === 'done') && self.treeData().data) {
-                    if(reset || nodeObject.treeData.loaded <= NODE_PAGE_SIZE){
-                        begin = 0;
-                        self.treeData().children = [];
-                    } else {
-                        begin = self.treeData().children.length;
-                    }
-                    updateTreeData(begin, nodeData);
-                    self.currentView().totalRows = nodeObject.loaded;
-                }
-                self.generateFiltersList(nodeData);
-                self.currentView().totalRows = nodeData.length;
+                var fetcher = nodeObject;
+                updateTreeData(0, fetcher._flat, true);
+                // if((nodeObject.loaded > 0 || fetcher.isFinished()) && self.treeData().data) {
+                //     if(reset || nodeObject.treeData.loaded <= NODE_PAGE_SIZE){
+                //         begin = 0;
+                //         self.treeData().children = [];
+                //     } else {
+                //         begin = self.treeData().children.length;
+                //     }
+                //     updateTreeData(0, nodeObject._data);
+                // }
+                self.generateFiltersList(fetcher._flat);
+                self.currentView().totalRows = fetcher._flat.length;
                 return;
             }
 
@@ -804,10 +959,24 @@ var MyProjects = {
             self.currentView().collection = self.systemCollections[0]; // Add linkObject to the currentView
             self.loadCategories().then(function(){
                 // start loading nodes at the same time
-                self.loadNodes('projects', 'treeData');
-                self.loadNodes('registrations', 'treeData');
-                self.loadNodes('projects', 'flatData');
-                self.loadNodes('registrations', 'flatData');
+                // self.loadNodes('projects', 'treeData');
+                // self.loadNodes('registrations', 'treeData');
+                // self.loadNodes('projects', 'flatData');
+                // self.loadNodes('registrations', 'flatData');
+                function onLoad(type, fetcher) {
+                  if(self.currentView().collection.data.nodeType === type) {
+                      self.loadValue(fetcher.progress());
+                      if(self.breadcrumbs().length === 1){
+                          self.updateList();
+                      }
+                  }
+                }
+
+                self.fetchers.projects.on('page', onLoad.bind(this, 'projects'));
+                self.fetchers.registrations.on('page', onLoad.bind(this, 'registrations'));
+
+                self.fetchers.projects.start();
+                self.fetchers.registrations.start();
             });
             var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : 'linked_nodes', 'page[size]' : self.collectionsPageSize(), 'sort' : 'date_created', 'embed' : 'node_links'}});
             if (!self.viewOnly){
@@ -856,6 +1025,7 @@ var MyProjects = {
                 updateFolder : ctrl.updateFolder,
                 currentView: ctrl.currentView,
                 nodes : ctrl.nodes,
+                fetchers : ctrl.fetchers,
                 indexes : ctrl.indexes
             },
             ctrl.projectOrganizerOptions
@@ -1590,7 +1760,7 @@ var Filters = {
         };
 
         var returnNameFilters = function _returnNameFilters(){
-            if(args.nodes.projects.flatData.total && args.nameFilters.length === 0){
+            if(args.fetchers.args.nodes.projects.flatData.total && args.nameFilters.length === 0){
                 return m('.text-muted.text-smaller', 'There are no collaborators in this collection yet.');
             }
             var list = [];
@@ -1650,7 +1820,7 @@ var Filters = {
                         )
                 ]),
                 m('ul', [
-                    args.nodes.projects.flatData.loaded === 0 ? m('.ball-beat.text-center.m-t-md', m('')) : returnNameFilters()
+                    args.fetchers.projects.loaded === 0 ? m('.ball-beat.text-center.m-t-md', m('')) : returnNameFilters()
                 ]),
                 m('h5.m-t-sm', [
                     'Tags',
@@ -1658,7 +1828,7 @@ var Filters = {
                         args.tagFilters.length && ctrl.tagTotalPages() > 1 ? m.component(MicroPagination, { currentPage : ctrl.tagCurrentPage, totalPages : ctrl.tagTotalPages, type: 'tags' }) : ''
                         )
                 ]), m('ul', [
-                    args.nodes.projects.flatData.loaded === 0 ? m('.ball-beat.text-center.m-t-md', m('')) : returnTagFilters()
+                    args.fetchers.projects.loaded === 0 ? m('.ball-beat.text-center.m-t-md', m('')) : returnTagFilters()
                 ])
             ]
         );
