@@ -65,7 +65,6 @@ from website.project import signals as project_signals
 from website.project.spam.model import SpamMixin
 from website.prereg import utils as prereg_utils
 
-from keen.client import KeenClient
 from keen import scoped_keys
 
 logger = logging.getLogger(__name__)
