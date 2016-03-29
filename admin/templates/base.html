@@ -55,6 +55,7 @@
           <div class="navbar-custom-menu">
 
             <ul class="nav navbar-nav">
+              {% if user.is_authenticated %}
               <!-- User Account Menu -->
               <li class="dropdown user user-menu">
                 <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
@@ -64,6 +65,7 @@
               <li>
                 <a href="{% url 'auth:logout' %}" class="btn btn-danger btn-flat">Sign out</a>
               </li>
+              {% endif %}
             </ul>
           </div>
         </nav>
