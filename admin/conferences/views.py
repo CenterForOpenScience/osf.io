@@ -38,7 +38,6 @@ def create_conference(request):
             # conf.field_names.update(custom_fields)
             try:
                 conf.save()
-                print('success')
             except ModularOdmException:
                 print('failed')
                 # conf = Conference.find_one(Q('endpoint', 'eq', meeting))
@@ -53,6 +52,8 @@ def create_conference(request):
                 # changed_fields = conf.save()
                 # if changed_fields:
                 #     print('Updated {}: {}'.format(meeting, changed_fields))
+            else:
+                print('success')
             return redirect('conferences:create_conference')
 
 
