@@ -721,7 +721,9 @@ var MyProjects = {
             if(!hasFilters && nodeObject){
                 var begin;
                 var fetcher = nodeObject;
-                updateTreeData(0, fetcher._flat, true);
+                if( self.treeData().data) {
+                    updateTreeData(0, fetcher._flat, true);
+                }
                 // if((nodeObject.loaded > 0 || fetcher.isFinished()) && self.treeData().data) {
                 //     if(reset || nodeObject.treeData.loaded <= NODE_PAGE_SIZE){
                 //         begin = 0;
