@@ -773,8 +773,8 @@ def _view_project(node, auth, primary=False):
             'forked_from_id': node.forked_from._primary_key if node.is_fork else '',
             'forked_from_display_absolute_url': node.forked_from.display_absolute_url if node.is_fork else '',
             'forked_date': iso8601format(node.forked_date) if node.is_fork else '',
-            'fork_count': len(node.forks),
-            'templated_count': len(node.templated_list),
+            'fork_count': node.forks.count(),
+            'templated_count': node.templated_list.count(),
             'watched_count': node.watches.count(),
             'private_links': [x.to_json() for x in node.private_links_active],
             'link': view_only_link,
@@ -1065,7 +1065,7 @@ def get_folder_pointers(auth, node, **kwargs):
 
 @must_be_contributor_or_public
 def get_forks(auth, node, **kwargs):
-    fork_list = sorted(node.forks, key=lambda fork: fork.forked_date, reverse=True)
+    fork_list = node.forks.sort('-forked_date')
     return _render_nodes(nodes=fork_list, auth=auth)
 
 

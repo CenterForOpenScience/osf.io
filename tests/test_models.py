@@ -3635,7 +3635,7 @@ class TestForkNode(OsfTestCase):
         assert_true(fork.is_fork)
         assert_equal(len(fork.private_links), 0)
         assert_equal(fork.forked_from, original)
-        assert_in(fork._id, original.node__forked)
+        assert_in(fork._id, [n._id for n in original.forks])
         # Note: Must cast ForeignList to list for comparison
         assert_equal(list(fork.contributors), [fork_user])
         assert_true((fork_date - fork.date_created) < datetime.timedelta(seconds=30))

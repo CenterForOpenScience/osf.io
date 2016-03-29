@@ -809,7 +809,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     system_tags = fields.StringField(list=True)
 
     nodes = fields.AbstractForeignField(list=True, backref='parent')
-    forked_from = fields.ForeignField('node', backref='forked', index=True)
+    forked_from = fields.ForeignField('node', index=True)
     registered_from = fields.ForeignField('node', index=True)
     root = fields.ForeignField('node', index=True)
     parent_node = fields.ForeignField('node', index=True)
@@ -1156,8 +1156,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     @property
     def forks(self):
         """List of forks of this node"""
-        return list(self.node__forked.find(Q('is_deleted', 'eq', False) &
-                                           Q('is_registration', 'ne', True)))
+        return Node.find(Q('forked_from', 'eq', self._id) &
+                         Q('is_deleted', 'eq', False)
+                         & Q('is_registration', 'ne', True))
 
     def add_permission(self, user, permission, save=False):
         """Grant permission to a user.
@@ -2498,11 +2499,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     @property
     def templated_list(self):
-        return [
-            x
-            for x in self.node__template_node
-            if not x.is_deleted
-        ]
+        return Node.find(Q('template_node', 'eq', self._id) & Q('is_deleted', 'ne', True))
 
     @property
     def _parent_node(self):
