@@ -815,7 +815,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     parent_node = fields.ForeignField('node', index=True)
 
     # The node (if any) used as a template for this node's creation
-    template_node = fields.ForeignField('node', backref='template_node', index=True)
+    template_node = fields.ForeignField('node', index=True)
 
     piwik_site_id = fields.StringField()
 
