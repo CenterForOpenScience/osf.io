@@ -358,7 +358,7 @@ var MyProjects = {
             }
             self.updateFilter(linkObject);
             self.updateBreadcrumbs(linkObject);
-            if(linkObject.data.nodeType === 'collection'){
+            if(linkObject.nodeType === 'collection'){
                 self.updateList(false, null, linkObject);
             } else {
                 self.updateList(true, itemId); // Reset and load item
