@@ -145,7 +145,7 @@ NodeFetcher.prototype = {
 
     this._callbacks.page.forEach((function(cb) {
       cb(this);
-    }).bind(this))
+    }).bind(this));
 
     if (!this.nextLink)
       this._callbacks.done.forEach((function(cb) {
@@ -1762,7 +1762,7 @@ var Filters = {
         };
 
         var returnNameFilters = function _returnNameFilters(){
-            if(args.fetchers.args.nodes.projects.flatData.total && args.nameFilters.length === 0){
+            if(args.fetchers.projects.total && args.nameFilters.length === 0){
                 return m('.text-muted.text-smaller', 'There are no collaborators in this collection yet.');
             }
             var list = [];
