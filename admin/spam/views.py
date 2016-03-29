@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
@@ -94,7 +96,7 @@ class SpamList(ListView):
         query = (
             Q('reports', 'ne', {}) &
             Q('reports', 'ne', None) &
-            Q('spam_status', 'eq', int(self.request.GET.get('status', u'1')))
+            Q('spam_status', 'eq', int(self.request.GET.get('status', '1')))
         )
         return Comment.find(query).sort(self.ordering)
 
@@ -105,7 +107,7 @@ class SpamList(ListView):
             queryset, page_size)
         kwargs.setdefault('spam', map(serialize_comment, queryset))
         kwargs.setdefault('page', page)
-        kwargs.setdefault('status', self.request.GET.get('status', u'1'))
+        kwargs.setdefault('status', self.request.GET.get('status', '1'))
         kwargs.setdefault('page_number', page.number)
         return super(SpamList, self).get_context_data(**kwargs)
 
@@ -118,7 +120,7 @@ class UserSpamList(SpamList):
             Q('reports', 'ne', {}) &
             Q('reports', 'ne', None) &
             Q('user', 'eq', self.kwargs.get('user_id', None)) &
-            Q('spam_status', 'eq', int(self.request.GET.get('status', u'1')))
+            Q('spam_status', 'eq', int(self.request.GET.get('status', '1')))
         )
         return Comment.find(query).sort(self.ordering)
 
@@ -129,7 +131,7 @@ class UserSpamList(SpamList):
             queryset, page_size)
         kwargs.setdefault('spam', map(serialize_comment, queryset))
         kwargs.setdefault('page', page)
-        kwargs.setdefault('status', self.request.GET.get('status', u'1'))
+        kwargs.setdefault('status', self.request.GET.get('status', '1'))
         kwargs.setdefault('page_number', page.number)
         kwargs.setdefault('user_id', self.kwargs.get('user_id', None))
         return super(UserSpamList, self).get_context_data(**kwargs)
@@ -150,7 +152,13 @@ class SpamDetail(FormView):
         try:
             context = self.get_context_data(**kwargs)
         except AttributeError:
-            return page_not_found(request)  # TODO: 1.9 update to have exception with node/user 404.html will be added
+            return page_not_found(
+                request,
+                AttributeError(
+                    'Spam with id "{}" not found.'.format(
+                        kwargs.get('spam_id', 'None'))
+                )
+            )
         self.page = request.GET.get('page', 1)
         context['page_number'] = self.page
         context['form'] = self.get_form()
@@ -161,7 +169,13 @@ class SpamDetail(FormView):
         try:
             context = self.get_context_data(**kwargs)
         except AttributeError:
-            return page_not_found(request)  # TODO: 1.9 update to have exception
+            return page_not_found(
+                request,
+                AttributeError(
+                    'Spam with id "{}" not found.'.format(
+                        kwargs.get('spam_id', 'None'))
+                )
+            )
         self.page = request.GET.get('page', 1)
         context['page_number'] = self.page
         context['form'] = self.get_form()
@@ -176,7 +190,7 @@ class SpamDetail(FormView):
         kwargs = super(SpamDetail, self).get_context_data(**kwargs)
         kwargs.setdefault('page_number', self.request.GET.get('page', 1))
         kwargs.setdefault('comment', serialize_comment(self.item))
-        kwargs.setdefault('status', self.request.GET.get('status', u'1'))
+        kwargs.setdefault('status', self.request.GET.get('status', '1'))
         return kwargs
 
     def form_valid(self, form):
@@ -191,5 +205,5 @@ class SpamDetail(FormView):
         return '{}?page={}&status={}'.format(
             reverse('spam:detail', kwargs={'spam_id': self.spam_id}),
             self.request.GET.get('page', 1),
-            self.request.GET.get('status', u'1')
+            self.request.GET.get('status', '1')
         )
