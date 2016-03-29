@@ -1,9 +1,9 @@
-"use strict";
+'use strict';
 
 var keen = require('keen-js');
 var ko = require('knockout');
 var ctx = window.contextVars;
-var $osf = require("js/osfHelpers");
+var $osf = require('js/osfHelpers');
 
 var KeenViz = function(){
     var self = this;
@@ -103,7 +103,7 @@ var KeenViz = function(){
         self.visitsByDay();
         self.topReferrers();
         self.visitsServerTime();
-    }
+    };
 
 
 };
