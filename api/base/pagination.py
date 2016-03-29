@@ -12,6 +12,12 @@ from rest_framework.utils.urls import (
 from api.base.serializers import is_anonymized
 from api.base.settings import MAX_PAGE_SIZE
 
+from framework.guid.model import Guid
+from website.addons.wiki.model import NodeWikiPage
+from website.files.models.base import StoredFileNode
+from website.project.model import Node, Comment
+
+
 class JSONAPIPagination(pagination.PageNumberPagination):
     """
     Custom paginator that formats responses in a JSON-API compatible format.
@@ -85,6 +91,19 @@ class JSONAPIPagination(pagination.PageNumberPagination):
                 ]))
             ])),
         ])
+        if view_name == 'nodes:node-comments' and self.request.query_params.get('related_counts', False):
+            target_id = self.request.query_params.get('filter[target]', None)
+            node_id = kwargs.get('node_id', None)
+            node = Node.load(node_id)
+            if target_id:
+                if not len(data):
+                    unread = 0
+                else:
+                    root_target = Guid.load(target_id)
+                    page = root_target.referent.root_target_page
+                    unread = Comment.find_n_unread(user=self.request.user, node=node, page=page, root_id=target_id)
+                response_dict['links']['meta']['unread'] = unread
+
         if is_anonymized(self.request):
             response_dict['meta'] = {'anonymous': True}
         return Response(response_dict)
