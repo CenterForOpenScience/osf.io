@@ -75,6 +75,7 @@ function confirm_emails(emails) {
             title: title,
             message: mergeMessage,
             onEscape: function() {},
+            backdrop: true,
             closeButton: true,
             buttons: {
                 confirm: {

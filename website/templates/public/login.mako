@@ -13,11 +13,6 @@
     </p>
 </div>
 %endif
-%if existing_user:
-    <div class="text-center m-t-lg">
-        <h3>Please sign in to continue.</h3>
-    </div>
-%endif
 
 %if campaign == "institution" and enable_institutions:
 <div class="text-center m-t-lg">
@@ -30,7 +25,12 @@
     <p> If you do not currently have an OSF account, this will create one. By creating an account you agree to our <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md">Terms</a> and that you have read our <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>, including our information on <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md#f-cookies">Cookie Use</a>.</p>
 </div>
 %endif
+%if existing_user:
+<div class="row m-t-xl existing-user-container">
+%else:
 <div class="row m-t-xl">
+%endif
+
     %if campaign == "institution" and enable_institutions:
     <div class="col-sm-6 col-sm-offset-3 toggle-box toggle-box-active">
         <h3 class="m-b-lg"> Login through institution</h3>
@@ -53,7 +53,22 @@
     </div>
     %endif
     %if campaign != "institution" or not enable_institutions:
-    <div class="col-sm-5 col-sm-offset-1 toggle-box toggle-box-left toggle-box-active p-h-lg">
+    %if existing_user:
+        <div class="col-sm-6 col-sm-offset-3">
+            <div class="row">
+            <div class="col-sm-1 p-t-sm">
+            <img src="/static/img/logo_spin.png">
+                </div>
+            <div class="col-sm-9 p-l-lg">
+            <h1 class="">Open Science Framework</h1>
+                </div>
+                </div>
+        <h3 class="text-center existing-user-instructions">Please sign in as <b>${existing_user}</b> to continue.</h3>
+        </div>
+        <div class="col-sm-6 col-sm-offset-3 existing-user-signin p-b-md m-b-m">
+    %else:
+        <div class="col-sm-5 col-sm-offset-1 toggle-box toggle-box-left toggle-box-active p-h-lg">
+    %endif
         <form
             id="logInForm"
             class="form-horizontal"
@@ -61,7 +76,7 @@
             method="POST"
             data-bind="submit: submit"
         >
-            <h3 class="m-b-lg"> Login </h3>
+            <h3 class="m-b-lg m-l-md"> Login </h3>
             <div class="form-group">
                 <label for="inputEmail3" class="col-sm-3 control-label">Email</label>
                 <div class="col-sm-9">
@@ -89,18 +104,22 @@
                     >
                 </div>
             </div>
-            <div class="form-group">
-                <div class="col-sm-offset-3 col-sm-9">
+            <div class="col-sm-12 m-t-sm">
+                <div class="col-sm-3"></div>
+            <div class="form-group m-b-s col-sm-7">
                     <div class="checkbox">
                     <label><input type="checkbox"> Remember me</label>
-                    </div>
                 </div>
             </div>
-            <div class="form-group">
-                <div class="col-sm-offset-3 col-sm-9">
-                    <button type="submit" class="btn btn-success pull-right">Sign in</button>
+                 <div class="form-group pull-right">
+                    <button type="submit" class="btn btn-success">Sign in</button>
                 </div>
             </div>
+            <div class="col-sm-3"></div>
+            <div class="col-sm-8 login-forgot-password">
+                <a href="/forgotpassword/">Forgot password?</a>
+            </div>
+
         </form>
     </div>
     %if not existing_user:
@@ -220,6 +239,9 @@
                 </div>
             </form>
         </div>
+    <!-- Prevents errors -->
+    %else:
+        <div id="signUpScope"></div>
     %endif
     %endif
 </div>
