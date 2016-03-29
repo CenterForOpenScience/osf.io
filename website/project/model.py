@@ -70,7 +70,6 @@ from website.project.sanctions import (
     Retraction,
 )
 
-from keen.client import KeenClient
 from keen import scoped_keys
 
 logger = logging.getLogger(__name__)
