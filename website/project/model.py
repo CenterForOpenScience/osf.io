@@ -803,14 +803,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     users_watching_node = fields.ForeignField('user', list=True)
 
     logs = fields.ForeignField('nodelog', list=True, backref='logged')
-    tags = fields.ForeignField('tag', list=True, backref='tagged')
+    tags = fields.ForeignField('tag', list=True)
 
     # Tags for internal use
     system_tags = fields.StringField(list=True)
 
     nodes = fields.AbstractForeignField(list=True, backref='parent')
     forked_from = fields.ForeignField('node', backref='forked', index=True)
-    registered_from = fields.ForeignField('node', backref='registrations', index=True)
+    registered_from = fields.ForeignField('node', index=True)
     root = fields.ForeignField('node', index=True)
     parent_node = fields.ForeignField('node', index=True)
 
@@ -2540,8 +2540,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return self.archivejob__active[0] if self.archivejob__active else None
 
     @property
+    def registrations_all(self):
+        return Node.find(Q('registered_from', 'eq', self._id))
+
+    @property
     def registrations(self):
-        return self.node__registrations.find(Q('archiving', 'eq', False))
+        # TODO: This method may be totally unused
+        return Node.find(Q('registered_from', 'eq', self._id) & Q('archiving', 'eq', False))
 
     @property
     def watch_url(self):

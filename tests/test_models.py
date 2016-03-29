@@ -2124,7 +2124,7 @@ class TestNodeTraversals(OsfTestCase):
         NodeFactory(parent=comp2)
         reg = RegistrationFactory(project=proj)
         reg.delete_registration_tree(save=True)
-        assert_false(proj.node__registrations)
+        assert_false(proj.registrations_all)
 
     def test_get_active_contributors_recursive_with_duplicate_users(self):
         parent = ProjectFactory(creator=self.user)
@@ -3994,7 +3994,7 @@ class TestRegisterNode(OsfTestCase):
         )
 
     def test_registration_list(self):
-        assert_in(self.registration._id, self.project.node__registrations)
+        assert_in(self.registration._id, [n._id for n in self.project.registrations_all])
 
     def test_registration_gets_institution_affiliation(self):
         node = NodeFactory()

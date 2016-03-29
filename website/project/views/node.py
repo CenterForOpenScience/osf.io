@@ -768,7 +768,7 @@ def _view_project(node, auth, primary=False):
             'root_id': node.root._id if node.root else None,
             'registered_meta': node.registered_meta,
             'registered_schemas': serialize_meta_schemas(node.registered_schema),
-            'registration_count': len(node.node__registrations),
+            'registration_count': node.registrations_all.count(),
             'is_fork': node.is_fork,
             'forked_from_id': node.forked_from._primary_key if node.is_fork else '',
             'forked_from_display_absolute_url': node.forked_from.display_absolute_url if node.is_fork else '',
@@ -1071,7 +1071,7 @@ def get_forks(auth, node, **kwargs):
 
 @must_be_contributor_or_public
 def get_registrations(auth, node, **kwargs):
-    registrations = [n for n in reversed(node.node__registrations) if not n.is_deleted]  # get all registrations, including archiving
+    registrations = [n for n in reversed(node.registrations_all) if not n.is_deleted]  # get all registrations, including archiving
     return _render_nodes(registrations, auth)
 
 

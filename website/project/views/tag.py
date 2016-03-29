@@ -1,10 +1,11 @@
 import httplib as http
 
 from flask import request
+from modularodm import Q
 from modularodm.exceptions import ValidationError
 
 from framework.auth.decorators import collect_auth
-from website.project.model import Tag
+from website.project.model import Node, Tag
 from website.project.decorators import (
     must_be_valid_project, must_have_permission, must_not_be_registration
 )
@@ -15,7 +16,11 @@ from website.project.decorators import (
 @collect_auth
 def project_tag(tag, auth, **kwargs):
     tag_obj = Tag.load(tag)
-    nodes = tag_obj.node__tagged if tag_obj else []
+    if tag_obj:
+        nodes = Node.find(Q('tags', 'eq', tag_obj._id))
+    else:
+        nodes = []
+
     visible_nodes = [obj for obj in nodes if obj.can_view(auth)]
     return {
         'nodes': [
