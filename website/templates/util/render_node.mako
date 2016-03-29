@@ -24,7 +24,7 @@
                     <span class="label label-danger"><strong>Withdrawn</strong></span> |
                   % elif summary['is_pending_retraction']:
                     <span class="label label-info"><strong>Pending withdrawal</strong></span> |
-                  % elif summary['embargo_end_date']:
+                  % elif summary['is_embargoed']:
                     <span class="label label-info"><strong>Embargoed</strong></span> |
                   % elif summary['is_pending_embargo']:
                     <span class="label label-info"><strong>Pending embargo</strong></span> |
