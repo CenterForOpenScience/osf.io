@@ -120,7 +120,7 @@ reordered contributors for
 </script>
 
 <script type="text/html" id="checked_in">
-checked in file
+checked in {{ params.kind }}
 <a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect">
     {{ stripSlash(params.path) }}</a>
 from
@@ -128,7 +128,7 @@ from
 </script>
 
 <script type="text/html" id="checked_out">
-checked out file
+checked out {{ params.kind }}
 <a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect">
     {{ stripSlash(params.path) }}</a>
 from

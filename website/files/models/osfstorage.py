@@ -82,40 +82,38 @@ class OsfStorageFileNode(FileNode):
             raise exceptions.FileNodeCheckedOutError()
         return super(OsfStorageFileNode, self).move_under(destination_parent, name)
 
-    def save(self):
+    def check_in_or_out(self, user, checkout, save=False):
         """
-        Saves node, logs any check-out or check-in actions
-            but we want to log specific activities (checkout, checkin)
-            check that via the if in the middle of the method and log the correct activity
+        Updates self.checkout with the requesting user or None if user has permission
+        to check out file or folder. Adds log to self.node.
+        """
+        if self.is_checked_out and self.checkout != user:
+            raise exceptions.FileNodeCheckedOutError()
 
-        :return:
-        """
+        action = 'checked_out' if checkout else 'checked_in'
+        self.checkout = checkout
+
+        self.node.add_log(
+            action=action,
+            params={
+                'kind': self.kind,
+                'project': self.node.parent_id,
+                'node': self.node._id,
+                'urls': {
+                    'download': "/project/{}/files/{}/{}/?action=download".format(self.node._id, self.provider, self._id),
+                    'view': "/project/{}/files/{}/{}".format(self.node._id, self.provider, self._id)},
+                'path': self.materialized_path
+            },
+            auth=Auth(user),
+        )
+
+        if save:
+            self.save()
+
+    def save(self):
         self.path = ''
         self.materialized_path = ''
-        ret = super(OsfStorageFileNode, self).save()
-
-        if 'checkout' in ret and len(ret) == 1:
-            # Set parameters
-            auth = Auth(user=self.node.creator)
-
-            # is checkout vs is checkin
-            action = ['checked_in', 'checked_out'][self.is_checked_out]
-
-            # Log the action
-            self.node.add_log(
-                action,
-                params={
-                    'project': self.node.parent_id,
-                    'node': self.node._id,
-                    'urls': {
-                        'download': "/project/" + self.node._id + "/files/osfstorage/" + self._id + "/?action=download",
-                        'view': "/project/" + self.node._id + "/files/osfstorage/" + self._id},
-                    'path': self.materialized_path
-                },
-                auth=auth,
-            )
-
-        return ret
+        return super(OsfStorageFileNode, self).save()
 
 
 class OsfStorageFile(OsfStorageFileNode, File):
