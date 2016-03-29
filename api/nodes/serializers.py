@@ -268,6 +268,8 @@ class NodeSerializer(JSONAPISerializer):
                 raise exceptions.PermissionDenied
             except NodeUpdateError as e:
                 raise ValidationError(detail=e.reason)
+            except NodeStateError as e:
+                raise InvalidModelValueError(detail=e.message)
 
         return node
 
