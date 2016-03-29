@@ -13,8 +13,8 @@ from modularodm import Q
 from website.project.model import Comment
 from website.settings import SUPPORT_EMAIL
 
-from .serializers import serialize_comment
-from .forms import EmailForm, ConfirmForm
+from admin.spam.serializers import serialize_comment
+from admin.spam.forms import EmailForm, ConfirmForm
 
 
 class EmailFormView(FormView):
@@ -140,17 +140,11 @@ class UserSpamList(SpamList):
 class SpamDetail(FormView):
     form_class = ConfirmForm
     template_name = 'spam/detail.html'
-    spam_id = None
-    page = 1
-
-    def __init__(self):
-        self.item = None
-        super(SpamDetail, self).__init__()
 
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
         try:
-            context = self.get_context_data(**kwargs)
+            return super(SpamDetail, self).get(request, *args, **kwargs)
         except AttributeError:
             return page_not_found(
                 request,
@@ -159,15 +153,11 @@ class SpamDetail(FormView):
                         kwargs.get('spam_id', 'None'))
                 )
             )
-        self.page = request.GET.get('page', 1)
-        context['page_number'] = self.page
-        context['form'] = self.get_form()
-        return self.render_to_response(context)
 
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         try:
-            context = self.get_context_data(**kwargs)
+            return super(SpamDetail, self).post(request, *args, **kwargs)
         except AttributeError:
             return page_not_found(
                 request,
@@ -176,34 +166,32 @@ class SpamDetail(FormView):
                         kwargs.get('spam_id', 'None'))
                 )
             )
-        self.page = request.GET.get('page', 1)
-        context['page_number'] = self.page
-        context['form'] = self.get_form()
-        if context['form'].is_valid():
-            return self.form_valid(context['form'])
-        else:
-            return render(request, self.template_name, context=context)
-        # return super(SpamDetail, self).post(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
-        self.item = Comment.load(self.kwargs.get('spam_id', None))
+        item = Comment.load(self.kwargs.get('spam_id'))
         kwargs = super(SpamDetail, self).get_context_data(**kwargs)
         kwargs.setdefault('page_number', self.request.GET.get('page', 1))
-        kwargs.setdefault('comment', serialize_comment(self.item))
-        kwargs.setdefault('status', self.request.GET.get('status', '1'))
+        kwargs.setdefault('comment', serialize_comment(item))
+        kwargs.setdefault('status', self.request.GET.get('status', u'1'))
         return kwargs
 
     def form_valid(self, form):
+        item = Comment.load(self.kwargs.get('spam_id'))
+        if item is None:
+            return page_not_found(self.request)
         if int(form.cleaned_data.get('confirm')) == Comment.SPAM:
-            self.item.confirm_spam(save=True)
+            item.confirm_spam(save=True)
         else:
-            self.item.confirm_ham(save=True)
+            item.confirm_ham(save=True)
         return super(SpamDetail, self).form_valid(form)
 
     @property
     def success_url(self):
         return '{}?page={}&status={}'.format(
-            reverse('spam:detail', kwargs={'spam_id': self.spam_id}),
+            reverse(
+                'spam:detail',
+                kwargs={'spam_id': self.kwargs.get('spam_id')}
+            ),
             self.request.GET.get('page', 1),
             self.request.GET.get('status', '1')
         )
