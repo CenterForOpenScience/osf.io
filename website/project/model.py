@@ -759,10 +759,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     is_registration = fields.BooleanField(default=False, index=True)
     registered_date = fields.DateTimeField(index=True)
-    registered_user = fields.ForeignField('user', backref='registered')
+    registered_user = fields.ForeignField('user')
 
     # A list of all MetaSchemas for which this Node has registered_meta
-    registered_schema = fields.ForeignField('metaschema', backref='registered', list=True, default=list)
+    registered_schema = fields.ForeignField('metaschema', list=True, default=list)
     # A set of <metaschema._id>: <schema> pairs, where <schema> is a
     # flat set of <question_id>: <response> pairs-- these question ids_above
     # map the the ids in the registrations MetaSchema (see registered_schema).
@@ -800,7 +800,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     creator = fields.ForeignField('user', index=True)
     contributors = fields.ForeignField('user', list=True)
-    users_watching_node = fields.ForeignField('user', list=True, backref='watched')
+    users_watching_node = fields.ForeignField('user', list=True)
 
     logs = fields.ForeignField('nodelog', list=True, backref='logged')
     tags = fields.ForeignField('tag', list=True, backref='tagged')
@@ -885,7 +885,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     # {<User.id>: [<Node._id>, <Node2._id>, ...] }
     child_node_subscriptions = fields.DictionaryField(default=dict)
 
-    alternative_citations = fields.ForeignField('alternativecitation', list=True, backref='citations')
+    alternative_citations = fields.ForeignField('alternativecitation', list=True)
 
     _meta = {
         'optimistic': True,
