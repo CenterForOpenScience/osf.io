@@ -228,7 +228,7 @@ var MyProjects = {
 
 
         // Initial Breadcrumb for All my projects
-        var initialBreadcrumbs = options.initialBreadcrumbs || [new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors', 'filter[parent]' : 'null' }}, 'All my projects')];
+        var initialBreadcrumbs = options.initialBreadcrumbs || [new LinkObject('collection', { nodeType : 'projects'}, 'All my projects')];
         self.breadcrumbs = m.prop(initialBreadcrumbs);
         // Calculate name filters
         self.nameFilters = [];
@@ -285,7 +285,7 @@ var MyProjects = {
                 } else {
                     parentID = null;
                 }
-                if(parentID && !n.attributes.registration && parentID !== crumbParent ) {
+                if(parentID && parentID !== crumbParent ) {
                     if(!node_list[parentID]){
                         node_list[parentID] = { children : [] };
                     }
@@ -536,7 +536,8 @@ var MyProjects = {
                     updateTreeData(0, data, true);
                 };
                 if(!self.indexes()[itemId]){
-                    var itemUrl = $osf.apiV2Url('nodes/' + itemId + '/children/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
+                    var type = self.currentView().collection.data.nodeType === 'registrations' ? 'registrations' : 'nodes';
+                    var itemUrl = $osf.apiV2Url(type + '/' + itemId + '/children/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
                     m.request({method : 'GET', url : itemUrl, config : xhrconfig}).then(function(result){
                         console.log(result);
                         processChildren(result.data);
@@ -553,7 +554,7 @@ var MyProjects = {
 
             // Reset the progress bar
             var progress = self.nodes[self.currentView().collection.data.nodeType].treeData;
-            self.loadValue(progress.loaded / progress.total * 100);
+            if (progress) self.loadValue(progress.loaded / progress.total * 100);
 
             var hasFilters = self.currentView().contributor.length || self.currentView().tag.length;
             var nodeType = self.currentView().collection.data.nodeType;
@@ -1431,8 +1432,11 @@ var Breadcrumbs = {
         var viewOnly = args.viewOnly;
         var mobile = window.innerWidth < MOBILE_WIDTH; // true if mobile view
         var updateFilesOnClick = function (item) {
-                args.updateFilesData(item);
-                $osf.trackClick('myProjects', 'projectOrganizer', 'click-on-breadcrumbs');
+          if (item.type === 'node')
+            args.updateFilesData(item, item.data.id);
+          else
+            args.updateFilesData(item);
+          $osf.trackClick('myProjects', 'projectOrganizer', 'click-on-breadcrumbs');
         };
         var contributorsTemplate = [];
         var tagsTemplate = [];

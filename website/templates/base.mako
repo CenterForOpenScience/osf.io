@@ -145,15 +145,7 @@
 
         % else:
             <script>
-                window.ga = function(source) {
-                        console.error('=== Mock ga event called: ===');
-                        console.log('event: ga(' +
-                                    arguments[0] + ', ' +
-                                    arguments[1] + ', ' +
-                                    arguments[2] + ', ' +
-                                    arguments[3] + ')'
-                        );
-                };
+                window.ga = function() {};
           </script>
         % endif
 
