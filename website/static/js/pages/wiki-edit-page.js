@@ -15,7 +15,7 @@ require('addons/wiki/static/ace-markdown-snippets.js');
 var $osf = require('js/osfHelpers');
 
 var WikiMenu = require('../wikiMenu');
-var Comment = require('js/comment');
+var Comment = require('js/comment'); //jshint ignore:line
 
 var ctx = window.contextVars.wiki;  // mako context variables
 
@@ -168,7 +168,7 @@ $(document).ready(function () {
 });
 
 var $comments = $('.comments');
-if ($comments.length && window.contextVars.wiki.wikiID !== "None") {
+if ($comments.length && window.contextVars.wiki.wikiID !== 'None') {
     var currentUser = {
         id: window.contextVars.currentUser.id,
         url: window.contextVars.currentUser.urls.profile,

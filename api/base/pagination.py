@@ -13,8 +13,6 @@ from api.base.serializers import is_anonymized
 from api.base.settings import MAX_PAGE_SIZE
 
 from framework.guid.model import Guid
-from website.addons.wiki.model import NodeWikiPage
-from website.files.models.base import StoredFileNode
 from website.project.model import Node, Comment
 
 
