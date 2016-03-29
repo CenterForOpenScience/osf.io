@@ -521,7 +521,7 @@ var MyProjects = {
                     }, function(result){
                         var message = 'Error loading nodes from collection id  ' + collectionObject.data.node.id;
                         Raven.captureMessage(message, {requestReturn: result});
-                        $osf.growl(' "' + collectionObject + '" contents couldn\'t load', 'Please try again later.');
+                        $osf.growl(' "' + collectionObject.data.node.attributes.title + '" contents couldn\'t load', 'Please try again later.');
                     });
                 }
 
