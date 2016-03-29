@@ -868,7 +868,7 @@ var MyProjects = {
                 ])),
                 m('.col-xs-4.p-sm', m('.pull-right', m.component(AddProject, {
                     buttonTemplate: m('.btn.btn-success.btn-success-high-contrast.f-w-xl[data-toggle="modal"][data-target="#addProject"]', {onclick: function() {
-                        $osf.trackClick('myProjects', 'add-project', 'open-add-project' + '-modal');
+                        $osf.trackClick('myProjects', 'add-project', 'open-add-project-modal');
                     }}, 'Create Project'),
                     parentID: null,
                     modalID: 'addProject',
@@ -1218,7 +1218,7 @@ var Collections = {
                         $osf.trackClick('myProjects', 'add-collection', 'open-add-collection-modal');
                     }}, m('i.fa.fa-plus')) : '',
                 m('.pull-right',
-                    ctrl.totalPages() > 1 ? m.component(MicroPagination, { currentPage : ctrl.currentPage, totalPages : ctrl.totalPages }) : ''
+                    ctrl.totalPages() > 1 ? m.component(MicroPagination, { currentPage : ctrl.currentPage, totalPages : ctrl.totalPages, type: 'collections' }) : ''
                 )
             ]),
             m('ul', { config: ctrl.applyDroppable },[
@@ -1393,9 +1393,9 @@ var Collections = {
  */
 var MicroPagination = {
     view : function(ctrl, args) {
-      if (args.currentPage() > args.totalPages()) {
-        args.currentPage(args.totalPages());
-      }
+        if (args.currentPage() > args.totalPages()) {
+            args.currentPage(args.totalPages());
+        }
         return m('span.osf-micro-pagination.m-l-xs', [
             args.currentPage() > 1 ? m('span.m-r-xs.arrow.left.live', { onclick : function(){
                     args.currentPage(args.currentPage() - 1);
