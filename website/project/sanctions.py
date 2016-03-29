@@ -909,7 +909,7 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
     APPROVE_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
     REJECT_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
 
-    embargoed_registration = fields.FloatField('node')
+    embargoed_registration = fields.ForeignField('node')
 
     def _get_registration(self):
         return self.embargoed_registration
