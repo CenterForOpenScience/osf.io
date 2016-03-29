@@ -17,7 +17,7 @@ from website.project.decorators import (
     must_not_be_registration, must_have_addon, must_have_permission
 )
 from website.util import rubeus
-from website.project.model import has_anonymous_link, Tag
+from website.project.model import has_anonymous_link
 
 from website.files import models
 from website.files import exceptions
@@ -244,19 +244,12 @@ def osfstorage_download(file_node, payload, node_addon, **kwargs):
         },
     }
 
+
 @must_have_permission('write')
 @decorators.autoload_filenode(must_be='file')
 def osfstorage_add_tag(file_node, **kwargs):
     data = request.get_json()
-    print data
-    tag = data['tag']
-    if tag not in file_node.tags and not file_node.node.is_registration:
-        new_tag = Tag.load(tag)
-        if not new_tag:
-            new_tag = Tag(_id=tag)
-        new_tag.save()
-        file_node.tags.append(new_tag)
-        file_node.save()
+    if file_node.add_tag(data['tag'], kwargs['auth']):
         return {'status': 'success'}, httplib.OK
     return {'status': 'failure'}, httplib.BAD_REQUEST
 
@@ -264,10 +257,6 @@ def osfstorage_add_tag(file_node, **kwargs):
 @decorators.autoload_filenode(must_be='file')
 def osfstorage_remove_tag(file_node, **kwargs):
     data = request.get_json()
-    tag = data['tag']
-    tag = Tag.load(tag)
-    if tag and tag in file_node.tags and not file_node.node.is_registration:
-        file_node.tags.remove(tag)
-        file_node.save()
+    if file_node.remove_tag(data['tag'], kwargs['auth']):
         return {'status': 'success'}, httplib.OK
     return {'status': 'failure'}, httplib.BAD_REQUEST
