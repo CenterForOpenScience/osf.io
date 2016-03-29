@@ -285,7 +285,7 @@ var MyProjects = {
                 } else {
                     parentID = null;
                 }
-                if(parentID && !n.attributes.registration && parentID !== crumbParent ) {
+                if(parentID && parentID !== crumbParent ) {
                     if(!node_list[parentID]){
                         node_list[parentID] = { children : [] };
                     }
