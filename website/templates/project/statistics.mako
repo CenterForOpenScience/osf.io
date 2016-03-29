@@ -24,6 +24,9 @@
                 <h3 class="panel-title">Visits</h3>
             </div>
             <div id="visits" class="panel-body">
+                <div class="text-center">
+                    <div class="logo-spin logo-lg"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -32,7 +35,24 @@
             <div class="panel-heading clearfix">
                 <h3 class="panel-title">Top Referrers</h3>
             </div>
-            <div id="topReferrers" class="panel-body">
+            <div id="topReferrers" class="panel-body scripted">
+                <!-- ko if: loadRefs -->
+                <div class="text-center">
+                    <div class="logo-spin logo-lg"></div>
+                </div>
+                <!-- /ko -->
+                <!-- ko ifnot: loadRefs -->
+                <table class="table">
+                    <thead>
+                        <th>Referrer</th>
+                        <th>Unique Visitors</th>
+                    </thead>
+                    <tbody data-bind="foreach: referrers">
+                        <td data-bind="text: referrer"></td>
+                        <td data-bind="text: count"></td>
+                    </tbody>
+                </table>
+                <!-- /ko -->
             </div>
         </div>
     </div>
@@ -42,6 +62,9 @@
                 <h3 class="panel-title">Visits by Server Time</h3>
             </div>
             <div id="serverTimeVisits" class="panel-body">
+                <div class="text-center">
+                    <div class="logo-spin logo-lg"></div>
+                </div>
             </div>
         </div>
     </div>

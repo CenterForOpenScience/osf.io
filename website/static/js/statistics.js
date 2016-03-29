@@ -1,7 +1,9 @@
 "use strict";
 
 var keen = require('keen-js');
+var ko = require('knockout');
 var ctx = window.contextVars;
+var $osf = require("js/osfHelpers");
 
 var KeenViz = function(){
     var self = this;
@@ -16,14 +18,7 @@ var KeenViz = function(){
             event_collection: 'pageviews',
             timeframe: 'this_7_days',
             interval: 'daily',
-            target_property: 'sessionId',
-            filters: [
-                {
-                    property_name: 'node.id',
-                    operator: 'eq',
-                    property_value: ctx.node.id
-                }
-            ]
+            target_property: 'sessionId'
         });
 
         var visitsViz = new keen.Dataviz();
@@ -37,34 +32,37 @@ var KeenViz = function(){
     };
 
     self.topReferrers = function() {
-        var topReferrersQuery = new keen.Query('count', {
+        self.referrers = ko.observableArray([]);
+        self.loadRefs = ko.observable(true);
+
+        var topReferrersQuery = new keen.Query('count_unique', {
             event_collection: 'pageviews',
             timeframe: 'this_7_days',
-            group_by: 'parsedReferrerUrl.domain',
-            filters: [
-                {
-                    property_name: 'node.id',
-                    operator: 'eq',
-                    property_value: ctx.node.id
-                }
-            ]
+            target_property: 'user.id',
+            group_by: 'parsedReferrerUrl.domain'
         });
 
-        var topReferrersViz = new keen.Dataviz();
-        var params = {
-            keenDataviz: topReferrersViz,
-            selector: 'topReferrers',
-            keenQuery: topReferrersQuery,
-            adapterOptions: {
-                chartType: 'table'
-            },
-            chartOptions: {
-                cssClassNames: {
-                    headerRow: "test"
-                }
+        var req = self.keenClient.run(topReferrersQuery, function(err, res){
+            if (err){
+                new keen.Dataviz().el(document.getElementById('topReferrers')).error(err.message);
+            } else {
+                self.parseTopReferrers(res.result);
+                self.loadRefs(false);
             }
-        };
-        self.chart(params);
+        });
+
+        $osf.applyBindings(self, '#topReferrers');
+    };
+
+    self.parseTopReferrers = function(data){
+        self.referrers(function(){
+            return data.map(function(obj){
+                return {
+                    'referrer': obj['parsedReferrerUrl.domain'],
+                    'count': obj.result
+                };
+            });
+        }());
 
     };
 
@@ -73,14 +71,7 @@ var KeenViz = function(){
             event_collection: 'pageviews',
             timeframe: 'this_1_days',
             interval: 'hourly',
-            target_property: 'sessionId',
-            filters: [
-                {
-                    property_name: 'node.id',
-                    operator: 'eq',
-                    property_value: ctx.node.id
-                }
-            ]
+            target_property: 'sessionId'
         });
 
         var serverVisitsViz = new keen.Dataviz();
@@ -95,20 +86,15 @@ var KeenViz = function(){
     };
 
     self.chart = function(params){
-        params.keenDataviz.el(document.getElementById(params.selector))
-            .height(300)
-            .prepare();
+
+        params.keenDataviz.el(document.getElementById(params.selector));
 
         var req = self.keenClient.run(params.keenQuery, function(err, res){
             if (err){
                 params.keenDataviz.error(err.message);
             }
             else {
-                debugger;
-                params.keenDataviz.parseRequest(this)
-                    .adapter(params.adapterOptions || {})
-                    .chartOptions(params.chartOptions || {})
-                    .render();
+                params.keenDataviz.parseRequest(this).render();
             }
         });
     };
