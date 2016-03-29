@@ -374,3 +374,10 @@ div[data-growl="container"] {
         width: 260px;
     }
 }
+
+.myprojects button {
+    -webkit-appearance: none;
+    outline: none;
+    border: 0;
+    background: transparent;
+}
