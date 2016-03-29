@@ -1043,6 +1043,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         return self.embargo.pending_registration
 
     @property
+    def is_embargoed(self):
+        """A Node is embargoed if:
+        - it has an associated Embargo record
+        - that record has been approved
+        - the node is not public (embargo not yet lifted)
+        """
+        return self.embargo and self.embargo.is_approved and not self.is_public
+
+    @property
     def private_links(self):
         # TODO: Consumer code assumes this is a list. Hopefully there aren't many links?
         return list(PrivateLink.find(Q('nodes', 'eq', self._id)))
@@ -3076,8 +3085,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                     raise NodeStateError("A registration with an unapproved embargo cannot be made public.")
                 elif self.is_pending_registration:
                     raise NodeStateError("An unapproved registration cannot be made public.")
-                elif self.embargo_end_date:
-                    raise NodeStateError("An embargoed registration cannot be made public.")
+                elif self.is_pending_embargo:
+                    raise NodeStateError("An unapproved embargoed registration cannot be made public.")
             self.is_public = True
         elif permissions == 'private' and self.is_public:
             if self.is_registration and not self.is_pending_embargo:
