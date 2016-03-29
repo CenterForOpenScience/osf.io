@@ -41,7 +41,10 @@ def get_osf_statistics(time=None):
         latest = OSFWebsiteStatistics.objects.latest('date')
         if latest.date.date() == time.date():
             return  # Don't add another
-    for date in get_list_of_dates(latest.date, time):
+        dates = get_list_of_dates(latest.date, time)
+    else:
+        dates = [time]
+    for date in dates:
         get_days_statistics(date, latest)
         latest = OSFWebsiteStatistics.objects.latest('date')
 
