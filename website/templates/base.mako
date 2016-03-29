@@ -65,7 +65,10 @@
     <div id='devmode'><strong>WARNING</strong>: This site is running in development mode.</div>
     % endif
 
-    <%include file="nav.mako"/>
+    <%namespace name="nav_file" file="nav.mako"/>
+    <%block name="nav">
+        ${nav_file.nav()}
+    </%block>
      ## TODO: shouldn't always have the watermark class
     ${self.content_wrap()}
 
