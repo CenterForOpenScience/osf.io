@@ -156,8 +156,8 @@ var BaseComment = function() {
         if (!content) {
             content = '';
         }
-        var regex = /<span.*?data-atwho-guid="([a-z\d]{5})".*?>(@[a-zA-Z]+)<\/span>/;
-        var matches = content.match(/<span.*?data-atwho-guid="([a-z\d]{5})".*?>(@[a-zA-Z]+)<\/span>/g);
+        var regex = /<span.*?data-atwho-guid="([a-z\d]{5})".*?>((@|\+)[a-zA-Z]+)<\/span>/;
+        var matches = content.match(/<span.*?data-atwho-guid="([a-z\d]{5})".*?>((@|\+)[a-zA-Z]+)<\/span>/g);
         if (matches) {
             for (var i = 0; i < matches.length; i++) {
                 let match = regex.exec(matches[i]);
@@ -396,8 +396,8 @@ var CommentModel = function(data, $parent, $root) {
         if (!content) {
             content = '';
         }
-        var regex = /\[(.)(.*?)\]\(localhost:5000\/([a-z\d]{5})\)/;
-        var matches = content.match(/\[(.)(.*?)\]\(localhost:5000\/([a-z\d]{5})\)/g);
+        var regex = /\[(@|\+)(.*?)\]\(localhost:5000\/([a-z\d]{5})\)/;
+        var matches = content.match(/\[(@|\+)(.*?)\]\(localhost:5000\/([a-z\d]{5})\)/g);
         if (matches) {
             for (var i = 0; i < matches.length; i++) {
                 let match = regex.exec(matches[i]);
@@ -418,8 +418,8 @@ var CommentModel = function(data, $parent, $root) {
         if (!content) {
             content = '';
         }
-        var regex = /<span.*?data-atwho-guid="([a-z\d]{5})".*?>(@[a-zA-Z]+)<\/span>/;
-        var matches = content.match(/<span.*?data-atwho-guid="([a-z\d]{5})".*?>(@[a-zA-Z]+)<\/span>/g);
+        var regex = /<span.*?data-atwho-guid="([a-z\d]{5})".*?>((@|\+)[a-zA-Z]+)<\/span>/;
+        var matches = content.match(/<span.*?data-atwho-guid="([a-z\d]{5})".*?>((@|\+)[a-zA-Z]+)<\/span>/g);
         if (matches) {
             for (var i = 0; i < matches.length; i++) {
                 let match = regex.exec(matches[i]);

@@ -446,7 +446,7 @@ ko.bindingHandlers.editableHTML = {
         var $element = $(element);
         var initialValue = ko.utils.unwrapObservable(valueAccessor());
         $element.html(initialValue);
-        $element.on('input', function() {
+        $element.on('change input paste keyup blur', function() {
             var observable = valueAccessor();
             // limit input to maxlength
             var charLimit = $element.attr('maxlength');
