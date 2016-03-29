@@ -108,7 +108,8 @@ class OsfStorageFileNode(FileNode):
         Updates self.checkout with the requesting user or None if user has permission
         to check out file or folder. Adds log to self.node.
         """
-        if self.is_checked_out and self.checkout != user and 'admin' not in self.node.permissions.get(user._id, []):
+        if (self.is_checked_out and self.checkout != user and 'admin' not in self.node.permissions.get(user._id, []))\
+           or user._id not in self.node.permissions.keys() or 'write' not in self.node.permissions.get(user._id, []):
             raise exceptions.FileNodeCheckedOutError()
 
         action = 'checked_out' if checkout else 'checked_in'

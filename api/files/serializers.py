@@ -188,11 +188,11 @@ class FileSerializer(JSONAPISerializer):
 
     def update(self, instance, validated_data):
         assert isinstance(instance, FileNode), 'Instance must be a FileNode'
-        if len(validated_data) == 1 and 'checkout' in validated_data:
-            user = self.context['request'].user
-            instance.check_in_or_out(user, validated_data['checkout'])
-        else:
-            for attr, value in validated_data.items():
+        for attr, value in validated_data.items():
+            if attr == 'checkout':
+                user = self.context['request'].user
+                instance.check_in_or_out(user, value)
+            else:
                 setattr(instance, attr, value)
         instance.save()
         return instance
