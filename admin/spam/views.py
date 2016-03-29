@@ -1,5 +1,7 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
+from django.core.mail import send_mail
+from django.http import HttpResponseNotFound
 from django.views.generic import FormView, ListView
 from django.utils.decorators import method_decorator
 from django.core.urlresolvers import reverse
@@ -7,9 +9,78 @@ from django.views.defaults import page_not_found
 
 from modularodm import Q
 from website.project.model import Comment
+from website.settings import SUPPORT_EMAIL
 
 from .serializers import serialize_comment
-from .forms import ConfirmForm
+from .forms import EmailForm, ConfirmForm
+
+
+class EmailFormView(FormView):
+
+    form_class = EmailForm
+    template_name = "spam/email.html"
+    spam_id = None
+    page = 1
+
+    def __init__(self):
+        self.spam = None
+        super(EmailFormView, self).__init__()
+
+    def get(self, request, *args, **kwargs):
+        spam_id = kwargs.get('spam_id', None)
+        self.spam_id = spam_id
+        self.page = request.GET.get('page', 1)
+        try:
+            self.spam = serialize_comment(Comment.load(spam_id))
+        except (AttributeError, TypeError):
+            return HttpResponseNotFound(
+                '<h1>Spam comment ({}) not found.</h1>'.format(spam_id)
+            )
+        form = self.get_form()
+        context = {
+            'comment': self.spam,
+            'page_number': request.GET.get('page', 1),
+            'form': form
+        }
+        return render(request, self.template_name, context)
+
+    def post(self, request, *args, **kwargs):
+        spam_id = kwargs.get('spam_id', None)
+        self.spam_id = spam_id
+        self.page = request.GET.get('page', 1)
+        try:
+            self.spam = serialize_comment(Comment.load(spam_id))
+        except (AttributeError, TypeError):
+            return HttpResponseNotFound(
+                '<h1>Spam comment ({}) not found.</h1>'.format(spam_id)
+            )
+        return super(EmailFormView, self).post(request, *args, **kwargs)
+
+    def get_initial(self):
+        self.initial = {
+            'author': self.spam['author'].fullname,
+            'email': [(r, r) for r in self.spam['author'].emails],
+            'subject': 'Reports of spam',
+            'message': render(
+                None,
+                'spam/email_template.html',
+                {'item': self.spam}
+            ).content,
+        }
+        return super(EmailFormView, self).get_initial()
+
+    def form_valid(self, form):
+        send_mail(
+            subject=form.cleaned_data.get('subject').strip(),
+            message=form.cleaned_data.get('message'),
+            from_email=SUPPORT_EMAIL,
+            recipient_list=[form.cleaned_data.get('email')]
+        )
+        return super(EmailFormView, self).form_valid(form)
+
+    @property
+    def success_url(self):
+        return reverse('spam:detail', kwargs={'spam_id': self.spam_id}) + '?page={}'.format(self.page)
 
 
 class SpamList(ListView):
@@ -122,12 +193,3 @@ class SpamDetail(FormView):
             self.request.GET.get('page', 1),
             self.request.GET.get('status', u'1')
         )
-
-
-@login_required
-def email(request, spam_id):
-    context = {
-        'comment': serialize_comment(Comment.load(spam_id), full=True),
-        'page_number': request.GET.get('page', 1),
-    }
-    return render(request, 'spam/email.html', context)
