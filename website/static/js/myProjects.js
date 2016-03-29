@@ -612,7 +612,7 @@ var MyProjects = {
 
                 for (var i = begin; i < data.length; i++){
                     item = data[i];
-                    if (!(item.attributes.retracted === true || item.attributes.pending_registration_approval === true)){
+                    if (!(item.attributes.withdrawn === true || item.attributes.pending_registration_approval === true)){
                         // Filter Retractions and Pending Registrations from the "All my registrations" view.
                         _formatDataforPO(item);
                         var child = self.buildTree()(item, self.treeData());
