@@ -1407,7 +1407,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
     affiliated_institutions = fields.ForeignField('institution', list=True)
 
-    def get_node_comment_timestamps(self, node, page, file_id=None):
+    def get_node_comment_timestamps(self, node, page, target_id=None):
         """ Returns the timestamp for when comments were last viewed on a node or
             a dictionary of timestamps for when comments were last viewed on files.
         """
@@ -1415,10 +1415,10 @@ class User(GuidStoredObject, AddonModelMixin):
         timestamps = self.comments_viewed_timestamp.get(node._id, {})
         if page == 'node':
             page_timestamps = timestamps.get(page, default_timestamp)
-        elif page == 'files':
+        else:
             page_timestamps = timestamps.get(page, {})
-            if file_id:
-                page_timestamps = page_timestamps.get(file_id, default_timestamp)
+            if target_id:
+                page_timestamps = page_timestamps.get(target_id, default_timestamp)
         return page_timestamps
 
 

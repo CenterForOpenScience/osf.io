@@ -255,8 +255,8 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
             if page == Comment.OVERVIEW:
                 view_timestamp = user.get_node_comment_timestamps(node, 'node')
                 root_target = Guid.load(node._id)
-            elif page == Comment.FILES:
-                view_timestamp = user.get_node_comment_timestamps(node, page, file_id=root_id)
+            elif page == Comment.FILES or page == Comment.WIKI:
+                view_timestamp = user.get_node_comment_timestamps(node, page, target_id=root_id)
                 root_target = Guid.load(root_id)
             else:
                 raise ValueError('Invalid page')
