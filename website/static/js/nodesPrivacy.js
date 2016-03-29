@@ -17,8 +17,9 @@ var MESSAGES = {
     makeProjectPublicWarning:
     'Please review your projects, components, and add-ons for sensitive or restricted information before making them public.' +
     '<br><br>Once they are made public, you should assume they will always be public. You can ' +
-    'return them to private later, but search engines (including Google’s cache) or others may access files before you do.',
-
+        'return them to private later, but search engines (including Google’s cache) or others may access files before you do.',
+    makeEmbargoPublicWarning: 'By making this registration public, you will end the embargo period and the registration will be open to the public. Making this registration public will automatically make all of its components public as well. This action is irreversible.',
+    makeEmbargoPublicTitle: 'End Embargo Early',
     selectNodes: 'Adjust your privacy settings by checking the boxes below. ' +
     '<br><br><b>Checked</b> projects and components will be <b>public</b>.  <br><b>Unchecked</b> components will be <b>private</b>.',
     confirmWarning: {
@@ -58,7 +59,7 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
  */
 function patchNodesPrivacy(nodes) {
     var nodesV2Url = window.contextVars.apiV2Prefix + 'nodes/';
-    var nodesPatch = nodes.map(function (node) {
+    var nodesPatch = $.map(nodes, function (node) {
         return {
             'type': 'nodes',
             'id': node.id,
@@ -87,13 +88,15 @@ function patchNodesPrivacy(nodes) {
  *
  * @type {NodesPrivacyViewModel}
  */
-var NodesPrivacyViewModel = function(parentIsPublic) {
+var NodesPrivacyViewModel = function(node) {
     var self = this;
     self.WARNING = 'warning';
     self.SELECT = 'select';
     self.CONFIRM = 'confirm';
 
-    var treebeardUrl = window.contextVars.node.urls.api  + 'tree/';
+    self.parentIsEmbargoed = node.is_embargoed;
+    self.parentIsPublic = node.is_public;
+    self.treebeardUrl = window.contextVars.node.urls.api  + 'tree/';
     self.nodesOriginal = {};
     self.nodesChanged = ko.observable();
     //state of current nodes
@@ -120,43 +123,14 @@ var NodesPrivacyViewModel = function(parentIsPublic) {
         self.clear();
     });
 
-    /**
-     * get node tree for treebeard from API V1
-     */
-    self.fetchNodeTree = function() {
-        return $.ajax({
-            url: treebeardUrl,
-            type: 'GET',
-            dataType: 'json'
-        }).done(function(response) {
-            self.nodesOriginal = getNodesOriginal(response[0], self.nodesOriginal);
-            Object.size = function(obj) {
-                var size = 0, key;
-                for (key in obj) {
-                    if (obj.hasOwnProperty(key)) size++;
-                }
-                return size;
-            };
-            // Get the size of an object
-            var size = Object.size(self.nodesOriginal);
-            self.hasChildren(size > 1);
-            var nodesState = $.extend(true, {}, self.nodesOriginal);
-            var nodeParent = response[0].node.id;
-            //change node state and response to reflect button push by user on project page (make public | make private)
-            nodesState[nodeParent].public = response[0].node.is_public = !parentIsPublic;
-            nodesState[nodeParent].changed = true;
-            self.nodesState(nodesState);
-        }).fail(function(xhr, status, error) {
-            $osf.growl('Error', 'Unable to retrieve project settings');
-            Raven.captureMessage('Could not GET project settings.', {
-                extra: { url: treebeardUrl, status: status, error: error }
-            });
-        });
-    };
-
     self.page = ko.observable(self.WARNING);
 
     self.pageTitle = ko.computed(function() {
+        if (self.page() === self.WARNING &&  self.parentIsEmbargoed) {
+            return MESSAGES.makeEmbargoPublicTitle;
+        }
+
+
         return {
             warning: 'Warning',
             select: 'Change privacy settings',
@@ -165,104 +139,172 @@ var NodesPrivacyViewModel = function(parentIsPublic) {
     });
 
     self.message = ko.computed(function() {
+        if (self.page() === self.WARNING &&  self.parentIsEmbargoed) {
+            return MESSAGES.makeEmbargoPublicWarning;
+        }
+
         return {
             warning: MESSAGES.makeProjectPublicWarning,
             select: MESSAGES.selectNodes,
             confirm: MESSAGES.confirmWarning
         }[self.page()];
     });
-
-    self.selectProjects =  function() {
-        self.page(self.SELECT);
-    };
-
-    self.confirmWarning =  function() {
-        var nodesState = ko.toJS(self.nodesState);
-        for (var node in nodesState) {
-            if (nodesState[node].changed) {
-                if (nodesState[node].public) {
-                    self.nodesChangedPublic().push(nodesState[node].title);
-                }
-                else {
-                    self.nodesChangedPrivate().push(nodesState[node].title);
-                }
-            }
-        }
-        self.page(self.CONFIRM);
-    };
-
-    self.confirmChanges =  function() {
-        var nodesState = ko.toJS(self.nodesState());
-        nodesState = Object.keys(nodesState).map(function(key) {
-            return nodesState[key];
-        });
-        var nodesChanged = nodesState.filter(function(node) {
-            return node.changed;
-        });
-        //The API's bulk limit is 100 nodes.  We catch the exception in nodes_privacy.mako.
-        if (nodesChanged.length <= 100) {
-            $osf.block('Updating Privacy');
-            patchNodesPrivacy(nodesChanged).then(function () {
-                $osf.unblock();
-                self.nodesChangedPublic([]);
-                self.nodesChangedPrivate([]);
-                self.page(self.WARNING);
-                window.location.reload();
-            }).fail(function () {
-                $osf.unblock();
-                $osf.growl('Error', 'Unable to update project privacy');
-                Raven.captureMessage('Could not PATCH project settings.');
-                self.clear();
-                window.location.reload();
-            });
-        }
-    };
-
-    self.clear = function() {
-        self.nodesChangedPublic([]);
-        self.nodesChangedPrivate([]);
-        self.page(self.WARNING);
-    };
-
-    self.selectAll = function() {
-        var nodesState = ko.toJS(self.nodesState());
-        for (var node in nodesState) {
-            if (nodesState[node].canWrite) {
-                nodesState[node].public = true;
-                nodesState[node].changed = nodesState[node].public !== self.nodesOriginal[node].public;
-            }
-        }
-        self.nodesState(nodesState);
-        m.redraw(true);
-    };
-
-    self.selectNone = function() {
-        var nodesState = ko.toJS(self.nodesState());
-        for (var node in nodesState) {
-            if (nodesState[node].canWrite) {
-                nodesState[node].public = false;
-                nodesState[node].changed = nodesState[node].public !== self.nodesOriginal[node].public;
-
-            }
-        }
-        self.nodesState(nodesState);
-        m.redraw(true);
-    };
-
-    self.back = function() {
-        var self = this;
-        self.nodesChangedPublic([]);
-        self.nodesChangedPrivate([]);
-        self.page(self.SELECT);
-    };
-
 };
 
-function NodesPrivacy (selector, parentNodePrivacy) {
+/**
+ * get node tree for treebeard from API V1
+ */
+NodesPrivacyViewModel.prototype.fetchNodeTree = function() {
     var self = this;
+
+    return $.ajax({
+        url: self.treebeardUrl,
+        type: 'GET',
+        dataType: 'json'
+    }).done(function(response) {
+        self.nodesOriginal = getNodesOriginal(response[0], self.nodesOriginal);
+        var size = 0;
+        $.each(Object.keys(self.nodesOriginal), function(_, key) {
+            if (self.nodesOriginal.hasOwnProperty(key)) {
+                size++;
+            }
+        });
+        self.hasChildren(size > 1);
+        var nodesState = $.extend(true, {}, self.nodesOriginal);
+        var nodeParent = response[0].node.id;
+        //change node state and response to reflect button push by user on project page (make public | make private)
+        nodesState[nodeParent].public = response[0].node.is_public = !self.parentIsPublic;
+        nodesState[nodeParent].changed = true;
+        self.nodesState(nodesState);
+    }).fail(function(xhr, status, error) {
+        $osf.growl('Error', 'Unable to retrieve project settings');
+        Raven.captureMessage('Could not GET project settings.', {
+            url: self.treebeardUrl, status: status, error: error
+        });
+    });
+};
+
+NodesPrivacyViewModel.prototype.selectProjects = function() {
+    this.page(this.SELECT);
+};
+
+NodesPrivacyViewModel.prototype.confirmWarning =  function() {
+    var nodesState = ko.toJS(this.nodesState);
+    for (var node in nodesState) {
+        if (nodesState[node].changed) {
+            if (nodesState[node].public) {
+                this.nodesChangedPublic().push(nodesState[node].title);
+            }
+            else {
+                this.nodesChangedPrivate().push(nodesState[node].title);
+            }
+        }
+    }
+    this.page(this.CONFIRM);
+};
+
+NodesPrivacyViewModel.prototype.confirmChanges =  function() {
+    var self = this;
+
+    var nodesState = ko.toJS(this.nodesState());
+    nodesState = Object.keys(nodesState).map(function(key) {
+        return nodesState[key];
+    });
+    var nodesChanged = nodesState.filter(function(node) {
+        return node.changed;
+    });
+    //The API's bulk limit is 100 nodes.  We catch the exception in nodes_privacy.mako.
+    if (nodesChanged.length <= 100) {
+        $osf.block('Updating Privacy');
+        patchNodesPrivacy(nodesChanged).then(function () {
+            $osf.unblock();
+            self.nodesChangedPublic([]);
+            self.nodesChangedPrivate([]);
+            self.page(self.WARNING);
+            window.location.reload();
+        }).fail(function () {
+            $osf.unblock();
+            $osf.growl('Error', 'Unable to update project privacy');
+            Raven.captureMessage('Could not PATCH project settings.');
+            self.clear();
+            window.location.reload();
+        });
+    }
+};
+
+NodesPrivacyViewModel.prototype.clear = function() {
+    this.nodesChangedPublic([]);
+    this.nodesChangedPrivate([]);
+    this.page(this.WARNING);
+};
+
+NodesPrivacyViewModel.prototype.selectAll = function() {
+    var nodesState = ko.toJS(this.nodesState());
+    for (var node in nodesState) {
+        if (nodesState[node].canWrite) {
+            nodesState[node].public = true;
+            nodesState[node].changed = nodesState[node].public !== this.nodesOriginal[node].public;
+        }
+    }
+    this.nodesState(nodesState);
+    m.redraw(true);
+};
+
+NodesPrivacyViewModel.prototype.selectNone = function() {
+    var nodesState = ko.toJS(this.nodesState());
+    for (var node in nodesState) {
+        if (nodesState[node].canWrite) {
+            nodesState[node].public = false;
+            nodesState[node].changed = nodesState[node].public !== this.nodesOriginal[node].public;
+
+        }
+    }
+    this.nodesState(nodesState);
+    m.redraw(true);
+};
+
+NodesPrivacyViewModel.prototype.back = function() {
+    this.nodesChangedPublic([]);
+    this.nodesChangedPrivate([]);
+    this.page(this.SELECT);
+};
+
+NodesPrivacyViewModel.prototype.makeEmbargoPublic = function() {
+    var self = this;
+
+    $.each(self.nodesOriginal, function(key, node) {
+        node.public = true;
+    });
+    $osf.block('Submitting request to end embargo early ...');
+    patchNodesPrivacy(
+        $.map(self.nodesOriginal, function(node) {return node;})
+    ).then(function (res) {
+        $osf.unblock();
+        // Non-error response with Nodes still private implies more than one
+        // admin in this registration tree, and approval is needed before the
+        // embargo is lifted.
+        // Non-error response with Nodes made public implies this user is the
+        // only admin on the registration tree, and the privacy was changed
+        // immediately.
+        if (res.data[0].attributes.public) {
+            window.location.reload();
+        }
+        else {
+            $osf.growl(
+                'Request Initiated',
+                'You have initiated a request to end this registration\'s embargo early, and to make it and all of its components public immediately. All adminstrators on this registration have 48 hours to approve or disapprove of this acrion.',
+                'success'
+            );
+        }
+    });
+};
+
+function NodesPrivacy (selector, node) {
+    var self = this;
+
     self.selector = selector;
     self.$element = $(self.selector);
-    self.viewModel = new NodesPrivacyViewModel(parentNodePrivacy);
+    self.viewModel = new NodesPrivacyViewModel(node);
     self.viewModel.fetchNodeTree().done(function(response) {
         new NodesPrivacyTreebeard('nodesPrivacyTreebeard', response, self.viewModel.nodesState, self.viewModel.nodesOriginal);
     });
@@ -271,8 +313,7 @@ function NodesPrivacy (selector, parentNodePrivacy) {
 }
 
 NodesPrivacy.prototype.init = function() {
-    var self = this;
-    osfHelpers.applyBindings(self.viewModel, this.selector);
+    osfHelpers.applyBindings(this.viewModel, this.selector);
 };
 
 module.exports = {
