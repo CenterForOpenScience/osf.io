@@ -128,7 +128,7 @@ NodeFetcher.prototype = {
       this.total = results.links.meta.total;
 
     this.nextLink = results.links.next;
-
+    this.loaded += results.data.length;
     for(var i = 0; i < results.data.length; i++) {
       if (results.data[i].relationships.parent)
         this._orphans.push(results.data[i]); //TODO run through orphans
