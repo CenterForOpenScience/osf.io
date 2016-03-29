@@ -475,6 +475,7 @@ class NodeLog(StoredObject):
     EMBARGO_CANCELLED = 'embargo_cancelled'
     EMBARGO_COMPLETED = 'embargo_completed'
     EMBARGO_INITIATED = 'embargo_initiated'
+    EMBARGO_TERMINATED = 'embargo_terminated'
     EMBARGO_TERMINATION_APPROVED = 'embargo_termination_approved'
     EMBARGO_TERMINATION_CANCELLED = 'embargo_termination_cancelled'
 
@@ -1427,12 +1428,21 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             elif key == 'description':
                 self.set_description(description=value, auth=auth, save=False)
             elif key == 'is_public':
-                self.set_privacy(
-                    Node.PUBLIC if value else Node.PRIVATE,
-                    auth=auth,
-                    log=True,
-                    save=False
-                )
+                if value and self.is_embargoed:
+                    admins = [admin for admin, node in self.root.get_admin_contributors_recursive(unique_users=True)]
+                    # Of more admins than just the current user
+                    if len(admins) > 1:
+                        self.request_embargo_termination(auth=auth)
+                        status.push_status_message("Your request to end this registration's embargo early has been received, and project administrators will be notified that their approval is requested.", kind='info', trust=False)
+                    else:
+                        self.terminate_embargo(auth=auth)
+                else:
+                    self.set_privacy(
+                        Node.PUBLIC if value else Node.PRIVATE,
+                        auth=auth,
+                        log=True,
+                        save=False
+                    )
             elif key == 'node_license':
                 self.set_node_license(
                     value.get('id'),
@@ -3429,17 +3439,41 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if self.is_public:
             self.set_privacy('private', Auth(user))
 
-    def lift_registration_embargo(self, user):
-        # TODO check if really embargoed and early
+    def request_embargo_termination(self, auth):
+        if not self.embargoed:
+            raise NodeStateError("This node is not under active embargo")
 
         approval = EmbargoTerminationApproval(
-            initiated_by=user,
+            initiated_by=auth.user,
             embargoed_registration=self,
         )
         admins = self.get_admin_contributors_recursive(unique_users=True)
         for (admin, node) in admins:
             approval.add_authorizer(admin, node=node)
         approval.save()
+        approval.ask()
+
+    def terminate_embargo(self, auth):
+        if not self.is_embargoed:
+            raise NodeStateError("This node is not under active embargo")
+
+        self.add_log(
+            action=NodeLog.EMBARGO_TERMINATED,
+            params={
+                'project': self._id,
+                'node': self._id,
+            },
+            auth=auth,
+            save=False
+        )
+        for node in self.node_and_primary_descendants():
+            node.set_privacy(
+                Node.PUBLIC,
+                auth=auth,
+                log=False,
+                save=True
+            )
+        return True
 
     def get_active_contributors_recursive(self, unique_users=False, *args, **kwargs):
         """Yield (admin, node) tuples for this node and
