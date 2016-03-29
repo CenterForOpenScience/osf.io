@@ -610,10 +610,12 @@ var MyProjects = {
                 if (clear)
                   self.treeData().children = [];
 
+                var isAllMyReg = Boolean(self.breadcrumbs()[0].label === 'All my registrations');
+
                 for (var i = begin; i < data.length; i++){
                     item = data[i];
-                    if (!(item.attributes.withdrawn === true || item.attributes.pending_registration_approval === true)){
-                        // Filter Retractions and Pending Registrations from the "All my registrations" view.
+                    if (!isAllMyReg || !(item.attributes.withdrawn === true || item.attributes.pending_registration_approval === true)){
+                        // Filter Retractions and Pending Registrations from ONLY the "All my registrations" view.
                         _formatDataforPO(item);
                         var child = self.buildTree()(item, self.treeData());
                         self.treeData().add(child);
