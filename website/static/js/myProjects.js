@@ -228,7 +228,7 @@ var MyProjects = {
 
 
         // Initial Breadcrumb for All my projects
-        var initialBreadcrumbs = options.initialBreadcrumbs || [new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors', 'filter[parent]' : 'null' }}, 'All my projects')];
+        var initialBreadcrumbs = options.initialBreadcrumbs || [new LinkObject('collection', { nodeType : 'projects'}, 'All my projects')];
         self.breadcrumbs = m.prop(initialBreadcrumbs);
         // Calculate name filters
         self.nameFilters = [];
@@ -342,7 +342,7 @@ var MyProjects = {
             if(self.selected().length === 1 && !self.logRequestPending){
                 var item = self.selected()[0];
                 var id = item.data.id;
-                if(!item.data.attributes.retracted){
+                if(!item.data.attributes.withdrawl){
                     var urlPrefix = item.data.attributes.registration ? 'registrations' : 'nodes';
                     var url = $osf.apiV2Url(urlPrefix + '/' + id + '/logs/', { query : { 'page[size]' : 6, 'embed' : ['nodes', 'user', 'linked_node', 'template_node', 'contributors']}});
                     var promise = self.getLogs(url);
@@ -536,7 +536,7 @@ var MyProjects = {
                     updateTreeData(0, data, true);
                 };
                 if(!self.indexes()[itemId]){
-                    var type = self.currentView().collection.data.nodeType || 'nodes';
+                    var type = self.currentView().collection.data.nodeType === 'registrations' ? 'registrations' : 'nodes';
                     var itemUrl = $osf.apiV2Url(type + '/' + itemId + '/children/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
                     m.request({method : 'GET', url : itemUrl, config : xhrconfig}).then(function(result){
                         console.log(result);
@@ -612,7 +612,7 @@ var MyProjects = {
 
                 for (var i = begin; i < data.length; i++){
                     item = data[i];
-                    if (!(item.attributes.retracted === true || item.attributes.pending_registration_approval === true)){
+                    if (!(item.attributes.withdrawl === true || item.attributes.pending_registration_approval === true)){
                         // Filter Retractions and Pending Registrations from the "All my registrations" view.
                         _formatDataforPO(item);
                         var child = self.buildTree()(item, self.treeData());
@@ -1420,11 +1420,11 @@ var Breadcrumbs = {
         var viewOnly = args.viewOnly;
         var mobile = window.innerWidth < MOBILE_WIDTH; // true if mobile view
         var updateFilesOnClick = function (item) {
-                if (item.type === 'node')
-                  args.updateFilesData(item, item.data.id);
-                else
-                  args.updateFilesData(item);
-                $osf.trackClick('myProjects', 'projectOrganizer', 'click-on-breadcrumbs');
+          if (item.type === 'node')
+            args.updateFilesData(item, item.data.id);
+          else
+            args.updateFilesData(item);
+          $osf.trackClick('myProjects', 'projectOrganizer', 'click-on-breadcrumbs');
         };
         var contributorsTemplate = [];
         var tagsTemplate = [];
