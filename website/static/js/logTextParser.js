@@ -132,9 +132,14 @@ var LogPieces = {
                 return m('span', logObject.attributes.params.params_node.title);
             }}
             else if(paramIsReturned(nodeObject, logObject) && nodeObject.data[0]){
-                return m('a', {href: nodeObject.data[0].links.html, onclick: function() {
-                    $osf.trackClick(logObject.trackingCategory, logObject.trackingAction, 'navigate-to-project-from-logs');
-                }}, nodeObject.data[0].attributes.title);
+                if (nodeObject.data[0].links && nodeObject.data[0].attributes) {
+                    return m('a', {href: nodeObject.data[0].links.html, onclick: function() {
+                        $osf.trackClick(logObject.trackingCategory, logObject.trackingAction, 'navigate-to-project-from-logs');
+                    }}, nodeObject.data[0].attributes.title);
+                }
+                else if (nodeObject.data[0].attributes) {
+                    return m('span', nodeObject.data[0].attributes.title)
+                }
             } else {
                 return m('span', 'a project');
             }
