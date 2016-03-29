@@ -144,7 +144,7 @@ NodeFetcher.prototype = {
     }
 
     this._callbacks.page.forEach((function(cb) {
-      cb(this);
+      cb(this, results.data);
     }).bind(this));
 
     if (!this.nextLink)
@@ -159,7 +159,7 @@ NodeFetcher.prototype = {
       this._cache[parent.id].children.push(_formatDataforPO(results.data[i]));
     }
 
-    return this._cache[parent.id];
+    return this._cache[parent.id].children;
   },
   _fail: function(results) {
     debugger;
@@ -644,9 +644,8 @@ var MyProjects = {
                             if(index === result.data.length - 1){
                                 collectionUpdateActions(collectionData);
                             }
-
                             self.loadValue(++collectionObject.data.loaded / collectionObject.data.count() * 100);
-                            updateTreeData(0, collectionData, true);
+                            self.updateTreeData(0, collectionData, true);
                         }, function(r){
                             var message = 'Error loading node not belonging to user for collections with node id  ' + node.id;
                             displayError = true;
@@ -658,7 +657,7 @@ var MyProjects = {
                     }
                 });
 
-                updateTreeData(0, collectionData, true);
+                self.updateTreeData(0, collectionData, true);
             }
 
             if(collectionObject){ // A regular collection including bookmarks
@@ -687,7 +686,7 @@ var MyProjects = {
                     self.currentView().contributor = [];
                     self.currentView().tag = [];
                     self.currentView().totalRows = data.length;
-                    updateTreeData(0, data, true);
+                    self.updateTreeData(0, data, true);
                 };
                 if(!self.indexes()[itemId]){
                     var type = self.currentView().collection.data.nodeType === 'registrations' ? 'registrations' : 'nodes';
@@ -722,7 +721,7 @@ var MyProjects = {
                 var begin;
                 var fetcher = nodeObject;
                 if( self.treeData().data) {
-                    updateTreeData(0, fetcher._flat, true);
+                    self.updateTreeData(0, fetcher._flat, true);
                 }
                 // if((nodeObject.loaded > 0 || fetcher.isFinished()) && self.treeData().data) {
                 //     if(reset || nodeObject.treeData.loaded <= NODE_PAGE_SIZE){
@@ -760,29 +759,29 @@ var MyProjects = {
               return tagMatch && contribMatch;
             });
 
-            updateTreeData(0, viewData, true);
+            self.updateTreeData(0, viewData, true);
             self.currentView().totalRows = viewData.length;
+        };
 
-            function updateTreeData (begin, data, clear) {
-                if (clear)
-                  self.treeData().children = [];
-
-                for (var i = begin; i < data.length; i++){
-                    item = data[i];
-                    if (!(item.attributes.retracted === true || item.attributes.pending_registration_approval === true)){
-                        // Filter Retractions and Pending Registrations from the "All my registrations" view.
-                        _formatDataforPO(item);
-                        var child = self.buildTree()(item, self.treeData());
-                        self.treeData().add(child);
-                    }
-                }
-                self.selected([]);
-                self.updateFolder()(null, self.treeData());
-                if(self.treeData().children[0]){
-                    $('.tb-row').first().trigger('click');
+        self.updateTreeData = function (begin, data, clear) {
+          var item;
+            if (clear) {
+              self.treeData().children = [];
+            }
+            for (var i = begin; i < data.length; i++){
+                item = data[i];
+                if (!(item.attributes.retracted === true || item.attributes.pending_registration_approval === true)){
+                    // Filter Retractions and Pending Registrations from the "All my registrations" view.
+                    _formatDataforPO(item);
+                    var child = self.buildTree()(item, self.treeData());
+                    self.treeData().add(child);
                 }
             }
-
+            self.selected([]);
+            self.updateFolder()(null, self.treeData());
+            if(self.treeData().children[0]){
+                $('.tb-row').first().trigger('click');
+            }
         };
 
         self.generateSets = function (item){
@@ -965,11 +964,18 @@ var MyProjects = {
                 // self.loadNodes('registrations', 'treeData');
                 // self.loadNodes('projects', 'flatData');
                 // self.loadNodes('registrations', 'flatData');
-                function onLoad(type, fetcher) {
+                function onLoad(type, fetcher, dataPerPage) {
                   if(self.currentView().collection.data.nodeType === type) {
                       self.loadValue(fetcher.progress());
                       if(self.breadcrumbs().length === 1){
-                          self.updateList();
+                          // self.updateList();
+                          if(self.treeData().children){
+                            var begin = self.treeData().children.length;
+                            var data = fetcher._flat;
+                            self.updateTreeData(begin, data);
+                            self.generateFiltersList(fetcher._flat);
+                            self.currentView().totalRows = fetcher._flat.length;
+                          }
                       }
                   }
                 }

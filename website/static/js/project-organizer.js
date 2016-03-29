@@ -388,7 +388,7 @@ var tbOptions = {
         .then(function(children) {
           // item.open = false;
           // HACK to use promises with TB
-          tb.updateFolder(children, item);
+          tb.updateFolder(children, item, null, true);
             // for (var i = 0; i < children.length; i++)
             //     item.add(tb.buildTree(children[i], item));
             // tb.updateFolder(null, item);
@@ -513,4 +513,3 @@ var ProjectOrganizer = {
 
 
 module.exports = ProjectOrganizer;
-
