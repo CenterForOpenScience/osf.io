@@ -46,6 +46,7 @@ INSTALLED_APPS = (
     'raven.contrib.django.raven_compat',
     'webpack_loader',
     'django_nose',
+    'ckeditor',
 )
 
 # Custom user model (extends AbstractBaseUser)
@@ -146,3 +147,15 @@ WEBPACK_LOADER = {
 
 TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 NOSE_ARGS = ['--verbosity=2']
+
+CKEDITOR_CONFIGS = {
+    'default': {
+        'toolbar': 'Custom',
+        'toolbar_Custom': [
+            ['Source'],
+            ['Bold', 'Italic', 'Underline'],
+            ['NumberedList', 'BulletedList'],
+            ['Link']
+        ]
+    },
+}

@@ -3,8 +3,11 @@ from website.project.model import User
 from furl import furl
 
 
-def serialize_comment(comment, full=False):
-    reports = serialize_reports(comment.reports)
+def serialize_comment(comment):
+    reports = [
+        serialize_report(user, report)
+        for user, report in comment.reports.iteritems()
+    ]
     author_abs_url = furl(OSF_DOMAIN)
     author_abs_url.path.add(comment.user.url)
 
@@ -24,13 +27,6 @@ def serialize_comment(comment, full=False):
         'node': comment.node,
         'category': reports[0]['category'],
     }
-
-
-def serialize_reports(reports):
-    return [
-        serialize_report(user, report)
-        for user, report in reports.iteritems()
-    ]
 
 
 def serialize_report(user, report):
