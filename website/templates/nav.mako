@@ -1,3 +1,4 @@
+<%block name="nav">
 <link rel="stylesheet" href='/static/css/nav.css'>
 <div class="osf-nav-wrapper">
 
@@ -23,7 +24,7 @@
     <div id="navbar" class="navbar-collapse collapse navbar-right">
       <ul class="nav navbar-nav">
         % if user_name:
-            <li id="osfNavMyDashboard"><a href="/">My Dashboard</a></li>
+            <li id="osfNavDashboard"><a href="/">Dashboard</a></li>
             <li id="osfNavMyProjects"><a href="/myprojects/">My Projects</a></li>
         % endif
         <li class="dropdown">
@@ -110,3 +111,4 @@
         <%include file='./search_bar.mako' />
     <!-- /ko -->
 </div>
+</%block>

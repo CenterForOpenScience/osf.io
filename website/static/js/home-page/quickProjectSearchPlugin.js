@@ -5,6 +5,7 @@
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
+var AddProject = require('js/addProjectPlugin');
 
 // CSS
 require('css/quick-project-search-plugin.css');
@@ -53,7 +54,6 @@ var QuickSearchProject = {
             // NOTE: This manual redraw is necessary because we set background: true on
             // the request, which prevents a redraw. This redraw allows the loading
             // indicator to go away and the first 10 nodes to be rendered
-            m.redraw();
         }, function _error(result){
             self.requestError(result);
             m.redraw();
@@ -65,6 +65,7 @@ var QuickSearchProject = {
                 }
                 else {
                     self.loadingComplete(true);
+                    m.redraw();
                 }
             }, function _error(result){
                 self.requestError(result);
@@ -464,12 +465,25 @@ var QuickSearchProject = {
             );
         }
         else {
-            return m('.row.quick-project',
+            return m('.row',
                 m('.col-xs-12',[
+                    m('h2.col-sm-9', 'Dashboard'), m('.pull-right.m-b-lg.col-sm-3', m.component(AddProject, {
+                        buttonTemplate : m('button.btn.btn-success.btn-success-high-contrast.m-t-md.f-w-xl[data-toggle="modal"][data-target="#addProjectFromHome"]', {onclick: function(){
+                                        $osf.trackClick('quickSearch', 'add-project', 'open-add-project-modal');
+                        }}, 'Create new project'),
+                        modalID : 'addProjectFromHome',
+                        stayCallback : function _stayCallback_inPanel() {
+                                        document.location.reload(true);
+                        },
+                        trackingCategory: 'quickSearch',
+                        trackingAction: 'add-project',
+                        templates: ctrl.nodes
+                    })),
+                    m('.row.quick-project', m('.col-xs-12',
                     m('.m-b-sm.text-center', [
                         searchBar()
                     ]),
-                    m('h4.text-center.f-w-lg', [ 'Go to ', m('a', {href:'/myprojects/'}, 'My Projects'),  ' to organize your work or ',
+                    m('p.text-center.f-w-lg', [ 'Go to ', m('a', {href:'/myprojects/'}, 'My Projects'),  ' to organize your work or ',
                         m('a', {href: '/search/', onclick: function(){ $osf.trackClick('quickSearch', 'navigate', 'navigate-to-search-the-OSF'); }}, 'search'), ' the OSF' ]),
                     m('.quick-search-table', [
                         m('.row.node-col-headers.m-t-md', [
@@ -491,8 +505,9 @@ var QuickSearchProject = {
                         }),
                         !ctrl.loadingComplete() && ctrl.filter() ? m('.loader-inner.ball-scale.text-center', m('')) : m('.m-v-md')
 
-                    ]),
-                    m('.text-center', loadMoreButton())
+                                ]),
+                                m('.text-center', loadMoreButton())
+                    ))
                 ])
             );
         }

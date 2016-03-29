@@ -4,7 +4,6 @@ from rest_framework import status
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from rest_framework.response import Response
 
-from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
 
 from api.base import generic_bulk_views as bulk_views
@@ -291,8 +290,7 @@ class CollectionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, C
 
     # overrides RetrieveUpdateDestroyAPIView
     def perform_destroy(self, instance):
-        user = self.request.user
-        auth = Auth(user)
+        auth = get_user_auth(self.request)
         node = self.get_object()
         try:
             node.remove_node(auth=auth)
@@ -366,10 +364,12 @@ class LinkedNodesList(JSONAPIBaseView, generics.ListAPIView, CollectionMixin):
     model_class = Pointer
 
     def get_queryset(self):
+        auth = get_user_auth(self.request)
         return [
             pointer.node for pointer in
             self.get_node().nodes_pointer
-            if not pointer.node.is_deleted and not pointer.node.is_collection
+            if not pointer.node.is_deleted and not pointer.node.is_collection and
+            pointer.node.can_view(auth)
         ]
 
     # overrides APIView
@@ -529,8 +529,7 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Collecti
 
     # overrides DestroyAPIView
     def perform_destroy(self, instance):
-        user = self.request.user
-        auth = Auth(user)
+        auth = get_user_auth(self.request)
         node = self.get_node()
         pointer = self.get_object()
         try:
@@ -620,18 +619,19 @@ class CollectionLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdate
 
     def get_object(self):
         collection = self.get_node(check_object_permissions=False)
+        auth = get_user_auth(self.request)
         obj = {'data': [
             pointer for pointer in
             collection.nodes_pointer
-            if not pointer.node.is_deleted and not pointer.node.is_collection
+            if not pointer.node.is_deleted and not pointer.node.is_collection and
+            pointer.node.can_view(auth)
         ], 'self': collection}
         self.check_object_permissions(self.request, obj)
         return obj
 
     def perform_destroy(self, instance):
         data = self.request.data['data']
-        user = self.request.user
-        auth = Auth(user)
+        auth = get_user_auth(self.request)
         current_pointers = {pointer.node._id: pointer for pointer in instance['data']}
         collection = instance['self']
         for val in data:

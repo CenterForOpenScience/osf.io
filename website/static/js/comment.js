@@ -137,33 +137,29 @@ BaseComment.prototype.fetch = function() {
 /* Go through the paginated API response to fetch all comments for the specified target */
 BaseComment.prototype.fetchNext = function(url, comments) {
     var self = this;
-    var deferred = $.Deferred();
-    if (self._loaded) {
-        deferred.resolve(self.comments());
-    }
     var request = osfHelpers.ajaxJSON(
         'GET',
         url,
         {'isCors': true});
     request.done(function(response) {
-        comments = comments.concat(response.data);
+        comments = response.data;
+        if (self._loaded !== true) {
+            self._loaded = true;
+        }
+        comments.forEach(function(comment) {
+            self.comments.push(
+                new CommentModel(comment, self, self.$root)
+            );
+        });
+        self.configureCommentsVisibility();
         if (response.links.next !== null) {
             self.fetchNext(response.links.next, comments);
         } else {
-            self.comments(
-                ko.utils.arrayMap(comments, function(comment) {
-                    return new CommentModel(comment, self, self.$root);
-                })
-            );
-            deferred.resolve(self.comments());
-            self.configureCommentsVisibility();
-            self._loaded = true;
             self.loadingComments(false);
         }
     }).fail(function () {
         self.loadingComments(false);
     });
-    return deferred.promise();
 };
 
 BaseComment.prototype.setUnreadCommentCount = function() {

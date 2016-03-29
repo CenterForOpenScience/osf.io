@@ -167,7 +167,7 @@ class Comment(GuidStoredObject, SpamMixin):
     root_target = fields.AbstractForeignField()
 
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
-    date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
+    date_modified = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow, editable=True)
     modified = fields.BooleanField(default=False)
     is_deleted = fields.BooleanField(default=False)
     # The type of root_target: node/files
@@ -215,10 +215,10 @@ class Comment(GuidStoredObject, SpamMixin):
     def find_n_unread(cls, user, node, page, root_id=None):
         if node.is_contributor(user):
             if page == Comment.OVERVIEW:
-                view_timestamp = user.get_node_comment_timestamps(node, 'node')
+                view_timestamp = user.get_node_comment_timestamps(target_id=node._id)
                 root_target = Guid.load(node._id)
             elif page == Comment.FILES:
-                view_timestamp = user.get_node_comment_timestamps(node, page, file_id=root_id)
+                view_timestamp = user.get_node_comment_timestamps(target_id=root_id)
                 root_target = Guid.load(root_id)
             else:
                 raise ValueError('Invalid page')
@@ -281,6 +281,7 @@ class Comment(GuidStoredObject, SpamMixin):
             log_dict['file'] = {'name': self.root_target.referent.name, 'url': self.get_comment_page_url()}
         self.content = content
         self.modified = True
+        self.date_modified = datetime.datetime.utcnow()
         if save:
             self.save()
             self.node.add_log(
@@ -303,6 +304,7 @@ class Comment(GuidStoredObject, SpamMixin):
         self.is_deleted = True
         if isinstance(self.root_target.referent, StoredFileNode):
             log_dict['file'] = {'name': self.root_target.referent.name, 'url': self.get_comment_page_url()}
+        self.date_modified = datetime.datetime.utcnow()
         if save:
             self.save()
             self.node.add_log(
@@ -325,6 +327,7 @@ class Comment(GuidStoredObject, SpamMixin):
         }
         if isinstance(self.root_target.referent, StoredFileNode):
             log_dict['file'] = {'name': self.root_target.referent.name, 'url': self.get_comment_page_url()}
+        self.date_modified = datetime.datetime.utcnow()
         if save:
             self.save()
             self.node.add_log(
