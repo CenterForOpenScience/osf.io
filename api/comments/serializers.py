@@ -60,11 +60,6 @@ class CommentSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'comments'
 
-    def validate_content(self, value):
-        if value is None or not value.strip():
-            raise ValidationError('Comment cannot be empty.')
-        return value
-
     def get_is_abuse(self, obj):
         user = self.context['request'].user
         if user.is_anonymous():
