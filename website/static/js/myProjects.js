@@ -806,6 +806,9 @@ var MyProjects = {
               self.generateFiltersList();
               if (!pageData) {
                 for(var i = 0; i < fetcher._flat.length; i++){
+                    if(self.treeData().children.length === 0){
+                      continue;
+                    }
                     var fetcherItem = fetcher._flat[i];
                     var tbItem = self.treeData().children[i].data;
                     if(fetcherItem === tbItem){
@@ -815,7 +818,7 @@ var MyProjects = {
                     itemToAdd.parentID = self.treeData().id;
                     itemToAdd.open = false;
                     itemToAdd.load = false;
-                    self.treeData().splice(i, 0, itemToAdd);
+                    self.treeData().children.splice(i, 0, itemToAdd);
                 }
                 return m.redraw();
               }
