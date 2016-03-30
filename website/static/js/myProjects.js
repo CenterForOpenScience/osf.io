@@ -613,7 +613,7 @@ var MyProjects = {
                     self.treeData().add(child);
                 }
             }
-            self.updateFolder()(null, self.treeData());
+                self.updateFolder()(null, self.treeData());
             // Manually select first item without triggering a click
             if(self.multiselected()().length === 0 && self.treeData().children[0]){
               self.multiselected()([self.treeData().children[0]]);
@@ -737,7 +737,7 @@ var MyProjects = {
             }
             // order tags
             self.tagFilters.sort(sortByCountDesc);
-            //m.redraw(true);
+            m.redraw(true);
         };
 
         // BREADCRUMBS
@@ -806,11 +806,8 @@ var MyProjects = {
               self.generateFiltersList();
               if (!pageData) {
                 for(var i = 0; i < fetcher._flat.length; i++){
-                    if(self.treeData().children.length === 0){
-                      continue;
-                    }
                     var fetcherItem = fetcher._flat[i];
-                    var tbItem = self.treeData().children[i].data;
+                    var tbItem = self.treeData().children[i] ? self.treeData().children[i].data : {};
                     if(fetcherItem === tbItem){
                         continue;
                     }
@@ -820,6 +817,7 @@ var MyProjects = {
                     itemToAdd.load = false;
                     self.treeData().children.splice(i, 0, itemToAdd);
                 }
+                self.updateFolder()(null, self.treeData(), true);
                 return m.redraw();
               }
               if(self.treeData().children){
