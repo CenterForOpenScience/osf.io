@@ -62,7 +62,6 @@ var entry = {
         // Vendor libraries
         'knockout',
         'knockout.validation',
-        'knockout.punches',
         'moment',
         'bootstrap',
         'bootbox',

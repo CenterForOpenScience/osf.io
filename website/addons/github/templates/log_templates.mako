@@ -9,11 +9,11 @@ GitHub repo
 
 <script type="text/html" id="github_folder_created">
 created folder
-<span class="overflow log-folder">{{ stripSlash(params.path) }}</span> in
+<span class="overflow log-folder" data-bind="text: stripSlash(params.path)"></span> in
 GitHub repo
 <span data-bind="text: params.github.user"></span> /
 <span data-bind="text: params.github.repo"></span> in
-<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
 <script type="text/html" id="github_file_updated">
@@ -50,18 +50,18 @@ unlinked GitHub repo
 <script type="text/html" id="github_node_authorized">
 authorized the GitHub addon for
 <a class="log-node-title-link overflow"
-    data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+    data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
 <script type="text/html" id="github_node_deauthorized">
 deauthorized the GitHub addon for
 <a class="log-node-title-link overflow"
-    data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+    data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
 <script type="text/html" id="github_node_deauthorized_no_user">
 GitHub addon for
 <a class="log-node-title-link overflow"
-    data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+    data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
     deauthorized
 </script>
