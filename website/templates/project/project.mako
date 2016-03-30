@@ -32,12 +32,15 @@
                     % if not user_name:
                         data-bind="tooltip: {title: 'Log-in or create an account to watch/duplicate this project', placement: 'bottom'}"
                     % endif
-                        >
+                     >
                     <div class="btn-group">
                     % if not node["is_public"]:
-                        <button class='btn btn-default disabled'>Private</button>
+                        <button class="btn btn-default disabled">Private</button>
                         % if 'admin' in user['permissions'] and not node['is_pending_registration'] and not node['is_pending_embargo']:
-                            <a class="btn btn-default"  href="#nodesPrivacy" data-toggle="modal" >Make Public</a>
+                        <a disabled data-bind="attr: {'disabled': false}, css: {'disabled': nodeIsPendingEmbargoTermination}" class="btn btn-default"  href="#nodesPrivacy" data-toggle="modal">
+                            <span class="fa fa-asterisk" data-bind="if: nodeIsPendingEmbargoTermination, tooltip: {title: makePublicTooltip, placement: 'bottom', disabled: true}"></span>
+                            Make Public
+                        </a>
                         % endif
                     % else:
                         % if 'admin' in user['permissions'] and not node['is_registration']:

@@ -20,7 +20,6 @@ var CitationList = require('js/citationList');
 var CitationWidget = require('js/citationWidget');
 var mathrender = require('js/mathrender');
 var md = require('js/markdown').full;
-var NodesPrivacy = require('js/nodesPrivacy').NodesPrivacy;
 
 var ctx = window.contextVars;
 var nodeApiUrl = ctx.node.urls.api;
@@ -40,9 +39,6 @@ $('body').on('nodeLoad', function(event, data) {
     }
     // Initialize nodeControl
     new NodeControl.NodeControl('#projectScope', data);
-    if (data.user.is_admin && !data.node.is_retracted) {
-        new NodesPrivacy('#nodesPrivacy', data.node);
-    }
 });
 
 // Initialize comment pane w/ its viewmodel

@@ -3422,6 +3422,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             approval.add_authorizer(admin, node=node)
         approval.save()
         approval.ask(admins)
+        self.embargo_termination_approval = approval
+        self.save()
 
     def terminate_embargo(self, auth):
         if not self.is_embargoed:
