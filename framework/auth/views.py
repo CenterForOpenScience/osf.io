@@ -96,6 +96,7 @@ def forgot_password_post():
     forms.push_errors_to_status(form.errors)
     return auth_login(forgot_password_form=form)
 
+
 @collect_auth
 def forgot_password_get(auth, *args, **kwargs):
     """Return forgot password page upon.
