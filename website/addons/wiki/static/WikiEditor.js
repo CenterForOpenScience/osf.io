@@ -55,7 +55,7 @@ function ViewModel(url, viewText) {
     });
     
     // Display the icons of up to the first 18 collaborators on a page
-    self.showCollaborators = ko.pureComputed(function() {
+    self.showCollaborators = ko.computed(function() {
         if (self.activeUsers().length > 18) {
             return self.activeUsers().slice(0,18);
         }
@@ -63,7 +63,7 @@ function ViewModel(url, viewText) {
     });
     
     // Show text that says "and # more" collaborators
-    self.andOthersMessage = ko.computed(function() {
+    self.andOthersMessage = ko.pureComputed(function() {
         if (self.activeUsers().length > 18) {
             var leftovers = self.activeUsers().length - 18;
             return '...and ' + leftovers + ' more';
