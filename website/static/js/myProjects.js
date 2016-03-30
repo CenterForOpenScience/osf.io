@@ -326,7 +326,6 @@ var MyProjects = {
         self.treeData = m.prop({}); // Top level object that houses all the rows
         self.buildTree = m.prop(null); // Preprocess function that adds to each item TB specific attributes
         self.updateFolder = m.prop(null); // Updates view to redraw without messing up scroll location
-        self.projectsForTemplates = m.prop([]);
 
         // Add All my Projects and All my registrations to collections
         self.systemCollections = options.systemCollections || [
@@ -895,12 +894,10 @@ var MyProjects = {
                         projects.fetch(this.saveResult().data.id, function(){
                           ctrl.updateTreeData(0, projects._flat, true);
                         });
-
-
                     },
                     trackingCategory: 'myProjects',
                     trackingAction: 'add-project',
-                    templates: ctrl.projectsForTemplates
+                    templatesFetcher: ctrl.fetchers[ctrl.systemCollections[0].id]
                 })))
             ])) : '',
             m('.db-header.row', [

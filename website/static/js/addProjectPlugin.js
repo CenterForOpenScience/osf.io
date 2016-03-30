@@ -51,11 +51,10 @@ var AddProject = {
 
         self.mapTemplates = function() {
             self.userProjects = [];
-            options.templates().map(function(node){
+            options.templatesFetcher._flat.map(function(node){
                 self.userProjects.push({title: node.attributes.title, id: node.id});
             });
             return self.userProjects;
-
         };
 
         self.add = function _add () {
