@@ -150,7 +150,7 @@ def robots():
 def goodbye():
     # Redirect to dashboard if logged in
     if _get_current_user():
-        return redirect(util.web_url_for('dashboard'))
+        return redirect(util.web_url_for('index'))
     status.push_status_message(language.LOGOUT, 'success')
     return {}
 

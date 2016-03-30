@@ -92,7 +92,7 @@ var entry = {
 var mainLogs = require(staticPath('js/logActionsList.json'));
 var addonLog;
 
-// Collect adddons endpoints. If an addon's static folder has
+// Collect addons endpoints. If an addon's static folder has
 // any of the following files, it will be added as an entry point
 // and output to website/static/public/js/<addon-name>/files.js
 var addonModules = ['files.js', 'node-cfg.js', 'user-cfg.js', 'file-detail.js', 'widget-cfg.js'];
