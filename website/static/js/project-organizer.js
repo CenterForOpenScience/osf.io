@@ -123,7 +123,6 @@ function _poModified(item) {
 function _poResolveRows(item) {
     var mobile = window.innerWidth < MOBILE_WIDTH; // true if mobile view
     var tb = this;
-    var folderIcons = !tb.filterOn;
     var defaultColumns = [];
 
     if(this.isMultiselected(item.id)){
@@ -134,7 +133,7 @@ function _poResolveRows(item) {
 
     defaultColumns.push({
         data : 'name',  // Data field name
-        folderIcons : folderIcons,
+        folderIcons : true,
         filter : true,
         css : 'po-draggable', // All projects are draggable since we separated collections from the grid
         custom : _poTitleColumn
@@ -345,6 +344,8 @@ var tbOptions = {
         tb.options.mpTreeData(tb.treeData);
         tb.options.mpBuildTree(tb.buildTree);
         tb.options.mpUpdateFolder(tb.updateFolder);
+        tb.options.mpMultiselected(tb.multiselected);
+        tb.options.mpHighlightMultiselect(tb.highlightMultiselect)
     },
     ontogglefolder : function (item, event) {
         var tb = this;
@@ -372,7 +373,7 @@ var tbOptions = {
       var key = this.options.currentView().collection.id;
       this.options.fetchers[key].getChildren(item.data.id)
         .then(function(children) {
-          // HACK to use promises with TB 
+          // HACK to use promises with TB
           var child, i;
           for (i = 0; i < children.length; i++) {
             child = tb.buildTree(children[i], item);
@@ -485,7 +486,9 @@ var ProjectOrganizer = {
                     nodes : args.nodes,
                     onPageLoad : args.onPageLoad,
                     fetchers : args.fetchers,
-                    indexes : args.indexes
+                    indexes : args.indexes,
+                    mpMultiselected : args.multiselected,
+                    mpHighlightMultiselect : args.highlightMultiselect
                 },
                 tbOptions
             );

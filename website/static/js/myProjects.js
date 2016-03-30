@@ -73,7 +73,7 @@ function NodeFetcher(type, link) {
 
 NodeFetcher.prototype = {
   isFinished: function() {
-    return this.loaded >= this.total && this._promise === null;
+    return this.loaded >= this.total && this._promise === null && this._orphans.length === 0;
   },
   isEmpty: function() {
     return this.loaded === 0 && this.isFinished();
@@ -326,6 +326,8 @@ var MyProjects = {
         self.treeData = m.prop({}); // Top level object that houses all the rows
         self.buildTree = m.prop(null); // Preprocess function that adds to each item TB specific attributes
         self.updateFolder = m.prop(null); // Updates view to redraw without messing up scroll location
+        self.multiselected = m.prop(); // Updated the selected list in treebeard
+        self.highlightMultiselect = m.prop(null); // does highlighting background of the row
 
         // Add All my Projects and All my registrations to collections
         self.systemCollections = options.systemCollections || [
@@ -613,8 +615,11 @@ var MyProjects = {
             }
             self.selected([]);
             self.updateFolder()(null, self.treeData());
+            // Manually select first item without triggering a click
             if(self.treeData().children[0]){
-                $('.tb-row').first().trigger('click');
+              self.multiselected()([self.treeData().children[0]]);
+              self.highlightMultiselect()();
+              self.updateSelected([self.treeData().children[0]]);
             }
         };
 
@@ -870,7 +875,9 @@ var MyProjects = {
                 currentView: ctrl.currentView,
                 nodes : ctrl.nodes,
                 fetchers : ctrl.fetchers,
-                indexes : ctrl.indexes
+                indexes : ctrl.indexes,
+                multiselected : ctrl.multiselected,
+                highlightMultiselect : ctrl.highlightMultiselect
             },
             ctrl.projectOrganizerOptions
         );
@@ -1665,7 +1672,7 @@ var Filters = {
                     'Contributors ',
                     m('i.fa.fa-question-circle.text-muted', {
                         'data-toggle':  'tooltip',
-                        'title': 'Click a name to display the selected contributor’s public projects, as well as their private projects on which you are at least a read contributor.',
+                        'title': 'Click a contributor\'s name to see projects that you have in common.',
                         'data-placement' : 'bottom'
                     }, ''),
                     m('.pull-right',
