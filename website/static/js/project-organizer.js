@@ -123,7 +123,6 @@ function _poModified(item) {
 function _poResolveRows(item) {
     var mobile = window.innerWidth < MOBILE_WIDTH; // true if mobile view
     var tb = this;
-    var folderIcons = !tb.filterOn;
     var defaultColumns = [];
 
     if(this.isMultiselected(item.id)){
@@ -134,7 +133,7 @@ function _poResolveRows(item) {
 
     defaultColumns.push({
         data : 'name',  // Data field name
-        folderIcons : folderIcons,
+        folderIcons : true,
         filter : true,
         css : 'po-draggable', // All projects are draggable since we separated collections from the grid
         custom : _poTitleColumn
@@ -225,35 +224,6 @@ function _poResolveToggle(item) {
     return '';
 }
 
-/**
- * Resolves lazy load url for fetching children
- * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
- * @this Treebeard.controller
- * @returns {String|Boolean} Returns the fetch URL in string or false if there is no url.
- * @private
- */
-function _poResolveLazyLoad(item) {
-    var tb = this;
-    var node = item.data;
-    if(item.children.length > 0) {
-        return false;
-    }
-    if(node.relationships.children){
-        // If flatData is loaded use that
-        if(tb.options.nodes.projects.flatData.loaded === tb.options.nodes.projects.flatData.total && tb.options.indexes()[node.id]){
-            return false;
-        }
-        //return node.relationships.children.links.related.href;
-        var urlPrefix = node.attributes.registration ? 'registrations' : 'nodes';
-        return $osf.apiV2Url(urlPrefix + '/' + node.id + '/children/', {
-            query : {
-                'related_counts' : 'children',
-                'embed' : 'contributors'
-            }
-        });
-    }
-    return false;
-}
 
 /**
  * Hook to run after multiselect is run when an item is selected.
@@ -345,6 +315,8 @@ var tbOptions = {
         tb.options.mpTreeData(tb.treeData);
         tb.options.mpBuildTree(tb.buildTree);
         tb.options.mpUpdateFolder(tb.updateFolder);
+        tb.options.mpMultiselected(tb.multiselected);
+        tb.options.mpHighlightMultiselect(tb.highlightMultiselect)
     },
     ontogglefolder : function (item, event) {
         var tb = this;
@@ -372,7 +344,7 @@ var tbOptions = {
       var key = this.options.currentView().collection.id;
       this.options.fetchers[key].getChildren(item.data.id)
         .then(function(children) {
-          // HACK to use promises with TB 
+          // HACK to use promises with TB
           var child, i;
           for (i = 0; i < children.length; i++) {
             child = tb.buildTree(children[i], item);
@@ -482,10 +454,10 @@ var ProjectOrganizer = {
                     mpBuildTree : args.buildTree,
                     mpUpdateFolder : args.updateFolder,
                     currentView: args.currentView,
-                    nodes : args.nodes,
                     onPageLoad : args.onPageLoad,
                     fetchers : args.fetchers,
-                    indexes : args.indexes
+                    mpMultiselected : args.multiselected,
+                    mpHighlightMultiselect : args.highlightMultiselect
                 },
                 tbOptions
             );

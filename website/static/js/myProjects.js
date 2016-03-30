@@ -66,13 +66,14 @@ function NodeFetcher(type, link) {
     done: [this._onFinish.bind(this)],
     page: [],
     children: [],
+    fetch : []
   };
   this.nextLink = link || $osf.apiV2Url('users/me/' + this.type + '/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
 }
 
 NodeFetcher.prototype = {
   isFinished: function() {
-    return this.loaded >= this.total && this._promise === null;
+    return this.loaded >= this.total && this._promise === null && this._orphans.length === 0;
   },
   isEmpty: function() {
     return this.loaded === 0 && this.isFinished();
@@ -99,7 +100,7 @@ NodeFetcher.prototype = {
       }).bind(this));
   },
   add: function(item) {
-    if (this._cache[item.id] || (this._promise === null && this.loaded === 0)) return;
+    if (!this.isFinished() && this._flat.indexOf(item) !== - 1) return;
 
     this.total++;
     this.loaded++;
@@ -132,12 +133,13 @@ NodeFetcher.prototype = {
     deferred.resolve(this._cache[id].children);
     return deferred.promise;
   },
-  fetch: function(id) {
+  fetch: function(id, cb) {
     // TODO This method is currently untested
     var url =  $osf.apiV2Url(this.type + '/' + id + '/', {query: {related_counts: 'children', embed: 'contributors' }});
     return m.request({method: 'GET', url: url, config: xhrconfig, background: true})
       .then((function(result) {
         this.add(result.data);
+        return result.data;
       }).bind(this), this._fail.bind(this));
   },
   fetchChildren: function(parent) {
@@ -153,8 +155,10 @@ NodeFetcher.prototype = {
     this.nextLink = results.links.next;
     this.loaded += results.data.length;
     for(var i = 0; i < results.data.length; i++) {
-      if (results.data[i].relationships.parent)
-        this._orphans.push(results.data[i]); //TODO run through orphans
+      if (this.type === 'registrations' && (results.data[i].attributes.retracted === true || results.data[i].attributes.pending_registration_approval === true))
+        continue // Exclude retracted and pending registrations
+      else if (results.data[i].relationships.parent)
+        this._orphans.push(results.data[i]);
       else
         this._flat.push(results.data[i]);
 
@@ -289,15 +293,12 @@ var MyProjects = {
         self.projectOrganizerOptions = options.projectOrganizerOptions || {};
         self.viewOnly = options.viewOnly || false;
         self.institutionId = options.institutionId || false;
-        self.reload = m.prop(false); // Gets set to true when treebeard link changes and it needs to be redrawn
         self.logUrlCache = {}; // dictionary of load urls to avoid multiple calls with little refactor
         self.nodeUrlCache = {}; // Cached returns of the project related urls
         // VIEW STATES
         self.showInfo = m.prop(true); // Show the info panel
         self.showSidebar = m.prop(false); // Show the links with collections etc. used in narrow views
         self.allProjectsLoaded = m.prop(false);
-        self.loadingAllNodes = false; // True if we are loading all nodes
-        self.loadingNodePages = false;
         self.categoryList = [];
         self.loadValue = m.prop(0); // What percentage of the project loading is done
         //self.loadCounter = m.prop(0); // Count how many items are received from the server
@@ -308,14 +309,14 @@ var MyProjects = {
             totalRows: 0
         });
         self.filesData = m.prop();
-        self.indexes = m.prop({}); // Container of tree indexes for the items
 
         // Treebeard functions looped through project organizer.
         // We need to pass these in to avoid reinstantiating treebeard but instead repurpose (update) the top level folder
         self.treeData = m.prop({}); // Top level object that houses all the rows
         self.buildTree = m.prop(null); // Preprocess function that adds to each item TB specific attributes
         self.updateFolder = m.prop(null); // Updates view to redraw without messing up scroll location
-        self.projectsForTemplates = m.prop([]);
+        self.multiselected = m.prop(); // Updated the selected list in treebeard
+        self.highlightMultiselect = m.prop(null); // does highlighting background of the row
 
         // Add All my Projects and All my registrations to collections
         self.systemCollections = options.systemCollections || [
@@ -353,49 +354,6 @@ var MyProjects = {
                 Raven.captureMessage(message, {requestReturn: results});
             });
             return promise;
-        };
-
-        /**
-         * Turn flat node array into a hierarchical structure
-         * @param flatData {Array} List of items returned from survey
-         * @param [lastcrumb] {Object} Right most selected breadcrumb linkobject
-         * @param [indexes] {Object} Object to save the tree index structure for quick find
-         * @returns {Array} A new list with hierarchical structure
-         */
-        self.makeTree = function _makeTree(flatData, lastcrumb, indexes) {
-            var root = {id:0, children: [], data : {} };
-            var node_list = { 0 : root};
-            var parentID;
-            var crumbParent = lastcrumb ? lastcrumb.data.id : null;
-            for (var i = 0; i < flatData.length; i++) {
-                if(flatData[i].errors){
-                    continue;
-                }
-                var n = _formatDataforPO(flatData[i]);
-                if (!node_list[n.id]) { // If this node is not in the object list, add it
-                    node_list[n.id] = n;
-                    node_list[n.id].children = [];
-                } else { // If this node is in object list it's likely because it was created as a parent so fill out the rest of the information
-                    n.children = node_list[n.id].children;
-                    node_list[n.id] = n;
-                }
-
-                if (n.relationships.parent){
-                    parentID = n.relationships.parent.links.related.href.split('/')[5]; // Find where parent id string can be extracted
-                } else {
-                    parentID = null;
-                }
-                if(parentID && parentID !== crumbParent ) {
-                    if(!node_list[parentID]){
-                        node_list[parentID] = { children : [] };
-                    }
-                    node_list[parentID].children.push(node_list[n.id]);
-                } else {
-                    node_list[0].children.push(node_list[n.id]);
-                }
-            }
-            indexes(node_list);
-            return root.children;
         };
 
         // Activity Logs
@@ -594,17 +552,17 @@ var MyProjects = {
             }
             for (var i = begin; i < data.length; i++){
                 item = data[i];
-                if (!(item.attributes.retracted === true || item.attributes.pending_registration_approval === true)){
-                    // Filter Retractions and Pending Registrations from the "All my registrations" view.
-                    _formatDataforPO(item);
-                    var child = self.buildTree()(item, self.treeData());
-                    self.treeData().add(child);
-                }
+                _formatDataforPO(item);
+                var child = self.buildTree()(item, self.treeData());
+                self.treeData().add(child);
             }
             self.selected([]);
             self.updateFolder()(null, self.treeData());
+            // Manually select first item without triggering a click
             if(self.treeData().children[0]){
-                $('.tb-row').first().trigger('click');
+              self.multiselected()([self.treeData().children[0]]);
+              self.highlightMultiselect()();
+              self.updateSelected([self.treeData().children[0]]);
             }
         };
 
@@ -658,10 +616,10 @@ var MyProjects = {
         /**
          * Generate this list from user's projects
          */
-        self.generateFiltersList = function() {
+        self.generateFiltersList = function(noClear) {
             self.users = {};
             self.tags = {};
-            var data = Object.keys(self.currentView().fetcher._cache).map(function(key) {
+            Object.keys(self.currentView().fetcher._cache).forEach(function(key) {
               var item = self.currentView().fetcher._cache[key];
               self.generateSets(item);
 
@@ -706,20 +664,36 @@ var MyProjects = {
             }
 
             // Add to lists with numbers
-            self.nameFilters = [];
-            for (var user in self.users){
+            if (!noClear)
+              self.nameFilters = [];
+
+            for (var user in self.users) {
                 var u2 = self.users[user];
                 if (u2.data.embeds.users.data) {
+                  var found = self.nameFilters.find(function(lo) {
+                    return lo.label === u2.data.embeds.users.data.attributes.full_name;
+                  });
+                  if (!found)
                     self.nameFilters.push(new LinkObject('contributor', { id : u2.data.id, count : u2.count, query : { 'related_counts' : 'children' }}, u2.data.embeds.users.data.attributes.full_name, options.institutionId || false));
+                  else
+                    found.data.count = u2.count;
                 }
             }
             // order names
             self.nameFilters.sort(sortByCountDesc);
 
-            self.tagFilters = [];
+            if (!noClear)
+              self.tagFilters = [];
+
             for (var tag in self.tags){
                 var t2 = self.tags[tag];
-                self.tagFilters.push(new LinkObject('tag', { tag : tag, count : t2, query : { 'related_counts' : 'children' }}, tag, options.institutionId || false));
+                var found = self.tagFilters.find(function(lo) {
+                  return lo.label === tag;
+                });
+                if (!found)
+                  self.tagFilters.push(new LinkObject('tag', { tag : tag, count : t2, query : { 'related_counts' : 'children' }}, tag, options.institutionId || false));
+                else
+                  found.data.count = t2;
             }
             // order tags
             self.tagFilters.sort(sortByCountDesc);
@@ -789,7 +763,7 @@ var MyProjects = {
         self.onPageLoad = function(fetcher, pageData) {
           if(self.currentView().fetcher === fetcher) {
             self.loadValue(fetcher.isFinished() ? 100 : fetcher.progress());
-              self.generateFiltersList();
+              self.generateFiltersList(true);
               if (!pageData) {
                 self.updateList(); // Done callback
                 return m.redraw();
@@ -798,7 +772,6 @@ var MyProjects = {
                 var begin = self.treeData().children.length;
                 var data = fetcher._flat;
                 self.updateTreeData(begin, data);
-                self.generateFiltersList(fetcher._flat);
                 self.currentView().totalRows = fetcher._flat.length;
               }
           }
@@ -849,7 +822,6 @@ var MyProjects = {
                 NodeFetcher : NodeFetcher,
                 formatDataforPO : _formatDataforPO,
                 wrapperSelector : args.wrapperSelector,
-                reload : ctrl.reload,
                 resetUi : ctrl.resetUi,
                 showSidebar : ctrl.showSidebar,
                 loadValue : ctrl.loadValue,
@@ -858,9 +830,10 @@ var MyProjects = {
                 buildTree : ctrl.buildTree,
                 updateFolder : ctrl.updateFolder,
                 currentView: ctrl.currentView,
-                nodes : ctrl.nodes,
                 fetchers : ctrl.fetchers,
-                indexes : ctrl.indexes
+                indexes : ctrl.indexes,
+                multiselected : ctrl.multiselected,
+                highlightMultiselect : ctrl.highlightMultiselect
             },
             ctrl.projectOrganizerOptions
         );
@@ -879,12 +852,15 @@ var MyProjects = {
                     title: 'Create new project',
                     categoryList: ctrl.categoryList,
                     stayCallback: function () {
-                        ctrl.allProjectsLoaded(false);
-                        ctrl.updateList(ctrl.breadcrumbs()[ctrl.breadcrumbs().length - 1]);
+                        // Fetch details of added item from server and redraw treebeard
+                        var projects = ctrl.fetchers[ctrl.systemCollections[0].id];
+                        projects.fetch(this.saveResult().data.id).then(function(){
+                          ctrl.updateTreeData(0, projects._flat, true);
+                        });
                     },
                     trackingCategory: 'myProjects',
                     trackingAction: 'add-project',
-                    templates: ctrl.projectsForTemplates
+                    templatesFetcher: ctrl.fetchers[ctrl.systemCollections[0].id]
                 })))
             ])) : '',
             m('.db-header.row', [
@@ -1187,8 +1163,6 @@ var Collections = {
                 childCount = item.data.count ? ' (' + item.data.count() + ')' : '';
                 if (args.currentView().collection === item) {
                     selectedCSS = 'active';
-                } else if (item.id === ctrl.collectionMenuObject().item.id) {
-                    selectedCSS = 'bg-color-hover';
                 } else {
                     selectedCSS = '';
                 }
@@ -1512,7 +1486,8 @@ var Breadcrumbs = {
             items.map(function(item, index, array){
                 if(index === array.length-1){
                     if(item.type === 'node'){
-                        var parentID = args.breadcrumbs()[args.breadcrumbs().length - 1].data.id;
+                        var linkObject = args.breadcrumbs()[args.breadcrumbs().length - 1];
+                        var parentID = linkObject.data.id;
                         var showAddProject = true;
                         var addProjectTemplate = '';
                         var permissions = item.data.attributes.current_user_permissions;
@@ -1530,8 +1505,10 @@ var Breadcrumbs = {
                                 title: 'Create new component',
                                 categoryList: args.categoryList,
                                 stayCallback: function () {
-                                    args.allProjectsLoaded(false);
-                                    args.updateList(args.breadcrumbs()[args.breadcrumbs().length - 1]);
+                                    var topLevelProject = args.fetchers[linkObject.id];
+                                    topLevelProject.fetch(this.saveResult().data.id, function(){
+                                      args.updateTreeData(0, topLevelProject._flat, true);
+                                    });
                                 },
                                 trackingCategory: 'myProjects',
                                 trackingAction: 'add-component'
@@ -1646,7 +1623,7 @@ var Filters = {
                     'Contributors ',
                     m('i.fa.fa-question-circle.text-muted', {
                         'data-toggle':  'tooltip',
-                        'title': 'Click a name to display the selected contributor’s public projects, as well as their private projects on which you are at least a read contributor.',
+                        'title': 'Click a contributor\'s name to see projects that you have in common.',
                         'data-placement' : 'bottom'
                     }, ''),
                     m('.pull-right',
