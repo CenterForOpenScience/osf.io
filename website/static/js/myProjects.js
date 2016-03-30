@@ -197,7 +197,7 @@ NodeFetcher.prototype = {
   },
   _fail: function(result) {
     Raven.captureMessage('Error loading nodes with nodeType ' + this.type + ' at url ' + this.nextLink, {requestReturn: result});
-    $osf.growl('We\'re having some touble contacting our servers. Try reloading the page.', 'Something went wrong!', 'danger', 5000);
+    $osf.growl('We\'re having some trouble contacting our servers. Try reloading the page.', 'Something went wrong!', 'danger', 5000);
     this.resume();
   },
   _onFinish: function() {
