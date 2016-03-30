@@ -47,24 +47,19 @@ class TestFileView(ApiTestCase):
         self.file.versions[-1].reload()
         assert_equal(res.status_code, 200)
         assert_equal(res.json.keys(), ['data'])
-        assert_equal(res.json['data']['attributes'], {
-            'path': self.file.path,
-            'kind': self.file.kind,
-            'name': self.file.name,
-            'materialized_path': self.file.materialized_path,
-            'last_touched': None,
-            'provider': self.file.provider,
-            'size': self.file.versions[-1].size,
-            # HACK: odm's dates are weird
-            'date_modified': _dt_to_iso8601(self.file.versions[-1].date_created.replace(tzinfo=pytz.utc)),
-            'date_created': _dt_to_iso8601(self.file.versions[0].date_created.replace(tzinfo=pytz.utc)),
-            'extra': {
-                'hashes': {
-                    'md5': None,
-                    'sha256': None,
-                },
-            },
-        })
+        attributes = res.json['data']['attributes']
+        assert_equal(attributes['path'], self.file.path)
+        assert_equal(attributes['kind'], self.file.kind)
+        assert_equal(attributes['name'], self.file.name)
+        assert_equal(attributes['materialized_path'], self.file.materialized_path)
+        assert_equal(attributes['last_touched'], None)
+        assert_equal(attributes['provider'], self.file.provider)
+        assert_equal(attributes['size'], self.file.versions[-1].size)
+        assert_equal(attributes['date_modified'], _dt_to_iso8601(self.file.versions[-1].date_created.replace(tzinfo=pytz.utc)))
+        assert_equal(attributes['date_created'], _dt_to_iso8601(self.file.versions[0].date_created.replace(tzinfo=pytz.utc)))
+        assert_equal(attributes['extra']['hashes']['md5'], None)
+        assert_equal(attributes['extra']['hashes']['sha256'], None)
+
 
     def test_file_has_comments_link(self):
         res = self.app.get('/{}files/{}/'.format(API_BASE, self.file._id), auth=self.user.auth)
