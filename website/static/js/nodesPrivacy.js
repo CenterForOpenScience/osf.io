@@ -30,26 +30,33 @@ var MESSAGES = {
     }
 };
 
+function _flattenNodeTree(nodeTree) {
+    var ret = [];
+    var stack = [nodeTree];
+    while (stack.length) {
+        var node = stack.pop();
+        ret.push(node);
+        stack = stack.concat(node.children);
+    }
+    return ret;
+}
+
 /**
  * take treebeard tree structure of nodes and get a dictionary of parent node and all its
  * children
  */
 function getNodesOriginal(nodeTree, nodesOriginal) {
-    var i;
-    var nodeId = nodeTree.node.id;
-    nodesOriginal[nodeId] = {
-        public: nodeTree.node.is_public,
-        id: nodeTree.node.id,
-        title: nodeTree.node.title,
-        canWrite: nodeTree.node.can_write,
-        changed: false
-    };
-
-    if (nodeTree.children) {
-        for (i in nodeTree.children) {
-            nodesOriginal = getNodesOriginal(nodeTree.children[i], nodesOriginal);
-        }
-    }
+    var flatNodes = _flattenNodeTree(nodeTree);
+    $.each(flatNodes, function(_, node) {
+        var nodeId = nodeTree.node.id;
+        nodesOriginal[nodeId] = {
+            public: nodeTree.node.is_public,
+            id: nodeTree.node.id,
+            title: nodeTree.node.title,
+            canWrite: nodeTree.node.can_write,
+            changed: false
+        };
+    });
     return nodesOriginal;
 }
 
@@ -88,11 +95,13 @@ function patchNodesPrivacy(nodes) {
  *
  * @type {NodesPrivacyViewModel}
  */
-var NodesPrivacyViewModel = function(node) {
+var NodesPrivacyViewModel = function(node, onSetPrivacy) {
     var self = this;
     self.WARNING = 'warning';
     self.SELECT = 'select';
     self.CONFIRM = 'confirm';
+
+    self.onSetPrivacy = onSetPrivacy;
 
     self.parentIsEmbargoed = node.is_embargoed;
     self.parentIsPublic = node.is_public;
@@ -217,6 +226,8 @@ NodesPrivacyViewModel.prototype.confirmChanges =  function() {
     if (nodesChanged.length <= 100) {
         $osf.block('Updating Privacy');
         patchNodesPrivacy(nodesChanged).then(function () {
+            self.onSetPrivacy(nodesChanged);
+
             $osf.unblock();
             self.nodesChangedPublic([]);
             self.nodesChangedPrivate([]);
@@ -276,11 +287,10 @@ NodesPrivacyViewModel.prototype.makeEmbargoPublic = function() {
         node.public = true;
     });
     $osf.block('Submitting request to end embargo early ...');
-    patchNodesPrivacy(
-        $.map(self.nodesOriginal, function(node) {return node;})
-    ).then(function (res) {
+    var nodesChanged = $.map(self.nodesOriginal, function(node) {return node;});
+    patchNodesPrivacy(nodesChanged).then(function (res) {        
         $osf.unblock();
-        $('.modal-dialog').modal('hide');
+        $('.modal').modal('hide');
         // Non-error response with Nodes still private implies more than one
         // admin in this registration tree, and approval is needed before the
         // embargo is lifted.
@@ -288,29 +298,31 @@ NodesPrivacyViewModel.prototype.makeEmbargoPublic = function() {
         // only admin on the registration tree, and the privacy was changed
         // immediately.
         if (res.data[0].attributes.public) {
+            // TODO move all logic to onSetPrivacy handler and don't reload the page.
+            // Requires the components list to be rendered client-side.
             window.location.reload();
         }
         else {
+            self.onSetPrivacy(nodesChanged, true);
             $osf.growl(
                 'Request Initiated',
                 'You have initiated a request to end this registration\'s embargo early, and to make it and all of its components public immediately. All adminstrators on this registration have 48 hours to approve or disapprove of this acrion.',
                 'success'
-            );
+            );  
         }
     });
 };
 
-function NodesPrivacy (selector, node) {
+function NodesPrivacy (selector, node, onSetPrivacy) {
     var self = this;
 
     self.selector = selector;
     self.$element = $(self.selector);
-    self.viewModel = new NodesPrivacyViewModel(node);
+    self.viewModel = new NodesPrivacyViewModel(node, onSetPrivacy);
     self.viewModel.fetchNodeTree().done(function(response) {
         new NodesPrivacyTreebeard('nodesPrivacyTreebeard', response, self.viewModel.nodesState, self.viewModel.nodesOriginal);
     });
     self.init();
-
 }
 
 NodesPrivacy.prototype.init = function() {
