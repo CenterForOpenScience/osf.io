@@ -3136,22 +3136,6 @@ class TestProject(OsfTestCase):
             registration.set_privacy('public', auth=self.auth)
         assert_false(registration.is_public)
 
-    def test_set_privacy_can_not_cancel_active_embargo_for_registration(self):
-        registration = RegistrationFactory(project=self.project)
-        registration.embargo_registration(
-            self.user,
-            datetime.datetime.utcnow() + datetime.timedelta(days=10)
-        )
-        registration.save()
-        assert_true(registration.is_pending_embargo)
-
-        approval_token = registration.embargo.approval_state[self.user._id]['approval_token']
-        registration.embargo.approve_embargo(self.user, approval_token)
-        assert_false(registration.is_pending_embargo)
-
-        with assert_raises(NodeStateError):
-            registration.set_privacy('public', auth=self.auth)
-
     def test_set_description(self):
         old_desc = self.project.description
         self.project.set_description(
