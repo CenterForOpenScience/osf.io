@@ -115,7 +115,7 @@ var LogPieces = {
                     $osf.trackClick(logObject.trackingCategory, logObject.trackingAction, 'navigate-to-user-from-logs');
                 }}, userObject.data.attributes.full_name);
             }
-            else if (userObject && userObject.errors) {
+            else if (userObject && userObject.errors[0].meta) {
                 return m('span', userObject.errors[0].meta.full_name);
             }
             else {

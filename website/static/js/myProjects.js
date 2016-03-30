@@ -1800,7 +1800,7 @@ var ActivityLogs = {
                 if (item.embeds.user && item.embeds.user.data) {
                     image = m('img', { src : item.embeds.user.data.links.profile_image});
                 }
-                else if (item.embeds.user && item.embeds.user.errors){
+                else if (item.embeds.user && item.embeds.user.errors[0].meta){
                     image = m('img', { src : item.embeds.user.errors[0].meta.profile_image});
                 }
                 return m('.db-activity-item', [
