@@ -525,11 +525,16 @@ var MyProjects = {
         // Update what is viewed
         self.updateList = function _updateList (reset, itemId, collectionObject){
             if (!self.buildTree()) return; // Treebeard hasn't loaded yet
+            var viewData = self.filteredData();
+            self.updateTreeData(0, viewData, true);
+            self.currentView().totalRows = viewData.length;
+        };
 
+        self.filteredData = function() {
             var tags = self.currentView().tag;
             var contributors = self.currentView().contributor;
 
-            var viewData = self.currentView().fetcher._flat.filter(function(node) {
+            return self.currentView().fetcher._flat.filter(function(node) {
               var tagMatch = tags.length === 0;
               var contribMatch = contributors.length === 0;
 
@@ -547,9 +552,6 @@ var MyProjects = {
 
               return tagMatch && contribMatch;
             });
-
-            self.updateTreeData(0, viewData, true);
-            self.currentView().totalRows = viewData.length;
         };
 
         self.updateTreeData = function (begin, data, clear) {
@@ -777,7 +779,7 @@ var MyProjects = {
               }
               if(self.treeData().children){
                 var begin = self.treeData().children.length;
-                var data = fetcher._flat;
+                var data = self.filteredData();
                 self.updateTreeData(begin, data);
                 self.currentView().totalRows = fetcher._flat.length;
               }
