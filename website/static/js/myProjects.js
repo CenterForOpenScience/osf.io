@@ -66,6 +66,7 @@ function NodeFetcher(type, link) {
     done: [this._onFinish.bind(this)],
     page: [],
     children: [],
+    fetch : []
   };
   this.nextLink = link || $osf.apiV2Url('users/me/' + this.type + '/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
 }
@@ -99,7 +100,7 @@ NodeFetcher.prototype = {
       }).bind(this));
   },
   add: function(item) {
-    if (this._cache[item.id] || (this._promise === null && this.loaded === 0)) return;
+    if (!this.isFinished() && this._flat.indexOf(item) !== - 1) return;
 
     this.total++;
     this.loaded++;
@@ -132,12 +133,15 @@ NodeFetcher.prototype = {
     deferred.resolve(this._cache[id].children);
     return deferred.promise;
   },
-  fetch: function(id) {
+  fetch: function(id, cb) {
     // TODO This method is currently untested
     var url =  $osf.apiV2Url(this.type + '/' + id + '/', {query: {related_counts: 'children', embed: 'contributors' }});
     return m.request({method: 'GET', url: url, config: xhrconfig, background: true})
       .then((function(result) {
         this.add(result.data);
+        if($.isFunction(cb)){
+          cb(this, result.data);
+        }
       }).bind(this), this._fail.bind(this));
   },
   fetchChildren: function(parent) {
@@ -322,7 +326,6 @@ var MyProjects = {
         self.treeData = m.prop({}); // Top level object that houses all the rows
         self.buildTree = m.prop(null); // Preprocess function that adds to each item TB specific attributes
         self.updateFolder = m.prop(null); // Updates view to redraw without messing up scroll location
-        self.projectsForTemplates = m.prop([]);
 
         // Add All my Projects and All my registrations to collections
         self.systemCollections = options.systemCollections || [
@@ -886,12 +889,15 @@ var MyProjects = {
                     title: 'Create new project',
                     categoryList: ctrl.categoryList,
                     stayCallback: function () {
-                        ctrl.allProjectsLoaded(false);
-                        ctrl.updateList(ctrl.breadcrumbs()[ctrl.breadcrumbs().length - 1]);
+                        // Fetch details of added item from server and redraw treebeard
+                        var projects = ctrl.fetchers[ctrl.systemCollections[0].id];
+                        projects.fetch(this.saveResult().data.id, function(){
+                          ctrl.updateTreeData(0, projects._flat, true);
+                        });
                     },
                     trackingCategory: 'myProjects',
                     trackingAction: 'add-project',
-                    templates: ctrl.projectsForTemplates
+                    templatesFetcher: ctrl.fetchers[ctrl.systemCollections[0].id]
                 })))
             ])) : '',
             m('.db-header.row', [
@@ -1522,7 +1528,8 @@ var Breadcrumbs = {
             items.map(function(item, index, array){
                 if(index === array.length-1){
                     if(item.type === 'node'){
-                        var parentID = args.breadcrumbs()[args.breadcrumbs().length - 1].data.id;
+                        var linkObject = args.breadcrumbs()[args.breadcrumbs().length - 1];
+                        var parentID = linkObject.data.id;
                         var showAddProject = true;
                         var addProjectTemplate = '';
                         var permissions = item.data.attributes.current_user_permissions;
@@ -1540,8 +1547,10 @@ var Breadcrumbs = {
                                 title: 'Create new component',
                                 categoryList: args.categoryList,
                                 stayCallback: function () {
-                                    args.allProjectsLoaded(false);
-                                    args.updateList(args.breadcrumbs()[args.breadcrumbs().length - 1]);
+                                    var topLevelProject = args.fetchers[linkObject.id];
+                                    topLevelProject.fetch(this.saveResult().data.id, function(){
+                                      args.updateTreeData(0, topLevelProject._flat, true);
+                                    });
                                 },
                                 trackingCategory: 'myProjects',
                                 trackingAction: 'add-component'

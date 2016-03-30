@@ -41,7 +41,7 @@ var AddProject = {
         self.errorMessage = {
             'unknown' : 'There was an unknown error. Please try again later.'
         };
-        self.userProjects =  []; // User nodes
+        self.userProjects =  m.prop([]); // User nodes
 
         // Validation
         self.isValid = m.prop(false);
@@ -49,14 +49,17 @@ var AddProject = {
             self.isValid(self.newProjectName().trim().length > 0);
         };
 
-        self.mapTemplates = function() {
-            self.userProjects = [];
-            options.templates().map(function(node){
-                self.userProjects.push({title: node.attributes.title, id: node.id});
-            });
-            return self.userProjects;
 
+        self.mapTemplates = function() {
+            self.userProjects([]);
+            options.templatesFetcher._flat.map(function(node){
+                self.userProjects().push({title: node.attributes.title, id: node.id});
+            });
+            return self.userProjects();
         };
+
+        options.templatesFetcher.on(['page', 'done'], self.mapTemplates);
+
 
         self.add = function _add () {
             var url;
@@ -182,7 +185,7 @@ var AddProject = {
                                     value: ctrl.newProjectTemplate,
                                     trackingCategory: options.trackingCategory,
                                     trackingAction: options.trackingAction,
-                                    mapTemplates: ctrl.mapTemplates
+                                    mapTemplates: ctrl.userProjects
                                 })
                             ]) : ''
                         ] : ''
