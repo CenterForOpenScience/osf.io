@@ -53,7 +53,6 @@
 .existing-user-instructions {
     margin-top: 75px;
     font-size: 20px;
-
 }
 
 .logo-no-spin {
@@ -66,6 +65,7 @@
 
 .login-title {
     font-weight: bold;
+    margin-top: 10px;
 }
 
 .login-logo {
@@ -75,4 +75,8 @@
   background-size: 100%;
   width: 150px;
   height: 150px;
+}
+
+.remember-me-checkbox {
+    margin-left: -20px !important;
 }

@@ -75,8 +75,8 @@
         >
         <h3 class=${'m-b-lg' if not existing_user else 'm-b-lg m-l-md'}> Login </h3>
         <div class="form-group">
-            <label for="inputEmail3" class="col-sm-3 control-label">Email</label>
-            <div class="col-sm-9">
+            <label for="inputEmail3" class="col-sm-2 control-label">Email</label>
+            <div class="col-sm-10">
                 <input
                     ${'autofocus' if not sign_up else ''}
                     type="email"
@@ -89,8 +89,8 @@
             </div>
         </div>
             <div class="form-group">
-                <label for="inputPassword3" class="col-sm-3 control-label">Password</label>
-                    <div class="col-sm-9">
+                <label for="inputPassword3" class="col-sm-2 control-label">Password</label>
+                    <div class="col-sm-10">
                         <input
                             type="password"
                             class="form-control"
@@ -102,15 +102,24 @@
                 </div>
             </div>
             %if existing_user:
-                <div class="col-sm-12 m-t-sm">
-                    <div class="col-sm-3"></div>
-                    <div class="form-group m-b-s col-sm-7">
-            %else:
-                <div class="form-group">
-                    <div class="col-sm-offset-3 col-sm-9">
-            %endif
+            <div class="col-sm-12 m-t-sm">
+            <div class="form-group col-sm-7 remember-me-checkbox">
                     <div class="checkbox">
-                        <label><input type="checkbox"> Remember me</label>
+                    <label><input type="checkbox"> Remember me</label>
+                </div>
+            </div>
+                 <div class="form-group pull-right">
+                    <button type="submit" class="btn btn-success">Sign in</button>
+                </div>
+            </div>
+            <div class="col-sm-8 login-forgot-password">
+                <a href="/forgotpassword/">Forgot password?</a>
+            </div>
+            %else:
+            <div class="form-group">
+                <div class="col-sm-offset-3 col-sm-9">
+                    <div class="checkbox">
+                    <label><input type="checkbox"> Remember me</label>
                     </div>
                 </div>
             </div>
@@ -119,6 +128,7 @@
                     <button type="submit" class="btn btn-success pull-right">Sign in</button>
                 </div>
             </div>
+            %endif
         </form>
     </div>
     %if not existing_user:
