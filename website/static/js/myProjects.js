@@ -326,6 +326,8 @@ var MyProjects = {
         self.treeData = m.prop({}); // Top level object that houses all the rows
         self.buildTree = m.prop(null); // Preprocess function that adds to each item TB specific attributes
         self.updateFolder = m.prop(null); // Updates view to redraw without messing up scroll location
+        self.multiselected = m.prop(); // Updated the selected list in treebeard
+        self.highlightMultiselect = m.prop(null); // does highlighting background of the row
 
         // Add All my Projects and All my registrations to collections
         self.systemCollections = options.systemCollections || [
@@ -613,8 +615,11 @@ var MyProjects = {
             }
             self.selected([]);
             self.updateFolder()(null, self.treeData());
+            // Manually select first item without triggering a click
             if(self.treeData().children[0]){
-                $('.tb-row').first().trigger('click');
+              self.multiselected()([self.treeData().children[0]]);
+              self.highlightMultiselect()();
+              self.updateSelected([self.treeData().children[0]]);
             }
         };
 
@@ -870,7 +875,9 @@ var MyProjects = {
                 currentView: ctrl.currentView,
                 nodes : ctrl.nodes,
                 fetchers : ctrl.fetchers,
-                indexes : ctrl.indexes
+                indexes : ctrl.indexes,
+                multiselected : ctrl.multiselected,
+                highlightMultiselect : ctrl.highlightMultiselect
             },
             ctrl.projectOrganizerOptions
         );
