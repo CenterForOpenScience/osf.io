@@ -350,20 +350,6 @@ var tbOptions = {
         var tb = this;
         $osf.trackClick('myProjects', 'projectOrganizer', 'expand-collapse-project-children');
         $('[data-toggle="tooltip"]').tooltip();
-        // if (item.children.length === 0 && tb.options.nodes.projects.flatData.loaded === tb.options.nodes.projects.flatData.total && tb.options.indexes()[item.data.id]) {
-        //     var childrenToAdd = tb.options.indexes()[item.data.id].children;
-        //     if(childrenToAdd.length){
-        //         var child, i;
-        //         for (i = 0; i < childrenToAdd.length; i++) {
-        //             child = tb.buildTree(childrenToAdd[i], item);
-        //             item.add(child);
-        //         }
-        //         tb.redraw();
-        //         tb.updateFolder(null, item);
-        //     }
-
-        // }
-
     },
     onscrollcomplete : function () {
         $('[data-toggle="tooltip"]').tooltip();
@@ -376,7 +362,6 @@ var tbOptions = {
         return m('i.fa.fa-cube');
     },
     resolveToggle : _poResolveToggle,
-    // resolveLazyloadUrl : _poResolveLazyLoad,
     resolveLazyloadUrl : function(item) {
       console.log(item.open);
       if (item.children.length > 0)
@@ -384,23 +369,17 @@ var tbOptions = {
       var tb = this;
       var deferred = $.Deferred();
 
-      var key = this.options.currentView().collection.data.nodeType
+      var key = this.options.currentView().collection.data.nodeType;
       this.options.fetchers[key].getChildren(item.data.id)
         .then(function(children) {
           // HACK to use promises with TB 
           var child, i;
           for (i = 0; i < children.length; i++) {
-              child = tb.buildTree(children[i], item);
-              item.add(child);
+            child = tb.buildTree(children[i], item);
+            item.add(child);
           }
           tb.flatten(tb.treeData.children, tb.visibleTop);
-
-          //tb.updateFolder(children, item, null, true);
-            // for (var i = 0; i < children.length; i++)
-            //     item.add(tb.buildTree(children[i], item));
-            // tb.updateFolder(null, item);
-
-            return deferred.resolve(null);
+          return deferred.resolve(null);
         });
       return deferred;
     },

@@ -125,7 +125,7 @@ NodeFetcher.prototype = {
   },
   getChildren: function(id) {
     //TODO Load via rootNode
-    if (this._cache[id].relationships.children.links.related.meta.count != this._cache[id].children.length) {
+    if (this._cache[id].relationships.children.links.related.meta.count !== this._cache[id].children.length) {
       return this.fetchChildren(this._cache[id]);
     }
     var deferred = m.deferred();
@@ -133,10 +133,12 @@ NodeFetcher.prototype = {
     return deferred.promise;
   },
   fetch: function(id) {
+    // TODO This method is currently untested
+    var url =  $osf.apiV2Url(this.type + '/' + id + '/', {query: {related_counts: 'children', embed: 'contributors' }});
     return m.request({method: 'GET', url: url, config: xhrconfig, background: true})
-      .then((function(results) {
-        debugger;
-      }));
+      .then((function(result) {
+        this.add(result.data);
+      }).bind(this), this._fail.bind(this));
   },
   fetchChildren: function(parent) {
     //TODO Allow suspending of children
@@ -178,7 +180,7 @@ NodeFetcher.prototype = {
     if (!this.nextLink)
       this._callbacks.done.forEach((function(cb) {
         cb(this);
-      }).bind(this))
+      }).bind(this));
   },
   _childrenSuccess: function(parent, results) {
     this.total += results.links.meta.total;
@@ -189,8 +191,10 @@ NodeFetcher.prototype = {
 
     return this._cache[parent.id].children;
   },
-  _fail: function(results) {
-    debugger;
+  _fail: function(result) {
+    Raven.captureMessage('Error loading nodes with nodeType ' + this.type + ' at url ' + this.nextLink, {requestReturn: result});
+    $osf.growl('We\'re having some touble contacting our servers. Try reloading the page.', 'Something went wrong!', 'danger', 5000);
+    this.resume();
   },
   _onFinish: function() {
     this._flat = this._orphans.concat(this._flat).sort(function(a,b) {
@@ -209,7 +213,7 @@ NodeFetcher.prototype = {
     for(var i = 0; i < type.length; i++)
       this._callbacks[type[i]].push(func);
   }
-}
+};
 
 
 function getUID() {
@@ -485,7 +489,7 @@ var MyProjects = {
             var filterIndex;
             // if collection, reset currentView otherwise toggle the item in the list of currentview items
             if (self.currentView().fetcher)
-              self.currentView().fetcher.pause()
+              self.currentView().fetcher.pause();
 
             self.currentView().fetcher = self.fetchers[filter.id];
 
@@ -1052,7 +1056,7 @@ var Collections = {
                 for ( var i = 0; i < self.collections().length; i++) {
                     var item = self.collections()[i];
                     if (item.data.node && item.data.node.id === self.collectionMenuObject().item.data.node.id) {
-                        if (args.currentView().fetcher == args.fetchers[item.id])
+                        if (args.currentView().fetcher === args.fetchers[item.id])
                           args.updateFilesData(self.collections()[0]); // Reset to all my projects
                         delete args.fetchers[item.id];
                         self.collections().splice(i, 1);
@@ -1129,7 +1133,7 @@ var Collections = {
                               args.fetchers[collection.id].add(item);
                               collection.data.count(collection.data.count()+1);
                               save(index + 1, data);
-                            })
+                            });
                       }, function(result){
                           var message = '';
                           var name = args.selected()[index] ? args.selected()[index].data.name : 'Item ';
@@ -1142,8 +1146,8 @@ var Collections = {
                           }
                           $osf.growl(message,null, 'warning', 4000);
                           save(index + 1, data);
-                      })
-                    };
+                      });
+                    }
 
                     save(0, dataArray);
                 }
