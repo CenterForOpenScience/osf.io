@@ -431,7 +431,7 @@ var tbOptions = {
                 if ($(this).val().length === 0) {
                     resetFilter();
                 } else {
-                    tb.filter();
+                    tb.filter(event);
                 }
             },
             onchange: function(event) {
