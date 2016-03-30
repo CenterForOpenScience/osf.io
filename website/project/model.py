@@ -159,7 +159,7 @@ class Commentable(object):
     def is_deleted(self):
         raise NotImplementedError
 
-    def belongs_to_node(self, node):
+    def belongs_to_node(self, node_id):
         raise NotImplementedError
 
 
