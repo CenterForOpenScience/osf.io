@@ -369,7 +369,7 @@ var tbOptions = {
       var tb = this;
       var deferred = $.Deferred();
 
-      var key = this.options.currentView().collection.data.nodeType;
+      var key = this.options.currentView().collection.id;
       this.options.fetchers[key].getChildren(item.data.id)
         .then(function(children) {
           // HACK to use promises with TB 
