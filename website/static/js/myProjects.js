@@ -613,10 +613,9 @@ var MyProjects = {
                     self.treeData().add(child);
                 }
             }
-            self.selected([]);
             self.updateFolder()(null, self.treeData());
             // Manually select first item without triggering a click
-            if(self.treeData().children[0]){
+            if(self.multiselected()().length === 0 && self.treeData().children[0]){
               self.multiselected()([self.treeData().children[0]]);
               self.highlightMultiselect()();
               self.updateSelected([self.treeData().children[0]]);
@@ -738,7 +737,7 @@ var MyProjects = {
             }
             // order tags
             self.tagFilters.sort(sortByCountDesc);
-            m.redraw(true);
+            //m.redraw(true);
         };
 
         // BREADCRUMBS
@@ -816,7 +815,7 @@ var MyProjects = {
                     itemToAdd.parentID = self.treeData().id;
                     itemToAdd.open = false;
                     itemToAdd.load = false;
-                    self.treeData().splice(i,0,itemToAdd);
+                    self.treeData().splice(i, 0, itemToAdd);
                 }
                 return m.redraw();
               }
