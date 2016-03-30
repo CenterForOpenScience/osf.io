@@ -470,11 +470,7 @@ var MyProjects = {
             }
             self.updateFilter(linkObject);
             self.updateBreadcrumbs(linkObject);
-            if(linkObject.data.nodeType === 'collection'){
-                self.updateList(false, null, linkObject);
-            } else {
-                self.updateList(true, itemId); // Reset and load item
-            }
+            self.updateList(); // Reset and load item
             self.showSidebar(false);
         };
 
@@ -570,7 +566,7 @@ var MyProjects = {
         };
 
         // Update what is viewed
-        self.updateList = function _updateList (reset, itemId, collectionObject){
+        self.updateList = function _updateList (){
             if (!self.buildTree()) return; // Treebeard hasn't loaded yet
 
             var tags = self.currentView().tag;
@@ -756,6 +752,8 @@ var MyProjects = {
             if(linkObject.ancestors && linkObject.ancestors.length > 0){
                 linkObject.ancestors.forEach(function(item){
                     var ancestorLink = new LinkObject('node', item.data, item.data.name);
+                    self.fetchers[ancestorLink.id] = new NodeFetcher(item.data.types, item.data.relationships.children.links.related.href + '?embed=contributors');
+                    self.fetchers[ancestorLink.id].on(['page', 'done'], self.onPageLoad);
                     self.breadcrumbs().push(ancestorLink);
                 });
             }
@@ -826,6 +824,7 @@ var MyProjects = {
                 self.updateTreeData(begin, data);
                 self.generateFiltersList(fetcher._flat);
                 self.currentView().totalRows = fetcher._flat.length;
+                m.redraw(true);
               }
           }
         };
