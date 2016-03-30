@@ -257,7 +257,6 @@ def must_be_contributor_even_if_public(func):
 
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
-        response = None
         _inject_nodes(kwargs)
         node = kwargs['node']
 
