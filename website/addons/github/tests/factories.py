@@ -22,5 +22,3 @@ class GitHubNodeSettingsFactory(ModularOdmFactory):
 
     owner = SubFactory(ProjectFactory)
     user_settings = SubFactory(GitHubUserSettingsFactory)
-    repo = 'mock'
-    user = 'abc'
