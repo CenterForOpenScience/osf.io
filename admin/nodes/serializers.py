@@ -17,12 +17,13 @@ def serialize_node(node):
         'root': node.root._id,
         'is_registration': node.is_registration,
         'date_created': node.date_created,
-        'withdrawal': node.is_retracted,
+        'withdrawn': node.is_retracted,
         'embargo': embargo,
         'contributors': map(serialize_simple_user,
                             node.permissions.iteritems()),
         'children': map(serialize_simple_node, node.nodes),
         'deleted': node.is_deleted,
+        'pending_registration': node.is_pending_registration,
     }
 
 
