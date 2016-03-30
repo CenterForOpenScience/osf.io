@@ -1124,18 +1124,13 @@ var Collections = {
                                     collection.data.count(collection.data.count() + 1);
                                     save(index + 1, data);
                             });
-                      }, function(result){
-                          var message = '';
-                          var name = args.selected()[index] ? args.selected()[index].data.name : 'Item ';
-                          if (result.errors.length > 0) {
-                              result.errors.forEach(function(error){
-                                  if(error.detail.indexOf('already pointed') > -1 ){
-                                      message = '"' + name + '" is already in "' + collection.label + '"' ;
-                                  }
-                              });
                           }
-                          $osf.growl(message,null, 'warning', 4000);
-                          save(index + 1, data);
+                          else {
+                              var name = projectName ? projectName : args.selected()[index] ? args.selected()[index].data.name : 'Item ';
+                              var message = '"' + name + '" is already in "' + collection.label + '"' ;
+                              $osf.growl(message,null, 'warning', 4000);
+                              save(index + 1, data);
+                          }
                       });
                     }
 
