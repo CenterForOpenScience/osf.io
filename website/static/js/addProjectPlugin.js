@@ -58,7 +58,9 @@ var AddProject = {
             return self.userProjects();
         };
 
-        options.templatesFetcher.on(['page', 'done'], self.mapTemplates);
+        if(options.templatesFetcher){
+            options.templatesFetcher.on(['page', 'done'], self.mapTemplates);
+        }
 
 
         self.add = function _add () {
