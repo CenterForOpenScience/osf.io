@@ -155,8 +155,10 @@ NodeFetcher.prototype = {
     this.nextLink = results.links.next;
     this.loaded += results.data.length;
     for(var i = 0; i < results.data.length; i++) {
-      if (results.data[i].relationships.parent)
-        this._orphans.push(results.data[i]); //TODO run through orphans
+      if (this.type === 'registrations' && (results.data[i].attributes.retracted === true || results.data[i].attributes.pending_registration_approval === true))
+        continue // Exclude retracted and pending registrations
+      else if (results.data[i].relationships.parent)
+        this._orphans.push(results.data[i]);
       else
         this._flat.push(results.data[i]);
 
@@ -557,12 +559,9 @@ var MyProjects = {
             }
             for (var i = begin; i < data.length; i++){
                 item = data[i];
-                if (!(item.attributes.retracted === true || item.attributes.pending_registration_approval === true)){
-                    // Filter Retractions and Pending Registrations from the "All my registrations" view.
-                    _formatDataforPO(item);
-                    var child = self.buildTree()(item, self.treeData());
-                    self.treeData().add(child);
-                }
+                _formatDataforPO(item);
+                var child = self.buildTree()(item, self.treeData());
+                self.treeData().add(child);
             }
             self.selected([]);
             self.updateFolder()(null, self.treeData());
@@ -627,7 +626,7 @@ var MyProjects = {
         self.generateFiltersList = function(noClear) {
             self.users = {};
             self.tags = {};
-            var data = Object.keys(self.currentView().fetcher._cache).map(function(key) {
+            Object.keys(self.currentView().fetcher._cache).forEach(function(key) {
               var item = self.currentView().fetcher._cache[key];
               self.generateSets(item);
 
