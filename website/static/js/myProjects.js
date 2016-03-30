@@ -271,17 +271,10 @@ var LinkObject = function _LinkObject (type, data, label, institutionId) {
  */
 function buildCollectionNodeData (id) {
     return {
-        'data' : {
-            'type': 'node_links',
-            'relationships': {
-                'nodes': {
-                    'data': {
-                        'type': 'nodes',
-                        'id': id
-                    }
-                }
-            }
-        }
+        'data': [{
+            'type': 'linked_nodes',
+            'id': id
+        }]
     };
 }
 
@@ -1118,7 +1111,7 @@ var Collections = {
                         return args.currentView().fetcher === args.fetchers[collection.id] ? args.updateList() : null;
                       m.request({
                           method : 'POST',
-                          url : collection.data.node.links.self + 'node_links/', //collection.data.node.relationships.linked_nodes.links.related.href,
+                          url : collection.data.node.links.self + 'relationships/linked_nodes/',
                           config : xhrconfig,
                           data : data[index]
                       }).then(function(result){
