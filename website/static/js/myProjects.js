@@ -652,7 +652,7 @@ var MyProjects = {
                         );
                     } else {
                         template = m('.db-non-load-template.m-md.p-md.osf-box.text-center', [
-                            'This project either has no components or you do not have permission to view them.'
+                            'No components to display. Either there are no components, or there are private components in which you are not a contributor.'
                         ]);
                     }
                 }
@@ -879,7 +879,7 @@ var MyProjects = {
                 ])),
                 m('.col-xs-4.p-sm', m('.pull-right', m.component(AddProject, {
                     buttonTemplate: m('.btn.btn-success.btn-success-high-contrast.f-w-xl[data-toggle="modal"][data-target="#addProject"]', {onclick: function() {
-                        $osf.trackClick('myProjects', 'add-project', 'open-add-project' + '-modal');
+                        $osf.trackClick('myProjects', 'add-project', 'open-add-project-modal');
                     }}, 'Create Project'),
                     parentID: null,
                     modalID: 'addProject',
@@ -1233,7 +1233,7 @@ var Collections = {
                         $osf.trackClick('myProjects', 'add-collection', 'open-add-collection-modal');
                     }}, m('i.fa.fa-plus')) : '',
                 m('.pull-right',
-                    ctrl.totalPages() > 1 ? m.component(MicroPagination, { currentPage : ctrl.currentPage, totalPages : ctrl.totalPages }) : ''
+                    ctrl.totalPages() > 1 ? m.component(MicroPagination, { currentPage : ctrl.currentPage, totalPages : ctrl.totalPages, type: 'collections' }) : ''
                 )
             ]),
             m('ul', { config: ctrl.applyDroppable },[
@@ -1408,9 +1408,9 @@ var Collections = {
  */
 var MicroPagination = {
     view : function(ctrl, args) {
-      if (args.currentPage() > args.totalPages()) {
-        args.currentPage(args.totalPages());
-      }
+        if (args.currentPage() > args.totalPages()) {
+            args.currentPage(args.totalPages());
+        }
         return m('span.osf-micro-pagination.m-l-xs', [
             args.currentPage() > 1 ? m('span.m-r-xs.arrow.left.live', { onclick : function(){
                     args.currentPage(args.currentPage() - 1);
@@ -1446,24 +1446,24 @@ var Breadcrumbs = {
         if(args.currentView().contributor.length) {
             contributorsTemplate.push(m('span.text-muted', 'with '));
             args.currentView().contributor.forEach(function (c) {
-                contributorsTemplate.push(m('span.comma-separated.filter-breadcrumb', [
+                contributorsTemplate.push(m('span.comma-separated.filter-breadcrumb.myprojects', [
                     c.label,
                     ' ',
-                    m('i.fa.fa-times-circle-o.text-muted', { onclick: function(){
+                    m('button', { onclick: function(){
                         args.unselectContributor(c.data.id);
-                    }})
+                    }}, m('span', '×'))
                 ]));
             });
         }
         if(args.currentView().tag.length){
             tagsTemplate.push(m('span.text-muted.m-l-sm', 'tagged '));
             args.currentView().tag.forEach(function(t){
-                tagsTemplate.push(m('span.comma-separated.filter-breadcrumb', [
+                tagsTemplate.push(m('span.comma-separated.filter-breadcrumb.myprojects', [
                     t.label,
                     ' ',
-                    m('i.fa.fa-times-circle-o.text-muted', { onclick: function(){
+                    m('button', { onclick: function(){
                         args.unselectTag(t.data.tag);
-                    }})
+                    }}, m('span', '×'))
                 ]));
             });
         }

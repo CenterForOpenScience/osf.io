@@ -13,7 +13,7 @@ from website.exceptions import NodeStateError, UserNotAffiliatedError
 from website.util import permissions as osf_permissions
 from website.project.model import NodeUpdateError
 
-from api.base.utils import get_object_or_error, absolute_reverse
+from api.base.utils import get_user_auth, get_object_or_error, absolute_reverse
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
                                   TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly,
                                   HideIfRegistration)
@@ -185,19 +185,11 @@ class NodeSerializer(JSONAPISerializer):
 
     # TODO: See if we can get the count filters into the filter rather than the serializer.
 
-    def get_user_auth(self, request):
-        user = request.user
-        if user.is_anonymous():
-            auth = Auth(None)
-        else:
-            auth = Auth(user)
-        return auth
-
     def get_logs_count(self, obj):
         return len(obj.logs)
 
     def get_node_count(self, obj):
-        auth = self.get_user_auth(self.context['request'])
+        auth = get_user_auth(self.context['request'])
         nodes = [node for node in obj.nodes if node.can_view(auth) and node.primary and not node.is_deleted]
         return len(nodes)
 
@@ -205,7 +197,7 @@ class NodeSerializer(JSONAPISerializer):
         return len(obj.contributors)
 
     def get_registration_count(self, obj):
-        auth = self.get_user_auth(self.context['request'])
+        auth = get_user_auth(self.context['request'])
         registrations = [node for node in obj.node__registrations if node.can_view(auth)]
         return len(registrations)
 
@@ -213,7 +205,7 @@ class NodeSerializer(JSONAPISerializer):
         return len(obj.nodes_pointer)
 
     def get_unread_comments_count(self, obj):
-        user = self.get_user_auth(self.context['request']).user
+        user = get_user_auth(self.context['request']).user
         node_comments = Comment.find_n_unread(user=user, node=obj, page='node')
 
         return {
@@ -233,7 +225,7 @@ class NodeSerializer(JSONAPISerializer):
 
             validated_data.pop('creator')
             changed_data = {template_from: validated_data}
-            node = template_node.use_as_template(auth=self.get_user_auth(request), changes=changed_data)
+            node = template_node.use_as_template(auth=get_user_auth(request), changes=changed_data)
         else:
             node = Node(**validated_data)
         try:
@@ -247,7 +239,7 @@ class NodeSerializer(JSONAPISerializer):
         the request to be in the serializer context.
         """
         assert isinstance(node, Node), 'node must be a Node'
-        auth = self.get_user_auth(self.context['request'])
+        auth = get_user_auth(self.context['request'])
         old_tags = set([tag._id for tag in node.tags])
         if 'tags' in validated_data:
             current_tags = set(validated_data.get('tags'))
