@@ -100,7 +100,7 @@ NodeFetcher.prototype = {
       }).bind(this));
   },
   add: function(item) {
-    if (this._cache[item.id] || (this._promise === null && this.loaded === 0)) return;
+    if (!this.isFinished() && this._flat.indexOf(item) !== - 1) return;
 
     this.total++;
     this.loaded++;
@@ -1531,7 +1531,8 @@ var Breadcrumbs = {
             items.map(function(item, index, array){
                 if(index === array.length-1){
                     if(item.type === 'node'){
-                        var parentID = args.breadcrumbs()[args.breadcrumbs().length - 1].data.id;
+                        var linkObject = args.breadcrumbs()[args.breadcrumbs().length - 1];
+                        var parentID = linkObject.data.id;
                         var showAddProject = true;
                         var addProjectTemplate = '';
                         var permissions = item.data.attributes.current_user_permissions;
@@ -1549,8 +1550,10 @@ var Breadcrumbs = {
                                 title: 'Create new component',
                                 categoryList: args.categoryList,
                                 stayCallback: function () {
-                                    args.allProjectsLoaded(false);
-                                    args.updateList(args.breadcrumbs()[args.breadcrumbs().length - 1]);
+                                    var topLevelProject = args.fetchers[linkObject.id];
+                                    topLevelProject.fetch(this.saveResult().data.id, function(){
+                                      args.updateTreeData(0, topLevelProject._flat, true);
+                                    });
                                 },
                                 trackingCategory: 'myProjects',
                                 trackingAction: 'add-component'
