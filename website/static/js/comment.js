@@ -121,9 +121,13 @@ BaseComment.prototype.setupToolTips = function(elm) {
 
 BaseComment.prototype.fetch = function() {
     var self = this;
+    var setUnread = getTargetType(self) !== 'comments';
     if (self.comments().length === 0) {
         var urlParams = osfHelpers.urlParams();
-        var query = 'related_counts=True&embed=user';
+        var query = 'embed=user';
+        if (!osfHelpers.urlParams().view_only && setUnread) {
+            query += '&related_counts=True';
+        }
         if (urlParams.view_only && !window.contextVars.node.isPublic) {
             query += '&view_only=' + urlParams.view_only;
         }
@@ -131,7 +135,6 @@ BaseComment.prototype.fetch = function() {
             query += '&filter[target]=' + self.id();
         }
         var url = osfHelpers.apiV2Url(self.$root.nodeType + '/' + window.contextVars.node.id + '/comments/', {query: query});
-        var setUnread = true;
         self.fetchNext(url, [], setUnread);
     }
 };
