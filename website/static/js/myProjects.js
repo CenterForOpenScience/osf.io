@@ -139,9 +139,7 @@ NodeFetcher.prototype = {
     return m.request({method: 'GET', url: url, config: xhrconfig, background: true})
       .then((function(result) {
         this.add(result.data);
-        if($.isFunction(cb)){
-          cb(this, result.data);
-        }
+        return result.data;
       }).bind(this), this._fail.bind(this));
   },
   fetchChildren: function(parent) {
@@ -864,7 +862,7 @@ var MyProjects = {
                     stayCallback: function () {
                         // Fetch details of added item from server and redraw treebeard
                         var projects = ctrl.fetchers[ctrl.systemCollections[0].id];
-                        projects.fetch(this.saveResult().data.id, function(){
+                        projects.fetch(this.saveResult().data.id).then(function(){
                           ctrl.updateTreeData(0, projects._flat, true);
                         });
                     },
