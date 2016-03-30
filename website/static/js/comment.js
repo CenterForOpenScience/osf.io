@@ -123,7 +123,7 @@ BaseComment.prototype.fetch = function() {
     var self = this;
     if (self.comments().length === 0) {
         var urlParams = osfHelpers.urlParams();
-        var query = 'embed=user';
+        var query = 'related_counts=True&embed=user';
         if (urlParams.view_only && !window.contextVars.node.isPublic) {
             query += '&view_only=' + urlParams.view_only;
         }
@@ -150,7 +150,7 @@ BaseComment.prototype.fetchNext = function(url, comments, setUnread) {
     request.done(function(response) {
         comments = comments.concat(response.data);
         if (!osfHelpers.urlParams().view_only && setUnread) {
-            self.unreadComments(response.links.meta.unread);
+            self.$root.unreadComments(response.links.meta.unread);
             setUnread = false;
         }
         if (response.links.next !== null) {
