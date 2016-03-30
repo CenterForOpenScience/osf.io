@@ -3345,12 +3345,13 @@ class TestAuthViews(OsfTestCase):
         self.user.save()
         self.user.reload()
         assert_equal(self.user.email_verifications[token]['confirmed'], False)
-        url = '/confirm/{}/{}/?existing_user=True'.format(self.user._id, token)
+        url = '/confirm/{}/{}/?existing_user={}'.format(self.user._id, token, self.user.username)
         res = self.app.get(url)
         self.user.reload()
         assert_equal(self.user.email_verifications[token]['confirmed'], True)
         assert_equal(res.status_code, 302)
-        assert_in('/login/?existing_user=True', res.body)
+        login_url = '/login/?existing_user={}'.format(self.user.username)
+        assert_in(login_url, res.body)
 
     def test_resend_confirmation_without_user_id(self):
         email = 'test@example.com'

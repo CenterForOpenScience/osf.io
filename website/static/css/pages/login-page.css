@@ -64,4 +64,15 @@
     padding-left: 10px;
 }
 
+.login-title {
+    font-weight: bold;
+}
 
+.login-logo {
+  display: inline-block;
+  vertical-align: middle;
+  background-image: url(/static/img/cos-logo-150-px.png);
+  background-size: 100%;
+  width: 150px;
+  height: 150px;
+}

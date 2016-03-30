@@ -866,13 +866,13 @@ class User(GuidStoredObject, AddonModelMixin):
         """
         try:
             verification = self.email_verifications[token]
-        except:
+        except KeyError:
             return False
         # Check token for existance and date
         if (
             'expiration' in verification and
-            verification['expiration'] < dt.datetime.utcnow() or
-            token not in self.email_verifications
+            (verification['expiration'] < dt.datetime.utcnow() or
+                token not in self.email_verifications)
         ):
             return False
         return True

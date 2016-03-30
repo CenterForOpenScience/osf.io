@@ -146,7 +146,7 @@ def auth_login(auth, **kwargs):
             data['campaign'] = campaign
     data['login_url'] = cas.get_login_url(redirect_url, auto=True)
     data['sign_up'] = request.args.get('sign_up', False)
-    data['existing_user'] = request.args.get('existing_user')
+    data['existing_user'] = request.args.get('existing_user', None)
 
     return data, http.OK
 
@@ -171,7 +171,7 @@ def auth_email_logout(token, user):
     redirect_url = web_url_for('auth_login') + '?existing_user={}'.format(user.email)
     if user.confirm_token(token):
         try:
-            user_merge = User.find_one(Q('emails', 'iexact', user.email_verifications[token]['email']))
+            user_merge = User.find_one(Q('emails', 'eq', user.email_verifications[token]['email'].lower()))
         except NoResultsFound:
             user_merge = False
         if user_merge:
@@ -197,7 +197,7 @@ def confirm_email_get(token, auth=None, **kwargs):
     user = User.load(kwargs['uid'])
     is_merge = 'confirm_merge' in request.args
     is_initial_confirmation = not user.date_confirmed
-    existing_user = request.args.get('existing_user')
+    existing_user = request.args.get('existing_user', None)
     if user is None:
         raise HTTPError(http.NOT_FOUND)
     # if the user is merging or adding an email (they already are an osf user)
@@ -267,11 +267,10 @@ def confirm_user_get(auth=None, **kwargs):
         if user.confirm_token(token):
             if user.email_verifications[token]['confirmed']:
                 try:
-                    user_merge = User.find_one(Q('emails', 'iexact', user.email_verifications[token]['email']))
+                    user_merge = User.find_one(Q('emails', 'eq', user.email_verifications[token]['email'].lower()))
                 except NoResultsFound:
                     user_merge = False
 
-                #todo remove confirmed, and maybe token, from object
                 verified_emails.append({'address': user.email_verifications[token]['email'],
                                         'token': token,
                                         'confirmed': user.email_verifications[token]['confirmed'],
@@ -293,8 +292,7 @@ def confirm_email_remove(auth=None, **kwargs):
     email_verifications = user.email_verifications.copy()
     for token in user.email_verifications:
         if user.confirm_token(token):
-            if user.email_verifications[token]['email'] == confirmed_email:
-                del email_verifications[token]
+            user.email_verifications.pop(token)
     user.email_verifications = email_verifications
     user.save()
     return {
