@@ -73,7 +73,7 @@ function NodeFetcher(type, link) {
 
 NodeFetcher.prototype = {
   isFinished: function() {
-    return this.loaded >= this.total && this._promise === null;
+    return this.loaded >= this.total && this._promise === null && this._orphans.length === 0;
   },
   isEmpty: function() {
     return this.loaded === 0 && this.isFinished();
