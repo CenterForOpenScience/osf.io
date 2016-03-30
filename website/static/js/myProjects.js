@@ -486,35 +486,30 @@ var MyProjects = {
          * @param filter
          */
         self.updateFilter = function _updateFilter(filter) {
-            var filterIndex;
             // if collection, reset currentView otherwise toggle the item in the list of currentview items
+            if (['node', 'collection'].indexOf(filter.type) === -1 ) {
+                var filterIndex = self.currentView()[filter.type].indexOf(filter);
+                if(filterIndex !== -1)
+                  self.currentView()[filter.type].splice(filterIndex,1);
+                else
+                  self.currentView()[filter.type].push(filter);
+                return;
+            }
+
             if (self.currentView().fetcher)
               self.currentView().fetcher.pause();
 
-            self.currentView().fetcher = self.fetchers[filter.id];
+            self.currentView().tag = [];
+            self.currentView().contributor = [];
 
+            self.currentView().fetcher = self.fetchers[filter.id];
             self.currentView().fetcher.resume();
             self.loadValue(self.currentView().fetcher.isFinished() ? 100 : self.currentView().fetcher.progress());
 
             self.generateFiltersList();
 
-            if(filter.type === 'node'){
-                self.currentView().contributor = [];
-                self.currentView().tag = [];
-                return;
-            }
-            if(filter.type === 'collection'){
-                self.currentView().collection = filter;
-                self.currentView().contributor = [];
-                self.currentView().tag = [];
-            } else {
-                filterIndex = self.currentView()[filter.type].indexOf(filter);
-                if(filterIndex !== -1){ // if filter already in
-                    self.currentView()[filter.type].splice(filterIndex,1);
-                } else {
-                    self.currentView()[filter.type].push(filter);
-                }
-            }
+            if (filter.type === 'collection')
+              self.currentView().collection = filter;
         };
 
         self.removeProjectFromCollections = function _removeProjectFromCollection () {
@@ -651,7 +646,7 @@ var MyProjects = {
                             'This collection is empty. To add projects or registrations, click "All my projects" or "All my registrations" in the sidebar, and then drag and drop items into the collection link.');
                     }
                 } else {
-                    if(self.nodes.projects.loadMode !== 'done' && self.nodes.registrations.loadMode !== 'done'){
+                    if(!self.currentView().fetcher.isEmpty()){
                         template = m('.db-non-load-template.m-md.p-md.osf-box.text-center',
                             m('.ball-scale.text-center', m(''))
                         );
@@ -817,7 +812,6 @@ var MyProjects = {
         };
 
         self.init = function _init_fileBrowser() {
-            self.currentView().collection = self.systemCollections[0]; // Add linkObject to the currentView
             self.loadCategories().then(function(){
                 self.fetchers[self.systemCollections[0].id].on(['page', 'done'], self.onPageLoad);
                 self.fetchers[self.systemCollections[1].id].on(['page', 'done'], self.onPageLoad);
@@ -826,6 +820,7 @@ var MyProjects = {
                 var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : 'linked_nodes', 'page[size]' : self.collectionsPageSize(), 'sort' : 'date_created', 'embed' : 'node_links'}});
                 self.loadCollections(collectionsUrl);
             }
+            // Add linkObject to the currentView
             self.updateFilter(self.collections()[0]);
         };
 
