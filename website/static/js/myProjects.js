@@ -1103,6 +1103,7 @@ var Collections = {
                     } else {
                         // if single items are passed use the event information
                         dataArray.push(buildCollectionNodeData(ui.draggable.find('.title-text>a').attr('data-nodeID'))); // data-nodeID attribute needs to be set in project organizer building title column
+                        var projectName = ui.draggable.find('.title-text>a').attr('data-nodeTitle');
                         $osf.trackClick('myProjects', 'projectOrganizer', 'single-project-dragged-to-collection');
                     }
 
