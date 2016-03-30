@@ -565,10 +565,9 @@ var MyProjects = {
                 var child = self.buildTree()(item, self.treeData());
                 self.treeData().add(child);
             }
-            self.selected([]);
-            self.updateFolder()(null, self.treeData());
+                self.updateFolder()(null, self.treeData());
             // Manually select first item without triggering a click
-            if(self.treeData().children[0]){
+            if(self.multiselected()().length === 0 && self.treeData().children[0]){
               self.multiselected()([self.treeData().children[0]]);
               self.highlightMultiselect()();
               self.updateSelected([self.treeData().children[0]]);
@@ -774,7 +773,19 @@ var MyProjects = {
             self.loadValue(fetcher.isFinished() ? 100 : fetcher.progress());
               self.generateFiltersList(true);
               if (!pageData) {
-                self.updateList(); // Done callback
+                for(var i = 0; i < fetcher._flat.length; i++){
+                    var fetcherItem = fetcher._flat[i];
+                    var tbItem = self.treeData().children[i] ? self.treeData().children[i].data : {};
+                    if(fetcherItem === tbItem){
+                        continue;
+                    }
+                    var itemToAdd = self.buildTree()(fetcherItem, self.treeData());
+                    itemToAdd.parentID = self.treeData().id;
+                    itemToAdd.open = false;
+                    itemToAdd.load = false;
+                    self.treeData().children.splice(i, 0, itemToAdd);
+                }
+                self.updateFolder()(null, self.treeData(), true);
                 return m.redraw();
               }
               if(self.treeData().children){
