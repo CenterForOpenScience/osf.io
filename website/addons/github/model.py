@@ -96,17 +96,17 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     @property
     def folder_id(self):
-        return self.repo
+        return self.repo or None
 
     @property
     def folder_name(self):
-        return self.repo
-
-    @property
-    def folder_path(self):
         if self.complete:
             return '{}/{}'.format(self.user, self.repo)
         return None
+
+    @property
+    def folder_path(self):
+        return self.repo or None
 
     @property
     def has_auth(self):
