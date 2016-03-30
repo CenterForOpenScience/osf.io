@@ -137,10 +137,10 @@ def ensure_schemas():
 
 
 class MetaData(GuidStoredObject):
-
+    # TODO: This model may be unused; potential candidate for deprecation depending on contents of production database
     _id = fields.StringField(primary=True)
 
-    target = fields.AbstractForeignField(backref='metadata')
+    target = fields.AbstractForeignField()
     data = fields.DictionaryField()
 
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
@@ -3912,7 +3912,7 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
     APPROVE_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
     REJECT_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
 
-    initiated_by = fields.ForeignField('user', backref='embargoed')
+    initiated_by = fields.ForeignField('user')
     for_existing_registration = fields.BooleanField(default=False)
 
     @property
@@ -4066,7 +4066,7 @@ class Retraction(EmailApprovableSanction):
     APPROVE_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
     REJECT_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
 
-    initiated_by = fields.ForeignField('user', backref='initiated')
+    initiated_by = fields.ForeignField('user')
     justification = fields.StringField(default=None, validate=MaxLengthValidator(2048))
 
     def __repr__(self):
@@ -4197,7 +4197,7 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
     APPROVE_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
     REJECT_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
 
-    initiated_by = fields.ForeignField('user', backref='registration_approved')
+    initiated_by = fields.ForeignField('user')
 
     def _get_registration(self):
         return Node.find_one(Q('registration_approval', 'eq', self))

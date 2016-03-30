@@ -5,17 +5,18 @@ import httplib as http
 
 import mock
 from nose.tools import *  # noqa
+
+from modularodm.exceptions import ValidationValueError
+from modularodm import Q
+
+from framework.auth import Auth
+from framework.exceptions import PermissionsError
 from tests.base import fake, OsfTestCase
 from tests.factories import (
     AuthUserFactory, NodeFactory, ProjectFactory,
     RegistrationFactory, UserFactory, UnconfirmedUserFactory,
     UnregUserFactory
 )
-
-from modularodm.exceptions import ValidationValueError
-from framework.auth import Auth
-from framework.exceptions import HTTPError, PermissionsError
-
 from website import tokens
 from website.exceptions import (
     InvalidSanctionApprovalToken, InvalidSanctionRejectionToken,
@@ -85,7 +86,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         self.registration.retract_registration(self.user, self.valid_justification)
         self.registration.save()
         self.registration.reload()
-        assert_equal(len(self.user.retraction__initiated), 1)
+        assert_equal(Retraction.find(Q('initiated_by', 'eq', self.user)).count(), 1)
 
     # Node#retract_registration tests
     def test_pending_retract(self):
