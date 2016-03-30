@@ -148,7 +148,6 @@
                         <div class="col-xs-12">
                           <div class="form-group wmd-panel">
                           <ul class="list-inline" class="pull-right">
-                          
                           <!-- ko foreach: showCollaborators -->
                              <!-- ko ifnot: id === '${user_id}' -->
                                 <li><a data-bind="attr: { href: url }" >
@@ -157,12 +156,8 @@
                                       </a></li>
                              <!-- /ko -->
                           <!-- /ko --> 
-                             
-                                <li><span data-bind="text: andOthersMessage"></span></li>    
-                                 
+                                <li><span data-bind="text: andOthersMessage"></span></li>      
                               </ul>
-                              
-
                               <div id="wmd-button-bar"></div>
                               <div id="editor" class="wmd-input wiki-editor"
                                    data-bind="ace: currentText">Loading. . .</div>

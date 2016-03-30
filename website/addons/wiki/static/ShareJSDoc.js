@@ -4,7 +4,6 @@ var WikiEditor = require('./WikiEditor.js');
 var LanguageTools = ace.require('ace/ext/language_tools');
 
 var activeUsers = [];
-
 var collaborative = (typeof WebSocket !== 'undefined' && typeof sharejs !== 'undefined');
 
 var ShareJSDoc = function(url, metadata, viewText, editor) {

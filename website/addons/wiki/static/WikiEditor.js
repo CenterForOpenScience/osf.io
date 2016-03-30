@@ -46,17 +46,16 @@ function ViewModel(url, viewText) {
     self.initText = ko.observable('');
     self.currentText = viewText; //from wikiPage's VM
     self.activeUsers = ko.observableArray([]);
-    
     self.status = ko.observable('connecting');
     self.throttledStatus = ko.observable(self.status());
     self.autocom = ko.observable(false);
 
-   self.displayCollaborators = ko.computed(function() {
+    self.displayCollaborators = ko.computed(function() {
        return (self.activeUsers().length > 1);
     });
     
     // Display the icons of up to the first 18 collaborators on a page
-    self.showCollaborators = ko.computed(function() {
+    self.showCollaborators = ko.pureComputed(function() {
         if (self.activeUsers().length > 18) {
             return self.activeUsers().slice(0,18);
         }
@@ -66,9 +65,10 @@ function ViewModel(url, viewText) {
     // Show text that says "and # more" collaborators
     self.andOthersMessage = ko.computed(function() {
         if (self.activeUsers().length > 18) {
-            var leftovers = self.activeUsers().slice(18, self.activeUsers().length);
-            return '...and ' + leftovers.length + ' more';
+            var leftovers = self.activeUsers().length - 18;
+            return '...and ' + leftovers + ' more';
         }
+        return '';
     });
     
     // Throttle the display when updating status.
@@ -82,7 +82,6 @@ function ViewModel(url, viewText) {
         if (newValue !== 'connecting') {
             self.updateStatus();
         }
-
         self.throttledUpdateStatus();
     });
 
@@ -106,7 +105,6 @@ function ViewModel(url, viewText) {
                     class: 'progress-bar progress-bar-success',
                     style: 'width: 100%'
                 };
-
             case 'connecting':
                 return {
                     class: 'progress-bar progress-bar-warning progress-bar-striped active',
@@ -139,7 +137,6 @@ function ViewModel(url, viewText) {
             wiki1.replace(/(\r\n|\n|\r)/gm, '\n') : '';
          var clean2 = typeof wiki2 === 'string' ? 
             wiki2.replace(/(\r\n|\n|\r)/gm, '\n') : '';
-
         return clean1 !== clean2;
     };
 
