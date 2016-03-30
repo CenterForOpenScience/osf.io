@@ -464,7 +464,7 @@ var MyProjects = {
         };
 
         /* filesData is the link that loads tree data. This function refreshes that information. */
-        self.updateFilesData = function _updateFilesData(linkObject, itemId) {
+        self.updateFilesData = function _updateFilesData(linkObject) {
             if ((linkObject.type === 'node') && self.viewOnly){
                 return;
             }
@@ -609,13 +609,14 @@ var MyProjects = {
                     self.treeData().add(child);
                 }
             }
-                self.updateFolder()(null, self.treeData());
+            self.updateFolder()(null, self.treeData());
             // Manually select first item without triggering a click
             if(self.multiselected()().length === 0 && self.treeData().children[0]){
               self.multiselected()([self.treeData().children[0]]);
               self.highlightMultiselect()();
               self.updateSelected([self.treeData().children[0]]);
             }
+            m.redraw(true);
         };
 
         self.generateSets = function (item){
@@ -738,6 +739,10 @@ var MyProjects = {
 
         // BREADCRUMBS
         self.updateBreadcrumbs = function _updateBreadcrumbs (linkObject){
+            if (!self.fetchers[linkObject.id]){
+              self.fetchers[linkObject.id] = new NodeFetcher(item.data.types, item.data.relationships.children.links.related.href + '?embed=contributors');
+              self.fetchers[linkObject.id].on(['page', 'done'], self.onPageLoad);
+            }
             if (linkObject.type === 'collection'){
                 self.breadcrumbs([linkObject]);
                 return;
@@ -824,7 +829,6 @@ var MyProjects = {
                 self.updateTreeData(begin, data);
                 self.generateFiltersList(fetcher._flat);
                 self.currentView().totalRows = fetcher._flat.length;
-                m.redraw(true);
               }
           }
         };
