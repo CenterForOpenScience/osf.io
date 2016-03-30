@@ -1672,7 +1672,7 @@ var Filters = {
                     'Contributors ',
                     m('i.fa.fa-question-circle.text-muted', {
                         'data-toggle':  'tooltip',
-                        'title': 'Click a name to display the selected contributor’s public projects, as well as their private projects on which you are at least a read contributor.',
+                        'title': 'Click a contributor\'s name to see projects that you have in common.',
                         'data-placement' : 'bottom'
                     }, ''),
                     m('.pull-right',
