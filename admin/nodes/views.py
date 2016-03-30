@@ -1,72 +1,85 @@
-from django.views.generic import ListView
+from __future__ import unicode_literals
+
+from django.views.generic import ListView, DeleteView
 from datetime import datetime
 from django.shortcuts import redirect
 from django.contrib.auth.decorators import user_passes_test
-from django.utils.decorators import method_decorator
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.defaults import page_not_found
 
 from website.project.model import Node
 from modularodm import Q
 
 from admin.base.views import GuidFormView, GuidView
-from admin.base.utils import osf_admin_check
 from admin.nodes.templatetags.node_extras import reverse_node
-from .serializers import serialize_node
+from admin.nodes.serializers import serialize_node
 
 
-@user_passes_test(osf_admin_check)
-def remove_node(request, guid):
-    node = Node.load(guid)
-    node.is_deleted = True  # Auth required for
-    node.deleted_date = datetime.utcnow()
-    node.save()
-    return redirect(reverse_node(guid))
-
-
-@user_passes_test(osf_admin_check)
-def restore_node(request, guid):
-    node = Node.load(guid)
-    node.is_deleted = False
-    node.deleted_date = None
-    node.save()
-    return redirect(reverse_node(guid))
-
-
-class NodeFormView(GuidFormView):
+class NodeFormView(LoginRequiredMixin, GuidFormView):
+    login_url = '/admin/auth/login'
+    redirect_field_name = 'redirect_to'
     template_name = 'nodes/search.html'
     object_type = 'node'
-
-    @method_decorator(user_passes_test(osf_admin_check))  # TODO: make into mix-in remove with 1.9
-    def dispatch(self, request, *args, **kwargs):
-        return super(NodeFormView, self).dispatch(request, *args, **kwargs)
 
     @property
     def success_url(self):
         return reverse_node(self.guid)
 
 
-class NodeView(GuidView):
+class NodeDeleteView(LoginRequiredMixin, DeleteView):
+    login_url = '/admin/auth/login'
+    redirect_field_name = 'redirect_to'
+    template_name = 'nodes/remove.html'
+
+    def delete(self, request, *args, **kwargs):
+        try:
+            node = self.get_object()
+            if node.is_deleted:
+                node.is_deleted = False
+                node.deleted_date = None
+            elif not node.is_registration:
+                node.is_deleted = True
+                node.deleted_date = datetime.utcnow()
+            node.save()
+        except AttributeError:
+            return page_not_found(
+                request,
+                AttributeError(
+                    '{} with id "{}" not found.'.format(
+                        self.context_object_name.title(),
+                        kwargs.get('spam_id')
+                    )
+                )
+            )
+        return redirect(reverse_node(self.kwargs.get('guid')))
+
+    def get_context_data(self, **kwargs):
+        context = {}
+        context.setdefault('guid', kwargs.get('object')._id)
+        return super(NodeDeleteView, self).get_context_data(**context)
+
+    def get_object(self, queryset=None):
+        return Node.load(self.kwargs.get('guid'))
+
+
+class NodeView(LoginRequiredMixin, GuidView, DeleteView):
+    login_url = '/admin/auth/login'
+    redirect_field_name = 'redirect_to'
     template_name = 'nodes/node.html'
     context_object_name = 'node'
 
-    @user_passes_test(osf_admin_check)  # TODO: make into mix-in remove with 1.9
-    def dispatch(self, request, *args, **kwargs):
-        return super(NodeView, self).dispatch(request, *args, **kwargs)
-
     def get_object(self, queryset=None):
-        self.guid = self.kwargs.get('guid', None)
-        return serialize_node(Node.load(self.guid))
+        return serialize_node(Node.load(self.kwargs.get('guid')))
 
 
-class RegistrationListView(ListView):
+class RegistrationListView(LoginRequiredMixin, ListView):
+    login_url = '/admin/auth/login'
+    redirect_field_name = 'redirect_to'
     template_name = 'nodes/registration_list.html'
     paginate_by = 10
     paginate_orphans = 1
     ordering = 'date_created'
     context_object_name = '-node'
-
-    @user_passes_test(osf_admin_check)  # TODO: make into mix-in remove with 1.9
-    def dispatch(self, request, *args, **kwargs):
-        return super(RegistrationListView, self).dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
         query = (

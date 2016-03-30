@@ -60,10 +60,6 @@ class GuidFormView(FormView):
 
 
 class GuidView(DetailView):
-    def __init__(self):
-        self.guid = None
-        super(GuidView, self).__init__()
-
     def get(self, request, *args, **kwargs):
         try:
             return super(GuidView, self).get(request, *args, **kwargs)

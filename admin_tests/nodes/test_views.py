@@ -4,6 +4,7 @@ from nose import tools as nt
 from tests.base import AdminTestCase
 from tests.factories import NodeFactory
 from admin_tests.utilities import setup_view
+from admin_tests.factories import UserFactory
 
 from admin.nodes.views import (
     NodeView,
@@ -47,6 +48,7 @@ class TestRemoveNode(AdminTestCase):
         super(TestRemoveNode, self).setUp()
         self.node = NodeFactory()
         self.request = RequestFactory().get('/fake_path')
+        self.request.user = UserFactory()
 
     def test_remove_node(self):
         remove_node(self.request, self.node._id)
