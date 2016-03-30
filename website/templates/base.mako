@@ -292,8 +292,8 @@
         <script src="/static/vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js"></script>
     % endif
 
-    <!--[if IE]>
     <!-- JQuery 3 for IE Patching -->
+    <!--[if IE ]>
     <script type="text/javascript" src="/static/vendor/jquery-compat-git/jquery-compat-git.js"></script>
     <script type="text/javascript">
         var $3 = jQuery.noConflict(true);
