@@ -129,6 +129,7 @@ WSGI_APPLICATION = 'admin.base.wsgi.application'
 ADMIN_BASE = 'admin/'
 STATIC_URL = '/static/'
 LOGIN_URL = '/admin/auth/login/'
+LOGIN_REDIRECT_URL = '/admin'
 
 STATIC_ROOT = os.path.join(os.path.dirname(BASE_DIR), 'static_root')
 

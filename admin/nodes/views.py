@@ -3,21 +3,18 @@ from __future__ import unicode_literals
 from django.views.generic import ListView, DeleteView
 from datetime import datetime
 from django.shortcuts import redirect
-from django.contrib.auth.decorators import user_passes_test
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.defaults import page_not_found
 
 from website.project.model import Node
 from modularodm import Q
 
 from admin.base.views import GuidFormView, GuidView
+from admin.base.utils import OSFAdmin
 from admin.nodes.templatetags.node_extras import reverse_node
 from admin.nodes.serializers import serialize_node
 
 
-class NodeFormView(LoginRequiredMixin, GuidFormView):
-    login_url = '/admin/auth/login'
-    redirect_field_name = 'redirect_to'
+class NodeFormView(OSFAdmin, GuidFormView):
     template_name = 'nodes/search.html'
     object_type = 'node'
 
@@ -26,10 +23,9 @@ class NodeFormView(LoginRequiredMixin, GuidFormView):
         return reverse_node(self.guid)
 
 
-class NodeDeleteView(LoginRequiredMixin, DeleteView):
-    login_url = '/admin/auth/login'
-    redirect_field_name = 'redirect_to'
+class NodeDeleteView(OSFAdmin, DeleteView):
     template_name = 'nodes/remove.html'
+    context_object_name = 'node'
 
     def delete(self, request, *args, **kwargs):
         try:
@@ -62,9 +58,7 @@ class NodeDeleteView(LoginRequiredMixin, DeleteView):
         return Node.load(self.kwargs.get('guid'))
 
 
-class NodeView(LoginRequiredMixin, GuidView, DeleteView):
-    login_url = '/admin/auth/login'
-    redirect_field_name = 'redirect_to'
+class NodeView(OSFAdmin, GuidView):
     template_name = 'nodes/node.html'
     context_object_name = 'node'
 
@@ -72,9 +66,7 @@ class NodeView(LoginRequiredMixin, GuidView, DeleteView):
         return serialize_node(Node.load(self.kwargs.get('guid')))
 
 
-class RegistrationListView(LoginRequiredMixin, ListView):
-    login_url = '/admin/auth/login'
-    redirect_field_name = 'redirect_to'
+class RegistrationListView(OSFAdmin, ListView):
     template_name = 'nodes/registration_list.html'
     paginate_by = 10
     paginate_orphans = 1

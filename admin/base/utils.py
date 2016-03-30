@@ -1,12 +1,22 @@
 """
-Utility functions
+Utility functions and classes
 """
+from django.contrib.auth.views import redirect_to_login
+from django.core.exceptions import PermissionDenied
+from django.contrib.auth.mixins import UserPassesTestMixin
 
 
-def osf_admin_check(user):
-    """Determines if user is in osf_admin group
+class OSFAdmin(UserPassesTestMixin):
+    login_url = '/admin/auth/login'
+    permission_denied_message = 'You are not in the OSF admin group.'
 
-    :param user:
-    :return:
-    """
-    return user.is_in_group('osf_admin')
+    def handle_no_permission(self):
+        if not self.request.user.is_authenticated():
+            return redirect_to_login(self.request.get_full_path(),
+                                     self.get_login_url(),
+                                     self.get_redirect_field_name())
+        else:
+            raise PermissionDenied(self.get_permission_denied_message())
+
+    def test_func(self):
+        return self.request.user.is_authenticated() and self.request.user.is_in_group('osf_admin')
