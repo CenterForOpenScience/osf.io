@@ -20,13 +20,15 @@ class BoxAccountFactory(ExternalAccountFactory):
 
 
 class BoxUserSettingsFactory(ModularOdmFactory):
-    FACTORY_FOR = BoxUserSettings
+    class Meta:
+        model = BoxUserSettings
 
     owner = SubFactory(UserFactory)
 
 
 class BoxNodeSettingsFactory(ModularOdmFactory):
-    FACTORY_FOR = BoxNodeSettings
+    class Meta:
+        model = BoxNodeSettings
 
     owner = SubFactory(ProjectFactory)
     user_settings = SubFactory(BoxUserSettingsFactory)

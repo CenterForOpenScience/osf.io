@@ -22,7 +22,8 @@ from website.identifiers import metadata
 
 
 class IdentifierFactory(ModularOdmFactory):
-    FACTORY_FOR = Identifier
+    class Meta:
+        model = Identifier
 
     referent = SubFactory(RegistrationFactory)
     category = 'carpid'
