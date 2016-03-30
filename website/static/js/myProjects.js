@@ -1234,11 +1234,12 @@ var Collections = {
                 } else {
                     submenuTemplate = '';
                 }
-                list.push(m('li', { className : selectedCSS + ' ' + dropAcceptClass, 'data-index' : index },
-                    [
-                        m('a[role="button"]', {
-                            onclick : collectionOnclick.bind(null, item)
-                        },  item.label + childCount),
+                list.push(m('li.pointer', {
+                    className : selectedCSS + ' ' + dropAcceptClass,
+                    'data-index' : index,
+                    onclick : collectionOnclick.bind(null, item)
+                  },[
+                        m('span', item.label + childCount),
                         submenuTemplate
                     ]
                 ));
@@ -1646,9 +1647,8 @@ var Filters = {
             for (i = begin; i < end; i++) {
                 item = args.nameFilters[i];
                 selectedCSS = args.currentView().contributor.indexOf(item) !== -1 ? '.active' : '';
-                list.push(m('li' + selectedCSS,
-                    m('a[role="button"]', {onclick : filterContributor.bind(null, item)},
-                        item.label)
+                list.push(m('li.pointer' + selectedCSS, {onclick : filterContributor.bind(null, item)},
+                    m('span', item.label)
                 ));
             }
             return list;
@@ -1669,9 +1669,8 @@ var Filters = {
             for (i = begin; i < end; i++) {
                 item = args.tagFilters[i];
                 selectedCSS = args.currentView().tag.indexOf(item) !== -1  ? '.active' : '';
-                list.push(m('li' + selectedCSS,
-                    m('a[role="button"]', {onclick : filterTag.bind(null, item)},
-                        item.label
+                list.push(m('li.pointer' + selectedCSS, {onclick : filterTag.bind(null, item)},
+                    m('span', item.label
                     )
                 ));
             }
