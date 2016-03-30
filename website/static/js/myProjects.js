@@ -72,7 +72,7 @@ function NodeFetcher(type, link) {
 
 NodeFetcher.prototype = {
   isFinished: function() {
-    return this.loaded >= this.total && self._promise === null;
+    return this.loaded >= this.total && this._promise === null;
   },
   isEmpty: function() {
     return this.loaded === 0 && this.isFinished();
@@ -91,10 +91,10 @@ NodeFetcher.prototype = {
     if (!this.nextLink) return this._promise = null;
     if (this._promise) return this._promise;
     return this._promise = m.request({method: 'GET', url: this.nextLink, config: xhrconfig, background: true})
+      .then(function(results) {this._promise = null; return results;}.bind(this))
       .then(this._success.bind(this), this._fail.bind(this))
       .then((function() {
           m.redraw(true);
-          this._promise = null;
           if(this.nextLink && this._continue) return this.resume();
       }).bind(this));
   },
@@ -148,9 +148,8 @@ NodeFetcher.prototype = {
     if (this.total < results.links.meta.total)
       this.total = results.links.meta.total;
 
-    this.loaded += results.data.length;
     this.nextLink = results.links.next;
-
+    this.loaded += results.data.length;
     for(var i = 0; i < results.data.length; i++) {
       if (results.data[i].relationships.parent)
         this._orphans.push(results.data[i]); //TODO run through orphans
@@ -173,8 +172,8 @@ NodeFetcher.prototype = {
     }
 
     this._callbacks.page.forEach((function(cb) {
-      cb(this);
-    }).bind(this))
+      cb(this, results.data);
+    }).bind(this));
 
     if (!this.nextLink)
       this._callbacks.done.forEach((function(cb) {
@@ -188,7 +187,7 @@ NodeFetcher.prototype = {
       this._cache[parent.id].children.push(_formatDataforPO(results.data[i]));
     }
 
-    return this._cache[parent.id];
+    return this._cache[parent.id].children;
   },
   _fail: function(results) {
     debugger;
@@ -568,7 +567,7 @@ var MyProjects = {
 
         // Update what is viewed
         self.updateList = function _updateList (reset, itemId, collectionObject){
-          if (!self.buildTree()) return; // Treebeard hasn't loaded yet
+            if (!self.buildTree()) return; // Treebeard hasn't loaded yet
 
             var tags = self.currentView().tag;
             var contributors = self.currentView().contributor;
@@ -592,29 +591,29 @@ var MyProjects = {
               return tagMatch && contribMatch;
             });
 
-            updateTreeData(0, viewData, true);
+            self.updateTreeData(0, viewData, true);
             self.currentView().totalRows = viewData.length;
+        };
 
-            function updateTreeData (begin, data, clear) {
-                if (clear)
-                  self.treeData().children = [];
-
-                for (var i = begin; i < data.length; i++){
-                    var item = data[i];
-                    if (!(item.attributes.retracted === true || item.attributes.pending_registration_approval === true)){
-                        // Filter Retractions and Pending Registrations from the "All my registrations" view.
-                        _formatDataforPO(item);
-                        var child = self.buildTree()(item, self.treeData());
-                        self.treeData().add(child);
-                    }
-                }
-                self.selected([]);
-                self.updateFolder()(null, self.treeData());
-                if(self.treeData().children[0]){
-                    $('.tb-row').first().trigger('click');
+        self.updateTreeData = function (begin, data, clear) {
+          var item;
+            if (clear) {
+              self.treeData().children = [];
+            }
+            for (var i = begin; i < data.length; i++){
+                item = data[i];
+                if (!(item.attributes.retracted === true || item.attributes.pending_registration_approval === true)){
+                    // Filter Retractions and Pending Registrations from the "All my registrations" view.
+                    _formatDataforPO(item);
+                    var child = self.buildTree()(item, self.treeData());
+                    self.treeData().add(child);
                 }
             }
-
+            self.selected([]);
+            self.updateFolder()(null, self.treeData());
+            if(self.treeData().children[0]){
+                $('.tb-row').first().trigger('click');
+            }
         };
 
         self.generateSets = function (item){
@@ -795,29 +794,29 @@ var MyProjects = {
             self.updateFilter(linkObject);
         };
 
-        self.onPageLoad = function(fetcher) {
+        self.onPageLoad = function(fetcher, pageData) {
           if(self.currentView().fetcher === fetcher) {
-            self.loadValue(fetcher.progress());
+            self.loadValue(fetcher.isFinished() ? 100 : fetcher.progress());
               self.generateFiltersList();
-              self.updateList();
+              if (!pageData) {
+                self.updateList(); // Done callback
+                return m.redraw();
+              }
+              if(self.treeData().children){
+                var begin = self.treeData().children.length;
+                var data = fetcher._flat;
+                self.updateTreeData(begin, data);
+                self.generateFiltersList(fetcher._flat);
+                self.currentView().totalRows = fetcher._flat.length;
+              }
           }
         };
 
         self.init = function _init_fileBrowser() {
             self.currentView().collection = self.systemCollections[0]; // Add linkObject to the currentView
             self.loadCategories().then(function(){
-                function onLoad(fetcher) {
-                  if(self.currentView().fetcher === fetcher) {
-                      self.loadValue(fetcher.progress());
-                      if(self.breadcrumbs().length === 1){
-                          self.updateList();
-                      }
-                  }
-                }
-
                 self.fetchers[self.systemCollections[0].id].on(['page', 'done'], self.onPageLoad);
                 self.fetchers[self.systemCollections[1].id].on(['page', 'done'], self.onPageLoad);
-
             });
             if (!self.viewOnly){
                 var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : 'linked_nodes', 'page[size]' : self.collectionsPageSize(), 'sort' : 'date_created', 'embed' : 'node_links'}});
@@ -936,7 +935,7 @@ var MyProjects = {
                 ]) : '',
                 ctrl.nonLoadTemplate(),
                 m('.db-poOrganizer', {
-                    style : ctrl.currentView().fetcher.isEmpty() === 0 ? 'display: none' : 'display: block'
+                    style : ctrl.currentView().fetcher.isEmpty() ? 'display: none' : 'display: block'
                 },  m.component( ProjectOrganizer, projectOrganizerOptions))
             ]
             ),
@@ -1609,7 +1608,6 @@ var Filters = {
         var returnNameFilters = function _returnNameFilters(){
             if(args.currentView().fetcher.isEmpty())
                 return m('.text-muted.text-smaller', 'There are no collaborators in this collection yet.');
-
             var list = [];
             var item;
             var i;
