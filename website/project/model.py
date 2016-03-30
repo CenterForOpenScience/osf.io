@@ -53,7 +53,7 @@ from website.exceptions import (
 from website.institutions.model import Institution, AffiliatedInstitutionsList
 from website.citations.utils import datetime_to_csl
 from website.identifiers.model import IdentifierMixin
-from website.files.models.base import StoredFileNode
+from website.files.models.base import StoredFileNode, FileNode
 from website.util.permissions import expand_permissions
 from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS, ADMIN
 from website.project.metadata.schemas import OSF_META_SCHEMAS
@@ -4441,6 +4441,7 @@ class DraftRegistrationApproval(Sanction):
         draft = DraftRegistration.find_one(
             Q('approval', 'eq', self)
         )
+        self._clear_checkout(save=True)
         auth = Auth(draft.initiator)
         registration = draft.register(
             auth=auth,
@@ -4463,6 +4464,7 @@ class DraftRegistrationApproval(Sanction):
     def _on_reject(self, user, *args, **kwargs):
         # clear out previous registration options
         self.meta = {}
+        self._clear_checkout(save=True)
         self.save()
 
         draft = DraftRegistration.find_one(
@@ -4470,6 +4472,20 @@ class DraftRegistrationApproval(Sanction):
         )
         self._send_rejection_email(draft.initiator, draft)
 
+    def _clear_checkout(self, save=False):
+        draft = DraftRegistration.find_one(
+            Q('approval', 'eq', self)
+        )
+        metadata = draft.registration_metadata
+        for question, answer in metadata.iteritems():
+            files = answer['extra']
+            if files:
+                for attached_file in files:
+                    fid = attached_file['data']['path'].replace('/', '')
+                    fnode = FileNode.load(fid)
+                    fnode.checkout = None
+                    if save:
+                        fnode.save()
 
 class DraftRegistration(StoredObject):
 
