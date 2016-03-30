@@ -20,10 +20,10 @@ from website.exceptions import (
     InvalidSanctionRejectionToken, InvalidSanctionApprovalToken, NodeStateError,
 )
 from website import tokens
-from website.models import Embargo, Node
+from website.models import Embargo, Node, User
 from website.project.model import ensure_schemas
 from website.project.sanctions import PreregCallbackMixin
-
+from website.util import permissions
 
 DUMMY_TOKEN = tokens.encode({
     'dummy': 'token'
@@ -896,7 +896,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         # Logs: Created, registered, embargo initiated
         assert_equal(len(self.project.logs), initial_project_logs + 1)
 
-    def test_embargoed_registration_cannot_be_made_public(self):
+    def test_embargoed_registration_can_be_made_public_by_sole_admin(self):
         # Initiate and approve embargo
         self.registration.embargo_registration(
             self.user,
@@ -909,10 +909,97 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         res = self.app.post(
             self.registration.api_url_for('project_set_privacy', permissions='public'),
             auth=self.user.auth,
+        )
+        assert_equal(res.status_code, 200)
+        self.registration.reload()
+        assert_true(self.registration.is_public)
+
+    def test_make_embargoed_registration_by_sole_admin_makes_tree_public(self):
+        # Initiate and approve embargo
+        node = NodeFactory(creator=self.user)
+        child = NodeFactory(parent=node, creator=self.user)
+        NodeFactory(parent=child, creator=self.user)
+        registration = RegistrationFactory(project=node)
+        registration.embargo_registration(
+            self.user,
+            datetime.datetime.utcnow() + datetime.timedelta(days=10)
+        )
+        approval_token = registration.embargo.approval_state[self.user._id]['approval_token']
+        registration.embargo.approve_embargo(self.user, approval_token)
+        registration.save()
+
+        for node in registration.node_and_primary_descendants():
+            assert_false(node.is_public)
+
+        res = self.app.post(
+            registration.api_url_for('project_set_privacy', permissions='public'),
+            auth=self.user.auth,
+        )
+        assert_equal(res.status_code, 200)
+        registration.reload()
+        for node in registration.node_and_primary_descendants():
+            node.reload()
+            assert_true(node.is_public)
+
+    @mock.patch('website.project.sanctions.TokenApprovableSanction.ask')
+    def test_embargoed_registration_set_privacy_multiple_admins_requests_embargo_termination(self, mock_ask):
+        # Initiate and approve embargo
+        for i in range(3):
+            c = AuthUserFactory()
+            self.registration.add_contributor(c, [permissions.ADMIN], auth=Auth(self.user))
+        self.registration.save()
+        self.registration.embargo_registration(
+            self.user,
+            datetime.datetime.utcnow() + datetime.timedelta(days=10)
+        )
+        for user_id, embargo_tokens in self.registration.embargo.approval_state.iteritems():
+            approval_token = embargo_tokens['approval_token']
+            self.registration.embargo.approve_embargo(User.load(user_id), approval_token)
+        self.registration.save()
+
+        res = self.app.post(
+            self.registration.api_url_for('project_set_privacy', permissions='public'),
+            auth=self.user.auth,
+        )
+        assert_equal(res.status_code, 200)
+        for reg in self.registration.node_and_primary_descendants():
+            reg.reload()
+            assert_false(reg.is_public)
+        assert_true(reg.embargo_termination_approval)
+        assert_true(reg.embargo_termination_approval.is_pending_approval)
+
+    @mock.patch('website.project.sanctions.TokenApprovableSanction.ask')
+    def test_make_child_embargoed_registration_public_asks_all_admins_in_tree(self, mock_ask):
+        # Initiate and approve embargo
+        node = NodeFactory(creator=self.user)
+        c1 = AuthUserFactory()
+        child = NodeFactory(parent=node, creator=c1)
+        c2 = AuthUserFactory()
+        NodeFactory(parent=child, creator=c2)
+        registration = RegistrationFactory(project=node)
+
+        registration.embargo_registration(
+            self.user,
+            datetime.datetime.utcnow() + datetime.timedelta(days=10)
+        )
+        for user_id, embargo_tokens in registration.embargo.approval_state.iteritems():
+            approval_token = embargo_tokens['approval_token']
+            registration.embargo.approve_embargo(User.load(user_id), approval_token)
+        self.registration.save()
+
+        sub_reg = registration.nodes[0].nodes[0]
+        res = self.app.post(
+            sub_reg.api_url_for('project_set_privacy', permissions='public'),
+            auth=c2.auth,
             expect_errors=True
         )
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['message_long'], 'An embargoed registration cannot be made public.')
+        assert_equal(res.status_code, 200)
+        sub_reg.reload()
+        assert_true(sub_reg.embargo_termination_approval)
+        assert_true(sub_reg.embargo_termination_approval.is_pending_approval)
+        asked_admins = [(admin._id, n._id) for admin, n in mock_ask.call_args[0][0]]
+        for admin, node in registration.get_admin_contributors_recursive():
+            assert_in((admin._id, node._id), asked_admins)
 
     def test_non_contributor_GET_approval_returns_HTTPError(self):
         non_contributor = AuthUserFactory()
