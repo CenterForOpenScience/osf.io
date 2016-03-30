@@ -465,7 +465,7 @@ var MyProjects = {
             }
             self.updateFilter(linkObject);
             self.updateBreadcrumbs(linkObject);
-            if(linkObject.data.nodeType === 'collection'){
+            if(linkObject.nodeType === 'collection'){
                 self.updateList(false, null, linkObject);
             } else {
                 self.updateList(true, itemId); // Reset and load item
@@ -886,8 +886,20 @@ var MyProjects = {
                     title: 'Create new project',
                     categoryList: ctrl.categoryList,
                     stayCallback: function () {
-                        ctrl.allProjectsLoaded(false);
-                        ctrl.updateList(ctrl.breadcrumbs()[ctrl.breadcrumbs().length - 1]);
+                        var savedItem = this.saveResult().data;
+                        var url = $osf.apiV2Url('nodes/' + savedItem.id + '/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
+                        m.request({method : 'GET', url : url, config : xhrconfig, background: true}).then(function(r){
+                            var item = r.data;
+                            ctrl.nodes.projects.treeData.data.unshift(item);
+                            ctrl.nodes.projects.flatData.data.unshift(item);
+                            ctrl.currentView().collection = ctrl.systemCollections[0];
+                            ctrl.currentView().contributor = [];
+                            ctrl.currentView().tag = [];
+                            ctrl.currentView().totalRows = ctrl.nodes.projects.treeData.data.length;
+                            ctrl.updateList(true);
+                        }, function(r){
+                            Raven.captureMessage('New project did not return api with embeds', { url: url, data : r });
+                        });
                     },
                     trackingCategory: 'myProjects',
                     trackingAction: 'add-project',
@@ -1540,8 +1552,17 @@ var Breadcrumbs = {
                                 title: 'Create new component',
                                 categoryList: args.categoryList,
                                 stayCallback: function () {
-                                    args.allProjectsLoaded(false);
-                                    args.updateList(args.breadcrumbs()[args.breadcrumbs().length - 1]);
+                                    var savedItem = this.saveResult().data;
+                                    var url = $osf.apiV2Url('nodes/' + savedItem.id + '/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
+                                    m.request({method : 'GET', url : url, config : xhrconfig, background: true}).then(function(r){
+                                        var item = r.data;
+                                        // ctrl.currentView().contributor = [];
+                                        // ctrl.currentView().tag = [];
+                                        args.indexes()[parentID].children.unshift(item);
+                                        args.updateList(false,parentID);
+                                    }, function(r){
+                                        Raven.captureMessage('New project did not return api with embeds', { url: url, data : r });
+                                    });
                                 },
                                 trackingCategory: 'myProjects',
                                 trackingAction: 'add-component'
