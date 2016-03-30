@@ -25,7 +25,7 @@ from framework.auth import exceptions as auth_exc
 from framework.auth.exceptions import ChangePasswordError, ExpiredTokenError
 from framework.auth.utils import impute_names_model
 from framework.auth.signals import user_merged
-from framework.tasks import handlers
+from framework.celery_tasks import handlers
 from framework.bcrypt import check_password_hash
 from website import filters, language, settings, mailchimp_utils
 from website.exceptions import NodeStateError
@@ -1604,7 +1604,7 @@ class TestNode(OsfTestCase):
             NodeLog.ADDON_REMOVED
         )
 
-    @mock.patch('website.addons.github.model.AddonGitHubNodeSettings.config')
+    @mock.patch('website.addons.github.model.GitHubNodeSettings.config')
     def test_delete_mandatory_addon(self, mock_config):
         mock_config.added_mandatory = ['node']
         self.node.add_addon('github', self.auth)

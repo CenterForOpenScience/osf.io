@@ -217,6 +217,8 @@ def project_contributors_post(auth, node, **kwargs):
 
     user_dicts = request.json.get('users')
     node_ids = request.json.get('node_ids')
+    if node._id in node_ids:
+        node_ids.remove(node._id)
 
     if user_dicts is None or node_ids is None:
         raise HTTPError(http.BAD_REQUEST)

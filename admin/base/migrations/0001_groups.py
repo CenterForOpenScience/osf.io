@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from django.db import models, migrations
+from django.db import migrations
 from django.contrib.auth.models import Group
 import logging
 
@@ -9,7 +9,6 @@ logger = logging.getLogger(__file__)
 
 
 def add_groups(*args):
-    print args
     group, created = Group.objects.get_or_create(name='prereg_group')
     if created:
         logger.info('prereg_group created')

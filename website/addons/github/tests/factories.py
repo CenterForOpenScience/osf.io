@@ -1,14 +1,30 @@
 # -*- coding: utf-8 -*-
 
-from tests.factories import ModularOdmFactory, FakerAttribute
+from factory import Sequence, SubFactory
+from tests.factories import ExternalAccountFactory, ModularOdmFactory, ProjectFactory, UserFactory
 
-from website.addons.github import model
+from website.addons.github.model import GitHubNodeSettings, GitHubUserSettings
 
-class GitHubOauthSettingsFactory(ModularOdmFactory):
 
-    FACTORY_FOR = model.AddonGitHubOauthSettings
+class GitHubAccountFactory(ExternalAccountFactory):
+    provider = 'github'
+    provider_id = Sequence(lambda n: 'id-{0}'.format(n))
+    oauth_key = Sequence(lambda n: 'key-{0}'.format(n))
+    display_name = 'abc'
 
-    oauth_access_token = FakerAttribute('md5')
-    oauth_token_type = None
-    github_user_id = FakerAttribute('sha1')
-    github_user_name = FakerAttribute('domain_word')
+
+class GitHubUserSettingsFactory(ModularOdmFactory):
+    class Meta:
+        model = GitHubUserSettings
+
+    owner = SubFactory(UserFactory)
+
+
+class GitHubNodeSettingsFactory(ModularOdmFactory):
+    class Meta:
+        model = GitHubNodeSettings
+
+    owner = SubFactory(ProjectFactory)
+    user_settings = SubFactory(GitHubUserSettingsFactory)
+    repo = 'mock'
+    user = 'abc'

@@ -164,6 +164,49 @@ class OsfStorageFile(OsfStorageFileNode, File):
                 raise exceptions.VersionNotFoundError(version)
             return None
 
+    def add_tag_log(self, action, tag, auth):
+        node = self.node
+        node.add_log(
+            action=action,
+            params={
+                'parent_node': node.parent_id,
+                'node': node._id,
+                'urls': {
+                    'download': '/project/{}/files/osfstorage/{}/?action=download'.format(node._id, self._id),
+                    'view': '/project/{}/files/osfstorage/{}/'.format(node._id, self._id)},
+                'path': self.materialized_path,
+                'tag': tag,
+            },
+            auth=auth,
+        )
+
+    def add_tag(self, tag, auth, save=True, log=True):
+        from website.models import Tag, NodeLog  # Prevent import error
+        if tag not in self.tags and not self.node.is_registration:
+            new_tag = Tag.load(tag)
+            if not new_tag:
+                new_tag = Tag(_id=tag)
+            new_tag.save()
+            self.tags.append(new_tag)
+            if log:
+                self.add_tag_log(NodeLog.FILE_TAG_ADDED, tag, auth)
+            if save:
+                self.save()
+            return True
+        return False
+
+    def remove_tag(self, tag, auth, save=True, log=True):
+        from website.models import Tag, NodeLog  # Prevent import error
+        tag = Tag.load(tag)
+        if tag and tag in self.tags and not self.node.is_registration:
+            self.tags.remove(tag)
+            if log:
+                self.add_tag_log(NodeLog.FILE_TAG_REMOVED, tag._id, auth)
+            if save:
+                self.save()
+            return True
+        return False
+
     def delete(self, user=None, parent=None):
         from website.search import search
         search.update_file(self, delete=True)
