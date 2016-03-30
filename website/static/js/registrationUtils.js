@@ -635,6 +635,7 @@ Draft.prototype.beforeRegister = function(url) {
     var self = this;
 
     $osf.block();
+    self.checkoutAllFiles();
 
     url = url || self.urls.register;
 
@@ -657,7 +658,10 @@ Draft.prototype.beforeRegister = function(url) {
                 self.register.bind(self, url)
             );
         }
-    }).fail($osf.unblock);
+    }).fail(function(){
+        $osf.unblock();
+        self.checkinAllFiles();
+    });
     return request;
 };
 Draft.prototype.registerWithoutReview = function() {
@@ -679,6 +683,64 @@ Draft.prototype.registerWithoutReview = function() {
         }
     });
 };
+Draft.prototype.checkoutAllFiles = function() {
+    var self = this;
+    var handleFail = function(resp){$osf.growl('Error', 'Unable to check in file');};
+
+    $.each(self.schemaData, function(_, question) {
+        if(question.extra.length !== 0) {
+            $.each(question.extra, function(_, file) {
+                $.ajax({
+                    method: 'put',
+                    url: window.contextVars.apiV2Prefix + 'files' + file.data.path + '/',
+                    beforeSend: $osf.setXHRAuthorization,
+                    contentType: 'application/json',
+                    dataType: 'json',
+                    data: JSON.stringify({
+                        data: {
+                            id: file.data.path.replace('/', ''),
+                            type: 'files',
+                            attributes: {
+                                checkout: window.contextVars.currentUser.id
+                            }
+                        }
+                    })
+                }).fail(handleFail);
+            });
+        }
+    });
+};
+Draft.prototype.checkinAllFiles = function() {
+    var self = this;
+    var handleFail = function(resp){$osf.growl('Error', 'Unable to check in file');};
+
+    $.each(self.schemaData, function(_, question) {
+        if(question.extra.length !== 0) {
+            $.each(question.extra, function(_, file) {
+                $.ajax({
+                    method: 'put',
+                    url: window.contextVars.apiV2Prefix + 'files' + file.data.path + '/',
+                    beforeSend: $osf.setXHRAuthorization,
+                    contentType: 'application/json',
+                    dataType: 'json',
+                    data: JSON.stringify({
+                        data: {
+                            id: file.data.path.replace('/', ''),
+                            type: 'files',
+                            attributes: {
+                                checkout: null
+                            }
+                        }
+                    })
+                }).fail(handleFail);
+            });
+        }
+    });
+};
+Draft.prototype.onRegisterFail = bootbox.alert.bind(null, {
+    title: 'Registration failed',
+    message: language.registerFail
+});
 Draft.prototype.register = function(url, data) {
     var self = this;
 
@@ -724,6 +786,8 @@ Draft.prototype.submitForReview = function() {
     }
 };
 Draft.prototype.approve = function() {
+    var self = this;
+
     return $osf.dialog(
         'Before you continue...',
         'Are you sure you want to approve this submission? This action is irreversible.',
@@ -731,9 +795,11 @@ Draft.prototype.approve = function() {
         {
             actionButtonClass: 'btn-warning'
         }
-    );
+    ).done(self.checkinAllFiles);
 };
 Draft.prototype.reject = function() {
+    var self = this;
+
     return $osf.dialog(
         'Before you continue...',
         'Are you sure you want to reject this submission? This action is irreversible.',
@@ -741,7 +807,7 @@ Draft.prototype.reject = function() {
         {
             actionButtonClass: 'btn-danger'
         }
-    );
+    ).done(self.checkinAllFiles());
 };
 
 /**

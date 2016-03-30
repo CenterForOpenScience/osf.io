@@ -191,11 +191,19 @@ var Uploader = function(question) {
     self.hasSelectedFile = ko.computed(function() {
         return !!(question.extra().viewUrl);
     });
-    self.unselectFile = function() {
-        self.selectedFile(null);
-        question.extra({
-            selectedFileName: NO_FILE
-        });
+    self.unselectFile = function(fileToRemove) {
+
+        var files = question.extra();
+        var handleFail = function(resp){$osf.growl('Error', 'Unable to check in file');};
+
+        for (var i = 0; i < files.length; i++) {
+            var file = files[i];
+            if(file.sha256 === fileToRemove.sha256) {
+                self.selectedFiles.splice(i, 1);
+                question.value(question.formattedFileList());
+                break;
+            }
+        }
     };
 
     self.filePicker = null;
@@ -210,6 +218,31 @@ var Uploader = function(question) {
             return $('<a target="_blank" href="' + extra.viewUrl + '">' + $osf.htmlEscape(extra.selectedFileName) + '</a>');
         }
     };
+
+
+    self.checkoutAllFiles = function() {
+        $.each(self.selectedFiles(), function(_, file) {
+            $.ajax({
+                method: 'put',
+                url: window.contextVars.apiV2Prefix + 'files' + file.data.path + '/',
+                beforeSend: $osf.setXHRAuthorization,
+                contentType: 'application/json',
+                dataType: 'json',
+                data: JSON.stringify({
+                    data: {
+                        id: file.data.path.replace('/', ''),
+                        type: 'files',
+                        attributes: {
+                            checkout: window.contextVars.currentUser.id
+                        }
+                    }
+                })
+            }).fail(function(resp) {
+                $osf.growl('Error', 'Unable to check out file');
+            });
+        });
+    };
+
 
     $.extend(self, question);
 };
