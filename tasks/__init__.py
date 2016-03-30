@@ -51,8 +51,10 @@ def task(*args, **kwargs):
 
 
 @task
-def server(host=None, port=5000, debug=True, live=False):
+def server(host=None, port=5000, debug=True, live=False, gitlogs=False):
     """Run the app server."""
+    if gitlogs:
+        git_logs()
     from website.app import init_app
     app = init_app(set_backends=True, routes=True)
     settings.API_SERVER_PORT = port
@@ -64,6 +66,11 @@ def server(host=None, port=5000, debug=True, live=False):
         server.serve(port=port)
     else:
         app.run(host=host, port=port, debug=debug, threaded=debug, extra_files=[settings.ASSET_HASH_PATH])
+
+@task
+def git_logs(count=100, pretty='format:"%s - %b"', grep='"Merge pull request"'):
+    cmd = 'git log --grep={1} -n {0} --pretty={2} > website/static/git_logs.txt'.format(count, grep, pretty)
+    run(cmd, echo=True)
 
 
 @task
