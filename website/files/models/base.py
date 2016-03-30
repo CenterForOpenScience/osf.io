@@ -101,6 +101,17 @@ class TrashedFileNode(StoredObject):
         TrashedFileNode.remove_one(self)
         return restored
 
+    def get_guid(self):
+        """Attempt to find a Guid that points to this object.
+
+        :rtype: Guid or None
+        """
+        try:
+            # Note sometimes multiple GUIDs can exist for
+            # a single object. Just go with the first one
+            return Guid.find(Q('referent', 'eq', self))[0]
+        except IndexError:
+            return None
 
 @unique_on(['node', 'name', 'parent', 'is_file', 'provider', 'path'])
 class StoredFileNode(StoredObject):
@@ -192,7 +203,9 @@ class StoredFileNode(StoredObject):
     def get_guid(self, create=False):
         """Attempt to find a Guid that points to this object.
         One will be created if requested.
-        :rtype: Guid
+
+        :param Boolean create: Should we generate a GUID if there isn't one?  Default: False
+        :rtype: Guid or None
         """
         try:
             # Note sometimes multiple GUIDs can exist for
@@ -586,7 +599,6 @@ class File(FileNode):
         if resp.status_code != 200:
             logger.warning('Unable to find {} got status code {}'.format(self, resp.status_code))
             return None
-
         return self.update(revision, resp.json()['data']['attributes'])
         # TODO Switch back to head requests
         # return self.update(revision, json.loads(resp.headers['x-waterbutler-metadata']))
