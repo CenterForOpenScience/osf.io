@@ -365,12 +365,12 @@ class LinkedNodesList(JSONAPIBaseView, generics.ListAPIView, CollectionMixin):
 
     def get_queryset(self):
         auth = get_user_auth(self.request)
-        return [
+        return sorted([
             pointer.node for pointer in
             self.get_node().nodes_pointer
             if not pointer.node.is_deleted and not pointer.node.is_collection and
             pointer.node.can_view(auth)
-        ]
+        ], key=lambda n: n.date_modified, reverse=True)
 
     # overrides APIView
     def get_parser_context(self, http_request):
