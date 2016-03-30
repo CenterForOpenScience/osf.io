@@ -1,6 +1,6 @@
 import mock
 from django.db import transaction
-from django.test import RequestFactory, Client
+from django.test import RequestFactory
 from nose import tools as nt
 
 from admin.common_auth.logs import OSFLogEntry
@@ -8,6 +8,7 @@ from admin.spam.forms import ConfirmForm
 from admin.spam.views import SpamDetail, UserSpamList
 from tests.base import AdminTestCase
 from tests.factories import CommentFactory, ProjectFactory, AuthUserFactory
+from admin_tests.factories import UserFactory
 
 from admin_tests.utilities import setup_form_view, setup_view
 
@@ -16,7 +17,8 @@ class TestSpamDetail(AdminTestCase):
     def setUp(self):
         super(TestSpamDetail, self).setUp()
         self.comment = CommentFactory()
-        self.request = Client().post('/admin/spam/id-{}'.format(self.comment._id))
+        self.request = RequestFactory().post('/fake_path')
+        self.request.user = UserFactory()
 
     @mock.patch('admin.spam.views.SpamDetail.success_url')
     def test_add_log(self, mock_success_url):
