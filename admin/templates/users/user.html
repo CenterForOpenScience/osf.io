@@ -170,7 +170,7 @@
                                 <td>{{ node.is_registration }}</td>
                                 <td>{{ node.number_contributors }}</td>
                                 <td>
-                                {% if node.number_contributors < 2 %}
+                                {% if node.number_contributors < 2 and not node.is_registration %}
                                     {% if node.deleted %}
                                         <a href="{% url 'nodes:restore_node' node.id %}"
                                            class="btn btn-success">
