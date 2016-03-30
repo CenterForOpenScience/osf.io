@@ -17,6 +17,7 @@ var $osf = require('js/osfHelpers');
 
 
 var LinkObject;
+var NodeFetcher;
 var formatDataforPO;
 var MOBILE_WIDTH = 767;
 
@@ -412,6 +413,9 @@ var tbOptions = {
         $osf.trackClick('myProjects', 'projectOrganizer', 'double-click-project');
         var node = item.data;
         var linkObject = new LinkObject('node', node, node.attributes.title);
+        tb.options.fetchers[linkObject.id] = new NodeFetcher(item.data.types, item.data.relationships.children.links.related.href + '?embed=contributors');
+        tb.options.fetchers[linkObject.id].on(['page', 'done'], tb.options.onPageLoad);
+
         // Get ancestors
         linkObject.ancestors = [];
         function getAncestors (item) {
@@ -472,6 +476,7 @@ var tbOptions = {
 var ProjectOrganizer = {
     controller : function (args) {
         LinkObject = args.LinkObject;
+        NodeFetcher  = args.NodeFetcher;
         formatDataforPO = args.formatDataforPO;
         var self = this;
         self.updateTB = function(){
@@ -493,6 +498,7 @@ var ProjectOrganizer = {
                     mpUpdateFolder : args.updateFolder,
                     currentView: args.currentView,
                     nodes : args.nodes,
+                    onPageLoad : args.onPageLoad,
                     fetchers : args.fetchers,
                     indexes : args.indexes
                 },
