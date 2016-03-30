@@ -806,7 +806,18 @@ var MyProjects = {
             self.loadValue(fetcher.isFinished() ? 100 : fetcher.progress());
               self.generateFiltersList();
               if (!pageData) {
-                self.updateList(); // Done callback
+                for(var i = 0; i < fetcher._flat.length; i++){
+                    var fetcherItem = fetcher._flat[i];
+                    var tbItem = self.treeData().children[i].data;
+                    if(fetcherItem === tbItem){
+                        continue;
+                    }
+                    var itemToAdd = self.buildTree()(fetcherItem, self.treeData());
+                    itemToAdd.parentID = self.treeData().id;
+                    itemToAdd.open = false;
+                    itemToAdd.load = false;
+                    self.treeData().splice(i,0,itemToAdd);
+                }
                 return m.redraw();
               }
               if(self.treeData().children){
