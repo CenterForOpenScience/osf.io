@@ -534,6 +534,10 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
         """Add user to approval list if user is admin and token verifies."""
         self.approve(user, token)
 
+    def mark_as_completed(self):
+        self.state = Sanction.COMPLETED
+        self.save()
+
 
 class Retraction(EmailApprovableSanction):
     """

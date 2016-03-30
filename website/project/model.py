@@ -968,7 +968,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
     @property
     def sanction(self):
-        sanction = self.registration_approval or self.embargo or self.retraction
+        sanction = self.embargo_termination_approval or self.retraction or self.embargo or self.registration_approval
         if sanction:
             return sanction
         elif self.parent_node:
@@ -1046,6 +1046,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         - that record has been approved
         - the node is not public (embargo not yet lifted)
         """
+        if self.embargo is None:
+            if self.parent_node:
+                return self.parent_node.is_embargoed
         return self.embargo and self.embargo.is_approved and not self.is_public
 
     @property
@@ -1428,20 +1431,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             elif key == 'description':
                 self.set_description(description=value, auth=auth, save=False)
             elif key == 'is_public':
-                if value and self.is_embargoed:
-                    admins = [admin for admin, node in self.root.get_admin_contributors_recursive(unique_users=True)]
-                    # Of more admins than just the current user
-                    if len(admins) > 1:
-                        self.request_embargo_termination(auth=auth)
-                    else:
-                        self.terminate_embargo(auth=auth)
-                else:
-                    self.set_privacy(
-                        Node.PUBLIC if value else Node.PRIVATE,
-                        auth=auth,
-                        log=True,
-                        save=False
-                    )
+                self.set_privacy(
+                    Node.PUBLIC if value else Node.PRIVATE,
+                    auth=auth,
+                    log=True,
+                    save=False
+                )
             elif key == 'node_license':
                 self.set_node_license(
                     value.get('id'),
@@ -3092,6 +3087,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                     raise NodeStateError("An unapproved registration cannot be made public.")
                 elif self.is_pending_embargo:
                     raise NodeStateError("An unapproved embargoed registration cannot be made public.")
+                elif self.is_embargoed:
+                    # Embargoed registrations can be made public early
+                    admins = [admin for admin, node in self.root.get_admin_contributors_recursive(unique_users=True)]
+                    # Of more admins than just the current user
+                    if len(admins) > 1:
+                        self.request_embargo_termination(auth=auth)
+                        return False
+                    else:
+                        return self.terminate_embargo(auth=auth)
             self.is_public = True
         elif permissions == 'private' and self.is_public:
             if self.is_registration and not self.is_pending_embargo:
@@ -3446,7 +3450,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             initiated_by=auth.user,
             embargoed_registration=self,
         )
-        admins = self.get_admin_contributors_recursive(unique_users=True)
+        admins = [admin for admin in self.root.get_admin_contributors_recursive(unique_users=True)]
         for (admin, node) in admins:
             approval.add_authorizer(admin, node=node)
         approval.save()
@@ -3467,6 +3471,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             auth=auth,
             save=False
         )
+        self.embargo.mark_as_completed()
         for node in self.node_and_primary_descendants():
             node.set_privacy(
                 Node.PUBLIC,
