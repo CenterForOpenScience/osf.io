@@ -45,10 +45,6 @@ class AddonDataverseNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     study_hdl = fields.StringField()    # Now dataset_doi
     study = fields.StringField()        # Now dataset
 
-    foreign_user_settings = fields.ForeignField(
-        'addondataverseusersettings', backref='authorized'
-    )
-
     # Legacy settings objects won't have IDs
     @property
     def folder_name(self):

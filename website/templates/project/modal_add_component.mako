@@ -22,7 +22,7 @@
                             %endfor
                         </select>
                     </div>
-                    %if (len(node['contributors']) > 1) and user['is_admin']:
+                    %if (len(node['contributors']) > 1) and user['can_edit']:
                         <div class="form-group">
                             <label class="f-w-md"><input id="inherit_contributors"
                                           name="inherit_contributors"

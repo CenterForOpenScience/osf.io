@@ -12,7 +12,6 @@ from modularodm import fields, Q
 from modularodm.exceptions import NoResultsFound
 from dateutil.parser import parse as parse_date
 
-from api.base.utils import absolute_reverse
 from framework.guid.model import Guid
 from framework.mongo import StoredObject
 from framework.mongo.utils import unique_on
@@ -185,7 +184,8 @@ class StoredFileNode(StoredObject, Commentable):
 
     @property
     def absolute_api_v2_url(self):
-        return absolute_reverse('files:file-detail', kwargs={'file_id': self._id})
+        path = '/files/{}/'.format(self._id)
+        return util.api_v2_url(path)
 
     # For Comment API compatibility
     @property
