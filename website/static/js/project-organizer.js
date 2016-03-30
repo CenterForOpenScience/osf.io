@@ -386,9 +386,15 @@ var tbOptions = {
       var key = this.options.currentView().collection.data.nodeType
       this.options.fetchers[key].getChildren(item.data.id)
         .then(function(children) {
-          // item.open = false;
-          // HACK to use promises with TB
-          tb.updateFolder(children, item, null, true);
+          // HACK to use promises with TB 
+          var child, i;
+          for (i = 0; i < children.length; i++) {
+              child = tb.buildTree(children[i], item);
+              item.add(child);
+          }
+          tb.flatten(tb.treeData.children, tb.visibleTop);
+
+          //tb.updateFolder(children, item, null, true);
             // for (var i = 0; i < children.length; i++)
             //     item.add(tb.buildTree(children[i], item));
             // tb.updateFolder(null, item);
