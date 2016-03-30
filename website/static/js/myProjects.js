@@ -1116,12 +1116,13 @@ var Collections = {
                           config : xhrconfig,
                           data : data[index]
                       }).then(function(result){
-                          return args.currentView().fetcher
-                            .get(result.data.embeds.target_node.data.id)
-                            .then(function(item) {
-                              args.fetchers[collection.id].add(item);
-                              collection.data.count(collection.data.count()+1);
-                              save(index + 1, data);
+                          if (result){
+                              return args.currentView().fetcher
+                                .get(result.data[(result.data).length - 1].id)
+                                .then(function(item) {
+                                    args.fetchers[collection.id].add(item);
+                                    collection.data.count(collection.data.count() + 1);
+                                    save(index + 1, data);
                             });
                       }, function(result){
                           var message = '';
