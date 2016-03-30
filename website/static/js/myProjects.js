@@ -66,6 +66,7 @@ function NodeFetcher(type, link) {
     done: [this._onFinish.bind(this)],
     page: [],
     children: [],
+    fetch : []
   };
   this.nextLink = link || $osf.apiV2Url('users/me/' + this.type + '/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
 }
@@ -132,12 +133,15 @@ NodeFetcher.prototype = {
     deferred.resolve(this._cache[id].children);
     return deferred.promise;
   },
-  fetch: function(id) {
+  fetch: function(id, cb) {
     // TODO This method is currently untested
     var url =  $osf.apiV2Url(this.type + '/' + id + '/', {query: {related_counts: 'children', embed: 'contributors' }});
     return m.request({method: 'GET', url: url, config: xhrconfig, background: true})
       .then((function(result) {
         this.add(result.data);
+        if($.isFunction(cb)){
+          cb(this, result.data);
+        }
       }).bind(this), this._fail.bind(this));
   },
   fetchChildren: function(parent) {
@@ -886,8 +890,13 @@ var MyProjects = {
                     title: 'Create new project',
                     categoryList: ctrl.categoryList,
                     stayCallback: function () {
-                        ctrl.allProjectsLoaded(false);
-                        ctrl.updateList(ctrl.breadcrumbs()[ctrl.breadcrumbs().length - 1]);
+                        // Fetch details of added item from server and redraw treebeard
+                        var projects = ctrl.fetchers[ctrl.systemCollections[0].id];
+                        projects.fetch(this.saveResult().data.id, function(){
+                          ctrl.updateTreeData(0, projects._flat, true);
+                        });
+
+
                     },
                     trackingCategory: 'myProjects',
                     trackingAction: 'add-project',
