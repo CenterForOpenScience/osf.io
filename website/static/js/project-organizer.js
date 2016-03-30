@@ -17,6 +17,7 @@ var $osf = require('js/osfHelpers');
 
 
 var LinkObject;
+var NodeFetcher;
 var formatDataforPO;
 var MOBILE_WIDTH = 767;
 
@@ -348,24 +349,7 @@ var tbOptions = {
     ontogglefolder : function (item, event) {
         var tb = this;
         $osf.trackClick('myProjects', 'projectOrganizer', 'expand-collapse-project-children');
-        if (!item.open) {
-            item.load = false;
-        }
         $('[data-toggle="tooltip"]').tooltip();
-        if (item.children.length === 0 && tb.options.nodes.projects.flatData.loaded === tb.options.nodes.projects.flatData.total && tb.options.indexes()[item.data.id]) {
-            var childrenToAdd = tb.options.indexes()[item.data.id].children;
-            if(childrenToAdd.length){
-                var child, i;
-                for (i = 0; i < childrenToAdd.length; i++) {
-                    child = tb.buildTree(childrenToAdd[i], item);
-                    item.add(child);
-                }
-                tb.redraw();
-                tb.updateFolder(null, item);
-            }
-
-        }
-
     },
     onscrollcomplete : function () {
         $('[data-toggle="tooltip"]').tooltip();
@@ -378,7 +362,27 @@ var tbOptions = {
         return m('i.fa.fa-cube');
     },
     resolveToggle : _poResolveToggle,
-    resolveLazyloadUrl : _poResolveLazyLoad,
+    resolveLazyloadUrl : function(item) {
+      console.log(item.open);
+      if (item.children.length > 0)
+        return null;
+      var tb = this;
+      var deferred = $.Deferred();
+
+      var key = this.options.currentView().collection.data.nodeType;
+      this.options.fetchers[key].getChildren(item.data.id)
+        .then(function(children) {
+          // HACK to use promises with TB 
+          var child, i;
+          for (i = 0; i < children.length; i++) {
+            child = tb.buildTree(children[i], item);
+            item.add(child);
+          }
+          tb.flatten(tb.treeData.children, tb.visibleTop);
+          return deferred.resolve(null);
+        });
+      return deferred;
+    },
     resolveRefreshIcon : function () {
         return m('i.fa.fa-refresh.fa-spin');
     }, naturalScrollLimit : 0,
@@ -394,6 +398,9 @@ var tbOptions = {
         $osf.trackClick('myProjects', 'projectOrganizer', 'double-click-project');
         var node = item.data;
         var linkObject = new LinkObject('node', node, node.attributes.title);
+        tb.options.fetchers[linkObject.id] = new NodeFetcher(item.data.types, item.data.relationships.children.links.related.href + '?embed=contributors');
+        tb.options.fetchers[linkObject.id].on(['page', 'done'], tb.options.onPageLoad);
+
         // Get ancestors
         linkObject.ancestors = [];
         function getAncestors (item) {
@@ -454,6 +461,7 @@ var tbOptions = {
 var ProjectOrganizer = {
     controller : function (args) {
         LinkObject = args.LinkObject;
+        NodeFetcher  = args.NodeFetcher;
         formatDataforPO = args.formatDataforPO;
         var self = this;
         self.updateTB = function(){
@@ -475,6 +483,8 @@ var ProjectOrganizer = {
                     mpUpdateFolder : args.updateFolder,
                     currentView: args.currentView,
                     nodes : args.nodes,
+                    onPageLoad : args.onPageLoad,
+                    fetchers : args.fetchers,
                     indexes : args.indexes
                 },
                 tbOptions
@@ -494,4 +504,3 @@ var ProjectOrganizer = {
 
 
 module.exports = ProjectOrganizer;
-
