@@ -224,35 +224,6 @@ function _poResolveToggle(item) {
     return '';
 }
 
-/**
- * Resolves lazy load url for fetching children
- * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
- * @this Treebeard.controller
- * @returns {String|Boolean} Returns the fetch URL in string or false if there is no url.
- * @private
- */
-function _poResolveLazyLoad(item) {
-    var tb = this;
-    var node = item.data;
-    if(item.children.length > 0) {
-        return false;
-    }
-    if(node.relationships.children){
-        // If flatData is loaded use that
-        if(tb.options.nodes.projects.flatData.loaded === tb.options.nodes.projects.flatData.total && tb.options.indexes()[node.id]){
-            return false;
-        }
-        //return node.relationships.children.links.related.href;
-        var urlPrefix = node.attributes.registration ? 'registrations' : 'nodes';
-        return $osf.apiV2Url(urlPrefix + '/' + node.id + '/children/', {
-            query : {
-                'related_counts' : 'children',
-                'embed' : 'contributors'
-            }
-        });
-    }
-    return false;
-}
 
 /**
  * Hook to run after multiselect is run when an item is selected.
@@ -483,10 +454,8 @@ var ProjectOrganizer = {
                     mpBuildTree : args.buildTree,
                     mpUpdateFolder : args.updateFolder,
                     currentView: args.currentView,
-                    nodes : args.nodes,
                     onPageLoad : args.onPageLoad,
                     fetchers : args.fetchers,
-                    indexes : args.indexes,
                     mpMultiselected : args.multiselected,
                     mpHighlightMultiselect : args.highlightMultiselect
                 },

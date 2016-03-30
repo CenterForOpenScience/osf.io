@@ -300,15 +300,12 @@ var MyProjects = {
         self.projectOrganizerOptions = options.projectOrganizerOptions || {};
         self.viewOnly = options.viewOnly || false;
         self.institutionId = options.institutionId || false;
-        self.reload = m.prop(false); // Gets set to true when treebeard link changes and it needs to be redrawn
         self.logUrlCache = {}; // dictionary of load urls to avoid multiple calls with little refactor
         self.nodeUrlCache = {}; // Cached returns of the project related urls
         // VIEW STATES
         self.showInfo = m.prop(true); // Show the info panel
         self.showSidebar = m.prop(false); // Show the links with collections etc. used in narrow views
         self.allProjectsLoaded = m.prop(false);
-        self.loadingAllNodes = false; // True if we are loading all nodes
-        self.loadingNodePages = false;
         self.categoryList = [];
         self.loadValue = m.prop(0); // What percentage of the project loading is done
         //self.loadCounter = m.prop(0); // Count how many items are received from the server
@@ -319,7 +316,6 @@ var MyProjects = {
             totalRows: 0
         });
         self.filesData = m.prop();
-        self.indexes = m.prop({}); // Container of tree indexes for the items
 
         // Treebeard functions looped through project organizer.
         // We need to pass these in to avoid reinstantiating treebeard but instead repurpose (update) the top level folder
@@ -365,49 +361,6 @@ var MyProjects = {
                 Raven.captureMessage(message, {requestReturn: results});
             });
             return promise;
-        };
-
-        /**
-         * Turn flat node array into a hierarchical structure
-         * @param flatData {Array} List of items returned from survey
-         * @param [lastcrumb] {Object} Right most selected breadcrumb linkobject
-         * @param [indexes] {Object} Object to save the tree index structure for quick find
-         * @returns {Array} A new list with hierarchical structure
-         */
-        self.makeTree = function _makeTree(flatData, lastcrumb, indexes) {
-            var root = {id:0, children: [], data : {} };
-            var node_list = { 0 : root};
-            var parentID;
-            var crumbParent = lastcrumb ? lastcrumb.data.id : null;
-            for (var i = 0; i < flatData.length; i++) {
-                if(flatData[i].errors){
-                    continue;
-                }
-                var n = _formatDataforPO(flatData[i]);
-                if (!node_list[n.id]) { // If this node is not in the object list, add it
-                    node_list[n.id] = n;
-                    node_list[n.id].children = [];
-                } else { // If this node is in object list it's likely because it was created as a parent so fill out the rest of the information
-                    n.children = node_list[n.id].children;
-                    node_list[n.id] = n;
-                }
-
-                if (n.relationships.parent){
-                    parentID = n.relationships.parent.links.related.href.split('/')[5]; // Find where parent id string can be extracted
-                } else {
-                    parentID = null;
-                }
-                if(parentID && parentID !== crumbParent ) {
-                    if(!node_list[parentID]){
-                        node_list[parentID] = { children : [] };
-                    }
-                    node_list[parentID].children.push(node_list[n.id]);
-                } else {
-                    node_list[0].children.push(node_list[n.id]);
-                }
-            }
-            indexes(node_list);
-            return root.children;
         };
 
         // Activity Logs
@@ -864,7 +817,6 @@ var MyProjects = {
                 NodeFetcher : NodeFetcher,
                 formatDataforPO : _formatDataforPO,
                 wrapperSelector : args.wrapperSelector,
-                reload : ctrl.reload,
                 resetUi : ctrl.resetUi,
                 showSidebar : ctrl.showSidebar,
                 loadValue : ctrl.loadValue,
@@ -873,7 +825,6 @@ var MyProjects = {
                 buildTree : ctrl.buildTree,
                 updateFolder : ctrl.updateFolder,
                 currentView: ctrl.currentView,
-                nodes : ctrl.nodes,
                 fetchers : ctrl.fetchers,
                 indexes : ctrl.indexes,
                 multiselected : ctrl.multiselected,
