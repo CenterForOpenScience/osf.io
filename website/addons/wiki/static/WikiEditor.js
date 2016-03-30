@@ -6,8 +6,6 @@ var Raven = require('raven-js');
 var Markdown = require('pagedown-ace-converter');
 Markdown.getSanitizingConverter = require('pagedown-ace-sanitizer').getSanitizingConverter;
 require('imports?Markdown=pagedown-ace-converter!pagedown-ace-editor');
-
-
 /**
  * Binding handler that instantiates an ACE editor.
  * The value accessor must be a ko.observable.
@@ -20,7 +18,6 @@ ko.bindingHandlers.ace = {
         editor = ace.edit(element.id);  // jshint ignore: line
         editor.renderer.setShowGutter(true);
         editor.renderer.setOption('showLineNumbers', true);
-
         // Updates the view model based on changes to the editor
         editor.getSession().on('change', function () {
             valueAccessor()(editor.getValue());
@@ -30,7 +27,6 @@ ko.bindingHandlers.ace = {
     update: function (element, valueAccessor) {
         var content = editor.getValue();        // Content of ace editor
         var value = ko.unwrap(valueAccessor()); // Value from view model
-
         // Updates the editor based on changes to the view model
         if (value !== undefined && content !== value) {
             var cursorPosition = editor.getCursorPosition();
@@ -42,7 +38,6 @@ ko.bindingHandlers.ace = {
 
 function ViewModel(url, viewText) {
     var self = this;
-    
     self.initText = ko.observable('');
     self.currentText = viewText; //from wikiPage's VM
     self.activeUsers = ko.observableArray([]);
@@ -53,7 +48,6 @@ function ViewModel(url, viewText) {
     self.displayCollaborators = ko.computed(function() {
        return (self.activeUsers().length > 1);
     });
-    
     // Display the icons of up to the first 18 collaborators on a page
     self.showCollaborators = ko.computed(function() {
         if (self.activeUsers().length > 18) {
@@ -61,7 +55,6 @@ function ViewModel(url, viewText) {
         }
         return self.activeUsers();
     });
-    
     // Show text that says "and # more" collaborators
     self.andOthersMessage = ko.pureComputed(function() {
         if (self.activeUsers().length > 18) {
@@ -70,7 +63,6 @@ function ViewModel(url, viewText) {
         }
         return '';
     });
-    
     // Throttle the display when updating status.
     self.updateStatus = function() {
         self.throttledStatus(self.status());
@@ -143,7 +135,6 @@ function ViewModel(url, viewText) {
     self.changed = function() {
         return self.wikisDiffer(self.initText(), self.currentText());
     };
-
     // Fetch initial wiki text
     self.fetchData = function() {
         var request = $.ajax({
@@ -165,7 +156,6 @@ function ViewModel(url, viewText) {
         });
         return request;
     };
-
     // Revert to last saved version, even if draft is more recent
     self.revertChanges = function() {
         return self.fetchData().then(function(response) {
