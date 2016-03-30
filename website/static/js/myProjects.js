@@ -1174,8 +1174,6 @@ var Collections = {
                 childCount = item.data.count ? ' (' + item.data.count() + ')' : '';
                 if (args.currentView().collection === item) {
                     selectedCSS = 'active';
-                } else if (item.id === ctrl.collectionMenuObject().item.id) {
-                    selectedCSS = 'bg-color-hover';
                 } else {
                     selectedCSS = '';
                 }
