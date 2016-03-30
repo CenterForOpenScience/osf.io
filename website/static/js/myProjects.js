@@ -779,6 +779,7 @@ var MyProjects = {
         self.loadCollections = function _loadCollections (url){
             var promise = m.request({method : 'GET', url : url, config : xhrconfig});
             promise.then(function(result){
+                debugger;
                 var sortedResults =  result.data.sort(function(x,y){
                     return x.attributes.bookmarks ? -1 : y.attributes.bookmarks ? 1 : 0;
                 });
@@ -1024,6 +1025,9 @@ var Collections = {
                 var node = result.data;
                 var collections = self.collections();
                 var count = node.relationships.linked_nodes.links.related.meta.count || 0;
+                //Place after Bookmarks, Registrations, and Projects
+                collections.splice(PREDEFINED_COLLECTIONS_NUMBER, 0, new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : 'children' }, systemCollection : false, node : node, count : m.prop(count) }, node.attributes.title));
+                self.collections(collections);
                 self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : 'children' }, node : node, count : m.prop(count), nodeType : 'collection' }, node.attributes.title));
                 self.newCollectionName('');
                 self.calculateTotalPages();
