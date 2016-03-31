@@ -1626,7 +1626,7 @@ var Filters = {
 
         var returnNameFilters = function _returnNameFilters(){
             if (args.currentView().fetcher.isEmpty() || args.nameFilters.length < 1)
-                return m('.text-muted.text-smaller', 'There are no collaborators in this collection yet.');
+                return m('.text-muted.text-smaller', 'No contributors to display in this collection. Project administrators can add contributors.');
             var list = [];
             var item;
             var i;
@@ -1647,7 +1647,7 @@ var Filters = {
         };
         var returnTagFilters = function _returnTagFilters(){
             if (args.currentView().fetcher.isEmpty() || args.tagFilters.length < 1)
-                return m('.text-muted.text-smaller', 'Projects in this collection don\'t have any tags yet.');
+                return m('.text-muted.text-smaller', 'No tags to display in this collection. Project administrators and write contributors can add tags.');
 
             var list = [];
             var selectedCSS;
