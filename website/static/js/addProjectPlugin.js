@@ -98,6 +98,7 @@ var AddProject = {
         };
         self.reset = function _reset(){
             self.newProjectName('');
+            $('#' + self.options.modalID + ' .project-name').val('');
             self.viewState('form');
             self.newProjectDesc('');
             self.newProjectCategory(self.defaultCat);
@@ -121,7 +122,7 @@ var AddProject = {
                     m('.text-left', [
                         m('.form-group.m-v-sm', [
                             m('label[for="projectName].f-w-lg.text-bigger', 'Title'),
-                            m('input[type="text"].form-control', {
+                            m('input[type="text"].form-control.project-name', {
                                 onkeyup: function(ev){
                                     if (ev.which === 13) {
                                          ctrl.add();
@@ -134,7 +135,8 @@ var AddProject = {
                                     //  This will not be reliably running!
                                     $osf.trackClick(options.trackingCategory, options.trackingAction, 'type-project-name');
                                 },
-                                placeholder : 'Enter ' + ctrl.nodeType + ' title'
+                                placeholder : 'Enter ' + ctrl.nodeType + ' title',
+                                name : 'projectName'
                             })
                         ]),
                         m('.text-muted.pointer', { onclick : function(){

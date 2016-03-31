@@ -317,6 +317,7 @@ var tbOptions = {
         tb.options.mpUpdateFolder(tb.updateFolder);
         tb.options.mpMultiselected(tb.multiselected);
         tb.options.mpHighlightMultiselect(tb.highlightMultiselect);
+        tb.options._onload(tb);
     },
     ontogglefolder : function (item, event) {
         var tb = this;
@@ -369,7 +370,7 @@ var tbOptions = {
         $osf.trackClick('myProjects', 'projectOrganizer', 'double-click-project');
         var node = item.data;
         var linkObject = new LinkObject('node', node, node.attributes.title);
-        tb.options.fetchers[linkObject.id] = new NodeFetcher(item.data.types, item.data.relationships.children.links.related.href + '?embed=contributors');
+        tb.options.fetchers[linkObject.id] = new NodeFetcher(item.data.types, item.data.relationships.children.links.related.href + '?related_counts=children&embed=contributors');
         tb.options.fetchers[linkObject.id].on(['page', 'done'], tb.options.onPageLoad);
 
         // Get ancestors
@@ -455,6 +456,7 @@ var ProjectOrganizer = {
                     currentView: args.currentView,
                     onPageLoad : args.onPageLoad,
                     fetchers : args.fetchers,
+                    _onload: args._onload,
                     mpMultiselected : args.multiselected,
                     mpHighlightMultiselect : args.highlightMultiselect
                 },

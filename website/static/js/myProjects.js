@@ -54,6 +54,7 @@ function NodeFetcher(type, link) {
   this._orphans = [];
   this._cache = {};
   this._promise = null;
+  this._started = false;
   this._continue = true;
   this.tree = {
       0: {
@@ -88,6 +89,7 @@ NodeFetcher.prototype = {
     this._continue = false;
   },
   resume: function() {
+    this._started = true;
     this._continue = true;
     if (!this.nextLink) return this._promise = null;
     if (this._promise) return this._promise;
@@ -100,12 +102,21 @@ NodeFetcher.prototype = {
       }).bind(this));
   },
   add: function(item) {
-    if (!this.isFinished() && this._flat.indexOf(item) !== - 1) return;
+    if (!this._started ||this._flat.indexOf(item) !== - 1) return;
 
     this.total++;
     this.loaded++;
 
     this._flat.unshift(item);
+
+    // Resort after inserting data
+    this._flat = this._orphans.concat(this._flat).sort(function(a,b) {
+      a = new Date(a.attributes.date_modified);
+      b = new Date(b.attributes.date_modified);
+      if (a > b) return -1;
+      if (a < b) return 1;
+      return 0;
+    });
   },
   remove: function(item) {
     item = item.id || item;
@@ -482,6 +493,7 @@ var MyProjects = {
               data.data.forEach(function(item) {
                   self.fetchers[currentCollection.id].remove(item.id);
                   currentCollection.data.count(currentCollection.data.count()-1);
+                  self.updateSelected([]);
               });
               self.updateList();
             }, function _removeProjectFromCollectionsFail(result){
@@ -672,12 +684,15 @@ var MyProjects = {
             if (!noClear)
               self.nameFilters = [];
 
+
+            var userFinder = function(lo) {
+              return lo.label === u2.data.embeds.users.data.attributes.full_name;
+            };
+
             for (var user in self.users) {
                 var u2 = self.users[user];
                 if (u2.data.embeds.users.data) {
-                  var found = self.nameFilters.find(function(lo) {
-                    return lo.label === u2.data.embeds.users.data.attributes.full_name;
-                  });
+                  var found = self.nameFilters.find(userFinder);
                   if (!found)
                     self.nameFilters.push(new LinkObject('contributor', { id : u2.data.id, count : u2.count, query : { 'related_counts' : 'children' }}, u2.data.embeds.users.data.attributes.full_name, options.institutionId || false));
                   else
@@ -690,15 +705,17 @@ var MyProjects = {
             if (!noClear)
               self.tagFilters = [];
 
+            var tagFinder = function(lo) {
+              return lo.label === tag;
+            };
+
             for (var tag in self.tags){
                 var t2 = self.tags[tag];
-                var found = self.tagFilters.find(function(lo) {
-                  return lo.label === tag;
-                });
-                if (!found)
+                var tFound = self.tagFilters.find(tagFinder);
+                if (!tFound)
                   self.tagFilters.push(new LinkObject('tag', { tag : tag, count : t2, query : { 'related_counts' : 'children' }}, tag, options.institutionId || false));
                 else
-                  found.data.count = t2;
+                  tFound.data.count = t2;
             }
             // order tags
             self.tagFilters.sort(sortByCountDesc);
@@ -768,8 +785,9 @@ var MyProjects = {
         };
 
         self.onPageLoad = function(fetcher, pageData) {
+          if (!self.buildTree()) return; // Treebeard hasn't loaded yet
           if(self.currentView().fetcher === fetcher) {
-            self.loadValue(fetcher.isFinished() ? 100 : fetcher.progress());
+              self.loadValue(fetcher.isFinished() ? 100 : fetcher.progress());
               self.generateFiltersList(true);
               if (!pageData) {
                 for(var i = 0; i < fetcher._flat.length; i++){
@@ -852,7 +870,17 @@ var MyProjects = {
                 fetchers : ctrl.fetchers,
                 indexes : ctrl.indexes,
                 multiselected : ctrl.multiselected,
-                highlightMultiselect : ctrl.highlightMultiselect
+                highlightMultiselect : ctrl.highlightMultiselect,
+                _onload: function(tb) {
+                  if (!ctrl.currentView().fetcher.isFinished()) return;
+                  // If data loads before treebeard force redrawing
+                  ctrl.loadValue(100);
+                  ctrl.generateFiltersList(true);
+                  ctrl.updateList();
+                  // TB/Mithril interaction requires the redraw to be called a bit later
+                  // TODO Figure out why
+                  setTimeout(m.redraw.bind(this, true), 250);
+                }
             },
             ctrl.projectOrganizerOptions
         );
@@ -874,7 +902,10 @@ var MyProjects = {
                         // Fetch details of added item from server and redraw treebeard
                         var projects = ctrl.fetchers[ctrl.systemCollections[0].id];
                         projects.fetch(this.saveResult().data.id).then(function(){
+                          ctrl.updateSelected([]);
+                          ctrl.multiselected()([]);
                           ctrl.updateTreeData(0, projects._flat, true);
+
                         });
                     },
                     trackingCategory: 'myProjects',
@@ -1463,7 +1494,11 @@ var Breadcrumbs = {
                         }}, '...'),
                         m('i.fa.fa-angle-right')
                     ]),
-                    m('li', m('span.btn', items[items.length-1].label))
+                    m('li', [
+                      m('span.btn', items[items.length-1].label),
+                      contributorsTemplate,
+                      tagsTemplate
+                    ])
                 ]),
                 m('#parentsModal.modal.fade[tabindex=-1][role="dialog"][aria-hidden="true"]',
                     m('.modal-dialog',
@@ -1491,15 +1526,13 @@ var Breadcrumbs = {
                                             style : 'margin-left:' + (index*20) + 'px;',
                                             onclick : function() {
                                                 $osf.trackClick('myProjects', 'mobile', 'open-parent-project');
-                                                args.updateFilesData(item);
                                                 $('.modal').modal('hide');
+                                                args.updateFilesData(item);
                                             }
                                         },  [
                                             m('i.fa.fa-angle-right.m-r-xs'),
                                             item.label
-                                        ]),
-                                        contributorsTemplate,
-                                        tagsTemplate
+                                        ])
                                         ]
                                     );
                                 })
@@ -1598,7 +1631,7 @@ var Filters = {
         };
 
         var returnNameFilters = function _returnNameFilters(){
-            if(args.currentView().fetcher.isEmpty())
+            if (args.currentView().fetcher.isEmpty() || args.nameFilters.length < 1)
                 return m('.text-muted.text-smaller', 'There are no collaborators in this collection yet.');
             var list = [];
             var item;
@@ -1619,7 +1652,7 @@ var Filters = {
             return list;
         };
         var returnTagFilters = function _returnTagFilters(){
-            if(args.currentView().fetcher.isEmpty())
+            if (args.currentView().fetcher.isEmpty() || args.tagFilters.length < 1)
                 return m('.text-muted.text-smaller', 'Projects in this collection don\'t have any tags yet.');
 
             var list = [];
@@ -1709,7 +1742,7 @@ var Information = {
         }
         if (args.selected().length === 1) {
             var item = args.selected()[0].data;
-            showRemoveFromCollection = collectionFilter.data.nodeType === 'collection' && args.selected()[0].depth === 1 && args.fetchers[collectionFilter.id]._cache[item.id]; // Be able to remove top level items but not their children
+            showRemoveFromCollection = collectionFilter.data.nodeType === 'collection' && args.selected()[0].depth === 1 && args.fetchers[collectionFilter.id]._flat.indexOf(item) !== -1; // Be able to remove top level items but not their children
             if(item.attributes.category === ''){
                 item.attributes.category = 'Uncategorized';
             }
