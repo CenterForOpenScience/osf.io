@@ -25,3 +25,34 @@ h3, h4 {
 .footer {
     margin-top: 0; /* Override footer margin for this page only */
 }
+
+/* Override alerts */
+.home-page-alert {
+    background: #eee;
+    color
+}
+
+.home-page-alert > #alert-container {
+    margin-bottom: 0;
+}
+
+.jumbotron {
+    padding: 10px 40px 10px 40px;
+    margin-bottom: 0;
+}
+
+.home-page-alert > #alert-container a:focus, .home-page-alert > #alert-container a:hover {
+    color: #23527c;
+    text-decoration: none;
+}
+
+.jumbotron p {
+    font-size: 18px;
+    font-weight: 400;
+}
+
+@media screen and (min-width: 768px) {
+    .jumbotron .h1, .jumbotron h1 {
+        font-size: 40px;
+    }
+}

@@ -417,17 +417,13 @@ var MyProjects = {
         };
 
         /* filesData is the link that loads tree data. This function refreshes that information. */
-        self.updateFilesData = function _updateFilesData(linkObject, itemId) {
+        self.updateFilesData = function _updateFilesData(linkObject) {
             if ((linkObject.type === 'node') && self.viewOnly){
                 return;
             }
             self.updateFilter(linkObject);
             self.updateBreadcrumbs(linkObject);
-            if(linkObject.data.nodeType === 'collection'){
-                self.updateList(false, null, linkObject);
-            } else {
-                self.updateList(true, itemId); // Reset and load item
-            }
+            self.updateList(); // Reset and load item
             self.showSidebar(false);
         };
 
@@ -523,7 +519,7 @@ var MyProjects = {
         };
 
         // Update what is viewed
-        self.updateList = function _updateList (reset, itemId, collectionObject){
+        self.updateList = function _updateList (){
             if (!self.buildTree()) return; // Treebeard hasn't loaded yet
             var viewData = self.filteredData();
             self.updateTreeData(0, viewData, true);
@@ -565,13 +561,14 @@ var MyProjects = {
                 var child = self.buildTree()(item, self.treeData());
                 self.treeData().add(child);
             }
-                self.updateFolder()(null, self.treeData());
+            self.updateFolder()(null, self.treeData());
             // Manually select first item without triggering a click
             if(self.multiselected()().length === 0 && self.treeData().children[0]){
               self.multiselected()([self.treeData().children[0]]);
               self.highlightMultiselect()();
               self.updateSelected([self.treeData().children[0]]);
             }
+            m.redraw(true);
         };
 
         self.generateSets = function (item){
@@ -710,6 +707,10 @@ var MyProjects = {
 
         // BREADCRUMBS
         self.updateBreadcrumbs = function _updateBreadcrumbs (linkObject){
+            if (!self.fetchers[linkObject.id]){
+              self.fetchers[linkObject.id] = new NodeFetcher(item.data.types, item.data.relationships.children.links.related.href + '?embed=contributors');
+              self.fetchers[linkObject.id].on(['page', 'done'], self.onPageLoad);
+            }
             if (linkObject.type === 'collection'){
                 self.breadcrumbs([linkObject]);
                 return;
@@ -724,6 +725,8 @@ var MyProjects = {
             if(linkObject.ancestors && linkObject.ancestors.length > 0){
                 linkObject.ancestors.forEach(function(item){
                     var ancestorLink = new LinkObject('node', item.data, item.data.name);
+                    self.fetchers[ancestorLink.id] = new NodeFetcher(item.data.types, item.data.relationships.children.links.related.href + '?embed=contributors');
+                    self.fetchers[ancestorLink.id].on(['page', 'done'], self.onPageLoad);
                     self.breadcrumbs().push(ancestorLink);
                 });
             }
@@ -1197,11 +1200,12 @@ var Collections = {
                 } else {
                     submenuTemplate = '';
                 }
-                list.push(m('li', { className : selectedCSS + ' ' + dropAcceptClass, 'data-index' : index },
-                    [
-                        m('a[role="button"]', {
-                            onclick : collectionOnclick.bind(null, item)
-                        },  item.label + childCount),
+                list.push(m('li.pointer', {
+                    className : selectedCSS + ' ' + dropAcceptClass,
+                    'data-index' : index,
+                    onclick : collectionOnclick.bind(null, item)
+                  },[
+                        m('span', item.label + childCount),
                         submenuTemplate
                     ]
                 ));
@@ -1609,9 +1613,8 @@ var Filters = {
             for (i = begin; i < end; i++) {
                 item = args.nameFilters[i];
                 selectedCSS = args.currentView().contributor.indexOf(item) !== -1 ? '.active' : '';
-                list.push(m('li' + selectedCSS,
-                    m('a[role="button"]', {onclick : filterContributor.bind(null, item)},
-                        item.label)
+                list.push(m('li.pointer' + selectedCSS, {onclick : filterContributor.bind(null, item)},
+                    m('span', item.label)
                 ));
             }
             return list;
@@ -1632,9 +1635,8 @@ var Filters = {
             for (i = begin; i < end; i++) {
                 item = args.tagFilters[i];
                 selectedCSS = args.currentView().tag.indexOf(item) !== -1  ? '.active' : '';
-                list.push(m('li' + selectedCSS,
-                    m('a[role="button"]', {onclick : filterTag.bind(null, item)},
-                        item.label
+                list.push(m('li.pointer' + selectedCSS, {onclick : filterTag.bind(null, item)},
+                    m('span', item.label
                     )
                 ));
             }

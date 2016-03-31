@@ -335,7 +335,6 @@ var tbOptions = {
     },
     resolveToggle : _poResolveToggle,
     resolveLazyloadUrl : function(item) {
-      console.log(item.open);
       if (item.children.length > 0)
         return null;
       var tb = this;
@@ -383,7 +382,7 @@ var tbOptions = {
             }
         }
         getAncestors(item);
-        tb.options.updateFilesData(linkObject, item.data.id);
+        tb.options.updateFilesData(linkObject);
     },
     hScroll : 'auto',
     filterTemplate : function() {
@@ -402,7 +401,7 @@ var tbOptions = {
                 if ($(this).val().length === 0) {
                     resetFilter();
                 } else {
-                    tb.filter();
+                    tb.filter(event);
                 }
             },
             onchange: function(event) {
