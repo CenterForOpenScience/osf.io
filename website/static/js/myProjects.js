@@ -640,8 +640,7 @@ var MyProjects = {
         self.generateFiltersList = function(noClear) {
             self.users = {};
             self.tags = {};
-            Object.keys(self.currentView().fetcher._cache).forEach(function(key) {
-              var item = self.currentView().fetcher._cache[key];
+            self.currentView().fetcher._flat.forEach(function(item) {
               self.generateSets(item);
 
               var contributors = item.embeds.contributors.data || [];
