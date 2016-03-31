@@ -264,6 +264,7 @@ function _formatDataforPO(item) {
         });
     }
     item.date = new $osf.FormattableDate(item.attributes.date_modified);
+    item.sortDate = item.date.date;
     return item;
 }
 
