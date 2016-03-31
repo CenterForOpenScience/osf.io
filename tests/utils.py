@@ -10,6 +10,7 @@ from nose.tools import assert_equal, assert_not_equal, assert_in
 from framework.auth import Auth
 from website.archiver import ARCHIVER_SUCCESS
 from website.archiver import listeners as archiver_listeners
+from website.project.sanctions import Sanction
 
 from tests.base import get_default_metaschema
 DEFAULT_METASCHEMA = get_default_metaschema()
@@ -72,6 +73,7 @@ def assert_not_logs(log_action, node_key, index=-1):
 @contextlib.contextmanager
 def mock_archive(project, schema=None, auth=None, data=None, parent=None,
                  embargo=False, embargo_end_date=None,
+                 retraction=False, justification=None, autoapprove_retraction=False,
                  autocomplete=True, autoapprove=False):
     """ A context manager for registrations. When you want to call Node#register_node in
     a test but do not want to deal with any of this side effects of archiver, this
@@ -134,7 +136,17 @@ def mock_archive(project, schema=None, auth=None, data=None, parent=None,
             archiver_listeners.archive_callback(registration)
     if autoapprove:
         sanction = registration.root.sanction
+        sanction.state = Sanction.APPROVED
         sanction._on_complete(project.creator)
+        sanction.save()
+
+    if retraction:
+        retraction = registration.retract_registration(project.creator, justification=justification)
+        if autoapprove_retraction:
+            retraction.state = Sanction.APPROVED
+            retraction._on_complete(project.creator)
+        retraction.save()
+        registration.save()
     yield registration
 
 def make_drf_request(*args, **kwargs):
