@@ -370,7 +370,7 @@ var tbOptions = {
         $osf.trackClick('myProjects', 'projectOrganizer', 'double-click-project');
         var node = item.data;
         var linkObject = new LinkObject('node', node, node.attributes.title);
-        tb.options.fetchers[linkObject.id] = new NodeFetcher(item.data.types, item.data.relationships.children.links.related.href + '?embed=contributors');
+        tb.options.fetchers[linkObject.id] = new NodeFetcher(item.data.types, item.data.relationships.children.links.related.href + '?related_counts=children&embed=contributors');
         tb.options.fetchers[linkObject.id].on(['page', 'done'], tb.options.onPageLoad);
 
         // Get ancestors
