@@ -30,11 +30,12 @@ h3, h4 {
 /* Override alerts */
 .home-page-alert {
     background: #eee;
-    color
 }
+
 
 .home-page-alert > #alert-container {
     margin-bottom: 0;
+    margin-top: 0;
 }
 
 .jumbotron {
