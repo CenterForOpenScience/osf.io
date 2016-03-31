@@ -336,21 +336,24 @@ var tbOptions = {
     },
     resolveToggle : _poResolveToggle,
     resolveLazyloadUrl : function(item) {
-      if (item.children.length > 0)
+    if (item.data.relationships.children.links.related.meta.count === item.children.length)
         return null;
       var tb = this;
       var deferred = $.Deferred();
-
       var key = this.options.currentView().collection.id;
+
       this.options.fetchers[key].getChildren(item.data.id)
         .then(function(children) {
+          item.children = [];
           // HACK to use promises with TB
           var child, i;
           for (i = 0; i < children.length; i++) {
             child = tb.buildTree(children[i], item);
             item.add(child);
           }
+          item.open = true;
           tb.flatten(tb.treeData.children, tb.visibleTop);
+          item.open = false;
           return deferred.resolve(null);
         });
       return deferred;
