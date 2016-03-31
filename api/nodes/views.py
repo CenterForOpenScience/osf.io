@@ -878,8 +878,7 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
         )
         nodes = Node.find(query)
         auth = get_user_auth(self.request)
-        children = [each for each in nodes if each.can_view(auth)]
-        return children
+        return sorted([each for each in nodes if each.can_view(auth)], key=lambda n: n.date_modified, reverse=True)
 
     # overrides ListBulkCreateJSONAPIView
     def perform_create(self, serializer):
