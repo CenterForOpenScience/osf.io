@@ -54,6 +54,7 @@ function NodeFetcher(type, link) {
   this._orphans = [];
   this._cache = {};
   this._promise = null;
+  this._started = false;
   this._continue = true;
   this.tree = {
       0: {
@@ -88,6 +89,7 @@ NodeFetcher.prototype = {
     this._continue = false;
   },
   resume: function() {
+    this._started = true;
     this._continue = true;
     if (!this.nextLink) return this._promise = null;
     if (this._promise) return this._promise;
@@ -100,7 +102,7 @@ NodeFetcher.prototype = {
       }).bind(this));
   },
   add: function(item) {
-    if (!this.isFinished() && this._flat.indexOf(item) !== - 1) return;
+    if (!this._started ||this._flat.indexOf(item) !== - 1) return;
 
     this.total++;
     this.loaded++;
@@ -770,7 +772,7 @@ var MyProjects = {
         self.onPageLoad = function(fetcher, pageData) {
           if (!self.buildTree()) return; // Treebeard hasn't loaded yet
           if(self.currentView().fetcher === fetcher) {
-            self.loadValue(fetcher.isFinished() ? 100 : fetcher.progress());
+              self.loadValue(fetcher.isFinished() ? 100 : fetcher.progress());
               self.generateFiltersList(true);
               if (!pageData) {
                 for(var i = 0; i < fetcher._flat.length; i++){
