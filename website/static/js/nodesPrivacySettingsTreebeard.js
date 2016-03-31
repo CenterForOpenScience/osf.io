@@ -66,6 +66,10 @@ function NodesPrivacyTreebeard(divID, data, nodesState, nodesOriginal) {
                 }
             ];
         },
+        onload : function () {
+            var tb = this;
+            expandOnLoad.call(tb);
+        },
         resolveRows: function nodesPrivacyResolveRows(item){
             var tb = this;
             var columns = [];
@@ -113,7 +117,5 @@ function NodesPrivacyTreebeard(divID, data, nodesState, nodesOriginal) {
         }
     });
     var grid = new Treebeard(tbOptions);
-    expandOnLoad.call(grid);
 }
 module.exports = NodesPrivacyTreebeard;
-

@@ -902,7 +902,10 @@ var MyProjects = {
                         // Fetch details of added item from server and redraw treebeard
                         var projects = ctrl.fetchers[ctrl.systemCollections[0].id];
                         projects.fetch(this.saveResult().data.id).then(function(){
+                          ctrl.updateSelected([]);
+                          ctrl.multiselected()([]);
                           ctrl.updateTreeData(0, projects._flat, true);
+
                         });
                     },
                     trackingCategory: 'myProjects',
