@@ -1589,8 +1589,6 @@ var Breadcrumbs = {
                 item.placement = 'breadcrumb'; // differentiate location for proper breadcrumb actions
                 return m('li',[
                     m('span.btn.btn-link', {onclick : updateFilesOnClick.bind(null, item)},  item.label),
-                    contributorsTemplate,
-                    tagsTemplate,
                     m('i.fa.fa-angle-right')
                     ]
                 );
