@@ -768,6 +768,7 @@ var MyProjects = {
         };
 
         self.onPageLoad = function(fetcher, pageData) {
+          if (!self.buildTree()) return; // Treebeard hasn't loaded yet
           if(self.currentView().fetcher === fetcher) {
             self.loadValue(fetcher.isFinished() ? 100 : fetcher.progress());
               self.generateFiltersList(true);
