@@ -340,8 +340,8 @@ var tbOptions = {
         return null;
       var tb = this;
       var deferred = $.Deferred();
-
       var key = this.options.currentView().collection.id;
+
       this.options.fetchers[key].getChildren(item.data.id)
         .then(function(children) {
           item.children = [];
@@ -351,7 +351,9 @@ var tbOptions = {
             child = tb.buildTree(children[i], item);
             item.add(child);
           }
+          item.open = true;
           tb.flatten(tb.treeData.children, tb.visibleTop);
+          item.open = false;
           return deferred.resolve(null);
         });
       return deferred;
