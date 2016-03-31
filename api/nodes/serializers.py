@@ -257,7 +257,7 @@ class NodeSerializer(JSONAPISerializer):
         if validated_data:
             try:
                 node.update(validated_data, auth=auth)
-            except exceptions.ValidationValueError as e:
+            except ValidationValueError as e:
                 raise InvalidModelValueError(detail=e.message)
             except PermissionsError:
                 raise exceptions.PermissionDenied
