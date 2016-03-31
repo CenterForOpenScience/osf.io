@@ -425,28 +425,42 @@ def flake():
 
 
 @task(aliases=['req'])
-def requirements(addons=False, release=False, dev=False, metrics=False):
+def requirements(base=False, addons=False, release=False, dev=False, metrics=False, quick=False):
     """Install python dependencies.
 
     Examples:
+        inv requirements
+        inv requirements --quick
 
-        inv requirements --dev
-        inv requirements --addons
-        inv requirements --release
-        inv requirements --metrics
+    Quick requirements are, in order, addons, dev and the base requirements. They should do for day-to-day development
+    work so you get everything that someone might have added that would keep you from running the software properly.
+
+    By default, base requirements will run. However, if any set of addons, release, dev, or metrics are chosen, base
+    will have to be mentioned explicitly in order to run. This is to remain compatible with previous usages. Release
+    requirements will prevent dev, metrics, and base from running.
     """
+    if quick:
+        base = True
+        addons = True
+        dev = True
+    if not(addons or dev or metrics):
+        base=True
     if release or addons:
         addon_requirements()
     # "release" takes precedence
     if release:
         req_file = os.path.join(HERE, 'requirements', 'release.txt')
-    elif dev:  # then dev requirements
-        req_file = os.path.join(HERE, 'requirements', 'dev.txt')
-    elif metrics:  # then dev requirements
-        req_file = os.path.join(HERE, 'requirements', 'metrics.txt')
-    else:  # then base requirements
-        req_file = os.path.join(HERE, 'requirements.txt')
-    run(pip_install(req_file), echo=True)
+        run(pip_install(req_file), echo=True)
+    else:
+        if dev:  # then dev requirements
+            req_file = os.path.join(HERE, 'requirements', 'dev.txt')
+            run(pip_install(req_file), echo=True)
+        if metrics:  # then dev requirements
+            req_file = os.path.join(HERE, 'requirements', 'metrics.txt')
+            run(pip_install(req_file), echo=True)
+        if base:  # then base requirements
+            req_file = os.path.join(HERE, 'requirements.txt')
+            run(pip_install(req_file), echo=True)
 
 
 @task
