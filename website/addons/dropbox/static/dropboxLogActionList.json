@@ -5,5 +5,6 @@
   "dropbox_folder_created" : "${user} created folder ${folder} in Dropbox in ${node}",
   "dropbox_folder_selected" : "${user} linked Dropbox folder ${folder} in ${node}",
   "dropbox_node_authorized" : "${user} authorized the Dropbox addon for ${node}",
-  "dropbox_node_deauthorized" : "${user} deauthorized the Dropbox addon for ${node}"
+  "dropbox_node_deauthorized" : "${user} deauthorized the Dropbox addon for ${node}",
+  "dropbox_node_deauthorized_no_user" : "Dropbox addon for ${node} deauthorized"
 }
