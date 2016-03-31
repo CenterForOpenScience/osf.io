@@ -145,7 +145,7 @@ NodeFetcher.prototype = {
     deferred.resolve(this._cache[id].children);
     return deferred.promise;
   },
-  fetch: function(id, cb) {
+  fetch: function(id) {
     // TODO This method is currently untested
     var url =  $osf.apiV2Url(this.type + '/' + id + '/', {query: {related_counts: 'children', embed: 'contributors' }});
     return m.request({method: 'GET', url: url, config: xhrconfig, background: true})
@@ -154,9 +154,9 @@ NodeFetcher.prototype = {
         return result.data;
       }).bind(this), this._fail.bind(this));
   },
-  fetchChildren: function(parent) {
+  fetchChildren: function(parent, link) {
     //TODO Allow suspending of children
-    return m.request({method: 'GET', url: parent.relationships.children.links.related.href + '?embed=contributors', config: xhrconfig, background: true})
+    return m.request({method: 'GET', url: link || parent.relationships.children.links.related.href + '?embed=contributors&related_counts=children', config: xhrconfig, background: true})
       .then(this._childrenSuccess.bind(this, parent), this._fail.bind(this));
   },
   _success: function(results) {
@@ -199,11 +199,18 @@ NodeFetcher.prototype = {
       }).bind(this));
   },
   _childrenSuccess: function(parent, results) {
-    this.total += results.links.meta.total;
+    if (!results.links.meta.previous)
+      this.total += results.links.meta.total;
+
+    this.loaded += results.data.length;
     for(var i = 0; i < results.data.length; i++) {
-      this._cache[results.data[i].id] = results.data[i];
-      this._cache[parent.id].children.push(_formatDataforPO(results.data[i]));
+      this._cache[results.data[i].id] = _formatDataforPO(results.data[i]);
+      results.data[i].children = [];
+      this._cache[parent.id].children.push(results.data[i]);
     }
+
+    if (results.links.next)
+      return this.fetchChildren(parent, results.links.next);
 
     return this._cache[parent.id].children;
   },
