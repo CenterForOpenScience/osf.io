@@ -739,10 +739,6 @@ var MyProjects = {
 
         // BREADCRUMBS
         self.updateBreadcrumbs = function _updateBreadcrumbs (linkObject){
-            if (!self.fetchers[linkObject.id]){
-              self.fetchers[linkObject.id] = new NodeFetcher(item.data.types, item.data.relationships.children.links.related.href + '?embed=contributors');
-              self.fetchers[linkObject.id].on(['page', 'done'], self.onPageLoad);
-            }
             if (linkObject.type === 'collection'){
                 self.breadcrumbs([linkObject]);
                 return;
