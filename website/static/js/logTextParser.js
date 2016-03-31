@@ -76,12 +76,24 @@ var LogText = {
     controller: function(logObject){
         var self = this;
 
+        self.userInfoReturned = function(userObject){
+            if (userObject){
+                if (userObject.data){
+                    return true;
+                }
+                else if (userObject.errors[0].meta){
+                    return true;
+                }
+            }
+            return false;
+        };
+
         self.logText = function() {
             var text = logActions[logObject.attributes.action];
             if (text) {
                 if (text.indexOf('${user}') !== -1) {
                     var userObject = logObject.embeds.user;
-                    if (paramIsReturned(userObject, logObject)) {
+                    if (self.userInfoReturned(userObject)) {
                         return text;
                     }
                     else {
