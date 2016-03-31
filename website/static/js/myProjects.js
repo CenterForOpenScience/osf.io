@@ -468,8 +468,9 @@ var MyProjects = {
             if ((linkObject.type === 'node') && self.viewOnly){
                 return;
             }
-            self.updateFilter(linkObject);
-            self.updateBreadcrumbs(linkObject);
+            self.updateTbMultiselect([]); // clear multiselected, updateTreeData will repick
+            self.updateFilter(linkObject); // Update what filters currently selected
+            self.updateBreadcrumbs(linkObject); // Change breadcrumbs
             self.updateList(); // Reset and load item
             self.showSidebar(false);
         };
@@ -595,6 +596,12 @@ var MyProjects = {
             self.currentView().totalRows = viewData.length;
         };
 
+        self.updateTbMultiselect = function (itemsArray) {
+          self.multiselected()(itemsArray);
+          self.highlightMultiselect()();
+          self.updateSelected(itemsArray);
+        };
+
         self.updateTreeData = function (begin, data, clear) {
           var item;
             if (clear) {
@@ -612,9 +619,7 @@ var MyProjects = {
             self.updateFolder()(null, self.treeData());
             // Manually select first item without triggering a click
             if(self.multiselected()().length === 0 && self.treeData().children[0]){
-              self.multiselected()([self.treeData().children[0]]);
-              self.highlightMultiselect()();
-              self.updateSelected([self.treeData().children[0]]);
+              self.updateTbMultiselect([self.treeData().children[0]]);
             }
             m.redraw(true);
         };
