@@ -279,9 +279,10 @@ def _profile_view(profile, is_profile=False):
 
 
 def _get_user_created_badges(user):
+    from website.addons.badges.model import Badge
     addon = user.get_addon('badges')
     if addon:
-        return [badge for badge in addon.badge__creator if not badge.is_system_badge]
+        return [badge for badge in Badge.find(Q('creator', 'eq', addon._id)) if not badge.is_system_badge]
     return []
 
 
