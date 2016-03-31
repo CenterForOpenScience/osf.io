@@ -46,9 +46,10 @@ if (!window.Set) {
 }
 
 
-function NodeFetcher(type, link) {
+function NodeFetcher(type, link, handleOrphans) {
   this.type = type || 'nodes';
   this.loaded = 0;
+  this._failed = 0;
   this.total = 0;
   this._flat = [];
   this._orphans = [];
@@ -56,13 +57,7 @@ function NodeFetcher(type, link) {
   this._promise = null;
   this._started = false;
   this._continue = true;
-  this.tree = {
-      0: {
-        id: 0,
-        data: {},
-        children: []
-      }
-  };
+  this._handleOrphans = handleOrphans === undefined ? true : handleOrphans;
   this._callbacks = {
     done: [this._onFinish.bind(this)],
     page: [],
@@ -144,7 +139,7 @@ NodeFetcher.prototype = {
     deferred.resolve(this._cache[id].children);
     return deferred.promise;
   },
-  fetch: function(id, cb) {
+  fetch: function(id) {
     // TODO This method is currently untested
     var url =  $osf.apiV2Url(this.type + '/' + id + '/', {query: {related_counts: 'children', embed: 'contributors' }});
     return m.request({method: 'GET', url: url, config: xhrconfig, background: true})
@@ -153,9 +148,9 @@ NodeFetcher.prototype = {
         return result.data;
       }).bind(this), this._fail.bind(this));
   },
-  fetchChildren: function(parent) {
+  fetchChildren: function(parent, link) {
     //TODO Allow suspending of children
-    return m.request({method: 'GET', url: parent.relationships.children.links.related.href + '?embed=contributors', config: xhrconfig, background: true})
+    return m.request({method: 'GET', url: link || parent.relationships.children.links.related.href + '?embed=contributors&related_counts=children', config: xhrconfig, background: true})
       .then(this._childrenSuccess.bind(this, parent), this._fail.bind(this));
   },
   _success: function(results) {
@@ -168,7 +163,7 @@ NodeFetcher.prototype = {
     for(var i = 0; i < results.data.length; i++) {
       if (this.type === 'registrations' && (results.data[i].attributes.withdrawn === true || results.data[i].attributes.pending_registration_approval === true))
           continue; // Exclude withdrawn and pending registrations
-      else if (results.data[i].relationships.parent)
+      else if (results.data[i].relationships.parent && this._handleOrphans)
           this._orphans.push(results.data[i]);
       else
           this._flat.push(results.data[i]);
@@ -198,18 +193,30 @@ NodeFetcher.prototype = {
       }).bind(this));
   },
   _childrenSuccess: function(parent, results) {
-    this.total += results.links.meta.total;
+    if (!results.links.prev)
+      this.total += results.links.meta.total;
+
+    this.loaded += results.data.length;
+    var finder = function(id, item) {return item.id === id;};
     for(var i = 0; i < results.data.length; i++) {
-      this._cache[results.data[i].id] = results.data[i];
-      this._cache[parent.id].children.push(_formatDataforPO(results.data[i]));
+      if (this._cache[parent.id].children.find(finder.bind(results.data[i].id))) continue;
+      this._cache[results.data[i].id] = _formatDataforPO(results.data[i]);
+      results.data[i].children = [];
+      this._cache[parent.id].children.push(results.data[i]);
     }
+
+    if (results.links.next)
+      return this.fetchChildren(parent, results.links.next);
 
     return this._cache[parent.id].children;
   },
   _fail: function(result) {
+    if (++this._failed < 5)
+      return this.resume();
+    this._continue = false;
+    this._promise = null;
     Raven.captureMessage('Error loading nodes with nodeType ' + this.type + ' at url ' + this.nextLink, {requestReturn: result});
     $osf.growl('We\'re having some trouble contacting our servers. Try reloading the page.', 'Something went wrong!', 'danger', 5000);
-    this.resume();
   },
   _onFinish: function() {
     this._flat = this._orphans.concat(this._flat).sort(function(a,b) {
@@ -636,8 +643,7 @@ var MyProjects = {
         self.generateFiltersList = function(noClear) {
             self.users = {};
             self.tags = {};
-            Object.keys(self.currentView().fetcher._cache).forEach(function(key) {
-              var item = self.currentView().fetcher._cache[key];
+            self.currentView().fetcher._flat.forEach(function(item) {
               self.generateSets(item);
 
               var contributors = item.embeds.contributors.data || [];
@@ -759,7 +765,7 @@ var MyProjects = {
                     self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors' }, nodeType : 'collection', node : node, count : m.prop(count), loaded: 1 }, node.attributes.title));
 
                     var link = $osf.apiV2Url('collections/' + node.id + '/linked_nodes/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
-                    self.fetchers[self.collections()[self.collections().length-1].id] = new NodeFetcher('nodes', link);
+                    self.fetchers[self.collections()[self.collections().length-1].id] = new NodeFetcher('nodes', link, false);
                     self.fetchers[self.collections()[self.collections().length-1].id].on(['page', 'done'], self.onPageLoad);
                 });
                 if(result.links.next){
