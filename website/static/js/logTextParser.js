@@ -350,7 +350,8 @@ var LogPieces = {
 
     forward_url: {
         view: function(ctrl, logObject) {
-            return returnTextParams('forward_url', 'a new URL', logObject);
+            var url = logObject.attributes.params.forward_url;
+            return returnTextParams('forward_url', 'a new URL', logObject, url);
         }
     },
 
