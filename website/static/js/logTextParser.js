@@ -51,6 +51,7 @@ var paramIsReturned = function _paramIsReturned (param, logObject){
  */
 var returnTextParams = function (param, text, logObject) {
     var source = logObject.attributes.params[param];
+    var view_url = logObject.attributes.params.view_url;
 
     if(paramIsReturned(source, logObject)){
         if($.isArray(source)){
@@ -66,7 +67,7 @@ var returnTextParams = function (param, text, logObject) {
                 })
             ]);
         }
-        return m('span', '"' + source + '"');
+        return view_url ? m('a', {href: view_url},'"' + source + '"') : m('span', '"' + source + '"');
     }
     return m('span', text);
 };
