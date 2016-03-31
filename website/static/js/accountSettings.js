@@ -213,8 +213,8 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
                     var addrText = $osf.htmlEscape(email.address());
                     bootbox.alert({
                                 title: 'Confirmation email sent',
-                                message: '<em>' + addrText + '</em>' + ' was added to your account.' +
-                                ' You will receive a confirmation email at ' + '<em>' + addrText + '</em>.' +
+                                message: '<b>' + addrText + '</b>' + ' was added to your account.' +
+                                ' You will receive a confirmation email at ' + '<b>' + addrText + '</b>.' +
                                 ' Please check your email to confirm this action.',
                                 buttons: {
                                     ok: {

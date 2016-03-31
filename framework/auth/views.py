@@ -303,38 +303,16 @@ def confirm_email_remove(auth=None, **kwargs):
 
 
 @collect_auth
-def add_confirmed_emails(auth=None, **kwargs):
+def add_confirmed_email(auth=None, **kwargs):
     """Called at login if user confirms their merge or email add.
     methods: PUT
     """
     user = auth.user
     confirmed_email = request.json.get('address')
     token = request.json.get('token')
-    is_merge = 'user_merge' in user.system_tags
-    is_initial_confirmation = not user.date_confirmed
 
     if user is None:
         raise HTTPError(http.NOT_FOUND)
-
-    if auth and auth.user and (auth.user._id == user._id or auth.user._id == user.merged_by._id) \
-            and not confirmed_email:
-        if not is_merge:
-            # determine if the user registered through a campaign
-            campaign = campaigns.campaign_for_user(user)
-            if campaign:
-                return redirect(
-                    campaigns.campaign_url_for(campaign)
-                )
-            if len(auth.user.emails) == 1 and len(auth.user.email_verifications) == 0:
-                status.push_status_message(language.WELCOME_MESSAGE, 'default', jumbotron=True)
-
-            if token in auth.user.email_verifications:
-                status.push_status_message(language.CONFIRM_ALTERNATE_EMAIL_ERROR, 'danger')
-            # Go to dashboard
-            return redirect(web_url_for('dashboard'))
-
-        status.push_status_message(language.MERGE_COMPLETE, 'success')
-        return redirect(web_url_for('user_account'))
 
     try:
         user.confirm_email(token, merge=True)
@@ -350,17 +328,6 @@ def add_confirmed_emails(auth=None, **kwargs):
             'status': 'success',
             'removed_email': confirmed_email
         }, 200
-    elif is_initial_confirmation:
-        user.date_last_login = datetime.datetime.utcnow()
-        user.save()
-
-        # Send out our welcome message
-        mails.send_mail(
-            to_addr=user.username,
-            mail=mails.WELCOME,
-            mimetype='html',
-            user=user
-        )
 
     # Redirect to CAS and authenticate the user with a verification key.
     user.verification_key = security.random_string(20)

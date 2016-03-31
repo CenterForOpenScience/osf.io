@@ -91,6 +91,7 @@ function confirm_emails(emails) {
                             email[0]
                         ).done(function () {
                             $osf.growl('Success', confirmMessage, 'success', 3000);
+                            confirm_emails(emails);
                         }).fail(function (xhr, textStatus, error) {
                             Raven.captureMessage('Could not add email', {
                                 url: url,
@@ -114,6 +115,7 @@ function confirm_emails(emails) {
                             email[0]
                         ).done(function () {
                             $osf.growl('Warning', nopeMessage, 'warning', 8000);
+                            confirm_emails(emails);
                         }).fail(function (xhr, textStatus, error) {
                             Raven.captureMessage('Could not remove email', {
                                 url: url,
@@ -125,7 +127,6 @@ function confirm_emails(emails) {
                                 'danger'
                             );
                         });
-                        confirm_emails(emails);
                     }
                 }
             }
@@ -133,10 +134,6 @@ function confirm_emails(emails) {
 
     }
 }
-
-request = $.getJSON(confirmedEmailURL, function(response) {
- });
-
 
 $.getJSON(confirmedEmailURL).done(function(response) {
         confirm_emails(response);
