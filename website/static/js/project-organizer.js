@@ -317,6 +317,7 @@ var tbOptions = {
         tb.options.mpUpdateFolder(tb.updateFolder);
         tb.options.mpMultiselected(tb.multiselected);
         tb.options.mpHighlightMultiselect(tb.highlightMultiselect);
+        tb.options._onload(tb);
     },
     ontogglefolder : function (item, event) {
         var tb = this;
@@ -455,6 +456,7 @@ var ProjectOrganizer = {
                     currentView: args.currentView,
                     onPageLoad : args.onPageLoad,
                     fetchers : args.fetchers,
+                    _onload: args._onload,
                     mpMultiselected : args.multiselected,
                     mpHighlightMultiselect : args.highlightMultiselect
                 },

@@ -853,7 +853,17 @@ var MyProjects = {
                 fetchers : ctrl.fetchers,
                 indexes : ctrl.indexes,
                 multiselected : ctrl.multiselected,
-                highlightMultiselect : ctrl.highlightMultiselect
+                highlightMultiselect : ctrl.highlightMultiselect,
+                _onload: function(tb) {
+                  if (!ctrl.currentView().fetcher.isFinished()) return;
+                  // If data loads before treebeard force redrawing
+                  ctrl.loadValue(100);
+                  ctrl.generateFiltersList(true);
+                  ctrl.updateList();
+                  // TB/Mithril interaction requires the redraw to be called a bit later
+                  // TODO Figure out why
+                  setTimeout(m.redraw.bind(this, true), 250);
+                }
             },
             ctrl.projectOrganizerOptions
         );
