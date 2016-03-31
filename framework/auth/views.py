@@ -291,8 +291,9 @@ def confirm_email_remove(auth=None, **kwargs):
     confirmed_email = request.json.get('address')
     email_verifications = user.email_verifications.copy()
     for token in user.email_verifications:
-        if user.confirm_token(token):
-            user.email_verifications.pop(token)
+        if user.email_verifications[token]['email'] == confirmed_email:
+            if user.confirm_token(token):
+                email_verifications.pop(token)
     user.email_verifications = email_verifications
     user.save()
     return {

@@ -68,8 +68,12 @@ function confirm_emails(emails) {
             nopeMessage = 'You have chosen not to add \<b>' + email[0].address + '\</b> to your account.' +
              'If you change your mind, visit the \<a href="/settings/account/">user settings page</a>.';
         }
-        var failMessage = 'There was a problem. Please contact <a href="mailto: support@osf.io">support@osf.io</a> ' +
-        'if the problem persists.';
+
+        var failSuccessMessage = 'There are a problem adding \<b>' + email[0].address +
+            '\</b>. Please contact <a href="mailto: support@osf.io">support@osf.io</a> if the problem persists.';
+
+        var failCancelMessage = 'There are a problem removing \<b>' + email[0].address +
+            '\</b>. Please contact <a href="mailto: support@osf.io">support@osf.io</a> if the problem persists.';
 
         bootbox.dialog({
             title: title,
@@ -88,13 +92,13 @@ function confirm_emails(emails) {
                         ).done(function () {
                             $osf.growl('Success', confirmMessage, 'success', 3000);
                         }).fail(function (xhr, textStatus, error) {
-                            Raven.captureMessage('Could not set user timezone or locale', {
+                            Raven.captureMessage('Could not add email', {
                                 url: url,
                                 textStatus: textStatus,
                                 error: error
                             });
                             $osf.growl('Error',
-                                failMessage,
+                                failSuccessMessage,
                                 'danger'
                             );
                         });
@@ -111,13 +115,13 @@ function confirm_emails(emails) {
                         ).done(function () {
                             $osf.growl('Warning', nopeMessage, 'warning', 8000);
                         }).fail(function (xhr, textStatus, error) {
-                            Raven.captureMessage('Could not set user timezone or locale', {
+                            Raven.captureMessage('Could not remove email', {
                                 url: url,
                                 textStatus: textStatus,
                                 error: error
                             });
                             $osf.growl('Error',
-                                failMessage,
+                                failCancelMessage,
                                 'danger'
                             );
                         });
@@ -131,10 +135,12 @@ function confirm_emails(emails) {
 }
 
 request = $.getJSON(confirmedEmailURL, function(response) {
-        confirm_emails(response);
  });
 
-request.fail(function(xhr, textStatus, error) {
+
+$.getJSON(confirmedEmailURL).done(function(response) {
+        confirm_emails(response);
+}).fail(function(xhr, textStatus, error) {
     Raven.captureMessage('Could not fetch dashboard nodes.', {
         url: url, textStatus: textStatus, error: error
     });
