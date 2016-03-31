@@ -1456,7 +1456,9 @@ var Breadcrumbs = {
             return m('.db-breadcrumbs', [
                 m('ul', [
                     m('li', [
-                        m('.btn.btn-link[data-toggle="modal"][data-target="#parentsModal"]', '...'),
+                        m('.btn.btn-link[data-toggle="modal"][data-target="#parentsModal"]', {onclick: function(){
+                            $osf.trackClick('myProjects', 'mobile', 'open-ellipsis-parent-modal');
+                        }}, '...'),
                         m('i.fa.fa-angle-right')
                     ]),
                     m('li', m('span.btn', items[items.length-1].label))
@@ -1465,7 +1467,9 @@ var Breadcrumbs = {
                     m('.modal-dialog',
                         m('.modal-content', [
                             m('.modal-body', [
-                                m('button.close[data-dismiss="modal"][aria-label="Close"]', [
+                                m('button.close[data-dismiss="modal"][aria-label="Close"]', {onclick: function(){
+                                    $osf.trackClick('myProjects', 'mobile', 'click-close-ellipsis-parent-modal');
+                                }}, [
                                     m('span[aria-hidden="true"]','×')
                                 ]),
                                 m('h4', 'Parent projects'),
@@ -1484,6 +1488,7 @@ var Breadcrumbs = {
                                         m('span.btn.btn-link', {
                                             style : 'margin-left:' + (index*20) + 'px;',
                                             onclick : function() {
+                                                $osf.trackClick('myProjects', 'mobile', 'open-parent-project');
                                                 args.updateFilesData(item);
                                                 $('.modal').modal('hide');
                                             }
