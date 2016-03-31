@@ -48,6 +48,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     params_project = ser.SerializerMethodField(read_only=True)
     source = NodeLogFileParamsSerializer(read_only=True)
     destination = NodeLogFileParamsSerializer(read_only=True)
+    view_url = ser.SerializerMethodField(read_only=True)
     study = ser.CharField(read_only=True)
     tag = ser.CharField(read_only=True)
     tags = ser.CharField(read_only=True)
@@ -59,6 +60,14 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     citation_name = ser.CharField(read_only=True, source='citation.name')
     institution = NodeLogInstitutionSerializer(read_only=True)
     previous_institution = NodeLogInstitutionSerializer(read_only=True)
+
+    def get_view_url(self, obj):
+        urls = obj.get('urls', None)
+        if urls:
+            view = urls.get('view', None)
+            if view:
+                return view
+        return {}
 
     def get_params_node(self, obj):
         node_id = obj.get('node', None)
