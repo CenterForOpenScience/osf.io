@@ -25,7 +25,10 @@ def get_targets():
 
 def migrate_log(logs):
     for log in logs:
-        log.params['node'] = log.node.registered_from_id
+        if log.node.registered_from:
+            log.params['node'] = log.node.registered_from_id
+        else:
+            log.params['node'] = log.node.logs[0].node._id
         log.save()
         logger.info('Finished migrate log {}: registration action {} of node {}'.format(log._id, log.action, log.node))
 
