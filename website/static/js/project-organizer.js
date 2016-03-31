@@ -316,7 +316,7 @@ var tbOptions = {
         tb.options.mpBuildTree(tb.buildTree);
         tb.options.mpUpdateFolder(tb.updateFolder);
         tb.options.mpMultiselected(tb.multiselected);
-        tb.options.mpHighlightMultiselect(tb.highlightMultiselect)
+        tb.options.mpHighlightMultiselect(tb.highlightMultiselect);
     },
     ontogglefolder : function (item, event) {
         var tb = this;
@@ -335,7 +335,6 @@ var tbOptions = {
     },
     resolveToggle : _poResolveToggle,
     resolveLazyloadUrl : function(item) {
-      console.log(item.open);
       if (item.children.length > 0)
         return null;
       var tb = this;
