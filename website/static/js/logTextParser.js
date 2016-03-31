@@ -72,9 +72,30 @@ var returnTextParams = function (param, text, logObject) {
 };
 
 var LogText = {
+    controller: function(logObject){
+        var self = this;
+
+        self.logText = function() {
+            var text = logActions[logObject.attributes.action];
+            if (text) {
+                if (text.indexOf('${user}') !== -1) {
+                    var userObject = logObject.embeds.user;
+                    if (paramIsReturned(userObject, logObject)) {
+                        return text;
+                    }
+                    else {
+                        var newAction = logObject.attributes.action + '_no_user';
+                        return logActions[newAction] ? logActions[newAction]: text;
+                    }
+                }
+                return text;
+            }
+        return null;
+        };
+    },
     view : function(ctrl, logObject) {
-        var text = logActions[logObject.attributes.action];
         var message = '';
+        var text = ctrl.logText();
         if(text){
             var list = text.split(/(\${.*?})/);
             return m('span.osf-log-item',[
