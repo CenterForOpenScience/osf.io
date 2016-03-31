@@ -44,6 +44,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     params_node = ser.SerializerMethodField(read_only=True)
     old_page = ser.CharField(read_only=True)
     page = ser.CharField(read_only=True)
+    page_id = ser.CharField(read_only=True)
     path = ser.CharField(read_only=True)
     params_project = ser.SerializerMethodField(read_only=True)
     source = NodeLogFileParamsSerializer(read_only=True)
@@ -67,7 +68,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
             view = urls.get('view', None)
             if view:
                 return view
-        return {}
+        return None
 
     def get_params_node(self, obj):
         node_id = obj.get('node', None)
