@@ -905,7 +905,6 @@ var MyProjects = {
                           ctrl.updateSelected([]);
                           ctrl.multiselected()([]);
                           ctrl.updateTreeData(0, projects._flat, true);
-
                         });
                     },
                     trackingCategory: 'myProjects',
@@ -1566,8 +1565,10 @@ var Breadcrumbs = {
                                 categoryList: args.categoryList,
                                 stayCallback: function () {
                                     var topLevelProject = args.fetchers[linkObject.id];
-                                    topLevelProject.fetch(this.saveResult().data.id, function(){
-                                      args.updateTreeData(0, topLevelProject._flat, true);
+                                    topLevelProject.fetch(this.saveResult().data.id).then(function(){
+                                        args.updateSelected([]);
+                                        args.multiselected()([]);
+                                        args.updateTreeData(0, topLevelProject._flat, true);
                                     });
                                 },
                                 trackingCategory: 'myProjects',
@@ -1632,7 +1633,7 @@ var Filters = {
 
         var returnNameFilters = function _returnNameFilters(){
             if (args.currentView().fetcher.isEmpty() || args.nameFilters.length < 1)
-                return m('.text-muted.text-smaller', 'There are no collaborators in this collection yet.');
+                return m('.text-muted.text-smaller', 'No contributors to display in this collection. Project administrators can add contributors.');
             var list = [];
             var item;
             var i;
@@ -1653,7 +1654,7 @@ var Filters = {
         };
         var returnTagFilters = function _returnTagFilters(){
             if (args.currentView().fetcher.isEmpty() || args.tagFilters.length < 1)
-                return m('.text-muted.text-smaller', 'Projects in this collection don\'t have any tags yet.');
+                return m('.text-muted.text-smaller', 'No tags to display in this collection. Project administrators and write contributors can add tags.');
 
             var list = [];
             var selectedCSS;
