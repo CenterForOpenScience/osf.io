@@ -439,6 +439,7 @@ var MyProjects = {
             self.updateBreadcrumbs(linkObject); // Change breadcrumbs
             self.updateList(); // Reset and load item
             $('.tb-tbody-inner>div').css('margin-top' , '0px'); // We change contents of treebeard folder, we need to manage margin-top for view to work
+            $('.tb-row-titles .fa').addClass('tb-sort-inactive');// make all toggle buttons inactive
             self.showSidebar(false);
         };
 
