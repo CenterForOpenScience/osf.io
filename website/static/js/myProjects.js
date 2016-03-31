@@ -678,7 +678,7 @@ var MyProjects = {
 
             var userFinder = function(lo) {
               return lo.label === u2.data.embeds.users.data.attributes.full_name;
-            }
+          };
 
             for (var user in self.users) {
                 var u2 = self.users[user];
@@ -896,7 +896,6 @@ var MyProjects = {
                           ctrl.updateSelected([]);
                           ctrl.multiselected()([]);
                           ctrl.updateTreeData(0, projects._flat, true);
-
                         });
                     },
                     trackingCategory: 'myProjects',
@@ -1550,8 +1549,10 @@ var Breadcrumbs = {
                                 categoryList: args.categoryList,
                                 stayCallback: function () {
                                     var topLevelProject = args.fetchers[linkObject.id];
-                                    topLevelProject.fetch(this.saveResult().data.id, function(){
-                                      args.updateTreeData(0, topLevelProject._flat, true);
+                                    topLevelProject.fetch(this.saveResult().data.id).then(function(){
+                                        args.updateSelected([]);
+                                        args.multiselected()([]);
+                                        args.updateTreeData(0, topLevelProject._flat, true);
                                     });
                                 },
                                 trackingCategory: 'myProjects',
