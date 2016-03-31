@@ -54,6 +54,7 @@ function NodeFetcher(type, link) {
   this._orphans = [];
   this._cache = {};
   this._promise = null;
+  this._started = false;
   this._continue = true;
   this.tree = {
       0: {
@@ -88,6 +89,7 @@ NodeFetcher.prototype = {
     this._continue = false;
   },
   resume: function() {
+    this._started = true;
     this._continue = true;
     if (!this.nextLink) return this._promise = null;
     if (this._promise) return this._promise;
@@ -100,7 +102,7 @@ NodeFetcher.prototype = {
       }).bind(this));
   },
   add: function(item) {
-    if (!this.isFinished() && this._flat.indexOf(item) !== - 1) return;
+    if (!this._started ||this._flat.indexOf(item) !== - 1) return;
 
     this.total++;
     this.loaded++;
@@ -673,12 +675,15 @@ var MyProjects = {
             if (!noClear)
               self.nameFilters = [];
 
+
+            var userFinder = self.nameFilters.find(function(lo) {
+              return lo.label === u2.data.embeds.users.data.attributes.full_name;
+            });
+
             for (var user in self.users) {
                 var u2 = self.users[user];
                 if (u2.data.embeds.users.data) {
-                  var found = self.nameFilters.find(function(lo) {
-                    return lo.label === u2.data.embeds.users.data.attributes.full_name;
-                  });
+                  var found = self.nameFilters.find(userFinder);
                   if (!found)
                     self.nameFilters.push(new LinkObject('contributor', { id : u2.data.id, count : u2.count, query : { 'related_counts' : 'children' }}, u2.data.embeds.users.data.attributes.full_name, options.institutionId || false));
                   else
@@ -691,15 +696,17 @@ var MyProjects = {
             if (!noClear)
               self.tagFilters = [];
 
+            var tagFinder = function(lo) {
+              return lo.label === tag;
+            };
+
             for (var tag in self.tags){
                 var t2 = self.tags[tag];
-                var found = self.tagFilters.find(function(lo) {
-                  return lo.label === tag;
-                });
-                if (!found)
+                var tFound = self.tagFilters.find(tagFinder);
+                if (!tFound)
                   self.tagFilters.push(new LinkObject('tag', { tag : tag, count : t2, query : { 'related_counts' : 'children' }}, tag, options.institutionId || false));
                 else
-                  found.data.count = t2;
+                  tFound.data.count = t2;
             }
             // order tags
             self.tagFilters.sort(sortByCountDesc);
@@ -769,8 +776,9 @@ var MyProjects = {
         };
 
         self.onPageLoad = function(fetcher, pageData) {
+          if (!self.buildTree()) return; // Treebeard hasn't loaded yet
           if(self.currentView().fetcher === fetcher) {
-            self.loadValue(fetcher.isFinished() ? 100 : fetcher.progress());
+              self.loadValue(fetcher.isFinished() ? 100 : fetcher.progress());
               self.generateFiltersList(true);
               if (!pageData) {
                 for(var i = 0; i < fetcher._flat.length; i++){
@@ -853,7 +861,17 @@ var MyProjects = {
                 fetchers : ctrl.fetchers,
                 indexes : ctrl.indexes,
                 multiselected : ctrl.multiselected,
-                highlightMultiselect : ctrl.highlightMultiselect
+                highlightMultiselect : ctrl.highlightMultiselect,
+                _onload: function(tb) {
+                  if (!ctrl.currentView().fetcher.isFinished()) return;
+                  // If data loads before treebeard force redrawing
+                  ctrl.loadValue(100);
+                  ctrl.generateFiltersList(true);
+                  ctrl.updateList();
+                  // TB/Mithril interaction requires the redraw to be called a bit later
+                  // TODO Figure out why
+                  setTimeout(m.redraw.bind(this, true), 250);
+                }
             },
             ctrl.projectOrganizerOptions
         );
