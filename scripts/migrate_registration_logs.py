@@ -35,8 +35,8 @@ def migrate_log(logs):
 
 def main(dry_run):
     logs = get_targets()
+    migrate_log(logs)
     if not dry_run:
-        migrate_log(logs)
         logger.info('Finished migrate {} logs '.format(len(logs)))
     else:
         raise RuntimeError('Dry Run -- Transaction rolled back')
