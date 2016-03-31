@@ -108,6 +108,15 @@ NodeFetcher.prototype = {
     this.loaded++;
 
     this._flat.unshift(item);
+
+    // Resort after inserting data
+    this._flat = this._orphans.concat(this._flat).sort(function(a,b) {
+      a = new Date(a.attributes.date_modified);
+      b = new Date(b.attributes.date_modified);
+      if (a > b) return -1;
+      if (a < b) return 1;
+      return 0;
+    });
   },
   remove: function(item) {
     item = item.id || item;
