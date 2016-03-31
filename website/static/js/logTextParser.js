@@ -263,29 +263,14 @@ var LogPieces = {
     },
     // Wiki page name
     page: {
-        controller: function(logObject){
-            var self = this;
-            self.returnLinkForPath = function() {
-                if (logObject) {
-                    var action = logObject.attributes.action;
-                    var acceptableLinkedItems = ['wiki_updated', 'wiki_renamed'];
-                    if (acceptableLinkedItems.indexOf(action) !== -1) {
-                        return logObject.attributes.params.page_id + '/';
-                    }
-                }
-                return null;
-            };
-        },
         view: function (ctrl, logObject) {
-            var url = ctrl.returnLinkForPath();
-            return returnTextParams('page', 'a title', logObject, url);
+            return returnTextParams('page', 'a title', logObject);
         }
     },
     // Old wiki title that's renamed
     old_page: {
         view: function (ctrl, logObject) {
-            var url = logObject.attributes.params.page_id + '/';
-            return returnTextParams('old_page', 'a title', logObject, url);
+            return returnTextParams('old_page', 'a title', logObject);
         }
     },
     // Wiki page version
@@ -328,7 +313,7 @@ var LogPieces = {
             self.returnLinkForPath = function() {
                 if (logObject) {
                     var action = logObject.attributes.action;
-                    var acceptableLinkedItems = ['file_added', 'file_restored', 'osf_storage_file_added', 'osf_storage_file_updated'];
+                    var acceptableLinkedItems = ['osf_storage_file_added', 'osf_storage_file_updated'];
                     if (acceptableLinkedItems.indexOf(action) !== -1) {
                         return logObject.attributes.params.view_url;
                     }
