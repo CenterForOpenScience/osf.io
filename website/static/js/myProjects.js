@@ -421,8 +421,9 @@ var MyProjects = {
             if ((linkObject.type === 'node') && self.viewOnly){
                 return;
             }
-            self.updateFilter(linkObject);
-            self.updateBreadcrumbs(linkObject);
+            self.updateTbMultiselect([]); // clear multiselected, updateTreeData will repick
+            self.updateFilter(linkObject); // Update what filters currently selected
+            self.updateBreadcrumbs(linkObject); // Change breadcrumbs
             self.updateList(); // Reset and load item
             self.showSidebar(false);
         };
@@ -550,6 +551,12 @@ var MyProjects = {
             });
         };
 
+        self.updateTbMultiselect = function (itemsArray) {
+          self.multiselected()(itemsArray);
+          self.highlightMultiselect()();
+          self.updateSelected(itemsArray);
+        };
+
         self.updateTreeData = function (begin, data, clear) {
           var item;
             if (clear) {
@@ -564,9 +571,7 @@ var MyProjects = {
             self.updateFolder()(null, self.treeData());
             // Manually select first item without triggering a click
             if(self.multiselected()().length === 0 && self.treeData().children[0]){
-              self.multiselected()([self.treeData().children[0]]);
-              self.highlightMultiselect()();
-              self.updateSelected([self.treeData().children[0]]);
+              self.updateTbMultiselect([self.treeData().children[0]]);
             }
             m.redraw(true);
         };
@@ -1433,7 +1438,7 @@ var Breadcrumbs = {
         if(args.currentView().contributor.length) {
             contributorsTemplate.push(m('span.text-muted', 'with '));
             args.currentView().contributor.forEach(function (c) {
-                contributorsTemplate.push(m('span.comma-separated.filter-breadcrumb.myprojects', [
+                contributorsTemplate.push(m('span.filter-breadcrumb.myprojects', [
                     c.label,
                     ' ',
                     m('button', { onclick: function(){
@@ -1445,7 +1450,7 @@ var Breadcrumbs = {
         if(args.currentView().tag.length){
             tagsTemplate.push(m('span.text-muted.m-l-sm', 'tagged '));
             args.currentView().tag.forEach(function(t){
-                tagsTemplate.push(m('span.comma-separated.filter-breadcrumb.myprojects', [
+                tagsTemplate.push(m('span.filter-breadcrumb.myprojects', [
                     t.label,
                     ' ',
                     m('button', { onclick: function(){
@@ -1506,8 +1511,8 @@ var Breadcrumbs = {
             ]);
         }
         return m('.db-breadcrumbs', m('ul', [
-            items.map(function(item, index, array){
-                if(index === array.length-1){
+            items.map(function(item, index, arr){
+                if(index === arr.length-1){
                     if(item.type === 'node'){
                         var linkObject = args.breadcrumbs()[args.breadcrumbs().length - 1];
                         var parentID = linkObject.data.id;
@@ -1552,7 +1557,8 @@ var Breadcrumbs = {
                 item.placement = 'breadcrumb'; // differentiate location for proper breadcrumb actions
                 return m('li',[
                     m('span.btn.btn-link', {onclick : updateFilesOnClick.bind(null, item)},  item.label),
-                    m('i.fa.fa-angle-right')
+                    index === 0 && arr.length === 1 ? [contributorsTemplate, tagsTemplate] : '',
+                    m('i.fa.fa-angle-right'),
                     ]
                 );
             })
@@ -1704,7 +1710,7 @@ var Information = {
         }
         if (args.selected().length === 1) {
             var item = args.selected()[0].data;
-            showRemoveFromCollection = collectionFilter.data.nodeType === 'collection' && args.selected()[0].depth === 1; // Be able to remove top level items but not their children
+            showRemoveFromCollection = collectionFilter.data.nodeType === 'collection' && args.selected()[0].depth === 1 && args.fetchers[collectionFilter.id]._cache[item.id]; // Be able to remove top level items but not their children
             if(item.attributes.category === ''){
                 item.attributes.category = 'Uncategorized';
             }
