@@ -6,6 +6,7 @@ var m = require('mithril');
 var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
 var AddProject = require('js/addProjectPlugin');
+var NodeFetcher = require('js/myProjects').NodeFetcher;
 
 // CSS
 require('css/quick-project-search-plugin.css');
@@ -38,6 +39,9 @@ var QuickSearchProject = {
             self.errorLoading(true);
             Raven.captureMessage('Error loading user projects on home page.', {requestReturn: result});
         };
+
+        self.templateNodes = new NodeFetcher('nodes');
+        self.templateNodes.start();
 
         // Load up to first ten nodes
         var url = $osf.apiV2Url('users/me/nodes/', { query : { 'embed': 'contributors'}});
@@ -456,7 +460,7 @@ var QuickSearchProject = {
         }
 
         function headerTemplate ( ){
-            return [ m('h2.col-sm-9', 'Dashboard'), m('.pull-right.m-b-lg.col-sm-3', m.component(AddProject, {
+            return [ m('h2.col-xs-9', 'Dashboard'), m('m-b-lg.col-xs-3', m('.pull-right', m.component(AddProject, {
                 buttonTemplate : m('button.btn.btn-success.btn-success-high-contrast.m-t-md.f-w-xl[data-toggle="modal"][data-target="#addProjectFromHome"]', {onclick: function(){
                                 $osf.trackClick('quickSearch', 'add-project', 'open-add-project-modal');
                 }}, 'Create new project'),
@@ -466,8 +470,8 @@ var QuickSearchProject = {
                 },
                 trackingCategory: 'quickSearch',
                 trackingAction: 'add-project',
-                templates: ctrl.nodes
-            }))];
+                templatesFetcher: ctrl.templateNodes
+            })))];
         }
 
         if (ctrl.eligibleNodes().length === 0 && ctrl.filter() == null) {
@@ -486,8 +490,8 @@ var QuickSearchProject = {
         }
         else {
             return m('.row',
+                m('.col-xs-12', headerTemplate()),
                 m('.col-xs-12',[
-                    headerTemplate(),
                     m('.row.quick-project', m('.col-xs-12',
                     m('.m-b-sm.text-center', [
                         searchBar()
