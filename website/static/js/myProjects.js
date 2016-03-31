@@ -410,17 +410,14 @@ var MyProjects = {
         };
 
         /* filesData is the link that loads tree data. This function refreshes that information. */
-        self.updateFilesData = function _updateFilesData(linkObject, itemId) {
+        self.updateFilesData = function _updateFilesData(linkObject) {
             if ((linkObject.type === 'node') && self.viewOnly){
                 return;
             }
-            self.updateFilter(linkObject);
-            self.updateBreadcrumbs(linkObject);
-            if(linkObject.data.nodeType === 'collection'){
-                self.updateList(false, null, linkObject);
-            } else {
-                self.updateList(true, itemId); // Reset and load item
-            }
+            self.updateTbMultiselect([]); // clear multiselected, updateTreeData will repick
+            self.updateFilter(linkObject); // Update what filters currently selected
+            self.updateBreadcrumbs(linkObject); // Change breadcrumbs
+            self.updateList(); // Reset and load item
             self.showSidebar(false);
         };
 
@@ -516,13 +513,18 @@ var MyProjects = {
         };
 
         // Update what is viewed
-        self.updateList = function _updateList (reset, itemId, collectionObject){
+        self.updateList = function _updateList (){
             if (!self.buildTree()) return; // Treebeard hasn't loaded yet
+            var viewData = self.filteredData();
+            self.updateTreeData(0, viewData, true);
+            self.currentView().totalRows = viewData.length;
+        };
 
+        self.filteredData = function() {
             var tags = self.currentView().tag;
             var contributors = self.currentView().contributor;
 
-            var viewData = self.currentView().fetcher._flat.filter(function(node) {
+            return self.currentView().fetcher._flat.filter(function(node) {
               var tagMatch = tags.length === 0;
               var contribMatch = contributors.length === 0;
 
@@ -540,9 +542,12 @@ var MyProjects = {
 
               return tagMatch && contribMatch;
             });
+        };
 
-            self.updateTreeData(0, viewData, true);
-            self.currentView().totalRows = viewData.length;
+        self.updateTbMultiselect = function (itemsArray) {
+          self.multiselected()(itemsArray);
+          self.highlightMultiselect()();
+          self.updateSelected(itemsArray);
         };
 
         self.updateTreeData = function (begin, data, clear) {
@@ -556,14 +561,12 @@ var MyProjects = {
                 var child = self.buildTree()(item, self.treeData());
                 self.treeData().add(child);
             }
-            self.selected([]);
             self.updateFolder()(null, self.treeData());
             // Manually select first item without triggering a click
-            if(self.treeData().children[0]){
-              self.multiselected()([self.treeData().children[0]]);
-              self.highlightMultiselect()();
-              self.updateSelected([self.treeData().children[0]]);
+            if(self.multiselected()().length === 0 && self.treeData().children[0]){
+              self.updateTbMultiselect([self.treeData().children[0]]);
             }
+            m.redraw(true);
         };
 
         self.generateSets = function (item){
@@ -716,6 +719,8 @@ var MyProjects = {
             if(linkObject.ancestors && linkObject.ancestors.length > 0){
                 linkObject.ancestors.forEach(function(item){
                     var ancestorLink = new LinkObject('node', item.data, item.data.name);
+                    self.fetchers[ancestorLink.id] = new NodeFetcher(item.data.types, item.data.relationships.children.links.related.href + '?embed=contributors');
+                    self.fetchers[ancestorLink.id].on(['page', 'done'], self.onPageLoad);
                     self.breadcrumbs().push(ancestorLink);
                 });
             }
@@ -765,12 +770,24 @@ var MyProjects = {
             self.loadValue(fetcher.isFinished() ? 100 : fetcher.progress());
               self.generateFiltersList(true);
               if (!pageData) {
-                self.updateList(); // Done callback
+                for(var i = 0; i < fetcher._flat.length; i++){
+                    var fetcherItem = fetcher._flat[i];
+                    var tbItem = self.treeData().children[i] ? self.treeData().children[i].data : {};
+                    if(fetcherItem === tbItem){
+                        continue;
+                    }
+                    var itemToAdd = self.buildTree()(fetcherItem, self.treeData());
+                    itemToAdd.parentID = self.treeData().id;
+                    itemToAdd.open = false;
+                    itemToAdd.load = false;
+                    self.treeData().children.splice(i, 0, itemToAdd);
+                }
+                self.updateFolder()(null, self.treeData(), true);
                 return m.redraw();
               }
               if(self.treeData().children){
                 var begin = self.treeData().children.length;
-                var data = fetcher._flat;
+                var data = self.filteredData();
                 self.updateTreeData(begin, data);
                 self.currentView().totalRows = fetcher._flat.length;
               }
@@ -1174,11 +1191,12 @@ var Collections = {
                 } else {
                     submenuTemplate = '';
                 }
-                list.push(m('li', { className : selectedCSS + ' ' + dropAcceptClass, 'data-index' : index },
-                    [
-                        m('a[role="button"]', {
-                            onclick : collectionOnclick.bind(null, item)
-                        },  item.label + childCount),
+                list.push(m('li.pointer', {
+                    className : selectedCSS + ' ' + dropAcceptClass,
+                    'data-index' : index,
+                    onclick : collectionOnclick.bind(null, item)
+                  },[
+                        m('span', item.label + childCount),
                         submenuTemplate
                     ]
                 ));
@@ -1410,7 +1428,7 @@ var Breadcrumbs = {
         if(args.currentView().contributor.length) {
             contributorsTemplate.push(m('span.text-muted', 'with '));
             args.currentView().contributor.forEach(function (c) {
-                contributorsTemplate.push(m('span.comma-separated.filter-breadcrumb.myprojects', [
+                contributorsTemplate.push(m('span.filter-breadcrumb.myprojects', [
                     c.label,
                     ' ',
                     m('button', { onclick: function(){
@@ -1422,7 +1440,7 @@ var Breadcrumbs = {
         if(args.currentView().tag.length){
             tagsTemplate.push(m('span.text-muted.m-l-sm', 'tagged '));
             args.currentView().tag.forEach(function(t){
-                tagsTemplate.push(m('span.comma-separated.filter-breadcrumb.myprojects', [
+                tagsTemplate.push(m('span.filter-breadcrumb.myprojects', [
                     t.label,
                     ' ',
                     m('button', { onclick: function(){
@@ -1483,8 +1501,8 @@ var Breadcrumbs = {
             ]);
         }
         return m('.db-breadcrumbs', m('ul', [
-            items.map(function(item, index, array){
-                if(index === array.length-1){
+            items.map(function(item, index, arr){
+                if(index === arr.length-1){
                     if(item.type === 'node'){
                         var linkObject = args.breadcrumbs()[args.breadcrumbs().length - 1];
                         var parentID = linkObject.data.id;
@@ -1529,9 +1547,8 @@ var Breadcrumbs = {
                 item.placement = 'breadcrumb'; // differentiate location for proper breadcrumb actions
                 return m('li',[
                     m('span.btn.btn-link', {onclick : updateFilesOnClick.bind(null, item)},  item.label),
-                    contributorsTemplate,
-                    tagsTemplate,
-                    m('i.fa.fa-angle-right')
+                    index === 0 && arr.length === 1 ? [contributorsTemplate, tagsTemplate] : '',
+                    m('i.fa.fa-angle-right'),
                     ]
                 );
             })
@@ -1586,9 +1603,8 @@ var Filters = {
             for (i = begin; i < end; i++) {
                 item = args.nameFilters[i];
                 selectedCSS = args.currentView().contributor.indexOf(item) !== -1 ? '.active' : '';
-                list.push(m('li' + selectedCSS,
-                    m('a[role="button"]', {onclick : filterContributor.bind(null, item)},
-                        item.label)
+                list.push(m('li.pointer' + selectedCSS, {onclick : filterContributor.bind(null, item)},
+                    m('span', item.label)
                 ));
             }
             return list;
@@ -1609,9 +1625,8 @@ var Filters = {
             for (i = begin; i < end; i++) {
                 item = args.tagFilters[i];
                 selectedCSS = args.currentView().tag.indexOf(item) !== -1  ? '.active' : '';
-                list.push(m('li' + selectedCSS,
-                    m('a[role="button"]', {onclick : filterTag.bind(null, item)},
-                        item.label
+                list.push(m('li.pointer' + selectedCSS, {onclick : filterTag.bind(null, item)},
+                    m('span', item.label
                     )
                 ));
             }
@@ -1685,7 +1700,7 @@ var Information = {
         }
         if (args.selected().length === 1) {
             var item = args.selected()[0].data;
-            showRemoveFromCollection = collectionFilter.data.nodeType === 'collection' && args.selected()[0].depth === 1; // Be able to remove top level items but not their children
+            showRemoveFromCollection = collectionFilter.data.nodeType === 'collection' && args.selected()[0].depth === 1 && args.fetchers[collectionFilter.id]._cache[item.id]; // Be able to remove top level items but not their children
             if(item.attributes.category === ''){
                 item.attributes.category = 'Uncategorized';
             }

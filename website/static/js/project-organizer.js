@@ -382,7 +382,7 @@ var tbOptions = {
             }
         }
         getAncestors(item);
-        tb.options.updateFilesData(linkObject, item.data.id);
+        tb.options.updateFilesData(linkObject);
     },
     hScroll : 'auto',
     filterTemplate : function() {
@@ -401,7 +401,7 @@ var tbOptions = {
                 if ($(this).val().length === 0) {
                     resetFilter();
                 } else {
-                    tb.filter();
+                    tb.filter(event);
                 }
             },
             onchange: function(event) {

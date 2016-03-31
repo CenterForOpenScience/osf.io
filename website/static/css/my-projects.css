@@ -88,14 +88,19 @@ border-bottom: 1px solid #ddd;
     padding: 3px 0;
     border-left: 3px solid #FFFFFF;
     position: relative;
+    color: #337AB7;
 }
 .db-collections h4 , .db-filters h4 {
     border-bottom: 1px solid #eee;
     padding-bottom: 5px;
 }
 .db-collections ul li.active, .db-filters ul li.active {
-    background-color: #f8f8f8;
+    background-color: #E0EBF3;
+    font-weight: 600;
     border-left: 3px solid #337AB7;
+}
+.db-collections ul li:hover, .db-filters ul li:hover {
+    background-color: #F8F8F8;
 }
 
 .db-collections ul>li, .db-filters ul>li {

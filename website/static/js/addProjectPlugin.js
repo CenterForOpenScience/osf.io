@@ -45,10 +45,6 @@ var AddProject = {
 
         // Validation
         self.isValid = m.prop(false);
-        self.checkValid = function _checkValid() {
-            self.isValid(self.newProjectName().trim().length > 0);
-        };
-
 
         self.mapTemplates = function() {
             self.userProjects([]);
@@ -130,13 +126,14 @@ var AddProject = {
                                     if (ev.which === 13) {
                                          ctrl.add();
                                     }
-                                    ctrl.newProjectName($(this).val());
-                                    ctrl.checkValid();
+                                    var val = ev.target.value;
+                                    ctrl.newProjectName(val);
+                                    ctrl.isValid(val.trim().length > 0);
                                 },
-                                onchange: function() {
+                                onchange: function(ev) {
+                                    //  This will not be reliably running!
                                     $osf.trackClick(options.trackingCategory, options.trackingAction, 'type-project-name');
                                 },
-                                value : ctrl.newProjectName(),
                                 placeholder : 'Enter ' + ctrl.nodeType + ' title'
                             })
                         ]),
@@ -187,7 +184,7 @@ var AddProject = {
                                     value: ctrl.newProjectTemplate,
                                     trackingCategory: options.trackingCategory,
                                     trackingAction: options.trackingAction,
-                                    mapTemplates: ctrl.userProjects
+                                    userProjects: ctrl.userProjects
                                 })
                             ]) : ''
                         ] : ''
@@ -285,7 +282,7 @@ var Select2Template = {
             $osf.trackClick(options.trackingCategory, options.trackingAction, 'select-project-template');
         }}, [
             m('option', {value: ''}, ''),
-            options.mapTemplates().map(function(node) {
+            options.userProjects().map(function(node) {
                 var args = {value: node.id};
                 return m('option', args, node.title);
             })
@@ -300,7 +297,7 @@ var Select2Template = {
                     var id = $el.select2('val');
                     m.startComputation();
                     //Set the value to the selected option
-                    ctrl.mapTemplates().map(function(node){
+                    ctrl.userProjects().map(function(node){
                         if(node.id === id) {
                             ctrl.value(node.id);
                         }
