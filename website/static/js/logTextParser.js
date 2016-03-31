@@ -323,8 +323,22 @@ var LogPieces = {
     },
         //
     path: {
+        controller: function(logObject){
+            var self = this;
+            self.returnLinkForPath = function() {
+                if (logObject) {
+                    var action = logObject.attributes.action;
+                    var acceptableLinkedItems = ['file_added', 'file_restored', 'osf_storage_file_added', 'osf_storage_file_updated'];
+                    if (acceptableLinkedItems.indexOf(action) !== -1) {
+                        return logObject.attributes.params.view_url;
+                    }
+                }
+                return null;
+            };
+        },
         view: function (ctrl, logObject) {
-            return returnTextParams('path', 'a file', logObject);
+            var url = ctrl.returnLinkForPath();
+            return returnTextParams('path', 'a file', logObject, url);
         }
     },
         //
