@@ -1982,7 +1982,6 @@ class TestNode(OsfTestCase):
             assert_equal(r.registered_meta[meta_schema._id], data)
             assert_equal(r.registered_schema[0], meta_schema)
 
-
 class TestNodeUpdate(OsfTestCase):
 
     def setUp(self):
@@ -3135,6 +3134,35 @@ class TestProject(OsfTestCase):
         with assert_raises(NodeStateError):
             registration.set_privacy('public', auth=self.auth)
         assert_false(registration.is_public)
+
+    def test_set_privacy_terminates_embargo_if_sole_admin_on_embargoed_registration(self):
+        registration = RegistrationFactory(project=self.project)
+        registration.embargo_registration(
+            self.user,
+            datetime.datetime.utcnow() + datetime.timedelta(days=10)
+        )
+        assert_equal(len([a for a in registration.get_admin_contributors_recursive(unique_users=True)]), 1)
+        with mock.patch('website.project.model.Node.is_embargoed', mock.PropertyMock(return_value=True)):
+            with mock.patch('website.project.model.Node.is_pending_embargo', mock.PropertyMock(return_value=False)):
+                with mock.patch('website.project.model.Node.terminate_embargo') as mock_terminate:
+                    registration.set_privacy('public', auth=self.auth)
+                    mock_terminate.assert_called()
+
+    def test_set_privacy_requests_embargo_termination_if_many_admins_on_embargoed_registration(self):
+        for i in range(3):
+            c = AuthUserFactory()
+            self.project.add_contributor(c, [ADMIN])
+        registration = RegistrationFactory(project=self.project)
+        registration.embargo_registration(
+            self.user,
+            datetime.datetime.utcnow() + datetime.timedelta(days=10)
+        )
+        assert_equal(len([a for a in registration.get_admin_contributors_recursive(unique_users=True)]), 4)
+        with mock.patch('website.project.model.Node.is_embargoed', mock.PropertyMock(return_value=True)):
+            with mock.patch('website.project.model.Node.is_pending_embargo', mock.PropertyMock(return_value=False)):
+                with mock.patch('website.project.model.Node.request_embargo_termination') as mock_request_embargo_termination:
+                    registration.set_privacy('public', auth=self.auth)
+                    mock_request_embargo_termination.assert_called()
 
     def test_set_description(self):
         old_desc = self.project.description
