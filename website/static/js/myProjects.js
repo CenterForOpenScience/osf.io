@@ -1749,7 +1749,7 @@ var Information = {
         }
         if (args.selected().length === 1) {
             var item = args.selected()[0].data;
-            showRemoveFromCollection = collectionFilter.data.nodeType === 'collection' && args.selected()[0].depth === 1 && args.fetchers[collectionFilter.id]._cache[item.id]; // Be able to remove top level items but not their children
+            showRemoveFromCollection = collectionFilter.data.nodeType === 'collection' && args.selected()[0].depth === 1 && args.fetchers[collectionFilter.id]._flat.indexOf(item) !== -1; // Be able to remove top level items but not their children
             if(item.attributes.category === ''){
                 item.attributes.category = 'Uncategorized';
             }
