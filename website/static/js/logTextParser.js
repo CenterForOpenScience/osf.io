@@ -182,7 +182,7 @@ var LogPieces = {
             }
         }
     },
-    // Contrubutor list of added, updated etc.
+    // Contributor list of added, updated etc.
     contributors: {
         view: function (ctrl, logObject) {
             var contributors = logObject.embeds.contributors;
@@ -195,12 +195,13 @@ var LogPieces = {
                     if(index === arr.length-2){
                         comma = ' and ';
                     }
-                    if (item.attributes.active) {
-                        return [ m('a', {href: item.links.html}, item.attributes.full_name), comma];
-                    }
-                    else {
-                        return [item.attributes.full_name, comma];
-
+                    if (item.attributes) {
+                        if (item.attributes.active) {
+                            return [ m('a', {href: item.links.html}, item.attributes.full_name), comma];
+                        }
+                        else {
+                            return [item.attributes.full_name, comma];
+                        }
                     }
                 }));
             }
