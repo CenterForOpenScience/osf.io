@@ -150,17 +150,17 @@ NodeFetcher.prototype = {
   _success: function(results) {
     // Only reset if we're lower as loading children will increment this number
     if (this.total < results.links.meta.total)
-      this.total = results.links.meta.total;
+        this.total = results.links.meta.total;
 
     this.nextLink = results.links.next;
     this.loaded += results.data.length;
     for(var i = 0; i < results.data.length; i++) {
       if (this.type === 'registrations' && (results.data[i].attributes.retracted === true || results.data[i].attributes.pending_registration_approval === true))
-        continue // Exclude retracted and pending registrations
+          continue; // Exclude retracted and pending registrations
       else if (results.data[i].relationships.parent)
-        this._orphans.push(results.data[i]);
+          this._orphans.push(results.data[i]);
       else
-        this._flat.push(results.data[i]);
+          this._flat.push(results.data[i]);
 
       if (this._cache[results.data[i].id]) continue;
       this._cache[results.data[i].id] = _formatDataforPO(results.data[i]);
@@ -1763,7 +1763,7 @@ var ActivityLogs = {
             args.activityLogs() ? args.activityLogs().map(function(item){
                 item.trackingCategory = 'myProjects';
                 item.trackingAction = 'information-panel';
-                var image = m('i.fa.fa-question');
+                var image = m('i.fa.fa-desktop');
                 if (item.embeds.user && item.embeds.user.data) {
                     image = m('img', { src : item.embeds.user.data.links.profile_image});
                 }
