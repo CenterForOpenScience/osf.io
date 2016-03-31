@@ -1016,7 +1016,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         res = self.app.get(approval_url, auth=non_contributor.auth, expect_errors=True)
         assert_equal(http.FORBIDDEN, res.status_code)
         assert_true(self.registration.is_pending_embargo)
-        assert_false(self.registration.embargo_end_date)
+        assert_true(self.registration.embargo_end_date)
 
     def test_non_contributor_GET_disapproval_returns_HTTPError(self):
         non_contributor = AuthUserFactory()
@@ -1033,4 +1033,4 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         res = self.app.get(approval_url, auth=non_contributor.auth, expect_errors=True)
         assert_equal(http.FORBIDDEN, res.status_code)
         assert_true(self.registration.is_pending_embargo)
-        assert_false(self.registration.embargo_end_date)
+        assert_true(self.registration.embargo_end_date)
