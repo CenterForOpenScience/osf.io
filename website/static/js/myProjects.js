@@ -1466,6 +1466,7 @@ var Breadcrumbs = {
                     ' ',
                     m('button', { onclick: function(){
                         args.unselectContributor(c.data.id);
+                         $osf.trackClick('myProjects', 'filter', 'unselect-contributor');
                     }}, m('span', '×'))
                 ]));
             });
@@ -1477,6 +1478,7 @@ var Breadcrumbs = {
                     t.label,
                     ' ',
                     m('button', { onclick: function(){
+                        $osf.trackClick('myProjects', 'filter', 'unselect-tag');
                         args.unselectTag(t.data.tag);
                     }}, m('span', '×'))
                 ]));
@@ -1487,7 +1489,9 @@ var Breadcrumbs = {
             return m('.db-breadcrumbs', [
                 m('ul', [
                     m('li', [
-                        m('.btn.btn-link[data-toggle="modal"][data-target="#parentsModal"]', '...'),
+                        m('.btn.btn-link[data-toggle="modal"][data-target="#parentsModal"]', {onclick: function(){
+                            $osf.trackClick('myProjects', 'mobile', 'open-ellipsis-parent-modal');
+                        }}, '...'),
                         m('i.fa.fa-angle-right')
                     ]),
                     m('li', [
@@ -1500,7 +1504,9 @@ var Breadcrumbs = {
                     m('.modal-dialog',
                         m('.modal-content', [
                             m('.modal-body', [
-                                m('button.close[data-dismiss="modal"][aria-label="Close"]', [
+                                m('button.close[data-dismiss="modal"][aria-label="Close"]', {onclick: function(){
+                                    $osf.trackClick('myProjects', 'mobile', 'click-close-ellipsis-parent-modal');
+                                }}, [
                                     m('span[aria-hidden="true"]','×')
                                 ]),
                                 m('h4', 'Parent projects'),
@@ -1519,6 +1525,7 @@ var Breadcrumbs = {
                                         m('span.btn.btn-link', {
                                             style : 'margin-left:' + (index*20) + 'px;',
                                             onclick : function() {
+                                                $osf.trackClick('myProjects', 'mobile', 'open-parent-project');
                                                 $('.modal').modal('hide');
                                                 args.updateFilesData(item);
                                             }
@@ -1793,7 +1800,9 @@ var Information = {
                 } }, 'Remove selected from collection')) : '',
                 args.selected().map(function(item){
                     return m('.db-info-multi', [
-                        m('h4', m('a', { href : item.data.links.html}, item.data.attributes.title)),
+                        m('h4', m('a', { href : item.data.links.html, onclick: function(){
+                            $osf.trackClick('myProjects', 'information-panel', 'navigate-to-project-multiple-selected');
+                        }}, item.data.attributes.title)),
                         m('p.db-info-meta.text-muted', [
                             m('span', item.data.attributes.public ? 'Public' : 'Private' + ' ' + item.data.attributes.category),
                             m('span', ', Last Modified on ' + item.data.date.local)
