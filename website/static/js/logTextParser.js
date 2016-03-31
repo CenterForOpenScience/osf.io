@@ -49,9 +49,8 @@ var paramIsReturned = function _paramIsReturned (param, logObject){
  * @param logObject {Object} the entire log object returned from the api
  * @returns {*}
  */
-var returnTextParams = function (param, text, logObject) {
+var returnTextParams = function (param, text, logObject, view_url) {
     var source = logObject.attributes.params[param];
-    var view_url = logObject.attributes.params.view_url;
 
     if(paramIsReturned(source, logObject)){
         if($.isArray(source)){
@@ -67,7 +66,10 @@ var returnTextParams = function (param, text, logObject) {
                 })
             ]);
         }
-        return view_url ? m('a', {href: view_url},'"' + source + '"') : m('span', '"' + source + '"');
+        if (param === 'path' && source.charAt(0) === '/'){
+            source = source.substr(1, source.length);
+        }
+        return view_url ? m('a', {href: view_url}, source) : m('span', source);
     }
     return m('span', text);
 };
@@ -306,8 +308,22 @@ var LogPieces = {
     },
         //
     path: {
+        controller: function(logObject){
+            var self = this;
+            self.returnLinkForPath = function() {
+                if (logObject) {
+                    var action = logObject.attributes.action;
+                    var acceptableLinkedItems = ['osf_storage_file_added', 'osf_storage_file_updated'];
+                    if (acceptableLinkedItems.indexOf(action) !== -1) {
+                        return logObject.attributes.params.view_url;
+                    }
+                }
+                return null;
+            };
+        },
         view: function (ctrl, logObject) {
-            return returnTextParams('path', 'a file', logObject);
+            var url = ctrl.returnLinkForPath();
+            return returnTextParams('path', 'a file', logObject, url);
         }
     },
         //
@@ -348,7 +364,8 @@ var LogPieces = {
 
     forward_url: {
         view: function(ctrl, logObject) {
-            return returnTextParams('forward_url', 'a new URL', logObject);
+            var url = logObject.attributes.params.forward_url;
+            return returnTextParams('forward_url', 'a new URL', logObject, url);
         }
     },
 
