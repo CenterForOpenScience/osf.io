@@ -1007,7 +1007,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if self.parent_node:
                 return self.parent_node.embargo_end_date
             return False
-        return self.embargo.embargo_end_date
+        return self.embargo.end_date
 
     @property
     def is_pending_embargo(self):
@@ -3354,6 +3354,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         self.retraction = retraction
         if save:
             self.save()
+        return retraction
 
     def _is_embargo_date_valid(self, end_date):
         today = datetime.datetime.utcnow()
@@ -3428,6 +3429,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         approval.ask(admins)
         self.embargo_termination_approval = approval
         self.save()
+        return approval
 
     def terminate_embargo(self, auth):
         if not self.is_embargoed:
