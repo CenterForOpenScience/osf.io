@@ -150,17 +150,17 @@ NodeFetcher.prototype = {
   _success: function(results) {
     // Only reset if we're lower as loading children will increment this number
     if (this.total < results.links.meta.total)
-      this.total = results.links.meta.total;
+        this.total = results.links.meta.total;
 
     this.nextLink = results.links.next;
     this.loaded += results.data.length;
     for(var i = 0; i < results.data.length; i++) {
       if (this.type === 'registrations' && (results.data[i].attributes.withdrawn === true || results.data[i].attributes.pending_registration_approval === true))
-        continue // Exclude withdrawn and pending registrations
+          continue; // Exclude withdrawn and pending registrations
       else if (results.data[i].relationships.parent)
-        this._orphans.push(results.data[i]);
+          this._orphans.push(results.data[i]);
       else
-        this._flat.push(results.data[i]);
+          this._flat.push(results.data[i]);
 
       if (this._cache[results.data[i].id]) continue;
       this._cache[results.data[i].id] = _formatDataforPO(results.data[i]);
@@ -197,7 +197,7 @@ NodeFetcher.prototype = {
   },
   _fail: function(result) {
     Raven.captureMessage('Error loading nodes with nodeType ' + this.type + ' at url ' + this.nextLink, {requestReturn: result});
-    $osf.growl('We\'re having some touble contacting our servers. Try reloading the page.', 'Something went wrong!', 'danger', 5000);
+    $osf.growl('We\'re having some trouble contacting our servers. Try reloading the page.', 'Something went wrong!', 'danger', 5000);
     this.resume();
   },
   _onFinish: function() {
@@ -275,17 +275,10 @@ var LinkObject = function _LinkObject (type, data, label, institutionId) {
  */
 function buildCollectionNodeData (id) {
     return {
-        'data' : {
-            'type': 'node_links',
-            'relationships': {
-                'nodes': {
-                    'data': {
-                        'type': 'nodes',
-                        'id': id
-                    }
-                }
-            }
-        }
+        'data': [{
+            'type': 'linked_nodes',
+            'id': id
+        }]
     };
 }
 
@@ -1103,6 +1096,7 @@ var Collections = {
                     } else {
                         // if single items are passed use the event information
                         dataArray.push(buildCollectionNodeData(ui.draggable.find('.title-text>a').attr('data-nodeID'))); // data-nodeID attribute needs to be set in project organizer building title column
+                        var projectName = ui.draggable.find('.title-text>a').attr('data-nodeTitle');
                         $osf.trackClick('myProjects', 'projectOrganizer', 'single-project-dragged-to-collection');
                     }
 
@@ -1111,29 +1105,25 @@ var Collections = {
                         return args.currentView().fetcher === args.fetchers[collection.id] ? args.updateList() : null;
                       m.request({
                           method : 'POST',
-                          url : collection.data.node.links.self + 'node_links/', //collection.data.node.relationships.linked_nodes.links.related.href,
+                          url : collection.data.node.links.self + 'relationships/linked_nodes/',
                           config : xhrconfig,
                           data : data[index]
                       }).then(function(result){
-                          return args.currentView().fetcher
-                            .get(result.data.embeds.target_node.data.id)
-                            .then(function(item) {
-                              args.fetchers[collection.id].add(item);
-                              collection.data.count(collection.data.count()+1);
-                              save(index + 1, data);
+                          if (result){
+                              return args.currentView().fetcher
+                                .get(result.data[(result.data).length - 1].id)
+                                .then(function(item) {
+                                    args.fetchers[collection.id].add(item);
+                                    collection.data.count(collection.data.count() + 1);
+                                    save(index + 1, data);
                             });
-                      }, function(result){
-                          var message = '';
-                          var name = args.selected()[index] ? args.selected()[index].data.name : 'Item ';
-                          if (result.errors.length > 0) {
-                              result.errors.forEach(function(error){
-                                  if(error.detail.indexOf('already pointed') > -1 ){
-                                      message = '"' + name + '" is already in "' + collection.label + '"' ;
-                                  }
-                              });
                           }
-                          $osf.growl(message,null, 'warning', 4000);
-                          save(index + 1, data);
+                          else {
+                              var name = projectName ? projectName : args.selected()[index] ? args.selected()[index].data.name : 'Item ';
+                              var message = '"' + name + '" is already in "' + collection.label + '"' ;
+                              $osf.growl(message,null, 'warning', 4000);
+                              save(index + 1, data);
+                          }
                       });
                     }
 
@@ -1788,11 +1778,11 @@ var ActivityLogs = {
             args.activityLogs() ? args.activityLogs().map(function(item){
                 item.trackingCategory = 'myProjects';
                 item.trackingAction = 'information-panel';
-                var image = m('i.fa.fa-question');
+                var image = m('i.fa.fa-desktop');
                 if (item.embeds.user && item.embeds.user.data) {
                     image = m('img', { src : item.embeds.user.data.links.profile_image});
                 }
-                else if (item.embeds.user && item.embeds.user.errors){
+                else if (item.embeds.user && item.embeds.user.errors[0].meta){
                     image = m('img', { src : item.embeds.user.errors[0].meta.profile_image});
                 }
                 return m('.db-activity-item', [
