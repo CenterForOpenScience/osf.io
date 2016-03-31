@@ -707,10 +707,6 @@ var MyProjects = {
 
         // BREADCRUMBS
         self.updateBreadcrumbs = function _updateBreadcrumbs (linkObject){
-            if (!self.fetchers[linkObject.id]){
-              self.fetchers[linkObject.id] = new NodeFetcher(item.data.types, item.data.relationships.children.links.related.href + '?embed=contributors');
-              self.fetchers[linkObject.id].on(['page', 'done'], self.onPageLoad);
-            }
             if (linkObject.type === 'collection'){
                 self.breadcrumbs([linkObject]);
                 return;
@@ -1556,8 +1552,6 @@ var Breadcrumbs = {
                 item.placement = 'breadcrumb'; // differentiate location for proper breadcrumb actions
                 return m('li',[
                     m('span.btn.btn-link', {onclick : updateFilesOnClick.bind(null, item)},  item.label),
-                    contributorsTemplate,
-                    tagsTemplate,
                     m('i.fa.fa-angle-right')
                     ]
                 );
