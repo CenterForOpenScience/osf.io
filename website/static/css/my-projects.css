@@ -373,6 +373,10 @@ div[data-growl="container"] {
     .db-poFilter {
         width: 80%;
     }
+    .dashboard {
+        height: 700px;
+    }
+
 }
 @media only screen and (max-width : 320px) {
     #poFilter {

@@ -1507,7 +1507,11 @@ var Breadcrumbs = {
                         m('.btn.btn-link[data-toggle="modal"][data-target="#parentsModal"]', '...'),
                         m('i.fa.fa-angle-right')
                     ]),
-                    m('li', m('span.btn', items[items.length-1].label))
+                    m('li', [
+                      m('span.btn', items[items.length-1].label),
+                      contributorsTemplate,
+                      tagsTemplate
+                    ])
                 ]),
                 m('#parentsModal.modal.fade[tabindex=-1][role="dialog"][aria-hidden="true"]',
                     m('.modal-dialog',
@@ -1532,15 +1536,13 @@ var Breadcrumbs = {
                                         m('span.btn.btn-link', {
                                             style : 'margin-left:' + (index*20) + 'px;',
                                             onclick : function() {
-                                                args.updateFilesData(item);
                                                 $('.modal').modal('hide');
+                                                args.updateFilesData(item);
                                             }
                                         },  [
                                             m('i.fa.fa-angle-right.m-r-xs'),
                                             item.label
-                                        ]),
-                                        contributorsTemplate,
-                                        tagsTemplate
+                                        ])
                                         ]
                                     );
                                 })
