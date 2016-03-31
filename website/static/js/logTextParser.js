@@ -51,6 +51,7 @@ var paramIsReturned = function _paramIsReturned (param, logObject){
  */
 var returnTextParams = function (param, text, logObject) {
     var source = logObject.attributes.params[param];
+    var view_url = logObject.attributes.params.view_url;
 
     if(paramIsReturned(source, logObject)){
         if($.isArray(source)){
@@ -66,15 +67,48 @@ var returnTextParams = function (param, text, logObject) {
                 })
             ]);
         }
-        return m('span', '"' + source + '"');
+        return view_url ? m('a', {href: view_url},'"' + source + '"') : m('span', '"' + source + '"');
     }
     return m('span', text);
 };
 
 var LogText = {
+    controller: function(logObject){
+        var self = this;
+
+        self.userInfoReturned = function(userObject){
+            if (userObject){
+                if (userObject.data){
+                    return true;
+                }
+                else if (userObject.errors[0].meta){
+                    return true;
+                }
+            }
+            return false;
+        };
+
+        self.logText = function() {
+            var text = logActions[logObject.attributes.action];
+            if (text) {
+                if (text.indexOf('${user}') !== -1) {
+                    var userObject = logObject.embeds.user;
+                    if (self.userInfoReturned(userObject)) {
+                        return text;
+                    }
+                    else {
+                        var newAction = logObject.attributes.action + '_no_user';
+                        return logActions[newAction] ? logActions[newAction]: text;
+                    }
+                }
+                return text;
+            }
+        return null;
+        };
+    },
     view : function(ctrl, logObject) {
-        var text = logActions[logObject.attributes.action];
         var message = '';
+        var text = ctrl.logText();
         if(text){
             var list = text.split(/(\${.*?})/);
             return m('span.osf-log-item',[
@@ -115,7 +149,7 @@ var LogPieces = {
                     $osf.trackClick(logObject.trackingCategory, logObject.trackingAction, 'navigate-to-user-from-logs');
                 }}, userObject.data.attributes.full_name);
             }
-            else if (userObject && userObject.errors) {
+            else if (userObject && userObject.errors[0].meta) {
                 return m('span', userObject.errors[0].meta.full_name);
             }
             else {

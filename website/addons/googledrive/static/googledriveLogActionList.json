@@ -5,5 +5,6 @@
   "googledrive_folder_created" : "${user} created folder ${googledrive_path} in Google Drive in ${node}",
   "googledrive_folder_selected" : "${user} linked Google Drive folder ${googledrive_folder} to ${node}",
   "googledrive_node_authorized" : "${user} authorized the Google Drive addon for ${node}",
-  "googledrive_node_deauthorized" : "${user} deauthorized the Google Drive addon for ${node}"
+  "googledrive_node_deauthorized" : "${user} deauthorized the Google Drive addon for ${node}",
+  "googledrive_node_deauthorized_no_user" : "Google Drive addon for ${node} deauthorized"
 }

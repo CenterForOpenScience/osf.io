@@ -5,5 +5,6 @@
   "github_folder_created" : "${user} created folder ${path} in GitHub repo ${repo} in ${node}",
   "github_node_authorized" : "${user} authorized the GitHub addon for ${node}",
   "github_node_deauthorized" : "${user} deauthorized the GitHub addon for ${node}",
+  "github_node_deauthorized_no_user" : "GitHub addon for ${node} deauthorized",
   "github_repo_linked" : "${user} linked GitHub repo ${repo} in ${node}"
 }
