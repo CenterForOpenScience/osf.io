@@ -108,6 +108,15 @@ NodeFetcher.prototype = {
     this.loaded++;
 
     this._flat.unshift(item);
+
+    // Resort after inserting data
+    this._flat = this._orphans.concat(this._flat).sort(function(a,b) {
+      a = new Date(a.attributes.date_modified);
+      b = new Date(b.attributes.date_modified);
+      if (a > b) return -1;
+      if (a < b) return 1;
+      return 0;
+    });
   },
   remove: function(item) {
     item = item.id || item;
@@ -1612,7 +1621,7 @@ var Filters = {
         };
 
         var returnNameFilters = function _returnNameFilters(){
-            if(args.currentView().fetcher.isEmpty())
+            if (args.currentView().fetcher.isEmpty() || args.nameFilters.length < 1)
                 return m('.text-muted.text-smaller', 'There are no collaborators in this collection yet.');
             var list = [];
             var item;
@@ -1633,7 +1642,7 @@ var Filters = {
             return list;
         };
         var returnTagFilters = function _returnTagFilters(){
-            if(args.currentView().fetcher.isEmpty())
+            if (args.currentView().fetcher.isEmpty() || args.tagFilters.length < 1)
                 return m('.text-muted.text-smaller', 'Projects in this collection don\'t have any tags yet.');
 
             var list = [];
