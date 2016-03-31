@@ -32,6 +32,12 @@
     color: #000000;
 }
 
+.quick-project img {
+    margin-top: 30px;
+    border: 3px solid #fff;
+    opacity: 0.6;
+}
+
 .quick-project .not-selected {
     color: #347BB7;
 }

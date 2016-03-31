@@ -475,7 +475,11 @@ var QuickSearchProject = {
                 m('.col-xs-12',[
                     headerTemplate(),
                     m('.row.quick-project',
-                        m('.col-sm-12.text-center', m('p','You have no projects yet. Create a project with the button on the top right.'), m('p', 'This feature allows you to search and quickly access your projects.'))
+                        m('.col-sm-12.text-center', [
+                            m('p','You have no projects yet. Create a project with the button on the top right.'),
+                            m('p', 'This feature allows you to search and quickly access your projects.'),
+                            m('img', { src : '/static/img/quicksearch-min.png', alt : 'Preview of a full quick projects screen'})
+                        ])
                     )
                 ])
             );
