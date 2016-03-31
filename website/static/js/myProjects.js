@@ -49,6 +49,7 @@ if (!window.Set) {
 function NodeFetcher(type, link) {
   this.type = type || 'nodes';
   this.loaded = 0;
+  this._failed = 0;
   this.total = 0;
   this._flat = [];
   this._orphans = [];
@@ -207,9 +208,12 @@ NodeFetcher.prototype = {
     return this._cache[parent.id].children;
   },
   _fail: function(result) {
+    if (++this._failed < 5)
+      return this.resume();
+    this._continue = false;
+    this._promise = null;
     Raven.captureMessage('Error loading nodes with nodeType ' + this.type + ' at url ' + this.nextLink, {requestReturn: result});
     $osf.growl('We\'re having some trouble contacting our servers. Try reloading the page.', 'Something went wrong!', 'danger', 5000);
-    this.resume();
   },
   _onFinish: function() {
     this._flat = this._orphans.concat(this._flat).sort(function(a,b) {
