@@ -2763,12 +2763,12 @@ class TestProject(OsfTestCase):
 
     def test_manage_contributors_cannot_remove_last_admin_contributor(self):
         user2 = UserFactory()
-        self.project.add_contributor(contributor=user2, permissions=['read', 'write'], auth=self.auth)
+        self.project.add_contributor(contributor=user2, permissions=[READ, WRITE], auth=self.auth)
         self.project.save()
         with assert_raises(ValueError):
             self.project.manage_contributors(
                 user_dicts=[{'id': user2._id,
-                             'permission': 'write',
+                             'permission': WRITE,
                              'visible': True}],
                 auth=self.auth,
                 save=True
@@ -2776,18 +2776,18 @@ class TestProject(OsfTestCase):
 
     def test_manage_contributors_logs_when_users_reorder(self):
         user2 = UserFactory()
-        self.project.add_contributor(contributor=user2, permissions=['read', 'write'], auth=self.auth)
+        self.project.add_contributor(contributor=user2, permissions=[READ, WRITE], auth=self.auth)
         self.project.save()
         self.project.manage_contributors(
             user_dicts=[
                 {
                     'id': user2._id,
-                    'permission': 'write',
+                    'permission': WRITE,
                     'visible': True,
                 },
                 {
                     'id': self.user._id,
-                    'permission': 'admin',
+                    'permission': ADMIN,
                     'visible': True,
                 },
             ],
@@ -2850,8 +2850,8 @@ class TestProject(OsfTestCase):
     def test_manage_contributors_new_contributor(self):
         user = UserFactory()
         users = [
-            {'id': self.project.creator._id, 'permission': 'read', 'visible': True},
-            {'id': user._id, 'permission': 'read', 'visible': True},
+            {'id': self.project.creator._id, 'permission': READ, 'visible': True},
+            {'id': user._id, 'permission': READ, 'visible': True},
         ]
         with assert_raises(ValueError):
             self.project.manage_contributors(
@@ -2868,7 +2868,7 @@ class TestProject(OsfTestCase):
         user = UserFactory()
         self.project.add_contributor(
             user,
-            permissions=['read', 'write', 'admin'],
+            permissions=[READ, WRITE, ADMIN],
             save=True
         )
         users = [
@@ -2888,8 +2888,8 @@ class TestProject(OsfTestCase):
             save=True
         )
         users = [
-            {'id': self.project.creator._id, 'permission': 'read', 'visible': True},
-            {'id': unregistered._id, 'permission': 'admin', 'visible': True},
+            {'id': self.project.creator._id, 'permission': READ, 'visible': True},
+            {'id': unregistered._id, 'permission': ADMIN, 'visible': True},
         ]
         with assert_raises(ValueError):
             self.project.manage_contributors(
@@ -2924,15 +2924,15 @@ class TestProject(OsfTestCase):
 
     def test_title_cant_be_empty(self):
         with assert_raises(ValidationValueError):
-            proj = ProjectFactory(title='', creator=self.user)
+            ProjectFactory(title='', creator=self.user)
         with assert_raises(ValidationValueError):
-            proj = ProjectFactory(title=' ', creator=self.user)
+            ProjectFactory(title=' ', creator=self.user)
 
     def test_title_cant_be_too_long(self):
         long_title = ''.join(random.choice(string.ascii_letters + string.digits)
                              for _ in range(201))
         with assert_raises(ValidationValueError):
-            proj = ProjectFactory(title=long_title, creator=self.user)
+            ProjectFactory(title=long_title, creator=self.user)
 
     def test_contributor_can_edit(self):
         contributor = UserFactory()
@@ -2955,7 +2955,7 @@ class TestProject(OsfTestCase):
         user1 = UserFactory()
         user1_auth = Auth(user=user1)
         # Change project to public
-        self.project.set_privacy('public')
+        self.project.set_privacy(Node.PUBLIC)
         self.project.save()
         # Noncontributor can't edit
         assert_false(self.project.can_edit(user1_auth))
@@ -3001,14 +3001,14 @@ class TestProject(OsfTestCase):
     def test_is_admin_parent_parent_write(self):
         user = UserFactory()
         node = NodeFactory(parent=self.project, creator=user)
-        self.project.set_permissions(self.project.creator, ['read', 'write'])
+        self.project.set_permissions(self.project.creator, [READ, WRITE])
         assert_false(node.is_admin_parent(self.project.creator))
 
     def test_has_permission_read_parent_admin(self):
         user = UserFactory()
         node = NodeFactory(parent=self.project, creator=user)
-        assert_true(node.has_permission(self.project.creator, 'read'))
-        assert_false(node.has_permission(self.project.creator, 'admin'))
+        assert_true(node.has_permission(self.project.creator, READ))
+        assert_false(node.has_permission(self.project.creator, ADMIN))
 
     def test_has_permission_read_grandparent_admin(self):
         user = UserFactory()
@@ -3021,10 +3021,10 @@ class TestProject(OsfTestCase):
             parent=parent_node,
             creator=user
         )
-        assert_true(child_node.has_permission(self.project.creator, 'read'))
-        assert_false(child_node.has_permission(self.project.creator, 'admin'))
-        assert_true(parent_node.has_permission(self.project.creator, 'read'))
-        assert_false(parent_node.has_permission(self.project.creator, 'admin'))
+        assert_true(child_node.has_permission(self.project.creator, READ))
+        assert_false(child_node.has_permission(self.project.creator, ADMIN))
+        assert_true(parent_node.has_permission(self.project.creator, READ))
+        assert_false(parent_node.has_permission(self.project.creator, ADMIN))
 
     def test_can_view_parent_admin(self):
         user = UserFactory()
@@ -3330,7 +3330,7 @@ class TestProject(OsfTestCase):
         assert_not_equal(self.project.date_modified, self.project.date_created)
 
     def test_date_modified_create_registration(self):
-        registration = RegistrationFactory(project=self.project)
+        RegistrationFactory(project=self.project)
         self.project.save()
 
         assert_equal(self.project.date_modified, self.project.logs[-1].date)
@@ -3634,7 +3634,6 @@ class TestTemplateNode(OsfTestCase):
         if isinstance(x, Node):
             return str(language.TEMPLATED_FROM_PREFIX + x.title)
         return str(x.title)
-
 
     def test_complex_template(self):
         """Create a templated node from a node with children"""
@@ -4033,7 +4032,7 @@ class TestRegisterNode(OsfTestCase):
 
     def test_permissions(self):
         assert_false(self.registration.is_public)
-        self.project.set_privacy('public')
+        self.project.set_privacy(Node.PUBLIC)
         registration = RegistrationFactory(project=self.project)
         assert_false(registration.is_public)
 
@@ -4132,9 +4131,9 @@ class TestRegisterNode(OsfTestCase):
 
         # Share the project and some nodes
         user2 = UserFactory()
-        self.project.add_contributor(user2, permissions=('read', 'write', 'admin'))
-        self.shared_component.add_contributor(user2, permissions=('read', 'write', 'admin'))
-        self.shared_subproject.add_contributor(user2, permissions=('read', 'write', 'admin'))
+        self.project.add_contributor(user2, permissions=(READ, WRITE, ADMIN))
+        self.shared_component.add_contributor(user2, permissions=(READ, WRITE, ADMIN))
+        self.shared_subproject.add_contributor(user2, permissions=(READ, WRITE, ADMIN))
 
         # Partial contributor registers the node
         registration = RegistrationFactory(project=self.project, user=user2)
@@ -4163,7 +4162,7 @@ class TestRegisterNode(OsfTestCase):
     def test_registered_user(self):
         # Add a second contributor
         user2 = UserFactory()
-        self.project.add_contributor(user2, permissions=('read', 'write', 'admin'))
+        self.project.add_contributor(user2, permissions=(READ, WRITE, ADMIN))
         # Second contributor registers project
         registration = RegistrationFactory(parent=self.project, user=user2)
         assert_equal(registration.registered_user, user2)
@@ -4643,7 +4642,6 @@ class TestPrivateLink(OsfTestCase):
         link.nodes.extend([project, node])
         link.save()
         assert_equal(link.node_scale(node), -40)
-
 
     def test_create_from_node(self):
         ensure_schemas()
