@@ -414,10 +414,12 @@ var MyProjects = {
             if ((linkObject.type === 'node') && self.viewOnly){
                 return;
             }
+
             self.updateTbMultiselect([]); // clear multiselected, updateTreeData will repick
             self.updateFilter(linkObject); // Update what filters currently selected
             self.updateBreadcrumbs(linkObject); // Change breadcrumbs
             self.updateList(); // Reset and load item
+            $('.tb-tbody-inner>div').css('margin-top' , '0px'); // We change contents of treebeard folder, we need to manage margin-top for view to work
             self.showSidebar(false);
         };
 
