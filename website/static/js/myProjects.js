@@ -1433,6 +1433,7 @@ var Breadcrumbs = {
                     ' ',
                     m('button', { onclick: function(){
                         args.unselectContributor(c.data.id);
+                         $osf.trackClick('myProjects', 'filter', 'unselect-contributor');
                     }}, m('span', '×'))
                 ]));
             });
@@ -1444,6 +1445,7 @@ var Breadcrumbs = {
                     t.label,
                     ' ',
                     m('button', { onclick: function(){
+                        $osf.trackClick('myProjects', 'filter', 'unselect-tag');
                         args.unselectTag(t.data.tag);
                     }}, m('span', '×'))
                 ]));
