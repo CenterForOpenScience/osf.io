@@ -49,9 +49,8 @@ var paramIsReturned = function _paramIsReturned (param, logObject){
  * @param logObject {Object} the entire log object returned from the api
  * @returns {*}
  */
-var returnTextParams = function (param, text, logObject) {
+var returnTextParams = function (param, text, logObject, view_url) {
     var source = logObject.attributes.params[param];
-    var view_url = logObject.attributes.params.view_url;
 
     if(paramIsReturned(source, logObject)){
         if($.isArray(source)){
