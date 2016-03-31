@@ -54,6 +54,7 @@ function NodeFetcher(type, link) {
   this._orphans = [];
   this._cache = {};
   this._promise = null;
+  this._started = false;
   this._continue = true;
   this.tree = {
       0: {
@@ -88,6 +89,7 @@ NodeFetcher.prototype = {
     this._continue = false;
   },
   resume: function() {
+    this._started = true;
     this._continue = true;
     if (!this.nextLink) return this._promise = null;
     if (this._promise) return this._promise;
@@ -100,7 +102,7 @@ NodeFetcher.prototype = {
       }).bind(this));
   },
   add: function(item) {
-    if (!this.isFinished() && this._flat.indexOf(item) !== - 1) return;
+    if (!this._started ||this._flat.indexOf(item) !== - 1) return;
 
     this.total++;
     this.loaded++;
@@ -139,9 +141,7 @@ NodeFetcher.prototype = {
     return m.request({method: 'GET', url: url, config: xhrconfig, background: true})
       .then((function(result) {
         this.add(result.data);
-        if($.isFunction(cb)){
-          cb(this, result.data);
-        }
+        return result.data;
       }).bind(this), this._fail.bind(this));
   },
   fetchChildren: function(parent) {
@@ -152,15 +152,17 @@ NodeFetcher.prototype = {
   _success: function(results) {
     // Only reset if we're lower as loading children will increment this number
     if (this.total < results.links.meta.total)
-      this.total = results.links.meta.total;
+        this.total = results.links.meta.total;
 
     this.nextLink = results.links.next;
     this.loaded += results.data.length;
     for(var i = 0; i < results.data.length; i++) {
-      if (results.data[i].relationships.parent)
-        this._orphans.push(results.data[i]); //TODO run through orphans
+      if (this.type === 'registrations' && (results.data[i].attributes.retracted === true || results.data[i].attributes.pending_registration_approval === true))
+          continue; // Exclude retracted and pending registrations
+      else if (results.data[i].relationships.parent)
+          this._orphans.push(results.data[i]);
       else
-        this._flat.push(results.data[i]);
+          this._flat.push(results.data[i]);
 
       if (this._cache[results.data[i].id]) continue;
       this._cache[results.data[i].id] = _formatDataforPO(results.data[i]);
@@ -197,7 +199,7 @@ NodeFetcher.prototype = {
   },
   _fail: function(result) {
     Raven.captureMessage('Error loading nodes with nodeType ' + this.type + ' at url ' + this.nextLink, {requestReturn: result});
-    $osf.growl('We\'re having some touble contacting our servers. Try reloading the page.', 'Something went wrong!', 'danger', 5000);
+    $osf.growl('We\'re having some trouble contacting our servers. Try reloading the page.', 'Something went wrong!', 'danger', 5000);
     this.resume();
   },
   _onFinish: function() {
@@ -275,17 +277,10 @@ var LinkObject = function _LinkObject (type, data, label, institutionId) {
  */
 function buildCollectionNodeData (id) {
     return {
-        'data' : {
-            'type': 'node_links',
-            'relationships': {
-                'nodes': {
-                    'data': {
-                        'type': 'nodes',
-                        'id': id
-                    }
-                }
-            }
-        }
+        'data': [{
+            'type': 'linked_nodes',
+            'id': id
+        }]
     };
 }
 
@@ -300,15 +295,12 @@ var MyProjects = {
         self.projectOrganizerOptions = options.projectOrganizerOptions || {};
         self.viewOnly = options.viewOnly || false;
         self.institutionId = options.institutionId || false;
-        self.reload = m.prop(false); // Gets set to true when treebeard link changes and it needs to be redrawn
         self.logUrlCache = {}; // dictionary of load urls to avoid multiple calls with little refactor
         self.nodeUrlCache = {}; // Cached returns of the project related urls
         // VIEW STATES
         self.showInfo = m.prop(true); // Show the info panel
         self.showSidebar = m.prop(false); // Show the links with collections etc. used in narrow views
         self.allProjectsLoaded = m.prop(false);
-        self.loadingAllNodes = false; // True if we are loading all nodes
-        self.loadingNodePages = false;
         self.categoryList = [];
         self.loadValue = m.prop(0); // What percentage of the project loading is done
         //self.loadCounter = m.prop(0); // Count how many items are received from the server
@@ -319,7 +311,6 @@ var MyProjects = {
             totalRows: 0
         });
         self.filesData = m.prop();
-        self.indexes = m.prop({}); // Container of tree indexes for the items
 
         // Treebeard functions looped through project organizer.
         // We need to pass these in to avoid reinstantiating treebeard but instead repurpose (update) the top level folder
@@ -365,49 +356,6 @@ var MyProjects = {
                 Raven.captureMessage(message, {requestReturn: results});
             });
             return promise;
-        };
-
-        /**
-         * Turn flat node array into a hierarchical structure
-         * @param flatData {Array} List of items returned from survey
-         * @param [lastcrumb] {Object} Right most selected breadcrumb linkobject
-         * @param [indexes] {Object} Object to save the tree index structure for quick find
-         * @returns {Array} A new list with hierarchical structure
-         */
-        self.makeTree = function _makeTree(flatData, lastcrumb, indexes) {
-            var root = {id:0, children: [], data : {} };
-            var node_list = { 0 : root};
-            var parentID;
-            var crumbParent = lastcrumb ? lastcrumb.data.id : null;
-            for (var i = 0; i < flatData.length; i++) {
-                if(flatData[i].errors){
-                    continue;
-                }
-                var n = _formatDataforPO(flatData[i]);
-                if (!node_list[n.id]) { // If this node is not in the object list, add it
-                    node_list[n.id] = n;
-                    node_list[n.id].children = [];
-                } else { // If this node is in object list it's likely because it was created as a parent so fill out the rest of the information
-                    n.children = node_list[n.id].children;
-                    node_list[n.id] = n;
-                }
-
-                if (n.relationships.parent){
-                    parentID = n.relationships.parent.links.related.href.split('/')[5]; // Find where parent id string can be extracted
-                } else {
-                    parentID = null;
-                }
-                if(parentID && parentID !== crumbParent ) {
-                    if(!node_list[parentID]){
-                        node_list[parentID] = { children : [] };
-                    }
-                    node_list[parentID].children.push(node_list[n.id]);
-                } else {
-                    node_list[0].children.push(node_list[n.id]);
-                }
-            }
-            indexes(node_list);
-            return root.children;
         };
 
         // Activity Logs
@@ -572,11 +520,16 @@ var MyProjects = {
         // Update what is viewed
         self.updateList = function _updateList (){
             if (!self.buildTree()) return; // Treebeard hasn't loaded yet
+            var viewData = self.filteredData();
+            self.updateTreeData(0, viewData, true);
+            self.currentView().totalRows = viewData.length;
+        };
 
+        self.filteredData = function() {
             var tags = self.currentView().tag;
             var contributors = self.currentView().contributor;
 
-            var viewData = self.currentView().fetcher._flat.filter(function(node) {
+            return self.currentView().fetcher._flat.filter(function(node) {
               var tagMatch = tags.length === 0;
               var contribMatch = contributors.length === 0;
 
@@ -594,9 +547,6 @@ var MyProjects = {
 
               return tagMatch && contribMatch;
             });
-
-            self.updateTreeData(0, viewData, true);
-            self.currentView().totalRows = viewData.length;
         };
 
         self.updateTbMultiselect = function (itemsArray) {
@@ -612,12 +562,9 @@ var MyProjects = {
             }
             for (var i = begin; i < data.length; i++){
                 item = data[i];
-                if (!(item.attributes.retracted === true || item.attributes.pending_registration_approval === true)){
-                    // Filter Retractions and Pending Registrations from the "All my registrations" view.
-                    _formatDataforPO(item);
-                    var child = self.buildTree()(item, self.treeData());
-                    self.treeData().add(child);
-                }
+                _formatDataforPO(item);
+                var child = self.buildTree()(item, self.treeData());
+                self.treeData().add(child);
             }
             self.updateFolder()(null, self.treeData());
             // Manually select first item without triggering a click
@@ -677,10 +624,10 @@ var MyProjects = {
         /**
          * Generate this list from user's projects
          */
-        self.generateFiltersList = function() {
+        self.generateFiltersList = function(noClear) {
             self.users = {};
             self.tags = {};
-            var data = Object.keys(self.currentView().fetcher._cache).map(function(key) {
+            Object.keys(self.currentView().fetcher._cache).forEach(function(key) {
               var item = self.currentView().fetcher._cache[key];
               self.generateSets(item);
 
@@ -725,20 +672,41 @@ var MyProjects = {
             }
 
             // Add to lists with numbers
-            self.nameFilters = [];
-            for (var user in self.users){
+            if (!noClear)
+              self.nameFilters = [];
+
+
+            var userFinder = function(lo) {
+              return lo.label === u2.data.embeds.users.data.attributes.full_name;
+            }
+
+            for (var user in self.users) {
                 var u2 = self.users[user];
                 if (u2.data.embeds.users.data) {
+                  var found = self.nameFilters.find(userFinder);
+                  if (!found)
                     self.nameFilters.push(new LinkObject('contributor', { id : u2.data.id, count : u2.count, query : { 'related_counts' : 'children' }}, u2.data.embeds.users.data.attributes.full_name, options.institutionId || false));
+                  else
+                    found.data.count = u2.count;
                 }
             }
             // order names
             self.nameFilters.sort(sortByCountDesc);
 
-            self.tagFilters = [];
+            if (!noClear)
+              self.tagFilters = [];
+
+            var tagFinder = function(lo) {
+              return lo.label === tag;
+            };
+
             for (var tag in self.tags){
                 var t2 = self.tags[tag];
-                self.tagFilters.push(new LinkObject('tag', { tag : tag, count : t2, query : { 'related_counts' : 'children' }}, tag, options.institutionId || false));
+                var tFound = self.tagFilters.find(tagFinder);
+                if (!tFound)
+                  self.tagFilters.push(new LinkObject('tag', { tag : tag, count : t2, query : { 'related_counts' : 'children' }}, tag, options.institutionId || false));
+                else
+                  tFound.data.count = t2;
             }
             // order tags
             self.tagFilters.sort(sortByCountDesc);
@@ -808,9 +776,10 @@ var MyProjects = {
         };
 
         self.onPageLoad = function(fetcher, pageData) {
+          if (!self.buildTree()) return; // Treebeard hasn't loaded yet
           if(self.currentView().fetcher === fetcher) {
-            self.loadValue(fetcher.isFinished() ? 100 : fetcher.progress());
-              self.generateFiltersList();
+              self.loadValue(fetcher.isFinished() ? 100 : fetcher.progress());
+              self.generateFiltersList(true);
               if (!pageData) {
                 for(var i = 0; i < fetcher._flat.length; i++){
                     var fetcherItem = fetcher._flat[i];
@@ -829,9 +798,8 @@ var MyProjects = {
               }
               if(self.treeData().children){
                 var begin = self.treeData().children.length;
-                var data = fetcher._flat;
+                var data = self.filteredData();
                 self.updateTreeData(begin, data);
-                self.generateFiltersList(fetcher._flat);
                 self.currentView().totalRows = fetcher._flat.length;
               }
           }
@@ -882,7 +850,6 @@ var MyProjects = {
                 NodeFetcher : NodeFetcher,
                 formatDataforPO : _formatDataforPO,
                 wrapperSelector : args.wrapperSelector,
-                reload : ctrl.reload,
                 resetUi : ctrl.resetUi,
                 showSidebar : ctrl.showSidebar,
                 loadValue : ctrl.loadValue,
@@ -891,11 +858,20 @@ var MyProjects = {
                 buildTree : ctrl.buildTree,
                 updateFolder : ctrl.updateFolder,
                 currentView: ctrl.currentView,
-                nodes : ctrl.nodes,
                 fetchers : ctrl.fetchers,
                 indexes : ctrl.indexes,
                 multiselected : ctrl.multiselected,
-                highlightMultiselect : ctrl.highlightMultiselect
+                highlightMultiselect : ctrl.highlightMultiselect,
+                _onload: function(tb) {
+                  if (!ctrl.currentView().fetcher.isFinished()) return;
+                  // If data loads before treebeard force redrawing
+                  ctrl.loadValue(100);
+                  ctrl.generateFiltersList(true);
+                  ctrl.updateList();
+                  // TB/Mithril interaction requires the redraw to be called a bit later
+                  // TODO Figure out why
+                  setTimeout(m.redraw.bind(this, true), 250);
+                }
             },
             ctrl.projectOrganizerOptions
         );
@@ -916,7 +892,7 @@ var MyProjects = {
                     stayCallback: function () {
                         // Fetch details of added item from server and redraw treebeard
                         var projects = ctrl.fetchers[ctrl.systemCollections[0].id];
-                        projects.fetch(this.saveResult().data.id, function(){
+                        projects.fetch(this.saveResult().data.id).then(function(){
                           ctrl.updateTreeData(0, projects._flat, true);
                         });
                     },
@@ -1141,6 +1117,7 @@ var Collections = {
                     } else {
                         // if single items are passed use the event information
                         dataArray.push(buildCollectionNodeData(ui.draggable.find('.title-text>a').attr('data-nodeID'))); // data-nodeID attribute needs to be set in project organizer building title column
+                        var projectName = ui.draggable.find('.title-text>a').attr('data-nodeTitle');
                         $osf.trackClick('myProjects', 'projectOrganizer', 'single-project-dragged-to-collection');
                     }
 
@@ -1149,29 +1126,25 @@ var Collections = {
                         return args.currentView().fetcher === args.fetchers[collection.id] ? args.updateList() : null;
                       m.request({
                           method : 'POST',
-                          url : collection.data.node.links.self + 'node_links/', //collection.data.node.relationships.linked_nodes.links.related.href,
+                          url : collection.data.node.links.self + 'relationships/linked_nodes/',
                           config : xhrconfig,
                           data : data[index]
                       }).then(function(result){
-                          return args.currentView().fetcher
-                            .get(result.data.embeds.target_node.data.id)
-                            .then(function(item) {
-                              args.fetchers[collection.id].add(item);
-                              collection.data.count(collection.data.count()+1);
-                              save(index + 1, data);
+                          if (result){
+                              return args.currentView().fetcher
+                                .get(result.data[(result.data).length - 1].id)
+                                .then(function(item) {
+                                    args.fetchers[collection.id].add(item);
+                                    collection.data.count(collection.data.count() + 1);
+                                    save(index + 1, data);
                             });
-                      }, function(result){
-                          var message = '';
-                          var name = args.selected()[index] ? args.selected()[index].data.name : 'Item ';
-                          if (result.errors.length > 0) {
-                              result.errors.forEach(function(error){
-                                  if(error.detail.indexOf('already pointed') > -1 ){
-                                      message = '"' + name + '" is already in "' + collection.label + '"' ;
-                                  }
-                              });
                           }
-                          $osf.growl(message,null, 'warning', 4000);
-                          save(index + 1, data);
+                          else {
+                              var name = projectName ? projectName : args.selected()[index] ? args.selected()[index].data.name : 'Item ';
+                              var message = '"' + name + '" is already in "' + collection.label + '"' ;
+                              $osf.growl(message,null, 'warning', 4000);
+                              save(index + 1, data);
+                          }
                       });
                     }
 
@@ -1228,8 +1201,6 @@ var Collections = {
                 childCount = item.data.count ? ' (' + item.data.count() + ')' : '';
                 if (args.currentView().collection === item) {
                     selectedCSS = 'active';
-                } else if (item.id === ctrl.collectionMenuObject().item.id) {
-                    selectedCSS = 'bg-color-hover';
                 } else {
                     selectedCSS = '';
                 }
@@ -1830,11 +1801,11 @@ var ActivityLogs = {
             args.activityLogs() ? args.activityLogs().map(function(item){
                 item.trackingCategory = 'myProjects';
                 item.trackingAction = 'information-panel';
-                var image = m('i.fa.fa-question');
+                var image = m('i.fa.fa-desktop');
                 if (item.embeds.user && item.embeds.user.data) {
                     image = m('img', { src : item.embeds.user.data.links.profile_image});
                 }
-                else if (item.embeds.user && item.embeds.user.errors){
+                else if (item.embeds.user && item.embeds.user.errors[0].meta){
                     image = m('img', { src : item.embeds.user.errors[0].meta.profile_image});
                 }
                 return m('.db-activity-item', [

@@ -6,5 +6,6 @@
   "s3_file_updated" : "${user} updated ${path} in Amazon S3 bucket ${bucket} in ${node}",
   "s3_folder_created" : "${user} created folder ${path} in Amazon S3 in ${node}",
   "s3_node_authorized" : "${user} authorized the Amazon S3 addon for ${node}",
-  "s3_node_deauthorized" : "${user} deauthorized the Amazon S3 addon for ${node}"
+  "s3_node_deauthorized" : "${user} deauthorized the Amazon S3 addon for ${node}",
+  "s3_node_deauthorized_no_user" : "Amazon S3 addon for ${node} deauthorized"
 }

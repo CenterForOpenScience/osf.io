@@ -37,12 +37,12 @@ function _poTitleColumn(item) {
     if (item.data.archiving) { // TODO check if this variable will be available
         return  m('span', {'class': 'registration-archiving'}, node.attributes.title + ' [Archiving]');
     } else if(node.links.html){
-        return [ m('a.fg-file-links', { 'class' : css, href : node.links.html, 'data-nodeID' : node.id, onclick : function(event) {
+        return [ m('a.fg-file-links', { 'class' : css, href : node.links.html, 'data-nodeID' : node.id, 'data-nodeTitle': node.attributes.title, onclick : function(event) {
             preventSelect.call(this, event);
             $osf.trackClick('myProjects', 'projectOrganizer', 'navigate-to-specific-project');
         }}, node.attributes.title) ];
     } else {
-        return  m('span', { 'class' : css, 'data-nodeID' : node.id }, node.attributes.title);
+        return  m('span', { 'class' : css, 'data-nodeID' : node.id, 'data-nodeTitle': node.attributes.title }, node.attributes.title);
     }
 }
 
@@ -224,35 +224,6 @@ function _poResolveToggle(item) {
     return '';
 }
 
-/**
- * Resolves lazy load url for fetching children
- * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
- * @this Treebeard.controller
- * @returns {String|Boolean} Returns the fetch URL in string or false if there is no url.
- * @private
- */
-function _poResolveLazyLoad(item) {
-    var tb = this;
-    var node = item.data;
-    if(item.children.length > 0) {
-        return false;
-    }
-    if(node.relationships.children){
-        // If flatData is loaded use that
-        if(tb.options.nodes.projects.flatData.loaded === tb.options.nodes.projects.flatData.total && tb.options.indexes()[node.id]){
-            return false;
-        }
-        //return node.relationships.children.links.related.href;
-        var urlPrefix = node.attributes.registration ? 'registrations' : 'nodes';
-        return $osf.apiV2Url(urlPrefix + '/' + node.id + '/children/', {
-            query : {
-                'related_counts' : 'children',
-                'embed' : 'contributors'
-            }
-        });
-    }
-    return false;
-}
 
 /**
  * Hook to run after multiselect is run when an item is selected.
@@ -345,7 +316,8 @@ var tbOptions = {
         tb.options.mpBuildTree(tb.buildTree);
         tb.options.mpUpdateFolder(tb.updateFolder);
         tb.options.mpMultiselected(tb.multiselected);
-        tb.options.mpHighlightMultiselect(tb.highlightMultiselect)
+        tb.options.mpHighlightMultiselect(tb.highlightMultiselect);
+        tb.options._onload(tb);
     },
     ontogglefolder : function (item, event) {
         var tb = this;
@@ -482,10 +454,9 @@ var ProjectOrganizer = {
                     mpBuildTree : args.buildTree,
                     mpUpdateFolder : args.updateFolder,
                     currentView: args.currentView,
-                    nodes : args.nodes,
                     onPageLoad : args.onPageLoad,
                     fetchers : args.fetchers,
-                    indexes : args.indexes,
+                    _onload: args._onload,
                     mpMultiselected : args.multiselected,
                     mpHighlightMultiselect : args.highlightMultiselect
                 },
