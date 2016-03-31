@@ -687,7 +687,7 @@ var MyProjects = {
 
             var userFinder = function(lo) {
               return lo.label === u2.data.embeds.users.data.attributes.full_name;
-            }
+            };
 
             for (var user in self.users) {
                 var u2 = self.users[user];
