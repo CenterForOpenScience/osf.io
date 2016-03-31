@@ -1758,7 +1758,9 @@ var Information = {
                 } }, 'Remove selected from collection')) : '',
                 args.selected().map(function(item){
                     return m('.db-info-multi', [
-                        m('h4', m('a', { href : item.data.links.html}, item.data.attributes.title)),
+                        m('h4', m('a', { href : item.data.links.html, onclick: function(){
+                            $osf.trackClick('myProjects', 'information-panel', 'navigate-to-project-multiple-selected');
+                        }}, item.data.attributes.title)),
                         m('p.db-info-meta.text-muted', [
                             m('span', item.data.attributes.public ? 'Public' : 'Private' + ' ' + item.data.attributes.category),
                             m('span', ', Last Modified on ' + item.data.date.local)
