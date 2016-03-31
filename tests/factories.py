@@ -13,6 +13,7 @@ Example usage: ::
 Factory boy docs: http://factoryboy.readthedocs.org/
 
 """
+import mock
 import datetime
 import functools
 from factory import base, Sequence, SubFactory, post_generation, LazyAttribute
@@ -42,6 +43,7 @@ from website.project.model import (
 )
 from website.project.sanctions import (
     Embargo,
+    EmbargoTerminationApproval,
     RegistrationApproval,
     Retraction,
     Sanction,
@@ -330,9 +332,10 @@ class SanctionFactory(ModularOdmFactory):
         abstract = True
 
     @classmethod
-    def _create(cls, target_class, approve=False, *args, **kwargs):
+    def _create(cls, target_class, initiated_by=None, approve=False, *args, **kwargs):
         user = kwargs.get('user') or UserFactory()
-        sanction = ModularOdmFactory._create(target_class, initiated_by=user, *args, **kwargs)
+        kwargs['initiated_by'] = initiated_by or user
+        sanction = ModularOdmFactory._create(target_class, *args, **kwargs)
         reg_kwargs = {
             'creator': user,
             'user': user,
@@ -349,7 +352,6 @@ class RetractionFactory(SanctionFactory):
         model = Retraction
     user = SubFactory(UserFactory)
 
-
 class EmbargoFactory(SanctionFactory):
     class Meta:
         model = Embargo
@@ -359,6 +361,28 @@ class RegistrationApprovalFactory(SanctionFactory):
     class Meta:
         model = RegistrationApproval
     user = SubFactory(UserFactory)
+
+class EmbargoTerminationApprovalFactory(ModularOdmFactory):
+
+    FACTORY_STRATEGY = base.CREATE_STRATEGY
+
+    @classmethod
+    def create(cls, registration=None, user=None, embargo=None, *args, **kwargs):
+        if registration:
+            if not user:
+                user = registration.creator
+        else:
+            user = user or AuthUserFactory()
+            if not embargo:
+                embargo = EmbargoFactory(initiated_by=user)
+                registration = embargo._get_registration()
+            else:
+                registration = RegistrationFactory(creator=user, user=user, embargo=embargo)
+        with mock.patch('website.project.sanctions.Sanction.is_approved', mock.Mock(return_value=True)):
+            with mock.patch('website.project.sanctions.TokenApprovableSanction.ask', mock.Mock()):
+                approval = registration.request_embargo_termination(Auth(user))
+                return approval
+
 
 class NodeWikiFactory(ModularOdmFactory):
     class Meta:
