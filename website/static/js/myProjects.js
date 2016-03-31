@@ -1117,58 +1117,60 @@ var Collections = {
             self.isValid(false);
             return promise;
         };
-        $('.db-collections ul>li.acceptDrop').droppable({
-            hoverClass: 'bg-color-hover',
-            drop: function( event, ui ) {
-                var dataArray = [];
-                var collection = self.collections()[$(this).attr('data-index')];
-                var collectionLink = $osf.apiV2Url(collection.data.path, { query : collection.data.query});
-                // If multiple items are dragged they have to be selected to make it work
-                if (args.selected().length > 1) {
-                    dataArray = args.selected().map(function(item){
-                        $osf.trackClick('myProjects', 'projectOrganizer', 'multiple-projects-dragged-to-collection');
-                        return buildCollectionNodeData(item.data.id);
-                    });
-                } else {
-                    // if single items are passed use the event information
-                    dataArray.push(buildCollectionNodeData(ui.draggable.find('.title-text>a').attr('data-nodeID'))); // data-nodeID attribute needs to be set in project organizer building title column
-                    $osf.trackClick('myProjects', 'projectOrganizer', 'single-project-dragged-to-collection');
-                }
-
-                function save(index, data) {
-                  if (!data[index])
-                    return args.currentView().fetcher === args.fetchers[collection.id] ? args.updateList() : null;
-                  m.request({
-                      method : 'POST',
-                      url : collection.data.node.links.self + 'node_links/', //collection.data.node.relationships.linked_nodes.links.related.href,
-                      config : xhrconfig,
-                      data : data[index]
-                  }).then(function(result){
-                      return args.currentView().fetcher
-                        .get(result.data.embeds.target_node.data.id)
-                        .then(function(item) {
-                          args.fetchers[collection.id].add(item);
-                          collection.data.count(collection.data.count()+1);
-                          save(index + 1, data);
+        self.applyDroppable = function _applyDroppable ( ){
+            $('.db-collections ul>li.acceptDrop').droppable({
+                hoverClass: 'bg-color-hover',
+                drop: function( event, ui ) {
+                    var dataArray = [];
+                    var collection = self.collections()[$(this).attr('data-index')];
+                    var collectionLink = $osf.apiV2Url(collection.data.path, { query : collection.data.query});
+                    // If multiple items are dragged they have to be selected to make it work
+                    if (args.selected().length > 1) {
+                        dataArray = args.selected().map(function(item){
+                            $osf.trackClick('myProjects', 'projectOrganizer', 'multiple-projects-dragged-to-collection');
+                            return buildCollectionNodeData(item.data.id);
                         });
-                  }, function(result){
-                      var message = '';
-                      var name = args.selected()[index] ? args.selected()[index].data.name : 'Item ';
-                      if (result.errors.length > 0) {
-                          result.errors.forEach(function(error){
-                              if(error.detail.indexOf('already pointed') > -1 ){
-                                  message = '"' + name + '" is already in "' + collection.label + '"' ;
-                              }
-                          });
-                      }
-                      $osf.growl(message,null, 'warning', 4000);
-                      save(index + 1, data);
-                  });
-                }
+                    } else {
+                        // if single items are passed use the event information
+                        dataArray.push(buildCollectionNodeData(ui.draggable.find('.title-text>a').attr('data-nodeID'))); // data-nodeID attribute needs to be set in project organizer building title column
+                        $osf.trackClick('myProjects', 'projectOrganizer', 'single-project-dragged-to-collection');
+                    }
 
-                save(0, dataArray);
-            }
-        });
+                    function save(index, data) {
+                      if (!data[index])
+                        return args.currentView().fetcher === args.fetchers[collection.id] ? args.updateList() : null;
+                      m.request({
+                          method : 'POST',
+                          url : collection.data.node.links.self + 'node_links/', //collection.data.node.relationships.linked_nodes.links.related.href,
+                          config : xhrconfig,
+                          data : data[index]
+                      }).then(function(result){
+                          return args.currentView().fetcher
+                            .get(result.data.embeds.target_node.data.id)
+                            .then(function(item) {
+                              args.fetchers[collection.id].add(item);
+                              collection.data.count(collection.data.count()+1);
+                              save(index + 1, data);
+                            });
+                      }, function(result){
+                          var message = '';
+                          var name = args.selected()[index] ? args.selected()[index].data.name : 'Item ';
+                          if (result.errors.length > 0) {
+                              result.errors.forEach(function(error){
+                                  if(error.detail.indexOf('already pointed') > -1 ){
+                                      message = '"' + name + '" is already in "' + collection.label + '"' ;
+                                  }
+                              });
+                          }
+                          $osf.growl(message,null, 'warning', 4000);
+                          save(index + 1, data);
+                      });
+                    }
+
+                    save(0, dataArray);
+                }
+            });
+        };
         self.validateName = function _validateName (val){
             if (val === 'Bookmarks') {
                 self.isValid(false);
