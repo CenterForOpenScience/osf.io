@@ -6,7 +6,7 @@ from website.models import NodeLog
 from website.app import init_app
 
 from scripts import utils as script_utils
-
+from framework.transactions.context import TokuTransaction
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -38,6 +38,8 @@ def main(dry_run):
     if not dry_run:
         migrate_log(logs)
         logger.info('Finished migrate {} logs '.format(len(logs)))
+    else:
+        raise RuntimeError('Dry Run -- Transaction rolled back')
 
 
 if __name__ == '__main__':
@@ -45,4 +47,5 @@ if __name__ == '__main__':
     script_utils.add_file_logger(logger, __file__)
     dry_run = 'dry' in sys.argv
     init_app(set_backends=True, routes=False)
-    main(dry_run=dry_run)
+    with TokuTransaction():
+        main(dry_run=dry_run)
