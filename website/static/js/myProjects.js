@@ -536,6 +536,7 @@ var MyProjects = {
               data.data.forEach(function(item) {
                   self.fetchers[currentCollection.id].remove(item.id);
                   currentCollection.data.count(currentCollection.data.count()-1);
+                  self.updateSelected([]);
               });
               self.updateList();
             }, function _removeProjectFromCollectionsFail(result){
