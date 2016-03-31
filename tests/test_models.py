@@ -59,8 +59,9 @@ from tests.factories import (
     ProjectFactory, NodeLogFactory, WatchConfigFactory,
     NodeWikiFactory, RegistrationFactory, UnregUserFactory,
     ProjectWithAddonFactory, UnconfirmedUserFactory, PrivateLinkFactory,
-    AuthUserFactory, BookmarkCollectionFactory, CollectionFactory,
-    NodeLicenseRecordFactory, InstitutionFactory
+    AuthUserFactory, DashboardFactory, FolderFactory,
+    NodeLicenseRecordFactory, InstitutionFactory,
+    EmbargoTerminationApprovalFactory, EmbargoFactory, RegistrationApprovalFactory, RetractionFactory
 )
 from tests.test_features import requires_piwik
 from tests.utils import mock_archive
@@ -1982,6 +1983,147 @@ class TestNode(OsfTestCase):
             assert_equal(r.registered_meta[meta_schema._id], data)
             assert_equal(r.registered_schema[0], meta_schema)
 
+
+class TestNodeSanctionStates(OsfTestCase):
+
+    def test_sanction_none(self):
+        node = NodeFactory()
+        assert_false(node.sanction)
+
+    def test_sanction_embargo_termination_first(self):
+        embargo_termination_approval = EmbargoTerminationApprovalFactory()
+        registration = Node.find_one(Q('embargo_termination_approval', 'eq', embargo_termination_approval))
+        assert_equal(registration.sanction, embargo_termination_approval)
+
+    def test_sanction_retraction(self):
+        retraction = RetractionFactory()
+        registration = Node.find_one(Q('retraction', 'eq', retraction))
+        assert_equal(registration.sanction, retraction)
+
+    def test_sanction_embargo(self):
+        embargo = EmbargoFactory()
+        registration = Node.find_one(Q('embargo', 'eq', embargo))
+        assert_equal(registration.sanction, embargo)
+
+    def test_sanction_registration_approval(self):
+        registration_approval = RegistrationApprovalFactory()
+        registration = Node.find_one(Q('registration_approval', 'eq', registration_approval))
+        assert_equal(registration.sanction, registration_approval)
+
+    def test_sanction_searches_parents(self):
+        user = AuthUserFactory()
+        node = NodeFactory(creator=user)
+        child = NodeFactory(creator=user, parent=node)
+        NodeFactory(creator=user, parent=child)
+        with mock_archive(node) as registration:
+            approval = registration.registration_approval
+            sub_reg = registration.nodes[0].nodes[0]
+            assert_equal(sub_reg.sanction, approval)
+
+    def test_is_pending_registration(self):
+        registration_approval = RegistrationApprovalFactory()
+        registration = Node.find_one(Q('registration_approval', 'eq', registration_approval))
+        assert_true(registration_approval.is_pending_approval)
+        assert_true(registration.is_pending_registration)
+
+    def test_is_pending_registration_searches_parents(self):
+        user = AuthUserFactory()
+        node = NodeFactory(creator=user)
+        child = NodeFactory(creator=user, parent=node)
+        NodeFactory(creator=user, parent=child)
+        with mock_archive(node) as registration:
+            sub_reg = registration.nodes[0].nodes[0]
+            assert_true(sub_reg.is_pending_registration)
+
+    def test_is_registration_approved(self):
+        registration_approval = RegistrationApprovalFactory()
+        registration = Node.find_one(Q('registration_approval', 'eq', registration_approval))
+        with mock.patch('website.project.sanctions.Sanction.is_approved', mock.Mock(return_value=True)):
+            assert_true(registration.is_registration_approved)
+
+    def test_is_registration_approved_searches_parents(self):
+        user = AuthUserFactory()
+        node = NodeFactory(creator=user)
+        child = NodeFactory(creator=user, parent=node)
+        NodeFactory(creator=user, parent=child)
+        with mock_archive(node) as registration:
+            with mock.patch('website.project.sanctions.Sanction.is_approved', mock.Mock(return_value=True)):
+                sub_reg = registration.nodes[0].nodes[0]
+                assert_true(sub_reg.is_registration_approved)
+
+    def test_is_retracted(self):
+        retraction = RetractionFactory()
+        registration = Node.find_one(Q('retraction', 'eq', retraction))
+        with mock.patch('website.project.sanctions.Sanction.is_approved', mock.Mock(return_value=True)):
+            assert_true(registration.is_retracted)
+
+    def test_is_retracted_searches_parents(self):
+        user = AuthUserFactory()
+        node = NodeFactory(creator=user)
+        child = NodeFactory(creator=user, parent=node)
+        NodeFactory(creator=user, parent=child)
+        with mock_archive(node, autoapprove=True, retraction=True, autoapprove_retraction=True) as registration:
+            sub_reg = registration.nodes[0].nodes[0]
+            assert_true(sub_reg.is_retracted)
+
+    def test_is_pending_retraction(self):
+        retraction = RetractionFactory()
+        registration = Node.find_one(Q('retraction', 'eq', retraction))
+        assert_true(retraction.is_pending_approval)
+        assert_true(registration.is_pending_retraction)
+
+    def test_is_pending_retraction_searches_parents(self):
+        user = AuthUserFactory()
+        node = NodeFactory(creator=user)
+        child = NodeFactory(creator=user, parent=node)
+        NodeFactory(creator=user, parent=child)
+        with mock_archive(node, autoapprove=True, retraction=True) as registration:
+            sub_reg = registration.nodes[0].nodes[0]
+            assert_true(sub_reg.is_pending_retraction)
+
+    def test_embargo_end_date(self):
+        embargo = EmbargoFactory()
+        registration = Node.find_one(Q('embargo', 'eq', embargo))
+        assert_equal(registration.embargo_end_date, embargo.end_date)
+
+    def test_embargo_end_date_searches_parents(self):
+        user = AuthUserFactory()
+        node = NodeFactory(creator=user)
+        child = NodeFactory(creator=user, parent=node)
+        NodeFactory(creator=user, parent=child)
+        with mock_archive(node, embargo=True) as registration:
+            sub_reg = registration.nodes[0].nodes[0]
+            assert_equal(sub_reg.embargo_end_date, registration.embargo_end_date)
+
+    def test_is_pending_embargo(self):
+        embargo = EmbargoFactory()
+        registration = Node.find_one(Q('embargo', 'eq', embargo))
+        assert_true(embargo.is_pending_approval)
+        assert_true(registration.is_pending_embargo)
+
+    def test_is_pending_embargo_searches_parents(self):
+        user = AuthUserFactory()
+        node = NodeFactory(creator=user)
+        child = NodeFactory(creator=user, parent=node)
+        NodeFactory(creator=user, parent=child)
+        with mock_archive(node, embargo=True) as registration:
+            sub_reg = registration.nodes[0].nodes[0]
+            assert_true(sub_reg.is_pending_embargo)
+
+    def test_is_embargoed(self):
+        embargo = EmbargoFactory()
+        registration = Node.find_one(Q('embargo', 'eq', embargo))
+        with mock.patch('website.project.sanctions.Sanction.is_approved', mock.Mock(return_value=True)):
+            assert_true(registration.is_embargoed)
+
+    def test_is_embargoed_searches_parents(self):
+        user = AuthUserFactory()
+        node = NodeFactory(creator=user)
+        child = NodeFactory(creator=user, parent=node)
+        NodeFactory(creator=user, parent=child)
+        with mock_archive(node, embargo=True, autoapprove=True) as registration:
+            sub_reg = registration.nodes[0].nodes[0]
+            assert_true(sub_reg.is_embargoed)
 
 class TestNodeUpdate(OsfTestCase):
 
