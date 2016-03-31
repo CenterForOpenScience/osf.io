@@ -204,6 +204,7 @@ NodeFetcher.prototype = {
 
     this.loaded += results.data.length;
     for(var i = 0; i < results.data.length; i++) {
+      if (this._cache[results.data[i].id]) continue;
       this._cache[results.data[i].id] = _formatDataforPO(results.data[i]);
       results.data[i].children = [];
       this._cache[parent.id].children.push(results.data[i]);

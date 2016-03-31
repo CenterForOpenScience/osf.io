@@ -336,7 +336,7 @@ var tbOptions = {
     },
     resolveToggle : _poResolveToggle,
     resolveLazyloadUrl : function(item) {
-      if (item.children.length > 0)
+    if (item.data.relationships.children.links.related.meta.count === item.children.length)
         return null;
       var tb = this;
       var deferred = $.Deferred();
@@ -344,6 +344,7 @@ var tbOptions = {
       var key = this.options.currentView().collection.id;
       this.options.fetchers[key].getChildren(item.data.id)
         .then(function(children) {
+          item.children = [];
           // HACK to use promises with TB
           var child, i;
           for (i = 0; i < children.length; i++) {
