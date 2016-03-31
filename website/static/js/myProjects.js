@@ -674,12 +674,15 @@ var MyProjects = {
             if (!noClear)
               self.nameFilters = [];
 
+
+            var userFinder = self.nameFilters.find(function(lo) {
+              return lo.label === u2.data.embeds.users.data.attributes.full_name;
+            });
+
             for (var user in self.users) {
                 var u2 = self.users[user];
                 if (u2.data.embeds.users.data) {
-                  var found = self.nameFilters.find(function(lo) {
-                    return lo.label === u2.data.embeds.users.data.attributes.full_name;
-                  });
+                  var found = self.nameFilters.find(userFinder);
                   if (!found)
                     self.nameFilters.push(new LinkObject('contributor', { id : u2.data.id, count : u2.count, query : { 'related_counts' : 'children' }}, u2.data.embeds.users.data.attributes.full_name, options.institutionId || false));
                   else
@@ -692,15 +695,17 @@ var MyProjects = {
             if (!noClear)
               self.tagFilters = [];
 
+            var tagFinder = function(lo) {
+              return lo.label === tag;
+            };
+
             for (var tag in self.tags){
                 var t2 = self.tags[tag];
-                var found = self.tagFilters.find(function(lo) {
-                  return lo.label === tag;
-                });
-                if (!found)
+                var tFound = self.tagFilters.find(tagFinder);
+                if (!tFound)
                   self.tagFilters.push(new LinkObject('tag', { tag : tag, count : t2, query : { 'related_counts' : 'children' }}, tag, options.institutionId || false));
                 else
-                  found.data.count = t2;
+                  tFound.data.count = t2;
             }
             // order tags
             self.tagFilters.sort(sortByCountDesc);
