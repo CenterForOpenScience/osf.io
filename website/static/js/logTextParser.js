@@ -66,7 +66,10 @@ var returnTextParams = function (param, text, logObject, view_url) {
                 })
             ]);
         }
-        return view_url ? m('a', {href: view_url},'"' + source + '"') : m('span', '"' + source + '"');
+        if (param === 'path' && source.charAt(0) === '/'){
+            source = source.substr(1, source.length);
+        }
+        return view_url ? m('a', {href: view_url}, source) : m('span', source);
     }
     return m('span', text);
 };
