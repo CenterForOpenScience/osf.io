@@ -6,6 +6,7 @@ var m = require('mithril');
 var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
 var AddProject = require('js/addProjectPlugin');
+var NodeFetcher = require('js/myProjects').NodeFetcher;
 
 // CSS
 require('css/quick-project-search-plugin.css');
@@ -38,6 +39,9 @@ var QuickSearchProject = {
             self.errorLoading(true);
             Raven.captureMessage('Error loading user projects on home page.', {requestReturn: result});
         };
+
+        self.templateNodes = new NodeFetcher('nodes');
+        self.templateNodes.start();
 
         // Load up to first ten nodes
         var url = $osf.apiV2Url('users/me/nodes/', { query : { 'embed': 'contributors'}});
@@ -466,7 +470,7 @@ var QuickSearchProject = {
                 },
                 trackingCategory: 'quickSearch',
                 trackingAction: 'add-project',
-                templates: ctrl.nodes
+                templatesFetcher: ctrl.templateNodes
             }))];
         }
 
