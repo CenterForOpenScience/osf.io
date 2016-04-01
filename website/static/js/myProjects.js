@@ -475,7 +475,7 @@ var MyProjects = {
                 else
                   self.currentView()[filter.type].push(filter);
 
-                return self.generateFiltersList()
+                return self.generateFiltersList();
             }
 
             if (self.currentView().fetcher)
@@ -1658,6 +1658,8 @@ var Filters = {
             var item;
             var i;
             var selectedCSS;
+            if (ctrl.nameCurrentPage() > Math.ceil(args.nameFilters.length / ctrl.namePageSize()))
+              ctrl.nameCurrentPage(Math.ceil(args.nameFilters.length / ctrl.namePageSize()));
             var begin = ((ctrl.nameCurrentPage()-1) * ctrl.namePageSize()); // remember indexes start from 0
             var end = ((ctrl.nameCurrentPage()) * ctrl.namePageSize()); // 1 more than the last item
             if (args.nameFilters.length < end) {
@@ -1680,6 +1682,8 @@ var Filters = {
             var selectedCSS;
             var item;
             var i;
+            if (ctrl.tagCurrentPage() > Math.ceil(args.tagFilters.length / ctrl.tagPageSize()))
+              ctrl.tagCurrentPage(Math.ceil(args.tagFilters.length / ctrl.tagPageSize()));
             var begin = ((ctrl.tagCurrentPage()-1) * ctrl.tagPageSize()); // remember indexes start from 0
             var end = ((ctrl.tagCurrentPage()) * ctrl.tagPageSize()); // 1 more than the last item
             if (args.tagFilters.length < end) {
