@@ -19,7 +19,7 @@ from faker import Factory
 from nose.tools import *  # noqa (PEP8 asserts)
 from pymongo.errors import OperationFailure
 from modularodm import storage
-from django.test import TestCase as DjangoTestCase
+from django.test import SimpleTestCase, override_settings
 
 
 from api.base.wsgi import application as api_django_app
@@ -31,7 +31,7 @@ from framework.guid.model import Guid
 from framework.mongo import client as client_proxy
 from framework.mongo import database as database_proxy
 from framework.transactions import commands, messages, utils
-from framework.tasks.handlers import celery_before_request
+from framework.celery_tasks.handlers import celery_before_request
 
 from website.project.model import (
     Node, NodeLog, Tag, WatchConfig, MetaSchema,
@@ -73,6 +73,7 @@ SILENT_LOGGERS = [
     'website.mails',
     'website.search_migration.migrate',
     'website.util.paths',
+    'api.caching.tasks'
 ]
 for logger_name in SILENT_LOGGERS:
     logging.getLogger(logger_name).setLevel(logging.CRITICAL)
@@ -241,7 +242,8 @@ class TestAppJSONAPI(TestApp, JSONAPIWrapper):
     delete_json_api = json_api_method('DELETE')
 
 
-class ApiAppTestCase(unittest.TestCase):
+@override_settings(DEBUG_PROPAGATE_EXCEPTIONS=True)
+class ApiAppTestCase(SimpleTestCase):
     """Base `TestCase` for OSF API v2 tests that require the WSGI app (but no database).
     """
     def setUp(self):
@@ -249,7 +251,8 @@ class ApiAppTestCase(unittest.TestCase):
         self.app = TestAppJSONAPI(api_django_app)
 
 
-class AdminAppTestCase(DjangoTestCase):
+@override_settings(DEBUG_PROPAGATE_EXCEPTIONS=True)
+class AdminAppTestCase(SimpleTestCase):
     def setUp(self):
         super(AdminAppTestCase, self).setUp()
         self.app = TestApp(admin_django_app)
@@ -336,6 +339,7 @@ class ApiTestCase(DbTestCase, ApiAppTestCase, UploadTestCase, MockRequestTestCas
 
 class AdminTestCase(DbTestCase, AdminAppTestCase, UploadTestCase, MockRequestTestCase):
     pass
+
 
 # From Flask-Security: https://github.com/mattupstate/flask-security/blob/develop/flask_security/utils.py
 class CaptureSignals(object):

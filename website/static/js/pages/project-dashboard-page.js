@@ -60,6 +60,7 @@ if ($comments.length) {
         isRegistration: window.contextVars.node.isRegistration,
         page: 'node',
         rootId: window.contextVars.node.id,
+        fileId: null,
         canComment: window.contextVars.currentUser.canComment,
         hasChildren: window.contextVars.node.hasChildren,
         currentUser: currentUser

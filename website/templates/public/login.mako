@@ -36,7 +36,7 @@
             </div>
             <div class="form-group">
                 <div class="col-sm-offset-3 col-sm-9">
-                    <button data-bind="click: instLogin" class="btn btn-success pull-right">Sign in</button>
+                    <button data-bind="click: instLogin, css: {disabled: loading}" class="btn btn-success pull-right">Sign in</button>
                 </div>
             </div>
             <div class="form-group" style="padding-top: 15px">
@@ -48,7 +48,11 @@
     </div>
     %endif
     %if campaign != "institution" or not enable_institutions:
-    <div class="col-sm-5 col-sm-offset-1 toggle-box toggle-box-left toggle-box-active p-h-lg">
+        %if sign_up:
+            <div class="col-sm-5 col-sm-offset-1 toggle-box toggle-box-left toggle-box-muted p-h-lg">
+        %else:
+            <div class="col-sm-5 col-sm-offset-1 toggle-box toggle-box-left toggle-box-active p-h-lg">
+        %endif
         <form
             id="logInForm"
             class="form-horizontal"
@@ -61,13 +65,13 @@
                 <label for="inputEmail3" class="col-sm-3 control-label">Email</label>
                 <div class="col-sm-9">
                     <input
+                        ${'autofocus' if not sign_up else ''}
                         type="email"
                         class="form-control"
                         data-bind="value: username"
                         name="username"
                         id="inputEmail3"
                         placeholder="Email"
-                        autofocus
                     >
                 </div>
             </div>
@@ -98,7 +102,11 @@
             </div>
         </form>
     </div>
-    <div id="signUpScope" class="col-sm-5 toggle-box toggle-box-right toggle-box-muted p-h-lg" style="height: auto;">
+        %if sign_up:
+            <div id="signUpScope" class="col-sm-5 toggle-box toggle-box-right toggle-box-active p-h-lg" style="height: auto;">
+        %else:
+            <div id="signUpScope" class="col-sm-5 toggle-box toggle-box-right toggle-box-muted p-h-lg" style="height: auto;">
+        %endif
         <form data-bind="submit: submit" class="form-horizontal">
             <h3 class="m-b-lg"> Create a free account </h3>
                 <div
@@ -112,6 +120,7 @@
                     <label for="inputName" class="col-sm-4 control-label">Full Name</label>
                     <div class="col-sm-8">
                         <input
+                            ${'autofocus' if sign_up else ''}
                             type="text"
                             class="form-control"
                             id="inputName"
@@ -214,6 +223,11 @@
             </div>
         </form>
     </div>
+        %if redirect_url:
+            <div class="text-center m-b-sm col-sm-12" style="padding-top: 15px"> <a href="${domain}login/?campaign=institution&redirect_url=${redirect_url}">Login through your institution  <i class="fa fa-arrow-right"></i></a></div>
+        %else:
+            <div class="text-center m-b-sm col-sm-12" style="padding-top: 15px"> <a href="${domain}login/?campaign=institution">Login through your institution  <i class="fa fa-arrow-right"></i></a></div>
+        %endif
     %endif
 </div>
 
@@ -223,7 +237,8 @@
     ${parent.javascript_bottom()}
     <script type="text/javascript">
         window.contextVars = $.extend(true, {}, window.contextVars, {
-            'campaign': ${campaign or '' | sjson, n}
+            'campaign': ${campaign or '' | sjson, n},
+            'institution_redirect': ${institution_redirect or '' | sjson, n}
         });
     </script>
     <script src=${"/static/public/js/login-page.js" | webpack_asset}></script>

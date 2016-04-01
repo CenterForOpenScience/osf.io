@@ -184,6 +184,7 @@
             safeName: ${ file_name | h, sjson},
             materializedPath: ${ materialized_path | sjson, n },
             file_tags: ${file_tags if file_tags else False| sjson, n},
+            guid: ${file_guid | sjson, n},
             id: ${file_id | sjson, n},
           urls: {
         %if error is None:

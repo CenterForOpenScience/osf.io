@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% load render_bundle from webpack_loader %}
+{% load node_extras %}
+
+{% load static %}
+{% block title %}
+    <title>Registrations</title>
+{% endblock title %}
+{% block content %}
+    <h2>List of Registrations</h2>
+    {% include "util/pagination.html" with items=page status=status %}
+    <table class="table table-striped table-hover table-responsive">
+    <thead>
+        <tr>
+            <th>GUID</th>
+            <th>Parent</th>
+            <th>Root</th>
+            <th>Date created</th>
+            <th>Public</th>
+            <th>Retracted</th>
+            <th>Embargo</th>
+            <th>Contributors</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for node in nodes %}
+    <tr>
+        <td>
+            <a href="{{ node.id | reverse_node }}"
+               class="btn btn-primary">
+                {{ node.id }}
+            </a>
+        </td>
+        <td>
+            {% if not node.parent %}
+                {{ node.parent }}
+            {% else %}
+                <a href="{{ node.parent | reverse_node }}">
+                    {{ node.parent }}
+                </a>
+            {% endif %}
+        </td>
+        <td>
+            {% if not node.root %}
+                {{ node.root }}
+            {% else %}
+                <a href="{{ node.root | reverse_node }}">
+                    {{ node.root }}
+                </a>
+            {% endif %}
+        </td>
+        <td>
+            {{ node.date_created|date }}
+        </td>
+        <td>
+            {{ node.public }}
+        </td>
+        <td>
+            {{ node.retraction }}
+        </td>
+        <td>
+            {{ node.embargo }}
+        </td>
+        <td>
+            {{ node.contributors|length }}
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+    </table>
+
+{% endblock content %}

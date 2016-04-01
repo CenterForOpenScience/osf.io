@@ -509,7 +509,8 @@ if ($comments.length) {
         nodeApiUrl: window.contextVars.node.urls.api,
         isRegistration: window.contextVars.node.isRegistration,
         page: 'files',
-        rootId: window.contextVars.file.id,
+        rootId: window.contextVars.file.guid,
+        fileId: window.contextVars.file.id,
         canComment: window.contextVars.currentUser.canComment,
         hasChildren: window.contextVars.node.hasChildren,
         currentUser: currentUser

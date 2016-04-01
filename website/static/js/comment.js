@@ -137,37 +137,36 @@ BaseComment.prototype.fetch = function() {
 /* Go through the paginated API response to fetch all comments for the specified target */
 BaseComment.prototype.fetchNext = function(url, comments) {
     var self = this;
-    var deferred = $.Deferred();
-    if (self._loaded) {
-        deferred.resolve(self.comments());
-    }
     var request = osfHelpers.ajaxJSON(
         'GET',
         url,
         {'isCors': true});
     request.done(function(response) {
-        comments = comments.concat(response.data);
+        comments = response.data;
+        if (self._loaded !== true) {
+            self._loaded = true;
+        }
+        comments.forEach(function(comment) {
+            self.comments.push(
+                new CommentModel(comment, self, self.$root)
+            );
+        });
+        self.configureCommentsVisibility();
         if (response.links.next !== null) {
             self.fetchNext(response.links.next, comments);
         } else {
-            self.comments(
-                ko.utils.arrayMap(comments, function(comment) {
-                    return new CommentModel(comment, self, self.$root);
-                })
-            );
-            deferred.resolve(self.comments());
-            self.configureCommentsVisibility();
-            self._loaded = true;
+            self.loadingComments(false);
         }
+    }).fail(function () {
+        self.loadingComments(false);
     });
-    return deferred.promise();
 };
 
 BaseComment.prototype.setUnreadCommentCount = function() {
     var self = this;
     var url;
     if (self.page() === FILES) {
-        url = osfHelpers.apiV2Url('files/' + self.$root.rootId() + '/', {query: 'related_counts=True'});
+        url = osfHelpers.apiV2Url('files/' + self.$root.fileId + '/', {query: 'related_counts=True'});
     } else {
         url = osfHelpers.apiV2Url(self.$root.nodeType + '/' + window.contextVars.node.id + '/', {query: 'related_counts=True'});
     }
@@ -586,9 +585,11 @@ var CommentListModel = function(options) {
     self.page(options.page);
     self.id = ko.observable(options.rootId);
     self.rootId = ko.observable(options.rootId);
+    self.fileId = options.fileId || '';
     self.canComment = ko.observable(options.canComment);
     self.hasChildren = ko.observable(options.hasChildren);
     self.author = options.currentUser;
+    self.loadingComments = ko.observable(true);
 
     self.togglePane = options.togglePane;
 
@@ -629,6 +630,9 @@ CommentListModel.prototype.initListeners = function() {
 };
 
 var onOpen = function(page, rootId, nodeApiUrl) {
+    if (osfHelpers.urlParams().view_only){
+        return null;
+    }
     var timestampUrl = nodeApiUrl + 'comments/timestamps/';
     var request = osfHelpers.putJSON(
         timestampUrl,
@@ -653,6 +657,7 @@ var onOpen = function(page, rootId, nodeApiUrl) {
  *      isRegistration: Node.is_registration,
  *      page: 'node',
  *      rootId: Node._id,
+ *      fileId: StoredFileNode._id,
  *      canComment: User.canComment,
  *      hasChildren: Node.hasChildren, 
  *      currentUser: {

@@ -25,7 +25,7 @@ from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
 from framework.exceptions import PermissionsError
 from website.project.model import Comment
-from website.files.models import StoredFileNode
+from website.files.models import StoredFileNode, TrashedFileNode
 from website.files.models.dropbox import DropboxFile
 from website.util import waterbutler_api_url_for
 
@@ -47,26 +47,32 @@ class CommentMixin(object):
 
         # Deleted root targets still appear as tuples in the database and are included in
         # the above query, requiring an additional check
+        if isinstance(comment.root_target.referent, TrashedFileNode):
+            comment.root_target = None
+            comment.save()
+
         if comment.root_target is None:
             raise NotFound
 
-        if isinstance(comment.root_target, StoredFileNode):
+        if isinstance(comment.root_target.referent, StoredFileNode):
             root_target = comment.root_target
-            if root_target.provider == 'osfstorage':
+            referent = root_target.referent
+
+            if referent.provider == 'osfstorage':
                 try:
                     StoredFileNode.find(
                         Q('node', 'eq', comment.node._id) &
-                        Q('_id', 'eq', root_target._id) &
+                        Q('_id', 'eq', referent._id) &
                         Q('is_file', 'eq', True)
                     )
                 except NoResultsFound:
                     Comment.update(Q('root_target', 'eq', root_target), data={'root_target': None})
-                    del comment.node.commented_files[root_target._id]
                     raise NotFound
             else:
-                if root_target.provider == 'dropbox':
-                    root_target = DropboxFile.load(comment.root_target._id)
-                url = waterbutler_api_url_for(comment.node._id, root_target.provider, root_target.path, meta=True)
+                if referent.provider == 'dropbox':
+                    # referent.path is the absolute path for the db file, but wb requires the relative path
+                    referent = DropboxFile.load(referent._id)
+                url = waterbutler_api_url_for(comment.node._id, referent.provider, referent.path, meta=True)
                 waterbutler_request = requests.get(
                     url,
                     cookies=self.request.COOKIES,

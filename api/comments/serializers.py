@@ -4,6 +4,7 @@ from rest_framework import serializers as ser
 from modularodm import Q
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
+from framework.guid.model import Guid
 from website.files.models import StoredFileNode
 from website.project.model import Comment, Node
 from rest_framework.exceptions import ValidationError, PermissionDenied
@@ -77,7 +78,7 @@ class CommentSerializer(JSONAPISerializer):
         return obj.user._id == user._id and obj.node.can_comment(Auth(user))
 
     def get_has_children(self, obj):
-        return Comment.find(Q('target', 'eq', obj)).count() > 0
+        return Comment.find(Q('target', 'eq', Guid.load(obj._id))).count() > 0
 
     def get_absolute_url(self, obj):
         return absolute_reverse('comments:comment-detail', kwargs={'comment_id': obj._id})
@@ -101,11 +102,11 @@ class CommentSerializer(JSONAPISerializer):
         return comment
 
     def get_target_type(self, obj):
-        if isinstance(obj, Node):
+        if isinstance(obj.referent, Node):
             return 'nodes'
-        elif isinstance(obj, Comment):
+        elif isinstance(obj.referent, Comment):
             return 'comments'
-        elif isinstance(obj, StoredFileNode):
+        elif isinstance(obj.referent, StoredFileNode):
             return 'files'
         else:
             raise InvalidModelValueError(
@@ -134,29 +135,27 @@ class CommentCreateSerializer(CommentSerializer):
         return target_type
 
     def get_target(self, node_id, target_id):
-        node = Node.load(target_id)
-        comment = Comment.load(target_id)
-        target_file = StoredFileNode.load(target_id)
+        target = Guid.load(target_id)
+        if not target:
+            raise ValueError('Invalid comment target.')
 
-        if node:
-            if node_id == target_id:
-                return node
-            else:
+        referent = target.referent
+
+        if isinstance(referent, Node):
+            if node_id != target_id:
                 raise ValueError('Cannot post comment to another node.')
-        elif comment:
-            if comment.node._id == node_id:
-                return comment
-            else:
+        elif isinstance(referent, Comment):
+            if referent.node._id != node_id:
                 raise ValueError('Cannot post reply to comment on another node.')
-        elif target_file:
-            if target_file.provider not in osf_settings.ADDONS_COMMENTABLE:
+        elif isinstance(referent, StoredFileNode):
+            if referent.provider not in osf_settings.ADDONS_COMMENTABLE:
                 raise ValueError('Comments are not supported for this file provider.')
-            elif target_file.node._id != node_id:
+            elif referent.node._id != node_id:
                 raise ValueError('Cannot post comment to file on another node.')
-            else:
-                return target_file
         else:
             raise ValueError('Invalid comment target.')
+
+        return target
 
     def create(self, validated_data):
         user = validated_data['user']

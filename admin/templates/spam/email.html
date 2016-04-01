@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load spam_extras %}
 {% block title %}
     <title>Email</title>
 {% endblock title %}
@@ -7,11 +8,11 @@
     <div class="container-fluid">
         <div class="row">
             <div class="btn-group col-sm-12">
-                <a href="{% url 'spam:spam' %}?page={{ page_number }}"
+                <a href="{% reverse_spam_list page=page_number %}"
                    class="btn btn-primary">
                     Back to list
                 </a>
-                <a href="{% url 'spam:detail' comment.id %}?page={{ page_number }}"
+                <a href="{% reverse_spam_detail comment.id page=page_number %}"
                    class="btn btn-default">
                     Back to detail
                 </a>

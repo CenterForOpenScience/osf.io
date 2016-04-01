@@ -3,10 +3,12 @@ from rest_framework import serializers as ser
 from rest_framework import exceptions
 
 from api.base.utils import absolute_reverse
+from api.files.serializers import FileSerializer
 from api.nodes.serializers import NodeSerializer
 from api.nodes.serializers import NodeLinksSerializer
 from api.nodes.serializers import NodeContributorsSerializer
-from api.base.serializers import IDField, RelationshipField, LinksField, HideIfRetraction, DevOnly
+from api.base.serializers import (IDField, RelationshipField, LinksField, HideIfRetraction, DevOnly,
+                                  FileCommentRelationshipField, NodeFileHyperLinkField)
 
 
 class RegistrationSerializer(NodeSerializer):
@@ -73,7 +75,8 @@ class RegistrationSerializer(NodeSerializer):
 
     parent = HideIfRetraction(RelationshipField(
         related_view='registrations:registration-detail',
-        related_view_kwargs={'node_id': '<parent_id>'}
+        related_view_kwargs={'node_id': '<parent_node._id>'},
+        filter_key='parent_node'
     ))
 
     logs = HideIfRetraction(RelationshipField(
@@ -157,9 +160,23 @@ class RegistrationContributorsSerializer(NodeContributorsSerializer):
     def get_absolute_url(self, obj):
         node_id = self.context['request'].parser_context['kwargs']['node_id']
         return absolute_reverse(
-            'registrations:node-contributor-detail',
+            'registrations:registration-contributor-detail',
             kwargs={
                 'node_id': node_id,
                 'user_id': obj._id
             }
         )
+
+
+class RegistrationFileSerializer(FileSerializer):
+
+    files = NodeFileHyperLinkField(
+        related_view='registrations:registration-files',
+        related_view_kwargs={'node_id': '<node_id>', 'path': '<path>', 'provider': '<provider>'},
+        kind='folder'
+    )
+
+    comments = FileCommentRelationshipField(related_view='registrations:registration-comments',
+                                            related_view_kwargs={'node_id': '<node._id>'},
+                                            related_meta={'unread': 'get_unread_comments_count'},
+                                            filter={'target': 'get_file_guid'})
