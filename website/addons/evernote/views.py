@@ -4,6 +4,7 @@ import httplib as http
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError, PermissionsError
 
+from website.addons.base import generic_views
 from website.addons.evernote import utils
 from website.addons.evernote.serializer import EvernoteSerializer
 from website.oauth.models import ExternalAccount
@@ -20,6 +21,9 @@ import ENML2HTML
 
 import logging
 logger = logging.getLogger(__name__)
+
+SHORT_NAME = 'evernote'
+FULL_NAME = 'Evernote'
 
 @must_be_logged_in
 def evernote_get_user_settings(auth):
@@ -94,6 +98,10 @@ def evernote_add_user_auth(auth, node_addon, user_addon, **kwargs):
         'message': 'Successfully imported access token from profile.',
     }
 
+
+evernote_deauthorize_node = generic_views.deauthorize_node(
+    SHORT_NAME
+)
 
 @must_have_addon('evernote', 'node')
 @must_be_addon_authorizer('evernote')
