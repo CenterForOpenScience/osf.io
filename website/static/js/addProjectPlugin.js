@@ -94,6 +94,7 @@ var AddProject = {
             m.request({method : 'POST', url : url, data : data, config : xhrconfig})
                 .then(success, error);
             self.newProjectName('');
+            self.newProjectDesc('');
             self.isValid(false);
         };
         self.reset = function _reset(){
