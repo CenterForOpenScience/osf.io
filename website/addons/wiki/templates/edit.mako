@@ -151,15 +151,17 @@
                         <div class="row">
                         <div class="col-xs-12">
                           <div class="form-group wmd-panel">
-                              <ul class="list-inline" data-bind="foreach: activeUsers" class="pull-right">
-                                  <!-- ko ifnot: id === '${user_id}' -->
-                                      <li><a data-bind="attr: { href: url }" >
+                          <ul class="list-inline" class="pull-right">
+                          <!-- ko foreach: showCollaborators -->
+                             <!-- ko ifnot: id === '${user_id}' -->
+                                <li><a data-bind="attr: { href: url }" >
                                           <img data-container="body" data-bind="attr: {src: gravatar}, tooltip: {title: name, placement: 'top'}"
-                                               style="border: 1px solid black;">
+                                               style="border: 1px solid black;" width="30px" height="30px">
                                       </a></li>
-                                  <!-- /ko -->
+                             <!-- /ko -->
+                          <!-- /ko --> 
+                                <li><span data-bind="text: andOthersMessage"></span></li>      
                               </ul>
-
                               <div id="wmd-button-bar"></div>
                               <div id="editor" class="wmd-input wiki-editor"
                                    data-bind="ace: currentText">Loading. . .</div>
@@ -389,6 +391,7 @@ ${parent.javascript_bottom()}
             userGravatar: '${urls['gravatar']}'.replace('&amp;', '&')
         }
     };
+    
 </script>
 <script src="//${sharejs_url}/text.js"></script>
 <script src="//${sharejs_url}/share.js"></script>

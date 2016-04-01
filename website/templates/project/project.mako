@@ -21,8 +21,8 @@
                     % endif
                 % endif
                 <h2 class="node-title">
-                    % if node['institution']['name'] and enable_institutions:
-                        <img class="img-circle" height="75" width="75" id="instLogo" src="${node['institution']['logo_path']}">
+                    % if node['institution']['name'] and enable_institutions and not node['anonymous']:
+                        <a href="/institutions/${node['institution']['id']}"><img class="img-circle" height="75" width="75" id="instLogo" src="${node['institution']['logo_path']}"></a>
                     % endif
                     <span id="nodeTitleEditable" class="overflow">${node['title']}</span>
                 </h2>
@@ -50,16 +50,16 @@
                     <div class="btn-group" style="display: none;" data-bind="visible: true">
 
                         <!-- ko ifnot: inDashboard -->
-                           <a id="addDashboardFolder" data-bind="click: addToDashboard, tooltip: {title: 'Add to dashboard folder',
+                           <a id="addDashboardFolder" data-bind="click: addToDashboard, tooltip: {title: 'Add to bookmarks',
                             placement: 'bottom', container : 'body'}" class="btn btn-default">
-                               <i class="fa fa-folder-open"></i>
+                               <i class="fa fa-bookmark"></i>
                                <i class="fa fa-plus"></i>
                            </a>
                         <!-- /ko -->
                         <!-- ko if: inDashboard -->
-                           <a id="removeDashboardFolder" data-bind="click: removeFromDashboard, tooltip: {title: 'Remove from dashboard folder',
+                           <a id="removeDashboardFolder" data-bind="click: removeFromDashboard, tooltip: {title: 'Remove from bookmarks',
                             placement: 'bottom', container : 'body'}" class="btn btn-default">
-                               <i class="fa fa-folder-open"></i>
+                               <i class="fa fa-bookmark"></i>
                                <i class="fa fa-minus"></i>
                            </a>
                         <!-- /ko -->
@@ -123,13 +123,17 @@
                     </ol>
                 % endif
                 </div>
-                % if enable_institutions:
-                    % if user['is_contributor']:
+                % if enable_institutions and not node['anonymous']:
+                    % if user['is_contributor'] and not node['is_registration']:
                         <a class="link-dashed" href="${node['url']}settings/#configureInstitutionAnchor" id="institution">Affiliated Institution:</a>
                     % else:
                         Affiliated institution:
                     % endif
-                    <span class="text-muted"> ${node['institution']['name']} </span>
+                    % if node['institution']['id']:
+                        <a href="/institutions/${node['institution']['id']}">${node['institution']['name']}</a>
+                    % else:
+                        <span> None </span>
+                    % endif
                 % endif
                 % if node['is_fork']:
                     <p>
