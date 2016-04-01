@@ -99,6 +99,7 @@ var AddProject = {
         self.reset = function _reset(){
             self.newProjectName('');
             $('#' + self.options.modalID + ' .project-name').val('');
+            $('#' + self.options.modalID + ' .project-desc').val('');
             self.viewState('form');
             self.newProjectDesc('');
             self.newProjectCategory(self.defaultCat);
@@ -149,14 +150,14 @@ var AddProject = {
                         ctrl.showMore() ? [
                             m('.form-group.m-v-sm', [
                                 m('label[for="projectDesc].f-w-lg.text-bigger', 'Description'),
-                                m('input[type="text"].form-control.noresize', {
+                                m('input[type="text"].form-control.noresize.project-desc', {
                                     onkeyup: function (ev){
                                         ctrl.newProjectDesc($(this).val());
                                     },
                                     onchange: function() {
                                         $osf.trackClick(options.trackingCategory, options.trackingAction, 'type-project-description');
                                     },
-                                    value : ctrl.newProjectDesc(),
+                                    name : 'projectDesc',
                                     placeholder : 'Enter ' + ctrl.nodeType + ' description'
                                 })
                             ]),
