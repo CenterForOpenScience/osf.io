@@ -956,7 +956,7 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
         if is_authorizer:
             approval_link = urls.get('approve', '')
             disapproval_link = urls.get('reject', '')
-            approval_time_span = settings.EMBARGO_PENDING_TIME.days * 24
+            approval_time_span = settings.EMBARGO_TERMINATION_PENDING_TIME.days * 24
 
             registration = self._get_registration()
 
@@ -978,20 +978,6 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
             })
         return context
 
-    def _on_reject(self, user):
-        from website.project.model import NodeLog
-
-        registration = self._get_registration()
-        registration.registered_from.add_log(
-            action=NodeLog.EMBARGO_TERMINATION_CANCELLED,
-            params={
-                'node': registration._id,
-                'embargo_id': self._id,
-            },
-            auth=Auth(user),
-        )
-        self.save()
-
     def _on_complete(self, user):
         from website.project.model import NodeLog
 
@@ -1001,7 +987,7 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
             action=NodeLog.EMBARGO_TERMINATION_APPROVED,
             params={
                 'node': registration._id,
-                'embargo_id': self._id,
+                'embargo_id': registration.embargo._id,
             },
             auth=Auth(self.initiated_by),
         )
