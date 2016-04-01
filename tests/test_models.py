@@ -25,7 +25,7 @@ from framework.auth import exceptions as auth_exc
 from framework.auth.exceptions import ChangePasswordError, ExpiredTokenError
 from framework.auth.utils import impute_names_model
 from framework.auth.signals import user_merged
-from framework.tasks import handlers
+from framework.celery_tasks import handlers
 from framework.bcrypt import check_password_hash
 from website import filters, language, settings, mailchimp_utils
 from website.exceptions import NodeStateError
@@ -59,7 +59,7 @@ from tests.factories import (
     ProjectFactory, NodeLogFactory, WatchConfigFactory,
     NodeWikiFactory, RegistrationFactory, UnregUserFactory,
     ProjectWithAddonFactory, UnconfirmedUserFactory, PrivateLinkFactory,
-    AuthUserFactory, DashboardFactory, FolderFactory,
+    AuthUserFactory, BookmarkCollectionFactory, CollectionFactory,
     NodeLicenseRecordFactory, InstitutionFactory
 )
 from tests.test_features import requires_piwik
@@ -89,10 +89,35 @@ class TestUserValidation(OsfTestCase):
         self.user.save()
         assert_equal(self.user.social['profileWebsites'], [])
 
-    def test_validate_social_valid(self):
+    def test_validate_social_valid_website_simple(self):
         self.user.social = {'profileWebsites': ['http://cos.io/']}
         self.user.save()
         assert_equal(self.user.social['profileWebsites'], ['http://cos.io/'])
+
+    def test_validate_social_valid_website_protocol(self):
+        self.user.social = {'profileWebsites': ['https://definitelyawebsite.com']}
+        self.user.save()
+        assert_equal(self.user.social['profileWebsites'], ['https://definitelyawebsite.com'])
+
+    def test_validate_social_valid_website_ipv4(self):
+        self.user.social = {'profileWebsites': ['http://127.0.0.1']}
+        self.user.save()
+        assert_equal(self.user.social['profileWebsites'], ['http://127.0.0.1'])
+
+    def test_validate_social_valid_website_path(self):
+        self.user.social = {'profileWebsites': ['http://definitelyawebsite.com/definitelyapage/']}
+        self.user.save()
+        assert_equal(self.user.social['profileWebsites'], ['http://definitelyawebsite.com/definitelyapage/'])
+
+    def test_validate_social_valid_website_portandpath(self):
+        self.user.social = {'profileWebsites': ['http://127.0.0.1:5000/hello/']}
+        self.user.save()
+        assert_equal(self.user.social['profileWebsites'], ['http://127.0.0.1:5000/hello/'])
+
+    def test_validate_social_valid_website_querystrings(self):
+        self.user.social = {'profileWebsites': ['http://definitelyawebsite.com?real=yes&page=definitely']}
+        self.user.save()
+        assert_equal(self.user.social['profileWebsites'], ['http://definitelyawebsite.com?real=yes&page=definitely'])
 
     def test_validate_multiple_profile_websites_valid(self):
         self.user.social = {'profileWebsites': ['http://cos.io/', 'http://thebuckstopshere.com', 'http://dinosaurs.com']}
@@ -933,6 +958,11 @@ class TestDisablingUsers(OsfTestCase):
         assert_true(isinstance(self.user.date_disabled, datetime.datetime))
         assert_false(self.user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST])
 
+    def test_disable_account_api(self):
+        settings.ENABLE_EMAIL_SUBSCRIPTIONS = True
+        with assert_raises(mailchimp_utils.mailchimp.InvalidApiKeyError):
+            self.user.disable_account()
+
 
 class TestMergingUsers(OsfTestCase):
 
@@ -956,8 +986,8 @@ class TestMergingUsers(OsfTestCase):
         self.master.merge_user(self.dupe)
         self.master.save()
 
-    def test_dashboard_nodes_arent_merged(self):
-        dashnode = ProjectFactory(creator=self.dupe, is_dashboard=True)
+    def test_bookmark_collection_nodes_arent_merged(self):
+        dashnode = ProjectFactory(creator=self.dupe, is_bookmark_collection=True)
 
         self._merge_dupe()
 
@@ -1599,7 +1629,7 @@ class TestNode(OsfTestCase):
             NodeLog.ADDON_REMOVED
         )
 
-    @mock.patch('website.addons.github.model.AddonGitHubNodeSettings.config')
+    @mock.patch('website.addons.github.model.GitHubNodeSettings.config')
     def test_delete_mandatory_addon(self, mock_config):
         mock_config.added_mandatory = ['node']
         self.node.add_addon('github', self.auth)
@@ -1681,8 +1711,8 @@ class TestNode(OsfTestCase):
         pointed_project = ProjectFactory(creator=user)  # project that other project points to
         pointer_project.add_pointer(pointed_project, Auth(pointer_project.creator), save=True)
 
-        # Project is in a dashboard folder
-        folder = FolderFactory(creator=pointed_project.creator)
+        # Project is in a organizer collection
+        folder = CollectionFactory(creator=pointed_project.creator)
         folder.add_pointer(pointed_project, Auth(pointed_project.creator), save=True)
 
         assert_in(pointer_project, pointed_project.get_points(folders=False))
@@ -1780,29 +1810,17 @@ class TestNode(OsfTestCase):
         pass
 
     def test_not_a_folder(self):
-        assert_equal(self.node.is_folder, False)
+        assert_equal(self.node.is_collection, False)
 
-    def test_not_a_dashboard(self):
-        assert_equal(self.node.is_dashboard, False)
+    def test_not_a_bookmark_collection(self):
+        assert_equal(self.node.is_bookmark_collection, False)
 
     def test_cannot_link_to_folder_more_than_once(self):
-        folder = FolderFactory(creator=self.user)
+        folder = CollectionFactory(creator=self.user)
         node_two = ProjectFactory(creator=self.user)
         self.node.add_pointer(folder, auth=self.auth)
         with assert_raises(ValueError):
             node_two.add_pointer(folder, auth=self.auth)
-
-    def test_is_expanded_default_false_with_user(self):
-        assert_equal(self.node.is_expanded(user=self.user), False)
-
-    def test_expand_sets_true_with_user(self):
-        self.node.expand(user=self.user)
-        assert_equal(self.node.is_expanded(user=self.user), True)
-
-    def test_collapse_sets_false_with_user(self):
-        self.node.expand(user=self.user)
-        self.node.collapse(user=self.user)
-        assert_equal(self.node.is_expanded(user=self.user), False)
 
     def test_cannot_register_deleted_node(self):
         self.node.is_deleted = True
@@ -2300,45 +2318,45 @@ class TestRemoveNode(OsfTestCase):
         assert_false(target.is_deleted)
 
 
-class TestDashboard(OsfTestCase):
+class TestBookmarkCollection(OsfTestCase):
 
     def setUp(self):
-        super(TestDashboard, self).setUp()
+        super(TestBookmarkCollection, self).setUp()
         # Create project with component
         self.user = UserFactory()
         self.auth = Auth(user=self.user)
-        self.project = DashboardFactory(creator=self.user)
+        self.project = BookmarkCollectionFactory(creator=self.user)
 
-    def test_dashboard_is_dashboard(self):
-        assert_equal(self.project.is_dashboard, True)
+    def test_bookmark_collection_is_bookmark_collection(self):
+        assert_equal(self.project.is_bookmark_collection, True)
 
-    def test_dashboard_is_folder(self):
-        assert_equal(self.project.is_folder, True)
+    def test_bookmark_collection_is_collection(self):
+        assert_equal(self.project.is_collection, True)
 
-    def test_cannot_remove_dashboard(self):
+    def test_cannot_remove_bookmark_collection(self):
         with assert_raises(NodeStateError):
             self.project.remove_node(self.auth)
 
-    def test_cannot_have_two_dashboards(self):
+    def test_cannot_have_two_bookmark_collection(self):
         with assert_raises(NodeStateError):
-            DashboardFactory(creator=self.user)
+            BookmarkCollectionFactory(creator=self.user)
 
-    def test_cannot_link_to_dashboard(self):
+    def test_cannot_link_to_bookmark_collection(self):
         new_node = ProjectFactory(creator=self.user)
         with assert_raises(ValueError):
             new_node.add_pointer(self.project, auth=self.auth)
 
     def test_can_remove_empty_folder(self):
-        new_folder = FolderFactory(creator=self.user)
-        assert_equal(new_folder.is_folder, True)
+        new_folder = CollectionFactory(creator=self.user)
+        assert_equal(new_folder.is_collection, True)
         new_folder.remove_node(auth=self.auth)
         assert_true(new_folder.is_deleted)
 
     def test_can_remove_folder_structure(self):
-        outer_folder = FolderFactory(creator=self.user)
-        assert_equal(outer_folder.is_folder, True)
-        inner_folder = FolderFactory(creator=self.user)
-        assert_equal(inner_folder.is_folder, True)
+        outer_folder = CollectionFactory(creator=self.user)
+        assert_equal(outer_folder.is_collection, True)
+        inner_folder = CollectionFactory(creator=self.user)
+        assert_equal(inner_folder.is_collection, True)
         outer_folder.add_pointer(inner_folder, self.auth)
         outer_folder.remove_node(auth=self.auth)
         assert_true(outer_folder.is_deleted)

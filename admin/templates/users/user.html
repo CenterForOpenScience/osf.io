@@ -6,74 +6,214 @@
 {% endblock title %}
 {% block content %}
     <div class="container-fluid">
-        <div class="row">
-            <form action="{% url 'users:user' %}" method="post">
-                {% csrf_token %}
-                {% if form.errors %}
-                    <div class="alert alert-danger">{{ form.errors }}</div>
-                {% endif %}
-                <div class="form-group">
-                    <label for="guid">User GUID:</label>
-                    {{ form.guid }}
+        <div class="row"> {# Action and link buttons #}
+            <a href="{% url 'users:search' %}"
+               class="btn btn-primary"><i class="fa fa-search"></i> </a>
+            <a href="{% url 'spam:user_spam' user.id %}"
+               class="btn btn-primary">
+                Associated spam
+            </a>
+            <a href=""
+               class="btn btn-primary disabled">
+                User notes
+            </a>
+            <a href="{% url 'users:reset_password' user.id %}"
+               data-toggle="modal" data-target="#resetModal"
+               class="btn btn-primary">
+                Send reset
+            </a>
+            <div class="modal" id="resetModal" style="display: none">
+                <div class="modal-dialog">
+                    <div class="modal-content"></div>
+                    {# Data from above link #}
                 </div>
-                <input type="submit" class="btn btn-primary" value="Submit" />
-            </form>
+            </div>
+            {% if not user.disabled %}
+            <button data-toggle="modal" data-target="#disableModal"
+                    class="btn btn-danger">
+                Disable account
+            </button>
+            <div class="modal" id="disableModal" style="display: none">
+                <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Are you sure you want to disable this user?</h3>
+                    </div>
+                    <div class="modal-body">
+                        Please be sure that you need to deactivate this user.
+                    </div>
+                    <div class="modal-footer">
+                        <a href="{% url 'users:disable' user.id %}"
+                           class="btn btn-danger">Disable</a>
+                        <button class="btn" data-dismiss="modal">Cancel</button>
+                    </div>
+                </div>
+                </div>
+            </div>
+            {% else %}
+                <a href="{% url 'users:reactivate' user.id %}"
+                   class="btn btn-success">Reactivate account</a>
+            {% endif %}
         </div>
-
-        <hr>
-
-        {% if guid_object %}
-        {% with user=guid_object %}
-            <div class="row">
-                <h3>User information</h3>
-            </div>
-            <div class="row">
-                <strong>Name:</strong> {{ user.name }}
-            </div>
-            <div class="row">
-                <strong>Emails:</strong>
-                <ul>
-                {% for email in user.emails %}
-                    <li>
-                        {% if forloop.first %}
-                            <strong>Primary: </strong>
+        <div class="row">
+            <h3>User details</h3>
+        </div>
+        <div class="row">
+            <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Name</td>
+                    <td>{{ user.name }}</td>
+                </tr>
+                <tr>
+                    <td>OSF account</td>
+                    <td>
+                        <a href="">{{ user.id }}</a>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Email</td>
+                    <td>
+                        {% for email in user.emails %}
+                            <li>
+                                {% if forloop.first %}
+                                    <strong>Primary: </strong>
+                                    {{ email }}
+                                    <a href=""
+                                       class="btn btn-default disabled">Email</a>
+                                {% else %}
+                                    {{ email }}
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Account disabled</td>
+                    <td>{{ user.disabled }}</td>
+                </tr>
+                <tr>
+                    <td>Last login</td>
+                    <td>{{ user.last_login }}</td>
+                </tr>
+                <tr>
+                    <td>Two factor</td>
+                    <td>
+                        {{ user.two_factor }}
+                        {% if user.two_factor %}
+                            <button data-toggle="modal"
+                                    data-target="#twoFactorModal"
+                                    class="btn btn-default">
+                                Deactivate
+                            </button>
+                            <div class="modal" id="twoFactorModal"
+                                 style="display: none;">
+                                <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h3>
+                                            This will remove two factor auth.
+                                        </h3>
+                                    </div>
+                                    <div class="modal-body">
+                                        Removing this will let the user log in
+                                        with only one form of authentication.
+                                        The only way to reverse this action is
+                                        for the user to re-enable the addon
+                                        after logging in.
+                                    </div>
+                                    <div class="modal-footer">
+                                        <a href="{% url 'users:remove2factor' user.id %}"
+                                           class="btn btn-danger">
+                                            Deactivate
+                                        </a>
+                                        <button class="btn" data-dismiss="modal">
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                                </div>
+                            </div>
                         {% endif %}
-                        {{ email }}
-                    </li>
-                {% endfor %}
-                </ul>
-            </div>
-            <div class="row">
-                <strong>Last logged in:</strong> {{ user.last_login }}
-            </div>
-            <div class="row">
-                <strong>Nodes</strong>
-                <table class="table table-striped table-hover table-responsive">
-                <thead>
-                    <tr>
-                        <th>GUID</th>
-                        <th>Name</th>
-                        <th>Public</th>
-                        <th># of Contributors</th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for node in user.nodes %}
-                    <tr>
-                        <td>
-                            <a href="{{ node.id | reverse_node }}">
-                                {{ node.id }}
-                            </a>
-                        </td>
-                        <td>{{ node.title }}</td>
-                        <td>{{ node.public }}</td>
-                        <td>{{ node.number_contributors }}</td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-                </table>
-            </div>
-        {% endwith %}
-        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Nodes</td>
+                    <td>
+                        <table class="table table-hover table-bordered">
+                        <thead>
+                            <tr>
+                                <th>GUID</th>
+                                <th>Name</th>
+                                <th>Public</th>
+                                <th>Registration</th>
+                                <th># of Contributors</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for node in user.nodes %}
+                            <tr>
+                                <td>
+                                    <a href="{{ node.id | reverse_node }}">
+                                        {{ node.id }}
+                                    </a>
+                                </td>
+                                <td>{{ node.title | truncatechars:20 }}</td>
+                                <td>{{ node.public }}</td>
+                                <td>{{ node.is_registration }}</td>
+                                <td>{{ node.number_contributors }}</td>
+                                <td>
+                                {% if node.number_contributors < 2 and not node.is_registration %}
+                                    {% if node.deleted %}
+                                        <a href="{% url 'nodes:restore_node' node.id %}"
+                                           class="btn btn-success">
+                                            Restore Node
+                                        </a>
+                                    {% else %}
+                                    <button data-toggle="modal" data-target="#deleteModal"
+                                            class="btn btn-danger">
+                                        Delete Node
+                                    </button>
+                                    <div class="modal" id="deleteModal">
+                                    <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h3>Are you sure you want to delete this node?</h3>
+                                        </div>
+                                        <div class="modal-body">
+                                            This action will be reversible after the fact.
+                                        </div>
+                                        <div class="modal-footer">
+                                            <a href="{% url 'nodes:remove_node' node.id %}"
+                                               class="btn btn-danger">
+                                                Delete
+                                            </a>
+                                            <button class="btn btn-default"
+                                                    data-dismiss="modal">
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </div>
+                                    </div>
+                                    </div>
+                                    {% endif %}
+                                {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                        </table>
+                    </td>
+                </tr>
+            </tbody>
+            </table>
+        </div>
     </div>
 {% endblock content %}

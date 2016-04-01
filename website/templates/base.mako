@@ -46,6 +46,7 @@
     ${self.javascript()}
 
     <link href='//fonts.googleapis.com/css?family=Carrois+Gothic|Inika|Patua+One' rel='stylesheet' type='text/css'>
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,600,300,700' rel='stylesheet' type='text/css'>
 
 </head>
 <body data-spy="scroll" data-target=".scrollspy">
@@ -65,7 +66,10 @@
     <div id='devmode'><strong>WARNING</strong>: This site is running in development mode.</div>
     % endif
 
-    <%include file="nav.mako"/>
+    <%namespace name="nav_file" file="nav.mako"/>
+    <%block name="nav">
+        ${nav_file.nav()}
+    </%block>
      ## TODO: shouldn't always have the watermark class
     ${self.content_wrap()}
 
@@ -109,6 +113,21 @@
             </script>
         % endif
 
+        <%!
+            import hashlib
+
+            def user_hash(user_id):
+                token = hashlib.md5()
+                token.update(user_id)
+                return token.hexdigest()
+        %>
+
+        <%!
+            import datetime
+            def create_timestamp():
+                return str(datetime.datetime.utcnow())
+        %>
+
         % if settings.GOOGLE_ANALYTICS_ID:
             <script>
             (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
@@ -119,19 +138,14 @@
             ga('create', ${ settings.GOOGLE_ANALYTICS_ID | sjson, n }, 'auto', {'allowLinker': true});
             ga('require', 'linker');
             ga('linker:autoLink', ['centerforopenscience.org'] );
+            ga('set', 'dimension1', ${user_hash(user_id) | sjson, n});
+            ga('set', 'dimension2', ${create_timestamp() | sjson, n});
             ga('send', 'pageview');
             </script>
+
         % else:
             <script>
-                window.ga = function(source) {
-                        console.error('=== Mock ga event called: ===');
-                        console.log('event: ga(' +
-                                    arguments[0] + ', ' +
-                                    arguments[1] + ', ' +
-                                    arguments[2] + ', ' +
-                                    arguments[3] + ')'
-                        );
-                };
+                window.ga = function() {};
           </script>
         % endif
 
@@ -145,7 +159,14 @@
                 waterbutlerURL: ${ waterbutler_url if waterbutler_url.endswith('/') else waterbutler_url + '/' | sjson, n },
                 cookieName: ${ cookie_name | sjson, n },
                 apiV2Prefix: ${ api_v2_base | sjson, n },
-                registerUrl: ${ api_url_for('register_user') | sjson, n}
+                registerUrl: ${ api_url_for('register_user') | sjson, n},
+                currentUser: {
+                    id: ${ user_id | sjson, n },
+                    locale: ${ user_locale | sjson, n },
+                    timezone: ${ user_timezone | sjson, n }
+                },
+                popular: ${ popular_links_node | sjson, n},
+                newAndNoteworthy: ${ noteworthy_links_node | sjson, n}
             });
         </script>
 
@@ -254,7 +275,8 @@
       <script src="//cdnjs.cloudflare.com/ajax/libs/es5-shim/4.0.3/es5-sham.min.js"></script>
     <![endif]-->
 
-    <!-- Le styles -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/es6-shim/0.35.0/es6-shim.min.js"></script>
+
     ## TODO: Get fontawesome and select2 to play nicely with webpack
     <link rel="stylesheet" href="/static/vendor/bower_components/bootstrap/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="/static/vendor/bower_components/select2/select2.css">

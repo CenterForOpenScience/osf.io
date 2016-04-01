@@ -69,7 +69,7 @@ var ProjectSettings = oop.extend(
                 return;
             }
             var requestPayload = self.serialize();
-            var request = $osf.ajaxJSON('put',
+            var request = $osf.ajaxJSON('patch',
                 self.updateUrl,
                 { data: requestPayload,
                 isCors: true });
