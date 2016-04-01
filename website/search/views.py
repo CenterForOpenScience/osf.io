@@ -14,6 +14,7 @@ from modularodm import Q
 from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
+from framework import sentry
 from website import settings
 from website.models import Node, User
 from website.project.views.contributor import get_node_contributors_abbrev
@@ -46,6 +47,16 @@ def handle_search_errors(func):
                 'message_short': 'Search unavailable',
                 'message_long': ('Our search service is currently unavailable, if the issue persists, '
                 'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.'),
+            })
+        except exceptions.SearchException:
+            # Interim fix for issue where ES fails with 500 in some settings- ensure exception is still logged until it can be better debugged. See OSF-4538
+            sentry.log_exception()
+            sentry.log_message('Elasticsearch returned an unexpected error response')
+            # TODO: Add a test; may need to mock out the error response due to inability to reproduce error code locally
+            raise HTTPError(http.BAD_REQUEST, data={
+                'message_short': 'Could not perform search query',
+                'message_long': ('Please check our help (the question mark beside the search box) for more information '
+                                 'on advanced search queries.'),
             })
     return wrapped
 

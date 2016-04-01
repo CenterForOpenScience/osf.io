@@ -14,6 +14,7 @@ from elasticsearch import (
     Elasticsearch,
     NotFoundError,
     RequestError,
+    TransportError,
     helpers,
 )
 from modularodm import Q
@@ -83,6 +84,9 @@ def requires_search(func):
             except RequestError as e:
                 if 'ParseException' in e.error:
                     raise exceptions.MalformedQueryError(e.error)
+                raise exceptions.SearchException(e.error)
+            except TransportError as e:
+                # Catch and wrap generic ES 500 codes. TODO: Improve fix for https://openscience.atlassian.net/browse/OSF-4538
                 raise exceptions.SearchException(e.error)
 
         sentry.log_message('Elastic search action failed. Is elasticsearch running?')
