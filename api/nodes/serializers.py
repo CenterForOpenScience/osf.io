@@ -82,7 +82,7 @@ class NodeSerializer(JSONAPISerializer):
     date_modified = ser.DateTimeField(read_only=True)
     registration = ser.BooleanField(read_only=True, source='is_registration')
     fork = ser.BooleanField(read_only=True, source='is_fork')
-    collection = DevOnly(ser.BooleanField(read_only=True, source='is_collection'))
+    collection = ser.BooleanField(read_only=True, source='is_collection')
     tags = JSONAPIListField(child=NodeTagField(), required=False)
     template_from = ser.CharField(required=False, allow_blank=False, allow_null=False,
                                   help_text='Specify a node id for a node you would like to use as a template for the '
@@ -132,11 +132,11 @@ class NodeSerializer(JSONAPISerializer):
         related_view_kwargs={'node_id': '<forked_from_id>'}
     )
 
-    node_links = DevOnly(RelationshipField(
+    node_links = RelationshipField(
         related_view='nodes:node-pointers',
         related_view_kwargs={'node_id': '<pk>'},
         related_meta={'count': 'get_pointers_count'},
-    ))
+    )
 
     parent = RelationshipField(
         related_view='nodes:node-detail',
