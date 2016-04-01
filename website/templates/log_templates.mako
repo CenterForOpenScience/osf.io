@@ -378,9 +378,14 @@ from
 </script>
 
 <script type="text/html" id="primary_institution_changed">
-changed this node's primary institution from <strong>{{ params.previous_institution.name }}</strong> to <strong>{{ params.institution.name }}</strong>.
+changed primary institution of <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+{{#if params.previous_institution.name != 'None'}}
+ from <a class="log-node-title-link overflow" href="/institutions/{{params.previous_institution.id}}">{{ params.previous_institution.name }}</a>
+{{/if}}
+ to <a class="log-node-title-link overflow" href="/institutions/{{params.institution.id}}">{{ params.institution.name }}</a>.
 </script>
 
 <script type="text/html" id="primary_institution_removed">
-removed <strong>{{ params.institution.name }}</strong> as this node's primary institution.
+removed <a class="log-node-title-link overflow" href="/institutions/{{params.institution.id}}">{{ params.institution.name }}</a>
+as the primary institution of <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>.
 </script>
