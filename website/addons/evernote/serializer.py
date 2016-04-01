@@ -66,7 +66,7 @@ class EvernoteSerializer(OAuthAddonSerializer):
             'notes': node.api_url_for('evernote_notes'),
             'note': node.api_url_for('evernote_note'),
             # 'files': node.web_url_for('collect_file_trees'),
-            # 'deauthorize': node.api_url_for('evernote_remove_user_auth'),
             #'share': 'https://app.box.com/files/0/f/{0}'.format(self.node_settings.folder_id),
+            'deauthorize': node.api_url_for('evernote_deauthorize_node'),
             'accounts': node.api_url_for('evernote_get_user_settings'),
         }
