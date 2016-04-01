@@ -18,6 +18,10 @@ function NodeSelectTreebeard(divID, data, nodesState) {
         naturalScrollLimit : 0,
         rowHeight : 35,
         hScroll : 0,
+        onload : function () {
+            var tb = this;
+            projectSettingsTreebeardBase.expandOnLoad.call(tb);
+        },
         columnTitles : function() {
             return [
                 {
@@ -78,7 +82,5 @@ function NodeSelectTreebeard(divID, data, nodesState) {
         }
     });
     var grid = new Treebeard(tbOptions);
-    projectSettingsTreebeardBase.expandOnLoad.call(grid.tbController);
 }
 module.exports = NodeSelectTreebeard;
-
