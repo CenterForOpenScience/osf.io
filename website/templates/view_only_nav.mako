@@ -4,8 +4,30 @@
     <div class="container">
 
     <div class="navbar-header pull-left">
-      <span class="navbar-brand hidden-sm hidden-xs" style="color:white;">This is a View-Only link on the OSF</span>
-      <span class="navbar-brand  visible-sm visible-xs" style="color:white;">This is a View-Only link</span>
+      <span class="navbar-brand view-only-navbar-brand">
+
+        <span class="hidden-sm hidden-xs">
+          This is a View-Only project version on the OSF
+          <i class="fa fa-question-circle view-only-info"
+            data-toggle="popover"
+            data-title="View-Only Information"
+            data-container="body"
+            data-placement="right"
+            data-html="true">
+          </i>
+        </span>
+        <span class="visible-sm visible-xs">
+        View-Only version
+          <i class="fa fa-question-circle view-only-info"
+            data-toggle="popover"
+            data-title="View-Only Information"
+            data-container="body"
+            data-placement="right"
+            data-html="true">
+          </i>
+        </span>
+
+      </span>
     </div>
 
     <div class="navbar-header pull-right">

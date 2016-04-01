@@ -190,9 +190,7 @@ a {
         line-height: 27px !important;
         padding: 11px 15px 10px 15px !important;
     }
-    .view-only-navbar-brand{
-        color: white;
-    }
+
     .osf-navbar-logo {
         margin-top: 0px !important;
     }
@@ -607,12 +605,8 @@ button.close {
     display: inline-block
 }
 
-.view-only-nav {
-    float: right;
-    /*text-align: middle;*/
-    padding: 15px 15px;
-    font-size: 30px;
-    /*font-weight: bold;*/
-    line-height: 20px;
-    height: 50px;
+.view-only-navbar-brand{
+        color: white !important;
     }
+
+

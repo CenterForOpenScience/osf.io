@@ -256,6 +256,16 @@ $(document).ready(function() {
         trigger: 'hover'
     });
 
+    var viewOnlyInfoHtml = 'This is a view-only version of this project. ' +
+           'Keep this link safe. To leave this view click ' +
+            'the Open Science Framework logo to the right.';
+
+    $('.view-only-info').attr(
+        'data-content', viewOnlyInfoHtml
+    ).popover({
+        trigger: 'hover'
+    });    
+
     ////////////////////
     // Event Handlers //
     ////////////////////
