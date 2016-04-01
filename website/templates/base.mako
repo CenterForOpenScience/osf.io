@@ -52,18 +52,41 @@
 <body data-spy="scroll" data-target=".scrollspy">
 
     % if dev_mode:
-    <style>
-        #devmode {
-            position:fixed;
-            bottom:0;
-            left:0;
-            border-top-right-radius:8px;
-            background-color:red;
-            color:white;
-            padding:.5em;
-        }
-    </style>
-    <div id='devmode'><strong>WARNING</strong>: This site is running in development mode.</div>
+        <div class="dev-mode-helper scripted" id="devModeControls">
+        <div id="metaInfo" data-bind="visible: showMetaInfo">
+            <h2>Current branch: <span data-bind="text: branch"></span></h2>
+            <table>
+                <thead>
+                <tr>
+                    <th>PR</th>
+                    <th>Title</th>
+                    <th>Date Merged</th>
+                </tr>
+                </thead>
+                <tbody data-bind="foreach: pullRequests">
+                    <tr>
+                        <td>#<a data-bind="attr: {href: url}, text: number"></a></td>
+                        <td data-bind="text: title"></td>
+                        <td data-bind="text: mergedAt"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <style>
+            #devmode {
+                position:fixed;
+                bottom:0;
+                left:0;
+                border-top-right-radius:8px;
+                background-color:red;
+                color:white;
+                padding:.5em;
+            }
+        </style>
+        <div id='devmode' data-bind='click: showHideMetaInfo'><strong>WARNING</strong>: This site is running in development mode.</div>
+    </div>
+    %else:
+        <div id="devModeControls"></div>
     % endif
 
     <%namespace name="nav_file" file="nav.mako"/>
@@ -87,7 +110,7 @@
                 <div>
                     <a data-bind="click: trackClick.bind($data, 'Create Account')" class="btn btn-primary" href="${web_url_for('index')}#signUp">Create an Account</a>
 
-                    <a data-bind="click: trackClick.bind($data, 'Learn More')" class="btn btn-primary" href="/getting-started/">Learn More</a>
+                    <a data-bind="click: trackClick.bind($data, 'Learn More')" class="btn btn-primary" href="http://help.osf.io" target="_blank" rel="noreferrer">Learn More</a>
                     <a data-bind="click: dismiss">Hide this message</a>
                 </div>
             </div>
@@ -157,16 +180,23 @@
             // Mako variables accessible globally
             window.contextVars = $.extend(true, {}, window.contextVars, {
                 waterbutlerURL: ${ waterbutler_url if waterbutler_url.endswith('/') else waterbutler_url + '/' | sjson, n },
+                // Whether or not this page is loaded under osf.io or another domain IE: institutions
+                isOnRootDomain: ${domain | sjson, n } === window.location.origin + '/',
                 cookieName: ${ cookie_name | sjson, n },
                 apiV2Prefix: ${ api_v2_base | sjson, n },
-                registerUrl: ${ api_url_for('register_user') | sjson, n},
+                registerUrl: ${ api_url_for('register_user') | sjson, n },
                 currentUser: {
                     id: ${ user_id | sjson, n },
                     locale: ${ user_locale | sjson, n },
-                    timezone: ${ user_timezone | sjson, n }
+                    timezone: ${ user_timezone | sjson, n },
+                    entryPoint: ${ user_entry_point | sjson, n },
+                    institutions: ${ user_institutions | sjson, n},
+                    emailsToAdd: ${ user_email_verifications | sjson, n }
                 },
-                popular: ${ popular_links_node | sjson, n},
-                newAndNoteworthy: ${ noteworthy_links_node | sjson, n}
+                allInstitutions: ${ all_institutions | sjson, n},
+                popular: ${ popular_links_node | sjson, n },
+                newAndNoteworthy: ${ noteworthy_links_node | sjson, n },
+                maintenance: ${ maintenance | sjson, n}
             });
         </script>
 
@@ -254,6 +284,18 @@
 <%def name="content_wrap()">
     <div class="watermarked">
         <div class="container ${self.container_class()}">
+            % if maintenance:
+            ## Maintenance alert
+            <div id="maintenance" class="scripted alert alert-info alert-dismissible" role="alert">
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span></button>
+                <strong>Notice:</strong> The site will undergo maintenance between
+                <span id="maintenanceTime"></span>.
+                Thank you for your patience.
+            </div>
+            ## End Maintenance alert
+            % endif
+
             % if status:
                 ${self.alert()}
             % endif
@@ -284,9 +326,9 @@
     <link rel="stylesheet" href="/static/css/style.css">
 
     % if settings.USE_CDN_FOR_CLIENT_LIBS:
-        <script src="//code.jquery.com/jquery-1.11.2.min.js"></script>
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
         <script>window.jQuery || document.write('<script src="/static/vendor/bower_components/jquery/dist/jquery.min.js">\x3C/script>')</script>
-        <script src="//code.jquery.com/ui/1.10.3/jquery-ui.min.js"></script>
+        <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
         <script>window.jQuery.ui || document.write('<script src="/static/vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js">\x3C/script>')</script>
     % else:
         <script src="/static/vendor/bower_components/jquery/dist/jquery.min.js"></script>
@@ -301,5 +343,4 @@
     ## the webpack runtime and a number of necessary stylesheets which should be loaded before the user sees
     ## content.
     <script src="${'/static/public/js/vendor.js' | webpack_asset}"></script>
-
 </%def>

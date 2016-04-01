@@ -220,6 +220,7 @@ class TestOsfstorageFileNode(StorageTestCase):
         child_storage['materialized_path'] = child.materialized_path
         trashed_storage.pop('deleted_by')
         trashed_storage.pop('deleted_on')
+        trashed_storage.pop('suspended')
         assert_equal(child_storage.pop('path'), '')
         assert_equal(trashed_storage.pop('path'), '/' + child._id)
         assert_equal(trashed_storage, child_storage)
@@ -494,24 +495,58 @@ class TestOsfStorageCheckout(StorageTestCase):
         self.root_node = self.osfstorage.get_root()
         self.file = self.root_node.append_file('3005')
 
+    def test_checkout_logs(self):
+        non_admin = factories.AuthUserFactory()
+        self.node.add_contributor(non_admin, permissions=['read', 'write'])
+        self.node.save()
+        self.file.check_in_or_out(non_admin, non_admin, save=True)
+        self.file.reload()
+        self.node.reload()
+        assert_equal(self.file.checkout, non_admin)
+        assert_equal(self.node.logs[-1].action, 'checked_out')
+        assert_equal(self.node.logs[-1].user, non_admin)
+
+        self.file.check_in_or_out(self.user, None, save=True)
+        self.file.reload()
+        self.node.reload()
+        assert_equal(self.file.checkout, None)
+        assert_equal(self.node.logs[-1].action, 'checked_in')
+        assert_equal(self.node.logs[-1].user, self.user)
+
+        self.file.check_in_or_out(self.user, self.user, save=True)
+        self.file.reload()
+        self.node.reload()
+        assert_equal(self.file.checkout, self.user)
+        assert_equal(self.node.logs[-1].action, 'checked_out')
+        assert_equal(self.node.logs[-1].user, self.user)
+
+        with assert_raises(FileNodeCheckedOutError):
+            self.file.check_in_or_out(non_admin, None, save=True)
+
+        with assert_raises(FileNodeCheckedOutError):
+            self.file.check_in_or_out(non_admin, non_admin, save=True)
+
+
     def test_delete_checked_out_file(self):
-        self.file.checkout = self.user
-        self.file.save()
+        self.file.check_in_or_out(self.user, self.user, save=True)
+        self.file.reload()
+        assert_equal(self.file.checkout, self.user)
         with assert_raises(FileNodeCheckedOutError):
             self.file.delete()
 
     def test_delete_folder_with_checked_out_file(self):
-
         folder = self.root_node.append_folder('folder')
         self.file.move_under(folder)
-        self.file.checkout = self.user
-        self.file.save()
+        self.file.check_in_or_out(self.user, self.user, save=True)
+        self.file.reload()
+        assert_equal(self.file.checkout, self.user)
         with assert_raises(FileNodeCheckedOutError):
             folder.delete()
 
     def test_move_checked_out_file(self):
-        self.file.checkout = self.user
-        self.file.save()
+        self.file.check_in_or_out(self.user, self.user, save=True)
+        self.file.reload()
+        assert_equal(self.file.checkout, self.user)
         folder = self.root_node.append_folder('folder')
         with assert_raises(FileNodeCheckedOutError):
             self.file.move_under(folder)
@@ -523,8 +558,9 @@ class TestOsfStorageCheckout(StorageTestCase):
         root_node = osfstorage.get_root()
         file = root_node.append_file('test_file')
         user_merge_target = factories.AuthUserFactory()
-        file.checkout = user
-        file.save()
+        file.check_in_or_out(user, user, save=True)
+        file.reload()
+        assert_equal(file.checkout, user)
         user_merge_target.merge_user(user)
         file.reload()
         assert_equal(user_merge_target, file.checkout)
@@ -535,8 +571,9 @@ class TestOsfStorageCheckout(StorageTestCase):
         self.node.add_permission(user, 'admin')
         self.node.visible_contributor_ids.append(user._id)
         self.node.save()
-        self.file.checkout = self.user
-        self.file.save()
+        self.file.check_in_or_out(self.user, self.user, save=True)
+        self.file.reload()
+        assert_equal(self.file.checkout, self.user)
         self.file.node.remove_contributors([self.user], save=True)
         self.file.reload()
         assert_equal(self.file.checkout, None)

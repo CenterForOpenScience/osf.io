@@ -25,7 +25,8 @@ class TestCallbacks(OsfTestCase):
         self.user_settings.save()
 
         self.user.delete_addon('twofactor')
-
+        self.user_settings.reload()
+        
         assert_equal(self.user_settings.totp_drift, 0)
         assert_is_none(self.user_settings.totp_secret)
         assert_false(self.user_settings.is_confirmed)
@@ -37,7 +38,8 @@ class TestCallbacks(OsfTestCase):
         self.user_settings.save()
 
         self.user.delete_addon('twofactor')
-
+        self.user_settings.reload()
+        
         assert_equal(self.user_settings.totp_drift, 0)
         assert_is_none(self.user_settings.totp_secret)
         assert_false(self.user_settings.is_confirmed)

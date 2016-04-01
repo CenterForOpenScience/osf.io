@@ -18,7 +18,6 @@ from tests.factories import (
     RegistrationFactory,
     AuthUserFactory,
     UserFactory,
-    RetractedRegistrationFactory
 )
 
 
@@ -89,14 +88,6 @@ class TestNodeList(ApiTestCase):
         res = self.app.get(self.url, auth=self.user.auth)
         ids = [each['id'] for each in res.json['data']]
         assert_not_in(registration._id, ids)
-
-    def test_omit_retracted_registration(self):
-        registration = RegistrationFactory(creator=self.user, project=self.public)
-        res = self.app.get(self.url, auth=self.user.auth)
-        assert_equal(len(res.json['data']), 2)
-        retraction = RetractedRegistrationFactory(registration=registration, user=registration.creator)
-        res = self.app.get(self.url, auth=self.user.auth)
-        assert_equal(len(res.json['data']), 2)
 
     def test_node_list_has_root(self):
         res = self.app.get(self.url, auth=self.user.auth)
@@ -671,7 +662,7 @@ class TestNodeCreate(ApiTestCase):
         }
         res = self.app.post_json_api(self.url, project, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
-        assert_equal(res.json['errors'][0]['detail'], 'Resource identifier does not match server endpoint.')
+        assert_equal(res.json['errors'][0]['detail'], 'This resource has a type of "nodes", but you set the json body\'s type field to "Wrong type.". You probably need to change the type field to match the resource\'s type.')
 
     def test_creates_project_properties_not_nested(self):
         project = {

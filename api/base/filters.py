@@ -21,23 +21,31 @@ from api.base.exceptions import (
 from api.base import utils
 from api.base.serializers import RelationshipField, TargetField
 
+def lowercase(lower):
+    if hasattr(lower, '__call__'):
+        return lower()
+    return lower
+
+
 def sort_multiple(fields):
     fields = list(fields)
     def sort_fn(a, b):
-        while fields:
-            field = fields.pop(0)
+        sort_direction = 1
+        for field in fields:
+            if field[0] == '-':
+                sort_direction = -1
+                field = field[1:]
             a_field = getattr(a, field)
             b_field = getattr(b, field)
             if a_field > b_field:
-                return 1
+                return 1 * sort_direction
             elif a_field < b_field:
-                return -1
+                return -1 * sort_direction
         return 0
     return sort_fn
 
 class ODMOrderingFilter(OrderingFilter):
     """Adaptation of rest_framework.filters.OrderingFilter to work with modular-odm."""
-
     # override
     def filter_queryset(self, request, queryset, view):
         ordering = self.get_ordering(request, queryset, view)
@@ -116,13 +124,13 @@ class FilterMixin(object):
         if op in self.COMPARISON_OPERATORS:
             if not isinstance(field, self.COMPARABLE_FIELDS):
                 raise InvalidFilterComparisonType(
-                    parameter="filter",
+                    parameter='filter',
                     detail="Field '{0}' does not support comparison operators in a filter.".format(field_name)
                 )
         if op in self.MATCH_OPERATORS:
             if not isinstance(field, self.MATCHABLE_FIELDS):
                 raise InvalidFilterMatchType(
-                    parameter="filter",
+                    parameter='filter',
                     detail="Field '{0}' does not support match operators in a filter.".format(field_name)
                 )
 
@@ -289,8 +297,10 @@ class ODMFilterMixin(FilterMixin):
             param_query = self.query_params_to_odm_query(self.request.query_params)
         default_query = self.get_default_odm_query()
 
-        if param_query:
+        if param_query and default_query:
             query = param_query & default_query
+        elif param_query:
+            query = param_query
         else:
             query = default_query
 
@@ -373,11 +383,21 @@ class ListFilterMixin(FilterMixin):
                 item for item in default_queryset
                 if params['value'].lower() in getattr(item, field_name, {}).lower()
             ]
-        else:
+        elif isinstance(field, ser.ListField):
             return_val = [
                 item for item in default_queryset
-                if self.FILTERS[params['op']](getattr(item, field_name, None), params['value'])
+                if params['value'].lower() in [
+                    lowercase(i.lower) for i in getattr(item, field_name, [])
+                ]
             ]
+        else:
+            try:
+                return_val = [
+                    item for item in default_queryset
+                    if self.FILTERS[params['op']](getattr(item, field_name, None), params['value'])
+                ]
+            except TypeError:
+                raise InvalidFilterValue(detail='Could not apply filter to specified field')
 
         return return_val
 

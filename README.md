@@ -99,6 +99,17 @@ viewed directly on the OSF. Files will not be rendered if the MFR is not running
 MFR [repository] (https://github.com/CenterForOpenScience/modular-file-renderer) for information on how to install 
 and run the MFR.
 
+#### Celery Beat
+
+Normally you don't need to run celery_beat. If you work on tasks that are dispatched by celery_beat:
+```
+invoke celery_beat
+```
+Some beat-dispatched tasks require metrics and release requirements. If needed:
+```
+invoke requirements --metrics
+```
+
 #### Sharejs
 
 ShareJS is used for collaborative editing features, such as the OSF wiki. It will be installed by the OSF installer 
@@ -174,7 +185,7 @@ $ cp api/base/settings/local-dist.py api/base/settings/local.py
 - On MacOSX with [homebrew](http://brew.sh/), there is a script that should automate much of the install process:
 
 ```bash
-$ pip install invoke
+$ pip install invoke==0.12.2
 $ invoke setup
 ```
 

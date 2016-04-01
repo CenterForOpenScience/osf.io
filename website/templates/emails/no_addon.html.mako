@@ -11,7 +11,7 @@
         OSF or external storage services. Files will be synced whenever you make changes.
         Get more information on OSF add-ons.
         <br><br>
-        Link your accounts today: <a href="${osf_url}settings">http://osf.io/settings</a>.
+        Link your accounts today: <a href="${osf_url}settings">https://osf.io/settings</a>.
         <br><br>
         Best wishes,<br>
         COS Support Team
@@ -19,5 +19,5 @@
 </%def>
 <%def name="footer()">
     <br>
-    The <a href="${osf_url}">Open Science Framework</a> is provided as a free, open-source service from the <a href="http://cos.io/">Center for Open Science</a>.
+    The <a href="${osf_url}">Open Science Framework</a> is provided as a free, open source service from the <a href="https://cos.io/">Center for Open Science</a>.
 </%def>

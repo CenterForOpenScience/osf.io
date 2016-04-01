@@ -35,6 +35,9 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
     def absolute_url(self, obj):
         return obj.absolute_url
 
+    def get_absolute_url(self, obj):
+        return obj.absolute_api_v2_url
+
     def to_representation(self, obj, envelope='data'):
         data = super(ApiOAuth2PersonalTokenSerializer, self).to_representation(obj, envelope=envelope)
         # Make sure users only see token_id on create

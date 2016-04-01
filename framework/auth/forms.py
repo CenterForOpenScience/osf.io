@@ -3,6 +3,8 @@
 # TODO: Remove me
 
 from wtforms import ValidationError
+
+from framework import auth
 from framework.forms import (
     Form,
     NoHtmlCharacters,
@@ -15,9 +17,6 @@ from framework.forms import (
     stripped,
     lowerstripped
 )
-
-from framework import auth
-
 from website import language
 
 

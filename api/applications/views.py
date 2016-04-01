@@ -3,9 +3,9 @@ Views related to OAuth2 platform applications. Intended for OSF internal use onl
 """
 from rest_framework.exceptions import APIException
 from rest_framework import generics
-from rest_framework import renderers
 from rest_framework import permissions as drf_permissions
 
+from api.base.renderers import JSONAPIRenderer, JSONRendererWithESISupport
 from modularodm import Q
 
 from framework.auth import cas
@@ -50,7 +50,9 @@ class ApplicationList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixi
     view_category = 'applications'
     view_name = 'application-list'
 
-    renderer_classes = [renderers.JSONRenderer]  # Hide from web-browsable API tool
+    # TODO: When we switch to Swagger this should be removed in lieu of a better
+    # solution for hiding this api endpoint
+    renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer, ]  # Hide from web-browsable API tool
 
     def get_default_odm_query(self):
 
@@ -90,7 +92,9 @@ class ApplicationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, 
     view_category = 'applications'
     view_name = 'application-detail'
 
-    renderer_classes = [renderers.JSONRenderer]  # Hide from web-browsable API tool
+    # TODO: When we switch to Swagger this should be removed in lieu of a better
+    # solution for hiding this api endpoint
+    renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer, ]  # Hide from web-browsable API tool
 
     def get_object(self):
         return self.get_app()
@@ -102,7 +106,7 @@ class ApplicationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, 
         try:
             obj.deactivate(save=True)
         except cas.CasHTTPError:
-            raise APIException("Could not revoke application auth tokens; please try again later")
+            raise APIException('Could not revoke application auth tokens; please try again later')
 
     def perform_update(self, serializer):
         """Necessary to prevent owner field from being blanked on updates"""
@@ -128,7 +132,9 @@ class ApplicationReset(JSONAPIBaseView, generics.CreateAPIView, ApplicationMixin
 
     serializer_class = ApiOAuth2ApplicationResetSerializer
 
-    renderer_classes = [renderers.JSONRenderer]  # Hide from web-browsable API tool
+    # TODO: When we switch to Swagger this should be removed in lieu of a better
+    # solution for hiding this api endpoint
+    renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer, ]  # Hide from web-browsable API tool
 
     view_category = 'applications'
     view_name = 'application-reset'

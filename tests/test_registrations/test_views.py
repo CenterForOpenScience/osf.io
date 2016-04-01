@@ -159,14 +159,14 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         assert_equal(mock_register_draft.call_args[0][0]._id, self.draft._id)
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
-    def test_register_template_make_public_creates_pending_registration(self, mock_enquque):
+    def test_register_template_make_public_creates_pending_registration(self, mock_enqueue):
         url = self.node.api_url_for('register_draft_registration', draft_id=self.draft._id)
         res = self.app.post_json(url, self.immediate_payload, auth=self.user.auth)
 
         assert_equal(res.status_code, http.ACCEPTED)
         self.node.reload()
         # Most recent node is a registration
-        reg = Node.load(self.node.node__registrations[-1])
+        reg = self.node.registrations_all[-1]
         assert_true(reg.is_registration)
         # The registration created is public
         assert_true(reg.is_pending_registration)
@@ -182,13 +182,13 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         assert_equal(res.status_code, http.ACCEPTED)
         self.node.reload()
         # Most recent node is a registration
-        reg = Node.load(self.node.node__registrations[-1])
+        reg = self.node.registrations_all[-1]
         for node in reg.get_descendants_recursive():
             assert_true(node.is_registration)
             assert_true(node.is_pending_registration)
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
-    def test_register_draft_registration_with_embargo_creates_embargo(self, mock_enquque):
+    def test_register_draft_registration_with_embargo_creates_embargo(self, mock_enqueue):
         url = self.node.api_url_for('register_draft_registration', draft_id=self.draft._id)
         end_date = dt.datetime.utcnow() + dt.timedelta(days=3)
         res = self.app.post_json(
@@ -202,16 +202,16 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         assert_equal(res.status_code, http.ACCEPTED)
         self.node.reload()
         # Most recent node is a registration
-        reg = Node.load(self.node.node__registrations[-1])
+        reg = self.node.registrations_all[-1]
         assert_true(reg.is_registration)
         # The registration created is not public
         assert_false(reg.is_public)
         # The registration is pending an embargo that has not been approved
         assert_true(reg.is_pending_embargo)
-        assert_false(reg.embargo_end_date)
+        assert_true(reg.embargo_end_date)
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
-    def test_register_draft_registration_with_embargo_adds_to_parent_project_logs(self, mock_enquque):
+    def test_register_draft_registration_with_embargo_adds_to_parent_project_logs(self, mock_enqueue):
         initial_project_logs = len(self.node.logs)
         res = self.app.post_json(
             self.node.api_url_for('register_draft_registration', draft_id=self.draft._id),

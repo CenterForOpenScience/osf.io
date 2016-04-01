@@ -259,12 +259,6 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
     except InvalidVersionError:
         raise WIKI_INVALID_VERSION_ERROR
 
-    # Default versions for view and compare
-    version_settings = {
-        'view': view or ('preview' if 'edit' in panels_used else 'current'),
-        'compare': compare or 'previous',
-    }
-
     # ensure home is always lower case since it cannot be renamed
     if wiki_name.lower() == 'home':
         wiki_name = 'home'
@@ -292,6 +286,16 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
                 raise HTTPError(http.UNAUTHORIZED)
             raise HTTPError(http.FORBIDDEN)
         sharejs_uuid = None
+
+    # Opens 'edit' panel when home wiki is empty
+    if not content and can_edit and wiki_name == 'home':
+        panels_used.append('edit')
+
+    # Default versions for view and compare
+    version_settings = {
+        'view': view or ('preview' if 'edit' in panels_used else 'current'),
+        'compare': compare or 'previous',
+    }
 
     ret = {
         'wiki_id': wiki_page._primary_key if wiki_page else None,

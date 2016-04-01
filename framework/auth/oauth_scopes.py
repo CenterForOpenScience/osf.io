@@ -17,6 +17,9 @@ class CoreScopes(object):
     """
     The smallest units of permission that can be granted- all other scopes are built out of these.
     Each named constant is a single string."""
+    # IMPORTANT: All views should be based on the smallest number of Core scopes required to describe
+    # the data in that view
+
     USERS_READ = 'users_read'
     USERS_WRITE = 'users_write'
 
@@ -25,6 +28,9 @@ class CoreScopes(object):
 
     NODE_CHILDREN_READ = 'nodes.children_read'
     NODE_CHILDREN_WRITE = 'nodes.children_write'
+
+    NODE_FORKS_READ = 'nodes.forks_read'
+    NODE_FORKS_WRITE = 'nodes.forks_write'
 
     NODE_CONTRIBUTORS_READ = 'nodes.contributors_read'
     NODE_CONTRIBUTORS_WRITE = 'nodes.contributors_write'
@@ -35,6 +41,11 @@ class CoreScopes(object):
     NODE_LINKS_READ = 'nodes.links_read'
     NODE_LINKS_WRITE = 'nodes.links_write'
 
+    METASCHEMA_READ = 'metaschemas.read'
+
+    NODE_DRAFT_REGISTRATIONS_READ = 'nodes.draft_registrations_read'
+    NODE_DRAFT_REGISTRATIONS_WRITE = 'nodes.draft_registrations_write'
+
     NODE_REGISTRATIONS_READ = 'nodes.registrations_read'
     NODE_REGISTRATIONS_WRITE = 'nodes.registrations_write'
 
@@ -43,6 +54,8 @@ class CoreScopes(object):
 
     NODE_COMMENTS_READ = 'comments.data_read'
     NODE_COMMENTS_WRITE = 'comments.data_write'
+
+    LICENSE_READ = 'license.data_read'
 
     COMMENT_REPORTS_READ = 'comments.reports_read'
     COMMENT_REPORTS_WRITE = 'comments.reports_write'
@@ -61,11 +74,19 @@ class CoreScopes(object):
     ORGANIZER_COLLECTIONS_BASE_READ = 'collections.base_read'
     ORGANIZER_COLLECTIONS_BASE_WRITE = 'collections.base_write'
 
+    GUIDS_READ = 'guids.base_read'
+
+    WIKI_BASE_READ = 'wikis.base_read'
+
+    IDENTIFIERS_READ = 'identifiers.data_read'
+
 
 class ComposedScopes(object):
     """
     Composed scopes, listed in increasing order of access (most restrictive first). Each named constant is a tuple.
     """
+    # IMPORTANT: Composed scopes exist only as an internal implementation detail.
+    # All views should be based on selections from CoreScopes, above
 
     # Users collection
     USERS_READ = (CoreScopes.USERS_READ,)
@@ -79,6 +100,19 @@ class ComposedScopes(object):
     TOKENS_READ = (CoreScopes.TOKENS_READ,)
     TOKENS_WRITE = TOKENS_READ + (CoreScopes.TOKENS_WRITE,)
 
+    # Guid redirect view
+    GUIDS_READ = (CoreScopes.GUIDS_READ, )
+
+    # Metaschemas collection
+    METASCHEMAS_READ = (CoreScopes.METASCHEMA_READ, )
+
+    # Draft registrations
+    DRAFT_READ = (CoreScopes.NODE_DRAFT_REGISTRATIONS_READ, )
+    DRAFT_WRITE = (CoreScopes.NODE_DRAFT_REGISTRATIONS_WRITE, )
+
+    # Identifier views
+    IDENTIFIERS_READ = (CoreScopes.IDENTIFIERS_READ, )
+
     # Comment reports collection
     COMMENT_REPORTS_READ = (CoreScopes.COMMENT_REPORTS_READ,)
     COMMENT_REPORTS_WRITE = COMMENT_REPORTS_READ + (CoreScopes.COMMENT_REPORTS_WRITE,)
@@ -86,14 +120,15 @@ class ComposedScopes(object):
     # Nodes collection.
     # Base node data includes node metadata, links, and children.
     NODE_METADATA_READ = (CoreScopes.NODE_BASE_READ, CoreScopes.NODE_CHILDREN_READ, CoreScopes.NODE_LINKS_READ,
-                          CoreScopes.NODE_CITATIONS_READ, CoreScopes.NODE_COMMENTS_READ)
+                          CoreScopes.NODE_CITATIONS_READ, CoreScopes.NODE_COMMENTS_READ, CoreScopes.NODE_LOG_READ,
+                          CoreScopes.NODE_FORKS_READ, CoreScopes.WIKI_BASE_READ, CoreScopes.LICENSE_READ, CoreScopes.IDENTIFIERS_READ)
     NODE_METADATA_WRITE = NODE_METADATA_READ + \
                     (CoreScopes.NODE_BASE_WRITE, CoreScopes.NODE_CHILDREN_WRITE, CoreScopes.NODE_LINKS_WRITE,
-                     CoreScopes.NODE_CITATIONS_WRITE, CoreScopes.NODE_COMMENTS_WRITE)
+                     CoreScopes.NODE_CITATIONS_WRITE, CoreScopes.NODE_COMMENTS_WRITE, CoreScopes.NODE_FORKS_WRITE)
 
     # Organizer Collections collection
     # Using Organizer Collections and the node links they collect. Reads Node Metadata.
-    ORGANIZER_READ = (CoreScopes.ORGANIZER_COLLECTIONS_BASE_READ, NODE_METADATA_READ)
+    ORGANIZER_READ = (CoreScopes.ORGANIZER_COLLECTIONS_BASE_READ,) + NODE_METADATA_READ
     ORGANIZER_WRITE = ORGANIZER_READ + (CoreScopes.ORGANIZER_COLLECTIONS_BASE_WRITE, CoreScopes.NODE_LINKS_WRITE)
 
     # Privileges relating to editing content uploaded under that node # TODO: Add wiki etc when implemented
@@ -111,12 +146,11 @@ class ComposedScopes(object):
     NODE_ALL_WRITE = NODE_ALL_READ + NODE_METADATA_WRITE + NODE_DATA_WRITE + NODE_ACCESS_WRITE
 
     # Full permissions: all routes intended to be exposed to third party API users
-    FULL_READ = NODE_ALL_READ + USERS_READ + ORGANIZER_READ
-    FULL_WRITE = NODE_ALL_WRITE + USERS_WRITE + ORGANIZER_WRITE
+    FULL_READ = NODE_ALL_READ + USERS_READ + ORGANIZER_READ + GUIDS_READ + METASCHEMAS_READ + DRAFT_READ + (CoreScopes.INSTITUTION_READ, )
+    FULL_WRITE = NODE_ALL_WRITE + USERS_WRITE + ORGANIZER_WRITE + GUIDS_READ + DRAFT_WRITE
 
     # Admin permissions- includes functionality not intended for third-party use
     ADMIN_LEVEL = FULL_WRITE + APPLICATIONS_WRITE + TOKENS_WRITE + COMMENT_REPORTS_WRITE
-
 
 # List of all publicly documented scopes, mapped to composed scopes defined above.
 #   Return as sets to enable fast comparisons of provided scopes vs those required by a given node

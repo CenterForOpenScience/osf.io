@@ -11,6 +11,8 @@ var Raven = require('raven-js');
 var LogText = require('js/logTextParser');
 var AddProject = require('js/addProjectPlugin');
 var mC = require('js/mithrilComponents');
+var lodashGet = require('lodash.get');
+var lodashFind = require('lodash.find');
 
 var MOBILE_WIDTH = 767; // Mobile view break point for responsiveness
 var NODE_PAGE_SIZE = 10; // Load 10 nodes at a time from server
@@ -164,7 +166,7 @@ NodeFetcher.prototype = {
     this.nextLink = results.links.next;
     this.loaded += results.data.length;
     for(var i = 0; i < results.data.length; i++) {
-      if (this.type === 'registrations' && (results.data[i].attributes.retracted === true || results.data[i].attributes.pending_registration_approval === true))
+      if (this.type === 'registrations' && (results.data[i].attributes.withdrawn === true || results.data[i].attributes.pending_registration_approval === true))
           continue; // Exclude retracted and pending registrations
       else if (results.data[i].relationships.parent && this._handleOrphans)
           this._orphans.push(results.data[i]);
@@ -219,7 +221,9 @@ NodeFetcher.prototype = {
       return this.resume();
     this._continue = false;
     this._promise = null;
-    Raven.captureMessage('Error loading nodes with nodeType ' + this.type + ' at url ' + this.nextLink, {requestReturn: result});
+    Raven.captureMessage('Error loading nodes with nodeType ' + this.type + ' at url ' + this.nextLink, {
+        extra: {requestReturn: result}
+    });
     $osf.growl('We\'re having some trouble contacting our servers. Try reloading the page.', 'Something went wrong!', 'danger', 5000);
   },
   _onFinish: function() {
@@ -249,7 +253,7 @@ function getUID() {
 
 /* Send with ajax calls to work with api2 */
 var xhrconfig = function (xhr) {
-    xhr.withCredentials = true;
+    xhr.withCredentials = window.contextVars.isOnRootDomain,
     xhr.setRequestHeader('Content-Type', 'application/vnd.api+json;');
     xhr.setRequestHeader('Accept', 'application/vnd.api+json; ext=bulk');
 };
@@ -261,21 +265,29 @@ function _formatDataforPO(item) {
     item.name = item.attributes.title;
     item.tags = item.attributes.tags.toString();
     item.contributors = '';
-    if (item.embeds.contributors.data){
+    var contributorsData = lodashGet(item, 'embeds.contributors.data', null);
+    if (contributorsData){
         item.embeds.contributors.data.forEach(function(c){
             var attr;
-            if (c.embeds.users.data) {
-                attr = c.embeds.users.data.attributes;
+            var contribNames = $osf.extractContributorNamesFromAPIData(c);
+
+            if (lodashGet(c, 'attributes.unregistered_contributor', null)) {
+                item.contributors += contribNames.fullName;
             }
             else {
-                attr = c.embeds.users.errors[0].meta;
+                item.contributors += contribNames.fullName + ' ' + contribNames.middleNames + ' ' + contribNames.givenName + ' ' + contribNames.familyName + ' ' ;
             }
-            item.contributors += attr.full_name + ' ' + attr.middle_names + ' ' + attr.given_name + ' ' + attr.family_name + ' ' ;
-
         });
     }
     item.date = new $osf.FormattableDate(item.attributes.date_modified);
     item.sortDate = item.date.date;
+    //
+    //Sets for filtering
+    item.tagSet = new Set(item.attributes.tags || []);
+    var contributors = lodashGet(item, 'embeds.contributors.data', []);
+    item.contributorSet= new Set(contributors.map(function(contrib) {
+      return contrib.id;
+    }));
     return item;
 }
 
@@ -348,8 +360,13 @@ var MyProjects = {
         ];
 
         self.fetchers = {};
-        self.fetchers[self.systemCollections[0].id] = new NodeFetcher('nodes');
-        self.fetchers[self.systemCollections[1].id] = new NodeFetcher('registrations');
+        if (!options.systemCollections) {
+          self.fetchers[self.systemCollections[0].id] = new NodeFetcher('nodes');
+          self.fetchers[self.systemCollections[1].id] = new NodeFetcher('registrations');
+        } else {
+          self.fetchers[self.systemCollections[0].id] = new NodeFetcher('nodes', self.systemCollections[0].data.link);
+          self.fetchers[self.systemCollections[1].id] = new NodeFetcher('registrations', self.systemCollections[1].data.link);
+        }
 
         // Initial Breadcrumb for All my projects
         var initialBreadcrumbs = options.initialBreadcrumbs || [self.systemCollections[0]];
@@ -374,7 +391,7 @@ var MyProjects = {
                 }
             }, function _error(results){
                 var message = 'Error loading project category names.';
-                Raven.captureMessage(message, {requestReturn: results});
+                Raven.captureMessage(message, {extra: {requestReturn: results}});
             });
             return promise;
         };
@@ -425,7 +442,7 @@ var MyProjects = {
                 var id = item.data.id;
                 if(!item.data.attributes.retracted){
                     var urlPrefix = item.data.attributes.registration ? 'registrations' : 'nodes';
-                    var url = $osf.apiV2Url(urlPrefix + '/' + id + '/logs/', { query : { 'page[size]' : 6, 'embed' : ['nodes', 'user', 'linked_node', 'template_node', 'contributors']}});
+                    var url = $osf.apiV2Url(urlPrefix + '/' + id + '/logs/', { query : { 'page[size]' : 6, 'embed' : ['original_node', 'user', 'linked_node', 'template_node']}});
                     var promise = self.getLogs(url);
                     return promise;
                 }
@@ -467,7 +484,8 @@ var MyProjects = {
                   self.currentView()[filter.type].splice(filterIndex,1);
                 else
                   self.currentView()[filter.type].push(filter);
-                return;
+
+                return self.generateFiltersList();
             }
 
             if (self.currentView().fetcher)
@@ -524,17 +542,15 @@ var MyProjects = {
         self.unselectContributor = function (id){
             self.currentView().contributor.forEach(function (c, index, arr) {
                 if(c.data.id === id){
-                    arr.splice(index, 1);
-                    self.updateList();
+                    self.updateFilesData(c);
                 }
             });
         };
 
         self.unselectTag = function (tag){
-            self.currentView().tag.forEach(function (c, index, arr) {
-                if(c.data.tag === tag){
-                    arr.splice(index, 1);
-                    self.updateList();
+            self.currentView().tag.forEach(function (t, index, arr) {
+                if(t.data.tag === tag){
+                    self.updateFilesData(t);
                 }
             });
         };
@@ -552,18 +568,20 @@ var MyProjects = {
             var contributors = self.currentView().contributor;
 
             return self.currentView().fetcher._flat.filter(function(node) {
-              var tagMatch = tags.length === 0;
-              var contribMatch = contributors.length === 0;
+              // var tagMatch = tags.length === 0;
+              // var contribMatch = contributors.length === 0;
+              var tagMatch = true;
+              var contribMatch = true;
 
               for (var i = 0; i < contributors.length; i++)
-                if (node.contributorSet.has(contributors[i].data.id)) {
-                  contribMatch = true;
+                if (!node.contributorSet.has(contributors[i].data.id)) {
+                  contribMatch = false;
                   break;
                 }
 
               for (var j = 0; j < tags.length; j++)
-                if (node.tagSet.has(tags[j].label)) {
-                  tagMatch = true;
+                if (!node.tagSet.has(tags[j].label)) {
+                  tagMatch = false;
                   break;
                 }
 
@@ -596,15 +614,6 @@ var MyProjects = {
             m.redraw(true);
         };
 
-        self.generateSets = function (item){
-            item.tagSet = new Set(item.attributes.tags || []);
-
-            var contributors = item.embeds.contributors.data || [];
-            item.contributorSet= new Set(contributors.map(function(contrib) {
-              return contrib.id;
-            }));
-        };
-
         self.nonLoadTemplate = function (){
             var template = '';
             if(!self.currentView().fetcher.isEmpty()) {
@@ -621,10 +630,11 @@ var MyProjects = {
                             'You have not created any projects yet.');
                     } else if (lastcrumb.data.nodeType === 'registrations'){
                         template = m('.db-non-load-template.m-md.p-md.osf-box',
-                            'You have not made any registrations yet.');
+                            'You have not made any registrations yet. Go to ',
+                            m('a', {href: 'http://help.osf.io/m/registrations'}, 'Getting Started'), ' to learn how registrations work.' );
                     } else {
                         template = m('.db-non-load-template.m-md.p-md.osf-box',
-                            'This collection is empty. To add projects or registrations, click "All my projects" or "All my registrations" in the sidebar, and then drag and drop items into the collection link.');
+                            'This collection is empty.' + self.viewOnly ? '' : ' To add projects or registrations, click "All my projects" or "All my registrations" in the sidebar, and then drag and drop items into the collection link.');
                     }
                 } else {
                     if(!self.currentView().fetcher.isEmpty()){
@@ -647,37 +657,55 @@ var MyProjects = {
          * Generate this list from user's projects
          */
         self.generateFiltersList = function(noClear) {
-            self.users = {};
             self.tags = {};
-            self.currentView().fetcher._flat.forEach(function(item) {
-              self.generateSets(item);
+            self.users = {};
 
-              var contributors = item.embeds.contributors.data || [];
-              for(var i = 0; i < contributors.length; i++) {
-                var u = contributors[i];
-                if (u.id === window.contextVars.currentUser.id) {
-                  continue;
+            self.filteredData().forEach(function(item) {
+                var contributors = lodashGet(item, 'embeds.contributors.data', []);
+                var isContributor = lodashFind(contributors, ['id', window.contextVars.currentUser.id]);
+                if (contributors) {
+                    for(var i = 0; i < contributors.length; i++) {
+                        var u = contributors[i];
+                        if ((u.id === window.contextVars.currentUser.id) && !(self.institutionId)) {
+                          continue;
+                        }
+                        if (!isContributor && !u.attributes.bibliographic) {
+                            continue;
+                        }
+
+                        if(self.users[u.id] === undefined) {
+                            self.users[u.id] = {
+                                data : u,
+                                count: 1,
+                                unregistered_contributors: u.attributes.unregistered_contributor
+                        };
+                    } else {
+                        self.users[u.id].count++;
+                            var currentUnregisteredName = lodashGet(u, 'attributes.unregistered_contributor');
+                            if (currentUnregisteredName) {
+                                var otherUnregisteredName = lodashGet(self.users[u.id], 'unregistered_contributors');
+                                if (otherUnregisteredName) {
+                                     if (otherUnregisteredName.indexOf(currentUnregisteredName) === -1) {
+                                         self.users[u.id].unregistered_contributors += ' a.k.a. ' + currentUnregisteredName;
+                                     }
+                                }
+                                else {
+                                    self.users[u.id].unregistered_contributors = currentUnregisteredName;
+                                }
+                            }
+                        }
+                    }
+                    var tags = item.attributes.tags || [];
+                    for(var j = 0; j < tags.length; j++) {
+                        var t = tags[j];
+                        if(self.tags[t] === undefined) {
+                             self.tags[t] = 1;
+                        } else {
+                            self.tags[t]++;
+                        }
+                    }
                 }
-                if(self.users[u.id] === undefined) {
-                  self.users[u.id] = {
-                    data : u,
-                    count: 1
-                  };
-                } else {
-                  self.users[u.id].count++;
-                }
-              }
-              var tags = item.attributes.tags || [];
-              for(var j = 0; j < tags.length; j++) {
-                var t = tags[j];
-                if(self.tags[t] === undefined) {
-                  self.tags[t] = 1;
-                } else {
-                  self.tags[t]++;
-                }
-              }
             });
-
 
             // Sorting by number of items utility function
             function sortByCountDesc (a,b){
@@ -692,30 +720,35 @@ var MyProjects = {
                 return 0;
             }
 
-            // Add to lists with numbers
-            if (!noClear)
-              self.nameFilters = [];
-
+            var oldNameFilters = self.nameFilters;
+            self.nameFilters = [];
 
             var userFinder = function(lo) {
+                if (u2.unregistered_contributors) {
+                    return lo.label === u2.unregistered_contributors;
+                }
               return lo.label === u2.data.embeds.users.data.attributes.full_name;
             };
 
+            // Add to lists with numbers
             for (var user in self.users) {
                 var u2 = self.users[user];
                 if (u2.data.embeds.users.data) {
-                  var found = self.nameFilters.find(userFinder);
-                  if (!found)
-                    self.nameFilters.push(new LinkObject('contributor', { id : u2.data.id, count : u2.count, query : { 'related_counts' : 'children' }}, u2.data.embeds.users.data.attributes.full_name, options.institutionId || false));
-                  else
-                    found.data.count = u2.count;
+                    var name;
+                    if (u2.unregistered_contributors) {
+                        name = u2.unregistered_contributors;
+                    }
+                    else {
+                        name = u2.data.embeds.users.data.attributes.full_name;
+                    }
+                  var link = oldNameFilters.find(userFinder) || new LinkObject('contributor', {id: u2.data.id, count: u2.count, query: { 'related_counts' : 'children' }}, name, options.institutionId || false);
+                  link.data.count = u2.count;
+                  self.nameFilters.push(link);
                 }
             }
-            // order names
-            self.nameFilters.sort(sortByCountDesc);
 
-            if (!noClear)
-              self.tagFilters = [];
+            var oldTagFilters = self.tagFilters;
+            self.tagFilters = [];
 
             var tagFinder = function(lo) {
               return lo.label === tag;
@@ -723,14 +756,14 @@ var MyProjects = {
 
             for (var tag in self.tags){
                 var t2 = self.tags[tag];
-                var tFound = self.tagFilters.find(tagFinder);
-                if (!tFound)
-                  self.tagFilters.push(new LinkObject('tag', { tag : tag, count : t2, query : { 'related_counts' : 'children' }}, tag, options.institutionId || false));
-                else
-                  tFound.data.count = t2;
+                var tLink = oldTagFilters.find(tagFinder) || new LinkObject('tag', { tag : tag, count : t2, query : { 'related_counts' : 'children' }}, tag, options.institutionId || false);
+                tLink.data.count = t2;
+                self.tagFilters.push(tLink);
             }
-            // order tags
+
+            // order filters
             self.tagFilters.sort(sortByCountDesc);
+            self.nameFilters.sort(sortByCountDesc);
             m.redraw(true);
         };
 
@@ -780,7 +813,7 @@ var MyProjects = {
             }, function(){
                 var message = 'Collections could not be loaded.';
                 $osf.growl(message, 'Please reload the page.');
-                Raven.captureMessage(message, { url: url });
+                Raven.captureMessage(message, {extra: { url: url }});
             });
             return promise;
         };
@@ -800,7 +833,7 @@ var MyProjects = {
           if (!self.buildTree()) return; // Treebeard hasn't loaded yet
           if(self.currentView().fetcher === fetcher) {
               self.loadValue(fetcher.isFinished() ? 100 : fetcher.progress());
-              self.generateFiltersList(true);
+              self.generateFiltersList();
               if (!pageData) {
                 for(var i = 0; i < fetcher._flat.length; i++){
                     var fetcherItem = fetcher._flat[i];
@@ -887,7 +920,7 @@ var MyProjects = {
                   if (!ctrl.currentView().fetcher.isFinished()) return;
                   // If data loads before treebeard force redrawing
                   ctrl.loadValue(100);
-                  ctrl.generateFiltersList(true);
+                  ctrl.generateFiltersList();
                   ctrl.updateList();
                   // TB/Mithril interaction requires the redraw to be called a bit later
                   // TODO Figure out why
@@ -911,12 +944,14 @@ var MyProjects = {
                     title: 'Create new project',
                     categoryList: ctrl.categoryList,
                     stayCallback: function () {
+                        var ap = this; // AddProject controller
                         // Fetch details of added item from server and redraw treebeard
                         var projects = ctrl.fetchers[ctrl.systemCollections[0].id];
-                        projects.fetch(this.saveResult().data.id).then(function(){
+                        projects.fetch(ap.saveResult().data.id).then(function(){
                           ctrl.updateSelected([]);
                           ctrl.multiselected()([]);
                           ctrl.updateTreeData(0, projects._flat, true);
+                          ap.mapTemplates();
                         });
                     },
                     trackingCategory: 'myProjects',
@@ -1068,7 +1103,7 @@ var Collections = {
                 var name = self.newCollectionName();
                 var message = '"' + name + '" collection could not be created.';
                 $osf.growl(message, 'Please try again', 'danger', 5000);
-                Raven.captureMessage(message, { url: url, data : data });
+                Raven.captureMessage(message, {extra: { url: url, data : data }});
                 self.newCollectionName('');
             });
             self.resetAddCollection();
@@ -1080,7 +1115,6 @@ var Collections = {
             self.newCollectionName('');
             self.isValid(false);
             $('#addCollInput').val('');
-            $osf.trackClick('myProjects', 'add-collection', 'click-cancel-button');
         },
         self.deleteCollection = function _deleteCollection(){
             var url = self.collectionMenuObject().item.data.node.links.self;
@@ -1101,7 +1135,7 @@ var Collections = {
                 var name = self.collectionMenuObject().item.label;
                 var message = '"' + name + '" could not be deleted.';
                 $osf.growl(message, 'Please try again', 'danger', 5000);
-                Raven.captureMessage(message, {collectionObject: self.collectionMenuObject() });
+                Raven.captureMessage(message, {extra: {collectionObject: self.collectionMenuObject() }});
             });
             self.dismissModal();
             return promise;
@@ -1126,7 +1160,7 @@ var Collections = {
                 var name = self.collectionMenuObject().item.label;
                 var message = '"' + name + '" could not be renamed.';
                 $osf.growl(message, 'Please try again', 'danger', 5000);
-                Raven.captureMessage(message, {collectionObject: self.collectionMenuObject() });
+                Raven.captureMessage(message, {extra: {collectionObject: self.collectionMenuObject() }});
             });
             self.dismissModal();
             self.isValid(false);
@@ -1219,6 +1253,7 @@ var Collections = {
                 end = ctrl.collections().length;
             }
             var openCollectionMenu = function _openCollectionMenu(e) {
+                e.stopPropagation();
                 var index = $(this).attr('data-index');
                 var selectedItem = ctrl.collections()[index];
                 ctrl.updateCollectionMenu(selectedItem, e);
@@ -1258,7 +1293,7 @@ var Collections = {
         var collectionListTemplate = [
             m('h5.clearfix', [
                 'Collections ',
-                m('i.fa.fa-question-circle.text-muted', {
+                 viewOnly ? '' : m('i.fa.fa-question-circle.text-muted', {
                     'data-toggle':  'tooltip',
                     'title':  'Collections are groups of projects. You can create custom collections. Drag and drop your projects or bookmarked projects to add them.',
                     'data-placement' : 'bottom'
@@ -1346,6 +1381,7 @@ var Collections = {
                             {
                                 onclick : function(){
                                     ctrl.resetAddCollection();
+                                    $osf.trackClick('myProjects', 'add-collection', 'click-cancel-button');
                                 }
                             }, 'Cancel'),
                         ctrl.isValid() ? m('button[type="button"].btn.btn-success', { onclick : function() {
@@ -1580,8 +1616,9 @@ var Breadcrumbs = {
                                 title: 'Create new component',
                                 categoryList: args.categoryList,
                                 stayCallback: function () {
+                                    var ap = this; // AddProject controller
                                     var topLevelProject = args.fetchers[linkObject.id];
-                                    topLevelProject.fetch(this.saveResult().data.id).then(function(newNode){
+                                    topLevelProject.fetch(ap.saveResult().data.id).then(function(newNode){
                                         if (args.breadcrumbs().length > 1) {
                                             var plo = args.breadcrumbs()[args.breadcrumbs().length-2];
                                             if (args.fetchers[plo.id] && args.fetchers[plo.id]._cache[linkObject.data.id]) {
@@ -1594,6 +1631,7 @@ var Breadcrumbs = {
                                         args.updateSelected([]);
                                         args.multiselected()([]);
                                         args.updateTreeData(0, topLevelProject._flat, true);
+                                        ap.mapTemplates();
                                     });
                                 },
                                 trackingCategory: 'myProjects',
@@ -1663,6 +1701,8 @@ var Filters = {
             var item;
             var i;
             var selectedCSS;
+            if (ctrl.nameCurrentPage() > Math.ceil(args.nameFilters.length / ctrl.namePageSize()))
+              ctrl.nameCurrentPage(Math.ceil(args.nameFilters.length / ctrl.namePageSize()));
             var begin = ((ctrl.nameCurrentPage()-1) * ctrl.namePageSize()); // remember indexes start from 0
             var end = ((ctrl.nameCurrentPage()) * ctrl.namePageSize()); // 1 more than the last item
             if (args.nameFilters.length < end) {
@@ -1685,6 +1725,8 @@ var Filters = {
             var selectedCSS;
             var item;
             var i;
+            if (ctrl.tagCurrentPage() > Math.ceil(args.tagFilters.length / ctrl.tagPageSize()))
+              ctrl.tagCurrentPage(Math.ceil(args.tagFilters.length / ctrl.tagPageSize()));
             var begin = ((ctrl.tagCurrentPage()-1) * ctrl.tagPageSize()); // remember indexes start from 0
             var end = ((ctrl.tagCurrentPage()) * ctrl.tagPageSize()); // 1 more than the last item
             if (args.tagFilters.length < end) {
@@ -1704,7 +1746,7 @@ var Filters = {
             [
                 m('h5.m-t-sm', [
                     'Contributors ',
-                    m('i.fa.fa-question-circle.text-muted', {
+                    args.viewOnly ? '' : m('i.fa.fa-question-circle.text-muted', {
                         'data-toggle':  'tooltip',
                         'title': 'Click a contributor\'s name to see projects that you have in common.',
                         'data-placement' : 'bottom'

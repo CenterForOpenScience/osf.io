@@ -5,7 +5,6 @@
 'use strict';
 
 var ko = require('knockout');
-require('knockout.punches');
 var $ = require('jquery');
 var Raven = require('raven-js');
 var bootbox = require('bootbox');
@@ -14,7 +13,6 @@ var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
 var FolderPickerViewModel = require('js/folderPickerNodeConfig');
 
-ko.punches.enableAll();
 
 /**
  * View model to support instances of AddonNodeConfig (folder picker widget)
@@ -129,13 +127,13 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         self.updateAccounts().then(function () {
             if (self.accounts().length > 1) {
                 bootbox.prompt({
-                    title: 'Choose ' + self.addonName + ' Account to Import',
+                    title: 'Choose ' + $osf.htmlEscape(self.addonName) + ' Account to Import',
                     inputType: 'select',
                     inputOptions: ko.utils.arrayMap(
                         self.accounts(),
                         function(item) {
                             return {
-                                text: item.name,
+                                text: $osf.htmlEscape(item.name),
                                 value: item.id
                             };
                         }
@@ -194,9 +192,11 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         }).fail(function(xhr, textStatus, error) {
             self.changeMessage(self.messages.UPDATE_ACCOUNTS_ERROR(), 'text-warning');
             Raven.captureMessage('Could not GET ' + self.addonName + ' accounts for user', {
-                url: self.url,
-                textStatus: textStatus,
-                error: error
+                extra: {
+                    url: self.url,
+                    textStatus: textStatus,
+                    error: error
+                }
             });
         });
     },

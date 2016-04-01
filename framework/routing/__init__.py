@@ -1,22 +1,24 @@
 # -*- coding: utf-8 -*-
-import os
-import logging
+
 import copy
-import json
 import functools
 import httplib as http
+import json
+import logging
+import os
 
-import lxml.html
-import werkzeug.wrappers
-from werkzeug.exceptions import NotFound
-from mako.template import Template
-from mako.lookup import TemplateLookup
 from flask import request, make_response
+import lxml.html
+from mako.lookup import TemplateLookup
+from mako.template import Template
+import markupsafe
+from werkzeug.exceptions import NotFound
+import werkzeug.wrappers
 
 from framework import sentry
+from framework.exceptions import HTTPError
 from framework.flask import app, redirect
 from framework.sessions import session
-from framework.exceptions import HTTPError
 
 from website import settings
 
@@ -27,9 +29,7 @@ TEMPLATE_DIR = settings.TEMPLATES_PATH
 _TPL_LOOKUP = TemplateLookup(
     default_filters=[
         'unicode',  # default filter; must set explicitly when overriding
-        'strip_ko',  # Filter that strips out Knockout punches syntax. Can be removed if Knockout-punches is removed.
     ],
-    imports=['from website.util.sanitize import strip_ko'],
     directories=[
         TEMPLATE_DIR,
         os.path.join(settings.BASE_PATH, 'addons/'),
@@ -40,12 +40,12 @@ _TPL_LOOKUP = TemplateLookup(
 _TPL_LOOKUP_SAFE = TemplateLookup(
     default_filters=[
         'unicode',  # default filter; must set explicitly when overriding
-        'temp_ampersand_fixer',  # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe.
-        'strip_ko',  # Filter that strips out Knockout punches syntax. Can be removed if Knockout-punches is removed.
+        'temp_ampersand_fixer',  # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe. See [#OSF-4432]
         'h',
     ],
-    imports=['from website.util.sanitize import temp_ampersand_fixer',  # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe.
-             'from website.util.sanitize import strip_ko'],
+    imports=[
+        'from website.util.sanitize import temp_ampersand_fixer',  # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe. See [#OSF-4432]
+    ],
     directories=[
         TEMPLATE_DIR,
         os.path.join(settings.BASE_PATH, 'addons/'),
@@ -235,7 +235,7 @@ def render_mako_string(tpldir, tplname, data, trust=True):
             input_encoding='utf-8',
             output_encoding='utf-8',
             default_filters=lookup_obj.template_args['default_filters'],
-            imports=lookup_obj.template_args['imports']  # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe.
+            imports=lookup_obj.template_args['imports']  # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe. See [#OSF-4432]
         )
     # Don't cache in debug mode
     if not app.debug:
@@ -343,7 +343,7 @@ class Renderer(object):
 
         # Set content type in headers
         headers = headers or {}
-        headers["Content-Type"] = self.CONTENT_TYPE + "; charset=" + kwargs.get("charset", "utf-8")
+        headers['Content-Type'] = self.CONTENT_TYPE + '; charset=' + kwargs.get('charset', 'utf-8')
 
         # Package as response
         return make_response(rendered, status_code, headers)
@@ -355,7 +355,7 @@ class JSONRenderer(Renderer):
 
     """
 
-    CONTENT_TYPE = "application/json"
+    CONTENT_TYPE = 'application/json'
 
     class Encoder(json.JSONEncoder):
         def default(self, obj):
@@ -383,7 +383,7 @@ class XMLRenderer(Renderer):
 
     """
 
-    CONTENT_TYPE = "application/xml"
+    CONTENT_TYPE = 'application/xml'
 
     def handle_error(self, error):
         return str(error.to_data()['message_long']), error.code
@@ -477,14 +477,14 @@ class WebRenderer(Renderer):
         :param data: Dictionary to be passed to the template as context
         :return: 2-tuple: (<result>, <flag: replace div>)
         """
-        attributes_string = element.get("mod-meta")
+        attributes_string = element.get('mod-meta')
 
         # Return debug <div> if JSON cannot be parsed
         try:
             element_meta = json.loads(attributes_string)
         except ValueError:
             return '<div>No JSON object could be decoded: {}</div>'.format(
-                attributes_string
+                markupsafe.escape(attributes_string)
             ), True
 
         uri = element_meta.get('uri')
@@ -504,11 +504,11 @@ class WebRenderer(Renderer):
                 uri_data = call_url(uri, view_kwargs=view_kwargs)
                 render_data.update(uri_data)
             except NotFound:
-                return '<div>URI {} not found</div>'.format(uri), is_replace
+                return '<div>URI {} not found</div>'.format(markupsafe.escape(uri)), is_replace
             except Exception as error:
                 logger.exception(error)
                 if error_msg:
-                    return '<div>{}</div>'.format(error_msg), is_replace
+                    return '<div>{}</div>'.format(markupsafe.escape(unicode(error_msg))), is_replace
                 return '<div>Error retrieving URI {}: {}</div>'.format(
                     uri,
                     repr(error)

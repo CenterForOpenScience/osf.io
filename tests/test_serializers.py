@@ -158,11 +158,15 @@ class TestNodeSerializers(OsfTestCase):
 
 class TestViewProject(OsfTestCase):
 
+    def setUp(self):
+        super(TestViewProject, self).setUp()
+        self.user = UserFactory()
+        self.node = ProjectFactory(creator=self.user)
+
     # related to https://github.com/CenterForOpenScience/openscienceframework.org/issues/1109
     def test_view_project_pointer_count_excludes_folders(self):
-        user = UserFactory()
         pointer_project = ProjectFactory(is_public=True)  # project that points to another project
-        pointed_project = ProjectFactory(creator=user)  # project that other project points to
+        pointed_project = self.node  # project that other project points to
         pointer_project.add_pointer(pointed_project, Auth(pointer_project.creator), save=True)
 
         # Project is in a organizer collection
@@ -173,14 +177,37 @@ class TestViewProject(OsfTestCase):
         # pointer_project is included in count, but not folder
         assert_equal(result['node']['points'], 1)
 
+    def test_view_project_pending_registration_for_admin_contributor_does_contain_cancel_link(self):
+        pending_reg = RegistrationFactory(project=self.node, archive=True)
+        assert_true(pending_reg.is_pending_registration)
+        result = _view_project(pending_reg, Auth(self.user))
+
+        assert_not_equal(result['node']['disapproval_link'], '')
+        assert_in('/?token=', result['node']['disapproval_link'])
+        pending_reg.remove()
+
+    def test_view_project_pending_registration_for_write_contributor_does_not_contain_cancel_link(self):
+        write_user = UserFactory()
+        self.node.add_contributor(write_user, permissions=permissions.WRITE,
+                                  auth=Auth(self.user), save=True)
+        pending_reg = RegistrationFactory(project=self.node, archive=True)
+        assert_true(pending_reg.is_pending_registration)
+        result = _view_project(pending_reg, Auth(write_user))
+
+        assert_equal(result['node']['disapproval_link'], '')
+        pending_reg.remove()
+
 
 class TestNodeLogSerializers(OsfTestCase):
 
     def test_serialize_log(self):
         node = NodeFactory(category='hypothesis')
-        log = NodeLogFactory(params={'node': node._primary_key})
-        node.logs.append(log)
         node.save()
+        log = NodeLogFactory(
+                params={'node': node._id},
+                node=node,
+                original_node=node
+            )
         d = serialize_log(log)
         assert_equal(d['action'], log.action)
         assert_equal(d['node']['node_type'], 'component')
@@ -206,6 +233,7 @@ class TestNodeLogSerializers(OsfTestCase):
         assert_equal(d['api_url'], node.api_url)
         assert_equal(d['is_public'], node.is_public)
         assert_equal(d['is_registration'], node.is_registration)
+
 
 class TestAddContributorJson(OsfTestCase):
 

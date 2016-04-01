@@ -37,7 +37,9 @@ var QuickSearchProject = {
         // Switches errorLoading to true
         self.requestError = function(result) {
             self.errorLoading(true);
-            Raven.captureMessage('Error loading user projects on home page.', {requestReturn: result});
+            Raven.captureMessage('Error loading user projects on home page.', {
+                extra: {requestReturn: result}
+            });
         };
 
         self.templateNodes = new NodeFetcher('nodes');
@@ -153,7 +155,11 @@ var QuickSearchProject = {
             var contributorList = [];
             contributors.data.forEach(function(contrib){
                 var fullName;
-                if (contrib.embeds.users.data) {
+                if (contrib.attributes.unregistered_contributor) {
+                    fullName = contrib.attributes.unregistered_contributor;
+                    contributorList.push(fullName);
+                }
+                else if (contrib.embeds.users.data) {
                     fullName = contrib.embeds.users.data.attributes.full_name;
                     contributorList.push(fullName);
                 }
@@ -172,12 +178,15 @@ var QuickSearchProject = {
             var attributes;
 
             if (contributor) {
-                 if (contributor.embeds.users.data) {
+                if (contributor.attributes.unregistered_contributor) {
+                    return contributor.attributes.unregistered_contributor;
+                }
+                else if (contributor.embeds.users.data) {
                     attributes = contributor.embeds.users.data.attributes;
-                 }
-                 else if (contributor.embeds.users.errors) {
+                }
+                else if (contributor.embeds.users.errors) {
                     attributes = contributor.embeds.users.errors[0].meta;
-                 }
+                }
                 return $osf.findContribName(attributes);
             }
             return 'a contributor';

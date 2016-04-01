@@ -15,6 +15,8 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticate
 from api.base.permissions import TokenHasScope
 from website.settings import DEBUG_MODE
 
+from django.contrib.auth.models import User
+
 import importlib
 
 URLS_MODULES = []
@@ -73,6 +75,11 @@ class TestApiBaseViews(ApiTestCase):
         for view in VIEW_CLASSES:
             assert_true(hasattr(view, '_get_embed_partial'), "{0} lacks embed support".format(view))
 
+    def test_view_classes_define_or_override_serializer_class(self):
+        for view in VIEW_CLASSES:
+            has_serializer_class = getattr(view, 'serializer_class', None) or getattr(view, 'get_serializer_class', None)
+            assert_true(has_serializer_class, "{0} should include serializer class or override get_serializer_class()".format(view))
+
     @mock.patch('framework.auth.core.User.is_confirmed', mock.PropertyMock(return_value=False))
     def test_unconfirmed_user_gets_error(self):
 
@@ -107,5 +114,9 @@ class TestJSONAPIBaseView(ApiTestCase):
     def test_request_added_to_serializer_context(self, mock_to_representation):
         self.app.get(self.url, auth=self.user.auth)
         assert_in('request', mock_to_representation.call_args[0][0].context)
+
+    def test_reverse_sort_possible(self):
+        response = self.app.get('http://localhost:8000/v2/users/me/nodes/?sort=-title', auth=self.user.auth)
+        assert_equal(response.status_code, 200)
 
 

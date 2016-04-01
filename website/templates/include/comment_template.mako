@@ -1,5 +1,5 @@
 <script type="text/html" id="commentTemplate">
-    <div class="comment-container" data-bind="if: shouldShow, attr:{id: id}">
+    <div class="comment-container" data-bind="attr:{id: id}">
 
         <div class="comment-body m-b-sm p-sm osf-box">
              <div data-bind="visible: loading">
@@ -7,7 +7,17 @@
              </div>
 
             <div data-bind="ifnot: loading">
-                <div data-bind="if: isDeleted">
+                <div data-bind="if: isDeletedAbuse">
+                    <div>
+                        <span class="text-muted">
+                            <em>Comment confirmed as spam.</em>
+                        </span>
+                        <span data-bind="if: hasChildren()" class="comment-actions pull-right">
+                            <i data-bind="css: toggleIcon, click: toggle"></i>
+                        </span>
+                    </div>
+                </div>
+                <div data-bind="if: isDeletedNotAbuse">
                     <div>
                         <span class="text-muted">
                             <em>Comment deleted.</em>
@@ -21,14 +31,18 @@
                     </div>
                 </div>
 
-                <div data-bind="if: isAbuse">
+                <div data-bind="if: isAbuseNotDeleted">
                     <div>
-                        <span data-bind="if: hasChildren()">
+                        <span class="text-muted">
+                            <em>Comment reported.</em>
+                        </span>
+                        <span data-bind="if: hasChildren()" class="comment-actions pull-right">
                             <i data-bind="css: toggleIcon, click: toggle"></i>
                         </span>
-                        Comment reported.
                     </div>
-                    <a data-bind="click: submitUnreportAbuse">Not abuse</a>
+                    <div data-bind="if: hasReport">
+                        <a data-bind="click: submitUnreportAbuse">Not abuse</a>
+                    </div>
                 </div>
 
                 <div data-bind="if: isVisible">
@@ -36,10 +50,10 @@
                     <div class="comment-info">
                         <form class="form-inline">
                             <span data-bind="if: author.gravatarUrl">
-                                <img data-bind="css: {comment-gravatar: author.gravatarUrl}, attr: {src: author.gravatarUrl}"/>
+                                <img data-bind="css: {'comment-gravatar': author.gravatarUrl}, attr: {src: author.gravatarUrl}"/>
                             </span>
                             <span data-bind="if: author.id">
-                                <a class="comment-author" data-bind="text: author.fullname, attr: {href: author.url}"></a>
+                                <a class="comment-author" data-bind="text: author.fullname, attr: {href: author.urls.profile}"></a>
                             </span>
                             <span data-bind="ifnot: author.id">
                                 <span class="comment-author" data-bind="text: author.fullname"></span>
@@ -83,24 +97,34 @@
 
                     <div>
 
-                        <span class="text-danger">{{errorMessage}}</span>
+                        <span class="text-danger" data-bind="text: errorMessage"></span>
 
                         <span>&nbsp;</span>
 
                         <!-- Action bar -->
                         <div style="display: inline">
                             <div data-bind="ifnot: editing" class="comment-actions pull-right">
-                                <span data-bind="if: canEdit, click: edit">
-                                    <i class="fa fa-pencil"></i>
+                                <span data-bind="ifnot: isHam">
+                                    <span data-bind="if: canEdit, click: edit">
+                                        <i class="fa fa-pencil"></i>
+                                    </span>
+                                    <span data-bind="if: $root.canComment, click: showReply">
+                                        <i class="fa fa-reply"></i>
+                                    </span>
+                                    <span data-bind="if: canReport, click: reportAbuse">
+                                        <i class="fa fa-warning"></i>
+                                    </span>
+                                    <span data-bind="if: canEdit, click: startDelete">
+                                        <i class="fa fa-trash-o"></i>
+                                    </span>
                                 </span>
-                                <span data-bind="if: $root.canComment, click: showReply">
-                                    <i class="fa fa-reply"></i>
-                                </span>
-                                <span data-bind="if: canReport, click: reportAbuse">
-                                    <i class="fa fa-warning"></i>
-                                </span>
-                                <span data-bind="if: canEdit, click: startDelete">
-                                    <i class="fa fa-trash-o"></i>
+                                <span data-bind="if: isHam">
+                                    <span data-bind="if: $root.canComment, click: showReply">
+                                        <i class="fa fa-reply"></i>
+                                    </span>
+                                    <span>
+                                        <i class="text-success fa fa-check-circle-o"></i>
+                                    </span>
                                 </span>
                             </div>
                         </div>
@@ -142,7 +166,7 @@
                     <div class="clearfix">
                         <div class="pull-right">
                             <a class="btn btn-default btn-sm" data-bind="click: cancelReply, css: {disabled: submittingReply}"> Cancel</a>
-                            <a class="btn btn-success btn-sm" data-bind="click: submitReply, visible: replyNotEmpty, css: {disabled: submittingReply}"> {{commentButtonText}}</a>
+                            <a class="btn btn-success btn-sm" data-bind="click: submitReply, visible: replyNotEmpty, css: {disabled: submittingReply}, text: commentButtonText"></a>
                             <span data-bind="text: replyErrorMessage" class="text-danger"></span>
                         </div>
                     </div>
@@ -152,6 +176,11 @@
 
             <!-- ko if: showChildren() -->
                 <!-- ko template: {name:  'commentTemplate', foreach: comments} -->
+                <!-- /ko -->
+                <!-- ko if: urlForNext() -->
+                <div class="row">
+                    <button class="btn btn-link pull-right more-replies" type="button" data-bind="click: getMoreComments">More replies</button>
+                </div>
                 <!-- /ko -->
             <!-- /ko -->
 

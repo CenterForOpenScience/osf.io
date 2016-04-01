@@ -13,9 +13,11 @@ Example usage: ::
 Factory boy docs: http://factoryboy.readthedocs.org/
 
 """
+import mock
 import datetime
 import functools
 from factory import base, Sequence, SubFactory, post_generation, LazyAttribute
+from random import randint
 
 from mock import patch, Mock
 from modularodm import Q
@@ -23,9 +25,10 @@ from modularodm.exceptions import NoResultsFound
 
 from framework.mongo import StoredObject
 from framework.auth import User, Auth
-from framework.auth.utils import impute_names_model
+from framework.auth.utils import impute_names_model, impute_names
 from framework.guid.model import Guid
 from framework.sessions.model import Session
+from website import security
 from website.addons import base as addons_base
 from website.files.models import StoredFileNode
 from website.oauth.models import (
@@ -35,12 +38,20 @@ from website.oauth.models import (
     ExternalProvider
 )
 from website.project.model import (
-    Comment, DraftRegistration, Embargo, MetaSchema, Node, NodeLog, Pointer,
-    PrivateLink, RegistrationApproval, Retraction, Sanction, Tag, WatchConfig, AlternativeCitation,
+    Comment, DraftRegistration, MetaSchema, Node, NodeLog, Pointer,
+    PrivateLink, Tag, WatchConfig, AlternativeCitation,
     ensure_schemas, Institution
+)
+from website.project.sanctions import (
+    Embargo,
+    EmbargoTerminationApproval,
+    RegistrationApproval,
+    Retraction,
+    Sanction,
 )
 from website.notifications.model import NotificationSubscription, NotificationDigest
 from website.archiver.model import ArchiveTarget, ArchiveJob
+from website.identifiers.model import Identifier
 from website.archiver import ARCHIVER_SUCCESS
 from website.project.licenses import NodeLicense, NodeLicenseRecord, ensure_licenses
 ensure_licenses = functools.partial(ensure_licenses, warn=False)
@@ -259,13 +270,10 @@ class RegistrationFactory(AbstractNodeFactory):
             reg.sanction.add_authorizer(reg.creator, reg)
             reg.sanction.save()
 
-        if archive:
+        with patch('framework.celery_tasks.handlers.enqueue_task'):
             reg = register()
             add_approval_step(reg)
-        else:
-            with patch('framework.celery_tasks.handlers.enqueue_task'):
-                reg = register()
-                add_approval_step(reg)
+        if not archive:
             with patch.object(reg.archive_job, 'archive_tree_finished', Mock(return_value=True)):
                 reg.archive_job.status = ARCHIVER_SUCCESS
                 reg.archive_job.save()
@@ -282,7 +290,7 @@ class RegistrationFactory(AbstractNodeFactory):
         return reg
 
 
-class RetractedRegistrationFactory(AbstractNodeFactory):
+class WithdrawnRegistrationFactory(AbstractNodeFactory):
 
     @classmethod
     def _create(cls, *args, **kwargs):
@@ -292,12 +300,29 @@ class RetractedRegistrationFactory(AbstractNodeFactory):
         user = kwargs.pop('user', registration.creator)
 
         registration.retract_registration(user)
-        retraction = registration.retraction
-        token = retraction.approval_state.values()[0]['approval_token']
-        retraction.approve_retraction(user, token)
-        retraction.save()
+        withdrawal = registration.retraction
+        token = withdrawal.approval_state.values()[0]['approval_token']
+        withdrawal.approve_retraction(user, token)
+        withdrawal.save()
 
-        return retraction
+        return withdrawal
+
+
+class ForkFactory(ModularOdmFactory):
+    class Meta:
+        model = Node
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+
+        project = kwargs.pop('project', None)
+        user = kwargs.pop('user', project.creator)
+        title = kwargs.pop('title', None)
+
+        fork = project.fork_node(auth=Auth(user), title=title)
+        fork.save()
+        return fork
+
 
 class PointerFactory(ModularOdmFactory):
     class Meta:
@@ -323,9 +348,10 @@ class SanctionFactory(ModularOdmFactory):
         abstract = True
 
     @classmethod
-    def _create(cls, target_class, approve=False, *args, **kwargs):
+    def _create(cls, target_class, initiated_by=None, approve=False, *args, **kwargs):
         user = kwargs.get('user') or UserFactory()
-        sanction = ModularOdmFactory._create(target_class, initiated_by=user, *args, **kwargs)
+        kwargs['initiated_by'] = initiated_by or user
+        sanction = ModularOdmFactory._create(target_class, *args, **kwargs)
         reg_kwargs = {
             'creator': user,
             'user': user,
@@ -342,7 +368,6 @@ class RetractionFactory(SanctionFactory):
         model = Retraction
     user = SubFactory(UserFactory)
 
-
 class EmbargoFactory(SanctionFactory):
     class Meta:
         model = Embargo
@@ -352,6 +377,28 @@ class RegistrationApprovalFactory(SanctionFactory):
     class Meta:
         model = RegistrationApproval
     user = SubFactory(UserFactory)
+
+class EmbargoTerminationApprovalFactory(ModularOdmFactory):
+
+    FACTORY_STRATEGY = base.CREATE_STRATEGY
+
+    @classmethod
+    def create(cls, registration=None, user=None, embargo=None, *args, **kwargs):
+        if registration:
+            if not user:
+                user = registration.creator
+        else:
+            user = user or AuthUserFactory()
+            if not embargo:
+                embargo = EmbargoFactory(initiated_by=user)
+                registration = embargo._get_registration()
+            else:
+                registration = RegistrationFactory(creator=user, user=user, embargo=embargo)
+        with mock.patch('website.project.sanctions.Sanction.is_approved', mock.Mock(return_value=True)):
+            with mock.patch('website.project.sanctions.TokenApprovableSanction.ask', mock.Mock()):
+                approval = registration.request_embargo_termination(Auth(user))
+                return approval
+
 
 class NodeWikiFactory(ModularOdmFactory):
     class Meta:
@@ -366,7 +413,10 @@ class NodeWikiFactory(ModularOdmFactory):
     @post_generation
     def set_node_keys(self, create, extracted):
         self.node.wiki_pages_current[self.page_name] = self._id
-        self.node.wiki_pages_versions[self.page_name] = [self._id]
+        if self.node.wiki_pages_versions.get(self.page_name, None):
+            self.node.wiki_pages_versions[self.page_name].append(self._id)
+        else:
+            self.node.wiki_pages_versions[self.page_name] = [self._id]
         self.node.save()
 
 
@@ -537,27 +587,38 @@ class CommentFactory(ModularOdmFactory):
 
 class InstitutionFactory(ProjectFactory):
 
+    default_institution_attributes = {
+        '_id': fake.md5,
+        'name': fake.company,
+        'logo_name': fake.file_name,
+        'auth_url': fake.url,
+        'domains': lambda: [fake.url()],
+        'email_domains': lambda: [fake.domain_name()],
+    }
+
     def _build(cls, target_class, *args, **kwargs):
-        from random import randint
-        '''Build an object without saving it.'''
-        inst = ProjectFactory._build(target_class, *args, **kwargs)
-        inst.institution_id = str(randint(1, 20000))
-        inst.institution_name = str(randint(10, 20000))
-        inst.institution_logo_name = 'logo.img'
-        inst.institution_auth_url = 'http://thisIsUrl.biz'
+        inst = ProjectFactory._build(target_class)
+        for inst_attr, node_attr in Institution.attribute_map.items():
+            default = cls.default_institution_attributes.get(inst_attr)
+            if callable(default):
+                default = default()
+            setattr(inst, node_attr, kwargs.pop(inst_attr, default))
+        for key, val in kwargs.items():
+            setattr(inst, key, val)
         return Institution(inst)
 
     @classmethod
     def _create(cls, target_class, *args, **kwargs):
-        from random import randint
-        inst = ProjectFactory._create(target_class, *args, **kwargs)
-        inst.institution_id = str(randint(1, 20000))
-        inst.institution_name = str(randint(10, 20000))
-        inst.institution_logo_name = 'logo.img'
-        inst.institution_auth_url = 'http://thisIsUrl.biz'
+        inst = ProjectFactory._build(target_class)
+        for inst_attr, node_attr in Institution.attribute_map.items():
+            default = cls.default_institution_attributes.get(inst_attr)
+            if callable(default):
+                default = default()
+            setattr(inst, node_attr, kwargs.pop(inst_attr, default))
+        for key, val in kwargs.items():
+            setattr(inst, key, val)
         inst.save()
         return Institution(inst)
-
 
 class NotificationSubscriptionFactory(ModularOdmFactory):
     class Meta:
@@ -718,3 +779,98 @@ class NodeLicenseRecordFactory(ModularOdmFactory):
             )
         )
         return super(NodeLicenseRecordFactory, cls)._create(*args, **kwargs)
+
+
+class IdentifierFactory(ModularOdmFactory):
+    class Meta:
+        model = Identifier
+
+    referent = SubFactory(RegistrationFactory)
+    value = Sequence(lambda n: 'carp:/2460{}'.format(n))
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        kwargs['category'] = kwargs.get('category', 'carpid')
+
+        return super(IdentifierFactory, cls)._create(*args, **kwargs)
+
+
+def render_generations_from_parent(parent, creator, num_generations):
+    current_gen = parent
+    for generation in xrange(0, num_generations):
+        next_gen = NodeFactory(
+            parent=current_gen,
+            creator=creator,
+            title=fake.sentence(),
+            description=fake.paragraph()
+        )
+        current_gen = next_gen
+    return current_gen
+
+
+def render_generations_from_node_structure_list(parent, creator, node_structure_list):
+    new_parent = None
+    for node_number in node_structure_list:
+        if isinstance(node_number, list):
+            render_generations_from_node_structure_list(new_parent or parent, creator, node_number)
+        else:
+            new_parent = render_generations_from_parent(parent, creator, node_number)
+    return new_parent
+
+
+def create_fake_user():
+    email = fake.email()
+    name = fake.name()
+    parsed = impute_names(name)
+    user = UserFactory(
+        username=email,
+        fullname=name,
+        is_registered=True,
+        is_claimed=True,
+        verification_key=security.random_string(15),
+        date_registered=fake.date_time(),
+        emails=[email],
+        **parsed
+    )
+    user.set_password('faker123')
+    user.save()
+    return user
+
+
+def create_fake_project(creator, n_users, privacy, n_components, name, n_tags, presentation_name, is_registration):
+    auth = Auth(user=creator)
+    project_title = name if name else fake.sentence()
+    if not is_registration:
+        project = ProjectFactory(
+            title=project_title,
+            description=fake.paragraph(),
+            creator=creator
+        )
+    else:
+        project = RegistrationFactory(
+            title=project_title,
+            description=fake.paragraph(),
+            creator=creator
+        )
+    project.set_privacy(privacy)
+    for _ in range(n_users):
+        contrib = create_fake_user()
+        project.add_contributor(contrib, auth=auth)
+    if isinstance(n_components, int):
+        for _ in range(n_components):
+            NodeFactory(
+                project=project,
+                title=fake.sentence(),
+                description=fake.paragraph(),
+                creator=creator
+            )
+    elif isinstance(n_components, list):
+        render_generations_from_node_structure_list(project, creator, n_components)
+    for _ in range(n_tags):
+        project.add_tag(fake.word(), auth=auth)
+    if presentation_name is not None:
+        project.add_tag(presentation_name, auth=auth)
+        project.add_tag('poster', auth=auth)
+
+    project.save()
+    return project

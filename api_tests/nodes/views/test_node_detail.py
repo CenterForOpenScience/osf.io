@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 from urlparse import urlparse
 from nose.tools import *  # flake8: noqa
+import functools
 
 from framework.auth.core import Auth
+from modularodm import Q
 
 from website.models import NodeLog
 from website.views import find_bookmark_collection
@@ -10,7 +12,6 @@ from website.util import permissions
 from website.util.sanitize import strip_html
 
 from api.base.settings.defaults import API_BASE
-from api_tests import utils as test_utils
 
 from tests.base import ApiTestCase, fake
 from tests.factories import (
@@ -20,8 +21,13 @@ from tests.factories import (
     AuthUserFactory,
     CollectionFactory,
     CommentFactory,
-    RetractedRegistrationFactory
+    NodeLicenseRecordFactory,
 )
+
+from website.project.licenses import ensure_licenses
+from website.project.licenses import NodeLicense
+
+ensure_licenses = functools.partial(ensure_licenses, warn=False)
 
 from tests.utils import assert_logs, assert_not_logs
 
@@ -174,7 +180,7 @@ class TestNodeDetail(ApiTestCase):
         )
         assert_equal(res.status_code, 404)
 
-    def test_can_not_return_registrations_at_node_detail_endpoint(self):
+    def test_cannot_return_registrations_at_node_detail_endpoint(self):
         registration = RegistrationFactory(project=self.public_project, creator=self.user)
         res = self.app.get('/{}nodes/{}/'.format(API_BASE, registration._id), auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
@@ -184,12 +190,6 @@ class TestNodeDetail(ApiTestCase):
         res = self.app.get('/{}nodes/{}/'.format(API_BASE, folder._id), auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
-    def test_cannot_return_a_retraction_at_node_detail_endpoint(self):
-        registration = RegistrationFactory(creator=self.user, project=self.public_project)
-        url = '/{}nodes/{}/'.format(API_BASE, registration._id)
-        retraction = RetractedRegistrationFactory(registration=registration, user=registration.creator)
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
 
 class NodeCRUDTestCase(ApiTestCase):
 
@@ -438,27 +438,6 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert_equal(res.status_code, 404)
         assert_equal(registration.title, original_title)
         assert_equal(registration.description, original_description)
-
-    def test_cannot_update_a_retraction(self):
-        registration = RegistrationFactory(creator=self.user, project=self.public_project)
-        url = '/{}nodes/{}/'.format(API_BASE, registration._id)
-        retraction = RetractedRegistrationFactory(registration=registration, user=registration.creator)
-        res = self.app.put_json_api(url, {
-            'data': {
-                'id': registration._id,
-                'type': 'nodes',
-                'attributes': {
-                    'title': fake.catch_phrase(),
-                    'description': fake.bs(),
-                    'category': 'hypothesis',
-                    'public': True
-                }
-            }
-        }, auth=self.user.auth, expect_errors=True)
-        registration.reload()
-        assert_equal(res.status_code, 404)
-        assert_equal(registration.title, registration.title)
-        assert_equal(registration.description, registration.description)
 
     def test_update_private_project_logged_out(self):
         res = self.app.put_json_api(self.private_url, {
@@ -747,6 +726,16 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'Title cannot exceed 200 characters.')
 
+    def test_public_project_with_publicly_editable_wiki_turns_private(self):
+        wiki = self.public_project.get_addon('wiki')
+        wiki.set_editing(permissions=True, auth=Auth(user=self.user), log=True)
+        res = self.app.patch_json_api(
+            self.public_url,
+            make_node_payload(self.public_project, {'public': False}),
+            auth=self.user.auth  # self.user is creator/admin
+        )
+        assert_equal(res.status_code, 200)
+
 
 class TestNodeDelete(NodeCRUDTestCase):
 
@@ -835,16 +824,6 @@ class TestNodeDelete(NodeCRUDTestCase):
         )
         # Bookmark collections are collections, so a 404 is returned
         assert_equal(res.status_code, 404)
-
-    def test_cannot_delete_a_retraction(self):
-        registration = RegistrationFactory(creator=self.user, project=self.public_project)
-        url = '/{}nodes/{}/'.format(API_BASE, registration._id)
-        retraction = RetractedRegistrationFactory(registration=registration, user=registration.creator)
-        res = self.app.delete_json_api(url, auth=self.user.auth, expect_errors=True)
-        registration.reload()
-        assert_equal(res.status_code, 404)
-        assert_equal(registration.title, registration.title)
-        assert_equal(registration.description, registration.description)
 
 
 class TestReturnDeletedNode(ApiTestCase):
@@ -1055,3 +1034,59 @@ class TestNodeTags(ApiTestCase):
         res = self.app.patch_json_api(self.public_url, self.one_new_tag_json, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'Expected a list of items but got type "dict".')
+
+
+class TestNodeLicense(ApiTestCase):
+    def setUp(self):
+        super(TestNodeLicense, self).setUp()
+        self.user = AuthUserFactory()
+        self.admin = AuthUserFactory()
+        self.user_two = AuthUserFactory()
+        self.read_only_contributor = AuthUserFactory()
+
+        self.public_project = ProjectFactory(title="Project One", is_public=True, creator=self.user)
+        self.public_project.add_contributor(self.user, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
+        self.private_project = ProjectFactory(title="Project Two", is_public=False, creator=self.user)
+        self.private_project.add_contributor(self.user, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
+        self.private_project.add_contributor(self.admin, permissions=permissions.CREATOR_PERMISSIONS, save=True)
+        self.public_url = '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
+        self.private_url = '/{}nodes/{}/'.format(API_BASE, self.private_project._id)
+        ensure_licenses()
+        self.LICENSE_NAME = 'MIT License'
+        self.node_license = NodeLicense.find_one(
+            Q('name', 'eq', self.LICENSE_NAME)
+        )
+        self.YEAR = '2105'
+        self.COPYRIGHT_HOLDERS = ['Foo', 'Bar']
+        self.public_project.node_license = NodeLicenseRecordFactory(
+            node_license=self.node_license,
+            year=self.YEAR,
+            copyright_holders=self.COPYRIGHT_HOLDERS
+        )
+        self.public_project.save()
+        self.private_project.node_license = NodeLicenseRecordFactory(
+            node_license=self.node_license,
+            year=self.YEAR,
+            copyright_holders=self.COPYRIGHT_HOLDERS
+        )
+        self.private_project.save()
+
+    def test_public_node_has_node_license(self):
+        res = self.app.get(self.public_url)
+        assert_equal(self.public_project.node_license.year, res.json['data']['attributes']['node_license']['year'])
+
+    def test_public_node_has_license_relationship(self):
+        res = self.app.get(self.public_url)
+        expected_license_url = '/{}licenses/{}'.format(API_BASE, self.node_license._id)
+        actual_license_url = res.json['data']['relationships']['license']['links']['related']['href']
+        assert_in(expected_license_url, actual_license_url)
+
+    def test_private_node_has_node_license(self):
+        res = self.app.get(self.private_url, auth=self.user.auth)
+        assert_equal(self.private_project.node_license.year, res.json['data']['attributes']['node_license']['year'])
+
+    def test_private_node_has_license_relationship(self):
+        res = self.app.get(self.private_url, auth=self.user.auth)
+        expected_license_url = '/{}licenses/{}'.format(API_BASE, self.node_license._id)
+        actual_license_url = res.json['data']['relationships']['license']['links']['related']['href']
+        assert_in(expected_license_url, actual_license_url)

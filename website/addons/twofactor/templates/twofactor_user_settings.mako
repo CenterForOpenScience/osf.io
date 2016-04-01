@@ -37,7 +37,7 @@
             <input type="submit" value="Submit" class="btn btn-primary">
           </div>
           <div class="help-block">
-            <p data-bind="html: message, attr.class: messageClass"></p>
+            <p data-bind="html: message, attr: {class: messageClass}"></p>
           </div>
         </div>
       </form>
