@@ -145,7 +145,7 @@ function _poResolveRows(item) {
             filter : true,
             custom : _poContributors
         }, {
-            data : 'dateModified',
+            data : 'sortDate',
             filter : false,
             custom : _poModified
         });
@@ -186,7 +186,8 @@ function _poColumnTitles() {
         }, {
             title : 'Modified',
             width : '25%',
-            sort : false
+            sort : true,
+            sortType : 'date'
         });
     } else {
         columns.push({
