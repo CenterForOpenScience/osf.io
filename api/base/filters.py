@@ -192,7 +192,7 @@ class FilterMixin(object):
                 # Special case date(time)s to allow for ambiguous date matches
                 if isinstance(field, self.DATE_FIELDS):
                     query[field_name].extend(self._parse_date_param(field, field_name, op, value))
-                elif not isinstance(value, int) and field_name == '_id':
+                elif not isinstance(value, int) and (field_name == '_id' or field_name == 'root'):
                     query[field_name].append({
                         'op': 'in',
                         'value': self.bulk_get_values(value, field)
@@ -209,6 +209,7 @@ class FilterMixin(object):
         :param basestring field_name: text representation of the field name
         :param rest_framework.fields.Field field: Field instance
         """
+        field = utils.decompose_field(field)
         source = field.source
         if source == '*':
             source = getattr(field, 'filter_key', None)
@@ -219,6 +220,7 @@ class FilterMixin(object):
         :param basestring value: value to be resolved
         :param rest_framework.fields.Field field: Field instance
         """
+        field = utils.decompose_field(field)
         if isinstance(field, ser.BooleanField):
             if utils.is_truthy(value):
                 return True

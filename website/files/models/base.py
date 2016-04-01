@@ -251,6 +251,30 @@ class FileNode(object):
             return cls.create(node=node, path=path)
 
     @classmethod
+    def get_file_guids(cls, materialized_path, provider, node, guids=None):
+        guids = guids or []
+        materialized_path = '/' + materialized_path.lstrip('/')
+        if materialized_path.endswith('/'):
+            folder_children = cls.find(Q('provider', 'eq', provider) &
+                                       Q('node', 'eq', node) &
+                                       Q('materialized_path', 'startswith', materialized_path))
+            for item in folder_children:
+                if item.kind == 'file':
+                    guid = item.get_guid()
+                    if guid:
+                        guids.append(guid._id)
+        else:
+            try:
+                file_obj = cls.find_one(Q('node', 'eq', node) & Q('materialized_path', 'eq', materialized_path))
+            except NoResultsFound:
+                return guids
+            guid = file_obj.get_guid()
+            if guid:
+                guids.append(guid._id)
+
+        return guids
+
+    @classmethod
     def resolve_class(cls, provider, _type=2):
         """Resolve a provider and type to the appropriate subclass.
         Usage:
@@ -404,8 +428,6 @@ class FileNode(object):
         """
         trashed = self._create_trashed(user=user, parent=parent)
         self._repoint_guids(trashed)
-        if self._id in self.node.commented_files:
-            del self.node.commented_files[self._id]
         self.node.save()
         StoredFileNode.remove_one(self.stored_object)
         return trashed

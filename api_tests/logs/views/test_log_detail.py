@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-import httplib as http
-
 from nose.tools import *  # noqa
 from test_log_nodes_list import LogsTestCase
 
@@ -32,3 +30,9 @@ class TestLogDetail(LogsTestCase):
         assert_equal(res.status_code, 200)
         json_data = res.json['data']
         assert_equal(json_data['id'], self.public_log._id)
+
+    def test_log_detail_data_format_api(self):
+        res = self.app.get(self.public_log_detail + '?format=api', auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_in(self.public_log._id, res.body)
+

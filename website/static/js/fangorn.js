@@ -91,10 +91,13 @@ function findByTempID(parent, tmpID) {
 function cancelUploads (row) {
     var tb = this;
     var uploading = tb.dropzone.getUploadingFiles();
-    var filesArr = uploading.concat(tb.dropzone.getQueuedFiles());
+    var rejected = tb.dropzone.getRejectedFiles();
+    var queued = tb.dropzone.getQueuedFiles();
+    var filesArr = uploading.concat(queued, rejected);
+
     for (var i = 0; i < filesArr.length; i++) {
         var j = filesArr[i];
-        if(!row){
+        if(!row) {
             var parent = j.treebeardParent || tb.dropzoneItemCache;
             var item = findByTempID(parent, j.tmpID);
             tb.dropzone.removeFile(j);

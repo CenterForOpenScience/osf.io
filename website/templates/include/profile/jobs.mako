@@ -36,7 +36,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Department</label>
+                        <label>Department / Institute</label>
                         <input class="form-control" data-bind="value: department" />
                     </div>
 

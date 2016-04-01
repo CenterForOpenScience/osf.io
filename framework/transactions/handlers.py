@@ -36,10 +36,12 @@ def transaction_before_request():
         return None
     try:
         commands.rollback()
-        logger.error('Transaction already in progress; rolling back.')
+        logger.error('Transaction already in progress prior to request; rolling back.')
     except OperationFailure as error:
+        #  expected error, transaction shouldn't be started prior to request
         message = utils.get_error_message(error)
         if messages.NO_TRANSACTION_ERROR not in message:
+            #  exception not a transaction error, reraise
             raise
     commands.begin()
 
@@ -52,11 +54,15 @@ def transaction_after_request(response, base_status_code_error=500):
     if view_has_annotation(NO_AUTO_TRANSACTION_ATTR):
         return response
     if response.status_code >= base_status_code_error:
-        commands.rollback()
+        try:
+            commands.rollback()
+        except OperationFailure:
+            logger.exception('Transaction rollback failed after request')
     else:
         try:
             commands.commit()
         except OperationFailure as error:
+            #  transaction commit failed, log and reraise
             message = utils.get_error_message(error)
             if messages.LOCK_ERROR in message:
                 commands.rollback()
@@ -76,8 +82,10 @@ def transaction_teardown_request(error=None):
         try:
             commands.rollback()
         except OperationFailure as error:
+            #  expected error, transaction should have closed in after_request
             message = utils.get_error_message(error)
             if messages.NO_TRANSACTION_ERROR not in message:
+                #  unexpected error, not a transaction error, reraise
                 raise
 
 

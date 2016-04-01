@@ -11,6 +11,7 @@ def serialize_comment(comment, full=False):
     return {
         'id': comment._id,
         'author': User.load(comment.user._id),
+        'author_id': comment.user._id,
         'author_path': author_abs_url.url,
         'date_created': comment.date_created,
         'date_modified': comment.date_modified,
@@ -18,6 +19,7 @@ def serialize_comment(comment, full=False):
         'has_children': bool(getattr(comment, 'commented', [])),
         'modified': comment.modified,
         'is_deleted': comment.is_deleted,
+        'spam_status': comment.spam_status,
         'reports': reports,
         'node': comment.node,
         'category': reports[0]['category'],

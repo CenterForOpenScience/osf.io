@@ -25,6 +25,7 @@ var entry = {
     // JS
     'base-page': staticPath('js/pages/base-page.js'),
     'home-page': staticPath('js/pages/home-page.js'),
+    'landing-page': staticPath('js/pages/landing-page.js'),
     'dashboard-page': staticPath('js/pages/dashboard-page.js'),
     'profile-page': staticPath('js/pages/profile-page.js'),
     'project-dashboard': staticPath('js/pages/project-dashboard-page.js'),
@@ -55,8 +56,10 @@ var entry = {
     'forgotpassword-page': staticPath('js/pages/forgotpassword-page.js'),
     'login-page': staticPath('js/pages/login-page.js'),
     'notifications-config-page': staticPath('js/pages/notifications-config-page.js'),
+    'faq-page' : staticPath('js/pages/faq-page.js'),
     'share-embed-page': staticPath('js/pages/share-embed-page.js'),
     'render-nodes': staticPath('js/pages/render-nodes.js'),
+    'institution-page': staticPath('js/pages/institution-page.js'),
     // Commons chunk
     'vendor': [
         // Vendor libraries
@@ -70,6 +73,7 @@ var entry = {
         'select2',
         'dropzone',
         'knockout-sortable',
+        'loaders.css',
         'treebeard',
         'jquery.cookie',
         'URIjs',
@@ -84,7 +88,11 @@ var entry = {
     ]
 };
 
-// Collect adddons endpoints. If an addon's static folder has
+// Collect log text from addons
+var mainLogs = require(staticPath('js/logActionsList.json'));
+var addonLog;
+
+// Collect addons endpoints. If an addon's static folder has
 // any of the following files, it will be added as an entry point
 // and output to website/static/public/js/<addon-name>/files.js
 var addonModules = ['files.js', 'node-cfg.js', 'user-cfg.js', 'file-detail.js', 'widget-cfg.js'];
@@ -98,7 +106,15 @@ addons.addons.forEach(function(addonName) {
             entry[entryPoint] =  modulePath;
         }
     });
+    var logTextPath = path.join(__dirname, 'website', 'addons',
+        addonName, 'static', addonName + 'LogActionList.json');
+    if(fs.existsSync(logTextPath)){
+        addonLog = require(logTextPath);
+        for (var attrname in addonLog) { mainLogs[attrname] = addonLog[attrname]; }
+    }
 });
+
+fs.writeFileSync(staticPath('js/_allLogTexts.json'), JSON.stringify(mainLogs));
 
 var resolve = {
     extensions: ['', '.es6.js', '.js', '.min.js'],
@@ -174,6 +190,7 @@ var output = {
 module.exports = {
     entry: entry,
     resolve: resolve,
+    devtool: 'source-map',
     externals: externals,
     plugins: plugins,
     output: output,
