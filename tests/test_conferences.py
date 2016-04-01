@@ -42,7 +42,8 @@ def assert_equal_urls(first, second):
 
 
 class ConferenceFactory(ModularOdmFactory):
-    FACTORY_FOR = Conference
+    class Meta:
+        model = Conference
 
     endpoint = Sequence(lambda n: 'conference{0}'.format(n))
     name = FakerAttribute('catch_phrase')

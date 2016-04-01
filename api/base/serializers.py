@@ -2,7 +2,8 @@ import collections
 import re
 
 import furl
-from django.core.urlresolvers import resolve, reverse
+from django.core.urlresolvers import resolve, reverse, NoReverseMatch
+from django.core.exceptions import ImproperlyConfigured
 from django.http.request import QueryDict
 from rest_framework import exceptions
 from rest_framework import serializers as ser
@@ -77,7 +78,10 @@ class HideIfRegistration(ser.Field):
 
     def get_attribute(self, instance):
         if instance.is_registration:
-            return None
+            if isinstance(self.field, RelationshipField):
+                raise SkipField
+            else:
+                return None
         return self.field.get_attribute(instance)
 
     def bind(self, field_name, parent):
@@ -152,7 +156,10 @@ class HideIfRetraction(HideIfRegistration):
 
     def get_attribute(self, instance):
         if instance.is_retracted:
-            return None
+            if isinstance(self.field, RelationshipField):
+                raise SkipField
+            else:
+                return None
         return self.field.get_attribute(instance)
 
 
@@ -505,7 +512,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         return urls
 
     def to_esi_representation(self, value, envelope='data'):
-        relationships = super(RelationshipField, self).to_representation(value)
+        relationships = self.to_representation(value)
         if relationships is not None and 'related' in relationships.keys():
             href = relationships['related']
             if href and not href == '{}':
@@ -539,17 +546,54 @@ class RelationshipField(ser.HyperlinkedIdentityField):
 
     # Overrides HyperlinkedIdentityField
     def to_representation(self, value):
-        urls = super(RelationshipField, self).to_representation(value)
-        if not urls:
-            raise SkipField
-        else:
-            related_url = urls['related']
-            related_meta = self.get_meta_information(self.related_meta, value)
-            self_url = urls['self']
-            self_meta = self.get_meta_information(self.self_meta, value)
+        request = self.context.get('request', None)
+        format = self.context.get('format', None)
 
-            ret = format_relationship_links(related_url, self_url, related_meta, self_meta)
-        return ret
+        assert request is not None, (
+            "`%s` requires the request in the serializer"
+            " context. Add `context={'request': request}` when instantiating "
+            "the serializer." % self.__class__.__name__
+        )
+
+        # By default use whatever format is given for the current context
+        # unless the target is a different type to the source.
+        #
+        # Eg. Consider a HyperlinkedIdentityField pointing from a json
+        # representation to an html property of that representation...
+        #
+        # '/snippets/1/' should link to '/snippets/1/highlight/'
+        # ...but...
+        # '/snippets/1/.json' should link to '/snippets/1/highlight/.html'
+        if format and self.format and self.format != format:
+            format = self.format
+
+        # Return the hyperlink, or error if incorrectly configured.
+        try:
+            url = self.get_url(value, self.view_name, request, format)
+        except NoReverseMatch:
+            msg = (
+                'Could not resolve URL for hyperlinked relationship using '
+                'view name "%s". You may have failed to include the related '
+                'model in your API, or incorrectly configured the '
+                '`lookup_field` attribute on this field.'
+            )
+            if value in ('', None):
+                value_string = {'': 'the empty string', None: 'None'}[value]
+                msg += (
+                    " WARNING: The value of the field on the model instance "
+                    "was %s, which may be why it didn't match any "
+                    "entries in your URL conf." % value_string
+                )
+            raise ImproperlyConfigured(msg % self.view_name)
+
+        if url is None:
+            raise SkipField
+
+        related_url = url['related']
+        related_meta = self.get_meta_information(self.related_meta, value)
+        self_url = url['self']
+        self_meta = self.get_meta_information(self.self_meta, value)
+        return format_relationship_links(related_url, self_url, related_meta, self_meta)
 
 
 class FileCommentRelationshipField(RelationshipField):
@@ -942,40 +986,48 @@ class JSONAPISerializer(ser.Serializer):
                 continue
 
             nested_field = getattr(field, 'field', None)
-
-            if getattr(field, 'json_api_link', False) or getattr(nested_field, 'json_api_link', False):
-                # If embed=field_name is appended to the query string or 'always_embed' flag is True, directly embed the
-                # results rather than adding a relationship link
-                if attribute is None:
+            if attribute is None:
+                # We skip `to_representation` for `None` values so that
+                # fields do not have to explicitly deal with that case.
+                data['attributes'][field.field_name] = None
+            else:
+                try:
+                    representation = field.to_representation(attribute)
+                except SkipField:
                     continue
-                if getattr(field, 'always_embed', None) or field.field_name in embeds:
-                    if enable_esi:
+                if getattr(field, 'json_api_link', False) or getattr(nested_field, 'json_api_link', False):
+                    # If embed=field_name is appended to the query string or 'always_embed' flag is True, directly embed the
+                    # results rather than adding a relationship link
+                    if embeds and (field.field_name in embeds or getattr(field, 'always_embed', None)):
+                        if enable_esi:
+                            try:
+                                result = field.to_esi_representation(attribute, envelope=envelope)
+                            except SkipField:
+                                continue
+                        else:
+                            try:
+                                # If a field has an empty representation, it should not be embedded.
+                                field.to_representation(attribute)
+                                result = self.context['embed'][field.field_name](obj)
+                            except SkipField:
+                                result = None
+
+                        if result:
+                            data['embeds'][field.field_name] = result
+                    else:
                         try:
-                            result = field.to_esi_representation(attribute, envelope=envelope)
+                            if not (is_anonymous and
+                                        hasattr(field, 'view_name') and
+                                            field.view_name in self.views_to_hide_if_anonymous):
+                                data['relationships'][field.field_name] = representation
                         except SkipField:
                             continue
-                    else:
-                        result = self.context['embed'][field.field_name](obj)
-
-                    if result:
-                        data['embeds'][field.field_name] = result
+                elif field.field_name == 'id':
+                    data['id'] = representation
+                elif field.field_name == 'links':
+                    data['links'] = representation
                 else:
-                    try:
-                        if not (is_anonymous and hasattr(field, 'view_name') and field.view_name in self.views_to_hide_if_anonymous):
-                            data['relationships'][field.field_name] = field.to_representation(attribute)
-                    except SkipField:
-                        continue
-            elif field.field_name == 'id':
-                data['id'] = field.to_representation(attribute)
-            elif field.field_name == 'links':
-                data['links'] = field.to_representation(attribute)
-            else:
-                if attribute is None:
-                    # We skip `to_representation` for `None` values so that
-                    # fields do not have to explicitly deal with that case.
-                    data['attributes'][field.field_name] = None
-                else:
-                    data['attributes'][field.field_name] = field.to_representation(attribute)
+                    data['attributes'][field.field_name] = representation
 
         if not data['relationships']:
             del data['relationships']

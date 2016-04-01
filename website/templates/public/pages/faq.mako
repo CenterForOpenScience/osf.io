@@ -10,7 +10,7 @@
     <h1 class="m-b-lg support-title"> Frequently Asked Questions </h1>
     <div class="search-layer bg-color-hover p-sm text-center">
         <input type="text" class="form-control support-filter" placeholder="Search">
-        <i class="fa fa-times-circle clear-search" ></i>
+        <i class="fa fa-times clear-search" ></i>
         <ul class="p-t-sm">
             <li class="search-expand"><i class="fa fa-th-list"></i> Expand All </li>
             <li class="search-collapse"><i class="fa fa-list"></i> Collapse All </li>

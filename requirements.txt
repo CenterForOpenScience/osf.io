@@ -53,8 +53,8 @@ raven==5.10.2
 webcolors==1.4
 
 # API requirements
-Django==1.8
-djangorestframework==3.1.1
+Django==1.9
+djangorestframework==3.3.3
 django-cors-headers==1.1.0
 django-rest-swagger==0.3.2
 djangorestframework-bulk==0.2.1
@@ -63,3 +63,5 @@ pyjwe==1.0.0
 
 # Admin requirements
 django-webpack-loader==0.2.3
+django-nose==1.4.3
+django-ckeditor==5.0.2

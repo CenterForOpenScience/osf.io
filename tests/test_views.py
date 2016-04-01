@@ -4045,7 +4045,7 @@ class TestProjectCreation(OsfTestCase):
         assert_true(node)
         assert_true(node.title, 'Im a real title')
 
-    def test_create_component_add_contributors(self):
+    def test_create_component_add_contributors_admin(self):
         url = web_url_for('project_new_node', pid=self.project._id)
         post_data = {'title': 'New Component With Contributors Title', 'category': '', 'inherit_contributors': True}
         res = self.app.post(url, post_data, auth=self.user1.auth)
@@ -4057,7 +4057,7 @@ class TestProjectCreation(OsfTestCase):
         # check redirect url
         assert_in('/contributors/', res.location)
 
-    def test_create_component_with_contributors_not_admin(self):
+    def test_create_component_with_contributors_read_write(self):
         url = web_url_for('project_new_node', pid=self.project._id)
         non_admin = AuthUserFactory()
         self.project.add_contributor(non_admin, permissions=['read', 'write'])
@@ -4067,10 +4067,21 @@ class TestProjectCreation(OsfTestCase):
         self.project.reload()
         child = self.project.nodes[0]
         assert_equal(child.title, 'New Component With Contributors Title')
-        assert_not_in(self.user1, child.contributors)
-        assert_not_in(self.user2, child.contributors)
+        assert_in(non_admin, child.contributors)
+        assert_in(self.user1, child.contributors)
+        assert_in(self.user2, child.contributors)
+        assert_equal(child.get_permissions(non_admin), ['read', 'write',  'admin'])
         # check redirect url
-        assert_not_in('/contributors/', res.location)
+        assert_in('/contributors/', res.location)
+
+    def test_create_component_with_contributors_read(self):
+        url = web_url_for('project_new_node', pid=self.project._id)
+        non_admin = AuthUserFactory()
+        self.project.add_contributor(non_admin, permissions=['read'])
+        self.project.save()
+        post_data = {'title': 'New Component With Contributors Title', 'category': '', 'inherit_contributors': True}
+        res = self.app.post(url, post_data, auth=non_admin.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
 
     def test_create_component_add_no_contributors(self):
         url = web_url_for('project_new_node', pid=self.project._id)

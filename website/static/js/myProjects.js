@@ -102,6 +102,9 @@ NodeFetcher.prototype = {
     this.total++;
     this.loaded++;
 
+    if (!this._cache[item.id])
+      this._cache[item.id] = item;
+
     this._flat.unshift(item);
 
     // Resort after inserting data
@@ -199,7 +202,8 @@ NodeFetcher.prototype = {
     this.loaded += results.data.length;
     var finder = function(id, item) {return item.id === id;};
     for(var i = 0; i < results.data.length; i++) {
-      if (this._cache[parent.id].children.find(finder.bind(results.data[i].id))) continue;
+      //TODO Sorting get a bit broken here @chrisseto
+      if (this._cache[parent.id].children.find(finder.bind(this, results.data[i].id))) continue;
       this._cache[results.data[i].id] = _formatDataforPO(results.data[i]);
       results.data[i].children = [];
       this._cache[parent.id].children.push(results.data[i]);
@@ -272,6 +276,13 @@ function _formatDataforPO(item) {
     }
     item.date = new $osf.FormattableDate(item.attributes.date_modified);
     item.sortDate = item.date.date;
+    //
+    //Sets for filtering
+    item.tagSet = new Set(item.attributes.tags || []);
+    var contributors = item.embeds.contributors.data || [];
+    item.contributorSet= new Set(contributors.map(function(contrib) {
+      return contrib.id;
+    }));
     return item;
 }
 
@@ -463,7 +474,8 @@ var MyProjects = {
                   self.currentView()[filter.type].splice(filterIndex,1);
                 else
                   self.currentView()[filter.type].push(filter);
-                return;
+
+                return self.generateFiltersList();
             }
 
             if (self.currentView().fetcher)
@@ -548,18 +560,20 @@ var MyProjects = {
             var contributors = self.currentView().contributor;
 
             return self.currentView().fetcher._flat.filter(function(node) {
-              var tagMatch = tags.length === 0;
-              var contribMatch = contributors.length === 0;
+              // var tagMatch = tags.length === 0;
+              // var contribMatch = contributors.length === 0;
+              var tagMatch = true;
+              var contribMatch = true;
 
               for (var i = 0; i < contributors.length; i++)
-                if (node.contributorSet.has(contributors[i].data.id)) {
-                  contribMatch = true;
+                if (!node.contributorSet.has(contributors[i].data.id)) {
+                  contribMatch = false;
                   break;
                 }
 
               for (var j = 0; j < tags.length; j++)
-                if (node.tagSet.has(tags[j].label)) {
-                  tagMatch = true;
+                if (!node.tagSet.has(tags[j].label)) {
+                  tagMatch = false;
                   break;
                 }
 
@@ -590,15 +604,6 @@ var MyProjects = {
               self.updateTbMultiselect([self.treeData().children[0]]);
             }
             m.redraw(true);
-        };
-
-        self.generateSets = function (item){
-            item.tagSet = new Set(item.attributes.tags || []);
-
-            var contributors = item.embeds.contributors.data || [];
-            item.contributorSet= new Set(contributors.map(function(contrib) {
-              return contrib.id;
-            }));
         };
 
         self.nonLoadTemplate = function (){
@@ -643,11 +648,10 @@ var MyProjects = {
          * Generate this list from user's projects
          */
         self.generateFiltersList = function(noClear) {
-            self.users = {};
             self.tags = {};
-            self.currentView().fetcher._flat.forEach(function(item) {
-              self.generateSets(item);
+            self.users = {};
 
+            self.filteredData().forEach(function(item) {
               var contributors = item.embeds.contributors.data || [];
               for(var i = 0; i < contributors.length; i++) {
                 var u = contributors[i];
@@ -688,30 +692,25 @@ var MyProjects = {
                 return 0;
             }
 
-            // Add to lists with numbers
-            if (!noClear)
-              self.nameFilters = [];
-
+            var oldNameFilters = self.nameFilters;
+            self.nameFilters = [];
 
             var userFinder = function(lo) {
               return lo.label === u2.data.embeds.users.data.attributes.full_name;
             };
 
+            // Add to lists with numbers
             for (var user in self.users) {
                 var u2 = self.users[user];
                 if (u2.data.embeds.users.data) {
-                  var found = self.nameFilters.find(userFinder);
-                  if (!found)
-                    self.nameFilters.push(new LinkObject('contributor', { id : u2.data.id, count : u2.count, query : { 'related_counts' : 'children' }}, u2.data.embeds.users.data.attributes.full_name, options.institutionId || false));
-                  else
-                    found.data.count = u2.count;
+                  var link = oldNameFilters.find(userFinder) || new LinkObject('contributor', {id: u2.data.id, count: u2.count, query: { 'related_counts' : 'children' }}, u2.data.embeds.users.data.attributes.full_name, options.institutionId || false);
+                  link.data.count = u2.count;
+                  self.nameFilters.push(link);
                 }
             }
-            // order names
-            self.nameFilters.sort(sortByCountDesc);
 
-            if (!noClear)
-              self.tagFilters = [];
+            var oldTagFilters = self.tagFilters;
+            self.tagFilters = [];
 
             var tagFinder = function(lo) {
               return lo.label === tag;
@@ -719,14 +718,14 @@ var MyProjects = {
 
             for (var tag in self.tags){
                 var t2 = self.tags[tag];
-                var tFound = self.tagFilters.find(tagFinder);
-                if (!tFound)
-                  self.tagFilters.push(new LinkObject('tag', { tag : tag, count : t2, query : { 'related_counts' : 'children' }}, tag, options.institutionId || false));
-                else
-                  tFound.data.count = t2;
+                var tLink = oldTagFilters.find(tagFinder) || new LinkObject('tag', { tag : tag, count : t2, query : { 'related_counts' : 'children' }}, tag, options.institutionId || false);
+                tLink.data.count = t2;
+                self.tagFilters.push(tLink);
             }
-            // order tags
+
+            // order filters
             self.tagFilters.sort(sortByCountDesc);
+            self.nameFilters.sort(sortByCountDesc);
             m.redraw(true);
         };
 
@@ -796,7 +795,7 @@ var MyProjects = {
           if (!self.buildTree()) return; // Treebeard hasn't loaded yet
           if(self.currentView().fetcher === fetcher) {
               self.loadValue(fetcher.isFinished() ? 100 : fetcher.progress());
-              self.generateFiltersList(true);
+              self.generateFiltersList();
               if (!pageData) {
                 for(var i = 0; i < fetcher._flat.length; i++){
                     var fetcherItem = fetcher._flat[i];
@@ -883,7 +882,7 @@ var MyProjects = {
                   if (!ctrl.currentView().fetcher.isFinished()) return;
                   // If data loads before treebeard force redrawing
                   ctrl.loadValue(100);
-                  ctrl.generateFiltersList(true);
+                  ctrl.generateFiltersList();
                   ctrl.updateList();
                   // TB/Mithril interaction requires the redraw to be called a bit later
                   // TODO Figure out why
@@ -907,12 +906,14 @@ var MyProjects = {
                     title: 'Create new project',
                     categoryList: ctrl.categoryList,
                     stayCallback: function () {
+                        var ap = this; // AddProject controller
                         // Fetch details of added item from server and redraw treebeard
                         var projects = ctrl.fetchers[ctrl.systemCollections[0].id];
-                        projects.fetch(this.saveResult().data.id).then(function(){
+                        projects.fetch(ap.saveResult().data.id).then(function(){
                           ctrl.updateSelected([]);
                           ctrl.multiselected()([]);
                           ctrl.updateTreeData(0, projects._flat, true);
+                          ap.mapTemplates();
                         });
                     },
                     trackingCategory: 'myProjects',
@@ -1576,8 +1577,9 @@ var Breadcrumbs = {
                                 title: 'Create new component',
                                 categoryList: args.categoryList,
                                 stayCallback: function () {
+                                    var ap = this; // AddProject controller
                                     var topLevelProject = args.fetchers[linkObject.id];
-                                    topLevelProject.fetch(this.saveResult().data.id).then(function(newNode){
+                                    topLevelProject.fetch(ap.saveResult().data.id).then(function(newNode){
                                         if (args.breadcrumbs().length > 1) {
                                             var plo = args.breadcrumbs()[args.breadcrumbs().length-2];
                                             if (args.fetchers[plo.id] && args.fetchers[plo.id]._cache[linkObject.data.id]) {
@@ -1590,6 +1592,7 @@ var Breadcrumbs = {
                                         args.updateSelected([]);
                                         args.multiselected()([]);
                                         args.updateTreeData(0, topLevelProject._flat, true);
+                                        ap.mapTemplates();
                                     });
                                 },
                                 trackingCategory: 'myProjects',
@@ -1659,6 +1662,8 @@ var Filters = {
             var item;
             var i;
             var selectedCSS;
+            if (ctrl.nameCurrentPage() > Math.ceil(args.nameFilters.length / ctrl.namePageSize()))
+              ctrl.nameCurrentPage(Math.ceil(args.nameFilters.length / ctrl.namePageSize()));
             var begin = ((ctrl.nameCurrentPage()-1) * ctrl.namePageSize()); // remember indexes start from 0
             var end = ((ctrl.nameCurrentPage()) * ctrl.namePageSize()); // 1 more than the last item
             if (args.nameFilters.length < end) {
@@ -1681,6 +1686,8 @@ var Filters = {
             var selectedCSS;
             var item;
             var i;
+            if (ctrl.tagCurrentPage() > Math.ceil(args.tagFilters.length / ctrl.tagPageSize()))
+              ctrl.tagCurrentPage(Math.ceil(args.tagFilters.length / ctrl.tagPageSize()));
             var begin = ((ctrl.tagCurrentPage()-1) * ctrl.tagPageSize()); // remember indexes start from 0
             var end = ((ctrl.tagCurrentPage()) * ctrl.tagPageSize()); // 1 more than the last item
             if (args.tagFilters.length < end) {

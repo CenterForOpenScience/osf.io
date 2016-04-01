@@ -31,7 +31,7 @@ from website.project.decorators import (
     http_error_if_disk_saving_mode
 )
 from website.tokens import process_token_or_pass
-from website.util.permissions import ADMIN, READ, WRITE
+from website.util.permissions import ADMIN, READ, WRITE, CREATOR_PERMISSIONS
 from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, get_pointer_parent, NodeUpdateError, validate_title, Institution
 from website.project.forms import NewNodeForm
@@ -161,9 +161,11 @@ def project_new_node(auth, node, **kwargs):
             'Your component was created successfully. You can keep working on the project page below, '
             'or go to the new <u><a href={component_url}>component</a></u>.'
         ).format(component_url=new_component.url)
-        if form.inherit_contributors.data and node.has_permission(user, ADMIN):
+        if form.inherit_contributors.data and node.has_permission(user, WRITE):
             for contributor in node.contributors:
-                new_component.add_contributor(contributor, permissions=node.get_permissions(contributor), auth=auth)
+                perm = CREATOR_PERMISSIONS if contributor is user else node.get_permissions(contributor)
+                new_component.add_contributor(contributor, permissions=perm, auth=auth)
+
             new_component.save()
             redirect_url = new_component.url + 'contributors/'
             message = (

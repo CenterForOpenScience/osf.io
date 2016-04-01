@@ -1,6 +1,5 @@
 from rest_framework import serializers as ser
 from rest_framework import exceptions
-from rest_framework.exceptions import ValidationError
 
 from modularodm import Q
 from modularodm.exceptions import ValidationValueError
@@ -82,7 +81,7 @@ class NodeSerializer(JSONAPISerializer):
     date_modified = ser.DateTimeField(read_only=True)
     registration = ser.BooleanField(read_only=True, source='is_registration')
     fork = ser.BooleanField(read_only=True, source='is_fork')
-    collection = DevOnly(ser.BooleanField(read_only=True, source='is_collection'))
+    collection = ser.BooleanField(read_only=True, source='is_collection')
     tags = JSONAPIListField(child=NodeTagField(), required=False)
     template_from = ser.CharField(required=False, allow_blank=False, allow_null=False,
                                   help_text='Specify a node id for a node you would like to use as a template for the '
@@ -132,11 +131,11 @@ class NodeSerializer(JSONAPISerializer):
         related_view_kwargs={'node_id': '<forked_from_id>'}
     )
 
-    node_links = DevOnly(RelationshipField(
+    node_links = RelationshipField(
         related_view='nodes:node-pointers',
         related_view_kwargs={'node_id': '<pk>'},
         related_meta={'count': 'get_pointers_count'},
-    ))
+    )
 
     parent = RelationshipField(
         related_view='nodes:node-detail',
@@ -262,7 +261,7 @@ class NodeSerializer(JSONAPISerializer):
             except PermissionsError:
                 raise exceptions.PermissionDenied
             except NodeUpdateError as e:
-                raise ValidationError(detail=e.reason)
+                raise exceptions.ValidationError(detail=e.reason)
 
         return node
 
@@ -355,7 +354,7 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
         try:
             node.update_contributor(contributor, permission, visible, auth, save=True)
         except NodeStateError as e:
-            raise exceptions.ValidationError(e)
+            raise exceptions.ValidationError(detail=e.message)
         contributor.permission = osf_permissions.reduce_permissions(node.get_permissions(contributor))
         contributor.bibliographic = node.get_visible(contributor)
         contributor.node_id = node._id
@@ -522,7 +521,7 @@ class NodeAlternativeCitationSerializer(JSONAPISerializer):
     def create(self, validated_data):
         errors = self.error_checker(validated_data)
         if len(errors) > 0:
-            raise ValidationError(detail=errors)
+            raise exceptions.ValidationError(detail=errors)
         node = self.context['view'].get_node()
         auth = Auth(self.context['request']._user)
         citation = node.add_citation(auth, save=True, **validated_data)
@@ -531,7 +530,7 @@ class NodeAlternativeCitationSerializer(JSONAPISerializer):
     def update(self, instance, validated_data):
         errors = self.error_checker(validated_data)
         if len(errors) > 0:
-            raise ValidationError(detail=errors)
+            raise exceptions.ValidationError(detail=errors)
         node = self.context['view'].get_node()
         auth = Auth(self.context['request']._user)
         instance = node.edit_citation(auth, instance, save=True, **validated_data)

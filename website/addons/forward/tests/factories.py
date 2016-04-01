@@ -8,8 +8,8 @@ from website.addons.forward.model import ForwardNodeSettings
 
 
 class ForwardSettingsFactory(ModularOdmFactory):
-
-    FACTORY_FOR = ForwardNodeSettings
+    class Meta:
+        model = ForwardNodeSettings
 
     owner = SubFactory(ProjectFactory)
     url = 'http://frozen.pizza.reviews/'

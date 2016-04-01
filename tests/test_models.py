@@ -89,10 +89,35 @@ class TestUserValidation(OsfTestCase):
         self.user.save()
         assert_equal(self.user.social['profileWebsites'], [])
 
-    def test_validate_social_valid(self):
+    def test_validate_social_valid_website_simple(self):
         self.user.social = {'profileWebsites': ['http://cos.io/']}
         self.user.save()
         assert_equal(self.user.social['profileWebsites'], ['http://cos.io/'])
+
+    def test_validate_social_valid_website_protocol(self):
+        self.user.social = {'profileWebsites': ['https://definitelyawebsite.com']}
+        self.user.save()
+        assert_equal(self.user.social['profileWebsites'], ['https://definitelyawebsite.com'])
+
+    def test_validate_social_valid_website_ipv4(self):
+        self.user.social = {'profileWebsites': ['http://127.0.0.1']}
+        self.user.save()
+        assert_equal(self.user.social['profileWebsites'], ['http://127.0.0.1'])
+
+    def test_validate_social_valid_website_path(self):
+        self.user.social = {'profileWebsites': ['http://definitelyawebsite.com/definitelyapage/']}
+        self.user.save()
+        assert_equal(self.user.social['profileWebsites'], ['http://definitelyawebsite.com/definitelyapage/'])
+
+    def test_validate_social_valid_website_portandpath(self):
+        self.user.social = {'profileWebsites': ['http://127.0.0.1:5000/hello/']}
+        self.user.save()
+        assert_equal(self.user.social['profileWebsites'], ['http://127.0.0.1:5000/hello/'])
+
+    def test_validate_social_valid_website_querystrings(self):
+        self.user.social = {'profileWebsites': ['http://definitelyawebsite.com?real=yes&page=definitely']}
+        self.user.save()
+        assert_equal(self.user.social['profileWebsites'], ['http://definitelyawebsite.com?real=yes&page=definitely'])
 
     def test_validate_multiple_profile_websites_valid(self):
         self.user.social = {'profileWebsites': ['http://cos.io/', 'http://thebuckstopshere.com', 'http://dinosaurs.com']}
