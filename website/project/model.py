@@ -442,8 +442,6 @@ class NodeLog(StoredObject):
     EMBARGO_COMPLETED = 'embargo_completed'
     EMBARGO_INITIATED = 'embargo_initiated'
     EMBARGO_TERMINATED = 'embargo_terminated'
-    EMBARGO_TERMINATION_APPROVED = 'embargo_termination_approved'
-    EMBARGO_TERMINATION_CANCELLED = 'embargo_termination_cancelled'
 
     RETRACTION_APPROVED = 'retraction_approved'
     RETRACTION_CANCELLED = 'retraction_cancelled'
