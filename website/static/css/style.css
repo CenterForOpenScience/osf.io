@@ -190,6 +190,9 @@ a {
         line-height: 27px !important;
         padding: 11px 15px 10px 15px !important;
     }
+    .view-only-navbar-brand{
+        color: white;
+    }
     .osf-navbar-logo {
         margin-top: 0px !important;
     }

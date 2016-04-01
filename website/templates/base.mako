@@ -69,6 +69,7 @@
         <%user['is_contributor'] = False%>
         <%user['can_comment'] = False%>
         <%node['has_comments'] = False%>
+        <%user['can_edit_wiki_body'] = False%>
         <%include file="view_only_nav.mako"/>
     % else:
         <%include file="nav.mako"/>
@@ -78,7 +79,7 @@
      ## TODO: shouldn't always have the watermark class
     ${self.content_wrap()}
 
-% if not user_id:
+% if not user_id and not private_link:
 <div id="footerSlideIn">
     <div class="container">
         <div class="row">
