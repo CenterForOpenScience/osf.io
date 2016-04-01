@@ -1573,7 +1573,16 @@ var Breadcrumbs = {
                                 categoryList: args.categoryList,
                                 stayCallback: function () {
                                     var topLevelProject = args.fetchers[linkObject.id];
-                                    topLevelProject.fetch(this.saveResult().data.id).then(function(){
+                                    topLevelProject.fetch(this.saveResult().data.id).then(function(newNode){
+                                        if (args.breadcrumbs().length > 1) {
+                                            var plo = args.breadcrumbs()[args.breadcrumbs().length-2];
+                                            if (args.fetchers[plo.id] && args.fetchers[plo.id]._cache[linkObject.data.id]) {
+                                                args.fetchers[plo.id]._cache[linkObject.data.id].open = false;
+                                                args.fetchers[plo.id]._cache[linkObject.data.id].kind = 'folder';
+                                                args.fetchers[plo.id]._cache[linkObject.data.id].children.unshift(newNode);
+                                                args.fetchers[plo.id]._cache[linkObject.data.id].relationships.children.links.related.meta.count++;
+                                            }
+                                        }
                                         args.updateSelected([]);
                                         args.multiselected()([]);
                                         args.updateTreeData(0, topLevelProject._flat, true);
