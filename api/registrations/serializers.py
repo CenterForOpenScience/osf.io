@@ -8,7 +8,7 @@ from api.nodes.serializers import NodeSerializer
 from api.nodes.serializers import NodeLinksSerializer
 from api.nodes.serializers import NodeContributorsSerializer
 from api.base.serializers import (IDField, RelationshipField, LinksField, HideIfRetraction,
-                                  FileCommentRelationshipField, NodeFileHyperLinkField)
+                                  FileCommentRelationshipField, NodeFileHyperLinkField, HideIfRegistration)
 
 
 class RegistrationSerializer(NodeSerializer):
