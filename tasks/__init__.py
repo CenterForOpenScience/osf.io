@@ -444,7 +444,7 @@ def requirements(base=False, addons=False, release=False, dev=False, metrics=Fal
         addons = True
         dev = True
     if not(addons or dev or metrics):
-        base=True
+        base = True
     if release or addons:
         addon_requirements()
     # "release" takes precedence
