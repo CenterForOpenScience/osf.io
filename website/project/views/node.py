@@ -6,7 +6,7 @@ from itertools import islice
 
 from flask import request
 from modularodm import Q
-from modularodm.exceptions import ModularOdmException, ValidationValueError
+from modularodm.exceptions import ModularOdmException, ValidationValueError, NoResultsFound
 
 from framework import status
 from framework.utils import iso8601format
@@ -14,7 +14,6 @@ from framework.mongo import StoredObject
 from framework.flask import redirect
 from framework.auth.decorators import must_be_logged_in, collect_auth
 from framework.exceptions import HTTPError, PermissionsError
-from framework.mongo.utils import get_or_http_error
 
 from website import language
 
@@ -34,14 +33,13 @@ from website.project.decorators import (
 from website.tokens import process_token_or_pass
 from website.util.permissions import ADMIN, READ, WRITE, CREATOR_PERMISSIONS
 from website.util.rubeus import collect_addon_js
-from website.project.model import has_anonymous_link, get_pointer_parent, NodeUpdateError, validate_title
+from website.project.model import has_anonymous_link, get_pointer_parent, NodeUpdateError, validate_title, Institution
 from website.project.forms import NewNodeForm
 from website.project.metadata.utils import serialize_meta_schemas
 from website.models import Node, Pointer, WatchConfig, PrivateLink, Comment
 from website import settings
-from website.views import _render_nodes, find_dashboard, validate_page_num
+from website.views import _render_nodes, find_bookmark_collection, validate_page_num
 from website.profile import utils
-from website.project import new_folder
 from website.project.licenses import serialize_node_license_record
 from website.util.sanitize import strip_html
 from website.util import rapply
@@ -134,50 +132,6 @@ def project_new_from_template(auth, node, **kwargs):
     )
     return {'url': new_node.url}, http.CREATED, None
 
-##############################################################################
-# New Folder
-##############################################################################
-@must_be_valid_project
-@must_be_logged_in
-def folder_new_post(auth, node, **kwargs):
-    user = auth.user
-
-    title = request.json.get('title')
-
-    if not node.is_folder:
-        raise HTTPError(http.BAD_REQUEST)
-    folder = new_folder(strip_html(title), user)
-    folders = [folder]
-    try:
-        _add_pointers(node, folders, auth)
-    except ValueError:
-        raise HTTPError(http.BAD_REQUEST)
-
-    return {
-        'projectUrl': '/dashboard/',
-    }, http.CREATED
-
-
-@collect_auth
-def add_folder(auth, **kwargs):
-    data = request.get_json()
-    node_id = data.get('node_id')
-    node = get_or_http_error(Node, node_id)
-
-    user = auth.user
-    title = strip_html(data.get('title'))
-    if not node.is_folder:
-        raise HTTPError(http.BAD_REQUEST)
-
-    folder = new_folder(
-        title, user
-    )
-    folders = [folder]
-    try:
-        _add_pointers(node, folders, auth)
-    except ValueError:
-        raise HTTPError(http.BAD_REQUEST)
-    return {}, 201, None
 
 ##############################################################################
 # New Node
@@ -295,6 +249,16 @@ def node_forks(auth, node, **kwargs):
 @must_be_contributor
 def node_setting(auth, node, **kwargs):
 
+    #check institutions:
+    try:
+        email_domains = [email.split('@')[1] for email in auth.user.emails]
+        inst = Institution.find_one(Q('email_domains', 'in', email_domains))
+        if inst not in auth.user.affiliated_institutions:
+            auth.user.affiliated_institutions.append(inst)
+            auth.user.save()
+    except (IndexError, NoResultsFound):
+        pass
+
     ret = _view_project(node, auth, primary=True)
 
     addons_enabled = []
@@ -403,22 +367,6 @@ def view_project(auth, node, **kwargs):
     ))
     ret.update(rubeus.collect_addon_assets(node))
     return ret
-
-
-# Expand/Collapse
-@must_be_valid_project
-@must_be_contributor_or_public
-def expand(auth, node, **kwargs):
-    node.expand(user=auth.user)
-    return {}, 200, None
-
-
-@must_be_valid_project
-@must_be_contributor_or_public
-def collapse(auth, node, **kwargs):
-    node.collapse(user=auth.user)
-    return {}, 200, None
-
 
 # Reorder components
 @must_be_valid_project
@@ -643,32 +591,6 @@ def component_remove(auth, node, **kwargs):
     }
 
 
-@must_have_permission(ADMIN)
-@must_not_be_registration
-def delete_folder(auth, node, **kwargs):
-    """Remove folder node
-
-    """
-    if node is None:
-        raise HTTPError(http.BAD_REQUEST)
-
-    if not node.is_folder or node.is_dashboard:
-        raise HTTPError(http.BAD_REQUEST)
-
-    try:
-        node.remove_node(auth)
-    except NodeStateError as e:
-        raise HTTPError(
-            http.BAD_REQUEST,
-            data={
-                'message_short': 'Error',
-                'message_long': 'Could not delete component: ' + e.message
-            },
-        )
-
-    return {}
-
-
 @must_be_valid_project
 @must_have_permission(ADMIN)
 def remove_private_link(*args, **kwargs):
@@ -719,12 +641,12 @@ def _view_project(node, auth, primary=False):
 
     parent = node.parent_node
     if user:
-        dashboard = find_dashboard(user)
-        dashboard_id = dashboard._id
-        in_dashboard = dashboard.pointing_at(node._primary_key) is not None
+        bookmark_collection = find_bookmark_collection(user)
+        bookmark_collection_id = bookmark_collection._id
+        in_bookmark_collection = bookmark_collection.pointing_at(node._primary_key) is not None
     else:
-        in_dashboard = False
-        dashboard_id = ''
+        in_bookmark_collection = False
+        bookmark_collection_id = ''
     view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
     anonymous = has_anonymous_link(node, auth)
     widgets, configs, js, css = _render_addon(node)
@@ -751,7 +673,7 @@ def _view_project(node, auth, primary=False):
             'redirect_url': redirect_url,
             'display_absolute_url': node.display_absolute_url,
             'update_url': node.api_url_for('update_node'),
-            'in_dashboard': in_dashboard,
+            'in_dashboard': in_bookmark_collection,
             'is_public': node.is_public,
             'is_archiving': node.archiving,
             'date_created': iso8601format(node.date_created),
@@ -798,6 +720,7 @@ def _view_project(node, auth, primary=False):
             'institution': {
                 'name': node.primary_institution.name if node.primary_institution else None,
                 'logo_path': node.primary_institution.logo_path if node.primary_institution else None,
+                'id': node.primary_institution._id if node.primary_institution else None
             },
             'alternative_citations': [citation.to_json() for citation in node.alternative_citations],
             'has_draft_registrations': node.has_active_draft_registrations,
@@ -831,7 +754,7 @@ def _view_project(node, auth, primary=False):
             'fullname': user.fullname if user else '',
             'can_comment': node.can_comment(auth),
             'show_wiki_widget': _should_show_wiki_widget(node, user),
-            'dashboard_id': dashboard_id,
+            'dashboard_id': bookmark_collection_id,
         },
         'badges': _get_badge(user),
         # TODO: Namespace with nested dicts
@@ -1058,19 +981,6 @@ def get_node_tree(auth, **kwargs):
     tree = node_child_tree(auth.user, [node._id])
     return tree
 
-
-@must_be_contributor_or_public
-def get_folder_pointers(auth, node, **kwargs):
-    if not node.is_folder:
-        return []
-    nodes = [
-        each.resolve()._id
-        for each in node.nodes
-        if each is not None and not each.is_deleted and not each.primary
-    ]
-    return nodes
-
-
 @must_be_contributor_or_public
 def get_forks(auth, node, **kwargs):
     fork_list = sorted(node.forks, key=lambda fork: fork.forked_date, reverse=True)
@@ -1180,7 +1090,7 @@ def search_node(auth, **kwargs):
     title_query = Q('title', 'icontains', query)
     not_deleted_query = Q('is_deleted', 'eq', False)
     visibility_query = Q('contributors', 'eq', auth.user)
-    no_folders_query = Q('is_folder', 'eq', False)
+    no_folders_query = Q('is_collection', 'eq', False)
     if include_public:
         visibility_query = visibility_query | Q('is_public', 'eq', True)
     odm_query = title_query & not_deleted_query & visibility_query & no_folders_query
@@ -1361,34 +1271,6 @@ def remove_pointer_from_folder(auth, node, pointer_id, **kwargs):
     node.save()
 
 
-@must_be_valid_project  # injects project
-@must_have_permission(WRITE)
-@must_not_be_registration
-def remove_pointers_from_folder(auth, node, **kwargs):
-    """Remove multiple pointers from a node, raising a 400 if the pointer is not
-    in `node.nodes`.
-    """
-    pointer_ids = request.json.get('pointerIds')
-
-    if pointer_ids is None:
-        raise HTTPError(http.BAD_REQUEST)
-
-    for pointer_id in pointer_ids:
-        pointer_id = node.pointing_at(pointer_id)
-
-        pointer = Pointer.load(pointer_id)
-
-        if pointer is None:
-            raise HTTPError(http.BAD_REQUEST)
-
-        try:
-            node.rm_pointer(pointer, auth=auth)
-        except ValueError:
-            raise HTTPError(http.BAD_REQUEST)
-
-    node.save()
-
-
 @must_have_permission(WRITE)
 @must_not_be_registration
 def fork_pointer(auth, node, **kwargs):
@@ -1441,5 +1323,5 @@ def get_pointed(auth, node, **kwargs):
     return {'pointed': [
         serialize_pointer(each, auth)
         for each in node.pointed
-        if not get_pointer_parent(each).is_folder
+        if not get_pointer_parent(each).is_collection
     ]}

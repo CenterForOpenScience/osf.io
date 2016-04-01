@@ -51,9 +51,12 @@ def task(*args, **kwargs):
 
 
 @task
-def server(host=None, port=5000, debug=True, live=False):
+def server(host=None, port=5000, debug=True, live=False, gitlogs=False):
     """Run the app server."""
+    if gitlogs:
+        git_logs()
     from website.app import init_app
+    os.environ['DJANGO_SETTINGS_MODULE'] = 'api.base.settings'
     app = init_app(set_backends=True, routes=True)
     settings.API_SERVER_PORT = port
 
@@ -64,6 +67,11 @@ def server(host=None, port=5000, debug=True, live=False):
         server.serve(port=port)
     else:
         app.run(host=host, port=port, debug=debug, threaded=debug, extra_files=[settings.ASSET_HASH_PATH])
+
+@task
+def git_logs(count=100, pretty='format:"%s - %b"', grep='"Merge pull request"'):
+    cmd = 'git log --grep={1} -n {0} --pretty={2} > website/static/git_logs.txt'.format(count, grep, pretty)
+    run(cmd, echo=True)
 
 
 @task
@@ -468,12 +476,8 @@ def test_admin():
     """Run the Admin test suite."""
     # test_module(module="admin_tests/")
     module = "admin_tests/"
-    verbosity = 0
     module_fmt = ' '.join(module) if isinstance(module, list) else module
-    args = " --verbosity={0} -s {1}".format(verbosity, module_fmt)
-    env = 'DJANGO_SETTINGS_MODULE="admin.base.settings" '
-    # Use pty so the process buffers "correctly"
-    run(env + bin_prefix(TEST_CMD) + args, pty=True)
+    admin_tasks.manage('test {}'.format(module_fmt))
 
 @task
 def test_varnish():

@@ -35,10 +35,9 @@ from website.oauth.models import (
     ExternalAccount,
     ExternalProvider
 )
-from website.models import Institution
 from website.project.model import (
     Comment, DraftRegistration, MetaSchema, Node, NodeLog, Pointer,
-    PrivateLink, Tag, WatchConfig, AlternativeCitation,
+    PrivateLink, Tag, WatchConfig, AlternativeCitation, Institution, 
     ensure_schemas
 )
 from website.project.sanctions import (
@@ -83,8 +82,8 @@ def FakerAttribute(provider, **kwargs):
 class ModularOdmFactory(base.Factory):
     """Base factory for modular-odm objects.
     """
-
-    ABSTRACT_FACTORY = True
+    class Meta:
+        abstract = True
 
     @classmethod
     def _build(cls, target_class, *args, **kwargs):
@@ -101,7 +100,9 @@ class ModularOdmFactory(base.Factory):
 
 
 class UserFactory(ModularOdmFactory):
-    FACTORY_FOR = User
+    class Meta:
+        model = User
+        abstract = False
 
     username = Sequence(lambda n: "fred{0}@example.com".format(n))
     # Don't use post generation call to set_password because
@@ -146,13 +147,15 @@ class AuthUserFactory(UserFactory):
 
 
 class TagFactory(ModularOdmFactory):
-    FACTORY_FOR = Tag
+    class Meta:
+        model = Tag
 
     _id = Sequence(lambda n: "scientastic-{}".format(n))
 
 
 class ApiOAuth2ApplicationFactory(ModularOdmFactory):
-    FACTORY_FOR = ApiOAuth2Application
+    class Meta:
+        model = ApiOAuth2Application
 
     owner = SubFactory(UserFactory)
 
@@ -163,7 +166,8 @@ class ApiOAuth2ApplicationFactory(ModularOdmFactory):
 
 
 class ApiOAuth2PersonalTokenFactory(ModularOdmFactory):
-    FACTORY_FOR = ApiOAuth2PersonalToken
+    class Meta:
+        model = ApiOAuth2PersonalToken
 
     owner = SubFactory(UserFactory)
 
@@ -173,7 +177,8 @@ class ApiOAuth2PersonalTokenFactory(ModularOdmFactory):
 
 
 class PrivateLinkFactory(ModularOdmFactory):
-    FACTORY_FOR = PrivateLink
+    class Meta:
+        model = PrivateLink
 
     name = "link"
     key = Sequence(lambda n: 'foobar{}'.format(n))
@@ -182,7 +187,8 @@ class PrivateLinkFactory(ModularOdmFactory):
 
 
 class AbstractNodeFactory(ModularOdmFactory):
-    FACTORY_FOR = Node
+    class Meta:
+        model = Node
 
     title = 'The meaning of life'
     description = 'The meaning of life is 42.'
@@ -193,12 +199,12 @@ class ProjectFactory(AbstractNodeFactory):
     category = 'project'
 
 
-class FolderFactory(ProjectFactory):
-    is_folder = True
+class CollectionFactory(ProjectFactory):
+    is_collection = True
 
 
-class DashboardFactory(FolderFactory):
-    is_dashboard = True
+class BookmarkCollectionFactory(CollectionFactory):
+    is_bookmark_collection = True
 
 
 class NodeFactory(AbstractNodeFactory):
@@ -302,24 +308,27 @@ class RetractedRegistrationFactory(AbstractNodeFactory):
         return retraction
 
 class PointerFactory(ModularOdmFactory):
-    FACTORY_FOR = Pointer
+    class Meta:
+        model = Pointer
     node = SubFactory(NodeFactory)
 
 
 class NodeLogFactory(ModularOdmFactory):
-    FACTORY_FOR = NodeLog
+    class Meta:
+        model = NodeLog
     action = 'file_added'
     user = SubFactory(UserFactory)
 
 
 class WatchConfigFactory(ModularOdmFactory):
-    FACTORY_FOR = WatchConfig
+    class Meta:
+        model = WatchConfig
     node = SubFactory(NodeFactory)
 
 
 class SanctionFactory(ModularOdmFactory):
-
-    ABSTRACT_FACTORY = True
+    class Meta:
+        abstract = True
 
     @classmethod
     def _create(cls, target_class, initiated_by=None, approve=False, *args, **kwargs):
@@ -338,15 +347,18 @@ class SanctionFactory(ModularOdmFactory):
         return sanction
 
 class RetractionFactory(SanctionFactory):
-    FACTORY_FOR = Retraction
+    class Meta:
+        model = Retraction
     user = SubFactory(UserFactory)
 
 class EmbargoFactory(SanctionFactory):
-    FACTORY_FOR = Embargo
+    class Meta:
+        model = Embargo
     user = SubFactory(UserFactory)
 
 class RegistrationApprovalFactory(SanctionFactory):
-    FACTORY_FOR = RegistrationApproval
+    class Meta:
+        model = RegistrationApproval
     user = SubFactory(UserFactory)
 
 class EmbargoTerminationApprovalFactory(ModularOdmFactory):
@@ -372,7 +384,8 @@ class EmbargoTerminationApprovalFactory(ModularOdmFactory):
 
 
 class NodeWikiFactory(ModularOdmFactory):
-    FACTORY_FOR = NodeWikiPage
+    class Meta:
+        model = NodeWikiPage
 
     page_name = 'home'
     content = 'Some content'
@@ -392,7 +405,9 @@ class UnregUserFactory(ModularOdmFactory):
     to create an instance.
 
     """
-    FACTORY_FOR = User
+    class Meta:
+        model = User
+        abstract = False
     email = Sequence(lambda n: "brian{0}@queen.com".format(n))
     fullname = Sequence(lambda n: "Brian May{0}".format(n))
 
@@ -411,8 +426,8 @@ class UnconfirmedUserFactory(ModularOdmFactory):
     """Factory for a user that has not yet confirmed their primary email
     address (username).
     """
-
-    FACTORY_FOR = User
+    class Meta:
+        model = User
     username = Sequence(lambda n: 'roger{0}@queen.com'.format(n))
     fullname = Sequence(lambda n: 'Roger Taylor{0}'.format(n))
     password = 'killerqueen'
@@ -434,7 +449,8 @@ class UnconfirmedUserFactory(ModularOdmFactory):
 
 
 class AuthFactory(base.Factory):
-    FACTORY_FOR = Auth
+    class Meta:
+        model = Auth
     user = SubFactory(UserFactory)
 
 
@@ -490,7 +506,8 @@ class DeprecatedUnregUserFactory(base.Factory):
         >>> UnregUserFactory()
         {'nr_name': 'Tom Jones1', 'nr_email': 'tom1@example.com'}
     """
-    FACTORY_FOR = DeprecatedUnregUser
+    class Meta:
+        model = DeprecatedUnregUser
 
     nr_name = Sequence(lambda n: "Tom Jones{0}".format(n))
     nr_email = Sequence(lambda n: "tom{0}@example.com".format(n))
@@ -503,8 +520,8 @@ class DeprecatedUnregUserFactory(base.Factory):
 
 
 class CommentFactory(ModularOdmFactory):
-
-    FACTORY_FOR = Comment
+    class Meta:
+        model = Comment
     content = Sequence(lambda n: 'Comment {0}'.format(n))
     is_public = True
 
@@ -548,24 +565,43 @@ class CommentFactory(ModularOdmFactory):
         return instance
 
 
-class InstitutionFactory(ModularOdmFactory):
-    FACTORY_FOR = Institution
-    _id = Sequence(lambda n: "S{}".format(n))
-    name = Sequence(lambda n: "School{}".format(n))
-    logo_name = 'logo.img'
-    auth_url = 'http://thisIsUrl.biz'
+class InstitutionFactory(ProjectFactory):
+
+    def _build(cls, target_class, *args, **kwargs):
+        from random import randint
+        '''Build an object without saving it.'''
+        inst = ProjectFactory._build(target_class, *args, **kwargs)
+        inst.institution_id = str(randint(1, 20000))
+        inst.institution_name = str(randint(10, 20000))
+        inst.institution_logo_name = 'logo.img'
+        inst.institution_auth_url = 'http://thisIsUrl.biz'
+        return Institution(inst)
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        from random import randint
+        inst = ProjectFactory._create(target_class, *args, **kwargs)
+        inst.institution_id = str(randint(1, 20000))
+        inst.institution_name = str(randint(10, 20000))
+        inst.institution_logo_name = 'logo.img'
+        inst.institution_auth_url = 'http://thisIsUrl.biz'
+        inst.save()
+        return Institution(inst)
 
 
 class NotificationSubscriptionFactory(ModularOdmFactory):
-    FACTORY_FOR = NotificationSubscription
+    class Meta:
+        model = NotificationSubscription
 
 
 class NotificationDigestFactory(ModularOdmFactory):
-    FACTORY_FOR = NotificationDigest
+    class Meta:
+        model = NotificationDigest
 
 
 class ExternalAccountFactory(ModularOdmFactory):
-    FACTORY_FOR = ExternalAccount
+    class Meta:
+        model = ExternalAccount
 
     provider = 'mock2'
     provider_id = Sequence(lambda n: 'user-{0}'.format(n))
@@ -574,7 +610,8 @@ class ExternalAccountFactory(ModularOdmFactory):
 
 
 class SessionFactory(ModularOdmFactory):
-    FACTORY_FOR = Session
+    class Meta:
+        model = Session
 
     @classmethod
     def _build(cls, target_class, *args, **kwargs):
@@ -640,14 +677,17 @@ class MockOAuthAddonNodeSettings(addons_base.AddonOAuthNodeSettingsBase):
 
 
 class ArchiveTargetFactory(ModularOdmFactory):
-    FACTORY_FOR = ArchiveTarget
+    class Meta:
+        model = ArchiveTarget
 
 
 class ArchiveJobFactory(ModularOdmFactory):
-    FACTORY_FOR = ArchiveJob
+    class Meta:
+        model = ArchiveJob
 
 class AlternativeCitationFactory(ModularOdmFactory):
-    FACTORY_FOR = AlternativeCitation
+    class Meta:
+        model = AlternativeCitation
 
     @classmethod
     def _create(cls, target_class, *args, **kwargs):
@@ -661,7 +701,8 @@ class AlternativeCitationFactory(ModularOdmFactory):
         return instance
 
 class DraftRegistrationFactory(ModularOdmFactory):
-    FACTORY_FOR = DraftRegistration
+    class Meta:
+        model = DraftRegistration
 
     @classmethod
     def _create(cls, *args, **kwargs):
@@ -689,7 +730,8 @@ class DraftRegistrationFactory(ModularOdmFactory):
         return draft
 
 class NodeLicenseRecordFactory(ModularOdmFactory):
-    FACTORY_FOR = NodeLicenseRecord
+    class Meta:
+        model = NodeLicenseRecord
 
     @classmethod
     def _create(cls, *args, **kwargs):
