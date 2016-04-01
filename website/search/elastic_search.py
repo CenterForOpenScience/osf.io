@@ -2,23 +2,22 @@
 
 from __future__ import division
 
-import re
 import copy
-import math
-import logging
-import unicodedata
 import functools
+import logging
+import math
+import re
+import unicodedata
 
-import six
-
-from modularodm import Q
 from elasticsearch import (
-    Elasticsearch,
-    RequestError,
-    NotFoundError,
     ConnectionError,
+    Elasticsearch,
+    NotFoundError,
+    RequestError,
     helpers,
 )
+from modularodm import Q
+import six
 
 from framework import sentry
 from framework.celery_tasks import app as celery_app
@@ -27,11 +26,11 @@ from framework.mongo.utils import paginated
 from website import settings
 from website.filters import gravatar
 from website.models import User, Node
+from website.project.licenses import serialize_node_license_record
 from website.search import exceptions
 from website.search.util import build_query
 from website.util import sanitize
 from website.views import validate_page_num
-from website.project.licenses import serialize_node_license_record
 
 logger = logging.getLogger(__name__)
 
