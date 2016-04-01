@@ -433,8 +433,8 @@ def requirements(base=False, addons=False, release=False, dev=False, metrics=Fal
         inv requirements
         inv requirements --quick
 
-    Quick requirements are, in order, addons, dev and the base requirements. They should do for day-to-day development
-    work so you get everything that someone might have added that would keep you from running the software properly.
+    Quick requirements are, in order, addons, dev and the base requirements. You should be able to use --quick for
+    day to day development.
 
     By default, base requirements will run. However, if any set of addons, release, dev, or metrics are chosen, base
     will have to be mentioned explicitly in order to run. This is to remain compatible with previous usages. Release
