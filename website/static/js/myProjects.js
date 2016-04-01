@@ -911,12 +911,14 @@ var MyProjects = {
                     title: 'Create new project',
                     categoryList: ctrl.categoryList,
                     stayCallback: function () {
+                        var ap = this; // AddProject controller
                         // Fetch details of added item from server and redraw treebeard
                         var projects = ctrl.fetchers[ctrl.systemCollections[0].id];
-                        projects.fetch(this.saveResult().data.id).then(function(){
+                        projects.fetch(ap.saveResult().data.id).then(function(){
                           ctrl.updateSelected([]);
                           ctrl.multiselected()([]);
                           ctrl.updateTreeData(0, projects._flat, true);
+                          ap.mapTemplates();
                         });
                     },
                     trackingCategory: 'myProjects',
@@ -1580,8 +1582,9 @@ var Breadcrumbs = {
                                 title: 'Create new component',
                                 categoryList: args.categoryList,
                                 stayCallback: function () {
+                                    var ap = this; // AddProject controller
                                     var topLevelProject = args.fetchers[linkObject.id];
-                                    topLevelProject.fetch(this.saveResult().data.id).then(function(newNode){
+                                    topLevelProject.fetch(ap.saveResult().data.id).then(function(newNode){
                                         if (args.breadcrumbs().length > 1) {
                                             var plo = args.breadcrumbs()[args.breadcrumbs().length-2];
                                             if (args.fetchers[plo.id] && args.fetchers[plo.id]._cache[linkObject.data.id]) {
@@ -1594,6 +1597,7 @@ var Breadcrumbs = {
                                         args.updateSelected([]);
                                         args.multiselected()([]);
                                         args.updateTreeData(0, topLevelProject._flat, true);
+                                        ap.mapTemplates();
                                     });
                                 },
                                 trackingCategory: 'myProjects',

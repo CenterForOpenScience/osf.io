@@ -56,6 +56,9 @@ var AddProject = {
 
         if(options.templatesFetcher){
             options.templatesFetcher.on(['page', 'done'], self.mapTemplates);
+            if(self.userProjects().length === 0){ // Run this in case fetcher callbacks have already finished
+                self.mapTemplates();
+            }
         }
 
 
