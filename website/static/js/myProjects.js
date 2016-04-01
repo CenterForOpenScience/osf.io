@@ -199,7 +199,8 @@ NodeFetcher.prototype = {
     this.loaded += results.data.length;
     var finder = function(id, item) {return item.id === id;};
     for(var i = 0; i < results.data.length; i++) {
-      if (this._cache[parent.id].children.find(finder.bind(results.data[i].id))) continue;
+      //TODO Sorting get a bit broken here @chrisseto
+      if (this._cache[parent.id].children.find(finder.bind(this, results.data[i].id))) continue;
       this._cache[results.data[i].id] = _formatDataforPO(results.data[i]);
       results.data[i].children = [];
       this._cache[parent.id].children.push(results.data[i]);
