@@ -105,7 +105,6 @@ class TestRegistrationDetail(ApiTestCase):
             'registration': True,
             'fork': None,
             'collection': None,
-            'dashboard': None,
             'tags': None,
             'withdrawn': True,
             'pending_withdrawal': None,
