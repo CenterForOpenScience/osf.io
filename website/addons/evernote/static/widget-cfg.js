@@ -10,11 +10,12 @@ require('datatables-select');
 var ko = require('knockout');
 var $osf = require('js/osfHelpers');
 
+//var moment = require('moment');
+
 
 var EvernoteWidget = function(urls) {
 
     self = this;
-
     self.urls = urls;
 
     self.notes = ko.observableArray();
@@ -31,8 +32,9 @@ var EvernoteWidget = function(urls) {
         data: notes,
         rowId: 'guid',
         columns: [
-            { data: "guid" , title: "guid"},
-            { data: "title", title: "title" }
+            { data: "title", title: "title" },
+            { data: "created" , title: "created"},
+            { data: "updated" , title: "updated"},
         ]
 
        } );
@@ -42,7 +44,7 @@ var EvernoteWidget = function(urls) {
     // on selecting a row -- I think there should be a better way
     $('#evernote-notes-list').on( 'click', 'tr', function () {
        console.log( 'Row id: '+self.notes_dt.row( this ).id() );
-       $("#evernote-notedisplay").html("<b>Loading note</b>");
+       $("#evernote-notedisplay").html("<b>Loading note...</b>");
        self.displayNote(self.notes_dt.row( this ).id());
     } );
 
@@ -75,19 +77,20 @@ var EvernoteWidget = function(urls) {
 
  };
 
- EvernoteWidget.prototype.openEditDialog = function (note, event) {
 
-
-   // make ajax call to note to retrieve some basic info about note
-   // ultimately, rendered html
-
-   var note = $.getJSON(this.urls.note + note.guid +"/");
-
-   note.done(function(data) {
-     $("#evernote-notedisplay").html(data.html);
-   });
-
- };
+ // EvernoteWidget.prototype.openEditDialog = function (note, event) {
+ //
+ //
+ //   // make ajax call to note to retrieve some basic info about note
+ //   // ultimately, rendered html
+ //
+ //   var note = $.getJSON(this.urls.note + note.guid +"/");
+ //
+ //   note.done(function(data) {
+ //     $("#evernote-notedisplay").html(data.html);
+ //   });
+ //
+ // };
 
 // Skip if widget is not correctly configured
 if ($('#evernoteWidget').length) {
