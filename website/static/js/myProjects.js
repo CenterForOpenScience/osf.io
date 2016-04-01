@@ -102,6 +102,9 @@ NodeFetcher.prototype = {
     this.total++;
     this.loaded++;
 
+    if (!this._cache[item.id])
+      this._cache[item.id] = item;
+
     this._flat.unshift(item);
 
     // Resort after inserting data
