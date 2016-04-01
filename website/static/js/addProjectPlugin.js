@@ -56,6 +56,9 @@ var AddProject = {
 
         if(options.templatesFetcher){
             options.templatesFetcher.on(['page', 'done'], self.mapTemplates);
+            if(self.userProjects().length === 0){ // Run this in case fetcher callbacks have already finished
+                self.mapTemplates();
+            }
         }
 
 
@@ -94,11 +97,13 @@ var AddProject = {
             m.request({method : 'POST', url : url, data : data, config : xhrconfig})
                 .then(success, error);
             self.newProjectName('');
+            self.newProjectDesc('');
             self.isValid(false);
         };
         self.reset = function _reset(){
             self.newProjectName('');
             $('#' + self.options.modalID + ' .project-name').val('');
+            $('#' + self.options.modalID + ' .project-desc').val('');
             self.viewState('form');
             self.newProjectDesc('');
             self.newProjectCategory(self.defaultCat);
@@ -149,14 +154,14 @@ var AddProject = {
                         ctrl.showMore() ? [
                             m('.form-group.m-v-sm', [
                                 m('label[for="projectDesc].f-w-lg.text-bigger', 'Description'),
-                                m('input[type="text"].form-control.noresize', {
+                                m('input[type="text"].form-control.noresize.project-desc', {
                                     onkeyup: function (ev){
                                         ctrl.newProjectDesc($(this).val());
                                     },
                                     onchange: function() {
                                         $osf.trackClick(options.trackingCategory, options.trackingAction, 'type-project-description');
                                     },
-                                    value : ctrl.newProjectDesc(),
+                                    name : 'projectDesc',
                                     placeholder : 'Enter ' + ctrl.nodeType + ' description'
                                 })
                             ]),

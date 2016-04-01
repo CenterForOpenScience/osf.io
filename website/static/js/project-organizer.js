@@ -406,11 +406,12 @@ var tbOptions = {
                 if ($(this).val().length === 0) {
                     resetFilter();
                 } else {
+                    tb.filterText(event.target.value);
                     tb.filter(event);
                 }
             },
             onchange: function(event) {
-                tb.filterText(event.value);
+                tb.filterText(event.target.value);
                 $osf.trackClick('myProjects', 'filter', 'search-projects');
             },
             value: tb.filterText()
