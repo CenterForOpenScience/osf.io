@@ -7,7 +7,7 @@ from api.files.serializers import FileSerializer
 from api.nodes.serializers import NodeSerializer
 from api.nodes.serializers import NodeLinksSerializer
 from api.nodes.serializers import NodeContributorsSerializer
-from api.base.serializers import (IDField, RelationshipField, LinksField, HideIfRetraction, DevOnly,
+from api.base.serializers import (IDField, RelationshipField, LinksField, HideIfRetraction,
                                   FileCommentRelationshipField, NodeFileHyperLinkField)
 
 
@@ -67,7 +67,7 @@ class RegistrationSerializer(NodeSerializer):
         related_view_kwargs={'node_id': '<forked_from_id>'}
     ))
 
-    node_links = (HideIfRetraction(RelationshipField(
+    node_links = HideIfRetraction(RelationshipField(
         related_view='registrations:registration-pointers',
         related_view_kwargs={'node_id': '<pk>'},
         related_meta={'count': 'get_pointers_count'}

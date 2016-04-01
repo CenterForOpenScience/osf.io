@@ -2,7 +2,6 @@ from django.conf import settings
 from django.conf.urls import include, url, patterns
 from django.conf.urls.static import static
 from settings import API_BASE
-from website import settings as osf_settings
 
 from . import views
 
