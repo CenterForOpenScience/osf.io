@@ -614,7 +614,7 @@ CommentListModel.prototype.initListeners = function() {
 };
 
 var onOpen = function(page, rootId, nodeApiUrl, currentUserId) {
-    if (osfHelpers.urlParams().view_only ||currentUserId === "") {
+    if (osfHelpers.urlParams().view_only ||currentUserId === '') {
         return null;
     }
     var timestampUrl = nodeApiUrl + 'comments/timestamps/';
