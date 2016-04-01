@@ -121,7 +121,7 @@ BaseComment.prototype.setupToolTips = function(elm) {
 
 BaseComment.prototype.fetch = function() {
     var self = this;
-    var setUnread = getTargetType(self) !== 'comments';
+    var setUnread = getTargetType(self) !== 'comments' && !osfHelpers.urlParams().view_only && self.author.id !== '';
     if (self.comments().length === 0) {
         var urlParams = osfHelpers.urlParams();
         var query = 'embed=user';
@@ -151,7 +151,7 @@ BaseComment.prototype.fetchNext = function(url, comments, setUnread) {
         if (self._loaded !== true) {
             self._loaded = true;
         }
-        if (!osfHelpers.urlParams().view_only && setUnread) {
+        if (setUnread && response.links.meta.unread) {
             self.$root.unreadComments(response.links.meta.unread);
             setUnread = false;
         }
@@ -613,8 +613,8 @@ CommentListModel.prototype.initListeners = function() {
     });
 };
 
-var onOpen = function(page, rootId, nodeApiUrl) {
-    if (osfHelpers.urlParams().view_only){
+var onOpen = function(page, rootId, nodeApiUrl, currentUserId) {
+    if (osfHelpers.urlParams().view_only ||currentUserId === "") {
         return null;
     }
     var timestampUrl = nodeApiUrl + 'comments/timestamps/';
@@ -655,7 +655,7 @@ var onOpen = function(page, rootId, nodeApiUrl) {
 var init = function(commentLinkSelector, commentPaneSelector, options) {
     var cp = new CommentPane(commentPaneSelector, {
         onOpen: function(){
-            return onOpen(options.page, options.rootId, options.nodeApiUrl);
+            return onOpen(options.page, options.rootId, options.nodeApiUrl, options.currentUser.id);
         }
     });
     options.togglePane = cp.toggle;

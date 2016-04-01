@@ -97,14 +97,15 @@ class JSONAPIPagination(pagination.PageNumberPagination):
             target_id = self.request.query_params.get('filter[target]', None)
             node_id = kwargs.get('node_id', None)
             node = Node.load(node_id)
-            if target_id:
+            user = self.request.user
+            if target_id and not user.is_anonymous() and node.is_contributor(user):
                 root_target = Guid.load(target_id)
                 page = getattr(root_target.referent, 'root_target_page', None)
                 if page:
                     if not len(data):
                         unread = 0
                     else:
-                        unread = Comment.find_n_unread(user=self.request.user, node=node, page=page, root_id=target_id)
+                        unread = Comment.find_n_unread(user=user, node=node, page=page, root_id=target_id)
                     response_dict['links']['meta']['unread'] = unread
 
         if is_anonymized(self.request):
