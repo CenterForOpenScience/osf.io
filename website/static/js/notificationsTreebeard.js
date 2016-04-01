@@ -84,6 +84,10 @@ function ProjectNotifications(data) {
         divID: 'grid',
         filesData: data,
         naturalScrollLimit : 0,
+        onload : function () {
+            var tb = this;
+            expandOnLoad.call(tb);
+        },
         resolveRows: function notificationResolveRows(item){
             var columns = [];
             var iconcss = '';
@@ -210,7 +214,6 @@ function ProjectNotifications(data) {
         }
     });
     var grid = new Treebeard(tbOptions);
-    expandOnLoad.call(grid);
 }
 
 module.exports = ProjectNotifications;
