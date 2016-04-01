@@ -99,6 +99,7 @@
                             <td>User id</td>
                             <td>Name</td>
                             <td>Permissions</td>
+                            <td>Actions</td>
                         </tr>
                     </thead>
                     <tbody>
@@ -111,6 +112,34 @@
                             </td>
                             <td>{{ user.name }}</td>
                             <td>{{ user.permission|capfirst }}</td>
+                            <td>
+                            {% if not node.is_registration %}
+                                <button class="btn btn-danger" data-toggle="modal"
+                                        data-target="#{{ user.id }}Modal">
+                                    Remove
+                                </button>
+                                <div class="modal" id="{{ user.id }}Modal">
+                                <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <button type="button" class="close" data-dismiss="modal">x</button>
+                                        <h3>Removing user: {{ user.name }}</h3>
+                                    </div>
+                                    <div class="modal-body">
+                                        User will be removed. Currently only
+                                        an admin on the project will be able to
+                                        add them back.
+                                    </div>
+                                    <div class="modal-footer">
+                                        <a href="{% url 'nodes:remove_user' node.id user.id %}"
+                                           class="btn btn-danger">Remove</a>
+                                        <button type="button" class="btn" data-dismiss="modal" >Cancel</button>
+                                    </div>
+                                </div>
+                                </div>
+                                </div>
+                            {% endif %}
+                            </td>
                         </tr>
                     {% endfor %}
                     </tbody>

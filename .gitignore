@@ -108,6 +108,9 @@ celery_beat.py.db
 # GUIDS
 scripts/guid_blacklist.txt
 
+# Generated json
+website/static/js/_allLogTexts.json
+
 # Admin Specific
 #################
 admin/static/public/
