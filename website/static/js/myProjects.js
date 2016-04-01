@@ -1067,9 +1067,17 @@ var Collections = {
                 Raven.captureMessage(message, { url: url, data : data });
                 self.newCollectionName('');
             });
-            self.dismissModal();
+            self.resetAddCollection();
+
             return promise;
         };
+        self.resetAddCollection = function (){
+            self.dismissModal();
+            self.newCollectionName('');
+            self.isValid(false);
+            $('#addCollInput').val('');
+            $osf.trackClick('myProjects', 'add-collection', 'click-cancel-button');
+        },
         self.deleteCollection = function _deleteCollection(){
             var url = self.collectionMenuObject().item.data.node.links.self;
             var promise = m.request({method : 'DELETE', url : url, config : xhrconfig});
@@ -1299,6 +1307,7 @@ var Collections = {
                     id: 'addColl',
                     header : m('.modal-header', [
                         m('button.close[data-dismiss="modal"][aria-label="Close"]', {onclick: function() {
+                            ctrl.resetAddCollection();
                             $osf.trackClick('myProjects', 'add-collection', 'click-close-add-collection-modal');
                         }}, [
                             m('span[aria-hidden="true"]','×')
@@ -1323,8 +1332,7 @@ var Collections = {
                                 onchange: function() {
                                     $osf.trackClick('myProjects', 'add-collection', 'type-collection-name');
                                 },
-                                placeholder : 'e.g.  My Replications',
-                                value : ctrl.newCollectionName()
+                                placeholder : 'e.g.  My Replications'
                             }),
                             m('span.help-block', ctrl.validationError())
                         ])
@@ -1333,11 +1341,7 @@ var Collections = {
                         m('button[type="button"].btn.btn-default[data-dismiss="modal"]',
                             {
                                 onclick : function(){
-                                    ctrl.dismissModal();
-                                    ctrl.newCollectionName('');
-                                    ctrl.isValid(false);
-                                    $osf.trackClick('myProjects', 'add-collection', 'click-cancel-button');
-
+                                    ctrl.resetAddCollection();
                                 }
                             }, 'Cancel'),
                         ctrl.isValid() ? m('button[type="button"].btn.btn-success', { onclick : function() {
