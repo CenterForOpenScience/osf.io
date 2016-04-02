@@ -220,9 +220,9 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
     },
     submit: function() {
         var self = this;
-        var response = removeNodesContributors(self.contributorToRemove().id, self.nodeIDsToRemove()).then(function () {
-            if (response.redirectUrl) {
-                window.location.href = response.redirectUrl;
+        removeNodesContributors(self.contributorToRemove().id, self.nodeIDsToRemove()).then(function (data) {
+            if (data.redirectUrl) {
+                window.location.href = data.redirectUrl;
             } else {
                 window.location.reload();
             }        }).fail(function(xhr, status, error) {
