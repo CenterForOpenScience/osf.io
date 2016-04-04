@@ -1264,11 +1264,6 @@ class TestUpdateNodeWiki(OsfTestCase):
         with assert_raises(NameInvalidError):
             self.project.update_node_wiki(invalid_name, 'more valid content', self.auth)
 
-    def test_wiki_url_when_home_wiki_empty(self):
-        # Make sure home wiki is empty
-        self.project.update_node_wiki('home', '', self.auth)
-        # how to make sure edit panel is open??
-
 class TestRenameNodeWiki(OsfTestCase):
 
     def setUp(self):

@@ -212,6 +212,7 @@ class TestAUser(OsfTestCase):
         ), auth=self.auth)
         assert_not_in('No wiki content', res)
         assert_in(wiki_content, res)
+        assert_in('panelsUsed: ["view", "menu"]', res)
 
     def test_wiki_page_name_non_ascii(self):
         project = ProjectFactory(creator=self.user)
