@@ -11,7 +11,7 @@ from django.conf import settings as django_settings
 from requests.auth import HTTPBasicAuth
 
 from framework.auth import User
-from scripts.create_fakes import create_fake_project
+from tests.factories import create_fake_project
 from tests.base import DbTestCase
 
 
@@ -46,7 +46,7 @@ class TestVarnish(DbTestCase):
         number_of_users = random.randint(1, 11)
 
         for i in range(number_of_projects):
-            name = ''
+            name = "Gotta cache 'em all"
             create_fake_project(cls.user, number_of_users,
                                 random.choice(['public', 'private']),
                                 components, name, number_of_tags, None, False)

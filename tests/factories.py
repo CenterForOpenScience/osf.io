@@ -23,9 +23,10 @@ from modularodm.exceptions import NoResultsFound
 
 from framework.mongo import StoredObject
 from framework.auth import User, Auth
-from framework.auth.utils import impute_names_model
+from framework.auth.utils import impute_names_model, impute_names
 from framework.guid.model import Guid
 from framework.sessions.model import Session
+from website import security
 from website.addons import base as addons_base
 from website.files.models import StoredFileNode
 from website.oauth.models import (
@@ -718,3 +719,69 @@ class NodeLicenseRecordFactory(ModularOdmFactory):
             )
         )
         return super(NodeLicenseRecordFactory, cls)._create(*args, **kwargs)
+
+
+def render_generations_from_parent(parent, creator, num_generations):
+    current_gen = parent
+    for generation in xrange(0, num_generations):
+        next_gen = NodeFactory(
+            parent=current_gen,
+            creator=creator,
+            title=fake.sentence(),
+            description=fake.paragraph()
+        )
+        current_gen = next_gen
+    return current_gen
+
+
+def render_generations_from_node_structure_list(parent, creator, node_structure_list):
+    new_parent = None
+    for node_number in node_structure_list:
+        if isinstance(node_number, list):
+            render_generations_from_node_structure_list(new_parent or parent, creator, node_number)
+        else:
+            new_parent = render_generations_from_parent(parent, creator, node_number)
+    return new_parent
+
+
+def create_fake_user():
+    email = fake.email()
+    name = fake.name()
+    parsed = impute_names(name)
+    user = UserFactory(username=email, fullname=name,
+                       is_registered=True, is_claimed=True,
+                       verification_key=security.random_string(15),
+                       date_registered=fake.date_time(),
+                       emails=[email],
+                       **parsed
+                   )
+    user.set_password('faker123')
+    user.save()
+    return user
+
+
+def create_fake_project(creator, n_users, privacy, n_components, name, n_tags, presentation_name, is_registration):
+    auth = Auth(user=creator)
+    project_title = name if name else fake.sentence()
+    if not is_registration:
+        project = ProjectFactory(title=project_title, description=fake.paragraph(), creator=creator)
+    else:
+        project = RegistrationFactory(title=project_title, description=fake.paragraph(), creator=creator)
+    project.set_privacy(privacy)
+    for _ in range(n_users):
+        contrib = create_fake_user()
+        project.add_contributor(contrib, auth=auth)
+    if isinstance(n_components, int):
+        for _ in range(n_components):
+            NodeFactory(project=project, title=fake.sentence(), description=fake.paragraph(),
+                        creator=creator)
+    elif isinstance(n_components, list):
+        render_generations_from_node_structure_list(project, creator, n_components)
+    for _ in range(n_tags):
+        project.add_tag(fake.word(), auth=auth)
+    if presentation_name is not None:
+        project.add_tag(presentation_name, auth=auth)
+        project.add_tag('poster', auth=auth)
+
+    project.save()
+    return project
