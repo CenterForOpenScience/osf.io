@@ -132,6 +132,9 @@ class DbTestCase(unittest.TestCase):
         cls._original_bcrypt_log_rounds = settings.BCRYPT_LOG_ROUNDS
         settings.BCRYPT_LOG_ROUNDS = 1
 
+        cls._original_enable_notification_subscription_creation = settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION
+        settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION = False
+
         teardown_database(database=database_proxy._get_current_object())
         # TODO: With `database` as a `LocalProxy`, we should be able to simply
         # this logic
