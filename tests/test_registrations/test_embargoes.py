@@ -104,17 +104,6 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         )
         assert_equal(Embargo.find().count(), initial_count + 1)
 
-    # Backref tests
-    def test_embargo_initiator_has_backref(self):
-        self.registration.embargo_registration(
-            self.user,
-            self.valid_embargo_end_date
-        )
-        self.registration.save()
-        self.registration.reload()
-        assert_equal(len(self.user.embargo__embargoed),
-            Embargo.find(Q('initiated_by', 'eq', self.user)).count())
-
     # Node#embargo_registration tests
     def test_embargo_from_non_admin_raises_PermissionsError(self):
         self.registration.remove_permission(self.user, 'admin')

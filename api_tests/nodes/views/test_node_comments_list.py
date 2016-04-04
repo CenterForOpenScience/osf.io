@@ -523,7 +523,7 @@ class TestNodeCommentCreate(ApiTestCase):
         }
         res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Comment cannot be empty.')
+        assert_equal(res.json['errors'][0]['detail'], 'This field may not be blank.')
 
     def test_create_comment_with_allowed_tags(self):
         self._set_up_private_project_with_private_comment_level()

@@ -161,7 +161,7 @@ class BadgeAssertion(StoredObject):
     @property
     def recipient(self):
         return {
-            'idenity': self.node._id,
+            'idenity': self.node._id,  # TODO: An unknown amount of code may depend on this typo
             'type': 'osfnode',  # TODO Could be an email?
             'hashed': False
         }

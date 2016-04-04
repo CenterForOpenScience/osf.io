@@ -47,11 +47,12 @@ from api.logs.serializers import NodeLogSerializer
 
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
-from website.models import Node, Pointer, Comment, Institution, NodeLog
+from website.models import Node, Pointer, Comment, NodeLog, Institution
 from website.files.models import StoredFileNode, FileNode, TrashedFileNode
 from website.files.models.dropbox import DropboxFile
 from framework.auth.core import User
 from website.util import waterbutler_api_url_for
+from api.base.utils import default_node_list_query, default_node_permission_query
 
 
 class NodeMixin(object):
@@ -70,7 +71,7 @@ class NodeMixin(object):
         )
         # Nodes that are folders/collections are treated as a separate resource, so if the client
         # requests a collection through a node endpoint, we return a 404
-        if node.is_folder or node.is_registration:
+        if node.is_collection or node.is_registration:
             raise NotFound
         # May raise a permission denied
         if check_object_permissions:
@@ -141,7 +142,6 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         tags           array of strings   list of tags that describe the node
         registration   boolean            is this a registration?
         fork           boolean            is this node a fork of another node?
-        dashboard      boolean            is this node visible on the user dashboard?
         public         boolean            has this node been made publicly-visible?
 
     ##Links
@@ -184,10 +184,10 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
 
     + `view_only=<Str>` -- Allow users with limited access keys to access this node. Note that some keys are anonymous, so using the view_only key will cause user-related information to no longer serialize. This includes blank ids for users and contributors and missing serializer fields and relationships.
 
-    Nodes may be filtered by their `title`, `category`, `description`, `public`, `registration`, or `tags`.  `title`,
-    `description`, and `category` are string fields and will be filtered using simple substring matching.  `public` and
-    `registration` are booleans, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note
-    that quoting `true` or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
+    Nodes may be filtered by their `id`, `title`, `category`, `description`, `public`, `tags`, `date_created`, `date_modified`,
+    `root`, and `parent`.  Most are string fields and will be filtered using simple substring matching.  `public`
+    is a boolean, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note that quoting `true`
+    or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
 
     #This Request/Response
 
@@ -209,18 +209,10 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
-        base_query = (
-            Q('is_deleted', 'ne', True) &
-            Q('is_folder', 'ne', True) &
-            Q('is_registration', 'ne', True)
-        )
         user = self.request.user
-        permission_query = Q('is_public', 'eq', True)
-        if not user.is_anonymous():
-            permission_query = (permission_query | Q('contributors', 'eq', user._id))
-
-        query = base_query & permission_query
-        return query
+        base_query = default_node_list_query()
+        permissions_query = default_node_permission_query(user)
+        return base_query & permissions_query
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView
     def get_queryset(self):
@@ -336,7 +328,6 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
         tags           array of strings   list of tags that describe the node
         registration   boolean            has this project been registered?
         fork           boolean            is this node a fork of another node?
-        dashboard      boolean            is this node visible on the user dashboard?
         public         boolean            has this node been made publicly-visible?
 
     ##Relationships
@@ -547,7 +538,7 @@ class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bu
 
     def get_default_queryset(self):
         node = self.get_node()
-        visible_contributors = node.visible_contributor_ids
+        visible_contributors = set(node.visible_contributor_ids)
         contributors = []
         for contributor in node.contributors:
             contributor.bibliographic = contributor._id in visible_contributors
@@ -817,7 +808,6 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
         tags           array of strings   list of tags that describe the node
         registration   boolean            has this project been registered?
         fork           boolean            is this node a fork of another node?
-        dashboard      boolean            is this node visible on the user dashboard?
         public         boolean            has this node been made publicly-visible?
 
     ##Links
@@ -884,10 +874,7 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
-        return (
-            Q('is_deleted', 'ne', True) &
-            Q('is_folder', 'ne', True)
-        )
+        return default_node_list_query()
 
     # overrides ListBulkCreateJSONAPIView
     def get_queryset(self):
@@ -900,8 +887,7 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
         )
         nodes = Node.find(query)
         auth = get_user_auth(self.request)
-        children = [each for each in nodes if each.can_view(auth)]
-        return children
+        return sorted([each for each in nodes if each.can_view(auth)], key=lambda n: n.date_modified, reverse=True)
 
     # overrides ListBulkCreateJSONAPIView
     def perform_create(self, serializer):

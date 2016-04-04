@@ -1,5 +1,6 @@
 from django.core.validators import URLValidator
 from rest_framework import serializers as ser
+
 from modularodm import Q
 
 from website.models import ApiOAuth2Application
@@ -27,6 +28,9 @@ class ApiOAuthApplicationBaseSerializer(JSONAPISerializer):
 
     def absolute_url(self, obj):
         return obj.absolute_url
+
+    def get_absolute_url(self, obj):
+        return obj.get_absolute_url()
 
     def reset_url(self, obj):
         return absolute_reverse('applications:application-reset', kwargs={'client_id': obj.client_id})
