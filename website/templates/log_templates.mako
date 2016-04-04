@@ -43,17 +43,17 @@ initiated an embargoed registration of
 
 ## Retraction related logs
 <script type="text/html" id="retraction_approved">
-approved retraction of registration of
+approved withdrawal of registration of
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: projectUrl}"></a>
 </script>
 
 <script type="text/html" id="retraction_cancelled">
-cancelled retraction of registration of
+cancelled withdrawal of registration of
 <span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
 </script>
 
 <script type="text/html" id="retraction_initiated">
-initiated retraction of registration of
+initiated withdrawal of registration of
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: projectUrl}"></a>
 </script>
 
@@ -159,6 +159,20 @@ tagged
 removed tag <a data-bind="attr: {href: '/search/?q=%22' + params.tag + '%22'}, text: params.tag"></a>
 from
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="file_tag_added">
+tagged <a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect"> {{ stripSlash(params.path) }}</a>
+in <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+as <a data-bind="attr: {href: '/search/?q=%22' + params.tag + '%22'}, text: params.tag"></a>
+in OSF Storage
+</script>
+
+<script type="text/html" id="file_tag_removed">
+removed tag <a data-bind="attr: {href: '/search/?q=%22' + params.tag + '%22'}, text: params.tag"></a>
+from <a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect"> {{ stripSlash(params.path) }}</a>
+in <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+in OSF Storage
 </script>
 
 <script type="text/html" id="edit_title">
@@ -364,9 +378,14 @@ from
 </script>
 
 <script type="text/html" id="primary_institution_changed">
-changed this node's primary institution from <strong>{{ params.previous_institution.name }}</strong> to <strong>{{ params.institution.name }}</strong>.
+changed primary institution of <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+{{#if params.previous_institution.name != 'None'}}
+ from <a class="log-node-title-link overflow" href="/institutions/{{params.previous_institution.id}}">{{ params.previous_institution.name }}</a>
+{{/if}}
+ to <a class="log-node-title-link overflow" href="/institutions/{{params.institution.id}}">{{ params.institution.name }}</a>.
 </script>
 
 <script type="text/html" id="primary_institution_removed">
-removed <strong>{{ params.institution.name }}</strong> as this node's primary institution.
+removed <a class="log-node-title-link overflow" href="/institutions/{{params.institution.id}}">{{ params.institution.name }}</a>
+as the primary institution of <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>.
 </script>

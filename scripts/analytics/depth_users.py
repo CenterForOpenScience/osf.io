@@ -32,7 +32,7 @@ def count_user_logs(user, query=None):
     length = logs.count()
     if length > 0:
         item = logs[0]
-        if item.action == 'project_created' and item.node.is_dashboard:
+        if item.action == 'project_created' and item.node.is_bookmark_collection:
             length -= 1
     return length
 
