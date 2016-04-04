@@ -201,12 +201,18 @@ var LogPieces = {
                     if(index === arr.length-2){
                         comma = ' and ';
                     }
-                    if (item.attributes) {
-                        if (item.attributes.active) {
-                            return [ m('a', {href: item.links.html}, item.attributes.full_name), comma];
+
+                    var attributes = item.attributes;
+                    if (attributes == null && item.data && item.data.attributes) {
+                        attributes = item.data.attributes;
+                    }
+
+                    if (attributes) {
+                        if (attributes.active) {
+                            return [ m('a', {href: item.links.html}, attributes.full_name), comma];
                         }
                         else {
-                            return [item.attributes.full_name, comma];
+                            return [attributes.full_name, comma];
                         }
                     }
                 }));
