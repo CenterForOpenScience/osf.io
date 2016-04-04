@@ -2,7 +2,7 @@ NODE_SUBSCRIPTIONS_AVAILABLE = {
     'comments': 'Comments added',
     'file_updated': 'Files updated',
     'mentions': 'Mentions added',
-    'mentions_replies': 'Replies with mentions added'
+    'mention_replies': 'Replies with mentions added'
 }
 
 # Note: if the subscription starts with 'global_', it will be treated like a default
