@@ -208,7 +208,7 @@ var LogPieces = {
                     }
 
                     if (attributes) {
-                        if (attributes.active) {
+                        if (attributes.active && item.links) {
                             return [ m('a', {href: item.links.html}, attributes.full_name), comma];
                         }
                         else {
