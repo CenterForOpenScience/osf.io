@@ -160,7 +160,7 @@ class Comment(GuidStoredObject, SpamMixin):
 
     user = fields.ForeignField('user', required=True)
     # the node that the comment belongs to
-    node = fields.ForeignField('node', required=True)
+    node = fields.ForeignField('node', required=True, index=True)
     # the direct 'parent' of the comment (e.g. the target of a comment reply is another comment)
     target = fields.AbstractForeignField(required=True)
     # The file or project overview page that the comment is for
@@ -1008,7 +1008,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     @property
     def nodes_active(self):
-        return [x for x in self.nodes if not x.is_deleted]
+        return Node.find(
+            Q('is_deleted', 'ne', True) &
+            Q('_id', 'in', zip(*self.nodes)[0] if self.nodes else [])
+        )
 
     @property
     def draft_registrations_active(self):
@@ -1094,8 +1097,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     @property
     def forks(self):
         """List of forks of this node"""
-        return list(self.node__forked.find(Q('is_deleted', 'eq', False) &
-                                           Q('is_registration', 'ne', True)))
+        return Node.find(
+            Q('forked_from', 'eq', self._id) &
+            Q('is_deleted', 'eq', False) &
+            Q('is_registration', 'ne', True)
+        )
 
     def add_permission(self, user, permission, save=False):
         """Grant permission to a user.
@@ -1790,18 +1796,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return None
 
     def get_points(self, folders=False, deleted=False, resolve=True):
-        ret = []
-        for each in self.pointed:
-            pointer_node = get_pointer_parent(each)
-            if not folders and pointer_node.is_collection:
-                continue
-            if not deleted and pointer_node.is_deleted:
-                continue
-            if resolve:
-                ret.append(pointer_node)
-            else:
-                ret.append(each)
-        return ret
+        return Node.find(
+            Q('is_deleted', 'ne', not deleted) &
+            Q('is_collection', 'ne', not folders) &
+            Q('_id', 'eq', zip(*self.pointed)[0] if self.pointed else []),
+        )
 
     def resolve(self):
         return self
