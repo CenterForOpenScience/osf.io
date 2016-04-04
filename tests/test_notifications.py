@@ -902,6 +902,12 @@ class TestCompileSubscriptions(OsfTestCase):
 
 class TestMoveSubscription(OsfTestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        super(TestMoveSubscription, cls).setUpClass()
+        cls._original_enable_notification_subscription_creation = settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION
+        settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION = True
+
     def setUp(self):
         super(TestMoveSubscription, self).setUp()
         self.blank = {key: [] for key in constants.NOTIFICATION_TYPES}  # For use where it is blank.
@@ -1024,7 +1030,7 @@ class TestMoveSubscription(OsfTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        super(TestNotificationsModels, cls).tearDownClass()
+        super(TestMoveSubscription, cls).tearDownClass()
         settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION = cls._original_enable_notification_subscription_creation
 
 
