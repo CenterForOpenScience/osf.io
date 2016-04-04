@@ -23,7 +23,7 @@ from framework.auth.forms import ForgotPasswordForm
 from framework.auth.decorators import must_be_logged_in
 
 from website.models import Guid
-from website.models import Node, Institution
+from website.models import Node, Institution, NodeLog
 from website.institutions.views import view_institution
 from website.util import sanitize
 from website.project import model
@@ -165,8 +165,14 @@ def serialize_log(node_log, auth=None, anonymous=False):
         'params': sanitize.unescape_entities(node_log.params),
         'date': utils.iso8601format(node_log.date),
         'node': node_log.node.serialize(auth) if node_log.node else None,
-        'anonymous': anonymous
+        'anonymous': anonymous,
+        'can_view': can_view(node_log, auth) if node_log.action == NodeLog.FILE_MOVED else True,
     }
+
+
+def can_view(node_log, auth):
+    source_node = Node.load(node_log.params['source']['node']['_id'])
+    return source_node.can_view(auth)
 
 
 def reproducibility():

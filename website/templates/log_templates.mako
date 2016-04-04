@@ -319,15 +319,28 @@ in
 
 <script type="text/html" id="addon_file_moved">
   {{#if params.source.materialized.endsWith('/')}}
-  moved <span class="overflow">{{ params.source.materialized }}</span> from {{ params.source.addon }} in
-  <a class="log-node-title-link overflow" href="{{ params.source.node.url }}">{{ params.source.node.title }}</a>
+  moved <span class="overflow">{{ params.source.materialized }}</span>
+    {{#if canView}}
+        from {{ params.source.addon }} in
+        <a class="log-node-title-link overflow" href="{{ params.source.node.url }}">{{ params.source.node.title }}</a>
+    {{/if}}
+    {{#ifnot canView}}
+        from a private component
+    {{/ifnot}}
   to <span class="overflow log-folder">{{ params.destination.materialized }}</span> in {{ params.destination.addon }} in
   <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
   {{/if}}
+
   {{#ifnot params.source.materialized.endsWith('/')}}
-  moved <span class="overflow">{{ params.source.materialized }}</span> from {{ params.source.addon }} in
-  <a class="log-node-title-link overflow" href="{{ params.source.node.url }}">{{ params.source.node.title }}</a>
-  to <a href="{{ params.destination.url }}" class="overflow">{{ params.destination.materialized }}</a> in {{ params.destination.addon }} in
+  moved <span class="overflow">{{ params.source.materialized }}</span>
+      {{#if canView}}
+          from {{ params.source.addon }} in
+          <a class="log-node-title-link overflow" href="{{ params.source.node.url }}">{{ params.source.node.title }}</a>
+      {{/if}}
+      {{#ifnot canView}}
+          from a private component
+      {{/ifnot}}
+    to <a href="{{ params.destination.url }}" class="overflow">{{ params.destination.materialized }}</a> in {{ params.destination.addon }} in
   <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
   {{/ifnot}}
 </script>

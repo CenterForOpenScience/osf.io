@@ -184,7 +184,8 @@ var createLogs = function(logData){
             nodeDescription: item.params.description_new,
             nodePath: item.node.path,
             user: item.user,
-            registrationCancelled: item.node.is_registration && item.node.registered_from_id == null
+            registrationCancelled: item.node.is_registration && item.node.registered_from_id == null,
+            canView: item.can_view
         });
     });
     return mappedLogs;
