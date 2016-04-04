@@ -323,7 +323,8 @@ BaseComment.prototype.submitReply = function() {
                 'data': {
                     'type': 'comments',
                     'attributes': {
-                        'content': self.saveContent()
+                        'content': self.saveContent(),
+                        'new_mentions': self.replyMentions()
                     },
                     'relationships': {
                         'target': {
@@ -340,7 +341,7 @@ BaseComment.prototype.submitReply = function() {
         self.cancelReply();
         self.replyContent(null);
         // do something with the mentions before resetting
-        self.replyMentions(null);
+        self.replyMentions([]);
         var newComment = new CommentModel(response.data, self, self.$root);
         newComment.loading(false);
         self.comments.unshift(newComment);
