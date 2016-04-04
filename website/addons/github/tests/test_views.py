@@ -421,6 +421,7 @@ class TestGithubSettings(OsfTestCase):
         self.project.save()
         self.auth = self.project.creator.auth
         self.consolidated_auth = Auth(user=self.project.creator)
+        self.project.save()
 
         self.project.add_addon('github', auth=self.consolidated_auth)
         self.project.creator.add_addon('github')

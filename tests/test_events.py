@@ -3,12 +3,18 @@ from collections import OrderedDict
 import mock
 from nose.tools import *
 
+from modularodm import Q
+
 from website.notifications.events.base import Event, register, event_registry
 from website.notifications.events.files import (
     FileAdded, FileRemoved, FolderCreated, FileUpdated,
     AddonFileCopied, AddonFileMoved, AddonFileRenamed,
 )
+
+from website.notifications import utils as notification_utils
 from website.notifications.events import utils
+
+from website.notifications.model import NotificationSubscription
 from website.addons.base import signals
 from framework.auth import Auth
 from tests import factories
@@ -188,6 +194,11 @@ class TestFileAdded(OsfTestCase):
         self.user = factories.UserFactory()
         self.consolidate_auth = Auth(user=self.user)
         self.project = factories.ProjectFactory()
+
+        # Remove default subscriptions
+        for sub in NotificationSubscription.find():
+            sub.remove()
+
         self.project_subscription = factories.NotificationSubscriptionFactory(
             _id=self.project._id + '_file_updated',
             owner=self.project,
@@ -215,12 +226,6 @@ class TestFileRemoved(OsfTestCase):
         self.user = factories.UserFactory()
         self.consolidate_auth = Auth(user=self.user)
         self.project = factories.ProjectFactory()
-        self.project_subscription = factories.NotificationSubscriptionFactory(
-            _id=self.project._id + '_file_updated',
-            owner=self.project,
-            event_name='file_updated'
-        )
-        self.project_subscription.save()
         self.user2 = factories.UserFactory()
         self.event = event_registry['file_removed'](
             self.user2, self.project, 'file_removed', payload=file_deleted_payload
@@ -250,6 +255,11 @@ class TestFolderCreated(OsfTestCase):
         self.user = factories.UserFactory()
         self.consolidate_auth = Auth(user=self.user)
         self.project = factories.ProjectFactory()
+
+        # Remove default subscriptions
+        for sub in NotificationSubscription.find():
+            sub.remove()
+
         self.project_subscription = factories.NotificationSubscriptionFactory(
             _id=self.project._id + '_file_updated',
             owner=self.project,
@@ -332,8 +342,11 @@ class TestFileMoved(OsfTestCase):
         self.event = event_registry['addon_file_moved'](
             self.user_2, self.private_node, 'addon_file_moved', payload=file_moved_payload
         )
-        # Subscriptions
-        # for parent node
+
+        # Remove default subscriptions
+        for sub in NotificationSubscription.find():
+            sub.remove()
+
         self.sub = factories.NotificationSubscriptionFactory(
             _id=self.project._id + '_file_updated',
             owner=self.project,
@@ -404,6 +417,7 @@ class TestFileMoved(OsfTestCase):
         # Move Event: Tests removed user is removed once. Regression
         self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
         self.project.save()
+        notification_utils.remove_contributor_from_subscriptions(self.user_3, self.project)
         self.file_sub.email_digest.append(self.user_3)
         self.file_sub.save()
         self.event.perform()
@@ -428,6 +442,11 @@ class TestFileCopied(OsfTestCase):
             payload=file_copied_payload
         )
         # Subscriptions
+
+        # Remove default subscriptions
+        for sub in NotificationSubscription.find():
+            sub.remove()
+
         # for parent node
         self.sub = factories.NotificationSubscriptionFactory(
             _id=self.project._id + '_file_updated',
@@ -470,8 +489,10 @@ class TestFileCopied(OsfTestCase):
         self.sub.email_transactional.append(self.user_1)
         self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
         self.project.save()
+        notification_utils.remove_contributor_from_subscriptions(self.user_3, self.project)
         self.private_node.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
         self.private_node.save()
+        notification_utils.remove_contributor_from_subscriptions(self.user_3, self.private_node)
         self.sub.email_digest.append(self.user_3)
         self.sub.save()
         self.project.add_contributor(self.user_4, permissions=['write', 'read'], auth=self.auth)
@@ -510,6 +531,10 @@ class TestCategorizeUsers(OsfTestCase):
             payload=file_moved_payload
         )
         # Subscriptions
+        # Remove default subscriptions
+        for sub in NotificationSubscription.find():
+            sub.remove()
+
         # for parent node
         self.sub = factories.NotificationSubscriptionFactory(
             _id=self.project._id + '_file_updated',
@@ -541,8 +566,10 @@ class TestCategorizeUsers(OsfTestCase):
         self.sub.email_transactional.append(self.user_1)
         self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
         self.project.save()
+        notification_utils.remove_contributor_from_subscriptions(self.user_3, self.project)
         self.private_node.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
         self.private_node.save()
+        notification_utils.remove_contributor_from_subscriptions(self.user_3, self.private_node)
         self.sub.email_digest.append(self.user_3)
         self.sub.save()
         self.private_sub.none.append(self.user_3)

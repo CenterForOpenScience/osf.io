@@ -115,6 +115,7 @@ class TestCallbacks(OsfTestCase):
             contributor=self.non_authenticator,
             auth=self.consolidated_auth,
         )
+        self.project.save()
 
         self.project.add_addon('github', auth=self.consolidated_auth)
         self.project.creator.add_addon('github')

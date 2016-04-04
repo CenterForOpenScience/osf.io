@@ -165,14 +165,6 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         self.node_settings.external_account = self.external_account
         self.node_settings.save()
 
-    def tearDown(self):
-        super(OAuthAddonNodeSettingsTestSuiteMixin, self).tearDown()
-        self.user_settings.remove()
-        self.node_settings.remove()
-        self.external_account.remove()
-        self.node.remove()
-        self.user.remove()
-
     def test_complete_true(self):
         assert_true(self.node_settings.has_auth)
         assert_true(self.node_settings.complete)

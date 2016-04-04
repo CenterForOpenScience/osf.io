@@ -65,6 +65,7 @@ from website.project import signals as project_signals
 from website.project.spam.model import SpamMixin
 from website.prereg import utils as prereg_utils
 
+
 logger = logging.getLogger(__name__)
 
 VIEW_PROJECT_URL_TEMPLATE = settings.DOMAIN + '{node_id}/'
@@ -1335,6 +1336,28 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if save:
             self.save()
 
+    def subscribe_user_to_notifications(self, user):
+        """ Update the notification settings for the creator or contributors
+
+        :param user: User to subscribe to notifications
+        """
+        from website.notifications import utils as notification_utils
+        from website.notifications.model import NotificationSubscription
+
+        events = ['file_updated', 'comments']
+        notification_type = 'email_transactional'
+        target_id = self._id
+
+        for event in events:
+            event_id = notification_utils.to_subscription_key(target_id, event)
+
+            subscription = NotificationSubscription.load(event_id)
+            if not subscription:
+                subscription = NotificationSubscription(_id=event_id, owner=self, event_name=event)
+
+            subscription.add_user_to_subscription(user, notification_type)
+            subscription.save()
+
     def update(self, fields, auth=None, save=True):
         """Update the node with the given fields.
 
@@ -1474,6 +1497,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 log_date=self.date_created,
                 save=True,
             )
+
+            if self.creator:
+                self.subscribe_user_to_notifications(user=self.creator)
 
         # Only update Solr if at least one stored field has changed, and if
         # public or privacy setting has changed
@@ -2873,6 +2899,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 user.recently_added.insert(0, contrib_to_add)
                 while len(user.recently_added) > MAX_RECENT_LENGTH:
                     user.recently_added.pop()
+
+            if contrib_to_add.is_registered:
+                self.subscribe_user_to_notifications(contrib_to_add)
 
             if log:
                 self.add_log(
