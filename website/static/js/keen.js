@@ -4,6 +4,7 @@ var keen = require('keen-js');
 var oop = require('js/oop');
 var $ = require('jquery');
 var uuid = require('uuid');
+var Raven = require('raven-js');
 
 var KeenTracker = oop.defclass({
     constructor: function(keenProjectId, keenWriteKey, params) {
@@ -106,7 +107,9 @@ var KeenTracker = oop.defclass({
 
         this.keenClient.addEvent('pageviews', pageView, function(err){
             if(err){
-                throw new Error('Error sending Keen data: ' + err, pageView);
+                Raven.captureMessage('Error sending Keen data: <' + err + '>', {
+                    payload: pageView
+                });
             }
         });
     },
