@@ -275,8 +275,27 @@ var LogPieces = {
     },
     // Wiki page name
     page: {
+        controller: function(logObject){
+            var self = this;
+            self.nodeObject = logObject.embeds.nodes;
+            self.action = logObject.attributes.action;
+            self.page = logObject.attributes.params.page;
+            self.acceptableLinkedItems = ['wiki_updated', 'wiki_renamed'];
+
+            self.returnLinkForPath = function() {
+                if (self.acceptableLinkedItems.indexOf(self.action) !== -1 && (paramIsReturned(self.nodeObject, logObject) &&
+                    self.nodeObject.data[0])) {
+                        var nodeUrl = self.nodeObject.data[0].links.html;
+                        if (paramIsReturned(self.page, logObject)){
+                            return nodeUrl + 'wiki/' + encodeURIComponent(self.page);
+                        }
+                }
+                return null;
+            };
+        },
         view: function (ctrl, logObject) {
-            return returnTextParams('page', 'a title', logObject);
+            var url = ctrl.returnLinkForPath();
+            return returnTextParams('page', 'a title', logObject, url);
         }
     },
     // Old wiki title that's renamed
