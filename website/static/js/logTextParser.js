@@ -262,8 +262,22 @@ var LogPieces = {
     },
     // The new title of node involved
     title_new: {
+        controller: function(logObject){
+            var self = this;
+            var nodeObject = logObject.embeds.nodes;
+
+            self.returnLinkForPath = function(){
+                if(paramIsReturned(nodeObject, logObject) && nodeObject.data[0]){
+                    if (nodeObject.data[0].links && nodeObject.data[0].attributes) {
+                        return nodeObject.data[0].links.html;
+                    }
+                }
+                return null;
+            };
+        },
         view: function (ctrl, logObject) {
-            return returnTextParams('title_new', 'a title', logObject);
+            var url = ctrl.returnLinkForPath();
+            return returnTextParams('title_new', 'a title', logObject, url);
         }
     },
     // Update fields for the node
