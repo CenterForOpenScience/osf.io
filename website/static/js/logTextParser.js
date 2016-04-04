@@ -308,13 +308,19 @@ var LogPieces = {
         }
     },
         //
+    kind: {
+        view: function (ctrl, logObject) {
+            return returnTextParams('kind', '', logObject);
+        }
+    },
+        //
     path: {
         controller: function(logObject){
             var self = this;
             self.returnLinkForPath = function() {
                 if (logObject) {
                     var action = logObject.attributes.action;
-                    var acceptableLinkedItems = ['osf_storage_file_added', 'osf_storage_file_updated'];
+                    var acceptableLinkedItems = ['osf_storage_file_added', 'osf_storage_file_updated', 'checked_out', 'checked_in'];
                     if (acceptableLinkedItems.indexOf(action) !== -1) {
                         return logObject.attributes.params.view_url;
                     }
