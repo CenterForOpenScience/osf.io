@@ -1,5 +1,12 @@
-"""Run nightly, this script will automagically approve any embargo termination
+"""EmbargoTerminationApprovals are the Sanction subclass that allows users
+to make Embargoes public before the official end date. Like RegistrationAprpovals
+and Embargoes, if an admin fails to approve or reject this request within 48
+hours it is approved automagically.
+
+
+Run nightly, this script will approve any embargo termination
 requests for which not all admins have responded within the 48 hour window.
+Makes the Embargoed Node and its components public.
 """
 
 import datetime

@@ -9,13 +9,13 @@ from modularodm import fields, storage, Q
 
 from tests.base import OsfTestCase
 from tests import factories
-from tests.utils import mock_archive
+from tests.utils import mock_archive, assert_logs
 
 from framework.auth import Auth
 from framework.mongo import handlers
 
 from website.exceptions import NodeStateError
-from website.project.model import ensure_schemas, Node
+from website.project.model import ensure_schemas, Node, NodeLog
 from website.project.sanctions import Sanction, TokenApprovableSanction, EmailApprovableSanction, PreregCallbackMixin
 
 def valid_user():
@@ -446,12 +446,30 @@ class TestNodeSanctionStates(OsfTestCase):
 
 class TestNodeEmbargoTerminations(OsfTestCase):
 
+    def tearDown(self):
+        with mock.patch('framework.celery_tasks.handlers.queue', mock.Mock(return_value=None)):
+            super(TestNodeEmbargoTerminations, self).tearDown()
+
     def setUp(self):
         super(TestNodeEmbargoTerminations, self).setUp()
 
+        self.user = factories.AuthUserFactory()
+        self.node = factories.ProjectFactory(creator=self.user)
+        with mock_archive(self.node, embargo=True, autoapprove=True) as registration:
+            self.registration = registration
+
+        self.not_embargoed = factories.RegistrationFactory()
+
     def test_request_embargo_termination_not_embargoed(self):
-        user = factories.AuthUserFactory()
-        registration = factories.RegistrationFactory(creator=user)
-        with mock.patch('website.project.model.Node.is_embargoed', mock.PropertyMock(return_value=False)):
-            with assert_raises(NodeStateError):
-                registration.request_embargo_termination(Auth(user))
+        with assert_raises(NodeStateError):
+            self.not_embargoed.request_embargo_termination(Auth(self.user))
+
+    def test_terminate_embargo_makes_registrations_public(self):
+        self.registration.terminate_embargo(Auth(self.user))
+        for node in self.registration.node_and_primary_descendants():
+            assert_true(node.is_public)
+            assert_false(node.is_embargoed)
+
+    @assert_logs(NodeLog.EMBARGO_TERMINATED, 'node')
+    def test_terminate_embargo_adds_log_to_registered_from(self):
+        self.registration.terminate_embargo(Auth(self.user))
