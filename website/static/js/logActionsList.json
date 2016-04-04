@@ -6,7 +6,7 @@
     "created_from":     "${user} created ${node} based on ${template}",
     "pointer_created":  "${user} created a link to ${category} ${pointer}",
     "pointer_forked":   "${user} forked a link to ${pointer}",
-    "pointer_removed":  "${user} removed a link to ${pointer}",
+    "pointer_removed":  "${user} removed a link to ${category} ${pointer}",
     "made_public":  "${user} made ${node} public",
     "made_public_no_user":  "${node} made public",
     "made_private":     "${user} made ${node} private",
