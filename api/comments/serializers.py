@@ -177,10 +177,7 @@ class CommentCreateSerializer(CommentSerializer):
         validated_data['content'] = validated_data.pop('get_content')
 
         # check to make sure the users mentioned are contributors on the node
-        for mention in validated_data['new_mentions']:
-            contributor = get_object_or_error(User, mention, display_name='user')
-            if contributor not in node.contributors:
-                validated_data['new_mentions'].remove(contributor)
+        validated_data['new_mentions'] = [mention for mention in validated_data['new_mentions'] if get_object_or_error(User, mention, display_name='user') in node.contributors]
 
         try:
             comment = Comment.create(auth=auth, **validated_data)
