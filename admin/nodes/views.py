@@ -4,14 +4,20 @@ from django.views.generic import ListView, DeleteView
 from datetime import datetime
 from django.shortcuts import redirect
 from django.views.defaults import page_not_found
-
-from website.project.model import Node
 from modularodm import Q
 
+from website.models import Node, User
 from admin.base.views import GuidFormView, GuidView
 from admin.base.utils import OSFAdmin
 from admin.nodes.templatetags.node_extras import reverse_node
 from admin.nodes.serializers import serialize_node
+
+
+def remove_contributor(request, node_id, user_id):
+    user = User.load(user_id)
+    node = Node.load(node_id)
+    node.remove_contributor(user, None, log=False)  # TODO: log on OSF as admin
+    return redirect(reverse_node(node_id))
 
 
 class NodeFormView(OSFAdmin, GuidFormView):

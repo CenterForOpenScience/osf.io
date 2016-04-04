@@ -6,6 +6,7 @@ import urllib
 import httplib as http
 
 from modularodm import Q
+from modularodm.exceptions import NoResultsFound
 from flask import request
 
 from framework import utils
@@ -19,19 +20,15 @@ from framework.forms import utils as form_utils
 from framework.auth.forms import RegistrationForm
 from framework.auth.forms import ResetPasswordForm
 from framework.auth.forms import ForgotPasswordForm
-from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
 
 from website.models import Guid
-from website.models import Node
-from website.util import rubeus
+from website.models import Node, Institution
+from website.institutions.views import view_institution
 from website.util import sanitize
 from website.project import model
-from website.util import web_url_for
 from website.util import permissions
-from website.project import new_dashboard
-from website.settings import ALL_MY_PROJECTS_ID
-from website.settings import ALL_MY_REGISTRATIONS_ID
+from website.project import new_bookmark_collection
 
 logger = logging.getLogger(__name__)
 
@@ -79,142 +76,33 @@ def _render_nodes(nodes, auth=None, show_path=False):
     return ret
 
 
-@collect_auth
-def index(auth):
-    """Redirect to dashboard if user is logged in, else show homepage.
-
-    """
-    if auth.user:
-        return redirect(web_url_for('dashboard'))
-    return {}
-
-
-def find_dashboard(user):
-    dashboard_folder = Node.find_for_user(user, subquery=Q('is_dashboard', 'eq', True))
-
-    if dashboard_folder.count() == 0:
-        new_dashboard(user)
-        dashboard_folder = Node.find_for_user(user, Q('is_dashboard', 'eq', True))
-    return dashboard_folder[0]
+def index():
+    try:
+        #TODO : make this way more robust
+        inst = Institution.find_one(Q('domains', 'eq', request.host.lower()))
+        inst_dict = view_institution(inst._id)
+        inst_dict.update({
+            'home': False,
+            'institution': True,
+            'redirect_url': '/institutions/{}/'.format(inst._id)
+        })
+        return inst_dict
+    except NoResultsFound:
+        pass
+    return {'home': True}
 
 
-@must_be_logged_in
-def get_dashboard(auth, nid=None, **kwargs):
-    user = auth.user
-    if nid is None:
-        node = find_dashboard(user)
-        dashboard_projects = [rubeus.to_project_root(node, auth, **kwargs)]
-        return_value = {'data': dashboard_projects}
-    elif nid == ALL_MY_PROJECTS_ID:
-        return_value = {'data': get_all_projects_smart_folder(**kwargs)}
-    elif nid == ALL_MY_REGISTRATIONS_ID:
-        return_value = {'data': get_all_registrations_smart_folder(**kwargs)}
-    else:
-        node = Node.load(nid)
-        dashboard_projects = rubeus.to_project_hgrid(node, auth, **kwargs)
-        return_value = {'data': dashboard_projects}
-
-    return_value['timezone'] = user.timezone
-    return_value['locale'] = user.locale
-    return_value['id'] = user._id
-    return return_value
-
-
-@must_be_logged_in
-def get_all_projects_smart_folder(auth, **kwargs):
-    # TODO: Unit tests
-    user = auth.user
-
-    contributed = Node.find_for_user(
-        user,
-        subquery=(
-            Q('is_deleted', 'eq', False) &
-            Q('is_registration', 'eq', False) &
-            Q('is_folder', 'eq', False)
-        )
-    )
-    nodes = contributed.sort('title')
-
-    keys = nodes.get_keys()
-    return [rubeus.to_project_root(node, auth, **kwargs) for node in nodes if node.parent_id not in keys]
-
-@must_be_logged_in
-def get_all_registrations_smart_folder(auth, **kwargs):
-    # TODO: Unit tests
-    user = auth.user
-
-    contributed = Node.find_for_user(
-        user,
-        subquery=(
-            Q('is_deleted', 'eq', False) &
-            Q('is_registration', 'eq', True) &
-            Q('is_folder', 'eq', False)
-        )
-    )
-    nodes = contributed.sort('-title')
-
-    # Note(hrybacki): is_retracted and is_pending_embargo are property methods
-    # and cannot be directly queried
-    nodes = filter(lambda node: not node.is_retracted and not node.is_pending_embargo, nodes)
-    keys = [node._id for node in nodes]
-    return [rubeus.to_project_root(node, auth, **kwargs) for node in nodes if node.ids_above.isdisjoint(keys)]
-
-@must_be_logged_in
-def get_dashboard_nodes(auth):
-    """Get summary information about the current user's dashboard nodes.
-
-    :param-query no_components: Exclude components from response.
-        NOTE: By default, components will only be shown if the current user
-        is contributor on a comonent but not its parent project. This query
-        parameter forces ALL components to be excluded from the request.
-    :param-query permissions: Filter upon projects for which the current user
-        has the specified permissions. Examples: 'write', 'admin'
-    """
-    user = auth.user
-
-    nodes = Node.find_for_user(
-        user,
-        subquery=(
-            Q('category', 'eq', 'project') &
-            Q('is_deleted', 'eq', False) &
-            Q('is_registration', 'eq', False) &
-            Q('is_folder', 'eq', False)
-        )
-    )
-
-    if request.args.get('no_components') not in [True, 'true', 'True', '1', 1]:
-        comps = Node.find_for_user(  # NOTE - this used to be a find on nodes above. Does this mess it up?
-            user,
-            (
-                # components only
-                Q('category', 'ne', 'project') &
-                # exclude deleted nodes
-                Q('is_deleted', 'eq', False) &
-                # exclude registrations
-                Q('is_registration', 'eq', False)
-            )
-        )
-    else:
-        comps = []
-
-    nodes = list(nodes) + list(comps)
-    if request.args.get('permissions'):
-        perm = request.args['permissions'].strip().lower()
-        if perm not in permissions.PERMISSIONS:
-            raise HTTPError(http.BAD_REQUEST, dict(
-                message_short='Invalid query parameter',
-                message_long='{0} is not in {1}'.format(perm, permissions.PERMISSIONS)
-            ))
-        response_nodes = [node for node in nodes if node.has_permission(user, permission=perm)]
-    else:
-        response_nodes = nodes
-    return _render_nodes(response_nodes, auth)
+def find_bookmark_collection(user):
+    bookmark_collection = Node.find(Q('is_bookmark_collection', 'eq', True) & Q('contributors', 'eq', user._id))
+    if bookmark_collection.count() == 0:
+        new_bookmark_collection(user)
+    return bookmark_collection[0]
 
 
 @must_be_logged_in
 def dashboard(auth):
     user = auth.user
-    dashboard_folder = find_dashboard(user)
+    dashboard_folder = find_bookmark_collection(user)
     dashboard_id = dashboard_folder._id
     return {'addons_enabled': user.get_addon_names(),
             'dashboard_id': dashboard_id,
@@ -367,6 +255,9 @@ def redirect_about(**kwargs):
 def redirect_howosfworks(**kwargs):
     return redirect('/getting-started/')
 
-
 def redirect_meetings_analytics_link(**kwargs):
     return redirect('/getting-started/?utm_source=osf4m&utm_medium=email&utm_campaign=success')
+
+def redirect_to_home():
+    # Redirect to support page
+    return redirect('/')

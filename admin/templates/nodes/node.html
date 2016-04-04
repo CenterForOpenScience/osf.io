@@ -3,7 +3,11 @@
 {% load user_extras %}
 {% load node_extras %}
 {% block title %}
-    <title>Node</title>
+    {% if node.is_registration %}
+        <title>Registration</title>
+    {% else %}
+        <title>Node</title>
+    {% endif %}
 {% endblock title %}
 {% block content %}
     <div class="container-fluid">
@@ -12,33 +16,39 @@
                class="btn btn-primary col-md-1">
                 <i class="fa fa-search"></i>
             </a>
-            {% if not node.deleted %}
-                <span class="col-md-2">
-                <a href="{% url 'nodes:remove' guid=node.id %}"
-                   data-toggle="modal" data-target="#deleteModal"
-                   class="btn btn-danger">
-                    Delete Node
-                </a>
-                </span>
-                <div class="modal" id="deleteModal">
-                    <div class="modal-dialog">
-                        <div class="modal-content"></div>
-                        {# Data from above link #}
+            {% if not node.is_registration %}
+                {% if not node.deleted %}
+                    <span class="col-md-2">
+                    <a href="{% url 'nodes:remove' guid=node.id %}"
+                       data-toggle="modal" data-target="#deleteModal"
+                       class="btn btn-danger">
+                        Delete Node
+                    </a>
+                    </span>
+                    <div class="modal" id="deleteModal">
+                        <div class="modal-dialog">
+                            <div class="modal-content"></div>
+                            {# Data from above link #}
+                        </div>
                     </div>
-                </div>
-            {% else %}
-                <span class="col-md-2">
-                <form method="post"
-                      action="{% url 'nodes:restore' guid=node.id %}">
-                    {% csrf_token %}
-                    <input class="btn btn-success" type="submit"
-                           value="Restore Node" />
-                </form>
-                </span>
+                {% else %}
+                    <span class="col-md-2">
+                    <form method="post"
+                          action="{% url 'nodes:restore' guid=node.id %}">
+                        {% csrf_token %}
+                        <input class="btn btn-success" type="submit"
+                               value="Restore Node" />
+                    </form>
+                    </span>
+                {% endif %}
             {% endif %}
         </div>
         <div class="row">
-            <h3>Node details</h3>
+            {% if node.is_registration %}
+                <h3>Registration Details</h3>
+            {% else %}
+                <h3>Node Details</h3>
+            {% endif %}
         </div>
         <div class="row">
         <table class="table table-striped">
@@ -83,6 +93,7 @@
                             <td>User id</td>
                             <td>Name</td>
                             <td>Permissions</td>
+                            <td>Actions</td>
                         </tr>
                     </thead>
                     <tbody>
@@ -95,6 +106,34 @@
                             </td>
                             <td>{{ user.name }}</td>
                             <td>{{ user.permission|capfirst }}</td>
+                            <td>
+                            {% if not node.is_registration %}
+                                <button class="btn btn-danger" data-toggle="modal"
+                                        data-target="#{{ user.id }}Modal">
+                                    Remove
+                                </button>
+                                <div class="modal" id="{{ user.id }}Modal">
+                                <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <button type="button" class="close" data-dismiss="modal">x</button>
+                                        <h3>Removing user: {{ user.name }}</h3>
+                                    </div>
+                                    <div class="modal-body">
+                                        User will be removed. Currently only
+                                        an admin on the project will be able to
+                                        add them back.
+                                    </div>
+                                    <div class="modal-footer">
+                                        <a href="{% url 'nodes:remove_user' node.id user.id %}"
+                                           class="btn btn-danger">Remove</a>
+                                        <button type="button" class="btn" data-dismiss="modal" >Cancel</button>
+                                    </div>
+                                </div>
+                                </div>
+                                </div>
+                            {% endif %}
+                            </td>
                         </tr>
                     {% endfor %}
                     </tbody>
@@ -111,6 +150,7 @@
                             <td>Title</td>
                             <td>Public</td>
                             <td># of Contributors</td>
+                            <td>Actions</td>
                         </tr>
                     </thead>
                     <tbody>
@@ -124,6 +164,43 @@
                             <td>{{ child.title }}</td>
                             <td>{{ child.public }}</td>
                             <td>{{ child.number_contributors }}</td>
+                            <td>
+                                {% if not child.is_registration %}
+                                    {% if child.deleted %}
+                                        <a href="{% url 'nodes:restore_node' child.id %}"
+                                           class="btn btn-success">
+                                            Restore Node
+                                        </a>
+                                    {% else %}
+                                    <button data-toggle="modal" data-target="#deleteModal{{ child.id }}"
+                                            class="btn btn-danger">
+                                        Delete Node
+                                    </button>
+                                    <div class="modal" id="deleteModal{{ child.id }}">
+                                    <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h3>Are you sure you want to delete this node?</h3>
+                                        </div>
+                                        <div class="modal-body">
+                                            This action will be reversible after the fact.
+                                        </div>
+                                        <div class="modal-footer">
+                                            <a href="{% url 'nodes:remove_node' child.id %}"
+                                               class="btn btn-danger">
+                                                Delete
+                                            </a>
+                                            <button class="btn btn-default"
+                                                    data-dismiss="modal">
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </div>
+                                    </div>
+                                    </div>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
                         </tr>
                     {% endfor %}
                     </tbody>
@@ -149,8 +226,12 @@
                                 <td>{{ node.date_created | date }}</td>
                             </tr>
                             <tr>
+                                <td>Pending</td>
+                                <td>{{ node.pending_registration }}</td>
+                            </tr>
+                            <tr>
                                 <td>Withdrawn</td>
-                                <td>{{ node.retraction }}</td>
+                                <td>{{ node.withdrawn }}</td>
                             </tr>
                             <tr>
                                 <td>Embargo</td>

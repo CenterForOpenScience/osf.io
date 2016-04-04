@@ -23,16 +23,10 @@
 
 <%def name="existingPrereg(size=None)">
 <% size = size or '' %>
-<div id="existingPrereg${size}" class="prereg-exisitng-prereg p-md osf-box box-round clearfix m-b-lg" style="display:none">
+<div id="existingPrereg${size}" class="prereg-existing-prereg p-md osf-box box-round clearfix m-b-lg" style="display:none; style="width: 100%;"">
   <p>Go to an existing preregistration:</p>
-  <form>
-    <osf-draft-registrations-search
-       params="placeholder: 'Type to search for a project',
-               data: '${api_url_for("prereg_draft_registrations")}',
-
-               submitText: 'Edit draft'">
-    </osf-draft-registrations-search>
-  </form>
+    <input id="regDraftSearch${size}" class="form-control"></input>
+    <div class="p-xs"><a href="#" class="regDraftButton btn btn-primary disabled pull-right">Preregister</a></div>
 </div>
 </%def>
 
@@ -40,12 +34,8 @@
 <% size = size or '' %>
 <div id="existingProject${size}" class="prereg-existing-project p-md osf-box box-round clearfix m-b-lg" style="display:none">
   <p>Preregister an existing project:</p>
-  <osf-project-search
-     params="data: nodes,
-             onSubmit: function(selected) { window.location = selected.urls.register; },
-             enableComponents: false,
-             submitText: 'Preregister'">
-  </osf-project-search>
+  <input id="projectSearch${size}" class="form-control" ></input>
+  <div class="p-xs"><a href="#" class="projectRegButton btn btn-primary disabled pull-right">Preregister</a></div>
 </div>
 </%def>
 
@@ -137,6 +127,5 @@
       </table>
     </div>
 </div>
-<%include file="components/dashboard_templates.mako"/>
 <%include file="components/autocomplete.mako"/>
 </%def>
