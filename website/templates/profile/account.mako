@@ -75,7 +75,7 @@
                                                 ## email input verification is not supported on safari
                                               <input placeholder="Email address" type="email" data-bind="value: emailInput" class="form-control" required maxlength="254">
                                             </div>
-                                            <input type="submit" value="Add Email" class="btn btn-success">
+                                            <input type="submit" value="Add email" class="btn btn-success">
                                         </form>
 
                                         <div class="help-block">
@@ -123,7 +123,7 @@
                     <div class="panel-heading clearfix"><h3 class="panel-title">Export Account Data</h3></div>
                     <div class="panel-body">
                         <p>Exporting your account data allows you to keep a permanent copy of the current state of your account. Keeping a copy of your account data can provide peace of mind or assist in transferring your information to another provider.</p>
-                        <a class="btn btn-primary" data-bind="click: submit, css: success() === true ? 'disabled' : ''">Request Export</a>
+                        <a class="btn btn-primary" data-bind="click: submit, css: success() === true ? 'disabled' : ''">Request export</a>
                     </div>
                 </div>
                 <div id="deactivateAccount" class="panel panel-default">
@@ -131,7 +131,7 @@
                     <div class="panel-body">
                         <p class="alert alert-warning"><strong>Warning:</strong> This action is irreversible.</p>
                         <p>Deactivating your account will remove you from all public projects to which you are a contributor. Your account will no longer be associated with OSF projects, and your work on the OSF will be inaccessible.</p>
-                        <a class="btn btn-danger" data-bind="click: submit, css: success() === true ? 'disabled' : ''">Request Deactivation</a>
+                        <a class="btn btn-danger" data-bind="click: submit, css: success() === true ? 'disabled' : ''">Request deactivation</a>
                     </div>
                 </div>
             </div>

@@ -36,7 +36,7 @@
             </div>
             <div class="form-group">
                 <div class="col-sm-offset-3 col-sm-9">
-                    <button data-bind="click: instLogin" class="btn btn-success pull-right">Sign in</button>
+                    <button data-bind="click: instLogin, css: {disabled: loading}" class="btn btn-success pull-right">Sign in</button>
                 </div>
             </div>
             <div class="form-group" style="padding-top: 15px">
@@ -223,6 +223,11 @@
             </div>
         </form>
     </div>
+        %if redirect_url:
+            <div class="text-center m-b-sm col-sm-12" style="padding-top: 15px"> <a href="${domain}login/?campaign=institution&redirect_url=${redirect_url}">Login through your institution  <i class="fa fa-arrow-right"></i></a></div>
+        %else:
+            <div class="text-center m-b-sm col-sm-12" style="padding-top: 15px"> <a href="${domain}login/?campaign=institution">Login through your institution  <i class="fa fa-arrow-right"></i></a></div>
+        %endif
     %endif
 </div>
 
@@ -232,7 +237,8 @@
     ${parent.javascript_bottom()}
     <script type="text/javascript">
         window.contextVars = $.extend(true, {}, window.contextVars, {
-            'campaign': ${campaign or '' | sjson, n}
+            'campaign': ${campaign or '' | sjson, n},
+            'institution_redirect': ${institution_redirect or '' | sjson, n}
         });
     </script>
     <script src=${"/static/public/js/login-page.js" | webpack_asset}></script>

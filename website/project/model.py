@@ -13,6 +13,7 @@ import warnings
 
 import pytz
 from django.core.urlresolvers import reverse
+from django.core.validators import URLValidator
 
 from modularodm import Q
 from modularodm import fields
@@ -20,7 +21,6 @@ from modularodm.validators import MaxLengthValidator
 from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationValueError
 
-from api.base.utils import absolute_reverse
 from framework import status
 from framework.mongo import ObjectId
 from framework.mongo import StoredObject
@@ -43,12 +43,14 @@ from framework.utils import iso8601format
 from website import language, mails, settings, tokens
 from website.util import web_url_for
 from website.util import api_url_for
+from website.util import api_v2_url
 from website.util import sanitize
 from website.exceptions import (
     NodeStateError,
     InvalidSanctionApprovalToken, InvalidSanctionRejectionToken,
     UserNotAffiliatedError,
 )
+from website.institutions.model import Institution, AffiliatedInstitutionsList
 from website.citations.utils import datetime_to_csl
 from website.identifiers.model import IdentifierMixin
 from website.files.models.base import StoredFileNode
@@ -137,10 +139,10 @@ def ensure_schemas():
 
 
 class MetaData(GuidStoredObject):
-
+    # TODO: This model may be unused; potential candidate for deprecation depending on contents of production database
     _id = fields.StringField(primary=True)
 
-    target = fields.AbstractForeignField(backref='metadata')
+    target = fields.AbstractForeignField()
     data = fields.DictionaryField()
 
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
@@ -165,7 +167,7 @@ class Comment(GuidStoredObject, SpamMixin):
     root_target = fields.AbstractForeignField()
 
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
-    date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
+    date_modified = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow, editable=True)
     modified = fields.BooleanField(default=False)
     is_deleted = fields.BooleanField(default=False)
     # The type of root_target: node/files
@@ -184,7 +186,8 @@ class Comment(GuidStoredObject, SpamMixin):
 
     @property
     def absolute_api_v2_url(self):
-        return absolute_reverse('comments:comment-detail', kwargs={'comment_id': self._id})
+        path = '/comments/{}/'.format(self._id)
+        return api_v2_url(path)
 
     # used by django and DRF
     def get_absolute_url(self):
@@ -213,10 +216,10 @@ class Comment(GuidStoredObject, SpamMixin):
     def find_n_unread(cls, user, node, page, root_id=None):
         if node.is_contributor(user):
             if page == Comment.OVERVIEW:
-                view_timestamp = user.get_node_comment_timestamps(node, 'node')
+                view_timestamp = user.get_node_comment_timestamps(target_id=node._id)
                 root_target = Guid.load(node._id)
             elif page == Comment.FILES:
-                view_timestamp = user.get_node_comment_timestamps(node, page, file_id=root_id)
+                view_timestamp = user.get_node_comment_timestamps(target_id=root_id)
                 root_target = Guid.load(root_id)
             else:
                 raise ValueError('Invalid page')
@@ -279,6 +282,7 @@ class Comment(GuidStoredObject, SpamMixin):
             log_dict['file'] = {'name': self.root_target.referent.name, 'url': self.get_comment_page_url()}
         self.content = content
         self.modified = True
+        self.date_modified = datetime.datetime.utcnow()
         if save:
             self.save()
             self.node.add_log(
@@ -301,6 +305,7 @@ class Comment(GuidStoredObject, SpamMixin):
         self.is_deleted = True
         if isinstance(self.root_target.referent, StoredFileNode):
             log_dict['file'] = {'name': self.root_target.referent.name, 'url': self.get_comment_page_url()}
+        self.date_modified = datetime.datetime.utcnow()
         if save:
             self.save()
             self.node.add_log(
@@ -323,6 +328,7 @@ class Comment(GuidStoredObject, SpamMixin):
         }
         if isinstance(self.root_target.referent, StoredFileNode):
             log_dict['file'] = {'name': self.root_target.referent.name, 'url': self.get_comment_page_url()}
+        self.date_modified = datetime.datetime.utcnow()
         if save:
             self.save()
             self.node.add_log(
@@ -528,9 +534,8 @@ class NodeLog(StoredObject):
 
     @property
     def absolute_api_v2_url(self):
-        from api.logs.views import NodeLogDetail
-
-        return absolute_reverse('{}:{}'.format(NodeLogDetail.view_category, NodeLogDetail.view_name), kwargs={'log_id': self._id})
+        path = '/logs/{}/'.format(self._id)
+        return api_v2_url(path)
 
     def get_absolute_url(self):
         return self.absolute_api_v2_url
@@ -666,19 +671,41 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         {
             'unique': False,
             'key_or_list': [
+                ('date_modified', pymongo.DESCENDING),
+            ]
+        },
+        {
+            'unique': False,
+            'key_or_list': [
                 ('tags.$', pymongo.ASCENDING),
                 ('is_public', pymongo.ASCENDING),
                 ('is_deleted', pymongo.ASCENDING),
+                ('institution_id', pymongo.ASCENDING),
             ]
         },
         {
             'unique': False,
             'key_or_list': [
                 ('is_deleted', pymongo.ASCENDING),
-                ('is_folder', pymongo.ASCENDING),
+                ('is_collection', pymongo.ASCENDING),
                 ('is_public', pymongo.ASCENDING),
+                ('institution_id', pymongo.ASCENDING),
                 ('is_registration', pymongo.ASCENDING),
                 ('date_modified', pymongo.ASCENDING),
+            ]
+        },
+        {
+            'unique': False,
+            'key_or_list': [
+                ('institution_id', pymongo.ASCENDING),
+                ('institution_domains', pymongo.ASCENDING),
+            ]
+        },
+        {
+            'unique': False,
+            'key_or_list': [
+                ('institution_id', pymongo.ASCENDING),
+                ('institution_email_domains', pymongo.ASCENDING),
             ]
         },
     ]
@@ -699,6 +726,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         'wiki_pages_current',
         'is_retracted',
         'node_license',
+        'primary_institution'
     }
 
     # Maps category identifier => Human-readable representation for use in
@@ -744,15 +772,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     visible_contributor_ids = fields.StringField(list=True)
 
     # Project Organization
-    is_dashboard = fields.BooleanField(default=False, index=True)
-    is_folder = fields.BooleanField(default=False, index=True)
-
-    # Expanded: Dictionary field mapping user IDs to expand state of this node:
-    # {
-    #   'icpnw': True,
-    #   'cdi38': False,
-    # }
-    expanded = fields.DictionaryField(default={}, validate=validate_user)
+    is_bookmark_collection = fields.BooleanField(default=False, index=True)
+    is_collection = fields.BooleanField(default=False, index=True)
 
     is_deleted = fields.BooleanField(default=False, index=True)
     deleted_date = fields.DateTimeField(index=True)
@@ -818,68 +839,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     template_node = fields.ForeignField('node', backref='template_node', index=True)
 
     piwik_site_id = fields.StringField()
-
-    # Primary institution node is attached to
-    primary_institution = fields.ForeignField('institution')
-
-    affiliated_institutions = fields.ForeignField('institution', list=True)
-
-    def add_primary_institution(self, user, inst):
-        if not user.is_affiliated_with_institution(inst):
-            raise UserNotAffiliatedError('User is not affiliated with {}'.format(inst.name))
-        if inst == self.primary_institution:
-            return False
-        previous = self.primary_institution
-        self.primary_institution = inst
-        if inst not in self.affiliated_institutions:
-            self.affiliated_institutions.append(inst)
-        self.add_log(
-            action=NodeLog.PRIMARY_INSTITUTION_CHANGED,
-            params={
-                'node': self._primary_key,
-                'institution': {
-                    'id': inst._id,
-                    'name': inst.name
-                },
-                'previous_institution': {
-                    'id': previous._id if previous else None,
-                    'name': previous.name if previous else 'None'
-                }
-            },
-            auth=Auth(user)
-        )
-        return True
-
-    def remove_primary_institution(self, user):
-        inst = self.primary_institution
-        if not inst:
-            return False
-        self.primary_institution = None
-        if inst in self.affiliated_institutions:
-            self.affiliated_institutions.remove(inst)
-        self.add_log(
-            action=NodeLog.PRIMARY_INSTITUTION_REMOVED,
-            params={
-                'node': self._primary_key,
-                'institution': {
-                    'id': inst._id,
-                    'name': inst.name
-                }
-            },
-            auth=Auth(user)
-        )
-        return True
-
-    def institution_id(self):
-        # Empty string over None, as None was somehow being serialized to <string>'None',
-        # there's probably a better way to do this or a problem there.
-        return self.primary_institution._id if self.primary_institution else ''
-
-    def institution_url(self):
-        return self.absolute_api_v2_url + 'institution/'
-
-    def institution_relationship_url(self):
-        return self.absolute_api_v2_url + 'relationships/institution/'
 
     # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
     # {<User.id>: [<Node._id>, <Node2._id>, ...] }
@@ -1116,26 +1075,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             auth.private_key in self.private_link_keys_active or
             self.is_admin_parent(auth.user)
         )
-
-    def is_expanded(self, user=None):
-        """Return if a user is has expanded the folder in the dashboard view.
-        Must specify one of (`auth`, `user`).
-
-        :param User user: User object to check
-        :returns: Boolean if the folder is expanded.
-        """
-        if user._id in self.expanded:
-            return self.expanded[user._id]
-        else:
-            return False
-
-    def expand(self, user=None):
-        self.expanded[user._id] = True
-        self.save()
-
-    def collapse(self, user=None):
-        self.expanded[user._id] = False
-        self.save()
 
     def is_derived_from(self, other, attr):
         derived_from = getattr(self, attr)
@@ -1413,7 +1352,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 raise NodeUpdateError(reason="Registered content cannot be updated", key=key)
             # Title and description have special methods for logging purposes
             if key == 'title':
-                self.set_title(title=value, auth=auth, save=False)
+                if not self.is_bookmark_collection:
+                    self.set_title(title=value, auth=auth, save=False)
+                else:
+                    raise NodeUpdateError(reason='Bookmark collections cannot be renamed.', key=key)
             elif key == 'description':
                 self.set_description(description=value, auth=auth, save=False)
             elif key == 'is_public':
@@ -1482,13 +1424,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         first_save = not self._is_loaded
 
-        if first_save and self.is_dashboard:
-            existing_dashboards = self.find_for_user(
-                self.creator,
-                Q('is_dashboard', 'eq', True)
+        if first_save and self.is_bookmark_collection:
+            existing_bookmark_collections = Node.find(
+                Q('is_bookmark_collection', 'eq', True) & Q('contributors', 'eq', self.creator._id)
             )
-            if existing_dashboards.count() > 0:
-                raise NodeStateError("Only one dashboard allowed per user.")
+            if existing_bookmark_collections.count() > 0:
+                raise NodeStateError("Only one bookmark collection allowed per user.")
+
+        # Bookmark collections are always named 'Bookmarks'
+        if self.is_bookmark_collection and self.title != 'Bookmarks':
+            self.title = 'Bookmarks'
 
         is_original = not self.is_registration and not self.is_fork
         if 'suppress_log' in kwargs.keys():
@@ -1536,7 +1481,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if not self.is_public:
             if first_save or 'is_public' not in saved_fields:
                 need_update = False
-        if self.is_folder or self.archiving:
+        if self.is_collection or self.archiving:
             need_update = False
         if need_update:
             self.update_search()
@@ -1677,16 +1622,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if self.is_registration:
             raise NodeStateError('Cannot add a pointer to a registration')
 
-        # If a folder, prevent more than one pointer to that folder. This will prevent infinite loops on the Dashboard.
-        # Also, no pointers to the dashboard project, which could cause loops as well.
+        # If a folder, prevent more than one pointer to that folder. This will prevent infinite loops on the project organizer.
         already_pointed = node.pointed
-        if node.is_folder and len(already_pointed) > 0:
+        if node.is_collection and len(already_pointed) > 0:
             raise ValueError(
                 'Pointer to folder {0} already exists. Only one pointer to any given folder allowed'.format(node._id)
             )
-        if node.is_dashboard:
+        if node.is_bookmark_collection:
             raise ValueError(
-                'Pointer to dashboard ({0}) not allowed.'.format(node._id)
+                'Pointer to bookmark collection ({0}) not allowed.'.format(node._id)
             )
 
         # Append pointer
@@ -1849,7 +1793,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         ret = []
         for each in self.pointed:
             pointer_node = get_pointer_parent(each)
-            if not folders and pointer_node.is_folder:
+            if not folders and pointer_node.is_collection:
                 continue
             if not deleted and pointer_node.is_deleted:
                 continue
@@ -2030,16 +1974,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         """
         # TODO: rename "date" param - it's shadowing a global
 
-        if self.is_dashboard:
-            raise NodeStateError("Dashboards may not be deleted.")
+        if self.is_bookmark_collection:
+            raise NodeStateError("Bookmark collections may not be deleted.")
 
         if not self.can_edit(auth):
             raise PermissionsError('{0!r} does not have permission to modify this {1}'.format(auth.user, self.category or 'node'))
 
-        #if this is a folder, remove all the folders that this is pointing at.
-        if self.is_folder:
+        #if this is a collection, remove all the collections that this is pointing at.
+        if self.is_collection:
             for pointed in self.nodes_pointer:
-                if pointed.node.is_folder:
+                if pointed.node.is_collection:
                     pointed.node.remove_node(auth=auth)
 
         if [x for x in self.nodes_primary if not x.is_deleted]:
@@ -2192,7 +2136,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 'User {} does not have permission '
                 'to register this node'.format(auth.user._id)
             )
-        if self.is_folder:
+        if self.is_collection:
             raise NodeStateError("Folders may not be registered")
 
         when = datetime.datetime.utcnow()
@@ -2225,7 +2169,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.tags = self.tags
         registered.piwik_site_id = None
         registered.primary_institution = self.primary_institution
-        registered.affiliated_institutions = self.affiliated_institutions
+        registered._affiliated_institutions = self._affiliated_institutions
         registered.alternative_citations = self.alternative_citations
         registered.node_license = original.license.copy() if original.license else None
 
@@ -2421,10 +2365,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     @property
     def absolute_api_v2_url(self):
         if self.is_registration:
-            return absolute_reverse('registrations:registration-detail', kwargs={'node_id': self._id})
-        if self.is_folder:
-            return absolute_reverse('collections:collection-detail', kwargs={'collection_id': self._id})
-        return absolute_reverse('nodes:node-detail', kwargs={'node_id': self._id})
+            path = '/registrations/{}/'.format(self._id)
+            return api_v2_url(path)
+        if self.is_collection:
+            path = '/collections/{}/'.format(self._id)
+            return api_v2_url(path)
+        path = '/nodes/{}/'.format(self._id)
+        return api_v2_url(path)
 
     # used by django and DRF
     def get_absolute_url(self):
@@ -3459,6 +3406,112 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             save=True,
         )
 
+    institution_id = fields.StringField(unique=True, index=True)
+    institution_domains = fields.StringField(list=True)
+    institution_auth_url = fields.StringField(validate=URLValidator())
+    institution_logo_name = fields.StringField()
+    institution_email_domains = fields.StringField(list=True)
+    institution_banner_name = fields.StringField()
+
+    @classmethod
+    def find(cls, query=None, allow_institution=False, **kwargs):
+        if not allow_institution:
+            query = (query & Q('institution_id', 'eq', None)) if query else Q('institution_id', 'eq', None)
+        return super(Node, cls).find(query, **kwargs)
+
+    @classmethod
+    def find_one(cls, query=None, allow_institution=False, **kwargs):
+        if not allow_institution:
+            query = (query & Q('institution_id', 'eq', None)) if query else Q('institution_id', 'eq', None)
+        return super(Node, cls).find_one(query, **kwargs)
+
+    @classmethod
+    def find_by_institution(cls, inst, query=None):
+        inst_node = inst.node
+        query = query & Q('_primary_institution', 'eq', inst_node)
+        return cls.find(query, allow_institution=True)
+
+    # Primary institution node is attached to
+    _primary_institution = fields.ForeignField('node')
+
+    @property
+    def primary_institution(self):
+        '''
+        Should behave as if this was a foreign field pointing to Institution
+        :return: this node's _primary_institution wrapped with Institution.
+        '''
+        return Institution(self._primary_institution) if self._primary_institution else None
+
+    @primary_institution.setter
+    def primary_institution(self, institution):
+        self._primary_institution = institution.node if institution else None
+
+    _affiliated_institutions = fields.ForeignField('node', list=True)
+
+    @property
+    def affiliated_institutions(self):
+        '''
+        Should behave as if this was a foreign field pointing to Institution
+        :return: this node's _affiliated_institutions wrapped with Institution as a list.
+        '''
+        return AffiliatedInstitutionsList([Institution(node) for node in self._affiliated_institutions], obj=self, private_target='_affiliated_institutions')
+
+    def add_primary_institution(self, user, inst, log=True):
+        if not isinstance(inst, Institution):
+            raise TypeError
+        if not user.is_affiliated_with_institution(inst):
+            raise UserNotAffiliatedError('User is not affiliated with {}'.format(inst.name))
+        if inst == self.primary_institution:
+            return False
+        previous = self.primary_institution if self.primary_institution else None
+        self.primary_institution = inst
+        if inst not in self.affiliated_institutions:
+            self.affiliated_institutions.append(inst)
+        if log:
+            self.add_log(
+                action=NodeLog.PRIMARY_INSTITUTION_CHANGED,
+                params={
+                    'node': self._primary_key,
+                    'institution': {
+                        'id': inst._id,
+                        'name': inst.name
+                    },
+                    'previous_institution': {
+                        'id': previous._id if previous else None,
+                        'name': previous.name if previous else 'None'
+                    }
+                },
+                auth=Auth(user)
+            )
+        return True
+
+    def remove_primary_institution(self, user, log=True):
+        inst = self.primary_institution
+        if not inst:
+            return False
+        self.primary_institution = None
+        if inst in self.affiliated_institutions:
+            self.affiliated_institutions.remove(inst)
+        if log:
+            self.add_log(
+                action=NodeLog.PRIMARY_INSTITUTION_REMOVED,
+                params={
+                    'node': self._primary_key,
+                    'institution': {
+                        'id': inst._id,
+                        'name': inst.name
+                    }
+                },
+                auth=Auth(user)
+            )
+        return True
+
+    def institution_url(self):
+        return self.absolute_api_v2_url + 'institution/'
+
+    def institution_relationship_url(self):
+        return self.absolute_api_v2_url + 'relationships/institution/'
+
 
 @Node.subscribe('before_save')
 def validate_permissions(schema, instance):
@@ -3605,13 +3658,6 @@ class Sanction(StoredObject):
     # Sanction subclasses must have an initiated_by field
     # initiated_by = fields.ForeignField('user', backref='initiated')
 
-    # Expanded: Dictionary field mapping admin IDs their approval status and relevant tokens:
-    # {
-    #   'b3k97': {
-    #     'has_approved': False,
-    #     'approval_token': 'Pew7wj1Puf7DENUPFPnXSwa1rf3xPN',
-    #     'rejection_token': 'TwozClTFOic2PYxHDStby94bCQMwJy'}
-    # }
     approval_state = fields.DictionaryField()
 
     def __repr__(self):
@@ -3666,8 +3712,8 @@ class TokenApprovableSanction(Sanction):
         :return Boolean: True if user is allowed to be an authorizer else False
         """
         return True
-
     def add_authorizer(self, user, node, approved=False, save=False):
+
         """Add an admin user to this Sanction's approval state.
 
         :param User user: User to add.
@@ -3909,7 +3955,7 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
     APPROVE_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
     REJECT_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
 
-    initiated_by = fields.ForeignField('user', backref='embargoed')
+    initiated_by = fields.ForeignField('user')
     for_existing_registration = fields.BooleanField(default=False)
 
     @property
@@ -4063,7 +4109,7 @@ class Retraction(EmailApprovableSanction):
     APPROVE_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
     REJECT_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
 
-    initiated_by = fields.ForeignField('user', backref='initiated')
+    initiated_by = fields.ForeignField('user')
     justification = fields.StringField(default=None, validate=MaxLengthValidator(2048))
 
     def __repr__(self):
@@ -4194,7 +4240,7 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
     APPROVE_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
     REJECT_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
 
-    initiated_by = fields.ForeignField('user', backref='registration_approved')
+    initiated_by = fields.ForeignField('user')
 
     def _get_registration(self):
         return Node.find_one(Q('registration_approval', 'eq', self))

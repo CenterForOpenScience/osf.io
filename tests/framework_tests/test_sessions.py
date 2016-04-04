@@ -34,3 +34,11 @@ class SessionUtilsTestCase(DbTestCase):
 
         utils.remove_sessions_for_user(self.user)
         assert_equal(1, Session.find().count())
+
+    def test_password_change_clears_sessions(self):
+        factories.SessionFactory(user=self.user)
+        factories.SessionFactory(user=self.user)
+        factories.SessionFactory(user=self.user)
+        assert_equal(3, Session.find().count())
+        self.user.set_password('killerqueen')
+        assert_equal(0, Session.find().count())
