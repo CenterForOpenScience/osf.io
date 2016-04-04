@@ -66,8 +66,13 @@ var returnTextParams = function (param, text, logObject, view_url) {
                 })
             ]);
         }
-        if (param === 'path' && source.charAt(0) === '/'){
-            source = source.substr(1, source.length);
+        if (param === 'path'){
+            if (source.charAt(0) === '/') {
+                source = source.substr(1, source.length - 1);
+            }
+            if (source.charAt(source.length - 1) === '/') {
+                source = source.substr(0, source.length - 2);
+            }
         }
         return view_url ? m('a', {href: view_url}, source) : m('span', source);
     }
