@@ -17,15 +17,11 @@ var KeenTracker = oop.defclass({
     },
 
     createOrUpdateKeenSession: function() {
-        var date = new Date();
+        var expDate = new Date();
         var expiresInMinutes = 25;
-        var expDate = date.setTime(date.getTime() + (expiresInMinutes*60*1000));
-        if(!$.cookie('keenSessionId')){
-            $.cookie('keenSessionId', uuid.v1(), {expires: expDate, path: '/'});
-        } else {
-            var sessionId = $.cookie('keenSessionId');
-            $.cookie('keenSessionId', sessionId, {expires: expDate, path: '/'});
-        }
+        expDate.setTime(expDate.getTime() + (expiresInMinutes*60*1000));
+        var currentSessionId = $.cookie('keenSessionId') || uuid.v1();
+        $.cookie('keenSessionId', currentSessionId, {expires: expDate, path: '/'});
     },
 
     getOrCreateKeenId: function() {
