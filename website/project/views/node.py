@@ -656,6 +656,9 @@ def _view_project(node, auth, primary=False):
             messages = addon.before_page_load(node, user) or []
             for message in messages:
                 status.push_status_message(message, kind='info', dismissible=False, trust=True)
+
+    comment_count = Comment.find(Q('node', 'eq', node)).count()
+
     data = {
         'node': {
             'id': node._primary_key,
@@ -677,7 +680,7 @@ def _view_project(node, auth, primary=False):
             'date_created': iso8601format(node.date_created),
             'date_modified': iso8601format(node.logs[-1].date) if node.logs else '',
             'tags': [tag._primary_key for tag in node.tags],
-            'children': bool(node.nodes_active),
+            'children': node.has_children,
             'is_registration': node.is_registration,
             'is_pending_registration': node.is_pending_registration,
             'is_retracted': node.is_retracted,
@@ -704,8 +707,8 @@ def _view_project(node, auth, primary=False):
             'points': len(node.get_points(deleted=False, folders=False)),
             'piwik_site_id': node.piwik_site_id,
             'comment_level': node.comment_level,
-            'has_comments': bool(Comment.find(Q('node', 'eq', node))),
-            'has_children': bool(Comment.find(Q('node', 'eq', node))),
+            'has_comments': comment_count > 0,
+            'has_children': comment_count > 0,
             'identifiers': {
                 'doi': node.get_identifier_value('doi'),
                 'ark': node.get_identifier_value('ark'),
@@ -717,7 +720,7 @@ def _view_project(node, auth, primary=False):
             },
             'alternative_citations': [citation.to_json() for citation in node.alternative_citations],
             'has_draft_registrations': node.has_active_draft_registrations,
-            'contributors': [contributor._id for contributor in node.contributors]
+            'contributors': node.to_storage()['contributors'],
         },
         'parent_node': {
             'exists': parent is not None,
@@ -749,7 +752,6 @@ def _view_project(node, auth, primary=False):
             'show_wiki_widget': _should_show_wiki_widget(node, user),
             'dashboard_id': bookmark_collection_id,
         },
-        'badges': _get_badge(user),
         # TODO: Namespace with nested dicts
         'addons_enabled': node.get_addon_names(),
         'addons': configs,
@@ -759,17 +761,6 @@ def _view_project(node, auth, primary=False):
         'node_categories': Node.CATEGORY_MAP
     }
     return data
-
-
-def _get_badge(user):
-    if user:
-        badger = user.get_addon('badges')
-        if badger:
-            return {
-                'can_award': badger.can_award,
-                'badges': badger.get_badges_json()
-            }
-    return {}
 
 
 def _get_children(node, auth, indent=0):

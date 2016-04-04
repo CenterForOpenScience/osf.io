@@ -236,6 +236,11 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
 
         rejection_token = project_registration.registration_approval.approval_state[self.user._id]['rejection_token']
         project_registration.registration_approval.reject(self.user, rejection_token)
+
+        project_registration.reload()
+        component_registration.reload()
+        subcomponent_registration.reload()
+
         assert_equal(project_registration.registration_approval.state, Sanction.REJECTED)
         assert_true(project_registration.is_deleted)
         assert_true(component_registration.is_deleted)

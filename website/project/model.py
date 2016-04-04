@@ -160,7 +160,7 @@ class Comment(GuidStoredObject, SpamMixin):
 
     user = fields.ForeignField('user', required=True)
     # the node that the comment belongs to
-    node = fields.ForeignField('node', required=True)
+    node = fields.ForeignField('node', required=True, index=True)
     # the direct 'parent' of the comment (e.g. the target of a comment reply is another comment)
     target = fields.AbstractForeignField(required=True)
     # The file or project overview page that the comment is for
@@ -1004,6 +1004,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return {p._id for p in parents}
 
     @property
+    def has_children(self):
+        if not self.nodes:
+            return False
+
+    @property
     def nodes_active(self):
         return [x for x in self.nodes if not x.is_deleted]
 
@@ -1091,8 +1096,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     @property
     def forks(self):
         """List of forks of this node"""
-        return list(self.node__forked.find(Q('is_deleted', 'eq', False) &
-                                           Q('is_registration', 'ne', True)))
+        return Node.find(
+            Q('is_deleted', 'eq', False) &
+            Q('is_registration', 'ne', True) &
+            Q('forked_from', 'eq', self._id)
+        )
 
     def add_permission(self, user, permission, save=False):
         """Grant permission to a user.
@@ -1690,18 +1698,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     @property
     def node_ids(self):
-        return [
-            node._id if node.primary else node.node._id
-            for node in self.nodes
-        ]
+        return [x[0] for x in self.to_storage()['nodes'] if x[1] == 'node']
 
     @property
     def nodes_primary(self):
-        return [
-            node
-            for node in self.nodes
-            if node.primary
-        ]
+        ids = [x[0] for x in self.to_storage()['nodes'] if x[1] == 'node']
+        if not ids:
+            return []
+        return Node.find(Q('_id', 'in', ids))
 
     def node_and_primary_descendants(self):
         """Return an iterator for a node and all of its primary (non-pointer) descendants.
@@ -1752,18 +1756,17 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     @property
     def nodes_pointer(self):
-        return [
-            node
-            for node in self.nodes
-            if not node.primary
-        ]
+        ids = [x[0] for x in self.to_storage()['nodes'] if x[1] == 'pointer']
+        if not ids:
+            return []
+        return Pointer.find(Q('_id', 'in', ids))
 
     @property
     def has_pointers_recursive(self):
         """Recursively checks whether the current node or any of its nodes
         contains a pointer.
         """
-        if self.nodes_pointer:
+        if len(self.nodes_pointer) > 0:
             return True
         for node in self.nodes_primary:
             if node.has_pointers_recursive:
@@ -1786,19 +1789,27 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 return pointer._id
         return None
 
-    def get_points(self, folders=False, deleted=False, resolve=True):
-        ret = []
-        for each in self.pointed:
-            pointer_node = get_pointer_parent(each)
-            if not folders and pointer_node.is_collection:
-                continue
-            if not deleted and pointer_node.is_deleted:
-                continue
-            if resolve:
-                ret.append(pointer_node)
-            else:
-                ret.append(each)
-        return ret
+    def get_points(self, folders=False, deleted=False):
+        if not self.pointed:
+            return []
+
+        # Note: Due to GUIDs being unique there will never be an overlap between Nodes and pointers
+        pointers = {
+            x._backrefs['parent']['node']['nodes'][0]: x._id
+            for x in Pointer.find(Q('_id', 'in', zip(*self.pointed)[0]))
+        }
+
+        nodes = {
+            pointers[n._id]: n
+            for n in
+            Node.find(
+                Q('_id', 'in', pointers.keys()) &
+                Q('is_deleted', 'ne', not deleted) &
+                Q('is_collection', 'ne', not folders)
+            )
+        }
+
+        return [nodes[i] for i in zip(*self.pointed)[0] if i in nodes]
 
     def resolve(self):
         return self
