@@ -207,6 +207,28 @@ class TestNodeLogSerializers(OsfTestCase):
         assert_equal(d['is_public'], node.is_public)
         assert_equal(d['is_registration'], node.is_registration)
 
+    def test_serialize_log_file_moved_admin_can_view(self):
+        admin = UserFactory()
+        node = NodeFactory(creator=admin)
+        log = NodeLogFactory(action='addon_file_moved', params={'source': {'node': {'_id': node._id}}})
+        node.logs.append(log)
+        node.save()
+        d = serialize_log(log, auth=Auth(admin))
+        assert_equal(d['action'], 'addon_file_moved')
+        assert_equal(d['can_view'], True)
+
+    def test_serialize_log_file_moved_non_contrib_can_view(self):
+        admin = UserFactory()
+        non_contrib = UserFactory()
+        node = NodeFactory(creator=admin)
+        log = NodeLogFactory(action='addon_file_moved', params={'source': {'node': {'_id': node._id}}})
+        node.logs.append(log)
+        node.save()
+        d = serialize_log(log, auth=Auth(non_contrib))
+        assert_equal(d['action'], 'addon_file_moved')
+        assert_equal(d['can_view'], False)
+
+
 class TestAddContributorJson(OsfTestCase):
 
     def setUp(self):
