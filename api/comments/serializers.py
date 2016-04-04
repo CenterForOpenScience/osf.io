@@ -5,11 +5,12 @@ from modularodm import Q
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 from framework.guid.model import Guid
+from website.models import User  # for getting contributors
 from website.files.models import StoredFileNode
 from website.project.model import Comment
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from api.base.exceptions import InvalidModelValueError, Conflict
-from api.base.utils import absolute_reverse
+from api.base.utils import absolute_reverse, get_object_or_error
 from api.base.settings import osf_settings
 from api.base.serializers import (JSONAPISerializer,
                                   TargetField,
@@ -39,6 +40,8 @@ class CommentSerializer(JSONAPISerializer):
     type = TypeField()
     content = AuthorizedCharField(source='get_content', required=True, max_length=osf_settings.COMMENT_MAXLENGTH)
     page = ser.CharField(read_only=True)
+    new_mentions = ser.ListField(required=True, child=AuthorizedCharField(source='get_mentions'))
+    old_mentions = ser.ListField(AuthorizedCharField(source='get_mentions'))
 
     target = TargetField(link_type='related', meta={'type': 'get_target_type'})
     user = RelationshipField(related_view='users:user-detail', related_view_kwargs={'user_id': '<user._id>'})
@@ -135,6 +138,7 @@ class CommentCreateSerializer(CommentSerializer):
         return target
 
     def create(self, validated_data):
+
         user = validated_data['user']
         auth = Auth(user)
         node = validated_data['node']
@@ -149,6 +153,13 @@ class CommentCreateSerializer(CommentSerializer):
             )
         validated_data['target'] = target
         validated_data['content'] = validated_data.pop('get_content')
+
+        # check to make sure the users mentioned are contributors on the node
+        for mention in validated_data['new_mentions']:
+            contributor = get_object_or_error(User, mention, display_name='user')
+            if contributor not in node.contributors:
+                validated_data['mew_mentions'].remove(contributor)
+
         try:
             comment = Comment.create(auth=auth, **validated_data)
         except PermissionsError:

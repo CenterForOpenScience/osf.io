@@ -175,6 +175,10 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
     page = fields.StringField()
     content = fields.StringField(required=True,
                                  validate=[MaxLengthValidator(settings.COMMENT_MAXLENGTH), validators.string_required])
+    # The mentioned users TODO
+    # need a validation thing
+    new_mentions = fields.ListField(fields.StringField(default=[]))
+    old_mentions = fields.ListField(fields.StringField())
 
     # For Django compatibility
     @property
@@ -239,6 +243,19 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
             return 'wiki'
         return self.node.project_or_component
 
+	# TODO: check whether user is a contributor on project
+    def get_mentions(self, auth):
+        """ Returns the comment mentions if the user is allowed to see it. Deleted comments
+        can only be viewed by the user who created the comment."""
+        if not auth and not self.node.is_public:
+            raise PermissionsError
+
+        if self.is_deleted and ((not auth or auth.user.is_anonymous())
+                                or (auth and not auth.user.is_anonymous() and self.user._id != auth.user._id)):
+            return None
+
+        return self.new_mentions
+
     @classmethod
     def find_n_unread(cls, user, node, page, root_id=None):
         if node.is_contributor(user):
@@ -290,6 +307,12 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
             auth=auth,
             save=False,
         )
+
+        # check if there are mentions and then send signal
+        if (comment.new_mentions):
+            project_signals.mention_added.send(comment, auth=auth)
+            # copy new_mentions to old_mentions
+            comment.old_mentions = comment.new_mentions
 
         comment.node.save()
         project_signals.comment_added.send(comment, auth=auth)
