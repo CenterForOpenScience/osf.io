@@ -1,0 +1,5 @@
+{
+  "mendeley_folder_selected" : "${user} selected ${folder_name} in Mendeley in ${node}",
+  "mendeley_node_authorized" : "${user} authorized the addon Mendeley for ${node}",
+  "mendeley_node_deauthorized" : "${user} deauthorized the addon Mendeley for ${node}"
+}

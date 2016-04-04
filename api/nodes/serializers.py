@@ -1,6 +1,5 @@
 from rest_framework import serializers as ser
 from rest_framework import exceptions
-from rest_framework.exceptions import ValidationError
 
 from modularodm import Q
 from modularodm.exceptions import ValidationValueError
@@ -13,7 +12,7 @@ from website.exceptions import NodeStateError, UserNotAffiliatedError
 from website.util import permissions as osf_permissions
 from website.project.model import NodeUpdateError
 
-from api.base.utils import get_object_or_error, absolute_reverse
+from api.base.utils import get_user_auth, get_object_or_error, absolute_reverse
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
                                   TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly,
                                   HideIfRegistration)
@@ -43,9 +42,9 @@ class NodeSerializer(JSONAPISerializer):
         'category',
         'date_created',
         'date_modified',
-        'registration',
         'root',
-        'parent'
+        'parent',
+        'contributors'
     ])
 
     non_anonymized_fields = [
@@ -72,8 +71,8 @@ class NodeSerializer(JSONAPISerializer):
     id = IDField(source='_id', read_only=True)
     type = TypeField()
 
-    category_choices = Node.CATEGORY_MAP.keys()
-    category_choices_string = ', '.join(["'{}'".format(choice) for choice in category_choices])
+    category_choices = Node.CATEGORY_MAP.items()
+    category_choices_string = ', '.join(["'{}'".format(choice[0]) for choice in category_choices])
 
     title = ser.CharField(required=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
@@ -82,8 +81,7 @@ class NodeSerializer(JSONAPISerializer):
     date_modified = ser.DateTimeField(read_only=True)
     registration = ser.BooleanField(read_only=True, source='is_registration')
     fork = ser.BooleanField(read_only=True, source='is_fork')
-    collection = DevOnly(ser.BooleanField(read_only=True, source='is_folder'))
-    dashboard = ser.BooleanField(read_only=True, source='is_dashboard')
+    collection = ser.BooleanField(read_only=True, source='is_collection')
     tags = JSONAPIListField(child=NodeTagField(), required=False)
     template_from = ser.CharField(required=False, allow_blank=False, allow_null=False,
                                   help_text='Specify a node id for a node you would like to use as a template for the '
@@ -133,11 +131,11 @@ class NodeSerializer(JSONAPISerializer):
         related_view_kwargs={'node_id': '<forked_from_id>'}
     )
 
-    node_links = DevOnly(RelationshipField(
+    node_links = RelationshipField(
         related_view='nodes:node-pointers',
         related_view_kwargs={'node_id': '<pk>'},
         related_meta={'count': 'get_pointers_count'},
-    ))
+    )
 
     parent = RelationshipField(
         related_view='nodes:node-detail',
@@ -166,6 +164,7 @@ class NodeSerializer(JSONAPISerializer):
     logs = RelationshipField(
         related_view='nodes:node-logs',
         related_view_kwargs={'node_id': '<pk>'},
+        related_meta={'count': 'get_logs_count'}
     )
 
     def get_current_user_permissions(self, obj):
@@ -185,16 +184,11 @@ class NodeSerializer(JSONAPISerializer):
 
     # TODO: See if we can get the count filters into the filter rather than the serializer.
 
-    def get_user_auth(self, request):
-        user = request.user
-        if user.is_anonymous():
-            auth = Auth(None)
-        else:
-            auth = Auth(user)
-        return auth
+    def get_logs_count(self, obj):
+        return len(obj.logs)
 
     def get_node_count(self, obj):
-        auth = self.get_user_auth(self.context['request'])
+        auth = get_user_auth(self.context['request'])
         nodes = [node for node in obj.nodes if node.can_view(auth) and node.primary and not node.is_deleted]
         return len(nodes)
 
@@ -202,7 +196,7 @@ class NodeSerializer(JSONAPISerializer):
         return len(obj.contributors)
 
     def get_registration_count(self, obj):
-        auth = self.get_user_auth(self.context['request'])
+        auth = get_user_auth(self.context['request'])
         registrations = [node for node in obj.node__registrations if node.can_view(auth)]
         return len(registrations)
 
@@ -210,7 +204,7 @@ class NodeSerializer(JSONAPISerializer):
         return len(obj.nodes_pointer)
 
     def get_unread_comments_count(self, obj):
-        user = self.get_user_auth(self.context['request']).user
+        user = get_user_auth(self.context['request']).user
         node_comments = Comment.find_n_unread(user=user, node=obj, page='node')
 
         return {
@@ -230,7 +224,7 @@ class NodeSerializer(JSONAPISerializer):
 
             validated_data.pop('creator')
             changed_data = {template_from: validated_data}
-            node = template_node.use_as_template(auth=self.get_user_auth(request), changes=changed_data)
+            node = template_node.use_as_template(auth=get_user_auth(request), changes=changed_data)
         else:
             node = Node(**validated_data)
         try:
@@ -244,7 +238,7 @@ class NodeSerializer(JSONAPISerializer):
         the request to be in the serializer context.
         """
         assert isinstance(node, Node), 'node must be a Node'
-        auth = self.get_user_auth(self.context['request'])
+        auth = get_user_auth(self.context['request'])
         old_tags = set([tag._id for tag in node.tags])
         if 'tags' in validated_data:
             current_tags = set(validated_data.get('tags'))
@@ -267,7 +261,7 @@ class NodeSerializer(JSONAPISerializer):
             except PermissionsError:
                 raise exceptions.PermissionDenied
             except NodeUpdateError as e:
-                raise ValidationError(detail=e.reason)
+                raise exceptions.ValidationError(detail=e.reason)
 
         return node
 
@@ -360,7 +354,7 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
         try:
             node.update_contributor(contributor, permission, visible, auth, save=True)
         except NodeStateError as e:
-            raise exceptions.ValidationError(e)
+            raise exceptions.ValidationError(detail=e.message)
         contributor.permission = osf_permissions.reduce_permissions(node.get_permissions(contributor))
         contributor.bibliographic = node.get_visible(contributor)
         contributor.node_id = node._id
@@ -408,7 +402,7 @@ class NodeLinksSerializer(JSONAPISerializer):
         node = self.context['view'].get_node()
         target_node_id = validated_data['_id']
         pointer_node = Node.load(target_node_id)
-        if not pointer_node or pointer_node.is_folder:
+        if not pointer_node or pointer_node.is_collection:
             raise InvalidModelValueError(
                 source={'pointer': '/data/relationships/node_links/data/id'},
                 detail='Target Node \'{}\' not found.'.format(target_node_id)
@@ -504,10 +498,11 @@ class NodeInstitutionRelationshipSerializer(ser.Serializer):
         type_ = getattr(meta, 'type_', None)
         assert type_ is not None, 'Must define Meta.type_'
         relation_id_field = self.fields['id']
-        attribute = relation_id_field.get_attribute(obj)
-        relationship = relation_id_field.to_representation(attribute)
-
-        data['data'] = {'type': type_, 'id': relationship} if relationship else None
+        data['data'] = None
+        if obj.primary_institution:
+            attribute = obj.primary_institution._id
+            relationship = relation_id_field.to_representation(attribute)
+            data['data'] = {'type': type_, 'id': relationship}
         data['links'] = {key: val for key, val in self.fields.get('links').to_representation(obj).iteritems()}
 
         return data
@@ -526,7 +521,7 @@ class NodeAlternativeCitationSerializer(JSONAPISerializer):
     def create(self, validated_data):
         errors = self.error_checker(validated_data)
         if len(errors) > 0:
-            raise ValidationError(detail=errors)
+            raise exceptions.ValidationError(detail=errors)
         node = self.context['view'].get_node()
         auth = Auth(self.context['request']._user)
         citation = node.add_citation(auth, save=True, **validated_data)
@@ -535,7 +530,7 @@ class NodeAlternativeCitationSerializer(JSONAPISerializer):
     def update(self, instance, validated_data):
         errors = self.error_checker(validated_data)
         if len(errors) > 0:
-            raise ValidationError(detail=errors)
+            raise exceptions.ValidationError(detail=errors)
         node = self.context['view'].get_node()
         auth = Auth(self.context['request']._user)
         instance = node.edit_citation(auth, instance, save=True, **validated_data)

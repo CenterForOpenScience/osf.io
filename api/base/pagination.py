@@ -27,7 +27,7 @@ class JSONAPIPagination(pagination.PageNumberPagination):
         """
         Builds uri and adds page param.
         """
-        url = self.request.build_absolute_uri(url)
+        url = remove_query_param(self.request.build_absolute_uri(url), '_')
         paginated_url = replace_query_param(url, self.page_query_param, page_number)
 
         if page_number == 1:
@@ -58,6 +58,21 @@ class JSONAPIPagination(pagination.PageNumberPagination):
         page_number = self.page.next_page_number()
         return self.page_number_query(url, page_number)
 
+    def get_response_dict(self, data, url):
+        return OrderedDict([
+            ('data', data),
+            ('links', OrderedDict([
+                ('first', self.get_first_real_link(url)),
+                ('last', self.get_last_real_link(url)),
+                ('prev', self.get_previous_real_link(url)),
+                ('next', self.get_next_real_link(url)),
+                ('meta', OrderedDict([
+                    ('total', self.page.paginator.count),
+                    ('per_page', self.page.paginator.per_page),
+                ]))
+            ])),
+        ])
+
     def get_paginated_response(self, data):
         """
         Formats paginated response in accordance with JSON API.
@@ -72,21 +87,13 @@ class JSONAPIPagination(pagination.PageNumberPagination):
         if embedded:
             reversed_url = reverse(view_name, kwargs=kwargs)
 
-        response_dict = OrderedDict([
-            ('data', data),
-            ('links', OrderedDict([
-                ('first', self.get_first_real_link(reversed_url)),
-                ('last', self.get_last_real_link(reversed_url)),
-                ('prev', self.get_previous_real_link(reversed_url)),
-                ('next', self.get_next_real_link(reversed_url)),
-                ('meta', OrderedDict([
-                    ('total', self.page.paginator.count),
-                    ('per_page', self.page.paginator.per_page),
-                ]))
-            ])),
-        ])
+        response_dict = self.get_response_dict(data, reversed_url)
+
         if is_anonymized(self.request):
-            response_dict['meta'] = {'anonymous': True}
+            if response_dict.get('meta', False):
+                response_dict['meta'].update({'anonymous': True})
+            else:
+                response_dict['meta'] = {'anonymous': True}
         return Response(response_dict)
 
     def paginate_queryset(self, queryset, request, view=None):

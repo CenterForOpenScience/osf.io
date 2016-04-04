@@ -3,10 +3,12 @@ from rest_framework import serializers as ser
 from rest_framework import exceptions
 
 from api.base.utils import absolute_reverse
+from api.files.serializers import FileSerializer
 from api.nodes.serializers import NodeSerializer
 from api.nodes.serializers import NodeLinksSerializer
 from api.nodes.serializers import NodeContributorsSerializer
-from api.base.serializers import IDField, RelationshipField, LinksField, HideIfRetraction, DevOnly
+from api.base.serializers import (IDField, RelationshipField, LinksField, HideIfRetraction,
+                                  FileCommentRelationshipField, NodeFileHyperLinkField, HideIfRegistration)
 
 
 class RegistrationSerializer(NodeSerializer):
@@ -15,15 +17,15 @@ class RegistrationSerializer(NodeSerializer):
         help_text='The associated Embargo is awaiting approval by project admins.'))
     pending_registration_approval = HideIfRetraction(ser.BooleanField(source='is_pending_registration', read_only=True,
         help_text='The associated RegistrationApproval is awaiting approval by project admins.'))
-    pending_retraction = HideIfRetraction(ser.BooleanField(source='is_pending_retraction', read_only=True,
-        help_text='The registration is awaiting retraction approval by project admins.'))
-    retracted = ser.BooleanField(source='is_retracted', read_only=True,
-                                 help_text='The registration has been retracted.')
+    pending_withdrawal = HideIfRetraction(ser.BooleanField(source='is_pending_retraction', read_only=True,
+        help_text='The registration is awaiting withdrawal approval by project admins.'))
+    withdrawn = ser.BooleanField(source='is_retracted', read_only=True,
+                                 help_text='The registration has been withdrawn.')
 
     date_registered = ser.DateTimeField(source='registered_date', read_only=True, help_text='Date time of registration.')
     embargo_end_date = HideIfRetraction(ser.SerializerMethodField(help_text='When the embargo on this registration will be lifted.'))
 
-    retraction_justification = ser.CharField(source='retraction.justification', read_only=True)
+    withdrawal_justification = ser.CharField(source='retraction.justification', read_only=True)
     registration_supplement = ser.SerializerMethodField()
     registered_meta = HideIfRetraction(ser.SerializerMethodField(
         help_text='A dictionary with supplemental registration questions and responses.'))
@@ -65,15 +67,16 @@ class RegistrationSerializer(NodeSerializer):
         related_view_kwargs={'node_id': '<forked_from_id>'}
     ))
 
-    node_links = DevOnly(HideIfRetraction(RelationshipField(
+    node_links = HideIfRetraction(RelationshipField(
         related_view='registrations:registration-pointers',
         related_view_kwargs={'node_id': '<pk>'},
         related_meta={'count': 'get_pointers_count'}
-    )))
+    ))
 
     parent = HideIfRetraction(RelationshipField(
         related_view='registrations:registration-detail',
-        related_view_kwargs={'node_id': '<parent_id>'}
+        related_view_kwargs={'node_id': '<parent_node._id>'},
+        filter_key='parent_node'
     ))
 
     logs = HideIfRetraction(RelationshipField(
@@ -90,6 +93,10 @@ class RegistrationSerializer(NodeSerializer):
         related_view='registrations:registration-institution-detail',
         related_view_kwargs={'node_id': '<pk>'}
     )
+    registrations = HideIfRegistration(RelationshipField(
+        related_view='nodes:node-registrations',
+        related_view_kwargs={'node_id': '<pk>'}
+    ))
 
     # TODO: Finish me
 
@@ -163,3 +170,17 @@ class RegistrationContributorsSerializer(NodeContributorsSerializer):
                 'user_id': obj._id
             }
         )
+
+
+class RegistrationFileSerializer(FileSerializer):
+
+    files = NodeFileHyperLinkField(
+        related_view='registrations:registration-files',
+        related_view_kwargs={'node_id': '<node_id>', 'path': '<path>', 'provider': '<provider>'},
+        kind='folder'
+    )
+
+    comments = FileCommentRelationshipField(related_view='registrations:registration-comments',
+                                            related_view_kwargs={'node_id': '<node._id>'},
+                                            related_meta={'unread': 'get_unread_comments_count'},
+                                            filter={'target': 'get_file_guid'})

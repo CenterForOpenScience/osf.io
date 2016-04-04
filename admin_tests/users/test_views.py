@@ -3,11 +3,17 @@ from nose.tools import *  # flake8: noqa
 import mock
 
 from tests.base import AdminTestCase
-from tests.factories import UserFactory
 from website import settings
 from tests.factories import UserFactory, AuthUserFactory
 from admin_tests.utilities import setup_view
-from admin.users.views import UserView, disable_user, reactivate_user, remove_2_factor
+
+from admin.users.views import (
+    UserView,
+    ResetPasswordView,
+    disable_user,
+    reactivate_user,
+    remove_2_factor,
+)
 
 
 class TestUserView(AdminTestCase):
@@ -38,6 +44,18 @@ class TestUserView(AdminTestCase):
         view.object = temp_object
         res = view.get_context_data()
         assert_equal(res[UserView.context_object_name], temp_object)
+
+
+class TestResetPasswordView(AdminTestCase):
+    def test_reset_password_context(self):
+        user = UserFactory()
+        guid = user._id
+        request = RequestFactory().get('/fake_path')
+        view = ResetPasswordView()
+        view = setup_view(view, request, guid=guid)
+        res = view.get_context_data()
+        assert_is_instance(res, dict)
+        assert_in((user.emails[0], user.emails[0]), view.initial['emails'])
 
 
 class TestDisableUser(AdminTestCase):
