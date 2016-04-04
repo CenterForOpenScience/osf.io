@@ -542,7 +542,7 @@ CommentModel.prototype.submitEdit = function(data, event) {
             }
         });
     request.done(function(response) {
-        self.content(response.data.attributes.content); // TODO: unsure if this needs to be changed
+        self.content(response.data.attributes.content);
         self.dateModified(response.data.attributes.date_modified);
         self.replyMentions([]);
         self.editing(false);
