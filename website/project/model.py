@@ -310,8 +310,9 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
         # check if there are mentions and then send signal
         if (comment.new_mentions):
             project_signals.mention_added.send(comment, auth=auth)
-            # copy new_mentions to old_mentions
-            comment.old_mentions = comment.new_mentions
+            # add new_mentions to old_mentions
+            comment.old_mentions.extend(comment.new_mentions)
+            comment.save()
 
         comment.node.save()
         project_signals.comment_added.send(comment, auth=auth)
@@ -331,6 +332,10 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
         self.content = content
         self.modified = True
         self.date_modified = datetime.datetime.utcnow()
+
+        if (self.new_mentions):
+            # copy new_mentions to old_mentions
+            self.old_mentions.extend(self.new_mentions)
         if save:
             self.save()
             self.node.add_log(
@@ -340,6 +345,7 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
                 save=False,
             )
             self.node.save()
+            project_signals.mention_added.send(self, auth=auth)
 
     def delete(self, auth, save=False):
         if not self.node.can_comment(auth) or self.user._id != auth.user._id:

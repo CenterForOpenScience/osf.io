@@ -41,7 +41,7 @@ class CommentSerializer(JSONAPISerializer):
     content = AuthorizedCharField(source='get_content', required=True, max_length=osf_settings.COMMENT_MAXLENGTH)
     page = ser.CharField(read_only=True)
     new_mentions = ser.ListField(required=True, child=AuthorizedCharField(source='get_mentions'))
-    old_mentions = ser.ListField(AuthorizedCharField(source='get_mentions'))
+    old_mentions = ser.ListField(ser.CharField())
 
     target = TargetField(link_type='related', meta={'type': 'get_target_type'})
     user = RelationshipField(related_view='users:user-detail', related_view_kwargs={'user_id': '<user._id>'})
@@ -93,6 +93,11 @@ class CommentSerializer(JSONAPISerializer):
                     raise PermissionDenied('Not authorized to undelete this comment.')
             elif 'get_content' in validated_data:
                 content = validated_data.pop('get_content')
+
+                if validated_data['new_mentions']:
+                    node = comment.node
+                    # check to make sure the users mentioned are contributors on the node or have been mentioned already
+                    validated_data['new_mentions'] = [mention for mention in validated_data['new_mentions'] if mention not in comment.old_mentions and get_object_or_error(User, mention, display_name='user') in node.contributors]
                 try:
                     comment.edit(content, auth=auth, save=True)
                 except PermissionsError:
@@ -157,7 +162,7 @@ class CommentCreateSerializer(CommentSerializer):
         for mention in validated_data['new_mentions']:
             contributor = get_object_or_error(User, mention, display_name='user')
             if contributor not in node.contributors:
-                validated_data['mew_mentions'].remove(contributor)
+                validated_data['new_mentions'].remove(contributor)
 
         try:
             comment = Comment.create(auth=auth, **validated_data)
