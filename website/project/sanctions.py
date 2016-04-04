@@ -978,17 +978,7 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
             })
         return context
 
-    def _on_complete(self, user):
-        from website.project.model import NodeLog
-
+    def _on_complete(self, user=None):
         super(EmbargoTerminationApproval, self)._on_complete(user)
         registration = self._get_registration()
-        registration.registered_from.add_log(
-            action=NodeLog.EMBARGO_TERMINATION_APPROVED,
-            params={
-                'node': registration._id,
-                'embargo_id': registration.embargo._id,
-            },
-            auth=Auth(self.initiated_by),
-        )
-        self.save()
+        registration.terminate_embargo(Auth(user) if user else None)
