@@ -727,8 +727,8 @@ def render_generations_from_parent(parent, creator, num_generations):
         next_gen = NodeFactory(
             parent=current_gen,
             creator=creator,
-            title=fake.science_sentence(),
-            description=fake.science_paragraph()
+            title=fake.sentence(),
+            description=fake.paragraph()
         )
         current_gen = next_gen
     return current_gen
@@ -762,23 +762,23 @@ def create_fake_user():
 
 def create_fake_project(creator, n_users, privacy, n_components, name, n_tags, presentation_name, is_registration):
     auth = Auth(user=creator)
-    project_title = name if name else fake.science_sentence()
+    project_title = name if name else fake.sentence()
     if not is_registration:
-        project = ProjectFactory(title=project_title, description=fake.science_paragraph(), creator=creator)
+        project = ProjectFactory(title=project_title, description=fake.paragraph(), creator=creator)
     else:
-        project = RegistrationFactory(title=project_title, description=fake.science_paragraph(), creator=creator)
+        project = RegistrationFactory(title=project_title, description=fake.paragraph(), creator=creator)
     project.set_privacy(privacy)
     for _ in range(n_users):
         contrib = create_fake_user()
         project.add_contributor(contrib, auth=auth)
     if isinstance(n_components, int):
         for _ in range(n_components):
-            NodeFactory(project=project, title=fake.science_sentence(), description=fake.science_paragraph(),
+            NodeFactory(project=project, title=fake.sentence(), description=fake.paragraph(),
                         creator=creator)
     elif isinstance(n_components, list):
         render_generations_from_node_structure_list(project, creator, n_components)
     for _ in range(n_tags):
-        project.add_tag(fake.science_word(), auth=auth)
+        project.add_tag(fake.word(), auth=auth)
     if presentation_name is not None:
         project.add_tag(presentation_name, auth=auth)
         project.add_tag('poster', auth=auth)
