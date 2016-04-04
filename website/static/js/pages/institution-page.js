@@ -13,7 +13,9 @@ var InstitutionNodes = require('js/institutionNodes.js');
 $(document).ready(function() {
     var institutionId = window.contextVars.institution.id;
     var query = {
-      'page[size]': 12,
+      //If we are not on the osf.io we are requesting data anonymously which can be cached for a long time
+      //So push the page size to the max for better UX
+      'page[size]': window.contextVars.isOnRootDomain ? 10 : 100,
       'filter[parent]': 'null',
       'embed': 'contributors',
       'related_counts': 'children',
