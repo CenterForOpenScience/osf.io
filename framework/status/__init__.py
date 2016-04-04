@@ -3,6 +3,7 @@
 from collections import namedtuple
 
 from framework.sessions import session
+# from api.base.api_globals import api_globals
 
 Status = namedtuple('Status', ['message', 'jumbotron', 'css_class', 'dismissible', 'trust'])  # trust=True displays msg as raw HTML
 
@@ -29,7 +30,14 @@ def push_status_message(message, kind='warning', dismissible=True, trust=True, j
     :param jumbotron: Should this be in a jumbstron element rather than an alert
     """
     # TODO: Change the default to trust=False once conversion to markupsafe rendering is complete
-    statuses = session.data.get('status')
+    try:
+        statuses = session.data.get('status')
+    except RuntimeError:
+        # Working outside of request context, so should be a DRF issue. Status messages are not appropriate there.
+        # Currently the only time this happens is when there's an info message that should be swallowed, but when
+        # we have a test case that requires an error response:
+        # TODO: we should probably have DRF raise a 400 and pass the error message along if it's an error
+        return
     if not statuses:
         statuses = []
     css_class = TYPE_MAP.get(kind, 'warning')
