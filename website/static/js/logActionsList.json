@@ -4,7 +4,7 @@
     "project_registered_no_user": "${node} registered",
     "project_deleted":  "${user} deleted ${node}",
     "created_from":     "${user} created ${node} based on ${template}",
-    "pointer_created":  "${user} created a link to ${pointer}",
+    "pointer_created":  "${user} created a link to ${category} ${pointer}",
     "pointer_forked":   "${user} forked a link to ${pointer}",
     "pointer_removed":  "${user} removed a link to ${pointer}",
     "made_public":  "${user} made ${node} public",

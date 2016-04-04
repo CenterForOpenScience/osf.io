@@ -182,6 +182,7 @@ var LogPieces = {
             }
         }
     },
+
     // Contributor list of added, updated etc.
     contributors: {
         view: function (ctrl, logObject) {
@@ -225,8 +226,18 @@ var LogPieces = {
             if(paramIsReturned(linked_node, logObject)){
                 return m('a', {href: linked_node.data.links.html}, linked_node.data.attributes.title);
             }
-            return m('span','a project' );
+            return m('span','a project');
         }
+    },
+    // Pointer category
+    category: {
+      view: function (ctrl, logObject) {
+            var linked_node = logObject.embeds.linked_node;
+            if(paramIsReturned(linked_node, logObject)){
+                return m('span', linked_node.data.attributes.category);
+            }
+            return m('span','');
+      }
     },
     // Node that acted as template to create a new node involved
     template: {
