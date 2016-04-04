@@ -3357,6 +3357,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             self.set_privacy('private', Auth(user))
 
     def request_embargo_termination(self, auth):
+        """Initiates an EmbargoTerminationApproval to lift this Embargoed Registration's
+        embargo early."""
         if not self.is_embargoed:
             raise NodeStateError("This node is not under active embargo")
 
@@ -3374,17 +3376,20 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return approval
 
     def terminate_embargo(self, auth):
+        """Handles the actual early termination of an Embargoed registration.
+        Adds a log to the registered_from Node.
+        """
         if not self.is_embargoed:
             raise NodeStateError("This node is not under active embargo")
 
-        self.add_log(
+        self.registered_from.add_log(
             action=NodeLog.EMBARGO_TERMINATED,
             params={
                 'project': self._id,
                 'node': self._id,
             },
             auth=auth,
-            save=False
+            save=True
         )
         self.embargo.mark_as_completed()
         for node in self.node_and_primary_descendants():
