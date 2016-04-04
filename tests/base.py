@@ -20,6 +20,7 @@ from nose.tools import *  # noqa (PEP8 asserts)
 from pymongo.errors import OperationFailure
 from modularodm import storage
 from django.test import SimpleTestCase, override_settings
+from django.test import TestCase as DjangoTestCase
 
 
 from api.base.wsgi import application as api_django_app
@@ -251,8 +252,7 @@ class ApiAppTestCase(SimpleTestCase):
         self.app = TestAppJSONAPI(api_django_app)
 
 
-@override_settings(DEBUG_PROPAGATE_EXCEPTIONS=True)
-class AdminAppTestCase(SimpleTestCase):
+class AdminAppTestCase(DjangoTestCase):
     def setUp(self):
         super(AdminAppTestCase, self).setUp()
         self.app = TestApp(admin_django_app)
