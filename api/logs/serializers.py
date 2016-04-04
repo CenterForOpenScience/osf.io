@@ -46,6 +46,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     page = ser.CharField(read_only=True)
     path = ser.CharField(read_only=True)
     params_project = ser.SerializerMethodField(read_only=True)
+    pointer = ser.SerializerMethodField(read_only=True)
     source = NodeLogFileParamsSerializer(read_only=True)
     destination = NodeLogFileParamsSerializer(read_only=True)
     view_url = ser.SerializerMethodField(read_only=True)
@@ -82,6 +83,16 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
             node = Node.load(project_id)
             return {'id': project_id, 'title': node.title}
         return {}
+
+    def get_pointer(self, obj):
+        pointer_info = obj.get('pointer', None)
+        if pointer_info:
+            pointer_id = pointer_info.get('id', None)
+            pointer_title = pointer_info.get('title', None)
+            if pointer_id and pointer_title:
+                return {'id': pointer_id, 'title': pointer_title}
+        return {}
+
 
 class NodeLogSerializer(JSONAPISerializer):
 
