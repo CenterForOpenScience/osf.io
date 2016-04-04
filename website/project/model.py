@@ -175,8 +175,7 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
     page = fields.StringField()
     content = fields.StringField(required=True,
                                  validate=[MaxLengthValidator(settings.COMMENT_MAXLENGTH), validators.string_required])
-    # The mentioned users TODO
-    # need a validation thing
+    # The mentioned users
     new_mentions = fields.ListField(fields.StringField(default=[]))
     old_mentions = fields.ListField(fields.StringField())
 

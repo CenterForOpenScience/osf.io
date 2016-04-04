@@ -138,7 +138,6 @@ class CommentCreateSerializer(CommentSerializer):
         return target
 
     def create(self, validated_data):
-
         user = validated_data['user']
         auth = Auth(user)
         node = validated_data['node']
