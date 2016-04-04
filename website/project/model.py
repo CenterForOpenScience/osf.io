@@ -2385,7 +2385,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if self.is_registration:
             path = '/registrations/{}/'.format(self._id)
             return api_v2_url(path)
-        if self.is_folder:
+        if self.is_collection:
             path = '/collections/{}/'.format(self._id)
             return api_v2_url(path)
         path = '/nodes/{}/'.format(self._id)
