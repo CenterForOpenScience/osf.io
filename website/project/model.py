@@ -215,7 +215,6 @@ class Comment(GuidStoredObject, SpamMixin):
 
         return self.content
 
-    # TODO: check whether user is a contributor on project
     def get_mentions(self, auth):
         """ Returns the comment mentions if the user is allowed to see it. Deleted comments
         can only be viewed by the user who created the comment."""
@@ -283,8 +282,9 @@ class Comment(GuidStoredObject, SpamMixin):
         # check if there are mentions and then send signal
         if (comment.new_mentions):
             project_signals.mention_added.send(comment, auth=auth)
-            # copy new_mentions to old_mentions
-            comment.old_mentions = comment.new_mentions
+            # add new_mentions to old_mentions
+            comment.old_mentions.extend(comment.new_mentions)
+            comment.save()
 
         comment.node.save()
         project_signals.comment_added.send(comment, auth=auth)
@@ -305,6 +305,10 @@ class Comment(GuidStoredObject, SpamMixin):
         self.content = content
         self.modified = True
         self.date_modified = datetime.datetime.utcnow()
+
+        if (self.new_mentions):
+            # copy new_mentions to old_mentions
+            self.old_mentions.extend(self.new_mentions)
         if save:
             self.save()
             self.node.add_log(
@@ -314,6 +318,7 @@ class Comment(GuidStoredObject, SpamMixin):
                 save=False,
             )
             self.node.save()
+            project_signals.mention_added.send(self, auth=auth)
 
     def delete(self, auth, save=False):
         if not self.node.can_comment(auth) or self.user._id != auth.user._id:

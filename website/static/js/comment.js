@@ -167,7 +167,7 @@ var BaseComment = function() {
                 content = content.replace(match[0], '['+ mention + '](' + url + ')');
 
                 if (guid && self.replyMentions.indexOf(guid) === -1) {
-                    self.replyMentions.push('guid');
+                    self.replyMentions.push(guid);
                 }
             }
             return content;
@@ -438,7 +438,7 @@ var CommentModel = function(data, $parent, $root) {
                 content = content.replace(match[0], '['+ mention + '](' + url + ')');
 
                 if (guid && self.replyMentions.indexOf(guid) === -1) {
-                    self.replyMentions.push('guid');
+                    self.replyMentions.push(guid);
                 }
             }
             return content;
@@ -544,6 +544,7 @@ CommentModel.prototype.submitEdit = function(data, event) {
                     'type': 'comments',
                     'attributes': {
                         'content': self.editedContent(),
+                        'new_mentions': self.replyMentions(),
                         'deleted': false
                     }
                 }
