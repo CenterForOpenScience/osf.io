@@ -221,7 +221,7 @@ var LogPieces = {
             if(paramIsReturned(tag, logObject)) {
                return m('a', {href: '/search/?q=%22' + tag + '%22'}, tag);
             }
-            return m('span', 'a tag');
+            return m('span', '');
        }
     },
     // Node that is linked to the node involved
