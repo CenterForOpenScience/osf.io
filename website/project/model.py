@@ -174,8 +174,7 @@ class Comment(GuidStoredObject, SpamMixin):
     page = fields.StringField()
     content = fields.StringField(required=True,
                                  validate=[MaxLengthValidator(settings.COMMENT_MAXLENGTH), validators.string_required])
-    # The mentioned users TODO
-    # need a validation thing
+    # The mentioned users
     new_mentions = fields.ListField(fields.StringField(default=[]))
     old_mentions = fields.ListField(fields.StringField())
 
@@ -213,7 +212,7 @@ class Comment(GuidStoredObject, SpamMixin):
         if self.is_deleted and ((not auth or auth.user.is_anonymous())
                                 or (auth and not auth.user.is_anonymous() and self.user._id != auth.user._id)):
             return None
-        # import ipdb; ipdb.set_trace()
+
         return self.content
 
     # TODO: check whether user is a contributor on project

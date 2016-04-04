@@ -137,7 +137,6 @@ var exclusifyGroup = function() {
 var BaseComment = function() {
 
     var self = this;
-
     self.abuseOptions = Object.keys(ABUSE_CATEGORIES);
 
     self._loaded = false;
@@ -339,7 +338,6 @@ BaseComment.prototype.submitReply = function() {
     request.done(function(response) {
         self.cancelReply();
         self.replyContent(null);
-        // do something with the mentions before resetting
         self.replyMentions([]);
         var newComment = new CommentModel(response.data, self, self.$root);
         newComment.loading(false);
@@ -353,6 +351,7 @@ BaseComment.prototype.submitReply = function() {
     });
     request.fail(function(xhr, status, error) {
         self.cancelReply();
+        self.replyMentions([]);
         self.errorMessage('Could not submit comment');
         Raven.captureMessage('Error creating comment', {
             url: url,
@@ -506,7 +505,6 @@ CommentModel.prototype = new BaseComment();
 CommentModel.prototype.edit = function() {
     if (this.canEdit()) {
         this._content = this.content();
-        // TODO: make sure setting this when edit will work
         this.content(this.editableContent());
         this.editing(true);
         this.$root.editors += 1;
@@ -545,7 +543,7 @@ CommentModel.prototype.submitEdit = function(data, event) {
                     'id': self.id(),
                     'type': 'comments',
                     'attributes': {
-                        'content': self.editedContent(), // TODO: change what is being saved...make it like submitReply and bind it to the div
+                        'content': self.editedContent(),
                         'deleted': false
                     }
                 }
@@ -554,6 +552,7 @@ CommentModel.prototype.submitEdit = function(data, event) {
     request.done(function(response) {
         self.content(response.data.attributes.content); // TODO: unsure if this needs to be changed
         self.dateModified(response.data.attributes.date_modified);
+        self.replyMentions([]);
         self.editing(false);
         self.modified(true);
         self.editErrorMessage('');
@@ -564,6 +563,7 @@ CommentModel.prototype.submitEdit = function(data, event) {
     });
     request.fail(function(xhr, status, error) {
         self.cancelEdit();
+        self.replyMentions([]);
         self.errorMessage('Could not submit comment');
         Raven.captureMessage('Error editing comment', {
             url: url,
