@@ -3,7 +3,6 @@
 from collections import namedtuple
 
 from framework.sessions import session
-# from api.base.api_globals import api_globals
 
 Status = namedtuple('Status', ['message', 'jumbotron', 'css_class', 'dismissible', 'trust'])  # trust=True displays msg as raw HTML
 
@@ -27,16 +26,19 @@ def push_status_message(message, kind='warning', dismissible=True, trust=True, j
     :param dismissible: Whether the status message can be dismissed by the user
     :param trust: Whether the text is safe to insert directly into HTML as given. (useful if the message includes
         custom code, eg links) If false, the message will be automatically escaped as an HTML-safe string.
-    :param jumbotron: Should this be in a jumbstron element rather than an alert
+    :param jumbotron: Should this be in a jumbotron element rather than an alert
     """
     # TODO: Change the default to trust=False once conversion to markupsafe rendering is complete
     try:
         statuses = session.data.get('status')
     except RuntimeError:
         # Working outside of request context, so should be a DRF issue. Status messages are not appropriate there.
-        # Currently the only time this happens is when there's an info message that should be swallowed, but when
-        # we have a test case that requires an error response:
-        # TODO: we should probably have DRF raise a 400 and pass the error message along if it's an error
+        # If it's any kind of notification, then it doesn't make sense to send back to the API routes.
+        if kind == 'error':
+            #  If it's an error, then the call should fail with the error message. I do not know of any cases where
+            # this branch will be hit, but I'd like to avoid a silent failure.
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError(message)
         return
     if not statuses:
         statuses = []
