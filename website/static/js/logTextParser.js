@@ -231,6 +231,11 @@ var LogPieces = {
             if(paramIsReturned(linked_node, logObject)){
                 return m('a', {href: linked_node.data.links.html}, linked_node.data.attributes.title);
             }
+            // Applicable when pointer has been deleted
+            var pointer_info = logObject.attributes.params.pointer;
+            if (paramIsReturned(pointer_info, logObject)) {
+                return m('span', pointer_info.title);
+            }
             return m('span','a project');
         }
     },
