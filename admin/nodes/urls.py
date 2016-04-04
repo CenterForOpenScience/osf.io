@@ -13,6 +13,6 @@ urlpatterns = [
         name='remove'),
     url(r'^(?P<guid>[a-z0-9]+)/restore/$', views.NodeDeleteView.as_view(),
         name='restore'),
-    url(r'^id-(?P<node_id>[a-z0-9]+)/remove_user/(?P<user_id>[a-z0-9]+)/$',
+    url(r'^(?P<node_id>[a-z0-9]+)/remove_user/(?P<user_id>[a-z0-9]+)/$',
         views.NodeRemoveContributorView.as_view(), name='remove_user'),
 ]

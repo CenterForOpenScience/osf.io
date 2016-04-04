@@ -10,7 +10,7 @@ from website.models import Node, User
 from admin.base.views import GuidFormView, GuidView
 from admin.base.utils import OSFAdmin
 from admin.nodes.templatetags.node_extras import reverse_node
-from admin.nodes.serializers import serialize_node
+from admin.nodes.serializers import serialize_node, serialize_simple_user
 
 
 class NodeFormView(OSFAdmin, GuidFormView):
@@ -26,6 +26,9 @@ class NodeRemoveContributorView(OSFAdmin, DeleteView):
     template_name = 'nodes/remove_contributor.html'
     context_object_name = 'node'
 
+    def get(self, request, *args, **kwargs):
+        return super(NodeRemoveContributorView, self).get(request, *args, **kwargs)
+
     def delete(self, request, *args, **kwargs):
         try:
             node, user = self.get_object()
@@ -40,7 +43,14 @@ class NodeRemoveContributorView(OSFAdmin, DeleteView):
                     )
                 )
             )
-        return redirect(reverse_node(self.kwargs.get('guid')))
+        return redirect(reverse_node(self.kwargs.get('node_id')))
+
+    def get_context_data(self, **kwargs):
+        context = {}
+        node, user = kwargs.get('object')
+        context.setdefault('node_id', node._id)
+        context.setdefault('user', serialize_simple_user((user._id, None)))
+        return super(NodeRemoveContributorView, self).get_context_data(**context)
 
     def get_object(self, queryset=None):
         return (Node.load(self.kwargs.get('node_id')),

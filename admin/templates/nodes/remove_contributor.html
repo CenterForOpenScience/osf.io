@@ -1,10 +1,13 @@
-<form class="well" method="post" action="{% url 'nodes:remove' guid=guid %}">
+<form class="well" method="post"
+      action="{% url 'nodes:remove_user' node_id=node_id user_id=user.id %}">
     <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">x</button>
-        <h3>Are you sure you want to delete this node? {{ guid }}</h3>
+        <h3>Removing contributor: {{ user.name }}</h3>
     </div>
     <div class="modal-body">
-        This action will be reversible after the fact.
+        User will be removed. Currently only
+        an admin on the project will be able to
+        add them back.
         {% csrf_token %}
     </div>
     <div class="modal-footer">
