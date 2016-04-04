@@ -141,7 +141,7 @@ var LogText = {
         } else {
             message = 'There is no text entry in dictionary for the action :' + logObject.attributes.action;
             ravenMessage(message, logObject);
-            return m('');
+            return m('em', 'Unable to retrieve log details');
         }
     }
 };
