@@ -13,13 +13,6 @@ from admin.nodes.templatetags.node_extras import reverse_node
 from admin.nodes.serializers import serialize_node
 
 
-def remove_contributor(request, node_id, user_id):
-    user = User.load(user_id)
-    node = Node.load(node_id)
-    node.remove_contributor(user, None, log=False)  # TODO: log on OSF as admin
-    return redirect(reverse_node(node_id))
-
-
 class NodeFormView(OSFAdmin, GuidFormView):
     template_name = 'nodes/search.html'
     object_type = 'node'
@@ -29,8 +22,33 @@ class NodeFormView(OSFAdmin, GuidFormView):
         return reverse_node(self.guid)
 
 
+class NodeRemoveContributorView(OSFAdmin, DeleteView):
+    template_name = 'nodes/remove_contributor.html'
+    context_object_name = 'node'
+
+    def delete(self, request, *args, **kwargs):
+        try:
+            node, user = self.get_object()
+            node.remove_contributor(user, None, log=False)
+        except AttributeError:
+            return page_not_found(
+                request,
+                AttributeError(
+                    '{} with id "{}" not found.'.format(
+                        self.context_object_name.title(),
+                        kwargs.get('spam_id')
+                    )
+                )
+            )
+        return redirect(reverse_node(self.kwargs.get('guid')))
+
+    def get_object(self, queryset=None):
+        return (Node.load(self.kwargs.get('node_id')),
+                User.load(self.kwargs.get('user_id')))
+
+
 class NodeDeleteView(OSFAdmin, DeleteView):
-    template_name = 'nodes/remove.html'
+    template_name = 'nodes/remove_node.html'
     context_object_name = 'node'
 
     def delete(self, request, *args, **kwargs):
