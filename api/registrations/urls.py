@@ -21,12 +21,12 @@ urlpatterns = [
     url(r'^(?P<node_id>\w+)/comments/$', views.RegistrationCommentsList.as_view(), name=views.RegistrationCommentsList.view_name),
     url(r'^(?P<node_id>\w+)/logs/$', views.RegistrationLogList.as_view(), name=views.RegistrationLogList.view_name),
     url(r'^(?P<node_id>\w+)/institution/$', views.RegistrationInstitutionDetail.as_view(), name=views.RegistrationInstitutionDetail.view_name),
+    url(r'^(?P<node_id>\w+)/node_links/$', views.RegistrationNodeLinksList.as_view(), name=views.RegistrationNodeLinksList.view_name),
+    url(r'^(?P<node_id>\w+)/node_links/(?P<node_link_id>\w+)/', views.RegistrationNodeLinksDetail.as_view(), name=views.RegistrationNodeLinksDetail.view_name),
 ]
 
 # Routes only active in local/staging environments
 if settings.DEV_MODE:
     urlpatterns.extend([
-        url(r'^(?P<node_id>\w+)/node_links/$', views.RegistrationNodeLinksList.as_view(), name=views.RegistrationNodeLinksList.view_name),
-        url(r'^(?P<node_id>\w+)/node_links/(?P<node_link_id>\w+)/', views.RegistrationNodeLinksDetail.as_view(), name=views.RegistrationNodeLinksDetail.view_name),
         url(r'^(?P<node_id>\w+)/registrations/$', views.RegistrationRegistrationsList.as_view(), name=views.RegistrationRegistrationsList.view_name),
     ])
