@@ -5,12 +5,11 @@ from modularodm import Q
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 from framework.guid.model import Guid
-from website.models import User  # for getting contributors
 from website.files.models import StoredFileNode
 from website.project.model import Comment, Node
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from api.base.exceptions import InvalidModelValueError, Conflict
-from api.base.utils import absolute_reverse, get_object_or_error
+from api.base.utils import absolute_reverse
 from api.base.settings import osf_settings
 from api.base.serializers import (JSONAPISerializer,
                                   TargetField,
@@ -40,7 +39,7 @@ class CommentSerializer(JSONAPISerializer):
     type = TypeField()
     content = AuthorizedCharField(source='get_content', required=True, max_length=osf_settings.COMMENT_MAXLENGTH)
     page = ser.CharField(read_only=True)
-    new_mentions = ser.ListField(required=True, child=AuthorizedCharField(source='get_mentions'))
+    new_mentions = ser.ListField(required=True, child=ser.CharField())
     old_mentions = ser.ListField(ser.CharField())
 
     target = TargetField(link_type='related', meta={'type': 'get_target_type'})
