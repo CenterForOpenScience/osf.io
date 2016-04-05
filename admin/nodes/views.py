@@ -6,7 +6,7 @@ from django.shortcuts import redirect
 from django.views.defaults import page_not_found
 from modularodm import Q
 
-from website.models import Node, User
+from website.models import Node, User, NodeLog
 from admin.base.views import GuidFormView, GuidView
 from admin.base.utils import OSFAdmin
 from admin.common_auth.logs import (
@@ -53,6 +53,19 @@ class NodeRemoveContributorView(OSFAdmin, DeleteView):
                     ),
                     action_flag=CONTRIBUTOR_REMOVED
                 )
+                # Log invisibly on the OSF.
+                osf_log = NodeLog(
+                    action=NodeLog.CONTRIB_REMOVED,
+                    user=None,
+                    params={
+                        'project': node.parent_id,
+                        'node': node.pk,
+                        'contributors': user.pk
+                    },
+                    date=datetime.utcnow(),
+                    should_hide=True,
+                )
+                osf_log.save()
         except AttributeError:
             return page_not_found(
                 request,
@@ -84,22 +97,26 @@ class NodeDeleteView(OSFAdmin, DeleteView):
     """
     template_name = 'nodes/remove_node.html'
     context_object_name = 'node'
+    object = None
 
     def delete(self, request, *args, **kwargs):
         try:
             node = self.get_object()
             flag = None
+            osf_flag = None
             message = None
             if node.is_deleted:
                 node.is_deleted = False
                 node.deleted_date = None
                 flag = NODE_RESTORED
                 message = 'Node {} restored.'.format(node.pk)
+                osf_flag = NodeLog.NODE_CREATED
             elif not node.is_registration:
                 node.is_deleted = True
                 node.deleted_date = datetime.utcnow()
                 flag = NODE_REMOVED
                 message = 'Node {} removed.'.format(node.pk)
+                osf_flag = NodeLog.NODE_REMOVED
             node.save()
             if flag is not None:
                 update_admin_log(
@@ -109,6 +126,18 @@ class NodeDeleteView(OSFAdmin, DeleteView):
                     message=message,
                     action_flag=flag
                 )
+            if osf_flag is not None:
+                # Log invisibly on the OSF.
+                osf_log = NodeLog(
+                    action=osf_flag,
+                    user=None,
+                    params={
+                        'project': node.parent_id,
+                    },
+                    date=datetime.utcnow(),
+                    should_hide=True,
+                )
+                osf_log.save()
         except AttributeError:
             return page_not_found(
                 request,

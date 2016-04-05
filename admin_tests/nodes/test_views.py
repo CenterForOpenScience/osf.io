@@ -60,7 +60,7 @@ class TestNodeDeleteView(AdminTestCase):
         nt.assert_is_instance(obj, Node)
 
     def test_get_context(self):
-        res = self.view.get_context_data(guid=self.node._id)
+        res = self.view.get_context_data(object=self.node)
         nt.assert_in('guid', res)
         nt.assert_equal(res.get('guid'), self.node._id)
 
