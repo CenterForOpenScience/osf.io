@@ -54,7 +54,7 @@ from website.project.views.contributor import (
 )
 from website.project.views.node import _should_show_wiki_widget, _view_project, abbrev_authors
 from website.util import api_url_for, web_url_for
-from website.util import rubeus
+from website.util import permissions, rubeus
 
 
 class Addon(MockAddonNodeSettings):
@@ -2760,6 +2760,83 @@ class TestPointerViews(OsfTestCase):
         self.user = AuthUserFactory()
         self.consolidate_auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user)
+
+    def _make_pointer_only_user_can_see(self, user, project, save=False):
+        node = ProjectFactory(creator=user)
+        project.add_pointer(node, auth=Auth(user=user), save=save)
+
+    def test_pointer_list_write_contributor_can_remove_private_component_entry(self):
+        """Ensure that write contributors see the button to delete a pointer,
+            even if they cannot see what it is pointing at"""
+        url = web_url_for('view_project', pid=self.project._id)
+        user2 = AuthUserFactory()
+        self.project.add_contributor(user2,
+                                     auth=Auth(self.project.creator),
+                                     permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS)
+
+        self._make_pointer_only_user_can_see(user2, self.project)
+        self.project.save()
+
+        res = self.app.get(url, auth=self.user.auth).maybe_follow()
+        assert_equal(res.status_code, 200)
+
+        has_controls = res.lxml.xpath('//li[@node_reference]/p[starts-with(normalize-space(text()), "Private Link")]//i[contains(@class, "remove-pointer")]')
+        assert_true(has_controls)
+
+
+    def test_pointer_list_write_contributor_can_remove_public_component_entry(self):
+        url = web_url_for('view_project', pid=self.project._id)
+
+        for i in xrange(3):
+            self.project.add_pointer(ProjectFactory(creator=self.user),
+                                     auth=Auth(user=self.user))
+        self.project.save()
+
+        res = self.app.get(url, auth=self.user.auth).maybe_follow()
+        assert_equal(res.status_code, 200)
+
+        has_controls = res.lxml.xpath(
+            '//li[@node_reference]//i[contains(@class, "remove-pointer")]')
+        assert_equal(len(has_controls), 3)
+
+    def test_pointer_list_read_contributor_cannot_remove_private_component_entry(self):
+        url = web_url_for('view_project', pid=self.project._id)
+        user2 = AuthUserFactory()
+        self.project.add_contributor(user2,
+                                     auth=Auth(self.project.creator),
+                                     permissions=[permissions.READ])
+
+        self._make_pointer_only_user_can_see(user2, self.project)
+        self.project.save()
+
+        res = self.app.get(url, auth=user2.auth).maybe_follow()
+        assert_equal(res.status_code, 200)
+
+        # TODO: Check length nodes total
+        has_controls = res.lxml.xpath('//li[@node_reference]/p[starts-with(normalize-space(text()), "Private Link")]//i[contains(@class, "remove-pointer")]')
+        assert_false(has_controls)
+
+    def test_pointer_list_read_contributor_cannot_remove_public_component_entry(self):
+        url = web_url_for('view_project', pid=self.project._id)
+
+        for i in xrange(3):
+            self.project.add_pointer(ProjectFactory(creator=self.user),
+                                     auth=Auth(user=self.user))
+
+
+        user2 = AuthUserFactory()
+        self.project.add_contributor(user2,
+                                     auth=Auth(self.project.creator),
+                                     permissions=[permissions.READ])
+        self.project.save()
+
+        res = self.app.get(url, auth=user2.auth).maybe_follow()
+        assert_equal(res.status_code, 200)
+
+        # TODO: Check length nodes total
+        has_controls = res.lxml.xpath(
+            '//li[@node_reference]//i[contains(@class, "remove-pointer")]')
+        assert_equal(len(has_controls), 0)
 
     # https://github.com/CenterForOpenScience/openscienceframework.org/issues/1109
     def test_get_pointed_excludes_folders(self):
