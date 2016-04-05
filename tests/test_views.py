@@ -1,69 +1,61 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-'''Views tests for the OSF.'''
+"""Views tests for the OSF."""
 
 from __future__ import absolute_import
-import unittest
-import json
+
 import datetime as dt
-import mock
 import httplib as http
+import json
 import math
 import time
+import unittest
 
+import mock
 from nose.tools import *  # noqa PEP8 asserts
 
-from tests.test_features import requires_search
 from modularodm import Q
 from modularodm.exceptions import ValidationError
 
 from framework import auth
-from framework.exceptions import HTTPError
 from framework.auth import User, Auth
-from framework.auth.utils import impute_names_model
 from framework.auth.exceptions import InvalidTokenError
+from framework.auth.utils import impute_names_model
 from framework.celery_tasks import handlers
-from framework.mongo import database
-
-from website import mailchimp_utils
-from website.util import permissions
-from website.models import Node, Pointer, NodeLog, MetaSchema, DraftRegistration
-from website.project.model import ensure_schemas, has_anonymous_link
-from website.project.views.contributor import (
-    send_claim_email,
-    deserialize_contributors,
-    send_claim_registered_email,
-    notify_added_contributor
-)
-from website.profile.utils import add_contributor_json, serialize_unregistered
-from website.profile.views import fmt_date_or_none, update_osf_help_mails_subscription
-from website.util import api_url_for, web_url_for
-from website import mails, settings
-from website.util import rubeus
-from website.project.views.node import _view_project, abbrev_authors, _should_show_wiki_widget
-from website.project.decorators import check_can_access
-from website.project.signals import contributor_added
-from website.addons.github.tests.factories import GitHubAccountFactory
-from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, _name_to_id
-
+from framework.exceptions import HTTPError
 from tests.base import (
-    OsfTestCase,
-    fake,
-    capture_signals,
     assert_is_redirect,
-    assert_datetime_equal,
-    get_default_metaschema
+    capture_signals,
+    fake,
+    get_default_metaschema,
+    OsfTestCase,
 )
 from tests.factories import (
-    UserFactory, ApiOAuth2ApplicationFactory, ApiOAuth2PersonalTokenFactory, ProjectFactory, WatchConfigFactory,
-    NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
-    RegistrationFactory,
-    PrivateLinkFactory,
-    UnconfirmedUserFactory,
-    BookmarkCollectionFactory,
-    CollectionFactory,
-    ProjectWithAddonFactory, MockAddonNodeSettings
+    ApiOAuth2ApplicationFactory, ApiOAuth2PersonalTokenFactory, AuthUserFactory,
+    BookmarkCollectionFactory, CollectionFactory, MockAddonNodeSettings, NodeFactory,
+    NodeLogFactory, PrivateLinkFactory, ProjectWithAddonFactory, ProjectFactory,
+    RegistrationFactory, UnconfirmedUserFactory, UnregUserFactory, UserFactory, WatchConfigFactory,
 )
+from tests.test_features import requires_search
+from website import mailchimp_utils
+from website import mails, settings
+from website.addons.github.tests.factories import GitHubAccountFactory
+from website.models import Node, NodeLog, Pointer
+from website.profile.utils import add_contributor_json, serialize_unregistered
+from website.profile.views import fmt_date_or_none, update_osf_help_mails_subscription
+from website.project.decorators import check_can_access
+from website.project.model import has_anonymous_link
+from website.project.signals import contributor_added
+from website.project.views.contributor import (
+    deserialize_contributors,
+    notify_added_contributor,
+    send_claim_email,
+    send_claim_registered_email,
+)
+from website.project.views.node import _should_show_wiki_widget, _view_project, abbrev_authors
+from website.util import api_url_for, web_url_for
+from website.util import rubeus
+
 
 class Addon(MockAddonNodeSettings):
     @property
