@@ -249,7 +249,7 @@ function getUID() {
 
 /* Send with ajax calls to work with api2 */
 var xhrconfig = function (xhr) {
-    xhr.withCredentials = true;
+    xhr.withCredentials = window.contextVars.isOnRootDomain,
     xhr.setRequestHeader('Content-Type', 'application/vnd.api+json;');
     xhr.setRequestHeader('Accept', 'application/vnd.api+json; ext=bulk');
 };
@@ -355,8 +355,13 @@ var MyProjects = {
         ];
 
         self.fetchers = {};
-        self.fetchers[self.systemCollections[0].id] = new NodeFetcher('nodes');
-        self.fetchers[self.systemCollections[1].id] = new NodeFetcher('registrations');
+        if (!options.systemCollections) {
+          self.fetchers[self.systemCollections[0].id] = new NodeFetcher('nodes');
+          self.fetchers[self.systemCollections[1].id] = new NodeFetcher('registrations');
+        } else {
+          self.fetchers[self.systemCollections[0].id] = new NodeFetcher('nodes', self.systemCollections[0].data.link);
+          self.fetchers[self.systemCollections[1].id] = new NodeFetcher('registrations', self.systemCollections[1].data.link);
+        }
 
         // Initial Breadcrumb for All my projects
         var initialBreadcrumbs = options.initialBreadcrumbs || [self.systemCollections[0]];
@@ -1216,6 +1221,7 @@ var Collections = {
                 end = ctrl.collections().length;
             }
             var openCollectionMenu = function _openCollectionMenu(e) {
+                e.stopPropagation();
                 var index = $(this).attr('data-index');
                 var selectedItem = ctrl.collections()[index];
                 ctrl.updateCollectionMenu(selectedItem, e);
