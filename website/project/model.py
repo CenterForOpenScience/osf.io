@@ -149,6 +149,16 @@ class MetaData(GuidStoredObject):
     date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
 
 
+def validate_contributor(guid, contributors):
+    if guid != '':
+        user = User.find(Q('_id', 'eq', guid))
+        if user.count() != 1:
+            raise ValidationValueError('User does not exist.')
+        elif guid not in contributors:
+            raise ValidationValueError('Mentioned user is not a contributor.')
+    return True
+
+
 class Comment(GuidStoredObject, SpamMixin, Commentable):
 
     __guid_min_length__ = 12
@@ -309,9 +319,11 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
 
         # check if there are mentions and then send signal
         if (comment.new_mentions):
-            project_signals.mention_added.send(comment, auth=auth)
-            # add new_mentions to old_mentions
-            comment.old_mentions.extend(comment.new_mentions)
+            comment.new_mentions = [mention for mention in comment.new_mentions if mention not in comment.old_mentions and validate_contributor(mention, comment.node.contributors)]
+            if len(comment.new_mentions) > 0:
+                project_signals.mention_added.send(comment, auth=auth)
+                # add new_mentions to old_mentions
+                comment.old_mentions.extend(comment.new_mentions)
             comment.save()
 
         comment.node.save()
@@ -334,8 +346,13 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
         self.date_modified = datetime.datetime.utcnow()
 
         if (self.new_mentions):
-            # copy new_mentions to old_mentions
-            self.old_mentions.extend(self.new_mentions)
+            self.new_mentions = [mention for mention in self.new_mentions if mention not in self.old_mentions and validate_contributor(mention, self.node.contributors)]
+            if len(self.new_mentions) > 0:
+                if save:
+                    project_signals.mention_added.send(self, auth=auth)
+                    # add new_mentions to old_mentions
+                    self.old_mentions.extend(self.new_mentions)
+
         if save:
             self.save()
             self.node.add_log(
@@ -345,7 +362,6 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
                 save=False,
             )
             self.node.save()
-            project_signals.mention_added.send(self, auth=auth)
 
     def delete(self, auth, save=False):
         if not self.node.can_comment(auth) or self.user._id != auth.user._id:
