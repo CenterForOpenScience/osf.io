@@ -7,6 +7,10 @@ COMMENT_PREREG = 12
 CONFIRM_SPAM = 20
 CONFIRM_HAM = 21
 
+NODE_REMOVED = 30
+NODE_RESTORED = 31
+CONTRIBUTOR_REMOVED = 32
+
 
 def update_admin_log(user_id, object_id, object_repr, message, action_flag=CHANGE):
     OSFLogEntry.objects.log_action(

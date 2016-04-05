@@ -9,6 +9,12 @@ from modularodm import Q
 from website.models import Node, User
 from admin.base.views import GuidFormView, GuidView
 from admin.base.utils import OSFAdmin
+from admin.common_auth.logs import (
+    update_admin_log,
+    NODE_REMOVED,
+    NODE_RESTORED,
+    CONTRIBUTOR_REMOVED
+)
 from admin.nodes.templatetags.node_extras import reverse_node
 from admin.nodes.serializers import serialize_node, serialize_simple_user
 
@@ -38,6 +44,15 @@ class NodeRemoveContributorView(OSFAdmin, DeleteView):
         try:
             node, user = self.get_object()
             node.remove_contributor(user, None, log=False)
+            update_admin_log(
+                user_id=request.user.id,
+                object_id=node.pk,
+                object_repr='Contributor',
+                message='User {} removed from node {}.'.format(
+                    user.pk, node.pk
+                ),
+                action_flag=CONTRIBUTOR_REMOVED
+            )
         except AttributeError:
             return page_not_found(
                 request,
@@ -53,8 +68,8 @@ class NodeRemoveContributorView(OSFAdmin, DeleteView):
     def get_context_data(self, **kwargs):
         context = {}
         node, user = kwargs.get('object')
-        context.setdefault('node_id', node._id)
-        context.setdefault('user', serialize_simple_user((user._id, None)))
+        context.setdefault('node_id', node.pk)
+        context.setdefault('user', serialize_simple_user((user.pk, None)))
         return super(NodeRemoveContributorView, self).get_context_data(**context)
 
     def get_object(self, queryset=None):
@@ -73,13 +88,27 @@ class NodeDeleteView(OSFAdmin, DeleteView):
     def delete(self, request, *args, **kwargs):
         try:
             node = self.get_object()
+            flag = None
+            message = None
             if node.is_deleted:
                 node.is_deleted = False
                 node.deleted_date = None
+                flag = NODE_RESTORED
+                message = 'Node {} restored.'.format(node.pk)
             elif not node.is_registration:
                 node.is_deleted = True
                 node.deleted_date = datetime.utcnow()
+                flag = NODE_REMOVED
+                message = 'Node {} removed.'.format(node.pk)
             node.save()
+            if flag is not None:
+                update_admin_log(
+                    user_id=request.user.id,
+                    object_id=node.pk,
+                    object_repr='Node',
+                    message=message,
+                    action_flag=flag
+                )
         except AttributeError:
             return page_not_found(
                 request,
@@ -94,7 +123,7 @@ class NodeDeleteView(OSFAdmin, DeleteView):
 
     def get_context_data(self, **kwargs):
         context = {}
-        context.setdefault('guid', kwargs.get('object')._id)
+        context.setdefault('guid', kwargs.get('object').pk)
         return super(NodeDeleteView, self).get_context_data(**context)
 
     def get_object(self, queryset=None):
