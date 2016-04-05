@@ -72,7 +72,7 @@ var returnTextParams = function (param, text, logObject, view_url) {
                 source = source.substr(1, source.length - 1);
             }
             if (source.charAt(source.length - 1) === '/') {
-                source = source.substr(0, source.length - 2);
+                source = source.substr(0, source.length - 1);
             }
         }
         return view_url ? m('a', {href: view_url}, source) : m('span', source);
@@ -256,7 +256,7 @@ var LogPieces = {
                 }
                 return m('span', title);
             }
-            return m('span', 'a project')
+            return m('span', 'a project');
         }
     },
     // Node that is linked to the node involved
@@ -280,19 +280,19 @@ var LogPieces = {
             var linked_node = logObject.embeds.linked_node;
             if(paramIsReturned(linked_node, logObject)){
                 var category = linked_node.data.attributes.category;
-                if (category != '') {
+                if (category !== '') {
                     return m('span', linked_node.data.attributes.category);
                 }
             }
 
             var linkedNodeParams = logObject.attributes.params.pointer;
             if (paramIsReturned(linkedNodeParams, logObject)) {
-                if (linkedNodeParams.category != '') {
+                if (linkedNodeParams.category !== '') {
                      return m('span', linkedNodeParams.category);
                 }
 
             }
-            return m('span','project')
+            return m('span','project');
         }
     },
     // Node that acted as template to create a new node involved
@@ -348,7 +348,7 @@ var LogPieces = {
                 }
                 return m('span', updatedField + ' to ' + updatedFieldsParam[updatedField].new);
                 }
-            return m('span', 'field')
+            return m('span', 'field');
         }},
     // external identifiers on node
     identifiers: {
@@ -557,8 +557,8 @@ var LogPieces = {
     comment_file: {
         view: function(ctrl,logObject){
             var file = logObject.attributes.params.file;
-            if (file){  // skipe paramIsReturned, as not having a file is expected at times
-                return m('span', ['in ', m('a', {href: file.url}, file.name)]);
+            if (file){ // skip param.isReturned as not having a file is expected at times
+                return m('span', ['on ', m('a', {href: file.url}, file.name)]);
             }
             return m('span', '');
         }
