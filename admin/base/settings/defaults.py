@@ -45,8 +45,8 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # Sendgrid Email Settings - Using OSF credentials.
 # Add settings references to local.py
 
-EMAIL_HOST = osf_settings.MAIL_HOST
-EMAIL_HOST_USER = osf_settings.MAIL_HOST_USER
+EMAIL_HOST = osf_settings.MAIL_SERVER
+EMAIL_HOST_USER = osf_settings.MAIL_USERNAME
 EMAIL_HOST_PASSWORD = osf_settings.MAIL_PASSWORD
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
