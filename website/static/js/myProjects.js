@@ -1221,6 +1221,7 @@ var Collections = {
                 end = ctrl.collections().length;
             }
             var openCollectionMenu = function _openCollectionMenu(e) {
+                e.stopPropagation();
                 var index = $(this).attr('data-index');
                 var selectedItem = ctrl.collections()[index];
                 ctrl.updateCollectionMenu(selectedItem, e);
