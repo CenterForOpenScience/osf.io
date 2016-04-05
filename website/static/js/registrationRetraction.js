@@ -60,9 +60,11 @@ var RegistrationRetractionViewModel = oop.extend(
             self.disableSave(false);
             self.changeMessage(self.SUBMIT_ERROR_MESSAGE, self.MESSAGE_ERROR_CLASS);
             Raven.captureMessage('Could not submit registration retraction.', {
-                xhr: xhr,
-                status: status,
-                error: errorThrown
+                extra: {
+                    xhr: xhr,
+                    status: status,
+                    error: errorThrown
+                }
             });
         },
         submit: function() {
