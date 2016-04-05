@@ -9,6 +9,7 @@ var $ = require('jquery');  // jQuery
 var $osf = require('js/osfHelpers');
 
 var ravenMessagesCache = []; // Cache messages to avoid sending multiple times in one page view
+var nodeCategories = require('json!built/nodeCategories.json');
 /**
  * Utility function to not repeat logging errors to Sentry
  * @param message {String} Custom message for error
@@ -298,7 +299,7 @@ var LogPieces = {
             }
 
             var templateFromParams = logObject.attributes.params.template_node;
-                if (paramIsReturned(templateFromParams, logObject)){
+                if (paramIsReturned(templateFromParams, logObject && templateFromParams.title)){
                      return m('span', templateFromParams.title);
                 }
             return m('span','a project' );
@@ -421,8 +422,8 @@ var LogPieces = {
                 if (logObject) {
                     var action = logObject.attributes.action;
                     var acceptableLinkedItems = ['osf_storage_file_added', 'osf_storage_file_updated', 'file_tag_added', 'file_tag_removed'];
-                    if (acceptableLinkedItems.indexOf(action) !== -1) {
-                        return logObject.attributes.params.view_url;
+                    if (acceptableLinkedItems.indexOf(action) !== -1 && logObject.attributes.params.urls) {
+                        return logObject.attributes.params.urls.view;
                     }
                 }
                 return null;

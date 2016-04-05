@@ -32,7 +32,9 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
 
     addon = ser.CharField(read_only=True)
     bucket = ser.CharField(read_only=True)
+    citation_name = ser.CharField(read_only=True, source='citation.name')
     data_set = ser.CharField(read_only=True, source='dataset')
+    destination = NodeLogFileParamsSerializer(read_only=True)
     figshare_title = ser.CharField(read_only=True, source='figshare.title')
     forward_url = ser.CharField(read_only=True)
     github_user = ser.CharField(read_only=True, source='github.user')
@@ -41,35 +43,25 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     folder = ser.CharField(read_only=True)
     folder_name = ser.CharField(read_only=True)
     identifiers = NodeLogIdentifiersSerializer(read_only=True)
-    params_node = ser.SerializerMethodField(read_only=True)
+    institution = NodeLogInstitutionSerializer(read_only=True)
     old_page = ser.CharField(read_only=True)
     page = ser.CharField(read_only=True)
-    path = ser.CharField(read_only=True)
+    params_node = ser.SerializerMethodField(read_only=True)
     params_project = ser.SerializerMethodField(read_only=True)
-    pointer = ser.SerializerMethodField(read_only=True)
+    path = ser.CharField(read_only=True)
+    pointer = ser.DictField(read_only=True)
+    previous_institution = NodeLogInstitutionSerializer(read_only=True)
     source = NodeLogFileParamsSerializer(read_only=True)
-    destination = NodeLogFileParamsSerializer(read_only=True)
-    view_url = ser.SerializerMethodField(read_only=True)
     study = ser.CharField(read_only=True)
     tag = ser.CharField(read_only=True)
     tags = ser.CharField(read_only=True)
     target = NodeLogFileParamsSerializer(read_only=True)
-    template_node = ser.SerializerMethodField(read_only=True)
+    template_node = ser.DictField(read_only=True)
     title_new = ser.CharField(read_only=True)
     title_original = ser.CharField(read_only=True)
     updated_fields = ser.DictField(read_only=True)
+    urls = ser.DictField(read_only=True)
     version = ser.CharField(read_only=True)
-    citation_name = ser.CharField(read_only=True, source='citation.name')
-    institution = NodeLogInstitutionSerializer(read_only=True)
-    previous_institution = NodeLogInstitutionSerializer(read_only=True)
-
-    def get_view_url(self, obj):
-        urls = obj.get('urls', None)
-        if urls:
-            view = urls.get('view', None)
-            if view:
-                return view
-        return None
 
     def get_params_node(self, obj):
         node_id = obj.get('node', None)
@@ -83,25 +75,6 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
         if project_id:
             node = Node.load(project_id)
             return {'id': project_id, 'title': node.title}
-        return None
-
-    def get_pointer(self, obj):
-        pointer_info = obj.get('pointer', None)
-        if pointer_info:
-            pointer_id = pointer_info.get('id', None)
-            pointer_title = pointer_info.get('title', None)
-            pointer_category = pointer_info.get('category', None)
-            if pointer_id and pointer_title:
-                return {'id': pointer_id, 'title': pointer_title, 'category': pointer_category}
-        return None
-
-    def get_template_node(self, obj):
-        template = obj.get('template_node', None)
-        if template:
-            template_id = template.get('id', None)
-            template_title = template.get('title', None)
-            if template_id and template_title:
-                return {'id': template_id, 'title': template_title}
         return None
 
 
