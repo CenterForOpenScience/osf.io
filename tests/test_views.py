@@ -821,7 +821,7 @@ class TestProjectViews(OsfTestCase):
         url = self.project.api_url_for('get_logs')
         res = self.app.get(url, {"page": 1}, auth=self.auth)
         assert_equal(len(res.json['logs']), 4)
-        #1 project create log, 1 add contributor log, then 12 generated logs
+        # 1 project create log, 1 add contributor log, then 12 generated logs
         assert_equal(res.json['total'], 12 + 2)
         assert_equal(res.json['page'], 1)
         assert_equal(res.json['pages'], 2)
@@ -1015,7 +1015,6 @@ class TestProjectViews(OsfTestCase):
         res = self.app.get(url, auth=self.auth)
         assert_equal(res.status_code, 302)
         assert_in(self.project.web_url_for('node_registration_retraction_get', _guid=True), res.location)
-
 
     def test_update_node(self):
         url = self.project.api_url_for('update_node')
@@ -1470,7 +1469,6 @@ class TestUserProfile(OsfTestCase):
         assert_equal(self.user.schools, schools)
 
     def test_unserialize_jobs_valid(self):
-        jobs_cached = self.user.jobs
         jobs = [
             {
                 'institution': fake.company(),
@@ -1577,7 +1575,7 @@ class TestUserProfile(OsfTestCase):
         email = 'test@cos.io'
         header = {'id': user1._id,
                   'emails': [{'address': user1.username, 'primary': True, 'confirmed': True},
-                            {'address': email, 'primary': False, 'confirmed': False}
+                             {'address': email, 'primary': False, 'confirmed': False}
                   ]}
         res = self.app.put_json(url, header, auth=user1.auth)
         assert_equal(res.status_code, 200)
@@ -2064,7 +2062,6 @@ class TestAddingContributorViews(OsfTestCase):
 
         # send_mail is called for both the project and the sub-component
         assert_equal(mock_send_mail.call_count, 2)
-
 
     @mock.patch('website.project.views.contributor.send_claim_email')
     def test_email_sent_when_unreg_user_is_added(self, send_mail):
@@ -2696,20 +2693,6 @@ class TestWatchViews(OsfTestCase):
         watch_cfg = WatchConfigFactory(node=project)
         self.user.watch(watch_cfg)
         self.user.save()
-        url = "/api/v1/watched/logs/"
-        res = self.app.get(url, auth=self.auth)
-        assert_equal(len(res.json['logs']), 10)
-        assert_equal(res.json['logs'][0]['action'], 'file_added')
-
-    def test_get_watched_logs(self):
-        project = ProjectFactory()
-        # Add some logs
-        for _ in range(12):
-            project.logs.append(NodeLogFactory(user=self.user, action="file_added"))
-        project.save()
-        watch_cfg = WatchConfigFactory(node=project)
-        self.user.watch(watch_cfg)
-        self.user.save()
         url = api_url_for("watched_logs_get")
         res = self.app.get(url, auth=self.auth)
         assert_equal(len(res.json['logs']), 10)
@@ -2976,7 +2959,7 @@ class TestPointerViews(OsfTestCase):
     def test_fork_pointer_not_provided(self):
         url = self.project.api_url + 'pointer/fork/'
         res = self.app.post_json(url, {}, auth=self.user.auth,
-                expect_errors=True)
+                                 expect_errors=True)
         assert_equal(res.status_code, 400)
 
     def test_fork_pointer_not_found(self):
@@ -3015,7 +2998,7 @@ class TestPointerViews(OsfTestCase):
         assert_equal(len(prompts), 1)
 
     def test_before_fork_with_pointer(self):
-        "Assert that link warning appears in before fork callback."
+        """Assert that link warning appears in before fork callback."""
         node = NodeFactory()
         self.project.add_pointer(node, auth=self.consolidate_auth)
         url = self.project.api_url + 'beforeregister/'
@@ -3028,7 +3011,7 @@ class TestPointerViews(OsfTestCase):
         assert_equal(len(prompts), 1)
 
     def test_before_register_no_pointer(self):
-        "Assert that link warning does not appear in before register callback."
+        """Assert that link warning does not appear in before register callback."""
         url = self.project.api_url + 'fork/before/'
         res = self.app.get(url, auth=self.user.auth).maybe_follow()
         prompts = [
@@ -3039,9 +3022,7 @@ class TestPointerViews(OsfTestCase):
         assert_equal(len(prompts), 0)
 
     def test_before_fork_no_pointer(self):
-        """Assert that link warning does not appear in before fork callback.
-
-        """
+        """Assert that link warning does not appear in before fork callback."""
         url = self.project.api_url + 'beforeregister/'
         res = self.app.get(url, auth=self.user.auth).maybe_follow()
         prompts = [
@@ -3210,8 +3191,7 @@ class TestAuthViews(OsfTestCase):
 
         name, email = fake.name(), fake.email()
 
-        project.add_unregistered_contributor(fullname=name, email=email,
-                auth=Auth(project.creator))
+        project.add_unregistered_contributor(fullname=name, email=email, auth=Auth(project.creator))
         project.save()
 
         # The new, unregistered user
@@ -3471,8 +3451,9 @@ class TestConfigureMailingListViews(OsfTestCase):
         # check that user is subscribed
         mock_client.lists.subscribe.assert_called_with(id=list_id,
                                                        email={'email': user.username},
-                                                       merge_vars= {'fname': user.given_name,
-                                                                    'lname': user.family_name,
+                                                       merge_vars={
+                                                           'fname': user.given_name,
+                                                           'lname': user.family_name,
                                                        },
                                                        double_optin=False,
                                                        update_existing=True)
@@ -3499,9 +3480,10 @@ class TestConfigureMailingListViews(OsfTestCase):
         user.save()
 
         # user subscribes and webhook sends request to OSF
-        data = {'type': 'subscribe',
-                'data[list_id]': list_id,
-                'data[email]': user.username
+        data = {
+            'type': 'subscribe',
+            'data[list_id]': list_id,
+            'data[email]': user.username
         }
         url = api_url_for('sync_data_from_mailchimp') + '?key=' + settings.MAILCHIMP_WEBHOOK_SECRET_KEY
         res = self.app.post(url,
@@ -3531,9 +3513,10 @@ class TestConfigureMailingListViews(OsfTestCase):
 
         # user hits subscribe again, which will update the user's existing info on mailchimp
         # webhook sends request (when configured to update on changes made through the API)
-        data = {'type': 'profile',
-                'data[list_id]': list_id,
-                'data[email]': user.username
+        data = {
+            'type': 'profile',
+            'data[list_id]': list_id,
+            'data[email]': user.username
         }
         url = api_url_for('sync_data_from_mailchimp') + '?key=' + settings.MAILCHIMP_WEBHOOK_SECRET_KEY
         res = self.app.post(url,
@@ -3559,9 +3542,10 @@ class TestConfigureMailingListViews(OsfTestCase):
         user.save()
 
         # user unsubscribes through mailchimp and webhook sends request
-        data = {'type': 'unsubscribe',
-                'data[list_id]': list_id,
-                'data[email]': user.username
+        data = {
+            'type': 'unsubscribe',
+            'data[list_id]': list_id,
+            'data[email]': user.username
         }
         url = api_url_for('sync_data_from_mailchimp') + '?key=' + settings.MAILCHIMP_WEBHOOK_SECRET_KEY
         res = self.app.post(url,
@@ -3879,7 +3863,6 @@ class TestReorderComponents(OsfTestCase):
         assert_equal(res.status_code, 200)
 
 
-
 class TestWikiWidgetViews(OsfTestCase):
 
     def setUp(self):
@@ -3980,7 +3963,7 @@ class TestProjectCreation(OsfTestCase):
         user = AuthUserFactory()
         project = ProjectFactory(creator=user)
         url = web_url_for('project_new_node', pid=project._id)
-        post_data = {'title': '<b>New <blink>Component</blink> Title</b>',  'category': ''}
+        post_data = {'title': '<b>New <blink>Component</blink> Title</b>', 'category': ''}
         request = self.app.post(url, post_data, auth=user.auth).follow()
         project.reload()
         child = project.nodes[0]
@@ -4062,7 +4045,7 @@ class TestProjectCreation(OsfTestCase):
         assert_in(non_admin, child.contributors)
         assert_in(self.user1, child.contributors)
         assert_in(self.user2, child.contributors)
-        assert_equal(child.get_permissions(non_admin), ['read', 'write',  'admin'])
+        assert_equal(child.get_permissions(non_admin), ['read', 'write', 'admin'])
         # check redirect url
         assert_in('/contributors/', res.location)
 
