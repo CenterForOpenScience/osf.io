@@ -266,9 +266,15 @@ var LogPieces = {
     template: {
         view: function (ctrl, logObject) {
             var template_node = logObject.embeds.template_node;
+
             if(paramIsReturned(template_node, logObject)){
                 return m('a', {href: template_node.data.links.html}, template_node.data.attributes.title);
             }
+
+            var templateFromParams = logObject.attributes.params.template_node;
+                if (paramIsReturned(templateFromParams, logObject)){
+                     return m('span', templateFromParams.title);
+                }
             return m('span','a project' );
         }
     },

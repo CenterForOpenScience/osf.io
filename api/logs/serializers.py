@@ -54,6 +54,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     tag = ser.CharField(read_only=True)
     tags = ser.CharField(read_only=True)
     target = NodeLogFileParamsSerializer(read_only=True)
+    template_node = ser.SerializerMethodField(read_only=True)
     title_new = ser.CharField(read_only=True)
     title_original = ser.CharField(read_only=True)
     updated_fields = ser.ListField(read_only=True)
@@ -75,14 +76,14 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
         if node_id:
             node = Node.load(node_id)
             return {'id': node_id, 'title': node.title}
-        return {}
+        return None
 
     def get_params_project(self, obj):
         project_id = obj.get('project', None)
         if project_id:
             node = Node.load(project_id)
             return {'id': project_id, 'title': node.title}
-        return {}
+        return None
 
     def get_pointer(self, obj):
         pointer_info = obj.get('pointer', None)
@@ -91,7 +92,16 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
             pointer_title = pointer_info.get('title', None)
             if pointer_id and pointer_title:
                 return {'id': pointer_id, 'title': pointer_title}
-        return {}
+        return None
+
+    def get_template_node(self, obj):
+        template = obj.get('template_node', None)
+        if template:
+            template_id = template.get('id', None)
+            template_title = template.get('title', None)
+            if template_id and template_title:
+                return {'id': template_id, 'title': template_title}
+        return None
 
 
 class NodeLogSerializer(JSONAPISerializer):
