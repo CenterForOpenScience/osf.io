@@ -30,6 +30,7 @@ def notify(event, user, node, timestamp, **context):
         store_emails(new_mentions, 'email_transactional', event_type, user, node,
                          timestamp, **context)
         sent_users.extend(new_mentions)
+        return sent_users
 
     if target_user:
         target_user_id = target_user._id
