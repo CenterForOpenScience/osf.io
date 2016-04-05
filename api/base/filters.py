@@ -25,7 +25,6 @@ def sort_multiple(fields):
     fields = list(fields)
     def sort_fn(a, b):
         rev = 1
-        num = 1
         i = 0
         for index, field in enumerate(fields):
             i += 1
@@ -46,11 +45,8 @@ def sort_multiple(fields):
         return 0
     return sort_fn
 
-
-
 class ODMOrderingFilter(OrderingFilter):
     """Adaptation of rest_framework.filters.OrderingFilter to work with modular-odm."""
-
     # override
     def filter_queryset(self, request, queryset, view):
         ordering = self.get_ordering(request, queryset, view)
