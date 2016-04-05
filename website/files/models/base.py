@@ -39,6 +39,16 @@ logger = logging.getLogger(__name__)
 
 class TrashedFileNode(StoredObject):
     """The graveyard for all deleted FileNodes"""
+
+    __indices__ = [{
+        'unique': False,
+        'key_or_list': [
+            ('node', pymongo.ASCENDING),
+            ('is_file', pymongo.ASCENDING),
+            ('provider', pymongo.ASCENDING),
+        ]
+    }]
+
     _id = fields.StringField(primary=True)
 
     last_touched = fields.DateTimeField()
