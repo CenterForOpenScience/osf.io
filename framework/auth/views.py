@@ -96,6 +96,7 @@ def forgot_password_post():
     forms.push_errors_to_status(form.errors)
     return auth_login(forgot_password_form=form)
 
+
 @collect_auth
 def forgot_password_get(auth, *args, **kwargs):
     """Return forgot password page upon.
@@ -116,8 +117,20 @@ def auth_login(auth, **kwargs):
     """
     campaign = request.args.get('campaign')
     next_url = request.args.get('next')
+    must_login_warning = True
+
     if campaign:
         next_url = campaigns.campaign_url_for(campaign)
+
+    if not next_url:
+        next_url = request.args.get('redirect_url')
+        must_login_warning = False
+
+    if next_url:
+        # Only allow redirects which are relative root or full domain, disallows external redirects.
+        if not (next_url[0] == '/' or next_url.startsWith(settings.DOMAIN)):
+            raise HTTPError(http.InvalidURL)
+
     if auth.logged_in:
         if not request.args.get('logout'):
             if next_url:
@@ -132,7 +145,7 @@ def auth_login(auth, **kwargs):
     if status_message == 'expired':
         status.push_status_message('The private link you used is expired.')
 
-    if next_url:
+    if next_url and must_login_warning:
         status.push_status_message(language.MUST_LOGIN)
     # set login_url to form action, upon successful authentication specifically w/o logout=True,
     # allows for next to be followed or a redirect to the dashboard.
@@ -143,6 +156,8 @@ def auth_login(auth, **kwargs):
         if (campaign == 'institution' and settings.ENABLE_INSTITUTIONS) or campaign != 'institution':
             data['campaign'] = campaign
     data['login_url'] = cas.get_login_url(redirect_url, auto=True)
+    data['institution_redirect'] = cas.get_institution_target(redirect_url)
+    data['redirect_url'] = next_url
 
     data['sign_up'] = request.args.get('sign_up', False)
 
@@ -191,8 +206,8 @@ def confirm_email_get(token, auth=None, **kwargs):
 
             if token in auth.user.email_verifications:
                 status.push_status_message(language.CONFIRM_ALTERNATE_EMAIL_ERROR, 'danger')
-            # Go to dashboard
-            return redirect(web_url_for('dashboard'))
+            # Go to home page
+            return redirect(web_url_for('index'))
 
         status.push_status_message(language.MERGE_COMPLETE, 'success')
         return redirect(web_url_for('user_account'))

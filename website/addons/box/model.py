@@ -81,9 +81,6 @@ class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     oauth_provider = Box
     serializer = BoxSerializer
 
-    foreign_user_settings = fields.ForeignField(
-        'boxusersettings', backref='authorized'
-    )
     folder_id = fields.StringField(default=None)
     folder_name = fields.StringField()
     folder_path = fields.StringField()

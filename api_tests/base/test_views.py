@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 import httplib as http
-import sys
-import inspect
 import pkgutil
 
 import mock
@@ -62,9 +60,9 @@ class TestApiBaseViews(ApiTestCase):
             for cls in base_permissions:
                 if isinstance(cls, tuple):
                     has_cls = any([c in view.permission_classes for c in cls])
-                    assert_true(has_cls, "{0} lacks the appropriate permission classes".format(name))
+                    assert_true(has_cls, "{0} lacks the appropriate permission classes".format(view))
                 else:
-                    assert_in(cls, view.permission_classes, "{0} lacks the appropriate permission classes".format(name))
+                    assert_in(cls, view.permission_classes, "{0} lacks the appropriate permission classes".format(view))
             for key in ['read', 'write']:
                 scopes = getattr(view, 'required_{}_scopes'.format(key), None)
                 assert_true(bool(scopes))

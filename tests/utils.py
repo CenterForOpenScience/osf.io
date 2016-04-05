@@ -103,7 +103,7 @@ def mock_archive(project, schema=None, auth=None, data=None, parent=None,
     auth = auth or Auth(project.creator)
     data = data or ''
 
-    with mock.patch('framework.tasks.handlers.enqueue_task'):
+    with mock.patch('framework.celery_tasks.handlers.enqueue_task'):
         registration = project.register_node(
             schema=schema,
             auth=auth,

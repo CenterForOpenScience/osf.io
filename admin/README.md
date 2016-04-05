@@ -20,8 +20,8 @@
 If you need to do prereg work then you need to add a group and add an OSF id to your admin user's profile.
 
 - Navigate to `localhost:8001/admin/django_admin/`
-- Go to groups and add `prereg_group` without any other permissions
-- save
+- ~~Go to groups and add `prereg_group` without any other permissions~~
+- ~~save~~ These should already be populated if `migrate` was run above
 - Go to **My users** and go into the user that needs to be a prereg admin
 - Add an existing user id to **Osf id**
 - Select **prereg_group** from the groups list and add it to **Chosen groups**

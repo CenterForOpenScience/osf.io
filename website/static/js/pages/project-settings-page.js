@@ -30,7 +30,7 @@ if ($('#grid').length) {
         $notificationsMsg.addClass('text-danger');
         $notificationsMsg.text('Could not retrieve notification settings.');
         Raven.captureMessage('Could not GET notification settings.', {
-            url: notificationsURL, status: status, error: error
+            extra: { url: notificationsURL, status: status, error: error }
         });
     });
 }
@@ -51,7 +51,7 @@ if ($('#wgrid').length) {
         $wikiMsg.addClass('text-danger');
         $wikiMsg.text('Could not retrieve wiki settings.');
         Raven.captureMessage('Could not GET wiki settings.', {
-            url: wikiSettingsURL, status: status, error: error
+            extra: { url: wikiSettingsURL, status: status, error: error }
         });
     });
 }
@@ -227,7 +227,13 @@ $(document).ready(function() {
       var unchecked = checkedOnLoad.filter('#selectAddonsForm input:not(:checked)');
 
       if(unchecked.length > 0 || checked.length > 0) {
-        return 'The changes on addon setting are not submitted!';
+          return 'The changes on addon setting are not submitted!';
+      }
+    /* Before closing the page, Check whether changes made to category, title or description are updated or not */
+      if (projectSettingsVM.title() !== projectSettingsVM.titlePlaceholder ||
+          projectSettingsVM.description() !== projectSettingsVM.descriptionPlaceholder ||
+          projectSettingsVM.selectedCategory() !== projectSettingsVM.categoryPlaceholder) {
+          return 'There are unsaved changes in your project settings.';
       }
     });
 
@@ -245,6 +251,8 @@ $(document).ready(function() {
                     callback: function(result) {
                         if (!result) {
                             $(that).attr('checked', false);
+                        } else {
+                            $('#selectAddonsForm').submit();
                         }
                     },
                     buttons:{
@@ -253,7 +261,11 @@ $(document).ready(function() {
                         }
                     }
                });
+            } else {
+                $('#selectAddonsForm').submit();
             }
+        } else {
+            $('#selectAddonsForm').submit();
         }
     });
 });
@@ -278,7 +290,9 @@ WikiSettingsViewModel.enabled.subscribe(function(newValue) {
     }).fail(function(xhr, status, error) {
         $osf.growl('Error', 'Unable to update wiki');
         Raven.captureMessage('Could not update wiki.', {
-            url: ctx.node.urls.api + 'settings/addons/', status: status, error: error
+            extra: {
+                url: ctx.node.urls.api + 'settings/addons/', status: status, error: error
+            }
         });
         setTimeout(function(){window.location.reload();}, 1500);
     });

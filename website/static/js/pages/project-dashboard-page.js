@@ -144,7 +144,9 @@ $(document).ready(function () {
             var request = $osf.postJSON(url, data);
             request.fail(function(xhr, textStatus, error) {
                 Raven.captureMessage('Failed to add tag', {
-                    tag: tag, url: url, textStatus: textStatus, error: error
+                    extra: {
+                        tag: tag, url: url, textStatus: textStatus, error: error
+                    }
                 });
             });
         },
@@ -160,7 +162,9 @@ $(document).ready(function () {
             });
             request.fail(function(xhr, textStatus, error) {
                 Raven.captureMessage('Failed to remove tag', {
-                    tag: tag, url: url, textStatus: textStatus, error: error
+                    extra: {
+                        tag: tag, url: url, textStatus: textStatus, error: error
+                    }
                 });
             });
         }

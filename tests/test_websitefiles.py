@@ -119,6 +119,40 @@ class TestFileNodeObj(FilesTestCase):
         assert_equals(found.name, 'kerp')
         assert_equals(found.materialized_path, 'crazypath')
 
+    def test_get_file_guids(self):
+        created = TestFile.get_or_create(self.node, 'Path')
+        created.name = 'kerp'
+        created.materialized_path = '/Path'
+        created.get_guid(create=True)
+        created.save()
+        file_guids = TestFile.get_file_guids(materialized_path=created.materialized_path,
+                                             provider=created.provider,
+                                             node=self.node)
+        assert_in(created.get_guid()._id, file_guids)
+
+    def test_get_file_guids_with_folder_path(self):
+        created = TestFile.get_or_create(self.node, 'folder/Path')
+        created.name = 'kerp'
+        created.materialized_path = '/folder/Path'
+        created.get_guid(create=True)
+        created.save()
+        file_guids = TestFile.get_file_guids(materialized_path='folder/',
+                                             provider=created.provider,
+                                             node=self.node)
+        assert_in(created.get_guid()._id, file_guids)
+
+    def test_get_file_guids_with_folder_path_does_not_include_deleted_files(self):
+        created = TestFile.get_or_create(self.node, 'folder/Path')
+        created.name = 'kerp'
+        created.materialized_path = '/folder/Path'
+        guid = created.get_guid(create=True)
+        created.save()
+        created.delete()
+        file_guids = TestFile.get_file_guids(materialized_path='folder/',
+                                             provider=created.provider,
+                                             node=self.node)
+        assert_not_in(guid._id, file_guids)
+
     def test_kind(self):
         assert_equals(TestFile().kind, 'file')
         assert_equals(TestFolder().kind, 'folder')

@@ -104,17 +104,6 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         )
         assert_equal(Embargo.find().count(), initial_count + 1)
 
-    # Backref tests
-    def test_embargo_initiator_has_backref(self):
-        self.registration.embargo_registration(
-            self.user,
-            self.valid_embargo_end_date
-        )
-        self.registration.save()
-        self.registration.reload()
-        assert_equal(len(self.user.embargo__embargoed),
-            Embargo.find(Q('initiated_by', 'eq', self.user)).count())
-
     # Node#embargo_registration tests
     def test_embargo_from_non_admin_raises_PermissionsError(self):
         self.registration.remove_permission(self.user, 'admin')
@@ -724,7 +713,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
             u'summary': unicode(fake.sentence())
         })
 
-    @mock.patch('framework.tasks.handlers.enqueue_task')
+    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_register_draft_without_embargo_creates_registration_approval(self, mock_enqueue):
         res = self.app.post(
             self.project.api_url_for('register_draft_registration', draft_id=self.draft._id),
@@ -740,7 +729,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         assert_not_equal(registration.registration_approval, None)
 
     # Regression test for https://openscience.atlassian.net/browse/OSF-5039
-    @mock.patch('framework.tasks.handlers.enqueue_task')
+    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_POST_register_make_public_immediately_creates_private_pending_registration_for_public_project(self, mock_enqueue):
         self.project.is_public = True
         self.project.save()
@@ -784,7 +773,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
             assert_true(node.is_registration)
             assert_false(node.is_public)
 
-    @mock.patch('framework.tasks.handlers.enqueue_task')
+    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_POST_register_make_public_does_not_make_children_public(self, mock_enqueue):
         component = NodeFactory(
             creator=self.user,
@@ -810,13 +799,13 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         )
         self.project.reload()
         # Last node directly registered from self.project
-        registration = Node.load(self.project.node__registrations[-1])
+        registration = self.project.registrations_all[-1]
         assert_false(registration.is_public)
         for node in registration.get_descendants_recursive():
             assert_true(node.is_registration)
             assert_false(node.is_public)
 
-    @mock.patch('framework.tasks.handlers.enqueue_task')
+    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_POST_register_embargo_is_not_public(self, mock_enqueue):
         res = self.app.post(
             self.project.api_url_for('register_draft_registration', draft_id=self.draft._id),
@@ -835,7 +824,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         assert_is_not_none(registration.embargo)
 
     # Regression test for https://openscience.atlassian.net/browse/OSF-5071
-    @mock.patch('framework.tasks.handlers.enqueue_task')
+    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_POST_register_embargo_does_not_make_project_or_children_public(self, mock_enqueue):
         self.project.is_public = True
         self.project.save()
@@ -881,7 +870,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
             assert_true(node.is_registration)
             assert_false(node.is_public)
 
-    @mock.patch('framework.tasks.handlers.enqueue_task')
+    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_POST_invalid_embargo_end_date_returns_HTTPBad_Request(self, mock_enqueue):
         res = self.app.post(
             self.project.api_url_for('register_draft_registration', draft_id=self.draft._id),
@@ -893,7 +882,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
 
         assert_equal(res.status_code, 400)
 
-    @mock.patch('framework.tasks.handlers.enqueue_task')
+    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_valid_POST_embargo_adds_to_parent_projects_log(self, mock_enquque):
         initial_project_logs = len(self.project.logs)
         self.app.post(

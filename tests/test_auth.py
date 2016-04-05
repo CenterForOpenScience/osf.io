@@ -4,6 +4,7 @@ import unittest
 from nose.tools import *  # noqa; PEP8 asserts
 from webtest_plus import TestApp
 import mock
+import urlparse
 import httplib as http
 
 from flask import Flask
@@ -81,7 +82,7 @@ class TestAuthUtils(OsfTestCase):
         res = res.follow()
 
         assert_equal(res.status_code, 302)
-        assert_in('dashboard', res.location)
+        assert_equal('/', urlparse.urlparse(res.location).path)
         assert_equal(len(mock_mail.call_args_list), 1)
         session = Session.find(
             Q('data.auth_user_id', 'eq', user._id)
@@ -104,6 +105,22 @@ class TestAuthUtils(OsfTestCase):
         assert_false(
             auth.get_user(email=user.username, password='wrong')
         )
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_password_change_sends_email(self, mock_mail):
+        user = UserFactory.build()
+        user.set_password('killerqueen')
+        assert_equal(len(mock_mail.call_args_list), 1)
+        empty, kwargs = mock_mail.call_args
+        kwargs['user'].reload()
+
+        assert_equal(empty, ())
+        assert_equal(kwargs, {
+            'user': user,
+            'mimetype': 'plain',
+            'mail': mails.PASSWORD_RESET,
+            'to_addr': user.username,
+        })
 
 
 class TestAuthObject(OsfTestCase):

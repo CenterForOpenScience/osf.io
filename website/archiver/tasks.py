@@ -6,8 +6,8 @@ import celery
 from celery.utils.log import get_task_logger
 from modularodm import Q
 
-from framework.tasks import app as celery_app
-from framework.tasks.utils import logged
+from framework.celery_tasks import app as celery_app
+from framework.celery_tasks.utils import logged
 from framework.exceptions import HTTPError
 
 from website.archiver import (
@@ -392,6 +392,6 @@ def archive_success(dst_pk, job_pk):
 
     job = ArchiveJob.load(job_pk)
     if not job.sent:
-        dst.sanction.ask(dst.get_active_contributors_recursive(unique_users=True))
         job.sent = True
         job.save()
+        dst.sanction.ask(dst.get_active_contributors_recursive(unique_users=True))
