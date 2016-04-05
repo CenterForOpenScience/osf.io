@@ -17,7 +17,7 @@ var MESSAGES = {
     makeProjectPublicWarning:
     'Please review your projects, components, and add-ons for sensitive or restricted information before making them public.' +
     '<br><br>Once they are made public, you should assume they will always be public. You can ' +
-        'return them to private later, but search engines (including Google’s cache) or others may access files before you do.',
+    'return them to private later, but search engines (including Google’s cache) or others may access files before you do.',
     makeEmbargoPublicWarning: 'By making this registration public, you will end the embargo period and the registration will be open to the public. Making this registration public will automatically make all of its components public as well. This action is irreversible.',
     makeEmbargoPublicTitle: 'End Embargo Early',
     selectNodes: 'Adjust your privacy settings by checking the boxes below. ' +
@@ -131,6 +131,40 @@ var NodesPrivacyViewModel = function(node, onSetPrivacy) {
     $('#nodesPrivacy').on('hidden.bs.modal', function () {
         self.clear();
     });
+
+    /**
+     * get node tree for treebeard from API V1
+     */
+    self.fetchNodeTree = function() {
+        return $.ajax({
+            url: self.treebeardUrl,
+            type: 'GET',
+            dataType: 'json'
+        }).done(function(response) {
+            self.nodesOriginal = getNodesOriginal(response[0], self.nodesOriginal);
+            Object.size = function(obj) {
+                var size = 0, key;
+                for (key in obj) {
+                    if (obj.hasOwnProperty(key)) size++;
+                }
+                return size;
+            };
+            // Get the size of an object
+            var size = Object.size(self.nodesOriginal);
+            self.hasChildren(size > 1);
+            var nodesState = $.extend(true, {}, self.nodesOriginal);
+            var nodeParent = response[0].node.id;
+            //change node state and response to reflect button push by user on project page (make public | make private)
+            nodesState[nodeParent].public = response[0].node.is_public = !self.parentIsPublic;
+            nodesState[nodeParent].changed = true;
+            self.nodesState(nodesState);
+        }).fail(function(xhr, status, error) {
+            $osf.growl('Error', 'Unable to retrieve project settings');
+            Raven.captureMessage('Could not GET project settings.', {
+                extra: { url: self.treebeardUrl, status: status, error: error }
+            });
+        });
+    };
 
     self.page = ko.observable(self.WARNING);
 

@@ -800,7 +800,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         )
         self.project.reload()
         # Last node directly registered from self.project
-        registration = Node.load(self.project.node__registrations[-1])
+        registration = self.project.registrations_all[-1]
         assert_false(registration.is_public)
         for node in registration.get_descendants_recursive():
             assert_true(node.is_registration)

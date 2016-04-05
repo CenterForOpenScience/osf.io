@@ -232,9 +232,11 @@ var AuthorImport = function(data, $root, preview) {
         return self.makeContributorsRequest()
             .fail(function(xhr, status, error) {
                 Raven.captureMessage('Could not GET contributors', {
-                    url: window.contextVars.node.urls.api + 'get_contributors/',
-                    textStatus: status,
-                    error: error
+                    extra: {
+                        url: window.contextVars.node.urls.api + 'get_contributors/',
+                        textStatus: status,
+                        error: error
+                    }
                 });
                 $osf.growl('Could not retrieve contributors.', osfLanguage.REFRESH_OR_SUPPORT);
             });
