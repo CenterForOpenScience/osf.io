@@ -221,6 +221,11 @@
                             <i class="fa social-icons" data-toggle="tooltip" title="Academia">A</i>
                         </a>
                     </li>
+                    <li data-bind="visible: social.baiduScholar">
+                        <a data-bind="attr.href: social.baiduScholar">
+                            <img class="social-icons" src="/static/img/baiduscholar.png"data-toggle="tooltip" style="PADDING-BOTTOM: 5px" title="Baidu Scholar">
+                        </a>
+                    </li>
                 </ul>
                 <!-- /ko -->
             </div>
@@ -250,6 +255,9 @@
             </span>
         </p>
         <!-- /ko -->
+      <!-- ko if: primary_institution -->
+        <p><strong>Primary institution:</strong> {{ primary_institution }} </p>
+        <!-- /ko -->
         <!-- ko if: tags.length > 0 -->
         <div data-bind="template: 'tag-cloud'"></div>
         <!-- /ko -->
@@ -268,10 +276,10 @@
     </script>
     <script type="text/html" id="registration">
         <!-- ko if: parent_url -->
-        <h4><a data-bind="attr.href: parent_url">{{ parent_title}}</a> / <a data-bind="attr.href: url">{{ title }}</a>  (<span class="text-danger" data-bind="if: is_retracted">Retracted </span>Registration)</h4>
+        <h4><a data-bind="attr.href: parent_url">{{ parent_title}}</a> / <a data-bind="attr.href: url">{{ title }}</a>  (<span class="text-danger" data-bind="if: is_retracted">Withdrawn </span>Registration)</h4>
         <!-- /ko -->
         <!-- ko if: !parent_url -->
-        <h4><span data-bind="if: parent_title">{{ parent_title }} /</span> <a data-bind="attr.href: url">{{ title }}</a>  (<span class="text-danger" data-bind="if: is_retracted">Retracted </span>Registration)</h4>
+        <h4><span data-bind="if: parent_title">{{ parent_title }} /</span> <a data-bind="attr.href: url">{{ title }}</a>  (<span class="text-danger" data-bind="if: is_retracted">Withdrawn </span>Registration)</h4>
         <!-- /ko -->
         <strong><span data-bind="text: 'Date Registered: ' + dateRegistered['local'], tooltip: {title: dateRegistered['utc']}"></span></strong>
 

@@ -26,11 +26,11 @@ class GoogleDriveSerializer(StorageAddonSerializer):
             'auth': api_url_for('oauth_connect',
                                 service_name='googledrive'),
             'files': node.web_url_for('collect_file_trees'),
-            'config': node.api_url_for('googledrive_config_put'),
-            'deauthorize': node.api_url_for('googledrive_remove_user_auth'),
-            'importAuth': node.api_url_for('googledrive_import_user_auth'),
-            'folders': node.api_url_for('googledrive_folders'),
-            'accounts': node.api_url_for('list_googledrive_user_accounts')
+            'config': node.api_url_for('googledrive_set_config'),
+            'deauthorize': node.api_url_for('googledrive_deauthorize_node'),
+            'importAuth': node.api_url_for('googledrive_import_auth'),
+            'folders': node.api_url_for('googledrive_folder_list'),
+            'accounts': node.api_url_for('googledrive_account_list')
         }
 
     @property

@@ -133,7 +133,7 @@
                 <div class="col-sm-9">
                   <strong><span data-bind="text: comment.getAuthor"></span></strong> said ...
                 </div>
-                <div class="col-sm-3">
+                <div class="col-sm-3"  data-bind="ifnot: $root.draft().isApproved">
                   <div style="text-align: right;" class="btn-group">
                     <button data-bind="disable: comment.saved,
                                        click: comment.toggleSaved.bind(comment, $root.save.bind($root))" class="btn btn-success fa fa-save registration-editor-comment-save"></button>
@@ -147,8 +147,7 @@
               </div>
               <br />
               <div class="row">
-                <div class="col-md-12 form-group">
-                  <textarea class="form-control"
+                <div class="col-md-12 form-group">                  <textarea class="form-control"
                           style="resize: none; overflow: scroll"
                             data-bind="disable: comment.saved,
                                        value: comment.value" type="text"></textarea>
@@ -158,7 +157,7 @@
           </div>
         </li>
     </ul>
-    <div class="input-group">
+    <div class="input-group" data-bind="ifnot: $root.draft().isApproved">
       <input class="form-control registration-editor-comment" type="text"
              data-bind="value: currentQuestion.nextComment,
                         valueUpdate: 'keyup'" />

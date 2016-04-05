@@ -1,6 +1,7 @@
 # encoding: utf-8
 from __future__ import unicode_literals
 
+import mock
 import datetime
 from nose.tools import *  # noqa
 
@@ -677,3 +678,48 @@ class TestFileTags(StorageTestCase):
         res = self.app.delete_json(url, {'tag': 'Chance'}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['status'], 'failure')
+
+    def test_file_add_tag_creates_log(self):
+        file = self.node_settings.get_root().append_file('Yeezy Season 3.mp4')
+        url = self.project.api_url_for('osfstorage_add_tag', fid=file._id)
+        res = self.app.post_json(url, {'tag': 'Kanye_West'}, auth=self.user.auth)
+
+        assert_equal(res.status_code, 200)
+        self.node.reload()
+        assert_equal(self.node.logs[-1].action, 'file_tag_added')
+
+
+    @mock.patch('website.files.models.osfstorage.OsfStorageFile.add_tag_log')
+    def test_file_add_tag_fail_doesnt_create_log(self, mock_log):
+        file = self.node_settings.get_root().append_file('UltraLightBeam.mp3')
+        tag = Tag(_id='The Life of Pablo')
+        tag.save()
+        file.tags.append(tag)
+        file.save()
+        url = self.project.api_url_for('osfstorage_add_tag', fid=file._id)
+        res = self.app.post_json(url, {'tag': 'The Life of Pablo'}, auth=self.user.auth, expect_errors=True)
+
+        assert_equal(res.status_code, 400)
+        mock_log.assert_not_called()
+
+    def test_file_remove_tag_creates_log(self):
+        file = self.node_settings.get_root().append_file('Formation.flac')
+        tag = Tag(_id='You that when you cause all this conversation')
+        tag.save()
+        file.tags.append(tag)
+        file.save()
+        url = self.project.api_url_for('osfstorage_remove_tag', fid=file._id)
+        res = self.app.delete_json(url, {'tag': 'You that when you cause all this conversation'}, auth=self.user.auth)
+
+        assert_equal(res.status_code, 200)
+        self.node.reload()
+        assert_equal(self.node.logs[-1].action, 'file_tag_removed')
+
+    @mock.patch('website.files.models.osfstorage.OsfStorageFile.add_tag_log')
+    def test_file_remove_tag_fail_doesnt_create_log(self, mock_log):
+        file = self.node_settings.get_root().append_file('For-once-in-my-life.mp3')
+        url = self.project.api_url_for('osfstorage_remove_tag', fid=file._id)
+        res = self.app.delete_json(url, {'tag': 'wonder'}, auth=self.user.auth, expect_errors=True)
+
+        assert_equal(res.status_code, 400)
+        mock_log.assert_not_called()

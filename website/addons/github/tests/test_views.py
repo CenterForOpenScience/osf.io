@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import httplib as http
 
 import mock
 import unittest
@@ -13,9 +14,66 @@ from framework.exceptions import HTTPError
 from framework.auth import Auth
 
 from website.util import api_url_for
+from website.addons.base.testing.views import (
+    OAuthAddonAuthViewsTestCaseMixin, OAuthAddonConfigViewsTestCaseMixin
+)
 from website.addons.github import views, utils
+from website.addons.github.api import GitHubClient
+from website.addons.github.model import GitHubProvider
+from website.addons.github.serializer import GitHubSerializer
 from website.addons.github.utils import check_permissions
-from website.addons.github.tests.utils import create_mock_github
+from website.addons.github.tests.utils import create_mock_github, GitHubAddonTestCase
+from website.addons.github.tests.factories import GitHubAccountFactory
+
+
+class TestGitHubAuthViews(GitHubAddonTestCase, OAuthAddonAuthViewsTestCaseMixin):
+    
+    @mock.patch(
+        'website.addons.github.model.GitHubUserSettings.revoke_remote_oauth_access',
+        mock.PropertyMock()
+    )
+    def test_delete_external_account(self):
+        super(TestGitHubAuthViews, self).test_delete_external_account()
+
+
+class TestGitHubConfigViews(GitHubAddonTestCase, OAuthAddonConfigViewsTestCaseMixin):
+    folder = None
+    Serializer = GitHubSerializer
+    client = GitHubClient
+
+    ## Overrides ##
+
+    def setUp(self):
+        super(TestGitHubConfigViews, self).setUp()
+        self.mock_api_user = mock.patch("website.addons.github.api.GitHubClient.user")
+        self.mock_api_user.return_value = mock.Mock()
+        self.mock_api_user.start()
+
+    def tearDown(self):
+        self.mock_api_user.stop()
+        super(TestGitHubConfigViews, self).tearDown()
+
+    def test_folder_list(self):
+        # GH only lists root folder (repos), this test is superfluous
+        pass
+
+    @mock.patch('website.addons.github.model.GitHubNodeSettings.add_hook')
+    @mock.patch('website.addons.github.views.GitHubClient.repo')
+    def test_set_config(self, mock_repo, mock_add_hook):
+        # GH selects repos, not folders, so this needs to be overriden
+        mock_repo.return_value = 'repo_name'
+        url = self.project.api_url_for('{0}_set_config'.format(self.ADDON_SHORT_NAME))
+        res = self.app.post_json(url, {
+            'github_user': 'octocat',
+            'github_repo': 'repo_name',
+        }, auth=self.user.auth)
+        assert_equal(res.status_code, http.OK)
+        self.project.reload()
+        assert_equal(
+            self.project.logs[-1].action,
+            '{0}_repo_linked'.format(self.ADDON_SHORT_NAME)
+        )
+        mock_add_hook.assert_called_once()
 
 
 # TODO: Test remaining CRUD methods
@@ -54,6 +112,8 @@ class TestGithubViews(OsfTestCase):
         self.project.save()
         self.project.add_addon('github', auth=self.consolidated_auth)
         self.project.creator.add_addon('github')
+        self.project.creator.external_accounts.append(GitHubAccountFactory())
+        self.project.creator.save()
 
         self.github = create_mock_github(user='fred', private=False)
 
@@ -76,8 +136,8 @@ class TestGithubViews(OsfTestCase):
         return branch_sha
 
     # Tests for _get_refs
-    @mock.patch('website.addons.github.api.GitHub.branches')
-    @mock.patch('website.addons.github.api.GitHub.repo')
+    @mock.patch('website.addons.github.api.GitHubClient.branches')
+    @mock.patch('website.addons.github.api.GitHubClient.repo')
     def test_get_refs_defaults(self, mock_repo, mock_branches):
         github_mock = self.github
         mock_repo.return_value = github_mock.repo.return_value
@@ -93,8 +153,8 @@ class TestGithubViews(OsfTestCase):
             github_mock.branches.return_value
         )
 
-    @mock.patch('website.addons.github.api.GitHub.branches')
-    @mock.patch('website.addons.github.api.GitHub.repo')
+    @mock.patch('website.addons.github.api.GitHubClient.branches')
+    @mock.patch('website.addons.github.api.GitHubClient.repo')
     def test_get_refs_branch(self, mock_repo, mock_branches):
         github_mock = self.github
         mock_repo.return_value = github_mock.repo.return_value
@@ -108,31 +168,12 @@ class TestGithubViews(OsfTestCase):
             github_mock.branches.return_value
         )
 
-    def test_before_remove_contributor_authenticator(self):
-        url = self.project.api_url + 'beforeremovecontributors/'
-        res = self.app.post_json(
-            url,
-            {'id': self.project.creator._id},
-            auth=self.user.auth,
-        ).maybe_follow()
-        # One prompt for transferring auth, one for removing self
-        assert_equal(len(res.json['prompts']), 2)
-
-    def test_before_remove_contributor_not_authenticator(self):
-        url = self.project.api_url + 'beforeremovecontributors/'
-        res = self.app.post_json(
-            url,
-            {'id': self.non_authenticator._id},
-            auth=self.user.auth,
-        ).maybe_follow()
-        assert_equal(len(res.json['prompts']), 0)
-
     def test_before_fork(self):
         url = self.project.api_url + 'fork/before/'
         res = self.app.get(url, auth=self.user.auth).maybe_follow()
         assert_equal(len(res.json['prompts']), 1)
 
-    @mock.patch('website.addons.github.model.AddonGitHubUserSettings.has_auth')
+    @mock.patch('website.addons.github.model.GitHubUserSettings.has_auth')
     def test_before_register(self, mock_has_auth):
         mock_has_auth.return_value = True
         url = self.project.api_url + 'beforeregister/'
@@ -168,8 +209,8 @@ class TestGithubViews(OsfTestCase):
 
     # make a repository that doesn't allow push access for this user;
     # make sure check_permissions returns false
-    @mock.patch('website.addons.github.model.AddonGitHubUserSettings.has_auth')
-    @mock.patch('website.addons.github.api.GitHub.repo')
+    @mock.patch('website.addons.github.model.GitHubUserSettings.has_auth')
+    @mock.patch('website.addons.github.api.GitHubClient.repo')
     def test_permissions_no_access(self, mock_repo, mock_has_auth):
         github_mock = self.github
         mock_has_auth.return_value = True
@@ -189,7 +230,7 @@ class TestGithubViews(OsfTestCase):
         assert_false(check_permissions(self.node_settings, self.consolidated_auth, connection, branch, repo=mock_repository))
 
     # make a branch with a different commit than the commit being passed into check_permissions
-    @mock.patch('website.addons.github.model.AddonGitHubUserSettings.has_auth')
+    @mock.patch('website.addons.github.model.GitHubUserSettings.has_auth')
     def test_permissions_not_head(self, mock_has_auth):
         github_mock = self.github
         mock_has_auth.return_value = True
@@ -200,7 +241,7 @@ class TestGithubViews(OsfTestCase):
         assert_false(check_permissions(self.node_settings, self.consolidated_auth, connection, mock_branch, sha=sha))
 
     # make sure permissions are not granted for editing a registration
-    @mock.patch('website.addons.github.model.AddonGitHubUserSettings.has_auth')
+    @mock.patch('website.addons.github.model.GitHubUserSettings.has_auth')
     def test_permissions(self, mock_has_auth):
         github_mock = self.github
         mock_has_auth.return_value = True
@@ -218,7 +259,7 @@ class TestGithubViews(OsfTestCase):
         assert_equal(urls['view'], expected_urls['view'])
         assert_equal(urls['download'], expected_urls['download'])
 
-    @mock.patch('website.addons.github.views.hooks.utils.verify_hook_signature')
+    @mock.patch('website.addons.github.views.verify_hook_signature')
     def test_hook_callback_add_file_not_thro_osf(self, mock_verify):
         url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
         self.app.post_json(
@@ -250,7 +291,7 @@ class TestGithubViews(OsfTestCase):
             sha='b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
         )
 
-    @mock.patch('website.addons.github.views.hooks.utils.verify_hook_signature')
+    @mock.patch('website.addons.github.views.verify_hook_signature')
     def test_hook_callback_modify_file_not_thro_osf(self, mock_verify):
         url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
         self.app.post_json(
@@ -276,7 +317,7 @@ class TestGithubViews(OsfTestCase):
             sha='b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
         )
 
-    @mock.patch('website.addons.github.views.hooks.utils.verify_hook_signature')
+    @mock.patch('website.addons.github.views.verify_hook_signature')
     def test_hook_callback_remove_file_not_thro_osf(self, mock_verify):
         url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
         self.app.post_json(
@@ -296,7 +337,7 @@ class TestGithubViews(OsfTestCase):
         urls = self.project.logs[-1].params['urls']
         assert_equal(urls, {})
 
-    @mock.patch('website.addons.github.views.hooks.utils.verify_hook_signature')
+    @mock.patch('website.addons.github.views.verify_hook_signature')
     def test_hook_callback_add_file_thro_osf(self, mock_verify):
         url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
         self.app.post_json(
@@ -314,7 +355,7 @@ class TestGithubViews(OsfTestCase):
         self.project.reload()
         assert_not_equal(self.project.logs[-1].action, "github_file_added")
 
-    @mock.patch('website.addons.github.views.hooks.utils.verify_hook_signature')
+    @mock.patch('website.addons.github.views.verify_hook_signature')
     def test_hook_callback_modify_file_thro_osf(self, mock_verify):
         url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
         self.app.post_json(
@@ -332,7 +373,7 @@ class TestGithubViews(OsfTestCase):
         self.project.reload()
         assert_not_equal(self.project.logs[-1].action, "github_file_updated")
 
-    @mock.patch('website.addons.github.views.hooks.utils.verify_hook_signature')
+    @mock.patch('website.addons.github.views.verify_hook_signature')
     def test_hook_callback_remove_file_thro_osf(self, mock_verify):
         url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
         self.app.post_json(
@@ -390,8 +431,8 @@ class TestGithubSettings(OsfTestCase):
         self.node_settings.repo = 'Sheer-Heart-Attack'
         self.node_settings.save()
 
-    @mock.patch('website.addons.github.model.AddonGitHubNodeSettings.add_hook')
-    @mock.patch('website.addons.github.api.GitHub.repo')
+    @mock.patch('website.addons.github.model.GitHubNodeSettings.add_hook')
+    @mock.patch('website.addons.github.api.GitHubClient.repo')
     def test_link_repo(self, mock_repo, mock_add_hook):
         github_mock = self.github
         mock_repo.return_value = github_mock.repo.return_value
@@ -414,8 +455,8 @@ class TestGithubSettings(OsfTestCase):
         assert_equal(self.project.logs[-1].action, 'github_repo_linked')
         mock_add_hook.assert_called_once()
 
-    @mock.patch('website.addons.github.model.AddonGitHubNodeSettings.add_hook')
-    @mock.patch('website.addons.github.api.GitHub.repo')
+    @mock.patch('website.addons.github.model.GitHubNodeSettings.add_hook')
+    @mock.patch('website.addons.github.api.GitHubClient.repo')
     def test_link_repo_no_change(self, mock_repo, mock_add_hook):
         github_mock = self.github
         mock_repo.return_value = github_mock.repo.return_value
@@ -438,7 +479,7 @@ class TestGithubSettings(OsfTestCase):
         assert_equal(len(self.project.logs), log_count)
         assert_false(mock_add_hook.called)
 
-    @mock.patch('website.addons.github.api.GitHub.repo')
+    @mock.patch('website.addons.github.api.GitHubClient.repo')
     def test_link_repo_non_existent(self, mock_repo):
 
         mock_repo.return_value = None
@@ -456,7 +497,7 @@ class TestGithubSettings(OsfTestCase):
 
         assert_equal(res.status_code, 400)
 
-    @mock.patch('website.addons.github.api.GitHub.branches')
+    @mock.patch('website.addons.github.api.GitHubClient.branches')
     def test_link_repo_registration(self, mock_branches):
 
         mock_branches.return_value = [
@@ -495,10 +536,10 @@ class TestGithubSettings(OsfTestCase):
 
         assert_equal(res.status_code, 400)
 
-    @mock.patch('website.addons.github.model.AddonGitHubNodeSettings.delete_hook')
+    @mock.patch('website.addons.github.model.GitHubNodeSettings.delete_hook')
     def test_deauthorize(self, mock_delete_hook):
 
-        url = self.project.api_url + 'github/oauth/'
+        url = self.project.api_url + 'github/user_auth/'
 
         self.app.delete(url, auth=self.auth).maybe_follow()
 
@@ -510,168 +551,6 @@ class TestGithubSettings(OsfTestCase):
 
         assert_equal(self.project.logs[-1].action, 'github_node_deauthorized')
 
-
-class TestAuthViews(OsfTestCase):
-
-    def setUp(self):
-        super(TestAuthViews, self).setUp()
-        self.user = AuthUserFactory()
-        self.user.add_addon('github')
-        self.user.save()
-        self.user_settings = self.user.get_addon('github')
-
-    def test_oauth_callback_with_invalid_user(self):
-        url = api_url_for('github_oauth_callback', uid="")
-        res = self.app.get(url, expect_errors=True)
-        assert_equal(res.status_code, 404)
-
-    def test_oauth_callback_with_invalid_node(self):
-        url = api_url_for('github_oauth_callback', uid=self.user._id, nid="")
-        res = self.app.get(url, expect_errors=True)
-        assert_equal(res.status_code, 404)
-
-    def test_oauth_callback_without_github_enabled(self):
-        user2 = AuthUserFactory()
-        url = api_url_for('github_oauth_callback', uid=user2._id)
-        res = self.app.get(url, expect_errors=True)
-        assert_equal(res.status_code, 400)
-
-    def test_oauth_callback_with_no_code(self):
-        url = api_url_for('github_oauth_callback', uid=self.user._id)
-        res = self.app.get(url, expect_errors=True)
-        assert_equal(res.status_code, 400)
-
-
-    @mock.patch('website.addons.github.api.GitHub.user')
-    @mock.patch('website.addons.github.views.auth.oauth_get_token')
-    def test_oauth_callback_without_node(self, mock_get_token, mock_github_user):
-        mock_get_token.return_value = {
-            "access_token": "testing access token",
-            "token_type": "testing token type",
-            "scope": ["repo"]
-        }
-        user = mock.Mock()
-        user.id = "testing user id"
-        user.login = "testing user"
-        mock_github_user.return_value = user
-
-        url = api_url_for('github_oauth_callback', uid=self.user._id)
-        res = self.app.get(url, {"code": "12345"}, auth=self.user.auth)
-        self.user_settings.reload()
-        assert_true(res.status_code, 302)
-        assert_in("/settings/addons/", res.location)
-        assert_true(self.user_settings.oauth_settings)
-        assert_equal(self.user_settings.oauth_access_token, "testing access token")
-        assert_equal(self.user_settings.oauth_token_type, "testing token type")
-        assert_equal(self.user_settings.github_user_name, "testing user")
-        assert_equal(self.user_settings.oauth_settings.github_user_id, "testing user id")
-
-
-    @mock.patch('website.addons.github.api.GitHub.user')
-    @mock.patch('website.addons.github.views.auth.oauth_get_token')
-    def test_oauth_callback_with_node(self, mock_get_token, mock_github_user):
-        mock_get_token.return_value = {
-            "access_token": "testing access token",
-            "token_type": "testing token type",
-            "scope": ["repo"]
-        }
-        user = mock.Mock()
-        user.id = "testing user id"
-        user.login = "testing user"
-        mock_github_user.return_value = user
-
-        project = ProjectFactory(creator=self.user)
-        project.add_addon('github', auth=Auth(user=self.user))
-        project.save()
-
-        url = api_url_for('github_oauth_callback', uid=self.user._id, nid=project._id)
-        res = self.app.get(url, {"code": "12345"}, auth=self.user.auth)
-        self.user_settings.reload()
-
-        node_settings = project.get_addon('github')
-        node_settings.reload()
-
-        assert_true(res.status_code, 302)
-        assert_not_in("/settings/addons/", res.location)
-        assert_in("/settings", res.location)
-        assert_true(self.user_settings.oauth_settings)
-        assert_equal(self.user_settings.oauth_access_token, "testing access token")
-        assert_equal(self.user_settings.oauth_token_type, "testing token type")
-        assert_equal(self.user_settings.github_user_name, "testing user")
-        assert_equal(self.user_settings.oauth_settings.github_user_id, "testing user id")
-        assert_equal(node_settings.user_settings, self.user_settings)
-
-    @mock.patch('website.addons.github.api.GitHub.user')
-    def test_create_and_attach_oauth(self, mock_github_user):
-        user = mock.Mock()
-        user.id = "testing user id"
-        user.login = "testing user"
-        mock_github_user.return_value = user
-        views.auth.create_and_attach_oauth(self.user_settings, "testing access token", "testing token type")
-        assert_true(self.user_settings.oauth_settings)
-        assert_false(self.user_settings.oauth_state)
-        assert_equal(
-            self.user_settings.github_user_name,
-            "testing user"
-        )
-        assert_equal(
-            self.user_settings.oauth_access_token,
-            "testing access token"
-        )
-        assert_equal(
-            self.user_settings.oauth_token_type,
-            "testing token type"
-        )
-        assert_equal(
-            self.user_settings.oauth_settings.github_user_id,
-            "testing user id"
-        )
-
-    @mock.patch('website.addons.github.api.GitHub.user')
-    @mock.patch('website.addons.github.api.GitHub.revoke_token')
-    def test_oauth_delete_user_one_osf_user(self, mock_revoke_token, mock_github_user):
-        mock_revoke_token.return_value = True
-        user = mock.Mock()
-        user.id = "testing user id"
-        user.login = "testing user"
-        mock_github_user.return_value = user
-        views.auth.create_and_attach_oauth(self.user_settings, "testing access token", "testing token type")
-        url = api_url_for("github_oauth_delete_user")
-        self.app.delete(url, auth=self.user.auth)
-        self.user_settings.reload()
-        assert_false(self.user_settings.oauth_token_type)
-        assert_false(self.user_settings.oauth_access_token)
-        assert_false(self.user_settings.github_user_name)
-        assert_false(self.user_settings.oauth_settings)
-
-    @mock.patch('website.addons.github.api.GitHub.user')
-    @mock.patch('website.addons.github.api.GitHub.revoke_token')
-    def test_oauth_delete_user_two_osf_user(self, mock_revoke_token, mock_github_user):
-        mock_revoke_token.return_value = True
-        user = mock.Mock()
-        user.id = "testing user id"
-        user.login = "testing user"
-        mock_github_user.return_value = user
-        views.auth.create_and_attach_oauth(self.user_settings, "testing acess token", "testing token type")
-
-        user2 = AuthUserFactory()
-        user2.add_addon('github')
-        user2.save()
-        user_settings2 = user2.get_addon('github')
-        views.auth.create_and_attach_oauth(user_settings2, "testing access token", "testing token type")
-
-        url = api_url_for("github_oauth_delete_user")
-        self.app.delete(url, auth=self.user.auth)
-        self.user_settings.reload()
-        user_settings2.reload()
-        assert_false(self.user_settings.oauth_token_type)
-        assert_false(self.user_settings.oauth_access_token)
-        assert_false(self.user_settings.github_user_name)
-        assert_false(self.user_settings.oauth_settings)
-        assert_true(user_settings2.oauth_settings)
-        assert_equal(user_settings2.oauth_token_type, "testing token type")
-        assert_equal(user_settings2.oauth_access_token, "testing access token")
-        assert_equal(user_settings2.github_user_name, "testing user")
 
 if __name__ == '__main__':
     unittest.main()

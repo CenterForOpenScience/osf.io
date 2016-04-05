@@ -74,7 +74,8 @@ describe('osfHelpers', () => {
             responseJSON: {
                 message_short: 'Oh no!',
                 message_long: 'Something went wrong'
-            }
+            },
+            status: 400
         };
         it('uses the response body if available', () => {
             $osf.handleJSONError(response);

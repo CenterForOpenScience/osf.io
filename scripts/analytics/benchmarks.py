@@ -34,18 +34,23 @@ def get_active_users(extra=None):
 
 
 def get_dropbox_metrics():
-    metrics = {
-        'enabled': [],
-        'authorized': [],
-        'linked': [],
+    queryset = DropboxUserSettings.find(Q('deleted', 'eq', False))
+    num_enabled = 0     # of users w/ 1+ DB account connected
+    num_authorized = 0  # of users w/ 1+ DB account connected to 1+ node
+    num_linked = 0      # of users w/ 1+ DB account connected to 1+ node w/ a folder linked
+    for user_settings in queryset:
+        if user_settings.has_auth:
+            num_enabled += 1
+            node_settings_list = [Node.load(guid).get_addon('dropbox') for guid in user_settings.oauth_grants.keys()]
+            if any([ns.has_auth for ns in node_settings_list if ns]):
+                num_authorized += 1
+                if any([(ns.complete and ns.folder) for ns in node_settings_list if ns]):
+                    num_linked += 1
+    return {
+        'enabled': num_enabled,
+        'authorized': num_authorized,
+        'linked': num_linked
     }
-    for node_settings in DropboxUserSettings.find():
-        metrics['enabled'].append(node_settings)
-        if node_settings.has_auth:
-            metrics['authorized'].append(node_settings)
-        if node_settings.nodes_authorized:
-            metrics['linked'].append(node_settings)
-    return metrics
 
 
 def get_private_links():
@@ -56,8 +61,8 @@ def get_private_links():
 
 def get_folders():
     return Node.find(
-        Q('is_folder', 'eq', True) &
-        Q('is_dashboard', 'ne', True) &
+        Q('is_collection', 'eq', True) &
+        Q('is_bookmark_collection', 'ne', True) &
         Q('is_deleted', 'ne', True)
     )
 
@@ -70,7 +75,7 @@ def count_user_nodes(users=None):
                 user,
                 (
                     Q('is_deleted', 'eq', False) &
-                    Q('is_folder', 'ne', True)
+                    Q('is_collection', 'ne', True)
                 )
             )
         )
@@ -148,7 +153,7 @@ def get_projects():
     projects = Node.find(
         Q('category', 'eq', 'project') &
         Q('is_deleted', 'eq', False) &
-        Q('is_folder', 'ne', True)
+        Q('is_collection', 'ne', True)
     )
     return projects
 
@@ -156,7 +161,7 @@ def get_projects_forked():
     projects_forked = list(Node.find(
         Q('category', 'eq', 'project') &
         Q('is_deleted', 'eq', False) &
-        Q('is_folder', 'ne', True) &
+        Q('is_collection', 'ne', True) &
         Q('is_fork', 'eq', True)
     ))
     return projects_forked
@@ -165,7 +170,7 @@ def get_projects_registered():
     projects_registered = Node.find(
         Q('category', 'eq', 'project') &
         Q('is_deleted', 'eq', False) &
-        Q('is_folder', 'ne', True) &
+        Q('is_collection', 'ne', True) &
         Q('is_registration', 'eq', True)
     )
     return projects_registered
@@ -174,7 +179,7 @@ def get_projects_public():
     projects_public = Node.find(
         Q('category', 'eq', 'project') &
         Q('is_deleted', 'eq', False) &
-        Q('is_folder', 'ne', True) &
+        Q('is_collection', 'ne', True) &
         Q('is_public', 'eq', True)
     )
     return projects_public
@@ -244,9 +249,9 @@ def main():
         ['number_downloads_unique', number_downloads_unique],
         ['active-users', active_users.count()],
         ['active-users-invited', active_users_invited.count()],
-        ['dropbox-users-enabled', len(dropbox_metrics['enabled'])],
-        ['dropbox-users-authorized', len(dropbox_metrics['authorized'])],
-        ['dropbox-users-linked', len(dropbox_metrics['linked'])],
+        ['dropbox-users-enabled', dropbox_metrics['enabled']],
+        ['dropbox-users-authorized', dropbox_metrics['authorized']],
+        ['dropbox-users-linked', dropbox_metrics['linked']],
         ['profile-edits', extended_profile_counts['any']],
         ['view-only-links', private_links.count()],
         ['folders', folders.count()],

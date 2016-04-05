@@ -4,7 +4,7 @@
 'use strict';
 
 var $ = require('jquery');
-var $3 = $;
+var $3 = window.$3;
 var ko = require('knockout');
 var Raven = require('raven-js');
 var $osf = require('./osfHelpers');
@@ -24,7 +24,7 @@ var MESSAGES = {
     confirmWarning: {
         nodesPublic: 'The following projects and components will be made <b>public</b>.',
         nodesPrivate: 'The following projects and components will be made <b>private</b>.',
-        nodesNotChangedWarning: 'No nodes were changed.',
+        nodesNotChangedWarning: 'No privacy settings were changed. Go back to make a change.',
         tooManyNodesWarning: 'You can only change the privacy of 100 projects and components at a time.  Please go back and limit your selection.'
     }
 };
@@ -149,7 +149,7 @@ var NodesPrivacyViewModel = function(parentIsPublic) {
         }).fail(function(xhr, status, error) {
             $osf.growl('Error', 'Unable to retrieve project settings');
             Raven.captureMessage('Could not GET project settings.', {
-                url: treebeardUrl, status: status, error: error
+                extra: { url: treebeardUrl, status: status, error: error }
             });
         });
     };

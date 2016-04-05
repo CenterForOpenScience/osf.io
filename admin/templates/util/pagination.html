@@ -3,7 +3,7 @@
     <div class="pagination pagination-lg">
         <span>
             {% if items.has_previous %}
-                <a href="?page={{ items.previous_page_number }}"
+                <a href="?page={{ items.previous_page_number }}&status={{ status }}"
                    class="btn btn-primary">
                     <i class="fa fa-angle-left"></i>
                 </a>
@@ -18,7 +18,7 @@
             </span>
 
             {% if items.has_next %}
-                <a href="?page={{ items.next_page_number }}"
+                <a href="?page={{ items.next_page_number }}&status={{ status }}"
                    class="btn btn-primary">
                     <i class="fa fa-angle-right"></i>
                 </a>

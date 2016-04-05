@@ -1,8 +1,9 @@
 [run]
 include =
     api/*
-    website/*
     framework/*
+    scripts/*
+    website/*
 omit =
     *tests/*
 [report]

@@ -77,9 +77,11 @@ describe('ProjectSettings', () => {
             vm.updateError({}, error, {});
             assert.calledWith(changeMessageSpy, language.updateErrorMessage);
             assert.calledWith(ravenStub, language.updateErrorMessage, {
-                url: updateUrl,
-                textStatus: error,
-                err: {},
+                extra: {
+                    url: updateUrl,
+                    textStatus: error,
+                    err: {},
+                }
             });
         });
     });
@@ -89,7 +91,7 @@ describe('ProjectSettings', () => {
         before(() => {
             server = sinon.fakeServer.create();
             server.respondWith(
-                'PUT',
+                'PATCH',
                 updateUrl,
                 function(xhr) {
                     serverSpy();
@@ -103,7 +105,7 @@ describe('ProjectSettings', () => {
         after(() => {
             server.restore();
         });
-        it('sends a put to the updateUrl with the settings inputs and updates them on success', (done) => {
+        it('sends a PATCH to the updateUrl with the settings inputs and updates them on success', (done) => {
             var newcategory = categoryOptions[0];
             vm.selectedCategory(newcategory);
             vm.title('New title');

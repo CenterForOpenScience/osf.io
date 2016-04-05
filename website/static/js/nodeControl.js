@@ -46,6 +46,8 @@ var ProjectViewModel = function(data) {
     self.user = data.user;
     self.nodeIsPublic = data.node.is_public;
     self.nodeType = data.node.node_type;
+
+
     // The button text to display (e.g. "Watch" if not watching)
     self.watchButtonDisplay = ko.pureComputed(function() {
         return self.watchedCount().toString();
@@ -106,6 +108,7 @@ var ProjectViewModel = function(data) {
                 }
             }
         }));
+
         $('#nodeDescriptionEditable').editable($.extend({}, editableOptions, {
             name: 'description',
             title: 'Edit Description',
@@ -233,7 +236,7 @@ var ProjectViewModel = function(data) {
                 'Please try again soon and/or contact ' +
                 '<a href="mailto: support@osf.io">support@osf.io</a>';
             osfHelpers.growl('Error', message, 'danger');
-            Raven.captureMessage('Could not create identifiers', {url: url, status: xhr.status});
+            Raven.captureMessage('Could not create identifiers', {extra: {url: url, status: xhr.status}});
         }).always(function() {
             clearTimeout(timeout);
             self.idCreationInProgress(false); // hide loading indicator

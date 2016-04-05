@@ -22,11 +22,10 @@ from framework.exceptions import HTTPError
 from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 from framework.auth.exceptions import InvalidTokenError
-from framework.tasks import handlers
+from framework.celery_tasks import handlers
 from framework.mongo import database
 
 from website import mailchimp_utils
-from website.views import _rescale_ratio
 from website.util import permissions
 from website.models import Node, Pointer, NodeLog, MetaSchema, DraftRegistration
 from website.project.model import ensure_schemas, has_anonymous_link
@@ -44,7 +43,7 @@ from website.util import rubeus
 from website.project.views.node import _view_project, abbrev_authors, _should_show_wiki_widget
 from website.project.decorators import check_can_access
 from website.project.signals import contributor_added
-from website.addons.github.model import AddonGitHubOauthSettings
+from website.addons.github.tests.factories import GitHubAccountFactory
 from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, _name_to_id
 
 from tests.base import (
@@ -58,10 +57,13 @@ from tests.base import (
 from tests.factories import (
     UserFactory, ApiOAuth2ApplicationFactory, ApiOAuth2PersonalTokenFactory, ProjectFactory, WatchConfigFactory,
     NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
-    RegistrationFactory, PrivateLinkFactory, UnconfirmedUserFactory, DashboardFactory, FolderFactory,
-    ProjectWithAddonFactory, MockAddonNodeSettings, DraftRegistrationFactory
+    RegistrationFactory,
+    PrivateLinkFactory,
+    UnconfirmedUserFactory,
+    BookmarkCollectionFactory,
+    CollectionFactory,
+    ProjectWithAddonFactory, MockAddonNodeSettings
 )
-from website.settings import ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_ID
 
 class Addon(MockAddonNodeSettings):
     @property
@@ -112,7 +114,10 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         assert_equal(res.status_code, 400)
         assert_in('Invalid link name.', res.body)
 
-    def test_not_anonymous_for_public_project(self):
+    @mock.patch('framework.auth.core.Auth.private_link')
+    def test_can_be_anonymous_for_public_project(self, mock_property):
+        mock_property.return_value(mock.MagicMock())
+        mock_property.anonymous = True
         anonymous_link = PrivateLinkFactory(anonymous=True)
         anonymous_link.nodes.append(self.project)
         anonymous_link.save()
@@ -120,7 +125,7 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         self.project.save()
         self.project.reload()
         auth = Auth(user=self.user, private_key=anonymous_link.key)
-        assert_false(has_anonymous_link(self.project, auth))
+        assert_true(has_anonymous_link(self.project, auth))
 
     def test_has_private_link_key(self):
         res = self.app.get(self.project_url, {'view_only': self.link.key})
@@ -223,7 +228,8 @@ class TestProjectViews(OsfTestCase):
         self.user1.save()
         self.consolidate_auth1 = Auth(user=self.user1)
         self.auth = self.user1.auth
-        self.user2 = UserFactory()
+        self.user2 = AuthUserFactory()
+        self.auth2 = self.user2.auth
         # A project has 2 contributors
         self.project = ProjectFactory(
             title="Ham",
@@ -232,6 +238,14 @@ class TestProjectViews(OsfTestCase):
         )
         self.project.add_contributor(self.user2, auth=Auth(self.user1))
         self.project.save()
+
+        self.project2 = ProjectFactory(
+            title="Tofu",
+            description='Glazed',
+            creator=self.user1
+        )
+        self.project2.add_contributor(self.user2, auth=Auth(self.user1))
+        self.project2.save()
 
     def test_edit_title_empty(self):
         node = ProjectFactory(creator=self.user1)
@@ -247,23 +261,13 @@ class TestProjectViews(OsfTestCase):
         assert_equal(res.status_code, 400)
         assert_in('Invalid title.', res.body)
 
-    def test_cannot_remove_only_visible_contributor_before_remove_contributor(self):
+    def test_cannot_remove_only_visible_contributor(self):
         self.project.visible_contributor_ids.remove(self.user1._id)
         self.project.save()
-
-        url = self.project.api_url_for('project_before_remove_contributor')
+        url = self.project.api_url_for('project_remove_contributor')
         res = self.app.post_json(
-            url, {'id': self.user2._id}, auth=self.auth, expect_errors=True
-        )
-        assert_equal(res.status_code, http.FORBIDDEN)
-        assert_equal(res.json['message_long'], 'Must have at least one bibliographic contributor')
-
-    def test_cannot_remove_only_visible_contributor_remove_contributor(self):
-        self.project.visible_contributor_ids.remove(self.user1._id)
-        self.project.save()
-        url = self.project.api_url_for('project_removecontributor')
-        res = self.app.post_json(
-            url, {'id': self.user2._id}, auth=self.auth, expect_errors=True
+            url, {'contributorID': self.user2._id,
+                  'nodeIDs': [self.project._id]}, auth=self.auth, expect_errors=True
         )
         assert_equal(res.status_code, http.FORBIDDEN)
         assert_equal(res.json['message_long'], 'Must have at least one bibliographic contributor')
@@ -325,38 +329,6 @@ class TestProjectViews(OsfTestCase):
         assert_in('watched_count', data['node'])
         assert_in('registered_from_url', data['node'])
         # TODO: Test "parent" and "user" output
-
-    def test_api_get_folder_pointers(self):
-        dashboard = DashboardFactory(creator=self.user1)
-        project_one = ProjectFactory(creator=self.user1)
-        project_two = ProjectFactory(creator=self.user1)
-        url = dashboard.api_url_for("get_folder_pointers")
-        dashboard.add_pointer(project_one, auth=self.consolidate_auth1)
-        dashboard.add_pointer(project_two, auth=self.consolidate_auth1)
-        res = self.app.get(url, auth=self.auth)
-        pointers = res.json
-        assert_in(project_one._id, pointers)
-        assert_in(project_two._id, pointers)
-        assert_equal(len(pointers), 2)
-
-    def test_api_get_folder_pointers_from_non_folder(self):
-        project_one = ProjectFactory(creator=self.user1)
-        project_two = ProjectFactory(creator=self.user1)
-        url = project_one.api_url_for("get_folder_pointers")
-        project_one.add_pointer(project_two, auth=self.consolidate_auth1)
-        res = self.app.get(url, auth=self.auth)
-        pointers = res.json
-        assert_equal(len(pointers), 0)
-
-    def test_new_user_gets_dashboard_on_dashboard_path(self):
-        my_user = AuthUserFactory()
-        dashboard = Node.find_for_user(my_user, subquery=Q('is_dashboard', 'eq', True))
-        assert_equal(dashboard.count(), 0)
-        url = api_url_for('get_dashboard')
-        self.app.get(url, auth=my_user.auth)
-        my_user.reload()
-        dashboard = Node.find_for_user(my_user, subquery=Q('is_dashboard', 'eq', True))
-        assert_equal(dashboard.count(), 1)
 
     def test_add_contributor_post(self):
         # Two users are added as a contributor via a POST request
@@ -504,15 +476,111 @@ class TestProjectViews(OsfTestCase):
         )
 
     def test_project_remove_contributor(self):
-        url = "/api/v1/project/{0}/removecontributors/".format(self.project._id)
+        url = self.project.api_url_for('project_remove_contributor')
         # User 1 removes user2
-        self.app.post(url, json.dumps({"id": self.user2._id}),
+        payload = {"contributorID": self.user2._id,
+                   "nodeIDs": [self.project._id]}
+        self.app.post(url, json.dumps(payload),
                       content_type="application/json",
                       auth=self.auth).maybe_follow()
         self.project.reload()
         assert_not_in(self.user2._id, self.project.contributors)
         # A log event was added
         assert_equal(self.project.logs[-1].action, "contributor_removed")
+
+    def test_multiple_project_remove_contributor(self):
+        url = self.project.api_url_for('project_remove_contributor')
+        # User 1 removes user2
+        payload = {"contributorID": self.user2._id,
+                   "nodeIDs": [self.project._id, self.project2._id]}
+        res = self.app.post(url, json.dumps(payload),
+                            content_type="application/json",
+                            auth=self.auth).maybe_follow()
+        self.project.reload()
+        self.project2.reload()
+        assert_not_in(self.user2._id, self.project.contributors)
+        assert_not_in('/dashboard/', res.json)
+
+        assert_not_in(self.user2._id, self.project2.contributors)
+        # A log event was added
+        assert_equal(self.project.logs[-1].action, "contributor_removed")
+
+    def test_private_project_remove_self_not_admin(self):
+        url = self.project.api_url_for('project_remove_contributor')
+        # user2 removes self
+        payload = {"contributorID": self.user2._id,
+                   "nodeIDs": [self.project._id]}
+        res = self.app.post(url, json.dumps(payload),
+                            content_type="application/json",
+                            auth=self.auth2).maybe_follow()
+        self.project.reload()
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['redirectUrl'], '/myprojects/')
+        assert_not_in(self.user2._id, self.project.contributors)
+
+    def test_public_project_remove_self_not_admin(self):
+        url = self.project.api_url_for('project_remove_contributor')
+        # user2 removes self
+        self.public_project = ProjectFactory(creator=self.user1, is_public=True)
+        self.public_project.add_contributor(self.user2, auth=Auth(self.user1))
+        self.public_project.save()
+        payload = {"contributorID": self.user2._id,
+                   "nodeIDs": [self.public_project._id]}
+        res = self.app.post(url, json.dumps(payload),
+                            content_type="application/json",
+                            auth=self.auth2).maybe_follow()
+        self.public_project.reload()
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['redirectUrl'], '/' + self.public_project._id + '/')
+        assert_not_in(self.user2._id, self.public_project.contributors)
+
+    def test_project_remove_other_not_admin(self):
+        url = self.project.api_url_for('project_remove_contributor')
+        # User 1 removes user2
+        payload = {"contributorID": self.user1._id,
+                   "nodeIDs": [self.project._id]}
+        res = self.app.post(url, json.dumps(payload),
+                            content_type="application/json",
+                            expect_errors=True,
+                            auth=self.auth2).maybe_follow()
+        self.project.reload()
+        assert_equal(res.status_code, 403)
+        assert_equal(res.json['message_long'],
+                     'You do not have permission to perform this action. '
+                     'If this should not have occurred and the issue persists, '
+                     'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.'
+                     )
+        assert_in(self.user1._id, self.project.contributors)
+
+    def test_project_remove_fake_contributor(self):
+        url = self.project.api_url_for('project_remove_contributor')
+        # User 1 removes user2
+        payload = {"contributorID": 'badid',
+                   "nodeIDs": [self.project._id]}
+        res = self.app.post(url, json.dumps(payload),
+                            content_type="application/json",
+                            expect_errors=True,
+                            auth=self.auth).maybe_follow()
+        self.project.reload()
+        # Assert the contributor id was invalid
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['message_long'], 'Contributor not found.')
+        assert_not_in('badid', self.project.contributors)
+
+    def test_project_remove_self_only_admin(self):
+        url = self.project.api_url_for('project_remove_contributor')
+        # User 1 removes user2
+        payload = {"contributorID": self.user1._id,
+                   "nodeIDs": [self.project._id]}
+        res = self.app.post(url, json.dumps(payload),
+                            content_type="application/json",
+                            expect_errors=True,
+                            auth=self.auth).maybe_follow()
+
+        self.project.reload()
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['message_long'], 'Could not remove contributor.')
+        assert_in(self.user1._id, self.project.contributors)
 
     def test_get_contributors_abbrev(self):
         # create a project with 3 registered contributors
@@ -627,7 +695,7 @@ class TestProjectViews(OsfTestCase):
         pid = data['nodes'][0]['id']
         url2 = api_url_for('get_summary', pid=pid)
         # count contributions
-        res2 = self.app.get(url2, {'rescale_ratio': data['rescale_ratio']}, auth=self.auth)
+        res2 = self.app.get(url2, auth=self.auth)
         data = res2.json
         assert_is_not_none(data['summary']['nlogs'])
 
@@ -641,7 +709,7 @@ class TestProjectViews(OsfTestCase):
         pid = data['nodes'][0]['id']
         url2 = api_url_for('get_summary', pid=pid)
         # count contributions
-        res2 = self.app.get(url2, {'rescale_ratio': data['rescale_ratio']}, auth=self.auth)
+        res2 = self.app.get(url2, auth=self.auth)
         data = res2.json
         assert_is_not_none(data['summary']['nlogs'])
 
@@ -950,6 +1018,13 @@ class TestProjectViews(OsfTestCase):
         assert_equal(res.status_code, 302)
         assert_in(self.project.web_url_for('project_statistics', _guid=True), res.location)
 
+    def test_registration_retraction_redirect(self):
+        url = self.project.web_url_for('node_registration_retraction_redirect')
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(res.status_code, 302)
+        assert_in(self.project.web_url_for('node_registration_retraction_get', _guid=True), res.location)
+
+
     def test_update_node(self):
         url = self.project.api_url_for('update_node')
         res = self.app.put_json(url, {'title': 'newtitle'}, auth=self.auth)
@@ -1077,17 +1152,6 @@ class TestChildrenViews(OsfTestCase):
         url = project.api_url_for('get_children', permissions='write')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(len(res.json['nodes']), 0)
-
-    def test_get_children_rescale_ratio(self):
-        project = ProjectFactory(creator=self.user)
-        child = NodeFactory(parent=project, creator=self.user)
-
-        url = project.api_url_for('get_children')
-        res = self.app.get(url, auth=self.user.auth)
-
-        rescale_ratio = res.json['rescale_ratio']
-        assert_is_instance(rescale_ratio, float)
-        assert_equal(rescale_ratio, _rescale_ratio(Auth(self.user), [child]))
 
     def test_get_children_render_nodes_receives_auth(self):
         project = ProjectFactory(creator=self.user)
@@ -1257,14 +1321,10 @@ class TestUserProfile(OsfTestCase):
 
     def test_serialize_social_addons_editable(self):
         self.user.add_addon('github')
-        user_github = self.user.get_addon('github')
-        oauth_settings = AddonGitHubOauthSettings()
-        oauth_settings.github_user_id = 'testuser'
+        oauth_settings = GitHubAccountFactory()
         oauth_settings.save()
-        user_github.oauth_settings = oauth_settings
-        user_github.save()
-        user_github.github_user_name = 'howtogithub'
-        oauth_settings.save()
+        self.user.external_accounts.append(oauth_settings)
+        self.user.save()
         url = api_url_for('serialize_social')
         res = self.app.get(
             url,
@@ -1272,20 +1332,16 @@ class TestUserProfile(OsfTestCase):
         )
         assert_equal(
             res.json['addons']['github'],
-            'howtogithub'
+            'abc'
         )
 
     def test_serialize_social_addons_not_editable(self):
         user2 = AuthUserFactory()
         self.user.add_addon('github')
-        user_github = self.user.get_addon('github')
-        oauth_settings = AddonGitHubOauthSettings()
-        oauth_settings.github_user_id = 'testuser'
+        oauth_settings = GitHubAccountFactory()
         oauth_settings.save()
-        user_github.oauth_settings = oauth_settings
-        user_github.save()
-        user_github.github_user_name = 'howtogithub'
-        oauth_settings.save()
+        self.user.external_accounts.append(oauth_settings)
+        self.user.save()
         url = api_url_for('serialize_social', uid=self.user._id)
         res = self.app.get(
             url,
@@ -1521,6 +1577,33 @@ class TestUserProfile(OsfTestCase):
         res = self.app.put_json(url, header, auth=user1.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['message_long'], '"id" is required')
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_add_emails_return_emails(self, send_mail):
+        user1 = AuthUserFactory()
+        url = api_url_for('update_user')
+        email = 'test@cos.io'
+        header = {'id': user1._id,
+                  'emails': [{'address': user1.username, 'primary': True, 'confirmed': True},
+                            {'address': email, 'primary': False, 'confirmed': False}
+                  ]}
+        res = self.app.put_json(url, header, auth=user1.auth)
+        assert_equal(res.status_code, 200)
+        assert_in('emails', res.json['profile'])
+        assert_equal(len(res.json['profile']['emails']), 2)
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_resend_confirmation_return_emails(self, send_mail):
+        user1 = AuthUserFactory()
+        url = api_url_for('resend_confirmation')
+        email = 'test@cos.io'
+        header = {'id': user1._id,
+                  'email': {'address': email, 'primary': False, 'confirmed': False}
+                  }
+        res = self.app.put_json(url, header, auth=user1.auth)
+        assert_equal(res.status_code, 200)
+        assert_in('emails', res.json['profile'])
+        assert_equal(len(res.json['profile']['emails']), 2)
 
     @mock.patch('framework.auth.views.mails.send_mail')
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
@@ -2709,9 +2792,9 @@ class TestPointerViews(OsfTestCase):
         pointed_project = ProjectFactory(creator=self.user)  # project that other project points to
         pointer_project.add_pointer(pointed_project, Auth(pointer_project.creator), save=True)
 
-        # Project is in a dashboard folder
-        folder = FolderFactory(creator=pointed_project.creator)
-        folder.add_pointer(pointed_project, Auth(pointed_project.creator), save=True)
+        # Project is in an organizer collection
+        collection = CollectionFactory(creator=pointed_project.creator)
+        collection.add_pointer(pointed_project, Auth(pointed_project.creator), save=True)
 
         url = pointed_project.api_url_for('get_pointed')
         res = self.app.get(url, auth=self.user.auth)
@@ -2719,7 +2802,7 @@ class TestPointerViews(OsfTestCase):
         # pointer_project's id is included in response, but folder's id is not
         pointer_ids = [each['id'] for each in res.json['pointed']]
         assert_in(pointer_project._id, pointer_ids)
-        assert_not_in(folder._id, pointer_ids)
+        assert_not_in(collection._id, pointer_ids)
 
     def test_add_pointers(self):
 
@@ -3664,8 +3747,8 @@ class TestODMTitleSearch(OsfTestCase):
         self.project_two = ProjectFactory(creator=self.user_two, title="bar")
         self.public_project = ProjectFactory(creator=self.user_two, is_public=True, title="baz")
         self.registration_project = RegistrationFactory(creator=self.user, title="qux")
-        self.folder = FolderFactory(creator=self.user, title="quux")
-        self.dashboard = DashboardFactory(creator=self.user, title="Dashboard")
+        self.folder = CollectionFactory(creator=self.user, title="quux")
+        self.dashboard = BookmarkCollectionFactory(creator=self.user, title="Dashboard")
         self.url = api_url_for('search_projects_by_title')
 
     def test_search_projects_by_title(self):
@@ -3804,192 +3887,6 @@ class TestReorderComponents(OsfTestCase):
         assert_equal(res.status_code, 200)
 
 
-class TestDashboardViews(OsfTestCase):
-
-    def setUp(self):
-        super(TestDashboardViews, self).setUp()
-        self.creator = AuthUserFactory()
-        self.contrib = AuthUserFactory()
-        self.dashboard = DashboardFactory(creator=self.creator)
-
-    # https://github.com/CenterForOpenScience/openscienceframework.org/issues/571
-    def test_components_with_are_accessible_from_dashboard(self):
-        project = ProjectFactory(creator=self.creator, is_public=False)
-        component = NodeFactory(creator=self.creator, parent=project)
-        component.add_contributor(self.contrib, auth=Auth(self.creator))
-        component.save()
-        # Get the All My Projects smart folder from the dashboard
-        url = api_url_for('get_dashboard', nid=ALL_MY_PROJECTS_ID)
-        res = self.app.get(url, auth=self.contrib.auth)
-        assert_equal(len(res.json['data']), 1)
-
-    def test_get_dashboard_nodes(self):
-        project = ProjectFactory(creator=self.creator)
-        component = NodeFactory(creator=self.creator, parent=project)
-
-        url = api_url_for('get_dashboard_nodes')
-
-        res = self.app.get(url, auth=self.creator.auth)
-        assert_equal(res.status_code, 200)
-
-        nodes = res.json['nodes']
-        assert_equal(len(nodes), 2)
-
-        project_serialized = nodes[0]
-        assert_equal(project_serialized['id'], project._primary_key)
-
-    def test_get_dashboard_nodes_shows_components_if_user_is_not_contrib_on_project(self):
-        # User creates a project with a component
-        project = ProjectFactory(creator=self.creator)
-        component = NodeFactory(creator=self.creator, parent=project)
-        # User adds friend as a contributor to the component but not the
-        # project
-        friend = AuthUserFactory()
-        component.add_contributor(friend, auth=Auth(self.creator))
-        component.save()
-
-        # friend requests their dashboard nodes
-        url = api_url_for('get_dashboard_nodes')
-        res = self.app.get(url, auth=friend.auth)
-        nodes = res.json['nodes']
-        # Response includes component
-        assert_equal(len(nodes), 1)
-        assert_equal(nodes[0]['id'], component._primary_key)
-
-        # friend requests dashboard nodes, filtering against components
-        url = api_url_for('get_dashboard_nodes', no_components=True)
-        res = self.app.get(url, auth=friend.auth)
-        nodes = res.json['nodes']
-        assert_equal(len(nodes), 0)
-
-    def test_get_dashboard_nodes_admin_only(self):
-        friend = AuthUserFactory()
-        project = ProjectFactory(creator=self.creator)
-        # Friend is added as a contributor with read+write (not admin)
-        # permissions
-        perms = permissions.expand_permissions(permissions.WRITE)
-        project.add_contributor(friend, auth=Auth(self.creator), permissions=perms)
-        project.save()
-
-        url = api_url_for('get_dashboard_nodes')
-        res = self.app.get(url, auth=friend.auth)
-        assert_equal(res.json['nodes'][0]['id'], project._primary_key)
-
-        # Can filter project according to permission
-        url = api_url_for('get_dashboard_nodes', permissions='admin')
-        res = self.app.get(url, auth=friend.auth)
-        assert_equal(len(res.json['nodes']), 0)
-
-    def test_get_dashboard_nodes_invalid_permission(self):
-        url = api_url_for('get_dashboard_nodes', permissions='not-valid')
-        res = self.app.get(url, auth=self.creator.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-
-    def test_registered_components_with_are_accessible_from_dashboard(self):
-        project = ProjectFactory(creator=self.creator, is_public=False)
-        component = NodeFactory(creator=self.creator, parent=project)
-        component.add_contributor(self.contrib, auth=Auth(self.creator))
-        component.save()
-        project.register_node(
-            get_default_metaschema(), Auth(self.creator), '', '',
-        )
-
-        # Get the All My Registrations smart folder from the dashboard
-        url = api_url_for('get_dashboard', nid=ALL_MY_REGISTRATIONS_ID)
-        res = self.app.get(url, auth=self.contrib.auth)
-
-        assert_equal(len(res.json['data']), 1)
-
-    def test_archiving_nodes_appear_in_all_my_registrations(self):
-        project = ProjectFactory(creator=self.creator, is_public=False)
-        reg = RegistrationFactory(project=project, user=self.creator)
-
-        # Get the All My Registrations smart folder from the dashboard
-        url = api_url_for('get_dashboard', nid=ALL_MY_REGISTRATIONS_ID)
-        res = self.app.get(url, auth=self.creator.auth)
-
-        assert_equal(res.json['data'][0]['node_id'], reg._id)
-
-    def test_untouched_node_is_collapsed(self):
-        found_item = False
-        folder = FolderFactory(creator=self.creator, public=True)
-        self.dashboard.add_pointer(folder, auth=Auth(self.creator))
-        url = api_url_for('get_dashboard', nid=self.dashboard._id)
-        dashboard_data = self.app.get(url, auth=self.creator.auth)
-        dashboard_json = dashboard_data.json[u'data']
-        for dashboard_item in dashboard_json:
-            if dashboard_item[u'node_id'] == folder._id:
-                found_item = True
-                assert_false(dashboard_item[u'expand'], "Expand state was not set properly.")
-        assert_true(found_item, "Did not find the folder in the dashboard.")
-
-    def test_expand_node_sets_expand_to_true(self):
-        found_item = False
-        folder = FolderFactory(creator=self.creator, public=True)
-        self.dashboard.add_pointer(folder, auth=Auth(self.creator))
-        url = api_url_for('expand', pid=folder._id)
-        self.app.post(url, auth=self.creator.auth)
-        url = api_url_for('get_dashboard', nid=self.dashboard._id)
-        dashboard_data = self.app.get(url, auth=self.creator.auth)
-        dashboard_json = dashboard_data.json[u'data']
-        for dashboard_item in dashboard_json:
-            if dashboard_item[u'node_id'] == folder._id:
-                found_item = True
-                assert_true(dashboard_item[u'expand'], "Expand state was not set properly.")
-        assert_true(found_item, "Did not find the folder in the dashboard.")
-
-    def test_collapse_node_sets_expand_to_true(self):
-        found_item = False
-        folder = FolderFactory(creator=self.creator, public=True)
-        self.dashboard.add_pointer(folder, auth=Auth(self.creator))
-
-        # Expand the folder
-        url = api_url_for('expand', pid=folder._id)
-        self.app.post(url, auth=self.creator.auth)
-
-        # Serialize the dashboard and test
-        url = api_url_for('get_dashboard', nid=self.dashboard._id)
-        dashboard_data = self.app.get(url, auth=self.creator.auth)
-        dashboard_json = dashboard_data.json[u'data']
-        for dashboard_item in dashboard_json:
-            if dashboard_item[u'node_id'] == folder._id:
-                found_item = True
-                assert_true(dashboard_item[u'expand'], "Expand state was not set properly.")
-        assert_true(found_item, "Did not find the folder in the dashboard.")
-
-        # Collapse the folder
-        found_item = False
-        url = api_url_for('collapse', pid=folder._id)
-        self.app.post(url, auth=self.creator.auth)
-
-        # Serialize the dashboard and test
-        url = api_url_for('get_dashboard', nid=self.dashboard._id)
-        dashboard_data = self.app.get(url, auth=self.creator.auth)
-        dashboard_json = dashboard_data.json[u'data']
-        for dashboard_item in dashboard_json:
-            if dashboard_item[u'node_id'] == folder._id:
-                found_item = True
-                assert_false(dashboard_item[u'expand'], "Expand state was not set properly.")
-        assert_true(found_item, "Did not find the folder in the dashboard.")
-
-    def test_folder_new_post(self):
-        url = api_url_for('folder_new_post', nid=self.dashboard._id)
-        found_item = False
-
-        # Make the folder
-        title = 'New test folder'
-        payload = {'title': title, }
-        self.app.post_json(url, payload, auth=self.creator.auth)
-
-        # Serialize the dashboard and test
-        url = api_url_for('get_dashboard', nid=self.dashboard._id)
-        dashboard_data = self.app.get(url, auth=self.creator.auth)
-        dashboard_json = dashboard_data.json[u'data']
-        for dashboard_item in dashboard_json:
-            if dashboard_item[u'name'] == title:
-                found_item = True
-        assert_true(found_item, "Did not find the folder in the dashboard.")
-
 
 class TestWikiWidgetViews(OsfTestCase):
 
@@ -4074,6 +3971,14 @@ class TestProjectCreation(OsfTestCase):
         super(TestProjectCreation, self).setUp()
         self.creator = AuthUserFactory()
         self.url = api_url_for('project_new_post')
+        self.user1 = AuthUserFactory()
+        self.user2 = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user1)
+        self.project.add_contributor(self.user2, auth=Auth(self.user1))
+        self.project.save()
+
+    def tearDown(self):
+        super(TestProjectCreation, self).tearDown()
 
     def test_needs_title(self):
         res = self.app.post_json(self.url, {}, auth=self.creator.auth, expect_errors=True)
@@ -4139,6 +4044,56 @@ class TestProjectCreation(OsfTestCase):
         node = Node.load(res.json['projectUrl'].replace('/', ''))
         assert_true(node)
         assert_true(node.title, 'Im a real title')
+
+    def test_create_component_add_contributors_admin(self):
+        url = web_url_for('project_new_node', pid=self.project._id)
+        post_data = {'title': 'New Component With Contributors Title', 'category': '', 'inherit_contributors': True}
+        res = self.app.post(url, post_data, auth=self.user1.auth)
+        self.project.reload()
+        child = self.project.nodes[0]
+        assert_equal(child.title, 'New Component With Contributors Title')
+        assert_in(self.user1, child.contributors)
+        assert_in(self.user2, child.contributors)
+        # check redirect url
+        assert_in('/contributors/', res.location)
+
+    def test_create_component_with_contributors_read_write(self):
+        url = web_url_for('project_new_node', pid=self.project._id)
+        non_admin = AuthUserFactory()
+        self.project.add_contributor(non_admin, permissions=['read', 'write'])
+        self.project.save()
+        post_data = {'title': 'New Component With Contributors Title', 'category': '', 'inherit_contributors': True}
+        res = self.app.post(url, post_data, auth=non_admin.auth)
+        self.project.reload()
+        child = self.project.nodes[0]
+        assert_equal(child.title, 'New Component With Contributors Title')
+        assert_in(non_admin, child.contributors)
+        assert_in(self.user1, child.contributors)
+        assert_in(self.user2, child.contributors)
+        assert_equal(child.get_permissions(non_admin), ['read', 'write',  'admin'])
+        # check redirect url
+        assert_in('/contributors/', res.location)
+
+    def test_create_component_with_contributors_read(self):
+        url = web_url_for('project_new_node', pid=self.project._id)
+        non_admin = AuthUserFactory()
+        self.project.add_contributor(non_admin, permissions=['read'])
+        self.project.save()
+        post_data = {'title': 'New Component With Contributors Title', 'category': '', 'inherit_contributors': True}
+        res = self.app.post(url, post_data, auth=non_admin.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_create_component_add_no_contributors(self):
+        url = web_url_for('project_new_node', pid=self.project._id)
+        post_data = {'title': 'New Component With Contributors Title', 'category': ''}
+        res = self.app.post(url, post_data, auth=self.user1.auth)
+        self.project.reload()
+        child = self.project.nodes[0]
+        assert_equal(child.title, 'New Component With Contributors Title')
+        assert_in(self.user1, child.contributors)
+        assert_not_in(self.user2, child.contributors)
+        # check redirect url
+        assert_not_in('/contributors/', res.location)
 
     def test_new_project_returns_serialized_node_data(self):
         payload = {

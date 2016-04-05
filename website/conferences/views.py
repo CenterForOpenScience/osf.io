@@ -8,6 +8,7 @@ from datetime import datetime
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
 
+from framework.auth import get_or_create_user
 from framework.exceptions import HTTPError
 from framework.flask import redirect
 from framework.transactions.context import TokuTransaction
@@ -74,7 +75,7 @@ def add_poster_by_email(conference, message):
     created = []
 
     with TokuTransaction():
-        user, user_created = utils.get_or_create_user(
+        user, user_created = get_or_create_user(
             message.sender_display,
             message.sender_email,
             message.is_spam,
@@ -172,7 +173,7 @@ def _render_conference_node(node, idx, conf):
         'category': conf.field_names['submission1'] if conf.field_names['submission1'] in node.system_tags else conf.field_names['submission2'],
         'download': download_count,
         'downloadUrl': download_url,
-        'dateCreated': str(node.date_created),
+        'dateCreated': node.date_created.isoformat(),
         'confName': conf.name,
         'confUrl': web_url_for('conference_results', meeting=conf.endpoint),
         'tags': ' '.join(tags)
@@ -233,12 +234,8 @@ def conference_submissions(**kwargs):
         # For efficiency, we filter by tag first, then node
         # instead of doing a single Node query
         projects = set()
-        for tag in Tag.find(Q('_id', 'iexact', conf.endpoint)):
-            for node in tag.node__tagged:
-                if not node:
-                    continue
-                if not node.is_public or node.is_deleted:
-                    continue
+        for tag in Tag.find(Q('lower', 'eq', conf.endpoint.lower())):
+            for node in Node.find(Q('tags', 'eq', tag._id) & Q('is_public', 'eq', True) & Q('is_deleted', 'eq', False)):
                 projects.add(node)
 
         for idx, node in enumerate(projects):
@@ -250,7 +247,6 @@ def conference_submissions(**kwargs):
         if num_submissions < settings.CONFERENCE_MIN_COUNT:
             continue
     submissions.sort(key=lambda submission: submission['dateCreated'], reverse=True)
-
     return {'submissions': submissions}
 
 def conference_view(**kwargs):

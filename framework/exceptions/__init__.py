@@ -67,6 +67,9 @@ class HTTPError(FrameworkError):
             data=self.to_data(),
         )
 
+    def __str__(self):
+        return repr(self)
+
     def to_data(self):
 
         data = copy.deepcopy(self.data)

@@ -33,14 +33,14 @@ $('body').on('nodeLoad', function(event, data) {
         new LogFeed('#logScope', nodeApiUrl + 'log/');
     }
     // Initialize CitationWidget if user isn't viewing through an anonymized VOL
-    if (!data.node.anonymous && !data.node.isRetracted) {
+    if (!data.node.anonymous && !data.node.is_retracted) {
         var citations = data.node.alternative_citations;
         new CitationList('#citationList', citations, data.user);
         new CitationWidget('#citationStyleInput', '#citationText');
     }
     // Initialize nodeControl
     new NodeControl.NodeControl('#projectScope', data);
-    if (data.user.is_admin) {
+    if (data.user.is_admin && !data.node.is_retracted) {
         new NodesPrivacy.NodesPrivacy('#nodesPrivacy', data.node.is_public);
     }
 });
@@ -60,6 +60,7 @@ if ($comments.length) {
         isRegistration: window.contextVars.node.isRegistration,
         page: 'node',
         rootId: window.contextVars.node.id,
+        fileId: null,
         canComment: window.contextVars.currentUser.canComment,
         hasChildren: window.contextVars.node.hasChildren,
         currentUser: currentUser
@@ -143,7 +144,9 @@ $(document).ready(function () {
             var request = $osf.postJSON(url, data);
             request.fail(function(xhr, textStatus, error) {
                 Raven.captureMessage('Failed to add tag', {
-                    tag: tag, url: url, textStatus: textStatus, error: error
+                    extra: {
+                        tag: tag, url: url, textStatus: textStatus, error: error
+                    }
                 });
             });
         },
@@ -159,7 +162,9 @@ $(document).ready(function () {
             });
             request.fail(function(xhr, textStatus, error) {
                 Raven.captureMessage('Failed to remove tag', {
-                    tag: tag, url: url, textStatus: textStatus, error: error
+                    extra: {
+                        tag: tag, url: url, textStatus: textStatus, error: error
+                    }
                 });
             });
         }

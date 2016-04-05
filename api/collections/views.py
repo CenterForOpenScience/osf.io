@@ -1,8 +1,9 @@
 from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
+from rest_framework import status
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
+from rest_framework.response import Response
 
-from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
 
 from api.base import generic_bulk_views as bulk_views
@@ -11,6 +12,7 @@ from api.base.filters import ODMFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.parsers import JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth
+from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.collections.serializers import (
     CollectionSerializer,
     CollectionDetailSerializer,
@@ -47,7 +49,7 @@ class CollectionMixin(object):
         )
         # Nodes that are folders/collections are treated as a separate resource, so if the client
         # requests a non-collection through a collection endpoint, we return a 404
-        if not node.is_folder:
+        if not node.is_collection:
             raise NotFound
         # May raise a permission denied
         if check_object_permissions:
@@ -72,7 +74,7 @@ class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_vie
     OSF Organizer Collection entities have the "nodes" `type`.
 
         name           type               description
-        ---------------------------------------------------------------------------------
+        =================================================================================
         title          string             title of Organizer Collection
         date_created   iso8601 timestamp  timestamp that the collection was created
         date_modified  iso8601 timestamp  timestamp when the collection was last updated
@@ -135,12 +137,12 @@ class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_vie
     def get_default_odm_query(self):
         base_query = (
             Q('is_deleted', 'ne', True) &
-            Q('is_folder', 'eq', True)
+            Q('is_collection', 'eq', True)
         )
         user = self.request.user
         permission_query = Q('is_public', 'eq', True)
         if not user.is_anonymous():
-            permission_query = (Q('is_public', 'eq', True) | Q('contributors', 'icontains', user._id))
+            permission_query = (Q('is_public', 'eq', True) | Q('contributors', 'eq', user._id))
 
         query = base_query & permission_query
         return query
@@ -212,7 +214,7 @@ class CollectionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, C
     OSF Organizer Collection entities have the "nodes" `type`.
 
         name           type               description
-        ---------------------------------------------------------------------------------
+        =================================================================================
         title          string             title of Organizer Collection
         date_created   iso8601 timestamp  timestamp that the collection was created
         date_modified  iso8601 timestamp  timestamp when the collection was last updated
@@ -288,8 +290,7 @@ class CollectionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, C
 
     # overrides RetrieveUpdateDestroyAPIView
     def perform_destroy(self, instance):
-        user = self.request.user
-        auth = Auth(user)
+        auth = get_user_auth(self.request)
         node = self.get_object()
         try:
             node.remove_node(auth=auth)
@@ -318,7 +319,7 @@ class LinkedNodesList(JSONAPIBaseView, generics.ListAPIView, CollectionMixin):
     OSF Node entities have the "nodes" `type`.
 
         name           type               description
-        ---------------------------------------------------------------------------------
+        =================================================================================
         title          string             title of project or component
         description    string             description of the node
         category       string             node category, must be one of the allowed values
@@ -327,7 +328,6 @@ class LinkedNodesList(JSONAPIBaseView, generics.ListAPIView, CollectionMixin):
         tags           array of strings   list of tags that describe the node
         registration   boolean            is this is a registration?
         collection     boolean            is this node a collection of other nodes?
-        dashboard      boolean            is this node visible on the user dashboard?
         public         boolean            has this node been made publicly-visible?
 
     ##Links
@@ -364,11 +364,13 @@ class LinkedNodesList(JSONAPIBaseView, generics.ListAPIView, CollectionMixin):
     model_class = Pointer
 
     def get_queryset(self):
-        return [
+        auth = get_user_auth(self.request)
+        return sorted([
             pointer.node for pointer in
             self.get_node().nodes_pointer
-            if not pointer.node.is_deleted and not pointer.node.is_folder
-        ]
+            if not pointer.node.is_deleted and not pointer.node.is_collection and
+            pointer.node.can_view(auth)
+        ], key=lambda n: n.date_modified, reverse=True)
 
     # overrides APIView
     def get_parser_context(self, http_request):
@@ -441,7 +443,7 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
         return [
             pointer for pointer in
             self.get_node().nodes_pointer
-            if not pointer.node.is_deleted and not pointer.node.is_folder
+            if not pointer.node.is_deleted and not pointer.node.is_collection
         ]
 
     # Overrides BulkDestroyJSONAPIView
@@ -527,8 +529,7 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Collecti
 
     # overrides DestroyAPIView
     def perform_destroy(self, instance):
-        user = self.request.user
-        auth = Auth(user)
+        auth = get_user_auth(self.request)
         node = self.get_node()
         pointer = self.get_object()
         try:
@@ -618,20 +619,28 @@ class CollectionLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdate
 
     def get_object(self):
         collection = self.get_node(check_object_permissions=False)
+        auth = get_user_auth(self.request)
         obj = {'data': [
             pointer for pointer in
             collection.nodes_pointer
-            if not pointer.node.is_deleted and not pointer.node.is_folder
+            if not pointer.node.is_deleted and not pointer.node.is_collection and
+            pointer.node.can_view(auth)
         ], 'self': collection}
         self.check_object_permissions(self.request, obj)
         return obj
 
     def perform_destroy(self, instance):
         data = self.request.data['data']
-        user = self.request.user
-        auth = Auth(user)
+        auth = get_user_auth(self.request)
         current_pointers = {pointer.node._id: pointer for pointer in instance['data']}
         collection = instance['self']
         for val in data:
             if val['id'] in current_pointers:
                 collection.rm_pointer(current_pointers[val['id']], auth)
+
+    def create(self, *args, **kwargs):
+        try:
+            ret = super(CollectionLinkedNodesRelationship, self).create(*args, **kwargs)
+        except RelationshipPostMakesNoChanges:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return ret

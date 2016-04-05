@@ -1,14 +1,17 @@
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import NotFound
 
-from website.models import NodeLog
 from modularodm import Q
 from framework.auth.core import User
-
 from framework.auth.oauth_scopes import CoreScopes
 
+from website.models import NodeLog
+from api.logs.permissions import (
+    ContributorOrPublicForLogs
+)
+
 from api.base.filters import ODMFilterMixin
-from api.base.utils import get_user_auth, get_object_or_error
+from api.base.utils import get_user_auth
 from api.base import permissions as base_permissions
 from api.nodes.serializers import NodeSerializer
 from api.users.serializers import UserSerializer
@@ -27,10 +30,12 @@ class LogMixin(object):
             raise NotFound(
                 detail='No log matching that log_id could be found.'
             )
+
+        self.check_object_permissions(self.request, log)
         return log
 
 
-class LogNodeList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
+class LogNodeList(JSONAPIBaseView, generics.ListAPIView, LogMixin, ODMFilterMixin):
     """List of nodes that a given log is associated with. *Read-only*.
 
     Paginated list of nodes that the user contributes to.  Each resource contains the full representation of the node,
@@ -45,7 +50,7 @@ class LogNodeList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     OSF Node entities have the "nodes" `type`.
 
         name           type               description
-        ---------------------------------------------------------------------------------
+        =================================================================================
         title          string             title of project or component
         description    string             description of the node
         category       string             node category, must be one of the allowed values
@@ -54,7 +59,6 @@ class LogNodeList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
         tags           array of strings   list of tags that describe the node
         registration   boolean            has this project been registered?
         collection     boolean            is this node a collection of other nodes?
-        dashboard      boolean            is this node visible on the user dashboard?
         public         boolean            has this node been made publicly-visible?
 
     ##Links
@@ -85,6 +89,7 @@ class LogNodeList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        ContributorOrPublicForLogs
     )
 
     required_read_scopes = [CoreScopes.NODE_LOG_READ]
@@ -104,7 +109,7 @@ class LogNodeList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
         ]
 
 
-class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView):
+class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView, LogMixin):
     """List of nodes that a given log is associated with. *Read-only*.
 
     Paginated list of nodes that the user contributes to.  Each resource contains the full representation of the node,
@@ -121,7 +126,7 @@ class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     OSF Node entities have the "nodes" `type`.
 
         name           type               description
-        ---------------------------------------------------------------------------------
+        =================================================================================
         title          string             title of project or component
         description    string             description of the node
         category       string             node category, must be one of the allowed values
@@ -130,7 +135,6 @@ class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         tags           array of strings   list of tags that describe the node
         registration   boolean            has this project been registered?
         collection     boolean            is this node a collection of other nodes?
-        dashboard      boolean            is this node visible on the user dashboard?
         public         boolean            has this node been made publicly-visible?
 
     ##Links
@@ -160,10 +164,11 @@ class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        ContributorOrPublicForLogs
     )
 
-    required_read_scopes = [CoreScopes.NODE_BASE_READ]
-    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
+    required_read_scopes = [CoreScopes.NODE_LOG_READ]
+    required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = NodeLogSerializer
     view_category = 'logs'
@@ -171,13 +176,7 @@ class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):
-        log = get_object_or_error(
-            NodeLog,
-            self.kwargs['log_id'],
-            display_name='log'
-        )
-        # May raise a permission denied
-        self.check_object_permissions(self.request, log)
+        log = self.get_log()
         return log
 
     # overrides RetrieveUpdateDestroyAPIView
@@ -185,11 +184,13 @@ class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         pass
 
 
-class NodeLogAddedContributors(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin, LogMixin):
-    """List of added contributors that a given log is associated with. *Read-only*.
+class NodeLogContributors(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin, LogMixin):
+    """List of contributors that a given log is associated with. *Read-only*.
 
-    Paginated list of users that were added as contributors, associated with a log. Each resource contains the full
-    representation of the user, meaning additional requests to an individual user's detail view are not necessary.
+    Paginated list of users that were associated with a contributor log action. For example, if a log action was `contributor_added`,
+    the new contributors' names would be found at this endpoint. If the relevant log had nothing to do with contributors,
+    an empty list would be returned. Each resource contains the full representation of the user, meaning additional requests
+    to an individual user's detail view are not necessary.
 
     ##User Attributes
 
@@ -198,7 +199,7 @@ class NodeLogAddedContributors(JSONAPIBaseView, generics.ListAPIView, ODMFilterM
     OSF User entities have the "users" `type`.
 
         name               type               description
-        ----------------------------------------------------------------------------------------
+        ========================================================================================
         full_name          string             full name of the user; used for display
         given_name         string             given name of the user; for bibliographic citations
         middle_names       string             middle name of user; for bibliographic citations
@@ -234,6 +235,7 @@ class NodeLogAddedContributors(JSONAPIBaseView, generics.ListAPIView, ODMFilterM
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        ContributorOrPublicForLogs
     )
 
     required_read_scopes = [CoreScopes.USERS_READ]
@@ -242,13 +244,13 @@ class NodeLogAddedContributors(JSONAPIBaseView, generics.ListAPIView, ODMFilterM
     serializer_class = UserSerializer
 
     view_category = 'logs'
-    view_name = 'log-added_contributors'
+    view_name = 'log-contributors'
 
     # overrides ListAPIView
     def get_queryset(self):
         log = self.get_log()
-        added_contrib_ids = log.params.get('contributors')
-        if added_contrib_ids is None:
+        associated_contrib_ids = log.params.get('contributors')
+        if associated_contrib_ids is None:
             return []
-        added_users = User.find(Q('_id', 'in', added_contrib_ids))
-        return added_users
+        associated_users = User.find(Q('_id', 'in', associated_contrib_ids))
+        return associated_users

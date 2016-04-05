@@ -125,6 +125,8 @@ class AddonModelMixin(StoredObject):
         if addon:
             if self._name in addon.config.added_mandatory and not _force:
                 raise ValueError('Cannot delete mandatory add-on.')
+            if hasattr(addon, 'external_account'):
+                addon.deauthorize(auth=auth)
             addon.delete(save=True)
             return True
         return False

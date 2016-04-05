@@ -27,7 +27,7 @@ class TestCommentReportsView(ApiTestCase):
     def _set_up_private_project_comment_reports(self):
         self.private_project = ProjectFactory.build(is_public=False, creator=self.user)
         self.private_project.add_contributor(contributor=self.contributor, save=True)
-        self.comment = CommentFactory.build(node=self.private_project, target=self.private_project, user=self.contributor)
+        self.comment = CommentFactory.build(node=self.private_project, user=self.contributor)
         self.comment.reports = self.comment.reports or {}
         self.comment.reports[self.user._id] = {
             'category': 'spam',
@@ -41,7 +41,7 @@ class TestCommentReportsView(ApiTestCase):
     def _set_up_public_project_comment_reports(self, comment_level='public'):
         self.public_project = ProjectFactory.build(is_public=True, creator=self.user, comment_level=comment_level)
         self.public_project.add_contributor(contributor=self.contributor, save=True)
-        self.public_comment = CommentFactory.build(node=self.public_project, target=self.public_project, user=self.contributor)
+        self.public_comment = CommentFactory.build(node=self.public_project, user=self.contributor)
         self.public_comment.reports = self.public_comment.reports or {}
         self.public_comment.reports[self.user._id] = {
             'category': 'spam',
@@ -130,7 +130,7 @@ class TestCommentReportsView(ApiTestCase):
 
     def test_public_node_private_comment_level_non_contributor_cannot_see_reports(self):
         project = ProjectFactory(is_public=True, creator=self.user, comment_level='private')
-        comment = CommentFactory(node=project, target=project, user=self.user)
+        comment = CommentFactory(node=project, user=self.user)
         comment.reports = dict()
         comment.reports[self.user._id] = {
             'category': 'spam',
@@ -297,7 +297,7 @@ class TestFileCommentReportsView(ApiTestCase):
         self.private_project = ProjectFactory.build(is_public=False, creator=self.user)
         self.private_project.add_contributor(contributor=self.contributor, save=True)
         self.file = test_utils.create_test_file(self.private_project, self.user)
-        self.comment = CommentFactory.build(node=self.private_project, target=self.file, user=self.contributor)
+        self.comment = CommentFactory.build(node=self.private_project, target=self.file.get_guid(), user=self.contributor)
         self.comment.reports = self.comment.reports or {}
         self.comment.reports[self.user._id] = {
             'category': 'spam',
@@ -312,7 +312,7 @@ class TestFileCommentReportsView(ApiTestCase):
         self.public_project = ProjectFactory.build(is_public=True, creator=self.user, comment_level=comment_level)
         self.public_project.add_contributor(contributor=self.contributor, save=True)
         self.public_file = test_utils.create_test_file(self.public_project, self.user)
-        self.public_comment = CommentFactory.build(node=self.public_project, target=self.public_file, user=self.contributor)
+        self.public_comment = CommentFactory.build(node=self.public_project, target=self.public_file.get_guid(), user=self.contributor)
         self.public_comment.reports = self.public_comment.reports or {}
         self.public_comment.reports[self.user._id] = {
             'category': 'spam',

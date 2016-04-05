@@ -18,7 +18,7 @@ def get_projects(user):
             Q('category', 'eq', 'project') &
             Q('is_registration', 'eq', False) &
             Q('is_deleted', 'eq', False) &
-            Q('is_folder', 'eq', False)
+            Q('is_collection', 'eq', False)
         )
     ))
 
@@ -36,7 +36,7 @@ def get_gravatar(user, size=None):
     )
 
 
-def serialize_user(user, node=None, admin=False, full=False):
+def serialize_user(user, node=None, admin=False, full=False, is_profile=False):
     """
     Return a dictionary representation of a registered user.
 
@@ -78,20 +78,21 @@ def serialize_user(user, node=None, admin=False, full=False):
 
     if full:
         # Add emails
-        ret['emails'] = [
-            {
-                'address': each,
-                'primary': each.strip().lower() == user.username.strip().lower(),
-                'confirmed': True,
-            } for each in user.emails
-        ] + [
-            {
-                'address': each,
-                'primary': each.strip().lower() == user.username.strip().lower(),
-                'confirmed': False
-            }
-            for each in user.unconfirmed_emails
-        ]
+        if is_profile:
+            ret['emails'] = [
+                {
+                    'address': each,
+                    'primary': each.strip().lower() == user.username.strip().lower(),
+                    'confirmed': True,
+                } for each in user.emails
+            ] + [
+                {
+                    'address': each,
+                    'primary': each.strip().lower() == user.username.strip().lower(),
+                    'confirmed': False
+                }
+                for each in user.unconfirmed_emails
+            ]
 
         if user.is_merged:
             merger = user.merged_by

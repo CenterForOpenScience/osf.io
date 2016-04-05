@@ -1,12 +1,12 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from forms import ConferenceForm, ConferenceFieldNamesForm
-from website.conferences.model import Conference as OSF_Conference
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import FormView, ProcessFormView
 from django.views.generic.list import ListView
 from django.core.urlresolvers import reverse
 from django.utils import timezone
+from forms import ConferenceForm, ConferenceFieldNamesForm
+from .serializers import serialize_node
 
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
@@ -14,6 +14,7 @@ from modularodm.exceptions import ModularOdmException
 from framework.auth.core import User
 
 from website import settings
+from website.conferences.model import Conference
 from website.app import init_app
 
 
@@ -24,7 +25,7 @@ def create_conference(request):
         conf_form = ConferenceForm(request.POST or None)
         conf_field_names_form = ConferenceFieldNamesForm(request.POST or None)
         if request.POST and conf_form.is_valid():
-            conf = OSF_Conference(
+            conf = Conference(
                 name=request.POST['name'],
                 endpoint=request.POST['endpoint'],
                 info_url=request.POST['info_url'],
@@ -63,3 +64,26 @@ def create_conference(request):
     else:
         messages.error(request, 'You do not have permission to access that page.')
         return redirect('auth:login')
+
+class ConferenceListView(ListView):
+    template_name = 'conferences/conference_list.html'
+    paginate_by = 10
+    paginate_orphans = 1
+    ordering = 'date_created'
+    context_object_name = 'conference'
+
+    def get_queryset(self):
+        query = (
+            Q('is_active', 'eq', True)
+        )
+        return Conference.find(query).sort(self.ordering)
+
+    def get_context_data(self, **kwargs):
+        query_set = kwargs.pop('object_list', self.object_list)
+        page_size = self.get_paginate_by(query_set)
+        paginator, page, query_set, is_paginated = self.paginate_queryset(
+            query_set, page_size)
+        return {
+            'conference': map(serialize_conference, query_set),
+            'page': page,
+        }

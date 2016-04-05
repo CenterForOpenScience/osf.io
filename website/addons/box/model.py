@@ -81,9 +81,6 @@ class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     oauth_provider = Box
     serializer = BoxSerializer
 
-    foreign_user_settings = fields.ForeignField(
-        'boxusersettings', backref='authorized'
-    )
     folder_id = fields.StringField(default=None)
     folder_name = fields.StringField()
     folder_path = fields.StringField()
@@ -134,19 +131,6 @@ class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         self.folder_id = str(folder_id)
         self._update_folder_data()
         self.save()
-
-        """ TODO: see if implicit authorization is necessary
-        (or a good idea in general?)
-        if not self.complete:
-            self.user_settings.grant_oauth_access(
-                node=self.owner,
-                external_account=self.external_account,
-                metadata={'folder': self.folder_id}
-            )
-            self.user_settings.save()
-        """
-
-        # Add log to node
         self.nodelogger.log(action="folder_selected", save=True)
 
     def clear_settings(self):
