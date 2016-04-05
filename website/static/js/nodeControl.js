@@ -236,7 +236,7 @@ var ProjectViewModel = function(data) {
                 'Please try again soon and/or contact ' +
                 '<a href="mailto: support@osf.io">support@osf.io</a>';
             osfHelpers.growl('Error', message, 'danger');
-            Raven.captureMessage('Could not create identifiers', {url: url, status: xhr.status});
+            Raven.captureMessage('Could not create identifiers', {extra: {url: url, status: xhr.status}});
         }).always(function() {
             clearTimeout(timeout);
             self.idCreationInProgress(false); // hide loading indicator
