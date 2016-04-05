@@ -333,9 +333,16 @@ var LogPieces = {
     // Update fields for the node
     updated_fields: {
         view: function (ctrl, logObject) {
-            return returnTextParams('updated_fields', 'field(s)', logObject);
-        }
-    },
+            var updatedFieldsParam = logObject.attributes.params.updated_fields;
+            if (paramIsReturned(updatedFieldsParam, logObject)) {
+                var updatedField = Object.keys(updatedFieldsParam)[0];
+                if (updatedField === 'category'){
+                    return m('span', updatedField + ' to ' + nodeCategories[updatedFieldsParam[updatedField].new]);
+                }
+                return m('span', updatedField + ' to ' + updatedFieldsParam[updatedField].new);
+                }
+            return m('span', 'field')
+        }},
     // external identifiers on node
     identifiers: {
         view: function (ctrl, logObject) {

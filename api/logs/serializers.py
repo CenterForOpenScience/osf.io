@@ -57,7 +57,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     template_node = ser.SerializerMethodField(read_only=True)
     title_new = ser.CharField(read_only=True)
     title_original = ser.CharField(read_only=True)
-    updated_fields = ser.ListField(read_only=True)
+    updated_fields = ser.DictField(read_only=True)
     version = ser.CharField(read_only=True)
     citation_name = ser.CharField(read_only=True, source='citation.name')
     institution = NodeLogInstitutionSerializer(read_only=True)
