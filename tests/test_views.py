@@ -2812,17 +2812,16 @@ class TestPointerViews(OsfTestCase):
         res = self.app.get(url, auth=user2.auth).maybe_follow()
         assert_equal(res.status_code, 200)
 
-        # TODO: Check length nodes total
+        pointer_nodes = res.lxml.xpath('//li[@node_reference]')
         has_controls = res.lxml.xpath('//li[@node_reference]/p[starts-with(normalize-space(text()), "Private Link")]//i[contains(@class, "remove-pointer")]')
+        assert_equal(len(pointer_nodes), 1)
         assert_false(has_controls)
 
     def test_pointer_list_read_contributor_cannot_remove_public_component_entry(self):
         url = web_url_for('view_project', pid=self.project._id)
 
-        for i in xrange(3):
-            self.project.add_pointer(ProjectFactory(creator=self.user),
-                                     auth=Auth(user=self.user))
-
+        self.project.add_pointer(ProjectFactory(creator=self.user),
+                                 auth=Auth(user=self.user))
 
         user2 = AuthUserFactory()
         self.project.add_contributor(user2,
@@ -2833,9 +2832,10 @@ class TestPointerViews(OsfTestCase):
         res = self.app.get(url, auth=user2.auth).maybe_follow()
         assert_equal(res.status_code, 200)
 
-        # TODO: Check length nodes total
+        pointer_nodes = res.lxml.xpath('//li[@node_reference]')
         has_controls = res.lxml.xpath(
             '//li[@node_reference]//i[contains(@class, "remove-pointer")]')
+        assert_equal(len(pointer_nodes), 1)
         assert_equal(len(has_controls), 0)
 
     # https://github.com/CenterForOpenScience/openscienceframework.org/issues/1109
