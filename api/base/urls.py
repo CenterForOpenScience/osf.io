@@ -2,7 +2,6 @@ from django.conf import settings
 from django.conf.urls import include, url, patterns
 from django.conf.urls.static import static
 from settings import API_BASE
-from website import settings as osf_settings
 
 from . import views
 
@@ -22,14 +21,11 @@ urlpatterns = [
                          url(r'^files/', include('api.files.urls', namespace='files')),
                          url(r'^docs/', include('rest_framework_swagger.urls')),
                          url(r'^institutions/', include('api.institutions.urls', namespace='institutions')),
+                         url(r'^collections/', include('api.collections.urls', namespace='collections')),
                          ))
         )
 ]
 
-if osf_settings.DEV_MODE:
-    urlpatterns.extend([
-        url(r'^v2/collections/', include('api.collections.urls', namespace='collections')),
-    ])
 
 urlpatterns += static('/static/', document_root=settings.STATIC_ROOT)
 

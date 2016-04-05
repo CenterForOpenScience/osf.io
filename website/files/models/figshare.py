@@ -38,7 +38,9 @@ class FigshareFile(FigshareFileNode, File):
             </style>
             <div class="alert alert-info" role="alert">
             The file "{name}" is still a draft on figshare. <br>
-            To view it  on the OSF <a href="http://figshare.com/faqs">publish</a> it on figshare.
+            To view it  on the OSF
+            <a href="https://figshare.zendesk.com/hc/en-us/articles/203712033-How-do-I-publish-my-data-/">publish</a>
+            it on figshare.
             </div>
             '''.format(name=escape_html(self.name)))
 
