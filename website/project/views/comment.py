@@ -59,6 +59,10 @@ def create_new_file(obj, source, destination, destination_node):
         new_file = FileNode.resolve_class(destination['provider'], FileNode.FILE).get_or_create(destination_node, destination['path'])
         if destination['provider'] != 'osfstorage':
             new_file.update(revision=None, data=data)
+            # TODO: Remove when materialized paths are fixed in the payload returned from waterbutler
+            if not new_file.materialized_path.startswith('/'):
+                new_file.materialized_path = '/' + new_file.materialized_path
+                new_file.save()
     else:
         new_file = find_and_create_file_from_metadata(destination.get('children', []), source, destination, destination_node, obj)
         if not new_file:
@@ -68,7 +72,7 @@ def create_new_file(obj, source, destination, destination_node):
                 new_path = obj.referent.materialized_path.replace(source['materialized'], destination['materialized'])
             new_file = FileNode.resolve_class(destination['provider'], FileNode.FILE).get_or_create(destination_node, new_path)
             new_file.name = new_path.split('/')[-1]
-            new_file.materialized_path = new_path
+            new_file.materialized_path = '/' + new_path
             new_file.save()
     return new_file
 
