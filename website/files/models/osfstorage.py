@@ -44,7 +44,7 @@ class OsfStorageFileNode(FileNode):
 
         if not file_obj.is_file:
             for item in file_obj.children:
-                cls.get_file_guids(item.path, provider, guids, node)
+                cls.get_file_guids(item.path, provider, node=node, guids=guids)
         else:
             try:
                 guid = Guid.find(Q('referent', 'eq', file_obj))[0]
