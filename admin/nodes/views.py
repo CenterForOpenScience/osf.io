@@ -43,16 +43,16 @@ class NodeRemoveContributorView(OSFAdmin, DeleteView):
     def delete(self, request, *args, **kwargs):
         try:
             node, user = self.get_object()
-            node.remove_contributor(user, None, log=False)
-            update_admin_log(
-                user_id=request.user.id,
-                object_id=node.pk,
-                object_repr='Contributor',
-                message='User {} removed from node {}.'.format(
-                    user.pk, node.pk
-                ),
-                action_flag=CONTRIBUTOR_REMOVED
-            )
+            if node.remove_contributor(user, None, log=False):
+                update_admin_log(
+                    user_id=self.request.user.id,
+                    object_id=node.pk,
+                    object_repr='Contributor',
+                    message='User {} removed from node {}.'.format(
+                        user.pk, node.pk
+                    ),
+                    action_flag=CONTRIBUTOR_REMOVED
+                )
         except AttributeError:
             return page_not_found(
                 request,
@@ -103,7 +103,7 @@ class NodeDeleteView(OSFAdmin, DeleteView):
             node.save()
             if flag is not None:
                 update_admin_log(
-                    user_id=request.user.id,
+                    user_id=self.request.user.id,
                     object_id=node.pk,
                     object_repr='Node',
                     message=message,
