@@ -108,7 +108,7 @@ var KeenTracker = oop.defclass({
         this.keenClient.addEvent('pageviews', pageView, function(err){
             if(err){
                 Raven.captureMessage('Error sending Keen data: <' + err + '>', {
-                    payload: pageView
+                    extra: { payload: pageView, },
                 });
             }
         });
