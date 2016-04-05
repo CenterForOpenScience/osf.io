@@ -237,6 +237,21 @@ var LogPieces = {
             return m('span', '');
        }
     },
+    // Original node
+    forked_from: {
+        view: function(ctrl, logObject) {
+            var forkedFrom = logObject.attributes.params.params_node;
+            var id = forkedFrom.id;
+            var title = forkedFrom.title;
+            if (paramIsReturned(forkedFrom, logObject) && title){
+                if (id) {
+                    return m('a', {href: '/' + id + '/' }, title);
+                }
+                return m('span', title);
+            }
+            return m('span', 'a project')
+        }
+    },
     // Node that is linked to the node involved
     pointer: {
         view: function (ctrl, logObject) {

@@ -56,7 +56,7 @@
     "registration_approved_no_user": "Registration of ${node} approved",
     "registration_cancelled":   "${user} cancelled registration of ${node}",
     "node_created":     "${user} created ${node}",
-    "node_forked":  "${user} created fork from ${node}",
+    "node_forked":  "${user} created fork from ${forked_from}",
     "node_removed":  "${user} removed ${node}",
     "license_changed" : "${user} updated the license of ${node}",
     "file_tag_added": "${user} tagged ${path} in ${node} as ${tag} in OSF Storage",
