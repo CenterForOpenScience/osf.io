@@ -282,6 +282,7 @@ var CommentModel = function(data, $parent, $root) {
     self.isAbuse = ko.observable(data.attributes.is_abuse);
     self.canEdit = ko.observable(data.attributes.can_edit);
     self.hasChildren = ko.observable(data.attributes.has_children);
+    self.loadingComments = ko.observable(true);
 
     if (window.contextVars.node.anonymous) {
         self.author = {
