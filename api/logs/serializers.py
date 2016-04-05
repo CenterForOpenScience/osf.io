@@ -90,8 +90,9 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
         if pointer_info:
             pointer_id = pointer_info.get('id', None)
             pointer_title = pointer_info.get('title', None)
+            pointer_category = pointer_info.get('category', None)
             if pointer_id and pointer_title:
-                return {'id': pointer_id, 'title': pointer_title}
+                return {'id': pointer_id, 'title': pointer_title, 'category': pointer_category}
         return None
 
     def get_template_node(self, obj):

@@ -268,14 +268,25 @@ var LogPieces = {
         }
     },
     // Pointer category
-    category: {
-      view: function (ctrl, logObject) {
+    pointer_category: {
+        view: function (ctrl, logObject) {
             var linked_node = logObject.embeds.linked_node;
             if(paramIsReturned(linked_node, logObject)){
-                return m('span', linked_node.data.attributes.category);
+                var category = linked_node.data.attributes.category;
+                if (category != '') {
+                    return m('span', linked_node.data.attributes.category);
+                }
             }
-            return m('span','');
-      }
+
+            var linkedNodeParams = logObject.attributes.params.pointer;
+            if (paramIsReturned(linkedNodeParams, logObject)) {
+                if (linkedNodeParams.category != '') {
+                     return m('span', linkedNodeParams.category);
+                }
+
+            }
+            return m('span','project')
+        }
     },
     // Node that acted as template to create a new node involved
     template: {
