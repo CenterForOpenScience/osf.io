@@ -374,7 +374,7 @@ var LogPieces = {
             self.returnLinkForPath = function() {
                 if (logObject) {
                     var action = logObject.attributes.action;
-                    var acceptableLinkedItems = ['osf_storage_file_added', 'osf_storage_file_updated'];
+                    var acceptableLinkedItems = ['osf_storage_file_added', 'osf_storage_file_updated', 'file_tag_added'];
                     if (acceptableLinkedItems.indexOf(action) !== -1) {
                         return logObject.attributes.params.view_url;
                     }

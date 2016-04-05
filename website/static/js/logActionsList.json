@@ -59,6 +59,7 @@
     "node_forked":  "${user} created fork from ${node}",
     "node_removed":  "${user} removed ${node}",
     "license_changed" : "${user} updated the license of ${node}",
+    "file_tag_added": "${user} tagged ${path} in ${node} as ${tag} in OSF Storage",
     "osf_storage_file_added" : "${user} added file ${path} to OSF Storage in ${node}",
     "osf_storage_folder_created" : "${user} created folder ${path} in OSF Storage in ${node}",
     "osf_storage_file_updated" : "${user} updated file ${path} in OSF Storage in ${node}",
