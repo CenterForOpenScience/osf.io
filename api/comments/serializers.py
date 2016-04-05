@@ -93,11 +93,6 @@ class CommentSerializer(JSONAPISerializer):
                     raise PermissionDenied('Not authorized to undelete this comment.')
             elif 'get_content' in validated_data:
                 content = validated_data.pop('get_content')
-
-                if validated_data['new_mentions']:
-                    node = comment.node
-                    # check to make sure the users mentioned are contributors on the node or have been mentioned already
-                    validated_data['new_mentions'] = [mention for mention in validated_data['new_mentions'] if mention not in comment.old_mentions and get_object_or_error(User, mention, display_name='user') in node.contributors]
                 try:
                     comment.edit(content, auth=auth, save=True)
                 except PermissionsError:
@@ -175,9 +170,6 @@ class CommentCreateSerializer(CommentSerializer):
             )
         validated_data['target'] = target
         validated_data['content'] = validated_data.pop('get_content')
-
-        # check to make sure the users mentioned are contributors on the node
-        validated_data['new_mentions'] = [mention for mention in validated_data['new_mentions'] if get_object_or_error(User, mention, display_name='user') in node.contributors]
 
         try:
             comment = Comment.create(auth=auth, **validated_data)
