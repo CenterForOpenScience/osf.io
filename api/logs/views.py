@@ -105,7 +105,7 @@ class LogNodeList(JSONAPIBaseView, generics.ListAPIView, LogMixin, ODMFilterMixi
         auth_user = get_user_auth(self.request)
         return [
             node for node in log.node__logged
-            if node.can_view(auth_user)
+            if node.can_view(auth_user) and not node.is_deleted
         ]
 
 

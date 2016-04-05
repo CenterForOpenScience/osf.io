@@ -169,9 +169,16 @@ var LogPieces = {
         view: function (ctrl, logObject) {
             var nodeObject = logObject.embeds.nodes;
 
+            // For logs that are returning deleted nodes
+            if (nodeObject.data.length === 0){
+                var deletedNode = logObject.attributes.params.params_node;
+                if (paramIsReturned(deletedNode, logObject)){
+                     return m('span', deletedNode.title);
+                }
+            }
             if (logObject.attributes.action === 'node_removed') {
                 if (logObject.attributes.params.params_node) {
-                return m('span', logObject.attributes.params.params_node.title);
+                    return m('span', logObject.attributes.params.params_node.title);
             }}
             else if(paramIsReturned(nodeObject, logObject) && nodeObject.data[0]){
                 if (nodeObject.data[0].links && nodeObject.data[0].attributes) {
