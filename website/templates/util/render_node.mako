@@ -145,6 +145,12 @@
             %else:
                 Private Component
             %endif
+            % if not summary['primary'] and 'write' in user['permissions'] and not node['is_registration']:
+                ## Allow deletion of pointers, even if user doesn't know what they are deleting
+                <span class="pull-right">
+                    <i class="fa fa-times remove-pointer pointer" data-id="${summary['id']}" data-toggle="tooltip" title="Remove link"></i>
+                </span>
+            % endif
         </p>
     </li>
 
