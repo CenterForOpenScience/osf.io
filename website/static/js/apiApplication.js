@@ -191,9 +191,11 @@ var ApplicationsListViewModel = oop.defclass({
                 'danger');
 
             Raven.captureMessage('Error fetching list of registered applications', {
-                url: this.apiListUrl,
-                status: status,
-                error: error
+                extra: {
+                    url: this.apiListUrl,
+                    status: status,
+                    error: error
+                }
             });
         }.bind(this));
     },
@@ -280,9 +282,11 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
                             'danger');
 
                 Raven.captureMessage('Error fetching application data', {
-                    url: this.apiDetailUrl(),
-                    status: status,
-                    error: error
+                    extra: {
+                        url: this.apiDetailUrl(),
+                        status: status,
+                        error: error
+                    }
                 });
             }.bind(this));
         }
@@ -313,9 +317,11 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
                        'danger');
 
             Raven.captureMessage('Error updating instance', {
-                url: this.apiDetailUrl,
-                status: status,
-                error: error
+                extra: {
+                    url: this.apiDetailUrl,
+                    status: status,
+                    error: error
+                }
             });
         }.bind(this));
         return request;
@@ -337,9 +343,11 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
                        'danger');
 
             Raven.captureMessage('Error registering new OAuth2 application', {
-                url: this.apiDetailUrl,
-                status: status,
-                error: error
+                extra: {
+                    url: this.apiDetailUrl,
+                    status: status,
+                    error: error
+                }
             });
         }.bind(this));
     },
@@ -409,9 +417,11 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
                             'danger');
 
                         Raven.captureMessage('Error resetting instance secret', {
-                            url: appData.apiResetUrl,
-                            status: status,
-                            error: error
+                            extra: {
+                                url: appData.apiResetUrl,
+                                status: status,
+                                error: error
+                            }
                         });
                     }.bind(self));
                 }
