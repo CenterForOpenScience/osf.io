@@ -14,6 +14,10 @@ from admin.nodes.serializers import serialize_node, serialize_simple_user
 
 
 class NodeFormView(OSFAdmin, GuidFormView):
+    """ Allow authorized admin user to input specific node guid.
+
+    Basic form. No admin models.
+    """
     template_name = 'nodes/search.html'
     object_type = 'node'
 
@@ -23,11 +27,12 @@ class NodeFormView(OSFAdmin, GuidFormView):
 
 
 class NodeRemoveContributorView(OSFAdmin, DeleteView):
+    """ Allow authorized admin user to remove project contributor
+
+    Interface with OSF database. No admin models.
+    """
     template_name = 'nodes/remove_contributor.html'
     context_object_name = 'node'
-
-    def get(self, request, *args, **kwargs):
-        return super(NodeRemoveContributorView, self).get(request, *args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
         try:
@@ -39,7 +44,7 @@ class NodeRemoveContributorView(OSFAdmin, DeleteView):
                 AttributeError(
                     '{} with id "{}" not found.'.format(
                         self.context_object_name.title(),
-                        kwargs.get('spam_id')
+                        kwargs.get('node_id')
                     )
                 )
             )
@@ -58,6 +63,10 @@ class NodeRemoveContributorView(OSFAdmin, DeleteView):
 
 
 class NodeDeleteView(OSFAdmin, DeleteView):
+    """ Allow authorized admin user to remove/hide nodes
+
+    Interface with OSF database. No admin models.
+    """
     template_name = 'nodes/remove_node.html'
     context_object_name = 'node'
 
@@ -77,7 +86,7 @@ class NodeDeleteView(OSFAdmin, DeleteView):
                 AttributeError(
                     '{} with id "{}" not found.'.format(
                         self.context_object_name.title(),
-                        kwargs.get('spam_id')
+                        kwargs.get('node_id')
                     )
                 )
             )
@@ -93,6 +102,10 @@ class NodeDeleteView(OSFAdmin, DeleteView):
 
 
 class NodeView(OSFAdmin, GuidView):
+    """ Allow authorized admin user to view nodes
+
+    View of OSF database. No admin models.
+    """
     template_name = 'nodes/node.html'
     context_object_name = 'node'
 
@@ -101,6 +114,10 @@ class NodeView(OSFAdmin, GuidView):
 
 
 class RegistrationListView(OSFAdmin, ListView):
+    """ Allow authorized admin user to view list of registrations
+
+    View of OSF database. No admin models.
+    """
     template_name = 'nodes/registration_list.html'
     paginate_by = 10
     paginate_orphans = 1
