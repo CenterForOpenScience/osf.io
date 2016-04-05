@@ -162,7 +162,7 @@ var BaseComment = function() {
                 let match = regex.exec(matches[i]);
                 let guid = match[1];
                 let mention = match[2];
-                let url = 'localhost:5000/' + guid; // TODO: change the url to not localhost
+                let url = '/' + guid + '/'; // TODO: change the url to not localhost
                 content = content.replace(match[0], '['+ mention + '](' + url + ')');
 
                 if (guid && self.replyMentions.indexOf(guid) === -1) {
@@ -396,8 +396,8 @@ var CommentModel = function(data, $parent, $root) {
         if (!content) {
             content = '';
         }
-        var regex = /\[(@|\+)(.*?)\]\(localhost:5000\/([a-z\d]{5})\)/;
-        var matches = content.match(/\[(@|\+)(.*?)\]\(localhost:5000\/([a-z\d]{5})\)/g);
+        var regex = /\[(@|\+)(.*?)\]\(\/([a-z\d]{5})\/\)/;
+        var matches = content.match(/\[(@|\+)(.*?)\]\(\/([a-z\d]{5})\/\)/g);
         if (matches) {
             for (var i = 0; i < matches.length; i++) {
                 let match = regex.exec(matches[i]);
@@ -425,7 +425,7 @@ var CommentModel = function(data, $parent, $root) {
                 let match = regex.exec(matches[i]);
                 let guid = match[1];
                 let mention = match[2];
-                let url = 'localhost:5000/' + guid; // TODO: change the url to not localhost
+                let url = '/' + guid + '/';
                 content = content.replace(match[0], '['+ mention + '](' + url + ')');
 
                 if (guid && self.replyMentions.indexOf(guid) === -1) {
