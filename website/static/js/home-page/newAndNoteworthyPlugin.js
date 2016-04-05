@@ -32,7 +32,9 @@ var NewAndNoteworthy = {
         // Switches errorLoading to true
         self.requestError = function(result){
             self.errorLoading = m.prop(true);
-            Raven.captureMessage('Error loading new and noteworthy projects on home page.', {requestReturn: result});
+            Raven.captureMessage('Error loading new and noteworthy projects on home page.', {
+                extra: { requestReturn: result }
+            });
         };
 
         // Load new and noteworthy nodes
