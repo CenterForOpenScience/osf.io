@@ -513,8 +513,8 @@ class RelationshipField(ser.HyperlinkedIdentityField):
 
     def to_esi_representation(self, value, envelope='data'):
         relationships = self.to_representation(value)
-        if relationships is not None and 'related' in relationships.keys():
-            href = relationships['related']
+        if relationships is not None and 'links' in relationships.keys() and 'related' in relationships['links'].keys():
+            href = relationships['links']['related']['href']
             if href and not href == '{}':
                 if self.always_embed:
                     envelope = 'data'
@@ -1007,7 +1007,6 @@ class JSONAPISerializer(ser.Serializer):
                         else:
                             try:
                                 # If a field has an empty representation, it should not be embedded.
-                                field.to_representation(attribute)
                                 result = self.context['embed'][field.field_name](obj)
                             except SkipField:
                                 result = None
