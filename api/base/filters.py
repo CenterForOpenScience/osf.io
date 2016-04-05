@@ -25,7 +25,10 @@ def sort_multiple(fields):
     fields = list(fields)
     def sort_fn(a, b):
         rev = 1
+        num = 1
+        i = 0
         for field in fields:
+            i += 1
             if field[0] == '-':
                 rev = -1
                 field = field[1:]
@@ -36,9 +39,10 @@ def sort_multiple(fields):
             elif a_field < b_field:
                 return -1 * rev
             elif a_field == b_field:
-                return 0
+                continue
         return 0
     return sort_fn
+
 
 
 class ODMOrderingFilter(OrderingFilter):

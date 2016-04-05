@@ -240,6 +240,15 @@ class TestODMOrderingFilter(ApiTestCase):
         def __str__(self):
             return self.title
 
+    class queryn:
+        title = ' '
+        number = 0
+        def __init__(self, title, number):
+            self.title = title
+            self.number = number
+        def __str__(self):
+            return self.title
+
     def test_filter_queryset_fails(self):
         query_s = [self.query(x) for x in 'NewProj Zip Proj Activity'.split()]
         sort_q = sorted(query_s, cmp=filters.sort_multiple(['-title']))
@@ -251,4 +260,12 @@ class TestODMOrderingFilter(ApiTestCase):
         sort_q = sorted(query_s, cmp=filters.sort_multiple(['-title']))
         sortt = [str(i) for i in sort_q]
         assert_equal((sortt) , ['Zip', 'NewProj', 'Activity', 'Activity'])
+
+    def test_filter_queryset_handles_multiple_fields(self):
+        objs = [self.queryn(title='NewProj', number=10),
+                self.queryn(title='Zip', number=20),
+                self.queryn(title='Activity', number=30),
+                self.queryn(title='Activity', number=40)]
+        actual = [x.number for x in sorted(objs, cmp=filters.sort_multiple(['title', '-number']))]
+        assert_equal(actual, [40, 30, 10, 20])
 
