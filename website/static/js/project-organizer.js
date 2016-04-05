@@ -53,7 +53,10 @@ function _poTitleColumn(item) {
  * @private
  */
 function _poContributors(item) {
-    var contributorList = item.data.embeds.contributors.data;
+    var contributorList = [];
+    if (item.data && item.data.embeds && item.data.embeds.contributors) {
+        contributorList = item.data.embeds.contributors.data;
+    }
     if(!contributorList){
         return '';
     }

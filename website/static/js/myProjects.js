@@ -261,7 +261,7 @@ function _formatDataforPO(item) {
     item.name = item.attributes.title;
     item.tags = item.attributes.tags.toString();
     item.contributors = '';
-    if (item.embeds.contributors.data){
+    if (item.embeds && item.embeds.contributors){
         item.embeds.contributors.data.forEach(function(c){
             var attr;
             if (c.embeds.users.data) {
@@ -279,7 +279,10 @@ function _formatDataforPO(item) {
     //
     //Sets for filtering
     item.tagSet = new Set(item.attributes.tags || []);
-    var contributors = item.embeds.contributors.data || [];
+    var contributors = [];
+    if (item.embeds && item.embeds.contributors) {
+        contributors = item.embeds.contributors.data;
+    }
     item.contributorSet= new Set(contributors.map(function(contrib) {
       return contrib.id;
     }));
@@ -652,7 +655,10 @@ var MyProjects = {
             self.users = {};
 
             self.filteredData().forEach(function(item) {
-              var contributors = item.embeds.contributors.data || [];
+                var contributors = [];
+                if (item.embeds && item.embeds.contributors) {
+                    contributors = item.embeds.contributors.data;
+                }
               for(var i = 0; i < contributors.length; i++) {
                 var u = contributors[i];
                 if (u.id === window.contextVars.currentUser.id) {
