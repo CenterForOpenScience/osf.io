@@ -210,14 +210,20 @@ var LogPieces = {
                         comma = ' and ';
                     }
 
+
                     var attributes = item.attributes;
                     if (attributes == null && item.data && item.data.attributes) {
                         attributes = item.data.attributes;
                     }
 
+                    var links = item.links;
+                    if (links == null && item.data && item.data.links){
+                        links = item.data.links;
+                    }
+
                     if (attributes) {
-                        if (attributes.active && item.data.links) {
-                            return [ m('a', {href: item.data.links.html}, attributes.full_name), comma];
+                        if (attributes.active && links) {
+                            return [ m('a', {href: links.html}, attributes.full_name), comma];
                         }
                         else {
                             return [attributes.full_name, comma];
