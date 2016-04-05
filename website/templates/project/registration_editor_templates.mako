@@ -61,6 +61,7 @@
 
 <script type="text/html" id="object">
   <span data-bind="foreach: $data.properties">
+    <p class="help-block breaklines f-w-xl" data-bind="text: $data.description"></p>
     <div data-bind="template: {data: $root.context($data, $root), name: $data.type}"></div>
     <hr />
   </span>
@@ -79,7 +80,7 @@
           <span class="text-muted" data-bind="ifnot: required">
             (optional)
           </span>
-          <p class="help-block" data-bind="text: description"></p>
+          <p class="help-block breaklines f-w-xl text-bigger" data-bind="text: description"></p>
           <span data-bind="if: help" class="example-block">
             <a data-bind="click: toggleExample">Show Example</a>
             <p data-bind="visible: showExample, html: help"></p>
