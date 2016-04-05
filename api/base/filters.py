@@ -27,7 +27,7 @@ def sort_multiple(fields):
         rev = 1
         num = 1
         i = 0
-        for field in fields:
+        for index, field in enumerate(fields):
             i += 1
             if field[0] == '-':
                 rev = -1
@@ -39,7 +39,10 @@ def sort_multiple(fields):
             elif a_field < b_field:
                 return -1 * rev
             elif a_field == b_field:
-                continue
+                if index < len(fields) - 1:
+                    continue
+                else:
+                    return 0
         return 0
     return sort_fn
 
