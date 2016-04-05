@@ -72,6 +72,11 @@ def main(dry_run=True):
     usage_audit.hour.on(0)
     usage_audit.minute.on(0)  # Daily 12 a.m.
 
+    new_and_noteworthy = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/populate_new_and_noteworthy_projects.sh')))
+    new_and_noteworthy.dow.on(6)
+    new_and_noteworthy.hour.on(0)
+    new_and_noteworthy.minute.on(0)  # Saturday 12:00 a.m.
+
     logger.info('Updating crontab file:')
     logger.info(cron.render())
 

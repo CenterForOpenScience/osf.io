@@ -13,7 +13,7 @@
 # (upon clicking primary email confirmation link)
 WELCOME_MESSAGE = '''
 <h1>Welcome to the OSF!</h1>
-<p>Visit our <a href="https://osf.io/getting-started/">getting started page</a> to learn about creating a project, or get inspiration from <a href="https://osf.io/explore/activity/#popularPublicProjects">popular public projects</a></p>
+<p>Visit our <a href="https://osf.io/getting-started/">getting started page</a> to learn about creating a project, or get inspiration from <a href="https://osf.io/explore/activity/#popularPublicProjects">popular public projects</a>.</p>
 '''
 
 REGISTRATION_SUCCESS = '''Registration successful. Please check {email} to confirm your email address.'''
@@ -61,6 +61,10 @@ CLAIMED_CONTRIBUTOR = ('<strong>Welcome to the OSF!</strong> Edit your display n
 
 # Error Pages
 # ###########
+
+# Search-related errors
+SEARCH_QUERY_HELP = ('Please check our help (the question mark beside the search box) for more information '
+                     'on advanced search queries.')
 
 # Shown at error page if an expired/revokes email confirmation link is clicked
 EXPIRED_EMAIL_CONFIRM_TOKEN = 'This confirmation link has expired. Please <a href="/login/">log in</a> to continue.'

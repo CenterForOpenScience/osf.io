@@ -3,10 +3,12 @@ from rest_framework import serializers as ser
 from rest_framework import exceptions
 
 from api.base.utils import absolute_reverse
+from api.files.serializers import FileSerializer
 from api.nodes.serializers import NodeSerializer
 from api.nodes.serializers import NodeLinksSerializer
 from api.nodes.serializers import NodeContributorsSerializer
-from api.base.serializers import IDField, RelationshipField, LinksField, HideIfRetraction, DevOnly
+from api.base.serializers import (IDField, RelationshipField, LinksField, HideIfRetraction,
+                                  FileCommentRelationshipField, NodeFileHyperLinkField, HideIfRegistration)
 
 
 class RegistrationSerializer(NodeSerializer):
@@ -65,15 +67,16 @@ class RegistrationSerializer(NodeSerializer):
         related_view_kwargs={'node_id': '<forked_from_id>'}
     ))
 
-    node_links = DevOnly(HideIfRetraction(RelationshipField(
+    node_links = HideIfRetraction(RelationshipField(
         related_view='registrations:registration-pointers',
         related_view_kwargs={'node_id': '<pk>'},
         related_meta={'count': 'get_pointers_count'}
-    )))
+    ))
 
     parent = HideIfRetraction(RelationshipField(
         related_view='registrations:registration-detail',
-        related_view_kwargs={'node_id': '<parent_id>'}
+        related_view_kwargs={'node_id': '<parent_node._id>'},
+        filter_key='parent_node'
     ))
 
     logs = HideIfRetraction(RelationshipField(
@@ -90,6 +93,10 @@ class RegistrationSerializer(NodeSerializer):
         related_view='registrations:registration-institution-detail',
         related_view_kwargs={'node_id': '<pk>'}
     )
+    registrations = HideIfRegistration(RelationshipField(
+        related_view='nodes:node-registrations',
+        related_view_kwargs={'node_id': '<pk>'}
+    ))
 
     # TODO: Finish me
 
@@ -163,3 +170,17 @@ class RegistrationContributorsSerializer(NodeContributorsSerializer):
                 'user_id': obj._id
             }
         )
+
+
+class RegistrationFileSerializer(FileSerializer):
+
+    files = NodeFileHyperLinkField(
+        related_view='registrations:registration-files',
+        related_view_kwargs={'node_id': '<node_id>', 'path': '<path>', 'provider': '<provider>'},
+        kind='folder'
+    )
+
+    comments = FileCommentRelationshipField(related_view='registrations:registration-comments',
+                                            related_view_kwargs={'node_id': '<node._id>'},
+                                            related_meta={'unread': 'get_unread_comments_count'},
+                                            filter={'target': 'get_file_guid'})

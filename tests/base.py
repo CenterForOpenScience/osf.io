@@ -19,6 +19,7 @@ from faker import Factory
 from nose.tools import *  # noqa (PEP8 asserts)
 from pymongo.errors import OperationFailure
 from modularodm import storage
+from django.test import SimpleTestCase, override_settings
 from django.test import TestCase as DjangoTestCase
 
 
@@ -73,6 +74,7 @@ SILENT_LOGGERS = [
     'website.mails',
     'website.search_migration.migrate',
     'website.util.paths',
+    'api.caching.tasks'
 ]
 for logger_name in SILENT_LOGGERS:
     logging.getLogger(logger_name).setLevel(logging.CRITICAL)
@@ -241,7 +243,8 @@ class TestAppJSONAPI(TestApp, JSONAPIWrapper):
     delete_json_api = json_api_method('DELETE')
 
 
-class ApiAppTestCase(unittest.TestCase):
+@override_settings(DEBUG_PROPAGATE_EXCEPTIONS=True)
+class ApiAppTestCase(SimpleTestCase):
     """Base `TestCase` for OSF API v2 tests that require the WSGI app (but no database).
     """
     def setUp(self):

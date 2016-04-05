@@ -56,9 +56,11 @@ var FileEditor = {
             }).fail(function (xhr, textStatus, error) {
                 $osf.growl('Error','The file content could not be loaded.');
                 Raven.captureMessage('Could not GET file contents.', {
-                    url: self.url,
-                    textStatus: textStatus,
-                    error: error
+                    extra: {
+                        url: self.url,
+                        textStatus: textStatus,
+                        error: error
+                    }
                 });
             });
         };
@@ -92,8 +94,10 @@ var FileEditor = {
                 model.editor.setValue(self.initialText);
                 $osf.growl('Error', message);
                 Raven.captureMessage('Could not PUT file content.', {
-                    textStatus: textStatus,
-                    url: self.url
+                    extra: {
+                        textStatus: textStatus,
+                        url: self.url
+                    }
                 });
                 m.redraw();
             });
