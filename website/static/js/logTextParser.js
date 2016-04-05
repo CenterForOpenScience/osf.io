@@ -354,17 +354,14 @@ var LogPieces = {
     page: {
         controller: function(logObject){
             var self = this;
-            self.nodeObject = logObject.embeds.nodes;
             self.action = logObject.attributes.action;
-            self.page = logObject.attributes.params.page;
             self.acceptableLinkedItems = ['wiki_updated', 'wiki_renamed'];
+            self.page_id = logObject.attributes.params.page_id;
 
             self.returnLinkForPath = function() {
-                if (self.acceptableLinkedItems.indexOf(self.action) !== -1 && (paramIsReturned(self.nodeObject, logObject) &&
-                    self.nodeObject.data[0])) {
-                    var nodeUrl = self.nodeObject.data[0].links.html;
-                    if (paramIsReturned(self.page, logObject)){
-                        return nodeUrl + 'wiki/' + encodeURIComponent(self.page);
+                if (self.acceptableLinkedItems.indexOf(self.action) !== -1) {
+                    if (paramIsReturned(self.page_id, logObject)){
+                        return '/' + self.page_id;
                     }
                 }
                 return null;
