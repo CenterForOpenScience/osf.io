@@ -69,6 +69,10 @@ function ProjectWiki(data) {
     var tbOptions = $.extend({}, projectSettingsTreebeardBase.defaults, {
         filesData: data,
         divID: 'wgrid',
+        onload : function () {
+            var tb = this;
+            expandOnLoad.call(tb);
+        },
         resolveRows: function wikiResolveRows(item){
             var columns = [];
             var iconcss = '';
@@ -128,7 +132,6 @@ function ProjectWiki(data) {
         }
     });
     var wgrid = new Treebeard(tbOptions);
-    expandOnLoad.call(wgrid.tbController);
 }
 
 module.exports = ProjectWiki;

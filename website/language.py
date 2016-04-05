@@ -13,7 +13,7 @@
 # (upon clicking primary email confirmation link)
 WELCOME_MESSAGE = '''
 <h1>Welcome to the OSF!</h1>
-<p>Visit our <a href="https://osf.io/getting-started/">getting started page</a> to learn about creating a project, or get inspiration from <a href="https://osf.io/explore/activity/#popularPublicProjects">popular public projects</a></p>
+<p>Visit our <a href="https://osf.io/getting-started/">getting started page</a> to learn about creating a project, or get inspiration from <a href="https://osf.io/explore/activity/#popularPublicProjects">popular public projects</a>.</p>
 '''
 
 REGISTRATION_SUCCESS = '''Registration successful. Please check {email} to confirm your email address.'''
@@ -109,12 +109,12 @@ BEFORE_FORK_HAS_POINTERS = (
 
 REGISTRATION_INFO = '''
 <p>Registration creates a frozen version of the project that can never be
-edited or deleted but can be retracted. You can register your project by
+edited or deleted but can be withdrawn. You can register your project by
 selecting a registration form, entering information about your project, and
 then confirming. You will be able to continue editing the original project,
 however, and the frozen version with timestamps will always be linked to
-the original. Retracting a registration will leave behind metadata about
-when the registration was created and retracted but removes the contents
+the original. Withdrawing a registration will leave behind metadata about
+when the registration was created and withdrawn but removes the contents
 of the registration.</p>
 
 <ul>
@@ -136,9 +136,9 @@ REGISTRATION_EMBARGO_INFO = '''
 You can choose whether to make your registration public immediately or
 embargo it for up to four years. At the end of the embargo period the registration
 is automatically made public. After becoming public, the only way to remove a
-registration is to retract it. Retractions show only the registration title,
+registration is to withdraw it. Withdrawn registrations show only the registration title,
 contributors, and description to indicate that a registration was made and
-later retracted.
+later withdrawn.
 <br /><br />
 If you choose to embargo your registration, a notification will be sent to
 all other project contributors. Other administrators will have 48 hours to

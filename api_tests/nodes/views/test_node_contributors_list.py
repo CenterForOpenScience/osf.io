@@ -130,6 +130,21 @@ class TestNodeContributorList(NodeCRUDTestCase):
         assert_equal(len(errors), 1)
         assert_equal(errors[0]['detail'], "'middle_name' is not a valid field for this endpoint.")
 
+    def test_disabled_contributors_contain_names_under_meta(self):
+        self.public_project.add_contributor(self.user_two, save=True)
+
+        self.user_two.is_disabled = True
+        self.user_two.save()
+
+        res = self.app.get(self.public_url)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert_equal(len(res.json['data']), 2)
+        assert_equal(res.json['data'][0]['id'], self.user._id)
+        assert_equal(res.json['data'][1]['id'], self.user_two._id)
+        assert_equal(res.json['data'][1]['embeds']['users']['errors'][0]['meta']['full_name'], self.user_two.fullname)
+        assert_equal(res.json['data'][1]['embeds']['users']['errors'][0]['detail'], 'The requested user is no longer available.')
+
 
 class TestNodeContributorFiltering(ApiTestCase):
 
