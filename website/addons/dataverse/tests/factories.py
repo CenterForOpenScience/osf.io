@@ -19,13 +19,15 @@ class DataverseAccountFactory(ExternalAccountFactory):
 
 
 class DataverseUserSettingsFactory(ModularOdmFactory):
-    FACTORY_FOR = AddonDataverseUserSettings
+    class Meta:
+        model = AddonDataverseUserSettings
 
     owner = SubFactory(UserFactory)
 
 
 class DataverseNodeSettingsFactory(ModularOdmFactory):
-    FACTORY_FOR = AddonDataverseNodeSettings
+    class Meta:
+        model = AddonDataverseNodeSettings
 
     owner = SubFactory(ProjectFactory)
     user_settings = SubFactory(DataverseUserSettingsFactory)
