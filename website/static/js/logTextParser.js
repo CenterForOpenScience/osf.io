@@ -315,10 +315,10 @@ var LogPieces = {
             self.returnLinkForPath = function() {
                 if (self.acceptableLinkedItems.indexOf(self.action) !== -1 && (paramIsReturned(self.nodeObject, logObject) &&
                     self.nodeObject.data[0])) {
-                        var nodeUrl = self.nodeObject.data[0].links.html;
-                        if (paramIsReturned(self.page, logObject)){
-                            return nodeUrl + 'wiki/' + encodeURIComponent(self.page);
-                        }
+                    var nodeUrl = self.nodeObject.data[0].links.html;
+                    if (paramIsReturned(self.page, logObject)){
+                        return nodeUrl + 'wiki/' + encodeURIComponent(self.page);
+                    }
                 }
                 return null;
             };
