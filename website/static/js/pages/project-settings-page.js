@@ -30,7 +30,7 @@ if ($('#grid').length) {
         $notificationsMsg.addClass('text-danger');
         $notificationsMsg.text('Could not retrieve notification settings.');
         Raven.captureMessage('Could not GET notification settings.', {
-            url: notificationsURL, status: status, error: error
+            extra: { url: notificationsURL, status: status, error: error }
         });
     });
 }
@@ -51,7 +51,7 @@ if ($('#wgrid').length) {
         $wikiMsg.addClass('text-danger');
         $wikiMsg.text('Could not retrieve wiki settings.');
         Raven.captureMessage('Could not GET wiki settings.', {
-            url: wikiSettingsURL, status: status, error: error
+            extra: { url: wikiSettingsURL, status: status, error: error }
         });
     });
 }
@@ -290,7 +290,9 @@ WikiSettingsViewModel.enabled.subscribe(function(newValue) {
     }).fail(function(xhr, status, error) {
         $osf.growl('Error', 'Unable to update wiki');
         Raven.captureMessage('Could not update wiki.', {
-            url: ctx.node.urls.api + 'settings/addons/', status: status, error: error
+            extra: {
+                url: ctx.node.urls.api + 'settings/addons/', status: status, error: error
+            }
         });
         setTimeout(function(){window.location.reload();}, 1500);
     });

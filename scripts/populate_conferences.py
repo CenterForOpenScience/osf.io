@@ -701,6 +701,26 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
+    'DLF2016': {
+        'name': 'Digital Library Federation 2016',
+        'info_url': 'https://www.diglib.org/forums/2016forum/',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
+    'ESCAN2016': {
+        'name': 'European Society for Cognitive and Affective Neuroscience (ESCAN) 2016',
+        'info_url': 'http://congressos.abreu.pt/escan2016/',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
 }
 
 

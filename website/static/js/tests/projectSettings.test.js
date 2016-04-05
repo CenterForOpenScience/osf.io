@@ -77,9 +77,11 @@ describe('ProjectSettings', () => {
             vm.updateError({}, error, {});
             assert.calledWith(changeMessageSpy, language.updateErrorMessage);
             assert.calledWith(ravenStub, language.updateErrorMessage, {
-                url: updateUrl,
-                textStatus: error,
-                err: {},
+                extra: {
+                    url: updateUrl,
+                    textStatus: error,
+                    err: {},
+                }
             });
         });
     });
