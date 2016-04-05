@@ -3822,9 +3822,8 @@ class TestODMTitleSearch(OsfTestCase):
                                'includePublic': 'yes',
                                'includeContributed': 'yes',
                                'isFolder': 'yes'
-                           }, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), 1)
+                           }, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
         res = self.app.get(self.url,
                            {
                                'term': self.folder.title,
@@ -3849,9 +3848,8 @@ class TestODMTitleSearch(OsfTestCase):
                                'includePublic': 'yes',
                                'includeContributed': 'yes',
                                'isFolder': 'yes'
-                           }, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), 1)
+                           }, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
 
 
 class TestReorderComponents(OsfTestCase):
