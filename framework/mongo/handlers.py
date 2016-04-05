@@ -4,7 +4,6 @@ import logging
 import threading
 
 import pymongo
-from flask import g
 from werkzeug.local import LocalProxy
 
 from website import settings
@@ -15,11 +14,14 @@ logger = logging.getLogger(__name__)
 
 class ClientPool(object):
 
+    class ExtraneousReleaseError(Exception):
+        message = 'no cached connection to release'
+
     @property
     def thread_id(self):
         return threading.current_thread().ident
 
-    def __init__(self, MAX_CLIENTS=15):
+    def __init__(self, MAX_CLIENTS=100):
         self._max_clients = MAX_CLIENTS
         self._cache, self._local = [], {}
         self._sem = threading.BoundedSemaphore(MAX_CLIENTS)
@@ -33,8 +35,11 @@ class ClientPool(object):
         return self._local[_id]
 
     def release(self, _id=None):
-        self._cache.append(self._local.pop(_id or self.thread_id))
-        self._sem.release()
+        try:
+            self._cache.append(self._local.pop(_id or self.thread_id))
+            self._sem.release()
+        except KeyError:
+            raise ClientPool.ExtraneousReleaseError
 
     def transfer(self, to, from_):
         self._local[to] = self._local.pop(from_ or self.thread_id)
@@ -45,33 +50,31 @@ class ClientPool(object):
         except IndexError:
             pass
         logger.warning('Creating new client instance. {} instances initialized.'.format(self._max_clients - self._sem._Semaphore__value))
-        client = pymongo.MongoClient(settings.DB_HOST, settings.DB_PORT)
+        client = pymongo.MongoClient(settings.DB_HOST, settings.DB_PORT, max_pool_size=1)
         db = client[settings.DB_NAME]
 
         if settings.DB_USER and settings.DB_PASS:
             db.authenticate(settings.DB_USER, settings.DB_PASS)
         return client
 
-CLIENT_POOL = ClientPool()
 
-def get_mongo_client():
-    """Create MongoDB client and authenticate database.
-    """
-    return CLIENT_POOL.acquire()
+CLIENT_POOL = ClientPool()
 
 
 def connection_before_request():
-    """Attach MongoDB client to `g`.
+    """Acquire a MongoDB client from the pool.
     """
-    g._mongo_client = get_mongo_client()
+    CLIENT_POOL.acquire()
 
 
 def connection_teardown_request(error=None):
-    """Close MongoDB client if attached to `g`.
+    """Release the MongoDB client back into the pool.
     """
-    if getattr(g, '_mongo_client', None):
+    try:
         CLIENT_POOL.release()
-        g._mongo_client = None
+    except ClientPool.ExtraneousReleaseError:
+        if not settings.DEBUG_MODE:
+            raise
 
 
 handlers = {
@@ -80,15 +83,10 @@ handlers = {
 }
 
 
-# Set up getters for `LocalProxy` objects
-_mongo_client = get_mongo_client()
-
-
 def _get_current_client():
-    """Getter for `client` proxy. Return default client if no client attached
-    to `g` or no request context.
+    """Get the current mongodb client from the pool.
     """
-    return get_mongo_client()
+    return CLIENT_POOL.acquire()
 
 
 def _get_current_database():

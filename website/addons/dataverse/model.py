@@ -48,7 +48,6 @@ class AddonDataverseNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     _dataset_id = fields.StringField()
     dataset = fields.StringField()
 
-    # Legacy settings objects won't have IDs
     @property
     def folder_name(self):
         return self.dataset

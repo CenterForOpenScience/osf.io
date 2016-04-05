@@ -32,7 +32,7 @@ class CommentDetailPermissions(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return node.is_public or node.can_view(auth)
         else:
-            return comment.user._id == auth.user._id
+            return comment.user._id == auth.user._id and node.can_comment(auth)
 
 
 class CommentReportsPermissions(permissions.BasePermission):

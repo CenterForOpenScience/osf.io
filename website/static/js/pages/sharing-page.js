@@ -2,7 +2,7 @@
 var $ = require('jquery');
 
 var ContribManager = require('js/contribManager');
-var ContribAdder = require('js/contribAdder');
+
 var PrivateLinkManager = require('js/privateLinkManager');
 var PrivateLinkTable = require('js/privateLinkTable');
 var ko = require('knockout');
@@ -14,20 +14,6 @@ require('js/filters');
 var ctx = window.contextVars;
 
 var nodeApiUrl = ctx.node.urls.api;
-
-$('body').on('nodeLoad', function(event, data) {
-    // If user is a contributor, initialize the contributor modal
-    // controller
-    if (data.user.can_edit) {
-        new ContribAdder(
-            '#addContributors',
-            data.node.title,
-            data.node.id,
-            data.parent_node.id,
-            data.parent_node.title
-        );
-    }
-});
 
 var cm = new ContribManager('#manageContributors', ctx.contributors, ctx.adminContributors, ctx.user, ctx.isRegistration, '#manageContributorsTable', '#adminContributorsTable');
 

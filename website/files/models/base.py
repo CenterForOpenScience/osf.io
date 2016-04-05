@@ -12,7 +12,6 @@ from modularodm import fields, Q
 from modularodm.exceptions import NoResultsFound
 from dateutil.parser import parse as parse_date
 
-from api.base.utils import absolute_reverse
 from framework.guid.model import Guid
 from framework.mongo import StoredObject
 from framework.mongo.utils import unique_on
@@ -107,14 +106,19 @@ class StoredFileNode(StoredObject):
             ('path', pymongo.ASCENDING),
             ('node', pymongo.ASCENDING),
             ('is_file', pymongo.ASCENDING),
-            ('provider', pymongo.ASCENDING)
+            ('provider', pymongo.ASCENDING),
         ]
     }, {
         'unique': False,
         'key_or_list': [
             ('node', pymongo.ASCENDING),
             ('is_file', pymongo.ASCENDING),
-            ('provider', pymongo.ASCENDING)
+            ('provider', pymongo.ASCENDING),
+        ]
+    }, {
+        'unique': False,
+        'key_or_list': [
+            ('parent', pymongo.ASCENDING),
         ]
     }]
 
@@ -163,7 +167,8 @@ class StoredFileNode(StoredObject):
 
     @property
     def absolute_api_v2_url(self):
-        return absolute_reverse('files:file-detail', kwargs={'file_id': self._id})
+        path = '/files/{}/'.format(self._id)
+        return util.api_v2_url(path)
 
     # used by django and DRF
     def get_absolute_url(self):
@@ -244,6 +249,30 @@ class FileNode(object):
             return cls.find_one(Q('node', 'eq', node) & Q('path', 'eq', path))
         except NoResultsFound:
             return cls.create(node=node, path=path)
+
+    @classmethod
+    def get_file_guids(cls, materialized_path, provider, node, guids=None):
+        guids = guids or []
+        materialized_path = '/' + materialized_path.lstrip('/')
+        if materialized_path.endswith('/'):
+            folder_children = cls.find(Q('provider', 'eq', provider) &
+                                       Q('node', 'eq', node) &
+                                       Q('materialized_path', 'startswith', materialized_path))
+            for item in folder_children:
+                if item.kind == 'file':
+                    guid = item.get_guid()
+                    if guid:
+                        guids.append(guid._id)
+        else:
+            try:
+                file_obj = cls.find_one(Q('node', 'eq', node) & Q('materialized_path', 'eq', materialized_path))
+            except NoResultsFound:
+                return guids
+            guid = file_obj.get_guid()
+            if guid:
+                guids.append(guid._id)
+
+        return guids
 
     @classmethod
     def resolve_class(cls, provider, _type=2):
@@ -399,8 +428,6 @@ class FileNode(object):
         """
         trashed = self._create_trashed(user=user, parent=parent)
         self._repoint_guids(trashed)
-        if self._id in self.node.commented_files:
-            del self.node.commented_files[self._id]
         self.node.save()
         StoredFileNode.remove_one(self.stored_object)
         return trashed
@@ -567,11 +594,12 @@ class File(FileNode):
         version.update_metadata(data, save=False)
 
         # Transform here so it can be sortted on later
-        data['modified'] = parse_date(
-            data['modified'] or '',  # None breaks things to pass a string
-            ignoretz=True,
-            default=datetime.datetime.utcnow()  # Just incase nothing can be parsed
-        )
+        if data['modified'] is not None and data['modified'] != '':
+            data['modified'] = parse_date(
+                data['modified'],
+                ignoretz=True,
+                default=datetime.datetime.utcnow()  # Just incase nothing can be parsed
+            )
 
         # if revision is none then version is the latest version
         # Dont save the latest information
@@ -732,7 +760,7 @@ class FileVersion(StoredObject):
         # If its are not in this callback it'll be in the next
         self.size = self.metadata.get('size', self.size)
         self.content_type = self.metadata.get('contentType', self.content_type)
-        if self.metadata.get('modified') is not None:
+        if self.metadata.get('modified'):
             # TODO handle the timezone here the user that updates the file may see an
             # Incorrect version
             self.date_modified = parse_date(self.metadata['modified'], ignoretz=True)

@@ -14,8 +14,45 @@
 </div>
 %endif
 
+%if campaign == "institution" and enable_institutions:
+<div class="text-center m-t-lg">
+    <h3>OSF for Institutions </h3>
+    <hr>
+    <p>
+      If your institution has partnered with the Open Science Framework, please
+        select its name below and sign in with your institutional credentials.
+    </p>
+    <p> If you do not currently have an OSF account, this will create one. By creating an account you agree to our <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md">Terms</a> and that you have read our <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>, including our information on <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md#f-cookies">Cookie Use</a>.</p>
+</div>
+%endif
 <div class="row m-t-xl">
-    <div class="col-sm-5 col-sm-offset-1 toggle-box toggle-box-left toggle-box-active p-h-lg">
+    %if campaign == "institution" and enable_institutions:
+    <div class="col-sm-6 col-sm-offset-3 toggle-box toggle-box-active">
+        <h3 class="m-b-lg"> Login through institution</h3>
+        <div id="inst">
+            <div class="form-group">
+                <label for="selectedInst" class="control-label">Select Institution</label>
+                <select id="selectedInst" class="form-control" data-bind="value: selectedInst, options: instNames"></select>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-offset-3 col-sm-9">
+                    <button data-bind="click: instLogin, css: {disabled: loading}" class="btn btn-success pull-right">Sign in</button>
+                </div>
+            </div>
+            <div class="form-group" style="padding-top: 15px">
+                <div class="text-center m-t-lg">
+                    <p>For non-institutional login, click <a href="/login/">here</a>.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    %endif
+    %if campaign != "institution" or not enable_institutions:
+        %if sign_up:
+            <div class="col-sm-5 col-sm-offset-1 toggle-box toggle-box-left toggle-box-muted p-h-lg">
+        %else:
+            <div class="col-sm-5 col-sm-offset-1 toggle-box toggle-box-left toggle-box-active p-h-lg">
+        %endif
         <form
             id="logInForm"
             class="form-horizontal"
@@ -28,13 +65,13 @@
                 <label for="inputEmail3" class="col-sm-3 control-label">Email</label>
                 <div class="col-sm-9">
                     <input
+                        ${'autofocus' if not sign_up else ''}
                         type="email"
                         class="form-control"
                         data-bind="value: username"
                         name="username"
                         id="inputEmail3"
                         placeholder="Email"
-                        autofocus
                     >
                 </div>
             </div>
@@ -65,7 +102,11 @@
             </div>
         </form>
     </div>
-    <div id="signUpScope" class="col-sm-5 toggle-box toggle-box-right toggle-box-muted p-h-lg" style="height: auto;">
+        %if sign_up:
+            <div id="signUpScope" class="col-sm-5 toggle-box toggle-box-right toggle-box-active p-h-lg" style="height: auto;">
+        %else:
+            <div id="signUpScope" class="col-sm-5 toggle-box toggle-box-right toggle-box-muted p-h-lg" style="height: auto;">
+        %endif
         <form data-bind="submit: submit" class="form-horizontal">
             <h3 class="m-b-lg"> Create a free account </h3>
                 <div
@@ -79,6 +120,7 @@
                     <label for="inputName" class="col-sm-4 control-label">Full Name</label>
                     <div class="col-sm-8">
                         <input
+                            ${'autofocus' if sign_up else ''}
                             type="text"
                             class="form-control"
                             id="inputName"
@@ -171,20 +213,34 @@
             <div class="help-block" >
                 <p data-bind="html: flashMessage, attr.class: flashMessageClass"></p>
             </div>
+            <div>
+                <p> By clicking "Create account", you agree to our <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md">Terms</a> and that you have read our <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>, including our information on <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md#f-cookies">Cookie Use</a>.</p>
+            </div>
             <div class="form-group">
                 <div class="col-sm-offset-4 col-sm-8">
-                    <input type="hidden" id="campaign" value="${campaign or ''}" />
                     <button type="submit" class="btn pull-right btn-success ">Create account</button>
                 </div>
             </div>
         </form>
     </div>
+        %if redirect_url:
+            <div class="text-center m-b-sm col-sm-12" style="padding-top: 15px"> <a href="${domain}login/?campaign=institution&redirect_url=${redirect_url}">Login through your institution  <i class="fa fa-arrow-right"></i></a></div>
+        %else:
+            <div class="text-center m-b-sm col-sm-12" style="padding-top: 15px"> <a href="${domain}login/?campaign=institution">Login through your institution  <i class="fa fa-arrow-right"></i></a></div>
+        %endif
+    %endif
 </div>
 
 </%def>
 
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
+    <script type="text/javascript">
+        window.contextVars = $.extend(true, {}, window.contextVars, {
+            'campaign': ${campaign or '' | sjson, n},
+            'institution_redirect': ${institution_redirect or '' | sjson, n}
+        });
+    </script>
     <script src=${"/static/public/js/login-page.js" | webpack_asset}></script>
 </%def>
 

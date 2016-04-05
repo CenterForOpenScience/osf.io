@@ -4,8 +4,9 @@ import os
 
 from modularodm import Q
 
+from framework.guid.model import Guid
 from website.files import exceptions
-from website.files.models.base import File, Folder, FileNode, FileVersion
+from website.files.models.base import File, Folder, FileNode, FileVersion, TrashedFileNode
 
 
 __all__ = ('OsfStorageFile', 'OsfStorageFolder', 'OsfStorageFileNode')
@@ -32,6 +33,26 @@ class OsfStorageFileNode(FileNode):
 
         # Dont raise anything a 404 will be raised later
         return cls.create(node=node, path=path)
+
+    @classmethod
+    def get_file_guids(cls, materialized_path, provider, node=None, guids=None):
+        guids = guids or []
+        path = materialized_path.strip('/')
+        file_obj = cls.load(path)
+        if not file_obj:
+            file_obj = TrashedFileNode.load(path)
+
+        if not file_obj.is_file:
+            for item in file_obj.children:
+                cls.get_file_guids(item.path, provider, node=node, guids=guids)
+        else:
+            try:
+                guid = Guid.find(Q('referent', 'eq', file_obj))[0]
+            except IndexError:
+                guid = None
+            if guid:
+                guids.append(guid._id)
+        return guids
 
     @property
     def kind(self):
@@ -142,6 +163,49 @@ class OsfStorageFile(OsfStorageFileNode, File):
             if required:
                 raise exceptions.VersionNotFoundError(version)
             return None
+
+    def add_tag_log(self, action, tag, auth):
+        node = self.node
+        node.add_log(
+            action=action,
+            params={
+                'parent_node': node.parent_id,
+                'node': node._id,
+                'urls': {
+                    'download': '/project/{}/files/osfstorage/{}/?action=download'.format(node._id, self._id),
+                    'view': '/project/{}/files/osfstorage/{}/'.format(node._id, self._id)},
+                'path': self.materialized_path,
+                'tag': tag,
+            },
+            auth=auth,
+        )
+
+    def add_tag(self, tag, auth, save=True, log=True):
+        from website.models import Tag, NodeLog  # Prevent import error
+        if tag not in self.tags and not self.node.is_registration:
+            new_tag = Tag.load(tag)
+            if not new_tag:
+                new_tag = Tag(_id=tag)
+            new_tag.save()
+            self.tags.append(new_tag)
+            if log:
+                self.add_tag_log(NodeLog.FILE_TAG_ADDED, tag, auth)
+            if save:
+                self.save()
+            return True
+        return False
+
+    def remove_tag(self, tag, auth, save=True, log=True):
+        from website.models import Tag, NodeLog  # Prevent import error
+        tag = Tag.load(tag)
+        if tag and tag in self.tags and not self.node.is_registration:
+            self.tags.remove(tag)
+            if log:
+                self.add_tag_log(NodeLog.FILE_TAG_REMOVED, tag._id, auth)
+            if save:
+                self.save()
+            return True
+        return False
 
     def delete(self, user=None, parent=None):
         from website.search import search

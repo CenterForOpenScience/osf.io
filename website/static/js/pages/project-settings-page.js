@@ -6,6 +6,7 @@ var Raven = require('raven-js');
 var ko = require('knockout');
 
 var ProjectSettings = require('js/projectSettings.js');
+var InstitutionProjectSettings = require('js/institutionProjectSettings.js');
 
 var $osf = require('js/osfHelpers');
 require('css/addonsettings.css');
@@ -54,8 +55,12 @@ if ($('#wgrid').length) {
         });
     });
 }
+
 $(document).ready(function() {
     // Apply KO bindings for Project Settings
+    if ($('#institutionSettings').length) {
+        new InstitutionProjectSettings('#institutionSettings', window.contextVars);
+    }
     var categoryOptions = [];
     var keys = Object.keys(window.contextVars.nodeCategories);
     for (var i = 0; i < keys.length; i++) {
@@ -222,7 +227,13 @@ $(document).ready(function() {
       var unchecked = checkedOnLoad.filter('#selectAddonsForm input:not(:checked)');
 
       if(unchecked.length > 0 || checked.length > 0) {
-        return 'The changes on addon setting are not submitted!';
+          return 'The changes on addon setting are not submitted!';
+      }
+    /* Before closing the page, Check whether changes made to category, title or description are updated or not */
+      if (projectSettingsVM.title() !== projectSettingsVM.titlePlaceholder ||
+          projectSettingsVM.description() !== projectSettingsVM.descriptionPlaceholder ||
+          projectSettingsVM.selectedCategory() !== projectSettingsVM.categoryPlaceholder) {
+          return 'There are unsaved changes in your project settings.';
       }
     });
 
@@ -240,6 +251,8 @@ $(document).ready(function() {
                     callback: function(result) {
                         if (!result) {
                             $(that).attr('checked', false);
+                        } else {
+                            $('#selectAddonsForm').submit();
                         }
                     },
                     buttons:{
@@ -248,7 +261,11 @@ $(document).ready(function() {
                         }
                     }
                });
+            } else {
+                $('#selectAddonsForm').submit();
             }
+        } else {
+            $('#selectAddonsForm').submit();
         }
     });
 });

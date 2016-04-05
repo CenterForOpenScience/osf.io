@@ -117,7 +117,7 @@ def search_projects_by_title(**kwargs):
     max_results = int(request.args.get('maxResults', '10'))
     category = request.args.get('category', 'project').lower()
     is_deleted = request.args.get('isDeleted', 'no').lower()
-    is_folder = request.args.get('isFolder', 'no').lower()
+    is_collection = request.args.get('isFolder', 'no').lower()
     is_registration = request.args.get('isRegistration', 'no').lower()
     include_public = request.args.get('includePublic', 'yes').lower()
     include_contributed = request.args.get('includeContributed', 'yes').lower()
@@ -129,7 +129,7 @@ def search_projects_by_title(**kwargs):
     )
 
     matching_title = conditionally_add_query_item(matching_title, 'is_deleted', is_deleted)
-    matching_title = conditionally_add_query_item(matching_title, 'is_folder', is_folder)
+    matching_title = conditionally_add_query_item(matching_title, 'is_collection', is_collection)
     matching_title = conditionally_add_query_item(matching_title, 'is_registration', is_registration)
 
     if len(ignore_nodes) > 0:
@@ -143,7 +143,7 @@ def search_projects_by_title(**kwargs):
     if include_contributed == "yes":
         my_projects = Node.find(
             matching_title &
-            Q('contributors', 'contains', user._id)  # user is a contributor
+            Q('contributors', 'eq', user._id)  # user is a contributor
         ).limit(max_results)
         my_project_count = my_project_count
 

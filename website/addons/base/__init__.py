@@ -22,7 +22,7 @@ from framework.auth import Auth
 
 from website import settings
 from website.addons.base import serializer, logger
-from website.project.model import Node
+from website.project.model import Node, User
 from website.util import waterbutler_url_for
 
 from website.oauth.signals import oauth_complete
@@ -386,17 +386,33 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
         """
         for node in self.get_nodes_with_oauth_grants(external_account):
             try:
-                addon_settings = node.get_addon(external_account.provider)
+                addon_settings = node.get_addon(external_account.provider, deleted=True)
             except AttributeError:
                 # No associated addon settings despite oauth grant
                 pass
             else:
                 addon_settings.deauthorize(auth=auth)
 
+        if User.find(Q('external_accounts', 'contains', external_account._id)).count() == 1:
+            # Only this user is using the account, so revoke remote access as well.
+            self.revoke_remote_oauth_access(external_account)
+
         for key in self.oauth_grants:
             self.oauth_grants[key].pop(external_account._id, None)
         if save:
             self.save()
+
+    def revoke_remote_oauth_access(self, external_account):
+        """ Makes outgoing request to remove the remote oauth grant
+        stored by third-party provider.
+
+        Individual addons must override this method, as it is addon-specific behavior.
+        Not all addon providers support this through their API, but those that do
+        should also handle the case where this is called with an external_account
+        with invalid credentials, to prevent a user from being unable to disconnect
+        an account.
+        """
+        pass
 
     def verify_oauth_access(self, node, external_account, metadata=None):
         """Verify that access has been previously granted.
@@ -846,7 +862,7 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
             "AddonOAuthNodeSettingsBase subclasses must expose a 'clear_settings' method."
         )
 
-    def set_auth(self, external_account, user, log=True):
+    def set_auth(self, external_account, user, metadata=None, log=True):
         """Connect the node addon to a user's external account.
 
         This method also adds the permission to use the account in the user's
@@ -856,8 +872,8 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
         user_settings = user.get_or_add_addon(self.oauth_provider.short_name)
         user_settings.grant_oauth_access(
             node=self.owner,
-            external_account=external_account
-            # no metadata, because the node has access to no folders
+            external_account=external_account,
+            metadata=metadata  # metadata can be passed in when forking
         )
         user_settings.save()
 
@@ -945,7 +961,13 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
             save=False,
         )
         if self.has_auth and self.user_settings.owner == user:
-            clone.set_auth(self.external_account, user, log=False)
+            metadata = None
+            if self.complete:
+                try:
+                    metadata = self.user_settings.oauth_grants[node._id][self.external_account._id]
+                except (KeyError, AttributeError):
+                    pass
+            clone.set_auth(self.external_account, user, metadata=metadata, log=False)
             message = '{addon} authorization copied to forked {category}.'.format(
                 addon=self.config.full_name,
                 category=fork.project_or_component,

@@ -18,6 +18,7 @@ SECRET_KEY = osf_settings.SECRET_KEY
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = osf_settings.DEBUG_MODE
+DEBUG_PROPAGATE_EXCEPTIONS = True
 
 ALLOWED_HOSTS = [
     '.osf.io'
@@ -39,10 +40,14 @@ INSTALLED_APPS = (
     'admin.base',
     'admin.pre_reg',
     'admin.spam',
+    'admin.nodes',
+    'admin.users',
 
     # 3rd party
     'raven.contrib.django.raven_compat',
     'webpack_loader',
+    'django_nose',
+    'ckeditor',
 )
 
 # Custom user model (extends AbstractBaseUser)
@@ -50,7 +55,9 @@ AUTH_USER_MODEL = 'common_auth.MyUser'
 
 # TODO: Are there more granular ways to configure reporting specifically related to the API?
 RAVEN_CONFIG = {
-    'dsn': osf_settings.SENTRY_DSN
+    'tags': {'App': 'admin'},
+    'dsn': osf_settings.SENTRY_DSN,
+    'release': osf_settings.VERSION,
 }
 
 # Settings related to CORS Headers addon: allow API to receive authenticated requests from OSF
@@ -67,7 +74,9 @@ MIDDLEWARE_CLASSES = (
     # even in the event of a redirect. CommonMiddleware may cause other middlewares'
     # process_request to be skipped, e.g. when a trailing slash is omitted
     'api.base.middleware.DjangoGlobalMiddleware',
-    'api.base.middleware.TokuTransactionsMiddleware',
+    'api.base.middleware.MongoConnectionMiddleware',
+    'api.base.middleware.CeleryTaskMiddleware',
+    'api.base.middleware.TokuTransactionMiddleware',
 
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -135,4 +144,19 @@ WEBPACK_LOADER = {
         'BUNDLE_DIR_NAME': 'public/js/',
         'STATS_FILE': os.path.join(BASE_DIR, 'webpack-stats.json'),
     }
+}
+
+TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
+NOSE_ARGS = ['--verbosity=2']
+
+CKEDITOR_CONFIGS = {
+    'default': {
+        'toolbar': 'Custom',
+        'toolbar_Custom': [
+            ['Source'],
+            ['Bold', 'Italic', 'Underline'],
+            ['NumberedList', 'BulletedList'],
+            ['Link']
+        ]
+    },
 }

@@ -8,7 +8,7 @@ from tests.factories import (
     RegistrationFactory,
     NodeFactory,
     NodeLogFactory,
-    FolderFactory,
+    CollectionFactory,
 )
 from tests.base import OsfTestCase
 
@@ -31,7 +31,6 @@ class TestNodeSerializers(OsfTestCase):
         node = ProjectFactory(is_public=False)
         result = _get_summary(
             node, auth=Auth(user),
-            rescale_ratio=None,
             primary=True,
             link_id=None
         )
@@ -45,7 +44,7 @@ class TestNodeSerializers(OsfTestCase):
     # https://github.com/CenterForOpenScience/openscienceframework.org/issues/668
     def test_get_summary_for_registration_uses_correct_date_format(self):
         reg = RegistrationFactory()
-        res = _get_summary(reg, auth=Auth(reg.creator), rescale_ratio=None)
+        res = _get_summary(reg, auth=Auth(reg.creator))
         assert_equal(res['summary']['registered_date'],
                 reg.registered_date.strftime('%Y-%m-%d %H:%M UTC'))
 
@@ -55,7 +54,7 @@ class TestNodeSerializers(OsfTestCase):
         # non-contributor cannot see private registration of public project
         node = ProjectFactory(is_public=True)
         reg = RegistrationFactory(project=node, user=node.creator)
-        res = _get_summary(reg, auth=Auth(user), rescale_ratio=None)
+        res = _get_summary(reg, auth=Auth(user))
 
         # serialized result should have is_registration
         assert_true(res['summary']['is_registration'])
@@ -121,7 +120,6 @@ class TestNodeSerializers(OsfTestCase):
 
         res = _get_summary(
             fork, auth=Auth(user),
-            rescale_ratio=None,
             primary=True,
             link_id=None
         )
@@ -140,7 +138,6 @@ class TestNodeSerializers(OsfTestCase):
 
         res = _get_summary(
             fork, auth=Auth(user),
-            rescale_ratio=None,
             primary=True,
             link_id=None
         )
@@ -168,8 +165,8 @@ class TestViewProject(OsfTestCase):
         pointed_project = ProjectFactory(creator=user)  # project that other project points to
         pointer_project.add_pointer(pointed_project, Auth(pointer_project.creator), save=True)
 
-        # Project is in a dashboard folder
-        folder = FolderFactory(creator=pointed_project.creator)
+        # Project is in a organizer collection
+        folder = CollectionFactory(creator=pointed_project.creator)
         folder.add_pointer(pointed_project, Auth(pointed_project.creator), save=True)
 
         result = _view_project(pointed_project, Auth(pointed_project.creator))

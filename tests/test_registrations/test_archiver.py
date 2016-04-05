@@ -19,7 +19,7 @@ from modularodm import Q
 from scripts import cleanup_failed_registrations as scripts
 
 from framework.auth import Auth
-from framework.tasks import handlers
+from framework.celery_tasks import handlers
 
 from website.archiver import (
     ARCHIVER_INITIATED,
@@ -50,7 +50,7 @@ from tests.utils import unique as _unique
 
 
 SILENT_LOGGERS = (
-    'framework.tasks.utils',
+    'framework.celery_tasks.utils',
     'website.archiver.tasks',
 )
 for each in SILENT_LOGGERS:
@@ -266,7 +266,7 @@ class TestStorageAddonBase(ArchiverTestCase):
 class TestArchiverTasks(ArchiverTestCase):
 
     @use_fake_addons
-    @mock.patch('framework.tasks.handlers.enqueue_task')
+    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     @mock.patch('celery.chain')
     def test_archive(self, mock_chain, mock_enqueue):
         archive(job_pk=self.archive_job._id)
@@ -1033,6 +1033,8 @@ class TestArchiverScripts(ArchiverTestCase):
                 datetime.datetime.now() - delta,
                 safe=True
             )
+            reg.archive_job.status = ARCHIVER_INITIATED
+            reg.archive_job.save()
             reg.save()
             for addon in ['osfstorage', 'dropbox']:
                 reg.archive_job._set_target(addon)

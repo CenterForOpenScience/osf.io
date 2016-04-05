@@ -27,6 +27,9 @@ ASSET_HASH_PATH = os.path.join(APP_PATH, 'webpack-assets.json')
 ROOT = os.path.join(BASE_PATH, '..')
 BCRYPT_LOG_ROUNDS = 12
 
+with open(os.path.join(APP_PATH, 'package.json'), 'r') as fobj:
+    VERSION = json.load(fobj)['version']
+
 # Hours before email confirmation tokens expire
 EMAIL_TOKEN_EXPIRATION = 24
 CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'static', 'vendor', 'bower_components', 'styles')
@@ -88,14 +91,14 @@ USE_CDN_FOR_CLIENT_LIBS = True
 USE_EMAIL = True
 FROM_EMAIL = 'openscienceframework-noreply@osf.io'
 SUPPORT_EMAIL = 'support@osf.io'
+
+# SMTP Settings
 MAIL_SERVER = 'smtp.sendgrid.net'
 MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = ''  # Set this in local.py
 
-# Mandrill
-MANDRILL_USERNAME = None
-MANDRILL_PASSWORD = None
-MANDRILL_MAIL_SERVER = None
+# OR, if using Sendgrid's API
+SENDGRID_API_KEY = None
 
 # Mailchimp
 MAILCHIMP_API_KEY = None
@@ -193,6 +196,7 @@ with open(os.path.join(ROOT, 'addons.json')) as fp:
     ADDONS_REQUESTED = addon_settings['addons']
     ADDONS_ARCHIVABLE = addon_settings['addons_archivable']
     ADDONS_COMMENTABLE = addon_settings['addons_commentable']
+    ADDONS_BASED_ON_IDS = addon_settings['addons_based_on_ids']
 
 ADDON_CATEGORIES = [
     'documentation',
@@ -216,6 +220,9 @@ PIWIK_HOST = None
 PIWIK_ADMIN_TOKEN = None
 PIWIK_SITE_ID = None
 
+KEEN_PROJECT_ID = None
+KEEN_WRITE_KEY = None
+
 SENTRY_DSN = None
 SENTRY_DSN_JS = None
 
@@ -223,11 +230,17 @@ SENTRY_DSN_JS = None
 # TODO: Delete me after merging GitLab
 MISSING_FILE_NAME = 'untitled'
 
-# Dashboard
+# Project Organizer
 ALL_MY_PROJECTS_ID = '-amp'
 ALL_MY_REGISTRATIONS_ID = '-amr'
 ALL_MY_PROJECTS_NAME = 'All my projects'
 ALL_MY_REGISTRATIONS_NAME = 'All my registrations'
+
+# Most Popular and New and Noteworthy Nodes
+POPULAR_LINKS_NODE = None  # TODO Override in local.py in production.
+NEW_AND_NOTEWORTHY_LINKS_NODE = None  # TODO Override in local.py in production.
+
+NEW_AND_NOTEWORTHY_CONTRIBUTOR_BLACKLIST = []  # TODO Override in local.py in production.
 
 # FOR EMERGENCIES ONLY: Setting this to True will disable forks, registrations,
 # and uploads in order to save disk space.
@@ -268,7 +281,7 @@ MFR_SERVER_URL = 'http://localhost:7778'
 ###### ARCHIVER ###########
 ARCHIVE_PROVIDER = 'osfstorage'
 
-MAX_ARCHIVE_SIZE = 1024 ** 3  # == math.pow(1024, 3) == 1 GB
+MAX_ARCHIVE_SIZE = 5 * 1024 ** 3  # == math.pow(1024, 3) == 1 GB
 MAX_FILE_SIZE = MAX_ARCHIVE_SIZE  # TODO limit file size?
 
 ARCHIVE_TIMEOUT_TIMEDELTA = timedelta(1)  # 24 hours
@@ -288,15 +301,14 @@ CELERY_RESULT_BACKEND = 'amqp://'
 
 #  Modules to import when celery launches
 CELERY_IMPORTS = (
-    'framework.tasks',
-    'framework.tasks.signals',
+    'framework.celery_tasks',
+    'framework.celery_tasks.signals',
     'framework.email.tasks',
     'framework.analytics.tasks',
     'website.mailchimp_utils',
     'website.notifications.tasks',
     'website.archiver.tasks',
-    'website.search.search',
-    'api.caching.tasks'
+    'website.search.search'
 )
 
 # celery.schedule will not be installed when running invoke requirements the first time.
@@ -330,3 +342,10 @@ DRAFT_REGISTRATION_APPROVAL_PERIOD = datetime.timedelta(days=10)
 assert (DRAFT_REGISTRATION_APPROVAL_PERIOD > EMBARGO_END_DATE_MIN), 'The draft registration approval period should be more than the minimum embargo end date.'
 
 PREREG_ADMIN_TAG = "prereg_admin"
+
+ENABLE_INSTITUTIONS = False
+
+ENABLE_VARNISH = False
+ENABLE_ESI = False
+VARNISH_SERVERS = []  # This should be set in local.py or cache invalidation won't work
+ESI_MEDIA_TYPES = {'application/vnd.api+json', 'application/json'}

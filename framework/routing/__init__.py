@@ -25,6 +25,11 @@ logger = logging.getLogger(__name__)
 TEMPLATE_DIR = settings.TEMPLATES_PATH
 
 _TPL_LOOKUP = TemplateLookup(
+    default_filters=[
+        'unicode',  # default filter; must set explicitly when overriding
+        'strip_ko',  # Filter that strips out Knockout punches syntax. Can be removed if Knockout-punches is removed.
+    ],
+    imports=['from website.util.sanitize import strip_ko'],
     directories=[
         TEMPLATE_DIR,
         os.path.join(settings.BASE_PATH, 'addons/'),
@@ -36,9 +41,11 @@ _TPL_LOOKUP_SAFE = TemplateLookup(
     default_filters=[
         'unicode',  # default filter; must set explicitly when overriding
         'temp_ampersand_fixer',  # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe.
+        'strip_ko',  # Filter that strips out Knockout punches syntax. Can be removed if Knockout-punches is removed.
         'h',
     ],
-    imports=['from website.util.sanitize import temp_ampersand_fixer'],  # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe.
+    imports=['from website.util.sanitize import temp_ampersand_fixer',  # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe.
+             'from website.util.sanitize import strip_ko'],
     directories=[
         TEMPLATE_DIR,
         os.path.join(settings.BASE_PATH, 'addons/'),

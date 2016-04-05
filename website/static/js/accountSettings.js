@@ -213,9 +213,15 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
                     var addrText = $osf.htmlEscape(email.address());
                     bootbox.alert({
                                 title: 'Confirmation email sent',
-                                message: 'Please check your email for confirmation of this change. ' + 
-                                'If there is another OSF account associated with ' + '<em>' + addrText + '</em>, ' +
-                                'you will have the ability to confirm an account merge.',
+                                message: '<em>' + addrText + '</em>' + ' was added to your account.' +
+                                ' You will receive a confirmation email at ' + '<em>' + addrText + '</em>.' +
+                                ' Please log out of this account and check your email to confirm this action.',
+                                buttons: {
+                                    ok: {
+                                        label: 'Close',
+                                        className: 'btn-default'
+                                    }
+                                }
                             });
                 }
             }.bind(this)).fail(function(){
@@ -240,7 +246,8 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
                     self.client.update(self.profile(), email).done(function () {
                         $osf.growl(
                             'Email confirmation resent to <em>' + addrText + '</em>',
-                            'You will receive a new confirmation email at <em>' + addrText  + '</em>. Please check your email and confirm.',
+                            'You will receive a new confirmation email at <em>' + addrText  + '</em>.' +
+                            ' Please log out of this account and check your email to confirm this action.',
                             'success');
                     });
                 }
