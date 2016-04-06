@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import copy
 import logging
 import itertools
 import math
@@ -162,17 +163,29 @@ def serialize_log(node_log, auth=None, anonymous=False):
         else {'fullname': node_log.foreign_user},
         'contributors': [node_log._render_log_contributor(c) for c in node_log.params.get("contributors", [])],
         'action': node_log.action,
-        'params': sanitize.unescape_entities(node_log.params),
+        'params': sanitize_params(auth, node_log),
         'date': utils.iso8601format(node_log.date),
         'node': node_log.node.serialize(auth) if node_log.node else None,
         'anonymous': anonymous,
-        'can_view': can_view(node_log, auth) if node_log.action == NodeLog.FILE_MOVED else True,
     }
 
 
-def can_view(node_log, auth):
-    source_node = Node.load(node_log.params['source']['node']['_id'])
-    return source_node.can_view(auth)
+def sanitize_params(auth, log):
+    UNSAFE_ACTIONS = [NodeLog.FILE_MOVED]
+    UNSAFE_KEYS = ['source']
+    if log.action not in UNSAFE_ACTIONS:
+        return sanitize.unescape_entities(log.params)
+    safe_params = copy.deepcopy(sanitize.unescape_entities(log.params))
+    for key in safe_params.keys():
+        if key in UNSAFE_KEYS:
+            source_node = Node.load(safe_params[key]['node']['_id'])
+            if not source_node.can_view(auth):
+                # TODO: Private component as a string here? Really?
+                safe_params[key] = {
+                    'materialized': safe_params[key]['materialized'],
+                    'private': True,
+                }
+    return safe_params
 
 
 def reproducibility():
