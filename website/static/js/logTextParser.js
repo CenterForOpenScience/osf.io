@@ -538,6 +538,9 @@ var LogPieces = {
         view: function(ctrl, logObject){
             var previous_institution = logObject.attributes.params.previous_institution;
             if (paramIsReturned(previous_institution, logObject)){
+                if (previous_institution.id !== null) {
+                    return m('a', {'href': '/institutions/' + previous_institution.id + '/'}, previous_institution.name);
+                }
                 return m('span', previous_institution.name);
             }
             return m('span', 'an institution');
@@ -548,7 +551,11 @@ var LogPieces = {
         view: function(ctrl, logObject){
             var institution = logObject.attributes.params.institution;
             if (paramIsReturned(institution, logObject)){
+                if (institution.id !== null) {
+                    return m('a', {'href': '/institutions/' + institution.id + '/'}, institution.name);
+                }
                 return m('span', institution.name);
+
             }
             return m('span', 'an institution');
         }
