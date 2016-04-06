@@ -31,14 +31,24 @@ from tests.base import capture_signals
 from tests.base import OsfTestCase
 
 
-class TestNotificationsModels(OsfTestCase):
-
+class AutoNotificationTestCase(OsfTestCase):
+    """ This class should be used when you'd like notifications for project users and contributors to be
+    added automatically when a node is saved or a contributor is added.
+    Using the basic OsfTestCase will ensure that subscriptions aren't made automatically so that tests are
+    more specific.
+    """
     @classmethod
     def setUpClass(cls):
-        super(TestNotificationsModels, cls).setUpClass()
+        super(AutoNotificationTestCase, cls).setUpClass()
         cls._original_enable_notification_subscription_creation = settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION
         settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION = True
 
+    @classmethod
+    def tearDownClass(cls):
+        settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION = cls._original_enable_notification_subscription_creation
+
+
+class TestNotificationsModels(AutoNotificationTestCase):
     def setUp(self):
         super(TestNotificationsModels, self).setUp()
         # Create project with component
@@ -153,19 +163,8 @@ class TestNotificationsModels(OsfTestCase):
         contributor_subscriptions = [x for x in utils.get_all_user_subscriptions(unregistered_contributor)]
         assert_equal(len(contributor_subscriptions), 0)
 
-    @classmethod
-    def tearDownClass(cls):
-        super(TestNotificationsModels, cls).tearDownClass()
-        settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION = cls._original_enable_notification_subscription_creation
 
-
-class TestSubscriptionView(OsfTestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        super(TestSubscriptionView, cls).setUpClass()
-        cls._original_enable_notification_subscription_creation = settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION
-        settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION = True
+class TestSubscriptionView(AutoNotificationTestCase):
 
     def setUp(self):
         super(TestSubscriptionView, self).setUp()
@@ -242,19 +241,8 @@ class TestSubscriptionView(OsfTestCase):
         for n in constants.NOTIFICATION_TYPES:
             assert_false(self.node.creator in getattr(s, n))
 
-    @classmethod
-    def tearDownClass(cls):
-        super(TestSubscriptionView, cls).tearDownClass()
-        settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION = cls._original_enable_notification_subscription_creation
 
-
-class TestRemoveContributor(OsfTestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        super(TestRemoveContributor, cls).setUpClass()
-        cls._original_enable_notification_subscription_creation = settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION
-        settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION = True
+class TestRemoveContributor(AutoNotificationTestCase):
 
     def setUp(self):
         super(OsfTestCase, self).setUp()
@@ -304,18 +292,8 @@ class TestRemoveContributor(OsfTestCase):
             self.project.remove_contributor(self.contributor, auth=Auth(self.project.creator))
         assert_equal(mock_signals.signals_sent(), set([contributor_removed]))
 
-    @classmethod
-    def tearDownClass(cls):
-        super(TestRemoveContributor, cls).tearDownClass()
-        settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION= cls._original_enable_notification_subscription_creation
 
-
-class TestRemoveNodeSignal(OsfTestCase):
-    @classmethod
-    def setUpClass(cls):
-        super(TestRemoveNodeSignal, cls).setUpClass()
-        cls._original_enable_notification_subscription_creation = settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION
-        settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION = True
+class TestRemoveNodeSignal(AutoNotificationTestCase):
 
     def test_node_subscriptions_and_backrefs_removed_when_node_is_deleted(self):
         project = factories.ProjectFactory()
@@ -333,11 +311,6 @@ class TestRemoveNodeSignal(OsfTestCase):
 
         with assert_raises(NoResultsFound):
             NotificationSubscription.find_one(Q('owner', 'eq', project))
-
-    @classmethod
-    def tearDownClass(cls):
-        super(TestRemoveNodeSignal, cls).tearDownClass()
-        settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION = cls._original_enable_notification_subscription_creation
 
 
 def list_or_dict(data):
@@ -416,13 +389,7 @@ def event_schema(level=None):
     }
 
 
-class TestNotificationUtils(OsfTestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        super(TestNotificationUtils, cls).setUpClass()
-        cls._original_enable_notification_subscription_creation = settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION
-        settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION = True
+class TestNotificationUtils(AutoNotificationTestCase):
 
     def setUp(self):
         super(TestNotificationUtils, self).setUp()
@@ -738,11 +705,6 @@ class TestNotificationUtils(OsfTestCase):
             'children': [],
         }
         assert_equal(data, expected)
-
-    @classmethod
-    def tearDownClass(cls):
-        super(TestNotificationUtils, cls).tearDownClass()
-        settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION = cls._original_enable_notification_subscription_creation
 
 
 class TestNotificationsDict(OsfTestCase):
