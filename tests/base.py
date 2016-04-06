@@ -159,6 +159,7 @@ class DbTestCase(unittest.TestCase):
         settings.PIWIK_HOST = cls._original_piwik_host
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = cls._original_enable_email_subscriptions
         settings.BCRYPT_LOG_ROUNDS = cls._original_bcrypt_log_rounds
+        settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION = cls._original_enable_notification_subscription_creation
 
 
 class AppTestCase(unittest.TestCase):
