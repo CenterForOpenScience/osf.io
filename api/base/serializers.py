@@ -513,8 +513,11 @@ class RelationshipField(ser.HyperlinkedIdentityField):
 
     def to_esi_representation(self, value, envelope='data'):
         relationships = self.to_representation(value)
-        if relationships is not None and 'related' in relationships.keys():
-            href = relationships['related']
+        try:
+            href = relationships['links']['related']['href']
+        except KeyError:
+            raise SkipField
+        else:
             if href and not href == '{}':
                 if self.always_embed:
                     envelope = 'data'
@@ -523,8 +526,6 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                     query_dict.update(view_only=[self.parent.context['request'].query_params['view_only']])
                 esi_url = extend_querystring_params(href, query_dict)
                 return '<esi:include src="{}"/>'.format(esi_url)
-        else:
-            raise SkipField
 
     def format_filter(self, obj):
         qd = QueryDict(mutable=True)
@@ -1007,7 +1008,6 @@ class JSONAPISerializer(ser.Serializer):
                         else:
                             try:
                                 # If a field has an empty representation, it should not be embedded.
-                                field.to_representation(attribute)
                                 result = self.context['embed'][field.field_name](obj)
                             except SkipField:
                                 result = None
