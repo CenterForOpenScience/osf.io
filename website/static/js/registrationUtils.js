@@ -692,7 +692,12 @@ Draft.prototype.register = function(url, data) {
             bootbox.alert({
                 title: 'Registration failed',
                 message: language.registerFail,
-                callback: $osf.unblock
+                callback: function() {
+                    $osf.unblock();
+                    if (self.urls.registrations) {
+                        window.location.assign(self.urls.registrations)
+                    }
+                }
             });
         })
         .always(function() {
