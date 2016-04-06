@@ -2220,19 +2220,24 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 self.save()
 
     def add_tag(self, tag, auth, save=True, log=True):
-        if tag not in self.tags:
-            new_tag = Tag.load(tag)
-            if not new_tag:
-                new_tag = Tag(_id=tag)
-            new_tag.save()
-            self.tags.append(new_tag)
+        if not isinstance(tag, Tag):
+            tag_instance = Tag.load(tag)
+            if tag_instance is None:
+                tag_instance = Tag(_id=tag)
+        else:
+            tag_instance = tag
+        #  should noop if it's not dirty
+        tag_instance.save()
+
+        if tag_instance._id not in self.tags:
+            self.tags.append(tag_instance)
             if log:
                 self.add_log(
                     action=NodeLog.TAG_ADDED,
                     params={
                         'parent_node': self.parent_id,
                         'node': self._primary_key,
-                        'tag': tag,
+                        'tag': tag_instance._id,
                     },
                     auth=auth,
                     save=False,
