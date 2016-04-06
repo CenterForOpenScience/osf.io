@@ -76,9 +76,11 @@ FilesWidget.prototype.init = function() {
         self.filebrowser = new Fangorn(self.fangornOpts);
     }).fail(function(xhr, status, error) {
         Raven.captureMessage('Could not GET files', {
-            url: self.filesUrl,
-            textStatus: status,
-            error: error
+            extra: {
+                url: self.filesUrl,
+                textStatus: status,
+                error: error
+            }
         });
         $('#' + self.fangornOpts.divID).replaceWith(
             $('<div>', {

@@ -280,12 +280,14 @@ class TestRemoveContributor(OsfTestCase):
         assert_in(self.contributor, self.subscription.email_transactional)
         self.project.remove_contributor(self.contributor, auth=Auth(self.project.creator))
         assert_not_in(self.contributor, self.project.contributors)
+        self.subscription.reload()
         assert_not_in(self.contributor, self.subscription.email_transactional)
 
     def test_removed_non_parent_admin_contributor_is_removed_from_subscriptions(self):
         assert_in(self.node.creator, self.node_subscription.email_transactional)
         self.node.remove_contributor(self.node.creator, auth=Auth(self.node.creator))
         assert_not_in(self.node.creator, self.node.contributors)
+        self.node_subscription.reload()
         assert_not_in(self.node.creator, self.node_subscription.email_transactional)
 
     def test_removed_contributor_admin_on_parent_not_removed_from_node_subscription(self):
@@ -309,7 +311,6 @@ class TestRemoveContributor(OsfTestCase):
 
 
 class TestRemoveNodeSignal(OsfTestCase):
-
     @classmethod
     def setUpClass(cls):
         super(TestRemoveNodeSignal, cls).setUpClass()
@@ -318,16 +319,24 @@ class TestRemoveNodeSignal(OsfTestCase):
 
     def test_node_subscriptions_and_backrefs_removed_when_node_is_deleted(self):
         project = factories.ProjectFactory()
-        s = getattr(project.creator, 'email_transactional', [])
-        assert_equal(len(s), 2)
+        subscription = factories.NotificationSubscriptionFactory(
+            _id=project._id + '_comments',
+            owner=project
+        )
+        subscription.save()
+        subscription.email_transactional.append(project.creator)
+        subscription.save()
+
+        s = NotificationSubscription.find(Q('email_transactional', 'eq', project.creator._id))
+        assert_equal(s.count(), 1)
 
         with capture_signals() as mock_signals:
             project.remove_node(auth=Auth(project.creator))
         assert_true(project.is_deleted)
         assert_equal(mock_signals.signals_sent(), set([node_deleted]))
 
-        s = getattr(project.creator, 'email_transactional', [])
-        assert_equal(len(s), 0)
+        s = NotificationSubscription.find(Q('email_transactional', 'eq', project.creator._id))
+        assert_equal(s.count(), 0)
 
         with assert_raises(NoResultsFound):
             NotificationSubscription.find_one(Q('owner', 'eq', project))
@@ -505,12 +514,6 @@ class TestNotificationUtils(OsfTestCase):
         node = factories.NodeFactory(parent=private_project)
         configured_project_ids = utils.get_configured_projects(node.creator)
         assert_in(private_project._id, configured_project_ids)
-
-    def test_get_configured_project_ids_excludes_private_projects_if_no_subscriptions_on_node(self):
-        private_project = factories.ProjectFactory()
-        node = factories.NodeFactory(parent=private_project)
-        configured_project_ids = utils.get_configured_projects(node.creator)
-        assert_not_in(private_project._id, configured_project_ids)
 
     def test_get_configured_project_ids_excludes_private_projects_if_no_subscriptions_on_node(self):
         user = factories.UserFactory()
@@ -918,13 +921,11 @@ class TestMoveSubscription(OsfTestCase):
         self.user_4 = factories.AuthUserFactory()
         self.project = factories.ProjectFactory(creator=self.user_1)
         self.private_node = factories.NodeFactory(parent=self.project, is_public=False, creator=self.user_1)
-
         self.sub = NotificationSubscription.find_one(
             Q('_id', 'eq', self.project._id + '_file_updated') &
             Q('owner', 'eq', self.project) &
             Q('event_name', 'eq', 'file_updated')
         )
-
         self.file_sub = factories.NotificationSubscriptionFactory(
             _id=self.project._id + '_xyz42_file_updated',
             owner=self.project,
@@ -1006,7 +1007,6 @@ class TestMoveSubscription(OsfTestCase):
         # One user with a project sub does not have permission on new node. User should be listed.
         self.private_node.add_contributor(self.user_2, permissions=['admin', 'write', 'read'], auth=self.auth)
         self.private_node.save()
-
         self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
         self.project.save()
         self.sub.email_transactional = []
