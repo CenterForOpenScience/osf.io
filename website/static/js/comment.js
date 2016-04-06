@@ -163,7 +163,7 @@ var BaseComment = function() {
                 let match = regex.exec(matches[i]);
                 let guid = match[1];
                 let mention = match[2];
-                let url = '/' + guid + '/'; // TODO: change the url to not localhost
+                let url = '/' + guid + '/';
                 content = content.replace(match[0], '['+ mention + '](' + url + ')');
 
                 if (guid && self.replyMentions.indexOf(guid) === -1) {
