@@ -17,6 +17,11 @@ TYPE_MAP = {
     'default': 'default',
 }
 
+
+def get_session_data(item):
+    return session.data.get(item)
+
+
 def push_status_message(message, kind='warning', dismissible=True, trust=True, jumbotron=False):
     """
     Push a status message that will be displayed as a banner on the next page loaded by the user.
@@ -30,16 +35,20 @@ def push_status_message(message, kind='warning', dismissible=True, trust=True, j
     """
     # TODO: Change the default to trust=False once conversion to markupsafe rendering is complete
     try:
-        statuses = session.data.get('status')
-    except RuntimeError:
-        # Working outside of request context, so should be a DRF issue. Status messages are not appropriate there.
-        # If it's any kind of notification, then it doesn't make sense to send back to the API routes.
-        if kind == 'error':
-            #  If it's an error, then the call should fail with the error message. I do not know of any cases where
-            # this branch will be hit, but I'd like to avoid a silent failure.
-            from rest_framework.exceptions import ValidationError
-            raise ValidationError(message)
-        return
+        statuses = get_session_data('status')
+    except RuntimeError as e:
+        exception_message = getattr(e, 'message', None)
+        if exception_message == 'working outside of request context':
+            # Working outside of request context, so should be a DRF issue. Status messages are not appropriate there.
+            # If it's any kind of notification, then it doesn't make sense to send back to the API routes.
+            if kind == 'error':
+                #  If it's an error, then the call should fail with the error message. I do not know of any cases where
+                # this branch will be hit, but I'd like to avoid a silent failure.
+                from rest_framework.exceptions import ValidationError
+                raise ValidationError(message)
+            return
+        else:
+            raise
     if not statuses:
         statuses = []
     css_class = TYPE_MAP.get(kind, 'warning')
