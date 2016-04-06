@@ -1869,7 +1869,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         :param int n: Number of logs to retrieve
         """
-        return list(reversed(self.logs))[:n]
+        return self.logs.sort('-date')[:n]
 
     def set_title(self, title, auth, save=False):
         """Set the title of this Node and log it.
