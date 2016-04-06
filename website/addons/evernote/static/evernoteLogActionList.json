@@ -1,0 +1,6 @@
+{
+  "evernote_folder_selected" : "${user} linked evernote folder ${folder} in ${node}",
+  "evernote_node_authorized" : "${user} authorized the evernote addon for ${node}",
+  "evernote_node_deauthorized" : "${user} deauthorized the evernote addon for ${node}",
+  "evernote_node_deauthorized_no_user" : "evernote addon for ${node} deauthorized"
+}
