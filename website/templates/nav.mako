@@ -1,3 +1,5 @@
+<%block name="nav">
+<link rel="stylesheet" href='/static/css/nav.css'>
 <div class="osf-nav-wrapper">
 
 <nav class="navbar navbar-inverse navbar-fixed-top" id="navbarScope" role="navigation">
@@ -22,25 +24,22 @@
     <div id="navbar" class="navbar-collapse collapse navbar-right">
       <ul class="nav navbar-nav">
         % if user_name:
-            <li><a href="/dashboard/">My Dashboard</a></li>
+            <li id="osfNavDashboard"><a href="/">Dashboard</a></li>
+            <li id="osfNavMyProjects"><a href="/myprojects/">My Projects</a></li>
         % endif
         <li class="dropdown">
           <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Browse <span class="caret"></span></a>
           <ul class="dropdown-menu" role="menu">
-              <li><a href="/explore/activity/">New Projects</a></li>
-              <li><a href="/search/?q=*&amp;filter=registration">Registry</a></li>
-              <li><a href="/meetings/">Meetings</a></li>
+              <li><a href="${domain}explore/activity/">New Projects</a></li>
+              <li><a href="${domain}search/?q=*&amp;filter=registration">Registry</a></li>
+              <li><a href="${web_url_for('conference_view', _absolute=True)}">Meetings</a></li>
           </ul>
         </li>
+        % if not user_name:
         <li class="dropdown">
-          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Help <span class="caret"></span></a>
-          <ul class="dropdown-menu" role="menu">
-              <li><a href="/faq/">FAQ</a></li>
-              <li><a href="/getting-started">Getting Started</a></li>
-              <li><script type="text/javascript">document.write("<n uers=\"znvygb:fhccbeg@bfs.vb\" ery=\"absbyybj\">Rznvy Fhccbeg</n>".replace(/[a-zA-Z]/g,function(e){return String.fromCharCode((e<="Z"?90:122)>=(e=e.charCodeAt(0)+13)?e:e-26)}));</script><noscript>Email Support: <span class="obfuscated-email-noscript"><strong><u>supp<span style="display:none;">null</span>ort@<span style="display:none;">null</span>osf.<span style="display:none;">null</span>io</u></strong></span></noscript></li>
-                <li><script type="text/javascript">document.write("<n uers=\"znvygb:pbagnpg@bfs.vb\" ery=\"absbyybj\">Pbagnpg</n>".replace(/[a-zA-Z]/g,function(e){return String.fromCharCode((e<="Z"?90:122)>=(e=e.charCodeAt(0)+13)?e:e-26)}));</script><noscript>Contact OSF: <span class="obfuscated-email-noscript"><strong><u>cont<span style="display:none;">null</span>act@<span style="display:none;">null</span>osf.<span style="display:none;">null</span>io</u></strong></span></noscript></li>
-          </ul>
+          <a href="${domain}support/" >Support</a>
         </li>
+        % endif
 
         <!-- ko ifnot: onSearchPage -->
         <li class="hidden-xs" data-bind="click : toggleSearch, css: searchCSS">
@@ -50,47 +49,59 @@
         </li>
         <!-- /ko -->
         % if user_name and display_name:
-        <li>
-            <a class="hidden-lg hidden-xs nav-profile" href="/profile/">
-                <span rel="tooltip" data-placement="bottom" title="${user_name}" class="osf-gravatar"><img src="${user_gravatar}" alt="User gravatar"/> </span>
-            </a>
-            <a class="visible-lg visible-xs nav-profile" href="/profile/">
-                <span rel="tooltip" data-placement="bottom" title="${user_name}"><span class="osf-gravatar"> <img src="${user_gravatar}" alt="User gravatar"/> </span> ${display_name}</span>
-            </a>
-        </li>
-        <li>
-            <a href="${web_url_for('user_profile')}">
-                <span rel="tooltip" data-placement="bottom" title="Settings" class="fa fa-cog hidden-xs fa-lg"></span>
-                <span class="visible-xs">Settings</span>
-            </a>
-        </li>
-        <li>
-            <a href="${web_url_for('auth_logout')}">
-                <span rel="tooltip" data-placement="bottom" title="Log&nbsp;out" class="fa fa-sign-out hidden-xs fa-lg"></span>
-                <span class="visible-xs">Log out</span>
-            </a>
+        <li class="dropdown">
+          <a href="#" class="dropdown-toggle nav-user-dropdown" data-toggle="dropdown" role="button" aria-expanded="false"><span class="osf-gravatar"><img src="${user_gravatar}" alt="User gravatar"/> </span> ${display_name} <span class="caret"></span></a>
+          <ul class="dropdown-menu" role="menu">
+              <li>
+                  <a href="/profile/"><i class="fa fa-user fa-lg p-r-xs"></i> My Profile</a>
+              </li>
+              <li>
+                  <a href="/support/" ><i class="fa fa-life-ring fa-lg p-r-xs"></i> Support</a>
+              </li>
+
+              <li>
+                  <a href="${web_url_for('user_profile')}"><i class="fa fa-cog fa-lg p-r-xs"></i> Settings</a>
+              </li>
+              <li>
+                  <a href="${web_url_for('auth_logout')}"><i class="fa fa-sign-out fa-lg p-r-xs"></i> Log out</a>
+              </li>
+
+          </ul>
         </li>
         % elif allow_login:
-        <li class="dropdown sign-in" data-bind="with: $root.signIn">
-          <div class="btn-group">
-              <a href="${web_url_for('auth_login')}?sign_up=True" class="btn btn-success btn-top-login m-r-sm">Sign up</a>
-              <button type="button" class="btn btn-info btn-top-login p-sm dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
-                  Sign in <span class="caret hidden-xs"></span>
-              </button>
-              <ul class="dropdown-menu" id="menuLogin" role="menu">
-                  <form class="form" id="signInForm" data-bind="submit: submit" action="${login_url}" method="POST">
-                      <div class="form-group"><input id="email" class="form-control" type="email" data-bind="value: username" name="username" placeholder="Email" aria-label="Username"></div>
-                      <div class="form-group"><input name="password" id="password" class="form-control" type="password" placeholder="Password" data-bind="value: password" aria-label="Password"></div>
-                      <div class="form-group"><button type="submit" id="btnLogin" class="btn btn-block btn-primary">Login</button></div>
-                      %if enable_institutions:
-                          <div class="text-center m-b-sm"> <a href="/login/?campaign=institution">Login through your institution  <i class="fa fa-arrow-right"></i></a></div>
-                      %endif
-                      <div class="text-center m-b-sm"> <a href="/forgotpassword/">Forgot password?</a></div>
-                  </form>
-              </ul>
-          </div>
-        </li>
+            %if institution:
+                 <li class="dropdown sign-in" data-bind="with: $root.signIn">
+                  <div class="btn-group">
+                      <a href="${domain}login/?campaign=institution&redirect_url=${redirect_url}">
+                        <button type="button" class="btn btn-info btn-top-login">
+                          Sign in <span class="hidden-xs"><i class="fa fa-arrow-right"></i></span>
+                        </button>
+                      </a>
+                </div>
+                </li>
+            %else :
+            <li class="dropdown sign-in" data-bind="with: $root.signIn">
+                <div class="col-sm-12">
+                    <a href="${web_url_for('auth_login')}?sign_up=True" class="btn btn-success btn-top-signup m-r-xs">Sign up</a>
+                    <button type="button" class="btn btn-info btn-top-login p-sm dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                        Sign in <span class="caret hidden-xs"></span>
+                    </button>
+                    <ul class="dropdown-menu" id="menuLogin" role="menu">
+                        <form class="form" id="signInForm" data-bind="submit: submit" action="${login_url}" method="POST">
+                            <div class="form-group"><input id="email" class="form-control" type="email" data-bind="value: username" name="username" placeholder="Email" aria-label="Username"></div>
+                            <div class="form-group"><input name="password" id="password" class="form-control" type="password" placeholder="Password" data-bind="value: password" aria-label="Password"></div>
+                            <div class="form-group"><button type="submit" id="btnLogin" class="btn btn-block btn-primary">Login</button></div>
+                            %if enable_institutions:
+                                <div class="text-center m-b-sm"> <a href="/login/?campaign=institution">Login through your institution  <i class="fa fa-arrow-right"></i></a></div>
+                            %endif
+                            <div class="text-center m-b-sm"> <a href="/forgotpassword/">Forgot password?</a></div>
+                        </form>
+                    </ul>
+                </div>
+            </li>
+             %endif
         % endif
+          </ul>
     </div><!--/.navbar-collapse -->
     </div>
 
@@ -100,3 +111,4 @@
         <%include file='./search_bar.mako' />
     <!-- /ko -->
 </div>
+</%block>

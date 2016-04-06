@@ -1,14 +1,19 @@
 # -*- coding: utf-8 -*-
+from functools import partial
+
 import pytz
+import markdown
 from datetime import datetime
 from flask import request
+
+from api.caching.tasks import ban_url
+from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from modularodm import Q
 
-from framework.auth.decorators import must_be_logged_in
 from framework.guid.model import Guid
 
 from website.addons.base.signals import file_updated
-from website.files.models import FileNode
+from website.files.models import FileNode, TrashedFileNode
 from website.notifications.constants import PROVIDERS
 from website.notifications.emails import notify
 from website.models import Comment
@@ -28,7 +33,6 @@ def update_file_guid_referent(self, node, event_type, payload, user=None):
         file_guids = FileNode.resolve_class(source['provider'], FileNode.ANY).get_file_guids(
             materialized_path=source['materialized'] if source['provider'] != 'osfstorage' else source['path'],
             provider=source['provider'],
-            guids=[],
             node=source_node)
 
         if event_type == 'addon_file_renamed' and source['provider'] in settings.ADDONS_BASED_ON_IDS:
@@ -43,8 +47,11 @@ def update_file_guid_referent(self, node, event_type, payload, user=None):
                 update_comment_node(guid, source_node, destination_node)
 
             if source['provider'] != destination['provider'] or source['provider'] != 'osfstorage':
+                old_file = FileNode.load(obj.referent._id)
                 obj.referent = create_new_file(obj, source, destination, destination_node)
                 obj.save()
+                if old_file and not TrashedFileNode.load(old_file._id):
+                    old_file.delete()
 
 
 def create_new_file(obj, source, destination, destination_node):
@@ -61,7 +68,7 @@ def create_new_file(obj, source, destination, destination_node):
             else:
                 new_path = obj.referent.materialized_path.replace(source['materialized'], destination['materialized'])
             new_file = FileNode.resolve_class(destination['provider'], FileNode.FILE).get_or_create(destination_node, new_path)
-            new_file.name = obj.referent.name
+            new_file.name = new_path.split('/')[-1]
             new_file.materialized_path = new_path
             new_file.save()
     return new_file
@@ -85,8 +92,6 @@ def find_and_create_file_from_metadata(children, source, destination, destinatio
 
 def update_comment_node(root_target_id, source_node, destination_node):
     Comment.update(Q('root_target', 'eq', root_target_id), data={'node': destination_node})
-    destination_node.commented_files[root_target_id] = source_node.commented_files[root_target_id]
-    del source_node.commented_files[root_target_id]
     source_node.save()
     destination_node.save()
 
@@ -98,7 +103,7 @@ def send_comment_added_notification(comment, auth):
 
     context = dict(
         gravatar_url=auth.user.profile_image_url(),
-        content=comment.content,
+        content=markdown.markdown(comment.content, ['del_ins', 'markdown.extensions.tables', 'markdown.extensions.fenced_code']),
         page_type='file' if comment.page == Comment.FILES else node.project_or_component,
         page_title=comment.root_target.referent.name if comment.page == Comment.FILES else '',
         provider=PROVIDERS[comment.root_target.referent.provider] if comment.page == Comment.FILES else '',
@@ -132,30 +137,21 @@ def is_reply(target):
 
 def _update_comments_timestamp(auth, node, page=Comment.OVERVIEW, root_id=None):
     if node.is_contributor(auth.user):
-        user_timestamp = auth.user.comments_viewed_timestamp
-        node_timestamp = user_timestamp.get(node._id, None)
-        if not node_timestamp:
-            user_timestamp[node._id] = dict()
-        timestamps = auth.user.comments_viewed_timestamp[node._id]
+        enqueue_postcommit_task(partial(ban_url, node, []))
+        if root_id is not None:
+            guid_obj = Guid.load(root_id)
+            if guid_obj is not None:
+                enqueue_postcommit_task(partial(ban_url, guid_obj.referent, []))
 
         # update node timestamp
         if page == Comment.OVERVIEW:
-            timestamps[Comment.OVERVIEW] = datetime.utcnow()
-            auth.user.save()
-            return {node._id: auth.user.comments_viewed_timestamp[node._id][Comment.OVERVIEW].isoformat()}
-
-        # set up timestamp dictionary for files page
-        if not timestamps.get(page, None):
-            timestamps[page] = dict()
-
-        # if updating timestamp on a specific file page
-        timestamps[page][root_id] = datetime.utcnow()
+            root_id = node._id
+        auth.user.comments_viewed_timestamp[root_id] = datetime.utcnow()
         auth.user.save()
-        return {node._id: auth.user.comments_viewed_timestamp[node._id][page][root_id].isoformat()}
+        return {root_id: auth.user.comments_viewed_timestamp[root_id].isoformat()}
     else:
         return {}
 
-@must_be_logged_in
 @must_be_contributor_or_public
 def update_comments_timestamp(auth, node, **kwargs):
     timestamp_info = request.get_json()

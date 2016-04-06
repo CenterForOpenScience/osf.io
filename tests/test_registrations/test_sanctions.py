@@ -262,7 +262,7 @@ class TestRegistrationApproval(OsfTestCase):
         self.user = factories.AuthUserFactory()
         self.registration = factories.RegistrationFactory(creator=self.user, archive=True)
 
-    @mock.patch('framework.tasks.handlers.enqueue_task')
+    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_non_contributor_GET_approval_returns_HTTPError(self, mock_enqueue):
         non_contributor = factories.AuthUserFactory()
 
@@ -274,7 +274,7 @@ class TestRegistrationApproval(OsfTestCase):
         assert_true(self.registration.is_pending_registration)
         assert_false(self.registration.is_registration_approved)
 
-    @mock.patch('framework.tasks.handlers.enqueue_task')
+    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_non_contributor_GET_disapproval_returns_HTTPError(self, mock_enqueue):
         non_contributor = factories.AuthUserFactory()
 

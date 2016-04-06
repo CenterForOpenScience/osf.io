@@ -71,10 +71,12 @@ CitationWidget.prototype.init = function() {
                 'danger'
             );
             Raven.captureMessage('Unexpected error when fetching citation', {
-                url: styleUrl,
-                citationStyle: event.val,
-                status: status,
-                error: error
+                extra: {
+                    url: styleUrl,
+                    citationStyle: event.val,
+                    status: status,
+                    error: error
+                }
             });
         });
     }).on('select2-removed', function(e) {

@@ -11,6 +11,7 @@ var Raven = require('raven-js');
 var oop = require('./oop');
 var $osf = require('./osfHelpers');
 var Paginator = require('./paginator');
+var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 
 function removeNodesContributors(contributor, nodes) {
 
@@ -201,12 +202,14 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
             type: 'GET',
             dataType: 'json'
         }).done(function(response) {
-            nodesOriginal = $osf.getNodesOriginal(response[0], nodesOriginal);
+            nodesOriginal = projectSettingsTreebeardBase.getNodesOriginal(response[0], nodesOriginal);
             self.nodesOriginal(nodesOriginal);
         }).fail(function(xhr, status, error) {
             $osf.growl('Error', 'Unable to retrieve projects and components');
             Raven.captureMessage('Unable to retrieve projects and components', {
-                url: self.nodeApiUrl, status: status, error: error
+                extra: {
+                    url: self.nodeApiUrl, status: status, error: error
+                }
             });
         });
     },
@@ -220,15 +223,17 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
     },
     submit: function() {
         var self = this;
-        var response = removeNodesContributors(self.contributorToRemove().id, self.nodeIDsToRemove()).then(function () {
-            if (response.redirectUrl) {
-                window.location.href = response.redirectUrl;
+        removeNodesContributors(self.contributorToRemove().id, self.nodeIDsToRemove()).then(function (data) {
+            if (data.redirectUrl) {
+                window.location.href = data.redirectUrl;
             } else {
                 window.location.reload();
             }        }).fail(function(xhr, status, error) {
             $osf.growl('Error', 'Unable to delete Contributor');
             Raven.captureMessage('Could not DELETE Contributor.' + error, {
-                url: window.contextVars.node.urls.api + 'contributor/remove/', status: status, error: error
+                extra: {
+                    url: window.contextVars.node.urls.api + 'contributor/remove/', status: status, error: error
+                }
             });
             self.clear();
             window.location.reload();

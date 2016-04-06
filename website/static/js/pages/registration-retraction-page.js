@@ -4,7 +4,7 @@
 
 var RegistrationRetraction = require('js/registrationRetraction');
 
-var submitUrl = window.contextVars.node.urls.api + 'retraction/';
+var submitUrl = window.contextVars.node.urls.api + 'withdraw/';
 
 var registrationTitle = window.contextVars.node.title;
 

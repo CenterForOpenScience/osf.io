@@ -286,10 +286,7 @@ class User(GuidStoredObject, AddonModelMixin):
     contributor_added_email_records = fields.DictionaryField(default=dict)
 
     # The user into which this account was merged
-    merged_by = fields.ForeignField('user',
-                                    default=None,
-                                    backref='merged',
-                                    index=True)
+    merged_by = fields.ForeignField('user', default=None, index=True)
 
     # verification key used for resetting password
     verification_key = fields.StringField()
@@ -334,15 +331,13 @@ class User(GuidStoredObject, AddonModelMixin):
                                            index=True)
 
     # watched nodes are stored via a list of WatchConfigs
-    watched = fields.ForeignField("WatchConfig", list=True, backref="watched")
+    watched = fields.ForeignField("WatchConfig", list=True)
 
-    # list of users recently added to nodes as a contributor
-    recently_added = fields.ForeignField("user", list=True, backref="recently_added")
+    # list of collaborators that this user recently added to nodes as a contributor
+    recently_added = fields.ForeignField("user", list=True)
 
     # Attached external accounts (OAuth)
-    external_accounts = fields.ForeignField("externalaccount",
-                                            list=True,
-                                            backref="connected")
+    external_accounts = fields.ForeignField("externalaccount", list=True)
 
     # CSL names
     given_name = fields.StringField()
@@ -397,15 +392,11 @@ class User(GuidStoredObject, AddonModelMixin):
     # When the user was disabled.
     date_disabled = fields.DateTimeField(index=True)
 
-    # when comments for a node were last viewed
+    # when comments were last viewed
     comments_viewed_timestamp = fields.DictionaryField()
     # Format: {
-    #   'node_id': {
-    #     'node': 'timestamp',
-    #     'files': {
-    #        'file_id': 'timestamp'
-    #     }
-    #   }
+    #   'Comment.root_target._id': 'timestamp',
+    #   ...
     # }
 
     # timezone for user's locale (e.g. 'America/New_York')
@@ -446,8 +437,8 @@ class User(GuidStoredObject, AddonModelMixin):
 
     @property
     def absolute_api_v2_url(self):
-        from api.base.utils import absolute_reverse  # Avoid circular dependency
-        return absolute_reverse('users:user-detail', kwargs={'user_id': self.pk})
+        from website import util
+        return util.api_v2_url('users/{}/'.format(self.pk))
 
     # used by django and DRF
     def get_absolute_url(self):
@@ -657,9 +648,27 @@ class User(GuidStoredObject, AddonModelMixin):
         return '{base_url}user/{uid}/{project_id}/claim/?token={token}'\
                     .format(**locals())
 
-    def set_password(self, raw_password):
-        """Set the password for this user to the hash of ``raw_password``."""
+    def set_password(self, raw_password, notify=True):
+        """Set the password for this user to the hash of ``raw_password``.
+        If this is a new user, we're done. If this is a password change,
+        then email the user about the change and clear all the old sessions
+        so that users will have to log in again with the new password.
+
+        :param raw_password: the plaintext value of the new password
+        :param notify: Only meant for unit tests to keep extra notifications from being sent
+        :rtype: list
+        :returns: Changed fields from the user save
+        """
+        had_existing_password = bool(self.password)
         self.password = generate_password_hash(raw_password)
+        if had_existing_password and notify:
+            mails.send_mail(
+                to_addr=self.username,
+                mail=mails.PASSWORD_RESET,
+                mimetype='plain',
+                user=self
+            )
+            remove_sessions_for_user(self)
 
     def check_password(self, raw_password):
         """Return a boolean of whether ``raw_password`` was correct."""
@@ -1069,7 +1078,7 @@ class User(GuidStoredObject, AddonModelMixin):
             node for node in self.contributed
             if not (
                 node.is_deleted
-                or node.is_dashboard
+                or node.is_bookmark_collection
             )
         )
 
@@ -1155,7 +1164,12 @@ class User(GuidStoredObject, AddonModelMixin):
         """
         for each in self.watched:
             if watch_config.node._id == each.node._id:
-                each.__class__.remove_one(each)
+                from framework.transactions.context import TokuTransaction  # Avoid circular import
+                with TokuTransaction():
+                    # Ensure that both sides of the relationship are removed
+                    each.__class__.remove_one(each)
+                    self.watched.remove(each)
+                    self.save()
                 return None
         raise ValueError('Node not being watched.')
 
@@ -1256,11 +1270,11 @@ class User(GuidStoredObject, AddonModelMixin):
             # clear subscriptions for merged user
             signals.user_merged.send(user, list_name=key, subscription=False, send_goodbye=False)
 
-        for node_id, timestamp in user.comments_viewed_timestamp.iteritems():
-            if not self.comments_viewed_timestamp.get(node_id):
-                self.comments_viewed_timestamp[node_id] = timestamp
-            elif timestamp > self.comments_viewed_timestamp[node_id]:
-                self.comments_viewed_timestamp[node_id] = timestamp
+        for target_id, timestamp in user.comments_viewed_timestamp.iteritems():
+            if not self.comments_viewed_timestamp.get(target_id):
+                self.comments_viewed_timestamp[target_id] = timestamp
+            elif timestamp > self.comments_viewed_timestamp[target_id]:
+                self.comments_viewed_timestamp[target_id] = timestamp
 
         self.emails.extend(user.emails)
         user.emails = []
@@ -1270,6 +1284,10 @@ class User(GuidStoredObject, AddonModelMixin):
             if k not in self.email_verifications and email_to_confirm != user.username:
                 self.email_verifications[k] = v
         user.email_verifications = {}
+
+        for institution in user.affiliated_institutions:
+            self.affiliated_institutions.append(institution)
+        user._affiliated_institutions = []
 
         # FOREIGN FIELDS
         for watched in user.watched:
@@ -1300,8 +1318,8 @@ class User(GuidStoredObject, AddonModelMixin):
         # - projects where the user was a contributor
         with disconnected_from(signal=contributor_added, listener=notify_added_contributor):
             for node in user.contributed:
-                # Skip dashboard node
-                if node.is_dashboard:
+                # Skip bookmark collection node
+                if node.is_bookmark_collection:
                     continue
                 # if both accounts are contributor of the same project
                 if node.is_contributor(self) and node.is_contributor(user):
@@ -1381,27 +1399,25 @@ class User(GuidStoredObject, AddonModelMixin):
         return inst in self.affiliated_institutions
 
     def remove_institution(self, inst_id):
-        try:
-            self.affiliated_institutions.remove(inst_id)
-        except ValueError:
-            return False
-        return True
+        removed = False
+        for inst in self.affiliated_institutions:
+            if inst._id == inst_id:
+                self.affiliated_institutions.remove(inst)
+                removed = True
+        return removed
 
-    affiliated_institutions = fields.ForeignField('institution', list=True)
+    _affiliated_institutions = fields.ForeignField('node', list=True)
 
-    def get_node_comment_timestamps(self, node, page, file_id=None):
-        """ Returns the timestamp for when comments were last viewed on a node or
-            a dictionary of timestamps for when comments were last viewed on files.
+    @property
+    def affiliated_institutions(self):
+        from website.institutions.model import Institution, AffiliatedInstitutionsList
+        return AffiliatedInstitutionsList([Institution(inst) for inst in self._affiliated_institutions], obj=self, private_target='_affiliated_institutions')
+
+    def get_node_comment_timestamps(self, target_id):
+        """ Returns the timestamp for when comments were last viewed on a node or file.
         """
         default_timestamp = dt.datetime(1970, 1, 1, 12, 0, 0)
-        timestamps = self.comments_viewed_timestamp.get(node._id, {})
-        if page == 'node':
-            page_timestamps = timestamps.get(page, default_timestamp)
-        elif page == 'files':
-            page_timestamps = timestamps.get(page, {})
-            if file_id:
-                page_timestamps = page_timestamps.get(file_id, default_timestamp)
-        return page_timestamps
+        return self.comments_viewed_timestamp.get(target_id, default_timestamp)
 
 
 def _merge_into_reversed(*iterables):

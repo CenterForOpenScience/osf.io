@@ -27,6 +27,7 @@ AUTHENTICATION_BACKENDS = (
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = osf_settings.DEBUG_MODE
+DEBUG_PROPAGATE_EXCEPTIONS = True
 
 ALLOWED_HOSTS = [
     '.osf.io'
@@ -108,9 +109,14 @@ MIDDLEWARE_CLASSES = (
     'api.base.middleware.MongoConnectionMiddleware',
     'api.base.middleware.CeleryTaskMiddleware',
     'api.base.middleware.TokuTransactionMiddleware',
+    'api.base.middleware.PostcommitTaskMiddleware',
+
+    # A profiling middleware. ONLY FOR DEV USE
+    # Uncomment and add "prof" to url params to recieve a profile for that url
+    # 'api.base.middleware.ProfileMiddleware',
 
     # 'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
+    'api.base.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     # 'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -176,7 +182,10 @@ SWAGGER_SETTINGS = {
 
 DEBUG_TRANSACTIONS = DEBUG
 
-ENABLE_VARNISH = False
-ENABLE_ESI = False
-VARNISH_SERVERS = []  # This should be set in local.py or cache invalidation won't work
-ESI_MEDIA_TYPES = {'application/vnd.api+json', 'application/json'}
+JWT_SECRET = 'osf_api_cas_login_jwt_secret_32b'
+JWE_SECRET = 'osf_api_cas_login_jwe_secret_32b'
+
+ENABLE_VARNISH = osf_settings.ENABLE_VARNISH
+ENABLE_ESI = osf_settings.ENABLE_ESI
+VARNISH_SERVERS = osf_settings.VARNISH_SERVERS
+ESI_MEDIA_TYPES = osf_settings.ESI_MEDIA_TYPES
