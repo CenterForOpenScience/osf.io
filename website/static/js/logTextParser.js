@@ -42,6 +42,16 @@ var paramIsReturned = function _paramIsReturned (param, logObject){
     return true;
 };
 
+var stripBackslash = function _stripBackslash(path){
+    if (path.charAt(0) === '/') {
+        path = path.substr(1, path.length - 1);
+    }
+
+    if (path.charAt(path.length - 1) === '/') {
+        path = path.substr(0, path.length - 1);
+    }
+    return path;
+};
 
 /**
  * Returns the text parameters since their formatting is mainly the same
@@ -68,12 +78,7 @@ var returnTextParams = function (param, text, logObject, view_url) {
             ]);
         }
         if (param === 'path'){
-            if (source.charAt(0) === '/') {
-                source = source.substr(1, source.length - 1);
-            }
-            if (source.charAt(source.length - 1) === '/') {
-                source = source.substr(0, source.length - 1);
-            }
+            source = stripBackslash(source);
         }
         return view_url ? m('a', {href: view_url}, source) : m('span', source);
     }
@@ -439,7 +444,7 @@ var LogPieces = {
                     var acceptableLinkedItems = ['osf_storage_file_added', 'osf_storage_file_updated', 'file_tag_added', 'file_tag_removed',
                     'github_file_added', 'github_file_updated'];
                     if (acceptableLinkedItems.indexOf(action) !== -1 && logObject.attributes.params.urls) {
-                        return logObject.attributes.params.urls.view;
+                         return logObject.attributes.params.urls.view;
                     }
                 }
                 return null;
@@ -522,10 +527,28 @@ var LogPieces = {
     },
 
     googledrive_path: {
-        view: function(ctrl, logObject){
+        controller: function(logObject){
+            var self = this;
+            self.returnLinkForPath = function() {
+                if (logObject) {
+                    var action = logObject.attributes.action;
+                    var acceptableLinkedItems = ['googledrive_file_added', 'googledrive_file_updated'];
+                    if (acceptableLinkedItems.indexOf(action) !== -1 && logObject.attributes.params.urls) {
+                         return logObject.attributes.params.urls.view;
+                    }
+                }
+                return null;
+            };
+        },
+        view: function (ctrl, logObject) {
+            var url = ctrl.returnLinkForPath();
             var path = logObject.attributes.params.path;
             if(paramIsReturned(path, logObject)){
-                return m('span', decodeURIComponent(path));
+                path = stripBackslash(decodeURIComponent(path));
+                if (url) {
+                     return m('a', {href: url}, path);
+                }
+                return m('span', path);
             }
             return m('span', '');
         }
