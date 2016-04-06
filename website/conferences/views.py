@@ -234,9 +234,14 @@ def conference_submissions(**kwargs):
         # For efficiency, we filter by tag first, then node
         # instead of doing a single Node query
         projects = set()
-        for tag in Tag.find(Q('lower', 'eq', conf.endpoint.lower())):
-            for node in Node.find(Q('tags', 'eq', tag._id) & Q('is_public', 'eq', True) & Q('is_deleted', 'eq', False)):
-                projects.add(node)
+
+        tags = Tag.find(Q('lower', 'eq', conf.endpoint.lower())).get_keys()
+        nodes = Node.find(
+            Q('tags', 'in', tags) &
+            Q('is_public', 'eq', True) &
+            Q('is_deleted', 'eq', False)
+        )
+        projects.update(list(nodes))
 
         for idx, node in enumerate(projects):
             submissions.append(_render_conference_node(node, idx, conf))
