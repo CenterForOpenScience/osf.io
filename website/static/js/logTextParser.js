@@ -353,7 +353,15 @@ var LogPieces = {
     // external identifiers on node
     identifiers: {
         view: function (ctrl, logObject) {
-            return returnTextParams('identifiers', 'identifier(s)', logObject);
+            external_ids = logObject.attributes.params.identifiers;
+            if (paramIsReturned(external_ids, logObject)) {
+                var doi = external_ids.doi;
+                var ark = external_ids.ark;
+                if (doi && ark) {
+                    return m('span', 'doi:' + doi + ' and ark:' + ark);
+                }
+            }
+            return m('span', '');
         }
     },
     // Wiki page name
