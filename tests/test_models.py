@@ -2136,7 +2136,7 @@ class TestNodeTraversals(OsfTestCase):
         NodeFactory(parent=comp2)
         reg = RegistrationFactory(project=proj)
         reg.delete_registration_tree(save=True)
-        assert_false(proj.node__registrations)
+        assert_false(proj.registrations_all)
 
     def test_get_active_contributors_recursive_with_duplicate_users(self):
         parent = ProjectFactory(creator=self.user)
@@ -2511,7 +2511,7 @@ class TestProject(OsfTestCase):
         config1 = WatchConfigFactory(node=self.project)
         user.watched.append(config1)
         user.save()
-        assert_in(config1._id, self.project.watchconfig__watched)
+        assert_in(config1._id, [e._id for e in self.project.watches])
 
     def test_add_contributor(self):
         # A user is added as a contributor
@@ -2641,7 +2641,7 @@ class TestProject(OsfTestCase):
         link = PrivateLinkFactory()
         link.nodes.append(self.project)
         link.save()
-        assert_in(link, self.project.private_links)
+        assert_in(link._id, [e._id for e in self.project.private_links])
 
     @mock.patch('framework.auth.core.Auth.private_link')
     def test_has_anonymous_link(self, mock_property):
@@ -3647,7 +3647,7 @@ class TestForkNode(OsfTestCase):
         assert_true(fork.is_fork)
         assert_equal(len(fork.private_links), 0)
         assert_equal(fork.forked_from, original)
-        assert_in(fork._id, original.node__forked)
+        assert_in(fork._id, [n._id for n in original.forks])
         # Note: Must cast ForeignList to list for comparison
         assert_equal(list(fork.contributors), [fork_user])
         assert_true((fork_date - fork.date_created) < datetime.timedelta(seconds=30))
@@ -4006,7 +4006,7 @@ class TestRegisterNode(OsfTestCase):
         )
 
     def test_registration_list(self):
-        assert_in(self.registration._id, self.project.node__registrations)
+        assert_in(self.registration._id, [n._id for n in self.project.registrations_all])
 
     def test_registration_gets_institution_affiliation(self):
         node = NodeFactory()

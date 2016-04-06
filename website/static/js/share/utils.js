@@ -279,7 +279,7 @@ utils.loadRawNormalized = function(result){
             error.raw = '"Raw data not found."';
             if (xhr.status >= 500) {
                 Raven.captureMessage('SHARE Raw and Normalized API Internal Server Error.', {
-                    textStatus: status
+                    extra: {textStatus: xhr.status}
                 });
             }
 

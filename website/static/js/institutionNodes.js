@@ -23,9 +23,11 @@ var ViewModel = function(context) {
             self.allNodes(response.data.embeds.nodes.data);
         }).fail(function(xhr, status, error){
             Raven.captureMessage('Failed to load Institution\'s nodes', {
-                url: url,
-                textStatus: status,
-                err: error
+                extra: {
+                    url: url,
+                    textStatus: status,
+                    err: error
+                }
             });
         });
     };

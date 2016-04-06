@@ -39,9 +39,11 @@ var ExternalAccount = oop.defclass({
             })
             .fail(function(xhr, status, error) {
                 Raven.captureMessage('Error deauthorizing node: ' + node.id, {
-                    url: url,
-                    status: status,
-                    error: error
+                    extra: {
+                        url: url,
+                        status: status,
+                        error: error
+                    }
                 });
             });
     },
@@ -126,9 +128,11 @@ var OAuthAddonSettingsViewModel = oop.defclass({
         });
         request.fail(function(xhr, status, error) {
             Raven.captureMessage('Error while removing addon authorization for ' + account.id, {
-                url: url,
-                status: status,
-                error: error
+                extra: {
+                    url: url,
+                    status: status,
+                    error: error
+                }
             });
         });
         return request;
@@ -144,9 +148,11 @@ var OAuthAddonSettingsViewModel = oop.defclass({
         });
         request.fail(function(xhr, status, error) {
             Raven.captureMessage('Error while updating addon account', {
-                url: url,
-                status: status,
-                error: error
+                extra: {
+                    url: url,
+                    status: status,
+                    error: error
+                }
             });
         });
         return request;

@@ -219,7 +219,9 @@ NodeFetcher.prototype = {
       return this.resume();
     this._continue = false;
     this._promise = null;
-    Raven.captureMessage('Error loading nodes with nodeType ' + this.type + ' at url ' + this.nextLink, {requestReturn: result});
+    Raven.captureMessage('Error loading nodes with nodeType ' + this.type + ' at url ' + this.nextLink, {
+        extra: {requestReturn: result}
+    });
     $osf.growl('We\'re having some trouble contacting our servers. Try reloading the page.', 'Something went wrong!', 'danger', 5000);
   },
   _onFinish: function() {
@@ -249,7 +251,7 @@ function getUID() {
 
 /* Send with ajax calls to work with api2 */
 var xhrconfig = function (xhr) {
-    xhr.withCredentials = true;
+    xhr.withCredentials = window.contextVars.isOnRootDomain,
     xhr.setRequestHeader('Content-Type', 'application/vnd.api+json;');
     xhr.setRequestHeader('Accept', 'application/vnd.api+json; ext=bulk');
 };
@@ -355,8 +357,13 @@ var MyProjects = {
         ];
 
         self.fetchers = {};
-        self.fetchers[self.systemCollections[0].id] = new NodeFetcher('nodes');
-        self.fetchers[self.systemCollections[1].id] = new NodeFetcher('registrations');
+        if (!options.systemCollections) {
+          self.fetchers[self.systemCollections[0].id] = new NodeFetcher('nodes');
+          self.fetchers[self.systemCollections[1].id] = new NodeFetcher('registrations');
+        } else {
+          self.fetchers[self.systemCollections[0].id] = new NodeFetcher('nodes', self.systemCollections[0].data.link);
+          self.fetchers[self.systemCollections[1].id] = new NodeFetcher('registrations', self.systemCollections[1].data.link);
+        }
 
         // Initial Breadcrumb for All my projects
         var initialBreadcrumbs = options.initialBreadcrumbs || [self.systemCollections[0]];
@@ -381,7 +388,7 @@ var MyProjects = {
                 }
             }, function _error(results){
                 var message = 'Error loading project category names.';
-                Raven.captureMessage(message, {requestReturn: results});
+                Raven.captureMessage(message, {extra: {requestReturn: results}});
             });
             return promise;
         };
@@ -775,7 +782,7 @@ var MyProjects = {
             }, function(){
                 var message = 'Collections could not be loaded.';
                 $osf.growl(message, 'Please reload the page.');
-                Raven.captureMessage(message, { url: url });
+                Raven.captureMessage(message, {extra: { url: url }});
             });
             return promise;
         };
@@ -1065,7 +1072,7 @@ var Collections = {
                 var name = self.newCollectionName();
                 var message = '"' + name + '" collection could not be created.';
                 $osf.growl(message, 'Please try again', 'danger', 5000);
-                Raven.captureMessage(message, { url: url, data : data });
+                Raven.captureMessage(message, {extra: { url: url, data : data }});
                 self.newCollectionName('');
             });
             self.resetAddCollection();
@@ -1098,7 +1105,7 @@ var Collections = {
                 var name = self.collectionMenuObject().item.label;
                 var message = '"' + name + '" could not be deleted.';
                 $osf.growl(message, 'Please try again', 'danger', 5000);
-                Raven.captureMessage(message, {collectionObject: self.collectionMenuObject() });
+                Raven.captureMessage(message, {extra: {collectionObject: self.collectionMenuObject() }});
             });
             self.dismissModal();
             return promise;
@@ -1123,7 +1130,7 @@ var Collections = {
                 var name = self.collectionMenuObject().item.label;
                 var message = '"' + name + '" could not be renamed.';
                 $osf.growl(message, 'Please try again', 'danger', 5000);
-                Raven.captureMessage(message, {collectionObject: self.collectionMenuObject() });
+                Raven.captureMessage(message, {extra: {collectionObject: self.collectionMenuObject() }});
             });
             self.dismissModal();
             self.isValid(false);
@@ -1216,6 +1223,7 @@ var Collections = {
                 end = ctrl.collections().length;
             }
             var openCollectionMenu = function _openCollectionMenu(e) {
+                e.stopPropagation();
                 var index = $(this).attr('data-index');
                 var selectedItem = ctrl.collections()[index];
                 ctrl.updateCollectionMenu(selectedItem, e);
