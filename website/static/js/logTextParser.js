@@ -500,9 +500,10 @@ var LogPieces = {
 
     box_folder: {
         view: function(ctrl, logObject) {
-            var folder = logObject.attributes.params.folder;
+            var folder = logObject.attributes.params.folder_name;
+
             if(paramIsReturned(folder, logObject)){
-                return m('span', folder === 'All Files' ? '/ (Full Box)' : (folder || '').replace('All Files',''));
+                return m('span', folder === 'All Files' ? '/ (Full Box)' : folder);
             }
             return m('span', '');
         }
