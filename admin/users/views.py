@@ -1,8 +1,10 @@
-from django.views.generic import FormView
+from __future__ import unicode_literals
+
+from furl import furl
+from django.views.generic import FormView, DeleteView
 from django.core.mail import send_mail
 from django.shortcuts import redirect
 from django.views.defaults import page_not_found
-from furl import furl
 
 from website.settings import SUPPORT_EMAIL, DOMAIN
 from website.security import random_string
@@ -13,36 +15,76 @@ from website.mailchimp_utils import subscribe_on_confirm
 
 from admin.base.views import GuidFormView, GuidView
 from admin.users.templatetags.user_extras import reverse_user
+from admin.base.utils import OSFAdmin
 
 from .serializers import serialize_user
 from .forms import EmailResetForm
 
 
-def disable_user(request, guid):
-    user = User.load(guid)
-    user.disable_account()
-    user.save()
-    return redirect(reverse_user(guid))
+class UserDeleteView(OSFAdmin, DeleteView):
+    """ Allow authorised admin user to remove/restore user
+
+    Interface with OSF database. No admin models.
+    """
+    template_name = 'users/remove_user.html'
+    context_object_name = 'user'
+    object = None
+
+    def delete(self, request, *args, **kwargs):
+        try:
+            user = self.get_object()
+            if user.date_disabled is None:
+                user.disable_account()
+            else:
+                user.date_disabled = None
+                subscribe_on_confirm(user)
+            user.save()
+        except AttributeError:
+            return page_not_found(
+                request,
+                AttributeError(
+                    '{} with id "{}" not found.'.format(
+                        self.context_object_name.title(),
+                        self.kwargs.get('guid')
+                    )
+                )
+            )
+        return redirect(reverse_user(self.kwargs.get('guid')))
+
+    def get_context_data(self, **kwargs):
+        context = {}
+        context.setdefault('guid', kwargs.get('object').pk)
+        return super(UserDeleteView, self).get_context_data(**context)
+
+    def get_object(self, queryset=None):
+        return User.load(self.kwargs.get('guid'))
 
 
-def reactivate_user(request, guid):
-    user = User.load(guid)
-    user.date_disabled = None
-    subscribe_on_confirm(user)
-    user.save()
-    return redirect(reverse_user(guid))
+class User2FactorDeleteView(UserDeleteView):
+    """ Allow authorised admin user to remove 2 factor authentication.
+
+    Interface with OSF database. No admin models.
+    """
+    template_name = 'users/remove_2_factor.html'
+
+    def delete(self, request, *args, **kwargs):
+        try:
+            user = self.get_object()
+            user.delete_addon('twofactor')
+        except AttributeError:
+            return page_not_found(
+                request,
+                AttributeError(
+                    '{} with id "{}" not found.'.format(
+                        self.context_object_name.title(),
+                        self.kwargs.get('guid')
+                    )
+                )
+            )
+        return redirect(reverse_user(self.kwargs.get('guid')))
 
 
-def remove_2_factor(request, guid):
-    user = User.load(guid)
-    try:
-        user.delete_addon('twofactor')
-    except AttributeError:
-        page_not_found(request)
-    return redirect(reverse_user(guid))
-
-
-class UserFormView(GuidFormView):
+class UserFormView(OSFAdmin, GuidFormView):
     template_name = 'users/search.html'
     object_type = 'user'
 
@@ -51,46 +93,58 @@ class UserFormView(GuidFormView):
         return reverse_user(self.guid)
 
 
-class UserView(GuidView):
+class UserView(OSFAdmin, GuidView):
     template_name = 'users/user.html'
     context_object_name = 'user'
 
     def get_object(self, queryset=None):
-        self.guid = self.kwargs.get('guid', None)
-        return serialize_user(User.load(self.guid))
+        return serialize_user(User.load(self.kwargs.get('guid')))
 
 
-class ResetPasswordView(FormView):
+class ResetPasswordView(OSFAdmin, FormView):
     form_class = EmailResetForm
     template_name = 'users/reset.html'
 
-    def __init__(self):
-        self.guid = None
-        super(ResetPasswordView, self).__init__()
-
     def get(self, request, *args, **kwargs):
-        return self.render_to_response(self.get_context_data())  # TODO: 1.9xx
-
-    def get_context_data(self, **kwargs):
-        self.guid = self.kwargs.get('guid', None)
         try:
-            user = User.load(self.guid)
+            return super(ResetPasswordView, self).get(request, *args, **kwargs)
         except AttributeError:
-            raise
-        self.initial.setdefault('emails', [(r, r) for r in user.emails])
-        kwargs.setdefault('guid', self.guid)
-        kwargs.setdefault('form', self.get_form())  # TODO: 1.9 xx
-        return super(ResetPasswordView, self).get_context_data(**kwargs)
+            return page_not_found(
+                request,
+                AttributeError(
+                    'User with id "{}" not found.'.format(
+                        self.kwargs.get('guid')
+                    )
+                )
+            )
 
     def post(self, request, *args, **kwargs):
-        self.guid = self.kwargs.get('guid', None)
-        return super(ResetPasswordView, self).post(request, *args, **kwargs)
+        try:
+            return super(ResetPasswordView, self).post(request, *args, **kwargs)
+        except AttributeError:
+            return page_not_found(
+                request,
+                AttributeError(
+                    'User with id "{}" not found.'.format(
+                        self.kwargs.get('guid')
+                    )
+                )
+            )
+
+    def get_context_data(self, **kwargs):
+        user = User.load(self.kwargs.get('guid'))
+        try:
+            self.initial.setdefault('emails', [(r, r) for r in user.emails])
+        except AttributeError:
+            raise
+        kwargs.setdefault('guid', user.pk)
+        return super(ResetPasswordView, self).get_context_data(**kwargs)
 
     def form_valid(self, form):
         email = form.cleaned_data.get('emails')
         user = get_user(email)
-        if user is None:
-            raise TypeError
+        if user is None or user.pk != self.kwargs.get('guid'):
+            raise AttributeError
         reset_abs_url = furl(DOMAIN)
         user.verification_key = random_string(20)
         user.save()
@@ -108,4 +162,4 @@ class ResetPasswordView(FormView):
 
     @property
     def success_url(self):
-        return reverse_user(self.guid)
+        return reverse_user(self.kwargs.get('guid'))
