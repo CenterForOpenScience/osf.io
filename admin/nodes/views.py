@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 
-from django.views.generic import ListView, DeleteView
 from datetime import datetime
+from django.views.generic import ListView, DeleteView
 from django.shortcuts import redirect
 from django.views.defaults import page_not_found
 from modularodm import Q

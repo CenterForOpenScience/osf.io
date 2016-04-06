@@ -4,10 +4,11 @@ Utility functions and classes
 from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.mixins import UserPassesTestMixin
+from django.conf import settings
 
 
 class OSFAdmin(UserPassesTestMixin):
-    login_url = '/admin/auth/login'
+    login_url = settings.LOGIN_URL
     permission_denied_message = 'You are not in the OSF admin group.'
 
     def handle_no_permission(self):
