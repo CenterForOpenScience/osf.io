@@ -695,7 +695,7 @@ Draft.prototype.register = function(url, data) {
                 callback: function() {
                     $osf.unblock();
                     if (self.urls.registrations) {
-                        window.location.assign(self.urls.registrations)
+                        window.location.assign(self.urls.registrations);
                     }
                 }
             });
