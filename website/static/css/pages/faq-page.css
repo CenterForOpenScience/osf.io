@@ -34,8 +34,9 @@
 }
 .search-layer .clear-search {
     margin-left: -30px;
-    font-size: 18px;
+    font-size: 15px;
     color: #CCCCCC;
+    cursor: pointer;
 }
 .search-layer .clear-search.clear-active {
     color: #666;
@@ -82,5 +83,13 @@
     }
     .search-layer ul li {
         padding: 3px;
+    }
+}
+@media (max-width: 767px) {
+    .search-layer input {
+        width: 90%;
+    }
+    .search-layer ul {
+        padding-left: 0;
     }
 }

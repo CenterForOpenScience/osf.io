@@ -37,7 +37,9 @@ var QuickSearchProject = {
         // Switches errorLoading to true
         self.requestError = function(result) {
             self.errorLoading(true);
-            Raven.captureMessage('Error loading user projects on home page.', {requestReturn: result});
+            Raven.captureMessage('Error loading user projects on home page.', {
+                extra: {requestReturn: result}
+            });
         };
 
         self.templateNodes = new NodeFetcher('nodes');

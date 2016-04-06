@@ -30,9 +30,11 @@ var ensureUserTimezone = function(savedTimezone, savedLocale, id) {
         );
         request.fail(function(xhr, textStatus, error) {
             Raven.captureMessage('Could not set user timezone or locale', {
-                url: url,
-                textStatus: textStatus,
-                error: error
+                extra: {
+                    url: url,
+                    textStatus: textStatus,
+                    error: error
+                }
             });
         });
     }
