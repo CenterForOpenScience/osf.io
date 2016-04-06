@@ -45,12 +45,16 @@ class FlaskDjangoIntegrationTestCase(ApiTestCase):
         except:
             assert_true(False, 'Exception from push_status_message when called from the v2 API with type "error"')
 
-    def test_push_status_message_unexpected_error(self):
+    @mock.patch('framework.status.session')
+    def test_push_status_message_unexpected_error(self, mock_sesh):
         status_message = 'This is a message'
         exception_message = 'this is some very unexpected problem'
+        mock_get = mock.Mock(side_effect=RuntimeError(exception_message))
+        mock_data = mock.Mock()
+        mock_data.attach_mock(mock_get, 'get')
+        mock_sesh.attach_mock(mock_data, 'data')
         try:
-            with mock.patch('framework.status.get_session_data', mock.Mock(side_effect=RuntimeError(exception_message))):
-                push_status_message(status_message, kind='error')
+            push_status_message(status_message, kind='error')
             assert_true(False, 'push_status_message() should have generated a RuntimeError exception.')
         except ValidationError as e:
             assert_true(False, 'push_status_message() should have re-raised the RuntimeError not gotten ValidationError.')

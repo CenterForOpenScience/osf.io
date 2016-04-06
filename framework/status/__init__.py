@@ -17,11 +17,6 @@ TYPE_MAP = {
     'default': 'default',
 }
 
-
-def get_session_data(item):
-    return session.data.get(item)
-
-
 def push_status_message(message, kind='warning', dismissible=True, trust=True, jumbotron=False):
     """
     Push a status message that will be displayed as a banner on the next page loaded by the user.
@@ -35,7 +30,7 @@ def push_status_message(message, kind='warning', dismissible=True, trust=True, j
     """
     # TODO: Change the default to trust=False once conversion to markupsafe rendering is complete
     try:
-        statuses = get_session_data('status')
+        statuses = session.data.get('status')
     except RuntimeError as e:
         exception_message = getattr(e, 'message', None)
         if exception_message == 'working outside of request context':
