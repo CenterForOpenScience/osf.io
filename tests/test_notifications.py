@@ -319,16 +319,9 @@ class TestRemoveNodeSignal(OsfTestCase):
 
     def test_node_subscriptions_and_backrefs_removed_when_node_is_deleted(self):
         project = factories.ProjectFactory()
-        subscription = factories.NotificationSubscriptionFactory(
-            _id=project._id + '_comments',
-            owner=project
-        )
-        subscription.save()
-        subscription.email_transactional.append(project.creator)
-        subscription.save()
 
         s = NotificationSubscription.find(Q('email_transactional', 'eq', project.creator._id))
-        assert_equal(s.count(), 1)
+        assert_equal(s.count(), 2)
 
         with capture_signals() as mock_signals:
             project.remove_node(auth=Auth(project.creator))
