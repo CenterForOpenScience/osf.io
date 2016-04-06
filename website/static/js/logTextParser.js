@@ -7,6 +7,7 @@ var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
 var logActions = require('json!js/_allLogTexts.json');
 var $ = require('jquery');  // jQuery
 var $osf = require('js/osfHelpers');
+var Raven = require('raven-js');
 
 var ravenMessagesCache = []; // Cache messages to avoid sending multiple times in one page view
 /**
@@ -16,7 +17,7 @@ var ravenMessagesCache = []; // Cache messages to avoid sending multiple times i
  */
 function ravenMessage (message, logObject) {
     if(ravenMessagesCache.indexOf(message) === -1){
-        Raven.captureMessage(message, {logObject: logObject});
+        Raven.captureMessage(message, {extra: {logObject: logObject}});
         ravenMessagesCache.push(message);
     }
 }

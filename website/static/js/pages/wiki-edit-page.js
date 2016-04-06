@@ -75,9 +75,11 @@ if (ctx.canEditPageName) {
             } else {
                 // Log unexpected error with Raven
                 Raven.captureMessage('Error in renaming wiki', {
-                    url: ctx.urls.rename,
-                    responseText: response.responseText,
-                    statusText: response.statusText
+                    extra: {
+                        url: ctx.urls.rename,
+                        responseText: response.responseText,
+                        statusText: response.statusText
+                    }
                 });
                 return 'An unexpected error occurred. Please try again.';
             }
@@ -102,7 +104,7 @@ $(document).ready(function () {
         errorMsg.append('<p>Could not retrieve wiki pages. If this issue persists, ' +
             'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.</p>');
         Raven.captureMessage('Could not GET wiki menu pages', {
-            url: ctx.urls.grid, status: status, error: error
+            extra: { url: ctx.urls.grid, status: status, error: error }
         });
     });
 

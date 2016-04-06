@@ -219,7 +219,9 @@ NodeFetcher.prototype = {
       return this.resume();
     this._continue = false;
     this._promise = null;
-    Raven.captureMessage('Error loading nodes with nodeType ' + this.type + ' at url ' + this.nextLink, {requestReturn: result});
+    Raven.captureMessage('Error loading nodes with nodeType ' + this.type + ' at url ' + this.nextLink, {
+        extra: {requestReturn: result}
+    });
     $osf.growl('We\'re having some trouble contacting our servers. Try reloading the page.', 'Something went wrong!', 'danger', 5000);
   },
   _onFinish: function() {
@@ -386,7 +388,7 @@ var MyProjects = {
                 }
             }, function _error(results){
                 var message = 'Error loading project category names.';
-                Raven.captureMessage(message, {requestReturn: results});
+                Raven.captureMessage(message, {extra: {requestReturn: results}});
             });
             return promise;
         };
@@ -780,7 +782,7 @@ var MyProjects = {
             }, function(){
                 var message = 'Collections could not be loaded.';
                 $osf.growl(message, 'Please reload the page.');
-                Raven.captureMessage(message, { url: url });
+                Raven.captureMessage(message, {extra: { url: url }});
             });
             return promise;
         };
@@ -1070,7 +1072,7 @@ var Collections = {
                 var name = self.newCollectionName();
                 var message = '"' + name + '" collection could not be created.';
                 $osf.growl(message, 'Please try again', 'danger', 5000);
-                Raven.captureMessage(message, { url: url, data : data });
+                Raven.captureMessage(message, {extra: { url: url, data : data }});
                 self.newCollectionName('');
             });
             self.resetAddCollection();
@@ -1103,7 +1105,7 @@ var Collections = {
                 var name = self.collectionMenuObject().item.label;
                 var message = '"' + name + '" could not be deleted.';
                 $osf.growl(message, 'Please try again', 'danger', 5000);
-                Raven.captureMessage(message, {collectionObject: self.collectionMenuObject() });
+                Raven.captureMessage(message, {extra: {collectionObject: self.collectionMenuObject() }});
             });
             self.dismissModal();
             return promise;
@@ -1128,7 +1130,7 @@ var Collections = {
                 var name = self.collectionMenuObject().item.label;
                 var message = '"' + name + '" could not be renamed.';
                 $osf.growl(message, 'Please try again', 'danger', 5000);
-                Raven.captureMessage(message, {collectionObject: self.collectionMenuObject() });
+                Raven.captureMessage(message, {extra: {collectionObject: self.collectionMenuObject() }});
             });
             self.dismissModal();
             self.isValid(false);
@@ -1221,6 +1223,7 @@ var Collections = {
                 end = ctrl.collections().length;
             }
             var openCollectionMenu = function _openCollectionMenu(e) {
+                e.stopPropagation();
                 var index = $(this).attr('data-index');
                 var selectedItem = ctrl.collections()[index];
                 ctrl.updateCollectionMenu(selectedItem, e);

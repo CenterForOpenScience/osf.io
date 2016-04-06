@@ -64,7 +64,7 @@ $(function(){
         });
         promise.fail(function(xhr, textStatus, error) {
             Raven.captureMessage('Next page load failed for user nodes.', {
-                url: url, textStatus: textStatus, error: error
+                extra: { url: url, textStatus: textStatus, error: error }
             });
         });
     }

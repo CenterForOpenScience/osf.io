@@ -43,9 +43,11 @@ var ViewModel = function() {
             self.loading(false);
         }).fail(function (xhr, status, error) {
             Raven.captureMessage('Unable to fetch institutions', {
-                url: url,
-                status: status,
-                error: error
+                extra: {
+                    url: url,
+                    status: status,
+                    error: error
+                }
             });
         });
     };
