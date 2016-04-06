@@ -151,7 +151,6 @@ class CommentCreateSerializer(CommentSerializer):
             )
         validated_data['target'] = target
         validated_data['content'] = validated_data.pop('get_content')
-
         try:
             comment = Comment.create(auth=auth, **validated_data)
         except PermissionsError:

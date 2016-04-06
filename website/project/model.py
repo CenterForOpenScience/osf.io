@@ -252,19 +252,6 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
             return 'wiki'
         return self.node.project_or_component
 
-	# TODO: check whether user is a contributor on project
-    def get_mentions(self, auth):
-        """ Returns the comment mentions if the user is allowed to see it. Deleted comments
-        can only be viewed by the user who created the comment."""
-        if not auth and not self.node.is_public:
-            raise PermissionsError
-
-        if self.is_deleted and ((not auth or auth.user.is_anonymous())
-                                or (auth and not auth.user.is_anonymous() and self.user._id != auth.user._id)):
-            return None
-
-        return self.new_mentions
-
     @classmethod
     def find_n_unread(cls, user, node, page, root_id=None):
         if node.is_contributor(user):
@@ -317,12 +304,10 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
             save=False,
         )
 
-        # check if there are mentions and then send signal
         if (comment.new_mentions):
             comment.new_mentions = [mention for mention in comment.new_mentions if mention not in comment.old_mentions and validate_contributor(mention, comment.node.contributors)]
             if len(comment.new_mentions) > 0:
                 project_signals.mention_added.send(comment, auth=auth)
-                # add new_mentions to old_mentions
                 comment.old_mentions.extend(comment.new_mentions)
             comment.save()
 
@@ -350,7 +335,6 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
             if len(self.new_mentions) > 0:
                 if save:
                     project_signals.mention_added.send(self, auth=auth)
-                    # add new_mentions to old_mentions
                     self.old_mentions.extend(self.new_mentions)
 
         if save:
