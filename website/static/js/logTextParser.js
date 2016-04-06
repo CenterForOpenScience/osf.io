@@ -554,11 +554,11 @@ var LogPieces = {
         }
     },
 
-    googledrive_path_type: {
+    path_type: {
         view: function(ctrl, logObject){
             var path = logObject.attributes.params.path;
             if (paramIsReturned(path, logObject)) {
-                if (path.indexOf('/') === path.length - 1) {
+                if (path.slice(-1) === '/') {
                     return m('span', 'folder');
                 }
             }
