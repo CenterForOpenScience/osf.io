@@ -16,9 +16,16 @@ from website.mailchimp_utils import subscribe_on_confirm
 from admin.base.views import GuidFormView, GuidView
 from admin.users.templatetags.user_extras import reverse_user
 from admin.base.utils import OSFAdmin
+from admin.common_auth.logs import (
+    update_admin_log,
+    USER_2_FACTOR,
+    USER_EMAILED,
+    USER_REMOVED,
+    USER_RESTORED,
+)
 
-from .serializers import serialize_user
-from .forms import EmailResetForm
+from admin.users.serializers import serialize_user
+from admin.users.forms import EmailResetForm
 
 
 class UserDeleteView(OSFAdmin, DeleteView):
@@ -33,12 +40,26 @@ class UserDeleteView(OSFAdmin, DeleteView):
     def delete(self, request, *args, **kwargs):
         try:
             user = self.get_object()
+            flag = None
+            message = None
             if user.date_disabled is None:
                 user.disable_account()
+                flag = USER_REMOVED
+                message = 'User account {} disabled'.format(user.pk)
             else:
                 user.date_disabled = None
                 subscribe_on_confirm(user)
+                flag = USER_RESTORED
+                message = 'User account {} reenabled'.format(user.pk)
             user.save()
+            if flag is not None:
+                update_admin_log(
+                    user_id=self.request.user.id,
+                    object_id=user.pk,
+                    object_repr='User',
+                    message=message,
+                    action_flag=flag
+                )
         except AttributeError:
             return page_not_found(
                 request,
@@ -71,6 +92,13 @@ class User2FactorDeleteView(UserDeleteView):
         try:
             user = self.get_object()
             user.delete_addon('twofactor')
+            update_admin_log(
+                user_id=self.request.user.id,
+                object_id=user.pk,
+                object_repr='User',
+                message='Removed 2 factor auth for user {}'.format(user.pk),
+                action_flag=USER_2_FACTOR
+            )
         except AttributeError:
             return page_not_found(
                 request,
@@ -157,6 +185,13 @@ class ResetPasswordView(OSFAdmin, FormView):
             ),
             from_email=SUPPORT_EMAIL,
             recipient_list=[email]
+        )
+        update_admin_log(
+            user_id=self.request.user.id,
+            object_id=user.pk,
+            object_repr='User',
+            message='Emailed user {} a reset link.'.format(user.pk),
+            action_flag=USER_EMAILED
         )
         return super(ResetPasswordView, self).form_valid(form)
 
