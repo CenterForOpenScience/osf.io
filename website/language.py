@@ -93,8 +93,8 @@ MERGE_CONFIRMATION_REQUIRED_LONG = (
 # Node Actions
 
 AFTER_REGISTER_ARCHIVING = (
-    'Files are being copied to the newly created registration. Please check the registrations page '
-    'for more information about the status of this registration.'
+    'Files are being copied to the newly created registration, and you will receive an email '
+    'notification when the copying is finished.'
 )
 
 BEFORE_REGISTER_HAS_POINTERS = (
