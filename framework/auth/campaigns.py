@@ -12,16 +12,22 @@ CAMPAIGNS = ImmutableDict({
         'redirect_url': lambda: web_url_for('prereg_landing_page'),
         'confirmation_email_template': mails.CONFIRM_EMAIL_PREREG,
     },
-})
+    'institution': {
+        'system_tag': 'institution_campaign',
+        'redirect_url': lambda: ''
+    }})
+
 
 def system_tag_for_campaign(campaign):
     if campaign in CAMPAIGNS:
         return CAMPAIGNS[campaign]['system_tag']
     return None
 
+
 def email_template_for_campaign(campaign):
     if campaign in CAMPAIGNS:
         return CAMPAIGNS[campaign]['confirmation_email_template']
+
 
 def campaign_for_user(user):
     for campaign, config in CAMPAIGNS.items():
@@ -31,6 +37,7 @@ def campaign_for_user(user):
         # campagin tag in their system_tags.
         if config['system_tag'] in user.system_tags:
             return campaign
+
 
 def campaign_url_for(campaign):
     if campaign not in CAMPAIGNS:

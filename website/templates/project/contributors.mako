@@ -3,6 +3,7 @@
 
 <%include file="project/modal_generate_private_link.mako"/>
 <%include file="project/modal_add_contributor.mako"/>
+<%include file="project/modal_remove_contributor.mako"/>
 
 <div class="page-header  visible-xs">
   <h2 class="text-300">Contributors</h2>
@@ -58,6 +59,7 @@
                 </a>
             <!-- /ko -->
         </h3>
+
         % if 'admin' in user['permissions'] and not node['is_registration']:
             <p class="m-b-xs">Drag and drop contributors to change listing order.</p>
         % endif
@@ -214,9 +216,6 @@
             <div class="header" data-bind="visible: $root.collapsed() && expanded()"></div>
             <div class="td-content" data-bind="visible: !$root.collapsed() || expanded()">
                 <span data-bind="html: anonymousDisplay"></span>
-                <!-- ko if: $root.nodeIsPublic && anonymous -->
-                <i data-bind="tooltip: {title: 'Public projects are not anonymized.'}" class="fa fa-question-circle fa-sm"></i>
-                <!-- /ko -->
             </div>
         </td>
         <td>
@@ -340,21 +339,10 @@
         </td>
         <td>
             <div class="td-content" data-bind="visible: !$root.collapsed() || contributor.expanded()">
-                <!-- ko if: contributor.canEdit() -->
-                    <!-- ko ifnot: deleteStaged -->
-                        <!-- Note: Prevent clickBubble so that removing a
-                        contributor does not immediately un-remove her. -->
-                            <button type="button" class="btn btn-danger" data-bind="click: remove, clickBubble: false">Remove</button>
-                    <!-- /ko -->
-                    <!-- ko if: deleteStaged -->
-                        Save to Remove
-                    <!-- /ko -->
-                <!-- /ko -->
-
-                <!-- ko ifnot: contributor.canEdit() -->
-                    <!-- ko if: canRemove -->
-                        <button type="button" class="btn btn-danger" data-bind="click: function() {$root.removeSelf($data)}">Remove</button>
-                    <!-- /ko -->
+                <!-- ko if: (contributor.canEdit() || canRemove) -->
+                        <button href="#removeContributor" class="btn btn-danger btn-sm m-l-md"
+                           data-bind="click: remove"
+                           data-toggle="modal">Remove</button>
                 <!-- /ko -->
             </div>
         </td>

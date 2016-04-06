@@ -1,6 +1,5 @@
 """
-Update User.comments_viewed_timestamp field & comments model.
-Accompanies https://github.com/CenterForOpenScience/osf.io/pull/1762
+Update User.comments_viewed_timestamp field.
 """
 import logging
 import sys
@@ -19,25 +18,29 @@ logger = logging.getLogger(__name__)
 
 def main():
     update_comments_viewed_timestamp()
-    update_comments()
 
 
 def update_comments_viewed_timestamp():
-    users = User.find(Q('comments_viewed_timestamp', 'ne', None) | Q('comments_viewed_timestamp', 'ne', {}))
+    users = User.find(Q('comments_viewed_timestamp', 'ne', None) & Q('comments_viewed_timestamp', 'ne', {}))
     for user in users:
         if user.comments_viewed_timestamp:
-            for node in user.comments_viewed_timestamp:
-                user.comments_viewed_timestamp[node] = {'node': user.comments_viewed_timestamp[node]}
+            timestamps = {}
+            for node_id in user.comments_viewed_timestamp:
+                node_timestamps = user.comments_viewed_timestamp[node_id]
+
+                # node timestamp
+                if node_timestamps.get('node', None):
+                    timestamps[node_id] = node_timestamps['node']
+
+                # file timestamps
+                file_timestamps = node_timestamps.get('files', None)
+                if file_timestamps:
+                    for file_id in file_timestamps:
+                        timestamps[file_id] = file_timestamps[file_id]
+
+            user.comments_viewed_timestamp = timestamps
             user.save()
             logger.info('Migrated timestamp for user {0}'.format(user._id))
-
-
-def update_comments():
-    comments = Comment.find()
-    for comment in comments:
-        comment.root_target = comment.node
-        comment.page = Comment.OVERVIEW
-        comment.save()
 
 
 if __name__ == '__main__':

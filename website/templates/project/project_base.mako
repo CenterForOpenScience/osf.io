@@ -70,7 +70,6 @@
         currentUser: {
             ## TODO: Abstract me
             username: ${ user['username'] | sjson, n },
-            id: ${ user_id | sjson, n },
             urls: {
                 api: userApiUrl,
                 profile: ${user_url | sjson, n}
@@ -103,7 +102,9 @@
             parentRegisterUrl: ${parent_registration_url | sjson, n },
             parentExists: ${ parent_exists | sjson, n},
             registrationMetaSchemas: ${ node['registered_schemas'] | sjson, n },
-            registrationMetaData: ${ node['registered_meta'] | sjson, n }
+            registrationMetaData: ${ node['registered_meta'] | sjson, n },
+            institution: ${ node['institution']['name'] | sjson, n },
+            contributors: ${ node['contributors'] | sjson, n }
         }
     });
 

@@ -26,16 +26,17 @@ class GoogleDriveAccountFactory(ExternalAccountFactory):
 
 # TODO(sloria): make an abstract UserSettingsFactory that just includes the owner field
 class GoogleDriveUserSettingsFactory(ModularOdmFactory):
-    FACTORY_FOR = GoogleDriveUserSettings
+    class Meta:
+        model = GoogleDriveUserSettings
 
     owner = SubFactory(UserFactory)
 
 
 class GoogleDriveNodeSettingsFactory(ModularOdmFactory):
-    FACTORY_FOR = GoogleDriveNodeSettings
+    class Meta:
+        model = GoogleDriveNodeSettings
 
     owner = SubFactory(ProjectFactory)
     user_settings = SubFactory(GoogleDriveUserSettingsFactory)
-    folder_id = '12345'
-    folder_name = 'Folder'
+    folder_id = '1234567890'
     folder_path = 'Drive/Camera Uploads'

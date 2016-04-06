@@ -34,3 +34,10 @@ class InvalidSanctionApprovalToken(TokenError):
     """
     message_short = "Invalid Token"
     message_long = "This approval link is invalid. Are you logged into the correct account?"
+
+class UserNotAffiliatedError(OSFError):
+    """Raised if a user attempts to add an institution that is not currently
+    one of its affiliations.
+    """
+    message_short = "User not affiliated"
+    message_long = "This user is not affiliated with this institution."

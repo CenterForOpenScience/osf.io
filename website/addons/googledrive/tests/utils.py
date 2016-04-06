@@ -1,6 +1,21 @@
 # -*- coding: utf-8 -*-
 import website
 
+from website.addons.base.testing import OAuthAddonTestCaseMixin, AddonTestCase
+from website.addons.googledrive.model import GoogleDriveProvider
+from website.addons.googledrive.tests.factories import GoogleDriveAccountFactory
+
+class GoogleDriveAddonTestCase(OAuthAddonTestCaseMixin, AddonTestCase):
+
+    ADDON_SHORT_NAME = 'googledrive'
+    ExternalAccountFactory = GoogleDriveAccountFactory
+    Provider = GoogleDriveProvider
+
+    def set_node_settings(self, settings):
+        super(GoogleDriveAddonTestCase, self).set_node_settings(settings)
+        settings.folder_id = '1234567890'
+        settings.folder_path = 'Drive/Camera Uploads'
+        settings.external_account = self.external_account
 
 mock_files_folders = {
  "kind": "drive#fileList",

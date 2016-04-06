@@ -7,6 +7,7 @@ body {
     padding-top: 50px; /* body padding for fixed top nav */
     position: relative; /* for bootstrap affix */
     -webkit-font-smoothing: antialiased;
+    font-family: 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 
 a {
@@ -602,4 +603,46 @@ button.close {
 .header-content {
     max-width: 75%;
     display: inline-block
+}
+
+/* Navigation -- general style should be in style guide
+-------------------------------------------------- */
+#navbarScope a.nav-user-dropdown {
+    padding-top: 12px;
+    padding-bottom: 11px;
+}
+
+/* Anonymous-mode notification bar
+-------------------------------------------------- */
+#anonymous-mode {
+    position: fixed;
+    bottom: 30px;
+    left: 0;
+    z-index: 8;
+    width: 100%;
+    text-align: center;
+    background-color: #f0ad4e;
+    padding: .5em;
+}
+
+/* Override insane add tag font
+-------------------------------------------------- */
+.tagsinput input {
+    font-family : 'Open Sans', Helvetica, sans-serif;
+}
+
+/* Bootstrap Accesibility Override */
+.btn-success-high-contrast {
+    background-color: #52A452;
+    border-color: #54AC54;
+}
+
+
+/* Trying out to move to osf-style */
+.comma-separated:after {
+    content: ", ";
+}
+
+.comma-separated:last-of-type:after {
+    content: "";
 }

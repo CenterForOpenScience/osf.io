@@ -37,7 +37,8 @@
     <p data-bind="if: Boolean(option.tooltip)">
       <input type="radio" data-bind="checked: $parent.value,
                                      value: option.text"/>
-      <span data-bind="text: option.text, tooltip: {title: option.tooltip}"></span>
+        {{option.text}}
+      <span data-bind="tooltip: {title: option.tooltip}" class="fa fa-info-circle"></span>
     </p>
   </div>
 </script>

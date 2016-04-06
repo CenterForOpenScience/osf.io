@@ -37,8 +37,8 @@
             "qid": "q2",
             "nav": "Authors",
             "type": "string",
-            "title": "Authorship",
-            "description": "The first author of the pre registered study is the recipient of the award money and must also be the first author of the published manuscript. Additional authors may be added or removed at any time.",
+            "title": "Authors",
+            "description": "The author who submits the preregistration is the recipient of the award money and must also be an author of the published manuscript. Additional authors may be added or removed at any time.",
             "help": "Jimmy Stewart, Ava Gardner, Bob Hope, Greta Garbo",
             "type": "osf-author-import",
             "format": "textarea",
@@ -75,23 +75,23 @@
             "format": "singleselect",
             "options": [
                 {
-                    "text": "Registration prior to creation of data",
+                    "text": "Registration prior to creation of data ",
                     "tooltip": "As of the date of submission of this research plan for preregistration, the data have not yet been collected, created, or realized."
                 },
                 {
-                    "text": "Registration prior to any human observation of the data",
+                    "text": "Registration prior to any human observation of the data ",
                     "tooltip": "As of the date of submission, the data exist but have not yet been quantified, constructed, observed, or reported by anyone - including individuals that are not associated with the proposed study. Examples include museum specimens that have not been measured and data that have been collected by non-human collectors and are inaccessible."
                 },
                 {
-                    "text": "Registration prior to accessing the data",
+                    "text": "Registration prior to accessing the data ",
                     "tooltip": "As of the date of submission, the data exist, but have not been accessed by you or your collaborators. Commonly, this includes data that has been collected by another researcher or institution."
                 },
                 {
-                    "text": "Registration prior to analysis of the data",
+                    "text": "Registration prior to analysis of the data ",
                     "tooltip": "As of the date of submission, the data exist and you have accessed it, though no analysis has been conducted related to the research plan (including calculation of summary statistics). A common situation for this scenario when a large dataset exists that is used for many different studies over time, or when a data set is randomly split into a sample for exploratory analyses, and the other section of data is reserved for later confirmatory data analysis."
                 },
                 {
-                   "text": "Registration following analysis of the data",
+                    "text": "Registration following analysis of the data ",
                     "tooltip": "As of the date of submission, you have accessed and analyzed some of the data relevant to the research plan. This includes preliminary analysis of variables, calculation of descriptive statistics, and observation of data distributions. Studies that fall into this category are ineligible for the Prereg Challenge. Please contact us (prereg@cos.io) and we will be happy to help you."
                 }
             ],
@@ -290,7 +290,7 @@
             "nav": "Statistical models",
             "type": "object",
             "title": "Statistical models",
-            "description": "What statistical model(s) will you use to test your hypothesis(ses)? Please include the type of model (e.g. ANOVA, regression, SEM, etc) as well as the specification of the model (i.e. what variables will be included). Refer to the “variables” section and include the manipulated or measured variables in the description of the predictors, outcomes, and relevant covariates for the analysis.",
+            "description": "What statistical model will you use to test each hypothesis? Please include the type of model (e.g. ANOVA, multiple regression, SEM, etc) and the specification of the model (this includes each variable that will be included as predictors, outcomes, or covariates). Please specify any interactions that will be tested and remember that any test not included here must be noted as an exploratory test in your final article.",
             "help": "We will use a one-way between subjects ANOVA to analyze our results. The manipulated, categorical independent variable is 'sugar' whereas the dependent variable is our taste index. <br /><br /> How responses will be evaluated: This is perhaps the most important and most complicated question within the preregistration. As with all of the other questions, the key is to provide a specific recipe for analyzing the collected data. Ask yourself: is enough detail provided to run the same analysis again with the information provided by the user? Be aware for instances where the statistical models appear specific, but actually leave openings for the precise test. See the following examples:<br /><br /> If someone specifies a 2x3 ANOVA with both factors within subjects, there is still flexibility with the various types of ANOVAs that could be run. Either a repeated measures ANOVA (RMANOVA) or a multivariate ANOVA (MANOVA) could be used for that design, which are two different tests. <br /><br />If you are going to perform a sequential analysis and check after 50, 100, and 150 samples, you must also specify the p-values you’ll test against at those three points.",
             "properties": [
                 {
@@ -352,10 +352,10 @@
             "format": "textarea"
         }, {
             "qid": "q25",
-            "nav": "Assumptions",
-            "title": "Assumptions",
-            "description": "If you are planning on testing the assumptions of the statistical tests included in your analysis plan, which assumptions will you test, how will you test them, what criteria will you use to make decisions based on that test, and what alternative statistical tests will you use? This may be an item where a decision tree could be helpful to plan and communicate the possibilities.",
-            "help": "We will test the assumption of the ANOVA on equal group variance using the Bartlett test and use a Kruskal-Wallis as an alternative to the ANOVA if p<.05.<br /><br /> How responses will be evaluated: Again, any reasonable answer here is acceptable, meaning that you are free to follow or ignore the assumptions of the test as they see fit.",
+            "nav": "Exploratory analysis",
+            "title": "Exploratory analysis",
+            "description": "If you plan to explore your data set to look for unexpected differences or relationships, you may describe those tests here. An exploratory test is any test where a prediction is not made up front, or there are multiple possible tests that you are going to use. A statistically significant finding in an exploratory test is a great way to form a new confirmatory hypothesis, which could be registered at a later time.",
+            "help": "We expect that certain demographic traits may be related to taste preferences. Therefore, we will look for relationships between demographic variables (age, gender, income, and marital status) and the primary outcome measures of taste preferences.",
             "type": "string",
             "format": "textarea"
         }]

@@ -11,6 +11,38 @@ var Treebeard = require('treebeard');
 var Fangorn = require('js/fangorn');
 
 
+
+
+function expandOnLoad() {
+    var tb = this;  // jshint ignore: line
+    for (var i = 0; i < tb.treeData.children.length; i++) {
+        var parent = tb.treeData.children[i];
+        tb.updateFolder(null, parent);
+        expandChildren(tb, parent.children);
+    }
+}
+
+function expandChildren(tb, children) {
+    var openParent = false;
+    for (var i = 0; i < children.length; i++) {
+        var child = children[i];
+        if (child.children.length > 0) {
+            expandChildren(tb, child.children);
+        }
+    }
+    if (openParent) {
+        openAncestors(tb, children[0]);
+    }
+}
+
+function openAncestors (tb, item) {
+    var parent = item.parent();
+    if(parent && parent.id > 0) {
+        tb.updateFolder(null, parent);
+        openAncestors(tb, parent);
+    }
+}
+
 function resolveToggle(item) {
     var toggleMinus = m('i.fa.fa-minus', ' '),
         togglePlus = m('i.fa.fa-plus', ' ');
@@ -23,6 +55,48 @@ function resolveToggle(item) {
     }
     item.open = true;
     return '';
+}
+
+
+/**
+ * take treebeard tree structure of nodes and get a dictionary of parent node and all its
+ * children
+ */
+function getNodesOriginal(nodeTree, nodesOriginal) {
+    var i;
+    var j;
+    var adminContributors = [];
+    var registeredContributors = [];
+    var nodeId = nodeTree.node.id;
+    for (i=0; i < nodeTree.node.contributors.length; i++) {
+        if (nodeTree.node.contributors[i].is_admin) {
+            adminContributors.push(nodeTree.node.contributors[i].id);
+        }
+        if (nodeTree.node.contributors[i].is_confirmed) {
+            registeredContributors.push(nodeTree.node.contributors[i].id);
+        }
+    }
+    nodesOriginal[nodeId] = {
+        isPublic: nodeTree.node.is_public,
+        id: nodeTree.node.id,
+        title: nodeTree.node.title,
+        contributors: nodeTree.node.contributors,
+        isAdmin: nodeTree.node.is_admin,
+        visibleContributors: nodeTree.node.visible_contributors,
+        adminContributors: adminContributors,
+        registeredContributors: registeredContributors,
+        canWrite: nodeTree.node.can_write,
+        changed: false,
+        checked: false,
+        enabled: true
+    };
+
+    if (nodeTree.children) {
+        for (j in nodeTree.children) {
+            nodesOriginal = getNodesOriginal(nodeTree.children[j], nodesOriginal);
+        }
+    }
+    return nodesOriginal;
 }
 
 module.exports = {
@@ -65,5 +139,7 @@ module.exports = {
         resolveRefreshIcon : function() {
           return m('i.fa.fa-refresh.fa-spin');
         }
-    }
+    },
+    expandOnLoad: expandOnLoad,
+    getNodesOriginal: getNodesOriginal
 };

@@ -21,6 +21,9 @@
                     % endif
                 % endif
                 <h2 class="node-title">
+                    % if node['institution']['name'] and enable_institutions and not node['anonymous']:
+                        <a href="/institutions/${node['institution']['id']}"><img class="img-circle" height="75" width="75" id="instLogo" src="${node['institution']['logo_path']}"></a>
+                    % endif
                     <span id="nodeTitleEditable" class="overflow">${node['title']}</span>
                 </h2>
             </div>
@@ -33,7 +36,7 @@
                     <div class="btn-group">
                     % if not node["is_public"]:
                         <button class='btn btn-default disabled'>Private</button>
-                        % if 'admin' in user['permissions'] and not node['is_pending_embargo']:
+                        % if 'admin' in user['permissions'] and not node['is_pending_registration'] and not node['embargo_end_date']:
                             <a class="btn btn-default"  href="#nodesPrivacy" data-toggle="modal" >Make Public</a>
                         % endif
                     % else:
@@ -47,16 +50,16 @@
                     <div class="btn-group" style="display: none;" data-bind="visible: true">
 
                         <!-- ko ifnot: inDashboard -->
-                           <a id="addDashboardFolder" data-bind="click: addToDashboard, tooltip: {title: 'Add to dashboard folder',
+                           <a id="addDashboardFolder" data-bind="click: addToDashboard, tooltip: {title: 'Add to bookmarks',
                             placement: 'bottom', container : 'body'}" class="btn btn-default">
-                               <i class="fa fa-folder-open"></i>
+                               <i class="fa fa-bookmark"></i>
                                <i class="fa fa-plus"></i>
                            </a>
                         <!-- /ko -->
                         <!-- ko if: inDashboard -->
-                           <a id="removeDashboardFolder" data-bind="click: removeFromDashboard, tooltip: {title: 'Remove from dashboard folder',
+                           <a id="removeDashboardFolder" data-bind="click: removeFromDashboard, tooltip: {title: 'Remove from bookmarks',
                             placement: 'bottom', container : 'body'}" class="btn btn-default">
-                               <i class="fa fa-folder-open"></i>
+                               <i class="fa fa-bookmark"></i>
                                <i class="fa fa-minus"></i>
                            </a>
                         <!-- /ko -->
@@ -108,7 +111,7 @@
                     Contributors:
                 % endif
 
-                % if node['anonymous'] and not node['is_public']:
+                % if node['anonymous']:
                     <ol>Anonymous Contributors</ol>
                 % else:
                     <ol>
@@ -120,6 +123,18 @@
                     </ol>
                 % endif
                 </div>
+                % if enable_institutions and not node['anonymous']:
+                    % if user['is_contributor'] and not node['is_registration']:
+                        <a class="link-dashed" href="${node['url']}settings/#configureInstitutionAnchor" id="institution">Affiliated Institution:</a>
+                    % else:
+                        Affiliated institution:
+                    % endif
+                    % if node['institution']['id']:
+                        <a href="/institutions/${node['institution']['id']}">${node['institution']['name']}</a>
+                    % else:
+                        <span> None </span>
+                    % endif
+                % endif
                 % if node['is_fork']:
                     <p>
                     Forked from <a class="node-forked-from" href="/${node['forked_from_id']}/">${node['forked_from_display_absolute_url']}</a> on
@@ -177,7 +192,7 @@
                 <span data-bind="css: icon"></span>
                 </p>
 
-                % if node['description'] or 'write' in user['permissions']:
+                % if (node['description']) or (not node['description'] and 'write' in user['permissions'] and not node['is_registration']):
                     <p>
                     <span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">${node['description']}</span>
                     </p>
@@ -194,6 +209,7 @@
                       </license-picker>
                     </p>
                  % endif
+
             </div>
         </div>
 

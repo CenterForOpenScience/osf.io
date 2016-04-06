@@ -32,29 +32,41 @@ Embargo for
 
 <script type="text/html" id="embargo_initiated">
 initiated an embargoed registration of
+<!-- ko if: !registrationCancelled -->
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: projectUrl}"></a>
+<!-- /ko -->
+
+<!-- ko if: registrationCancelled -->
+<span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
+<!-- /ko -->
 </script>
 
 ## Retraction related logs
 <script type="text/html" id="retraction_approved">
-approved retraction of registration of
+approved withdrawal of registration of
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: projectUrl}"></a>
 </script>
 
 <script type="text/html" id="retraction_cancelled">
-cancelled retraction of registration of
+cancelled withdrawal of registration of
 <span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
 </script>
 
 <script type="text/html" id="retraction_initiated">
-initiated retraction of registration of
+initiated withdrawal of registration of
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: projectUrl}"></a>
 </script>
 
 ## Registration related Logs
 <script type="text/html" id="registration_initiated">
 initiated registration of
+<!-- ko if: !registrationCancelled -->
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: projectUrl}"></a>
+<!-- /ko -->
+
+<!-- ko if: registrationCancelled -->
+<span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
+<!-- /ko -->
 </script>
 
 <script type="text/html" id="registration_cancelled">
@@ -147,6 +159,20 @@ tagged
 removed tag <a data-bind="attr: {href: '/search/?q=%22' + params.tag + '%22'}, text: params.tag"></a>
 from
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="file_tag_added">
+tagged <a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect"> {{ stripSlash(params.path) }}</a>
+in <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+as <a data-bind="attr: {href: '/search/?q=%22' + params.tag + '%22'}, text: params.tag"></a>
+in OSF Storage
+</script>
+
+<script type="text/html" id="file_tag_removed">
+removed tag <a data-bind="attr: {href: '/search/?q=%22' + params.tag + '%22'}, text: params.tag"></a>
+from <a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect"> {{ stripSlash(params.path) }}</a>
+in <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+in OSF Storage
 </script>
 
 <script type="text/html" id="edit_title">
@@ -253,17 +279,27 @@ in
 </script>
 
 <script type="text/html" id="made_contributor_visible">
-made contributor
-<span data-bind="html: displayContributors"></span>
-visible on
-<a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
+    {{#if log.anonymous}}
+        changed a non-bibliographic contributor to a bibliographic contributor on
+    {{/if}}
+    {{#ifnot log.anonymous}}
+        made non-bibliographic contributor
+        <span data-bind="html: displayContributors"></span>
+        a bibliographic contributor on
+    {{/ifnot}}
+    <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
 </script>
 
 <script type="text/html" id="made_contributor_invisible">
-made contributor
-<span data-bind="html: displayContributors"></span>
-invisible on
-<a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
+    {{#if log.anonymous}}
+        changed a bibliographic contributor to a non-bibliographic contributor on
+    {{/if}}
+    {{#ifnot log.anonymous}}
+        made bibliographic contributor
+        <span data-bind="html: displayContributors"></span>
+        a non-bibliographic contributor on
+    {{/ifnot}}
+    <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
 </script>
 
 <script type="text/html" id="addon_file_copied">
@@ -339,4 +375,17 @@ on
 removed a citation ({{ params.citation.name }})
 from
 <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
+</script>
+
+<script type="text/html" id="primary_institution_changed">
+changed primary institution of <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+{{#if params.previous_institution.name != 'None'}}
+ from <a class="log-node-title-link overflow" href="/institutions/{{params.previous_institution.id}}">{{ params.previous_institution.name }}</a>
+{{/if}}
+ to <a class="log-node-title-link overflow" href="/institutions/{{params.institution.id}}">{{ params.institution.name }}</a>.
+</script>
+
+<script type="text/html" id="primary_institution_removed">
+removed <a class="log-node-title-link overflow" href="/institutions/{{params.institution.id}}">{{ params.institution.name }}</a>
+as the primary institution of <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>.
 </script>

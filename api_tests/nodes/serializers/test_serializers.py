@@ -38,7 +38,7 @@ class TestNodeSerializer(DbTestCase):
         assert_equal(attributes['category'], node.category)
         assert_equal(attributes['registration'], node.is_registration)
         assert_equal(attributes['fork'], node.is_fork)
-        assert_equal(attributes['collection'], node.is_folder)
+        assert_equal(attributes['collection'], node.is_collection)
 
         # Relationships
         relationships = data['relationships']
@@ -46,6 +46,7 @@ class TestNodeSerializer(DbTestCase):
         assert_in('contributors', relationships)
         assert_in('files', relationships)
         assert_in('parent', relationships)
+        assert_in('primary_institution', relationships)
         parent_link = relationships['parent']['links']['related']['href']
         assert_equal(
             urlparse(parent_link).path,
@@ -81,7 +82,7 @@ class TestNodeRegistrationSerializer(DbTestCase):
         assert_equal(data['type'], 'registrations')
         should_not_relate_to_registrations = [
             'registered_from',
-            'registered_by'
+            'registered_by',
         ]
 
         # Attributes
@@ -90,7 +91,7 @@ class TestNodeRegistrationSerializer(DbTestCase):
             parse_date(attributes['date_registered']),
             reg.registered_date
         )
-        assert_equal(attributes['retracted'], reg.is_retracted)
+        assert_equal(attributes['withdrawn'], reg.is_retracted)
 
         # Relationships
         relationships = data['relationships']

@@ -47,6 +47,13 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, OsfTestCase)
         mock_refresh.return_value = True
         super(TestNodeSettings, self).test_serialize_credentials()
 
+    @mock.patch(
+        'website.addons.box.model.BoxUserSettings.revoke_remote_oauth_access',
+        mock.PropertyMock()
+    )
+    def test_complete_has_auth_not_verified(self):
+        super(TestNodeSettings, self).test_complete_has_auth_not_verified()
+
 class TestUserSettings(models.OAuthAddonUserSettingTestSuiteMixin, OsfTestCase):
 
     short_name = 'box'

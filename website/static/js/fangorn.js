@@ -91,10 +91,13 @@ function findByTempID(parent, tmpID) {
 function cancelUploads (row) {
     var tb = this;
     var uploading = tb.dropzone.getUploadingFiles();
-    var filesArr = uploading.concat(tb.dropzone.getQueuedFiles());
+    var rejected = tb.dropzone.getRejectedFiles();
+    var queued = tb.dropzone.getQueuedFiles();
+    var filesArr = uploading.concat(queued, rejected);
+
     for (var i = 0; i < filesArr.length; i++) {
         var j = filesArr[i];
-        if(!row){
+        if(!row) {
             var parent = j.treebeardParent || tb.dropzoneItemCache;
             var item = findByTempID(parent, j.tmpID);
             tb.dropzone.removeFile(j);
@@ -505,12 +508,14 @@ function doItemOp(operation, to, from, rename, conflict) {
         $osf.growl(operation.verb + ' failed.', message);
 
         Raven.captureMessage('Failed to move or copy file', {
-            xhr: xhr,
-            requestData: {
-                rename: rename,
-                conflict: conflict,
-                source: waterbutler.toJsonBlob(from),
-                destination: waterbutler.toJsonBlob(to),
+            extra: {
+                xhr: xhr,
+                requestData: {
+                    rename: rename,
+                    conflict: conflict,
+                    source: waterbutler.toJsonBlob(from),
+                    destination: waterbutler.toJsonBlob(to),
+                }
             }
         });
 
@@ -1340,6 +1345,7 @@ function _loadTopLevelChildren() {
  * @this Treebeard.controller
  * @private
  */
+var NO_AUTO_EXPAND_PROJECTS = ['ezcuj', 'ecmz4'];
 function expandStateLoad(item) {
     var tb = this,
         i;
@@ -1348,7 +1354,7 @@ function expandStateLoad(item) {
         // but do NOT lazy-load children in order to save hundreds of requests.
         // TODO: We might want to do this for every project, but that's TBD.
         // /sloria
-        if (window.contextVars && window.contextVars.node && window.contextVars.node.id === 'ezcuj') {
+        if (window.contextVars && window.contextVars.node && NO_AUTO_EXPAND_PROJECTS.indexOf(window.contextVars.node.id) > -1) {
             tb.updateFolder(null, item.children[0]);
         } else {
             for (i = 0; i < item.children.length; i++) {
@@ -1689,10 +1695,10 @@ var FGToolbar = {
                 icon : 'fa fa-times'
             }, '');
         templates[toolbarModes.FILTER] =  [
-            m('.col-xs-10', [
+            m('.col-xs-9', [
                 ctrl.tb.options.filterTemplate.call(ctrl.tb)
                 ]),
-                m('.col-xs-2.tb-buttons-col',
+                m('.col-xs-3.tb-buttons-col',
                     m('.fangorn-toolbar.pull-right', [dismissIcon])
                 )
             ];

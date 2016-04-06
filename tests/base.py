@@ -19,6 +19,7 @@ from faker import Factory
 from nose.tools import *  # noqa (PEP8 asserts)
 from pymongo.errors import OperationFailure
 from modularodm import storage
+from django.test import SimpleTestCase, override_settings
 from django.test import TestCase as DjangoTestCase
 
 
@@ -31,7 +32,7 @@ from framework.guid.model import Guid
 from framework.mongo import client as client_proxy
 from framework.mongo import database as database_proxy
 from framework.transactions import commands, messages, utils
-from framework.tasks.handlers import celery_before_request
+from framework.celery_tasks.handlers import celery_before_request
 
 from website.project.model import (
     Node, NodeLog, Tag, WatchConfig, MetaSchema,
@@ -73,6 +74,7 @@ SILENT_LOGGERS = [
     'website.mails',
     'website.search_migration.migrate',
     'website.util.paths',
+    'api.caching.tasks'
 ]
 for logger_name in SILENT_LOGGERS:
     logging.getLogger(logger_name).setLevel(logging.CRITICAL)
@@ -160,6 +162,7 @@ class AppTestCase(unittest.TestCase):
     """Base `TestCase` for OSF tests that require the WSGI app (but no database).
     """
 
+    PUSH_CONTEXT = True
     DISCONNECTED_SIGNALS = {
         # disconnect notify_add_contributor so that add_contributor does not send "fake" emails in tests
         contributor_added: [notify_added_contributor]
@@ -168,6 +171,8 @@ class AppTestCase(unittest.TestCase):
     def setUp(self):
         super(AppTestCase, self).setUp()
         self.app = TestApp(test_app)
+        if not self.PUSH_CONTEXT:
+            return
         self.context = test_app.test_request_context()
         self.context.push()
         with self.context:
@@ -178,6 +183,8 @@ class AppTestCase(unittest.TestCase):
 
     def tearDown(self):
         super(AppTestCase, self).tearDown()
+        if not self.PUSH_CONTEXT:
+            return
         with mock.patch('website.mailchimp_utils.get_mailchimp_api'):
             self.context.pop()
         for signal in self.DISCONNECTED_SIGNALS:
@@ -236,7 +243,8 @@ class TestAppJSONAPI(TestApp, JSONAPIWrapper):
     delete_json_api = json_api_method('DELETE')
 
 
-class ApiAppTestCase(unittest.TestCase):
+@override_settings(DEBUG_PROPAGATE_EXCEPTIONS=True)
+class ApiAppTestCase(SimpleTestCase):
     """Base `TestCase` for OSF API v2 tests that require the WSGI app (but no database).
     """
     def setUp(self):
@@ -331,6 +339,7 @@ class ApiTestCase(DbTestCase, ApiAppTestCase, UploadTestCase, MockRequestTestCas
 
 class AdminTestCase(DbTestCase, AdminAppTestCase, UploadTestCase, MockRequestTestCase):
     pass
+
 
 # From Flask-Security: https://github.com/mattupstate/flask-security/blob/develop/flask_security/utils.py
 class CaptureSignals(object):

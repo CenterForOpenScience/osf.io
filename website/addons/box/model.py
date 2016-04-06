@@ -4,6 +4,7 @@ import logging
 from box import CredentialsV2, BoxClient
 from box.client import BoxClientException
 from modularodm import fields
+import requests
 
 from framework.auth import Auth
 from framework.exceptions import HTTPError
@@ -59,15 +60,27 @@ class BoxUserSettings(AddonOAuthUserSettingsBase):
     oauth_provider = Box
     serializer = BoxSerializer
 
+    def revoke_remote_oauth_access(self, external_account):
+        try:
+            # TODO: write client for box, stop using third-party lib
+            requests.request(
+                'POST',
+                settings.BOX_OAUTH_REVOKE_ENDPOINT,
+                params={
+                    'client_id': settings.BOX_KEY,
+                    'client_secret': settings.BOX_SECRET,
+                    'token': external_account.oauth_key,
+                }
+            )
+        except requests.HTTPError:
+            pass
+
 
 class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     oauth_provider = Box
     serializer = BoxSerializer
 
-    foreign_user_settings = fields.ForeignField(
-        'boxusersettings', backref='authorized'
-    )
     folder_id = fields.StringField(default=None)
     folder_name = fields.StringField()
     folder_path = fields.StringField()
@@ -118,19 +131,6 @@ class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         self.folder_id = str(folder_id)
         self._update_folder_data()
         self.save()
-
-        """ TODO: see if implicit authorization is necessary
-        (or a good idea in general?)
-        if not self.complete:
-            self.user_settings.grant_oauth_access(
-                node=self.owner,
-                external_account=self.external_account,
-                metadata={'folder': self.folder_id}
-            )
-            self.user_settings.save()
-        """
-
-        # Add log to node
         self.nodelogger.log(action="folder_selected", save=True)
 
     def clear_settings(self):

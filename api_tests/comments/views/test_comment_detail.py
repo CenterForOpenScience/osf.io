@@ -18,7 +18,7 @@ class TestCommentDetailView(ApiTestCase):
     def _set_up_private_project_with_comment(self):
         self.private_project = ProjectFactory.build(is_public=False, creator=self.user)
         self.private_project.add_contributor(self.contributor, save=True)
-        self.comment = CommentFactory(node=self.private_project, target=self.private_project, user=self.user)
+        self.comment = CommentFactory(node=self.private_project, user=self.user)
         self.private_url = '/{}comments/{}/'.format(API_BASE, self.comment._id)
         self.payload = {
             'data': {
@@ -34,7 +34,7 @@ class TestCommentDetailView(ApiTestCase):
     def _set_up_public_project_with_comment(self):
         self.public_project = ProjectFactory.build(is_public=True, creator=self.user)
         self.public_project.add_contributor(self.contributor, save=True)
-        self.public_comment = CommentFactory(node=self.public_project, target=self.public_project, user=self.user)
+        self.public_comment = CommentFactory(node=self.public_project, user=self.user)
         self.public_url = '/{}comments/{}/'.format(API_BASE, self.public_comment._id)
         self.public_comment_payload = {
             'data': {
@@ -209,7 +209,7 @@ class TestCommentDetailView(ApiTestCase):
 
     def test_public_node_non_contributor_commenter_can_update_comment(self):
         project = ProjectFactory(is_public=True, comment_level='public')
-        comment = CommentFactory(node=project, target=project, user=self.non_contributor)
+        comment = CommentFactory(node=project, user=self.non_contributor)
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
         payload = {
             'data': {
@@ -224,6 +224,26 @@ class TestCommentDetailView(ApiTestCase):
         res = self.app.put_json_api(url, payload, auth=self.non_contributor.auth)
         assert_equal(res.status_code, 200)
         assert_equal(payload['data']['attributes']['content'], res.json['data']['attributes']['content'])
+
+    def test_public_node_non_contributor_commenter_cannot_update_own_comment_if_comment_level_private(self):
+        project = ProjectFactory(is_public=True, comment_level='public')
+        comment = CommentFactory(node=project, user=self.non_contributor)
+        project.comment_level = 'private'
+        project.save()
+        url = '/{}comments/{}/'.format(API_BASE, comment._id)
+        payload = {
+            'data': {
+                'id': comment._id,
+                'type': 'comments',
+                'attributes': {
+                    'content': 'Updating this comment',
+                    'deleted': False
+                }
+            }
+        }
+        res = self.app.put_json_api(url, payload, auth=self.non_contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
 
     def test_update_comment_cannot_exceed_max_length(self):
         self._set_up_private_project_with_comment()
@@ -288,7 +308,7 @@ class TestCommentDetailView(ApiTestCase):
 
     def test_private_node_only_logged_in_contributor_commenter_can_undelete_comment(self):
         self._set_up_private_project_with_comment()
-        comment = CommentFactory.build(node=self.private_project, target=self.private_project, user=self.user)
+        comment = CommentFactory.build(node=self.private_project, user=self.user)
         comment.is_deleted = True
         comment.save()
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
@@ -308,7 +328,7 @@ class TestCommentDetailView(ApiTestCase):
 
     def test_private_node_contributor_cannot_undelete_other_users_comment(self):
         self._set_up_private_project_with_comment()
-        comment = CommentFactory.build(node=self.private_project, target=self.private_project, user=self.user)
+        comment = CommentFactory.build(node=self.private_project, user=self.user)
         comment.is_deleted = True
         comment.save()
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
@@ -326,7 +346,7 @@ class TestCommentDetailView(ApiTestCase):
 
     def test_private_node_non_contributor_cannot_undelete_comment(self):
         self._set_up_private_project_with_comment()
-        comment = CommentFactory.build(node=self.private_project, target=self.private_project, user=self.user)
+        comment = CommentFactory.build(node=self.private_project, user=self.user)
         comment.is_deleted = True
         comment.save()
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
@@ -344,7 +364,7 @@ class TestCommentDetailView(ApiTestCase):
 
     def test_private_node_logged_out_user_cannot_undelete_comment(self):
         self._set_up_private_project_with_comment()
-        comment = CommentFactory.build(node=self.private_project, target=self.private_project, user=self.user)
+        comment = CommentFactory.build(node=self.private_project, user=self.user)
         comment.is_deleted = True
         comment.save()
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
@@ -381,8 +401,8 @@ class TestCommentDetailView(ApiTestCase):
         assert_equal(res.status_code, 401)
 
     def test_public_node_non_contributor_commenter_can_delete_comment(self):
-        project = ProjectFactory(is_public=True, comment_level='public')
-        comment = CommentFactory(node=project, target=project, user=self.non_contributor)
+        project = ProjectFactory(is_public=True)
+        comment = CommentFactory(node=project, user=self.non_contributor)
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
         res = self.app.delete_json_api(url, auth=self.non_contributor.auth)
         assert_equal(res.status_code, 204)
@@ -397,7 +417,7 @@ class TestCommentDetailView(ApiTestCase):
 
     def test_private_node_only_logged_in_commenter_can_view_deleted_comment(self):
         self._set_up_private_project_with_comment()
-        comment = CommentFactory(node=self.private_project, target=self.private_project, user=self.user)
+        comment = CommentFactory(node=self.private_project, user=self.user)
         comment.is_deleted = True
         comment.save()
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
@@ -407,7 +427,7 @@ class TestCommentDetailView(ApiTestCase):
 
     def test_private_node_contributor_cannot_see_other_users_deleted_comment(self):
         self._set_up_private_project_with_comment()
-        comment = CommentFactory(node=self.private_project, target=self.private_project, user=self.user)
+        comment = CommentFactory(node=self.private_project, user=self.user)
         comment.is_deleted = True
         comment.save()
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
@@ -417,7 +437,7 @@ class TestCommentDetailView(ApiTestCase):
 
     def test_private_node_logged_out_user_cannot_see_deleted_comment(self):
         self._set_up_private_project_with_comment()
-        comment = CommentFactory(node=self.private_project, target=self.private_project, user=self.user)
+        comment = CommentFactory(node=self.private_project, user=self.user)
         comment.is_deleted = True
         comment.save()
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
@@ -452,7 +472,7 @@ class TestCommentDetailView(ApiTestCase):
 
     def test_public_node_only_logged_in_commenter_can_view_deleted_comment(self):
         public_project = ProjectFactory(is_public=True, creator=self.user)
-        comment = CommentFactory(node=public_project, target=public_project, user=self.user)
+        comment = CommentFactory(node=public_project, user=self.user)
         comment.is_deleted = True
         comment.save()
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
@@ -462,7 +482,7 @@ class TestCommentDetailView(ApiTestCase):
 
     def test_public_node_contributor_cannot_view_other_users_deleted_comment(self):
         public_project = ProjectFactory(is_public=True, creator=self.user)
-        comment = CommentFactory(node=public_project, target=public_project, user=self.user)
+        comment = CommentFactory(node=public_project, user=self.user)
         comment.is_deleted = True
         comment.save()
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
@@ -472,7 +492,7 @@ class TestCommentDetailView(ApiTestCase):
 
     def test_public_node_non_contributor_cannot_view_other_users_deleted_comment(self):
         public_project = ProjectFactory(is_public=True, creator=self.user)
-        comment = CommentFactory(node=public_project, target=public_project, user=self.user)
+        comment = CommentFactory(node=public_project, user=self.user)
         comment.is_deleted = True
         comment.save()
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
@@ -482,7 +502,7 @@ class TestCommentDetailView(ApiTestCase):
 
     def test_public_node_logged_out_user_cannot_view_deleted_comments(self):
         public_project = ProjectFactory(is_public=True, creator=self.user)
-        comment = CommentFactory(node=public_project, target=public_project, user=self.user)
+        comment = CommentFactory(node=public_project, user=self.user)
         comment.is_deleted = True
         comment.save()
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
@@ -528,7 +548,7 @@ class TestFileCommentDetailView(ApiTestCase):
         self.private_project = ProjectFactory.build(is_public=False, creator=self.user, comment_level='private')
         self.private_project.add_contributor(self.contributor, save=True)
         self.file = test_utils.create_test_file(self.private_project, self.user)
-        self.comment = CommentFactory(node=self.private_project, target=self.file, user=self.user)
+        self.comment = CommentFactory(node=self.private_project, target=self.file.get_guid(), user=self.user)
         self.private_url = '/{}comments/{}/'.format(API_BASE, self.comment._id)
         self.payload = self._set_up_payload(self.comment._id)
 
@@ -536,14 +556,14 @@ class TestFileCommentDetailView(ApiTestCase):
         self.public_project = ProjectFactory.build(is_public=True, creator=self.user, comment_level='private')
         self.public_project.add_contributor(self.contributor, save=True)
         self.public_file = test_utils.create_test_file(self.public_project, self.user)
-        self.public_comment = CommentFactory(node=self.public_project, target=self.public_file, user=self.user)
+        self.public_comment = CommentFactory(node=self.public_project, target=self.public_file.get_guid(), user=self.user)
         self.public_url = '/{}comments/{}/'.format(API_BASE, self.public_comment._id)
         self.public_comment_payload = self._set_up_payload(self.public_comment._id)
 
     def _set_up_registration_with_file_comment(self):
         self.registration = RegistrationFactory(creator=self.user, comment_level='private')
         self.registration_file = test_utils.create_test_file(self.registration, self.user)
-        self.registration_comment = CommentFactory(node=self.registration, target=self.registration_file, user=self.user)
+        self.registration_comment = CommentFactory(node=self.registration, target=self.registration_file.get_guid(), user=self.user)
         self.registration_url = '/{}comments/{}/'.format(API_BASE, self.registration_comment._id)
 
     def test_private_node_logged_in_contributor_can_view_file_comment(self):
@@ -679,14 +699,26 @@ class TestFileCommentDetailView(ApiTestCase):
         assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
 
     def test_public_node_non_contributor_commenter_can_update_file_comment(self):
-        project = ProjectFactory(is_public=True, comment_level='public')
+        project = ProjectFactory(is_public=True)
         test_file = test_utils.create_test_file(project, project.creator)
-        comment = CommentFactory(node=project, target=test_file, user=self.non_contributor)
+        comment = CommentFactory(node=project, target=test_file.get_guid(), user=self.non_contributor)
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
         payload = self._set_up_payload(comment._id)
         res = self.app.put_json_api(url, payload, auth=self.non_contributor.auth)
         assert_equal(res.status_code, 200)
         assert_equal(payload['data']['attributes']['content'], res.json['data']['attributes']['content'])
+
+    def test_public_node_non_contributor_commenter_cannot_update_own_file_comment_if_comment_level_private(self):
+        project = ProjectFactory(is_public=True)
+        test_file = test_utils.create_test_file(project, project.creator)
+        comment = CommentFactory(node=project, target=test_file.get_guid(), user=self.non_contributor)
+        project.comment_level = 'private'
+        project.save()
+        url = '/{}comments/{}/'.format(API_BASE, comment._id)
+        payload = self._set_up_payload(comment._id)
+        res = self.app.put_json_api(url, payload, auth=self.non_contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
 
     def test_private_node_only_logged_in_contributor_commenter_can_delete_file_comment(self):
         self._set_up_private_project_with_file_comment()
@@ -721,7 +753,7 @@ class TestFileCommentDetailView(ApiTestCase):
 
     def test_private_node_only_logged_in_contributor_commenter_can_undelete_file_comment(self):
         self._set_up_private_project_with_file_comment()
-        comment = CommentFactory.build(node=self.private_project, target=self.file, user=self.user)
+        comment = CommentFactory.build(node=self.private_project, target=self.file.get_guid(), user=self.user)
         comment.is_deleted = True
         comment.save()
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
@@ -741,7 +773,7 @@ class TestFileCommentDetailView(ApiTestCase):
 
     def test_private_node_contributor_cannot_undelete_other_users_file_comment(self):
         self._set_up_private_project_with_file_comment()
-        comment = CommentFactory.build(node=self.private_project, target=self.file, user=self.user)
+        comment = CommentFactory.build(node=self.private_project, target=self.file.get_guid(), user=self.user)
         comment.is_deleted = True
         comment.save()
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
@@ -760,7 +792,7 @@ class TestFileCommentDetailView(ApiTestCase):
 
     def test_private_node_non_contributor_cannot_undelete_file_comment(self):
         self._set_up_private_project_with_file_comment()
-        comment = CommentFactory.build(node=self.private_project, target=self.file, user=self.user)
+        comment = CommentFactory.build(node=self.private_project, target=self.file.get_guid(), user=self.user)
         comment.is_deleted = True
         comment.save()
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
@@ -779,7 +811,7 @@ class TestFileCommentDetailView(ApiTestCase):
 
     def test_private_node_logged_out_user_cannot_undelete_file_comment(self):
         self._set_up_private_project_with_file_comment()
-        comment = CommentFactory.build(node=self.private_project, target=self.file, user=self.user)
+        comment = CommentFactory.build(node=self.private_project, target=self.file.get_guid(), user=self.user)
         comment.is_deleted = True
         comment.save()
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
@@ -822,7 +854,7 @@ class TestFileCommentDetailView(ApiTestCase):
     def test_public_node_non_contributor_commenter_can_delete_file_comment(self):
         project = ProjectFactory(is_public=True, comment_level='public')
         test_file = test_utils.create_test_file(project, project.creator)
-        comment = CommentFactory(node=project, target=test_file, user=self.non_contributor)
+        comment = CommentFactory(node=project, target=test_file.get_guid(), user=self.non_contributor)
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
         res = self.app.delete_json_api(url, auth=self.non_contributor.auth)
         assert_equal(res.status_code, 204)
@@ -837,7 +869,7 @@ class TestFileCommentDetailView(ApiTestCase):
 
     def test_private_node_only_logged_in_commenter_can_view_deleted_file_comment(self):
         self._set_up_private_project_with_file_comment()
-        comment = CommentFactory(node=self.private_project, target=self.file, user=self.user)
+        comment = CommentFactory(node=self.private_project, target=self.file.get_guid(), user=self.user)
         comment.is_deleted = True
         comment.save()
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
@@ -847,7 +879,7 @@ class TestFileCommentDetailView(ApiTestCase):
 
     def test_private_node_contributor_cannot_see_other_users_deleted_file_comment(self):
         self._set_up_private_project_with_file_comment()
-        comment = CommentFactory(node=self.private_project, target=self.file, user=self.user)
+        comment = CommentFactory(node=self.private_project, target=self.file.get_guid(), user=self.user)
         comment.is_deleted = True
         comment.save()
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
@@ -857,7 +889,7 @@ class TestFileCommentDetailView(ApiTestCase):
 
     def test_private_node_logged_out_user_cannot_see_deleted_file_comment(self):
         self._set_up_private_project_with_file_comment()
-        comment = CommentFactory(node=self.private_project, target=self.file, user=self.user)
+        comment = CommentFactory(node=self.private_project, target=self.file.get_guid(), user=self.user)
         comment.is_deleted = True
         comment.save()
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
@@ -867,7 +899,7 @@ class TestFileCommentDetailView(ApiTestCase):
 
     def test_public_node_only_logged_in_commenter_can_view_deleted_file_comment(self):
         self._set_up_public_project_with_file_comment()
-        comment = CommentFactory(node=self.public_project, target=self.public_file, user=self.user)
+        comment = CommentFactory(node=self.public_project, target=self.public_file.get_guid(), user=self.user)
         comment.is_deleted = True
         comment.save()
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
@@ -877,7 +909,7 @@ class TestFileCommentDetailView(ApiTestCase):
 
     def test_public_node_contributor_cannot_view_other_users_deleted_file_comment(self):
         self._set_up_public_project_with_file_comment()
-        comment = CommentFactory(node=self.public_project, target=self.public_file, user=self.user)
+        comment = CommentFactory(node=self.public_project, target=self.public_file.get_guid(), user=self.user)
         comment.is_deleted = True
         comment.save()
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
@@ -887,7 +919,7 @@ class TestFileCommentDetailView(ApiTestCase):
 
     def test_public_node_non_contributor_cannot_view_other_users_deleted_file_comment(self):
         self._set_up_public_project_with_file_comment()
-        comment = CommentFactory(node=self.public_project, target=self.public_file, user=self.user)
+        comment = CommentFactory(node=self.public_project, target=self.public_file.get_guid(), user=self.user)
         comment.is_deleted = True
         comment.save()
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
@@ -897,7 +929,7 @@ class TestFileCommentDetailView(ApiTestCase):
 
     def test_public_node_logged_out_user_cannot_view_deleted_file_comments(self):
         self._set_up_public_project_with_file_comment()
-        comment = CommentFactory(node=self.public_project, target=self.public_file, user=self.user)
+        comment = CommentFactory(node=self.public_project, target=self.public_file.get_guid(), user=self.user)
         comment.is_deleted = True
         comment.save()
         url = '/{}comments/{}/'.format(API_BASE, comment._id)

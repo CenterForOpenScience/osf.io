@@ -66,7 +66,7 @@ def json_api_exception_handler(exc, context):
             response['X-OSF-OTP'] = 'required; app'
 
         if isinstance(exc, JSONAPIException):
-            errors.extend([{'source': exc.source or {}, 'detail': exc.detail}])
+            errors.extend([{'source': exc.source or {}, 'detail': exc.detail, 'meta': exc.meta or {}}])
         elif isinstance(message, dict):
             errors.extend(dict_error_formatting(message, None))
         else:
@@ -95,15 +95,18 @@ class JSONAPIException(APIException):
     :param dict source: A dictionary containing references to the source of the error.
         See http://jsonapi.org/format/#error-objects.
         Example: ``source={'pointer': '/data/attributes/title'}``
+    :param dict meta: A meta object containing non-standard meta info about the error.
     """
     status_code = status.HTTP_400_BAD_REQUEST
-    def __init__(self, detail=None, source=None):
+
+    def __init__(self, detail=None, source=None, meta=None):
         super(JSONAPIException, self).__init__(detail=detail)
         self.source = source
+        self.meta = meta
 
 
 # Custom Exceptions the Django Rest Framework does not support
-class Gone(APIException):
+class Gone(JSONAPIException):
     status_code = status.HTTP_410_GONE
     default_detail = ('The requested resource is no longer available.')
 
@@ -218,4 +221,8 @@ class InvalidModelValueError(JSONAPIException):
 
 class TargetNotSupportedError(Exception):
     """Raised if a TargetField is used for a resource that isn't supported."""
+    pass
+
+class RelationshipPostMakesNoChanges(Exception):
+    """Raised when a post is on a relationship that already exists, so view can return a 204"""
     pass

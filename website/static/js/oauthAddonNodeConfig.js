@@ -171,13 +171,15 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
     */
     connectExistingAccount: function(account_id) {
         var self = this;
-
-        return $osf.putJSON(
-            self.urls().importAuth, {
-                external_account_id: account_id
-            }
-        ).done(self.onImportSuccess.bind(self)
-        ).fail(self.onImportError.bind(self));
+        if (account_id !== null) {
+            return $osf.putJSON(
+                self.urls().importAuth, {
+                    external_account_id: account_id
+                }
+            ).done(self.onImportSuccess.bind(self)
+            ).fail(self.onImportError.bind(self));
+        }
+        return;
     },
     updateAccounts: function() {
         var self = this;
@@ -192,9 +194,11 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         }).fail(function(xhr, textStatus, error) {
             self.changeMessage(self.messages.UPDATE_ACCOUNTS_ERROR(), 'text-warning');
             Raven.captureMessage('Could not GET ' + self.addonName + ' accounts for user', {
-                url: self.url,
-                textStatus: textStatus,
-                error: error
+                extra: {
+                    url: self.url,
+                    textStatus: textStatus,
+                    error: error
+                }
             });
         });
     },

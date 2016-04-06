@@ -39,6 +39,16 @@
               <strong>{{ draft.embargo | date:"N dS Y" }}</strong> at <strong>{{draft.embargo | date:"g:i a" }}</strong>
           {%  endif %}
       </span>
+      <br />
+      <span>
+          {% if draft.registered_node %}
+              <a href="{{ draft.registered_node }}">
+                  {{ draft.registered_node }}
+              </a>
+          {% else %}
+            None
+          {% endif %}
+      </span>
     </div>
     <div class="col-md-6 form">
       <form class="prereg-draft-form" action="{% url 'pre_reg:update_draft' draft.pk %}">

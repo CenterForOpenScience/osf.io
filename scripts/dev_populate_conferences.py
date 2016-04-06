@@ -433,18 +433,39 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
+    'TESS': {
+        'name': 'Time-sharing Experiments for the Social Sciences',
+        'info_url': 'http://www.tessexperiments.org',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': False,
+        'talk': True,
+        'field_names': {
+            'submission1': 'poster',
+            'submission2': 'study',
+            'submission1_plural': 'posters',
+            'submission2_plural': 'studies',
+            'meeting_title_type': 'Studies',
+            'add_submission': 'studies',
+        }
+    },
 }
 
 
+# NOTE: admins field is ignored
 def populate_conferences():
     for meeting, attrs in MEETING_DATA.iteritems():
+        custom_fields = attrs.pop('field_names', {})
+
         conf = Conference(
             endpoint=meeting, **attrs
         )
+        conf.field_names.update(custom_fields)
         try:
             conf.save()
         except ModularOdmException:
-            print('{0} Conference already exists. Updating existing record...'.format(meeting))
             conf = Conference.find_one(Q('endpoint', 'eq', meeting))
             for key, value in attrs.items():
                 if isinstance(value, dict):
@@ -453,7 +474,11 @@ def populate_conferences():
                     setattr(conf, key, current)
                 else:
                     setattr(conf, key, value)
-            conf.save()
+            changed_fields = conf.save()
+            if changed_fields:
+                print('Updated {}: {}'.format(meeting, changed_fields))
+        else:
+            print('Added new Conference: {}'.format(meeting))
 
 
 if __name__ == '__main__':

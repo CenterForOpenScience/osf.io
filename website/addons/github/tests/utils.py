@@ -1,7 +1,22 @@
 import mock
 import github3
-from website.addons.github.api import GitHub
+from website.addons.github.api import GitHubClient
 from github3.repos.branch import Branch
+
+from website.addons.base.testing import OAuthAddonTestCaseMixin, AddonTestCase
+from website.addons.github.model import GitHubProvider
+from website.addons.github.tests.factories import GitHubAccountFactory
+
+
+class GitHubAddonTestCase(OAuthAddonTestCaseMixin, AddonTestCase):
+    ADDON_SHORT_NAME = 'github'
+    ExternalAccountFactory = GitHubAccountFactory
+    Provider = GitHubProvider
+
+    def set_node_settings(self, settings):
+        super(GitHubAddonTestCase, self).set_node_settings(settings)
+        settings.repo = 'abc'
+        settings.user = 'octo-cat'
 
 # TODO: allow changing the repo name
 def create_mock_github(user='octo-cat', private=False):
@@ -24,7 +39,7 @@ def create_mock_github(user='octo-cat', private=False):
     :param bool private: Whether repo is private.
     :return: An autospecced GitHub Mock object
     """
-    github_mock = mock.create_autospec(GitHub)
+    github_mock = mock.create_autospec(GitHubClient)
     github_mock.repo.return_value = github3.repos.Repository.from_json({
     u'archive_url': u'https://api.github.com/repos/{user}/mock-repo/{{archive_format}}{{/ref}}'.format(user=user),
      u'assignees_url': u'https://api.github.com/repos/{user}/mock-repo/assignees{{/user}}'.format(user=user),

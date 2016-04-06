@@ -415,7 +415,7 @@ ViewModel.prototype.openCreateBucket = function() {
         message:
                 '<div class="row"> ' +
                     '<div class="col-md-12"> ' +
-                        '<form class="form-horizontal"> ' +
+                        '<form class="form-horizontal" onsubmit="return false"> ' +
                             '<div class="form-group"> ' +
                                 '<label class="col-md-4 control-label" for="bucketName">Bucket Name</label> ' +
                                 '<div class="col-md-8"> ' +

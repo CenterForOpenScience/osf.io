@@ -11,7 +11,9 @@ import furl
 from modularodm import Q
 from modularodm.exceptions import ValidationError
 
+from framework.auth import get_or_create_user
 from framework.auth.core import Auth
+from framework.transactions import commands
 
 from website import settings
 from website.models import User, Node
@@ -40,7 +42,8 @@ def assert_equal_urls(first, second):
 
 
 class ConferenceFactory(ModularOdmFactory):
-    FACTORY_FOR = Conference
+    class Meta:
+        model = Conference
 
     endpoint = Sequence(lambda n: 'conference{0}'.format(n))
     name = FakerAttribute('catch_phrase')
@@ -65,7 +68,7 @@ class TestConferenceUtils(OsfTestCase):
 
     def test_get_or_create_user_exists(self):
         user = UserFactory()
-        fetched, created = utils.get_or_create_user(user.fullname, user.username, True)
+        fetched, created = get_or_create_user(user.fullname, user.username, True)
         assert_false(created)
         assert_equal(user._id, fetched._id)
         assert_false('is_spam' in fetched.system_tags)
@@ -73,7 +76,7 @@ class TestConferenceUtils(OsfTestCase):
     def test_get_or_create_user_not_exists(self):
         fullname = 'Roger Taylor'
         username = 'roger@queen.com'
-        fetched, created = utils.get_or_create_user(fullname, username, False)
+        fetched, created = get_or_create_user(fullname, username, False)
         assert_true(created)
         assert_equal(fetched.fullname, fullname)
         assert_equal(fetched.username, username)
@@ -82,7 +85,7 @@ class TestConferenceUtils(OsfTestCase):
     def test_get_or_create_user_is_spam(self):
         fullname = 'John Deacon'
         username = 'deacon@queen.com'
-        fetched, created = utils.get_or_create_user(fullname, username, True)
+        fetched, created = get_or_create_user(fullname, username, True)
         assert_true(created)
         assert_equal(fetched.fullname, fullname)
         assert_equal(fetched.username, username)
@@ -124,6 +127,13 @@ class ContextTestCase(OsfTestCase):
     def tearDownClass(cls):
         super(ContextTestCase, cls).tearDownClass()
         settings.MAILGUN_API_KEY = cls._MAILGUN_API_KEY
+
+    def tearDown(self):
+        try:
+            commands.commit()
+        except Exception:
+            pass
+        super(ContextTestCase, self).tearDown()
 
     def make_context(self, method='POST', **kwargs):
         data = {
@@ -242,6 +252,8 @@ class TestProvisionNode(ContextTestCase):
 
 
 class TestMessage(ContextTestCase):
+
+    PUSH_CONTEXT = False
 
     def test_verify_signature_valid(self):
         with self.make_context():

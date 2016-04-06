@@ -103,7 +103,7 @@ def mock_archive(project, schema=None, auth=None, data=None, parent=None,
     auth = auth or Auth(project.creator)
     data = data or ''
 
-    with mock.patch('framework.tasks.handlers.enqueue_task'):
+    with mock.patch('framework.celery_tasks.handlers.enqueue_task'):
         registration = project.register_node(
             schema=schema,
             auth=auth,
@@ -152,6 +152,8 @@ class MockAuth(object):
     def __init__(self, user):
         self.user = user
         self.logged_in = True
+        self.private_key = None
+        self.private_link = None
 
 mock_auth = lambda user: mock.patch('framework.auth.Auth.from_kwargs', mock.Mock(return_value=MockAuth(user)))
 

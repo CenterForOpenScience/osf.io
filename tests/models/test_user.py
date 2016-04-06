@@ -11,7 +11,7 @@ from website import models, project
 from tests import base
 from tests.base import fake
 from tests import factories
-from framework.tasks import handlers
+from framework.celery_tasks import handlers
 
 
 class TestUser(base.OsfTestCase):
@@ -121,7 +121,7 @@ class TestUser(base.OsfTestCase):
             self.user._get_unconfirmed_email_for_token(token1)
 
     def test_contributed_property(self):
-        projects_contributed_to = project.model.Node.find(Q('contributors', 'contains', self.user._id))
+        projects_contributed_to = project.model.Node.find(Q('contributors', 'eq', self.user._id))
         assert_equal(list(self.user.contributed), list(projects_contributed_to))
 
     def test_created_property(self):
@@ -324,6 +324,7 @@ class TestUserMerging(base.OsfTestCase):
             'username',
             'mailing_lists',
             'verification_key',
+            '_affiliated_institutions',
             'contributor_added_email_records'
         ]
 
