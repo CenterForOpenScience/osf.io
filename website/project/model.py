@@ -1342,7 +1342,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         :param user: User to subscribe to notifications
         """
-        from website.notifications import utils as notification_utils
+        from website.notifications.utils import to_subscription_key
         from website.notifications.model import NotificationSubscription
 
         events = ['file_updated', 'comments']
@@ -1350,7 +1350,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         target_id = self._id
 
         for event in events:
-            event_id = notification_utils.to_subscription_key(target_id, event)
+            event_id = to_subscription_key(target_id, event)
 
             subscription = NotificationSubscription.load(event_id)
             if not subscription:
