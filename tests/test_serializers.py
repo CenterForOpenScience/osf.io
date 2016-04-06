@@ -17,7 +17,7 @@ from framework import utils as framework_utils
 from website.project.views.node import _get_summary, _view_project, _serialize_node_search, _get_children
 from website.views import _render_node
 from website.profile import utils
-from website.views import serialize_log
+from website.views import serialize_log, sanitize_params
 from website.util import permissions
 
 
@@ -207,26 +207,71 @@ class TestNodeLogSerializers(OsfTestCase):
         assert_equal(d['is_public'], node.is_public)
         assert_equal(d['is_registration'], node.is_registration)
 
-    def test_serialize_log_file_moved_admin_can_view(self):
+    def test_serialize_logs_sanitize_params_admin(self):
         admin = UserFactory()
-        node = NodeFactory(creator=admin)
-        log = NodeLogFactory(action='addon_file_moved', params={'source': {'node': {'_id': node._id}}})
-        node.logs.append(log)
-        node.save()
-        d = serialize_log(log, auth=Auth(admin))
-        assert_equal(d['action'], 'addon_file_moved')
-        assert_equal(d['can_view'], True)
+        project = NodeFactory(creator=admin)
+        component = NodeFactory(creator=admin)
+        params = {
+            'source': {
+                'materialized': 'test.pdf',
+                'node': {
+                    '_id': component._id,
+                    'title': 'Component B'
+                }
+            },
+            'destination': {
+                'materialized': 'test.pdf',
+                'node': {
+                    '_id': project._id,
+                    'title': 'Project A'
+                }
+            }
+        }
+        log = NodeLogFactory(action='addon_file_moved', params=params)
+        project.logs.append(log)
+        project.save()
+        safe_params = sanitize_params(Auth(admin), log)
+        assert_equal(safe_params, params)
 
-    def test_serialize_log_file_moved_non_contrib_can_view(self):
+    def test_serialize_logs_sanitize_params_non_contrib(self):
         admin = UserFactory()
         non_contrib = UserFactory()
-        node = NodeFactory(creator=admin)
-        log = NodeLogFactory(action='addon_file_moved', params={'source': {'node': {'_id': node._id}}})
-        node.logs.append(log)
-        node.save()
-        d = serialize_log(log, auth=Auth(non_contrib))
-        assert_equal(d['action'], 'addon_file_moved')
-        assert_equal(d['can_view'], False)
+        project = NodeFactory(creator=admin)
+        component = NodeFactory(creator=admin)
+        params = {
+            'source': {
+                'materialized': 'test.pdf',
+                'node': {
+                    '_id': component._id,
+                    'title': 'Component B'
+                }
+            },
+            'destination': {
+                'materialized': 'test.pdf',
+                'node': {
+                    '_id': project._id,
+                    'title': 'Project A'
+                }
+            }
+        }
+        log = NodeLogFactory(action='addon_file_moved', params=params)
+        project.logs.append(log)
+        project.save()
+        safe_params = {
+            'source': {
+                'materialized': 'test.pdf',
+                'private': True
+            },
+            'destination': {
+                'materialized': 'test.pdf',
+                'node': {
+                    '_id': project._id,
+                    'title': 'Project A'
+                }
+            }
+        }
+        new_params = sanitize_params(Auth(non_contrib), log)
+        assert_equal(new_params, safe_params)
 
 
 class TestAddContributorJson(OsfTestCase):

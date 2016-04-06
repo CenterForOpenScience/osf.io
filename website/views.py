@@ -166,7 +166,7 @@ def serialize_log(node_log, auth=None, anonymous=False):
         'params': sanitize_params(auth, node_log),
         'date': utils.iso8601format(node_log.date),
         'node': node_log.node.serialize(auth) if node_log.node else None,
-        'anonymous': anonymous,
+        'anonymous': anonymous
     }
 
 
@@ -180,7 +180,6 @@ def sanitize_params(auth, log):
         if key in UNSAFE_KEYS:
             source_node = Node.load(safe_params[key]['node']['_id'])
             if not source_node.can_view(auth):
-                # TODO: Private component as a string here? Really?
                 safe_params[key] = {
                     'materialized': safe_params[key]['materialized'],
                     'private': True,
