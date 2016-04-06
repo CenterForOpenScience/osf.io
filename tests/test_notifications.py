@@ -899,13 +899,6 @@ class TestCompileSubscriptions(OsfTestCase):
 
 
 class TestMoveSubscription(OsfTestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        super(TestMoveSubscription, cls).setUpClass()
-        cls._original_enable_notification_subscription_creation = settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION
-        settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION = True
-
     def setUp(self):
         super(TestMoveSubscription, self).setUp()
         self.blank = {key: [] for key in constants.NOTIFICATION_TYPES}  # For use where it is blank.
@@ -916,11 +909,13 @@ class TestMoveSubscription(OsfTestCase):
         self.user_4 = factories.AuthUserFactory()
         self.project = factories.ProjectFactory(creator=self.user_1)
         self.private_node = factories.NodeFactory(parent=self.project, is_public=False, creator=self.user_1)
-        self.sub = NotificationSubscription.find_one(
-            Q('_id', 'eq', self.project._id + '_file_updated') &
-            Q('owner', 'eq', self.project) &
-            Q('event_name', 'eq', 'file_updated')
+        self.sub = factories.NotificationSubscriptionFactory(
+            _id=self.project._id + '_file_updated',
+            owner=self.project,
+            event_name='file_updated'
         )
+        self.sub.email_transactional.extend([self.user_1])
+        self.sub.save()
         self.file_sub = factories.NotificationSubscriptionFactory(
             _id=self.project._id + '_xyz42_file_updated',
             owner=self.project,
@@ -966,7 +961,6 @@ class TestMoveSubscription(OsfTestCase):
     def test_move_sub_with_none(self):
         # Attempt to reproduce an error that is seen when moving files
         self.project.add_contributor(self.user_2, permissions=['write', 'read'], auth=self.auth)
-        utils.remove_contributor_from_subscriptions(self.user_2, self.project)
         self.project.save()
         self.file_sub.none.append(self.user_2)
         self.file_sub.save()
@@ -989,7 +983,6 @@ class TestMoveSubscription(OsfTestCase):
         self.private_node.save()
         self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
         self.project.save()
-        utils.remove_contributor_from_subscriptions(self.user_3, self.project)
         self.sub.email_digest.append(self.user_3)
         self.sub.save()
         self.file_sub.email_transactional.extend([self.user_2, self.user_4])
@@ -1004,7 +997,6 @@ class TestMoveSubscription(OsfTestCase):
         self.private_node.save()
         self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
         self.project.save()
-        self.sub.email_transactional = []
         self.sub.email_digest.append(self.user_3)
         self.sub.save()
         self.file_sub.email_transactional.extend([self.user_2])
@@ -1022,11 +1014,6 @@ class TestMoveSubscription(OsfTestCase):
         self.sub.save()
         utils.move_subscription(self.blank, 'xyz42_file_updated', self.project, 'abc42_file_updated', self.private_node)
         assert_equal([], self.file_sub.email_digest)
-
-    @classmethod
-    def tearDownClass(cls):
-        super(TestMoveSubscription, cls).tearDownClass()
-        settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION = cls._original_enable_notification_subscription_creation
 
 
 class TestSendEmails(OsfTestCase):
