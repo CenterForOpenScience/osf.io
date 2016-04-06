@@ -603,7 +603,7 @@ var SocialViewModel = function(urls, modes) {
         return [
             {label: 'ORCID', text: self.orcid(), value: self.orcid.url()},
             {label: 'ResearcherID', text: self.researcherId(), value: self.researcherId.url()},
-            {label: 'Twitter', text: self.twitter(), value: self.twitter.url().replace(/@/g, "")},
+            {label: 'Twitter', text: self.twitter(), value: self.twitter.url()},
             {label: 'GitHub', text: self.github(), value: self.github.url()},
             {label: 'LinkedIn', text: self.linkedIn(), value: self.linkedIn.url()},
             {label: 'ImpactStory', text: self.impactStory(), value: self.impactStory.url()},
@@ -675,6 +675,8 @@ SocialViewModel.prototype.serialize = function() {
             return value;
         }
     );
+    var twitter = serializedData.twitter;
+    serializedData.twitter = twitter.replace(/@/g, "");
     return serializedData;
 };
 
@@ -695,7 +697,7 @@ SocialViewModel.prototype.unserialize = function(data) {
             }
             self[key](websiteValue);
         }
-        else if (ko.isObservable(self[key])) {
+        else if (ko.isObservable(self[key])) {g
             self[key](value);
             // Ensure that validation errors are displayed
             self[key].notifySubscribers();
