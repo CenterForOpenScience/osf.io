@@ -2224,9 +2224,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             tag_instance = Tag.load(tag)
             if tag_instance is None:
                 tag_instance = Tag(_id=tag)
-                tag_instance.save()
         else:
             tag_instance = tag
+        #  should noop if it's not dirty
+        tag_instance.save()
 
         if tag_instance._id not in self.tags:
             self.tags.append(tag_instance)
