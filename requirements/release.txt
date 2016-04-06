@@ -3,7 +3,7 @@
 # Requirements to be installed on server deployments
 
 # scripts osfstorage
-pyrax==1.9.6
+pyrax==1.9.7
 # multipart uploads (https://github.com/boto/boto/issues/2603)
 boto==2.31.1
 # newrelic APM agent

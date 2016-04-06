@@ -104,21 +104,16 @@ def waterbutler_upload(path, name, test_existence=False):
                     parent_id = dirs[0]['_id']
                     parent_path.append(parent_id)
                 else:
-                    print('I/O Error: cannot find newly created directory')
-                    return
+                    raise Exception('Cannot find newly created directory')
                 continue
         else: # dir found
             parent_id = dirs[0]['_id']
             parent_path.append(parent_id)
             continue
 
-    try:
-        file_path = '/' + '/'.join(website_settings.ANALYTICS_PATH.split('/')[1:-1]) + path + '/' + name
-        print('file_path: {}'.format(file_path))
-        file_stream = open(file_path, 'r')
-    except IOError as e:
-        print('I/O error({0}): {1}'.format(e.errno, e.strerror))
-        return
+    file_path = '/' + '/'.join(website_settings.ANALYTICS_PATH.split('/')[1:-1]) + path + '/' + name
+    print('file_path: {}'.format(file_path))
+    file_stream = open(file_path, 'r')
 
     docs = database['storedfilenode'].find({'name': name, 'parent': parent_id})
     assert docs.count() in [0,1], 'Database query failure'
