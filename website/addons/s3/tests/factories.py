@@ -17,13 +17,15 @@ class S3AccountFactory(ExternalAccountFactory):
 
 
 class S3UserSettingsFactory(ModularOdmFactory):
-    FACTORY_FOR = S3UserSettings
+    class Meta:
+        model = S3UserSettings
 
     owner = SubFactory(UserFactory)
 
 
 class S3NodeSettingsFactory(ModularOdmFactory):
-    FACTORY_FOR = S3NodeSettings
+    class Meta:
+        model =  S3NodeSettings
 
     owner = SubFactory(ProjectFactory)
     user_settings = SubFactory(S3UserSettingsFactory)
