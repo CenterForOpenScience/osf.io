@@ -693,10 +693,11 @@ Draft.prototype.register = function(url, data) {
                 title: 'Registration failed',
                 message: language.registerFail,
                 callback: $osf.unblock
-            })
+            });
         })
         .always(function() {
-            $osf.unblock()});
+            $osf.unblock();
+        });
     return request;
 };
 Draft.prototype.submitForReview = function() {
