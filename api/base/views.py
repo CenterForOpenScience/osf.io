@@ -129,7 +129,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
         context.update({
             'enable_esi': (
                 is_truthy(self.request.query_params.get('esi', django_settings.ENABLE_ESI)) and
-                self.request.accepted_media_type in django_settings.ESI_MEDIA_TYPES
+                self.request.accepted_renderer.media_type in django_settings.ESI_MEDIA_TYPES
             ),
             'embed': embeds_partials,
             'envelope': self.request.query_params.get('envelope', 'data'),
