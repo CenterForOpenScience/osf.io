@@ -676,7 +676,7 @@ SocialViewModel.prototype.serialize = function() {
         }
     );
     var twitter = serializedData.twitter;
-    serializedData.twitter = twitter.replace(/@/g, "");
+    serializedData.twitter = twitter.replace(/@/g, '');
     return serializedData;
 };
 
@@ -697,7 +697,7 @@ SocialViewModel.prototype.unserialize = function(data) {
             }
             self[key](websiteValue);
         }
-        else if (ko.isObservable(self[key])) {g
+        else if (ko.isObservable(self[key])) {
             self[key](value);
             // Ensure that validation errors are displayed
             self[key].notifySubscribers();
