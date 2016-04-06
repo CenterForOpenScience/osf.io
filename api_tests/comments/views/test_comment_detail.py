@@ -32,6 +32,8 @@ class CommentDetailMixin(object):
                 'id': target_id,
                 'type': 'comments',
                 'attributes': {
+                    'content': 'Updating this comment',
+                    'new_mentions': [],
                     'deleted': False
                 }
             }
