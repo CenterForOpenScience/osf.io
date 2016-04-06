@@ -70,9 +70,12 @@ def create_new_file(obj, source, destination, destination_node):
                 new_path = obj.referent.path
             else:
                 new_path = obj.referent.materialized_path.replace(source['materialized'], destination['materialized'])
+            # TODO: Remove when materialized paths are fixed in the payload returned from waterbutler
+            if not new_path.startswith('/'):
+                new_path = '/' + new_path
             new_file = FileNode.resolve_class(destination['provider'], FileNode.FILE).get_or_create(destination_node, new_path)
             new_file.name = new_path.split('/')[-1]
-            new_file.materialized_path = '/' + new_path
+            new_file.materialized_path = new_path
             new_file.save()
     return new_file
 
