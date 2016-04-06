@@ -152,6 +152,7 @@ var LogPieces = {
     user: {
         view: function (ctrl, logObject) {
             var userObject = logObject.embeds.user;
+            var githubUser = logObject.attributes.params.github_user;
             if(paramIsReturned(userObject, logObject) && userObject.data) {
                 return m('a', {href: userObject.data.links.html, onclick: function() {
                     $osf.trackClick(logObject.trackingCategory, logObject.trackingAction, 'navigate-to-user-from-logs');
@@ -159,6 +160,9 @@ var LogPieces = {
             }
             else if (userObject && userObject.errors[0].meta) {
                 return m('span', userObject.errors[0].meta.full_name);
+            }
+            else if (githubUser){ //paramIsReturned skipped b/c this is applicable in only a few situtations
+                return m('span', githubUser);
             }
             else {
                 return m('span', 'A user');
