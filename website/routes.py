@@ -952,7 +952,7 @@ def make_url_map(app):
                 '/project/<pid>/node/<nid>/files/deleted/<trashed_id>/',
             ],
             'get',
-            addon_views.addon_deleted_file,
+            addon_views.addon_view_or_download_file,
             OsfWebRenderer('project/view_file.mako', trust=False)
         ),
         Rule(
