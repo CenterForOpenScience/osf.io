@@ -112,7 +112,6 @@ class TestCommentModel(OsfTestCase):
             content='This is a comment.',
             new_mentions=self.comment.new_mentions
         )
-
         assert_equal(comment.user, self.comment.user)
         assert_equal(comment.node, self.comment.node)
         assert_equal(comment.target, self.comment.target)
