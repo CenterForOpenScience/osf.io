@@ -73,19 +73,6 @@
                     <!-- /ko -->
                     <div class="btn-group">
                         <a
-                        % if user_name and (node['is_public'] or user['has_read_permissions']) and not node['is_registration']:
-                            data-bind="click: toggleWatch, tooltip: {title: watchButtonAction, placement: 'bottom', container : 'body'}"
-                            class="btn btn-default" data-container="body"
-                        % else:
-                            class="btn btn-default disabled"
-                        % endif
-                            href="#">
-                            <i class="fa fa-eye"></i>
-                            <span data-bind="text: watchButtonDisplay" id="watchCount"></span>
-                        </a>
-                    </div>
-                    <div class="btn-group">
-                        <a
                         % if user_name:
                             class="btn btn-default"
                             data-bind="tooltip: {title: 'Duplicate', placement: 'bottom', container : 'body'}"

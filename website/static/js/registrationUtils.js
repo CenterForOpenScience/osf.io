@@ -320,7 +320,19 @@ Question.prototype.toggleExample = function() {
 };
 
 Question.prototype.validationInfo = function() {
-    return ko.validation.group(this, {deep: true})();
+    var errors = ko.validation.group(this, {deep: true})();
+
+    var errorSet = ko.utils.arrayGetDistinctValues(errors);
+    var finalErrorSet = [];
+    $.each(errorSet, function(_, error) {
+        if (errors.indexOf(error) !== errors.lastIndexOf(error)) {
+            finalErrorSet.push(VALIDATOR_LOOKUP[error].messagePlural);
+        }
+        else {
+            finalErrorSet.push(error);
+        }
+    });
+    return ko.utils.arrayGetDistinctValues(finalErrorSet);
 };
 
 /**
@@ -370,17 +382,7 @@ var Page = function(schemaPage, schemaData) {
             return Boolean(errors);
         });
 
-        var errorSet = ko.utils.arrayGetDistinctValues(errors);
-        var finalErrorSet = [];
-        $.each(errorSet, function(_, error) {
-            if (errors.indexOf(error) !== errors.lastIndexOf(error)) {
-                finalErrorSet.push(VALIDATOR_LOOKUP[error].messagePlural);
-            }
-            else {
-                finalErrorSet.push(error);
-            }
-        });
-        return finalErrorSet;
+        return ko.utils.arrayGetDistinctValues(errors);
     }, {deferEvaluation: true});
 
     self.hasValidationInfo = ko.computed(function() {
@@ -901,7 +903,7 @@ RegistrationEditor.prototype.init = function(draft) {
             return self.draft().updated;
         }
         else {
-            return 'never';            
+            return 'never';
         }
     });
 
