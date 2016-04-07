@@ -29,6 +29,7 @@ from website import security
 from website.models import User
 from website.util import web_url_for
 from website.util.sanitize import strip_html
+from website.settings import FORGOT_PASSWORD_MINIMUM_TIME
 
 
 @collect_auth
@@ -72,27 +73,37 @@ def forgot_password_post():
 
     if form.validate():
         email = form.email.data
+        status_message = ('If there is an OSF account associated with {0}, an email with instructions on how to reset '
+                          'the OSF password has been sent to {0}. If you do not receive an email and believe you '
+                          'should have, please contact OSF Support. ').format(email)
         user_obj = get_user(email=email)
         if user_obj:
-            user_obj.verification_key = security.random_string(20)
-            user_obj.save()
-            reset_link = "http://{0}{1}".format(
-                request.host,
-                web_url_for(
-                    'reset_password',
-                    verification_key=user_obj.verification_key
+            now = datetime.datetime.utcnow()
+            last_attempt = user_obj.forgot_password_last_post or now - datetime.timedelta(seconds=FORGOT_PASSWORD_MINIMUM_TIME)
+            user_obj.forgot_password_last_post = now
+            time_since_last_attempt = now - last_attempt
+            if time_since_last_attempt.seconds >= FORGOT_PASSWORD_MINIMUM_TIME:
+                user_obj.verification_key = security.random_string(20)
+                user_obj.save()
+                reset_link = "http://{0}{1}".format(
+                    request.host,
+                    web_url_for(
+                        'reset_password',
+                        verification_key=user_obj.verification_key
+                    )
                 )
-            )
-            mails.send_mail(
-                to_addr=email,
-                mail=mails.FORGOT_PASSWORD,
-                reset_link=reset_link
-            )
-        status.push_status_message(
-            ('If there is an OSF account associated with {0}, an email with instructions on how to reset '
-             'the OSF password has been sent to {0}. If you do not receive an email and believe you should '
-             'have, please contact OSF Support. ').format(email), 'success')
-
+                mails.send_mail(
+                    to_addr=email,
+                    mail=mails.FORGOT_PASSWORD,
+                    reset_link=reset_link
+                )
+                status.push_status_message(status_message, 'success')
+            else:
+                user_obj.save()
+                status.push_status_message('You have recently requested to change your password. Please wait a little '
+                                           'while before trying again.', 'error')
+        else:
+            status.push_status_message(status_message, 'success')
     forms.push_errors_to_status(form.errors)
     return auth_login(forgot_password_form=form)
 
