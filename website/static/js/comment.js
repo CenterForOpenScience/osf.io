@@ -16,6 +16,77 @@ var osfHelpers = require('js/osfHelpers');
 var CommentPane = require('js/commentpane');
 var markdown = require('js/markdown');
 
+var caret = require('Caret.js');
+var atWho = require('At.js');
+
+// @ mention prototyping
+var callbacks = {
+    beforeInsert: function(value, $li) {
+        var data = $li.data('item-data');
+        var model = ko.dataFor(this.$inputor[0]);
+        if (model.replyMentions().indexOf(data.id) === -1) {
+            model.replyMentions().push(data.id);
+        }
+        this.query.el.attr('data-atwho-guid', '' + data.id);
+        return value;
+    }
+};
+
+var at_config = {
+    at: '@',
+    headerTpl: '<div class="atwho-header">Contributors<small>&nbsp;↑&nbsp;↓&nbsp;</small></div>',
+    insertTpl: '@${name}',
+    displayTpl: '<li>${name} <small>${fullName}</small></li>',
+    limit: 6,
+    callbacks: callbacks
+};
+
+var plus_config = {
+    at: '+',
+    headerTpl: '<div class="atwho-header">Contributors<small>&nbsp;↑&nbsp;↓&nbsp;</small></div>',
+    insertTpl: '+${name}',
+    displayTpl: '<li>${name} <small>${fullName}</small></li>',
+    limit: 6,
+    callbacks: callbacks
+};
+
+var input = $('.atwho-input');
+var nodeId = window.nodeId;
+
+var getContributorList = function(input, nodeId) {
+    var url = osfHelpers.apiV2Url('nodes/' + nodeId + '/contributors/', {});
+    var request = osfHelpers.ajaxJSON(
+        'GET',
+        url,
+        {'isCors': true});
+    request.done(function(response) {
+        var data = response.data.map(function(item) {
+            return {
+                'id': item.id,
+                'name': item.embeds.users.data.attributes.given_name,
+                'fullName': item.embeds.users.data.attributes.full_name,
+                'link': item.embeds.users.data.links.html
+            };
+        });
+        // for any input areas that currently exist on page
+        input.atwho('load','@', data).atwho('load', '+', data).atwho('run');
+        // for future input areas so that data doesn't need to be reloaded
+        at_config.data = data;
+        plus_config.data = data;
+    });
+    request.fail(function(xhr, status, error) {
+        Raven.captureMessage('Error getting contributors', {
+            url: url,
+            status: status,
+            error: error
+        });
+    });
+    return request;
+};
+
+// should only need to do this once
+getContributorList(input, nodeId);
+input.atwho(at_config).atwho(plus_config);
 
 // Maximum length for comments, in characters
 var MAXLENGTH = 500;
@@ -78,6 +149,32 @@ var BaseComment = function() {
 
     self.replying = ko.observable(false);
     self.replyContent = ko.observable('');
+    self.replyMentions = ko.observableArray([]);
+
+    self.saveContent = ko.computed(function() {
+        var content = self.replyContent();
+        if (!content) {
+            content = '';
+        }
+        var regex = /<span.*?data-atwho-guid="([a-z\d]{5})".*?>((@|\+)[a-zA-Z]+)<\/span>/;
+        var matches = content.match(/<span.*?data-atwho-guid="([a-z\d]{5})".*?>((@|\+)[a-zA-Z]+)<\/span>/g);
+        if (matches) {
+            for (var i = 0; i < matches.length; i++) {
+                let match = regex.exec(matches[i]);
+                let guid = match[1];
+                let mention = match[2];
+                let url = '/' + guid + '/';
+                content = content.replace(match[0], '['+ mention + '](' + url + ')');
+
+                if (guid && self.replyMentions.indexOf(guid) === -1) {
+                    self.replyMentions.push(guid);
+                }
+            }
+            return content;
+        } else {
+            return content;
+        }
+    });
 
     self.submittingReply = ko.observable(false);
 
@@ -226,7 +323,8 @@ BaseComment.prototype.submitReply = function() {
                 'data': {
                     'type': 'comments',
                     'attributes': {
-                        'content': self.replyContent()
+                        'content': self.saveContent(),
+                        'new_mentions': self.replyMentions()
                     },
                     'relationships': {
                         'target': {
@@ -242,6 +340,7 @@ BaseComment.prototype.submitReply = function() {
     request.done(function(response) {
         self.cancelReply();
         self.replyContent(null);
+        self.replyMentions([]);
         var newComment = new CommentModel(response.data, self, self.$root);
         newComment.loading(false);
         self.comments.unshift(newComment);
@@ -254,6 +353,7 @@ BaseComment.prototype.submitReply = function() {
     });
     request.fail(function(xhr, status, error) {
         self.cancelReply();
+        self.replyMentions([]);
         self.errorMessage('Could not submit comment');
         Raven.captureMessage('Error creating comment', {
             extra: {
@@ -303,6 +403,53 @@ var CommentModel = function(data, $parent, $root) {
     } else {
         self.author = self.$root.author;
     }
+
+    self.editableContent = ko.computed(function() {
+        var content = self.content();
+        if (!content) {
+            content = '';
+        }
+        var regex = /\[(@|\+)(.*?)\]\(\/([a-z\d]{5})\/\)/;
+        var matches = content.match(/\[(@|\+)(.*?)\]\(\/([a-z\d]{5})\/\)/g);
+        if (matches) {
+            for (var i = 0; i < matches.length; i++) {
+                let match = regex.exec(matches[i]);
+                var atwho = match[1];
+                let guid = match[3];
+                let mention = match[2];
+
+                content = content.replace(match[0], '<span class="atwho-inserted" data-atwho-guid="'+ guid + '" data-atwho-at-query="' + atwho + '">' + atwho + mention + '</span>');
+            }
+            return content;
+        } else {
+            return content;
+        }
+    });
+
+    self.editedContent = ko.computed(function() {
+        var content = self.content();
+        if (!content) {
+            content = '';
+        }
+        var regex = /<span.*?data-atwho-guid="([a-z\d]{5})".*?>((@|\+)[a-zA-Z]+)<\/span>/;
+        var matches = content.match(/<span.*?data-atwho-guid="([a-z\d]{5})".*?>((@|\+)[a-zA-Z]+)<\/span>/g);
+        if (matches) {
+            for (var i = 0; i < matches.length; i++) {
+                let match = regex.exec(matches[i]);
+                let guid = match[1];
+                let mention = match[2];
+                let url = '/' + guid + '/';
+                content = content.replace(match[0], '['+ mention + '](' + url + ')');
+
+                if (guid && self.replyMentions.indexOf(guid) === -1) {
+                    self.replyMentions.push(guid);
+                }
+            }
+            return content;
+        } else {
+            return content;
+        }
+    });
 
     self.contentDisplay = ko.observable(markdown.full.render(self.content()));
 
@@ -362,6 +509,7 @@ CommentModel.prototype = new BaseComment();
 CommentModel.prototype.edit = function() {
     if (this.canEdit()) {
         this._content = this.content();
+        this.content(this.editableContent());
         this.editing(true);
         this.$root.editors += 1;
     }
@@ -369,6 +517,7 @@ CommentModel.prototype.edit = function() {
 
 CommentModel.prototype.autosizeText = function(elm) {
     $(elm).find('textarea').autosize().focus();
+    $(elm).find('.atwho-input').atwho(at_config).atwho(plus_config);
 };
 
 CommentModel.prototype.cancelEdit = function() {
@@ -398,7 +547,8 @@ CommentModel.prototype.submitEdit = function(data, event) {
                     'id': self.id(),
                     'type': 'comments',
                     'attributes': {
-                        'content': self.content(),
+                        'content': self.editedContent(),
+                        'new_mentions': self.replyMentions(),
                         'deleted': false
                     }
                 }
@@ -407,6 +557,7 @@ CommentModel.prototype.submitEdit = function(data, event) {
     request.done(function(response) {
         self.content(response.data.attributes.content);
         self.dateModified(response.data.attributes.date_modified);
+        self.replyMentions([]);
         self.editing(false);
         self.modified(true);
         self.editErrorMessage('');
@@ -417,6 +568,7 @@ CommentModel.prototype.submitEdit = function(data, event) {
     });
     request.fail(function(xhr, status, error) {
         self.cancelEdit();
+        self.replyMentions([]);
         self.errorMessage('Could not submit comment');
         Raven.captureMessage('Error editing comment', {
             extra: {
@@ -653,7 +805,7 @@ var onOpen = function(page, rootId, nodeApiUrl) {
             page: page,
             rootId: rootId
         }
-    );    
+    );
     request.fail(function(xhr, textStatus, errorThrown) {
         Raven.captureMessage('Could not update comment timestamp', {
             extra: {
@@ -674,7 +826,7 @@ var onOpen = function(page, rootId, nodeApiUrl) {
  *      rootId: Node._id,
  *      fileId: StoredFileNode._id,
  *      canComment: User.canComment,
- *      hasChildren: Node.hasChildren, 
+ *      hasChildren: Node.hasChildren,
  *      currentUser: {
  *          id: User._id,
  *          url: User.url,

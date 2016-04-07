@@ -20,6 +20,7 @@ from website.models import Comment
 from website.project.decorators import must_be_contributor_or_public
 from website.project.model import Node
 from website.project.signals import comment_added
+from website.project.signals import mention_added
 from website import settings
 
 
@@ -130,6 +131,41 @@ def send_comment_added_notification(comment, auth):
                 **context
             )
 
+
+@mention_added.connect
+def send_mention_added_notification(comment, auth):
+    node = comment.node
+    target = comment.target
+
+    context = dict(
+        gravatar_url=auth.user.profile_image_url(),
+        content=markdown.markdown(comment.content, ['del_ins', 'markdown.extensions.tables', 'markdown.extensions.fenced_code']),
+        page_type='file' if comment.page == Comment.FILES else node.project_or_component,
+        page_title=comment.root_target.referent.name if comment.page == Comment.FILES else '',
+        provider=PROVIDERS[comment.root_target.referent.provider] if comment.page == Comment.FILES else '',
+        target_user=target.referent.user if is_reply(target) else None,
+        parent_comment=target.referent.content if is_reply(target) else "",
+        new_mentions=comment.new_mentions,
+        url=comment.get_comment_page_url()
+    )
+    time_now = datetime.utcnow().replace(tzinfo=pytz.utc)
+    sent_subscribers = notify(
+        event="mentions",
+        user=auth.user,
+        node=node,
+        timestamp=time_now,
+        **context
+    )
+
+    if is_reply(target):
+        if target.referent.user and target.referent.user not in sent_subscribers:
+            notify(
+                event='mention_replies',
+                user=auth.user,
+                node=node,
+                timestamp=time_now,
+                **context
+            )
 
 def is_reply(target):
     return isinstance(target.referent, Comment)
