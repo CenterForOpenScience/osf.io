@@ -499,6 +499,8 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                 if kwargs is None:
                     urls[view_name] = {}
                 else:
+                    if callable(view):
+                        view = view(getattr(obj, self.field_name))
                     url = self.reverse(view, kwargs=kwargs, request=request, format=format)
                     if self.filter:
                         formatted_filter = self.format_filter(obj)
