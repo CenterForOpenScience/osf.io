@@ -3823,7 +3823,7 @@ class TestODMTitleSearch(OsfTestCase):
                                'includeContributed': 'yes',
                                'isFolder': 'yes'
                            }, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
+        assert_equal(res.status_code, 404)
         res = self.app.get(self.url,
                            {
                                'term': self.folder.title,
@@ -3849,7 +3849,7 @@ class TestODMTitleSearch(OsfTestCase):
                                'includeContributed': 'yes',
                                'isFolder': 'yes'
                            }, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
+        assert_equal(res.status_code, 404)
 
 
 class TestReorderComponents(OsfTestCase):
