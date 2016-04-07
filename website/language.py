@@ -21,7 +21,7 @@ REGISTRATION_SUCCESS = '''Registration successful. Please check {email} to confi
 # Shown if registration is turned off in website.settings
 REGISTRATION_UNAVAILABLE = 'Registration currently unavailable.'
 
-ALREADY_REGISTERED = '''The email <em>{email}</em> has already been registered.'''
+ALREADY_REGISTERED = u'The email <em>{email}</em> has already been registered.'
 
 AFTER_SUBMIT_FOR_REVIEW = "Your submission has been received. You will be notified within ten business days regarding the status of your submission. If you have questions you may contact us at prereg@cos.io."
 
@@ -49,7 +49,7 @@ LOGOUT = '''
 You have successfully logged out.
 '''
 
-EMAIL_NOT_FOUND = '''
+EMAIL_NOT_FOUND = u'''
 <strong>{email}</strong> was not found in our records.
 '''
 
@@ -84,10 +84,10 @@ MERGE_COMPLETE = 'Accounts successfully merged.'
 MERGE_CONFIRMATION_REQUIRED_SHORT = 'Confirmation Required: Merge Accounts'
 
 MERGE_CONFIRMATION_REQUIRED_LONG = (
-    '<p>This email is confirmed to another account. '
-    'Would you like to merge <em>{user_to_merge.username}</em> with the account '
-    '<em>{user.username}</em>?<p>'
-    '<a class="btn btn-primary" href="?confirm_merge">Confirm merge</a> '
+    u'<p>This email is confirmed to another account. '
+    u'Would you like to merge <em>{user_to_merge.username}</em> with the account '
+    u'<em>{user.username}</em>?<p>'
+    u'<a class="btn btn-primary" href="?confirm_merge">Confirm merge</a> '
 )
 
 # Node Actions
@@ -98,17 +98,17 @@ AFTER_REGISTER_ARCHIVING = (
 )
 
 BEFORE_REGISTER_HAS_POINTERS = (
-    'This {category} contains links to other projects. Links will be copied '
-    'into your registration, but the projects that they link to will not be '
-    'registered. If you wish to register the linked projects, you must fork '
-    'them from the original project before registering.'
+    u'This {category} contains links to other projects. Links will be copied '
+    u'into your registration, but the projects that they link to will not be '
+    u'registered. If you wish to register the linked projects, you must fork '
+    u'them from the original project before registering.'
 )
 
 BEFORE_FORK_HAS_POINTERS = (
-    'This {category} contains links to other projects. Links will be copied '
-    'into your fork, but the projects that they link to will not be forked. '
-    'If you wish to fork the linked projects, they need to be forked from the '
-    'original project.'
+    u'This {category} contains links to other projects. Links will be copied '
+    u'into your fork, but the projects that they link to will not be forked. '
+    u'If you wish to fork the linked projects, they need to be forked from the '
+    u'original project.'
 )
 
 REGISTRATION_INFO = '''
@@ -186,11 +186,11 @@ TEMPLATED_FROM_PREFIX = "Templated from "
 
 # MFR Error handling
 ERROR_PREFIX = "Unable to render. <a href='?action=download'>Download</a> file to view it."
-SUPPORT = "Contact support@osf.io for further assistance."
+SUPPORT = u"Contact support@osf.io for further assistance."
 
-# Custom Error Messages w/ support
-STATA_VERSION_ERROR = 'Version of given Stata file is not 104, 105, 108, 113 (Stata 8/9), 114 (Stata 10/11) or 115 (Stata 12)<p>{0}</p>'.format(SUPPORT)
-BLANK_OR_CORRUPT_TABLE_ERROR = 'Is this a valid instance of this file type?<p>{0}</p>'.format(SUPPORT)
+# Custom Error Messages w/ support  # TODO: Where are these used?
+STATA_VERSION_ERROR = u'Version of given Stata file is not 104, 105, 108, 113 (Stata 8/9), 114 (Stata 10/11) or 115 (Stata 12)<p>{0}</p>'.format(SUPPORT)
+BLANK_OR_CORRUPT_TABLE_ERROR = u'Is this a valid instance of this file type?<p>{0}</p>'.format(SUPPORT)
 
 #disk saving mode
 DISK_SAVING_MODE = 'Forks, registrations, and uploads to OSF Storage uploads are temporarily disabled while we are undergoing a server upgrade. These features will return shortly.'

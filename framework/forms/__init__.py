@@ -41,10 +41,11 @@ class BootstrapTextArea(TextArea):
 
 
 def push_errors_to_status(errors):
+    # TODO: Review whether errors contain custom HTML. If so this change might cause some display anomalies.
     if errors:
         for field, _ in errors.items():
             for error in errors[field]:
-                status.push_status_message(error)
+                status.push_status_message(error, trust=False)
 
 
 class NoHtmlCharacters(object):

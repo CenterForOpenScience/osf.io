@@ -6,6 +6,7 @@ import httplib as http  # TODO: Inconsistent usage of aliased import
 from dateutil.parser import parse as parse_date
 
 from flask import request
+import markupsafe
 from modularodm.exceptions import ValidationError, NoResultsFound, MultipleResultsFound
 from modularodm import Q
 
@@ -353,9 +354,11 @@ def user_account_password(auth, **kwargs):
         user.change_password(old_password, new_password, confirm_password)
         user.save()
     except ChangePasswordError as error:
-        push_status_message('<br />'.join(error.messages) + '.', kind='warning')
+        # TODO: Why is this pushing one single message, instead of a separate message for each error? The <br> is the only reason we need to trust at all
+        safe_messages = [markupsafe.escape(m) for m in error.messages]
+        push_status_message(u'<br />'.join(safe_messages) + '.', kind='warning', trust=True)
     else:
-        push_status_message('Password updated successfully.', kind='success')
+        push_status_message('Password updated successfully.', kind='success', trust=False)
 
     return redirect(web_url_for('user_account'))
 
