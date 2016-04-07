@@ -264,50 +264,50 @@ def migrate(dry_run=True):
         )
 
     if user_no_oauth_creds:
-        logger.error(
-            "Found {0} invalid user settings with a lack of oauth credentials:\n{1}".format(
+        logger.warn(
+            "Skipped migration of {0} invalid user settings with a lack of oauth credentials:\n{1}".format(
                 len(user_no_oauth_creds), [e for e in user_no_oauth_creds]
             )
         )
     if invalid_oauth_creds:
-        logger.error(
-            "Failed to migrate {0} user settings due to invalid oauth credentials:\n{1}".format(
+        logger.warn(
+            "Skipped migration of {0} user settings due to invalid oauth credentials:\n{1}".format(
                 len(invalid_oauth_creds), [e for e in invalid_oauth_creds]
             )
         )
     if deleted_user_settings:
-        logger.error(
-            "Failed to migrate {0} deleted user settings: {1}".format(
+        logger.warn(
+            "Skipped migration of {0} deleted user settings: {1}".format(
                 len(deleted_user_settings), [e for e in deleted_user_settings]
             )
         )
     if broken_user_settings:
-        logger.error(
-            "Failed to migrate {0} addons3usersettings because they could not be verified:\n{1}".format(
+        logger.warn(
+            "Skipped migration of {0} addons3usersettings because they could not be verified:\n{1}".format(
                 len(broken_user_settings), [e for e in broken_user_settings]
             )
         )
     if inactive_user_or_no_owner:
-        logger.error(
-            "Failed to migrate {0} user settings due to an inactive or null owner:\n{1}".format(
+        logger.warn(
+            "Skipped migration of {0} user settings due to an inactive or null owner:\n{1}".format(
                 len(inactive_user_or_no_owner), [e for e in inactive_user_or_no_owner]
             )
         )
     if unverifiable_node_settings:
-        logger.error(
-            "Failed to migrate {0} addons3nodesettings documents because they could not be verified:\n{1}".format(
+        logger.warn(
+            "Skipped migration of {0} addons3nodesettings documents because they could not be verified:\n{1}".format(
                 len(unverifiable_node_settings), [e for e in unverifiable_node_settings]
             )
         )
     if deleted_node_settings:
-        logger.error(
-            "Failed to migrate {0} deleted node settings:\n{1}".format(
+        logger.warn(
+            "Skipped migration of {0} deleted node settings:\n{1}".format(
                 len(deleted_node_settings), [e for e in deleted_node_settings]
             )
         )
     if nodeless_node_settings:
-        logger.error(
-            "Failed to migrate {0} node settings without an associated node:\n{1}".format(
+        logger.warn(
+            "Skipped migration of {0} node settings without an associated node:\n{1}".format(
                 len(nodeless_node_settings), [e for e in nodeless_node_settings]
             )
         )
