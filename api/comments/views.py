@@ -67,10 +67,10 @@ class CommentMixin(object):
                     )
                 except NoResultsFound:
                     Comment.update(Q('root_target', 'eq', root_target), data={'root_target': None})
-                    del comment.node.commented_files[root_target._id]
                     raise NotFound
             else:
                 if referent.provider == 'dropbox':
+                    # referent.path is the absolute path for the db file, but wb requires the relative path
                     referent = DropboxFile.load(referent._id)
                 url = waterbutler_api_url_for(comment.node._id, referent.provider, referent.path, meta=True)
                 waterbutler_request = requests.get(
@@ -116,7 +116,7 @@ class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Comm
     OSF comment entities have the "comments" `type`.
 
         name           type               description
-        ---------------------------------------------------------------------------------
+        =================================================================================
         content        string             content of the comment
         date_created   iso8601 timestamp  timestamp that the comment was created
         date_modified  iso8601 timestamp  timestamp when the comment was last updated
@@ -238,7 +238,7 @@ class CommentReportsList(JSONAPIBaseView, generics.ListCreateAPIView, CommentMix
     OSF comment report entities have the "comment_reports" `type`.
 
         name           type               description
-        -------------------------------------------------------------------------------------
+        =====================================================================================
         category        string            the type of spam, must be one of the allowed values
         message         string            description of why the comment was reported
 
@@ -312,7 +312,7 @@ class CommentReportDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView
     OSF comment report entities have the "comment_reports" `type`.
 
         name           type               description
-        -------------------------------------------------------------------------------------
+        =====================================================================================
         category        string            the type of spam, must be one of the allowed values
         message         string            description of why the comment was reported
 

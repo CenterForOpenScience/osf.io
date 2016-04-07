@@ -91,10 +91,13 @@ function findByTempID(parent, tmpID) {
 function cancelUploads (row) {
     var tb = this;
     var uploading = tb.dropzone.getUploadingFiles();
-    var filesArr = uploading.concat(tb.dropzone.getQueuedFiles());
+    var rejected = tb.dropzone.getRejectedFiles();
+    var queued = tb.dropzone.getQueuedFiles();
+    var filesArr = uploading.concat(queued, rejected);
+
     for (var i = 0; i < filesArr.length; i++) {
         var j = filesArr[i];
-        if(!row){
+        if(!row) {
             var parent = j.treebeardParent || tb.dropzoneItemCache;
             var item = findByTempID(parent, j.tmpID);
             tb.dropzone.removeFile(j);
@@ -505,12 +508,14 @@ function doItemOp(operation, to, from, rename, conflict) {
         $osf.growl(operation.verb + ' failed.', message);
 
         Raven.captureMessage('Failed to move or copy file', {
-            xhr: xhr,
-            requestData: {
-                rename: rename,
-                conflict: conflict,
-                source: waterbutler.toJsonBlob(from),
-                destination: waterbutler.toJsonBlob(to),
+            extra: {
+                xhr: xhr,
+                requestData: {
+                    rename: rename,
+                    conflict: conflict,
+                    source: waterbutler.toJsonBlob(from),
+                    destination: waterbutler.toJsonBlob(to),
+                }
             }
         });
 

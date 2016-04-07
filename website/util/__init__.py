@@ -111,9 +111,8 @@ def api_v2_url(path_str,
     params = params or {}  # Optional params dict for special-character param names, eg filter[fullname]
 
     base_url = furl.furl(base_route + base_prefix)
-    sub_url = furl.furl(path_str)
 
-    base_url.path.add(sub_url.path.segments)
+    base_url.path.add([x for x in path_str.split('/') if x] + [''])
 
     base_url.args.update(params)
     base_url.args.update(kwargs)

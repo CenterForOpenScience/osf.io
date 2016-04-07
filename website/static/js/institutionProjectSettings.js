@@ -7,7 +7,9 @@ var $osf = require('js/osfHelpers');
 
 var ViewModel = function(data) {
     var self = this;
-    self.primaryInstitution = ko.observable('None');
+    self.primaryInstitution = ko.observable('Loading...');
+    self.loading = ko.observable(true);
+    self.error = ko.observable(false);
     self.institutionHref = ko.observable('');
     self.availableInstitutions = ko.observable(false);
     self.selectedInstitution = ko.observable();
@@ -19,14 +21,17 @@ var ViewModel = function(data) {
             url,
             {isCors: true}
         ).done(function (response) {
-            if (response.data.embeds.institutions.data.length){
-                self.availableInstitutions(response.data.embeds.institutions.data);
-            }
+            self.availableInstitutions(response.data.embeds.institutions.data.length ? response.data.embeds.institutions.data: []);
+            self.loading(false);
         }).fail(function (xhr, status, error) {
+            self.error(true);
+            self.loading(false);
             Raven.captureMessage('Unable to fetch user with embedded institutions', {
-                url: url,
-                status: status,
-                error: error
+                extra: {
+                    url: url,
+                    status: status,
+                    error: error
+                }
             });
         });
     };
@@ -43,9 +48,11 @@ var ViewModel = function(data) {
             }
         }).fail(function (xhr, status, error) {
             Raven.captureMessage('Unable to fetch node with embedded institutions', {
-                url: url,
-                status: status,
-                error: error
+                extra: {
+                    url: url,
+                    status: status,
+                    error: error
+                }
             });
         });
     };
@@ -67,9 +74,11 @@ var ViewModel = function(data) {
         }).fail(function (xhr, status, error) {
             $osf.growl('Unable to add institution to this node. Please try again. If the problem persists, email <a href="mailto:support@osf.io.">support@osf.io</a>');
             Raven.captureMessage('Unable to add institution to this node', {
-                url: url,
-                status: status,
-                error: error
+                extra: {
+                    url: url,
+                    status: status,
+                    error: error
+                }
             });
         });
     };
@@ -90,9 +99,11 @@ var ViewModel = function(data) {
         }).fail(function (xhr, status, error) {
             $osf.growl('Unable to remove institution from this node. Please try again. If the problem persists, email <a href="mailto:support@osf.io.">support@osf.io</a>');
             Raven.captureMessage('Unable to remove institution from this node!', {
-                url: url,
-                status: status,
-                error: error
+                extra: {
+                    url: url,
+                    status: status,
+                    error: error
+                }
             });
         });
     };

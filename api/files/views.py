@@ -64,7 +64,7 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
     ####File Entity
 
         name          type       description
-        -------------------------------------------------------------------------
+        =========================================================================
         name          string     name of the file
         path          string     unique identifier for this file entity for this
                                  project and storage provider. may not end with '/'
@@ -88,7 +88,7 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
     ####Folder Entity
 
         name          type    description
-        ----------------------------------------------------------------------
+        ======================================================================
         name          string  name of the folder
         path          string  unique identifier for this folder entity for this
                               project and storage provider. must end with '/'
@@ -107,7 +107,7 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
     null for folders.  A list of storage provider keys can be found [here](/v2/#storage-providers).
 
         name          type               description
-        ---------------------------------------------------------------------------------------------------
+        ===================================================================================================
         name              string             name of the file or folder; used for display
         kind              string             "file" or "folder"
         path              string             same as for corresponding WaterButler entity
@@ -331,7 +331,7 @@ class FileVersionsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
     For an OSF FileVersion entity the API `type` is "file_versions".
 
         name          type     description
-        ---------------------------------------------------------------------------------
+        =================================================================================
         size          integer  size of file in bytes
         content_type  string   MIME content-type for the file. May be null if unavailable.
 
@@ -390,7 +390,7 @@ class FileVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, FileMixin):
     For an OSF FileVersion entity the API `type` is "file_versions".
 
         name          type     description
-        ---------------------------------------------------------------------------------
+        =================================================================================
         size          integer  size of file in bytes
         content_type  string   MIME content-type for the file. May be null if unavailable.
 

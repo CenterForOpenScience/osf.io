@@ -6,7 +6,7 @@ You initiated an embargoed registration of ${project_name}${context.get('custom_
 ${initiated_by} initiated an embargoed registration of ${project_name}${context.get('custom_message', '')}. The proposed registration can be viewed here: ${registration_link}.
 % endif
 
-If approved, a registration will be created for the project and it will remain private until it is retracted, manually
+If approved, a registration will be created for the project and it will remain private until it is withdrawn, manually
 made public, or the embargo end date has passed on ${embargo_end_date.date()}.
 
 To approve this embargo, click the following link: ${approval_link}.
