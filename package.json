@@ -31,7 +31,6 @@
     "jstimezonedetect": "^1.0.6",
     "keen-js": "^3.0.0",
     "knockout": "~3.2.0",
-    "knockout.punches": "^0.5.1",
     "knockout.validation": "^2.0.2",
     "less": "^2.5.3",
     "list-of-licenses": "git://github.com/samchrisinger/list-of-licenses.git#1f1d9ca8a9aba56d57fca6e27df80b8298048cc8",

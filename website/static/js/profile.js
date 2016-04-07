@@ -5,7 +5,6 @@ var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
 require('knockout.validation');
-require('knockout.punches');
 require('knockout-sortable');
 
 var $osf = require('./osfHelpers');
