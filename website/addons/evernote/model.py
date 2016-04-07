@@ -112,13 +112,14 @@ class EvernoteNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
             self.save()
 
+    # Sam C says following can be removed https://github.com/CenterForOpenScience/osf.io/pull/4670/files#r49327525
     # boilerplate from https://github.com/CenterForOpenScience/osf.io/blob/e4e1bd951b6e79d3bb2335d326bb44d9939bffb8/website/addons/box/model.py#L94-L99
-    @property
-    def complete(self):
-        return bool(self.has_auth and self.user_settings.verify_oauth_access(
-            node=self.owner,
-            external_account=self.external_account,
-        ))
+    # @property
+    # def complete(self):
+    #     return bool(self.has_auth and self.user_settings.verify_oauth_access(
+    #         node=self.owner,
+    #         external_account=self.external_account,
+    #     ))
 
     # based on https://github.com/CenterForOpenScience/osf.io/blob/4a5d4e5a887c944174694300c42b399638184722/website/addons/box/model.py#L105-L107
     def fetch_full_folder_path(self):
