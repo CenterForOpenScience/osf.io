@@ -1,12 +1,17 @@
+import mock
+from django.db import transaction
 from django.test import RequestFactory
 from nose import tools as nt
 from datetime import datetime, timedelta
 
+from admin.common_auth.logs import OSFLogEntry
+from admin.spam.forms import ConfirmForm
 from tests.base import AdminTestCase
 from tests.factories import CommentFactory, AuthUserFactory, ProjectFactory
-from admin_tests.utilities import setup_view
+from admin_tests.utilities import setup_view, setup_form_view
+from admin_tests.factories import UserFactory
 
-from admin.spam.views import SpamList, UserSpamList
+from admin.spam.views import SpamList, UserSpamList, SpamDetail
 
 
 class TestSpamListView(AdminTestCase):
@@ -77,6 +82,27 @@ class TestSpamListView(AdminTestCase):
             self.comment_1._id
         ]
         nt.assert_list_equal(should_be, response_list)
+
+
+class TestSpamDetail(AdminTestCase):
+    def setUp(self):
+        super(TestSpamDetail, self).setUp()
+        self.comment = CommentFactory()
+        self.request = RequestFactory().post('/fake_path')
+        self.request.user = UserFactory()
+
+    @mock.patch('admin.spam.views.SpamDetail.success_url')
+    def test_add_log(self, mock_success_url):
+        form_data = {'confirm': '2'}
+        form = ConfirmForm(data=form_data)
+        nt.assert_true(form.is_valid())
+        view = SpamDetail()
+        view = setup_form_view(
+            view, self.request, form, spam_id=self.comment._id)
+        with transaction.atomic():
+            view.form_valid(form)
+        obj = OSFLogEntry.objects.latest(field_name='action_time')
+        nt.assert_equal(obj.object_id, self.comment._id)
 
 
 class TestUserSpamListView(AdminTestCase):

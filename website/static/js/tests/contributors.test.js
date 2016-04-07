@@ -133,6 +133,11 @@ describe('addContributors', () => {
                    });
 
                    it('should return true with one result addable', (done) => {
+                       vm.results([
+                           {
+                               id: 'c1234'
+                           }
+                       ]);
                        vm.selection([
                            {
                                id: 'b1234'

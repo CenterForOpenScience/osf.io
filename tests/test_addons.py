@@ -29,10 +29,10 @@ from website.util import api_url_for, rubeus
 from website.project import new_private_link
 from website.project.views.node import _view_project as serialize_node
 from website.addons.base import AddonConfig, AddonNodeSettingsBase, views
-from website.addons.github.model import AddonGitHubOauthSettings
 from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory, ProjectFactory
 from website.addons.github.exceptions import ApiError
+from website.addons.github.tests.factories import GitHubAccountFactory
 
 
 class TestAddonConfig(unittest.TestCase):
@@ -93,16 +93,16 @@ class TestAddonAuth(OsfTestCase):
     def configure_addon(self):
         self.user.add_addon('github')
         self.user_addon = self.user.get_addon('github')
-        self.oauth_settings = AddonGitHubOauthSettings(github_user_id='john')
+        self.oauth_settings = GitHubAccountFactory(display_name='john')
         self.oauth_settings.save()
-        self.user_addon.oauth_settings = self.oauth_settings
-        self.user_addon.oauth_access_token = 'secret'
-        self.user_addon.save()
+        self.user.external_accounts.append(self.oauth_settings)
+        self.user.save()
         self.node.add_addon('github', self.auth_obj)
         self.node_addon = self.node.get_addon('github')
         self.node_addon.user = 'john'
         self.node_addon.repo = 'youre-my-best-friend'
         self.node_addon.user_settings = self.user_addon
+        self.node_addon.external_account = self.oauth_settings
         self.node_addon.save()
 
     def build_url(self, **kwargs):
@@ -178,16 +178,16 @@ class TestAddonLogs(OsfTestCase):
     def configure_addon(self):
         self.user.add_addon('github')
         self.user_addon = self.user.get_addon('github')
-        self.oauth_settings = AddonGitHubOauthSettings(github_user_id='john')
+        self.oauth_settings = GitHubAccountFactory(display_name='john')
         self.oauth_settings.save()
-        self.user_addon.oauth_settings = self.oauth_settings
-        self.user_addon.oauth_access_token = 'secret'
-        self.user_addon.save()
+        self.user.external_accounts.append(self.oauth_settings)
+        self.user.save()        
         self.node.add_addon('github', self.auth_obj)
         self.node_addon = self.node.get_addon('github')
         self.node_addon.user = 'john'
         self.node_addon.repo = 'youre-my-best-friend'
         self.node_addon.user_settings = self.user_addon
+        self.node_addon.external_account = self.oauth_settings
         self.node_addon.save()
 
     def build_payload(self, metadata, **kwargs):
@@ -547,7 +547,7 @@ class TestFolder(TestFileNode, models.Folder):
     pass
 
 
-@mock.patch('website.addons.github.model.GitHub.repo', mock.Mock(side_effect=ApiError))
+@mock.patch('website.addons.github.model.GitHubClient.repo', mock.Mock(side_effect=ApiError))
 class TestAddonFileViews(OsfTestCase):
 
     @classmethod
@@ -566,17 +566,14 @@ class TestAddonFileViews(OsfTestCase):
 
         self.user_addon = self.user.get_addon('github')
         self.node_addon = self.project.get_addon('github')
-        self.oauth = AddonGitHubOauthSettings(
-            github_user_id='denbarell',
-            oauth_access_token='Truthy'
-        )
-
+        self.oauth = GitHubAccountFactory()
         self.oauth.save()
 
-        self.user_addon.oauth_settings = self.oauth
-        self.user_addon.save()
+        self.user.external_accounts.append(self.oauth)
+        self.user.save()
 
         self.node_addon.user_settings = self.user_addon
+        self.node_addon.external_account = self.oauth
         self.node_addon.repo = 'Truth'
         self.node_addon.user = 'E'
         self.node_addon.save()

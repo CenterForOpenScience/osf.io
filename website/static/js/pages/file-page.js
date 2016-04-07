@@ -3,6 +3,7 @@ var m = require('mithril');
 var $osf = require('js/osfHelpers');
 var FileViewPage = require('js/filepage');
 var waterbutler = require('js/waterbutler');
+var Raven = require('raven-js');
 
 require('jquery-tagsinput');
 
@@ -22,7 +23,7 @@ $(function() {
             request.fail(function (xhr, textStatus, error) {
                 $osf.growl('Error', 'Could not add tag.');
                 Raven.captureMessage('Failed to add tag', {
-                    tag: tag, url: url, textStatus: textStatus, error: error
+                    extra: { tag: tag, url: url, textStatus: textStatus, error: error }
                 });
             });
         },
@@ -31,7 +32,7 @@ $(function() {
             request.fail(function (xhr, textStatus, error) {
                 $osf.growl('Error', 'Could not remove tag.');
                 Raven.captureMessage('Failed to remove tag', {
-                    tag: tag, url: url, textStatus: textStatus, error: error
+                    extra: { tag: tag, url: tagUrl, textStatus: textStatus, error: error }
                 });
             });
         }

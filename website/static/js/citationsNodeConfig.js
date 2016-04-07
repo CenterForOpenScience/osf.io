@@ -76,9 +76,11 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         request.fail(function(xhr, textStatus, error) {
             self.changeMessage(self.messages.updateAccountsError(), 'text-danger');
             Raven.captureMessage('Could not GET ' + self.addonName + ' accounts for user', {
-                url: self.url,
-                textStatus: textStatus,
-                error: error
+                extra: {
+                    url: self.url,
+                    textStatus: textStatus,
+                    error: error
+                }
             });
             ret.reject(xhr, textStatus, error);
         });
