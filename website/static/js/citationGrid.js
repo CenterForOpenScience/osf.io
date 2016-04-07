@@ -353,7 +353,7 @@ CitationGrid.prototype.updateStyle = function(name, xml) {
     this.styleName = name;
     this.styleXml = xml;
     this.bibliographies = {};
-    this.treebeard.tbController.redraw();
+    this.treebeard.redraw();
 };
 
 CitationGrid.prototype.makeBibliography = function(folder, format) {
