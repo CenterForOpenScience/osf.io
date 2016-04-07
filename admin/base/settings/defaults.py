@@ -5,6 +5,8 @@ Django settings for the admin project.
 import os
 from urlparse import urlparse
 from website import settings as osf_settings
+from django.contrib import messages
+
 # import local  # Build own local.py (used with postgres)
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -24,8 +26,31 @@ ALLOWED_HOSTS = [
     '.osf.io'
 ]
 
+# AUTH_PASSWORD_VALIDATORS available only in Django 1.9
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {
+            'min_length': 5,
+        }
+    },
+]
+
 # Email settings. Account created for testing. Password shouldn't be hardcoded
+# [DEVOPS] this should be set to 'django.core.mail.backends.smtp.EmailBackend' in the > dev local.py.
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# Sendgrid Email Settings - Using OSF credentials.
+# Add settings references to local.py
+
+EMAIL_HOST = osf_settings.MAIL_SERVER
+EMAIL_HOST_USER = osf_settings.MAIL_USERNAME
+EMAIL_HOST_PASSWORD = osf_settings.MAIL_PASSWORD
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
 
 # Application definition
 
@@ -87,6 +112,12 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
 )
+
+MESSAGE_TAGS = {
+    messages.SUCCESS: 'text-success',
+    messages.ERROR: 'text-danger',
+    messages.WARNING: 'text-warning',
+}
 
 TEMPLATES = [
     {

@@ -17,7 +17,7 @@ def home(request):
 
 
 def password_reset_done(request, **kwargs):
-    messages.success(request, 'You have successfully reset your password and activated your admin account. Thank you')
+    messages.success(request, 'You have successfully reset your password and activated your admin account.')
     return redirect('auth:login')
 
 

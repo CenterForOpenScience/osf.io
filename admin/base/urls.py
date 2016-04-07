@@ -1,5 +1,6 @@
 from django.conf.urls import include, url, patterns
 from django.contrib import admin
+from django.core.urlresolvers import reverse_lazy
 from django.views.generic import RedirectView
 
 from settings import ADMIN_BASE
@@ -22,10 +23,19 @@ urlpatterns = [
                          url(r'^users/',
                              include('admin.users.urls', namespace='users')),
                          url(r'^prereg/', include('admin.pre_reg.urls', namespace='pre_reg')),
-                         url(r'^reset/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})/$',
+                         url(r'^accounts/password_reset/$', 'django.contrib.auth.views.password_reset', name='reset_password'),
+                         url(r'^accounts/password_reset/confirm/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})/$',
                             views.password_reset_confirm_custom, name='password_reset_confirm'),
-                         url(r'^reset/done/$', views.password_reset_done,
+                         url(r'^accounts/password_reset/done/$', 'django.contrib.auth.views.password_reset_done', name='password_reset_done'),
+                         url(r'^accounts/password_reset/complete/$',
+                            'django.contrib.auth.views.password_reset_complete',
                             name='password_reset_complete'),
+                         url(r'^accounts/password_change/$',
+                            'django.contrib.auth.views.password_change',
+                            {'post_change_redirect': reverse_lazy('password_change_done')},
+                            name="password_change"),
+                         url(r'^accounts/password_change/done/$',
+                            'django.contrib.auth.views.password_change_done', {'template_name': 'registration/password_change_done.html'}, name='password_change_done'),
                          )
                 )
         ),
