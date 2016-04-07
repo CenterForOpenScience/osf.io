@@ -80,9 +80,11 @@ $.extend(BaseSearchViewModel.prototype, {
         return $.get(self.dataUrl).fail(
             function(xhr, status, error) {
                 Raven.captureMessage('Could not GET autocomplete data', {
-                    url: self.dataUrl,
-                    textStatus: status,
-                    error: error
+                    extra: {
+                        url: self.dataUrl,
+                        textStatus: status,
+                        error: error
+                    }
                 });
             });
     },
