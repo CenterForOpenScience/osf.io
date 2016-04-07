@@ -34,6 +34,9 @@ with open(os.path.join(APP_PATH, 'package.json'), 'r') as fobj:
 EMAIL_TOKEN_EXPIRATION = 24
 CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'static', 'vendor', 'bower_components', 'styles')
 
+# Minimum seconds between forgot password email attempts
+FORGOT_PASSWORD_MINIMUM_TIME = 30
+
 # Hours before pending embargo/retraction/registration automatically becomes active
 RETRACTION_PENDING_TIME = datetime.timedelta(days=2)
 EMBARGO_PENDING_TIME = datetime.timedelta(days=2)
