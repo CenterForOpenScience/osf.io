@@ -83,6 +83,8 @@ var BaseComment = function() {
 
     self.comments = ko.observableArray();
 
+    self.loadingComments = ko.observable(true);
+
     self.replyNotEmpty = ko.pureComputed(function() {
         return notEmpty(self.replyContent());
     });
@@ -601,7 +603,6 @@ var CommentListModel = function(options) {
     self.canComment = ko.observable(options.canComment);
     self.hasChildren = ko.observable(options.hasChildren);
     self.author = options.currentUser;
-    self.loadingComments = ko.observable(true);
 
     self.togglePane = options.togglePane;
 
