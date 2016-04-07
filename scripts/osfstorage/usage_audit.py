@@ -18,7 +18,7 @@ from collections import defaultdict
 import progressbar
 from modularodm import Q
 
-from framework.tasks import app as celery_app
+from framework.celery_tasks import app as celery_app
 
 from website import mails
 from website.models import User

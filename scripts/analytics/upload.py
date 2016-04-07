@@ -2,7 +2,7 @@ import os
 
 from time import sleep
 
-from framework.tasks import app as celery_app
+from framework.celery_tasks import app as celery_app
 from framework.mongo import database
 
 from scripts.analytics import settings

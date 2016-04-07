@@ -22,7 +22,7 @@ from modularodm import Q
 from boto.glacier.layer2 import Layer2
 from pyrax.exceptions import NoSuchObject
 
-from framework.tasks import app as celery_app
+from framework.celery_tasks import app as celery_app
 
 from website.app import init_app
 from website.files import models

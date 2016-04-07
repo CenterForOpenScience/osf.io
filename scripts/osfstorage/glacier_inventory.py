@@ -9,7 +9,7 @@ import datetime
 
 from boto.glacier.layer2 import Layer2
 
-from framework.tasks import app as celery_app
+from framework.celery_tasks import app as celery_app
 
 from scripts import utils as scripts_utils
 from scripts.osfstorage import settings as storage_settings

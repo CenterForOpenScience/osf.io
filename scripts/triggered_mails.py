@@ -5,7 +5,7 @@ from datetime import datetime
 from modularodm import Q
 
 from framework.auth import User
-from framework.tasks import app as celery_app
+from framework.celery_tasks import app as celery_app
 from framework.transactions.context import TokuTransaction
 
 from website.app import init_app

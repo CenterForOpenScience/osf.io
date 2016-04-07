@@ -1,6 +1,6 @@
 import matplotlib
 
-from framework.tasks import app as celery_app
+from framework.celery_tasks import app as celery_app
 
 from website.app import init_app
 

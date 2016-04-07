@@ -13,7 +13,7 @@ from boto.glacier.layer2 import Layer2
 from dateutil.parser import parse as parse_date
 from dateutil.relativedelta import relativedelta
 
-from framework.tasks import app as celery_app
+from framework.celery_tasks import app as celery_app
 
 from website.app import init_app
 from website.files import models

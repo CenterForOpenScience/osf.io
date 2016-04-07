@@ -310,6 +310,7 @@ CELERY_IMPORTS = (
     'website.archiver.tasks',
     'website.search.search',
     'api.caching.tasks',
+    'scripts.populate_new_and_noteworthy_projects',
     'scripts.refresh_box_tokens',
     'scripts.retract_registrations',
     'scripts.embargo_registrations',
@@ -410,12 +411,17 @@ else:
         'analytics': {
             'task': 'scripts.analytics.tasks',
             'schedule': crontab(minute=0, hour=2),  # Daily 2:00 a.m.
-            'kwargs': ()
+            'kwargs': {}
         },
         'analytics-upload': {
             'task': 'scripts.analytics.upload',
             'schedule': crontab(minute=0, hour=6),  # Daily 6:00 a.m.
-            'kwargs': ()
+            'kwargs': {}
+        },
+        'new-and-noteworthy': {
+            'task': 'scripts.populate_new_and_noteworthy_projects',
+            'schedule': crontab(minute=0, hour=2, day_of_week=6),  # Saturday 2:00 a.m.
+            'kwargs': {'dry_run': True}
         }
     }
 

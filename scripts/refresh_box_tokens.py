@@ -8,7 +8,7 @@ import datetime
 from modularodm import Q
 from dateutil.relativedelta import relativedelta
 
-from framework.tasks import app as celery_app
+from framework.celery_tasks import app as celery_app
 
 from scripts import utils as scripts_utils
 
