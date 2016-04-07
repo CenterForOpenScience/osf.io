@@ -136,6 +136,15 @@ class TestUser(base.OsfTestCase):
         )
         assert_equal(list(contributor_to), list(self.user.contributor_to))
 
+    def test_visible_contributor_to_property(self):
+        visible_contributor_to = project.model.Node.find(
+            Q('contributors', 'eq', self.user._id) &
+            Q('is_deleted', 'eq', False) &
+            Q('is_bookmark_collection', 'eq', False) &
+            Q(self.user._id, 'eq', 'visible_contributor_ids')
+        )
+        assert_equal(list(visible_contributor_to), list(self.user.visible_contributor_to))
+
     def test_created_property(self):
         # make sure there's at least one project
         factories.ProjectFactory(creator=self.user)
