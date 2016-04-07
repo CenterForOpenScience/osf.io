@@ -103,8 +103,13 @@ class NodeLogSerializer(JSONAPISerializer):
         type_ = 'logs'
 
     node = RelationshipField(
-        related_view='nodes:node-detail',
+        related_view=lambda n: 'registrations:registration-detail' if getattr(n, 'is_registration', False) else 'nodes:node-detail',
         related_view_kwargs={'node_id': '<node._id>'},
+    )
+
+    original_node = RelationshipField(
+        related_view=lambda n: 'registrations:registration-detail' if getattr(n, 'is_registration', False) else 'nodes:node-detail',
+        related_view_kwargs={'node_id': '<original_node._id>'},
     )
 
     user = RelationshipField(
