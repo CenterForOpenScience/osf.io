@@ -1,5 +1,5 @@
 import httplib
-import urllib.request
+import urllib
 
 from flask import request
 
@@ -33,7 +33,7 @@ def sharelatex_post_user_settings(auth, **kwargs):
         }, httplib.BAD_REQUEST
 
     try:
-        urllib.request.urlopen(sharelatex_url)
+        urllib.urlopen(sharelatex_url)
     except ValueError:
         return {
             'message': ('Invalid URL.\n'
