@@ -75,10 +75,8 @@ var returnTextParams = function (param, text, logObject, view_url) {
 };
 
 var LogText = {
-    controller: function(logObject){
-        var self = this;
-
-        self.userInfoReturned = function(userObject){
+    view : function(ctrl, logObject) {
+        var userInfoReturned = function(userObject){
             if (userObject){
                 if (userObject.data){
                     return true;
@@ -89,13 +87,12 @@ var LogText = {
             }
             return false;
         };
-
-        self.logText = function() {
+        var logText = function() {
             var text = logActions[logObject.attributes.action];
             if (text) {
                 if (text.indexOf('${user}') !== -1) {
                     var userObject = logObject.embeds.user;
-                    if (self.userInfoReturned(userObject)) {
+                    if (userInfoReturned(userObject)) {
                         return text;
                     }
                     else {
@@ -107,13 +104,11 @@ var LogText = {
             }
         return null;
         };
-    },
-    view : function(ctrl, logObject) {
         var message = '';
-        var text = ctrl.logText();
+        var text = logText();
         if(text){
             var list = text.split(/(\${.*?})/);
-            return m('span.osf-log-item',[
+            return m('span.osf-log-item', [
                 list.map(function(piece){
                     if (piece === '') {
                         return m('span');
