@@ -19,6 +19,16 @@ var markdown = require('js/markdown');
 var caret = require('Caret.js');
 var atWho = require('At.js');
 
+var emoji_data = require('json!emojis.json');
+
+var full_emoji_list = [];
+
+for (var emoji_name in emoji_data) {
+  if (emoji_data.hasOwnProperty(emoji_name)) {
+    full_emoji_list.push({name: emoji_name, value: emoji_data[emoji_name]});
+  }
+}
+
 // @ mention prototyping
 var callbacks = {
     beforeInsert: function(value, $li) {
@@ -48,6 +58,14 @@ var plus_config = {
     displayTpl: '<li>${name} <small>${fullName}</small></li>',
     limit: 6,
     callbacks: callbacks
+};
+
+var emoji_config = {
+    at: ':',
+    insertTpl: ':${name}:',
+    displayTpl: '<li>${name} <small>${value}</small></li>',
+    limit: 6,
+    data: full_emoji_list
 };
 
 var input = $('.atwho-input');
@@ -86,7 +104,7 @@ var getContributorList = function(input, nodeId) {
 
 // should only need to do this once
 getContributorList(input, nodeId);
-input.atwho(at_config).atwho(plus_config);
+input.atwho(at_config).atwho(plus_config).atwho(emoji_config);
 
 // Maximum length for comments, in characters
 var MAXLENGTH = 500;
@@ -152,28 +170,36 @@ var BaseComment = function() {
     self.replyMentions = ko.observableArray([]);
 
     self.saveContent = ko.computed(function() {
-        var content = self.replyContent();
+        let content = self.replyContent();
         if (!content) {
-            content = '';
+            return '';
         }
-        var regex = /<span.*?data-atwho-guid="([a-z\d]{5})".*?>((@|\+)[a-zA-Z]+)<\/span>/;
-        var matches = content.match(/<span.*?data-atwho-guid="([a-z\d]{5})".*?>((@|\+)[a-zA-Z]+)<\/span>/g);
-        if (matches) {
-            for (var i = 0; i < matches.length; i++) {
-                let match = regex.exec(matches[i]);
-                let guid = match[1];
-                let mention = match[2];
+        let regexMention = /<span[^>]*?data-atwho-guid="([a-z\d]{5})"[^<]*?>((@|\+)[a-zA-Z]+)<\/span>/;
+        let matchesMention = content.match(/<span[^>]*?data-atwho-guid="([a-z\d]{5})"[^<]*?>((@|\+)[a-zA-Z]+)<\/span>/g);
+        if (matchesMention) {
+            for (let i = 0; i < matchesMention.length; i++) {
+                let matchMention = regexMention.exec(matchesMention[i]);
+                let guid = matchMention[1];
+                let mention = matchMention[2];
                 let url = '/' + guid + '/';
-                content = content.replace(match[0], '['+ mention + '](' + url + ')');
+                content = content.replace(matchMention[0], '['+ mention + '](' + url + ')');
 
                 if (guid && self.replyMentions.indexOf(guid) === -1) {
                     self.replyMentions.push(guid);
                 }
             }
-            return content;
-        } else {
-            return content;
         }
+
+        let regexEmoji = /<span[^>]*?class="atwho-inserted"[^<]*?>(:[a-zA-Z\d_\-\+]+:)<\/span>/;
+        let matchesEmoji = content.match(/<span[^>]*?class="atwho-inserted"[^<]*?>(:[a-zA-Z\d_\-\+]+:)<\/span>/g);
+        if (matchesEmoji) {
+            for (let i = 0; i < matchesEmoji.length; i++) {
+                let matchEmoji = regexEmoji.exec(matchesEmoji[i]);
+                let emoji = matchEmoji[1];
+                content = content.replace(matchEmoji[0], emoji);
+            }
+        }
+        return content;
     });
 
     self.submittingReply = ko.observable(false);
@@ -405,48 +431,64 @@ var CommentModel = function(data, $parent, $root) {
     self.editableContent = ko.computed(function() {
         var content = self.content();
         if (!content) {
-            content = '';
+            return '';
         }
-        var regex = /\[(@|\+)(.*?)\]\(\/([a-z\d]{5})\/\)/;
-        var matches = content.match(/\[(@|\+)(.*?)\]\(\/([a-z\d]{5})\/\)/g);
-        if (matches) {
-            for (var i = 0; i < matches.length; i++) {
-                let match = regex.exec(matches[i]);
-                var atwho = match[1];
-                let guid = match[3];
-                let mention = match[2];
+        var regexMention = /\[(@|\+)(.*?)\]\(\/([a-z\d]{5})\/\)/;
+        var matchesMention = content.match(/\[(@|\+)(.*?)\]\(\/([a-z\d]{5})\/\)/g);
+        if (matchesMention) {
+            for (let i = 0; i < matchesMention.length; i++) {
+                let matchMention = regexMention.exec(matchesMention[i]);
+                let atwho = matchMention[1];
+                let guid = matchMention[3];
+                let mention = matchMention[2];
 
-                content = content.replace(match[0], '<span class="atwho-inserted" data-atwho-guid="'+ guid + '" data-atwho-at-query="' + atwho + '">' + atwho + mention + '</span>');
+                content = content.replace(matchMention[0], '<span class="atwho-inserted" data-atwho-guid="'+ guid + '" data-atwho-at-query="' + atwho + '">' + atwho + mention + '</span>');
             }
-            return content;
-        } else {
-            return content;
         }
+        var regexEmoji = /(:[a-zA-Z/d_\-\+]+:)/;
+        var matchesEmoji = content.match(/(:[a-zA-Z/d_\-\+]+:)/g);
+        if (matchesEmoji) {
+            for (let i = 0; i < matchesEmoji.length; i++) {
+                let matchEmoji = regexEmoji.exec(matchesEmoji[i]);
+                let emoji = matchEmoji[1];
+
+                content = content.replace(matchEmoji[0], '<span class="atwho-inserted" data-atwho-at-query=":">' + emoji + '</span>');
+            }
+        }
+        return content;
+
     });
 
     self.editedContent = ko.computed(function() {
         var content = self.content();
         if (!content) {
-            content = '';
+            return '';
         }
-        var regex = /<span.*?data-atwho-guid="([a-z\d]{5})".*?>((@|\+)[a-zA-Z]+)<\/span>/;
-        var matches = content.match(/<span.*?data-atwho-guid="([a-z\d]{5})".*?>((@|\+)[a-zA-Z]+)<\/span>/g);
-        if (matches) {
-            for (var i = 0; i < matches.length; i++) {
-                let match = regex.exec(matches[i]);
-                let guid = match[1];
-                let mention = match[2];
+        var regexMention = /<span[^>]*?data-atwho-guid="([a-z\d]{5})"[^<]*?>((@|\+)[a-zA-Z]+)<\/span>/;
+        var matchesMention = content.match(/<span[^>]*?data-atwho-guid="([a-z\d]{5})"[^<]*?>((@|\+)[a-zA-Z]+)<\/span>/g);
+        if (matchesMention) {
+            for (let i = 0; i < matchesMention.length; i++) {
+                let matchMention = regexMention.exec(matchesMention[i]);
+                let guid = matchMention[1];
+                let mention = matchMention[2];
                 let url = '/' + guid + '/';
-                content = content.replace(match[0], '['+ mention + '](' + url + ')');
+                content = content.replace(matchMention[0], '['+ mention + '](' + url + ')');
 
                 if (guid && self.replyMentions.indexOf(guid) === -1) {
                     self.replyMentions.push(guid);
                 }
             }
-            return content;
-        } else {
-            return content;
         }
+        var regexEmoji = /<span[^>]*?class="atwho-inserted"[^<]*?>(:[a-zA-Z\d_\-\+]+:)<\/span>/;
+        var matchesEmoji = content.match(/<span[^>]*?class="atwho-inserted"[^<]*?>(:[a-zA-Z\d_\-\+]+:)<\/span>/g);
+        if (matchesEmoji) {
+            for (let i = 0; i < matchesEmoji.length; i++) {
+                let matchEmoji = regexEmoji.exec(matchesEmoji[i]);
+                let emoji = matchEmoji[1];
+                content = content.replace(matchEmoji[0], emoji);
+            }
+        }
+        return content;
     });
 
     self.contentDisplay = ko.observable(markdown.full.render(self.content()));
@@ -515,7 +557,7 @@ CommentModel.prototype.edit = function() {
 
 CommentModel.prototype.autosizeText = function(elm) {
     $(elm).find('textarea').autosize().focus();
-    $(elm).find('.atwho-input').atwho(at_config).atwho(plus_config);
+    $(elm).find('.atwho-input').atwho(at_config).atwho(plus_config).atwho(emoji_config);
 };
 
 CommentModel.prototype.cancelEdit = function() {
