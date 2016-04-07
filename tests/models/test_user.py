@@ -124,6 +124,18 @@ class TestUser(base.OsfTestCase):
         projects_contributed_to = project.model.Node.find(Q('contributors', 'eq', self.user._id))
         assert_equal(list(self.user.contributed), list(projects_contributed_to))
 
+    def test_contributor_to_property(self):
+        # Make sure there's at least one deleted project and bookmark collection
+        factories.ProjectFactory(creator=self.user, is_deleted=True)
+        factories.BookmarkCollectionFactory(creator=self.user)
+
+        contributor_to = project.model.Node.find(
+            Q('contributors', 'eq', self.user._id) &
+            Q('is_deleted', 'eq', False) &
+            Q('is_bookmark_collection', 'eq', False)
+        )
+        assert_equal(list(contributor_to), list(self.user.contributor_to))
+
     def test_created_property(self):
         # make sure there's at least one project
         factories.ProjectFactory(creator=self.user)
