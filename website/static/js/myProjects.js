@@ -153,7 +153,7 @@ NodeFetcher.prototype = {
   },
   fetchChildren: function(parent, link) {
     //TODO Allow suspending of children
-    return m.request({method: 'GET', url: link || parent.relationembedships.children.links.related.href + '?embed=contributors&related_counts=children', config: xhrconfig, background: true})
+    return m.request({method: 'GET', url: link || parent.relationships.children.links.related.href + '?embed=contributors&related_counts=children', config: xhrconfig, background: true})
       .then(this._childrenSuccess.bind(this, parent), this._fail.bind(this));
   },
   _success: function(results) {
