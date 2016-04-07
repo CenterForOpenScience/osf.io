@@ -105,8 +105,14 @@ class OsfStorageFileNode(FileNode):
 
     def check_in_or_out(self, user, checkout, save=False):
         """
-        Updates self.checkout with the requesting user or None if user has permission
-        to check out file or folder. Adds log to self.node.
+        Updates self.checkout with the requesting user or None,
+        iff user has permission to check out file or folder.
+        Adds log to self.node.
+
+
+        :param user:        User making the request
+        :param checkout:    Either the same user or None, depending on in/out-checking
+        :param save:        Whether or not to save the user
         """
         if (self.is_checked_out and self.checkout != user and 'admin' not in self.node.permissions.get(user._id, []))\
            or user._id not in self.node.permissions.keys() or 'write' not in self.node.permissions.get(user._id, []):
