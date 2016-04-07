@@ -78,6 +78,7 @@ def forgot_password_post():
                           'should have, please contact OSF Support. ').format(email)
         user_obj = get_user(email=email)
         if user_obj:
+            #TODO: Remove this rate limiting and replace it with something that doesn't write to the User model
             now = datetime.datetime.utcnow()
             last_attempt = user_obj.forgot_password_last_post or now - datetime.timedelta(seconds=FORGOT_PASSWORD_MINIMUM_TIME)
             user_obj.forgot_password_last_post = now
