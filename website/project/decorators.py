@@ -88,7 +88,7 @@ def must_be_valid_project(func=None, retractions_valid=False):
 
             if getattr(kwargs['node'], 'is_collection', True):
                 raise HTTPError(
-                    http.BAD_REQUEST,
+                    http.NOT_FOUND,
                     data=dict(message_long='Viewing collections is not permitted')
                 )
 
