@@ -884,15 +884,14 @@ class TestForgotAndResetPasswordViews(OsfTestCase):
         self.user.verification_key = self.key
         self.user.save()
 
-        self.reset_url = web_url_for('reset_password', verification_key=self.key)
-        self.forgot_url = web_url_for('forgot_password_post')
+        self.url = web_url_for('reset_password', verification_key=self.key)
 
     def test_reset_password_view_returns_200(self):
-        res = self.app.get(self.reset_url)
+        res = self.app.get(self.url)
         assert_equal(res.status_code, 200)
 
     def test_can_reset_password_if_form_success(self):
-        res = self.app.get(self.reset_url)
+        res = self.app.get(self.url)
         form = res.forms['resetPasswordForm']
         form['password'] = 'newpassword'
         form['password2'] = 'newpassword'
@@ -906,7 +905,7 @@ class TestForgotAndResetPasswordViews(OsfTestCase):
     def test_reset_password_logs_out_user(self):
         another_user = AuthUserFactory()
         # visits reset password link while another user is logged in
-        res = self.app.get(self.reset_url, auth=another_user.auth)
+        res = self.app.get(self.url, auth=another_user.auth)
         assert_equal(res.status_code, 200)
         # We check if another_user is logged in by checking if
         # their full name appears on the page (it should be in the navbar).
@@ -914,18 +913,6 @@ class TestForgotAndResetPasswordViews(OsfTestCase):
         assert_not_in(another_user.fullname, res)
         # make sure the form is on the page
         assert_true(res.forms['resetPasswordForm'])
-
-    def test_submit_forgot_password(self):
-        header = {'email': self.user.username}
-        res = self.app.post_json(self.forgot_url, header)
-        assert_equal(res.status_code, 200)
-
-    def test_cannot_submit_forgot_password_twice(self):
-        header = {'email': self.user.username}
-        res = self.app.post_json(self.forgot_url, header)
-        assert_equal(res.status_code, 200)
-        res = self.app.post_json(self.forgot_url, header)
-        assert_equal(res.status_code, 400)
 
 class TestAUserProfile(OsfTestCase):
 
