@@ -67,7 +67,7 @@ def s3_add_user_account(auth, **kwargs):
 
     if not (access_key and secret_key):
         return {
-            'message': ('All the fields above are required.')
+            'message': 'All the fields above are required.'
         }, httplib.BAD_REQUEST
 
     user_info = utils.get_user_info(access_key, secret_key)
@@ -122,11 +122,11 @@ def s3_set_config(node, auth, user_addon, node_addon, **kwargs):
     """Saves selected bucket to node settings."""
     # Fail if user settings not authorized
     if not user_addon.has_auth:
-        raise HTTPError(httplib.BAD_REQUEST)
+        raise HTTPError(httplib.UNAUTHORIZED)
 
     # If authorized, only owner can change settings
     if node_addon.has_auth and node_addon.user_settings.owner != auth.user:
-        raise HTTPError(httplib.BAD_REQUEST)
+        raise HTTPError(httplib.FORBIDDEN)
 
     # Claiming the node settings
     if not node_addon.user_settings:
@@ -157,14 +157,14 @@ def create_bucket(auth, node_addon, **kwargs):
         return {
             'message': 'That bucket name is not valid.',
             'title': 'Invalid bucket name',
-        }, httplib.NOT_ACCEPTABLE
+        }, httplib.BAD_REQUEST
 
     # Get location and verify it is valid
     if not utils.validate_bucket_location(bucket_location):
         return {
             'message': 'That bucket location is not valid.',
             'title': 'Invalid bucket location',
-        }, httplib.NOT_ACCEPTABLE
+        }, httplib.BAD_REQUEST
 
     try:
         utils.create_bucket(node_addon, bucket_name, bucket_location)
@@ -172,17 +172,17 @@ def create_bucket(auth, node_addon, **kwargs):
         return {
             'message': e.message,
             'title': 'Problem connecting to S3',
-        }, httplib.NOT_ACCEPTABLE
+        }, httplib.BAD_REQUEST
     except exception.S3CreateError as e:
         return {
             'message': e.message,
             'title': "Problem creating bucket '{0}'".format(bucket_name),
-        }, httplib.NOT_ACCEPTABLE
+        }, httplib.BAD_REQUEST
     except exception.BotoClientError as e:  # Base class catchall
         return {
             'message': e.message,
             'title': 'Error connecting to S3',
-        }, httplib.NOT_ACCEPTABLE
+        }, httplib.BAD_REQUEST
 
     return {
         'buckets': utils.get_bucket_names(node_addon)
