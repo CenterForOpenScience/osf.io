@@ -189,32 +189,27 @@
                         "id": "question1c",
                         "description": "the relevant variables and how they are calculated;",
                         "type": "string",
-                        "format": "textarea",
-                        "required": true
+                        "format": "textarea"
                     }, {
                         "id": "question2c",
                         "description": "the statistical technique;",
                         "type": "string",
-                        "format": "textarea",
-                        "required": true
+                        "format": "textarea"
                     }, {
                         "id": "question3c",
                         "description": "each variable’s role in the technique (e.g., IV, DV, moderator, mediator, covariate);",
                         "type": "string",
-                        "format": "textarea",
-                        "required": true
+                        "format": "textarea"
                     }, {
                         "id": "question4c",
                         "description": "rationale for each covariate used, if any;",
                         "type": "string",
-                        "format": "textarea",
-                        "required": true
+                        "format": "textarea"
                     }, {
                         "id": "question5c",
                         "description": "if using techniques other than null hypothesis testing (for example, Bayesian statistics), describe your criteria and inputs toward making an evidential conclusion, including prior values or distributions.",
                         "type": "string",
-                        "format": "textarea",
-                        "required": true
+                        "format": "textarea"
                     }]
                 }, {
                     "id": "third",
@@ -224,32 +219,27 @@
                         "id": "question1c",
                         "description": "the relevant variables and how they are calculated;",
                         "type": "string",
-                        "format": "textarea",
-                        "required": true
+                        "format": "textarea"                        
                     }, {
                         "id": "question2c",
                         "description": "the statistical technique;",
                         "type": "string",
-                        "format": "textarea",
-                        "required": true
+                        "format": "textarea"                        
                     }, {
                         "id": "question3c",
                         "description": "each variable’s role in the technique (e.g., IV, DV, moderator, mediator, covariate);",
                         "type": "string",
-                        "format": "textarea",
-                        "required": true
+                        "format": "textarea"                        
                     }, {
                         "id": "question4c",
                         "description": "rationale for each covariate used, if any;",
                         "type": "string",
-                        "format": "textarea",
-                        "required": true
+                        "format": "textarea"                        
                     }, {
                         "id": "question5c",
                         "description": "if using techniques other than null hypothesis testing (for example, Bayesian statistics), describe your criteria and inputs toward making an evidential conclusion, including prior values or distributions.",
                         "type": "string",
-                        "format": "textarea",
-                        "required": true
+                        "format": "textarea"                        
                     }]
                 }, {
                     "id": "fourth",
@@ -259,32 +249,27 @@
                         "id": "question1c",
                         "description": "the relevant variables and how they are calculated;",
                         "type": "string",
-                        "format": "textarea",
-                        "required": true
+                        "format": "textarea"
                     }, {
                         "id": "question2c",
                         "description": "the statistical technique;",
                         "type": "string",
-                        "format": "textarea",
-                        "required": true
+                        "format": "textarea"
                     }, {
                         "id": "question3c",
                         "description": "each variable’s role in the technique (e.g., IV, DV, moderator, mediator, covariate);",
                         "type": "string",
-                        "format": "textarea",
-                        "required": true
+                        "format": "textarea"
                     }, {
                         "id": "question4c",
                         "description": "rationale for each covariate used, if any;",
                         "type": "string",
-                        "format": "textarea",
-                        "required": true
+                        "format": "textarea"
                     }, {
                         "id": "question5c",
                         "description": "if using techniques other than null hypothesis testing (for example, Bayesian statistics), describe your criteria and inputs toward making an evidential conclusion, including prior values or distributions.",
                         "type": "string",
-                        "format": "textarea",
-                        "required": true
+                        "format": "textarea"
                     }]
                 }, {
                     "id": "further",
@@ -294,32 +279,27 @@
                         "id": "question1c",
                         "description": "the relevant variables and how they are calculated;",
                         "type": "string",
-                        "format": "textarea",
-                        "required": true
+                        "format": "textarea"
                     }, {
                         "id": "question2c",
                         "description": "the statistical technique;",
                         "type": "string",
-                        "format": "textarea",
-                        "required": true
+                        "format": "textarea"
                     }, {
                         "id": "question3c",
                         "description": "each variable’s role in the technique (e.g., IV, DV, moderator, mediator, covariate);",
                         "type": "string",
-                        "format": "textarea",
-                        "required": true
+                        "format": "textarea"
                     }, {
                         "id": "question4c",
                         "description": "rationale for each covariate used, if any;",
                         "type": "string",
-                        "format": "textarea",
-                        "required": true
+                        "format": "textarea"
                     }, {
                         "id": "question5c",
                         "description": "if using techniques other than null hypothesis testing (for example, Bayesian statistics), describe your criteria and inputs toward making an evidential conclusion, including prior values or distributions.",
                         "type": "string",
-                        "format": "textarea",
-                        "required": true
+                        "format": "textarea"
                     }]
                 }
             ]
