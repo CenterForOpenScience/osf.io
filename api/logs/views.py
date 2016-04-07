@@ -115,6 +115,10 @@ class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView, LogMixin):
 
     The node this log belongs to.
 
+    ###Original Node
+
+    The node this log pertains to.
+
     ###User
 
     The user who performed the logged action.
