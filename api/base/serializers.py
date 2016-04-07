@@ -392,9 +392,12 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         """
         kwargs = {attr_name: self.lookup_attribute(resource, attr) for (attr_name, attr) in
                   self.lookup_url_kwarg.items()}
+        view = self.view_name
+        if callable(self.view_name):
+            view = view(getattr(resource, field_name))
         return resolve(
             reverse(
-                self.view_name,
+                view,
                 kwargs=kwargs
             )
         )
