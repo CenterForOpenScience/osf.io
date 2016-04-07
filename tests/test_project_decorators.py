@@ -73,9 +73,9 @@ class TestValidProject(OsfTestCase):
         res = as_factory_allow_retractions(pid=self.project._id)
         assert_equal(res['node'], self.project)
 
-    def test_collection_guid_bad_request(self):
+    def test_collection_guid_not_found(self):
         collection = CollectionFactory()
         collection.add_pointer(self.project, self.auth)
         with assert_raises(HTTPError) as exc_info:
             valid_project_helper(pid=collection._id, nid=collection._id)
-        assert_equal(exc_info.exception.code, 400)
+        assert_equal(exc_info.exception.code, 404)
