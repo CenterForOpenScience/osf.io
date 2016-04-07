@@ -11,9 +11,7 @@ from api.logs.permissions import (
 )
 
 from api.base.filters import ODMFilterMixin
-from api.base.utils import get_user_auth
 from api.base import permissions as base_permissions
-from api.nodes.serializers import NodeSerializer
 from api.users.serializers import UserSerializer
 from api.logs.serializers import NodeLogSerializer
 from api.base.views import JSONAPIBaseView
@@ -35,107 +33,95 @@ class LogMixin(object):
         return log
 
 
-class LogNodeList(JSONAPIBaseView, generics.ListAPIView, LogMixin, ODMFilterMixin):
-    """List of nodes that a given log is associated with. *Read-only*.
-
-    Paginated list of nodes that the user contributes to.  Each resource contains the full representation of the node,
-    meaning additional requests to an individual node's detail view are not necessary. If the user id in the path is the
-    same as the logged-in user, all nodes will be visible.  Otherwise, you will only be able to see the other user's
-    publicly-visible nodes.  The special user id `me` can be used to represent the currently logged-in user.
-
-    ##Node Attributes
-
-    <!--- Copied Attributes from NodeDetail -->
-
-    OSF Node entities have the "nodes" `type`.
-
-        name           type               description
-        =================================================================================
-        title          string             title of project or component
-        description    string             description of the node
-        category       string             node category, must be one of the allowed values
-        date_created   iso8601 timestamp  timestamp that the node was created
-        date_modified  iso8601 timestamp  timestamp when the node was last updated
-        tags           array of strings   list of tags that describe the node
-        registration   boolean            has this project been registered?
-        collection     boolean            is this node a collection of other nodes?
-        public         boolean            has this node been made publicly-visible?
-
-    ##Links
-
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
-
-    ##Actions
-
-    *None*.
-
-    ##Query Params
-
-    + `page=<Int>` -- page number of results to view, default 1
-
-    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
-
-    <!--- Copied Query Params from NodeList -->
-
-    Nodes may be filtered by their `title`, `category`, `description`, `public`, `registration`, or `tags`.  `title`,
-    `description`, and `category` are string fields and will be filtered using simple substring matching.  `public` and
-    `registration` are booleans, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note
-    that quoting `true` or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
-
-    #This Request/Response
-
-    """
-
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope,
-        ContributorOrPublicForLogs
-    )
-
-    required_read_scopes = [CoreScopes.NODE_LOG_READ]
-    required_write_scopes = [CoreScopes.NULL]
-
-    serializer_class = NodeSerializer
-    view_category = 'logs'
-    view_name = 'log-nodes'
-    order = ('-date', )
-
-    def get_queryset(self):
-        log = self.get_log()
-        auth_user = get_user_auth(self.request)
-        return [
-            node for node in log.node__logged
-            if node.can_view(auth_user) and not node.is_deleted and not node.is_registration
-        ]
-
-
 class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView, LogMixin):
-    """List of nodes that a given log is associated with. *Read-only*.
+    """Details about a given Node Log. *Read-only*.
 
-    Paginated list of nodes that the user contributes to.  Each resource contains the full representation of the node,
-    meaning additional requests to an individual node's detail view are not necessary. If the user id in the path is the
-    same as the logged-in user, all nodes will be visible.  Otherwise, you will only be able to see the other user's
-    publicly-visible nodes.  The special user id `me` can be used to represent the currently logged-in user.
+     On the front end, logs show record and show actions done on the OSF. The complete list of loggable actions (in the format {identifier}: {description}) is as follows:
 
-    Note that if an anonymous view_only key is being used, the user relationship will not be exposed.
+    * 'project_created': A Node is created
+    * 'project_registered': A Node is registered
+    * 'project_deleted': A Node is deleted
+    * 'created_from': A Node is created using an existing Node as a template
+    * 'pointer_created': A Pointer is created
+    * 'pointer_forked': A Pointer is forked
+    * 'pointer_removed': A Pointer is removed
+    ---
+    * 'made_public': A Node is made public
+    * 'made_private': A Node is made private
+    * 'tag_added': A tag is added to a Node
+    * 'tag_removed': A tag is removed from a Node
+    * 'edit_title': A Node's title is changed
+    * 'edit_description': A Node's description is changed
+    * 'updated_fields': One or more of a Node's fields are changed
+    * 'external_ids_added': An external identifier is added to a Node (e.g. DOI, ARK)
+    ---
+    * 'contributor_added': A Contributor is added to a Node
+    * 'contributor_removed': A Contributor is removed from a Node
+    * 'contributors_reordered': A Contributor's position is a Node's biliography is changed
+    * 'permissions_update': A Contributor's permissions on a Node are changed
+    * 'made_contributor_visible': A Contributor is made bibliographically visible on a Node
+    * 'made_contributor_invisible': A Contributor is made bibliographically invisible on a Node
+    ---
+    * 'wiki_updated': A Node's wiki is updated
+    * 'wiki_deleted': A Node's wiki is deleted
+    * 'wiki_renamed': A Node's wiki is renamed
+    * 'made_wiki_public': A Node's wiki is made public
+    * 'made_wiki_private': A Node's wiki is made private
+    ---
+    * 'addon_added': An add-on is linked to a Node
+    * 'addon_removed': An add-on is unlinked from a Node
+    * 'addon_file_moved': A File in a Node's linked add-on is moved
+    * 'addon_file_copied': A File in a Node's linked add-on is copied
+    * 'addon_file_renamed': A File in a Node's linked add-on is renamed
+    * 'folder_created': A Folder is created in a Node's linked add-on
+    * 'file_added': A File is added to a Node's linked add-on
+    * 'file_updated': A File is updated on a Node's linked add-on
+    * 'file_removed': A File is removed from a Node's linked add-on
+    * 'file_restored': A File is restored in a Node's linked add-on
+    ---
+    * 'comment_added': A Comment is added to some item
+    * 'comment_removed': A Comment is removed from some item
+    * 'comment_updated': A Comment is updated on some item
+    ---
+    * 'embargo_initiated': An embargoed Registration is proposed on a Node
+    * 'embargo_approved': A proposed Embargo of a Node is approved
+    * 'embargo_cancelled': A proposed Embargo of a Node is cancelled
+    * 'embargo_completed': A proposed Embargo of a Node is completed
+    * 'retraction_initiated': A Retraction of a Registration is proposed
+    * 'retraction_approved': A Retraction of a Registration is approved
+    * 'retraction_cancelled': A Retraction of a Registration is cancelled
+    * 'registration_initiated': A Registration of a Node is proposed
+    * 'registration_approved': A proposed Registration is approved
+    * 'registration_cancelled': A proposed Registration is cancelled
+    ---
+    * 'node_created': A Node is created (_deprecated_)
+    * 'node_forked': A Node is forked (_deprecated_)
+    * 'node_removed': A Node is deleted (_deprecated_)
 
-    ##Node Attributes
+   ##Log Attributes
 
-    <!--- Copied Attributes from NodeDetail -->
+    <!--- Copied Attributes from LogList -->
 
-    OSF Node entities have the "nodes" `type`.
+    OSF Log entities have the "logs" `type`.
 
-        name           type               description
-        =================================================================================
-        title          string             title of project or component
-        description    string             description of the node
-        category       string             node category, must be one of the allowed values
-        date_created   iso8601 timestamp  timestamp that the node was created
-        date_modified  iso8601 timestamp  timestamp when the node was last updated
-        tags           array of strings   list of tags that describe the node
-        registration   boolean            has this project been registered?
-        collection     boolean            is this node a collection of other nodes?
-        public         boolean            has this node been made publicly-visible?
+        name           type                   description
+        ----------------------------------------------------------------------------
+        date           iso8601 timestamp      timestamp of Log creation
+        action         string                 Log action (see list above)
+
+    ##Relationships
+
+    ###Node
+
+    The node this log belongs to.
+
+    ###Original Node
+
+    The node this log pertains to.
+
+    ###User
+
+    The user who performed the logged action.
 
     ##Links
 
@@ -147,16 +133,9 @@ class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView, LogMixin):
 
     ##Query Params
 
-    + `page=<Int>` -- page number of results to view, default 1
+    <!--- Copied Query Params from LogList -->
 
-    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
-
-    <!--- Copied Query Params from NodeList -->
-
-    Nodes may be filtered by their `title`, `category`, `description`, `public`, `registration`, or `tags`.  `title`,
-    `description`, and `category` are string fields and will be filtered using simple substring matching.  `public` and
-    `registration` are booleans, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note
-    that quoting `true` or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
+    Logs may be filtered by their `action` and `date`.
 
     #This Request/Response
 

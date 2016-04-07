@@ -52,7 +52,7 @@ var DEFAULT_ERROR_MESSAGE = 'Request failed.';
 function captureError(message, callback) {
     return function(xhr, status, error) {
         Raven.captureMessage(message || DEFAULT_ERROR_MESSAGE, {
-            xhr: xhr, status: status, error: error
+            extra: { xhr: xhr, status: status, error: error }
         });
         // Additional error-handling
         callback && callback(xhr, status, error);

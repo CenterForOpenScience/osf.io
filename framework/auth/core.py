@@ -286,10 +286,7 @@ class User(GuidStoredObject, AddonModelMixin):
     contributor_added_email_records = fields.DictionaryField(default=dict)
 
     # The user into which this account was merged
-    merged_by = fields.ForeignField('user',
-                                    default=None,
-                                    backref='merged',
-                                    index=True)
+    merged_by = fields.ForeignField('user', default=None, index=True)
 
     # verification key used for resetting password
     verification_key = fields.StringField()
@@ -334,15 +331,13 @@ class User(GuidStoredObject, AddonModelMixin):
                                            index=True)
 
     # watched nodes are stored via a list of WatchConfigs
-    watched = fields.ForeignField("WatchConfig", list=True, backref="watched")
+    watched = fields.ForeignField("WatchConfig", list=True)
 
-    # list of users recently added to nodes as a contributor
-    recently_added = fields.ForeignField("user", list=True, backref="recently_added")
+    # list of collaborators that this user recently added to nodes as a contributor
+    recently_added = fields.ForeignField("user", list=True)
 
     # Attached external accounts (OAuth)
-    external_accounts = fields.ForeignField("externalaccount",
-                                            list=True,
-                                            backref="connected")
+    external_accounts = fields.ForeignField("externalaccount", list=True)
 
     # CSL names
     given_name = fields.StringField()
@@ -1169,7 +1164,12 @@ class User(GuidStoredObject, AddonModelMixin):
         """
         for each in self.watched:
             if watch_config.node._id == each.node._id:
-                each.__class__.remove_one(each)
+                from framework.transactions.context import TokuTransaction  # Avoid circular import
+                with TokuTransaction():
+                    # Ensure that both sides of the relationship are removed
+                    each.__class__.remove_one(each)
+                    self.watched.remove(each)
+                    self.save()
                 return None
         raise ValueError('Node not being watched.')
 
@@ -1197,9 +1197,9 @@ class User(GuidStoredObject, AddonModelMixin):
             # The first 4 bytes of Mongo's ObjectId encodes time
             # This prevents having to load each Log Object and access their
             # date fields
-            node_log_ids = [log_id for log_id in config.node.logs._to_primary_keys()
-                                   if bson.ObjectId(log_id).generation_time > since_date and
-                                   log_id not in log_ids]
+            node_log_ids = [log.pk for log in config.node.logs
+                                   if bson.ObjectId(log.pk).generation_time > since_date and
+                                   log.pk not in log_ids]
             # Log ids in reverse chronological order
             log_ids = _merge_into_reversed(log_ids, node_log_ids)
         return (l_id for l_id in log_ids)
