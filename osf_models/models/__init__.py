@@ -4,4 +4,5 @@ from osf_models.models.node import Node  # noqa
 from osf_models.models.user import User  # noqa
 from osf_models.models.registration import Registration  # noqa
 from osf_models.models.collection import Collection  # noqa
+from osf_models.models.nodelog import NodeLog  # noqa
 
