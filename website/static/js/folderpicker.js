@@ -198,7 +198,7 @@ function FolderPicker(selector, opts) {
     self.options.rootName = opts.rootName;
 
     // Start up the grid
-    self.grid = new Treebeard(self.options).tbController;
+    self.grid = new Treebeard(self.options);
 }
 
 FolderPicker.prototype.destroy = function() {

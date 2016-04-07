@@ -320,7 +320,19 @@ Question.prototype.toggleExample = function() {
 };
 
 Question.prototype.validationInfo = function() {
-    return ko.validation.group(this, {deep: true})();
+    var errors = ko.validation.group(this, {deep: true})();
+
+    var errorSet = ko.utils.arrayGetDistinctValues(errors);
+    var finalErrorSet = [];
+    $.each(errorSet, function(_, error) {
+        if (errors.indexOf(error) !== errors.lastIndexOf(error)) {
+            finalErrorSet.push(VALIDATOR_LOOKUP[error].messagePlural);
+        }
+        else {
+            finalErrorSet.push(error);
+        }
+    });
+    return ko.utils.arrayGetDistinctValues(finalErrorSet);
 };
 
 /**
@@ -370,17 +382,7 @@ var Page = function(schemaPage, schemaData) {
             return Boolean(errors);
         });
 
-        var errorSet = ko.utils.arrayGetDistinctValues(errors);
-        var finalErrorSet = [];
-        $.each(errorSet, function(_, error) {
-            if (errors.indexOf(error) !== errors.lastIndexOf(error)) {
-                finalErrorSet.push(VALIDATOR_LOOKUP[error].messagePlural);
-            }
-            else {
-                finalErrorSet.push(error);
-            }
-        });
-        return finalErrorSet;
+        return ko.utils.arrayGetDistinctValues(errors);
     }, {deferEvaluation: true});
 
     self.hasValidationInfo = ko.computed(function() {
@@ -677,10 +679,6 @@ Draft.prototype.registerWithoutReview = function() {
         }
     });
 };
-Draft.prototype.onRegisterFail = bootbox.alert.bind(null, {
-    title: 'Registration failed',
-    message: language.registerFail
-});
 Draft.prototype.register = function(url, data) {
     var self = this;
 
@@ -693,9 +691,20 @@ Draft.prototype.register = function(url, data) {
             }
         })
         .fail(function() {
-            self.onRegisterFail();
+            bootbox.alert({
+                title: 'Registration failed',
+                message: language.registerFail,
+                callback: function() {
+                    $osf.unblock();
+                    if (self.urls.registrations) {
+                        window.location.assign(self.urls.registrations);
+                    }
+                }
+            });
         })
-        .always($osf.unblock);
+        .always(function() {
+            $osf.unblock();
+        });
     return request;
 };
 Draft.prototype.submitForReview = function() {
@@ -901,7 +910,7 @@ RegistrationEditor.prototype.init = function(draft) {
             return self.draft().updated;
         }
         else {
-            return 'never';            
+            return 'never';
         }
     });
 

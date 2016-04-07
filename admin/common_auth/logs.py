@@ -1,5 +1,6 @@
-from django.contrib.admin.models import LogEntry, CHANGE, LogEntryManager
+from django.contrib.admin.models import LogEntry, LogEntryManager
 
+UNKNOWN = 0
 ACCEPT_PREREG = 10
 REJECT_PREREG = 11
 COMMENT_PREREG = 12
@@ -7,8 +8,12 @@ COMMENT_PREREG = 12
 CONFIRM_SPAM = 20
 CONFIRM_HAM = 21
 
+NODE_REMOVED = 30
+NODE_RESTORED = 31
+CONTRIBUTOR_REMOVED = 32
 
-def update_admin_log(user_id, object_id, object_repr, message, action_flag=CHANGE):
+
+def update_admin_log(user_id, object_id, object_repr, message, action_flag=UNKNOWN):
     OSFLogEntry.objects.log_action(
         user_id=user_id,
         content_type_id=None,
