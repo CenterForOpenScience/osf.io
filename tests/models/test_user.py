@@ -305,6 +305,7 @@ class TestUserMerging(base.OsfTestCase):
             'date_last_login',
             'date_registered',
             'family_name',
+            'forgot_password_last_post',
             'fullname',
             'given_name',
             'is_claimed',
