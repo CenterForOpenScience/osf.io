@@ -10,3 +10,5 @@ boto==2.30.0
 newrelic==2.60.0.46
 # uwsgi
 uwsgi==2.0.12
+# Scripts
+progressbar==2.3
