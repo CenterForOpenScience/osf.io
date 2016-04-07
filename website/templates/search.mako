@@ -64,7 +64,7 @@
                         </div>
                         <br />
                         <!-- /ko -->
-                        <div class="row" class="hidden-xs" data-bind="if: showLicenses" class="row">
+                        <div class="row hidden-xs" data-bind="if: showLicenses">
                             <div class="col-md-12">
                                 <h4> Filter by license:</h4>
                                 <span data-bind="if: licenses">
@@ -119,7 +119,6 @@
             <h4><a data-bind="attr: {href: id.url}, text: title"></a></h4>
         <!-- /ko -->
 
-        <!-- TODO: Add a "trimText" filter to replace the one we're losing from KO.punches; this display value should be a 500 char max limit-->
         <h5>Description: <small data-bind="fitText: {text: description || 'No Description', length: 500}"></small></h5>
 
         <!-- ko if: contributors.length > 0 -->
@@ -251,7 +250,7 @@
         </p>
         <!-- /ko -->
       <!-- ko if: primary_institution -->
-        <p><strong>Primary institution:</strong> {{ primary_institution }} </p>
+        <p><strong>Primary institution:</strong> <span data-bind="text: primary_institution"></span></p>
         <!-- /ko -->
         <!-- ko if: tags.length > 0 -->
         <div data-bind="template: 'tag-cloud'"></div>
