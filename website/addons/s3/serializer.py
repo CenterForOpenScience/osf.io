@@ -19,20 +19,19 @@ class S3Serializer(OAuthAddonSerializer):
             'create': node.api_url_for('s3_add_user_account'),
             'deauthorize': node.api_url_for('s3_deauthorize_node'),
             'bucket_list': node.api_url_for('s3_folder_list'),
-            'set_bucket': node.api_url_for('s3_get_config'),
+            'set_bucket': node.api_url_for('s3_set_config'),
             'files': node.web_url_for('collect_file_trees'),
         }
         if user_settings:
             result['owner'] = web_url_for('profile_view_id',
-                uid=user_settings.owner._primary_key)
+                uid=user_settings.owner._id)
         return result
 
     def credentials_are_valid(self, user_settings):
         if user_settings:
-            if len(user_settings.external_accounts) < 1:
-                return False
-            return any([utils.can_list(account.oauth_key, account.oauth_secret)
-                for account in user_settings.external_accounts])
+            for account in user_settings.external_accounts:
+                if utils.can_list(account.oauth_key, account.oauth_secret):
+                    return True
         return False
 
     def serialize_settings(self, node_settings, current_user, client=None):
