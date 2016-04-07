@@ -774,7 +774,7 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     # overrides ListAPIView
     # TODO: Filter out retractions by default
     def get_queryset(self):
-        nodes = self.get_node().node__registrations
+        nodes = self.get_node().registrations_all
         auth = get_user_auth(self.request)
         registrations = [node for node in nodes if node.can_view(auth)]
         return registrations

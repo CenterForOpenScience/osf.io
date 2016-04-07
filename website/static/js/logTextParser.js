@@ -7,6 +7,7 @@ var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
 var logActions = require('json!js/_allLogTexts.json');
 var $ = require('jquery');  // jQuery
 var $osf = require('js/osfHelpers');
+var Raven = require('raven-js');
 
 var ravenMessagesCache = []; // Cache messages to avoid sending multiple times in one page view
 /**
@@ -16,7 +17,7 @@ var ravenMessagesCache = []; // Cache messages to avoid sending multiple times i
  */
 function ravenMessage (message, logObject) {
     if(ravenMessagesCache.indexOf(message) === -1){
-        Raven.captureMessage(message, {logObject: logObject});
+        Raven.captureMessage(message, {extra: {logObject: logObject}});
         ravenMessagesCache.push(message);
     }
 }
@@ -75,10 +76,8 @@ var returnTextParams = function (param, text, logObject, view_url) {
 };
 
 var LogText = {
-    controller: function(logObject){
-        var self = this;
-
-        self.userInfoReturned = function(userObject){
+    view : function(ctrl, logObject) {
+        var userInfoReturned = function(userObject){
             if (userObject){
                 if (userObject.data){
                     return true;
@@ -89,13 +88,12 @@ var LogText = {
             }
             return false;
         };
-
-        self.logText = function() {
+        var logText = function() {
             var text = logActions[logObject.attributes.action];
             if (text) {
                 if (text.indexOf('${user}') !== -1) {
                     var userObject = logObject.embeds.user;
-                    if (self.userInfoReturned(userObject)) {
+                    if (userInfoReturned(userObject)) {
                         return text;
                     }
                     else {
@@ -107,13 +105,11 @@ var LogText = {
             }
         return null;
         };
-    },
-    view : function(ctrl, logObject) {
         var message = '';
-        var text = ctrl.logText();
+        var text = logText();
         if(text){
             var list = text.split(/(\${.*?})/);
-            return m('span.osf-log-item',[
+            return m('span.osf-log-item', [
                 list.map(function(piece){
                     if (piece === '') {
                         return m('span');
