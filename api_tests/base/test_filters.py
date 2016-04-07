@@ -240,7 +240,7 @@ class TestODMOrderingFilter(ApiTestCase):
         def __str__(self):
             return self.title
 
-    class queryn:
+    class query_with_num:
         title = ' '
         number = 0
         def __init__(self, title, number):
@@ -249,23 +249,45 @@ class TestODMOrderingFilter(ApiTestCase):
         def __str__(self):
             return self.title
 
-    def test_filter_queryset_fails(self):
-        query_s = [self.query(x) for x in 'NewProj Zip Proj Activity'.split()]
-        sort_q = sorted(query_s, cmp=filters.sort_multiple(['-title']))
-        sortt = [str(i) for i in sort_q]
-        assert_equal((sortt) , ['Zip', 'Proj', 'NewProj', 'Activity'])
+
+    def test_filter_queryset_forward(self):
+        query_to_be_sorted = [self.query(x) for x in 'NewProj Zip Proj Activity'.split()]
+        sorted_query = sorted(query_to_be_sorted, cmp=filters.sort_multiple(['title']))
+        sorted_output = [str(i) for i in sorted_query]
+        assert_equal((sorted_output) , ['Activity', 'NewProj', 'Proj', 'Zip'])
+
+
+    def test_filter_queryset_forward_duplicate(self):
+        query_to_be_sorted = [self.query(x) for x in 'NewProj Activity Zip Activity'.split()]
+        sorted_query = sorted(query_to_be_sorted, cmp=filters.sort_multiple(['-title']))
+        sorted_output = [str(i) for i in sorted_query]
+        assert_equal((sorted_output) , ['Activity', 'Activity', 'NewProj', 'Zip'])
+
+
+    def test_filter_queryset_reverse(self):
+        query_to_be_sorted = [self.query(x) for x in 'NewProj Zip Proj Activity'.split()]
+        sorted_query = sorted(query_to_be_sorted, cmp=filters.sort_multiple(['-title']))
+        sorted_output = [str(i) for i in sorted_query]
+        assert_equal((sorted_output) , ['Zip', 'Proj', 'NewProj', 'Activity'])
     
-    def test_filter_queryset_duplicate_fails(self):
-        query_s = [self.query(x) for x in 'NewProj Activity Zip Activity'.split()]
-        sort_q = sorted(query_s, cmp=filters.sort_multiple(['-title']))
-        sortt = [str(i) for i in sort_q]
-        assert_equal((sortt) , ['Zip', 'NewProj', 'Activity', 'Activity'])
+    def test_filter_queryset_reverse_duplicate(self):
+        query_to_be_sorted = [self.query(x) for x in 'NewProj Activity Zip Activity'.split()]
+        sorted_query = sorted(query_to_be_sorted, cmp=filters.sort_multiple(['-title']))
+        sorted_output = [str(i) for i in sorted_query]
+        assert_equal((sorted_output) , ['Zip', 'NewProj', 'Activity', 'Activity'])
 
     def test_filter_queryset_handles_multiple_fields(self):
-        objs = [self.queryn(title='NewProj', number=10),
-                self.queryn(title='Zip', number=20),
-                self.queryn(title='Activity', number=30),
-                self.queryn(title='Activity', number=40)]
+        objs = [self.query_with_num(title='NewProj', number=10),
+                self.query_with_num(title='Zip', number=20),
+                self.query_with_num(title='Activity', number=30),
+                self.query_with_num(title='Activity', number=40)]
         actual = [x.number for x in sorted(objs, cmp=filters.sort_multiple(['title', '-number']))]
         assert_equal(actual, [40, 30, 10, 20])
+
+
+class TestAPIResponse(ApiTestCase):
+    def test_gives_500_error(self):
+        response = self.app.get('http://localhost:5000/v2/users/me/nodes/?sort=-title', follow=True)
+        assert_equal(response.status_code, 500)
+
 
