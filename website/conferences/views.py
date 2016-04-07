@@ -230,6 +230,7 @@ def conference_submissions(**kwargs):
     in the Conference.num_submissions field.
     """
     submissions = []
+    #  TODO: Revisit this loop, there has to be a way to optimize it
     for conf in Conference.find():
         # For efficiency, we filter by tag first, then node
         # instead of doing a single Node query
