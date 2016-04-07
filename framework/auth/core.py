@@ -1077,7 +1077,7 @@ class User(GuidStoredObject, AddonModelMixin):
         from website.project.model import Node
         return Node.find(
             Q('contributors', 'eq', self._id) &
-            Q('is_deleted', 'eq', False) &
+            Q('is_deleted', 'ne', True) &
             Q('is_bookmark_collection', 'eq', False)
         )
 

@@ -131,7 +131,7 @@ class TestUser(base.OsfTestCase):
 
         contributor_to = project.model.Node.find(
             Q('contributors', 'eq', self.user._id) &
-            Q('is_deleted', 'eq', False) &
+            Q('is_deleted', 'ne', True) &
             Q('is_bookmark_collection', 'eq', False)
         )
         assert_equal(list(contributor_to), list(self.user.contributor_to))
@@ -139,7 +139,7 @@ class TestUser(base.OsfTestCase):
     def test_visible_contributor_to_property(self):
         visible_contributor_to = project.model.Node.find(
             Q('contributors', 'eq', self.user._id) &
-            Q('is_deleted', 'eq', False) &
+            Q('is_deleted', 'ne', True) &
             Q('is_bookmark_collection', 'eq', False) &
             Q(self.user._id, 'eq', 'visible_contributor_ids')
         )
