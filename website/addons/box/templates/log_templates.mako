@@ -30,7 +30,7 @@ Box in
 <script type="text/html" id="box_folder_selected">
 linked Box folder
 <span class="overflow" data-bind="text: (params.folder === 'All Files' ? '/ (Full Box)' : (params.folder || '').replace('All Files',''))"></span> to
-<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, title: nodeTitle"></a>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
 
