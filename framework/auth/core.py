@@ -1078,7 +1078,7 @@ class User(GuidStoredObject, AddonModelMixin):
         return Node.find(
             Q('contributors', 'eq', self._id) &
             Q('is_deleted', 'ne', True) &
-            Q('is_bookmark_collection', 'eq', False)
+            Q('is_bookmark_collection', 'ne', True)
         )
 
     @property
@@ -1087,8 +1087,8 @@ class User(GuidStoredObject, AddonModelMixin):
         return Node.find(
             Q('contributors', 'eq', self._id) &
             Q('is_deleted', 'eq', False) &
-            Q('is_bookmark_collection', 'eq', False) &
-            Q(self._id, 'eq', 'visible_contributor_ids')
+            Q('is_bookmark_collection', 'ne', True) &
+            Q('visible_contributor_ids', 'eq', self.user._id)
         )
 
     def get_summary(self, formatter='long'):
