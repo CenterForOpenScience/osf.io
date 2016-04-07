@@ -3166,13 +3166,13 @@ class TestProject(OsfTestCase):
 
         # Expected logs appears
         assert_equal(
-            self.project.get_recent_logs(3),
-            list(reversed(self.project.logs))[:3]
+            list(self.project.get_recent_logs(3)),
+            list(self.project.logs.sort('-date')[:3])
         )
 
         assert_equal(
-            self.project.get_recent_logs(),
-            list(reversed(self.project.logs))
+            list(self.project.get_recent_logs()),
+            list(self.project.logs.sort('-date'))
         )
 
     def test_date_modified(self):

@@ -39,7 +39,6 @@ def migrate(dry=True):
         except KeyError as error:
             logger.error('Could not migrate nodelog due to error -- likely a lack of __backrefs')
             logger.exception(error)
-            pass
         else:
             # Step 2: migrate any backreffed logs - creates new
             for node in log['__backrefs']['logged']['node']['logs'][1:]:

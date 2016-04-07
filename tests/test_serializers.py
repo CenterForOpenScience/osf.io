@@ -180,7 +180,7 @@ class TestNodeLogSerializers(OsfTestCase):
         node = NodeFactory(category='hypothesis')
         node.save()
         log = NodeLogFactory(
-                params={'node': node._primary_key},
+                params={'node': node._id},
                 node=node,
                 original_node=node
             )

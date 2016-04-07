@@ -82,5 +82,5 @@ class TestLogDetail(LogsTestCase):
     def test_log_detail_data_format_api(self):
         res = self.app.get(self.public_log_detail + '?format=api', auth=self.user.auth)
         assert_equal(res.status_code, 200)
-        assert_in(self.public_log._id, res.body)
+        assert_in(self.public_log._id, unicode(res.body, 'utf-8'))
 

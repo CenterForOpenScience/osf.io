@@ -344,14 +344,18 @@ class Comment(GuidStoredObject, SpamMixin):
 class NodeLog(StoredObject):
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
-    __indices__ = [
-        {
-            'key_or_list': [
-                ('user', 1),
-                ('node', 1)
-            ],
-        }
-    ]
+    __indices__ = [{
+        'key_or_list': [
+            ('user', 1),
+            ('node', 1)
+        ],
+    }, {
+        'key_or_list': [
+            ('node', 1),
+            ('should_hide', 1),
+            ('date', -1)
+        ]
+    }]
 
     date = fields.DateTimeField(default=datetime.datetime.utcnow, index=True)
     action = fields.StringField(index=True)
@@ -469,7 +473,7 @@ class NodeLog(StoredObject):
         :param node_id:
         :return: cloned log
         """
-        original_log = self.load(self._primary_key)
+        original_log = self.load(self._id)
         node = Node.find(Q('_id', 'eq', node_id))[0]
         log_clone = original_log.clone()
         log_clone.node = node
@@ -497,12 +501,7 @@ class NodeLog(StoredObject):
             return self.tz_date.isoformat()
 
     def can_view(self, node, auth):
-        node_to_check = node
-        if self.node != node_to_check:
-            return False
-        if node_to_check:
-            return node_to_check.can_view(auth)
-        return False
+        return node.can_view(auth)
 
     def _render_log_contributor(self, contributor, anonymous=False):
         user = User.load(contributor)
@@ -817,7 +816,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     contributors = fields.ForeignField('user', list=True)
     users_watching_node = fields.ForeignField('user', list=True)
 
-    tags = fields.ForeignField('tag', list=True, backref='tagged')
+    tags = fields.ForeignField('tag', list=True)
 
     # Tags for internal use
     system_tags = fields.StringField(list=True)
