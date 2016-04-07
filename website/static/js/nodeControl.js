@@ -48,6 +48,7 @@ var ProjectViewModel = function(data) {
     self.nodeType = data.node.node_type;
 
 
+    // WATCH button is removed, functionality is still here in case of future implementation -- CU
     // The button text to display (e.g. "Watch" if not watching)
     self.watchButtonDisplay = ko.pureComputed(function() {
         return self.watchedCount().toString();
