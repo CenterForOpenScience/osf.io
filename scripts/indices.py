@@ -26,3 +26,10 @@ db['node'].create_index([
     ('is_registration', ASCENDING),
     ('contributors', ASCENDING),
 ])
+
+db['node'].create_index([
+    ('tags.$', ASCENDING),
+    ('is_public', ASCENDING),
+    ('is_deleted', ASCENDING),
+    ('institution_id', ASCENDING),
+])
