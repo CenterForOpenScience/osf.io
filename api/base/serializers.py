@@ -386,7 +386,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
 
         super(RelationshipField, self).__init__(view_name, lookup_url_kwarg=lookup_kwargs, **kwargs)
 
-    def resolve(self, resource):
+    def resolve(self, resource, field_name):
         """
         Resolves the view when embedding.
         """
@@ -633,7 +633,7 @@ class TargetField(ser.Field):
         self.link_type = kwargs.pop('link_type', 'url')
         super(TargetField, self).__init__(read_only=True, **kwargs)
 
-    def resolve(self, resource):
+    def resolve(self, resource, field_name):
         """
         Resolves the view for target node or target comment when embedding.
         """
