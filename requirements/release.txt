@@ -5,8 +5,10 @@
 # scripts osfstorage
 pyrax==1.9.5
 # multipart uploads (https://github.com/boto/boto/issues/2603)
-boto==2.31.1
+boto==2.30.0
 # newrelic APM agent
 newrelic==2.60.0.46
 # uwsgi
 uwsgi==2.0.12
+# Scripts
+progressbar==2.3

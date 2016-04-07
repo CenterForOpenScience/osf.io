@@ -18,8 +18,5 @@ flake8==2.4.0
 # Livereload
 livereload==2.3.2
 
-# Scripts
-progressbar==2.3
-
 # Avoid eating cpu with live reloading
 watchdog==0.8.3
