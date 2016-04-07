@@ -421,11 +421,6 @@ class User(GuidStoredObject, AddonModelMixin):
         return self._id
 
     @property
-    def contributed(self):
-        from website.project.model import Node
-        return Node.find(Q('contributors', 'eq', self._id))
-
-    @property
     def email(self):
         return self.username
 
@@ -1071,6 +1066,11 @@ class User(GuidStoredObject, AddonModelMixin):
     @property
     def profile_url(self):
         return '/{}/'.format(self._id)
+
+    @property
+    def contributed(self):
+        from website.project.model import Node
+        return Node.find(Q('contributors', 'eq', self._id))
 
     @property
     def contributor_to(self):
