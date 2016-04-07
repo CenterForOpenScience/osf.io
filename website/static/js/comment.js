@@ -8,9 +8,7 @@ var ko = require('knockout');
 var moment = require('moment');
 var Raven = require('raven-js');
 var koHelpers = require('./koHelpers');
-require('knockout.punches');
 require('jquery-autosize');
-ko.punches.enableAll();
 
 var osfHelpers = require('js/osfHelpers');
 var CommentPane = require('js/commentpane');

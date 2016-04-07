@@ -10,8 +10,6 @@ var ko = require('knockout');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
 require('bootstrap-editable');
-require('knockout.punches');
-ko.punches.enableAll();
 
 var osfHelpers = require('js/osfHelpers');
 var NodeActions = require('js/project.js');
