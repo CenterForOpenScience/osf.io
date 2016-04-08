@@ -1088,7 +1088,7 @@ class User(GuidStoredObject, AddonModelMixin):
             Q('contributors', 'eq', self._id) &
             Q('is_deleted', 'ne', True) &
             Q('is_collection', 'ne', True) &
-            Q('visible_contributor_ids', 'eq', self.user._id)
+            Q('visible_contributor_ids', 'eq', self._id)
         )
 
     def get_summary(self, formatter='long'):
