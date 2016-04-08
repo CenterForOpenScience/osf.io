@@ -3247,7 +3247,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             'api_url': self.api_url,
             'is_public': self.is_public,
             'is_registration': self.is_registration,
-            'registered_from_id': self.registered_from_id,
         }
 
     def _initiate_retraction(self, user, justification=None):
@@ -3285,7 +3284,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         self.registered_from.add_log(
             action=NodeLog.RETRACTION_INITIATED,
             params={
-                'node': self._id,
+                'node': self.registered_from_id,
                 'retraction_id': retraction._id,
             },
             auth=Auth(user),
@@ -3343,7 +3342,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         self.registered_from.add_log(
             action=NodeLog.EMBARGO_INITIATED,
             params={
-                'node': self._id,
+                'node': self.registered_from_id,
                 'embargo_id': embargo._id,
             },
             auth=Auth(user),
@@ -3423,7 +3422,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         self.registered_from.add_log(
             action=NodeLog.REGISTRATION_APPROVAL_INITIATED,
             params={
-                'node': self._id,
+                'node': self.registered_from_id,
                 'registration_approval_id': approval._id,
             },
             auth=Auth(user),
@@ -4108,7 +4107,7 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
         parent_registration.registered_from.add_log(
             action=NodeLog.EMBARGO_APPROVED,
             params={
-                'node': parent_registration._id,
+                'node': parent_registration.registered_from_id,
                 'embargo_id': self._id,
             },
             auth=Auth(self.initiated_by),
@@ -4224,7 +4223,7 @@ class Retraction(EmailApprovableSanction):
         parent_registration.registered_from.add_log(
             action=NodeLog.RETRACTION_APPROVED,
             params={
-                'node': parent_registration._id,
+                'node': parent_registration.registered_from_id,
                 'retraction_id': self._id,
             },
             auth=Auth(self.initiated_by),
