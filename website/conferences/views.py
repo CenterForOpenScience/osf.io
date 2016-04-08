@@ -240,7 +240,7 @@ def conference_submissions(**kwargs):
         nodes = Node.find(
             Q('tags', 'in', tags) &
             Q('is_public', 'eq', True) &
-            Q('is_deleted', 'eq', False)
+            Q('is_deleted', 'ne', True)
         )
         projects.update(list(nodes))
 
