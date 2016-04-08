@@ -244,3 +244,6 @@ class FileVersionSerializer(JSONAPISerializer):
             path=(fobj.node._id, 'files', fobj.provider, fobj.path.lstrip('/')),
             query={fobj.version_identifier: obj.identifier}  # TODO this can probably just be changed to revision or version
         ).url
+
+    def get_absolute_url(self, obj):
+        return self.self_url(obj)
