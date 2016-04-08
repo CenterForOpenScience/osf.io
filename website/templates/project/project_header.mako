@@ -122,11 +122,11 @@
         % endif
 
         % if node['is_pending_retraction']:
-            <div class="alert alert-info">This ${node['node_type']} is currently pending entering into a retracted state.</div>
+            <div class="alert alert-info">This ${node['node_type']} is currently pending entering into a withdrawn state.</div>
         % endif
 
         % if  node['is_retracted']:
-            <div class="alert alert-danger">This ${node['node_type']} is a retracted registration of <a class="link-solid" href="${node['registered_from_url']}">this ${node['node_type']}</a>; the content of the ${node['node_type']} has been taken down for the reason(s) stated below.</div>
+            <div class="alert alert-danger">This ${node['node_type']} is a withdrawn registration of <a class="link-solid" href="${node['registered_from_url']}">this ${node['node_type']}</a>; the content of the ${node['node_type']} has been taken down for the reason(s) stated below.</div>
         % endif
 
         % if  node['is_pending_embargo']:
@@ -139,7 +139,11 @@
 
     % endif  ## End registration undismissable labels
 
-    % if node['link'] and not node['anonymous'] and not user['is_contributor']:
+    % if node['anonymous'] and user['is_contributor']:
+        <div class="alert alert-info">This ${node['node_type']} is being viewed through an anonymized, view-only link. If you want to view it as a contributor, click <a class="link-solid" href="${node['redirect_url']}">here</a>.</div>
+    % endif
+
+    % if node['link'] and not node['is_public'] and not user['is_contributor']:
         <div class="alert alert-info">This ${node['node_type']} is being viewed through a private, view-only link. Anyone with the link can view this project. Keep the link safe.</div>
     % endif
 

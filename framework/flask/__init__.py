@@ -19,7 +19,7 @@ app = Flask(
 
 # Pull debug mode from settings
 app.debug = settings.DEBUG_MODE
-app.config['SENTRY_TAGS'] = {'App': 'web'},
+app.config['SENTRY_TAGS'] = {'App': 'web'}
 app.config['SENTRY_RELEASE'] = settings.VERSION
 
 # Set up static routing for addons

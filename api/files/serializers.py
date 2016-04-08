@@ -12,7 +12,7 @@ from website.project.model import Comment
 from api.base.utils import absolute_reverse
 from api.base.serializers import NodeFileHyperLinkField, WaterbutlerLink, format_relationship_links, FileCommentRelationshipField
 from api.base.serializers import Link, JSONAPISerializer, LinksField, IDField, TypeField
-
+from website.util import api_v2_url
 
 class CheckoutField(ser.HyperlinkedRelatedField):
 
@@ -117,8 +117,7 @@ class FileSerializer(JSONAPISerializer):
     comments = FileCommentRelationshipField(related_view='nodes:node-comments',
                                             related_view_kwargs={'node_id': '<node._id>'},
                                             related_meta={'unread': 'get_unread_comments_count'},
-                                            filter={'target': '<_id>'})
-
+                                            filter={'target': 'get_file_guid'})
     links = LinksField({
         'info': Link('files:file-detail', kwargs={'file_id': '<_id>'}),
         'move': WaterbutlerLink(),
@@ -178,7 +177,7 @@ class FileSerializer(JSONAPISerializer):
         user = self.context['request'].user
         if user.is_anonymous():
             return 0
-        return Comment.find_n_unread(user=user, node=obj.node, page='files', root_id=obj._id)
+        return Comment.find_n_unread(user=user, node=obj.node, page='files', root_id=obj.get_guid()._id)
 
     def user_id(self, obj):
         # NOTE: obj is the user here, the meta field for
@@ -196,6 +195,16 @@ class FileSerializer(JSONAPISerializer):
 
     def is_valid(self, **kwargs):
         return super(FileSerializer, self).is_valid(clean_html=False, **kwargs)
+
+    def get_file_guid(self, obj):
+        if obj:
+            guid = obj.get_guid()
+            if guid:
+                return guid._id
+        return None
+
+    def get_absolute_url(self, obj):
+        return api_v2_url('files/{}/'.format(obj._id))
 
 
 class FileDetailSerializer(FileSerializer):

@@ -83,6 +83,8 @@ var BaseComment = function() {
 
     self.comments = ko.observableArray();
 
+    self.loadingComments = ko.observable(true);
+
     self.replyNotEmpty = ko.pureComputed(function() {
         return notEmpty(self.replyContent());
     });
@@ -137,37 +139,36 @@ BaseComment.prototype.fetch = function() {
 /* Go through the paginated API response to fetch all comments for the specified target */
 BaseComment.prototype.fetchNext = function(url, comments) {
     var self = this;
-    var deferred = $.Deferred();
-    if (self._loaded) {
-        deferred.resolve(self.comments());
-    }
     var request = osfHelpers.ajaxJSON(
         'GET',
         url,
         {'isCors': true});
     request.done(function(response) {
-        comments = comments.concat(response.data);
+        comments = response.data;
+        if (self._loaded !== true) {
+            self._loaded = true;
+        }
+        comments.forEach(function(comment) {
+            self.comments.push(
+                new CommentModel(comment, self, self.$root)
+            );
+        });
+        self.configureCommentsVisibility();
         if (response.links.next !== null) {
             self.fetchNext(response.links.next, comments);
         } else {
-            self.comments(
-                ko.utils.arrayMap(comments, function(comment) {
-                    return new CommentModel(comment, self, self.$root);
-                })
-            );
-            deferred.resolve(self.comments());
-            self.configureCommentsVisibility();
-            self._loaded = true;
+            self.loadingComments(false);
         }
+    }).fail(function () {
+        self.loadingComments(false);
     });
-    return deferred.promise();
 };
 
 BaseComment.prototype.setUnreadCommentCount = function() {
     var self = this;
     var url;
     if (self.page() === FILES) {
-        url = osfHelpers.apiV2Url('files/' + self.$root.rootId() + '/', {query: 'related_counts=True'});
+        url = osfHelpers.apiV2Url('files/' + self.$root.fileId + '/', {query: 'related_counts=True'});
     } else {
         url = osfHelpers.apiV2Url(self.$root.nodeType + '/' + window.contextVars.node.id + '/', {query: 'related_counts=True'});
     }
@@ -255,9 +256,11 @@ BaseComment.prototype.submitReply = function() {
         self.cancelReply();
         self.errorMessage('Could not submit comment');
         Raven.captureMessage('Error creating comment', {
-            url: url,
-            status: status,
-            error: error
+            extra: {
+                url: url,
+                status: status,
+                error: error
+            }
         });
     });
 };
@@ -416,9 +419,11 @@ CommentModel.prototype.submitEdit = function(data, event) {
         self.cancelEdit();
         self.errorMessage('Could not submit comment');
         Raven.captureMessage('Error editing comment', {
-            url: url,
-            status: status,
-            error: error
+            extra: {
+                url: url,
+                status: status,
+                error: error
+            }
         });
     });
     return request;
@@ -459,9 +464,11 @@ CommentModel.prototype.submitAbuse = function() {
     request.fail(function(xhr, status, error) {
         self.errorMessage('Could not report abuse.');
         Raven.captureMessage('Error reporting abuse', {
-            url: url,
-            status: status,
-            error: error
+            extra: {
+                url: url,
+                status: status,
+                error: error
+            }
         });
     });
     return request;
@@ -486,9 +493,11 @@ CommentModel.prototype.submitDelete = function() {
     request.fail(function(xhr, status, error) {
         self.deleting(false);
         Raven.captureMessage('Error deleting comment', {
-            url: url,
-            status: status,
-            error: error
+            extra: {
+                url: url,
+                status: status,
+                error: error
+            }
         });
     });
     return request;
@@ -522,9 +531,11 @@ CommentModel.prototype.submitUndelete = function() {
     });
     request.fail(function(xhr, status, error) {
         Raven.captureMessage('Error undeleting comment', {
-            url: url,
-            status: status,
-            error: error
+            extra: {
+                url: url,
+                status: status,
+                error: error
+            }
         });
 
     });
@@ -545,9 +556,11 @@ CommentModel.prototype.submitUnreportAbuse = function() {
     });
     request.fail(function(xhr, status, error) {
         Raven.captureMessage('Error unreporting comment', {
-            url: url,
-            status: status,
-            error: error
+            extra: {
+                url: url,
+                status: status,
+                error: error
+            }
         });
 
     });
@@ -586,6 +599,7 @@ var CommentListModel = function(options) {
     self.page(options.page);
     self.id = ko.observable(options.rootId);
     self.rootId = ko.observable(options.rootId);
+    self.fileId = options.fileId || '';
     self.canComment = ko.observable(options.canComment);
     self.hasChildren = ko.observable(options.hasChildren);
     self.author = options.currentUser;
@@ -629,6 +643,9 @@ CommentListModel.prototype.initListeners = function() {
 };
 
 var onOpen = function(page, rootId, nodeApiUrl) {
+    if (osfHelpers.urlParams().view_only){
+        return null;
+    }
     var timestampUrl = nodeApiUrl + 'comments/timestamps/';
     var request = osfHelpers.putJSON(
         timestampUrl,
@@ -639,9 +656,11 @@ var onOpen = function(page, rootId, nodeApiUrl) {
     );    
     request.fail(function(xhr, textStatus, errorThrown) {
         Raven.captureMessage('Could not update comment timestamp', {
-            url: timestampUrl,
-            textStatus: textStatus,
-            errorThrown: errorThrown
+            extra: {
+                url: timestampUrl,
+                textStatus: textStatus,
+                errorThrown: errorThrown
+            }
         });
     });
     return request;
@@ -653,6 +672,7 @@ var onOpen = function(page, rootId, nodeApiUrl) {
  *      isRegistration: Node.is_registration,
  *      page: 'node',
  *      rootId: Node._id,
+ *      fileId: StoredFileNode._id,
  *      canComment: User.canComment,
  *      hasChildren: Node.hasChildren, 
  *      currentUser: {

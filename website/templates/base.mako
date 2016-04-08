@@ -46,6 +46,7 @@
     ${self.javascript()}
 
     <link href='//fonts.googleapis.com/css?family=Carrois+Gothic|Inika|Patua+One' rel='stylesheet' type='text/css'>
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,600,300,700' rel='stylesheet' type='text/css'>
 
 </head>
 <body data-spy="scroll" data-target=".scrollspy">
@@ -70,16 +71,19 @@
         <%user['can_comment'] = False%>
         <%node['has_comments'] = False%>
         <%user['can_edit_wiki_body'] = False%>
-        <%include file="view_only_nav.mako"/>
+        <%namespace name="nav_file" file="view_only_nav.mako"/>
     % else:
-        <%include file="nav.mako"/>
+        <%namespace name="nav_file" file="nav.mako"/>
     % endif
 
-
+    <%namespace name="nav_file" file="nav.mako"/>
+    <%block name="nav">
+        ${nav_file.nav()}
+    </%block>
      ## TODO: shouldn't always have the watermark class
     ${self.content_wrap()}
 
-% if not user_id and not private_link:
+% if not user_id:
 <div id="footerSlideIn">
     <div class="container">
         <div class="row">
@@ -119,6 +123,21 @@
             </script>
         % endif
 
+        <%!
+            import hashlib
+
+            def user_hash(user_id):
+                token = hashlib.md5()
+                token.update(user_id)
+                return token.hexdigest()
+        %>
+
+        <%!
+            import datetime
+            def create_timestamp():
+                return str(datetime.datetime.utcnow())
+        %>
+
         % if settings.GOOGLE_ANALYTICS_ID:
             <script>
             (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
@@ -129,19 +148,14 @@
             ga('create', ${ settings.GOOGLE_ANALYTICS_ID | sjson, n }, 'auto', {'allowLinker': true});
             ga('require', 'linker');
             ga('linker:autoLink', ['centerforopenscience.org'] );
+            ga('set', 'dimension1', ${user_hash(user_id) | sjson, n});
+            ga('set', 'dimension2', ${create_timestamp() | sjson, n});
             ga('send', 'pageview');
             </script>
+
         % else:
             <script>
-                window.ga = function(source) {
-                        console.error('=== Mock ga event called: ===');
-                        console.log('event: ga(' +
-                                    arguments[0] + ', ' +
-                                    arguments[1] + ', ' +
-                                    arguments[2] + ', ' +
-                                    arguments[3] + ')'
-                        );
-                };
+                window.ga = function() {};
           </script>
         % endif
 
@@ -153,9 +167,18 @@
             // Mako variables accessible globally
             window.contextVars = $.extend(true, {}, window.contextVars, {
                 waterbutlerURL: ${ waterbutler_url if waterbutler_url.endswith('/') else waterbutler_url + '/' | sjson, n },
+                // Whether or not this page is loaded under osf.io or another domain IE: institutions
+                isOnRootDomain: ${domain | sjson, n } === window.location.origin + '/',
                 cookieName: ${ cookie_name | sjson, n },
                 apiV2Prefix: ${ api_v2_base | sjson, n },
-                registerUrl: ${ api_url_for('register_user') | sjson, n}
+                registerUrl: ${ api_url_for('register_user') | sjson, n},
+                currentUser: {
+                    id: ${ user_id | sjson, n },
+                    locale: ${ user_locale | sjson, n },
+                    timezone: ${ user_timezone | sjson, n }
+                },
+                popular: ${ popular_links_node | sjson, n},
+                newAndNoteworthy: ${ noteworthy_links_node | sjson, n}
             });
         </script>
 
@@ -264,7 +287,8 @@
       <script src="//cdnjs.cloudflare.com/ajax/libs/es5-shim/4.0.3/es5-sham.min.js"></script>
     <![endif]-->
 
-    <!-- Le styles -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/es6-shim/0.35.0/es6-shim.min.js"></script>
+
     ## TODO: Get fontawesome and select2 to play nicely with webpack
     <link rel="stylesheet" href="/static/vendor/bower_components/bootstrap/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="/static/vendor/bower_components/select2/select2.css">
@@ -272,9 +296,9 @@
     <link rel="stylesheet" href="/static/css/style.css">
 
     % if settings.USE_CDN_FOR_CLIENT_LIBS:
-        <script src="//code.jquery.com/jquery-1.11.2.min.js"></script>
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
         <script>window.jQuery || document.write('<script src="/static/vendor/bower_components/jquery/dist/jquery.min.js">\x3C/script>')</script>
-        <script src="//code.jquery.com/ui/1.10.3/jquery-ui.min.js"></script>
+        <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
         <script>window.jQuery.ui || document.write('<script src="/static/vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js">\x3C/script>')</script>
     % else:
         <script src="/static/vendor/bower_components/jquery/dist/jquery.min.js"></script>

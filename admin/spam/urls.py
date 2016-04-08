@@ -3,7 +3,20 @@ from django.conf.urls import url
 from . import views
 
 urlpatterns = [
-    url(r'^$', views.spam_list, name='spam'),
-    url(r'^(?P<spam_id>[a-z0-9]+)/$', views.spam_detail, name='detail'),
-    url(r'^(?P<spam_id>[a-z0-9]+)/email/$', views.email, name='email'),
+    url(r'^$', views.SpamList.as_view(), name='spam'),
+    url(
+        r'^(?P<spam_id>[a-z0-9]+)/$',
+        views.SpamDetail.as_view(),
+        name='detail'
+    ),
+    url(
+        r'^(?P<spam_id>[a-z0-9]+)/email/$',
+        views.EmailFormView.as_view(),
+        name='email'
+    ),
+    url(
+        r'^user/id-(?P<user_id>[a-z0-9]+)/$',
+        views.UserSpamList.as_view(),
+        name='user_spam'
+    ),
 ]

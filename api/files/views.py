@@ -64,7 +64,7 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
     ####File Entity
 
         name          type       description
-        -------------------------------------------------------------------------
+        =========================================================================
         name          string     name of the file
         path          string     unique identifier for this file entity for this
                                  project and storage provider. may not end with '/'
@@ -88,7 +88,7 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
     ####Folder Entity
 
         name          type    description
-        ----------------------------------------------------------------------
+        ======================================================================
         name          string  name of the folder
         path          string  unique identifier for this folder entity for this
                               project and storage provider. must end with '/'
@@ -107,7 +107,7 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
     null for folders.  A list of storage provider keys can be found [here](/v2/#storage-providers).
 
         name          type               description
-        ---------------------------------------------------------------------------------------------------
+        ===================================================================================================
         name              string             name of the file or folder; used for display
         kind              string             "file" or "folder"
         path              string             same as for corresponding WaterButler entity
@@ -197,13 +197,12 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
         URL:          /links/upload
         Query Params: ?kind=file&name={new_file_name}
         Body (Raw):   <file data (not form-encoded)>
-        Success:      201 Created or 200 OK + new file representation
+        Success:      201 Created + new file representation
 
     To upload a file to a folder, issue a PUT request to the folder's `upload` link with the raw file data in the
     request body, and the `kind` and `name` query parameters set to `'file'` and the desired name of the file.  The
     response will contain a [WaterButler file entity](#file-entity) that describes the new file.  If a file with the
-    same name already exists in the folder, it will be considered a new version.  In this case, the response will be a
-    200 OK.
+    same name already exists in the folder, the server will return a 409 Conflict error response.
 
     ###Update Existing File (*file*)
 
@@ -332,7 +331,7 @@ class FileVersionsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
     For an OSF FileVersion entity the API `type` is "file_versions".
 
         name          type     description
-        ---------------------------------------------------------------------------------
+        =================================================================================
         size          integer  size of file in bytes
         content_type  string   MIME content-type for the file. May be null if unavailable.
 
@@ -391,7 +390,7 @@ class FileVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, FileMixin):
     For an OSF FileVersion entity the API `type` is "file_versions".
 
         name          type     description
-        ---------------------------------------------------------------------------------
+        =================================================================================
         size          integer  size of file in bytes
         content_type  string   MIME content-type for the file. May be null if unavailable.
 

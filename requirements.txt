@@ -3,7 +3,7 @@
 # To install addon requirements: inv requirements --addons
 # To install dev requirements: inv requirements --dev
 
-invoke==0.11.0
+invoke==0.12.2
 Werkzeug==0.10.4
 Flask==0.10.1
 gevent==1.0.2
@@ -19,6 +19,7 @@ itsdangerous==0.24
 lxml==3.4.1
 mailchimp==2.0.9
 nameparser==0.3.3
+nose-parameterized==0.5.0
 py-bcrypt==0.4
 pymongo==2.5.1
 python-dateutil==2.5.0
@@ -27,7 +28,7 @@ pytz==2014.9
 bleach==1.4.1
 html5lib==0.999
 blinker==1.3
-furl==0.4.4
+furl==0.4.92
 elasticsearch==1.3.0
 google-api-python-client==1.2
 python-crontab==1.9.2
@@ -37,6 +38,8 @@ Babel==1.3
 ndg-httpsclient==0.3.0
 # Development version of modular-odm
 git+https://github.com/CenterForOpenScience/modular-odm.git@develop
+# Python markdown extensions for comment emails
+git+git://github.com/aleray/mdx_del_ins.git
 
 # Issue: certifi-2015.9.6.1 and 2015.9.6.2 fail verification (https://github.com/certifi/python-certifi/issues/26)
 # MailChimp Ticket: LTK1218902287135X, Domain: https://us9.api.mailchimp.com
@@ -50,13 +53,15 @@ raven==5.10.2
 webcolors==1.4
 
 # API requirements
-Django==1.8
-djangorestframework==3.1.1
+Django==1.9
+djangorestframework==3.3.3
 django-cors-headers==1.1.0
 django-rest-swagger==0.3.2
 djangorestframework-bulk==0.2.1
 pyjwt==1.4.0
-pyjwe==0.1.6
+pyjwe==1.0.0
 
 # Admin requirements
 django-webpack-loader==0.2.3
+django-nose==1.4.3
+django-ckeditor==5.0.2
