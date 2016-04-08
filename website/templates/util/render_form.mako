@@ -9,7 +9,7 @@
                 ${field['label'] | unicode, n }
                 <span class="help-block">${ field['description'] | unicode, n }</span>
                 % if html_replacements and (field['id'] in html_replacements):
-                    ${ html_replacements[field['id']] | unicode, n }
+                    ${ html_replacements[field['id']] | unicode, n }  <!-- possibly totally unused -->
                 % else:
                     ${ field['html'] | unicode, n }
                 % endif

@@ -248,13 +248,13 @@ def make_url_map(app):
             '/faq/',
             'get',
             {},
-            OsfWebRenderer('public/pages/faq.mako')
+            OsfWebRenderer('public/pages/faq.mako', trust=False)
         ),
         Rule(
             '/getting-started/',
             'get',
             {},
-            OsfWebRenderer('public/pages/getting_started.mako')
+            OsfWebRenderer('public/pages/getting_started.mako', trust=False)
         ),
         Rule(
             '/getting-started/email/',
@@ -289,14 +289,14 @@ def make_url_map(app):
             '/view/<meeting>/',
             'get',
             conference_views.conference_results,
-            OsfWebRenderer('public/pages/meeting.mako'),
+            OsfWebRenderer('public/pages/meeting.mako', trust=False),
         ),
 
         Rule(
             '/view/<meeting>/plain/',
             'get',
             conference_views.conference_results,
-            OsfWebRenderer('public/pages/meeting_plain.mako'),
+            OsfWebRenderer('public/pages/meeting_plain.mako', trust=False),
             endpoint_suffix='__plain',
         ),
 
@@ -311,7 +311,7 @@ def make_url_map(app):
             '/meetings/',
             'get',
             conference_views.conference_view,
-            OsfWebRenderer('public/pages/meeting_landing.mako'),
+            OsfWebRenderer('public/pages/meeting_landing.mako', trust=False),
         ),
 
         Rule(
@@ -328,7 +328,12 @@ def make_url_map(app):
             json_renderer,
         ),
 
-        Rule('/news/', 'get', {}, OsfWebRenderer('public/pages/news.mako')),
+        Rule(
+            '/news/',
+            'get',
+            {},
+            OsfWebRenderer('public/pages/news.mako', trust=False)
+        ),
 
         Rule(
             '/prereg/',
@@ -389,7 +394,7 @@ def make_url_map(app):
             '/oauth/callback/<service_name>/',
             'get',
             oauth_views.oauth_callback,
-            OsfWebRenderer('util/oauth_complete.mako'),
+            OsfWebRenderer('util/oauth_complete.mako', trust=False),
         ),
     ])
     process_rules(app, [
@@ -459,14 +464,14 @@ def make_url_map(app):
             'get',
             auth_views.confirm_email_get,
             # View will either redirect or display error message
-            OsfWebRenderer('error.mako', render_mako_string)
+            notemplate
         ),
 
         Rule(
             '/resetpassword/<verification_key>/',
             ['get', 'post'],
             auth_views.reset_password,
-            OsfWebRenderer('public/resetpassword.mako', render_mako_string)
+            OsfWebRenderer('public/resetpassword.mako', render_mako_string, trust=False)
         ),
 
         # Resend confirmation URL linked to in CAS login page
@@ -474,24 +479,52 @@ def make_url_map(app):
             '/resend/',
             ['get', 'post'],
             auth_views.resend_confirmation,
-            OsfWebRenderer('resend.mako', render_mako_string)
+            OsfWebRenderer('resend.mako', render_mako_string, trust=False)
         ),
 
         # TODO: Remove `auth_register_post`
-        Rule('/register/', 'post', auth_views.auth_register_post,
-             OsfWebRenderer('public/login.mako')),
+        Rule(
+            '/register/',
+            'post',
+            auth_views.auth_register_post,
+            OsfWebRenderer('public/login.mako', trust=False)
+        ),
         Rule('/api/v1/register/', 'post', auth_views.register_user, json_renderer),
 
-        Rule(['/login/', '/account/'], 'get',
-             auth_views.auth_login, OsfWebRenderer('public/login.mako')),
-        Rule('/login/first/', 'get', auth_views.auth_login,
-             OsfWebRenderer('public/login.mako'),
-             endpoint_suffix='__first', view_kwargs={'first': True}),
-        Rule('/logout/', 'get', auth_views.auth_logout, notemplate),
-        Rule('/forgotpassword/', 'get', auth_views.forgot_password_get,
-             OsfWebRenderer('public/forgot_password.mako')),
-        Rule('/forgotpassword/', 'post', auth_views.forgot_password_post,
-             OsfWebRenderer('public/login.mako')),
+        Rule(
+            [
+                '/login/',
+                '/account/'
+            ],
+            'get',
+            auth_views.auth_login,
+            OsfWebRenderer('public/login.mako', trust=False)
+        ),
+        Rule(
+            '/login/first/',
+            'get',
+            auth_views.auth_login,
+            OsfWebRenderer('public/login.mako', trust=False),
+            endpoint_suffix='__first', view_kwargs={'first': True}
+        ),
+        Rule(
+            '/logout/',
+            'get',
+            auth_views.auth_logout,
+            notemplate
+        ),
+        Rule(
+            '/forgotpassword/',
+            'get',
+            auth_views.forgot_password_get,
+            OsfWebRenderer('public/forgot_password.mako', trust=False)
+        ),
+        Rule(
+            '/forgotpassword/',
+            'post',
+            auth_views.forgot_password_post,
+            OsfWebRenderer('public/login.mako', trust=False)
+        ),
 
         Rule([
             '/midas/', '/summit/', '/accountbeta/', '/decline/'

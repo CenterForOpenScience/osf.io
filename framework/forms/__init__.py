@@ -55,7 +55,7 @@ class NoHtmlCharacters(object):
     TODO: This could still post a problem if we output an email address to a
     Javascript literal.
     """
-
+    # TODO: Improve this for a post-bleach world
     def __init__(self, message=None):
         self.message = message or u'HTML is not allowed in form field'
 
