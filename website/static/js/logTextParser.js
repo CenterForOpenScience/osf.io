@@ -175,13 +175,7 @@ var LogPieces = {
         view: function (ctrl, logObject) {
             var nodeObject = logObject.embeds.original_node;
 
-            // For logs that are returning deleted nodes
-            if (nodeObject.data.length === 0){
-                var deletedNode = logObject.attributes.params.params_node;
-                if (paramIsReturned(deletedNode, logObject)){
-                     return m('span', deletedNode.title);
-                }
-            }
+            // Log action is node_removed
             if (logObject.attributes.action === 'node_removed') {
                 if (logObject.attributes.params.params_node) {
                     return m('span', logObject.attributes.params.params_node.title);
@@ -195,7 +189,15 @@ var LogPieces = {
                 else if (nodeObject.data.attributes) {
                     return m('span', nodeObject.data.attributes.title);
                 }
-            } else {
+            }
+            // Original node has been deleted
+            else if (!paramIsReturned(nodeObject, logObject)) {
+                var deletedNode = logObject.attributes.params.params_node;
+                if (paramIsReturned(deletedNode, logObject)){
+                     return m('span', deletedNode.title);
+                }
+            }
+            else {
                 return m('span', 'a project');
             }
         }
@@ -326,12 +328,12 @@ var LogPieces = {
     title_new: {
         controller: function(logObject){
             var self = this;
-            var nodeObject = logObject.embeds.nodes;
+            var nodeObject = logObject.embeds.original_node;
 
             self.returnLinkForPath = function(){
-                if(paramIsReturned(nodeObject, logObject) && nodeObject.data[0]){
-                    if (nodeObject.data[0].links && nodeObject.data[0].attributes) {
-                        return nodeObject.data[0].links.html;
+                if(paramIsReturned(nodeObject, logObject) && nodeObject.data){
+                    if (nodeObject.data.links && nodeObject.data.attributes) {
+                        return nodeObject.data.links.html;
                     }
                 }
                 return null;
