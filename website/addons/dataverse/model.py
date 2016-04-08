@@ -100,7 +100,7 @@ class AddonDataverseNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                 action='dataverse_dataset_linked',
                 params={
                     'project': self.owner.parent_id,
-                    'node': self.owner._primary_key,
+                    'node': self.owner._id,
                     'dataset': dataset.title,
                 },
                 auth=auth,

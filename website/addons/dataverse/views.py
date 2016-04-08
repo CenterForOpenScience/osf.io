@@ -103,7 +103,6 @@ def dataverse_add_user_account(auth, **kwargs):
             Q('provider', 'eq', provider.short_name) &
             Q('provider_id', 'eq', api_token)
         )
-        assert provider.account is not None
 
     if provider.account not in user.external_accounts:
         user.external_accounts.append(provider.account)
@@ -138,10 +137,10 @@ def dataverse_set_config(node_addon, auth, **kwargs):
         # TODO: Test me!
         raise HTTPError(http.NOT_ACCEPTABLE)
 
-    alias = request.json.get('dataverse').get('alias')
-    doi = request.json.get('dataset').get('doi')
+    alias = request.json.get('dataverse', {}).get('alias')
+    doi = request.json.get('dataset', {}).get('doi')
 
-    if doi is None:
+    if doi is None or alias is None:
         return HTTPError(http.BAD_REQUEST)
 
     connection = client.connect_from_settings(node_addon)
@@ -182,13 +181,7 @@ def dataverse_publish_dataset(node_addon, auth, **kwargs):
 
     now = datetime.datetime.utcnow()
 
-    try:
-        connection = client.connect_from_settings_or_401(node_addon)
-    except HTTPError as error:
-        if error.code == http.UNAUTHORIZED:
-            connection = None
-        else:
-            raise
+    connection = client.connect_from_settings_or_401(node_addon)
 
     dataverse = client.get_dataverse(connection, node_addon.dataverse_alias)
     dataset = client.get_dataset(dataverse, node_addon.dataset_doi)
@@ -202,7 +195,7 @@ def dataverse_publish_dataset(node_addon, auth, **kwargs):
         action='dataverse_dataset_published',
         params={
             'project': node.parent_id,
-            'node': node._primary_key,
+            'node': node._id,
             'dataset': dataset.title,
         },
         auth=auth,
