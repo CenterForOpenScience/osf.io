@@ -1394,10 +1394,8 @@ function setCurrentFileID(tree, nodeID, file) {
         for (i = 0; i < tree.children.length; i++) {
             child = tree.children[i];
             var urlParams = $osf.urlParams();
-            console.log(urlParams);
             if (nodeID === child.data.nodeId && child.data.provider === file.provider && child.data.path === file.path &&
                 child.data.extra.datasetVersion === urlParams.version) {
-                console.log('hi');
                 tb.currentFileID = child.id;
             }
         }

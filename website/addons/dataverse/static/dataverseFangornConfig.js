@@ -216,6 +216,7 @@ function _fangornDataverseTitle(item, col) {
         var contents = [m('dataverse-name', item.data.name + ' (' + version + ')')];
         if (item.data.hasPublishedFiles) {
             if (item.data.permissions.edit) {
+                // Default to version in url parameters for file view page
                 var urlParams = $osf.urlParams();
                 if (urlParams.version && urlParams.version !== item.data.version) {
                     item.data.version = urlParams.version;
