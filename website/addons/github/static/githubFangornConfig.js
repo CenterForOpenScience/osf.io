@@ -27,9 +27,6 @@ function _removeEvent (event, items) {
     function runDelete (item) {
         tb.select('.tb-modal-footer .text-danger').html('<i> Deleting...</i>').css('color', 'grey');
         // delete from server, if successful delete from view
-        console.log(item);
-        console.log('The branch is ' + item.data.branch);
-        console.log('The sha is ' + item.data.extra.fileSha);
         $.ajax({
             url: waterbutler.buildTreeBeardDelete(item, {branch: item.data.branch, sha: item.data.extra.fileSha}),
             type : 'DELETE',
