@@ -26,6 +26,8 @@ def main():
             {'date_created': True},
         )
     ]
+    if not dates:
+        return
     plot_dates(dates)
     plt.title('folders ({0} total)'.format(len(dates)))
     plt.savefig(os.path.join(FIG_PATH, 'folder-actions.png'))

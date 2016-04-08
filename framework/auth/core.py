@@ -291,6 +291,8 @@ class User(GuidStoredObject, AddonModelMixin):
     # verification key used for resetting password
     verification_key = fields.StringField()
 
+    forgot_password_last_post = fields.DateTimeField()
+
     # confirmed emails
     #   emails should be stripped of whitespace and lower-cased before appending
     # TODO: Add validator to ensure an email address only exists once across
@@ -1197,9 +1199,9 @@ class User(GuidStoredObject, AddonModelMixin):
             # The first 4 bytes of Mongo's ObjectId encodes time
             # This prevents having to load each Log Object and access their
             # date fields
-            node_log_ids = [log_id for log_id in config.node.logs._to_primary_keys()
-                                   if bson.ObjectId(log_id).generation_time > since_date and
-                                   log_id not in log_ids]
+            node_log_ids = [log.pk for log in config.node.logs
+                                   if bson.ObjectId(log.pk).generation_time > since_date and
+                                   log.pk not in log_ids]
             # Log ids in reverse chronological order
             log_ids = _merge_into_reversed(log_ids, node_log_ids)
         return (l_id for l_id in log_ids)
