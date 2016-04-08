@@ -28,7 +28,7 @@ db['node'].create_index([
 ])
 
 db['node'].create_index([
-    ('tags.$', ASCENDING),
+    ('tags', ASCENDING),
     ('is_public', ASCENDING),
     ('is_deleted', ASCENDING),
     ('institution_id', ASCENDING),
