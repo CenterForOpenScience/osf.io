@@ -414,7 +414,11 @@ var LogPieces = {
         view: function (ctrl, logObject) {
             var source = logObject.attributes.params.source;
             if(paramIsReturned(source, logObject)){
-                return m('span', [source.materialized, ' in ', source.addon]);
+                var sourceMaterialized = source.materialized;
+                if (sourceMaterialized.endsWith('/')) {
+                    sourceMaterialized = stripBackslash(source.materialized);
+                }
+                return m('span', [sourceMaterialized, ' in ', source.addon]);
             }
             return m('span','a name/location' );
         }
@@ -424,10 +428,12 @@ var LogPieces = {
         view: function (ctrl, logObject) {
             var destination = logObject.attributes.params.destination;
             if(paramIsReturned(destination, logObject)){
-                if (destination.materialized.endsWith('/')){
-                    return m('span', [destination.materialized, ' in ', destination.addon]);
+                var destinationMaterialized = destination.materialized;
+                if (destinationMaterialized.endsWith('/')){
+                    destinationMaterialized = stripBackslash(destination.materialized);
+                    return m('span', [destinationMaterialized, ' in ', destination.addon]);
                 }
-                return m('span', [m('a', {href: destination.url}, destination.materialized), ' in ', destination.addon]);
+                return m('span', [m('a', {href: destination.url}, destinationMaterialized), ' in ', destination.addon]);
             }
             return m('span','a new name/location' );
         }
