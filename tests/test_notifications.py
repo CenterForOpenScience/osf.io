@@ -28,27 +28,10 @@ from website.util import web_url_for
 
 from tests import factories
 from tests.base import capture_signals
-from tests.base import OsfTestCase
+from tests.base import OsfTestCase, NotificationTestCase
 
 
-class AutoNotificationTestCase(OsfTestCase):
-    """ This class should be used when you'd like notifications for project users and contributors to be
-    added automatically when a node is saved or a contributor is added.
-    Using the basic OsfTestCase will ensure that subscriptions aren't made automatically so that tests are
-    more specific.
-    """
-    @classmethod
-    def setUpClass(cls):
-        super(AutoNotificationTestCase, cls).setUpClass()
-        cls._original_enable_notification_subscription_creation = settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION
-        settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION = True
-
-    @classmethod
-    def tearDownClass(cls):
-        settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION = cls._original_enable_notification_subscription_creation
-
-
-class TestNotificationsModels(AutoNotificationTestCase):
+class TestNotificationsModels(OsfTestCase):
     def setUp(self):
         super(TestNotificationsModels, self).setUp()
         # Create project with component
@@ -164,7 +147,7 @@ class TestNotificationsModels(AutoNotificationTestCase):
         assert_equal(len(contributor_subscriptions), 0)
 
 
-class TestSubscriptionView(AutoNotificationTestCase):
+class TestSubscriptionView(OsfTestCase):
 
     def setUp(self):
         super(TestSubscriptionView, self).setUp()
@@ -242,7 +225,7 @@ class TestSubscriptionView(AutoNotificationTestCase):
             assert_false(self.node.creator in getattr(s, n))
 
 
-class TestRemoveContributor(AutoNotificationTestCase):
+class TestRemoveContributor(OsfTestCase):
 
     def setUp(self):
         super(OsfTestCase, self).setUp()
@@ -293,7 +276,7 @@ class TestRemoveContributor(AutoNotificationTestCase):
         assert_equal(mock_signals.signals_sent(), set([contributor_removed]))
 
 
-class TestRemoveNodeSignal(AutoNotificationTestCase):
+class TestRemoveNodeSignal(OsfTestCase):
 
     def test_node_subscriptions_and_backrefs_removed_when_node_is_deleted(self):
         project = factories.ProjectFactory()
@@ -389,7 +372,7 @@ def event_schema(level=None):
     }
 
 
-class TestNotificationUtils(AutoNotificationTestCase):
+class TestNotificationUtils(OsfTestCase):
 
     def setUp(self):
         super(TestNotificationUtils, self).setUp()
@@ -740,7 +723,7 @@ class TestNotificationsDict(OsfTestCase):
         assert_equal(d, expected)
 
 
-class TestCompileSubscriptions(OsfTestCase):
+class TestCompileSubscriptions(NotificationTestCase):
     def setUp(self):
         super(TestCompileSubscriptions, self).setUp()
         self.user_1 = factories.UserFactory()
@@ -860,7 +843,7 @@ class TestCompileSubscriptions(OsfTestCase):
         assert_equal(subs, {'email_transactional': [], 'email_digest': [self.user_1._id], 'none': []})
 
 
-class TestMoveSubscription(OsfTestCase):
+class TestMoveSubscription(NotificationTestCase):
     def setUp(self):
         super(TestMoveSubscription, self).setUp()
         self.blank = {key: [] for key in constants.NOTIFICATION_TYPES}  # For use where it is blank.
@@ -978,7 +961,7 @@ class TestMoveSubscription(OsfTestCase):
         assert_equal([], self.file_sub.email_digest)
 
 
-class TestSendEmails(OsfTestCase):
+class TestSendEmails(NotificationTestCase):
     def setUp(self):
         super(TestSendEmails, self).setUp()
         self.user = factories.AuthUserFactory()
