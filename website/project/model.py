@@ -670,15 +670,17 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 ('date_modified', pymongo.DESCENDING),
             ]
         },
-        {
-            'unique': False,
-            'key_or_list': [
-                ('tags.$', pymongo.ASCENDING),
-                ('is_public', pymongo.ASCENDING),
-                ('is_deleted', pymongo.ASCENDING),
-                ('institution_id', pymongo.ASCENDING),
-            ]
-        },
+        #  Dollar sign indexes don't actually do anything
+        #  This index has been moved to scripts/indices.py#L30
+        # {
+        #     'unique': False,
+        #     'key_or_list': [
+        #         ('tags.$', pymongo.ASCENDING),
+        #         ('is_public', pymongo.ASCENDING),
+        #         ('is_deleted', pymongo.ASCENDING),
+        #         ('institution_id', pymongo.ASCENDING),
+        #     ]
+        # },
         {
             'unique': False,
             'key_or_list': [
