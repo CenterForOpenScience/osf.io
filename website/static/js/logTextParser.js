@@ -461,8 +461,22 @@ var LogPieces = {
     },
         //
     filename: {
+        controller: function(logObject) {
+            var self = this;
+            self.returnLinkForPath = function(){
+                if (logObject){
+                    var action = logObject.attributes.action;
+                    var acceptableLinkedItems = ['dataverse_file_added'];
+                    if (acceptableLinkedItems.indexOf(action) !== -1 && logObject.attributes.params.urls) {
+                        return logObject.attributes.params.urls.view;
+                    }
+                }
+                return null;
+            };
+        },
         view: function (ctrl, logObject) {
-            return returnTextParams('filename', 'a title', logObject);
+            var url = ctrl.returnLinkForPath();
+            return returnTextParams('filename', 'a title', logObject, url);
         }
     },
 
