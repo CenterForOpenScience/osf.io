@@ -143,7 +143,7 @@
         "title": "C. Analysis plan",
         "description": "For any required question that does not apply to your study put 'N/A' in the space for the relevant field.",
         "questions": [{
-            "qid": "confirmatory-analyses",
+            "qid": "confirmatory-analyses-first",
             "type": "object",
             "title": "Confirmatory Analyses",
             "properties": [{
@@ -181,7 +181,12 @@
                         "format": "textarea",
                         "required": true
                     }]
-                }, {
+            }]
+	}, {
+	    "qid": "confirmatory-analyses-second",
+	    "type": "object",
+	    "title": "Second Analysis",
+	    "properties": [{
                     "id": "second",
                     "type": "object",
                     "description": "Describe the analyses that will test the second main prediction from the hypotheses section. Include:",
@@ -211,7 +216,12 @@
                         "type": "string",
                         "format": "textarea"
                     }]
-                }, {
+            }]
+	}, {
+	    "qid": "confirmatory-analyses-third",
+	    "type": "object",
+	    "title": "Third Analysis",
+	    "properties": [{
                     "id": "third",
                     "type": "object",
                     "description": "Describe the analyses that will test the third main prediction from the hypotheses section. Include:",
@@ -219,29 +229,34 @@
                         "id": "question1c",
                         "description": "the relevant variables and how they are calculated;",
                         "type": "string",
-                        "format": "textarea"                        
+                        "format": "textarea"
                     }, {
                         "id": "question2c",
                         "description": "the statistical technique;",
                         "type": "string",
-                        "format": "textarea"                        
+                        "format": "textarea"
                     }, {
                         "id": "question3c",
                         "description": "each variable’s role in the technique (e.g., IV, DV, moderator, mediator, covariate);",
                         "type": "string",
-                        "format": "textarea"                        
+                        "format": "textarea"
                     }, {
                         "id": "question4c",
                         "description": "rationale for each covariate used, if any;",
                         "type": "string",
-                        "format": "textarea"                        
+                        "format": "textarea"
                     }, {
                         "id": "question5c",
                         "description": "if using techniques other than null hypothesis testing (for example, Bayesian statistics), describe your criteria and inputs toward making an evidential conclusion, including prior values or distributions.",
                         "type": "string",
-                        "format": "textarea"                        
+                        "format": "textarea"
                     }]
-                }, {
+            }]
+	}, {
+	    "qid": "confirmatory-analyses-fourth",
+	    "type": "object",
+	    "title": "Fourth Analysis",
+	    "properties": [{
                     "id": "fourth",
                     "type": "object",
                     "description": "Describe the analyses that will test the fourth main prediction from the hypotheses section. Include:",
@@ -271,7 +286,12 @@
                         "type": "string",
                         "format": "textarea"
                     }]
-                }, {
+            }]
+	}, {
+	    "qid": "confirmatory-analyses-further",
+	    "type": "object",
+	    "title": "Further Analyses",
+	    "properties": [{
                     "id": "further",
                     "type": "object",
                     "description": "Describe the analyses that will test any further (main) predictions from the hypotheses section. Include:",
