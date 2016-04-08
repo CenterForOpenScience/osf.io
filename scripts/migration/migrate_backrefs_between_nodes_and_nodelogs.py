@@ -46,7 +46,7 @@ def migrate(dry=True):
                 'original_node': log['params'].get('node', node),
             }})
         except Exception as error:
-            if log == {'__backrefs': {}, 'params': {}, '_id': log['_id']} or {'__backrefs': {'logged': {'node': {'logs': []}}}, 'params': {}, '_id': log['_id']}:
+            if log == {'__backrefs': {}, 'params': {}, '_id': log['_id']} or log == {'__backrefs': {'logged': {'node': {'logs': []}}}, 'params': {}, '_id': log['_id']}:
                 logger.warning('log {} is empty. Skipping.'.format(log['_id']))
             else:
                 logger.error('Could not migrate nodelog {} due to error'.format(log))
@@ -58,7 +58,7 @@ def migrate(dry=True):
         for other in tagged:
             clone = deepcopy(log)
             clone.pop('_id')
-            clone.pop('__backrefs')
+            clone.pop('__backrefs', None)
             clone['original_node'] = log['params'].get('node', node)
             clone['node'] = other
             to_insert.append(clone)
