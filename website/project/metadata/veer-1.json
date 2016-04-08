@@ -13,7 +13,7 @@
             "properties": [{
                 "id": "question1a",
                 "type": "string",
-                "format": "textarea",
+                "format": "textarea-lg",
                 "required": true,
                 "description": "Describe the (numbered) hypotheses in terms of directional relationships between your (manipulated or measured) variables."
             }, {
