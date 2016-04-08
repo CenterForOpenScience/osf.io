@@ -339,6 +339,11 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
 
         rejection_token = project_registration.embargo.approval_state[self.user._id]['rejection_token']
         project_registration.embargo.disapprove_embargo(self.user, rejection_token)
+
+        project_registration.reload()
+        component_registration.reload()
+        subcomponent_registration.reload()
+
         assert_equal(project_registration.embargo.state, Embargo.REJECTED)
         assert_true(project_registration.is_deleted)
         assert_true(component_registration.is_deleted)

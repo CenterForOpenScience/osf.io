@@ -1690,9 +1690,10 @@ class TestNode(OsfTestCase):
         folder = CollectionFactory(creator=pointed_project.creator)
         folder.add_pointer(pointed_project, Auth(pointed_project.creator), save=True)
 
-        assert_in(pointer_project, pointed_project.get_points(folders=False))
-        assert_not_in(folder, pointed_project.get_points(folders=False))
-        assert_in(folder, pointed_project.get_points(folders=True))
+        # Node equality is broken when not the same object
+        assert_in(pointer_project._id, map(lambda n: n._id, pointed_project.get_points(folders=False)))
+        assert_not_in(folder._id, map(lambda n: n._id, pointed_project.get_points(folders=False)))
+        assert_in(folder._id, map(lambda n: n._id, pointed_project.get_points(folders=True)))
 
     def test_get_points_exclude_deleted(self):
         user = UserFactory()
@@ -1700,8 +1701,9 @@ class TestNode(OsfTestCase):
         pointed_project = ProjectFactory(creator=user)  # project that other project points to
         pointer_project.add_pointer(pointed_project, Auth(pointer_project.creator), save=True)
 
-        assert_not_in(pointer_project, pointed_project.get_points(deleted=False))
-        assert_in(pointer_project, pointed_project.get_points(deleted=True))
+        # Node equality is broken when not the same object
+        assert_not_in(pointer_project._id, map(lambda n: n._id, pointed_project.get_points(deleted=False)))
+        assert_in(pointer_project._id, map(lambda n: n._id, pointed_project.get_points(deleted=True)))
 
     def test_add_pointer_already_present(self):
         node2 = NodeFactory(creator=self.user)
@@ -4214,6 +4216,7 @@ class TestPointer(OsfTestCase):
         project = ProjectFactory()
         node = NodeFactory(parent=project)
         node.nodes.append(self.pointer)
+        node.save()
         assert_true(node.has_pointers_recursive)
         assert_true(project.has_pointers_recursive)
 

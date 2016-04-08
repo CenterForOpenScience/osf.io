@@ -160,22 +160,17 @@ class AddonConfig(object):
 
     @property
     def icon(self):
-
         try:
             return self._icon
-        except:
+        except AttributeError:
             static_path = os.path.join('website', 'addons', self.short_name, 'static')
             static_files = glob.glob(os.path.join(static_path, 'comicon.*'))
-            image_files = [
+            return next((
                 os.path.split(filename)[1]
                 for filename in static_files
-                if _is_image(filename)
-            ]
-            if len(image_files) == 1:
-                self._icon = image_files[0]
-            else:
-                self._icon = None
-            return self._icon
+                if _is_image(filename)),
+                None
+            )
 
     @property
     def icon_url(self):
