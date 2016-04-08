@@ -344,18 +344,25 @@ class Comment(GuidStoredObject, SpamMixin):
 class NodeLog(StoredObject):
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+    __indices__ = [{
+        'key_or_list': [
+            ('user', 1),
+            ('node', 1)
+        ],
+    }, {
+        'key_or_list': [
+            ('node', 1),
+            ('should_hide', 1),
+            ('date', -1)
+        ]
+    }]
 
     date = fields.DateTimeField(default=datetime.datetime.utcnow, index=True)
     action = fields.StringField(index=True)
     params = fields.DictionaryField()
     should_hide = fields.BooleanField(default=False)
-    __indices__ = [
-        {
-            'key_or_list': [
-                ('__backrefs.logged.node.logs.$', 1)
-            ],
-        }
-    ]
+    original_node = fields.ForeignField('node', index=True)
+    node = fields.ForeignField('node', index=True)
 
     was_connected_to = fields.ForeignField('node', list=True)
 
@@ -460,13 +467,20 @@ class NodeLog(StoredObject):
     def pk(self):
         return self._id
 
-    @property
-    def node(self):
-        """Return the :class:`Node` associated with this log."""
-        return (
-            Node.load(self.params.get('node')) or
-            Node.load(self.params.get('project'))
-        )
+    def clone_node_log(self, node_id):
+        """
+        When a node is forked or registered, all logs on the node need to be cloned for the fork or registration.
+        :param node_id:
+        :return: cloned log
+        """
+        original_log = self.load(self._id)
+        node = Node.find(Q('_id', 'eq', node_id))[0]
+        log_clone = original_log.clone()
+        log_clone.node = node
+        log_clone.original_node = original_log.original_node
+        log_clone.user = original_log.user
+        log_clone.save()
+        return log_clone
 
     @property
     def tz_date(self):
@@ -486,29 +500,8 @@ class NodeLog(StoredObject):
         if self.tz_date:
             return self.tz_date.isoformat()
 
-    def resolve_node(self, node):
-        """A single `NodeLog` record may be attached to multiple `Node` records
-        (parents, forks, registrations, etc.), so the node that the log refers
-        to may not be the same as the node the user is viewing. Use
-        `resolve_node` to determine the relevant node to use for permission
-        checks.
-
-        :param Node node: Node being viewed
-        """
-        if self.node == node or self.node in node.nodes:
-            return self.node
-        if node.is_fork_of(self.node) or node.is_registration_of(self.node):
-            return node
-        for child in node.nodes:
-            if child.is_fork_of(self.node) or node.is_registration_of(self.node):
-                return child
-        return False
-
     def can_view(self, node, auth):
-        node_to_check = self.resolve_node(node)
-        if node_to_check:
-            return node_to_check.can_view(auth)
-        return False
+        return node.can_view(auth)
 
     def _render_log_contributor(self, contributor, anonymous=False):
         user = User.load(contributor)
@@ -823,7 +816,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     contributors = fields.ForeignField('user', list=True)
     users_watching_node = fields.ForeignField('user', list=True)
 
-    logs = fields.ForeignField('nodelog', list=True, backref='logged')
     tags = fields.ForeignField('tag', list=True)
 
     # Tags for internal use
@@ -852,6 +844,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     def __init__(self, *args, **kwargs):
 
+        kwargs.pop('logs', [])
+
         super(Node, self).__init__(*args, **kwargs)
 
         if kwargs.get('_is_loaded', False):
@@ -878,6 +872,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     @property
     def pk(self):
         return self._id
+
+    @property
+    def logs(self):
+        """ List of logs associated with this node"""
+        return NodeLog.find(Q('node', 'eq', self._id)).sort('date')
 
     @property
     def license(self):
@@ -1748,12 +1747,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         ids = [self._id] + [n._id
                             for n in self.get_descendants_recursive()
                             if n.can_view(auth)]
-        query = Q('__backrefs.logged.node.logs', 'in', ids) & Q('should_hide', 'ne', True)
+        query = Q('node', 'in', ids) & Q('should_hide', 'ne', True)
         return query
 
     def get_aggregate_logs_queryset(self, auth):
         query = self.get_aggregate_logs_query(auth)
-        return NodeLog.find(query).sort('-_id')
+        return NodeLog.find(query).sort('-date')
 
     @property
     def nodes_pointer(self):
@@ -1869,7 +1868,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         :param int n: Number of logs to retrieve
         """
-        return list(reversed(self.logs)[:n])
+        return self.logs.sort('-date')[:n]
 
     def set_title(self, title, auth, save=False):
         """Set the title of this Node and log it.
@@ -2056,7 +2055,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         # correct URLs to that content.
         forked = original.clone()
 
-        forked.logs = self.logs
         forked.tags = self.tags
 
         # Recursively fork child nodes
@@ -2101,6 +2099,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             save=False
         )
 
+        forked.save()
+
         forked.add_log(
             action=NodeLog.NODE_FORKED,
             params={
@@ -2113,7 +2113,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             save=False,
         )
 
-        forked.save()
+        # Clone each log from the original node for this fork.
+        logs = original.logs
+        for log in logs:
+            log.clone_node_log(forked._id)
+
+        forked.reload()
+
         # After fork callback
         for addon in original.get_addons():
             _, message = addon.after_fork(original, forked, user)
@@ -2167,7 +2173,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.contributors = self.contributors
         registered.forked_from = self.forked_from
         registered.creator = self.creator
-        registered.logs = self.logs
         registered.tags = self.tags
         registered.piwik_site_id = None
         registered.primary_institution = self.primary_institution
@@ -2176,6 +2181,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.node_license = original.license.copy() if original.license else None
 
         registered.save()
+
+        # Clone each log from the original node for this registration.
+        logs = original.logs
+        for log in logs:
+            log.clone_node_log(registered._id)
+
         registered.is_public = False
         for node in registered.get_descendants_recursive():
             node.is_public = False
@@ -2204,6 +2215,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.save()
 
         if settings.ENABLE_ARCHIVER:
+            registered.reload()
             project_signals.after_create_registration.send(self, dst=registered, user=auth.user)
 
         return registered
@@ -2313,21 +2325,25 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True):
         user = auth.user if auth else None
-        params['node'] = params.get('node') or params.get('project')
+        params['node'] = params.get('node') or params.get('project') or self._id
         log = NodeLog(
             action=action,
             user=user,
             foreign_user=foreign_user,
             params=params,
+            node=self,
+            original_node=params['node']
         )
 
         if log_date:
             log.date = log_date
-
-        self.date_modified = log.date.replace(tzinfo=None)
-
         log.save()
-        self.logs.append(log)
+
+        if len(self.logs) == 1:
+            self.date_modified = log.date.replace(tzinfo=None)
+        else:
+            self.date_modified = self.logs[-1].date.replace(tzinfo=None)
+
         if save:
             self.save()
         if user:
