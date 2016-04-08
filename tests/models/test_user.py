@@ -125,25 +125,33 @@ class TestUser(base.OsfTestCase):
         assert_equal(list(self.user.contributed), list(projects_contributed_to))
 
     def test_contributor_to_property(self):
-        # Make sure there's at least one deleted project and bookmark collection
-        factories.ProjectFactory(creator=self.user, is_deleted=True)
-        factories.BookmarkCollectionFactory(creator=self.user)
+        normal_node = factories.ProjectFactory(creator=self.user)
+        deleted_node = factories.ProjectFactory(creator=self.user, is_deleted=True)
+        bookmark_collection_node = factories.BookmarkCollectionFactory(creator=self.user)
+        collection_node = factories.CollectionFactory(creator=self.user)
+        contributor_to_nodes = [node._id for node in self.user.contributor_to]
 
-        contributor_to = project.model.Node.find(
-            Q('contributors', 'eq', self.user._id) &
-            Q('is_deleted', 'ne', True) &
-            Q('is_collection', 'ne', True)
-        )
-        assert_equal(list(contributor_to), list(self.user.contributor_to))
+        assert_in(normal_node._id, contributor_to_nodes)
+        assert_not_in(deleted_node._id, contributor_to_nodes)
+        assert_not_in(bookmark_collection_node._id, contributor_to_nodes)
+        assert_not_in(collection_node._id, contributor_to_nodes)
 
     def test_visible_contributor_to_property(self):
-        visible_contributor_to = project.model.Node.find(
-            Q('contributors', 'eq', self.user._id) &
-            Q('is_deleted', 'ne', True) &
-            Q('is_collection', 'ne', True) &
-            Q('visible_contributor_ids', 'eq', self.user._id)
-        )
-        assert_equal(list(visible_contributor_to), list(self.user.visible_contributor_to))
+        invisible_contributor = factories.UserFactory()
+        normal_node = factories.ProjectFactory(creator=invisible_contributor)
+        deleted_node = factories.ProjectFactory(creator=invisible_contributor, is_deleted=True)
+        bookmark_collection_node = factories.BookmarkCollectionFactory(creator=invisible_contributor)
+        collection_node = factories.CollectionFactory(creator=invisible_contributor)
+        project_to_be_invisible_on = factories.ProjectFactory()
+        project_to_be_invisible_on.add_contributor(invisible_contributor, visible=False)
+
+        visible_contributor_to_nodes = [node._id for node in invisible_contributor.visible_contributor_to]
+
+        assert_in(normal_node._id, visible_contributor_to_nodes)
+        assert_not_in(deleted_node._id, visible_contributor_to_nodes)
+        assert_not_in(bookmark_collection_node._id, visible_contributor_to_nodes)
+        assert_not_in(collection_node._id, visible_contributor_to_nodes)
+        assert_not_in(project_to_be_invisible_on._id, visible_contributor_to_nodes)
 
     def test_created_property(self):
         # make sure there's at least one project
