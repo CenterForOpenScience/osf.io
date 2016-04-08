@@ -66,11 +66,6 @@
     <div id='devmode'><strong>WARNING</strong>: This site is running in development mode.</div>
     % endif
     % if private_link:
-        <%user['permissions'] = ['read']%>
-        <%user['is_contributor'] = False%>
-        <%user['can_comment'] = False%>
-        <%node['has_comments'] = False%>
-        <%user['can_edit_wiki_body'] = False%>
         <%namespace name="view_only_nav_file" file="view_only_nav.mako"/>
             <%block name="view_only_nav">
                 ${view_only_nav_file.view_only_nav()}
