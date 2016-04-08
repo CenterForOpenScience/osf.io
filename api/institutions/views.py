@@ -66,7 +66,7 @@ class InstitutionList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     view_category = 'institutions'
     view_name = 'institution-list'
 
-    ordering = ('name', )
+    ordering = ('-date_modified', )
 
     def get_default_odm_query(self):
         return Q('_id', 'ne', None)
