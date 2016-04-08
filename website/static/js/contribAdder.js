@@ -400,9 +400,11 @@ AddContributorViewModel = oop.extend(Paginator, {
             $osf.unblock();
             $osf.growl('Could not add contributors', 'There was a problem trying to add contributors. ' + osfLanguage.REFRESH_OR_SUPPORT);
             Raven.captureMessage('Error adding contributors', {
-                url: url,
-                status: status,
-                error: error
+                extra: {
+                    url: url,
+                    status: status,
+                    error: error
+                }
             });
         });
     },

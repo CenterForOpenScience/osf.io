@@ -76,9 +76,11 @@ FilesWidget.prototype.init = function() {
         self.filebrowser = new Fangorn(self.fangornOpts);
     }).fail(function(xhr, status, error) {
         Raven.captureMessage('Could not GET files', {
-            url: self.filesUrl,
-            textStatus: status,
-            error: error
+            extra: {
+                url: self.filesUrl,
+                textStatus: status,
+                error: error
+            }
         });
         $('#' + self.fangornOpts.divID).replaceWith(
             $('<div>', {
@@ -96,9 +98,8 @@ FilesWidget.prototype.init = function() {
 };
 FilesWidget.prototype.destroy = function() {
     if (this.filebrowser) {
-        if (this.filebrowser.grid.tbController) {
-            this.filebrowser.grid.tbController.destroy();
-            delete this.filebrowser.tbController;
+        if (this.filebrowser.grid) {
+            this.filebrowser.grid.destroy();
         }
         delete this.filebrowser;
     }

@@ -60,6 +60,7 @@ function _poContributors(item) {
     if (contributorList.length === 0) {
         return '';
     }
+    var totalContributors = item.data.embeds.contributors.links.meta.total;
 
     return contributorList.map(function (person, index, arr) {
         var name;
@@ -96,7 +97,7 @@ function _poContributors(item) {
             return m('span');
         }
         if (index === 2) {
-            return m('span', ' + ' + (arr.length - 2));
+            return m('span', ' + ' + (totalContributors -2)); // We already show names of the two
         }
         return m('span', comma + name);
     });
@@ -406,11 +407,12 @@ var tbOptions = {
                 if ($(this).val().length === 0) {
                     resetFilter();
                 } else {
+                    tb.filterText(event.target.value);
                     tb.filter(event);
                 }
             },
             onchange: function(event) {
-                tb.filterText(event.value);
+                tb.filterText(event.target.value);
                 $osf.trackClick('myProjects', 'filter', 'search-projects');
             },
             value: tb.filterText()

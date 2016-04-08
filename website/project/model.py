@@ -570,7 +570,7 @@ class Pointer(StoredObject):
     primary = False
 
     _id = fields.StringField()
-    node = fields.ForeignField('node', backref='_pointed')
+    node = fields.ForeignField('node')
 
     _meta = {'optimistic': True}
 
@@ -780,10 +780,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     is_registration = fields.BooleanField(default=False, index=True)
     registered_date = fields.DateTimeField(index=True)
-    registered_user = fields.ForeignField('user', backref='registered')
+    registered_user = fields.ForeignField('user')
 
     # A list of all MetaSchemas for which this Node has registered_meta
-    registered_schema = fields.ForeignField('metaschema', backref='registered', list=True, default=list)
+    registered_schema = fields.ForeignField('metaschema', list=True, default=list)
     # A set of <metaschema._id>: <schema> pairs, where <schema> is a
     # flat set of <question_id>: <response> pairs-- these question ids_above
     # map the the ids in the registrations MetaSchema (see registered_schema).
@@ -821,22 +821,22 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     creator = fields.ForeignField('user', index=True)
     contributors = fields.ForeignField('user', list=True)
-    users_watching_node = fields.ForeignField('user', list=True, backref='watched')
+    users_watching_node = fields.ForeignField('user', list=True)
 
     logs = fields.ForeignField('nodelog', list=True, backref='logged')
-    tags = fields.ForeignField('tag', list=True, backref='tagged')
+    tags = fields.ForeignField('tag', list=True)
 
     # Tags for internal use
     system_tags = fields.StringField(list=True)
 
     nodes = fields.AbstractForeignField(list=True, backref='parent')
-    forked_from = fields.ForeignField('node', backref='forked', index=True)
-    registered_from = fields.ForeignField('node', backref='registrations', index=True)
+    forked_from = fields.ForeignField('node', index=True)
+    registered_from = fields.ForeignField('node', index=True)
     root = fields.ForeignField('node', index=True)
     parent_node = fields.ForeignField('node', index=True)
 
     # The node (if any) used as a template for this node's creation
-    template_node = fields.ForeignField('node', backref='template_node', index=True)
+    template_node = fields.ForeignField('node', index=True)
 
     piwik_site_id = fields.StringField()
 
@@ -844,7 +844,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     # {<User.id>: [<Node._id>, <Node2._id>, ...] }
     child_node_subscriptions = fields.DictionaryField(default=dict)
 
-    alternative_citations = fields.ForeignField('alternativecitation', list=True, backref='citations')
+    alternative_citations = fields.ForeignField('alternativecitation', list=True)
 
     _meta = {
         'optimistic': True,
@@ -983,7 +983,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     @property
     def private_links(self):
-        return self.privatelink__shared
+        # TODO: Consumer code assumes this is a list. Hopefully there aren't many links?
+        return list(PrivateLink.find(Q('nodes', 'eq', self._id)))
 
     @property
     def private_links_active(self):
@@ -1094,8 +1095,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     @property
     def forks(self):
         """List of forks of this node"""
-        return list(self.node__forked.find(Q('is_deleted', 'eq', False) &
-                                           Q('is_registration', 'ne', True)))
+        return Node.find(Q('forked_from', 'eq', self._id) &
+                         Q('is_deleted', 'eq', False)
+                         & Q('is_registration', 'ne', True))
 
     def add_permission(self, user, permission, save=False):
         """Grant permission to a user.
@@ -1775,7 +1777,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     @property
     def pointed(self):
-        return getattr(self, '_pointed', [])
+        return Pointer.find(Q('node', 'eq', self._id))
 
     def pointing_at(self, pointed_node_id):
         """This node is pointed at another node.
@@ -2223,19 +2225,24 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 self.save()
 
     def add_tag(self, tag, auth, save=True, log=True):
-        if tag not in self.tags:
-            new_tag = Tag.load(tag)
-            if not new_tag:
-                new_tag = Tag(_id=tag)
-            new_tag.save()
-            self.tags.append(new_tag)
+        if not isinstance(tag, Tag):
+            tag_instance = Tag.load(tag)
+            if tag_instance is None:
+                tag_instance = Tag(_id=tag)
+        else:
+            tag_instance = tag
+        #  should noop if it's not dirty
+        tag_instance.save()
+
+        if tag_instance._id not in self.tags:
+            self.tags.append(tag_instance)
             if log:
                 self.add_log(
                     action=NodeLog.TAG_ADDED,
                     params={
                         'parent_node': self.parent_id,
                         'node': self._primary_key,
-                        'tag': tag,
+                        'tag': tag_instance._id,
                     },
                     auth=auth,
                     save=False,
@@ -2367,7 +2374,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if self.is_registration:
             path = '/registrations/{}/'.format(self._id)
             return api_v2_url(path)
-        if self.is_folder:
+        if self.is_collection:
             path = '/collections/{}/'.format(self._id)
             return api_v2_url(path)
         path = '/nodes/{}/'.format(self._id)
@@ -2444,11 +2451,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     @property
     def templated_list(self):
-        return [
-            x
-            for x in self.node__template_node
-            if not x.is_deleted
-        ]
+        return Node.find(Q('template_node', 'eq', self._id) & Q('is_deleted', 'ne', True))
 
     @property
     def _parent_node(self):
@@ -2486,8 +2489,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return self.archivejob__active[0] if self.archivejob__active else None
 
     @property
+    def registrations_all(self):
+        return Node.find(Q('registered_from', 'eq', self._id))
+
+    @property
     def registrations(self):
-        return self.node__registrations.find(Q('archiving', 'eq', False))
+        # TODO: This method may be totally unused
+        return Node.find(Q('registered_from', 'eq', self._id) & Q('archiving', 'eq', False))
 
     @property
     def watch_url(self):
@@ -3406,6 +3414,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             save=True,
         )
 
+    @property
+    def watches(self):
+        return WatchConfig.find(Q('node', 'eq', self._id))
+
     institution_id = fields.StringField(unique=True, index=True)
     institution_domains = fields.StringField(list=True)
     institution_auth_url = fields.StringField(validate=URLValidator())
@@ -3560,7 +3572,7 @@ def validate_visible_contributors(schema, instance):
 class WatchConfig(StoredObject):
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
-    node = fields.ForeignField('Node', backref='watched')
+    node = fields.ForeignField('Node')
     digest = fields.BooleanField(default=False)
     immediate = fields.BooleanField(default=False)
 
@@ -3577,8 +3589,8 @@ class PrivateLink(StoredObject):
     is_deleted = fields.BooleanField(default=False)
     anonymous = fields.BooleanField(default=False)
 
-    nodes = fields.ForeignField('node', list=True, backref='shared')
-    creator = fields.ForeignField('user', backref='created')
+    nodes = fields.ForeignField('node', list=True)
+    creator = fields.ForeignField('user')
 
     @property
     def node_ids(self):
