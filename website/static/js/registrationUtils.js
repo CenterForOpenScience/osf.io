@@ -275,7 +275,7 @@ var Question = function(questionSchema, data) {
                 var ret = true;
                 $.each(self.properties, function(_, subQuestion) {
                     var value = subQuestion.value();
-                    if (subQuestion.required && !(Boolean(value === true || (value && value.length)))) {
+                    if (!subQuestion.isComplete()) {
                         ret = false;
                         return;
                     }
@@ -850,33 +850,37 @@ var RegistrationEditor = function(urls, editorId, preview) {
 
     preview = preview || false;
     if (preview) {
+	var unwrap = function(question) {
+	    var $elem = $('<span>');
+	    if (question.type === 'object') {
+                $elem.append(
+                    $.map(question.properties, function(subQuestion) {
+                        subQuestion = self.context(subQuestion, self, true);
+			return unwrap(subQuestion);
+		    })
+                );
+            } else {
+                var value;
+                if (self.extensions[question.type] ) {
+                    value = question.preview();
+                } else {
+                    value = $osf.htmlEscape(question.value() || '');
+                }
+		$elem.append(
+		    $('<span class="col-md-12">').append(
+			$('<p class="breaklines"><small><em>' + question.description + '</em></small></p>'),
+			$('<span class="well col-md-12">' + value + '</span>')
+		    )
+		);
+            }
+	    return $elem;
+	};
+
         ko.bindingHandlers.previewQuestion = {
             init: function(elem, valueAccessor) {
                 var question = valueAccessor();
                 var $elem = $(elem);
-
-                if (question.type === 'object') {
-                    $elem.append(
-                        $.map(question.properties, function(subQuestion) {
-                            subQuestion = self.context(subQuestion, self, true);
-                            var value;
-                            if (self.extensions[subQuestion.type] ) {
-                                value = subQuestion.preview();
-                            } else {
-                                value = $osf.htmlEscape(subQuestion.value() || '');
-                            }
-                            return $('<p>').append(value);
-                        })
-                    );
-                } else {
-                    var value;
-                    if (self.extensions[question.type] ) {
-                        value = question.preview();
-                    } else {
-                        value = $osf.htmlEscape(question.value() || '');
-                    }
-                    $elem.append(value);
-                }
+		$elem.append(unwrap(question));
             }
         };
     }

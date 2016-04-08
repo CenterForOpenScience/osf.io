@@ -15,7 +15,7 @@
               <ul class="list-group" data-bind="foreach: {data: Object.keys(page.questions), as: 'qid'}">
                 <span data-bind="with: page.questions[qid]">
                   <li class="registration-editor-question list-group-item">
-                    <a data-bind="text: nav, attr.href: '#' + qid"></a>
+                    <a data-bind="text: $data.nav || $data.title, attr.href: '#' + qid"></a>
                   </li>
                 </span>
               </ul>
@@ -30,8 +30,7 @@
             <div data-bind="foreach: {data: page.questions, as: 'question'}">
               <div class="row">
                 <h4 data-bind="attr.id: question.id, text: question.title"></h4>
-                <small><em data-bind="text: question.description"></em></small>
-                <div class="col-md-12 well">
+                <div class="col-md-12">
                   <span data-bind="if: question.value()">
                     <p>
                       <span data-bind="previewQuestion: $root.editor.context(question, $root.editor)"></span>
