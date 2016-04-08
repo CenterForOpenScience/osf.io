@@ -25,8 +25,14 @@ function _removeEvent (event, items) {
     }
 
     function runDelete (item) {
-        tb.select('.tb-modal-footer .text-danger').html('<i> Deleting...</i>').css('color', 'grey');;
+        tb.select('.tb-modal-footer .text-danger').html('<i> Deleting...</i>').css('color', 'grey');
         // delete from server, if successful delete from view
+        // Weird stuff is going on. If you have more than 1 folder under the GH repo, you can delete all but the last folder.
+        // The last folder is un-deletable.
+        // There may be some issues here because we're deleting a FOLDER, not a FILE. Let's check.
+        console.log(item);
+        console.log('The branch is ' + item.data.branch);
+        console.log('The sha is ' + item.data.extra.fileSha);
         $.ajax({
             url: waterbutler.buildTreeBeardDelete(item, {branch: item.data.branch, sha: item.data.extra.fileSha}),
             type : 'DELETE',
@@ -130,6 +136,7 @@ var _githubItemButtons = {
             window.location = waterbutler.buildTreeBeardDownload(item, {fileSha: item.data.extra.fileSha});
         }
         // Download Zip File
+        // There is nothing in here that allows for deleting a folder. This should change.
         if (item.kind === 'folder') {
             var branchArray = [];
             if (item.data.branches) {
@@ -192,6 +199,18 @@ var _githubItemButtons = {
                         }, 'Open')
                     );
                 }
+            }
+            // Allow the user to delete a Github folder from the fileview
+            if (item.data.permissions && item.data.permissions.edit) {
+                buttons.push(
+                    m.component(Fangorn.Components.button, {
+                        onclick: function (event) {
+                            _removeEvent.call(tb, event, [item]);
+                        },
+                        icon: 'fa fa-trash',
+                        className: 'text-danger'
+                    }, 'Delete')
+                );
             }
         } else if (item.kind === 'file' && tb.options.placement !== 'fileview') {
             buttons.push(

@@ -76,6 +76,9 @@ var _dataverseItemButtons = {
                     item.data.dataverseIsPublished = true;
                     item.data.hasPublishedFiles = item.children.length > 0;
                     item.data.version = item.data.hasPublishedFiles ? 'latest-published' : 'latest';
+                    for (var i = 0; i < item.children.length; i++) { // Brute force the child files to be set as "latest-published" without page reload
+                        item.children[i].data.extra.datasetVersion = item.data.hasPublishedFiles ? 'latest-published' : 'latest';
+                    }
                 }).fail(function (xhr, status, error) {
                     var statusCode = xhr.responseJSON.code;
                     var message;
@@ -213,7 +216,6 @@ function _fangornDataverseTitle(item, col) {
         var contents = [m('dataverse-name', item.data.name + ' (' + version + ')')];
         if (item.data.hasPublishedFiles) {
             if (item.data.permissions.edit) {
-                // Default to version in url parameters for file view page
                 var urlParams = $osf.urlParams();
                 if (urlParams.version && urlParams.version !== item.data.version) {
                     item.data.version = urlParams.version;
