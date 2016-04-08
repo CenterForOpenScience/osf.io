@@ -38,6 +38,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     github_user = ser.CharField(read_only=True, source='github.user')
     github_repo = ser.CharField(read_only=True, source='github.repo')
     filename = ser.CharField(read_only=True)
+    kind = ser.CharField(read_only=True)
     folder = ser.CharField(read_only=True)
     folder_name = ser.CharField(read_only=True)
     identifiers = NodeLogIdentifiersSerializer(read_only=True)
