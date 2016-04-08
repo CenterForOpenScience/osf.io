@@ -111,9 +111,9 @@ AddContributorViewModel = oop.extend(Paginator, {
                 return user.id;
             });
             var contributors = self.contributors();
-            return !($osf.any(
+            return ($osf.any(
                 $.map(self.results(), function (result) {
-                    return contributors.indexOf(result.id) === -1 && selected_ids.indexOf(result.id === -1);
+                    return contributors.indexOf(result.id) === -1 && selected_ids.indexOf(result.id) === -1;
                 })
             ));
         });
@@ -400,9 +400,11 @@ AddContributorViewModel = oop.extend(Paginator, {
             $osf.unblock();
             $osf.growl('Could not add contributors', 'There was a problem trying to add contributors. ' + osfLanguage.REFRESH_OR_SUPPORT);
             Raven.captureMessage('Error adding contributors', {
-                url: url,
-                status: status,
-                error: error
+                extra: {
+                    url: url,
+                    status: status,
+                    error: error
+                }
             });
         });
     },

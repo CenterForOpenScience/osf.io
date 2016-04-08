@@ -1,7 +1,9 @@
+import weakref
 from django.http import JsonResponse
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import generics
+# from rest_framework.serializers
 from rest_framework.mixins import ListModelMixin
 
 from api.users.serializers import UserSerializer
@@ -11,6 +13,9 @@ from django.conf import settings as django_settings
 from .utils import absolute_reverse, is_truthy
 
 from .requests import EmbeddedRequest
+
+
+CACHE = weakref.WeakKeyDictionary()
 
 
 class JSONAPIBaseView(generics.GenericAPIView):
@@ -30,19 +35,68 @@ class JSONAPIBaseView(generics.GenericAPIView):
         :return function object -> dict:
         """
         if getattr(field, 'field', None):
-                field = field.field
+            field = field.field
         def partial(item):
             # resolve must be implemented on the field
-            view, view_args, view_kwargs = field.resolve(item)
-            if issubclass(view.cls, ListModelMixin) and field.always_embed:
-                raise Exception("Cannot auto-embed a list view.")
-            request = EmbeddedRequest(self.request)
+            v, view_args, view_kwargs = field.resolve(item)
+
+            if isinstance(self.request._request, EmbeddedRequest):
+                request = self.request._request
+            else:
+                request = EmbeddedRequest(self.request)
+
             view_kwargs.update({
                 'request': request,
                 'is_embedded': True
             })
-            response = view(*view_args, **view_kwargs)
-            return response.data
+
+            # Setup a view ourselves to avoid all the junk DRF throws in
+            # v is a function that hides everything v.cls is the actual view class
+            view = v.cls()
+            view.args = view_args
+            view.kwargs = view_kwargs
+            view.request = request
+            view.request.parser_context['kwargs'] = view_kwargs
+            view.format_kwarg = view.get_format_suffix(**view_kwargs)
+
+            _cache_key = (v.cls, field_name, view.get_serializer_class(), item)
+            if _cache_key in CACHE.setdefault(self.request._request, {}):
+                # We already have the result for this embed, return it
+                return CACHE[self.request._request][_cache_key]
+
+            # Cache serializers. to_representation of a serializer should NOT augment it's fields so resetting the context
+            # should be sufficient for reuse
+            if not view.get_serializer_class() in CACHE.setdefault(self.request._request, {}):
+                CACHE[self.request._request][view.get_serializer_class()] = view.get_serializer_class()(many=isinstance(view, ListModelMixin))
+            ser = CACHE[self.request._request][view.get_serializer_class()]
+
+            try:
+                if not isinstance(view, ListModelMixin):
+                    ser._context = view.get_serializer_context()
+                    ret = ser.to_representation(view.get_object())
+                else:
+                    ser._context = view.get_serializer_context()
+                    queryset = view.filter_queryset(view.get_queryset())
+                    page = view.paginate_queryset(queryset)
+
+                    ret = ser.to_representation(page or queryset)
+
+                    if page is not None:
+                        request.parser_context['view'] = view
+                        request.parser_context['kwargs'].pop('request')
+                        view.paginator.request = request
+                        ret = view.paginator.get_paginated_response(ret).data
+            except Exception as e:
+                ret = view.handle_exception(e).data
+
+            # Allow request to be gc'd
+            ser._context = None
+
+            # Cache our final result
+            CACHE[self.request._request][_cache_key] = ret
+
+            return ret
+
         return partial
 
     def get_serializer_context(self):
@@ -56,8 +110,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
         else:
             embeds = self.request.query_params.getlist('embed')
 
-        fields = self.serializer_class._declared_fields
-        fields_check = fields.copy()
+        fields_check = self.serializer_class._declared_fields.copy()
 
         for field in fields_check:
             if getattr(fields_check[field], 'field', None):
@@ -76,7 +129,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
         context.update({
             'enable_esi': (
                 is_truthy(self.request.query_params.get('esi', django_settings.ENABLE_ESI)) and
-                self.request.accepted_media_type in django_settings.ESI_MEDIA_TYPES
+                self.request.accepted_renderer.media_type in django_settings.ESI_MEDIA_TYPES
             ),
             'embed': embeds_partials,
             'envelope': self.request.query_params.get('envelope', 'data'),
@@ -414,6 +467,7 @@ def root(request, format=None):
     }
     if settings.DEV_MODE:
         return_val["links"]["collections"] = absolute_reverse('collections:collection-list')
+        return_val["links"]["registrations"] = absolute_reverse('registrations:registration-list')
 
     return Response(return_val)
 

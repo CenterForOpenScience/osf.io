@@ -89,6 +89,10 @@ function NodeSelectTreebeard(divID, data, nodesState) {
                 }
             ];
         },
+        onload : function () {
+            var tb = this;
+            expandOnLoad.call(tb);
+        },
         resolveRows: function nodeSelectResolveRows(item){
             var tb = this;
             var columns = [];
@@ -133,7 +137,5 @@ function NodeSelectTreebeard(divID, data, nodesState) {
         }
     });
     var grid = new Treebeard(tbOptions);
-    expandOnLoad.call(grid.tbController);
 }
 module.exports = NodeSelectTreebeard;
-

@@ -38,7 +38,7 @@ class TestNodeSerializer(DbTestCase):
         assert_equal(attributes['category'], node.category)
         assert_equal(attributes['registration'], node.is_registration)
         assert_equal(attributes['fork'], node.is_fork)
-        assert_equal(attributes['collection'], node.is_folder)
+        assert_equal(attributes['collection'], node.is_collection)
 
         # Relationships
         relationships = data['relationships']
