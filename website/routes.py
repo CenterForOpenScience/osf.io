@@ -211,22 +211,79 @@ def make_url_map(app):
 
     process_rules(app, [
 
-        Rule('/dashboard/', 'get', website_views.redirect_to_home, OsfWebRenderer('home.mako')),
-        Rule('/myprojects/', 'get', website_views.dashboard, OsfWebRenderer('dashboard.mako')),
+        Rule(
+            '/dashboard/',
+            'get',
+            website_views.redirect_to_home,
+            OsfWebRenderer('home.mako', trust=False)
+        ),
+        Rule(
+            '/myprojects/',
+            'get',
+            website_views.dashboard,
+            OsfWebRenderer('dashboard.mako', trust=False)
+        ),
 
-        Rule('/reproducibility/', 'get',
-             website_views.reproducibility, OsfWebRenderer('', render_mako_string)),
+        Rule(
+            '/reproducibility/',
+            'get',
+            website_views.reproducibility,
+            notemplate
+        ),
 
-        Rule('/about/', 'get', website_views.redirect_about, json_renderer,),
-        Rule('/howosfworks/', 'get', website_views.redirect_howosfworks, json_renderer,),
+        Rule(
+            '/about/',
+            'get',
+            website_views.redirect_about,
+            json_renderer
+        ),
+        Rule(
+            '/howosfworks/',
+            'get',
+            website_views.redirect_howosfworks,
+            json_renderer
+        ),
 
-        Rule('/faq/', 'get', {}, OsfWebRenderer('public/pages/faq.mako')),
-        Rule('/getting-started/', 'get', {}, OsfWebRenderer('public/pages/getting_started.mako')),
-        Rule('/getting-started/email/', 'get', website_views.redirect_meetings_analytics_link, json_renderer),
-        Rule('/support/', 'get', {}, OsfWebRenderer('public/pages/support.mako')),
+        Rule(
+            '/faq/',
+            'get',
+            {},
+            OsfWebRenderer('public/pages/faq.mako')
+        ),
+        Rule(
+            '/getting-started/',
+            'get',
+            {},
+            OsfWebRenderer('public/pages/getting_started.mako')
+        ),
+        Rule(
+            '/getting-started/email/',
+            'get',
+            website_views.redirect_meetings_analytics_link,
+            json_renderer
+        ),
+        Rule(
+            '/support/',
+            'get',
+            {},
+            OsfWebRenderer('public/pages/support.mako', trust=False)
+        ),
 
-        Rule('/explore/', 'get', {}, OsfWebRenderer('public/explore.mako')),
-        Rule(['/messages/', '/help/'], 'get', {}, OsfWebRenderer('public/comingsoon.mako')),
+        Rule(
+            '/explore/',
+            'get',
+            {},
+            OsfWebRenderer('public/explore.mako', trust=False)
+        ),
+        Rule(
+            [
+                '/messages/',
+                '/help/'
+            ],
+            'get',
+            {},
+            OsfWebRenderer('public/comingsoon.mako', trust=False)
+        ),
 
         Rule(
             '/view/<meeting>/',
