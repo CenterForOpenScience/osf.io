@@ -144,7 +144,6 @@ class TestUser(base.OsfTestCase):
         collection_node = factories.CollectionFactory(creator=invisible_contributor)
         project_to_be_invisible_on = factories.ProjectFactory()
         project_to_be_invisible_on.add_contributor(invisible_contributor, visible=False)
-
         visible_contributor_to_nodes = [node._id for node in invisible_contributor.visible_contributor_to]
 
         assert_in(normal_node._id, visible_contributor_to_nodes)
