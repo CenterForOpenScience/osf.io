@@ -86,7 +86,6 @@ def get_globals():
         'api_v2_url': util.api_v2_url,  # URL function for templates
         'api_v2_base': util.api_v2_url(''),  # Base url used by JS api helper
         'sanitize': sanitize,
-        'js_str': lambda x: x.replace("'", r"\'").replace('"', r'\"'),
         'sjson': lambda s: sanitize.safe_json(s),
         'webpack_asset': paths.webpack_asset,
         'waterbutler_url': settings.WATERBUTLER_URL,
