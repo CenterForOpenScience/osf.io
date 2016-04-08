@@ -134,9 +134,6 @@ class DbTestCase(unittest.TestCase):
         cls._original_bcrypt_log_rounds = settings.BCRYPT_LOG_ROUNDS
         settings.BCRYPT_LOG_ROUNDS = 1
 
-        cls._original_enable_notification_subscription_creation = settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION
-        settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION = False
-
         teardown_database(database=database_proxy._get_current_object())
         # TODO: With `database` as a `LocalProxy`, we should be able to simply
         # this logic
@@ -159,7 +156,6 @@ class DbTestCase(unittest.TestCase):
         settings.PIWIK_HOST = cls._original_piwik_host
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = cls._original_enable_email_subscriptions
         settings.BCRYPT_LOG_ROUNDS = cls._original_bcrypt_log_rounds
-        settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION = cls._original_enable_notification_subscription_creation
 
 
 class AppTestCase(unittest.TestCase):
@@ -343,6 +339,22 @@ class ApiTestCase(DbTestCase, ApiAppTestCase, UploadTestCase, MockRequestTestCas
 
 class AdminTestCase(DbTestCase, AdminAppTestCase, UploadTestCase, MockRequestTestCase):
     pass
+
+
+class NotificationTestCase(OsfTestCase):
+    """An `OsfTestCase` to use when testing specific subscription behavior.
+    Use when you'd like to manually create all Node subscriptions and subscriptions
+    for added contributors yourself, and not rely on automatically added ones.
+    """
+    @classmethod
+    def setUpClass(cls):
+        super(NotificationTestCase, cls).setUpClass()
+        cls._original_enable_notification_subscription_creation = settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION
+        settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION = False
+
+    @classmethod
+    def tearDownClass(cls):
+        settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION = cls._original_enable_notification_subscription_creation
 
 
 # From Flask-Security: https://github.com/mattupstate/flask-security/blob/develop/flask_security/utils.py
