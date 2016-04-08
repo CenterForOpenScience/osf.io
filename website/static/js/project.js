@@ -264,8 +264,8 @@ $(document).ready(function() {
     });
 
     var viewOnlyInfoHtml = 'This is a view-only version of this project. ' +
-           'Keep this link safe. To leave this view click ' +
-            'the Open Science Framework logo to the right.';
+        'Anyone with the link can view this project. Keep the link safe. ' +
+        'To leave this view click the Open Science Framework logo to the right.';
 
     $('.view-only-info').attr(
         'data-content', viewOnlyInfoHtml

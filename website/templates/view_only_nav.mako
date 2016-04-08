@@ -1,3 +1,5 @@
+<%block name="view_only_nav">
+<link rel="stylesheet" href='/static/css/nav.css'>
 <div class="osf-nav-wrapper">
 
 <nav class="navbar navbar-inverse navbar-fixed-top" id="navbarScope" role="navigation">
@@ -48,3 +50,5 @@
 
 </nav>
 </div>
+</%block>
+
