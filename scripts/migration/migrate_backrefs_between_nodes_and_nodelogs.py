@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 def migrate(dry=True):
     init_app(routes=False)
-    cursor = db.nodelog.find({'original_node': None}, {'params.node': 1, '__backrefs.logged.node.logs': 1})
+    cursor = db.nodelog.find({'original_node': None})
     cursor.batch_size(10000)
 
     count = cursor.count()
