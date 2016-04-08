@@ -119,7 +119,7 @@ class OsfWebRenderer(WebRenderer):
         super(OsfWebRenderer, self).__init__(*args, **kwargs)
 
 #: Use if a view only redirects or raises error
-notemplate = OsfWebRenderer('', renderer=render_mako_string)
+notemplate = OsfWebRenderer('', renderer=render_mako_string)  # TODO convert
 
 
 # Static files (robots.txt, etc.)
@@ -151,7 +151,7 @@ def goodbye():
     # Redirect to dashboard if logged in
     if _get_current_user():
         return redirect(util.web_url_for('index'))
-    status.push_status_message(language.LOGOUT, 'success')
+    status.push_status_message(language.LOGOUT, kind='success', trust=False)
     return {}
 
 def make_url_map(app):
@@ -162,10 +162,18 @@ def make_url_map(app):
 
     # Set default views to 404, using URL-appropriate renderers
     process_rules(app, [
-        Rule('/<path:_>', ['get', 'post'], HTTPError(http.NOT_FOUND),
-             OsfWebRenderer('', render_mako_string)),
-        Rule('/api/v1/<path:_>', ['get', 'post'],
-             HTTPError(http.NOT_FOUND), json_renderer),
+        Rule(
+            '/<path:_>',
+            ['get', 'post'],
+            HTTPError(http.NOT_FOUND),
+            OsfWebRenderer('', render_mako_string, trust=True)
+        ),
+        Rule(
+            '/api/v1/<path:_>',
+            ['get', 'post'],
+            HTTPError(http.NOT_FOUND),
+            json_renderer
+        ),
     ])
 
     ### GUID ###

@@ -211,7 +211,7 @@ def confirm_email_get(token, auth=None, **kwargs):
                 status.push_status_message(language.WELCOME_MESSAGE, kind='default', jumbotron=True, trust=True)
 
             if token in auth.user.email_verifications:
-                status.push_status_message(language.CONFIRM_ALTERNATE_EMAIL_ERROR, 'danger')
+                status.push_status_message(language.CONFIRM_ALTERNATE_EMAIL_ERROR, kind='danger', trust=True)
             # Go to home page
             return redirect(web_url_for('index'))
 
