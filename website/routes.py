@@ -526,19 +526,33 @@ def make_url_map(app):
             OsfWebRenderer('public/login.mako', trust=False)
         ),
 
-        Rule([
-            '/midas/', '/summit/', '/accountbeta/', '/decline/'
-        ], 'get', auth_views.auth_registerbeta, OsfWebRenderer('', render_mako_string)),
+        Rule(
+            [
+                '/midas/',
+                '/summit/',
+                '/accountbeta/',
+                '/decline/'
+            ],
+            'get',
+            auth_views.auth_registerbeta,
+            notemplate
+        ),
 
-        Rule('/login/connected_tools/',
-             'get',
-             landing_page_views.connected_tools,
-             OsfWebRenderer('public/login_landing.mako')),
+        # FIXME or REDIRECTME: This redirects to settings when logged in, but gives an error (no template) when logged out
+        Rule(
+            '/login/connected_tools/',
+            'get',
+            landing_page_views.connected_tools,
+            OsfWebRenderer('public/login_landing.mako', trust=False)
+        ),
 
-        Rule('/login/enriched_profile/',
-             'get',
-             landing_page_views.enriched_profile,
-             OsfWebRenderer('public/login_landing.mako')),
+        # FIXME or REDIRECTME: mod-meta error when logged out: signin form not rendering for login_landing sidebar
+        Rule(
+            '/login/enriched_profile/',
+            'get',
+            landing_page_views.enriched_profile,
+            OsfWebRenderer('public/login_landing.mako', trust=False)
+        ),
 
     ])
 
@@ -806,12 +820,43 @@ def make_url_map(app):
 
     process_rules(app, [
 
-        Rule('/search/', 'get', {}, OsfWebRenderer('search.mako')),
-        Rule('/share/', 'get', {}, OsfWebRenderer('share_search.mako')),
-        Rule('/share/registration/', 'get', {'register': settings.SHARE_REGISTRATION_URL}, OsfWebRenderer('share_registration.mako')),
-        Rule('/share/help/', 'get', {'help': settings.SHARE_API_DOCS_URL}, OsfWebRenderer('share_api_docs.mako')),
-        Rule('/share_dashboard/', 'get', {}, OsfWebRenderer('share_dashboard.mako')),
-        Rule('/share/atom/', 'get', search_views.search_share_atom, xml_renderer),
+        Rule(
+            '/search/',
+            'get',
+            {},
+            OsfWebRenderer('search.mako', trust=False)
+        ),
+        # TODO: Get share running and test this set of routes locally
+        Rule(
+            '/share/',
+            'get',
+            {},
+            OsfWebRenderer('share_search.mako', trust=False)
+        ),
+        Rule(
+            '/share/registration/',
+            'get',
+            {'register': settings.SHARE_REGISTRATION_URL},
+            OsfWebRenderer('share_registration.mako', trust=False)
+        ),
+        Rule(
+            '/share/help/',
+            'get',
+            {'help': settings.SHARE_API_DOCS_URL},
+            OsfWebRenderer('share_api_docs.mako', trust=False)
+        ),
+        Rule(  # FIXME: Dead route; possible that template never existed; confirm deletion candidate with ErinB
+            '/share_dashboard/',
+            'get',
+            {},
+            OsfWebRenderer('share_dashboard.mako', trust=False)
+        ),
+        Rule(
+            '/share/atom/',
+            'get',
+            search_views.search_share_atom,
+            xml_renderer
+        ),
         Rule('/api/v1/user/search/', 'get', search_views.search_contributor, json_renderer),
 
         Rule(
@@ -847,8 +892,8 @@ def make_url_map(app):
 
     process_rules(app, [
         # '/' route loads home.mako if logged in, otherwise loads landing.mako
-        Rule('/', 'get', website_views.index, OsfWebRenderer('index.mako')),
-        Rule('/goodbye/', 'get', goodbye, OsfWebRenderer('landing.mako')),
+        Rule('/', 'get', website_views.index, OsfWebRenderer('index.mako', trust=False)),
+        Rule('/goodbye/', 'get', goodbye, OsfWebRenderer('landing.mako', trust=False)),
 
         Rule(
             [
@@ -894,14 +939,14 @@ def make_url_map(app):
         ),
 
         # Permissions
-        Rule(
+        Rule(  # TODO: Where, if anywhere, is this route used?
             [
                 '/project/<pid>/permissions/<permissions>/',
                 '/project/<pid>/node/<nid>/permissions/<permissions>/',
             ],
             'post',
             project_views.node.project_set_privacy,
-            OsfWebRenderer('project/project.mako')  # TODO: Should this be notemplate? (post request)
+            notemplate
         ),
 
         ### Logs ###
