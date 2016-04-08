@@ -63,6 +63,7 @@ function _poContributors(item) {
     if (contributorList.length === 0) {
         return '';
     }
+    var totalContributors = item.data.embeds.contributors.links.meta.total;
 
     return contributorList.map(function (person, index, arr) {
         var name;
@@ -99,7 +100,7 @@ function _poContributors(item) {
             return m('span');
         }
         if (index === 2) {
-            return m('span', ' + ' + (arr.length - 2));
+            return m('span', ' + ' + (totalContributors -2)); // We already show names of the two
         }
         return m('span', comma + name);
     });

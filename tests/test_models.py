@@ -3306,7 +3306,7 @@ class TestRoot(OsfTestCase):
         self.registration = RegistrationFactory(project=self.project)
 
     def test_top_level_project_has_own_root(self):
-        assert(self.project.root._id, self.project._id)
+        assert_equal(self.project.root._id, self.project._id)
 
     def test_child_project_has_root_of_parent(self):
         child = NodeFactory(parent=self.project)

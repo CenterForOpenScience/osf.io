@@ -646,3 +646,6 @@ button.close {
 .comma-separated:last-of-type:after {
     content: "";
 }
+.breaklines {
+    white-space: pre-wrap;
+}
