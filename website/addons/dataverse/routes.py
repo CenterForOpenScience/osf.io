@@ -103,7 +103,7 @@ api_routes = {
             ],
             'get',
             views.widget.dataverse_widget,
-            OsfWebRenderer('../addons/dataverse/templates/dataverse_widget.mako'),
+            OsfWebRenderer('../addons/dataverse/templates/dataverse_widget.mako', trust=False),
         ),
         Rule(
             [
