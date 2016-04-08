@@ -8,6 +8,7 @@ from framework.auth import Auth
 from framework.guid.model import Guid
 from website.files import exceptions
 from website.files.models.base import File, Folder, FileNode, FileVersion, TrashedFileNode
+from website.util import permissions
 
 
 __all__ = ('OsfStorageFile', 'OsfStorageFolder', 'OsfStorageFileNode')
@@ -114,11 +115,13 @@ class OsfStorageFileNode(FileNode):
         :param checkout:    Either the same user or None, depending on in/out-checking
         :param save:        Whether or not to save the user
         """
-        if (self.is_checked_out and self.checkout != user and 'admin' not in self.node.permissions.get(user._id, []))\
-           or user._id not in self.node.permissions.keys() or 'write' not in self.node.permissions.get(user._id, []):
+        from website.project.model import NodeLog  # Avoid circular import
+
+        if (self.is_checked_out and self.checkout != user and permissions.ADMIN not in self.node.permissions.get(user._id, []))\
+           or permissions.WRITE not in self.node.get_permissions(user):
             raise exceptions.FileNodeCheckedOutError()
 
-        action = 'checked_out' if checkout else 'checked_in'
+        action = NodeLog.CHECKED_OUT if checkout else NodeLog.CHECKED_IN
         self.checkout = checkout
 
         self.node.add_log(
@@ -128,6 +131,7 @@ class OsfStorageFileNode(FileNode):
                 'project': self.node.parent_id,
                 'node': self.node._id,
                 'urls': {
+                    # web_url_for unavailable -- called from within the API, so no flask app
                     'download': "/project/{}/files/{}/{}/?action=download".format(self.node._id, self.provider, self._id),
                     'view': "/project/{}/files/{}/{}".format(self.node._id, self.provider, self._id)},
                 'path': self.materialized_path
