@@ -443,7 +443,7 @@ var LogPieces = {
                 if (logObject) {
                     var action = logObject.attributes.action;
                     var acceptableLinkedItems = ['osf_storage_file_added', 'osf_storage_file_updated', 'file_tag_added', 'file_tag_removed',
-                    'github_file_added', 'github_file_updated', 'box_file_added', 'box_file_updated'];
+                    'github_file_added', 'github_file_updated', 'box_file_added', 'box_file_updated', 'dropbox_file_added', 'dropbox_file_updated'];
                     if (acceptableLinkedItems.indexOf(action) !== -1 && logObject.attributes.params.urls) {
                          return logObject.attributes.params.urls.view;
                     }
@@ -505,6 +505,17 @@ var LogPieces = {
 
             if(paramIsReturned(folder, logObject)){
                 return m('span', folder === 'All Files' ? '/ (Full Box)' : folder);
+            }
+            return m('span', '');
+        }
+    },
+
+    dropbox_folder: {
+        view: function(ctrl, logObject) {
+            var folder = logObject.attributes.params.folder;
+
+            if(paramIsReturned(folder, logObject)){
+                return m('span', folder === '/' ? '/ (Full Dropbox)' : folder);
             }
             return m('span', '');
         }
