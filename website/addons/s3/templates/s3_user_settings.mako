@@ -39,7 +39,9 @@
 
 <%def name="on_submit()">
     <script type="text/javascript">
-        window.contextVars = $.extend({}, window.contextVars, {'addonSettingsSelector': '#addonSettings${addon_short_name.capitalize()}'});
+        window.contextVars = $.extend({}, window.contextVars, {
+            'addonSettingsSelector': ${('#addonSettings' + addon_short_name.capitalize()) | sjson, n }
+        });
     </script>
 </%def>
 
