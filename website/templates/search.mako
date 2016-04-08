@@ -276,10 +276,10 @@
     </script>
     <script type="text/html" id="registration">
         <!-- ko if: parent_url -->
-        <h4><a data-bind="attr.href: parent_url">{{ parent_title}}</a> / <a data-bind="attr.href: url">{{ title }}</a>  (<span class="text-danger" data-bind="if: is_retracted">Retracted </span>Registration)</h4>
+        <h4><a data-bind="attr.href: parent_url">{{ parent_title}}</a> / <a data-bind="attr.href: url">{{ title }}</a>  (<span class="text-danger" data-bind="if: is_retracted">Withdrawn </span>Registration)</h4>
         <!-- /ko -->
         <!-- ko if: !parent_url -->
-        <h4><span data-bind="if: parent_title">{{ parent_title }} /</span> <a data-bind="attr.href: url">{{ title }}</a>  (<span class="text-danger" data-bind="if: is_retracted">Retracted </span>Registration)</h4>
+        <h4><span data-bind="if: parent_title">{{ parent_title }} /</span> <a data-bind="attr.href: url">{{ title }}</a>  (<span class="text-danger" data-bind="if: is_retracted">Withdrawn </span>Registration)</h4>
         <!-- /ko -->
         <strong><span data-bind="text: 'Date Registered: ' + dateRegistered['local'], tooltip: {title: dateRegistered['utc']}"></span></strong>
 

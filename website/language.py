@@ -62,6 +62,10 @@ CLAIMED_CONTRIBUTOR = ('<strong>Welcome to the OSF!</strong> Edit your display n
 # Error Pages
 # ###########
 
+# Search-related errors
+SEARCH_QUERY_HELP = ('Please check our help (the question mark beside the search box) for more information '
+                     'on advanced search queries.')
+
 # Shown at error page if an expired/revokes email confirmation link is clicked
 EXPIRED_EMAIL_CONFIRM_TOKEN = 'This confirmation link has expired. Please <a href="/login/">log in</a> to continue.'
 
@@ -109,12 +113,12 @@ BEFORE_FORK_HAS_POINTERS = (
 
 REGISTRATION_INFO = '''
 <p>Registration creates a frozen version of the project that can never be
-edited or deleted but can be retracted. You can register your project by
+edited or deleted but can be withdrawn. You can register your project by
 selecting a registration form, entering information about your project, and
 then confirming. You will be able to continue editing the original project,
 however, and the frozen version with timestamps will always be linked to
-the original. Retracting a registration will leave behind metadata about
-when the registration was created and retracted but removes the contents
+the original. Withdrawing a registration will leave behind metadata about
+when the registration was created and withdrawn but removes the contents
 of the registration.</p>
 
 <ul>
@@ -136,9 +140,9 @@ REGISTRATION_EMBARGO_INFO = '''
 You can choose whether to make your registration public immediately or
 embargo it for up to four years. At the end of the embargo period the registration
 is automatically made public. After becoming public, the only way to remove a
-registration is to retract it. Retractions show only the registration title,
+registration is to withdraw it. Withdrawn registrations show only the registration title,
 contributors, and description to indicate that a registration was made and
-later retracted.
+later withdrawn.
 <br /><br />
 If you choose to embargo your registration, a notification will be sent to
 all other project contributors. Other administrators will have 48 hours to

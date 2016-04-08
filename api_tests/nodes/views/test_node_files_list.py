@@ -5,7 +5,7 @@ import httpretty
 
 from framework.auth.core import Auth
 
-from website.addons.github import model
+from website.addons.github.tests.factories import GitHubAccountFactory
 from website.models import Node
 from website.util import waterbutler_api_url_for
 from api.base.settings.defaults import API_BASE
@@ -162,11 +162,12 @@ class TestNodeFilesList(ApiTestCase):
         addon = self.project.get_addon('github')
         addon.repo = 'something'
         addon.user = 'someone'
-        oauth_settings = model.AddonGitHubOauthSettings(github_user_id='plstowork', oauth_access_token='foo')
+        oauth_settings = GitHubAccountFactory()
         oauth_settings.save()
-        user_settings = model.AddonGitHubUserSettings(oauth_settings=oauth_settings)
-        user_settings.save()
-        addon.user_settings = user_settings
+        self.user.add_addon('github')
+        self.user.external_accounts.append(oauth_settings)
+        self.user.save()
+        addon.user_settings = self.user.get_addon('github')
         addon.save()
         self.project.save()
         res = self.app.get(self.private_url, auth=self.user.auth)

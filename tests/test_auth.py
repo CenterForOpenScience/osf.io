@@ -106,6 +106,22 @@ class TestAuthUtils(OsfTestCase):
             auth.get_user(email=user.username, password='wrong')
         )
 
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_password_change_sends_email(self, mock_mail):
+        user = UserFactory.build()
+        user.set_password('killerqueen')
+        assert_equal(len(mock_mail.call_args_list), 1)
+        empty, kwargs = mock_mail.call_args
+        kwargs['user'].reload()
+
+        assert_equal(empty, ())
+        assert_equal(kwargs, {
+            'user': user,
+            'mimetype': 'plain',
+            'mail': mails.PASSWORD_RESET,
+            'to_addr': user.username,
+        })
+
 
 class TestAuthObject(OsfTestCase):
 

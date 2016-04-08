@@ -89,10 +89,35 @@ class TestUserValidation(OsfTestCase):
         self.user.save()
         assert_equal(self.user.social['profileWebsites'], [])
 
-    def test_validate_social_valid(self):
+    def test_validate_social_valid_website_simple(self):
         self.user.social = {'profileWebsites': ['http://cos.io/']}
         self.user.save()
         assert_equal(self.user.social['profileWebsites'], ['http://cos.io/'])
+
+    def test_validate_social_valid_website_protocol(self):
+        self.user.social = {'profileWebsites': ['https://definitelyawebsite.com']}
+        self.user.save()
+        assert_equal(self.user.social['profileWebsites'], ['https://definitelyawebsite.com'])
+
+    def test_validate_social_valid_website_ipv4(self):
+        self.user.social = {'profileWebsites': ['http://127.0.0.1']}
+        self.user.save()
+        assert_equal(self.user.social['profileWebsites'], ['http://127.0.0.1'])
+
+    def test_validate_social_valid_website_path(self):
+        self.user.social = {'profileWebsites': ['http://definitelyawebsite.com/definitelyapage/']}
+        self.user.save()
+        assert_equal(self.user.social['profileWebsites'], ['http://definitelyawebsite.com/definitelyapage/'])
+
+    def test_validate_social_valid_website_portandpath(self):
+        self.user.social = {'profileWebsites': ['http://127.0.0.1:5000/hello/']}
+        self.user.save()
+        assert_equal(self.user.social['profileWebsites'], ['http://127.0.0.1:5000/hello/'])
+
+    def test_validate_social_valid_website_querystrings(self):
+        self.user.social = {'profileWebsites': ['http://definitelyawebsite.com?real=yes&page=definitely']}
+        self.user.save()
+        assert_equal(self.user.social['profileWebsites'], ['http://definitelyawebsite.com?real=yes&page=definitely'])
 
     def test_validate_multiple_profile_websites_valid(self):
         self.user.social = {'profileWebsites': ['http://cos.io/', 'http://thebuckstopshere.com', 'http://dinosaurs.com']}
@@ -1604,7 +1629,7 @@ class TestNode(OsfTestCase):
             NodeLog.ADDON_REMOVED
         )
 
-    @mock.patch('website.addons.github.model.AddonGitHubNodeSettings.config')
+    @mock.patch('website.addons.github.model.GitHubNodeSettings.config')
     def test_delete_mandatory_addon(self, mock_config):
         mock_config.added_mandatory = ['node']
         self.node.add_addon('github', self.auth)
@@ -2112,7 +2137,7 @@ class TestNodeTraversals(OsfTestCase):
         NodeFactory(parent=comp2)
         reg = RegistrationFactory(project=proj)
         reg.delete_registration_tree(save=True)
-        assert_false(proj.node__registrations)
+        assert_false(proj.registrations_all)
 
     def test_get_active_contributors_recursive_with_duplicate_users(self):
         parent = ProjectFactory(creator=self.user)
@@ -2487,7 +2512,7 @@ class TestProject(OsfTestCase):
         config1 = WatchConfigFactory(node=self.project)
         user.watched.append(config1)
         user.save()
-        assert_in(config1._id, self.project.watchconfig__watched)
+        assert_in(config1._id, [e._id for e in self.project.watches])
 
     def test_add_contributor(self):
         # A user is added as a contributor
@@ -2617,7 +2642,7 @@ class TestProject(OsfTestCase):
         link = PrivateLinkFactory()
         link.nodes.append(self.project)
         link.save()
-        assert_in(link, self.project.private_links)
+        assert_in(link._id, [e._id for e in self.project.private_links])
 
     @mock.patch('framework.auth.core.Auth.private_link')
     def test_has_anonymous_link(self, mock_property):
@@ -3623,7 +3648,7 @@ class TestForkNode(OsfTestCase):
         assert_true(fork.is_fork)
         assert_equal(len(fork.private_links), 0)
         assert_equal(fork.forked_from, original)
-        assert_in(fork._id, original.node__forked)
+        assert_in(fork._id, [n._id for n in original.forks])
         # Note: Must cast ForeignList to list for comparison
         assert_equal(list(fork.contributors), [fork_user])
         assert_true((fork_date - fork.date_created) < datetime.timedelta(seconds=30))
@@ -3982,7 +4007,7 @@ class TestRegisterNode(OsfTestCase):
         )
 
     def test_registration_list(self):
-        assert_in(self.registration._id, self.project.node__registrations)
+        assert_in(self.registration._id, [n._id for n in self.project.registrations_all])
 
     def test_registration_gets_institution_affiliation(self):
         node = NodeFactory()

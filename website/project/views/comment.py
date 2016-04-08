@@ -2,6 +2,7 @@
 from functools import partial
 
 import pytz
+import markdown
 from datetime import datetime
 from flask import request
 
@@ -102,7 +103,7 @@ def send_comment_added_notification(comment, auth):
 
     context = dict(
         gravatar_url=auth.user.profile_image_url(),
-        content=comment.content,
+        content=markdown.markdown(comment.content, ['del_ins', 'markdown.extensions.tables', 'markdown.extensions.fenced_code']),
         page_type='file' if comment.page == Comment.FILES else node.project_or_component,
         page_title=comment.root_target.referent.name if comment.page == Comment.FILES else '',
         provider=PROVIDERS[comment.root_target.referent.provider] if comment.page == Comment.FILES else '',

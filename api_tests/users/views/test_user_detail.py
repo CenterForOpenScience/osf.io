@@ -371,12 +371,12 @@ class TestUserUpdate(ApiTestCase):
     def test_update_user_blank_but_not_empty_full_name(self):
         res = self.app.put_json_api(self.user_one_url, self.blank_but_not_empty_full_name, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Value must not be empty.')
+        assert_equal(res.json['errors'][0]['detail'], 'This field may not be blank.')
 
     def test_partial_update_user_blank_but_not_empty_full_name(self):
         res = self.app.patch_json_api(self.user_one_url, self.blank_but_not_empty_full_name, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Value must not be empty.')
+        assert_equal(res.json['errors'][0]['detail'], 'This field may not be blank.')
 
     def test_patch_user_incorrect_type(self):
         res = self.app.put_json_api(self.user_one_url, self.incorrect_type, auth=self.user_one.auth, expect_errors=True)

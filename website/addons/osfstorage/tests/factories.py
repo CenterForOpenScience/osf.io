@@ -19,7 +19,8 @@ generic_location = {
 
 
 class FileVersionFactory(ModularOdmFactory):
-    FACTORY_FOR = models.FileVersion
+    class Meta:
+        model = models.FileVersion
 
     creator = SubFactory(AuthUserFactory)
     date_modified = datetime.datetime.utcnow()

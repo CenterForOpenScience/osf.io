@@ -21,7 +21,6 @@ from modularodm.validators import MaxLengthValidator
 from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationValueError
 
-from api.base.utils import absolute_reverse
 from framework import status
 from framework.mongo import ObjectId
 from framework.mongo import StoredObject
@@ -44,6 +43,7 @@ from framework.utils import iso8601format
 from website import language, mails, settings, tokens
 from website.util import web_url_for
 from website.util import api_url_for
+from website.util import api_v2_url
 from website.util import sanitize
 from website.exceptions import (
     NodeStateError,
@@ -139,10 +139,10 @@ def ensure_schemas():
 
 
 class MetaData(GuidStoredObject):
-
+    # TODO: This model may be unused; potential candidate for deprecation depending on contents of production database
     _id = fields.StringField(primary=True)
 
-    target = fields.AbstractForeignField(backref='metadata')
+    target = fields.AbstractForeignField()
     data = fields.DictionaryField()
 
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
@@ -186,7 +186,8 @@ class Comment(GuidStoredObject, SpamMixin):
 
     @property
     def absolute_api_v2_url(self):
-        return absolute_reverse('comments:comment-detail', kwargs={'comment_id': self._id})
+        path = '/comments/{}/'.format(self._id)
+        return api_v2_url(path)
 
     # used by django and DRF
     def get_absolute_url(self):
@@ -397,6 +398,9 @@ class NodeLog(StoredObject):
     TAG_ADDED = 'tag_added'
     TAG_REMOVED = 'tag_removed'
 
+    FILE_TAG_ADDED = 'file_tag_added'
+    FILE_TAG_REMOVED = 'file_tag_removed'
+
     EDITED_TITLE = 'edit_title'
     EDITED_DESCRIPTION = 'edit_description'
     CHANGED_LICENSE = 'license_changed'
@@ -445,7 +449,7 @@ class NodeLog(StoredObject):
     PRIMARY_INSTITUTION_CHANGED = 'primary_institution_changed'
     PRIMARY_INSTITUTION_REMOVED = 'primary_institution_removed'
 
-    actions = [CREATED_FROM, PROJECT_CREATED, PROJECT_REGISTERED, PROJECT_DELETED, NODE_CREATED, NODE_FORKED, NODE_REMOVED, POINTER_CREATED, POINTER_FORKED, POINTER_REMOVED, WIKI_UPDATED, WIKI_DELETED, WIKI_RENAMED, MADE_WIKI_PUBLIC, MADE_WIKI_PRIVATE, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED, PERMISSIONS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, TAG_ADDED, TAG_REMOVED, EDITED_TITLE, EDITED_DESCRIPTION, UPDATED_FIELDS, FILE_MOVED, FILE_COPIED, FOLDER_CREATED, FILE_ADDED, FILE_UPDATED, FILE_REMOVED, FILE_RESTORED, ADDON_ADDED, ADDON_REMOVED, COMMENT_ADDED, COMMENT_REMOVED, COMMENT_UPDATED, MADE_CONTRIBUTOR_VISIBLE, MADE_CONTRIBUTOR_INVISIBLE, EXTERNAL_IDS_ADDED, EMBARGO_APPROVED, EMBARGO_CANCELLED, EMBARGO_COMPLETED, EMBARGO_INITIATED, RETRACTION_APPROVED, RETRACTION_CANCELLED, RETRACTION_INITIATED, REGISTRATION_APPROVAL_CANCELLED, REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED, CITATION_ADDED, CITATION_EDITED, CITATION_REMOVED, PRIMARY_INSTITUTION_CHANGED, PRIMARY_INSTITUTION_REMOVED]
+    actions = [FILE_TAG_REMOVED, FILE_TAG_ADDED, CREATED_FROM, PROJECT_CREATED, PROJECT_REGISTERED, PROJECT_DELETED, NODE_CREATED, NODE_FORKED, NODE_REMOVED, POINTER_CREATED, POINTER_FORKED, POINTER_REMOVED, WIKI_UPDATED, WIKI_DELETED, WIKI_RENAMED, MADE_WIKI_PUBLIC, MADE_WIKI_PRIVATE, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED, PERMISSIONS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, TAG_ADDED, TAG_REMOVED, EDITED_TITLE, EDITED_DESCRIPTION, UPDATED_FIELDS, FILE_MOVED, FILE_COPIED, FOLDER_CREATED, FILE_ADDED, FILE_UPDATED, FILE_REMOVED, FILE_RESTORED, ADDON_ADDED, ADDON_REMOVED, COMMENT_ADDED, COMMENT_REMOVED, COMMENT_UPDATED, MADE_CONTRIBUTOR_VISIBLE, MADE_CONTRIBUTOR_INVISIBLE, EXTERNAL_IDS_ADDED, EMBARGO_APPROVED, EMBARGO_CANCELLED, EMBARGO_COMPLETED, EMBARGO_INITIATED, RETRACTION_APPROVED, RETRACTION_CANCELLED, RETRACTION_INITIATED, REGISTRATION_APPROVAL_CANCELLED, REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED, CITATION_ADDED, CITATION_EDITED, CITATION_REMOVED, PRIMARY_INSTITUTION_CHANGED, PRIMARY_INSTITUTION_REMOVED]
 
     def __repr__(self):
         return ('<NodeLog({self.action!r}, params={self.params!r}) '
@@ -530,9 +534,8 @@ class NodeLog(StoredObject):
 
     @property
     def absolute_api_v2_url(self):
-        from api.logs.views import NodeLogDetail
-
-        return absolute_reverse('{}:{}'.format(NodeLogDetail.view_category, NodeLogDetail.view_name), kwargs={'log_id': self._id})
+        path = '/logs/{}/'.format(self._id)
+        return api_v2_url(path)
 
     def get_absolute_url(self):
         return self.absolute_api_v2_url
@@ -567,7 +570,7 @@ class Pointer(StoredObject):
     primary = False
 
     _id = fields.StringField()
-    node = fields.ForeignField('node', backref='_pointed')
+    node = fields.ForeignField('node')
 
     _meta = {'optimistic': True}
 
@@ -671,15 +674,17 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 ('date_modified', pymongo.DESCENDING),
             ]
         },
-        {
-            'unique': False,
-            'key_or_list': [
-                ('tags.$', pymongo.ASCENDING),
-                ('is_public', pymongo.ASCENDING),
-                ('is_deleted', pymongo.ASCENDING),
-                ('institution_id', pymongo.ASCENDING),
-            ]
-        },
+        #  Dollar sign indexes don't actually do anything
+        #  This index has been moved to scripts/indices.py#L30
+        # {
+        #     'unique': False,
+        #     'key_or_list': [
+        #         ('tags.$', pymongo.ASCENDING),
+        #         ('is_public', pymongo.ASCENDING),
+        #         ('is_deleted', pymongo.ASCENDING),
+        #         ('institution_id', pymongo.ASCENDING),
+        #     ]
+        # },
         {
             'unique': False,
             'key_or_list': [
@@ -777,10 +782,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     is_registration = fields.BooleanField(default=False, index=True)
     registered_date = fields.DateTimeField(index=True)
-    registered_user = fields.ForeignField('user', backref='registered')
+    registered_user = fields.ForeignField('user')
 
     # A list of all MetaSchemas for which this Node has registered_meta
-    registered_schema = fields.ForeignField('metaschema', backref='registered', list=True, default=list)
+    registered_schema = fields.ForeignField('metaschema', list=True, default=list)
     # A set of <metaschema._id>: <schema> pairs, where <schema> is a
     # flat set of <question_id>: <response> pairs-- these question ids_above
     # map the the ids in the registrations MetaSchema (see registered_schema).
@@ -818,22 +823,22 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     creator = fields.ForeignField('user', index=True)
     contributors = fields.ForeignField('user', list=True)
-    users_watching_node = fields.ForeignField('user', list=True, backref='watched')
+    users_watching_node = fields.ForeignField('user', list=True)
 
     logs = fields.ForeignField('nodelog', list=True, backref='logged')
-    tags = fields.ForeignField('tag', list=True, backref='tagged')
+    tags = fields.ForeignField('tag', list=True)
 
     # Tags for internal use
     system_tags = fields.StringField(list=True)
 
     nodes = fields.AbstractForeignField(list=True, backref='parent')
-    forked_from = fields.ForeignField('node', backref='forked', index=True)
-    registered_from = fields.ForeignField('node', backref='registrations', index=True)
+    forked_from = fields.ForeignField('node', index=True)
+    registered_from = fields.ForeignField('node', index=True)
     root = fields.ForeignField('node', index=True)
     parent_node = fields.ForeignField('node', index=True)
 
     # The node (if any) used as a template for this node's creation
-    template_node = fields.ForeignField('node', backref='template_node', index=True)
+    template_node = fields.ForeignField('node', index=True)
 
     piwik_site_id = fields.StringField()
 
@@ -841,7 +846,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     # {<User.id>: [<Node._id>, <Node2._id>, ...] }
     child_node_subscriptions = fields.DictionaryField(default=dict)
 
-    alternative_citations = fields.ForeignField('alternativecitation', list=True, backref='citations')
+    alternative_citations = fields.ForeignField('alternativecitation', list=True)
 
     _meta = {
         'optimistic': True,
@@ -980,7 +985,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     @property
     def private_links(self):
-        return self.privatelink__shared
+        # TODO: Consumer code assumes this is a list. Hopefully there aren't many links?
+        return list(PrivateLink.find(Q('nodes', 'eq', self._id)))
 
     @property
     def private_links_active(self):
@@ -1091,8 +1097,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     @property
     def forks(self):
         """List of forks of this node"""
-        return list(self.node__forked.find(Q('is_deleted', 'eq', False) &
-                                           Q('is_registration', 'ne', True)))
+        return Node.find(Q('forked_from', 'eq', self._id) &
+                         Q('is_deleted', 'eq', False)
+                         & Q('is_registration', 'ne', True))
 
     def add_permission(self, user, permission, save=False):
         """Grant permission to a user.
@@ -1772,7 +1779,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     @property
     def pointed(self):
-        return getattr(self, '_pointed', [])
+        return Pointer.find(Q('node', 'eq', self._id))
 
     def pointing_at(self, pointed_node_id):
         """This node is pointed at another node.
@@ -2367,10 +2374,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     @property
     def absolute_api_v2_url(self):
         if self.is_registration:
-            return absolute_reverse('registrations:registration-detail', kwargs={'node_id': self._id})
+            path = '/registrations/{}/'.format(self._id)
+            return api_v2_url(path)
         if self.is_collection:
-            return absolute_reverse('collections:collection-detail', kwargs={'collection_id': self._id})
-        return absolute_reverse('nodes:node-detail', kwargs={'node_id': self._id})
+            path = '/collections/{}/'.format(self._id)
+            return api_v2_url(path)
+        path = '/nodes/{}/'.format(self._id)
+        return api_v2_url(path)
 
     # used by django and DRF
     def get_absolute_url(self):
@@ -2443,11 +2453,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     @property
     def templated_list(self):
-        return [
-            x
-            for x in self.node__template_node
-            if not x.is_deleted
-        ]
+        return Node.find(Q('template_node', 'eq', self._id) & Q('is_deleted', 'ne', True))
 
     @property
     def _parent_node(self):
@@ -2485,8 +2491,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return self.archivejob__active[0] if self.archivejob__active else None
 
     @property
+    def registrations_all(self):
+        return Node.find(Q('registered_from', 'eq', self._id))
+
+    @property
     def registrations(self):
-        return self.node__registrations.find(Q('archiving', 'eq', False))
+        # TODO: This method may be totally unused
+        return Node.find(Q('registered_from', 'eq', self._id) & Q('archiving', 'eq', False))
 
     @property
     def watch_url(self):
@@ -2992,7 +3003,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             self.is_public = True
         elif permissions == 'private' and self.is_public:
             if self.is_registration and not self.is_pending_embargo:
-                raise NodeStateError("Public registrations must be retracted, not made private.")
+                raise NodeStateError("Public registrations must be withdrawn, not made private.")
             else:
                 self.is_public = False
         else:
@@ -3251,10 +3262,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         """
 
         if not self.is_registration or (not self.is_public and not (self.embargo_end_date or self.is_pending_embargo)):
-            raise NodeStateError('Only public or embargoed registrations may be retracted.')
+            raise NodeStateError('Only public or embargoed registrations may be withdrawn.')
 
         if self.root is not self:
-            raise NodeStateError('Retraction of non-parent registrations is not permitted.')
+            raise NodeStateError('Withdrawal of non-parent registrations is not permitted.')
 
         retraction = self._initiate_retraction(user, justification)
         self.registered_from.add_log(
@@ -3404,6 +3415,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             auth=Auth(user),
             save=True,
         )
+
+    @property
+    def watches(self):
+        return WatchConfig.find(Q('node', 'eq', self._id))
 
     institution_id = fields.StringField(unique=True, index=True)
     institution_domains = fields.StringField(list=True)
@@ -3559,7 +3574,7 @@ def validate_visible_contributors(schema, instance):
 class WatchConfig(StoredObject):
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
-    node = fields.ForeignField('Node', backref='watched')
+    node = fields.ForeignField('Node')
     digest = fields.BooleanField(default=False)
     immediate = fields.BooleanField(default=False)
 
@@ -3576,8 +3591,8 @@ class PrivateLink(StoredObject):
     is_deleted = fields.BooleanField(default=False)
     anonymous = fields.BooleanField(default=False)
 
-    nodes = fields.ForeignField('node', list=True, backref='shared')
-    creator = fields.ForeignField('user', backref='created')
+    nodes = fields.ForeignField('node', list=True)
+    creator = fields.ForeignField('user')
 
     @property
     def node_ids(self):
@@ -3954,7 +3969,7 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
     APPROVE_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
     REJECT_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
 
-    initiated_by = fields.ForeignField('user', backref='embargoed')
+    initiated_by = fields.ForeignField('user')
     for_existing_registration = fields.BooleanField(default=False)
 
     @property
@@ -4092,7 +4107,11 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
 
 
 class Retraction(EmailApprovableSanction):
-    """Retraction object for public registrations."""
+    """
+    Retraction object for public registrations.
+    Externally (specifically in user-facing language) retractions should be referred to as "Withdrawals", i.e.
+    "Retract Registration" -> "Withdraw Registration", "Retracted" -> "Withdrawn", etc.
+    """
 
     DISPLAY_NAME = 'Retraction'
     SHORT_NAME = 'retraction'
@@ -4104,7 +4123,7 @@ class Retraction(EmailApprovableSanction):
     APPROVE_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
     REJECT_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
 
-    initiated_by = fields.ForeignField('user', backref='initiated')
+    initiated_by = fields.ForeignField('user')
     justification = fields.StringField(default=None, validate=MaxLengthValidator(2048))
 
     def __repr__(self):
@@ -4235,7 +4254,7 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
     APPROVE_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
     REJECT_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
 
-    initiated_by = fields.ForeignField('user', backref='registration_approved')
+    initiated_by = fields.ForeignField('user')
 
     def _get_registration(self):
         return Node.find_one(Q('registration_approval', 'eq', self))
@@ -4519,7 +4538,7 @@ class DraftRegistration(StoredObject):
             else:
                 return self.approval.is_approved
         else:
-            return True
+            return False
 
     @property
     def is_rejected(self):
@@ -4543,6 +4562,9 @@ class DraftRegistration(StoredObject):
         return draft
 
     def update_metadata(self, metadata):
+        if self.is_approved:
+            return []
+
         changes = []
         for question_id, value in metadata.iteritems():
             old_value = self.registration_metadata.get(question_id)

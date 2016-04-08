@@ -286,10 +286,7 @@ class User(GuidStoredObject, AddonModelMixin):
     contributor_added_email_records = fields.DictionaryField(default=dict)
 
     # The user into which this account was merged
-    merged_by = fields.ForeignField('user',
-                                    default=None,
-                                    backref='merged',
-                                    index=True)
+    merged_by = fields.ForeignField('user', default=None, index=True)
 
     # verification key used for resetting password
     verification_key = fields.StringField()
@@ -334,15 +331,13 @@ class User(GuidStoredObject, AddonModelMixin):
                                            index=True)
 
     # watched nodes are stored via a list of WatchConfigs
-    watched = fields.ForeignField("WatchConfig", list=True, backref="watched")
+    watched = fields.ForeignField("WatchConfig", list=True)
 
-    # list of users recently added to nodes as a contributor
-    recently_added = fields.ForeignField("user", list=True, backref="recently_added")
+    # list of collaborators that this user recently added to nodes as a contributor
+    recently_added = fields.ForeignField("user", list=True)
 
     # Attached external accounts (OAuth)
-    external_accounts = fields.ForeignField("externalaccount",
-                                            list=True,
-                                            backref="connected")
+    external_accounts = fields.ForeignField("externalaccount", list=True)
 
     # CSL names
     given_name = fields.StringField()
@@ -653,9 +648,27 @@ class User(GuidStoredObject, AddonModelMixin):
         return '{base_url}user/{uid}/{project_id}/claim/?token={token}'\
                     .format(**locals())
 
-    def set_password(self, raw_password):
-        """Set the password for this user to the hash of ``raw_password``."""
+    def set_password(self, raw_password, notify=True):
+        """Set the password for this user to the hash of ``raw_password``.
+        If this is a new user, we're done. If this is a password change,
+        then email the user about the change and clear all the old sessions
+        so that users will have to log in again with the new password.
+
+        :param raw_password: the plaintext value of the new password
+        :param notify: Only meant for unit tests to keep extra notifications from being sent
+        :rtype: list
+        :returns: Changed fields from the user save
+        """
+        had_existing_password = bool(self.password)
         self.password = generate_password_hash(raw_password)
+        if had_existing_password and notify:
+            mails.send_mail(
+                to_addr=self.username,
+                mail=mails.PASSWORD_RESET,
+                mimetype='plain',
+                user=self
+            )
+            remove_sessions_for_user(self)
 
     def check_password(self, raw_password):
         """Return a boolean of whether ``raw_password`` was correct."""
@@ -1151,7 +1164,12 @@ class User(GuidStoredObject, AddonModelMixin):
         """
         for each in self.watched:
             if watch_config.node._id == each.node._id:
-                each.__class__.remove_one(each)
+                from framework.transactions.context import TokuTransaction  # Avoid circular import
+                with TokuTransaction():
+                    # Ensure that both sides of the relationship are removed
+                    each.__class__.remove_one(each)
+                    self.watched.remove(each)
+                    self.save()
                 return None
         raise ValueError('Node not being watched.')
 

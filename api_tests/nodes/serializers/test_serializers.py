@@ -91,7 +91,7 @@ class TestNodeRegistrationSerializer(DbTestCase):
             parse_date(attributes['date_registered']),
             reg.registered_date
         )
-        assert_equal(attributes['retracted'], reg.is_retracted)
+        assert_equal(attributes['withdrawn'], reg.is_retracted)
 
         # Relationships
         relationships = data['relationships']

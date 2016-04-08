@@ -2,10 +2,12 @@
 import httplib as http
 import urlparse
 
+import httpretty
 import mock
 from nose.tools import *  # noqa (PEP8 asserts)
 
 from framework.auth import Auth
+from framework.exceptions import HTTPError
 
 from website.addons.base.testing.base import OAuthAddonTestCaseMixin
 from website.util import api_url_for, web_url_for, permissions
@@ -216,3 +218,187 @@ class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         self.project.reload()
         last_log = self.project.logs[-1]
         assert_equal(last_log.action, '{0}_node_deauthorized'.format(self.ADDON_SHORT_NAME))
+
+class OAuthCitationAddonConfigViewsTestCaseMixin(OAuthAddonConfigViewsTestCaseMixin):
+
+    @property
+    def citationsProvider(self):
+        raise NotImplementedError()
+
+    @property
+    def foldersApiUrl(self):
+        raise NotImplementedError()
+
+    @property
+    def documentsApiUrl(self):
+        raise NotImplementedError()
+
+    @property
+    def mockResponses(self):
+        raise NotImplementedError()
+
+    def setUp(self):
+        super(OAuthCitationAddonConfigViewsTestCaseMixin, self).setUp()
+        self.mock_verify = mock.patch.object(
+            self.client,
+            '_verify_client_validity'
+        )
+        self.mock_verify.start()
+
+    def tearDown(self):
+        self.mock_verify.stop()
+        super(OAuthCitationAddonConfigViewsTestCaseMixin, self).tearDown()
+
+    def test_set_config(self):
+        with mock.patch.object(self.client, '_folder_metadata') as mock_metadata:
+            mock_metadata.return_value = self.folder
+            url = self.project.api_url_for('{0}_set_config'.format(self.ADDON_SHORT_NAME))
+            res = self.app.put_json(url, {
+                'external_list_id': self.folder.json['id'],
+                'external_list_name': self.folder.name,
+            }, auth=self.user.auth)
+            assert_equal(res.status_code, http.OK)
+            self.project.reload()
+            assert_equal(
+                self.project.logs[-1].action,
+                '{0}_folder_selected'.format(self.ADDON_SHORT_NAME)
+            )
+            assert_equal(res.json['result']['folder']['name'], self.folder.name)
+
+    def test_get_config(self):
+        with mock.patch.object(self.client, '_folder_metadata') as mock_metadata:
+            mock_metadata.return_value = self.folder
+            self.node_settings.api._client = 'client'
+            self.node_settings.save()
+            url = self.project.api_url_for('{0}_get_config'.format(self.ADDON_SHORT_NAME))
+            res = self.app.get(url, auth=self.user.auth)
+            assert_equal(res.status_code, http.OK)
+            assert_in('result', res.json)
+            result = res.json['result']
+            serialized = self.Serializer(node_settings=self.node_settings, user_settings=self.node_settings.user_settings).serialized_node_settings
+            serialized['validCredentials'] = self.citationsProvider().check_credentials(self.node_settings)
+            assert_equal(serialized, result)
+
+    def test_folder_list(self):
+        with mock.patch.object(self.client, '_get_folders'):
+            self.node_settings.set_auth(self.external_account, self.user)
+            self.node_settings.save()
+            url = self.project.api_url_for('{0}_citation_list'.format(self.ADDON_SHORT_NAME))
+            res = self.app.get(url, auth=self.user.auth)
+            assert_equal(res.status_code, http.OK)
+
+    def test_check_credentials(self):
+        with mock.patch.object(self.client, 'client', new_callable=mock.PropertyMock) as mock_client:
+            self.provider = self.citationsProvider()
+            mock_client.side_effect = HTTPError(403)
+            assert_false(self.provider.check_credentials(self.node_settings))
+
+            mock_client.side_effect = HTTPError(402)
+            with assert_raises(HTTPError):
+                self.provider.check_credentials(self.node_settings)
+
+    def test_widget_view_complete(self):
+        # JSON: everything a widget needs
+        self.citationsProvider().set_config(
+            self.node_settings,
+            self.user,
+            self.folder.json['id'],
+            self.folder.name,
+            Auth(self.user)
+        )
+        assert_true(self.node_settings.complete)
+        assert_equal(self.node_settings.list_id, 'Fake Key')
+        url = self.project.api_url_for('{0}_widget'.format(self.ADDON_SHORT_NAME))
+        res = self.app.get(url, auth=self.user.auth).json
+
+        assert_true(res['complete'])
+        assert_equal(res['list_id'], 'Fake Key')
+
+    def test_widget_view_incomplete(self):
+        # JSON: tell the widget when it hasn't been configured
+        self.node_settings.clear_settings()
+        self.node_settings.save()
+        assert_false(self.node_settings.complete)
+        assert_equal(self.node_settings.list_id, None)
+        url = self.project.api_url_for('{0}_widget'.format(self.ADDON_SHORT_NAME))
+        res = self.app.get(url, auth=self.user.auth).json
+
+        assert_false(res['complete'])
+        assert_is_none(res['list_id'])
+
+    @httpretty.activate
+    def test_citation_list_root(self):
+
+        httpretty.register_uri(
+            httpretty.GET,
+            self.foldersApiUrl,
+            body=self.mockResponses['folders'],
+            content_type='application/json'
+        )
+
+        res = self.app.get(
+            self.project.api_url_for('{0}_citation_list'.format(self.ADDON_SHORT_NAME)),
+            auth=self.user.auth
+        )
+        root = res.json['contents'][0]
+        assert_equal(root['kind'], 'folder')
+        assert_equal(root['id'], 'ROOT')
+        assert_equal(root['parent_list_id'], '__')
+
+    @httpretty.activate
+    def test_citation_list_non_root(self):
+
+        httpretty.register_uri(
+            httpretty.GET,
+            self.foldersApiUrl,
+            body=self.mockResponses['folders'],
+            content_type='application/json'
+        )
+
+        httpretty.register_uri(
+            httpretty.GET,
+            self.documentsApiUrl,
+            body=self.mockResponses['documents'],
+            content_type='application/json'
+        )
+
+        res = self.app.get(
+            self.project.api_url_for('{0}_citation_list'.format(self.ADDON_SHORT_NAME), list_id='ROOT'),
+            auth=self.user.auth
+        )
+
+        children = res.json['contents']
+        assert_equal(len(children), 7)
+        assert_equal(children[0]['kind'], 'folder')
+        assert_equal(children[1]['kind'], 'file')
+        assert_true(children[1].get('csl') is not None)
+
+    @httpretty.activate
+    def test_citation_list_non_linked_or_child_non_authorizer(self):
+
+        non_authorizing_user = AuthUserFactory()
+        self.project.add_contributor(non_authorizing_user, save=True)
+
+        self.node_settings.list_id = 'e843da05-8818-47c2-8c37-41eebfc4fe3f'
+        self.node_settings.save()
+
+        httpretty.register_uri(
+            httpretty.GET,
+            self.foldersApiUrl,
+            body=self.mockResponses['folders'],
+            content_type='application/json'
+        )
+
+        httpretty.register_uri(
+            httpretty.GET,
+            self.documentsApiUrl,
+            body=self.mockResponses['documents'],
+            content_type='application/json'
+        )
+
+        res = self.app.get(
+            self.project.api_url_for('{0}_citation_list'.format(self.ADDON_SHORT_NAME), list_id='ROOT'),
+            auth=non_authorizing_user.auth,
+            expect_errors=True
+        )
+        assert_equal(res.status_code, http.FORBIDDEN)

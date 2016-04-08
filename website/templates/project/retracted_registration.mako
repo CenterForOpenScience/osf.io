@@ -51,11 +51,11 @@
                 <div id="justificationWidget" class="addon-widget-container">
                     <div class="addon-widget" name="justification">
                         <div class="addon-widget-header clearfix">
-                            <h4>Justification for Retraction</h4>
+                            <h4>Justification for Withdrawal</h4>
                         </div>
                         <div class="addon-widget-body">
                             % if not node['retracted_justification']:
-                                <em>No justification provided during retraction.</em>
+                                <em>No justification provided during withdrawal.</em>
                             % else:
                                 ${ node['retracted_justification'] }
                             % endif

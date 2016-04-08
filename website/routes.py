@@ -214,6 +214,7 @@ def make_url_map(app):
 
         Rule('/faq/', 'get', {}, OsfWebRenderer('public/pages/faq.mako')),
         Rule('/getting-started/', 'get', {}, OsfWebRenderer('public/pages/getting_started.mako')),
+        Rule('/getting-started/email/', 'get', website_views.redirect_meetings_analytics_link, json_renderer),
         Rule('/support/', 'get', {}, OsfWebRenderer('public/pages/support.mako')),
 
         Rule('/explore/', 'get', {}, OsfWebRenderer('public/explore.mako')),
@@ -872,11 +873,21 @@ def make_url_map(app):
             project_views.drafts.draft_before_register_page,
             OsfWebRenderer('project/register_draft.mako', trust=False)),
 
-        # TODO: Can't create a registration locally, so can't test this one..?
         Rule(
             [
                 '/project/<pid>/retraction/',
                 '/project/<pid>/node/<nid>/retraction/',
+            ],
+            'get',
+            project_views.register.node_registration_retraction_redirect,
+            notemplate,
+        ),
+
+        # TODO: Can't create a registration locally, so can't test this one..?
+        Rule(
+            [
+                '/project/<pid>/withdraw/',
+                '/project/<pid>/node/<nid>/withdraw/',
             ],
             'get',
             project_views.register.node_registration_retraction_get,
@@ -1287,8 +1298,8 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/register/<template>/',
         ], 'get', project_views.register.node_register_template_page, json_renderer),
         Rule([
-            '/project/<pid>/retraction/',
-            '/project/<pid>/node/<nid>/retraction/'
+            '/project/<pid>/withdraw/',
+            '/project/<pid>/node/<nid>/withdraw/'
         ], 'post', project_views.register.node_registration_retraction_post, json_renderer),
 
         Rule(

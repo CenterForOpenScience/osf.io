@@ -70,21 +70,24 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
 
         name                            type               description
         =======================================================================================================
-        title                           string             title of the registered project or component
-        description                     string             description of the registered node
-        category                        string             node category, must be one of the allowed values
-        date_created                    iso8601 timestamp  timestamp that the node was created
-        date_modified                   iso8601 timestamp  timestamp when the node was last updated
-        tags                            array of strings   list of tags that describe the registered node
-        fork                            boolean            is this project a fork?
-        registration                    boolean            has this project been registered?
-        public                          boolean            has this registration been made publicly-visible?
-        retracted                       boolean            has this registration been retracted?
-        date_registered                 iso8601 timestamp  timestamp that the registration was created
-        retraction_justification        string             reasons for retracting the registration
-        pending_retraction              boolean            is this registration pending retraction?
-        pending_registration_approval   boolean            is this registration pending approval?
-        pending_embargo                 boolean            is this registration pending an embargo?
+        title                           string             Title of the registered project or component
+        description                     string             Description of the registered node
+        category                        string             Node category, must be one of the allowed values
+        date_created                    iso8601 timestamp  Timestamp that the node was created
+        date_modified                   iso8601 timestamp  Timestamp when the node was last updated
+        tags                            array of strings   List of tags that describe the registered node
+        current_user_permissions        array of strings   List of strings representing the permissions for the current user on this node
+        fork                            boolean            Is this project a fork?
+        registration                    boolean            Has this project been registered?
+        dashboard                       boolean            Is this registered node visible on the user dashboard?
+        public                          boolean            Has this registration been made publicly-visible?
+        retracted                       boolean            Has this registration been retracted?
+        date_registered                 iso8601 timestamp  Timestamp that the registration was created
+        embargo_end_date                iso8601 timestamp  When the embargo on this registration will be lifted (if applicable)
+        retraction_justification        string             Reasons for retracting the registration
+        pending_retraction              boolean            Is this registration pending retraction?
+        pending_registration_approval   boolean            Is this registration pending approval?
+        pending_embargo_approval        boolean            Is the associated Embargo awaiting approval by project admins?
         registered_meta                 dictionary         registration supplementary information
         registration_supplement         string             registration template
 
@@ -175,21 +178,24 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveAPIView, Registration
 
         name                            type               description
         =======================================================================================================
-        title                           string             title of the registered project or component
-        description                     string             description of the registered node
-        category                        string             node category, must be one of the allowed values
-        date_created                    iso8601 timestamp  timestamp that the node was created
-        date_modified                   iso8601 timestamp  timestamp when the node was last updated
-        tags                            array of strings   list of tags that describe the registered node
-        fork                            boolean            is this project a fork?
-        registration                    boolean            has this project been registered?
-        public                          boolean            has this registration been made publicly-visible?
-        retracted                       boolean            has this registration been retracted?
-        date_registered                 iso8601 timestamp  timestamp that the registration was created
-        retraction_justification        string             reasons for retracting the registration
-        pending_retraction              boolean            is this registration pending retraction?
-        pending_registration_approval   boolean            is this registration pending approval?
-        pending_embargo                 boolean            is this registration pending an embargo?
+        title                           string             Title of the registered project or component
+        description                     string             Description of the registered node
+        category                        string             Node category, must be one of the allowed values
+        date_created                    iso8601 timestamp  Timestamp that the node was created
+        date_modified                   iso8601 timestamp  Timestamp when the node was last updated
+        tags                            array of strings   List of tags that describe the registered node
+        current_user_permissions        array of strings   List of strings representing the permissions for the current user on this node
+        fork                            boolean            Is this project a fork?
+        registration                    boolean            Has this project been registered?
+        dashboard                       boolean            Is this registered node visible on the user dashboard?
+        public                          boolean            Has this registration been made publicly-visible?
+        retracted                       boolean            Has this registration been retracted?
+        date_registered                 iso8601 timestamp  Timestamp that the registration was created
+        embargo_end_date                iso8601 timestamp  When the embargo on this registration will be lifted (if applicable)
+        retraction_justification        string             Reasons for retracting the registration
+        pending_retraction              boolean            Is this registration pending retraction?
+        pending_registration_approval   boolean            Is this registration pending approval?
+        pending_embargo_approval        boolean            Is the associated Embargo awaiting approval by project admins?
         registered_meta                 dictionary         registration supplementary information
         registration_supplement         string             registration template
 

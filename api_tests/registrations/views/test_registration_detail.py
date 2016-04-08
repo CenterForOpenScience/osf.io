@@ -92,29 +92,31 @@ class TestRegistrationDetail(ApiTestCase):
         registration = self.retraction_registration
         res = self.app.get(self.retraction_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
-
-        assert_items_equal(res.json['data']['attributes'], {
+        attributes = res.json['data']['attributes']
+        expected_attributes = {
             'title': registration.title,
             'description': registration.description,
             'date_created': registration.date_created,
             'date_registered': registration.registered_date,
-            'retraction_justification': registration.retraction.justification,
+            'withdrawal_justification': registration.retraction.justification,
             'public': None,
             'category': None,
             'date_modified': None,
-            "registration": True,
+            'registration': True,
             'fork': None,
             'collection': None,
             'tags': None,
-            'retracted': True,
-            'pending_retraction': None,
+            'withdrawn': True,
+            'pending_withdrawal': None,
             'pending_registration_approval': None,
             'pending_embargo_approval': None,
-            "embargo_end_date": None,
-            "registered_meta": None,
+            'embargo_end_date': None,
+            'registered_meta': None,
             'current_user_permissions': None,
-            "registration_supplement": registration.registered_meta.keys()[0]
-        })
+            'registration_supplement': registration.registered_meta.keys()[0]
+        }
+
+        assert_items_equal(attributes, expected_attributes)
 
         contributors = urlparse(res.json['data']['relationships']['contributors']['links']['related']['href']).path
         assert_equal(contributors, '/{}registrations/{}/contributors/'.format(API_BASE, registration._id))
