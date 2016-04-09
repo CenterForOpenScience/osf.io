@@ -311,7 +311,7 @@ def dataverse_get_widget_contents(node_addon, **kwargs):
 
     dataverse_host = node_addon.external_account.oauth_key
     dataverse_url = 'http://{0}/dataverse/{1}'.format(dataverse_host, alias)
-    dataset_url = 'http://dx.doi.org/' + doi
+    dataset_url = 'https://doi.org/' + doi
 
     data.update({
         'connected': True,
