@@ -321,6 +321,12 @@ def delete_draft_registration(auth, node, draft, *args, **kwargs):
     DraftRegistration.remove_one(draft)
     return None, http.NO_CONTENT
 
+
+@must_be_branched_from_node
+def forcibly_reject_draft_registration(node, draft, *args, **kwargs):
+    draft.approval.forcibly_reject()
+
+
 def get_metaschemas(*args, **kwargs):
     """
     List metaschemas with which a draft registration may be created. Only fetch the newest version for each schema.
