@@ -816,9 +816,9 @@ def redirect_to_twitter(twitter_handle):
         users = User.find(Q('social.twitter', 'iexact', twitter_handle))
         message_long = 'There are multiple OSF accounts associated with the ' \
                        'Twitter handle: <strong>{0}</strong>. <br /> Please ' \
-                       'select from the accounts below. <br /><ul>'.format(twitter_handle)
+                       'select from the accounts below. <br /><ul>'.format(markupsafe.escape(twitter_handle))
         for user in users:
-            message_long += '<li><a href="{0}">{1}</a></li>'.format(user.url, user.fullname)
+            message_long += '<li><a href="{0}">{1}</a></li>'.format(user.url, markupsafe.escape(user.fullname))
         message_long += '</ul>'
         raise HTTPError(http.MULTIPLE_CHOICES, data={
             'message_short': 'Multiple Users Found',

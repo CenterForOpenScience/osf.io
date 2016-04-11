@@ -118,7 +118,7 @@ class OsfWebRenderer(WebRenderer):
         super(OsfWebRenderer, self).__init__(*args, **kwargs)
 
 #: Use if a view only redirects or raises error
-notemplate = OsfWebRenderer('', renderer=render_mako_string)  # TODO convert
+notemplate = OsfWebRenderer('', renderer=render_mako_string, trust=False)
 
 
 # Static files (robots.txt, etc.)
@@ -165,7 +165,7 @@ def make_url_map(app):
             '/<path:_>',
             ['get', 'post'],
             HTTPError(http.NOT_FOUND),
-            OsfWebRenderer('', render_mako_string, trust=True)
+            OsfWebRenderer('', render_mako_string, trust=True)  # TODO: Review all possible cases of error.mako returning HTML
         ),
         Rule(
             '/api/v1/<path:_>',
@@ -913,7 +913,7 @@ def make_url_map(app):
         ),
 
         # # TODO: Add API endpoint for tags
-        # Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, OsfWebRenderer('tags.mako')),
+        # Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, OsfWebRenderer('tags.mako', trust=False)),
         Rule('/project/new/<pid>/beforeTemplate/', 'get',
              project_views.node.project_before_template, json_renderer),
 

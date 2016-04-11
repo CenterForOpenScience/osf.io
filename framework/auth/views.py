@@ -41,9 +41,10 @@ def reset_password(auth, **kwargs):
 
     user_obj = get_user(verification_key=verification_key)
     if not user_obj:
-        error_data = {'message_short': 'Invalid url.',
-            'message_long': 'The verification key in the URL is invalid or '
-            'has expired.'}
+        error_data = {
+            'message_short': 'Invalid url.',
+            'message_long': 'The verification key in the URL is invalid or has expired.'
+        }
         raise HTTPError(400, data=error_data)
 
     if request.method == 'POST' and form.validate():

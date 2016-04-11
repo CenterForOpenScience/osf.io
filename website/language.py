@@ -85,8 +85,8 @@ MERGE_CONFIRMATION_REQUIRED_SHORT = 'Confirmation Required: Merge Accounts'
 
 MERGE_CONFIRMATION_REQUIRED_LONG = (
     u'<p>This email is confirmed to another account. '
-    u'Would you like to merge <em>{user_to_merge.username}</em> with the account '
-    u'<em>{user.username}</em>?<p>'
+    u'Would you like to merge <em>{src_user}</em> with the account '
+    u'<em>{dest_user}</em>?<p>'
     u'<a class="btn btn-primary" href="?confirm_merge">Confirm merge</a> '
 )
 
