@@ -50,20 +50,20 @@ def get_osf_statistics(time=None):
 
 
 def get_days_statistics(time, latest=None):
-    statistic = OSFWebsiteStatistics(date=time)
+    statistics = OSFWebsiteStatistics(date=time)
     # Basic user count
-    statistic.users = get_all_user_count(time)
+    statistics.users = get_all_user_count(time)
     # Users who are currently unregistered
-    statistic.unregistered_users = get_unregistered_users()
-    statistic.projects = get_projects(time=time)
-    statistic.public_projects = get_projects(time=time, public=True)
-    statistic.registered_projects = get_projects(time=time, registered=True)
+    statistics.unregistered_users = get_unregistered_users()
+    statistics.projects = get_projects(time=time)
+    statistics.public_projects = get_projects(time=time, public=True)
+    statistics.registered_projects = get_projects(time=time, registered=True)
     if latest:
-        statistic.delta_users = statistic.users - latest.users
-        statistic.delta_projects = statistic.projects - latest.projects
-        statistic.delta_public_projects = statistic.public_projects - latest.public_projects
-        statistic.delta_registered_projects = statistic.registered_projects - latest.registered_projects
-    statistic.save()
+        statistics.delta_users = statistics.users - latest.users
+        statistics.delta_projects = statistics.projects - latest.projects
+        statistics.delta_public_projects = statistics.public_projects - latest.public_projects
+        statistics.delta_registered_projects = statistics.registered_projects - latest.registered_projects
+    statistics.save()
 
 
 def get_projects(time=None, public=False, registered=False):
