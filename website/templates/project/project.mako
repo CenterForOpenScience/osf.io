@@ -21,7 +21,7 @@
                     % endif
                 % endif
                 <h2 class="node-title">
-                    % if node['institution']['name'] and enable_institutions and not node['anonymous']:
+                    % if node['institution']['name'] and enable_institutions and not node['anonymous'] and not private_link:
                         <a href="/institutions/${node['institution']['id']}"><img class="img-circle" height="75" width="75" id="instLogo" src="${node['institution']['logo_path']}"></a>
                     % endif
                     <span id="nodeTitleEditable" class="overflow">${node['title']}</span>
@@ -112,13 +112,13 @@
                     </ol>
                 % endif
                 </div>
-                % if enable_institutions and not node['anonymous']:
+                % if enable_institutions and not node['anonymous'] and not private_link:
                     % if user['is_contributor'] and not node['is_registration']:
                         <a class="link-dashed" href="${node['url']}settings/#configureInstitutionAnchor" id="institution">Affiliated Institution:</a>
                     % else:
                         Affiliated institution:
                     % endif
-                    % if node['institution']['id']:
+                    % if node['institution']['id'] and not private_link:
                         <a href="/institutions/${node['institution']['id']}">${node['institution']['name']}</a>
                     % else:
                         <span> None </span>

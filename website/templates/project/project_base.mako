@@ -1,13 +1,5 @@
 <%inherit file="../base.mako"/>
 
-% if private_link:
-    <%user['permissions'] = ['read']%>
-    <%user['is_contributor'] = False%>
-    <%user['can_comment'] = False%>
-    <%node['has_comments'] = False%>
-    <%user['can_edit_wiki_body'] = False%>
-%endif
-
 <%def name="og_description()">
 
     %if node['description']:
