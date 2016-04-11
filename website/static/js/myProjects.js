@@ -533,7 +533,6 @@ var MyProjects = {
             self.currentView().contributor.forEach(function (c, index, arr) {
                 if(c.data.id === id){
                     self.updateFilesData(c);
-                    console.log(c);
                 }
             });
         };
