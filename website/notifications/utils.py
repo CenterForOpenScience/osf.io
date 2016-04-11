@@ -363,6 +363,21 @@ def get_parent_notification_type(node, event, user):
     else:
         return None
 
+def get_global_notification_type(global_subscription, user):
+    """
+    Given a global subscription (e.g. NotificationSubscription object with event_type
+    'global_file_updated'), find the user's notification type.
+    :param obj global_subscription: modular odm NotificationSubscription object
+    :param obj user: modular odm User object
+    :return: str notification type (e.g. 'email_transactional')
+    """
+    if global_subscription and isinstance(global_subscription, NotificationSubscription):
+        for notification_type in constants.NOTIFICATION_TYPES:
+            if user in getattr(global_subscription, notification_type):
+                return notification_type
+    else:
+        return None
+
 
 def format_user_and_project_subscriptions(user):
     """ Format subscriptions data for user settings page. """

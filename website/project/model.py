@@ -1345,6 +1345,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param user: User to subscribe to notifications
         """
         from website.notifications.utils import to_subscription_key
+        from website.notifications.utils import get_global_notification_type
         from website.notifications.model import NotificationSubscription
 
         events = ['file_updated', 'comments']
@@ -1353,12 +1354,17 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         for event in events:
             event_id = to_subscription_key(target_id, event)
+            global_event_id = to_subscription_key(user._id, 'global_' + event)
+            global_subscription = NotificationSubscription.load(global_event_id)
 
             subscription = NotificationSubscription.load(event_id)
             if not subscription:
                 subscription = NotificationSubscription(_id=event_id, owner=self, event_name=event)
-
-            subscription.add_user_to_subscription(user, notification_type)
+            if global_subscription:
+                global_notification_type = get_global_notification_type(global_subscription, user)
+                subscription.add_user_to_subscription(user, global_notification_type)
+            else:
+                subscription.add_user_to_subscription(user, notification_type)
             subscription.save()
 
     def update(self, fields, auth=None, save=True):
