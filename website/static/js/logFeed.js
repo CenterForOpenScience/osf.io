@@ -38,19 +38,19 @@ var Log = function(params) {
         return '<a class="contrib-link" href="/profile/' + person.id + '/">' + fullnameText + '</a>';
     };
 
+    self.hasUser = ko.pureComputed(function() {
+        return Boolean(self.user && self.user.fullname);
+    });
+
     /**
       * Return whether a knockout template exists for the log.
       */
     self.hasTemplate = ko.computed(function() {
-        if (!self.user) {
+        if (!self.hasUser()) {
             return $('script#' + self.action + '_no_user').length > 0;
         } else {
             return $('script#' + self.action).length > 0;
         }
-    });
-
-    self.hasUser = ko.pureComputed(function() {
-        return Boolean(self.user && self.user.fullname);
     });
 
     self.mapUpdates = function(key, item) {
