@@ -4394,7 +4394,6 @@ class DraftRegistrationApproval(Sanction):
     def _send_rejection_email(self, user, draft):
         schema = draft.registration_schema
         prereg_schema = prereg_utils.get_prereg_schema()
-
         if schema._id == prereg_schema._id:
             mails.send_mail(
                 user.username,
@@ -4418,6 +4417,10 @@ class DraftRegistrationApproval(Sanction):
             raise PermissionsError("This user does not have permission to approve this draft.")
         self.state = Sanction.REJECTED
         self._on_reject(user)
+
+    def forcibly_reject(self):
+        self.state = Sanction.REJECTED
+        self._on_reject(None)
 
     def _on_complete(self, user):
         draft = DraftRegistration.find_one(
@@ -4446,12 +4449,17 @@ class DraftRegistrationApproval(Sanction):
     def _on_reject(self, user, *args, **kwargs):
         # clear out previous registration options
         self.meta = {}
-        self._clear_checkout(save=True)
         self.save()
 
         draft = DraftRegistration.find_one(
             Q('approval', 'eq', self)
         )
+        schema = draft.registration_schema
+        prereg_schema = prereg_utils.get_prereg_schema()
+
+        if schema._id == prereg_schema._id:
+            self._clear_checkout(save=True)
+
         self._send_rejection_email(draft.initiator, draft)
 
     def _clear_checkout(self, save=False):

@@ -15,9 +15,11 @@ from framework.exceptions import HTTPError
 from framework.auth import Auth
 
 from website.models import Node, MetaSchema, DraftRegistration
+from website.project.model import Sanction
 from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, _name_to_id
 from website.util import permissions, api_url_for
 from website.project.views import drafts as draft_views
+from website.prereg import utils as prereg_utils
 
 from tests.factories import (
     NodeFactory, AuthUserFactory, DraftRegistrationFactory, RegistrationFactory
@@ -453,6 +455,33 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         res = self.app.delete(url, auth=non_admin.auth, expect_errors=True)
         assert_equal(res.status_code, http.FORBIDDEN)
         assert_equal(1, DraftRegistration.find().count())
+
+    def test_forcibly_reject_draft_registration(self):
+        prereg_draft = DraftRegistrationFactory(
+            initiator=self.user,
+            branched_from=self.node,
+            registration_schema=prereg_utils.get_prereg_schema(),
+            registration_metadata={
+                'summary': {'value': 'Some airy', 'extra': []}
+            }
+        )
+        non_admin = AuthUserFactory()
+        url = self.node.api_url_for('submit_draft_for_review', draft_id=prereg_draft._id)
+        res = self.app.post_json(
+            url,
+            self.embargo_payload,
+            auth=self.user.auth
+        )
+        prereg_draft.reload()
+        url = self.node.api_url_for('forcibly_reject_draft_registration', draft_id=prereg_draft._id)
+        payload = {
+            'draft': prereg_draft._id
+        }
+        res = self.app.post(url, payload, auth=non_admin.auth)
+        prereg_draft.save()
+        assert_equal(prereg_draft.approval.state, Sanction.REJECTED)
+        assert_equal(prereg_draft.approval.meta, {})
+
 
     def test_get_metaschemas(self):
         url = api_url_for('get_metaschemas')
