@@ -23,7 +23,7 @@ a {
     border-bottom: 1px solid #e5e5e5;
     width: 100%;
     color: #555;
-    position: absolute;
+    position: relative;
     padding-top:20px;
     padding-bottom:20px;
     z-index:10;

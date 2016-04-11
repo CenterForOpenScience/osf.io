@@ -8,15 +8,19 @@ var DevModeModel = function() {
     self.showMetaInfo = ko.observable(false);
     self.showHideMetaInfo = function() {
         if(self.pullRequests().length === 0) {
-            $.getJSON('/static/git_logs.json')
-                .done(function(data){
-                    dataLength = data.length;
-                    for(i=0; i<dataLength; i++) {
-                        self.pullRequests.push(new PullRequestItem(data[i]));
-                    }
-            });
+            if(!self.showMetaInfo()) {
+                $.getJSON('/static/git_logs.json')
+                    .done(function (data) {
+                        dataLength = data.length;
+                        for (i = 0; i < dataLength; i++) {
+                            self.pullRequests.push(new PullRequestItem(data[i]));
+                        }
+                        self.showMetaInfo(true);
+                    });
+            }
+        } else {
+            self.showMetaInfo(!self.showMetaInfo());
         }
-        self.showMetaInfo(!self.showMetaInfo());
     };
 };
 
