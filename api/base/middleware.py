@@ -122,6 +122,7 @@ class CorsMiddleware(corsheaders.middleware.CorsMiddleware):
                         return False
                     elif (
                         request.method == 'OPTIONS' and
+                        'HTTP_ACCESS_CONTROL_REQUEST_METHOD' in request.META and
                         'authorization' in request.META.get('HTTP_ACCESS_CONTROL_REQUEST_HEADERS', '').split(', ')
                     ):
                         return False
