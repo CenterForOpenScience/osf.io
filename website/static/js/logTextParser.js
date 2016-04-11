@@ -517,6 +517,12 @@ var LogPieces = {
         }
     },
 
+    figshare_title: {
+        view: function(ctrl, logObject) {
+            return returnTextParams('figshare_title', '', logObject);
+        }
+    },
+
     forward_url: {
         view: function(ctrl, logObject) {
             var url = logObject.attributes.params.forward_url;
