@@ -1,3 +1,7 @@
+<%!
+    from website import settings
+%>
+
 Hello ${referrer.fullname},
 
 You recently added ${fullname} to "${node.title}". ${fullname} wants to claim their account, but the email address they provided is different from the one you provided.  To maintain security of your project, we are sending the account confirmation to you first.
@@ -14,7 +18,7 @@ You have been added by ${referrer.fullname} as a contributor to the project "${n
 
 ${claim_url}
 
-Once you have set a password, you will be able to make contributions to ${node.title}.
+Once you have set a password, you will be able to make contributions to ${node.title}. You will automatically be subscribed to notifications when a comment is added or a file is changed on this project. To change your email notification preferences once you've created your account, visit your project or your user settings: ${settings.DOMAIN + "settings/notifications/"}
 
 Sincerely,
 
