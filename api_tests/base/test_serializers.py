@@ -4,6 +4,7 @@ import contextlib
 import mock
 
 from nose.tools import *  # flake8: noqa
+import re
 
 from tests.base import ApiTestCase, DbTestCase
 from tests import factories
@@ -37,17 +38,14 @@ class FakeSerializer(base_serializers.JSONAPISerializer):
         'null_field': 'null_field',
         'valued_field': 'valued_field',
     })
-    
     null_link_field = base_serializers.RelationshipField(
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<null>'},
     )
-    
     valued_link_field = base_serializers.RelationshipField(
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<foo>'},
     )
-          
     def null_field(*args, **kwargs):
         return None
 
@@ -78,6 +76,15 @@ class TestApiBaseSerializers(ApiTestCase):
             factories.ProjectFactory(is_public=True, parent=self.node)
 
         self.url = '/{}nodes/{}/'.format(API_BASE, self.node._id)
+
+    def test_serializers_have_get_absolute_url_method(self):
+        serializers = JSONAPISerializer.__subclasses__()
+        base_get_absolute_url = JSONAPISerializer.get_absolute_url
+
+        for serializer in serializers:
+            if not re.match('^(api_test|test).*', serializer.__module__):
+                assert hasattr(serializer, 'get_absolute_url'), 'No get_absolute_url method'
+                assert_not_equal(serializer.get_absolute_url, base_get_absolute_url)
 
     def test_counts_not_included_in_link_fields_by_default(self):
 
