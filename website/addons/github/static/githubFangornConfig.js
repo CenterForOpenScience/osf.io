@@ -178,7 +178,7 @@ var _githubItemButtons = {
                            },
                            icon: 'fa fa-trash',
                            className: 'text-danger'
-                       }, 'Delete')
+                       }, 'Delete Folder')
                     );
                 }
                 if (item.data.addonFullname) {
