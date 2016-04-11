@@ -3398,7 +3398,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 'project': self._id,
                 'node': self._id,
             },
-            auth=auth,
+            auth=None,
             save=True
         )
         self.embargo.mark_as_completed()
