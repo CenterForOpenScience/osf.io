@@ -662,7 +662,7 @@ var MyProjects = {
               var contributors = item.embeds.contributors.data || [];
               for(var i = 0; i < contributors.length; i++) {
                 var u = contributors[i];
-                if (u.id === window.contextVars.currentUser.id) {
+                if ((u.id === window.contextVars.currentUser.id) && !(self.institutionId)) {
                   continue;
                 }
                 if(self.users[u.id] === undefined) {
