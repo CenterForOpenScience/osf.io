@@ -220,30 +220,6 @@ var Uploader = function(question) {
     };
 
 
-    self.checkoutAllFiles = function() {
-        $.each(self.selectedFiles(), function(_, file) {
-            $.ajax({
-                method: 'put',
-                url: window.contextVars.apiV2Prefix + 'files' + file.data.path + '/',
-                beforeSend: $osf.setXHRAuthorization,
-                contentType: 'application/json',
-                dataType: 'json',
-                data: JSON.stringify({
-                    data: {
-                        id: file.data.path.replace('/', ''),
-                        type: 'files',
-                        attributes: {
-                            checkout: window.contextVars.currentUser.id
-                        }
-                    }
-                })
-            }).fail(function(resp) {
-                $osf.growl('Error', 'Unable to check out file');
-            });
-        });
-    };
-
-
     $.extend(self, question);
 };
 
