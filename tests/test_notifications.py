@@ -395,14 +395,28 @@ class TestNotificationUtils(OsfTestCase):
 
         self.node_subscription = list(NotificationSubscription.find(Q('owner', 'eq', self.node)))
 
-        self.user_subscription = factories.NotificationSubscriptionFactory(
+        self.user_subscription = [factories.NotificationSubscriptionFactory(
             _id=self.user._id + '_' + 'comment_replies',
             owner=self.user,
             event_name='comment_replies'
-        )
-        self.user_subscription.save()
-        self.user_subscription.email_transactional.append(self.user)
-        self.user_subscription.save()
+        ),
+        factories.NotificationSubscriptionFactory(
+            _id=self.user._id + '_' + 'global_comment',
+            owner=self.user,
+            event_name='global_comment'
+        ),
+        factories.NotificationSubscriptionFactory(
+            _id=self.user._id + '_' + 'global_file_updated',
+            owner=self.user,
+            event_name='global_file_updated'
+        )]
+
+        for x in self.user_subscription:
+            x.save()
+        for x in self.user_subscription:
+            x.email_transactional.append(self.user)
+        for x in self.user_subscription:
+            x.save()
 
     def test_to_subscription_key(self):
         key = utils.to_subscription_key('xyz', 'comments')
@@ -419,8 +433,9 @@ class TestNotificationUtils(OsfTestCase):
         user_subscriptions = [x for x in utils.get_all_user_subscriptions(self.user)]
         assert_in(self.project_subscription, user_subscriptions)
         assert_in(self.node_comments_subscription, user_subscriptions)
-        assert_in(self.user_subscription, user_subscriptions)
-        assert_equal(len(user_subscriptions), 5)
+        for x in self.user_subscription:
+            assert_in(x, user_subscriptions)
+        assert_equal(len(user_subscriptions), 7)
 
     def test_get_all_node_subscriptions_given_user_subscriptions(self):
         user_subscriptions = utils.get_all_user_subscriptions(self.user)
@@ -595,17 +610,41 @@ class TestNotificationUtils(OsfTestCase):
 
     def test_format_user_subscriptions(self):
         data = utils.format_user_subscriptions(self.user)
-        expected = [{
-            'event': {
-                'title': 'comment_replies',
-                'description': constants.USER_SUBSCRIPTIONS_AVAILABLE['comment_replies'],
-                'notificationType': 'email_transactional',
-                'parent_notification_type': None
-            },
-            'kind': 'event',
-            'children': [],
-        }]
+        expected = [
+            {
+                'event': {
+                    'title': 'comment_replies',
+                    'description': constants.USER_SUBSCRIPTIONS_AVAILABLE['comment_replies'],
+                    'notificationType': 'email_transactional',
+                    'parent_notification_type': None
+                },
+                'kind': 'event',
+                'children': []
+            }, {
+                'event': {
+                    'title': 'global_file_updated',
+                    'description': constants.USER_SUBSCRIPTIONS_AVAILABLE['global_file_updated'],
+                    'notificationType': 'email_transactional',
+                    'parent_notification_type': None
+                },
+                'kind': 'event',
+                'children': []
+            }, {
+                'event': {
+                    'title': 'global_comments',
+                    'description': constants.USER_SUBSCRIPTIONS_AVAILABLE['global_comments'],
+                    'notificationType': 'email_transactional',
+                    'parent_notification_type': None
+                },
+                'kind': 'event',
+                'children': []
+            }
+        ]
         assert_equal(data, expected)
+
+    def test_get_global_notification_type(self):
+        notification_type = utils.get_global_notification_type(self.user_subscription[1] ,self.user)
+        assert_equal('email_transactional', notification_type)
 
     def test_format_data_user_settings(self):
         data = utils.format_user_and_project_subscriptions(self.user)
