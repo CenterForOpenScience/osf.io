@@ -172,12 +172,12 @@ var _githubItemButtons = {
                             className: 'text-success'
                         }, 'Create Folder'),
                         m.component(Fangorn.Components.button, {
- +                          onclick: function (event) {
- +                              _removeEvent.call(tb, event, [item]);
- +                          },
- +                          icon: 'fa fa-trash',
- +                          className: 'text-danger'
- +                      }, 'Delete')
+                           onclick: function (event) {
+                               _removeEvent.call(tb, event, [item]);
+                           },
+                           icon: 'fa fa-trash',
+                           className: 'text-danger'
+                       }, 'Delete')
                     );
                 }
                 if (item.data.addonFullname) {
