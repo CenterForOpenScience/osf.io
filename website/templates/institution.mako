@@ -44,7 +44,7 @@
                 logoPath: ${ logo_path | sjson, n},
             },
             currentUser: {
-                'id': '${user_id}'
+                'id': ${ user_id | sjson, n }
             }
         });
     </script>

@@ -573,16 +573,16 @@ def make_url_map(app):
             OsfWebRenderer('profile.mako', trust=False)
         ),
         Rule(
-            ["/user/merge/"],
+            ['/user/merge/'],
             'get',
             auth_views.merge_user_get,
-            OsfWebRenderer("merge_accounts.mako", trust=False)
+            OsfWebRenderer('merge_accounts.mako', trust=False)
         ),
         Rule(
-            ["/user/merge/"],
+            ['/user/merge/'],
             'post',
             auth_views.merge_user_post,
-            OsfWebRenderer("merge_accounts.mako", trust=False)
+            OsfWebRenderer('merge_accounts.mako', trust=False)
         ),
         # Route for claiming and setting email and password.
         # Verification token must be querystring argument
