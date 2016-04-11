@@ -6,7 +6,7 @@ from django.views.generic.list import ListView
 from django.core.urlresolvers import reverse
 from django.utils import timezone
 from forms import ConferenceForm, ConferenceFieldNamesForm
-from .serializers import serialize_node
+from .serializers import serialize_conference
 
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
@@ -55,6 +55,7 @@ def create_conference(request):
                 #     print('Updated {}: {}'.format(meeting, changed_fields))
             else:
                 print('success')
+                messages.success(request, 'success')
             return redirect('conferences:create_conference')
 
 
@@ -65,7 +66,7 @@ def create_conference(request):
         messages.error(request, 'You do not have permission to access that page.')
         return redirect('auth:login')
 
-class ConferenceListView(ListView):
+class ConferenceList(ListView):
     template_name = 'conferences/conference_list.html'
     paginate_by = 10
     paginate_orphans = 1
@@ -74,7 +75,7 @@ class ConferenceListView(ListView):
 
     def get_queryset(self):
         query = (
-            Q('is_active', 'eq', True)
+            Q('active', 'eq', True) # What is the query for .all()?
         )
         return Conference.find(query).sort(self.ordering)
 
@@ -84,6 +85,6 @@ class ConferenceListView(ListView):
         paginator, page, query_set, is_paginated = self.paginate_queryset(
             query_set, page_size)
         return {
-            'conference': map(serialize_conference, query_set),
+            'conferences': map(serialize_conference, query_set),
             'page': page,
         }

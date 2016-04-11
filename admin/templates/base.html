@@ -86,6 +86,7 @@
             <li><a href="{% url 'pre_reg:prereg' %}"><i class='fa fa-link'></i> <span>OSF Prereg</span></a></li>
             {% endif %}
             {% if  request.user.is_staff %}
+            <li><a href="{% url 'conferences:conference_list' %}"><i class='fa fa-link'></i> <span>OSF for Meetings</span></a></li>
             <li><a href="{% url 'conferences:create_conference' %}"><i class='fa fa-link'></i> <span>Create Conference</span></a></li>
             {% endif %}
           </ul><!-- /.sidebar-menu -->

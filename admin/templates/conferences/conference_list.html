@@ -1,8 +1,51 @@
-<h1>Confs</h1>
-<ul>
-{% for conf in object_list %}
-    <li>{{ conf.pub_date|date }} - {{ conf.name }}</li>
-{% empty %}
-    <li>No confs yet.</li>
-{% endfor %}
-</ul>
+{% extends "base.html" %}
+{% load render_bundle from webpack_loader %}
+{% load conference_extras %}
+
+{% load static %}
+{% block title %}
+    <title>Conferences</title>
+{% endblock title %}
+{% block content %}
+    <h2>List of Conferences</h2>
+    {% include "util/pagination.html" with items=page status=status %}
+    <table class="table table-striped table-hover table-responsive">
+    <thead>
+        <tr>
+            <th>Endpoint</th>
+            <th>Name</th>
+            <th>Active</th>
+            <th>public_projects</th>
+            <th>poster</th>
+            <th>talk</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for conference in conferences %}
+    <tr>
+        <td>
+        <a href="#"
+               class="btn btn-primary">
+                {{ conference.endpoint }}
+        </td>
+        <td>
+            {{ conference.name }}
+        </td>
+        <td>
+            {{ conference.active }}
+        </td>
+         <td>
+            {{ conference.public_projects }}
+        </td>
+         <td>
+            {{ conference.poster }}
+        </td>
+        <td>
+            {{ conference.talk }}
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+    </table>
+
+{% endblock content %}

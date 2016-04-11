@@ -9,3 +9,4 @@ def serialize_conference(conference):
         'poster': conference.poster,
         'talk': conference.talk,
     }
+
