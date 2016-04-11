@@ -67,8 +67,6 @@ class InstitutionList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     view_category = 'institutions'
     view_name = 'institution-list'
 
-    ordering = ('-date_modified', )
-
     def get_default_odm_query(self):
         return Q('_id', 'ne', None)
 
@@ -142,6 +140,8 @@ class InstitutionNodeList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
     serializer_class = NodeSerializer
     view_category = 'institutions'
     view_name = 'institution-nodes'
+
+    ordering = ('-date_modified', )
 
     base_node_query = (
         Q('is_deleted', 'ne', True) &
