@@ -473,3 +473,9 @@ class TestNodeEmbargoTerminations(OsfTestCase):
     @assert_logs(NodeLog.EMBARGO_TERMINATED, 'node')
     def test_terminate_embargo_adds_log_to_registered_from(self):
         self.registration.terminate_embargo(Auth(self.user))
+
+    def test_terminate_embargo_log_is_nouser(self):
+        self.registration.terminate_embargo(Auth(self.user))
+        last_log = self.node.logs[-1]
+        assert_equal(last_log.action, NodeLog.EMBARGO_TERMINATED)
+        assert_equal(last_log.user, None)
