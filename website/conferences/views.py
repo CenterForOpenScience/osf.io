@@ -4,6 +4,7 @@ import json
 import httplib
 import logging
 from datetime import datetime
+from keen.client import KeenClient
 
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
@@ -27,6 +28,32 @@ from website.conferences.model import Conference
 
 
 logger = logging.getLogger(__name__)
+
+
+# Setup Keen client
+def get_keen_client(project_id, write_key):
+    if project_id and write_key:
+        return KeenClient(
+            project_id=project_id,
+            write_key=write_key,
+        )
+    else:
+        return
+
+
+keenclient = get_keen_client(project_id=settings.KEEN_PROJECT_ID, write_key=settings.KEEN_WRITE_KEY)
+
+
+def _dt_to_iso8601(value):
+    """Helper function for formatting UTC time.
+    """
+    iso8601 = value.isoformat()
+    if iso8601.endswith('+00:00'):
+        iso8601 = iso8601[:-9] + 'Z'  # offset upped to 9 to get rid of 3 ms decimal points
+    else:
+        iso8601 = iso8601[:-3] + 'Z'
+
+    return iso8601
 
 
 @no_auto_transaction
@@ -138,6 +165,32 @@ def add_poster_by_email(conference, message):
     if node_created and user_created:
         signals.osf4m_user_created.send(user, conference=conference, node=node)
 
+    # Send log to Keen (Only when project id and write key are provided)
+    if keenclient:
+        keenclient.add_event('osf4m', {
+            "osf4m": {
+                "receivedFrom": {
+                    "username": user.username,
+                    "userEmail": message.sender_email,
+                    "locale": user.locale,
+                    "urls": {
+                        "profile": "/{}/".format(user._id),
+                        "api": "/api/v1/profile/{}/".format(user._id),
+                    },
+                    "timezone": user.timezone,
+                    "fullname": user.fullname,
+                    "isActive": user.is_active,
+                    "id": user._id,
+                },
+                "meeting": message.conference_name,
+                "userCreated": user_created,
+                "timeSubmitted": _dt_to_iso8601(datetime.utcnow()),
+            },
+            "product": {
+                "id": "osf4m"
+            }
+        })
+
 
 def _render_conference_node(node, idx, conf):
     try:
@@ -223,6 +276,7 @@ def conference_results(meeting):
         'settings': settings,
     }
 
+
 def conference_submissions(**kwargs):
     """Return data for all OSF4M submissions.
 
@@ -254,6 +308,7 @@ def conference_submissions(**kwargs):
             continue
     submissions.sort(key=lambda submission: submission['dateCreated'], reverse=True)
     return {'submissions': submissions}
+
 
 def conference_view(**kwargs):
     meetings = []
