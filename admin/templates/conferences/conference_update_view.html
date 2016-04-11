@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load conference_extras %}
+{% block title %}
+    <title>Update Conference</title>
+{% endblock title %}
+{% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            <form action="{% url 'conferences:conference_update_view' endpoint %}" method="post">
+                {% csrf_token %}
+                {% if conf_form.errors %}
+                    <div class="alert alert-danger">{{ conf_form.errors }}</div>
+                {% endif %}
+                <div class="form-group">
+                    <label for="endpoint">Endpoint:</label>
+                    {{ conf_form.endpoint }}
+                </div>
+                <div class="form-group">
+                    <label for="endpoint">Name:</label>
+                    {{ conf_form.name }}
+                </div>
+                <div class="form-group">
+                    <label for="endpoint">Active:</label>
+                    {{ conf_form.active }}
+                </div>
+                <div class="form-group">
+                    <label for="endpoint">Public_projects:</label>
+                    {{ conf_form.public_projects }}
+                </div>
+                <div class="form-group">
+                    <label for="endpoint">Poster:</label>
+                    {{ conf_form.poster }}
+                </div>
+                <div class="form-group">
+                    <label for="endpoint">Talk:</label>
+                    {{ conf_form.talk }}
+                </div>
+             <!-- Todo: include fieldnames -->
+                <input type="submit" class="btn btn-primary" value="Submit" />
+            </form>
+        </div>
+    </div>
+{% endblock content %}

@@ -24,7 +24,7 @@
     {% for conference in conferences %}
     <tr>
         <td>
-        <a href="#"
+        <a href="{% url 'conferences:conference_update_view' conference.endpoint %}"
                class="btn btn-primary">
                 {{ conference.endpoint }}
         </td>

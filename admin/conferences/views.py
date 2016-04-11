@@ -18,8 +18,6 @@ from website.conferences.model import Conference
 from website.app import init_app
 
 
-
-# Create your views here.
 def create_conference(request):
     if request.user.is_staff:
         conf_form = ConferenceForm(request.POST or None)
@@ -35,30 +33,17 @@ def create_conference(request):
                 poster=request.POST.get('poster', True),
                 talk=request.POST.get('talk', True),
             )
+            # Todo: implement overriding default fieldnames
             # if (conf_field_names_form.has_changed):
-            # conf.field_names.update(custom_fields)
+            #   conf.field_names.update(custom_fields)
             try:
                 conf.save()
             except ModularOdmException:
                 print('failed')
-                # conf = Conference.find_one(Q('endpoint', 'eq', meeting))
-                # for key, value in attrs.items():
-                #     if isinstance(value, dict):
-                #         current = getattr(conf, key)
-                #         current.update(value)
-                #         setattr(conf, key, current)
-                #     else:
-                #         setattr(conf, key, value)
-                # conf.admins = admin_objs
-                # changed_fields = conf.save()
-                # if changed_fields:
-                #     print('Updated {}: {}'.format(meeting, changed_fields))
             else:
                 print('success')
                 messages.success(request, 'success')
             return redirect('conferences:create_conference')
-
-
         else:
             context = {'conf_form': conf_form, 'conf_field_names_form': conf_field_names_form}
             return render(request, 'conferences/create_conference.html', context)
@@ -66,18 +51,16 @@ def create_conference(request):
         messages.error(request, 'You do not have permission to access that page.')
         return redirect('auth:login')
 
+
 class ConferenceList(ListView):
     template_name = 'conferences/conference_list.html'
     paginate_by = 10
     paginate_orphans = 1
-    ordering = 'date_created'
+    ordering = 'endpoint'
     context_object_name = 'conference'
 
     def get_queryset(self):
-        query = (
-            Q('active', 'eq', True) # What is the query for .all()?
-        )
-        return Conference.find(query).sort(self.ordering)
+        return Conference.find().sort(self.ordering)
 
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)
@@ -88,3 +71,25 @@ class ConferenceList(ListView):
             'conferences': map(serialize_conference, query_set),
             'page': page,
         }
+
+
+def conference_update_view(request, endpoint):
+    conference_instance = Conference.load(endpoint)
+    conf_form = ConferenceForm(request.POST or None)
+    conf_field_names_form = ConferenceFieldNamesForm(request.POST or None)
+    if request.POST and conf_form.is_valid():
+        # Todo: implement updating only edited fields
+        # setattr(conference_instance, key, value)
+        # try:
+        #     conference_instance.save()
+        # except ModularOdmException:
+        #     print('failed')
+        # else:
+        #     print('success')
+        return redirect('conferences:conference', endpoint=endpoint)
+    context = {
+        'conf_form': conf_form,
+        'conf_field_names_form': conf_field_names_form,
+        'endpoint': conference_instance.endpoint,
+    }
+    return render(request, 'conferences/conference_update_view.html', context)
