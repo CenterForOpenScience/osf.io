@@ -141,7 +141,7 @@ def audit(targets, nworkers, worker_id, dry_run):
     for version in targets:
         if hash(version._id) % nworkers == worker_id:
             if version.size == 0:
-                return
+                continue
             ensure_backups(version, dry_run)
             idx += 1
             progress = int(idx / maxval * 100)
