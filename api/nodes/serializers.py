@@ -15,8 +15,8 @@ from website.project.model import NodeUpdateError
 from api.base.utils import get_user_auth, get_object_or_error, absolute_reverse
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
                                   TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly,
-                                  HideIfRegistration)
-from api.base.exceptions import InvalidModelValueError
+                                  HideIfRegistration, JSONAPIRelationshipSerializer, relationship_diff)
+from api.base.exceptions import InvalidModelValueError, RelationshipPostMakesNoChanges
 
 
 class NodeTagField(ser.Field):
@@ -506,6 +506,80 @@ class NodeInstitutionRelationshipSerializer(ser.Serializer):
         data['links'] = {key: val for key, val in self.fields.get('links').to_representation(obj).iteritems()}
 
         return data
+
+class InstitutionRelated(JSONAPIRelationshipSerializer):
+    id = ser.CharField(source='_id', required=False, allow_null=True)
+    class Meta:
+        type_ = 'institutions'
+
+class NodeInstitutionsRelationshipSerializer(ser.Serializer):
+    data = ser.ListField(child=InstitutionRelated())
+    links = LinksField({'self': 'get_self_url',
+                        'html': 'get_related_url'})
+
+    def get_self_url(self, obj):
+        return 'self-url'
+
+    def get_related_url(self, obj):
+        return 'get-related-url'
+
+    class Meta:
+        type_ = 'institutions'
+
+    def get_institutions_to_add_remove(self, institutions, new_institutions):
+        # TODO: figure out how new_institutions is formatted
+        diff = relationship_diff(
+            current_items={inst._id: inst for inst in institutions},
+            new_items={inst['_id']: inst for inst in new_institutions}
+        )
+
+        insts_to_add = []
+        for inst_id in diff['add']:
+            inst = Institution.load(inst_id)
+            if not inst:
+                raise exceptions.NotFound(detail='Institution with id "{}" was not found'.format(inst_id))
+            insts_to_add.append(inst)
+
+        return insts_to_add, diff['remove'].values()
+
+    def make_instance_obj(self, obj):
+        return {
+            'data': obj.affiliated_institutions,
+            'self': obj
+        }
+
+    def update(self, instance, validated_data):
+        node = instance['self']
+        user = self.context['request'].user
+
+        add, remove = self.get_institutions_to_add_remove(
+            institutions=node.affiliated_institutions,
+            new_institutions=validated_data['data']
+        )
+
+        for inst in remove:
+            node.remove_affiliated_institution(inst, user)
+        for inst in add:
+            node.add_affiliated_institution(inst, user)
+
+        return self.make_instance_obj(node)
+
+    def create(self, validated_data):
+        instance = self.context['view'].get_object()
+        user = self.context['request'].user
+        node = instance['self']
+
+        add, remove = self.get_institutions_to_add_remove(
+            institutions=node.affiliated_institutions,
+            new_institutions=validated_data['data']
+        )
+        if not len(add):
+            raise RelationshipPostMakesNoChanges
+
+        for inst in add:
+            node.add_affiliated_institution(inst, user)
+
+        return self.make_instance_obj(node)
 
 
 class NodeAlternativeCitationSerializer(JSONAPISerializer):
