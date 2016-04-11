@@ -551,3 +551,7 @@ class NodeAlternativeCitationSerializer(JSONAPISerializer):
                 names = "', '".join([str(citation.name) for citation in matching_citations])
                 errors.append("Citation matches '{}'".format(names))
         return errors
+
+    def get_absolute_url(self, obj):
+        #  Citations don't have urls
+        raise NotImplementedError

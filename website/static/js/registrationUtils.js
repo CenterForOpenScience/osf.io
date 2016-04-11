@@ -679,10 +679,6 @@ Draft.prototype.registerWithoutReview = function() {
         }
     });
 };
-Draft.prototype.onRegisterFail = bootbox.alert.bind(null, {
-    title: 'Registration failed',
-    message: language.registerFail
-});
 Draft.prototype.register = function(url, data) {
     var self = this;
 
@@ -695,9 +691,20 @@ Draft.prototype.register = function(url, data) {
             }
         })
         .fail(function() {
-            self.onRegisterFail();
+            bootbox.alert({
+                title: 'Registration failed',
+                message: language.registerFail,
+                callback: function() {
+                    $osf.unblock();
+                    if (self.urls.registrations) {
+                        window.location.assign(self.urls.registrations);
+                    }
+                }
+            });
         })
-        .always($osf.unblock);
+        .always(function() {
+            $osf.unblock();
+        });
     return request;
 };
 Draft.prototype.submitForReview = function() {
