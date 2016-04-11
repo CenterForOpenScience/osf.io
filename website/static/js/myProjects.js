@@ -264,7 +264,7 @@ function _formatDataforPO(item) {
     item.name = item.attributes.title;
     item.tags = item.attributes.tags.toString();
     item.contributors = '';
-    var contributorsData = lodashGet(item.embeds.contributors.data, null);
+    var contributorsData = lodashGet(item, 'embeds.contributors.data', null);
     if (contributorsData){
         item.embeds.contributors.data.forEach(function(c){
             var attr;
@@ -659,7 +659,8 @@ var MyProjects = {
             self.users = {};
 
             self.filteredData().forEach(function(item) {
-              var contributors = lodashGet(item.embeds.contributors.data, []);
+                var contributors = lodashGet(item, 'embeds.contributors.data', [])
+
                 if (contributors) {
                     for(var i = 0; i < contributors.length; i++) {
                         var u = contributors[i];
