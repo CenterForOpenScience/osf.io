@@ -159,7 +159,7 @@ def audit(targets, nworkers, worker_id, dry_run):
                 gc.collect()
 
 
-def main(targets, nworkers, worker_id, dry_run):
+def main(nworkers, worker_id, dry_run):
     logger.info('glacier audit start')
     audit(glacier_targets(), nworkers, worker_id, dry_run)
     logger.info('glacier audit complete')
