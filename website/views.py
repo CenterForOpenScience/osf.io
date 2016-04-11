@@ -165,26 +165,66 @@ def serialize_log(node_log, auth=None, anonymous=False):
         'action': node_log.action,
         'params': sanitize_params(auth, node_log),
         'date': utils.iso8601format(node_log.date),
-        'node': node_log.node.serialize(auth) if node_log.node else None,
+        'node': sanitize_node(auth, node_log),
         'anonymous': anonymous
     }
 
 
+# TODO: @caseyrollins REFACTOR ME
 def sanitize_params(auth, log):
-    UNSAFE_ACTIONS = [NodeLog.FILE_MOVED]
-    UNSAFE_KEYS = ['source']
-    if log.action not in UNSAFE_ACTIONS:
-        return sanitize.unescape_entities(log.params)
+    potential_unsafe_actions = [NodeLog.PROJECT_CREATED, NodeLog.NODE_REMOVED,
+                                NodeLog.FILE_MOVED, NodeLog.FILE_COPIED,
+                                NodeLog.POINTER_CREATED, NodeLog.POINTER_REMOVED]
+
     safe_params = copy.deepcopy(sanitize.unescape_entities(log.params))
-    for key in safe_params.keys():
-        if key in UNSAFE_KEYS:
-            source_node = Node.load(safe_params[key]['node']['_id'])
-            if not source_node.can_view(auth):
-                safe_params[key] = {
-                    'materialized': safe_params[key]['materialized'],
-                    'private': True,
-                }
+
+    if log.action not in potential_unsafe_actions:
+        return sanitize.unescape_entities(log.params)
+
+    elif log.action in [NodeLog.PROJECT_CREATED, NodeLog.NODE_REMOVED, NodeLog.POINTER_CREATED, NodeLog.POINTER_REMOVED]:
+        for key in safe_params.keys():
+            if key in ['node', 'project', 'parent_node', 'pointer'] and safe_params[key]:
+                node_id = safe_params[key] if key in ['node', 'parent_node', 'project'] else safe_params[key]['id']
+                node = Node.load(node_id)
+                if not node.can_view(auth):
+                    safe_params[key] = {
+                        'private': True
+                    }
+
+    else:
+        for key in safe_params.keys():
+            if key in ['source', 'destination', 'node']:
+                node_id = safe_params[key]['node']['_id'] if key in ['source', 'destination'] else safe_params[key]
+                node = Node.load(node_id)
+                if not node.can_view(auth):
+                    node_type = node.project_or_component
+                    safe_params[key] = {
+                        'materialized': safe_params[key]['materialized'],
+                        'node_type': node_type,
+                        'private': True
+                    } if key in ['source', 'destination'] else {
+                        'private': True
+                    }
+
     return safe_params
+
+
+#TODO: @caseyrollins REFACTOR ME
+def sanitize_node(auth, log):
+    # TODO: @caseyrollins check which log actions actually require this -- definitely FILE_COPIED -- or should it be required for all? forking/nesting?
+    potential_unsafe_actions = [NodeLog.PROJECT_CREATED, NodeLog.NODE_REMOVED,
+                                NodeLog.FILE_MOVED, NodeLog.FILE_COPIED]
+    if log.action not in potential_unsafe_actions:
+        return log.node.serialize(auth) if log.node else None
+    else:
+        node = Node.load(log.node._id)
+        if not node.can_view(auth):
+            safe_node = {
+                'private': True
+            }
+            return safe_node
+        else:
+            return log.node.serialize(auth) if log.node else None
 
 
 def reproducibility():

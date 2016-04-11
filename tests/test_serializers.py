@@ -17,7 +17,7 @@ from framework import utils as framework_utils
 from website.project.views.node import _get_summary, _view_project, _serialize_node_search, _get_children
 from website.views import _render_node
 from website.profile import utils
-from website.views import serialize_log, sanitize_params
+from website.views import serialize_log, sanitize_params, sanitize_node
 from website.util import permissions
 
 

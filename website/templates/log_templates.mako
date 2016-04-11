@@ -87,7 +87,10 @@ Registration of
 ## Project related logs
 <script type="text/html" id="project_created">
 created
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+<!-- ko if: params.node.private --> a private component <!-- /ko -->
+<!-- ko ifnot: params.node.private -->
+    <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+<!-- /ko -->
 </script>
 
 <script type="text/html" id="project_deleted">
@@ -109,7 +112,10 @@ created
 
 <script type="text/html" id="node_removed">
 removed
-<span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
+<!-- ko if: params.node.private --> a private component <!-- /ko -->
+<!-- ko ifnot: params.node.private -->
+    <span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
+<!-- /ko -->
 </script>
 
 <script type="text/html" id="contributor_added">
@@ -212,13 +218,21 @@ updated the license of <a class="log-node-title-link" data-bind="attr: {href: no
 </script>
 
 <script type="text/html" id="pointer_created">
-created a link to <span data-bind="text: params.pointer.category"></span>
-<a class="log-node-title-link overflow" data-bind="text: params.pointer.title, attr: {href: params.pointer.url}"></a>
+created a link to
+<!-- ko if: params.pointer.private --> a private project <!-- /ko -->
+<!-- ko ifnot: params.pointer.private -->
+    <span data-bind="text: params.pointer.category"></span>
+    <a class="log-node-title-link overflow" data-bind="text: params.pointer.title, attr: {href: params.pointer.url}"></a>
+<!-- /ko -->
 </script>
 
 <script type="text/html" id="pointer_removed">
-removed a link to <span data-bind="text: params.pointer.category"></span>
-<a class="log-node-title-link overflow" data-bind="text: params.pointer.title, attr: {href: params.pointer.url}"></a>
+removed a link to
+<!-- ko if: params.pointer.private --> a private project <!-- /ko -->
+<!-- ko ifnot: params.pointer.private -->
+<span data-bind="text: params.pointer.category"></span>
+    <a class="log-node-title-link overflow" data-bind="text: params.pointer.title, attr: {href: params.pointer.url}"></a>
+<!-- /ko -->
 </script>
 
 <script type="text/html" id="pointer_forked">
@@ -303,45 +317,84 @@ in
 </script>
 
 <script type="text/html" id="addon_file_copied">
-  {{#if params.source.materialized.endsWith('/')}}
-    copied <span class="overflow log-folder">{{ params.source.materialized }}</span> from {{ params.source.addon }} in
-    <a class="log-node-title-link overflow" href="{{ params.source.node.url }}">{{ params.source.node.title }}</a>
-    to <span class="overflow log-folder">{{ params.destination.materialized }}</span> in {{ params.destination.addon }} in
-    <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
-  {{/if}}
-  {{#ifnot params.source.materialized.endsWith('/')}}
-    copied <a href="{{ params.source.url }}" class="overflow">{{ params.source.materialized }}</a> from {{ params.source.addon }} in
-    <a class="log-node-title-link overflow" href="{{ params.source.node.url }}">{{ params.source.node.title }}</a>
-    to <a href="{{ params.destination.url }}" class="overflow">{{ params.destination.materialized }}</a> in {{ params.destination.addon }} in
-    <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
-  {{/ifnot}}
+<!-- ko if: params.source.materialized.endsWith('/') -->
+    copied <span class="overflow log-folder" data-bind="text: params.source.materialized"></span>
+    <!-- ko if: params.source.private -->
+        from a private <span data-bind="text: params.source.node_type"></span>
+    <!-- /ko -->
+    <!-- ko ifnot: params.source.private -->
+        from <span data-bind="text: params.source.addon"></span> in
+        <a class="log-node-title-link overflow" data-bind="attr: {href: params.source.node.url}, text: params.source.node.title"></a>
+    <!-- /ko -->
+    to <span class="overflow log-folder" data-bind="text: params.destination.materialized"></span> in
+    <!-- ko if: params.destination.private -->
+        a private <span data-bind="text: params.destination.node_type"></span>
+    <!-- /ko -->
+    <!-- ko ifnot: params.destination.private -->
+        <span data-bind="text: params.destination.addon"></span> in
+        <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
+    <!-- /ko -->
+<!-- /ko -->
+<!-- ko ifnot: params.source.materialized.endsWith('/') -->
+    copied <span class="overflow" data-bind="text: params.source.materialized"></span>
+    <!-- ko if: params.source.private -->
+        from a private <span data-bind="text: params.source.node_type"></span>
+    <!-- /ko -->
+    <!-- ko ifnot: params.source.private -->
+        <a data-bind="attr: {href: params.source.url, text: params.source.materialized" class="overflow"></a>
+        from <span data-bind="text: params.source.addon"></span> in
+        <a class="log-node-title-link overflow" data-bind="attr: {href: params.source.node.url}, text: params.source.node.title"></a>
+    <!-- /ko -->
+    <!-- ko if: params.destination.private -->
+        to <span class="overflow" data-bind="text: params.destination.materialized"></span>
+        in a private <span data-bind="text: params.destination.node_type"></span>
+    <!-- /ko -->
+    <!-- ko ifnot: params.destination.private -->
+        to <a data-bind="attr: {href: params.destination.url}, text: params.destination.materialized" class="overflow"></a>
+        in <span data-bind="text: params.destination.addon"></span> in
+        <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
+    <!-- /ko -->
+<!-- /ko -->
 </script>
 
 <script type="text/html" id="addon_file_moved">
-  {{#if params.source.materialized.endsWith('/')}}
-  moved <span class="overflow">{{ params.source.materialized }}</span>
-    {{#if params.source.private}}
-        from a private component
-    {{/if}}
-    {{#ifnot params.source.private}}
-        from {{ params.source.addon }} in
-        <a class="log-node-title-link overflow" href="{{ params.source.node.url }}">{{ params.source.node.title }}</a>
-    {{/ifnot}}
-    to <span class="overflow log-folder">{{ params.destination.materialized }}</span> in {{ params.destination.addon }} in
-    <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
-  {{/if}}
-  {{#ifnot params.source.materialized.endsWith('/')}}
-  moved <span class="overflow">{{ params.source.materialized }}</span>
-    {{#if params.source.private}}
-        from a private component
-    {{/if}}
-    {{#ifnot params.source.private}}
-        from {{ params.source.addon }} in
-        <a class="log-node-title-link overflow" href="{{ params.source.node.url }}">{{ params.source.node.title }}</a>
-    {{/ifnot}}
-    to <a href="{{ params.destination.url }}" class="overflow">{{ params.destination.materialized }}</a> in {{ params.destination.addon }} in
-    <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
-  {{/ifnot}}
+<!-- ko if: params.source.materialized.endsWith('/') -->
+    moved <span class="overflow" data-bind="text: params.source.materialized"></span>
+    <!-- ko if: params.source.private -->
+        from a private <span data-bind="text: params.source.node_type"></span>
+    <!-- /ko -->
+    <!-- ko ifnot: params.source.private -->
+        from <span data-bind="text: params.source.addon"></span> in
+        <a class="log-node-title-link overflow" data-bind="attr: {href: params.source.node.url}, text: params.source.node.title"></a>
+    <!-- /ko -->
+    to <span class="overflow log-folder" data-bind="text: params.destination.materialized"></span>
+    in <span data-bind="text: params.destination.addon"></span> in
+    <!-- ko if: params.destination.private -->
+        a private <span data-bind="text: params.destination.node_type"></span>
+    <!-- /ko -->
+    <!-- ko ifnot: params.destination.private -->
+        <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
+    <!-- /ko -->
+<!-- /ko -->
+<!-- ko ifnot: params.source.materialized.endsWith('/') -->
+    moved <span class="overflow" data-bind="text: params.source.materialized"></span>
+    <!-- ko if: params.source.private -->
+        from a private <span data-bind="text: params.source.node_type"></span>
+    <!-- /ko -->
+    <!-- ko ifnot: params.source.private -->
+        from <span data-bind="text: params.source.addon"></span> in
+        <a class="log-node-title-link overflow" data-bind="attr: {href: params.source.node.url}, text: params.source.node.title"></a>
+    <!-- /ko -->
+    <!-- ko if: params.destination.private -->
+        to <span class="overflow" data-bind="text: params.destination.materialized"></span>
+        in a private <span data-bind="text: params.destination.node_type"></span>
+    <!-- /ko -->
+    <!-- ko ifnot: params.destination.private -->
+        to <a data-bind="attr: {href: params.destination.url}, text: params.destination.materialized" class="overflow"></a>
+        in <span data-bind="text: params.destination.addon"></span> in
+        <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
+    <!-- /ko -->
+<!-- /ko -->
 </script>
 
 <script type="text/html" id="addon_file_renamed">
