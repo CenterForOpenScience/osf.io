@@ -1,5 +1,3 @@
-<%page expression_filter="h"/>
-
 <nav class="wiki-nav">
     <div class="navbar-collapse text-center">
         <ul class="superlist nav navbar-nav" style="float: none">
