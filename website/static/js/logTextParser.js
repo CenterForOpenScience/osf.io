@@ -1,7 +1,7 @@
 /**
  * Parses text to return to the log items
  * Created by cos-caner on 12/4/15.
- * Remember to embed original_node, user, linked_node and template_node in api call i.e. var url = $osf.apiV2Url('nodes/' + nodeId + '/logs/', { query : { 'embed' : ['original_node', 'user']}});
+ * Remember to embed original_node, node, user, linked_node and template_node in api call i.e. var url = $osf.apiV2Url('nodes/' + nodeId + '/logs/', { query : { 'embed' : ['original_node', 'user']}});
  */
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
 var logActions = require('json!js/_allLogTexts.json');
@@ -174,7 +174,14 @@ var LogPieces = {
     node: {
         view: function (ctrl, logObject) {
             var nodeObject = logObject.embeds.original_node;
+            var logAction = logObject.attributes.action;
 
+            var originalNodeNeeded = ['retraction_cancelled', 'registration_cancelled', 'embargo_approved',
+                'embargo_cancelled', 'embargo_completed'];
+
+            if (originalNodeNeeded.indexOf(logAction) > -1) {
+                nodeObject = logObject.embeds.node;
+            }
             // Log action is node_removed
             if (logObject.attributes.action === 'node_removed') {
                 if (logObject.attributes.params.params_node) {
