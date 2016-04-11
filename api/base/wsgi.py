@@ -6,9 +6,7 @@ It exposes the WSGI callable as a module-level variable named ``application``.
 For more information on this file, see
 https://docs.djangoproject.com/en/1.8/howto/deployment/wsgi/
 """
-import itertools
-
-from website import settings, models
+from website import settings
 from api.base import settings as api_settings
 
 if not settings.DEBUG_MODE:
@@ -41,10 +39,6 @@ def __getattr__(self, attr):
 Request.__getattr__ = __getattr__
 
 init_app(set_backends=True, routes=False, attach_request_handlers=False)
-
-api_settings.INSTITUTION_ORIGINS_WHITELIST = tuple(itertools.chain(*[
-    institution.domains
-    for institution in models.Institution.find()
-]))
+api_settings.load_institutions()
 
 application = get_wsgi_application()

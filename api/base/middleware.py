@@ -31,7 +31,7 @@ from framework.transactions.handlers import (
     transaction_teardown_request
 )
 from .api_globals import api_globals
-from api.base import setttings as api_settings
+from api.base import settings as api_settings
 
 
 class MongoConnectionMiddleware(object):

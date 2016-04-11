@@ -8,6 +8,7 @@ from nose.tools import *  # flake8: noqa
 from rest_framework.test import APIRequestFactory
 
 from website.util import api_v2_url
+from api.base import settings
 from api.base.middleware import TokuTransactionMiddleware, CorsMiddleware
 from tests.base import ApiTestCase
 from tests import factories
@@ -50,6 +51,7 @@ class TestCorsMiddleware(MiddlewareTestCase):
             institution_domains=[domain.netloc.lower()],
             title="Institute for Sexy Lizards"
         )
+        settings.load_institutions()
         request = self.request_factory.get(url, HTTP_ORIGIN=domain.geturl())
         response = {}
         self.middleware.process_request(request)
