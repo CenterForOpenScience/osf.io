@@ -64,13 +64,12 @@ class TestSpamListView(AdminTestCase):
         )
         self.comment_6.report_abuse(user=self.user_1, save=True,
                                     category='spam')
+        self.request = RequestFactory().get('/fake_path')
+        self.view = SpamList()
+        self.view = setup_view(self.view, self.request, user_id=self.user_1._id)
 
     def test_get_spam(self):
-        guid = self.user_1._id
-        request = RequestFactory().get('/fake_path')
-        view = SpamList()
-        view = setup_view(view, request, user_id=guid)
-        res = list(view.get_queryset())
+        res = list(self.view.get_queryset())
         nt.assert_equal(len(res), 6)
         response_list = [r._id for r in res]
         should_be = [
@@ -82,6 +81,11 @@ class TestSpamListView(AdminTestCase):
             self.comment_1._id
         ]
         nt.assert_list_equal(should_be, response_list)
+
+    def test_get_context_data(self):
+        self.view.object_list = self.view.get_query_set()
+        res = self.view.get_context_data()
+
 
 
 class TestSpamDetail(AdminTestCase):
@@ -103,6 +107,27 @@ class TestSpamDetail(AdminTestCase):
             view.form_valid(form)
         obj = OSFLogEntry.objects.latest(field_name='action_time')
         nt.assert_equal(obj.object_id, self.comment._id)
+
+    def test_confirm_ham(self):
+        pass
+
+    def test_get_context_data(self):
+        pass
+
+
+class TestEmailFormView(AdminTestCase):
+    def setUp(self):
+        super(TestEmailFormView, self).setUp()
+
+    def test_get_context(self):
+        pass
+
+    def test_get_initial(self):
+        pass
+
+    @mock.patch('admin.spam.views.send_mail')
+    def test_form_valid(self, mock_mail):
+        pass
 
 
 class TestUserSpamListView(AdminTestCase):
@@ -142,3 +167,6 @@ class TestUserSpamListView(AdminTestCase):
         view = setup_view(view, request, user_id=guid)
         res = list(view.get_queryset())
         nt.assert_equal(len(res), 4)
+
+    def test_get_context_data(self):
+        pass

@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 from django.shortcuts import render
 from django.core.mail import send_mail
 from django.views.generic import FormView, ListView
-from django.core.urlresolvers import reverse
 from django.views.defaults import page_not_found
 
 from modularodm import Q
@@ -227,11 +226,8 @@ class SpamDetail(OSFAdmin, FormView):
 
     @property
     def success_url(self):
-        return '{}?page={}&status={}'.format(
-            reverse(
-                'spam:detail',
-                kwargs={'spam_id': self.kwargs.get('spam_id')}
-            ),
-            self.request.GET.get('page', 1),
-            self.request.GET.get('status', '1')
+        return reverse_spam_detail(
+            self.kwargs.get('spam_id'),
+            page=self.request.GET.get('page', 1),
+            status=self.request.GET.get('status', '1')
         )
