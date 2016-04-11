@@ -1,4 +1,3 @@
-import requests
 import json
 from website.settings import GITHUB_API_TOKEN
 
@@ -6,6 +5,7 @@ the_filename = 'website/static/git_logs.json'
 
 
 def gather_pr_data():
+    import requests
     pr_data = []
     auth_header = {'Authorization': 'token %s' % GITHUB_API_TOKEN}
     res = requests.get('https://api.github.com/repos/centerforopenscience/osf.io/pulls?state=closed&per_page=100',
