@@ -447,3 +447,6 @@ ENABLE_VARNISH = False
 ENABLE_ESI = False
 VARNISH_SERVERS = []  # This should be set in local.py or cache invalidation won't work
 ESI_MEDIA_TYPES = {'application/vnd.api+json', 'application/json'}
+
+# Used for gathering meta information about the current build
+GITHUB_API_TOKEN = None

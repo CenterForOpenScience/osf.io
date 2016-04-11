@@ -52,18 +52,40 @@
 <body data-spy="scroll" data-target=".scrollspy">
 
     % if dev_mode:
-    <style>
-        #devmode {
-            position:fixed;
-            bottom:0;
-            left:0;
-            border-top-right-radius:8px;
-            background-color:red;
-            color:white;
-            padding:.5em;
-        }
-    </style>
-    <div id='devmode'><strong>WARNING</strong>: This site is running in development mode.</div>
+    <div class="dev-mode-helper scripted" id="devModeHelper">
+        <div id="metaInfo" data-bind="visible: showMetaInfo">
+            <table>
+                <thead>
+                <tr>
+                    <th>PR</th>
+                    <th>Title</th>
+                    <th>Date Merged</th>
+                </tr>
+                </thead>
+                <tbody data-bind="foreach: pullRequests">
+                    <tr>
+                        <td>#<a data-bind="attr: {href: url}, text: number"></a></td>
+                        <td data-bind="text: title"></td>
+                        <td data-bind="text: mergedAt"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <style>
+            #devmode {
+                position:fixed;
+                bottom:0;
+                left:0;
+                border-top-right-radius:8px;
+                background-color:red;
+                color:white;
+                padding:.5em;
+            }
+        </style>
+        <div id='devmode' data-bind='click: showHideMetaInfo'><strong>WARNING</strong>: This site is running in development mode.</div>
+    </div>
+    %else:
+        <div id="devModeHelper"></div>
     % endif
 
     <%namespace name="nav_file" file="nav.mako"/>
@@ -303,5 +325,4 @@
     ## the webpack runtime and a number of necessary stylesheets which should be loaded before the user sees
     ## content.
     <script src="${'/static/public/js/vendor.js' | webpack_asset}"></script>
-
 </%def>

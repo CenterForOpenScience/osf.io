@@ -55,6 +55,7 @@ node_modules
 # Allow robots.txt to be deployment-specific
 website/static/robots.local.txt
 /website/static/git_logs.txt
+/website/static/gitlogs.json
 
 # OSF-specific
 ##############
