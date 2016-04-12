@@ -19,7 +19,70 @@ var markdown = require('js/markdown');
 var caret = require('Caret.js');
 var atWho = require('At.js');
 
-// @ mention prototyping
+// @ mention
+var onPaste = function(e){
+    e.preventDefault();
+    var pasteText = e.originalEvent.clipboardData.getData('text/plain');
+    document.execCommand('insertHTML', false, pasteText);
+};
+
+var onReturn = function (e) {
+  var doxExec = false;
+  var range;
+
+  try {
+    doxExec = document.execCommand('insertBrOnReturn', false, true);
+  }
+  catch (error) {
+    // IE throws an error if it does not recognize the command...
+  }
+
+  if (doxExec) {
+    // Hurray, no dirty hacks needed !
+    return true;
+  }
+  // Standard
+  else if (window.getSelection) {
+    e.stopPropagation();
+
+    let selection = window.getSelection(),
+        range = selection.getRangeAt(0),
+        br = document.createElement('br');
+
+    range.deleteContents();
+
+    range.insertNode(br);
+
+    range.setStartAfter(br);
+
+    range.setEndAfter(br);
+
+    range.collapse(false);
+
+    selection.removeAllRanges();
+
+    selection.addRange(range);
+
+    return false;
+  }
+  // IE
+  else if ($.browser.msie) {
+    e.preventDefault();
+
+    let range = document.selection.createRange();
+
+    range.pasteHTML('<BR><SPAN class="--IE-BR-HACK"></SPAN>');
+
+    // Move the caret after the BR
+    range.moveStart('character', 1);
+
+    return false;
+  }
+
+  // Last resort, just use the default browser behavior and pray...
+  return true;
+};
+
 var callbacks = {
     beforeInsert: function(value, $li) {
         var data = $li.data('item-data');
@@ -86,7 +149,11 @@ var getContributorList = function(input, nodeId) {
 
 // should only need to do this once
 getContributorList(input, nodeId);
-input.atwho(at_config).atwho(plus_config);
+input.atwho(at_config).atwho(plus_config).bind('paste', onPaste).keydown(function(e) {
+    if(e.which === 13) {
+        onReturn(e);
+    }
+});
 
 // Maximum length for comments, in characters
 var MAXLENGTH = 500;
@@ -515,7 +582,11 @@ CommentModel.prototype.edit = function() {
 
 CommentModel.prototype.autosizeText = function(elm) {
     $(elm).find('textarea').autosize().focus();
-    $(elm).find('.atwho-input').atwho(at_config).atwho(plus_config);
+    $(elm).find('.atwho-input').atwho(at_config).atwho(plus_config).bind('paste', onPaste).keydown(function(e) {
+        if(e.which === 13) {
+            onReturn(e);
+        }
+    });
 };
 
 CommentModel.prototype.cancelEdit = function() {
