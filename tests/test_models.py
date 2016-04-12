@@ -4096,7 +4096,7 @@ class TestNodeLog(OsfTestCase):
 
         assert_equal(project._id, log_project_created_original.original_node._id)
         assert_equal(project._id, log_project_created_original.node._id)
-        assert_equal(registration._id, log_registration_initiated.original_node._id)
+        assert_equal(project._id, log_registration_initiated.original_node._id)
         assert_equal(project._id, log_registration_initiated.node._id)
         assert_equal(project._id, log_project_created_registration.original_node._id)
         assert_equal(registration._id, log_project_created_registration.node._id)
