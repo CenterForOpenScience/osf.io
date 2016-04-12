@@ -10,6 +10,7 @@
     "font-awesome": "^4.5.0",
     "font-awesome-webpack": "0.0.4",
     "json-loader": "^0.5.1",
+    "keen-js": "^3.0.0",
     "knockout": "~3.2.0",
     "less": "^2.6.0",
     "less-loader": "^2.2.2",

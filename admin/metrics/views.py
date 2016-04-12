@@ -1,5 +1,6 @@
 from django.views.generic import ListView
 from django.shortcuts import redirect
+from django.shortcuts import render
 from django.core.urlresolvers import reverse
 from djqscsv import render_to_csv_response
 
@@ -24,3 +25,9 @@ class OSFStatisticsListView(ListView):
     paginate_by = 50
     paginate_orphans = 5
     ordering = '-date'
+
+
+def sales_analytics(request):
+    # TODO: pass keen project id, read key and write key through context
+    context = {}
+    return render(request, 'metrics/sales_analytics.html', context)
