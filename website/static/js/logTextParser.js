@@ -446,6 +446,12 @@ var LogPieces = {
         }
     },
         //
+    kind: {
+        view: function (ctrl, logObject) {
+            return returnTextParams('kind', '', logObject);
+        }
+    },
+        //
     path: {
         controller: function(logObject){
             var self = this;

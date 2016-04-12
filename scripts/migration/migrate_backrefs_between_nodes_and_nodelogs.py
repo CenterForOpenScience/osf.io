@@ -18,42 +18,59 @@ logger = logging.getLogger(__name__)
 
 def migrate(dry=True):
     init_app(routes=False)
-    node_logs = db.nodelog.find({'original_node': None})
-    total_log_count = node_logs.count()
-    count = 0
+    cursor = db.nodelog.find({'original_node': None})
+    cursor.batch_size(10000)
 
-    for log in node_logs:
-        count += 1
+    count = cursor.count()
+    done = 0
+
+    to_insert = []
+    for log in cursor:
         try:
-            # Step 1: migrate original nodelog - updates existing
-            db.nodelog.update(
-                {'_id': log['_id']},
-                {'$set': {
-                    'original_node': log['params']['node'],
-                    'node': log['__backrefs']['logged']['node']['logs'][0]
-                    }
-                },
-                upsert=True
-            )
-            logger.info('{}/{} Log {} updated'.format(count, total_log_count, log['_id']))
-        except KeyError as error:
-            logger.error('Could not migrate nodelog due to error -- likely a lack of __backrefs')
-            logger.exception(error)
-        else:
-            # Step 2: migrate any backreffed logs - creates new
-            for node in log['__backrefs']['logged']['node']['logs'][1:]:
-                clone = deepcopy(log)
-                clone.pop('_id')
-                clone.pop('__backrefs')
-                clone['original_node'] = log['params']['node']
-                clone['node'] = node
-                try:
-                    db.nodelog.save(clone)
-                    logger.info('{}/{} New log added: {}'.format(count, total_log_count, clone['_id']))
-                except KeyError as error:
-                    logger.error('Could not create new nodelog due to error')
-                    logger.exception(error)
-                    pass
+            try:
+                node = log['__backrefs']['logged']['node']['logs'][0]
+                tagged = log['__backrefs']['logged']['node']['logs'][1:]
+            except (KeyError, IndexError):
+                # If backrefs don't exist fallback to node/project with priority to node
+                node = log['params'].get('node') or log['params'].get('project')
+                # If project is different from the node we've found clone the logs for it
+                if log['params'].get('project', node) != node:
+                    tagged = [log['params']['project']]
+                else:
+                    tagged = []
+
+            assert node is not None, 'Could not find a node for {}'.format(log)
+
+            db.nodelog.update({'_id': log['_id']}, {'$set': {
+                'node': node,
+                'original_node': log['params'].get('node', node),
+            }})
+        except Exception as error:
+            if log == {'__backrefs': {}, 'params': {}, '_id': log['_id']} or log == {'__backrefs': {'logged': {'node': {'logs': []}}}, 'params': {}, '_id': log['_id']}:
+                logger.warning('log {} is empty. Skipping.'.format(log['_id']))
+            else:
+                logger.error('Could not migrate nodelog {} due to error'.format(log))
+                logger.exception(error)
+            continue
+        finally:
+            done += 1
+
+        for other in tagged:
+            clone = deepcopy(log)
+            clone.pop('_id')
+            clone.pop('__backrefs', None)
+            clone['original_node'] = log['params'].get('node', node)
+            clone['node'] = other
+            to_insert.append(clone)
+
+        if len(to_insert) > 9999:
+            count += len(to_insert)
+            result = db.nodelog.insert(to_insert)
+            # print(result)
+            # assert result.modified_count == 500, result
+            to_insert = []
+            done += len(result)
+            logger.info('{}/{} Logs updated'.format(done, count))
 
     if dry:
         raise RuntimeError('Dry run -- transaction rolled back')

@@ -12,6 +12,11 @@ NODE_REMOVED = 30
 NODE_RESTORED = 31
 CONTRIBUTOR_REMOVED = 32
 
+USER_REMOVED = 40
+USER_RESTORED = 41
+USER_2_FACTOR = 42
+USER_EMAILED = 43
+
 
 def update_admin_log(user_id, object_id, object_repr, message, action_flag=UNKNOWN):
     OSFLogEntry.objects.log_action(

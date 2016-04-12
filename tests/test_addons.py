@@ -807,7 +807,7 @@ class TestAddonFileViews(OsfTestCase):
                 'materialized': '/test/Test'
             }
         }
-        views.addon_delete_file_node(self=None, node=self.project, event_type='file_removed', payload=payload)
+        views.addon_delete_file_node(self=None, node=self.project, user=self.user, event_type='file_removed', payload=payload)
         assert_false(StoredFileNode.load(file_node._id))
         assert_true(TrashedFileNode.load(file_node._id))
 
@@ -828,7 +828,7 @@ class TestAddonFileViews(OsfTestCase):
                 'materialized': '/test/'
             }
         }
-        views.addon_delete_file_node(self=None, node=self.project, event_type='file_removed', payload=payload)
+        views.addon_delete_file_node(self=None, node=self.project, user=self.user, event_type='file_removed', payload=payload)
         assert_false(StoredFileNode.load(file_node._id))
         assert_true(TrashedFileNode.load(file_node._id))
         assert_false(StoredFileNode.load(subfolder._id))

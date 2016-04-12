@@ -1264,7 +1264,6 @@ class TestUpdateNodeWiki(OsfTestCase):
         with assert_raises(NameInvalidError):
             self.project.update_node_wiki(invalid_name, 'more valid content', self.auth)
 
-
 class TestRenameNodeWiki(OsfTestCase):
 
     def setUp(self):

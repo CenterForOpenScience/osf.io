@@ -131,6 +131,22 @@ reordered contributors for
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
+<script type="text/html" id="checked_in">
+checked in {{ params.kind }}
+<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect">
+    {{ stripSlash(params.path) }}</a>
+from
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="checked_out">
+checked out {{ params.kind }}
+<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect">
+    {{ stripSlash(params.path) }}</a>
+from
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
 <script type="text/html" id="permissions_updated">
 changed permissions for
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>

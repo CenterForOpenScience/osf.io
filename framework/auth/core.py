@@ -291,6 +291,8 @@ class User(GuidStoredObject, AddonModelMixin):
     # verification key used for resetting password
     verification_key = fields.StringField()
 
+    forgot_password_last_post = fields.DateTimeField()
+
     # confirmed emails
     #   emails should be stripped of whitespace and lower-cased before appending
     # TODO: Add validator to ensure an email address only exists once across
@@ -419,11 +421,6 @@ class User(GuidStoredObject, AddonModelMixin):
     @property
     def pk(self):
         return self._id
-
-    @property
-    def contributed(self):
-        from website.project.model import Node
-        return Node.find(Q('contributors', 'eq', self._id))
 
     @property
     def email(self):
@@ -1073,20 +1070,27 @@ class User(GuidStoredObject, AddonModelMixin):
         return '/{}/'.format(self._id)
 
     @property
+    def contributed(self):
+        from website.project.model import Node
+        return Node.find(Q('contributors', 'eq', self._id))
+
+    @property
     def contributor_to(self):
-        return (
-            node for node in self.contributed
-            if not (
-                node.is_deleted
-                or node.is_bookmark_collection
-            )
+        from website.project.model import Node
+        return Node.find(
+            Q('contributors', 'eq', self._id) &
+            Q('is_deleted', 'ne', True) &
+            Q('is_collection', 'ne', True)
         )
 
     @property
     def visible_contributor_to(self):
-        return (
-            node for node in self.contributor_to
-            if self._id in node.visible_contributor_ids
+        from website.project.model import Node
+        return Node.find(
+            Q('contributors', 'eq', self._id) &
+            Q('is_deleted', 'ne', True) &
+            Q('is_collection', 'ne', True) &
+            Q('visible_contributor_ids', 'eq', self._id)
         )
 
     def get_summary(self, formatter='long'):
