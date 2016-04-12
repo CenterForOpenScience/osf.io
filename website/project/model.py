@@ -3541,7 +3541,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             self.save()
         return True
 
-
     def institution_url(self):
         return self.absolute_api_v2_url + 'institution/'
 

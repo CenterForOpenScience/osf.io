@@ -1,7 +1,5 @@
 from nose.tools import *
 
-from framework.auth.core import Auth
-
 from tests.base import ApiTestCase
 from tests.factories import InstitutionFactory, AuthUserFactory, NodeFactory
 
@@ -182,6 +180,3 @@ class TestNodeRelationshipInstitutions(ApiTestCase):
         assert_equal(res.status_code, 204)
         self.node.reload()
         assert_in(self.institution1, self.node.affiliated_institutions)
-
-
-

@@ -7,7 +7,6 @@ from rest_framework.exceptions import PermissionDenied, ValidationError, NotFoun
 from rest_framework.status import HTTP_204_NO_CONTENT
 from rest_framework.response import Response
 
-from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
 
 from api.base import generic_bulk_views as bulk_views
