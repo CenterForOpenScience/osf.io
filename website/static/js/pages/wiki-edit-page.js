@@ -180,7 +180,8 @@ if ($comments.length && window.contextVars.wiki.wikiID !== 'None') {
         fileId: null,
         canComment: window.contextVars.currentUser.canComment,
         hasChildren: window.contextVars.node.hasChildren,
-        currentUser: window.contextVars.currentUser
+        currentUser: window.contextVars.currentUser,
+        pageTitle: window.contextVars.wiki.wikiName
     };
     Comment.init('#commentsLink', '.comment-pane', options);
 }

@@ -373,6 +373,7 @@ ${parent.javascript_bottom()}
         versionSettings: ${json.dumps(version_settings) | n},
         panelsUsed: ${json.dumps(panels_used) | n},
         wikiID: '${wiki_id}',
+        wikiName: '${wiki_name}',
         urls: {
             draft: '${urls['api']['draft']}',
             content: '${urls['api']['content']}',

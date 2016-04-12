@@ -57,7 +57,8 @@ if ($comments.length) {
         fileId: null,
         canComment: window.contextVars.currentUser.canComment,
         hasChildren: window.contextVars.node.hasChildren,
-        currentUser: window.contextVars.currentUser
+        currentUser: window.contextVars.currentUser,
+        pageTitle: window.contextVars.node.title
     };
     Comment.init('#commentsLink', '.comment-pane', options);
 }

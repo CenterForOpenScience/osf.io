@@ -507,7 +507,8 @@ if ($comments.length) {
         fileId: window.contextVars.file.id,
         canComment: window.contextVars.currentUser.canComment,
         hasChildren: window.contextVars.node.hasChildren,
-        currentUser: window.contextVars.currentUser
+        currentUser: window.contextVars.currentUser,
+        pageTitle: window.contextVars.file.name
     };
     CommentModel.init('#commentsLink', '.comment-pane', options);
 }

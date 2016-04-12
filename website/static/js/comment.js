@@ -586,6 +586,7 @@ var CommentListModel = function(options) {
     self.nodeApiUrl = options.nodeApiUrl;
     self.nodeType = options.isRegistration ? 'registrations' : 'nodes';
     self.page(options.page);
+    self.pageTitle = options.pageTitle;
     self.id = ko.observable(options.rootId);
     self.rootId = ko.observable(options.rootId);
     self.fileId = options.fileId || '';
@@ -660,7 +661,8 @@ var onOpen = function(page, rootId, nodeApiUrl, currentUserId) {
  *      fileId: StoredFileNode._id,
  *      canComment: User.canComment,
  *      hasChildren: Node.hasChildren, 
- *      currentUser: window.contextVars.currentUser
+ *      currentUser: window.contextVars.currentUser,
+ *      pageTitle: Node.title
  * }
  */
 var init = function(commentLinkSelector, commentPaneSelector, options) {

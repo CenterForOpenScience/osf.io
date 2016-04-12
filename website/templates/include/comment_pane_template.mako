@@ -15,13 +15,9 @@
                 <i class="fa fa-times"></i>
             </button>
             <h4>
-                %if file_name:
-                    <span data-bind="if: page() == 'files'">Files | ${file_name} Discussion</span>
-                %elif wiki_name:
-                    <span data-bind="if: page() == 'wiki'">Wiki | ${wiki_name} Discussion</span>
-                %else:
-                    <span data-bind="if: page() == 'node' ">${node['title']} Discussion</span>
-                %endif
+                <span data-bind="if: page() == 'files'">Files | <span data-bind="text: pageTitle"></span> Discussion</span>
+                <span data-bind="if: page() == 'wiki'">Wiki | <span data-bind="text: pageTitle"></span> Discussion</span>
+                <span data-bind="if: page() == 'node'"><span data-bind="text: pageTitle"></span> | Discussion</span>
             </h4>
 
             <div data-bind="if: canComment" style="margin-top: 20px">
