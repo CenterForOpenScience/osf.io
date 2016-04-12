@@ -102,4 +102,71 @@ class TestNodeRelationshipInstitution(ApiTestCase):
         assert_in(self.institution1, self.node.affiliated_institutions)
         assert_in(self.institution2, self.node.affiliated_institutions)
 
+    def test_user_with_institution_and_permissions_through_patch(self):
+        assert_not_in(self.institution1, self.node.affiliated_institutions)
+        assert_not_in(self.institution2, self.node.affiliated_institutions)
+
+        res = self.app.post_json_api(
+            self.node_institutions_url,
+            self.create_payload(self.institution1._id, self.institution2._id),
+            auth=self.user.auth
+        )
+
+        assert_equal(res.status_code, 200)
+        data = res.json['data']
+        ret_institutions = [inst['id'] for inst in data]
+
+        assert_in(self.institution1._id, ret_institutions)
+        assert_in(self.institution2._id, ret_institutions)
+
+        self.node.reload()
+        assert_in(self.institution1, self.node.affiliated_institutions)
+        assert_in(self.institution2, self.node.affiliated_institutions)
+
+    def test_user_with_institution_and_permissions_through_patch(self):
+        assert_not_in(self.institution1, self.node.affiliated_institutions)
+        assert_not_in(self.institution2, self.node.affiliated_institutions)
+
+        res = self.app.post_json_api(
+            self.node_institutions_url,
+            self.create_payload(self.institution1._id, self.institution2._id),
+            auth=self.user.auth
+        )
+
+        assert_equal(res.status_code, 201)
+        data = res.json['data']
+        ret_institutions = [inst['id'] for inst in data]
+
+        assert_in(self.institution1._id, ret_institutions)
+        assert_in(self.institution2._id, ret_institutions)
+
+        self.node.reload()
+        assert_in(self.institution1, self.node.affiliated_institutions)
+        assert_in(self.institution2, self.node.affiliated_institutions)
+
+    def test_remove_institutions_with_no_permissions(self):
+        res = self.app.put_json_api(
+            self.node_institution_url,
+            {'data': []},
+            expect_errors=True,
+            auth=self.user.auth
+        )
+
+        assert_equal(res.status_code, 403)
+
+    def test_remove_institutions_with_affiliated_user(self):
+        self.node.affiliated_institutions.append(self.institution1)
+        self.node.save()
+        assert_in(self.institution1, self.node.affiliated_institutions)
+
+        res = self.app.put_json_api(
+            self.node_institutions_url,
+            {'data': []},
+            auth=self.user.auth
+        )
+
+        assert_equal(res.status_code, 204)
+        self.node.reload()
+        assert_equal(self.node.affiliated_institutions, [])
+
 
