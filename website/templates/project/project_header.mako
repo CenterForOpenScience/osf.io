@@ -2,7 +2,6 @@
     is_project = node['node_type'] == 'project'
 %>
 
-
 <div id="projectBanner" >
     <header class="subhead" id="overview">
         <nav id="projectSubnav" class="navbar osf-project-navbar" role="navigation">
@@ -13,7 +12,7 @@
                         <span class="sr-only">Toggle navigation</span>
                         <span class="fa fa-bars fa-lg"></span>
                     </button>
-                    <a class="navbar-brand visible-xs" href="node['url']}">
+                    <a class="navbar-brand visible-xs" href="${node['url']}">
                         ${'Project' if node['node_type'] == 'project' else 'Component'} Navigation
                     </a>
                 </div>
@@ -78,8 +77,8 @@
                         % endif
                     % endif
                     % if user['can_comment'] or node['has_comments']:
-                       <li>
-                           <a id="commentsLink" class="visible-xs cp-handle" data-bind="click:removeCount" data-toggle="collapse" data-target="#projectSubnav .navbar-collapse">
+                        <li>
+                            <a id="commentsLink" class="visible-xs cp-handle" data-bind="click:removeCount" data-toggle="collapse" data-target="#projectSubnav .navbar-collapse">
                                 Comments
                                 <span data-bind="if: unreadComments() !== 0">
                                     <span data-bind="text: displayCount" class="badge"></span>
@@ -88,35 +87,31 @@
                        </li>
                     % endif
 
-
                     </ul>
                 </div>
             </div>
         </nav>
     </header>
 
-
     <style type="text/css">
-    .watermarked {
-        padding-top: 55px;
-    }
+        .watermarked {
+            padding-top: 55px;
+        }
     </style>
-    
 
     % if node['is_registration']:  ## Begin registration undismissable labels
 
         % if not node['is_retracted']:
-           % if not node['is_pending_registration']:
-              <div class="alert alert-info">This ${node['node_type']} is a registration of <a class="link-solid" href="${node['registered_from_url']}">this ${node['node_type']}</a>; the content of the ${node['node_type']} has been frozen and cannot be edited.</div>
+            % if not node['is_pending_registration']:
+                <div class="alert alert-info">This ${node['node_type']} is a registration of <a class="link-solid" href="${node['registered_from_url']}">this ${node['node_type']}</a>; the content of the ${node['node_type']} has been frozen and cannot be edited.</div>
 
-           % else:
+            % else:
                 <div class="alert alert-info">
                     <div>This is a pending registration of <a class="link-solid" href="${node['registered_from_url']}">this ${node['node_type']}</a>, awaiting approval from project administrators. This registration will be final when all project administrators approve the registration or 48 hours pass, whichever comes first.</div>
 
                     % if 'admin' in user['permissions']: 
                         <div>
                             <br>
-                            <a class="btn btn-success" href="${node['approval_link']}">Approve Registration</a>
                             <button type="button" id="registrationCancelButton" class="btn btn-danger" data-toggle="modal" data-target="#registrationCancel">
                                 Cancel Registration
                             </button>
@@ -124,15 +119,14 @@
                         <%include file="modal_confirm_cancel_registration.mako"/>
                     % endif
                 </div>
-           % endif
-           
-          
-           <style type="text/css">
-              .watermarked {
-                  background-image:url('/static/img/read-only.png');
-                  background-repeat:repeat;
-              }
-           </style>
+            % endif
+
+            <style type="text/css">
+                .watermarked {
+                    background-image:url('/static/img/read-only.png');
+                    background-repeat:repeat;
+                }
+            </style>
 
         % endif
 
@@ -140,15 +134,15 @@
             <div class="alert alert-info">This ${node['node_type']} is currently pending entering into a withdrawn state.</div>
         % endif
 
-        % if  node['is_retracted']:
+        % if node['is_retracted']:
             <div class="alert alert-danger">This ${node['node_type']} is a withdrawn registration of <a class="link-solid" href="${node['registered_from_url']}">this ${node['node_type']}</a>; the content of the ${node['node_type']} has been taken down for the reason(s) stated below.</div>
         % endif
 
-        % if  node['is_pending_embargo']:
+        % if node['is_pending_embargo']:
             <div class="alert alert-info">This ${node['node_type']} is currently pending registration, awaiting approval from project administrators. This registration will be final and enter the embargo period when all project administrators approve the registration or 48 hours pass, whichever comes first. The embargo will keep the registration private until the embargo period ends.</div>
         % endif
 
-        % if  node['embargo_end_date']:
+        % if node['embargo_end_date']:
             <div class="alert alert-danger">This ${node['node_type']} is currently embargoed. It will remain private until its embargo date, ${ node['embargo_end_date'] }.</div>
         % endif
 
