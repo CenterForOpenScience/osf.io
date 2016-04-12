@@ -197,6 +197,7 @@ class TestViewProject(OsfTestCase):
         assert_equal(result['node']['disapproval_link'], '')
         pending_reg.remove()
 
+
 class TestNodeLogSerializers(OsfTestCase):
 
     def test_serialize_log(self):
@@ -232,6 +233,7 @@ class TestNodeLogSerializers(OsfTestCase):
         assert_equal(d['api_url'], node.api_url)
         assert_equal(d['is_public'], node.is_public)
         assert_equal(d['is_registration'], node.is_registration)
+
 
 class TestAddContributorJson(OsfTestCase):
 
