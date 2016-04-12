@@ -11,6 +11,7 @@ from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.parsers import JSONAPIOnetoOneRelationshipParser, JSONAPIOnetoOneRelationshipParserForRegularJSON
+from api.base.pagination import CommentPagination
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
 from api.files.serializers import FileSerializer
 from api.comments.serializers import CommentSerializer, CommentCreateSerializer
@@ -1855,6 +1856,7 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
     required_read_scopes = [CoreScopes.NODE_COMMENTS_READ]
     required_write_scopes = [CoreScopes.NODE_COMMENTS_WRITE]
 
+    pagination_class = CommentPagination
     serializer_class = CommentSerializer
     view_category = 'nodes'
     view_name = 'node-comments'
