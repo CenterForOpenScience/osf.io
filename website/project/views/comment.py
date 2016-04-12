@@ -55,6 +55,12 @@ def update_file_guid_referent(self, node, event_type, payload, user=None):
 
 
 def create_new_file(obj, source, destination, destination_node):
+    # TODO: Remove when materialized paths are fixed in the payload returned from waterbutler
+    if not source['materialized'].startswith('/'):
+        source['materialized'] = '/' + source['materialized']
+    if not destination['materialized'].startswith('/'):
+        destination['materialized'] = '/' + destination['materialized']
+
     if not source['path'].endswith('/'):
         data = dict(destination)
         new_file = FileNode.resolve_class(destination['provider'], FileNode.FILE).get_or_create(destination_node, destination['path'])
@@ -80,6 +86,10 @@ def find_and_create_file_from_metadata(children, source, destination, destinatio
     and return the new file.
     """
     for item in children:
+        # TODO: Remove when materialized paths are fixed in the payload returned from waterbutler
+        if not item['materialized'].startswith('/'):
+            item['materialized'] = '/' + item['materialized']
+
         if item['kind'] == 'folder':
             return find_and_create_file_from_metadata(item.get('children', []), source, destination, destination_node, obj)
         elif item['kind'] == 'file' and item['materialized'].replace(destination['materialized'], source['materialized']) == obj.referent.materialized_path:

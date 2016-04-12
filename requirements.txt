@@ -1,7 +1,9 @@
 # Base requirements for running the OSF.
-# NOTE: This does not include addon requirements or development requirements.
+# NOTE: This does not include addon, development, metrics or release requirements.
 # To install addon requirements: inv requirements --addons
 # To install dev requirements: inv requirements --dev
+# To install metrics requirements: inv requirements --metrics
+# To install release requirements: inv requirements --release
 
 invoke==0.12.2
 Werkzeug==0.10.4

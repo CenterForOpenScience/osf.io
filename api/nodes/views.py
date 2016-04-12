@@ -1690,7 +1690,7 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMix
     ===
     * 'node_created': A Node is created (_deprecated_)
     * 'node_forked': A Node is forked (_deprecated_)
-    * 'node_removed': A Node is dele (_deprecated_)
+    * 'node_removed': A Node is deleted (_deprecated_)
 
    ##Log Attributes
 
@@ -1705,9 +1705,9 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMix
 
     ##Relationships
 
-    ###Nodes
+    ###Node
 
-    A list of all Nodes this Log is added to.
+    The node this log belongs to.
 
     ###User
 

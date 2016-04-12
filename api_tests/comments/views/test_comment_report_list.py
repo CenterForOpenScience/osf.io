@@ -243,7 +243,7 @@ class CommentReportsMixin(object):
 class TestCommentReportsView(CommentReportsMixin, ApiTestCase):
 
     def _set_up_private_project_comment_reports(self):
-        self.private_project = ProjectFactory.build(is_public=False, creator=self.user)
+        self.private_project = ProjectFactory.create(is_public=False, creator=self.user)
         self.private_project.add_contributor(contributor=self.contributor, save=True)
         self.comment = CommentFactory.build(node=self.private_project, user=self.contributor)
         self.comment.reports = self.comment.reports or {}
@@ -257,7 +257,7 @@ class TestCommentReportsView(CommentReportsMixin, ApiTestCase):
         self.private_url = '/{}comments/{}/reports/'.format(API_BASE, self.comment._id)
 
     def _set_up_public_project_comment_reports(self, comment_level='public'):
-        self.public_project = ProjectFactory.build(is_public=True, creator=self.user, comment_level=comment_level)
+        self.public_project = ProjectFactory.create(is_public=True, creator=self.user, comment_level=comment_level)
         self.public_project.add_contributor(contributor=self.contributor, save=True)
         self.public_comment = CommentFactory.build(node=self.public_project, user=self.contributor)
         self.public_comment.reports = self.public_comment.reports or {}
@@ -274,7 +274,7 @@ class TestCommentReportsView(CommentReportsMixin, ApiTestCase):
 class TestFileCommentReportsView(CommentReportsMixin, ApiTestCase):
 
     def _set_up_private_project_comment_reports(self):
-        self.private_project = ProjectFactory.build(is_public=False, creator=self.user)
+        self.private_project = ProjectFactory.create(is_public=False, creator=self.user)
         self.private_project.add_contributor(contributor=self.contributor, save=True)
         self.file = test_utils.create_test_file(self.private_project, self.user)
         self.comment = CommentFactory.build(node=self.private_project, target=self.file.get_guid(), user=self.contributor)
@@ -289,7 +289,7 @@ class TestFileCommentReportsView(CommentReportsMixin, ApiTestCase):
         self.private_url = '/{}comments/{}/reports/'.format(API_BASE, self.comment._id)
 
     def _set_up_public_project_comment_reports(self, comment_level='public'):
-        self.public_project = ProjectFactory.build(is_public=True, creator=self.user, comment_level=comment_level)
+        self.public_project = ProjectFactory.create(is_public=True, creator=self.user, comment_level=comment_level)
         self.public_project.add_contributor(contributor=self.contributor, save=True)
         self.public_file = test_utils.create_test_file(self.public_project, self.user)
         self.public_comment = CommentFactory.build(node=self.public_project, target=self.public_file.get_guid(), user=self.contributor)
@@ -307,7 +307,7 @@ class TestFileCommentReportsView(CommentReportsMixin, ApiTestCase):
 class TestWikiCommentReportsView(CommentReportsMixin, ApiTestCase):
 
     def _set_up_private_project_comment_reports(self):
-        self.private_project = ProjectFactory.build(is_public=False, creator=self.user)
+        self.private_project = ProjectFactory.create(is_public=False, creator=self.user)
         self.private_project.add_contributor(contributor=self.contributor, save=True)
         self.wiki = NodeWikiFactory(node=self.private_project, user=self.user)
         self.comment = CommentFactory.build(node=self.private_project, target=Guid.load(self.wiki._id), user=self.contributor)
@@ -322,7 +322,7 @@ class TestWikiCommentReportsView(CommentReportsMixin, ApiTestCase):
         self.private_url = '/{}comments/{}/reports/'.format(API_BASE, self.comment._id)
 
     def _set_up_public_project_comment_reports(self, comment_level='public'):
-        self.public_project = ProjectFactory.build(is_public=True, creator=self.user, comment_level=comment_level)
+        self.public_project = ProjectFactory.create(is_public=True, creator=self.user, comment_level=comment_level)
         self.public_project.add_contributor(contributor=self.contributor, save=True)
         self.public_wiki = NodeWikiFactory(node=self.public_project, user=self.user)
         self.public_comment = CommentFactory.build(node=self.public_project, target=Guid.load(self.public_wiki._id), user=self.contributor)

@@ -386,15 +386,18 @@ class RelationshipField(ser.HyperlinkedIdentityField):
 
         super(RelationshipField, self).__init__(view_name, lookup_url_kwarg=lookup_kwargs, **kwargs)
 
-    def resolve(self, resource):
+    def resolve(self, resource, field_name):
         """
         Resolves the view when embedding.
         """
         kwargs = {attr_name: self.lookup_attribute(resource, attr) for (attr_name, attr) in
                   self.lookup_url_kwarg.items()}
+        view = self.view_name
+        if callable(self.view_name):
+            view = view(getattr(resource, field_name))
         return resolve(
             reverse(
-                self.view_name,
+                view,
                 kwargs=kwargs
             )
         )
@@ -499,6 +502,8 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                 if kwargs is None:
                     urls[view_name] = {}
                 else:
+                    if callable(view):
+                        view = view(getattr(obj, self.field_name))
                     url = self.reverse(view, kwargs=kwargs, request=request, format=format)
                     if self.filter:
                         formatted_filter = self.format_filter(obj)
@@ -635,7 +640,7 @@ class TargetField(ser.Field):
         self.link_type = kwargs.pop('link_type', 'url')
         super(TargetField, self).__init__(read_only=True, **kwargs)
 
-    def resolve(self, resource):
+    def resolve(self, resource, field_name):
         """
         Resolves the view for target node or target comment when embedding.
         """

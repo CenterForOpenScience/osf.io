@@ -191,6 +191,7 @@ AddContributorViewModel = oop.extend(Paginator, {
     },
     fetchResults: function () {
         var self = this;
+        self.doneSearching(false);
         self.notification(false);
         if (self.query()) {
             return $.getJSON(

@@ -293,6 +293,10 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
             raise HTTPError(http.FORBIDDEN)
         sharejs_uuid = None
 
+    # Opens 'edit' panel when home wiki is empty
+    if not content and can_edit and wiki_name == 'home':
+        panels_used.append('edit')
+
     ret = {
         'wiki_id': wiki_page._primary_key if wiki_page else None,
         'wiki_name': wiki_page.page_name if wiki_page else wiki_name,
