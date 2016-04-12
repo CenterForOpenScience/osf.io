@@ -20,7 +20,7 @@ from framework.analytics import get_basic_counters
 from website import util
 from website.files import utils
 from website.files import exceptions
-from website.project.model import Commentable
+from website.project.commentable import Commentable
 
 
 __all__ = (

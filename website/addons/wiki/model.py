@@ -20,7 +20,7 @@ from website import settings
 from website.addons.base import AddonNodeSettingsBase
 from website.addons.wiki import utils as wiki_utils
 from website.addons.wiki.settings import WIKI_CHANGE_DATE
-from website.project.model import Commentable
+from website.project.commentable import Commentable
 from website.project.signals import write_permissions_revoked
 
 from website.exceptions import NodeStateError
