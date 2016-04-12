@@ -354,9 +354,8 @@ def user_account_password(auth, **kwargs):
         user.change_password(old_password, new_password, confirm_password)
         user.save()
     except ChangePasswordError as error:
-        # TODO: Why is this pushing one single message, instead of a separate message for each error? The <br> is the only reason we need to trust at all
-        safe_messages = [markupsafe.escape(m) for m in error.messages]
-        push_status_message(u'<br />'.join(safe_messages) + '.', kind='warning', trust=True)
+        for m in error.messages:
+            push_status_message(m, kind='warning', trust=False)
     else:
         push_status_message('Password updated successfully.', kind='success', trust=False)
 

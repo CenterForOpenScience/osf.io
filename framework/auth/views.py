@@ -91,13 +91,12 @@ def forgot_password_post():
                 reset_link=reset_link
             )
 
-        email_safe = markupsafe.escape(email)
         status.push_status_message(
             (u'If there is an OSF account associated with {0}, an email with instructions on how to reset '
              u'the OSF password has been sent to {0}. If you do not receive an email and believe you should '
-             u'have, please contact OSF Support. ').format(email_safe),
+             u'have, please contact OSF Support. ').format(email),
             kind='success',
-            trust=True)
+            trust=False)
 
     forms.push_errors_to_status(form.errors)
     return auth_login(forgot_password_form=form)
@@ -358,17 +357,15 @@ def auth_register_post():
                 form.fullname.data)
             framework.auth.signals.user_registered.send(user)
         except (ValidationValueError, DuplicateEmailError):
-            email = markupsafe.escape(form.username.data)
             status.push_status_message(
-                language.ALREADY_REGISTERED.format(email=email),
-                trust=True)
+                language.ALREADY_REGISTERED.format(email=form.username.data),
+                trust=False)
             return auth_login()
         if user:
             if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
                 send_confirm_email(user, email=user.username)
-                email = markupsafe.escape(user.username)
-                message = language.REGISTRATION_SUCCESS.format(email=email)
-                status.push_status_message(message, kind='success', trust=True)
+                message = language.REGISTRATION_SUCCESS.format(email=user.username)
+                status.push_status_message(message, kind='success', trust=False)
                 return auth_login()
             else:
                 return redirect('/login/first/')
@@ -399,10 +396,9 @@ def resend_confirmation():
                 status_message = 'Email has already been confirmed.'
                 kind = 'warning'
             else:
-                safe_email = markupsafe.escape(clean_email)
-                status_message = 'Resent email to <em>{0}</em>'.format(safe_email)
+                status_message = 'Resent email to {0}'.format(clean_email)
                 kind = 'success'
-            status.push_status_message(status_message, kind=kind, trust=True)
+            status.push_status_message(status_message, kind=kind, trust=False)
         else:
             forms.push_errors_to_status(form.errors)
     # Don't go anywhere
@@ -442,8 +438,7 @@ def merge_user_post(auth, **kwargs):
             master.merge_user(merged_user)
             master.save()
             if request.form:
-                safe_username = markupsafe.escape(merged_username)
-                status.push_status_message("Successfully merged {0} with this account".format(safe_username),
+                status.push_status_message("Successfully merged {0} with this account".format(merged_username),
                                            kind='success',
                                            trust=False)
                 return redirect("/settings/")

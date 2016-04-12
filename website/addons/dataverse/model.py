@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
-from time import sleep
-import requests
+
 import httplib as http
+from time import sleep
+
+import markupsafe
+import requests
 
 from modularodm import fields
 
@@ -268,9 +271,9 @@ class AddonDataverseNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                 u'Because the Dataverse add-on for {category} "{title}" was authenticated '
                 u'by {user}, authentication information has been deleted.'
             ).format(
-                category=node.category_display,
-                title=node.title,
-                user=removed.fullname
+                category=markupsafe.escape(node.category_display),
+                title=markupsafe.escape(node.title),
+                user=markupsafe.escape(removed.fullname)
             )
 
             if not auth or auth.user != removed:

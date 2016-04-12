@@ -21,7 +21,7 @@ REGISTRATION_SUCCESS = '''Registration successful. Please check {email} to confi
 # Shown if registration is turned off in website.settings
 REGISTRATION_UNAVAILABLE = 'Registration currently unavailable.'
 
-ALREADY_REGISTERED = u'The email <em>{email}</em> has already been registered.'
+ALREADY_REGISTERED = u'The email {email} has already been registered.'
 
 AFTER_SUBMIT_FOR_REVIEW = "Your submission has been received. You will be notified within ten business days regarding the status of your submission. If you have questions you may contact us at prereg@cos.io."
 
@@ -50,7 +50,7 @@ You have successfully logged out.
 '''
 
 EMAIL_NOT_FOUND = u'''
-<strong>{email}</strong> was not found in our records.
+{email} was not found in our records.
 '''
 
 # Shown after an unregistered user claims an account and is redirected to the

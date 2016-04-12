@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import markupsafe
 from modularodm import fields
 
 from framework.auth.core import Auth
@@ -251,7 +252,11 @@ class AddonS3NodeSettings(StorageAddonBase, AddonNodeSettingsBase):
             message = (
                 u'Because the Amazon Simple Storage add-on for {category} "{title}" was '
                 u'authenticated by {user}, authentication information has been deleted.'
-            ).format(category=node.category_display, title=node.title, user=removed.fullname)
+            ).format(
+                category=markupsafe.escape(node.category_display),
+                title=markupsafe.escape(node.title),
+                user=markupsafe.escape(removed.fullname)
+            )
 
             if not auth or auth.user != removed:
                 url = node.web_url_for('node_setting')

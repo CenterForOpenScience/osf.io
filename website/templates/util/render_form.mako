@@ -2,7 +2,7 @@
     % if id:
         id="${id}"
     % endif
-    name="${name}" method="${method_string}" ${"action=\""+action_string+"\"" if action_string else ""} class="${form_class}">
+    name="${name}" method="${method_string}" action="${action_string}" class="${form_class}">
     <fieldset>
         % for field in form:
             <div class="form-group">
