@@ -1,48 +1,46 @@
-<form role="form" id="addonSettings${addon_short_name.capitalize()}" data-addon="${addon_short_name}">
-    <span data-owner="user"></span>
-    <div>
-        <h4 class="addon-title">
-          <img class="addon-icon" src="${addon_icon_url}"></img>
-            Amazon S3
+<!-- Authorization -->
+<div id='s3AddonScope' class='addon-settings addon-generic scripted'
+     data-addon-short-name="${ addon_short_name }"
+     data-addon-name="${ addon_full_name }">
 
-            <small class="authorized-by">
-                % if has_auth:
-                    authorized by <em>${name}</em>
-                    <a id="s3RemoveAccess" class="text-danger pull-right addon-auth">Disconnect Account</a>
-                % endif
-            </small>
+    <%include file="s3_credentials_modal.mako"/>
 
-        </h4>
+    <h4 class="addon-title">
+        <img class="addon-icon" src=${addon_icon_url}></img>
+        {{ properName }}
+        <small>
+            <a href="#s3InputCredentials" data-toggle="modal" class="pull-right text-primary">Connect Account</a>
+        </small>
+    </h4>
+
+    <div class="addon-auth-table" id="${addon_short_name}-header">
+        <!-- ko foreach: accounts -->
+        <a data-bind="click: $root.askDisconnect" class="text-danger pull-right default-authorized-by">Disconnect Account</a>
+
+        <div class="m-h-lg">
+            <table class="table table-hover">
+                <thead>
+                    <tr class="user-settings-addon-auth">
+                        <th class="text-muted default-authorized-by">Authorized by <em><span data-bind="text: name"></span></em></th>
+                    </tr>
+                </thead>
+                <!-- ko if: connectedNodes().length > 0 -->
+                <tbody data-bind="foreach: connectedNodes()">
+                    <tr>
+                        <td class="authorized-nodes">
+                            <!-- ko if: title --><a data-bind="attr.href: urls.view, text: title"></a><!-- /ko -->
+                            <!-- ko if: !title --><em>Private project</em><!-- /ko -->
+                        </td>
+                        <td>
+                            <a data-bind="click: $parent.deauthorizeNode">
+                                <i class="fa fa-times text-danger pull-right" title="disconnect Project"></i>
+                            </a>
+                        </td>
+                    </tr>
+                </tbody>
+                <!-- /ko -->
+            </table>
+        </div>
+        <!-- /ko -->
     </div>
-
-    % if not has_auth:
-        <div class="form-group">
-            <label for="s3Addon">Access Key</label>
-            <input class="form-control" id="access_key" name="access_key" ${'disabled' if disabled else ''} />
-        </div>
-        <div class="form-group">
-            <label for="s3Addon">Secret Key</label>
-            <input type="password" class="form-control" id="secret_key" name="secret_key" ${'disabled' if disabled else ''} />
-        </div>
-
-        <button class="btn btn-success addon-settings-submit">
-            Save
-        </button>
-    % endif
-
-    ${self.on_submit()}
-
-    <!-- Form feedback -->
-    <div class="addon-settings-message" style="display: none; padding-top: 10px;"></div>
-
-</form>
-
-<%def name="on_submit()">
-    <script type="text/javascript">
-        window.contextVars = $.extend({}, window.contextVars, {
-            'addonSettingsSelector': ${('#addonSettings' + addon_short_name.capitalize()) | sjson, n }
-        });
-    </script>
-</%def>
-
-<%include file="profile/addon_permissions.mako" />
+</div>

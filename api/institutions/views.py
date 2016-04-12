@@ -12,6 +12,7 @@ from website.models import Node, User, Institution
 from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin
 from api.base.views import JSONAPIBaseView
+from api.base.serializers import JSONAPISerializer
 from api.base.utils import get_object_or_error
 from api.nodes.serializers import NodeSerializer
 from api.users.serializers import UserSerializer
@@ -66,7 +67,7 @@ class InstitutionList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     view_category = 'institutions'
     view_name = 'institution-list'
 
-    ordering = ('name', )
+    ordering = ('-date_modified', )
 
     def get_default_odm_query(self):
         return Q('_id', 'ne', None)
@@ -200,6 +201,8 @@ class InstitutionAuth(JSONAPIBaseView, generics.CreateAPIView):
         drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope,
     )
+
+    serializer_class = JSONAPISerializer
 
     required_read_scopes = [CoreScopes.NULL]
     required_write_scopes = [CoreScopes.NULL]

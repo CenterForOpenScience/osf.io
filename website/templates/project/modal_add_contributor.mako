@@ -48,7 +48,7 @@
                             <!-- ko if: notification -->
                             <div data-bind="html: notification().message, css: 'alert alert-' + notification().level"></div>
                             <!-- /ko -->
-
+                            <!-- ko if: doneSearching -->
                             <table class="table-condensed">
                                 <thead data-bind="visible: foundResults">
                                 </thead>
@@ -107,6 +107,7 @@
 
                                 </tbody>
                             </table>
+                            <!-- /ko -->
                             <!-- Link to add non-registered contributor -->
                             <div class='help-block'>
                                 <div data-bind='if: foundResults'>
