@@ -51,7 +51,7 @@ class TestCorsMiddleware(MiddlewareTestCase):
             institution_domains=[domain.netloc.lower()],
             title="Institute for Sexy Lizards"
         )
-        settings.load_institutions()
+        CorsMiddleware.INSTITUTION_ORIGINS_WHITELIST = CorsMiddleware.INSTITUTION_ORIGINS_WHITELIST + (domain.netloc.lower(),)
         request = self.request_factory.get(url, HTTP_ORIGIN=domain.geturl())
         response = {}
         self.middleware.process_request(request)

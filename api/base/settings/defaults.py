@@ -99,8 +99,6 @@ CORS_ORIGIN_WHITELIST = (urlparse(osf_settings.DOMAIN).netloc,
                          osf_settings.DOMAIN,
                          )
 CORS_ALLOW_CREDENTIALS = True
-# Set dynamically on app init
-INSTITUTION_ORIGINS_WHITELIST = ()
 
 MIDDLEWARE_CLASSES = (
     # TokuMX transaction support

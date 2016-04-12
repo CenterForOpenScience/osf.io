@@ -39,6 +39,5 @@ def __getattr__(self, attr):
 Request.__getattr__ = __getattr__
 
 init_app(set_backends=True, routes=False, attach_request_handlers=False)
-api_settings.load_institutions()
 
 application = get_wsgi_application()
