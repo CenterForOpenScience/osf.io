@@ -116,7 +116,7 @@
                 % endif
                 </div>
                 % if enable_institutions and not node['anonymous']:
-                    % if user['is_contributor'] and not node['is_registration']:
+                    % if 'admin' in user['permissions'] and not node['is_registration']:
                         <a class="link-dashed" href="${node['url']}settings/#configureInstitutionAnchor" id="institution">Affiliated Institution:</a>
                     % else:
                         Affiliated institution:

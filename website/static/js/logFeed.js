@@ -176,7 +176,6 @@ var createLogs = function(logData){
             nodeCategory: item.node.category,
             contributors: item.contributors,
             nodeUrl: item.node.url,
-            projectUrl: item.node.node_type === 'project' ? '/' + item.node.registered_from_id + '/' : item.node.url,
             userFullName: item.user.fullname,
             userURL: item.user.url,
             params: item.params,

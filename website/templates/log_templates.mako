@@ -7,7 +7,7 @@
 ## Embargo related logs
 <script type="text/html" id="embargo_approved">
 approved embargoed registration of
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: projectUrl}"></a>
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
 </script>
 
 <script type="text/html" id="embargo_approved_no_user">
@@ -33,7 +33,7 @@ Embargo for
 <script type="text/html" id="embargo_initiated">
 initiated an embargoed registration of
 <!-- ko if: !registrationCancelled -->
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: projectUrl}"></a>
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
 <!-- /ko -->
 
 <!-- ko if: registrationCancelled -->
@@ -50,7 +50,7 @@ ended.
 ## Retraction related logs
 <script type="text/html" id="retraction_approved">
 approved withdrawal of registration of
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: projectUrl}"></a>
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
 </script>
 
 <script type="text/html" id="retraction_cancelled">
@@ -60,14 +60,14 @@ cancelled withdrawal of registration of
 
 <script type="text/html" id="retraction_initiated">
 initiated withdrawal of registration of
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: projectUrl}"></a>
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
 </script>
 
 ## Registration related Logs
 <script type="text/html" id="registration_initiated">
 initiated registration of
 <!-- ko if: !registrationCancelled -->
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: projectUrl}"></a>
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
 <!-- /ko -->
 
 <!-- ko if: registrationCancelled -->
@@ -134,6 +134,22 @@ as contributor(s) from
 
 <script type="text/html" id="contributors_reordered">
 reordered contributors for
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="checked_in">
+checked in {{ params.kind }}
+<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect">
+    {{ stripSlash(params.path) }}</a>
+from
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="checked_out">
+checked out {{ params.kind }}
+<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect">
+    {{ stripSlash(params.path) }}</a>
+from
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
