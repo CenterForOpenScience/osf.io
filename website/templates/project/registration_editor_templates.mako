@@ -23,6 +23,11 @@
                        textInput: value"
             class="form-control registration-editor-textarea-lg"> </textarea>
 </script>
+<script type="text/html" id="textarea-xl">
+  <textarea data-bind="valueUpdate: 'keyup',
+                       textInput: value"
+            class="form-control registration-editor-textarea-xl"> </textarea>
+</script>
 <!-- Number Types -->
 <script type="text/html" id="number">
   <input data-bind="valueUpdate: 'keyup',
