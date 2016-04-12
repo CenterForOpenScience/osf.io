@@ -8,8 +8,6 @@ from pymongo.errors import OperationFailure
 
 from framework.transactions import utils, commands, messages
 
-from website import settings
-
 
 LOCK_ERROR_CODE = httplib.BAD_REQUEST
 NO_AUTO_TRANSACTION_ATTR = '_no_auto_transaction'
@@ -38,10 +36,12 @@ def transaction_before_request():
         return None
     try:
         commands.rollback()
-        logger.error('Transaction already in progress; rolling back.')
+        logger.error('Transaction already in progress prior to request; rolling back.')
     except OperationFailure as error:
+        #  expected error, transaction shouldn't be started prior to request
         message = utils.get_error_message(error)
         if messages.NO_TRANSACTION_ERROR not in message:
+            #  exception not a transaction error, reraise
             raise
     commands.begin()
 
@@ -54,11 +54,15 @@ def transaction_after_request(response, base_status_code_error=500):
     if view_has_annotation(NO_AUTO_TRANSACTION_ATTR):
         return response
     if response.status_code >= base_status_code_error:
-        commands.rollback()
+        try:
+            commands.rollback()
+        except OperationFailure:
+            logger.exception('Transaction rollback failed after request')
     else:
         try:
             commands.commit()
         except OperationFailure as error:
+            #  transaction commit failed, log and reraise
             message = utils.get_error_message(error)
             if messages.LOCK_ERROR in message:
                 commands.rollback()
@@ -73,15 +77,16 @@ def transaction_teardown_request(error=None):
     Werkzeug debugger.
     """
     if view_has_annotation(NO_AUTO_TRANSACTION_ATTR):
-        return None
+        return
     if error is not None:
-        if not settings.DEBUG_MODE:
-            logger.error('Uncaught error in `transaction_teardown_request`; '
-                         'this should never happen with `DEBUG_MODE = True`')
-        # If we're testing, the before_request handlers may not have been executed
-        # e.g. when Flask#test_request_context() is used
-        if not current_app.testing:
+        try:
             commands.rollback()
+        except OperationFailure as error:
+            #  expected error, transaction should have closed in after_request
+            message = utils.get_error_message(error)
+            if messages.NO_TRANSACTION_ERROR not in message:
+                #  unexpected error, not a transaction error, reraise
+                raise
 
 
 handlers = {

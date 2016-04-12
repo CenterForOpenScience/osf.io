@@ -83,6 +83,8 @@ var BaseComment = function() {
 
     self.comments = ko.observableArray();
 
+    self.loadingComments = ko.observable(true);
+
     self.replyNotEmpty = ko.pureComputed(function() {
         return notEmpty(self.replyContent());
     });
@@ -137,30 +139,29 @@ BaseComment.prototype.fetch = function() {
 /* Go through the paginated API response to fetch all comments for the specified target */
 BaseComment.prototype.fetchNext = function(url, comments) {
     var self = this;
-    var deferred = $.Deferred();
-    if (self._loaded) {
-        deferred.resolve(self.comments());
-    }
     var request = osfHelpers.ajaxJSON(
         'GET',
         url,
         {'isCors': true});
     request.done(function(response) {
-        comments = comments.concat(response.data);
+        comments = response.data;
+        if (self._loaded !== true) {
+            self._loaded = true;
+        }
+        comments.forEach(function(comment) {
+            self.comments.push(
+                new CommentModel(comment, self, self.$root)
+            );
+        });
+        self.configureCommentsVisibility();
         if (response.links.next !== null) {
             self.fetchNext(response.links.next, comments);
         } else {
-            self.comments(
-                ko.utils.arrayMap(comments, function(comment) {
-                    return new CommentModel(comment, self, self.$root);
-                })
-            );
-            deferred.resolve(self.comments());
-            self.configureCommentsVisibility();
-            self._loaded = true;
+            self.loadingComments(false);
         }
+    }).fail(function () {
+        self.loadingComments(false);
     });
-    return deferred.promise();
 };
 
 BaseComment.prototype.setUnreadCommentCount = function() {
@@ -255,9 +256,11 @@ BaseComment.prototype.submitReply = function() {
         self.cancelReply();
         self.errorMessage('Could not submit comment');
         Raven.captureMessage('Error creating comment', {
-            url: url,
-            status: status,
-            error: error
+            extra: {
+                url: url,
+                status: status,
+                error: error
+            }
         });
     });
 };
@@ -416,9 +419,11 @@ CommentModel.prototype.submitEdit = function(data, event) {
         self.cancelEdit();
         self.errorMessage('Could not submit comment');
         Raven.captureMessage('Error editing comment', {
-            url: url,
-            status: status,
-            error: error
+            extra: {
+                url: url,
+                status: status,
+                error: error
+            }
         });
     });
     return request;
@@ -459,9 +464,11 @@ CommentModel.prototype.submitAbuse = function() {
     request.fail(function(xhr, status, error) {
         self.errorMessage('Could not report abuse.');
         Raven.captureMessage('Error reporting abuse', {
-            url: url,
-            status: status,
-            error: error
+            extra: {
+                url: url,
+                status: status,
+                error: error
+            }
         });
     });
     return request;
@@ -486,9 +493,11 @@ CommentModel.prototype.submitDelete = function() {
     request.fail(function(xhr, status, error) {
         self.deleting(false);
         Raven.captureMessage('Error deleting comment', {
-            url: url,
-            status: status,
-            error: error
+            extra: {
+                url: url,
+                status: status,
+                error: error
+            }
         });
     });
     return request;
@@ -522,9 +531,11 @@ CommentModel.prototype.submitUndelete = function() {
     });
     request.fail(function(xhr, status, error) {
         Raven.captureMessage('Error undeleting comment', {
-            url: url,
-            status: status,
-            error: error
+            extra: {
+                url: url,
+                status: status,
+                error: error
+            }
         });
 
     });
@@ -545,9 +556,11 @@ CommentModel.prototype.submitUnreportAbuse = function() {
     });
     request.fail(function(xhr, status, error) {
         Raven.captureMessage('Error unreporting comment', {
-            url: url,
-            status: status,
-            error: error
+            extra: {
+                url: url,
+                status: status,
+                error: error
+            }
         });
 
     });
@@ -630,6 +643,9 @@ CommentListModel.prototype.initListeners = function() {
 };
 
 var onOpen = function(page, rootId, nodeApiUrl) {
+    if (osfHelpers.urlParams().view_only){
+        return null;
+    }
     var timestampUrl = nodeApiUrl + 'comments/timestamps/';
     var request = osfHelpers.putJSON(
         timestampUrl,
@@ -640,9 +656,11 @@ var onOpen = function(page, rootId, nodeApiUrl) {
     );    
     request.fail(function(xhr, textStatus, errorThrown) {
         Raven.captureMessage('Could not update comment timestamp', {
-            url: timestampUrl,
-            textStatus: textStatus,
-            errorThrown: errorThrown
+            extra: {
+                url: timestampUrl,
+                textStatus: textStatus,
+                errorThrown: errorThrown
+            }
         });
     });
     return request;

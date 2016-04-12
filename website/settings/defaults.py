@@ -34,6 +34,9 @@ with open(os.path.join(APP_PATH, 'package.json'), 'r') as fobj:
 EMAIL_TOKEN_EXPIRATION = 24
 CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'static', 'vendor', 'bower_components', 'styles')
 
+# Minimum seconds between forgot password email attempts
+FORGOT_PASSWORD_MINIMUM_TIME = 30
+
 # Hours before pending embargo/retraction/registration automatically becomes active
 RETRACTION_PENDING_TIME = datetime.timedelta(days=2)
 EMBARGO_PENDING_TIME = datetime.timedelta(days=2)
@@ -196,6 +199,7 @@ with open(os.path.join(ROOT, 'addons.json')) as fp:
     ADDONS_REQUESTED = addon_settings['addons']
     ADDONS_ARCHIVABLE = addon_settings['addons_archivable']
     ADDONS_COMMENTABLE = addon_settings['addons_commentable']
+    ADDONS_BASED_ON_IDS = addon_settings['addons_based_on_ids']
 
 ADDON_CATEGORIES = [
     'documentation',
@@ -229,11 +233,17 @@ SENTRY_DSN_JS = None
 # TODO: Delete me after merging GitLab
 MISSING_FILE_NAME = 'untitled'
 
-# Dashboard
+# Project Organizer
 ALL_MY_PROJECTS_ID = '-amp'
 ALL_MY_REGISTRATIONS_ID = '-amr'
 ALL_MY_PROJECTS_NAME = 'All my projects'
 ALL_MY_REGISTRATIONS_NAME = 'All my registrations'
+
+# Most Popular and New and Noteworthy Nodes
+POPULAR_LINKS_NODE = None  # TODO Override in local.py in production.
+NEW_AND_NOTEWORTHY_LINKS_NODE = None  # TODO Override in local.py in production.
+
+NEW_AND_NOTEWORTHY_CONTRIBUTOR_BLACKLIST = []  # TODO Override in local.py in production.
 
 # FOR EMERGENCIES ONLY: Setting this to True will disable forks, registrations,
 # and uploads in order to save disk space.
@@ -294,15 +304,28 @@ CELERY_RESULT_BACKEND = 'amqp://'
 
 #  Modules to import when celery launches
 CELERY_IMPORTS = (
-    'framework.tasks',
-    'framework.tasks.signals',
+    'framework.celery_tasks',
+    'framework.celery_tasks.signals',
     'framework.email.tasks',
     'framework.analytics.tasks',
     'website.mailchimp_utils',
     'website.notifications.tasks',
     'website.archiver.tasks',
     'website.search.search',
-    'api.caching.tasks'
+    'api.caching.tasks',
+    'scripts.populate_new_and_noteworthy_projects',
+    'scripts.refresh_box_tokens',
+    'scripts.retract_registrations',
+    'scripts.embargo_registrations',
+    'scripts.approve_registrations',
+    'scripts.osfstorage.glacier_inventory',
+    'scripts.osfstorage.glacier_audit',
+    'scripts.triggered_mails',
+    'scripts.send_queued_mails',
+    'scripts.osfstorage.usage_audit',
+    'scripts.osfstorage.files_audit',
+    'scripts.analytics.tasks',
+    'scripts.analytics.upload'
 )
 
 # celery.schedule will not be installed when running invoke requirements the first time.
@@ -323,7 +346,88 @@ else:
             'schedule': crontab(minute=0, hour=0),
             'args': ('email_digest',),
         },
+        'refresh_box': {
+            'task': 'scripts.refresh_box_tokens',
+            'schedule': crontab(minute=0, hour= 2),  # Daily 2:00 a.m
+            'kwargs': {'dry_run': False},
+        },
+        'retract_registrations': {
+            'task': 'scripts.retract_registrations',
+            'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+            'kwargs': {'dry_run': False},
+        },
+        'embargo_registrations': {
+            'task': 'scripts.embargo_registrations',
+            'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+            'kwargs': {'dry_run': False},
+        },
+        'approve_registrations': {
+            'task': 'scripts.approve_registrations',
+            'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+            'kwargs': {'dry_run': False},
+        },
+        'glacier_inventory': {
+            'task': 'scripts.osfstorage.glacier_inventory',
+            'schedule': crontab(minute=0, hour= 0, day_of_week=0),  # Sunday 12:00 a.m.
+            'args': (),
+        },
+        'glacier_audit': {
+            'task': 'scripts.osfstorage.glacier_audit',
+            'schedule': crontab(minute=0, hour=6, day_of_week=0),  # Sunday 6:00 a.m.
+            'kwargs': {'dry_run': False},
+        },
+        'triggered_mails': {
+            'task': 'scripts.triggered_mails',
+            'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+            'kwargs': {'dry_run': False},
+        },
+        'send_queued_mails': {
+            'task': 'scripts.send_queued_mails',
+            'schedule': crontab(minute=0, hour=12),  # Daily 12 p.m.
+            'kwargs': {'dry_run': False},
+        },
+        'usage_audit': {
+            'task': 'scripts.osfstorage.usage_audit',
+            'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+            'kwargs': {'send_mail': True},
+        },
+        'files_audit_0': {
+            'task': 'scripts.osfstorage.files_audit_0',
+            'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
+            'kwargs': {'num_of_workers': 4, 'dry_run': False},
+        },
+        'files_audit_1': {
+            'task': 'scripts.osfstorage.files_audit_1',
+            'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
+            'kwargs': {'num_of_workers': 4, 'dry_run': False},
+        },
+        'files_audit_2': {
+            'task': 'scripts.osfstorage.files_audit_2',
+            'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
+            'kwargs': {'num_of_workers': 4, 'dry_run': False},
+        },
+        'files_audit_3': {
+            'task': 'scripts.osfstorage.files_audit_3',
+            'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
+            'kwargs': {'num_of_workers': 4, 'dry_run': False},
+        },
+        'analytics': {
+            'task': 'scripts.analytics.tasks',
+            'schedule': crontab(minute=0, hour=2),  # Daily 2:00 a.m.
+            'kwargs': {}
+        },
+        'analytics-upload': {
+            'task': 'scripts.analytics.upload',
+            'schedule': crontab(minute=0, hour=6),  # Daily 6:00 a.m.
+            'kwargs': {}
+        },
+        'new-and-noteworthy': {
+            'task': 'scripts.populate_new_and_noteworthy_projects',
+            'schedule': crontab(minute=0, hour=2, day_of_week=6),  # Saturday 2:00 a.m.
+            'kwargs': {'dry_run': True}
+        }
     }
+
 
 WATERBUTLER_JWE_SALT = 'yusaltydough'
 WATERBUTLER_JWE_SECRET = 'CirclesAre4Squares'
@@ -338,3 +442,8 @@ assert (DRAFT_REGISTRATION_APPROVAL_PERIOD > EMBARGO_END_DATE_MIN), 'The draft r
 PREREG_ADMIN_TAG = "prereg_admin"
 
 ENABLE_INSTITUTIONS = False
+
+ENABLE_VARNISH = False
+ENABLE_ESI = False
+VARNISH_SERVERS = []  # This should be set in local.py or cache invalidation won't work
+ESI_MEDIA_TYPES = {'application/vnd.api+json', 'application/json'}

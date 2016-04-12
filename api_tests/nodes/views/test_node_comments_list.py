@@ -523,7 +523,7 @@ class TestNodeCommentCreate(ApiTestCase):
         }
         res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Comment cannot be empty.')
+        assert_equal(res.json['errors'][0]['detail'], 'This field may not be blank.')
 
     def test_create_comment_with_allowed_tags(self):
         self._set_up_private_project_with_private_comment_level()
@@ -939,14 +939,14 @@ class TestCommentRepliesCreate(ApiTestCase):
         }
 
     def _set_up_private_project_with_private_comment_level(self):
-        self.private_project = ProjectFactory.build(is_public=False, creator=self.user, comment_level='private')
+        self.private_project = ProjectFactory.create(is_public=False, creator=self.user, comment_level='private')
         self.private_project.add_contributor(self.read_only_contributor, permissions=['read'], save=True)
         self.comment = CommentFactory(node=self.private_project, user=self.user)
         self.private_url = '/{}nodes/{}/comments/'.format(API_BASE, self.private_project._id)
         self.private_payload = self._set_up_payload(self.comment._id)
 
     def _set_up_public_project_with_private_comment_level(self):
-        self.public_project = ProjectFactory.build(is_public=True, creator=self.user, comment_level='private')
+        self.public_project = ProjectFactory.create(is_public=True, creator=self.user, comment_level='private')
         self.public_project.add_contributor(self.read_only_contributor, permissions=['read'], save=True)
         self.public_comment = CommentFactory(node=self.public_project, user=self.user)
         self.public_url = '/{}nodes/{}/comments/'.format(API_BASE, self.public_project._id)

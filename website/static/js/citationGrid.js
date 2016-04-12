@@ -339,9 +339,11 @@ CitationGrid.prototype.initStyleSelect = function() {
             self.updateStyle(event.val, xml);
         }).fail(function(jqxhr, status, error) {
             Raven.captureMessage('Error while selecting citation style: ' + event.val, {
-                url: styleUrl,
-                status: status,
-                error: error
+                extra: {
+                    url: styleUrl,
+                    status: status,
+                    error: error
+                }
             });
         });
     });
@@ -351,7 +353,7 @@ CitationGrid.prototype.updateStyle = function(name, xml) {
     this.styleName = name;
     this.styleXml = xml;
     this.bibliographies = {};
-    this.treebeard.tbController.redraw();
+    this.treebeard.redraw();
 };
 
 CitationGrid.prototype.makeBibliography = function(folder, format) {

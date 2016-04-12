@@ -320,7 +320,19 @@ Question.prototype.toggleExample = function() {
 };
 
 Question.prototype.validationInfo = function() {
-    return ko.validation.group(this, {deep: true})();
+    var errors = ko.validation.group(this, {deep: true})();
+
+    var errorSet = ko.utils.arrayGetDistinctValues(errors);
+    var finalErrorSet = [];
+    $.each(errorSet, function(_, error) {
+        if (errors.indexOf(error) !== errors.lastIndexOf(error)) {
+            finalErrorSet.push(VALIDATOR_LOOKUP[error].messagePlural);
+        }
+        else {
+            finalErrorSet.push(error);
+        }
+    });
+    return ko.utils.arrayGetDistinctValues(finalErrorSet);
 };
 
 /**
@@ -370,17 +382,7 @@ var Page = function(schemaPage, schemaData) {
             return Boolean(errors);
         });
 
-        var errorSet = ko.utils.arrayGetDistinctValues(errors);
-        var finalErrorSet = [];
-        $.each(errorSet, function(_, error) {
-            if (errors.indexOf(error) !== errors.lastIndexOf(error)) {
-                finalErrorSet.push(VALIDATOR_LOOKUP[error].messagePlural);
-            }
-            else {
-                finalErrorSet.push(error);
-            }
-        });
-        return finalErrorSet;
+        return ko.utils.arrayGetDistinctValues(errors);
     }, {deferEvaluation: true});
 
     self.hasValidationInfo = ko.computed(function() {
@@ -677,10 +679,6 @@ Draft.prototype.registerWithoutReview = function() {
         }
     });
 };
-Draft.prototype.onRegisterFail = bootbox.alert.bind(null, {
-    title: 'Registration failed',
-    message: language.registerFail
-});
 Draft.prototype.register = function(url, data) {
     var self = this;
 
@@ -693,9 +691,20 @@ Draft.prototype.register = function(url, data) {
             }
         })
         .fail(function() {
-            self.onRegisterFail();
+            bootbox.alert({
+                title: 'Registration failed',
+                message: language.registerFail,
+                callback: function() {
+                    $osf.unblock();
+                    if (self.urls.registrations) {
+                        window.location.assign(self.urls.registrations);
+                    }
+                }
+            });
         })
-        .always($osf.unblock);
+        .always(function() {
+            $osf.unblock();
+        });
     return request;
 };
 Draft.prototype.submitForReview = function() {
@@ -901,7 +910,7 @@ RegistrationEditor.prototype.init = function(draft) {
             return self.draft().updated;
         }
         else {
-            return 'never';            
+            return 'never';
         }
     });
 
@@ -1058,9 +1067,11 @@ RegistrationEditor.prototype.submit = function() {
             });
             request.fail(function(xhr, status, error) {
                 Raven.captureMessage('Could not submit draft registration', {
-                    url: url,
-                    textStatus: status,
-                    error: error
+                    extra: {
+                        url: url,
+                        textStatus: status,
+                        error: error
+                    }
                 });
                 $osf.growl('Error submitting for review', language.submitForReviewFail);
             });
@@ -1141,9 +1152,11 @@ RegistrationEditor.prototype.save = function() {
     }
     request.fail(function(xhr, status, error) {
         Raven.captureMessage('Could not save draft registration', {
-            url: self.urls.update.replace('{draft_pk}', self.draft().pk),
-            textStatus: status,
-            error: error
+            extra: {
+                url: self.urls.update.replace('{draft_pk}', self.draft().pk),
+                textStatus: status,
+                error: error
+            }
         });
         $osf.growl('Problem saving draft', 'There was a problem saving this draft. Please try again, and if the problem persists please contact ' + SUPPORT_LINK + '.');
     });
@@ -1270,9 +1283,11 @@ RegistrationManager.prototype.init = function() {
     });
     getSchemas.fail(function(xhr, status, error) {
         Raven.captureMessage('Could not load registration templates', {
-            url: self.urls.schemas,
-            textStatus: status,
-            error: error
+            extra: {
+                url: self.urls.schemas,
+                textStatus: status,
+                error: error
+            }
         });
         $osf.growl('Error loading registration templates', language.loadMetaSchemaFail);
     });
@@ -1291,9 +1306,11 @@ RegistrationManager.prototype.init = function() {
         });
         getDraftRegistrations.fail(function(xhr, status, error) {
             Raven.captureMessage('Could not load draft registrations', {
-                url: self.urls.list,
-                textStatus: status,
-                error: error
+                extra: {
+                    url: self.urls.list,
+                    textStatus: status,
+                    error: error
+                }
             });
             $osf.growl('Error loading draft registrations', language.loadDraftsFail);
         });
@@ -1344,9 +1361,11 @@ RegistrationManager.prototype.deleteDraft = function(draft) {
                         });
                     }).fail(function(xhr, status, err) {
                         Raven.captureMessage('Could not submit draft registration', {
-                            url: url,
-                            textStatus: status,
-                            error: err
+                            extra: {
+                                url: url,
+                                textStatus: status,
+                                error: err
+                            }
                         });
                         $osf.growl('Error deleting draft', language.deleteDraftFail);
                     });

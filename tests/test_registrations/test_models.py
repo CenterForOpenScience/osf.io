@@ -15,7 +15,7 @@ from tests.factories import (
     ProjectFactory, NodeLogFactory, WatchConfigFactory,
     NodeWikiFactory, RegistrationFactory, UnregUserFactory,
     ProjectWithAddonFactory, UnconfirmedUserFactory, CommentFactory, PrivateLinkFactory,
-    AuthUserFactory, DashboardFactory, FolderFactory,
+    AuthUserFactory, BookmarkCollectionFactory, CollectionFactory,
     NodeLicenseRecordFactory, DraftRegistrationFactory
 )
 from tests.test_registrations.base import RegistrationsTestBase
@@ -143,7 +143,7 @@ class TestDraftRegistrationApprovals(RegistrationsTestBase):
         self.draft.approval = self.approval
         self.draft.save()
 
-    @mock.patch('framework.tasks.handlers.enqueue_task')
+    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_on_complete_immediate_creates_registration_for_draft_initiator(self, mock_enquque):
         self.approval._on_complete(self.user)
 
@@ -152,7 +152,7 @@ class TestDraftRegistrationApprovals(RegistrationsTestBase):
         assert_true(registered_node.is_pending_registration)
         assert_equal(registered_node.registered_user, self.draft.initiator)
 
-    @mock.patch('framework.tasks.handlers.enqueue_task')
+    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_on_complete_embargo_creates_registration_for_draft_initiator(self, mock_enquque):
         end_date = dt.datetime.now() + dt.timedelta(days=366)  # <- leap year
         self.approval = DraftRegistrationApproval(

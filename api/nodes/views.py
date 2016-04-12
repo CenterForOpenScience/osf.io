@@ -47,11 +47,12 @@ from api.logs.serializers import NodeLogSerializer
 
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
-from website.models import Node, Pointer, Comment, Institution, NodeLog
+from website.models import Node, Pointer, Comment, NodeLog, Institution
 from website.files.models import StoredFileNode, FileNode, TrashedFileNode
 from website.files.models.dropbox import DropboxFile
 from framework.auth.core import User
 from website.util import waterbutler_api_url_for
+from api.base.utils import default_node_list_query, default_node_permission_query
 
 
 class NodeMixin(object):
@@ -70,7 +71,7 @@ class NodeMixin(object):
         )
         # Nodes that are folders/collections are treated as a separate resource, so if the client
         # requests a collection through a node endpoint, we return a 404
-        if node.is_folder or node.is_registration:
+        if node.is_collection or node.is_registration:
             raise NotFound
         # May raise a permission denied
         if check_object_permissions:
@@ -132,7 +133,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     OSF Node entities have the "nodes" `type`.
 
         name           type               description
-        ---------------------------------------------------------------------------------
+        =================================================================================
         title          string             title of project or component
         description    string             description of the node
         category       string             node category, must be one of the allowed values
@@ -141,7 +142,6 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         tags           array of strings   list of tags that describe the node
         registration   boolean            is this a registration?
         fork           boolean            is this node a fork of another node?
-        dashboard      boolean            is this node visible on the user dashboard?
         public         boolean            has this node been made publicly-visible?
 
     ##Links
@@ -184,10 +184,10 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
 
     + `view_only=<Str>` -- Allow users with limited access keys to access this node. Note that some keys are anonymous, so using the view_only key will cause user-related information to no longer serialize. This includes blank ids for users and contributors and missing serializer fields and relationships.
 
-    Nodes may be filtered by their `title`, `category`, `description`, `public`, `registration`, or `tags`.  `title`,
-    `description`, and `category` are string fields and will be filtered using simple substring matching.  `public` and
-    `registration` are booleans, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note
-    that quoting `true` or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
+    Nodes may be filtered by their `id`, `title`, `category`, `description`, `public`, `tags`, `date_created`, `date_modified`,
+    `root`, and `parent`.  Most are string fields and will be filtered using simple substring matching.  `public`
+    is a boolean, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note that quoting `true`
+    or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
 
     #This Request/Response
 
@@ -209,18 +209,10 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
-        base_query = (
-            Q('is_deleted', 'ne', True) &
-            Q('is_folder', 'ne', True) &
-            Q('is_registration', 'ne', True)
-        )
         user = self.request.user
-        permission_query = Q('is_public', 'eq', True)
-        if not user.is_anonymous():
-            permission_query = (permission_query | Q('contributors', 'eq', user._id))
-
-        query = base_query & permission_query
-        return query
+        base_query = default_node_list_query()
+        permissions_query = default_node_permission_query(user)
+        return base_query & permissions_query
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView
     def get_queryset(self):
@@ -327,7 +319,7 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
     OSF Node entities have the "nodes" `type`.
 
         name           type               description
-        ---------------------------------------------------------------------------------
+        =================================================================================
         title          string             title of project or component
         description    string             description of the node
         category       string             node category, must be one of the allowed values
@@ -336,7 +328,6 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
         tags           array of strings   list of tags that describe the node
         registration   boolean            has this project been registered?
         fork           boolean            is this node a fork of another node?
-        dashboard      boolean            is this node visible on the user dashboard?
         public         boolean            has this node been made publicly-visible?
 
     ##Relationships
@@ -466,7 +457,7 @@ class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bu
     `type` is "contributors"
 
         name           type     description
-        ------------------------------------------------------------------------------------------------------
+        ======================================================================================================
         bibliographic  boolean  Whether the user will be included in citations for this node. Default is true.
         permission     string   User permission level. Must be "read", "write", or "admin". Default is "write".
 
@@ -547,7 +538,7 @@ class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bu
 
     def get_default_queryset(self):
         node = self.get_node()
-        visible_contributors = node.visible_contributor_ids
+        visible_contributors = set(node.visible_contributor_ids)
         contributors = []
         for contributor in node.contributors:
             contributor.bibliographic = contributor._id in visible_contributors
@@ -619,7 +610,7 @@ class NodeContributorDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVi
     `type` is "contributors"
 
         name           type     description
-        ------------------------------------------------------------------------------------------------------
+        ======================================================================================================
         bibliographic  boolean  Whether the user will be included in citations for this node. Default is true.
         permission     string   User permission level. Must be "read", "write", or "admin". Default is "write".
 
@@ -730,20 +721,28 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
 
     Registrations have the "registrations" `type`.
 
-        name               type               description
-        ---------------------------------------------------------------------------------
-        title              string             title of the registered project or component
-        description        string             description of the registered node
-        category           string             node category, must be one of the allowed values
-        date_created       iso8601 timestamp  timestamp that the node was created
-        date_modified      iso8601 timestamp  timestamp when the node was last updated
-        tags               array of strings   list of tags that describe the registered node
-        fork               boolean            is this project a fork?
-        registration       boolean            has this project been registered?
-        dashboard          boolean            is this registered node visible on the user dashboard?
-        public             boolean            has this registration been made publicly-visible?
-        retracted          boolean            has this registration been retracted?
-        date_registered    iso8601 timestamp  timestamp that the registration was created
+        name                            type               description
+        =======================================================================================================
+        title                           string             Title of the registered project or component
+        description                     string             Description of the registered node
+        category                        string             Node category, must be one of the allowed values
+        date_created                    iso8601 timestamp  Timestamp that the node was created
+        date_modified                   iso8601 timestamp  Timestamp when the node was last updated
+        tags                            array of strings   List of tags that describe the registered node
+        current_user_permissions        array of strings   List of strings representing the permissions for the current user on this node
+        fork                            boolean            Is this project a fork?
+        registration                    boolean            Has this project been registered?
+        dashboard                       boolean            Is this registered node visible on the user dashboard?
+        public                          boolean            Has this registration been made publicly-visible?
+        retracted                       boolean            Has this registration been retracted?
+        date_registered                 iso8601 timestamp  Timestamp that the registration was created
+        embargo_end_date                iso8601 timestamp  When the embargo on this registration will be lifted (if applicable)
+        retraction_justification        string             Reasons for retracting the registration
+        pending_retraction              boolean            Is this registration pending retraction?
+        pending_registration_approval   boolean            Is this registration pending approval?
+        pending_embargo_approval        boolean            Is the associated Embargo awaiting approval by project admins?
+        registered_meta                 dictionary         registration supplementary information
+        registration_supplement         string             registration template
 
 
     ##Relationships
@@ -780,7 +779,7 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     # overrides ListAPIView
     # TODO: Filter out retractions by default
     def get_queryset(self):
-        nodes = self.get_node().node__registrations
+        nodes = self.get_node().registrations_all
         auth = get_user_auth(self.request)
         registrations = [node for node in nodes if node.can_view(auth)]
         return registrations
@@ -800,7 +799,7 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
     OSF Node entities have the "nodes" `type`.
 
         name           type               description
-        ---------------------------------------------------------------------------------
+        =================================================================================
         title          string             title of project or component
         description    string             description of the node
         category       string             node category, must be one of the allowed values
@@ -809,7 +808,6 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
         tags           array of strings   list of tags that describe the node
         registration   boolean            has this project been registered?
         fork           boolean            is this node a fork of another node?
-        dashboard      boolean            is this node visible on the user dashboard?
         public         boolean            has this node been made publicly-visible?
 
     ##Links
@@ -876,10 +874,7 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
-        return (
-            Q('is_deleted', 'ne', True) &
-            Q('is_folder', 'ne', True)
-        )
+        return default_node_list_query()
 
     # overrides ListBulkCreateJSONAPIView
     def get_queryset(self):
@@ -892,8 +887,7 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
         )
         nodes = Node.find(query)
         auth = get_user_auth(self.request)
-        children = [each for each in nodes if each.can_view(auth)]
-        return children
+        return sorted([each for each in nodes if each.can_view(auth)], key=lambda n: n.date_modified, reverse=True)
 
     # overrides ListBulkCreateJSONAPIView
     def perform_create(self, serializer):
@@ -1100,7 +1094,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
     ####File Entity
 
         name          type       description
-        -------------------------------------------------------------------------
+        =========================================================================
         name          string     name of the file
         path          string     unique identifier for this file entity for this
                                  project and storage provider. may not end with '/'
@@ -1124,7 +1118,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
     ####Folder Entity
 
         name          type    description
-        ----------------------------------------------------------------------
+        ======================================================================
         name          string  name of the folder
         path          string  unique identifier for this folder entity for this
                               project and storage provider. must end with '/'
@@ -1144,7 +1138,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
     found [here](/v2/#storage-providers).
 
         name          type               description
-        ---------------------------------------------------------------------------------------------------
+        ===================================================================================================
         name              string             name of the file or folder; used for display
         kind              string             "file" or "folder"
         path              string             same as for corresponding WaterButler entity
@@ -1221,13 +1215,12 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
         URL:          /links/upload
         Query Params: ?kind=file&name={new_file_name}
         Body (Raw):   <file data (not form-encoded)>
-        Success:      201 Created or 200 OK + new file representation
+        Success:      201 Created + new file representation
 
     To upload a file to a folder, issue a PUT request to the folder's `upload` link with the raw file data in the
     request body, and the `kind` and `name` query parameters set to `'file'` and the desired name of the file.  The
     response will contain a [WaterButler file entity](#file-entity) that describes the new file.  If a file with the
-    same name already exists in the folder, it will be considered a new version.  In this case, the response will be a
-    200 OK.
+    same name already exists in the folder, the server will return a 409 Conflict error response.
 
     ###Update Existing File (*file*)
 
@@ -1415,7 +1408,7 @@ class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     ####File Entity
 
         name          type       description
-        -------------------------------------------------------------------------
+        =========================================================================
         name          string     name of the file
         path          string     unique identifier for this file entity for this
                                  project and storage provider. may not end with '/'
@@ -1439,7 +1432,7 @@ class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     ####Folder Entity
 
         name          type    description
-        ----------------------------------------------------------------------
+        ======================================================================
         name          string  name of the folder
         path          string  unique identifier for this folder entity for this
                               project and storage provider. must end with '/'
@@ -1454,7 +1447,7 @@ class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     `type` is "files"
 
         name      type    description
-        ---------------------------------------------------------------------------------
+        =================================================================================
         name      string  name of the provider
         kind      string  type of this file/folder.  always "folder"
         path      path    relative path of this folder within the provider filesys. always "/"
@@ -1489,13 +1482,12 @@ class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
         URL:          /links/upload
         Query Params: ?kind=file&name={new_file_name}
         Body (Raw):   <file data (not form-encoded)>
-        Success:      201 Created or 200 OK + new file representation
+        Success:      201 Created + new file representation
 
     To upload a file to a folder, issue a PUT request to the folder's `upload` link with the raw file data in the
     request body, and the `kind` and `name` query parameters set to `'file'` and the desired name of the file.  The
     response will contain a [WaterButler file entity](#file-entity) that describes the new file.  If a file with the
-    same name already exists in the folder, it will be considered a new version.  In this case, the response will be a
-    200 OK.
+    same name already exists in the folder, the server will return a 409 Conflict error response.
 
     ##Query Params
 
@@ -1652,7 +1644,7 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMix
     * 'pointer_created': A Pointer is created
     * 'pointer_forked': A Pointer is forked
     * 'pointer_removed': A Pointer is removed
-    ---
+    ===
     * 'made_public': A Node is made public
     * 'made_private': A Node is made private
     * 'tag_added': A tag is added to a Node
@@ -1661,20 +1653,20 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMix
     * 'edit_description': A Node's description is changed
     * 'updated_fields': One or more of a Node's fields are changed
     * 'external_ids_added': An external identifier is added to a Node (e.g. DOI, ARK)
-    ---
+    ===
     * 'contributor_added': A Contributor is added to a Node
     * 'contributor_removed': A Contributor is removed from a Node
     * 'contributors_reordered': A Contributor's position is a Node's biliography is changed
     * 'permissions_update': A Contributor's permissions on a Node are changed
     * 'made_contributor_visible': A Contributor is made bibliographically visible on a Node
     * 'made_contributor_invisible': A Contributor is made bibliographically invisible on a Node
-    ---
+    ===
     * 'wiki_updated': A Node's wiki is updated
     * 'wiki_deleted': A Node's wiki is deleted
     * 'wiki_renamed': A Node's wiki is renamed
     * 'made_wiki_public': A Node's wiki is made public
     * 'made_wiki_private': A Node's wiki is made private
-    ---
+    ===
     * 'addon_added': An add-on is linked to a Node
     * 'addon_removed': An add-on is unlinked from a Node
     * 'addon_file_moved': A File in a Node's linked add-on is moved
@@ -1685,11 +1677,11 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMix
     * 'file_updated': A File is updated on a Node's linked add-on
     * 'file_removed': A File is removed from a Node's linked add-on
     * 'file_restored': A File is restored in a Node's linked add-on
-    ---
+    ===
     * 'comment_added': A Comment is added to some item
     * 'comment_removed': A Comment is removed from some item
     * 'comment_updated': A Comment is updated on some item
-    ---
+    ===
     * 'embargo_initiated': An embargoed Registration is proposed on a Node
     * 'embargo_approved': A proposed Embargo of a Node is approved
     * 'embargo_cancelled': A proposed Embargo of a Node is cancelled
@@ -1700,10 +1692,10 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMix
     * 'registration_initiated': A Registration of a Node is proposed
     * 'registration_approved': A proposed Registration is approved
     * 'registration_cancelled': A proposed Registration is cancelled
-    ---
+    ===
     * 'node_created': A Node is created (_deprecated_)
     * 'node_forked': A Node is forked (_deprecated_)
-    * 'node_removed': A Node is dele (_deprecated_)
+    * 'node_removed': A Node is deleted (_deprecated_)
 
    ##Log Attributes
 
@@ -1712,15 +1704,15 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMix
     OSF Log entities have the "logs" `type`.
 
         name           type                   description
-        ----------------------------------------------------------------------------
+        ============================================================================
         date           iso8601 timestamp      timestamp of Log creation
         action         string                 Log action (see list above)
 
     ##Relationships
 
-    ###Nodes
+    ###Node
 
-    A list of all Nodes this Log is added to.
+    The node this log belongs to.
 
     ###User
 
@@ -1789,7 +1781,7 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
     OSF comment entities have the "comments" `type`.
 
         name           type               description
-        ---------------------------------------------------------------------------------
+        =================================================================================
         content        string             content of the comment
         date_created   iso8601 timestamp  timestamp that the comment was created
         date_modified  iso8601 timestamp  timestamp when the comment was last updated
@@ -1892,9 +1884,6 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
                 commented_files.append(comment.root_target)
 
         for root_target in commented_files:
-            if root_target.referent.provider == 'dropbox':
-                root_target = DropboxFile.load(root_target._id)
-
             if root_target.referent.provider == 'osfstorage':
                 try:
                     StoredFileNode.find(
@@ -1904,10 +1893,12 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
                     )
                 except NoResultsFound:
                     Comment.update(Q('root_target', 'eq', root_target), data={'root_target': None})
-                    del root_target.referent.node.commented_files[root_target._id]
-
             else:
-                url = waterbutler_api_url_for(self.get_node()._id, root_target.referent.provider, root_target.referent.path, meta=True)
+                referent = root_target.referent
+                if referent.provider == 'dropbox':
+                    # referent.path is the absolute path for the db file, but wb requires the relative path
+                    referent = DropboxFile.load(root_target.referent._id)
+                url = waterbutler_api_url_for(self.get_node()._id, referent.provider, referent.path, meta=True)
                 waterbutler_request = requests.get(
                     url,
                     cookies=self.request.COOKIES,
@@ -1948,7 +1939,7 @@ class NodeInstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin
     OSF Institutions have the "institutions" `type`.
 
         name           type               description
-        -------------------------------------------------------------------------
+        =========================================================================
         name           string             title of the institution
         id             string             unique identifier in the OSF
         logo_path      string             a path to the institution's static logo

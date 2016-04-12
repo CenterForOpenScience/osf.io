@@ -3,9 +3,9 @@
 import mailchimp
 
 from framework import sentry
-from framework.tasks import app
+from framework.celery_tasks import app
 from framework.auth.core import User
-from framework.tasks.handlers import queued_task
+from framework.celery_tasks.handlers import queued_task
 from framework.auth.signals import user_confirmed
 
 from framework.transactions.context import transaction
@@ -15,7 +15,9 @@ from website import settings
 
 def get_mailchimp_api():
     if not settings.MAILCHIMP_API_KEY:
-        raise RuntimeError("An API key is required to connect to Mailchimp.")
+        raise mailchimp.InvalidApiKeyError(
+            "An API key is required to connect to Mailchimp."
+        )
     return mailchimp.Mailchimp(settings.MAILCHIMP_API_KEY)
 
 

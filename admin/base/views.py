@@ -1,9 +1,11 @@
+from __future__ import unicode_literals
+
 from django.contrib import messages
 from django.contrib.auth import views
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from django.utils.http import urlsafe_base64_decode
-from django.views.generic import FormView
+from django.views.generic import FormView, DetailView
 from django.views.defaults import page_not_found
 
 from admin.common_auth.models import MyUser
@@ -41,30 +43,13 @@ class GuidFormView(FormView):
     template_name = None
     object_type = None
 
-    def get_guid_object(self):
-        raise NotImplementedError
-
     def __init__(self):
         self.guid = None
         super(GuidFormView, self).__init__()
 
-    def get(self, request, *args, **kwargs):
-        try:
-            return super(GuidFormView, self).get(request, args, kwargs)
-        except AttributeError:
-            return page_not_found(self.request)
-
     def get_context_data(self, **kwargs):
-        self.guid = self.request.GET.get('guid', None)
-        guid_object = None
-        if self.guid is not None:
-            try:
-                guid_object = self.get_guid_object()
-            except AttributeError:
-                raise
         kwargs.setdefault('view', self)
         kwargs.setdefault('form', self.get_form())
-        kwargs.setdefault('guid_object', guid_object)
         return kwargs
 
     def form_valid(self, form):
@@ -74,3 +59,19 @@ class GuidFormView(FormView):
     @property
     def success_url(self):
         raise NotImplementedError
+
+
+class GuidView(DetailView):
+    def get(self, request, *args, **kwargs):
+        try:
+            return super(GuidView, self).get(request, *args, **kwargs)
+        except AttributeError:
+            return page_not_found(
+                request,
+                AttributeError(
+                    '{} with id "{}" not found.'.format(
+                        self.context_object_name.title(),
+                        kwargs.get('spam_id')
+                    )
+                )
+            )

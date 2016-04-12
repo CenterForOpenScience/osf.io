@@ -189,9 +189,11 @@ var LicensePicker = oop.extend(ChangeMessageMixin, {
         self.changeMessage('There was a problem updating your license. Please try again.', 'text-danger', 2500);
 
         Raven.captureMessage('Error fetching user profile', {
-            url: self.saveUrl,
-            status: status,
-            error: error
+            extra: {
+                url: self.saveUrl,
+                status: status,
+                error: error
+            }
         });
     },
     /**
