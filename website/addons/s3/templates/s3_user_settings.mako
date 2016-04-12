@@ -6,7 +6,7 @@
     <%include file="s3_credentials_modal.mako"/>
 
     <h4 class="addon-title">
-        <img class="addon-icon" src=${addon_icon_url}></img>
+        <img class="addon-icon" src=${addon_icon_url}>
         {{ properName }}
         <small>
             <a href="#s3InputCredentials" data-toggle="modal" class="pull-right text-primary">Connect Account</a>

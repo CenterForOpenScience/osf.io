@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import httplib as http
 
-import markupsafe
 from modularodm import fields
 
 from framework.auth.decorators import Auth

@@ -44,7 +44,7 @@ def _get_folders(node_addon, folder_id):
     client = DropboxClient(node_addon.external_account.oauth_key)
     file_not_found = HTTPError(http.NOT_FOUND, data={
         'message_short': 'File not found',
-        'message_long':'The Dropbox file you requested could not be found.'
+        'message_long': 'The Dropbox file you requested could not be found.'
     })
 
     max_retry_error = HTTPError(http.REQUEST_TIMEOUT, data={

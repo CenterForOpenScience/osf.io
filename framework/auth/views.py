@@ -3,7 +3,6 @@ import datetime
 import httplib as http
 
 from flask import request
-import markupsafe
 
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
@@ -30,7 +29,6 @@ from website import security
 from website.models import User
 from website.util import web_url_for
 from website.util.sanitize import strip_html
-from website.settings import FORGOT_PASSWORD_MINIMUM_TIME
 
 
 @collect_auth
@@ -82,10 +80,10 @@ def forgot_password_post():
         if user_obj:
             #TODO: Remove this rate limiting and replace it with something that doesn't write to the User model
             now = datetime.datetime.utcnow()
-            last_attempt = user_obj.forgot_password_last_post or now - datetime.timedelta(seconds=FORGOT_PASSWORD_MINIMUM_TIME)
+            last_attempt = user_obj.forgot_password_last_post or now - datetime.timedelta(seconds=settings.FORGOT_PASSWORD_MINIMUM_TIME)
             user_obj.forgot_password_last_post = now
             time_since_last_attempt = now - last_attempt
-            if time_since_last_attempt.seconds >= FORGOT_PASSWORD_MINIMUM_TIME:
+            if time_since_last_attempt.seconds >= settings.FORGOT_PASSWORD_MINIMUM_TIME:
                 user_obj.verification_key = security.random_string(20)
                 user_obj.save()
                 reset_link = "http://{0}{1}".format(

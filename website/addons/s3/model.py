@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import markupsafe
 from modularodm import fields
 
 from framework.auth.core import Auth

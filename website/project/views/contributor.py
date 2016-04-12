@@ -636,7 +636,6 @@ def claim_user_form(auth, **kwargs):
             user.verification_key = security.random_string(20)
             user.save()
             # Authenticate user and redirect to project page
-            node = Node.load(pid)
             status.push_status_message(language.CLAIMED_CONTRIBUTOR,
                                        kind='success',
                                        trust=True)
