@@ -264,7 +264,7 @@ utils.loadRawNormalized = function(result){
         unwrapSuccess: function(data) {
             var unwrapped = {};
             unwrapped.raw = data.raw.doc;
-            unwrapped.rawfiletype = data.raw..filetype;
+            unwrapped.rawfiletype = data.raw.filetype;
             unwrapped.normalized = data.normalized;
 
             return unwrapped;
