@@ -557,10 +557,15 @@ class NodeInstitutionsRelationshipSerializer(ser.Serializer):
             new_institutions=validated_data['data']
         )
 
+        for inst in add:
+            if inst not in user.affiliated_institutions:
+                raise exceptions.PermissionDenied
+
         for inst in remove:
             node.remove_affiliated_institution(inst, user)
         for inst in add:
             node.add_affiliated_institution(inst, user)
+        node.save()
 
         return self.make_instance_obj(node)
 
@@ -577,7 +582,12 @@ class NodeInstitutionsRelationshipSerializer(ser.Serializer):
             raise RelationshipPostMakesNoChanges
 
         for inst in add:
+            if inst not in user.affiliated_institutions:
+                raise exceptions.PermissionDenied
+
+        for inst in add:
             node.add_affiliated_institution(inst, user)
+        node.save()
 
         return self.make_instance_obj(node)
 

@@ -50,6 +50,7 @@ from api.nodes.permissions import (
     ContributorDetailPermissions,
     ReadOnlyIfRegistration,
     ExcludeRetractions,
+    AdminOrPublicForRelationshipInstitutions,
 )
 from api.logs.serializers import NodeLogSerializer
 
@@ -2050,6 +2051,7 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        AdminOrPublicForRelationshipInstitutions
     )
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]

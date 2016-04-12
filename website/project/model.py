@@ -3520,21 +3520,25 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             )
         return True
 
-    def add_affiliated_institution(self, inst, user):
+    def add_affiliated_institution(self, inst, user, save=False):
         if not user.is_affiliated_with_institution(inst):
             raise UserNotAffiliatedError('User is not affiliated with {}'.format(inst.name))
         self.primary_institution = inst
         if inst not in self.affiliated_institutions:
             self.affiliated_institutions.append(inst)
+        if save:
+            self.save()
         return True
 
-    def remove_affiliated_institution(self, inst, user):
+    def remove_affiliated_institution(self, inst, user, save=False):
         if not user.is_affiliated_with_institution(inst):
             raise UserNotAffiliatedError('User is not affiliated with {}'.format(inst.name))
         if inst == self.primary_institution:
             self.primary_institution = None  # TODO: Return false so it doesnt allow removal if its the only (or primary) institution
         if inst in self.affiliated_institutions:
             self.affiliated_institutions.remove(inst)
+        if save:
+            self.save()
         return True
 
 

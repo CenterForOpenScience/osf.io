@@ -103,6 +103,16 @@ class ContributorOrPublicForRelationshipPointers(permissions.BasePermission):
                     break
             return has_pointer_auth
 
+class AdminOrPublicForRelationshipInstitutions(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        assert isinstance(obj, dict)
+        auth = get_user_auth(request)
+        node = obj['self']
+
+        if request.method in permissions.SAFE_METHODS:
+            return node.can_view(auth)
+        else:
+            return node.can_edit(auth)
 
 class ReadOnlyIfRegistration(permissions.BasePermission):
     """Makes PUT and POST forbidden for registrations."""
