@@ -439,7 +439,7 @@ var MyProjects = {
                 var id = item.data.id;
                 if(!item.data.attributes.retracted){
                     var urlPrefix = item.data.attributes.registration ? 'registrations' : 'nodes';
-                    var url = $osf.apiV2Url(urlPrefix + '/' + id + '/logs/', { query : { 'page[size]' : 6, 'embed' : ['nodes', 'user', 'linked_node', 'template_node', 'contributors']}});
+                    var url = $osf.apiV2Url(urlPrefix + '/' + id + '/logs/', { query : { 'page[size]' : 6, 'embed' : ['original_node', 'user', 'linked_node', 'template_node', 'contributors']}});
                     var promise = self.getLogs(url);
                     return promise;
                 }
@@ -539,17 +539,15 @@ var MyProjects = {
         self.unselectContributor = function (id){
             self.currentView().contributor.forEach(function (c, index, arr) {
                 if(c.data.id === id){
-                    arr.splice(index, 1);
-                    self.updateList();
+                    self.updateFilesData(c);
                 }
             });
         };
 
         self.unselectTag = function (tag){
-            self.currentView().tag.forEach(function (c, index, arr) {
-                if(c.data.tag === tag){
-                    arr.splice(index, 1);
-                    self.updateList();
+            self.currentView().tag.forEach(function (t, index, arr) {
+                if(t.data.tag === tag){
+                    self.updateFilesData(t);
                 }
             });
         };

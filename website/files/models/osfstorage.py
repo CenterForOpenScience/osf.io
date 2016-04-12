@@ -4,9 +4,11 @@ import os
 
 from modularodm import Q
 
+from framework.auth import Auth
 from framework.guid.model import Guid
 from website.files import exceptions
 from website.files.models.base import File, Folder, FileNode, FileVersion, TrashedFileNode
+from website.util import permissions
 
 
 __all__ = ('OsfStorageFile', 'OsfStorageFolder', 'OsfStorageFileNode')
@@ -101,6 +103,44 @@ class OsfStorageFileNode(FileNode):
         if self.is_checked_out:
             raise exceptions.FileNodeCheckedOutError()
         return super(OsfStorageFileNode, self).move_under(destination_parent, name)
+
+    def check_in_or_out(self, user, checkout, save=False):
+        """
+        Updates self.checkout with the requesting user or None,
+        iff user has permission to check out file or folder.
+        Adds log to self.node.
+
+
+        :param user:        User making the request
+        :param checkout:    Either the same user or None, depending on in/out-checking
+        :param save:        Whether or not to save the user
+        """
+        from website.project.model import NodeLog  # Avoid circular import
+
+        if (self.is_checked_out and self.checkout != user and permissions.ADMIN not in self.node.permissions.get(user._id, []))\
+           or permissions.WRITE not in self.node.get_permissions(user):
+            raise exceptions.FileNodeCheckedOutError()
+
+        action = NodeLog.CHECKED_OUT if checkout else NodeLog.CHECKED_IN
+        self.checkout = checkout
+
+        self.node.add_log(
+            action=action,
+            params={
+                'kind': self.kind,
+                'project': self.node.parent_id,
+                'node': self.node._id,
+                'urls': {
+                    # web_url_for unavailable -- called from within the API, so no flask app
+                    'download': "/project/{}/files/{}/{}/?action=download".format(self.node._id, self.provider, self._id),
+                    'view': "/project/{}/files/{}/{}".format(self.node._id, self.provider, self._id)},
+                'path': self.materialized_path
+            },
+            auth=Auth(user),
+        )
+
+        if save:
+            self.save()
 
     def save(self):
         self.path = ''
