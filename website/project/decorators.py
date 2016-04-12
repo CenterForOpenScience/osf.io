@@ -252,6 +252,30 @@ must_be_contributor_or_public = _must_be_contributor_factory(True)
 must_be_contributor_or_public_but_not_anonymized = _must_be_contributor_factory(include_public=True, include_view_only_anon=False)
 
 
+def must_be_contributor_even_if_public(func):
+    """Decorator that verifies whether user is a contributor even if the node is public
+
+    :returns: Decorator function
+    :raises: http.Forbidden if user is not contributor and the node is public
+
+    """
+
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        _inject_nodes(kwargs)
+        node = kwargs['node']
+
+        kwargs['auth'] = Auth.from_kwargs(request.args.to_dict(), kwargs)
+        user = kwargs['auth'].user
+
+        if not node.is_contributor(user):
+            raise HTTPError(http.FORBIDDEN)
+
+        return func(*args, **kwargs)
+
+    return wrapped
+
+
 def must_have_addon(addon_name, model):
     """Decorator factory that ensures that a given addon has been added to
     the target node. The decorated function will throw a 404 if the required
