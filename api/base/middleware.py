@@ -33,8 +33,6 @@ from framework.transactions.handlers import (
 )
 from website import models
 from .api_globals import api_globals
-from api.base import settings as api_settings
-
 
 class MongoConnectionMiddleware(object):
     """MongoDB Connection middleware."""

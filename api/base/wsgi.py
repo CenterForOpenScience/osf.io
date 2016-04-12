@@ -7,7 +7,6 @@ For more information on this file, see
 https://docs.djangoproject.com/en/1.8/howto/deployment/wsgi/
 """
 from website import settings
-from api.base import settings as api_settings
 
 if not settings.DEBUG_MODE:
     from gevent import monkey
