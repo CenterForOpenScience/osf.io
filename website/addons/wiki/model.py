@@ -182,10 +182,12 @@ class NodeWikiPage(GuidStoredObject, Commentable):
     # For Comment API compatibility
     @property
     def target_type(self):
+        """The object "type" used in the OSF v2 API."""
         return 'wiki'
 
     @property
     def root_target_page(self):
+        """The comment page type associated with NodeWikiPages."""
         return 'wiki'
 
     @property
@@ -194,6 +196,7 @@ class NodeWikiPage(GuidStoredObject, Commentable):
         return key not in self.node.wiki_pages_current
 
     def belongs_to_node(self, node_id):
+        """Check whether the wiki is attached to the specified node."""
         return self.node._id == node_id
 
     # used by django and DRF - use v1 url since there are no v2 wiki routes

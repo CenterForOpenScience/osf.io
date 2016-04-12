@@ -192,13 +192,16 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
 
     @property
     def target_type(self):
+        """The object "type" used in the OSF v2 API."""
         return 'comments'
 
     @property
     def root_target_page(self):
+        """The page type associated with the object/Comment.root_target."""
         return None
 
     def belongs_to_node(self, node_id):
+        """Check whether the comment is attached to the specified node."""
         return self.node._id == node_id
 
     # used by django and DRF
@@ -916,13 +919,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     # For Comment API compatibility
     @property
     def target_type(self):
+        """The object "type" used in the OSF v2 API."""
         return 'nodes'
 
     @property
     def root_target_page(self):
+        """The comment page type associated with Nodes."""
         return Comment.OVERVIEW
 
     def belongs_to_node(self, node_id):
+        """Check whether this node matches the specified node."""
         return self._id == node_id
 
     @property

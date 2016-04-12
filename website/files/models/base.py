@@ -80,10 +80,12 @@ class TrashedFileNode(StoredObject, Commentable):
     # For Comment API compatibility
     @property
     def target_type(self):
+        """The object "type" used in the OSF v2 API."""
         return 'files'
 
     @property
     def root_target_page(self):
+        """The comment page type associated with TrashedFileNodes."""
         return 'files'
 
     @property
@@ -91,6 +93,7 @@ class TrashedFileNode(StoredObject, Commentable):
         return True
 
     def belongs_to_node(self, node_id):
+        """Check whether the file is attached to the specified node."""
         return self.node._id == node_id
 
     def restore(self, recursive=True, parent=None):
@@ -200,10 +203,12 @@ class StoredFileNode(StoredObject, Commentable):
     # For Comment API compatibility
     @property
     def target_type(self):
+        """The object "type" used in the OSF v2 API."""
         return 'files'
 
     @property
     def root_target_page(self):
+        """The comment page type associated with StoredFileNodes."""
         return 'files'
 
     @property
@@ -212,6 +217,7 @@ class StoredFileNode(StoredObject, Commentable):
             return False
 
     def belongs_to_node(self, node_id):
+        """Check whether the file is attached to the specified node."""
         return self.node._id == node_id
 
     # used by django and DRF
