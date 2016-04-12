@@ -659,7 +659,7 @@ var MyProjects = {
             self.users = {};
 
             self.filteredData().forEach(function(item) {
-                var contributors = lodashGet(item, 'embeds.contributors.data', [])
+                var contributors = lodashGet(item, 'embeds.contributors.data', []);
 
                 if (contributors) {
                     for(var i = 0; i < contributors.length; i++) {
