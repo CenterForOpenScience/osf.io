@@ -4091,7 +4091,7 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
         parent_registration.registered_from.add_log(
             action=NodeLog.EMBARGO_CANCELLED,
             params={
-                'node': parent_registration._id,
+                'node': parent_registration.registered_from_id,
                 'registration': parent_registration._id,
                 'embargo_id': self._id,
             },
@@ -4221,7 +4221,7 @@ class Retraction(EmailApprovableSanction):
         parent_registration.registered_from.add_log(
             action=NodeLog.RETRACTION_CANCELLED,
             params={
-                'node': parent_registration._id,
+                'node': parent_registration.registered_from_id,
                 'registration': parent_registration._id,
                 'retraction_id': self._id,
             },
@@ -4246,7 +4246,7 @@ class Retraction(EmailApprovableSanction):
             parent_registration.registered_from.add_log(
                 action=NodeLog.EMBARGO_CANCELLED,
                 params={
-                    'node': parent_registration._id,
+                    'node': parent_registration.registered_from_id,
                     'registration': parent_registration._id,
                     'embargo_id': parent_registration.embargo._id,
                 },
@@ -4392,7 +4392,7 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
         registered_from.add_log(
             action=NodeLog.REGISTRATION_APPROVAL_CANCELLED,
             params={
-                'node': register._id,
+                'node': registered_from._id,
                 'registration': register._id,
                 'registration_approval_id': self._id,
             },
