@@ -7,9 +7,9 @@ from tests.factories import InstitutionFactory, AuthUserFactory, NodeFactory
 
 from api.base.settings.defaults import API_BASE
 
-class TestNodeRelationshipInstitution(ApiTestCase):
+class TestNodeRelationshipInstitutions(ApiTestCase):
     def setUp(self):
-        super(TestNodeRelationshipInstitution, self).setUp()
+        super(TestNodeRelationshipInstitutions, self).setUp()
         self.user = AuthUserFactory()
         self.institution1 = InstitutionFactory()
         self.institution2 = InstitutionFactory()
@@ -146,10 +146,9 @@ class TestNodeRelationshipInstitution(ApiTestCase):
 
     def test_remove_institutions_with_no_permissions(self):
         res = self.app.put_json_api(
-            self.node_institution_url,
+            self.node_institutions_url,
             {'data': []},
-            expect_errors=True,
-            auth=self.user.auth
+            expect_errors=True
         )
 
         assert_equal(res.status_code, 403)
@@ -165,8 +164,24 @@ class TestNodeRelationshipInstitution(ApiTestCase):
             auth=self.user.auth
         )
 
-        assert_equal(res.status_code, 204)
+        assert_equal(res.status_code, 200)
         self.node.reload()
         assert_equal(self.node.affiliated_institutions, [])
+
+    def test_using_put_making_no_changes_returns_204(self):
+        self.node.affiliated_institutions.append(self.institution1)
+        self.node.save()
+        assert_in(self.institution1, self.node.affiliated_institutions)
+
+        res = self.app.put_json_api(
+            self.node_institutions_url,
+            {'data': [self.institution1._id]},
+            auth=self.user.auth
+        )
+
+        assert_equal(res.status_code, 204)
+        self.node.reload()
+        assert_in(self.institution1, self.node.affiliated_institutions)
+
 
 
