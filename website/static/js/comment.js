@@ -123,7 +123,7 @@ BaseComment.prototype.setupToolTips = function(elm) {
 
 BaseComment.prototype.fetch = function() {
     var self = this;
-    var setUnread = getTargetType(self) !== 'comments' && !osfHelpers.urlParams().view_only && self.author.id !== '';
+    var setUnread = self.getTargetType() !== 'comments' && !osfHelpers.urlParams().view_only && self.author.id !== '';
     if (self.comments().length === 0) {
         var urlParams = osfHelpers.urlParams();
         var query = 'embed=user';
@@ -181,7 +181,8 @@ BaseComment.prototype.configureCommentsVisibility = function() {
     }
 };
 
-var getTargetType = function(self) {
+BaseComment.prototype.getTargetType = function() {
+    var self = this;
     if (self.id() === window.contextVars.node.id) {
         return 'nodes';
     } else if (self.id() === self.$root.rootId() && self.page() === FILES) {
@@ -219,7 +220,7 @@ BaseComment.prototype.submitReply = function() {
                     'relationships': {
                         'target': {
                             'data': {
-                                'type': getTargetType(self),
+                                'type': self.getTargetType(),
                                 'id': self.id() === window.contextVars.node.id ? window.contextVars.node.id : self.id()
                             }
                         }
@@ -276,7 +277,7 @@ var CommentModel = function(data, $parent, $root) {
     if (window.contextVars.node.anonymous) {
         self.author = {
             'id': null,
-            'url': '',
+            'urls': {'profile': ''},
             'fullname': 'A User',
             'gravatarUrl': ''
         };
@@ -284,7 +285,7 @@ var CommentModel = function(data, $parent, $root) {
         var userData = data.embeds.user.data;
         self.author = {
             'id': userData.id,
-            'url': userData.links.html,
+            'urls': {'profile': userData.links.html},
             'fullname': userData.attributes.full_name,
             'gravatarUrl': userData.links.profile_image
         };
@@ -627,7 +628,7 @@ CommentListModel.prototype.initListeners = function() {
 };
 
 var onOpen = function(page, rootId, nodeApiUrl, currentUserId) {
-    if (osfHelpers.urlParams().view_only ||currentUserId === '') {
+    if (osfHelpers.urlParams().view_only || !currentUserId) {
         return null;
     }
     var timestampUrl = nodeApiUrl + 'comments/timestamps/';
@@ -659,12 +660,7 @@ var onOpen = function(page, rootId, nodeApiUrl, currentUserId) {
  *      fileId: StoredFileNode._id,
  *      canComment: User.canComment,
  *      hasChildren: Node.hasChildren, 
- *      currentUser: {
- *          id: User._id,
- *          url: User.url,
- *          fullname: User.fullname,
- *          gravatarUrl: User.profile_image_url
- *      }
+ *      currentUser: window.contextVars.currentUser
  * }
  */
 var init = function(commentLinkSelector, commentPaneSelector, options) {
