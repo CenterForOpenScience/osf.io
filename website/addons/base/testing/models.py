@@ -181,6 +181,7 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         with mock_auth(self.user):
             self.user_settings.revoke_oauth_access(self.external_account)
 
+        self.node_settings.reload()
         assert_false(self.node_settings.has_auth)
         assert_false(self.node_settings.complete)
 
@@ -290,7 +291,7 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         node_settings.save()
 
         assert_true(node_settings.has_auth)
-        assert_equal(node_settings.user_settings, user_settings)
+        assert_equal(node_settings.user_settings._id, user_settings._id)
         # A log was saved
         last_log = node_settings.owner.logs[-1]
         assert_equal(last_log.action, '{0}_node_authorized'.format(self.short_name))
@@ -348,7 +349,7 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         clone, message = self.node_settings.after_fork(
             node=self.node, fork=fork, user=self.user_settings.owner
         )
-        assert_equal(clone.user_settings, self.user_settings)
+        assert_equal(clone.user_settings._id, self.user_settings._id)
 
     def test_after_fork_by_unauthorized_user(self):
         fork = ProjectFactory()
@@ -548,6 +549,7 @@ class OAuthCitationsNodeSettingsTestSuiteMixin(OAuthAddonNodeSettingsTestSuiteMi
     def test_fork_by_authorizer(self, mock_push_status):
         fork = self.node.fork_node(auth=Auth(user=self.node.creator))
 
+        self.user_settings.reload()
         assert_true(fork.get_addon(self.short_name).has_auth)
         assert_true(self.user_settings.verify_oauth_access(fork, self.external_account))
 
