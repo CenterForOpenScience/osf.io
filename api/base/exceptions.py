@@ -83,6 +83,10 @@ def json_api_exception_handler(exc, context):
     return response
 
 
+class NotImplementedError(APIException):
+    status_code = status.HTTP_501_NOT_IMPLEMENTED
+    default_detail = _('This view is not yet implemented.')
+
 class ServiceUnavailableError(APIException):
     status_code = status.HTTP_503_SERVICE_UNAVAILABLE
     default_detail = _('Service is unavailable at this time.')
