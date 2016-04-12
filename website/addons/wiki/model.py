@@ -199,6 +199,9 @@ class NodeWikiPage(GuidStoredObject, Commentable):
         """Check whether the wiki is attached to the specified node."""
         return self.node._id == node_id
 
+    def get_extra_log_params(self, comment):
+        return {'wiki': {'name': self.page_name, 'url': comment.get_comment_page_url()}}
+
     # used by django and DRF - use v1 url since there are no v2 wiki routes
     def get_absolute_url(self):
         return '{}wiki/{}/'.format(self.node.absolute_url, self.page_name)

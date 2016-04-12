@@ -96,6 +96,9 @@ class TrashedFileNode(StoredObject, Commentable):
         """Check whether the file is attached to the specified node."""
         return self.node._id == node_id
 
+    def get_extra_log_params(self, comment):
+        return {'file': {'name': self.page_name, 'url': comment.get_comment_page_url()}}
+
     def restore(self, recursive=True, parent=None):
         """Recreate a StoredFileNode from the data in this object
         Will re-point all guids and finally remove itself
@@ -219,6 +222,9 @@ class StoredFileNode(StoredObject, Commentable):
     def belongs_to_node(self, node_id):
         """Check whether the file is attached to the specified node."""
         return self.node._id == node_id
+
+    def get_extra_log_params(self, comment):
+        return {'file': {'name': self.page_name, 'url': comment.get_comment_page_url()}}
 
     # used by django and DRF
     def get_absolute_url(self):

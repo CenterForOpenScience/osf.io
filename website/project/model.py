@@ -280,10 +280,7 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
             raise ValueError('Invalid root target.')
         comment.page = page
 
-        if comment.page == Comment.FILES:
-            log_dict['file'] = {'name': comment.root_target.referent.name, 'url': comment.get_comment_page_url()}
-        elif comment.page == Comment.WIKI:
-            log_dict['wiki'] = {'name': comment.root_target.referent.page_name, 'url': comment.get_comment_page_url()}
+        log_dict.update(comment.root_target.referent.get_extra_log_params(comment))
 
         comment.save()
 
@@ -308,11 +305,7 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
             'user': self.user._id,
             'comment': self._id,
         }
-        if self.page == Comment.FILES:
-            log_dict['file'] = {'name': self.root_target.referent.name, 'url': self.get_comment_page_url()}
-        elif self.page == Comment.WIKI:
-            log_dict['wiki'] = {'name': self.root_target.referent.page_name, 'url': self.get_comment_page_url()}
-
+        log_dict.update(self.root_target.referent.get_extra_log_params(self))
         self.content = content
         self.modified = True
         self.date_modified = datetime.datetime.utcnow()
@@ -336,10 +329,7 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
             'comment': self._id,
         }
         self.is_deleted = True
-        if self.page == Comment.FILES:
-            log_dict['file'] = {'name': self.root_target.referent.name, 'url': self.get_comment_page_url()}
-        elif self.page == Comment.WIKI:
-            log_dict['wiki'] = {'name': self.root_target.referent.page_name, 'url': self.get_comment_page_url()}
+        log_dict.update(self.root_target.referent.get_extra_log_params(self))
         self.date_modified = datetime.datetime.utcnow()
         if save:
             self.save()
@@ -361,10 +351,7 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
             'user': self.user._id,
             'comment': self._id,
         }
-        if self.page == Comment.FILES:
-            log_dict['file'] = {'name': self.root_target.referent.name, 'url': self.get_comment_page_url()}
-        elif self.page == Comment.WIKI:
-            log_dict['wiki'] = {'name': self.root_target.referent.page_name, 'url': self.get_comment_page_url()}
+        log_dict.update(self.root_target.referent.get_extra_log_params(self))
         self.date_modified = datetime.datetime.utcnow()
         if save:
             self.save()

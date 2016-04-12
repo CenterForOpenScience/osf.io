@@ -19,3 +19,8 @@ class Commentable(object):
     def belongs_to_node(self, node_id):
         """Check whether an object (e.g. file, wiki, comment) is attached to the specified node."""
         raise NotImplementedError
+
+    def get_extra_log_params(self, comment):
+        """Return extra data to pass as `params` to `Node.add_log` when a new comment is
+        created, edited, deleted or restored."""
+        return {}
