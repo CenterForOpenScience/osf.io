@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    <title>OSF Sales Analytics</title>
+{% endblock title %}
+
+{% block bottom_js %}
+    <script src="{% static 'public/js/metrics-sales-analytics.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+    <h1>Sales Analytics</h1>
+    <h3>Average User Session Length</h3>
+    <div id='keen-chart-average-session-user'>...</div>
+    <h3>Average MAU Session Length (MAU)</h3>
+    <div id='keen-chart-average-session-mau'>...</div>
+    <h3>Average User/MAU Session Length History (12 Months)</h3>
+    <div id='keen-chart-average-session-history'>Coming Soon ...</div>
+{% endblock content %}
