@@ -268,11 +268,12 @@ function _formatDataforPO(item) {
     if (contributorsData){
         item.embeds.contributors.data.forEach(function(c){
             var attr;
-            if (c.embeds.users.data) {
-                attr = c.embeds.users.data.attributes;
+            var users = lodashGet(c, 'embeds.users.data', null);
+            if (users) {
+                attr = users.attributes;
             }
             else {
-                attr = c.embeds.users.errors[0].meta;
+                attr = users.errors[0].meta;
             }
             item.contributors += attr.full_name + ' ' + attr.middle_names + ' ' + attr.given_name + ' ' + attr.family_name + ' ' ;
 
