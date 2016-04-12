@@ -40,7 +40,7 @@ def main():
     emails = get_emails_since(settings.TABULATE_EMAILS_TIME_DELTA)
     sio = StringIO()
     utils.make_csv(sio, emails, ['affiliation', 'count'])
-    utils.send_file(app, settings.TABULATE_EMAILS_FILE_NAME, settings.TABULATE_EMAILS_CONTENT_TYPE, sio, node, user)
+    utils.send_file(settings.TABULATE_EMAILS_FILE_NAME, settings.TABULATE_EMAILS_CONTENT_TYPE, sio, node, user)
 
 
 if __name__ == '__main__':
