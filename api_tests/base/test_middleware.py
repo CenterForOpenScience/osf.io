@@ -94,3 +94,18 @@ class TestCorsMiddleware(MiddlewareTestCase):
             self.middleware.process_request(request)
             processed = self.middleware.process_response(request, response)
         assert_not_in('Access-Control-Allow-Origin', response)
+
+    def test_non_institution_preflight_request_requesting_authorization_header_gets_cors_headers(self):        
+        url = api_v2_url('users/me/')
+        domain = urlparse("https://dinosaurs.sexy")
+        request = self.request_factory.options(
+            url,
+            HTTP_ORIGIN=domain.geturl(),
+            HTTP_ACCESS_CONTROL_REQUEST_METHOD='GET',
+            HTTP_ACCESS_CONTROL_REQUEST_HEADERS='authorization'
+        )
+        response = {}
+        self.middleware.process_request(request)
+        processed = self.middleware.process_response(request, response)
+        assert_equal(response['Access-Control-Allow-Origin'], domain.geturl())
+
