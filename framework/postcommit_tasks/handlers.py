@@ -22,7 +22,6 @@ def postcommit_after_request(response, base_status_error_code=500):
         return response
     try:
         if postcommit_queue():
-            pcq = postcommit_queue()
             threads = [gevent.spawn(func, *args) for func, args in postcommit_queue()]
             gevent.joinall(threads)
     except AttributeError:
