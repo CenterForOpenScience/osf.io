@@ -15,15 +15,15 @@
 %endif
 
 %if campaign == "institution" and enable_institutions:
-    <div class="text-center m-t-lg">
-        <h3>OSF for Institutions </h3>
-        <hr>
-        <p>
-        If your institution has partnered with the Open Science Framework, please
+<div class="text-center m-t-lg">
+    <h3>OSF for Institutions </h3>
+    <hr>
+    <p>
+      If your institution has partnered with the Open Science Framework, please
         select its name below and sign in with your institutional credentials.
-        </p>
-        <p> If you do not currently have an OSF account, this will create one. By creating an account you agree to our <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md">Terms</a> and that you have read our <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>, including our information on <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md#f-cookies">Cookie Use</a>.</p>
-    </div>
+    </p>
+    <p> If you do not currently have an OSF account, this will create one. By creating an account you agree to our <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md">Terms</a> and that you have read our <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>, including our information on <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md#f-cookies">Cookie Use</a>.</p>
+</div>
 %endif
 %if existing_user:
     <div class="row m-t-xl existing-user-container">
@@ -40,7 +40,7 @@
             </div>
             <div class="form-group">
                 <div class="col-sm-offset-3 col-sm-9">
-                    <button data-bind="click: instLogin" class="btn btn-success pull-right">Sign in</button>
+                    <button data-bind="click: instLogin, css: {disabled: loading}" class="btn btn-success pull-right">Sign in</button>
                 </div>
             </div>
             <div class="form-group" style="padding-top: 15px">
@@ -252,12 +252,22 @@
                 </div>
             </div>
         </form>
+    </div>
+
+</div>
+
         </div>
     </div>
     %else:
         <div id="signUpScope"></div>
     %endif
 %endif
+            %if redirect_url:
+            <div class="text-center m-b-sm col-sm-12" style="padding-top: 15px"> <a href="${domain}login/?campaign=institution&redirect_url=${redirect_url}">Login through your institution  <i class="fa fa-arrow-right"></i></a></div>
+        %else:
+            <div class="text-center m-b-sm col-sm-12" style="padding-top: 15px"> <a href="${domain}login/?campaign=institution">Login through your institution  <i class="fa fa-arrow-right"></i></a></div>
+        %endif
+    %endif
 </%def>
 
 <%def name="javascript_bottom()">
@@ -265,6 +275,7 @@
     <script type="text/javascript">
         window.contextVars = $.extend(true, {}, window.contextVars, {
             'campaign': ${campaign or '' | sjson, n},
+            'institution_redirect': ${institution_redirect or '' | sjson, n},
             'existing_user': ${existing_user or '' | sjson, n}
         });
     </script>

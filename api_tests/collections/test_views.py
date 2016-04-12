@@ -7,7 +7,7 @@ from website.util.sanitize import strip_html
 from api.base.settings.defaults import API_BASE
 from tests.base import ApiTestCase
 from tests.factories import (
-    FolderFactory,
+    CollectionFactory,
     NodeFactory,
     ProjectFactory,
     AuthUserFactory
@@ -25,8 +25,8 @@ class TestCollectionList(ApiTestCase):
         super(TestCollectionList, self).setUp()
         self.user_one = AuthUserFactory()
         self.user_two = AuthUserFactory()
-        self.deleted_one = FolderFactory(creator=self.user_one, is_deleted=True)
-        self.collection_one = FolderFactory(creator=self.user_one)
+        self.deleted_one = CollectionFactory(creator=self.user_one, is_deleted=True)
+        self.collection_one = CollectionFactory(creator=self.user_one)
 
         self.url = '/{}collections/'.format(API_BASE)
 
@@ -168,6 +168,63 @@ class TestCollectionCreate(ApiTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'Title cannot exceed 200 characters.')
 
+    def test_create_bookmark_collection(self):
+        collection = {
+            'data': {
+                'type': 'collections',
+                'attributes': {
+                    'title': 'Bookmarks',
+                    'bookmarks': True,
+                }
+            }
+        }
+        res = self.app.post_json_api(self.url, collection, auth=self.user_one.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['title'], 'Bookmarks')
+        assert_true(res.json['data']['attributes']['bookmarks'])
+
+    def test_cannot_create_multiple_bookmark_collection(self):
+        collection = {
+            'data': {
+                'type': 'collections',
+                'attributes': {
+                    'title': 'Bookmarks',
+                    'bookmarks': True,
+                }
+            }
+        }
+        res = self.app.post_json_api(self.url, collection, auth=self.user_one.auth)
+        assert_equal(res.status_code, 201)
+        res = self.app.post_json_api(self.url, collection, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Each user cannot have more than one Bookmark collection.')
+
+    def test_create_bookmark_collection_with_wrong_title(self):
+        collection = {
+            'data': {
+                'type': 'collections',
+                'attributes': {
+                    'title': 'Not Bookmarks',
+                    'bookmarks': True,
+                }
+            }
+        }
+        res = self.app.post_json_api(self.url, collection, auth=self.user_one.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['title'], 'Bookmarks')
+        assert_true(res.json['data']['attributes']['bookmarks'])
+
+    def test_create_bookmark_collection_with_no_title(self):
+        collection = {
+            'data': {
+                'type': 'collections',
+                'attributes': {
+                    'bookmarks': True,
+                }
+            }
+        }
+        res = self.app.post_json_api(self.url, collection, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
 
 class TestCollectionFiltering(ApiTestCase):
 
@@ -175,9 +232,9 @@ class TestCollectionFiltering(ApiTestCase):
         super(TestCollectionFiltering, self).setUp()
         self.user_one = AuthUserFactory()
         self.user_two = AuthUserFactory()
-        self.collection_one = FolderFactory(title="Collection One", creator=self.user_one)
-        self.collection_two = FolderFactory(title="Collection Two", creator=self.user_one)
-        self.collection_three = FolderFactory(title="Three", creator=self.user_one)
+        self.collection_one = CollectionFactory(title="Collection One", creator=self.user_one)
+        self.collection_two = CollectionFactory(title="Collection Two", creator=self.user_one)
+        self.collection_three = CollectionFactory(title="Three", creator=self.user_one)
 
         self.url = "/{}collections/".format(API_BASE)
 
@@ -267,7 +324,7 @@ class TestCollectionDetail(ApiTestCase):
         self.user_one = AuthUserFactory()
         self.user_two = AuthUserFactory()
 
-        self.collection = FolderFactory(title="Test collection", creator=self.user_one)
+        self.collection = CollectionFactory(title="Test collection", creator=self.user_one)
         self.url = '/{}collections/{}/'.format(API_BASE, self.collection._id)
 
     def test_do_not_return_collection_details_logged_out(self):
@@ -309,7 +366,7 @@ class CollectionCRUDTestCase(ApiTestCase):
         self.title = 'Cool Collection'
         self.new_title = 'Super Cool Collection'
 
-        self.collection = FolderFactory(title=self.title, creator=self.user)
+        self.collection = CollectionFactory(title=self.title, creator=self.user)
         self.url = '/{}collections/{}/'.format(API_BASE, self.collection._id)
         self.fake_url = '/{}collections/{}/'.format(API_BASE, '12345')
 
@@ -631,7 +688,7 @@ class TestCollectionNodeLinksList(ApiTestCase):
         super(TestCollectionNodeLinksList, self).setUp()
         self.user_one = AuthUserFactory()
         self.user_two = AuthUserFactory()
-        self.collection = FolderFactory(creator=self.user_one)
+        self.collection = CollectionFactory(creator=self.user_one)
         self.project = ProjectFactory(is_public=False, creator=self.user_one)
         self.public_project = ProjectFactory(is_public=True, creator=self.user_two)
         self.private_project = ProjectFactory(is_public=False, creator=self.user_two)
@@ -680,8 +737,8 @@ class TestCollectionNodeLinkCreate(ApiTestCase):
         self.user_one = AuthUserFactory()
         self.user_two = AuthUserFactory()
 
-        self.collection = FolderFactory(creator=self.user_one)
-        self.collection_two = FolderFactory(creator=self.user_one)
+        self.collection = CollectionFactory(creator=self.user_one)
+        self.collection_two = CollectionFactory(creator=self.user_one)
 
         self.project = ProjectFactory(is_public=False, creator=self.user_one)
         self.public_project = ProjectFactory(is_public=True, creator=self.user_one)
@@ -819,7 +876,7 @@ class TestCollectionNodeLinkDetail(ApiTestCase):
         super(TestCollectionNodeLinkDetail, self).setUp()
         self.user_one = AuthUserFactory()
         self.user_two = AuthUserFactory()
-        self.collection = FolderFactory(creator=self.user_one)
+        self.collection = CollectionFactory(creator=self.user_one)
         self.project = ProjectFactory(creator=self.user_one, is_public=False)
         self.project_public = ProjectFactory(creator=self.user_one, is_public=False)
         self.node_link = self.collection.add_pointer(self.project, auth=Auth(self.user_one), save=True)
@@ -865,7 +922,7 @@ class TestCollectionNodeLinkDetail(ApiTestCase):
         assert_in(self.url, url)
 
     def test_delete_node_link_no_permissions_for_target_node(self):
-        pointer_project = FolderFactory(creator=self.user_two)
+        pointer_project = CollectionFactory(creator=self.user_two)
         pointer = self.collection.add_pointer(pointer_project, auth=Auth(self.user_one), save=True)
         assert_in(pointer, self.collection.nodes)
         url = '/{}collections/{}/node_links/{}/'.format(API_BASE, self.collection._id, pointer._id)
@@ -927,7 +984,7 @@ class TestCollectionNodeLinkDetail(ApiTestCase):
 
     # Regression test for https://openscience.atlassian.net/browse/OSF-4322
     def test_delete_link_that_is_not_linked_to_correct_node(self):
-        collection = FolderFactory(creator=self.user_one)
+        collection = CollectionFactory(creator=self.user_one)
         # The node link belongs to a different project
         res = self.app.delete(
             '/{}nodes/{}/node_links/{}/'.format(API_BASE, collection._id, self.node_link._id),
@@ -947,8 +1004,8 @@ class TestReturnDeletedCollection(ApiTestCase):
         self.user = AuthUserFactory()
         self.non_contrib = AuthUserFactory()
 
-        self.deleted = FolderFactory(is_deleted=True, creator=self.user, title='This collection has been deleted')
-        self.collection = FolderFactory(creator=self.user, title='A boring collection')
+        self.deleted = CollectionFactory(is_deleted=True, creator=self.user, title='This collection has been deleted')
+        self.collection = CollectionFactory(creator=self.user, title='A boring collection')
 
         self.new_title = 'This deleted node has been edited'
         self.deleted_url = '/{}collections/{}/'.format(API_BASE, self.deleted._id)
@@ -1104,11 +1161,11 @@ class TestCollectionBulkUpdate(ApiTestCase):
         self.title = 'Cool Project'
         self.new_title = 'Super Cool Project'
 
-        self.collection = FolderFactory(title=self.title,
-                                        creator=self.user)
+        self.collection = CollectionFactory(title=self.title,
+                                            creator=self.user)
 
-        self.collection_two = FolderFactory(title=self.title,
-                                             creator=self.user)
+        self.collection_two = CollectionFactory(title=self.title,
+                                                creator=self.user)
 
         self.collection_payload = {
             'data': [
@@ -1284,10 +1341,10 @@ class TestNodeBulkDelete(ApiTestCase):
         super(TestNodeBulkDelete, self).setUp()
         self.user_one = AuthUserFactory()
         self.user_two = AuthUserFactory()
-        self.collection_one = FolderFactory(title="Collection One", creator=self.user_one)
-        self.collection_two = FolderFactory(title="Collection Two", creator=self.user_one)
-        self.collection_three = FolderFactory(title="Collection Three", creator=self.user_one)
-        self.collection_user_two = FolderFactory(title="Collection User Two", creator=self.user_two)
+        self.collection_one = CollectionFactory(title="Collection One", creator=self.user_one)
+        self.collection_two = CollectionFactory(title="Collection Two", creator=self.user_one)
+        self.collection_three = CollectionFactory(title="Collection Three", creator=self.user_one)
+        self.collection_user_two = CollectionFactory(title="Collection User Two", creator=self.user_two)
 
         self.url = "/{}collections/".format(API_BASE)
         self.project_one_url = '/{}collections/{}/'.format(API_BASE, self.collection_one._id)
@@ -1402,7 +1459,7 @@ class TestCollectionLinksBulkCreate(ApiTestCase):
         super(TestCollectionLinksBulkCreate, self).setUp()
         self.user = AuthUserFactory()
 
-        self.collection_one = FolderFactory(is_public=False, creator=self.user)
+        self.collection_one = CollectionFactory(is_public=False, creator=self.user)
         self.private_pointer_project = ProjectFactory(is_public=False, creator=self.user)
         self.private_pointer_project_two = ProjectFactory(is_public=False, creator=self.user)
 
@@ -1439,7 +1496,7 @@ class TestCollectionLinksBulkCreate(ApiTestCase):
         self.public_pointer_project_two = ProjectFactory(is_public=True, creator=self.user)
 
         self.user_two = AuthUserFactory()
-        self.user_two_collection = FolderFactory(creator=self.user_two)
+        self.user_two_collection = CollectionFactory(creator=self.user_two)
         self.user_two_project = ProjectFactory(is_public=True, creator=self.user_two)
         self.user_two_url = '/{}collections/{}/node_links/'.format(API_BASE, self.user_two_collection._id)
         self.user_two_payload = {'data': [{
@@ -1574,7 +1631,7 @@ class TestBulkDeleteCollectionNodeLinks(ApiTestCase):
     def setUp(self):
         super(TestBulkDeleteCollectionNodeLinks, self).setUp()
         self.user = AuthUserFactory()
-        self.collection = FolderFactory(creator=self.user)
+        self.collection = CollectionFactory(creator=self.user)
         self.pointer_project = ProjectFactory(creator=self.user, is_public=True)
         self.pointer_project_two = ProjectFactory(creator=self.user, is_public=True)
 
@@ -1592,7 +1649,7 @@ class TestBulkDeleteCollectionNodeLinks(ApiTestCase):
 
         self.user_two = AuthUserFactory()
 
-        self.collection_two = FolderFactory(creator=self.user)
+        self.collection_two = CollectionFactory(creator=self.user)
         self.collection_two_pointer_project = ProjectFactory(is_public=True, creator=self.user)
         self.collection_two_pointer_project_two = ProjectFactory(is_public=True, creator=self.user)
 
@@ -1722,17 +1779,18 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
         self.user = AuthUserFactory()
         self.user2 = AuthUserFactory()
         self.auth = Auth(self.user)
-        self.collection = FolderFactory(creator=self.user)
+        self.collection = CollectionFactory(creator=self.user)
         self.admin_node = NodeFactory(creator=self.user)
         self.contributor_node = NodeFactory(creator=self.user2)
         self.contributor_node.add_contributor(self.user, auth=Auth(self.user2))
         self.contributor_node.save()
         self.other_node = NodeFactory()
-        self.linked_node = NodeFactory(creator=self.user)
-        self.collection.add_pointer(self.linked_node, auth=self.auth)
-        self.public_collection = FolderFactory(is_public=True, creator=self.user2)
-        self.public_collection.add_pointer(self.linked_node, auth=Auth(self.user2))
+        self.private_node = NodeFactory(creator=self.user)
         self.public_node = NodeFactory(is_public=True)
+        self.collection.add_pointer(self.private_node, auth=self.auth)
+        self.public_collection = CollectionFactory(is_public=True, creator=self.user2)
+        self.public_collection.add_pointer(self.private_node, auth=Auth(self.user2))
+        self.public_collection.add_pointer(self.public_node, auth=Auth(self.user2))
         self.url = '/{}collections/{}/relationships/linked_nodes/'.format(API_BASE, self.collection._id)
         self.public_url = '/{}collections/{}/relationships/linked_nodes/'.format(API_BASE, self.public_collection._id)
 
@@ -1750,13 +1808,20 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
 
         assert_in(self.collection.linked_nodes_self_url, res.json['links']['self'])
         assert_in(self.collection.linked_nodes_related_url, res.json['links']['html'])
-        assert_equal(res.json['data'][0]['id'], self.linked_node._id)
+        assert_equal(res.json['data'][0]['id'], self.private_node._id)
 
     def test_get_public_relationship_linked_nodes_logged_out(self):
         res = self.app.get(self.public_url)
 
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data'][0]['id'], self.linked_node._id)
+        assert_equal(len(res.json['data']), 1)
+        assert_equal(res.json['data'][0]['id'], self.public_node._id)
+
+    def test_get_public_relationship_linked_nodes_logged_in(self):
+        res = self.app.get(self.public_url, auth=self.user.auth)
+
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']), 2)
 
     def test_get_private_relationship_linked_nodes_logged_out(self):
         res = self.app.get(self.url, expect_errors=True)
@@ -1773,7 +1838,7 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
 
         ids = [data['id'] for data in res.json['data']]
         assert_in(self.contributor_node._id, ids)
-        assert_in(self.linked_node._id, ids)
+        assert_in(self.private_node._id, ids)
 
     def test_post_public_node(self):
         res = self.app.post_json_api(
@@ -1785,7 +1850,7 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
 
         ids = [data['id'] for data in res.json['data']]
         assert_in(self.public_node._id, ids)
-        assert_in(self.linked_node._id, ids)
+        assert_in(self.private_node._id, ids)
 
     def test_post_private_node(self):
         res = self.app.post_json_api(
@@ -1802,7 +1867,7 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
 
         ids = [data['id'] for data in res.json['data']]
         assert_not_in(self.other_node._id, ids)
-        assert_in(self.linked_node._id, ids)
+        assert_in(self.private_node._id, ids)
 
     def test_post_mixed_nodes(self):
         res = self.app.post_json_api(
@@ -1820,11 +1885,11 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
         ids = [data['id'] for data in res.json['data']]
         assert_not_in(self.other_node._id, ids)
         assert_not_in(self.contributor_node._id, ids)
-        assert_in(self.linked_node._id, ids)
+        assert_in(self.private_node._id, ids)
 
     def test_post_node_already_linked(self):
         res = self.app.post_json_api(
-            self.url, self.payload([self.linked_node._id]),
+            self.url, self.payload([self.private_node._id]),
             auth=self.user.auth
         )
 
@@ -1840,7 +1905,7 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
 
         ids = [data['id'] for data in res.json['data']]
         assert_in(self.contributor_node._id, ids)
-        assert_not_in(self.linked_node._id, ids)
+        assert_not_in(self.private_node._id, ids)
 
     def test_put_private_node(self):
         res = self.app.put_json_api(
@@ -1857,7 +1922,7 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
 
         ids = [data['id'] for data in res.json['data']]
         assert_not_in(self.other_node._id, ids)
-        assert_in(self.linked_node._id, ids)
+        assert_in(self.private_node._id, ids)
 
     def test_put_mixed_nodes(self):
         res = self.app.put_json_api(
@@ -1875,7 +1940,7 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
         ids = [data['id'] for data in res.json['data']]
         assert_not_in(self.other_node._id, ids)
         assert_not_in(self.contributor_node._id, ids)
-        assert_in(self.linked_node._id, ids)
+        assert_in(self.private_node._id, ids)
 
     def test_delete_with_put_empty_array(self):
         self.collection.add_pointer(self.admin_node, auth=self.auth)
@@ -1891,7 +1956,7 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
     def test_delete_one(self):
         self.collection.add_pointer(self.admin_node, auth=self.auth)
         res = self.app.delete_json_api(
-            self.url, self.payload([self.linked_node._id]),
+            self.url, self.payload([self.private_node._id]),
             auth=self.user.auth,
         )
         assert_equal(res.status_code, 204)
@@ -1900,12 +1965,12 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
 
         ids = [data['id'] for data in res.json['data']]
         assert_in(self.admin_node._id, ids)
-        assert_not_in(self.linked_node._id, ids)
+        assert_not_in(self.private_node._id, ids)
 
     def test_delete_multiple(self):
         self.collection.add_pointer(self.admin_node, auth=self.auth)
         res = self.app.delete_json_api(
-            self.url, self.payload([self.linked_node._id, self.admin_node._id]),
+            self.url, self.payload([self.private_node._id, self.admin_node._id]),
             auth=self.user.auth,
         )
         assert_equal(res.status_code, 204)
@@ -1927,7 +1992,7 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
         assert_equal(len(res.json['data']), number_of_links)
 
     def test_access_other_collection(self):
-        other_collection = FolderFactory(creator=self.user2)
+        other_collection = CollectionFactory(creator=self.user2)
         url = '/{}collections/{}/relationships/linked_nodes/'.format(API_BASE, other_collection._id)
         res = self.app.get(
             url, auth=self.user.auth,
@@ -1991,7 +2056,7 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
 
     def test_put_public_nodes_relationships_logged_in(self):
         res = self.app.put_json_api(
-                self.public_url, self.payload([self.linked_node._id]),
+                self.public_url, self.payload([self.private_node._id]),
                 auth=self.user.auth, expect_errors=True
         )
 
@@ -2007,7 +2072,7 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
 
     def test_delete_public_nodes_relationships_logged_in(self):
         res = self.app.delete_json_api(
-                self.public_url, self.payload([self.linked_node._id]),
+                self.public_url, self.payload([self.private_node._id]),
                 auth=self.user.auth, expect_errors=True
         )
 
@@ -2029,10 +2094,95 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
         assert_equal(set(node_links_id), set(relationship_id))
 
     def test_attempt_to_add_collection_to_collection(self):
-        other_collection = NodeFactory(creator=self.user, is_folder=True)
+        other_collection = CollectionFactory(creator=self.user)
         res = self.app.post_json_api(
             self.url, self.payload([other_collection._id]),
             auth=self.user.auth, expect_errors=True
         )
 
         assert_equal(res.status_code, 404)
+
+
+class TestCollectionLinkedNodes(ApiTestCase):
+    def setUp(self):
+        super(TestCollectionLinkedNodes, self).setUp()
+        self.user = AuthUserFactory()
+        self.auth = Auth(self.user)
+        self.collection = CollectionFactory(creator=self.user)
+        self.linked_node = NodeFactory(creator=self.user)
+        self.linked_node2 = NodeFactory(creator=self.user)
+        self.public_node = NodeFactory(is_public=True, creator=self.user)
+        self.collection.add_pointer(self.linked_node, auth=self.auth)
+        self.collection.add_pointer(self.linked_node2, auth=self.auth)
+        self.collection.add_pointer(self.public_node, auth=self.auth)
+        self.collection.save()
+        self.url = '/{}collections/{}/linked_nodes/'.format(API_BASE, self.collection._id)
+        self.node_ids = [pointer.node._id for pointer in self.collection.nodes_pointer]
+
+    def test_linked_nodes_returns_everything(self):
+        res = self.app.get(self.url, auth=self.user.auth)
+
+        assert_equal(res.status_code, 200)
+        nodes_returned = [linked_node['id'] for linked_node in res.json['data']]
+        assert_equal(len(nodes_returned), len(self.node_ids))
+
+        for node_id in self.node_ids:
+            assert_in(node_id, nodes_returned)
+
+    def test_linked_nodes_only_return_viewable_nodes(self):
+        user = AuthUserFactory()
+        collection = CollectionFactory(creator=user)
+        self.linked_node.add_contributor(user, auth=self.auth, save=True)
+        self.linked_node2.add_contributor(user, auth=self.auth, save=True)
+        self.public_node.add_contributor(user, auth=self.auth, save=True)
+        collection.add_pointer(self.linked_node, auth=Auth(user))
+        collection.add_pointer(self.linked_node2, auth=Auth(user))
+        collection.add_pointer(self.public_node, auth=Auth(user))
+        collection.save()
+
+        res = self.app.get(
+            '/{}collections/{}/linked_nodes/'.format(API_BASE, collection._id),
+            auth=user.auth
+        )
+
+        assert_equal(res.status_code, 200)
+        nodes_returned = [linked_node['id'] for linked_node in res.json['data']]
+        assert_equal(len(nodes_returned), len(self.node_ids))
+
+        for node_id in self.node_ids:
+            assert_in(node_id, nodes_returned)
+
+        self.linked_node2.remove_contributor(user, auth=self.auth)
+        self.public_node.remove_contributor(user, auth=self.auth)
+
+        res = self.app.get(
+            '/{}collections/{}/linked_nodes/'.format(API_BASE, collection._id),
+            auth=user.auth
+        )
+        nodes_returned = [linked_node['id'] for linked_node in res.json['data']]
+        assert_equal(len(nodes_returned), len(self.node_ids) - 1)
+
+        assert_in(self.linked_node._id, nodes_returned)
+        assert_in(self.public_node._id, nodes_returned)
+        assert_not_in(self.linked_node2._id, nodes_returned)
+
+    def test_linked_nodes_doesnt_return_deleted_nodes(self):
+        self.linked_node.is_deleted = True
+        self.linked_node.save()
+        res = self.app.get(self.url, auth=self.user.auth)
+
+        assert_equal(res.status_code, 200)
+        nodes_returned = [linked_node['id'] for linked_node in res.json['data']]
+        assert_equal(len(nodes_returned), len(self.node_ids) - 1)
+
+        assert_not_in(self.linked_node._id, nodes_returned)
+        assert_in(self.linked_node2._id, nodes_returned)
+        assert_in(self.public_node._id, nodes_returned)
+
+    def test_attempt_to_return_linked_nodes_logged_out(self):
+        res = self.app.get(
+            self.url, auth=None,
+            expect_errors=True
+        )
+
+        assert_equal(res.status_code, 401)
