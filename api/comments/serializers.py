@@ -97,7 +97,7 @@ class CommentSerializer(JSONAPISerializer):
         return comment
 
     def get_target_type(self, obj):
-        if not getattr(obj.referent, 'target_type'):
+        if not getattr(obj.referent, 'target_type', None):
             raise InvalidModelValueError(
                 source={'pointer': '/data/relationships/target/links/related/meta/type'},
                 detail='Invalid comment target type.'
@@ -126,7 +126,7 @@ class CommentCreateSerializer(CommentSerializer):
 
     def get_target(self, node_id, target_id):
         target = Guid.load(target_id)
-        if not target or not getattr(target.referent, 'belongs_to_node'):
+        if not target or not getattr(target.referent, 'belongs_to_node', None):
             raise ValueError('Invalid comment target.')
         elif not target.referent.belongs_to_node(node_id):
             raise ValueError('Cannot post to comment target on another node.')
