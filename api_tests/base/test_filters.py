@@ -3,6 +3,8 @@ import datetime
 import re
 from dateutil import parser
 
+import json
+
 from nose.tools import *  # flake8: noqa
 
 from rest_framework import serializers as ser
@@ -10,6 +12,10 @@ from rest_framework import serializers as ser
 from tests.base import ApiTestCase
 
 from api.base.filters import FilterMixin
+
+from api.base.filters import ODMOrderingFilter
+
+import api.base.filters as filters 
 
 from api.base.exceptions import (
     InvalidFilterError,
@@ -33,6 +39,7 @@ class FakeSerializer(ser.Serializer):
 class FakeView(FilterMixin):
 
     serializer_class = FakeSerializer
+
 
 class TestFilterMixin(ApiTestCase):
 
@@ -222,3 +229,52 @@ class TestFilterMixin(ApiTestCase):
         field = FakeSerializer._declared_fields['float_field']
         value = self.view.convert_value(value, field)
         assert_equal(value, 42.0)
+
+
+
+class TestODMOrderingFilter(ApiTestCase):
+    def test_filter_queryset_fails(self):
+        class query:
+            title = ' '
+            def __init__(self, title):
+                self.title = title
+            def __str__(self):
+                return self.title
+        query_s = []
+        q1 = query('NewProj')
+        query_s.append((q1))
+        q2 = query('Zip')
+        query_s.append((q2))
+        q3 = query('Proj')
+        query_s.append((q3))
+        q4 = query('Activity')
+        query_s.append((q4))
+        sort_q = sorted(query_s, cmp=filters.sort_multiple(['-title']))
+        sortt = []
+        for i in sort_q:
+            sortt.append(str(i))
+        assert_equal((sortt) , ['Zip', 'Proj', 'NewProj', 'Activity'])
+    
+    def test_filter_queryset_duplicate_fails(self):
+        class query:
+            title = ' '
+            def __init__(self, title):
+                self.title = title
+            def __str__(self):
+                return self.title
+        query_s = []
+        q1 = query('NewProj')
+        query_s.append((q1))
+        q2 = query('Zip')
+        query_s.append((q2))
+        q3 = query('Activity')
+        query_s.append((q3))
+        q4 = query('Activity')
+        query_s.append((q4))
+        sort_q = sorted(query_s, cmp=filters.sort_multiple(['-title']))
+        sortt = []
+        for i in sort_q:
+            sortt.append(str(i))
+        assert_equal((sortt) , ['Zip', 'NewProj', 'Activity', 'Activity'])
+
+
