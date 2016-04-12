@@ -97,7 +97,7 @@ class TrashedFileNode(StoredObject, Commentable):
         return self.node._id == node_id
 
     def get_extra_log_params(self, comment):
-        return {'file': {'name': self.page_name, 'url': comment.get_comment_page_url()}}
+        return {'file': {'name': self.name, 'url': comment.get_comment_page_url()}}
 
     def restore(self, recursive=True, parent=None):
         """Recreate a StoredFileNode from the data in this object
@@ -224,7 +224,7 @@ class StoredFileNode(StoredObject, Commentable):
         return self.node._id == node_id
 
     def get_extra_log_params(self, comment):
-        return {'file': {'name': self.page_name, 'url': comment.get_comment_page_url()}}
+        return {'file': {'name': self.name, 'url': comment.get_comment_page_url()}}
 
     # used by django and DRF
     def get_absolute_url(self):
