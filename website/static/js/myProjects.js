@@ -270,12 +270,15 @@ function _formatDataforPO(item) {
             var attr;
             var users = lodashGet(c, 'embeds.users.data', null);
             if (users) {
-                attr = users.attributes;
+                if (users.errors) {
+                    attr = users.errors[0].meta;
+                } else {
+                    attr = users.attributes;
+                }
             }
-            else {
-                attr = users.errors[0].meta;
+            if (attr) {
+                item.contributors += attr.full_name + ' ' + attr.middle_names + ' ' + attr.given_name + ' ' + attr.family_name + ' ' ;
             }
-            item.contributors += attr.full_name + ' ' + attr.middle_names + ' ' + attr.given_name + ' ' + attr.family_name + ' ' ;
 
         });
     }
