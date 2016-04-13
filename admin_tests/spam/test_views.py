@@ -4,6 +4,8 @@ from django.test import RequestFactory
 from nose import tools as nt
 from datetime import datetime, timedelta
 
+from website.project.model import Comment
+
 from admin.common_auth.logs import OSFLogEntry
 from admin.spam.forms import ConfirmForm
 from tests.base import AdminTestCase
@@ -11,12 +13,18 @@ from tests.factories import CommentFactory, AuthUserFactory, ProjectFactory
 from admin_tests.utilities import setup_view, setup_form_view
 from admin_tests.factories import UserFactory
 
-from admin.spam.views import SpamList, UserSpamList, SpamDetail
+from admin.spam.views import (
+    SpamList,
+    UserSpamList,
+    SpamDetail,
+    EmailFormView,
+)
 
 
 class TestSpamListView(AdminTestCase):
     def setUp(self):
         super(TestSpamListView, self).setUp()
+        Comment.remove()
         self.project = ProjectFactory(is_public=True)
         self.user_1 = AuthUserFactory()
         self.user_2 = AuthUserFactory()
@@ -83,21 +91,25 @@ class TestSpamListView(AdminTestCase):
         nt.assert_list_equal(should_be, response_list)
 
     def test_get_context_data(self):
-        self.view.object_list = self.view.get_query_set()
+        self.view.object_list = self.view.get_queryset()
         res = self.view.get_context_data()
-
+        nt.assert_is_instance(res['spam'], list)
+        nt.assert_is_instance(res['spam'][0], dict)
+        nt.assert_equal(res['status'], '1')
+        nt.assert_equal(res['page_number'], 1)
 
 
 class TestSpamDetail(AdminTestCase):
     def setUp(self):
         super(TestSpamDetail, self).setUp()
         self.comment = CommentFactory()
+        self.comment.report_abuse(user=AuthUserFactory(), save=True,
+                                  category='spam')
         self.request = RequestFactory().post('/fake_path')
         self.request.user = UserFactory()
 
-    @mock.patch('admin.spam.views.SpamDetail.success_url')
-    def test_add_log(self, mock_success_url):
-        form_data = {'confirm': '2'}
+    def test_confirm_spam(self):
+        form_data = {'confirm': str(Comment.SPAM)}
         form = ConfirmForm(data=form_data)
         nt.assert_true(form.is_valid())
         view = SpamDetail()
@@ -107,17 +119,43 @@ class TestSpamDetail(AdminTestCase):
             view.form_valid(form)
         obj = OSFLogEntry.objects.latest(field_name='action_time')
         nt.assert_equal(obj.object_id, self.comment._id)
+        nt.assert_in('Confirmed SPAM:', obj.message())
 
     def test_confirm_ham(self):
-        pass
+        form_data = {'confirm': str(Comment.HAM)}
+        form = ConfirmForm(data=form_data)
+        nt.assert_true(form.is_valid())
+        view = SpamDetail()
+        view = setup_form_view(
+            view, self.request, form, spam_id=self.comment._id)
+        with transaction.atomic():
+            view.form_valid(form)
+        obj = OSFLogEntry.objects.latest(field_name='action_time')
+        nt.assert_equal(obj.object_id, self.comment._id)
+        nt.assert_in('Confirmed HAM:', obj.message())
 
     def test_get_context_data(self):
-        pass
+        view = SpamDetail()
+        view = setup_view(view, self.request, spam_id=self.comment._id)
+        res = view.get_context_data()
+        nt.assert_equal(res['status'], '1')
+        nt.assert_equal(res['page_number'], 1)
+        nt.assert_is_instance(res['comment'], dict)
+        nt.assert_equal(res['UNKNOWN'], Comment.UNKNOWN)
+        nt.assert_equal(res['SPAM'], Comment.SPAM)
+        nt.assert_equal(res['HAM'], Comment.HAM)
+        nt.assert_equal(res['FLAGGED'], Comment.FLAGGED)
 
 
 class TestEmailFormView(AdminTestCase):
     def setUp(self):
         super(TestEmailFormView, self).setUp()
+        self.comment = CommentFactory()
+        self.comment.report_abuse(user=AuthUserFactory(), save=True,
+                                  category='spam')
+        self.request = RequestFactory().post('/fake_path')
+        self.request.user = UserFactory()
+        self.view = EmailFormView()
 
     def test_get_context(self):
         pass
