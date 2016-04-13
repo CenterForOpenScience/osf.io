@@ -177,7 +177,7 @@ class TestViewProject(OsfTestCase):
         # pointer_project is included in count, but not folder
         assert_equal(result['node']['points'], 1)
 
-    def test_view_project_pending_registration_for_admin_user_does_contain_cancel_link(self):
+    def test_view_project_pending_registration_for_admin_contributor_does_contain_cancel_link(self):
         pending_reg = RegistrationFactory(project=self.node, archive=True)
         assert_true(pending_reg.is_pending_registration)
         result = _view_project(pending_reg, Auth(self.user))
@@ -186,7 +186,7 @@ class TestViewProject(OsfTestCase):
         assert_in('/?token=', result['node']['disapproval_link'])
         pending_reg.remove()
 
-    def test_view_project_pending_registration_for_admin_user_does_not_contain_cancel_link(self):
+    def test_view_project_pending_registration_for_write_contributor_does_not_contain_cancel_link(self):
         write_user = UserFactory()
         self.node.add_contributor(write_user, permissions=permissions.WRITE,
                                   auth=Auth(self.user), save=True)
