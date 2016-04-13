@@ -178,9 +178,12 @@ class TestNodeLogSerializers(OsfTestCase):
 
     def test_serialize_log(self):
         node = NodeFactory(category='hypothesis')
-        log = NodeLogFactory(params={'node': node._primary_key})
-        node.logs.append(log)
         node.save()
+        log = NodeLogFactory(
+                params={'node': node._id},
+                node=node,
+                original_node=node
+            )
         d = serialize_log(log)
         assert_equal(d['action'], log.action)
         assert_equal(d['node']['node_type'], 'component')
