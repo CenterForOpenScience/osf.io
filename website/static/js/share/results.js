@@ -112,7 +112,7 @@ var Description = {
                 ),
                 m('a.sr-only', {href: '#', onclick: showOnClick}, ctrl.showAll() ? 'See less' : 'See more')]);
         } else {
-            return m('p.readable', MathJax.Hub.Queue(['Typeset', MathJax.Hub]), result.description);
+            return m('p.readable', MathJax.Hub.Queue(['Typeset', MathJax.Hub]), result.description); // jshint ignore:line
         }
     }
 };
