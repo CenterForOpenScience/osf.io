@@ -536,6 +536,13 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         raise NotImplementedError()
 
     @property
+    def configured(self):
+        """Whether or not this addon has had a folder connected.
+        :rtype bool:
+        """
+        return self.complete
+
+    @property
     def has_auth(self):
         """Whether the node has added credentials for this addon."""
         return False
@@ -843,6 +850,13 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
                 node=self.owner,
                 external_account=self.external_account,
             )
+        )
+
+    @property
+    def configured(self):
+        return bool(
+            self.complete and
+            (self.folder_id or self.folder_name or self.folder_path)
         )
 
     @property
