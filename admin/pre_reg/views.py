@@ -1,10 +1,10 @@
-import functools
+from __future__ import unicode_literals
+
 import httplib as http
 import json
-import operator
 
-from django.contrib.auth.decorators import user_passes_test
-from django.core.paginator import Paginator, EmptyPage
+from django.views.generic import ListView, DetailView
+from django.views.defaults import page_not_found
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseBadRequest
 from django.http import JsonResponse
@@ -21,88 +21,66 @@ from admin.common_auth.logs import (
 from admin.pre_reg import serializers
 from admin.pre_reg.forms import DraftRegistrationForm
 from framework.exceptions import HTTPError
-from framework.mongo.utils import get_or_http_error
 from website.exceptions import NodeStateError
 from website.files.models import FileNode
 from website.project.model import MetaSchema, DraftRegistration
 
-get_draft_or_error = functools.partial(get_or_http_error, DraftRegistration)
+from admin.base.utils import PreregAdmin
 
 
-def get_prereg_drafts(user=None, filters=tuple()):
-    prereg_schema = MetaSchema.find_one(
-        Q('name', 'eq', 'Prereg Challenge') &
-        Q('schema_version', 'eq', 2)
-    )
-    query = (
-        Q('registration_schema', 'eq', prereg_schema) &
-        Q('approval', 'ne', None)
-    )
-    if user:
-        pass
-        # TODO: filter by assignee; this requires multiple levels of Prereg admins-
-        # one level that can see all drafts, and another than can see only the ones they're assigned.
-        # As a followup to this, we need to make sure this applies to approval/rejection/commenting endpoints
-        # query = query & Q('_metaschema_flags.assignee', 'eq', user._id)
-    return sorted(
-        DraftRegistration.find(query),
-        key=operator.attrgetter('approval.initiation_date')
-    )
+class DraftListView(PreregAdmin, ListView):
+    template_name = 'pre_reg/draft_list.html'
+    paginate_by = 10
+    paginate_orphans = 1
+    ordering = '-approval.initiation_date'
+    context_object_name = 'draft'
+
+    def get_queryset(self):
+        prereg_schema = MetaSchema.find_one(
+            Q('name', 'eq', 'Prereg Challenge') &
+            Q('schema_version', 'eq', 2)
+        )
+        query = (
+            Q('registration_schema', 'eq', prereg_schema) &
+            Q('approval', 'ne', None)
+        )
+        return DraftRegistration.find(query).sort(self.ordering)
+
+    def get_context_data(self, **kwargs):
+        query_set = kwargs.pop('object_list', self.object_list)
+        page_size = self.get_paginate_by(query_set)
+        paginator, page, query_set, is_paginated = self.paginate_queryset(
+            query_set, page_size)
+        return {
+            'drafts': [serializers.serialize_draft_registration(d, json_safe=False) for d in query_set],
+            'page': page,
+        }
 
 
-def is_in_prereg_group(user):
-    """Determines whether a user is in the prereg_group
-    :param user: User wanting access to prereg material
-    :return: True if prereg False if not
-    """
-    return user.is_in_group('prereg_group')
+class DraftDetailView(PreregAdmin, DetailView):
+    template_name = 'pre_reg/edit_draft_registration.html'
+    context_object_name = 'draft'
+
+    def get(self, request, *args, **kwargs):
+        try:
+            return super(DraftDetailView, self).get(request, *args, **kwargs)
+        except AttributeError:
+            return page_not_found(
+                request,
+                AttributeError(
+                    '{} with id "{}" not found.'.format(
+                        self.context_object_name.title(),
+                        kwargs.get('draft_pk')
+                    )
+                )
+            )
+
+    def get_object(self, queryset=None):
+        return serializers.serialize_draft_registration(
+            DraftRegistration.load(self.kwargs.get('draft_pk'))
+        )
 
 
-@user_passes_test(is_in_prereg_group)
-def prereg(request):
-    """Redirects to prereg page if user has prereg access
-    :param request: Current logged in user
-    :return: Redirect to prereg page with username, reviewers, and user obj
-    """
-    paginator = Paginator(get_prereg_drafts(user=request.user), 5)
-
-    try:
-        page_number = int(request.GET.get('page'))
-    except (TypeError, ValueError):
-        page_number = 1
-
-    page = paginator.page(page_number)
-
-    try:
-        drafts = [serializers.serialize_draft_registration(d, json_safe=False) for d in page]
-    except EmptyPage:
-        drafts = []
-
-    for draft in drafts:
-        draft['form'] = DraftRegistrationForm(draft)
-
-    context = {
-        'drafts': drafts,
-        'page': page,
-        'IMMEDIATE': serializers.IMMEDIATE,
-    }
-    return render(request, 'pre_reg/prereg.html', context)
-
-
-@user_passes_test(is_in_prereg_group)
-def view_draft(request, draft_pk):
-    """Redirects to prereg form review page if user has prereg access
-    :param draft_pk: Unique id for selected draft
-    :return: Redirect to prereg form review page with draft obj
-    """
-    draft = get_draft_or_error(draft_pk)
-    context = {
-        'draft': serializers.serialize_draft_registration(draft)
-    }
-    return render(request, 'pre_reg/edit_draft_registration.html', context)
-
-
-@user_passes_test(is_in_prereg_group)
 def view_file(request, node_id, provider, file_id):
     file = FileNode.load(file_id)
     wb_url = file.generate_waterbutler_url()
@@ -110,7 +88,6 @@ def view_file(request, node_id, provider, file_id):
 
 
 @csrf_exempt
-@user_passes_test(is_in_prereg_group)
 def approve_draft(request, draft_pk):
     """Approves current draft
     :param request: mostly for user
@@ -129,7 +106,6 @@ def approve_draft(request, draft_pk):
 
 
 @csrf_exempt
-@user_passes_test(is_in_prereg_group)
 def reject_draft(request, draft_pk):
     """Rejects current draft
     :param request: mostly for user

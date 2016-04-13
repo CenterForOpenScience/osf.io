@@ -21,3 +21,11 @@ class OSFAdmin(UserPassesTestMixin):
 
     def test_func(self):
         return self.request.user.is_authenticated() and self.request.user.is_in_group('osf_admin')
+
+
+class PreregAdmin(OSFAdmin):
+    """For testing for Prereg credentials of user."""
+    permission_denied_message = 'You are not in the Pre-reg admin group.'
+
+    def test_func(self):
+        return self.request.user.is_authenticated() and self.request.user.is_in_group('prereg_group')

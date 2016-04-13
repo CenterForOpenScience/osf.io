@@ -4,10 +4,10 @@ from django.contrib.auth.decorators import login_required as login
 from . import views
 
 urlpatterns = [
-    url(r'^$', views.prereg, name='prereg'),
+    url(r'^$', views.DraftListView.as_view(), name='prereg'),
     url(
         r'^drafts/(?P<draft_pk>[0-9a-z]+)/$',
-        login(views.view_draft),
+        views.DraftDetailView.as_view(),
         name='view_draft'
     ),
     url(
