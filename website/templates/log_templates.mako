@@ -258,6 +258,11 @@ to
 <a data-bind="attr: {href: params.file.url}, text: params.file.name"></a>
 in
 <!-- /ko -->
+<!-- ko if: params.wiki -->
+wiki page
+<a data-bind="attr: {href: params.wiki.url}, text: params.wiki.name"></a>
+in
+<!-- /ko -->
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
@@ -266,6 +271,11 @@ updated a comment
 on
 <!-- ko if: params.file -->
 <a data-bind="attr: {href: params.file.url}, text: params.file.name"></a>
+in
+<!-- /ko -->
+<!-- ko: params.wiki -->
+wiki page
+<a data-bind="attr: {href: params.wiki.url}, text: params.wiki.name"></a>
 in
 <!-- /ko -->
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
@@ -278,6 +288,11 @@ on
 <a data-bind="attr: {href: params.file.url}, text: params.file.name"></a>
 in
 <!-- /ko -->
+<!-- ko if: params.wiki -->
+wiki page
+<a data-bind="attr: {href: params.wiki.url}, text: params.wiki.name"></a>
+in
+<!-- /ko -->
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
@@ -286,6 +301,11 @@ restored a comment
 on
 <!-- ko if: params.file -->
 <a data-bind="attr: {href: params.file.url}, text: params.file.name"></a>
+in
+<!-- /ko -->
+<!-- ko if: params.wiki -->
+wiki page
+<a data-bind="attr: {href: params.wiki.url}, text: params.wiki.name"></a>
 in
 <!-- /ko -->
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>

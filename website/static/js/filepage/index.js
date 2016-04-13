@@ -498,12 +498,6 @@ var FileViewPage = {
 // Initialize file comment pane
 var $comments = $('.comments');
 if ($comments.length) {
-    var currentUser = {
-        id: window.contextVars.currentUser.id,
-        url: window.contextVars.currentUser.urls.profile,
-        fullname: window.contextVars.currentUser.fullname,
-        gravatarUrl: window.contextVars.currentUser.gravatarUrl
-    };
     var options = {
         nodeId: window.contextVars.node.id,
         nodeApiUrl: window.contextVars.node.urls.api,
@@ -513,7 +507,8 @@ if ($comments.length) {
         fileId: window.contextVars.file.id,
         canComment: window.contextVars.currentUser.canComment,
         hasChildren: window.contextVars.node.hasChildren,
-        currentUser: currentUser
+        currentUser: window.contextVars.currentUser,
+        pageTitle: window.contextVars.file.name
     };
     CommentModel.init('#commentsLink', '.comment-pane', options);
 }
