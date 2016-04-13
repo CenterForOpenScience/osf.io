@@ -1,5 +1,7 @@
 from nose.tools import *
 
+from framework.auth import Auth
+
 from tests.base import ApiTestCase
 from tests.factories import InstitutionFactory, AuthUserFactory, NodeFactory
 
@@ -145,11 +147,11 @@ class TestNodeRelationshipInstitutions(ApiTestCase):
     def test_remove_institutions_with_no_permissions(self):
         res = self.app.put_json_api(
             self.node_institutions_url,
-            {'data': []},
+            self.create_payload(),
             expect_errors=True
         )
 
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
 
     def test_remove_institutions_with_affiliated_user(self):
         self.node.affiliated_institutions.append(self.institution1)
@@ -166,17 +168,63 @@ class TestNodeRelationshipInstitutions(ApiTestCase):
         self.node.reload()
         assert_equal(self.node.affiliated_institutions, [])
 
-    def test_using_put_making_no_changes_returns_204(self):
+    def test_using_post_making_no_changes_returns_204(self):
         self.node.affiliated_institutions.append(self.institution1)
         self.node.save()
         assert_in(self.institution1, self.node.affiliated_institutions)
 
-        res = self.app.put_json_api(
+        res = self.app.post_json_api(
             self.node_institutions_url,
-            {'data': [self.institution1._id]},
+            self.create_payload(self.institution1._id),
             auth=self.user.auth
         )
 
         assert_equal(res.status_code, 204)
         self.node.reload()
         assert_in(self.institution1, self.node.affiliated_institutions)
+
+    def test_put_not_admin_but_affiliated(self):
+        user = AuthUserFactory()
+        user.affiliated_institutions.append(self.institution1)
+        user.save()
+        self.node.add_contributor(user, auth=Auth(self.user))
+        self.node.save()
+
+        res = self.app.put_json_api(
+            self.node_institutions_url,
+            self.create_payload(self.institution1._id),
+            auth=user.auth,
+            expect_errors=True
+        )
+
+        assert_equal(res.status_code, 403)
+        assert_equal(self.node.affiliated_institutions, [])
+
+    def test_retrieve_private_node_no_auth(self):
+        res = self.app.get(self.node_institution_url, expect_errors=True)
+
+        assert_equal(res.status_code, 401)
+
+    def test_add_through_patch_one_inst_to_node_with_inst(self):
+        pass
+
+    def test_add_through_patch_one_inst_while_removing_other(self):
+        pass
+
+    def test_add_one_inst_with_put_to_node_with_inst(self):
+        pass
+
+    def test_delete_nothing(self):
+        pass
+
+    def test_delete_existing_inst(self):
+        pass
+
+    def test_delete_non_existing_inst(self):
+        pass
+
+    def test_delete_user_is_not_admin(self):
+        pass
+
+    def test_delete_user_is_admin_but_not_affiliated_with_inst(self):
+        pass

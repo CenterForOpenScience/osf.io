@@ -110,9 +110,9 @@ class AdminOrPublicForRelationshipInstitutions(permissions.BasePermission):
         node = obj['self']
 
         if request.method in permissions.SAFE_METHODS:
-            return node.can_view(auth)
+            return node.is_public or node.can_view(auth)
         else:
-            return node.can_edit(auth)
+            return node.has_permission(auth.user, osf_permissions.ADMIN)
 
 class ReadOnlyIfRegistration(permissions.BasePermission):
     """Makes PUT and POST forbidden for registrations."""
