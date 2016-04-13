@@ -74,6 +74,7 @@ var entry = {
         'knockout-sortable',
         'loaders.css',
         'treebeard',
+        'lodash.get',
         'jquery.cookie',
         'URIjs',
         // Common internal modules

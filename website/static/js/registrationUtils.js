@@ -182,7 +182,13 @@ var Question = function(questionSchema, data) {
     self.properties = questionSchema.properties || [];
     self.match = questionSchema.match || '';
 
-    self.extra = ko.observable(self.data.extra || {});
+    self.extra = ko.observableArray(self.data.extra || []);
+
+    self.formattedFileList = ko.pureComputed(function() {
+        return self.extra().map(function(elem) {
+            return elem.selectedFileName;
+        }).join(', ');
+    });
     self.showExample = ko.observable(false);
 
     self.comments = ko.observableArray(
@@ -320,19 +326,7 @@ Question.prototype.toggleExample = function() {
 };
 
 Question.prototype.validationInfo = function() {
-    var errors = ko.validation.group(this, {deep: true})();
-
-    var errorSet = ko.utils.arrayGetDistinctValues(errors);
-    var finalErrorSet = [];
-    $.each(errorSet, function(_, error) {
-        if (errors.indexOf(error) !== errors.lastIndexOf(error)) {
-            finalErrorSet.push(VALIDATOR_LOOKUP[error].messagePlural);
-        }
-        else {
-            finalErrorSet.push(error);
-        }
-    });
-    return ko.utils.arrayGetDistinctValues(finalErrorSet);
+    return ko.validation.group(this, {deep: true})();
 };
 
 /**
@@ -382,7 +376,17 @@ var Page = function(schemaPage, schemaData) {
             return Boolean(errors);
         });
 
-        return ko.utils.arrayGetDistinctValues(errors);
+        var errorSet = ko.utils.arrayGetDistinctValues(errors);
+        var finalErrorSet = [];
+        $.each(errorSet, function(_, error) {
+            if (errors.indexOf(error) !== errors.lastIndexOf(error)) {
+                finalErrorSet.push(VALIDATOR_LOOKUP[error].messagePlural);
+            }
+            else {
+                finalErrorSet.push(error);
+            }
+        });
+        return finalErrorSet;
     }, {deferEvaluation: true});
 
     self.hasValidationInfo = ko.computed(function() {
@@ -910,7 +914,7 @@ RegistrationEditor.prototype.init = function(draft) {
             return self.draft().updated;
         }
         else {
-            return 'never';
+            return 'never';            
         }
     });
 
