@@ -77,8 +77,8 @@
                         % endif
                     % endif
                     % if user['can_comment'] or node['has_comments']:
-                        <li>
-                            <a id="commentsLink" class="visible-xs cp-handle" data-bind="click:removeCount" data-toggle="collapse" data-target="#projectSubnav .navbar-collapse">
+                        <li id="commentsLink">
+                            <a href="" class="visible-xs cp-handle" data-bind="click:removeCount" data-toggle="collapse" data-target="#projectSubnav .navbar-collapse">
                                 Comments
                                 <span data-bind="if: unreadComments() !== 0">
                                     <span data-bind="text: displayCount" class="badge"></span>

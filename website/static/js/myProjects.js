@@ -165,7 +165,7 @@ NodeFetcher.prototype = {
     this.nextLink = results.links.next;
     this.loaded += results.data.length;
     for(var i = 0; i < results.data.length; i++) {
-      if (this.type === 'registrations' && (results.data[i].attributes.retracted === true || results.data[i].attributes.pending_registration_approval === true))
+      if (this.type === 'registrations' && (results.data[i].attributes.withdrawn === true || results.data[i].attributes.pending_registration_approval === true))
           continue; // Exclude retracted and pending registrations
       else if (results.data[i].relationships.parent && this._handleOrphans)
           this._orphans.push(results.data[i]);
@@ -636,7 +636,7 @@ var MyProjects = {
                             'You have not made any registrations yet.');
                     } else {
                         template = m('.db-non-load-template.m-md.p-md.osf-box',
-                            'This collection is empty. To add projects or registrations, click "All my projects" or "All my registrations" in the sidebar, and then drag and drop items into the collection link.');
+                            'This collection is empty.' + self.viewOnly ? '' : ' To add projects or registrations, click "All my projects" or "All my registrations" in the sidebar, and then drag and drop items into the collection link.');
                     }
                 } else {
                     if(!self.currentView().fetcher.isEmpty()){
@@ -668,7 +668,7 @@ var MyProjects = {
                 if (contributors) {
                     for(var i = 0; i < contributors.length; i++) {
                         var u = contributors[i];
-                        if (u.id === window.contextVars.currentUser.id) {
+                        if ((u.id === window.contextVars.currentUser.id) && !(self.institutionId)) {
                           continue;
                         }
                         if(self.users[u.id] === undefined) {
@@ -1269,7 +1269,7 @@ var Collections = {
         var collectionListTemplate = [
             m('h5.clearfix', [
                 'Collections ',
-                m('i.fa.fa-question-circle.text-muted', {
+                 viewOnly ? '' : m('i.fa.fa-question-circle.text-muted', {
                     'data-toggle':  'tooltip',
                     'title':  'Collections are groups of projects. You can create custom collections. Drag and drop your projects or bookmarked projects to add them.',
                     'data-placement' : 'bottom'
@@ -1721,7 +1721,7 @@ var Filters = {
             [
                 m('h5.m-t-sm', [
                     'Contributors ',
-                    m('i.fa.fa-question-circle.text-muted', {
+                    args.viewOnly ? '' : m('i.fa.fa-question-circle.text-muted', {
                         'data-toggle':  'tooltip',
                         'title': 'Click a contributor\'s name to see projects that you have in common.',
                         'data-placement' : 'bottom'

@@ -629,6 +629,10 @@ class TargetField(ser.Field):
             'view': 'comments:comment-detail',
             'lookup_kwarg': 'comment_id'
         },
+        'nodewikipage': {
+            'view': None,
+            'lookup_kwarg': None
+        }
     }
 
     def __init__(self, **kwargs):
@@ -640,11 +644,13 @@ class TargetField(ser.Field):
         """
         Resolves the view for target node or target comment when embedding.
         """
-        view_info = self.view_map.get(resource.target._name, None)
+        view_info = self.view_map.get(resource.target.referent._name, None)
         if not view_info:
             raise TargetNotSupportedError('{} is not a supported target type'.format(
                 resource.target._name
             ))
+        if not view_info['view']:
+            return None, None, None
         embed_value = resource.target._id
 
         kwargs = {view_info['lookup_kwarg']: embed_value}
@@ -1019,6 +1025,8 @@ class JSONAPISerializer(ser.Serializer):
 
                         if result:
                             data['embeds'][field.field_name] = result
+                        else:
+                            data['embeds'][field.field_name] = {'error': 'This field is not embeddable.'}
                     else:
                         try:
                             if not (is_anonymous and

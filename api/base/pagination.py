@@ -12,6 +12,10 @@ from rest_framework.utils.urls import (
 from api.base.serializers import is_anonymized
 from api.base.settings import MAX_PAGE_SIZE
 
+from framework.guid.model import Guid
+from website.project.model import Node, Comment
+
+
 class JSONAPIPagination(pagination.PageNumberPagination):
     """
     Custom paginator that formats responses in a JSON-API compatible format.
@@ -122,3 +126,29 @@ class JSONAPIPagination(pagination.PageNumberPagination):
 
         else:
             return super(JSONAPIPagination, self).paginate_queryset(queryset, request, view=None)
+
+
+class CommentPagination(JSONAPIPagination):
+
+    def get_paginated_response(self, data):
+        """Add number of unread comments to links.meta when viewing list of comments filtered by
+        a target node, file or wiki page."""
+        response = super(CommentPagination, self).get_paginated_response(data)
+        response_dict = response.data
+        kwargs = self.request.parser_context['kwargs'].copy()
+
+        if self.request.query_params.get('related_counts', False):
+            target_id = self.request.query_params.get('filter[target]', None)
+            node_id = kwargs.get('node_id', None)
+            node = Node.load(node_id)
+            user = self.request.user
+            if target_id and not user.is_anonymous() and node.is_contributor(user):
+                root_target = Guid.load(target_id)
+                page = getattr(root_target.referent, 'root_target_page', None)
+                if page:
+                    if not len(data):
+                        unread = 0
+                    else:
+                        unread = Comment.find_n_unread(user=user, node=node, page=page, root_id=target_id)
+                    response_dict['links']['meta']['unread'] = unread
+        return Response(response_dict)
