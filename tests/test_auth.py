@@ -190,7 +190,7 @@ class AuthAppTestCase(OsfTestCase):
     def tearDown(self):
         self.ctx.pop()
 
-#need to include both public and private project cases
+
 class TestMustBeContributorDecorator(AuthAppTestCase):
 
     def setUp(self):
@@ -242,7 +242,7 @@ class TestMustBeContributorDecorator(AuthAppTestCase):
         assert_equal(redirect_url, login_url)
 
     def test_must_be_contributor_no_user_and_private_project_redirect(self):
-        res = view_that_needs_contributor_or_public(
+        res = view_that_needs_contributor(
             pid=self.private_project._primary_key,
             user=None,
         )
@@ -255,7 +255,7 @@ class TestMustBeContributorDecorator(AuthAppTestCase):
     def test_must_be_contributor_parent_admin_and_public_project(self):
         user = UserFactory()
         node = NodeFactory(parent=self.public_project, creator=user)
-        res = view_that_needs_contributor_or_public(
+        res = view_that_needs_contributor(
             pid=self.public_project._id,
             nid=node._id,
             user=self.public_project.creator,
@@ -265,7 +265,7 @@ class TestMustBeContributorDecorator(AuthAppTestCase):
     def test_must_be_contributor_parent_admin_and_private_project(self):
         user = UserFactory()
         node = NodeFactory(parent=self.private_project, creator=user)
-        res = view_that_needs_contributor_or_public(
+        res = view_that_needs_contributor(
             pid=self.private_project._id,
             nid=node._id,
             user=self.private_project.creator,
@@ -278,7 +278,7 @@ class TestMustBeContributorDecorator(AuthAppTestCase):
         self.public_project.set_permissions(self.public_project.creator, ['read', 'write'])
         self.public_project.save()
         with assert_raises(HTTPError) as exc_info:
-            view_that_needs_contributor_or_public(
+            view_that_needs_contributor(
                 pid=self.public_project._id,
                 nid=node._id,
                 user=self.public_project.creator,
@@ -291,7 +291,7 @@ class TestMustBeContributorDecorator(AuthAppTestCase):
         self.private_project.set_permissions(self.private_project.creator, ['read', 'write'])
         self.private_project.save()
         with assert_raises(HTTPError) as exc_info:
-            view_that_needs_contributor_or_public(
+            view_that_needs_contributor(
                 pid=self.private_project._id,
                 nid=node._id,
                 user=self.private_project.creator,
