@@ -19,70 +19,64 @@ var markdown = require('js/markdown');
 var caret = require('Caret.js');
 var atWho = require('At.js');
 
-// @ mention
+// preventing unexpected contenteditable behavior
 var onPaste = function(e){
     e.preventDefault();
     var pasteText = e.originalEvent.clipboardData.getData('text/plain');
     document.execCommand('insertHTML', false, pasteText);
 };
 
+// ensure that return inserts a <br> in all browsers
 var onReturn = function (e) {
-  var doxExec = false;
-  var range;
+    var doxExec = false;
+    var range;
 
-  try {
-    doxExec = document.execCommand('insertBrOnReturn', false, true);
-  }
-  catch (error) {
-    // IE throws an error if it does not recognize the command...
-  }
+    // Gecko
+    try {
+        doxExec = document.execCommand('insertBrOnReturn', false, true);
+    }
+    catch (error) {
+        // IE throws an error if it does not recognize the command...
+    }
 
-  if (doxExec) {
-    // Hurray, no dirty hacks needed !
+    if (doxExec) {
+        return true;
+    }
+    // Standard
+    else if (window.getSelection) {
+        e.preventDefault();
+
+        let selection = window.getSelection(),
+            range = selection.getRangeAt(0),
+            br = document.createElement('br');
+
+        range.deleteContents();
+        range.insertNode(br);
+        range.setStartAfter(br);
+        range.setEndAfter(br);
+        range.collapse(false);
+        selection.removeAllRanges();
+        selection.addRange(range);
+
+        return false;
+    }
+    // IE (http://wadmiraal.net/lore/2012/06/14/contenteditable-ie-hack-the-new-line/)
+    else if ($.browser.msie) {
+        e.preventDefault();
+
+        let range = document.selection.createRange();
+
+        range.pasteHTML('<BR><SPAN class="--IE-BR-HACK"></SPAN>');
+
+        // Move the caret after the BR
+        range.moveStart('character', 1);
+
+        return false;
+    }
     return true;
-  }
-  // Standard
-  else if (window.getSelection) {
-    e.stopPropagation();
-
-    let selection = window.getSelection(),
-        range = selection.getRangeAt(0),
-        br = document.createElement('br');
-
-    range.deleteContents();
-
-    range.insertNode(br);
-
-    range.setStartAfter(br);
-
-    range.setEndAfter(br);
-
-    range.collapse(false);
-
-    selection.removeAllRanges();
-
-    selection.addRange(range);
-
-    return false;
-  }
-  // IE
-  else if ($.browser.msie) {
-    e.preventDefault();
-
-    let range = document.selection.createRange();
-
-    range.pasteHTML('<BR><SPAN class="--IE-BR-HACK"></SPAN>');
-
-    // Move the caret after the BR
-    range.moveStart('character', 1);
-
-    return false;
-  }
-
-  // Last resort, just use the default browser behavior and pray...
-  return true;
 };
 
+// At.js
 var callbacks = {
     beforeInsert: function(value, $li) {
         var data = $li.data('item-data');
@@ -92,14 +86,43 @@ var callbacks = {
         }
         this.query.el.attr('data-atwho-guid', '' + data.id);
         return value;
+    },
+    highlighter: function(li, query) {
+        var regexp;
+        if (!query) {
+            return li;
+        }
+        regexp = new RegExp('>\\s*([\\w\\s]*?)(' + query.replace('+', '\\+') + ')([\\w\\s]*)\\s*<', 'ig');
+        return li.replace(regexp, function(str, $1, $2, $3) {
+            return '> ' + $1 + '<strong>' + $2 + '</strong>' + $3 + ' <';
+        });
+    },
+    matcher: function(flag, subtext, should_startWithSpace, acceptSpaceBar) {
+        acceptSpaceBar = true;
+        var _a, _y, match, regexp, space;
+        flag = flag.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, '\\$&');
+        if (should_startWithSpace) {
+            flag = '(?:^|\\s)' + flag;
+        }
+        _a = decodeURI('%C3%80');
+        _y = decodeURI('%C3%BF');
+        space = acceptSpaceBar ? '\ ' : '';
+        regexp = new RegExp(flag + '([A-Za-z' + _a + '-' + _y + '0-9_' + space + '\'\.\+\-]*)$|' + flag + '([^\\x00-\\xff]*)$', 'gi');
+        match = regexp.exec(subtext.replace(/\s/g, ' '));
+        if (match) {
+            return match[2] || match[1];
+        } else {
+            return null;
+        }
     }
 };
 
 var at_config = {
     at: '@',
     headerTpl: '<div class="atwho-header">Contributors<small>&nbsp;↑&nbsp;↓&nbsp;</small></div>',
-    insertTpl: '@${name}',
-    displayTpl: '<li>${name} <small>${fullName}</small></li>',
+    insertTpl: '@${fullName}',
+    displayTpl: '<li>${fullName}</li>',
+    searchKey: 'fullName',
     limit: 6,
     callbacks: callbacks
 };
@@ -107,8 +130,9 @@ var at_config = {
 var plus_config = {
     at: '+',
     headerTpl: '<div class="atwho-header">Contributors<small>&nbsp;↑&nbsp;↓&nbsp;</small></div>',
-    insertTpl: '+${name}',
-    displayTpl: '<li>${name} <small>${fullName}</small></li>',
+    insertTpl: '+${fullName}',
+    displayTpl: '<li>${fullName}</li>',
+    searchKey: 'fullName',
     limit: 6,
     callbacks: callbacks
 };
@@ -223,8 +247,8 @@ var BaseComment = function() {
         if (!content) {
             content = '';
         }
-        var regex = /<span.*?data-atwho-guid="([a-z\d]{5})".*?>((@|\+)[a-zA-Z]+)<\/span>/;
-        var matches = content.match(/<span.*?data-atwho-guid="([a-z\d]{5})".*?>((@|\+)[a-zA-Z]+)<\/span>/g);
+        var regex = /<span.*?data-atwho-guid="([a-z\d]{5})".*?>((@|\+)[\w\s]+)<\/span>/;
+        var matches = content.match(/<span.*?data-atwho-guid="([a-z\d]{5})".*?>((@|\+)[\w\s]+)<\/span>/g);
         if (matches) {
             for (var i = 0; i < matches.length; i++) {
                 let match = regex.exec(matches[i]);
@@ -237,10 +261,9 @@ var BaseComment = function() {
                     self.replyMentions.push(guid);
                 }
             }
-            return content;
-        } else {
-            return content;
         }
+        return content.replace(/<br>/g, '&#13;&#10;');
+
     });
 
     self.submittingReply = ko.observable(false);
@@ -485,10 +508,9 @@ var CommentModel = function(data, $parent, $root) {
 
                 content = content.replace(match[0], '<span class="atwho-inserted" data-atwho-guid="'+ guid + '" data-atwho-at-query="' + atwho + '">' + atwho + mention + '</span>');
             }
-            return content;
-        } else {
-            return content;
         }
+        content += '<br>';
+        return content.replace(/\x0D\x0A/g, '<br>');
     });
 
     self.editedContent = ko.computed(function() {
@@ -496,8 +518,8 @@ var CommentModel = function(data, $parent, $root) {
         if (!content) {
             content = '';
         }
-        var regex = /<span.*?data-atwho-guid="([a-z\d]{5})".*?>((@|\+)[a-zA-Z]+)<\/span>/;
-        var matches = content.match(/<span.*?data-atwho-guid="([a-z\d]{5})".*?>((@|\+)[a-zA-Z]+)<\/span>/g);
+        var regex = /<span.*?data-atwho-guid="([a-z\d]{5})".*?>((@|\+)[\w\s]+)<\/span>/;
+        var matches = content.match(/<span.*?data-atwho-guid="([a-z\d]{5})".*?>((@|\+)[\w\s]+)<\/span>/g);
         if (matches) {
             for (var i = 0; i < matches.length; i++) {
                 let match = regex.exec(matches[i]);
@@ -510,10 +532,8 @@ var CommentModel = function(data, $parent, $root) {
                     self.replyMentions.push(guid);
                 }
             }
-            return content;
-        } else {
-            return content;
         }
+        return content.replace(/<br>/g, '&#13;&#10;');
     });
 
     self.contentDisplay = ko.observable(markdown.full.render(self.content()));
