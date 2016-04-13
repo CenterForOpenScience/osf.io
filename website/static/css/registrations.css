@@ -37,3 +37,6 @@
     display: inline-block;
     margin-bottom: 10px;
 }
+.breaklines {
+    white-space: pre-wrap;
+}

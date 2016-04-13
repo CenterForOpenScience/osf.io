@@ -424,13 +424,13 @@
 		"required": true
             }, {
                 "qid": "dataCollectionDates",
-                "title": "The (estimated) start and end dates for this project are:",
+                "title": "The (estimated) start and end dates for this project are",
                 "nav": "Data collection period",
                 "type": "string",
                 "format": "textarea"
             }, {
                 "qid": "additionalComments",
-                "title": "Any additional comments before I pre-register this project:",
+                "title": "Any additional comments before I pre-register this project",
                 "nav": "Additional comments",
                 "type": "string",
                 "format": "textarea"
