@@ -4486,8 +4486,11 @@ class DraftRegistrationApproval(Sanction):
         )
         metadata = draft.registration_metadata
         for question, answer in metadata.iteritems():
-            files = answer['extra']
-            if files:
+            try:
+                files = answer['extra']
+            except KeyError as e:
+                logger.exception(e)
+            else:
                 for attached_file in files:
                     fid = attached_file['data']['path'].replace('/', '')
                     fnode = FileNode.load(fid)
