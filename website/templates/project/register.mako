@@ -31,11 +31,9 @@
               <div class="row">
                 <h4 data-bind="attr.id: question.id, text: question.title"></h4>
                 <div class="col-md-12">
-                  <span data-bind="if: question.value()">
-                    <p>
-                      <span data-bind="previewQuestion: $root.editor.context(question, $root.editor)"></span>
-                    </p>
-                  </span>
+                  <p>
+                    <span data-bind="previewQuestion: $root.editor.context(question, $root.editor)"></span>
+                  </p>
                 </div>
               </div>
             </div>

@@ -852,6 +852,7 @@ var RegistrationEditor = function(urls, editorId, preview) {
 	    var $elem = $('<span>');
 	    if (question.type === 'object') {
                 $elem.append(
+		    $('<p class="breaklines"><small><em>' + question.description + '</em></small></p>'),
                     $.map(question.properties, function(subQuestion) {
                         subQuestion = self.context(subQuestion, self, true);
 			return unwrap(subQuestion);
