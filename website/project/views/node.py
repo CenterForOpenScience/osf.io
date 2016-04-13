@@ -290,7 +290,7 @@ def node_forks(auth, node, **kwargs):
 
 @must_be_valid_project
 @must_be_logged_in
-@must_be_contributor
+@must_have_permission(READ)
 def node_setting(auth, node, **kwargs):
 
     ret = _view_project(node, auth, primary=True)
