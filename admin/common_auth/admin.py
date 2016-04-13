@@ -63,7 +63,7 @@ class LogEntryAdmin(admin.ModelAdmin):
 
     date_hierarchy = 'action_time'
 
-    readonly_fields = OSFLogEntry._meta.get_all_field_names()
+    readonly_fields = [f.name for f in OSFLogEntry._meta.get_fields()]
 
     list_filter = [
         'user',

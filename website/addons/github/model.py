@@ -93,9 +93,20 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     hook_id = fields.StringField()
     hook_secret = fields.StringField()
     registration_data = fields.DictionaryField()
-    folder_id = fields.StringField(default=None)
-    folder_name = fields.StringField(default=None)
-    folder_path = fields.StringField(default=None)
+
+    @property
+    def folder_id(self):
+        return self.repo or None
+
+    @property
+    def folder_name(self):
+        if self.complete:
+            return '{}/{}'.format(self.user, self.repo)
+        return None
+
+    @property
+    def folder_path(self):
+        return self.repo or None
 
     @property
     def has_auth(self):
@@ -124,9 +135,6 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         self.hook_id = None
         self.hook_secret = None
         self.registration_data = None
-        self.folder_id = None
-        self.folder_name = None
-        self.folder_path = None
 
     def deauthorize(self, auth=None, log=True):
         self.delete_hook(save=False)

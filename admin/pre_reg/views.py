@@ -2,7 +2,6 @@ import functools
 import httplib as http
 import json
 import operator
-from copy import deepcopy
 
 from django.contrib.auth.decorators import user_passes_test
 from django.core.paginator import Paginator, EmptyPage
@@ -169,14 +168,13 @@ def update_draft(request, draft_pk):
         draft.save()
     else:
         schema_data = data.get('schema_data', {})
-        data = deepcopy(draft.registration_metadata)
         log_message = list()
-        for key, value in data.items():
+        for key, value in schema_data.iteritems():
             comments = schema_data.get(key, {}).get('comments', [])
             for comment in comments:
                 log_message.append('{}: {}'.format(key, comment['value']))
         try:
-            draft.update_metadata(data)
+            draft.update_metadata(schema_data)
             draft.save()
             update_admin_log(
                 user_id=request.user.id,
