@@ -191,11 +191,19 @@ var Uploader = function(question) {
     self.hasSelectedFile = ko.computed(function() {
         return !!(question.extra().viewUrl);
     });
-    self.unselectFile = function() {
-        self.selectedFile(null);
-        question.extra({
-            selectedFileName: NO_FILE
-        });
+    self.unselectFile = function(fileToRemove) {
+
+        var files = question.extra();
+        var handleFail = function(resp){$osf.growl('Error', 'Unable to check in file');};
+
+        for (var i = 0; i < files.length; i++) {
+            var file = files[i];
+            if(file.sha256 === fileToRemove.sha256) {
+                self.selectedFiles.splice(i, 1);
+                question.value(question.formattedFileList());
+                break;
+            }
+        }
     };
 
     self.filePicker = null;
@@ -210,6 +218,7 @@ var Uploader = function(question) {
             return $('<a target="_blank" href="' + extra.viewUrl + '">' + $osf.htmlEscape(extra.selectedFileName) + '</a>');
         }
     };
+
 
     $.extend(self, question);
 };
