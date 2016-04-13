@@ -1519,7 +1519,7 @@ class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
             for addon
             in self.get_node().get_addons()
             if addon.config.has_hgrid_files
-            and addon.complete
+            and addon.configured
         ]
 
 class NodeProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
