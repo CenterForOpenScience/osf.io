@@ -132,17 +132,14 @@ reordered contributors for
 </script>
 
 <script type="text/html" id="checked_in">
-checked in {{ params.kind }}
-<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect">
-    {{ stripSlash(params.path) }}</a>
-from
-<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+checked in <span data-bind="text: params.kind"></span>
+<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect, text: stripSlash(params.path)"></a>
+from <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
 <script type="text/html" id="checked_out">
-checked out {{ params.kind }}
-<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect">
-    {{ stripSlash(params.path) }}</a>
+checked out <span data-bind="text: params.kind"></span>
+<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect, text: stripSlash(params.path)"></a>
 from
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>

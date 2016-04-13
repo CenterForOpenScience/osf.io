@@ -71,6 +71,6 @@
     </div>
     <!-- Flashed Messages -->
     <div class="help-block">
-        <p data-bind="html: node_message, attr.class: messageClass"></p>
+        <p data-bind="html: node_message, attr: {class: messageClass}"></p>
     </div>
 </div>
