@@ -89,7 +89,8 @@
 <%def name="on_submit()">
     <script type="text/javascript">
         window.contextVars = $.extend({}, window.contextVars, {
-            'githubSettingsSelector': ${('#addonSettings' + addon_short_name.capitalize()) | sjson, n }
-            });
+            ## Short name never changes
+            'githubSettingsSelector': '#addonSettings${addon_short_name.capitalize()}'
+        });
     </script>
 </%def>

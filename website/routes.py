@@ -165,7 +165,7 @@ def make_url_map(app):
             '/<path:_>',
             ['get', 'post'],
             HTTPError(http.NOT_FOUND),
-            OsfWebRenderer('', render_mako_string, trust=True)  # TODO: Review all possible cases of error.mako returning HTML
+            OsfWebRenderer('', render_mako_string, trust=False)
         ),
         Rule(
             '/api/v1/<path:_>',
@@ -825,7 +825,6 @@ def make_url_map(app):
             {},
             OsfWebRenderer('search.mako', trust=False)
         ),
-        # TODO: Get share running and test this set of routes locally
         Rule(
             '/share/',
             'get',
@@ -945,7 +944,7 @@ def make_url_map(app):
             ],
             'post',
             project_views.node.project_set_privacy,
-            notemplate
+            OsfWebRenderer('project/project.mako', trust=False)
         ),
 
         ### Logs ###
@@ -1025,7 +1024,6 @@ def make_url_map(app):
             notemplate,
         ),
 
-        # TODO: Can't create a registration locally, so can't test this one..?
         Rule(
             [
                 '/project/<pid>/withdraw/',
