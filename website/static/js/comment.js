@@ -8,6 +8,7 @@ var ko = require('knockout');
 var moment = require('moment');
 var Raven = require('raven-js');
 var koHelpers = require('./koHelpers');
+var infinitescroll = require('./knockout-js-infinite-scroll');
 require('knockout.punches');
 require('jquery-autosize');
 ko.punches.enableAll();
@@ -81,7 +82,25 @@ var BaseComment = function() {
 
     self.submittingReply = ko.observable(false);
 
+    self.nodeType = 'nodes';
+
+
     self.comments = ko.observableArray();
+
+    self.comments.extend({
+        infinitescroll: {}
+    })
+
+    self.items = ko.observableArray();
+
+    self.items.extend({
+        infinitescroll: {}
+    });
+
+    // detect resize
+    $(window).resize(function() {
+        updateViewportDimensions();
+    });
 
     self.loadingComments = ko.observable(true);
 
@@ -92,7 +111,76 @@ var BaseComment = function() {
         return self.submittingReply() ? 'Commenting' : 'Comment';
     });
 
+    $('#comments_window').scroll(function() {
+        console.log('This is what I think I am in the scroll function');
+        console.log(self);
+        console.log('1. At the start of the scroll function! ');
+
+        self.get_more_stuff();
+    });
+
+    // update dimensions of infinite-scroll viewport and item
+    function updateViewportDimensions() {
+        var itemsRef = $('#comments_window'),
+            itemRef = $('.item').first(),
+            itemsWidth = 240,
+            itemsHeight = 300,
+            itemWidth = 220,
+            itemHeight = 20;
+
+        self.comments.infinitescroll.viewportWidth(itemsWidth);
+        self.comments.infinitescroll.viewportHeight(itemsHeight);
+        self.comments.infinitescroll.itemWidth(itemWidth);
+        self.comments.infinitescroll.itemHeight(itemHeight);
+
+    }
+    updateViewportDimensions();
+
+
+    // init items
+    //function populateItems(numTotal) {
+    //    var existingItems = self.items(),
+    //        item = '',
+    //        alphabet = 'abcdefghijklmnopqrstuvwxyz',
+    //        numTotal = numTotal || 500;
+    //
+    //    for (var i = 0; i < numTotal; i++) {
+    //        item = '';
+    //        for( var j = 0; j < Math.floor(Math.random() * 20) + 1; j++ ) {
+    //            item += alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+    //        }
+    //        existingItems.push(item);
+    //    }
+    //    self.items(existingItems);
+    //}
+    //populateItems();
 };
+
+BaseComment.prototype.get_more_stuff = function() {
+    var self = this;
+    console.log('At the start of get more stuff, here is what I think I am:');
+    console.log(self);
+    console.log('2. Here are the comments I think I have:');
+    console.log(self.comments());
+
+    var comments = self.comments();
+    var url = self.get_url();
+    var response = self.fetchNext(url, comments);
+
+    console.log('3. Here is the response I think I got from fetchNext:');
+    console.log(response);
+
+    self.comments.infinitescroll.scrollY($('#comments_window').scrollTop());
+
+    console.log('4. Here is the URL I will ask for');
+    console.log(url);
+
+    if (response.links.next =! null) {
+        if (self.comments.peek().length - self.comments.infinitescroll.lastVisibleIndex.peek() <= 10) {
+            self.fetchNext(response.links.next, comments);
+        }
+    }
+}
 
 BaseComment.prototype.abuseLabel = function(item) {
     return ABUSE_CATEGORIES[item];
@@ -120,8 +208,27 @@ BaseComment.prototype.setupToolTips = function(elm) {
     });
 };
 
-BaseComment.prototype.fetch = function() {
+BaseComment.prototype.get_url = function() {
     var self = this;
+    if (self.comments().length === 0) {
+        var urlParams = osfHelpers.urlParams();
+        var query = 'embed=user';
+        if (urlParams.view_only && !window.contextVars.node.isPublic) {
+            query += '&view_only=' + urlParams.view_only;
+        }
+        if (self.id() !== undefined) {
+            query += '&filter[target]=' + self.id();
+        }
+        var url = osfHelpers.apiV2Url(self.nodeType + '/' + window.contextVars.node.id + '/comments/', {query: query});
+
+        return url;
+    }
+};
+
+BaseComment.prototype.fetch = function() {
+    console.log('In the fetch function');
+    var self = this;
+    console.log(self);
     if (self.comments().length === 0) {
         var urlParams = osfHelpers.urlParams();
         var query = 'embed=user';
@@ -138,6 +245,7 @@ BaseComment.prototype.fetch = function() {
 
 /* Go through the paginated API response to fetch all comments for the specified target */
 BaseComment.prototype.fetchNext = function(url, comments) {
+    console.log('2. at the top of fetch next');
     var self = this;
     var request = osfHelpers.ajaxJSON(
         'GET',
@@ -154,15 +262,46 @@ BaseComment.prototype.fetchNext = function(url, comments) {
             );
         });
         self.configureCommentsVisibility();
-        if (response.links.next !== null) {
-            self.fetchNext(response.links.next, comments);
-        } else {
-            self.loadingComments(false);
-        }
+        self.loadingComments(false);
+        console.log('3. Here are the comments I just added in fetchNext');
+        console.log(self);
+        console.log(self.comments());
+        console.log('4. about to return response:');
+        console.log(response);
+        return response;
+
     }).fail(function () {
         self.loadingComments(false);
     });
 };
+
+///* Go through the paginated API response to fetch all comments for the specified target */
+//BaseComment.prototype.fetchNext = function(url, comments) {
+//    var self = this;
+//    var request = osfHelpers.ajaxJSON(
+//        'GET',
+//        url,
+//        {'isCors': true});
+//    request.done(function(response) {
+//        comments = response.data;
+//        if (self._loaded !== true) {
+//            self._loaded = true;
+//        }
+//        comments.forEach(function(comment) {
+//            self.comments.push(
+//                new CommentModel(comment, self, self.$root)
+//            );
+//        });
+//        self.configureCommentsVisibility();
+//        if (response.links.next !== null) {
+//            self.fetchNext(response.links.next, comments);
+//        } else {
+//            self.loadingComments(false);
+//        }
+//    }).fail(function () {
+//        self.loadingComments(false);
+//    });
+//};
 
 BaseComment.prototype.setUnreadCommentCount = function() {
     var self = this;
@@ -595,7 +734,7 @@ var CommentListModel = function(options) {
     self.editors = 0;
     self.nodeId = ko.observable(options.nodeId);
     self.nodeApiUrl = options.nodeApiUrl;
-    self.nodeType = options.isRegistration ? 'registrations' : 'nodes';
+    //self.nodeType = options.isRegistration ? 'registrations' : 'nodes';
     self.page(options.page);
     self.id = ko.observable(options.rootId);
     self.rootId = ko.observable(options.rootId);
