@@ -182,7 +182,13 @@ var Question = function(questionSchema, data) {
     self.properties = questionSchema.properties || [];
     self.match = questionSchema.match || '';
 
-    self.extra = ko.observable(self.data.extra || {});
+    self.extra = ko.observableArray(self.data.extra || []);
+
+    self.formattedFileList = ko.pureComputed(function() {
+        return self.extra().map(function(elem) {
+            return elem.selectedFileName;
+        }).join(', ');
+    });
     self.showExample = ko.observable(false);
 
     self.comments = ko.observableArray(
@@ -698,6 +704,11 @@ Draft.prototype.register = function(url, data) {
                     $osf.unblock();
                     if (self.urls.registrations) {
                         window.location.assign(self.urls.registrations);
+                    }
+                },
+                buttons: {
+                    ok: {
+                        label: 'Back to project',
                     }
                 }
             });
