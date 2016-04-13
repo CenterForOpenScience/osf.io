@@ -700,7 +700,7 @@ Draft.prototype.register = function(url, data) {
                 },
                 buttons: {
                     ok: {
-                        label:'Back to project',
+                        label: 'Back to project',
                     }
                 }
             });
