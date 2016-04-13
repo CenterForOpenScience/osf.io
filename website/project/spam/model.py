@@ -33,13 +33,13 @@ class SpamMixin(StoredObject):
         'abstract': True
     }
 
-    UNKNOWN = 0
+    UNKNOWN = None
     FLAGGED = 1
     SPAM = 2
     HAM = 4
 
     spam_status = fields.IntegerField(default=UNKNOWN, index=True)
-    latest_report = fields.DateTimeField(default=None, index=True)
+    date_last_reported = fields.DateTimeField(default=None, index=True)
 
     # Reports is a dict of reports keyed on reporting user
     # Each report is a dictionary including:
@@ -99,7 +99,7 @@ class SpamMixin(StoredObject):
         if 'text' not in report:
             report['text'] = None
         self.reports[user._id] = report
-        self.latest_report = report['date']
+        self.date_last_reported = report['date']
         if save:
             self.save()
 
