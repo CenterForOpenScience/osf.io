@@ -24,6 +24,14 @@ def notify(event, user, node, timestamp, **context):
     subscriptions = compile_subscriptions(node, event_type, event)
     sent_users = []
     target_user = context.get('target_user', None)
+    new_mentions = context.get('new_mentions', None)
+
+    if new_mentions:
+        store_emails(new_mentions, 'email_transactional', event_type, user, node,
+                         timestamp, **context)
+        sent_users.extend(new_mentions)
+        return sent_users
+
     if target_user:
         target_user_id = target_user._id
         if event_type in constants.USER_SUBSCRIPTIONS_AVAILABLE:

@@ -396,6 +396,41 @@ ko.bindingHandlers.datePicker = {
 };
 
  /**
+ * Bind content of content editable to observable. Looks for maxlength attr
+ * to limit input. If no attr then no limit.
+ * Example:
+ * <div contenteditable="true" data-bind="editableHTML: <observable_name>" maxlength="500"></div>
+ */
+ko.bindingHandlers.editableHTML = {
+    init: function(element, valueAccessor) {
+        var $element = $(element);
+        var initialValue = ko.utils.unwrapObservable(valueAccessor());
+        $element.html(initialValue);
+        $element.on('change input paste keyup blur', function() {
+            var observable = valueAccessor();
+            // limit input to maxlength
+            var charLimit = $element.attr('maxlength');
+            if (charLimit) {
+                if ($element.text().length < charLimit) {
+                    observable($element.html());
+                } else {
+                    $element.html(observable());
+                }
+            } else {
+                observable($element.html());
+            }
+        });
+    },
+    update: function(element, valueAccessor) {
+        var $element = $(element);
+        var initialValue = ko.utils.unwrapObservable(valueAccessor());
+        if (initialValue === '') {
+            $(element).html(initialValue);
+        }
+    }
+};
+
+ /**
  * Adds class returned from iconmap to the element. The value accessor should be the
  * category of the node.
  * Example:
