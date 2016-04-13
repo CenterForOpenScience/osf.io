@@ -30,12 +30,7 @@ def postcommit_after_request(response, base_status_error_code=500):
     return response
 
 def enqueue_postcommit_task(function_and_args):
-    try:
-        postcommit_queue().add(function_and_args)
-    except RuntimeError:
-        # if we can't add to the queue just log and run it
-        logger.error('Couldn\'t add {} to the postcommit queue, running syncronously'.format(function_and_args))
-        function_and_args[0](*function_and_args[1])
+    postcommit_queue().add(function_and_args)
 
 
 handlers = {
