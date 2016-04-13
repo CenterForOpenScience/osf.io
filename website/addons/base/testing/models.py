@@ -251,7 +251,7 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         assert_is(self.node_settings.user_settings, None)
         assert_is(self.node_settings.folder_id, None)
         assert_true(self.node_settings.deleted)
-        assert_equal(self.node.logs, old_logs)
+        assert_equal(list(self.node.logs), list(old_logs))
 
     def test_deauthorize(self):
         assert_true(self.node_settings.user_settings)

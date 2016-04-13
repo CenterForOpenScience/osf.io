@@ -26,7 +26,7 @@ class TestReportDetailView(ApiTestCase):
         }
 
     def _set_up_private_project_comment_reports(self):
-        self.private_project = ProjectFactory.build(is_public=False, creator=self.user)
+        self.private_project = ProjectFactory.create(is_public=False, creator=self.user)
         self.private_project.add_contributor(contributor=self.contributor, save=True)
         self.comment = CommentFactory.build(node=self.private_project, user=self.contributor)
         self.comment.reports = {self.user._id: {
@@ -39,7 +39,7 @@ class TestReportDetailView(ApiTestCase):
         self.private_url = '/{}comments/{}/reports/{}/'.format(API_BASE, self.comment._id, self.user._id)
 
     def _set_up_public_project_comment_reports(self):
-        self.public_project = ProjectFactory.build(is_public=True, creator=self.user)
+        self.public_project = ProjectFactory.create(is_public=True, creator=self.user)
         self.public_project.add_contributor(contributor=self.contributor, save=True)
         self.public_comment = CommentFactory.build(node=self.public_project, user=self.contributor)
         self.public_comment.reports = {self.user._id: {
@@ -256,7 +256,7 @@ class TestFileCommentReportDetailView(ApiTestCase):
         }
 
     def _set_up_private_project_file_comment_reports(self):
-        self.private_project = ProjectFactory.build(is_public=False, creator=self.user)
+        self.private_project = ProjectFactory.create(is_public=False, creator=self.user)
         self.private_project.add_contributor(contributor=self.contributor, save=True)
         self.file = test_utils.create_test_file(self.private_project, self.user)
         self.comment = CommentFactory.build(node=self.private_project, target=self.file.get_guid(), user=self.contributor)
@@ -270,7 +270,7 @@ class TestFileCommentReportDetailView(ApiTestCase):
         self.private_url = '/{}comments/{}/reports/{}/'.format(API_BASE, self.comment._id, self.user._id)
 
     def _set_up_public_project_file_comment_reports(self):
-        self.public_project = ProjectFactory.build(is_public=True, creator=self.user)
+        self.public_project = ProjectFactory.create(is_public=True, creator=self.user)
         self.public_project.add_contributor(contributor=self.contributor, save=True)
         self.public_file = test_utils.create_test_file(self.public_project, self.user)
         self.public_comment = CommentFactory.build(node=self.public_project, target=self.public_file.get_guid(), user=self.contributor)

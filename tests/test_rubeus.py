@@ -24,7 +24,7 @@ class TestRubeus(OsfTestCase):
 
         super(TestRubeus, self).setUp()
 
-        self.project = ProjectFactory.build()
+        self.project = ProjectFactory.create()
         self.consolidated_auth = Auth(user=self.project.creator)
         self.non_authenticator = UserFactory()
         self.project.save()
@@ -200,7 +200,7 @@ class TestRubeus(OsfTestCase):
     def test_serialize_private_node(self):
         user = UserFactory()
         auth = Auth(user=user)
-        public = ProjectFactory.build(is_public=True)
+        public = ProjectFactory.create(is_public=True)
         # Add contributor with write permissions to avoid admin permission cascade
         public.add_contributor(user, permissions=['read', 'write'])
         public.save()
