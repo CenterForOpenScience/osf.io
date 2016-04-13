@@ -729,24 +729,6 @@ def setup():
 
 
 @task
-def analytics():
-    from website.app import init_app
-    import matplotlib
-    matplotlib.use('Agg')
-    init_app()
-    from scripts.analytics import (
-        logs, addons, comments, folders, links, watch, email_invites,
-        permissions, profile, benchmarks
-    )
-    modules = (
-        logs, addons, comments, folders, links, watch, email_invites,
-        permissions, profile, benchmarks
-    )
-    for module in modules:
-        module.main()
-
-
-@task
 def clear_sessions(months=1, dry_run=False):
     from website.app import init_app
     init_app(routes=False, set_backends=True)

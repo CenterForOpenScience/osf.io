@@ -747,6 +747,16 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'Title cannot exceed 200 characters.')
 
+    def test_public_project_with_publicly_editable_wiki_turns_private(self):
+        wiki = self.public_project.get_addon('wiki')
+        wiki.set_editing(permissions=True, auth=Auth(user=self.user), log=True)
+        res = self.app.patch_json_api(
+            self.public_url,
+            make_node_payload(self.public_project, {'public': False}),
+            auth=self.user.auth  # self.user is creator/admin
+        )
+        assert_equal(res.status_code, 200)
+
 
 class TestNodeDelete(NodeCRUDTestCase):
 
