@@ -26,6 +26,7 @@ class TestCommentDetailView(ApiTestCase):
                 'type': 'comments',
                 'attributes': {
                     'content': 'Updating this comment',
+                    'new_mentions': [],
                     'deleted': False
                 }
             }
@@ -42,6 +43,7 @@ class TestCommentDetailView(ApiTestCase):
                 'type': 'comments',
                 'attributes': {
                     'content': 'Updating this comment',
+                    'new_mentions': [],
                     'deleted': False
                 }
             }
@@ -217,6 +219,7 @@ class TestCommentDetailView(ApiTestCase):
                 'type': 'comments',
                 'attributes': {
                     'content': 'Updating this comment',
+                    'new_mentions': [],
                     'deleted': False
                 }
             }
@@ -237,6 +240,7 @@ class TestCommentDetailView(ApiTestCase):
                 'type': 'comments',
                 'attributes': {
                     'content': 'Updating this comment',
+                    'new_mentions': [],
                     'deleted': False
                 }
             }
@@ -253,6 +257,7 @@ class TestCommentDetailView(ApiTestCase):
                 'type': 'comments',
                 'attributes': {
                     'content': ''.join(['c' for c in range(osf_settings.COMMENT_MAXLENGTH + 1)]),
+                    'new_mentions': [],
                     'deleted': False
                 }
             }
@@ -270,6 +275,7 @@ class TestCommentDetailView(ApiTestCase):
                 'type': 'comments',
                 'attributes': {
                     'content': '',
+                    'new_mentions': [],
                     'deleted': False
                 }
             }
@@ -539,6 +545,7 @@ class TestFileCommentDetailView(ApiTestCase):
                 'type': 'comments',
                 'attributes': {
                     'content': 'Updating this comment',
+                    'new_mentions': [],
                     'deleted': False
                 }
             }

@@ -16,6 +16,95 @@ var osfHelpers = require('js/osfHelpers');
 var CommentPane = require('js/commentpane');
 var markdown = require('js/markdown');
 
+var caret = require('Caret.js');
+var atWho = require('At.js');
+
+var emoji_data = require('json!emojis.json');
+
+var full_emoji_list = [];
+
+for (var emoji_name in emoji_data) {
+  if (emoji_data.hasOwnProperty(emoji_name)) {
+    full_emoji_list.push({name: emoji_name, value: emoji_data[emoji_name]});
+  }
+}
+
+// @ mention prototyping
+var callbacks = {
+    beforeInsert: function(value, $li) {
+        var data = $li.data('item-data');
+        var model = ko.dataFor(this.$inputor[0]);
+        if (model.replyMentions().indexOf(data.id) === -1) {
+            model.replyMentions().push(data.id);
+        }
+        this.query.el.attr('data-atwho-guid', '' + data.id);
+        return value;
+    }
+};
+
+var at_config = {
+    at: '@',
+    headerTpl: '<div class="atwho-header">Contributors<small>&nbsp;↑&nbsp;↓&nbsp;</small></div>',
+    insertTpl: '@${name}',
+    displayTpl: '<li>${name} <small>${fullName}</small></li>',
+    limit: 6,
+    callbacks: callbacks
+};
+
+var plus_config = {
+    at: '+',
+    headerTpl: '<div class="atwho-header">Contributors<small>&nbsp;↑&nbsp;↓&nbsp;</small></div>',
+    insertTpl: '+${name}',
+    displayTpl: '<li>${name} <small>${fullName}</small></li>',
+    limit: 6,
+    callbacks: callbacks
+};
+
+var emoji_config = {
+    at: ':',
+    insertTpl: ':${name}:',
+    displayTpl: '<li>${name} <small>${value}</small></li>',
+    limit: 6,
+    data: full_emoji_list
+};
+
+var input = $('.atwho-input');
+var nodeId = window.nodeId;
+
+var getContributorList = function(input, nodeId) {
+    var url = osfHelpers.apiV2Url('nodes/' + nodeId + '/contributors/', {});
+    var request = osfHelpers.ajaxJSON(
+        'GET',
+        url,
+        {'isCors': true});
+    request.done(function(response) {
+        var data = response.data.map(function(item) {
+            return {
+                'id': item.id,
+                'name': item.embeds.users.data.attributes.given_name,
+                'fullName': item.embeds.users.data.attributes.full_name,
+                'link': item.embeds.users.data.links.html
+            };
+        });
+        // for any input areas that currently exist on page
+        input.atwho('load','@', data).atwho('load', '+', data).atwho('run');
+        // for future input areas so that data doesn't need to be reloaded
+        at_config.data = data;
+        plus_config.data = data;
+    });
+    request.fail(function(xhr, status, error) {
+        Raven.captureMessage('Error getting contributors', {
+            url: url,
+            status: status,
+            error: error
+        });
+    });
+    return request;
+};
+
+// should only need to do this once
+getContributorList(input, nodeId);
+input.atwho(at_config).atwho(plus_config).atwho(emoji_config);
 
 // Maximum length for comments, in characters
 var MAXLENGTH = 500;
@@ -78,6 +167,40 @@ var BaseComment = function() {
 
     self.replying = ko.observable(false);
     self.replyContent = ko.observable('');
+    self.replyMentions = ko.observableArray([]);
+
+    self.saveContent = ko.computed(function() {
+        let content = self.replyContent();
+        if (!content) {
+            return '';
+        }
+        let regexMention = /<span[^>]*?data-atwho-guid="([a-z\d]{5})"[^<]*?>((@|\+)[a-zA-Z]+)<\/span>/;
+        let matchesMention = content.match(/<span[^>]*?data-atwho-guid="([a-z\d]{5})"[^<]*?>((@|\+)[a-zA-Z]+)<\/span>/g);
+        if (matchesMention) {
+            for (let i = 0; i < matchesMention.length; i++) {
+                let matchMention = regexMention.exec(matchesMention[i]);
+                let guid = matchMention[1];
+                let mention = matchMention[2];
+                let url = '/' + guid + '/';
+                content = content.replace(matchMention[0], '['+ mention + '](' + url + ')');
+
+                if (guid && self.replyMentions.indexOf(guid) === -1) {
+                    self.replyMentions.push(guid);
+                }
+            }
+        }
+
+        let regexEmoji = /<span[^>]*?class="atwho-inserted"[^<]*?>(:[a-zA-Z\d_\-\+]+:)<\/span>/;
+        let matchesEmoji = content.match(/<span[^>]*?class="atwho-inserted"[^<]*?>(:[a-zA-Z\d_\-\+]+:)<\/span>/g);
+        if (matchesEmoji) {
+            for (let i = 0; i < matchesEmoji.length; i++) {
+                let matchEmoji = regexEmoji.exec(matchesEmoji[i]);
+                let emoji = matchEmoji[1];
+                content = content.replace(matchEmoji[0], emoji);
+            }
+        }
+        return content;
+    });
 
     self.submittingReply = ko.observable(false);
 
@@ -226,7 +349,8 @@ BaseComment.prototype.submitReply = function() {
                 'data': {
                     'type': 'comments',
                     'attributes': {
-                        'content': self.replyContent()
+                        'content': self.saveContent(),
+                        'new_mentions': self.replyMentions()
                     },
                     'relationships': {
                         'target': {
@@ -242,6 +366,7 @@ BaseComment.prototype.submitReply = function() {
     request.done(function(response) {
         self.cancelReply();
         self.replyContent(null);
+        self.replyMentions([]);
         var newComment = new CommentModel(response.data, self, self.$root);
         newComment.loading(false);
         self.comments.unshift(newComment);
@@ -254,6 +379,7 @@ BaseComment.prototype.submitReply = function() {
     });
     request.fail(function(xhr, status, error) {
         self.cancelReply();
+        self.replyMentions([]);
         self.errorMessage('Could not submit comment');
         Raven.captureMessage('Error creating comment', {
             extra: {
@@ -303,6 +429,69 @@ var CommentModel = function(data, $parent, $root) {
     } else {
         self.author = self.$root.author;
     }
+
+    self.editableContent = ko.computed(function() {
+        var content = self.content();
+        if (!content) {
+            return '';
+        }
+        var regexMention = /\[(@|\+)(.*?)\]\(\/([a-z\d]{5})\/\)/;
+        var matchesMention = content.match(/\[(@|\+)(.*?)\]\(\/([a-z\d]{5})\/\)/g);
+        if (matchesMention) {
+            for (let i = 0; i < matchesMention.length; i++) {
+                let matchMention = regexMention.exec(matchesMention[i]);
+                let atwho = matchMention[1];
+                let guid = matchMention[3];
+                let mention = matchMention[2];
+
+                content = content.replace(matchMention[0], '<span class="atwho-inserted" data-atwho-guid="'+ guid + '" data-atwho-at-query="' + atwho + '">' + atwho + mention + '</span>');
+            }
+        }
+        var regexEmoji = /(:[a-zA-Z/d_\-\+]+:)/;
+        var matchesEmoji = content.match(/(:[a-zA-Z/d_\-\+]+:)/g);
+        if (matchesEmoji) {
+            for (let i = 0; i < matchesEmoji.length; i++) {
+                let matchEmoji = regexEmoji.exec(matchesEmoji[i]);
+                let emoji = matchEmoji[1];
+
+                content = content.replace(matchEmoji[0], '<span class="atwho-inserted" data-atwho-at-query=":">' + emoji + '</span>');
+            }
+        }
+        return content;
+
+    });
+
+    self.editedContent = ko.computed(function() {
+        var content = self.content();
+        if (!content) {
+            return '';
+        }
+        var regexMention = /<span[^>]*?data-atwho-guid="([a-z\d]{5})"[^<]*?>((@|\+)[a-zA-Z]+)<\/span>/;
+        var matchesMention = content.match(/<span[^>]*?data-atwho-guid="([a-z\d]{5})"[^<]*?>((@|\+)[a-zA-Z]+)<\/span>/g);
+        if (matchesMention) {
+            for (let i = 0; i < matchesMention.length; i++) {
+                let matchMention = regexMention.exec(matchesMention[i]);
+                let guid = matchMention[1];
+                let mention = matchMention[2];
+                let url = '/' + guid + '/';
+                content = content.replace(matchMention[0], '['+ mention + '](' + url + ')');
+
+                if (guid && self.replyMentions.indexOf(guid) === -1) {
+                    self.replyMentions.push(guid);
+                }
+            }
+        }
+        var regexEmoji = /<span[^>]*?class="atwho-inserted"[^<]*?>(:[a-zA-Z\d_\-\+]+:)<\/span>/;
+        var matchesEmoji = content.match(/<span[^>]*?class="atwho-inserted"[^<]*?>(:[a-zA-Z\d_\-\+]+:)<\/span>/g);
+        if (matchesEmoji) {
+            for (let i = 0; i < matchesEmoji.length; i++) {
+                let matchEmoji = regexEmoji.exec(matchesEmoji[i]);
+                let emoji = matchEmoji[1];
+                content = content.replace(matchEmoji[0], emoji);
+            }
+        }
+        return content;
+    });
 
     self.contentDisplay = ko.observable(markdown.full.render(self.content()));
 
@@ -362,6 +551,7 @@ CommentModel.prototype = new BaseComment();
 CommentModel.prototype.edit = function() {
     if (this.canEdit()) {
         this._content = this.content();
+        this.content(this.editableContent());
         this.editing(true);
         this.$root.editors += 1;
     }
@@ -369,6 +559,7 @@ CommentModel.prototype.edit = function() {
 
 CommentModel.prototype.autosizeText = function(elm) {
     $(elm).find('textarea').autosize().focus();
+    $(elm).find('.atwho-input').atwho(at_config).atwho(plus_config).atwho(emoji_config);
 };
 
 CommentModel.prototype.cancelEdit = function() {
@@ -398,7 +589,8 @@ CommentModel.prototype.submitEdit = function(data, event) {
                     'id': self.id(),
                     'type': 'comments',
                     'attributes': {
-                        'content': self.content(),
+                        'content': self.editedContent(),
+                        'new_mentions': self.replyMentions(),
                         'deleted': false
                     }
                 }
@@ -407,6 +599,7 @@ CommentModel.prototype.submitEdit = function(data, event) {
     request.done(function(response) {
         self.content(response.data.attributes.content);
         self.dateModified(response.data.attributes.date_modified);
+        self.replyMentions([]);
         self.editing(false);
         self.modified(true);
         self.editErrorMessage('');
@@ -417,6 +610,7 @@ CommentModel.prototype.submitEdit = function(data, event) {
     });
     request.fail(function(xhr, status, error) {
         self.cancelEdit();
+        self.replyMentions([]);
         self.errorMessage('Could not submit comment');
         Raven.captureMessage('Error editing comment', {
             extra: {
@@ -653,7 +847,7 @@ var onOpen = function(page, rootId, nodeApiUrl) {
             page: page,
             rootId: rootId
         }
-    );    
+    );
     request.fail(function(xhr, textStatus, errorThrown) {
         Raven.captureMessage('Could not update comment timestamp', {
             extra: {
@@ -674,7 +868,7 @@ var onOpen = function(page, rootId, nodeApiUrl) {
  *      rootId: Node._id,
  *      fileId: StoredFileNode._id,
  *      canComment: User.canComment,
- *      hasChildren: Node.hasChildren, 
+ *      hasChildren: Node.hasChildren,
  *      currentUser: {
  *          id: User._id,
  *          url: User.url,

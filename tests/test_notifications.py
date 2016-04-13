@@ -1043,11 +1043,37 @@ class TestSendEmails(OsfTestCase):
         assert_equal(sent, [])
 
     @mock.patch('website.notifications.emails.store_emails')
+    def test_notify_sends_to_mentioned_users_subscribed_to_none(self, mock_store):
+        node = factories.NodeFactory()
+        user = factories.UserFactory()
+        node_subscription = factories.NotificationSubscriptionFactory(
+            _id=node._id + '_comments',
+            owner=node,
+            event_name='mentions'
+        )
+        node_subscription.save()
+        node_subscription.none.append(user)
+        node_subscription.save()
+        time_now = datetime.datetime.utcnow()
+        sent = emails.notify('mentions', user=user, node=node, timestamp=time_now, new_mentions=[user._id])
+        assert_true(mock_store.called)
+        mock_store.assert_called_with([user._id], 'email_transactional', 'mentions', user,
+                                      node, time_now, new_mentions=[user._id])
+        assert_equal(sent, [user._id])
+
+    @mock.patch('website.notifications.emails.store_emails')
     def test_notify_sends_comment_reply_event_if_comment_is_direct_reply(self, mock_store):
         time_now = datetime.datetime.utcnow()
         emails.notify('comments', user=self.user, node=self.node, timestamp=time_now, target_user=self.project.creator)
         mock_store.assert_called_with([self.project.creator._id], 'email_transactional', 'comment_replies',
                                       self.user, self.node, time_now, target_user=self.project.creator)
+
+    @mock.patch('website.notifications.emails.store_emails')
+    def test_notify_sends_mention_reply_event_if_mention_within_direct_reply(self, mock_store):
+        time_now = datetime.datetime.utcnow()
+        emails.notify('mention_replies', user=self.user, node=self.node, timestamp=time_now, target_user=self.project.creator, new_mentions=[self.user._id])
+        mock_store.assert_called_with([self.user._id], 'email_transactional', 'mention_replies',
+                                      self.user, self.node, time_now, target_user=self.project.creator, new_mentions=[self.user._id])
 
     @mock.patch('website.notifications.emails.store_emails')
     def test_notify_sends_comment_reply_when_target_user_is_subscribed_via_user_settings(self, mock_store):

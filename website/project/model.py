@@ -149,6 +149,16 @@ class MetaData(GuidStoredObject):
     date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
 
 
+def validate_contributor(guid, contributors):
+    if guid != '':
+        user = User.find(Q('_id', 'eq', guid))
+        if user.count() != 1:
+            raise ValidationValueError('User does not exist.')
+        elif guid not in contributors:
+            raise ValidationValueError('Mentioned user is not a contributor.')
+    return True
+
+
 class Comment(GuidStoredObject, SpamMixin):
 
     __guid_min_length__ = 12
@@ -174,6 +184,9 @@ class Comment(GuidStoredObject, SpamMixin):
     page = fields.StringField()
     content = fields.StringField(required=True,
                                  validate=[MaxLengthValidator(settings.COMMENT_MAXLENGTH), validators.string_required])
+    # The mentioned users
+    new_mentions = fields.ListField(fields.StringField(default=[]))
+    old_mentions = fields.ListField(fields.StringField())
 
     # For Django compatibility
     @property
@@ -264,6 +277,13 @@ class Comment(GuidStoredObject, SpamMixin):
             save=False,
         )
 
+        if (comment.new_mentions):
+            comment.new_mentions = [mention for mention in comment.new_mentions if mention not in comment.old_mentions and validate_contributor(mention, comment.node.contributors)]
+            if len(comment.new_mentions) > 0:
+                project_signals.mention_added.send(comment, auth=auth)
+                comment.old_mentions.extend(comment.new_mentions)
+            comment.save()
+
         comment.node.save()
         project_signals.comment_added.send(comment, auth=auth)
 
@@ -283,6 +303,14 @@ class Comment(GuidStoredObject, SpamMixin):
         self.content = content
         self.modified = True
         self.date_modified = datetime.datetime.utcnow()
+
+        if (self.new_mentions):
+            self.new_mentions = [mention for mention in self.new_mentions if mention not in self.old_mentions and validate_contributor(mention, self.node.contributors)]
+            if len(self.new_mentions) > 0:
+                if save:
+                    project_signals.mention_added.send(self, auth=auth)
+                    self.old_mentions.extend(self.new_mentions)
+
         if save:
             self.save()
             self.node.add_log(

@@ -4,6 +4,7 @@ require('highlight-css');
 var MarkdownIt = require('markdown-it');
 
 var insDel = require('markdown-it-ins-del');
+var emoji = require('markdown-it-emoji');
 
 var highlighter = function (str, lang) {
         if (lang && hljs.getLanguage(lang)) {
@@ -36,6 +37,7 @@ var markdown = new MarkdownIt('commonmark', {
     .use(insDel)
     .enable('table')
     .use(bootstrapTable)
+    .use(emoji)
     .disable('strikethrough');
 
 
