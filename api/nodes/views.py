@@ -1978,6 +1978,29 @@ class NodeInstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin
             raise NotFound
         return node.primary_institution
 
+class NodeInstitutionsList(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        AdminOrPublic
+    )
+
+    required_read_scopes = [CoreScopes.NODE_BASE_READ, CoreScopes.INSTITUTION_READ]
+    required_write_scopes = [CoreScopes.NULL]
+    serializer_class = InstitutionSerializer
+
+    model = Institution
+    view_category = 'nodes'
+    view_name = 'node-institution-detail'
+
+    # overrides RetrieveAPIView
+    def get_object(self):
+        node = self.get_node()
+        if not node.primary_institution:
+            raise NotFound
+        return node.primary_institution
+
 
 class NodeInstitutionRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin):
     """ Relationship Endpoint for Node -> Institution Relationship

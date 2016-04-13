@@ -518,10 +518,10 @@ class NodeInstitutionsRelationshipSerializer(ser.Serializer):
                         'html': 'get_related_url'})
 
     def get_self_url(self, obj):
-        return 'self-url'
+        return obj['self'].institutions_relationship_url()
 
     def get_related_url(self, obj):
-        return 'get-related-url'
+        return obj['self'].institutions_url()
 
     class Meta:
         type_ = 'institutions'

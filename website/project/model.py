@@ -3545,6 +3545,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def institution_relationship_url(self):
         return self.absolute_api_v2_url + 'relationships/institution/'
 
+    def institutions_url(self):
+        return self.absolute_api_v2_url + 'institutions/'
+
+    def institutions_relationship_url(self):
+        return self.absolute_api_v2_url + 'relationships/institutions/'
+
 
 @Node.subscribe('before_save')
 def validate_permissions(schema, instance):
