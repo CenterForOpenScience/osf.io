@@ -39,7 +39,8 @@ class JSONAPIBaseView(generics.GenericAPIView):
         def partial(item):
             # resolve must be implemented on the field
             v, view_args, view_kwargs = field.resolve(item, field_name)
-
+            if not v:
+                return None
             if isinstance(self.request._request, EmbeddedRequest):
                 request = self.request._request
             else:
