@@ -2,18 +2,6 @@ import random
 
 from django.db import models
 
-from osf_models.utils.datetime_aware_jsonfield import DatetimeAwareJSONField
-
-try:
-    from django.db.transaction import atomic
-except ImportError:
-    from django.db.transaction import commit_on_success as atomic
-
-try:
-    from django.db.models.fields.related import SingleRelatedObjectDescriptor
-except ImportError:
-    from django.db.models.fields.related_descriptors import ReverseOneToOneDescriptor as SingleRelatedObjectDescriptor
-
 ALPHABET = '23456789abcdefghjkmnpqrstuvwxyz'
 
 
@@ -49,12 +37,15 @@ def generate_guid_instance():
 
 class BaseModel(models.Model):
     id = models.AutoField(primary_key=True)
-    guid = models.OneToOneField(Guid, default=generate_guid_instance, unique=True, related_name='referent_%(class)s')
-    data = DatetimeAwareJSONField()
+    _guid = models.OneToOneField(Guid, default=generate_guid_instance, unique=True, related_name='referent_%(class)s')
+
+    @property
+    def guid(self):
+        return self._guid.guid
 
     @property
     def _id(self):
-        return self.guid.id
+        return self._guid.guid
 
     class Meta:
         abstract = True
