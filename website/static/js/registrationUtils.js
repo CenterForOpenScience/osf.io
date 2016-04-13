@@ -703,6 +703,11 @@ Draft.prototype.register = function(url, data) {
                     if (self.urls.registrations) {
                         window.location.assign(self.urls.registrations);
                     }
+                },
+                buttons: {
+                    ok: {
+                        label: 'Back to project',
+                    }
                 }
             });
         })
