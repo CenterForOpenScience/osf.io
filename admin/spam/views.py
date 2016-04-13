@@ -61,14 +61,14 @@ class EmailFormView(OSFAdmin, FormView):
     def get_context_data(self, **kwargs):
         kwargs.setdefault(
             'comment',
-            serialize_comment(Comment.load(kwargs.get('spam_id')))
+            serialize_comment(Comment.load(self.kwargs.get('spam_id')))
         )
-        kwargs.setdefault('page_number', self.request.GET.get('page', 1))
-        kwargs.setdefault('status', self.request.GET.get('status', 1))
+        kwargs.setdefault('page_number', self.request.GET.get('page', '1'))
+        kwargs.setdefault('status', self.request.GET.get('status', '1'))
         return super(EmailFormView, self).get_context_data(**kwargs)
 
     def get_initial(self):
-        spam = Comment.load(self.kwargs.get('spam_id'))
+        spam = serialize_comment(Comment.load(self.kwargs.get('spam_id')))
         self.initial = {
             'author': spam['author'].fullname,
             'email': [(r, r) for r in spam['author'].emails],
@@ -105,7 +105,7 @@ class EmailFormView(OSFAdmin, FormView):
     def success_url(self):
         return reverse_spam_detail(
             self.kwargs.get('spam_id'),
-            page=self.request.GET.get('page', 1),
+            page=self.request.GET.get('page', '1'),
             status=self.request.GET.get('status', '1')
         )
 
@@ -198,9 +198,9 @@ class SpamDetail(OSFAdmin, FormView):
     def get_context_data(self, **kwargs):
         item = Comment.load(self.kwargs.get('spam_id'))
         kwargs = super(SpamDetail, self).get_context_data(**kwargs)
-        kwargs.setdefault('page_number', self.request.GET.get('page', 1))
+        kwargs.setdefault('page_number', self.request.GET.get('page', '1'))
         kwargs.setdefault('comment', serialize_comment(item))
-        kwargs.setdefault('status', self.request.GET.get('status', u'1'))
+        kwargs.setdefault('status', self.request.GET.get('status', '1'))
         kwargs.update(STATUS)  # Pass status in to check against
         return kwargs
 
@@ -228,6 +228,6 @@ class SpamDetail(OSFAdmin, FormView):
     def success_url(self):
         return reverse_spam_detail(
             self.kwargs.get('spam_id'),
-            page=self.request.GET.get('page', 1),
+            page=self.request.GET.get('page', '1'),
             status=self.request.GET.get('status', '1')
         )

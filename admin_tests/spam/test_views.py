@@ -1,4 +1,3 @@
-import mock
 from django.db import transaction
 from django.test import RequestFactory
 from nose import tools as nt
@@ -7,7 +6,7 @@ from datetime import datetime, timedelta
 from website.project.model import Comment
 
 from admin.common_auth.logs import OSFLogEntry
-from admin.spam.forms import ConfirmForm
+from admin.spam.forms import ConfirmForm, EmailForm
 from tests.base import AdminTestCase
 from tests.factories import CommentFactory, AuthUserFactory, ProjectFactory
 from admin_tests.utilities import setup_view, setup_form_view
@@ -139,7 +138,7 @@ class TestSpamDetail(AdminTestCase):
         view = setup_view(view, self.request, spam_id=self.comment._id)
         res = view.get_context_data()
         nt.assert_equal(res['status'], '1')
-        nt.assert_equal(res['page_number'], 1)
+        nt.assert_equal(res['page_number'], '1')
         nt.assert_is_instance(res['comment'], dict)
         nt.assert_equal(res['UNKNOWN'], Comment.UNKNOWN)
         nt.assert_equal(res['SPAM'], Comment.SPAM)
@@ -156,16 +155,27 @@ class TestEmailFormView(AdminTestCase):
         self.request = RequestFactory().post('/fake_path')
         self.request.user = UserFactory()
         self.view = EmailFormView()
+        self.form = EmailForm(data={
+            'author': 'Nemo',
+            'message': 'A message for spammers.',
+            'subject': 'stop spamming',
+            'email': ('email@email.org', 'email@email.org')
+        })
+        self.view = setup_form_view(self.view, self.request, self.form,
+                                    spam_id=self.comment._id)
 
-    def test_get_context(self):
-        pass
+    def test_get_context_data(self):
+        res = self.view.get_context_data()
+        nt.assert_equal(res['status'], '1')
+        nt.assert_equal(res['page_number'], '1')
+        nt.assert_is_instance(res['comment'], dict)
 
     def test_get_initial(self):
-        pass
-
-    @mock.patch('admin.spam.views.send_mail')
-    def test_form_valid(self, mock_mail):
-        pass
+        self.view.get_initial()
+        res = self.view.initial
+        nt.assert_is_instance(res, dict)
+        nt.assert_is_instance(res['email'], list)
+        nt.assert_is_instance(res['email'][0], tuple)
 
 
 class TestUserSpamListView(AdminTestCase):
@@ -197,14 +207,19 @@ class TestUserSpamListView(AdminTestCase):
                                     category='spam')
         self.comment_6.report_abuse(user=self.user_1, save=True,
                                     category='spam')
+        self.request = RequestFactory().get('/fake_path')
+        self.view = UserSpamList()
+        self.view = setup_view(self.view, self.request, user_id=self.user_1._id)
 
     def test_get_user_spam(self):
-        guid = self.user_1._id
-        request = RequestFactory().get('/fake_path')
-        view = UserSpamList()
-        view = setup_view(view, request, user_id=guid)
-        res = list(view.get_queryset())
+        res = list(self.view.get_queryset())
         nt.assert_equal(len(res), 4)
 
     def test_get_context_data(self):
-        pass
+        self.view.object_list = self.view.get_queryset()
+        res = self.view.get_context_data()
+        nt.assert_is_instance(res['spam'], list)
+        nt.assert_is_instance(res['spam'][0], dict)
+        nt.assert_equal(res['status'], '1')
+        nt.assert_equal(res['page_number'], 1)
+        nt.assert_equal(res['user_id'], self.user_1._id)
