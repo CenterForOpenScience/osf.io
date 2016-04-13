@@ -1,5 +1,5 @@
-from .base import BaseModel
+from .base import BaseModel, GuidMixin
 
 
-class User(BaseModel):
+class User(GuidMixin, BaseModel):
     pass

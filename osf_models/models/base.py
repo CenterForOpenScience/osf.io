@@ -34,9 +34,7 @@ class BlackListGuid(models.Model):
 def generate_guid_instance():
     return Guid.objects.create().id
 
-
-class BaseModel(models.Model):
-    id = models.AutoField(primary_key=True)
+class GuidMixin(models.Model):
     _guid = models.OneToOneField(Guid, default=generate_guid_instance, unique=True, related_name='referent_%(class)s')
 
     @property
@@ -46,6 +44,13 @@ class BaseModel(models.Model):
     @property
     def _id(self):
         return self._guid.guid
+
+    class Meta:
+        abstract = True
+
+
+class BaseModel(models.Model):
+    id = models.AutoField(primary_key=True)
 
     class Meta:
         abstract = True
