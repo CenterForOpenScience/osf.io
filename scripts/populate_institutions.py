@@ -106,7 +106,7 @@ def main(env):
                 'banner_name': 'nd-banner.png',
                 'logo_name': 'nd-shield.jpg',
                 'auth_url': SHIBBOLETH_SP.format(encode_uri_component('https://login-test.cc.nd.edu/idp/shibboleth')),
-                'domains': ['osf.nd.edu'],
+                'domains': ['staging-osf-nd.cos.io'],
                 'email_domains': [],
             },
         ]
