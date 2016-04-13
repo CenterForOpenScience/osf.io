@@ -26,7 +26,10 @@ from framework.auth.decorators import must_be_logged_in
 from website import mails
 from website import settings
 from website.project.decorators import (
-    must_have_permission, must_be_contributor,
+    must_have_permission,
+    must_be_contributor,
+    must_be_contributor_or_public,
+    must_be_contributor_or_public_but_not_anonymized,
     must_have_addon, must_be_addon_authorizer,
 )
 
@@ -187,33 +190,49 @@ class AuthAppTestCase(OsfTestCase):
     def tearDown(self):
         self.ctx.pop()
 
-
+#need to include both public and private project cases
 class TestMustBeContributorDecorator(AuthAppTestCase):
 
     def setUp(self):
         super(TestMustBeContributorDecorator, self).setUp()
         self.contrib = AuthUserFactory()
-        self.project = ProjectFactory()
-        self.project.add_contributor(self.contrib, auth=Auth(self.project.creator))
-        self.project.save()
+        self.non_contrib = AuthUserFactory()
+        self.public_project = ProjectFactory(is_public=True)
+        self.private_project = ProjectFactory(is_public=False)
+        self.public_project.add_contributor(self.contrib, auth=Auth(self.public_project.creator))
+        self.private_project.add_contributor(self.contrib, auth=Auth(self.private_project.creator))
+        self.public_project.save()
+        self.private_project.save()
 
-    def test_must_be_contributor_when_user_is_contributor(self):
+    def test_must_be_contributor_when_user_is_contributor_and_public_project(self):
         result = view_that_needs_contributor(
-            pid=self.project._primary_key,
+            pid=self.public_project._primary_key,
             user=self.contrib)
-        assert_equal(result, self.project)
+        assert_equal(result, self.public_project)
 
-    def test_must_be_contributor_when_user_is_not_contributor_raises_error(self):
-        non_contributor = AuthUserFactory()
+    def test_must_be_contributor_when_user_is_not_contributor_and_public_project_raise_error(self):
         with assert_raises(HTTPError):
             view_that_needs_contributor(
-                pid=self.project._primary_key,
-                user=non_contributor
+                pid=self.public_project._primary_key,
+                user=self.non_contrib
             )
 
-    def test_must_be_contributor_no_user(self):
+    def test_must_be_contributor_when_user_is_contributor_and_private_project(self):
+        result = view_that_needs_contributor(
+            pid=self.private_project._primary_key,
+            user=self.contrib)
+        assert_equal(result, self.private_project)
+
+    def test_must_be_contributor_when_user_is_not_contributor_and_private_project_raise_error(self):
+        with assert_raises(HTTPError):
+            view_that_needs_contributor(
+                pid=self.private_project._primary_key,
+                user=self.non_contrib
+            )
+
+    def test_must_be_contributor_no_user_and_public_project_redirect(self):
         res = view_that_needs_contributor(
-            pid=self.project._primary_key,
+            pid=self.public_project._primary_key,
             user=None,
         )
         assert_is_redirect(res)
@@ -222,29 +241,306 @@ class TestMustBeContributorDecorator(AuthAppTestCase):
         login_url = cas.get_login_url(service_url='http://localhost/')
         assert_equal(redirect_url, login_url)
 
-    def test_must_be_contributor_parent_admin(self):
+    def test_must_be_contributor_no_user_and_private_project_redirect(self):
+        res = view_that_needs_contributor_or_public(
+            pid=self.private_project._primary_key,
+            user=None,
+        )
+        assert_is_redirect(res)
+        # redirects to login url
+        redirect_url = res.headers['Location']
+        login_url = cas.get_login_url(service_url='http://localhost/')
+        assert_equal(redirect_url, login_url)
+
+    def test_must_be_contributor_parent_admin_and_public_project(self):
         user = UserFactory()
-        node = NodeFactory(parent=self.project, creator=user)
-        res = view_that_needs_contributor(
-            pid=self.project._id,
+        node = NodeFactory(parent=self.public_project, creator=user)
+        res = view_that_needs_contributor_or_public(
+            pid=self.public_project._id,
             nid=node._id,
-            user=self.project.creator,
+            user=self.public_project.creator,
         )
         assert_equal(res, node)
 
-    def test_must_be_contributor_parent_write(self):
+    def test_must_be_contributor_parent_admin_and_private_project(self):
         user = UserFactory()
-        node = NodeFactory(parent=self.project, creator=user)
-        self.project.set_permissions(self.project.creator, ['read', 'write'])
-        self.project.save()
+        node = NodeFactory(parent=self.private_project, creator=user)
+        res = view_that_needs_contributor_or_public(
+            pid=self.private_project._id,
+            nid=node._id,
+            user=self.private_project.creator,
+        )
+        assert_equal(res, node)
+
+    def test_must_be_contributor_parent_write_public_project(self):
+        user = UserFactory()
+        node = NodeFactory(parent=self.public_project, creator=user)
+        self.public_project.set_permissions(self.public_project.creator, ['read', 'write'])
+        self.public_project.save()
         with assert_raises(HTTPError) as exc_info:
-            view_that_needs_contributor(
-                pid=self.project._id,
+            view_that_needs_contributor_or_public(
+                pid=self.public_project._id,
                 nid=node._id,
-                user=self.project.creator,
+                user=self.public_project.creator,
             )
         assert_equal(exc_info.exception.code, 403)
 
+    def test_must_be_contributor_parent_write_private_project(self):
+        user = UserFactory()
+        node = NodeFactory(parent=self.private_project, creator=user)
+        self.private_project.set_permissions(self.private_project.creator, ['read', 'write'])
+        self.private_project.save()
+        with assert_raises(HTTPError) as exc_info:
+            view_that_needs_contributor_or_public(
+                pid=self.private_project._id,
+                nid=node._id,
+                user=self.private_project.creator,
+            )
+        assert_equal(exc_info.exception.code, 403)
+
+
+@must_be_contributor_or_public
+def view_that_needs_contributor_or_public(**kwargs):
+    return kwargs.get('node') or kwargs.get('parent')
+
+
+class TestMustBeContributorOrPublicDecorator(AuthAppTestCase):
+
+    def setUp(self):
+        super(TestMustBeContributorOrPublicDecorator, self).setUp()
+        self.contrib = AuthUserFactory()
+        self.non_contrib = AuthUserFactory()
+        self.public_project = ProjectFactory(is_public=True)
+        self.private_project = ProjectFactory(is_public=False)
+        self.public_project.add_contributor(self.contrib, auth=Auth(self.public_project.creator))
+        self.private_project.add_contributor(self.contrib, auth=Auth(self.private_project.creator))
+        self.public_project.save()
+        self.private_project.save()
+
+    def test_must_be_contributor_when_user_is_contributor_and_public_project(self):
+        result = view_that_needs_contributor_or_public(
+            pid=self.public_project._primary_key,
+            user=self.contrib)
+        assert_equal(result, self.public_project)
+
+    def test_must_be_contributor_when_user_is_not_contributor_and_public_project(self):
+        result = view_that_needs_contributor_or_public(
+            pid=self.public_project._primary_key,
+            user=self.non_contrib)
+        assert_equal(result, self.public_project)
+
+    def test_must_be_contributor_when_user_is_contributor_and_private_project(self):
+        result = view_that_needs_contributor_or_public(
+            pid=self.private_project._primary_key,
+            user=self.contrib)
+        assert_equal(result, self.private_project)
+
+    def test_must_be_contributor_when_user_is_not_contributor_and_private_project_raise_error(self):
+        with assert_raises(HTTPError):
+            view_that_needs_contributor_or_public(
+                pid=self.private_project._primary_key,
+                user=self.non_contrib
+            )
+
+    def test_must_be_contributor_no_user_and_public_project(self):
+        res = view_that_needs_contributor_or_public(
+            pid=self.public_project._primary_key,
+            user=None,
+        )
+        assert_equal(res, self.public_project)
+
+    def test_must_be_contributor_no_user_and_private_project(self):
+        res = view_that_needs_contributor_or_public(
+            pid=self.private_project._primary_key,
+            user=None,
+        )
+        assert_is_redirect(res)
+        # redirects to login url
+        redirect_url = res.headers['Location']
+        login_url = cas.get_login_url(service_url='http://localhost/')
+        assert_equal(redirect_url, login_url)
+
+    def test_must_be_contributor_parent_admin_and_public_project(self):
+        user = UserFactory()
+        node = NodeFactory(parent=self.public_project, creator=user)
+        res = view_that_needs_contributor_or_public(
+            pid=self.public_project._id,
+            nid=node._id,
+            user=self.public_project.creator,
+        )
+        assert_equal(res, node)
+
+    def test_must_be_contributor_parent_admin_and_private_project(self):
+        user = UserFactory()
+        node = NodeFactory(parent=self.private_project, creator=user)
+        res = view_that_needs_contributor_or_public(
+            pid=self.private_project._id,
+            nid=node._id,
+            user=self.private_project.creator,
+        )
+        assert_equal(res, node)
+
+    def test_must_be_contributor_parent_write_public_project(self):
+        user = UserFactory()
+        node = NodeFactory(parent=self.public_project, creator=user)
+        self.public_project.set_permissions(self.public_project.creator, ['read', 'write'])
+        self.public_project.save()
+        with assert_raises(HTTPError) as exc_info:
+            view_that_needs_contributor_or_public(
+                pid=self.public_project._id,
+                nid=node._id,
+                user=self.public_project.creator,
+            )
+        assert_equal(exc_info.exception.code, 403)
+
+    def test_must_be_contributor_parent_write_private_project(self):
+        user = UserFactory()
+        node = NodeFactory(parent=self.private_project, creator=user)
+        self.private_project.set_permissions(self.private_project.creator, ['read', 'write'])
+        self.private_project.save()
+        with assert_raises(HTTPError) as exc_info:
+            view_that_needs_contributor_or_public(
+                pid=self.private_project._id,
+                nid=node._id,
+                user=self.private_project.creator,
+            )
+        assert_equal(exc_info.exception.code, 403)
+
+
+@must_be_contributor_or_public_but_not_anonymized
+def view_that_needs_contributor_or_public_but_not_anonymized(**kwargs):
+    return kwargs.get('node') or kwargs.get('parent')
+
+
+class TestMustBeContributorOrPublicButNotAnonymizedDecorator(AuthAppTestCase):
+    def setUp(self):
+        super(TestMustBeContributorOrPublicButNotAnonymizedDecorator, self).setUp()
+        self.contrib = AuthUserFactory()
+        self.non_contrib = AuthUserFactory()
+        self.public_project = ProjectFactory(is_public=True)
+        self.private_project = ProjectFactory(is_public=False)
+        self.public_project.add_contributor(self.contrib, auth=Auth(self.public_project.creator))
+        self.private_project.add_contributor(self.contrib, auth=Auth(self.private_project.creator))
+        self.public_project.save()
+        self.private_project.save()
+        self.anonymized_link_to_public_project = PrivateLinkFactory(anonymous=True)
+        self.anonymized_link_to_private_project = PrivateLinkFactory(anonymous=True)
+        self.anonymized_link_to_public_project.nodes.append(self.public_project)
+        self.anonymized_link_to_public_project.save()
+        self.anonymized_link_to_private_project.nodes.append(self.private_project)
+        self.anonymized_link_to_private_project.save()
+        self.flaskapp = Flask('Testing decorator')
+
+        @self.flaskapp.route('/project/<pid>/')
+        @must_be_contributor_or_public_but_not_anonymized
+        def project_get(**kwargs):
+            return 'success', 200
+        self.app = TestApp(self.flaskapp)
+
+    def test_must_be_contributor_when_user_is_contributor_and_public_project(self):
+        result = view_that_needs_contributor_or_public_but_not_anonymized(
+            pid=self.public_project._primary_key,
+            user=self.contrib)
+        assert_equal(result, self.public_project)
+
+    def test_must_be_contributor_when_user_is_not_contributor_and_public_project(self):
+        result = view_that_needs_contributor_or_public_but_not_anonymized(
+            pid=self.public_project._primary_key,
+            user=self.non_contrib)
+        assert_equal(result, self.public_project)
+
+    def test_must_be_contributor_when_user_is_contributor_and_private_project(self):
+        result = view_that_needs_contributor_or_public_but_not_anonymized(
+            pid=self.private_project._primary_key,
+            user=self.contrib)
+        assert_equal(result, self.private_project)
+
+    def test_must_be_contributor_when_user_is_not_contributor_and_private_project_raise_error(self):
+        with assert_raises(HTTPError):
+            view_that_needs_contributor_or_public_but_not_anonymized(
+                pid=self.private_project._primary_key,
+                user=self.non_contrib
+            )
+
+    def test_must_be_contributor_no_user_and_public_project(self):
+        res = view_that_needs_contributor_or_public_but_not_anonymized(
+            pid=self.public_project._primary_key,
+            user=None,
+        )
+        assert_equal(res, self.public_project)
+
+    def test_must_be_contributor_no_user_and_private_project(self):
+        res = view_that_needs_contributor_or_public_but_not_anonymized(
+            pid=self.private_project._primary_key,
+            user=None,
+        )
+        assert_is_redirect(res)
+        # redirects to login url
+        redirect_url = res.headers['Location']
+        login_url = cas.get_login_url(service_url='http://localhost/')
+        assert_equal(redirect_url, login_url)
+
+    def test_must_be_contributor_parent_admin_and_public_project(self):
+        user = UserFactory()
+        node = NodeFactory(parent=self.public_project, creator=user)
+        res = view_that_needs_contributor_or_public_but_not_anonymized(
+            pid=self.public_project._id,
+            nid=node._id,
+            user=self.public_project.creator,
+        )
+        assert_equal(res, node)
+
+    def test_must_be_contributor_parent_admin_and_private_project(self):
+        user = UserFactory()
+        node = NodeFactory(parent=self.private_project, creator=user)
+        res = view_that_needs_contributor_or_public_but_not_anonymized(
+            pid=self.private_project._id,
+            nid=node._id,
+            user=self.private_project.creator,
+        )
+        assert_equal(res, node)
+
+    def test_must_be_contributor_parent_write_public_project(self):
+        user = UserFactory()
+        node = NodeFactory(parent=self.public_project, creator=user)
+        self.public_project.set_permissions(self.public_project.creator, ['read', 'write'])
+        self.public_project.save()
+        with assert_raises(HTTPError) as exc_info:
+            view_that_needs_contributor_or_public_but_not_anonymized(
+                pid=self.public_project._id,
+                nid=node._id,
+                user=self.public_project.creator,
+            )
+        assert_equal(exc_info.exception.code, 403)
+
+    def test_must_be_contributor_parent_write_private_project(self):
+        user = UserFactory()
+        node = NodeFactory(parent=self.private_project, creator=user)
+        self.private_project.set_permissions(self.private_project.creator, ['read', 'write'])
+        self.private_project.save()
+        with assert_raises(HTTPError) as exc_info:
+            view_that_needs_contributor_or_public_but_not_anonymized(
+                pid=self.private_project._id,
+                nid=node._id,
+                user=self.private_project.creator,
+            )
+        assert_equal(exc_info.exception.code, 403)
+
+    @mock.patch('website.project.decorators.Auth.from_kwargs')
+    def test_decorator_does_allow_anonymous_link_public_project(self, mock_from_kwargs):
+        mock_from_kwargs.return_value = Auth(user=None)
+        res = self.app.get('/project/{0}'.format(self.public_project._primary_key),
+            {'view_only': self.anonymized_link_to_public_project.key})
+        res = res.follow()
+        assert_equal(res.status_code, 200)
+
+    @mock.patch('website.project.decorators.Auth.from_kwargs')
+    def test_decorator_does_not_allow_anonymous_link_private_project(self, mock_from_kwargs):
+        mock_from_kwargs.return_value = Auth(user=None)
+        res = self.app.get('/project/{0}'.format(self.private_project._primary_key),
+                           {'view_only': self.anonymized_link_to_private_project.key})
+        res = res.follow(expect_errors=True)
+        assert_equal(res.status_code, 500)
 
 @must_be_logged_in
 def protected(**kwargs):
