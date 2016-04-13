@@ -3531,8 +3531,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return True
 
     def remove_affiliated_institution(self, inst, user, save=False):
-        if not user.is_affiliated_with_institution(inst):
-            raise UserNotAffiliatedError('User is not affiliated with {}'.format(inst.name))
         if inst == self.primary_institution:
             self.primary_institution = None  # TODO: Return false so it doesnt allow removal if its the only (or primary) institution
         if inst in self.affiliated_institutions:

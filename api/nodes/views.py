@@ -2076,7 +2076,7 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
         node = instance['self']
         for val in data:
             if val['id'] in current_insts:
-                node.remove_affiliated_institution(user, current_insts[val['id']])
+                node.remove_affiliated_institution(inst=current_insts[val['id']], user=user)
         node.save()
 
     def create(self, *args, **kwargs):
