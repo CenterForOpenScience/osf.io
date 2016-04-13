@@ -18,7 +18,7 @@ def postcommit_before_request():
 
 def postcommit_after_request(response, base_status_error_code=500):
     if response.status_code >= base_status_error_code:
-        _local.postcommmit_queue = set()
+        _local.postcommit_queue = set()
         return response
     try:
         if postcommit_queue():
