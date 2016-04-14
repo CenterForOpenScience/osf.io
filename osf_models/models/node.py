@@ -10,6 +10,20 @@ from .base import BaseModel, GuidMixin
 
 
 class Node(GuidMixin, BaseModel):
+    CATEGORY_MAP = (
+        ('analysis', 'Analysis'),
+        ('communication', 'Communication'),
+        ('data', 'Data'),
+        ('hypothesis', 'Hypothesis'),
+        ('instrumentation', 'Instrumentation'),
+        ('methods and measures', 'Methods and Measures'),
+        ('procedure', 'Procedure'),
+        ('project', 'Project'),
+        ('software', 'Software'),
+        ('other', 'Other'),
+        ('', 'Uncategorized')
+    )
+
     date_created = models.DateTimeField(auto_now_add=True)
     date_modified = models.DateTimeField(auto_now=True)
 
@@ -40,7 +54,7 @@ class Node(GuidMixin, BaseModel):
 
     title = models.CharField(validators=[validate_title], max_length=200)
     description = models.TextField()
-    # category = models.ForeignKey(Category, db_index=True)
+    category = models.CharField(max_length=255, choices=CATEGORY_MAP, default=CATEGORY_MAP[-1])
     # node_license = models.ForeignKey(NodeLicenseRecord)
 
     public_comments = models.BooleanField(default=True)

@@ -4,7 +4,7 @@ from django.db import models
 # from osf_models.models.node import Node
 
 
-class Permissions(models.Model):
+class Contributor(models.Model):
     read = models.BooleanField(default=False)
     write = models.BooleanField(default=False)
     admin = models.BooleanField(default=False)
