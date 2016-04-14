@@ -1,15 +1,12 @@
 from __future__ import unicode_literals
 
-import httplib as http
 import json
 
-from django.views.generic import ListView, DetailView, FormView
-from django.views.defaults import page_not_found, permission_denied
+from django.views.generic import ListView, DetailView, FormView, UpdateView
+from django.views.defaults import page_not_found, permission_denied, bad_request
 from django.core.urlresolvers import reverse
-from django.http import HttpResponseBadRequest
 from django.http import JsonResponse
-from django.shortcuts import render, redirect
-from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import redirect
 from modularodm import Q
 
 from admin.common_auth.logs import (
@@ -20,7 +17,7 @@ from admin.common_auth.logs import (
 )
 from admin.pre_reg import serializers
 from admin.pre_reg.forms import DraftRegistrationForm
-from framework.exceptions import HTTPError, PermissionsError
+from framework.exceptions import PermissionsError
 from website.exceptions import NodeStateError
 from website.files.models import FileNode
 from website.project.model import MetaSchema, DraftRegistration
@@ -58,7 +55,7 @@ class DraftListView(PreregAdmin, ListView):
 
 
 class DraftDetailView(PreregAdmin, DetailView):
-    template_name = 'pre_reg/edit_draft_registration.html'
+    template_name = 'pre_reg/draft_detail.html'
     context_object_name = 'draft'
 
     def get(self, request, *args, **kwargs):
@@ -77,7 +74,7 @@ class DraftDetailView(PreregAdmin, DetailView):
 
     def get_object(self, queryset=None):
         return serializers.serialize_draft_registration(
-            DraftRegistration.load(self.kwargs.get('draft_pk'), json_safe=False)
+            DraftRegistration.load(self.kwargs.get('draft_pk'))
         )
 
 
@@ -162,41 +159,20 @@ class DraftFormView(PreregAdmin, FormView):
                                    self.request.POST.get('page', 1))
 
 
-def view_file(request, node_id, provider, file_id):
-    file = FileNode.load(file_id)
-    wb_url = file.generate_waterbutler_url()
-    return redirect(wb_url)
+class CommentUpdateView(PreregAdmin, UpdateView):
+    context_object_name = 'draft'
 
-
-@csrf_exempt
-def update_draft(request, draft_pk):
-    """Updates current draft to save admin comments
-
-    :param draft_pk: Unique id for current draft
-    :return: DraftRegistration obj
-    """
-    data = json.loads(request.body)
-    draft = get_draft_or_error(draft_pk)
-
-    if 'admin_settings' in data:
-        form = DraftRegistrationForm(data=data['admin_settings'])
-        if not form.is_valid():
-            return HttpResponseBadRequest("Invalid form data")
-        admin_settings = form.cleaned_data
-        draft.notes = admin_settings.get('notes', draft.notes)
-        del admin_settings['notes']
-        draft.flags = admin_settings
-        draft.save()
-    else:
-        schema_data = data.get('schema_data', {})
-        log_message = list()
-        for key, value in schema_data.iteritems():
-            comments = schema_data.get(key, {}).get('comments', [])
-            for comment in comments:
-                log_message.append('{}: {}'.format(key, comment['value']))
+    def post(self, request, *args, **kwargs):
         try:
-            draft.update_metadata(schema_data)
+            data = json.loads(request.body).get('schema_data', {})
+            draft = DraftRegistration.load(self.kwargs.get('draft_pk'))
+            draft.update_metadata(data)
             draft.save()
+            log_message = list()
+            for key, value in data.iteritems():
+                comments = data.get(key, {}).get('comments', [])
+                for comment in comments:
+                    log_message.append('{}: {}'.format(key, comment['value']))
             update_admin_log(
                 user_id=request.user.id,
                 object_id=draft._id,
@@ -204,6 +180,22 @@ def update_draft(request, draft_pk):
                 message='Comments: <p>{}</p>'.format('</p><p>'.join(log_message)),
                 action_flag=COMMENT_PREREG
             )
-        except (NodeStateError):
-            raise HTTPError(http.BAD_REQUEST)
-    return JsonResponse(serializers.serialize_draft_registration(draft))
+            return JsonResponse(serializers.serialize_draft_registration(draft))
+        except AttributeError:
+            return page_not_found(
+                request,
+                AttributeError(
+                    '{} with id "{}" not found.'.format(
+                        self.context_object_name.title(),
+                        kwargs.get('draft_pk')
+                    )
+                )
+            )
+        except NodeStateError as e:
+            return bad_request(request, e)
+
+
+def view_file(request, node_id, provider, file_id):
+    fp = FileNode.load(file_id)
+    wb_url = fp.generate_waterbutler_url()
+    return redirect(wb_url)
