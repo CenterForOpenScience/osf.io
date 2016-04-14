@@ -2373,12 +2373,20 @@ class TestAddonCallbacks(OsfTestCase):
     }
 
     def setUp(self):
+        def mock_get_addon(addon_name, deleted=False):
+            # Overrides AddonModelMixin.get_addon -- without backrefs,
+            # no longer guaranteed to return the same set of objects-in-memory
+            return self.patched_addons.get(addon_name, None)
+
         super(TestAddonCallbacks, self).setUp()
         # Create project with component
         self.user = UserFactory()
         self.auth = Auth(user=self.user)
         self.parent = ProjectFactory()
         self.node = NodeFactory(creator=self.user, project=self.parent)
+        self.patches = []
+        self.patched_addons = {}
+        self.original_get_addon = Node.get_addon
 
         # Mock addon callbacks
         for addon in self.node.addons:
@@ -2386,14 +2394,28 @@ class TestAddonCallbacks(OsfTestCase):
             for callback, return_value in self.callbacks.iteritems():
                 mock_callback = getattr(mock_settings, callback)
                 mock_callback.return_value = return_value
-                setattr(
+                patch = mock.patch.object(
                     addon,
                     callback,
                     getattr(mock_settings, callback)
                 )
+                patch.start()
+                self.patches.append(patch)
+            self.patched_addons[addon.config.short_name] = addon
+        n_patch = mock.patch.object(
+            self.node,
+            'get_addon',
+            mock_get_addon
+        )
+        n_patch.start()
+        self.patches.append(n_patch)
+
+    def tearDown(self):
+        super(TestAddonCallbacks, self).tearDown()
+        for patcher in self.patches:
+            patcher.stop()
 
     def test_remove_contributor_callback(self):
-
         user2 = UserFactory()
         self.node.add_contributor(contributor=user2, auth=self.auth)
         self.node.remove_contributor(contributor=user2, auth=self.auth)
@@ -2404,7 +2426,6 @@ class TestAddonCallbacks(OsfTestCase):
             )
 
     def test_set_privacy_callback(self):
-
         self.node.set_privacy('public', self.auth)
         for addon in self.node.addons:
             callback = addon.after_set_privacy
@@ -3354,6 +3375,7 @@ class TestRoot(OsfTestCase):
 
     def test_fork_has_own_root(self):
         fork = self.project.fork_node(auth=self.auth)
+        fork.save()
         assert_equal(fork.root._id, fork._id)
 
     def test_fork_children_have_correct_root(self):

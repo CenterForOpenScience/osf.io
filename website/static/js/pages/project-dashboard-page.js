@@ -44,12 +44,6 @@ $('body').on('nodeLoad', function(event, data) {
 // Initialize comment pane w/ its viewmodel
 var $comments = $('.comments');
 if ($comments.length) {
-    var currentUser = {
-        id: ctx.currentUser.id,
-        url: ctx.currentUser.urls.profile,
-        fullname: ctx.currentUser.fullname,
-        gravatarUrl: ctx.currentUser.gravatarUrl
-    };
     var options = {
         nodeId : window.contextVars.node.id,
         nodeApiUrl: window.contextVars.node.urls.api,
@@ -59,7 +53,8 @@ if ($comments.length) {
         fileId: null,
         canComment: window.contextVars.currentUser.canComment,
         hasChildren: window.contextVars.node.hasChildren,
-        currentUser: currentUser
+        currentUser: window.contextVars.currentUser,
+        pageTitle: window.contextVars.node.title
     };
     Comment.init('#commentsLink', '.comment-pane', options);
 }

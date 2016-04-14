@@ -652,6 +652,10 @@ def _view_project(node, auth, primary=False):
     widgets, configs, js, css = _render_addon(node)
     redirect_url = node.url + '?view_only=None'
 
+    disapproval_link = ''
+    if (node.is_pending_registration and node.has_permission(user, ADMIN)):
+        disapproval_link = node.registration_approval.stashed_urls.get(user._id, {}).get('reject', '')
+
     # Before page load callback; skip if not primary call
     if primary:
         for addon in node.get_addons():
@@ -660,6 +664,7 @@ def _view_project(node, auth, primary=False):
                 status.push_status_message(message, kind='info', dismissible=False, trust=True)
     data = {
         'node': {
+            'disapproval_link': disapproval_link,
             'id': node._primary_key,
             'title': node.title,
             'category': node.category_display,
