@@ -3507,6 +3507,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     def find_by_institution(cls, inst, query=None):
         inst_node = inst.node
         query = query & Q('_primary_institution', 'eq', inst_node)
+        return cls.find(query, allow_institution=True)\
+
+    @classmethod
+    def find_by_institutions(cls, inst, query=None):
+        inst_node = inst.node
+        query = query & Q('_affiliated_institutions', 'eq', inst_node)
         return cls.find(query, allow_institution=True)
 
     # Primary institution node is attached to
