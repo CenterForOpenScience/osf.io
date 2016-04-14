@@ -221,4 +221,26 @@ $(function() {
 
     confirmEmails(window.contextVars.currentUser.emailsToAdd);
 
+    // Maintenance alert
+    var maintenancePersistKey = 'maintenance';
+    var $maintenance = $('#maintenance').on('closed.bs.alert', function() {
+        $.cookie(maintenancePersistKey, '0', { expires: 1, path: '/'});
+    });
+    var dismissed = $.cookie(maintenancePersistKey) === '0';
+    if (!dismissed) {
+        $maintenance.show();
+    }
+    // Localize maintenance period datetimes
+    var startMaintenanceUTC = moment.utc({year: 2016, month: 3, day: 15, hour: 1});
+    var endMaintenanceUTC = moment.utc({year: 2016, month: 3, day: 15, hour: 3, minute: 59});
+    var startMaintenance = moment(startMaintenanceUTC.toDate());
+    var endMaintenance = moment(endMaintenanceUTC.toDate());
+    $('#maintenanceTime').html(
+        '<strong>' +
+        startMaintenance.format('lll') +
+            '-' +
+                endMaintenance.format('lll') + '</strong>' +
+                    ' (' + startMaintenance.format('ZZ') + ' UTC)');
+    // END Maintenance alert
+
 });
