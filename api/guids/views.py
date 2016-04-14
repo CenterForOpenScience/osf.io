@@ -19,7 +19,7 @@ class GuidRedirect(JSONAPIBaseView):
     required_read_scopes = [ComposedScopes.FULL_READ]
     required_write_scopes = [CoreScopes.NULL]
 
-    view_category = 'guid'
+    view_category = 'guids'
     view_name = 'guid-detail'
 
     def get(self, request, **kwargs):
@@ -29,7 +29,7 @@ class GuidRedirect(JSONAPIBaseView):
         raise NotFound
 
     def get_redirect_url(self, **kwargs):
-        guid = Guid.load(kwargs['guid'])
+        guid = Guid.load(kwargs['guids'])
         if guid:
             referent = guid.referent
             if getattr(referent, 'absolute_api_v2_url', None):
