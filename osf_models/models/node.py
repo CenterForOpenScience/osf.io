@@ -1,7 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.db import models
 
-from osf_models.models.permissions import Permissions
+from osf_models.models.contributor import Contributor
 from osf_models.models.tag import Tag
 from osf_models.models.user import User
 from osf_models.models.validators import validate_title
@@ -31,6 +31,9 @@ class Node(GuidMixin, BaseModel):
 
     # permissions = Permissions are now on contributors
     # visible_contributor_ids =
+    @property
+    def visible_contributor_ids(self):
+        return self.contributors.filter(visible=True)
 
     is_bookmark_collection = models.BooleanField(default=False, db_index=True)
     is_collection = models.BooleanField(default=False, db_index=True)
@@ -67,7 +70,7 @@ class Node(GuidMixin, BaseModel):
     file_guid_to_share_uuids = DatetimeAwareJSONField()
 
     creator = models.ForeignKey(User, db_index=True, related_name='created', on_delete=models.SET_NULL, null=True)
-    contributors = models.ManyToManyField(User, through=Permissions, related_name='contributed_to')
+    contributors = models.ManyToManyField(User, through=Contributor, related_name='contributed_to')
     users_watching_node = models.ManyToManyField(User, related_name='watching')
 
     # logs = Logs have a reverse relation to nodes

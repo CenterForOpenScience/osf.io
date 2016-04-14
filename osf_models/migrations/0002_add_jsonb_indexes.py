@@ -31,4 +31,3 @@ class Migration(migrations.Migration):
                 migrations.RunSQL(base_create_sql.format(field, table, field),
                                   reverse_sql=base_drop_sql.format(field, table))
             )
-
