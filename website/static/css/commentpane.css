@@ -124,6 +124,7 @@
 }
 
 .atwho-input {
+    display: block;
     height: auto;
     min-height: 56px;
     overflow: hidden;
