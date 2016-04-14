@@ -3,6 +3,7 @@ This migration will add original_node and node associated with the log to nodelo
 clone each nodelog for the remaining nodes in the backref (registrations and forks),
 changing the node to the current node.
 """
+from bson import ObjectId
 from copy import deepcopy
 import logging
 import sys
@@ -57,7 +58,7 @@ def migrate(dry=True):
 
         for other in tagged:
             clone = deepcopy(log)
-            clone.pop('_id')
+            clone['_id'] = str(ObjectId())
             clone.pop('__backrefs', None)
             clone['original_node'] = log['params'].get('node', node)
             clone['node'] = other
