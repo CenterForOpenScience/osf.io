@@ -11,6 +11,7 @@ var Raven = require('raven-js');
 var LogText = require('js/logTextParser');
 var AddProject = require('js/addProjectPlugin');
 var mC = require('js/mithrilComponents');
+var lodashGet = require('lodash.get');
 
 var MOBILE_WIDTH = 767; // Mobile view break point for responsiveness
 var NODE_PAGE_SIZE = 10; // Load 10 nodes at a time from server
@@ -164,7 +165,7 @@ NodeFetcher.prototype = {
     this.nextLink = results.links.next;
     this.loaded += results.data.length;
     for(var i = 0; i < results.data.length; i++) {
-      if (this.type === 'registrations' && (results.data[i].attributes.retracted === true || results.data[i].attributes.pending_registration_approval === true))
+      if (this.type === 'registrations' && (results.data[i].attributes.withdrawn === true || results.data[i].attributes.pending_registration_approval === true))
           continue; // Exclude retracted and pending registrations
       else if (results.data[i].relationships.parent && this._handleOrphans)
           this._orphans.push(results.data[i]);
@@ -263,16 +264,21 @@ function _formatDataforPO(item) {
     item.name = item.attributes.title;
     item.tags = item.attributes.tags.toString();
     item.contributors = '';
-    if (item.embeds.contributors.data){
+    var contributorsData = lodashGet(item, 'embeds.contributors.data', null);
+    if (contributorsData){
         item.embeds.contributors.data.forEach(function(c){
             var attr;
-            if (c.embeds.users.data) {
-                attr = c.embeds.users.data.attributes;
+            var users = lodashGet(c, 'embeds.users.data', null);
+            if (users) {
+                if (users.errors) {
+                    attr = users.errors[0].meta;
+                } else {
+                    attr = users.attributes;
+                }
             }
-            else {
-                attr = c.embeds.users.errors[0].meta;
+            if (attr) {
+                item.contributors += attr.full_name + ' ' + attr.middle_names + ' ' + attr.given_name + ' ' + attr.family_name + ' ' ;
             }
-            item.contributors += attr.full_name + ' ' + attr.middle_names + ' ' + attr.given_name + ' ' + attr.family_name + ' ' ;
 
         });
     }
@@ -439,7 +445,7 @@ var MyProjects = {
                 var id = item.data.id;
                 if(!item.data.attributes.retracted){
                     var urlPrefix = item.data.attributes.registration ? 'registrations' : 'nodes';
-                    var url = $osf.apiV2Url(urlPrefix + '/' + id + '/logs/', { query : { 'page[size]' : 6, 'embed' : ['nodes', 'user', 'linked_node', 'template_node', 'contributors']}});
+                    var url = $osf.apiV2Url(urlPrefix + '/' + id + '/logs/', { query : { 'page[size]' : 6, 'embed' : ['original_node', 'user', 'linked_node', 'template_node', 'contributors']}});
                     var promise = self.getLogs(url);
                     return promise;
                 }
@@ -539,17 +545,15 @@ var MyProjects = {
         self.unselectContributor = function (id){
             self.currentView().contributor.forEach(function (c, index, arr) {
                 if(c.data.id === id){
-                    arr.splice(index, 1);
-                    self.updateList();
+                    self.updateFilesData(c);
                 }
             });
         };
 
         self.unselectTag = function (tag){
-            self.currentView().tag.forEach(function (c, index, arr) {
-                if(c.data.tag === tag){
-                    arr.splice(index, 1);
-                    self.updateList();
+            self.currentView().tag.forEach(function (t, index, arr) {
+                if(t.data.tag === tag){
+                    self.updateFilesData(t);
                 }
             });
         };
@@ -632,7 +636,7 @@ var MyProjects = {
                             'You have not made any registrations yet.');
                     } else {
                         template = m('.db-non-load-template.m-md.p-md.osf-box',
-                            'This collection is empty. To add projects or registrations, click "All my projects" or "All my registrations" in the sidebar, and then drag and drop items into the collection link.');
+                            'This collection is empty.' + self.viewOnly ? '' : ' To add projects or registrations, click "All my projects" or "All my registrations" in the sidebar, and then drag and drop items into the collection link.');
                     }
                 } else {
                     if(!self.currentView().fetcher.isEmpty()){
@@ -659,30 +663,32 @@ var MyProjects = {
             self.users = {};
 
             self.filteredData().forEach(function(item) {
-              var contributors = item.embeds.contributors.data || [];
-              for(var i = 0; i < contributors.length; i++) {
-                var u = contributors[i];
-                if (u.id === window.contextVars.currentUser.id) {
-                  continue;
+                var contributors = lodashGet(item, 'embeds.contributors.data', []);
+
+                if (contributors) {
+                    for(var i = 0; i < contributors.length; i++) {
+                        var u = contributors[i];
+                        if ((u.id === window.contextVars.currentUser.id) && !(self.institutionId)) {
+                          continue;
+                        }
+                        if(self.users[u.id] === undefined) {
+                            self.users[u.id] = {
+                                data : u,
+                                count: 1
+                        };
+                    } else {
+                        self.users[u.id].count++;
+                    }}
+                    var tags = item.attributes.tags || [];
+                    for(var j = 0; j < tags.length; j++) {
+                        var t = tags[j];
+                        if(self.tags[t] === undefined) {
+                             self.tags[t] = 1;
+                        } else {
+                            self.tags[t]++;
+                        }
+                    }
                 }
-                if(self.users[u.id] === undefined) {
-                  self.users[u.id] = {
-                    data : u,
-                    count: 1
-                  };
-                } else {
-                  self.users[u.id].count++;
-                }
-              }
-              var tags = item.attributes.tags || [];
-              for(var j = 0; j < tags.length; j++) {
-                var t = tags[j];
-                if(self.tags[t] === undefined) {
-                  self.tags[t] = 1;
-                } else {
-                  self.tags[t]++;
-                }
-              }
             });
 
 
@@ -1263,7 +1269,7 @@ var Collections = {
         var collectionListTemplate = [
             m('h5.clearfix', [
                 'Collections ',
-                m('i.fa.fa-question-circle.text-muted', {
+                 viewOnly ? '' : m('i.fa.fa-question-circle.text-muted', {
                     'data-toggle':  'tooltip',
                     'title':  'Collections are groups of projects. You can create custom collections. Drag and drop your projects or bookmarked projects to add them.',
                     'data-placement' : 'bottom'
@@ -1715,7 +1721,7 @@ var Filters = {
             [
                 m('h5.m-t-sm', [
                     'Contributors ',
-                    m('i.fa.fa-question-circle.text-muted', {
+                    args.viewOnly ? '' : m('i.fa.fa-question-circle.text-muted', {
                         'data-toggle':  'tooltip',
                         'title': 'Click a contributor\'s name to see projects that you have in common.',
                         'data-placement' : 'bottom'

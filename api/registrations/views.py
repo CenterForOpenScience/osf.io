@@ -305,7 +305,7 @@ class RegistrationNodeLinksDetail(NodeLinksDetail, RegistrationMixin):
 
 class RegistrationRegistrationsList(NodeRegistrationsList, RegistrationMixin):
     view_category = 'registrations'
-    view_name = 'registration-providers'
+    view_name = 'registration-registrations'
 
 
 class RegistrationFilesList(NodeFilesList, RegistrationMixin):

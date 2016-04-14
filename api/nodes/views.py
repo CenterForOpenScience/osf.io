@@ -1,7 +1,4 @@
-import requests
-
 from modularodm import Q
-from modularodm.exceptions import NoResultsFound
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
 from rest_framework.status import HTTP_204_NO_CONTENT
@@ -20,6 +17,7 @@ from api.base.parsers import (
     JSONAPIOnetoOneRelationshipParserForRegularJSON
 )
 from api.base.exceptions import RelationshipPostMakesNoChanges
+from api.base.pagination import CommentPagination
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
 from api.files.serializers import FileSerializer
 from api.comments.serializers import CommentSerializer, CommentCreateSerializer
@@ -56,10 +54,8 @@ from api.logs.serializers import NodeLogSerializer
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
 from website.models import Node, Pointer, Comment, NodeLog, Institution
-from website.files.models import StoredFileNode, FileNode, TrashedFileNode
-from website.files.models.dropbox import DropboxFile
+from website.files.models import FileNode
 from framework.auth.core import User
-from website.util import waterbutler_api_url_for
 from api.base.utils import default_node_list_query, default_node_permission_query
 
 
@@ -1527,7 +1523,7 @@ class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
             for addon
             in self.get_node().get_addons()
             if addon.config.has_hgrid_files
-            and addon.complete
+            and addon.configured
         ]
 
 class NodeProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
@@ -1703,7 +1699,7 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMix
     ===
     * 'node_created': A Node is created (_deprecated_)
     * 'node_forked': A Node is forked (_deprecated_)
-    * 'node_removed': A Node is dele (_deprecated_)
+    * 'node_removed': A Node is deleted (_deprecated_)
 
    ##Log Attributes
 
@@ -1718,9 +1714,9 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMix
 
     ##Relationships
 
-    ###Nodes
+    ###Node
 
-    A list of all Nodes this Log is added to.
+    The node this log belongs to.
 
     ###User
 
@@ -1868,6 +1864,7 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
     required_read_scopes = [CoreScopes.NODE_COMMENTS_READ]
     required_write_scopes = [CoreScopes.NODE_COMMENTS_WRITE]
 
+    pagination_class = CommentPagination
     serializer_class = CommentSerializer
     view_category = 'nodes'
     view_name = 'node-comments'
@@ -1879,41 +1876,13 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
         return Q('node', 'eq', self.get_node()) & Q('root_target', 'ne', None)
 
     def get_queryset(self):
-        commented_files = []
         comments = Comment.find(self.get_query_from_request())
         for comment in comments:
             # Deleted root targets still appear as tuples in the database,
             # but need to be None in order for the query to be correct.
-            if isinstance(comment.root_target.referent, TrashedFileNode):
+            if comment.root_target.referent.is_deleted:
                 comment.root_target = None
                 comment.save()
-
-            elif isinstance(comment.root_target.referent, StoredFileNode) and comment.root_target.referent not in commented_files:
-                commented_files.append(comment.root_target)
-
-        for root_target in commented_files:
-            if root_target.referent.provider == 'osfstorage':
-                try:
-                    StoredFileNode.find(
-                        Q('node', 'eq', self.get_node()._id) &
-                        Q('_id', 'eq', root_target.referent._id) &
-                        Q('is_file', 'eq', True)
-                    )
-                except NoResultsFound:
-                    Comment.update(Q('root_target', 'eq', root_target), data={'root_target': None})
-            else:
-                referent = root_target.referent
-                if referent.provider == 'dropbox':
-                    # referent.path is the absolute path for the db file, but wb requires the relative path
-                    referent = DropboxFile.load(root_target.referent._id)
-                url = waterbutler_api_url_for(self.get_node()._id, referent.provider, referent.path, meta=True)
-                waterbutler_request = requests.get(
-                    url,
-                    cookies=self.request.COOKIES,
-                    headers={'Authorization': self.request.META.get('HTTP_AUTHORIZATION')},
-                )
-                if waterbutler_request.status_code == 404:
-                    Comment.update(Q('root_target', 'eq', root_target), data={'root_target': None})
 
         return Comment.find(self.get_query_from_request())
 
