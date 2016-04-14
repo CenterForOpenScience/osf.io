@@ -4,7 +4,7 @@ from rest_framework import permissions as drf_permissions
 
 from framework.guid.model import Guid
 from framework.auth.oauth_scopes import CoreScopes, ComposedScopes
-from api.base.exceptions import NotImplementedError
+from api.base.exceptions import EndpointNotImplementedError
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
 
@@ -35,5 +35,5 @@ class GuidRedirect(JSONAPIBaseView):
             if getattr(referent, 'absolute_api_v2_url', None):
                 return referent.absolute_api_v2_url
             else:
-                raise NotImplementedError()
+                raise EndpointNotImplementedError()
         return None
