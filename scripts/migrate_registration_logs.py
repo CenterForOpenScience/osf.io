@@ -47,8 +47,9 @@ def get_registered_from(registration):
     if registration.registered_from:
         return registration.registered_from_id
     else:
-        first_log = db['node'].find_one({'_id': registration._id})['logs'][0]
-        return NodeLog.load(first_log).params['node']
+        first_log_id = db['node'].find_one({'_id': registration._id})['logs'][0]
+        log = NodeLog.load(first_log_id)
+        return log.params.get('node') or log.params.get('project')
 
 
 def migrate_log(logs):
@@ -59,7 +60,8 @@ def migrate_log(logs):
     count = 0
     for log in logs:
         count += 1
-        params_node = Node.load(log.params['node'])
+        node = log.params.get('node') or log.params.get('project')
+        params_node = Node.load(node)
         if params_node.is_registration:
             log.params['node'] = get_registered_from(params_node)
             log.params['registration'] = params_node._id
