@@ -10,6 +10,16 @@ from api.base.views import JSONAPIBaseView
 
 
 class GuidRedirect(JSONAPIBaseView):
+    """Find an item by its guid.
+
+    This endpoint will redirect you to the most appropriate URL given an OSF GUID. For example, /v2/guids/{node_id},
+    will redirect to /v2/nodes/{node_id} while /v2/guids/{user_id} will redirect to /v2/users/{user_id}. If the GUID
+    does not resolve, you will receive a 410 GONE response. If the GUID corresponds to an item that does not have a
+    corresponding endpoint (e.g. wiki pages), you will receive a 501 NOT_IMPLEMENTED response.
+
+    #This Request/Response
+
+    """
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
