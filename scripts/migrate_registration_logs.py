@@ -84,7 +84,7 @@ def main(dry_run):
 if __name__ == '__main__':
     import sys
     script_utils.add_file_logger(logger, __file__)
-    dry_run = 'dry' in sys.argv
+    dry_run = '--dry' in sys.argv
     init_app(set_backends=True, routes=False)
     with TokuTransaction():
         main(dry_run=dry_run)
