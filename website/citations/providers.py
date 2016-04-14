@@ -200,7 +200,7 @@ class CitationsProvider(object):
 
         # Folders with 'parent_list_id'==None are children of 'All Documents'
         for folder in account_folders:
-            if folder.get('parent_list_id') is None:
+            if not folder.get('parent_list_id'):
                 folder['parent_list_id'] = 'ROOT'
 
         node_account = node_addon.external_account
