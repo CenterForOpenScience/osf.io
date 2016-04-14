@@ -32,6 +32,9 @@ class GuidRedirect(JSONAPIBaseView):
     view_category = 'guids'
     view_name = 'guid-detail'
 
+    def get_serializer_class(self):
+        return None
+
     def get(self, request, **kwargs):
         url = self.get_redirect_url(**kwargs)
         if url:
