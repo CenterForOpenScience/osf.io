@@ -6,13 +6,14 @@ to the correct Glacier archive, and have an archive of the correct size.
 Should be run after `glacier_inventory.py`.
 """
 
-import sys
 import logging
 
 from modularodm import Q
 from boto.glacier.layer2 import Layer2
 from dateutil.parser import parse as parse_date
 from dateutil.relativedelta import relativedelta
+
+from framework.celery_tasks import app as celery_app
 
 from website.app import init_app
 from website.files import models
@@ -110,13 +111,9 @@ def main(job_id=None):
             logger.error(str(error))
 
 
-if __name__ == '__main__':
-    dry_run = 'dry' in sys.argv
+@celery_app.task(name='scripts.osfstorage.glacier_audit')
+def run_main(job_id=None, dry_run=True):
     init_app(set_backends=True, routes=False)
     if not dry_run:
         scripts_utils.add_file_logger(logger, __file__)
-    try:
-        job_id = sys.argv[2]
-    except IndexError:
-        job_id = None
     main(job_id=job_id)
