@@ -1,21 +1,12 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from django.views.generic.detail import DetailView
-from django.views.generic.edit import FormView, ProcessFormView
 from django.views.generic.list import ListView
-from django.core.urlresolvers import reverse
-from django.utils import timezone
 from forms import ConferenceForm, ConferenceFieldNamesForm
 from .serializers import serialize_conference
 
-from modularodm import Q
 from modularodm.exceptions import ModularOdmException
 
-from framework.auth.core import User
-
-from website import settings
 from website.conferences.model import Conference
-from website.app import init_app
 
 
 def create_conference(request):
