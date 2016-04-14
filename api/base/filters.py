@@ -374,10 +374,17 @@ class ListFilterMixin(FilterMixin):
                 if params['value'].lower() in getattr(item, field_name, {}).lower()
             ]
         else:
-            return_val = [
-                item for item in default_queryset
-                if self.FILTERS[params['op']](getattr(item, field_name, None), params['value'])
-            ]
+            return_val = []
+            for item in default_queryset:
+                item_val = getattr(item, field_name, None)
+                filter_val = params['value']
+                try:
+                    accept = self.FILTERS[params['op']](item_val, filter_val)
+                except TypeError:
+                    raise InvalidFilterValue(detail='Cannot compare filter of type {} to item of type {}'.format(
+                        type(item_val).__name__, type(filter_val).__name__))
+                else:
+                    if accept: return_val.append(item)
 
         return return_val
 
