@@ -37,9 +37,19 @@ class DraftRegistrationForm(forms.Form):
         required=False
     )
 
+    approve_reject = forms.ChoiceField(
+        label='Action',
+        choices=(
+            ('approve', 'Approve'),
+            ('reject', 'Reject'),
+        ),
+        required=False,
+        widget=forms.RadioSelect(),
+    )
+
     def __init__(self, *args, **kwargs):
         prereg_reviewers = itertools.chain(
             ((None, 'None'), ), get_prereg_reviewers())
         self.base_fields['assignee'] = forms.ChoiceField(
-            choices=prereg_reviewers)
+            choices=prereg_reviewers, required=False)
         super(DraftRegistrationForm, self).__init__(*args, **kwargs)

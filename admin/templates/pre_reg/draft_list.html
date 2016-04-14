@@ -24,13 +24,15 @@
     {% for draft in drafts %}
     <tr>
         <td>
+            <h4 style="margin-top: 0px">
             {% if draft.is_pending_approval %}
-            <span class="label label-lg label-warning">Pending Approval</span>
+            <span class="label label-warning">Pending Approval</span>
             {% elif draft.is_approved %}
             <span class="label label-lg label-success">Approved</span>
             {% elif draft.is_rejected %}
             <span class="label label-lg label-danger">Rejected</span>
             {% endif %}
+            </h4>
         </td>
         <td>
             {{ draft.title|truncatechars:40 }}
@@ -39,9 +41,21 @@
             {{ draft.initiator.full_name }}
         </td>
         <td>
-            {{ draft.submitted | date:"N dS Y"}}
+            {{ draft.submitted | date:"N dS Y g:i a"}}
         </td>
         <td>
+            <a href="{% url 'pre_reg:update_draft' draft.pk %}"
+               class="btn btn-success" data-toggle="modal"
+               data-target="#form{{ draft.pk }}">
+                View details
+            </a>
+            <div class="modal" id="form{{ draft.pk }}">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        {# Data from above link #}
+                    </div>
+                </div>
+            </div>
             <a href="{% url 'pre_reg:view_draft' draft.pk %}" target="_blank"
                class="btn btn-primary">
                 View Draft

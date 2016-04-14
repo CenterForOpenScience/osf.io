@@ -3,8 +3,8 @@ from __future__ import unicode_literals
 import httplib as http
 import json
 
-from django.views.generic import ListView, DetailView
-from django.views.defaults import page_not_found
+from django.views.generic import ListView, DetailView, FormView
+from django.views.defaults import page_not_found, permission_denied
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseBadRequest
 from django.http import JsonResponse
@@ -20,7 +20,7 @@ from admin.common_auth.logs import (
 )
 from admin.pre_reg import serializers
 from admin.pre_reg.forms import DraftRegistrationForm
-from framework.exceptions import HTTPError
+from framework.exceptions import HTTPError, PermissionsError
 from website.exceptions import NodeStateError
 from website.files.models import FileNode
 from website.project.model import MetaSchema, DraftRegistration
@@ -77,50 +77,95 @@ class DraftDetailView(PreregAdmin, DetailView):
 
     def get_object(self, queryset=None):
         return serializers.serialize_draft_registration(
-            DraftRegistration.load(self.kwargs.get('draft_pk'))
+            DraftRegistration.load(self.kwargs.get('draft_pk'), json_safe=False)
         )
+
+
+class DraftFormView(PreregAdmin, FormView):
+    template_name = 'pre_reg/draft_form.html'
+    form_class = DraftRegistrationForm
+    context_object_name = 'draft'
+
+    def get(self, request, *args, **kwargs):
+        try:
+            return super(DraftFormView, self).get(request, *args, **kwargs)
+        except AttributeError:
+            return page_not_found(
+                request,
+                AttributeError(
+                    '{} with id "{}" not found.'.format(
+                        self.context_object_name.title(),
+                        kwargs.get('draft_pk')
+                    )
+                )
+            )
+
+    def post(self, request, *args, **kwargs):
+        try:
+            return super(DraftFormView, self).post(request, *args, **kwargs)
+        except AttributeError:
+            return page_not_found(
+                request,
+                AttributeError(
+                    '{} with id "{}" not found.'.format(
+                        self.context_object_name.title(),
+                        kwargs.get('draft_pk')
+                    )
+                )
+            )
+        except PermissionsError as e:
+            return permission_denied(request, e)
+
+    def get_initial(self):
+        draft = DraftRegistration.load(self.kwargs.get('draft_pk'))
+        flags = draft.flags
+        self.initial = {
+            'notes': draft.notes,
+            'assignee': flags['assignee'],
+            'payment_sent': flags['payment_sent'],
+            'proof_of_publication': flags['proof_of_publication'],
+        }
+        return super(DraftFormView, self).get_initial()
+
+    def get_context_data(self, **kwargs):
+        kwargs.setdefault('draft', serializers.serialize_draft_registration(
+            DraftRegistration.load(self.kwargs.get('draft_pk')),
+            json_safe=False
+        ))
+        kwargs.setdefault('IMMEDIATE', serializers.IMMEDIATE)
+        return super(DraftFormView, self).get_context_data(**kwargs)
+
+    def form_valid(self, form):
+        draft = DraftRegistration.load(self.kwargs.get('draft_pk'))
+        if 'approve_reject' in form.changed_data:
+            osf_user = self.request.user.osf_user
+            if form.cleaned_data.get('approve_reject') == 'approve':
+                flag = ACCEPT_PREREG
+                message = 'Approved'
+                draft.approve(osf_user)
+            else:
+                flag = REJECT_PREREG
+                message = 'Rejected'
+                draft.reject(osf_user)
+            update_admin_log(self.request.user.id, self.kwargs.get('draft_pk'),
+                             'Draft Registration', message, flag)
+        admin_settings = form.cleaned_data
+        draft.notes = admin_settings.get('notes', draft.notes)
+        del admin_settings['approve_reject']
+        del admin_settings['notes']
+        draft.flags = admin_settings
+        draft.save()
+        return super(DraftFormView, self).form_valid(form)
+
+    def get_success_url(self):
+        return '{}?page={}'.format(reverse('pre_reg:prereg'),
+                                   self.request.POST.get('page', 1))
 
 
 def view_file(request, node_id, provider, file_id):
     file = FileNode.load(file_id)
     wb_url = file.generate_waterbutler_url()
     return redirect(wb_url)
-
-
-@csrf_exempt
-def approve_draft(request, draft_pk):
-    """Approves current draft
-    :param request: mostly for user
-    :param draft_pk: Unique id for current draft
-    :return: DraftRegistrationApproval obj
-    """
-    draft = get_draft_or_error(draft_pk)
-
-    user = request.user.osf_user
-    draft.approve(user)
-    update_admin_log(
-        request.user.id, draft._id, 'Draft Registration',
-        'approved', action_flag=ACCEPT_PREREG
-    )
-    return redirect(reverse('pre_reg:prereg') + "?page={0}".format(request.POST.get('page', 1)), permanent=True)
-
-
-@csrf_exempt
-def reject_draft(request, draft_pk):
-    """Rejects current draft
-    :param request: mostly for user
-    :param draft_pk: Unique id for current draft
-    :return: DraftRegistrationApproval obj
-    """
-    draft = get_draft_or_error(draft_pk)
-
-    user = request.user.osf_user
-    draft.reject(user)
-    update_admin_log(
-        request.user.id, draft._id, 'Draft Registration',
-        'rejected', action_flag=REJECT_PREREG
-    )
-    return redirect(reverse('pre_reg:prereg') + "?page={0}".format(request.POST.get('page', 1)), permanent=True)
 
 
 @csrf_exempt
