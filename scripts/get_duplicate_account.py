@@ -34,7 +34,7 @@ def log_duplicate_acount(dry):
             logger.info("User {}, username {}, id {}, email {} is a duplicate"
                         .format(user.fullname, user.username, user._id, user.emails))
     else:
-        logger.infoe("There is no duplicate emails.")
+        logger.info("There is no duplicate emails.")
 
 
 def main():
