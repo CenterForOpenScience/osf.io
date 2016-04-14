@@ -173,6 +173,16 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         self.node.remove()
         self.user.remove()
 
+    def test_configured_true(self):
+        assert_true(self.node_settings.has_auth)
+        assert_true(self.node_settings.complete)
+        assert_true(self.node_settings.configured)
+
+    def test_configured_false(self):
+        self.node_settings.clear_settings()
+        self.node_settings.save()
+        assert_false(self.node_settings.configured)
+
     def test_complete_true(self):
         assert_true(self.node_settings.has_auth)
         assert_true(self.node_settings.complete)
