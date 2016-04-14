@@ -15,6 +15,7 @@
     "less": "^2.6.0",
     "less-loader": "^2.2.2",
     "raven": "^0.7.2",
+    "simple-statistics": "2.0.0-beta1",
     "urijs": "^1.14.1",
     "webpack": "^1.7.2",
     "webpack-bundle-tracker": "0.0.8"
