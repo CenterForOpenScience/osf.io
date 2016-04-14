@@ -1,12 +1,12 @@
 from django.core.exceptions import ValidationError
 from django.db import models
 
-from osf_models.models.user import User
 from osf_models.models.permissions import Permissions
-from osf_models.utils.datetime_aware_jsonfield import DatetimeAwareJSONField
-from website.util import sanitize
-from .base import BaseModel, GuidMixin
 from osf_models.models.tag import Tag
+from osf_models.models.user import User
+from osf_models.models.validators import validate_title
+from osf_models.utils.datetime_aware_jsonfield import DatetimeAwareJSONField
+from .base import BaseModel, GuidMixin
 
 
 class Node(GuidMixin, BaseModel):
@@ -26,7 +26,7 @@ class Node(GuidMixin, BaseModel):
 
     is_registration = models.BooleanField(default=False, db_index=True)
     registered_date = models.DateTimeField(db_index=True)
-    registered_user = models.ForeignKey(User)
+    registered_user = models.ForeignKey(User, related_name='related_to', on_delete=models.SET_NULL, null=True)
 
     # registered_schema = models.ManyToManyField(Metaschema)
 
@@ -38,7 +38,7 @@ class Node(GuidMixin, BaseModel):
     is_fork = models.BooleanField(default=False, db_index=True)
     forked_date = models.DateTimeField(db_index=True)
 
-    title = models.CharField(validators=validate_title, max_length=200)
+    title = models.CharField(validators=[validate_title], max_length=200)
     description = models.TextField()
     # category = models.ForeignKey(Category, db_index=True)
     # node_license = models.ForeignKey(NodeLicenseRecord)
@@ -52,24 +52,24 @@ class Node(GuidMixin, BaseModel):
     wiki_private_uuids = DatetimeAwareJSONField()
     file_guid_to_share_uuids = DatetimeAwareJSONField()
 
-    creator = models.ForeignKey(User, db_index=True)
-    contributors = models.ManyToManyField(User, through=Permissions)
-    users_watching_node = models.ManyToManyField(User)
+    creator = models.ForeignKey(User, db_index=True, related_name='created', on_delete=models.SET_NULL, null=True)
+    contributors = models.ManyToManyField(User, through=Permissions, related_name='contributed_to')
+    users_watching_node = models.ManyToManyField(User, related_name='watching')
 
     # logs = Logs have a reverse relation to nodes
-    tags = models.ManyToManyField(Tag)
+    tags = models.ManyToManyField(Tag, related_name='tagged')
 
     # Tags for internal use
-    system_tags = models.ManyToManyField(Tag)
+    system_tags = models.ManyToManyField(Tag, related_name='tagged_by_system')
 
-    nodes = models.ManyToManyField('self')
-    forked_from = models.ForeignKey('self')
-    registered_from = models.ForeignKey('self')
-    root = models.ForeignKey('self')
-    parent_node = models.ForeignKey('self')
+    nodes = models.ManyToManyField('self', related_name='children')
+    forked_from = models.ForeignKey('self', related_name='forks', on_delete=models.SET_NULL, null=True)
+    registered_from = models.ForeignKey('self', related_name='registrations', on_delete=models.SET_NULL, null=True)
+    root = models.ForeignKey('self', related_name='absolute_parent', on_delete=models.SET_NULL, null=True)
+    parent_node = models.ForeignKey('self', related_name='parent', on_delete=models.SET_NULL, null=True)
 
     # The node (if any) used as a template for this node's creation
-    template_node = models.ForeignKey('self')
+    template_node = models.ForeignKey('self', related_name='templated_from', on_delete=models.SET_NULL, null=True)
 
     piwik_site_id = models.IntegerField()
 
@@ -96,19 +96,3 @@ class Node(GuidMixin, BaseModel):
         else:
             raise ValidationError('comment_level must be either `public` or `private`')
 
-def validate_title(value):
-    """Validator for Node#title. Makes sure that the value exists and is not
-    above 200 characters.
-    """
-    if value is None or not value.strip():
-        raise ValidationError('Title cannot be blank.')
-
-    value = sanitize.strip_html(value)
-
-    if value is None or not value.strip():
-        raise ValidationError('Invalid title.')
-
-    if len(value) > 200:
-        raise ValidationError('Title cannot exceed 200 characters.')
-
-    return True
