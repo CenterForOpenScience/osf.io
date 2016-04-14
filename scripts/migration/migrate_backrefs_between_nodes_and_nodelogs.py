@@ -67,11 +67,16 @@ def migrate(dry=True):
         if len(to_insert) > 9999:
             count += len(to_insert)
             result = db.nodelog.insert(to_insert)
-            # print(result)
-            # assert result.modified_count == 500, result
             to_insert = []
             done += len(result)
             logger.info('{}/{} Logs updated'.format(done, count))
+
+    if len(to_insert) > 0:
+        count += len(to_insert)
+        result = db.nodelog.insert(to_insert)
+        to_insert = []
+        done += len(result)
+        logger.info('{}/{} Logs updated'.format(done, count))
 
     if dry:
         raise RuntimeError('Dry run -- transaction rolled back')
