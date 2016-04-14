@@ -7,6 +7,7 @@ from scripts import utils as script_utils
 from modularodm import Q
 from bson.son import SON
 from framework.mongo import database as db
+from framework.transactions.context import TokuTransaction
 
 logger = logging.getLogger(__name__)
 
@@ -39,10 +40,11 @@ def log_duplicate_acount(dry):
 
 def main():
     init_app(routes=False)  # Sets the storage backends on all models
-    dry = 'dry' in sys.argv
+    dry = '--dry' in sys.argv
     if not dry:
         script_utils.add_file_logger(logger, __file__)
-    log_duplicate_acount(dry)
+    with TokuTransaction():
+        log_duplicate_acount(dry)
 
 
 if __name__ == '__main__':
