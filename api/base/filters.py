@@ -375,9 +375,9 @@ class ListFilterMixin(FilterMixin):
             ]
         else:
             return_val = []
+            filter_val = params['value']
             for item in default_queryset:
                 item_val = getattr(item, field_name, None)
-                filter_val = params['value']
                 try:
                     accept = self.FILTERS[params['op']](item_val, filter_val)
                 except TypeError:
