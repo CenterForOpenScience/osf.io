@@ -39,7 +39,7 @@
                                 <img data-bind="css: {comment-gravatar: author.gravatarUrl}, attr: {src: author.gravatarUrl}"/>
                             </span>
                             <span data-bind="if: author.id">
-                                <a class="comment-author" data-bind="text: author.fullname, attr: {href: author.url}"></a>
+                                <a class="comment-author" data-bind="text: author.fullname, attr: {href: author.urls.profile}"></a>
                             </span>
                             <span data-bind="ifnot: author.id">
                                 <span class="comment-author" data-bind="text: author.fullname"></span>

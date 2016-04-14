@@ -8,6 +8,10 @@
 ## Use full page width
 <%def name="container_class()">container-xxl</%def>
 
+% if (user['can_comment'] or node['has_comments']):
+    <%include file="include/comment_pane_template.mako"/>
+% endif
+
 <div class="row" style="margin-bottom: 5px;">
     <div class="col-sm-6">
         <%include file="wiki/templates/status.mako"/>
@@ -365,6 +369,7 @@ ${parent.javascript_bottom()}
         versionSettings: ${ version_settings | sjson, n },
         panelsUsed: ${ panels_used | sjson, n },
         wikiID: ${ wiki_id | sjson, n },
+        wikiName: ${wiki_name | sjson, n },
         urls: {
             draft: ${ urls['api']['draft'] | sjson, n },
             content: ${urls['api']['content'] | sjson, n },

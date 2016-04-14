@@ -1,26 +1,24 @@
 # -*- coding: utf-8 -*-
-from functools import partial
 
-import pytz
-import markdown
 from datetime import datetime
+
+import markdown
+import pytz
 from flask import request
 
 from api.caching.tasks import ban_url
+from framework.guid.model import Guid
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from modularodm import Q
-
-from framework.guid.model import Guid
-
+from website import settings
 from website.addons.base.signals import file_updated
 from website.files.models import FileNode, TrashedFileNode
+from website.models import Comment
 from website.notifications.constants import PROVIDERS
 from website.notifications.emails import notify
-from website.models import Comment
 from website.project.decorators import must_be_contributor_or_public
 from website.project.model import Node
 from website.project.signals import comment_added
-from website import settings
 
 
 @file_updated.connect
@@ -114,8 +112,8 @@ def send_comment_added_notification(comment, auth):
     context = dict(
         gravatar_url=auth.user.profile_image_url(),
         content=markdown.markdown(comment.content, ['del_ins', 'markdown.extensions.tables', 'markdown.extensions.fenced_code']),
-        page_type='file' if comment.page == Comment.FILES else node.project_or_component,
-        page_title=comment.root_target.referent.name if comment.page == Comment.FILES else '',
+        page_type=comment.get_comment_page_type(),
+        page_title=comment.get_comment_page_title(),
         provider=PROVIDERS[comment.root_target.referent.provider] if comment.page == Comment.FILES else '',
         target_user=target.referent.user if is_reply(target) else None,
         parent_comment=target.referent.content if is_reply(target) else "",
@@ -147,11 +145,11 @@ def is_reply(target):
 
 def _update_comments_timestamp(auth, node, page=Comment.OVERVIEW, root_id=None):
     if node.is_contributor(auth.user):
-        enqueue_postcommit_task(partial(ban_url, node, []))
+        enqueue_postcommit_task((ban_url, (node, )))
         if root_id is not None:
             guid_obj = Guid.load(root_id)
             if guid_obj is not None:
-                enqueue_postcommit_task(partial(ban_url, guid_obj.referent, []))
+                enqueue_postcommit_task((ban_url, (guid_obj.referent, )))
 
         # update node timestamp
         if page == Comment.OVERVIEW:
