@@ -26,6 +26,20 @@ var onPaste = function(e){
     document.execCommand('insertHTML', false, pasteText);
 };
 
+// remove br if no text
+var onlyElementBr = function() {
+    if (this.innerText.trim() === '') {
+        this.innerHTML = '';
+    }
+};
+
+// make sure br is always the lastChild of contenteditable so return works properly
+var lastElementBr = function(){
+    if (!this.lastChild || this.lastChild.nodeName.toLowerCase() !== 'br') {
+        this.appendChild(document.createElement('br'));
+    }
+};
+
 // ensure that return inserts a <br> in all browsers
 var onReturn = function (e) {
     var doxExec = false;
@@ -85,6 +99,9 @@ var callbacks = {
             model.replyMentions().push(data.id);
         }
         this.query.el.attr('data-atwho-guid', '' + data.id);
+        // this.query.el.attr('display', '' + 'inline-block');
+        this.query.el.attr('contenteditable', '' + 'false');
+        // this.query.el.after('&zwj;&nbsp;');
         return value;
     },
     highlighter: function(li, query) {
@@ -173,7 +190,7 @@ var getContributorList = function(input, nodeId) {
 
 // should only need to do this once
 getContributorList(input, nodeId);
-input.atwho(at_config).atwho(plus_config).bind('paste', onPaste).keydown(function(e) {
+input.atwho(at_config).atwho(plus_config).bind('paste', onPaste).on('focusin keyup', lastElementBr).on('focusout', onlyElementBr).keydown(function(e) {
     if(e.which === 13) {
         onReturn(e);
     }
@@ -202,6 +219,9 @@ var relativeDate = function(datetime) {
 };
 
 var notEmpty = function(value) {
+    if (value === '<br>')  {
+        return false;
+    }
     return !!$.trim(value);
 };
 
@@ -602,7 +622,7 @@ CommentModel.prototype.edit = function() {
 
 CommentModel.prototype.autosizeText = function(elm) {
     $(elm).find('textarea').autosize().focus();
-    $(elm).find('.atwho-input').atwho(at_config).atwho(plus_config).bind('paste', onPaste).keydown(function(e) {
+    $(elm).find('.atwho-input').atwho(at_config).atwho(plus_config).bind('paste', onPaste).on('focusin', lastElementBr).on('focusout', onlyElementBr).keydown(function(e) {
         if(e.which === 13) {
             onReturn(e);
         }
