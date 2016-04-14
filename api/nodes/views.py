@@ -1978,7 +1978,7 @@ class NodeInstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin
             raise NotFound
         return node.primary_institution
 
-class NodeInstitutionsList(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
+class NodeInstitutionsList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin, NodeMixin):
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -1992,14 +1992,11 @@ class NodeInstitutionsList(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin)
 
     model = Institution
     view_category = 'nodes'
-    view_name = 'node-institution-detail'
+    view_name = 'node-institutions-detail'
 
-    # overrides RetrieveAPIView
-    def get_object(self):
+    def get_queryset(self):
         node = self.get_node()
-        if not node.primary_institution:
-            raise NotFound
-        return node.primary_institution
+        return node.affiliated_institutions or []
 
 
 class NodeInstitutionRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin):
