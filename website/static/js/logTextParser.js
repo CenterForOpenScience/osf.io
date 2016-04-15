@@ -196,6 +196,9 @@ var LogPieces = {
                             return [ m('a', {href: item.links.html}, item.attributes.full_name), comma];
                         }
                         else {
+                            if (item.attributes.unregistered_contributor) {
+                                return [item.attributes.unregistered_contributor, comma];
+                            }
                             return [item.attributes.full_name, comma];
                         }
                     }
