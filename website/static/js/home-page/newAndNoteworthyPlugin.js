@@ -82,7 +82,10 @@ var NewAndNoteworthy = {
             promise.then(function(result){
                 var contribNames = [];
                 result.data.forEach(function (contrib){
-                    if (contrib.embeds.users.data){
+                    if (contrib.attributes.unregistered_contributor) {
+                        contribNames.push(contrib.attributes.unregistered_contributor);
+                    }
+                    else if (contrib.embeds.users.data){
                         contribNames.push($osf.findContribName(contrib.embeds.users.data.attributes));
                     }
                     else if (contrib.embeds.users.errors) {
