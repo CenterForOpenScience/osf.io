@@ -35,4 +35,3 @@ def sales_analytics(request):
         'keen_read_key': KEEN_READ_KEY
     }
     return render(request, 'metrics/sales_analytics.html', context)
-
