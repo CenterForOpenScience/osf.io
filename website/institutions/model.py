@@ -102,7 +102,7 @@ class Institution(object):
         elif isinstance(query, RawQuery):
             replacement_attr = cls.attribute_map.get(query.attribute, False)
             query.attribute = replacement_attr or query.attribute
-        query = query & Q('institution_id', 'ne', None) if query else Q('institution_id', 'ne', None)
+        query = query & Q('institution_id', 'ne', None) & Q('is_deleted', 'ne', True) if query else Q('institution_id', 'ne', None) & Q('is_deleted', 'ne', True)
         nodes = Node.find(query, allow_institution=True, **kwargs)
         return InstitutionQuerySet(nodes)
 
@@ -116,7 +116,7 @@ class Institution(object):
         elif isinstance(query, RawQuery):
             replacement_attr = cls.attribute_map.get(query.attribute, False)
             query.attribute = replacement_attr if replacement_attr else query.attribute
-        query = query & Q('institution_id', 'ne', None) if query else Q('institution_id', 'ne', None)
+        query = query & Q('institution_id', 'ne', None) & Q('is_deleted', 'ne', True) if query else Q('institution_id', 'ne', None) & Q('is_deleted', 'ne', True)
         node = Node.find_one(query, allow_institution=True, **kwargs)
         return cls(node)
 
