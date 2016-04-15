@@ -8,7 +8,7 @@ var ko = require('knockout');
 var moment = require('moment');
 var Raven = require('raven-js');
 var koHelpers = require('./koHelpers');
-var infinitescroll = require('./knockout-js-infinite-scroll');
+require('./knockout-js-infinite-scroll');
 require('knockout.punches');
 require('jquery-autosize');
 ko.punches.enableAll();
@@ -101,22 +101,24 @@ var BaseComment = function() {
     self.commentButtonText = ko.computed(function () {
         return self.submittingReply() ? 'Commenting' : 'Comment';
     });
+
+    self.updateViewportDimensions = ko.computed(function () {
+        var commentSidebarRef = $('.cp-sidebar-content');
+        var commentRef = $('.comment-body').first();
+
+        var commentsWidth = self.atBottomOfScroll() ? commentSidebarRef.width() : 300;
+        var commentsHeight = self.atBottomOfScroll() ? commentSidebarRef.width() : 1238;
+        var commentWidth = self.atBottomOfScroll() ? commentRef.width() : 100;
+        var commentHeight = self.atBottomOfScroll() ? commentRef.height() : 86;
+
+        self.comments.infinitescroll.viewportWidth(commentsWidth);
+        self.comments.infinitescroll.viewportHeight(commentsHeight);
+        self.comments.infinitescroll.itemWidth(commentWidth);
+        self.comments.infinitescroll.itemHeight(commentHeight);
+
+    });
 };
 
-BaseComment.prototype.updateViewportDimensions = function() {
-    var self = this;
-    var itemsRef = $('.cp-sidebar-content'),
-        itemRef = $('.comment-body').first(),
-        itemsWidth = 300,
-        itemsHeight = 1238,
-        itemWidth = 100,
-        itemHeight = 86;
-
-    self.comments.infinitescroll.viewportWidth(itemsWidth);
-    self.comments.infinitescroll.viewportHeight(itemsHeight);
-    self.comments.infinitescroll.itemWidth(itemWidth);
-    self.comments.infinitescroll.itemHeight(itemHeight);
-};
 
 BaseComment.prototype.abuseLabel = function(item) {
     return ABUSE_CATEGORIES[item];
@@ -684,7 +686,6 @@ var CommentListModel = function(options) {
         var checkNumber = ((last + numberOfComments) - first) * numberOfComments;
 
         if ( $('#comments_window').scrollTop() >= checkNumber) {
-            console.log('I am at the bottom!!!');
             self.atBottomOfScroll(true);
             if (self.readyForMore()) {
                 self.get_more_comments();
