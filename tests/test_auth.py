@@ -383,6 +383,7 @@ class TestMustBeAddonAuthorizerDecorator(AuthAppTestCase):
         self.project.creator.add_addon('github')
         user_settings = self.project.creator.get_addon('github')
         node_settings.user_settings = user_settings
+        node_settings.save()
 
         # Test
         res = self.decorated()
@@ -397,6 +398,7 @@ class TestMustBeAddonAuthorizerDecorator(AuthAppTestCase):
         user2.add_addon('github')
         user_settings = user2.get_addon('github')
         node_settings.user_settings = user_settings
+        node_settings.save()
 
         # Test
         with assert_raises(HTTPError):

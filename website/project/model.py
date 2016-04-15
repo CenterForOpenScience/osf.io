@@ -53,9 +53,10 @@ from website.exceptions import (
 from website.institutions.model import Institution, AffiliatedInstitutionsList
 from website.citations.utils import datetime_to_csl
 from website.identifiers.model import IdentifierMixin
-from website.files.models.base import StoredFileNode, FileNode
+from website.files.models.base import FileNode
 from website.util.permissions import expand_permissions
 from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS, ADMIN
+from website.project.commentable import Commentable
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.project.licenses import (
     NodeLicense,
@@ -149,12 +150,13 @@ class MetaData(GuidStoredObject):
     date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
 
 
-class Comment(GuidStoredObject, SpamMixin):
+class Comment(GuidStoredObject, SpamMixin, Commentable):
 
     __guid_min_length__ = 12
 
     OVERVIEW = "node"
     FILES = "files"
+    WIKI = 'wiki'
 
     _id = fields.StringField(primary=True)
 
@@ -189,16 +191,28 @@ class Comment(GuidStoredObject, SpamMixin):
         path = '/comments/{}/'.format(self._id)
         return api_v2_url(path)
 
+    @property
+    def target_type(self):
+        """The object "type" used in the OSF v2 API."""
+        return 'comments'
+
+    @property
+    def root_target_page(self):
+        """The page type associated with the object/Comment.root_target."""
+        return None
+
+    def belongs_to_node(self, node_id):
+        """Check whether the comment is attached to the specified node."""
+        return self.node._id == node_id
+
     # used by django and DRF
     def get_absolute_url(self):
         return self.absolute_api_v2_url
 
     def get_comment_page_url(self):
-        if isinstance(self.root_target.referent, StoredFileNode):
-            file_guid = self.root_target._id
-            return settings.DOMAIN + str(file_guid) + '/'
-        else:
+        if isinstance(self.root_target.referent, Node):
             return self.node.absolute_url
+        return settings.DOMAIN + str(self.root_target._id) + '/'
 
     def get_content(self, auth):
         """ Returns the comment content if the user is allowed to see it. Deleted comments
@@ -212,13 +226,27 @@ class Comment(GuidStoredObject, SpamMixin):
 
         return self.content
 
+    def get_comment_page_title(self):
+        if self.page == Comment.FILES:
+            return self.root_target.referent.name
+        elif self.page == Comment.WIKI:
+            return self.root_target.referent.page_name
+        return ''
+
+    def get_comment_page_type(self):
+        if self.page == Comment.FILES:
+            return 'file'
+        elif self.page == Comment.WIKI:
+            return 'wiki'
+        return self.node.project_or_component
+
     @classmethod
     def find_n_unread(cls, user, node, page, root_id=None):
         if node.is_contributor(user):
             if page == Comment.OVERVIEW:
                 view_timestamp = user.get_node_comment_timestamps(target_id=node._id)
                 root_target = Guid.load(node._id)
-            elif page == Comment.FILES:
+            elif page == Comment.FILES or page == Comment.WIKI:
                 view_timestamp = user.get_node_comment_timestamps(target_id=root_id)
                 root_target = Guid.load(root_id)
             else:
@@ -248,13 +276,13 @@ class Comment(GuidStoredObject, SpamMixin):
         else:
             comment.root_target = comment.target
 
-        if isinstance(comment.root_target.referent, Node):
-            comment.page = Comment.OVERVIEW
-        elif isinstance(comment.root_target.referent, StoredFileNode):
-            log_dict['file'] = {'name': comment.root_target.referent.name, 'url': comment.get_comment_page_url()}
-            comment.page = Comment.FILES
-        else:
+        page = getattr(comment.root_target.referent, 'root_target_page', None)
+        if not page:
             raise ValueError('Invalid root target.')
+        comment.page = page
+
+        log_dict.update(comment.root_target.referent.get_extra_log_params(comment))
+
         comment.save()
 
         comment.node.add_log(
@@ -278,8 +306,7 @@ class Comment(GuidStoredObject, SpamMixin):
             'user': self.user._id,
             'comment': self._id,
         }
-        if isinstance(self.root_target.referent, StoredFileNode):
-            log_dict['file'] = {'name': self.root_target.referent.name, 'url': self.get_comment_page_url()}
+        log_dict.update(self.root_target.referent.get_extra_log_params(self))
         self.content = content
         self.modified = True
         self.date_modified = datetime.datetime.utcnow()
@@ -303,8 +330,7 @@ class Comment(GuidStoredObject, SpamMixin):
             'comment': self._id,
         }
         self.is_deleted = True
-        if isinstance(self.root_target.referent, StoredFileNode):
-            log_dict['file'] = {'name': self.root_target.referent.name, 'url': self.get_comment_page_url()}
+        log_dict.update(self.root_target.referent.get_extra_log_params(self))
         self.date_modified = datetime.datetime.utcnow()
         if save:
             self.save()
@@ -326,8 +352,7 @@ class Comment(GuidStoredObject, SpamMixin):
             'user': self.user._id,
             'comment': self._id,
         }
-        if isinstance(self.root_target.referent, StoredFileNode):
-            log_dict['file'] = {'name': self.root_target.referent.name, 'url': self.get_comment_page_url()}
+        log_dict.update(self.root_target.referent.get_extra_log_params(self))
         self.date_modified = datetime.datetime.utcnow()
         if save:
             self.save()
@@ -658,7 +683,7 @@ class NodeUpdateError(Exception):
         self.reason = reason
 
 
-class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
+class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
     #: Whether this is a pointer or not
     primary = True
@@ -877,6 +902,21 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     @property
     def pk(self):
         return self._id
+
+    # For Comment API compatibility
+    @property
+    def target_type(self):
+        """The object "type" used in the OSF v2 API."""
+        return 'nodes'
+
+    @property
+    def root_target_page(self):
+        """The comment page type associated with Nodes."""
+        return Comment.OVERVIEW
+
+    def belongs_to_node(self, node_id):
+        """Check whether this node matches the specified node."""
+        return self._id == node_id
 
     @property
     def logs(self):
@@ -1599,7 +1639,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         new.nodes = [
             x.use_as_template(auth, changes, top_level=False)
             for x in self.nodes
-            if x.can_view(auth)
+            if x.can_view(auth) and not x.is_deleted
         ]
 
         new.save()
@@ -3100,6 +3140,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         name = (name or '').strip()
         key = to_mongo_key(name)
+        has_comments = False
 
         if key not in self.wiki_pages_current:
             if key in self.wiki_pages_versions:
@@ -3111,6 +3152,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             current.is_current = False
             version = current.version + 1
             current.save()
+            if Comment.find(Q('root_target', 'eq', current._id)).count() > 0:
+                has_comments = True
 
         new_page = NodeWikiPage(
             page_name=name,
@@ -3121,6 +3164,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             content=content
         )
         new_page.save()
+
+        if has_comments:
+            Comment.update(Q('root_target', 'eq', current._id), data={'root_target': Guid.load(new_page._id)})
+            Comment.update(Q('target', 'eq', current._id), data={'target': Guid.load(new_page._id)})
 
         # check if the wiki page already exists in versions (existed once and is now deleted)
         if key not in self.wiki_pages_versions:
