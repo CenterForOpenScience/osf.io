@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 pipeline = [
     {"$unwind": "$emails"},
-    {"$group": {"_id": { "$toLower" : "$emails"}, "count": {"$sum": 1}}},
+    {"$group": {"_id": {"$toLower": "$emails"}, "count": {"$sum": 1}}},
     {"$sort": SON([("count", -1), ("_id", -1)])}
 ]
 
@@ -31,9 +31,10 @@ def log_duplicate_acount(dry):
     duplicate_emails = get_duplicate_email()
     if duplicate_emails:
         for email in duplicate_emails:
-            user = User.find(Q('emails', 'eq', email) & Q('merged_by', 'ne', None) & Q('username', 'ne', None))
-            logger.info("User {}, username {}, id {}, email {} is a duplicate"
-                        .format(user.fullname, user.username, user._id, user.emails))
+            users = User.find(Q('emails', 'eq', email) & Q('merged_by', 'ne', None) & Q('username', 'ne', None))
+            for user in users:
+                logger.info("User {}, username {}, id {}, email {} is a duplicate"
+                            .format(user.fullname, user.username, user._id, user.emails))
     else:
         logger.info("There is no duplicate emails.")
 
