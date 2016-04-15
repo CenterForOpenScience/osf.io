@@ -21,3 +21,16 @@ class TestInstitutionList(ApiTestCase):
         assert_equal(len(res.json['data']), 2)
         assert_in(self.institution._id, ids)
         assert_in(self.institution2._id, ids)
+
+    def test_does_not_return_deleted_institution(self):
+        self.institution.is_deleted = True
+        self.institution.node.save()
+
+        res = self.app.get(self.institution_url)
+
+        assert_equal(res.status_code, 200)
+
+        ids = [each['id'] for each in res.json['data']]
+        assert_equal(len(res.json['data']), 1)
+        assert_not_in(self.institution._id, ids)
+        assert_in(self.institution2._id, ids)
