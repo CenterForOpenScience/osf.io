@@ -1,4 +1,3 @@
-
 # -*- coding: utf-8 -*-
 import sys
 import logging
@@ -12,7 +11,7 @@ from website.app import init_app
 from website.archiver import ARCHIVER_INITIATED
 from website.archiver.model import ArchiveJob
 from website import mails
-from website.settings import ARCHIVE_TIMEOUT_TIMEDELTA, FROM_EMAIL, SUPPORT_EMAIL
+from website.settings import ARCHIVE_TIMEOUT_TIMEDELTA, SUPPORT_EMAIL
 
 from scripts import utils as script_utils
 
@@ -58,12 +57,14 @@ def report_failed_registrations(dry_run):
             message += total
             mails.send_mail(
                 to_addr=SUPPORT_EMAIL,
+                mail=mails.EMPTY,
                 subject='Failed registration on {}'.format(yesterday),
                 message=message
             )
         else:
             mails.send_mail(
                 to_addr=SUPPORT_EMAIL,
+                mail=mails.EMPTY,
                 subject='None failed registration on {}'.format(yesterday),
                 message='There are no failed registration on {}'.format(
                     yesterday
