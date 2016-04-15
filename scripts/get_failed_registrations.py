@@ -4,7 +4,6 @@ import sys
 import logging
 
 from datetime import datetime
-from django.core.mail import send_mail
 from framework.celery_tasks import app as celery_app
 from framework.transactions.context import TokuTransaction
 from modularodm import Q
@@ -12,6 +11,7 @@ from modularodm import Q
 from website.app import init_app
 from website.archiver import ARCHIVER_INITIATED
 from website.archiver.model import ArchiveJob
+from website import mails
 from website.settings import ARCHIVE_TIMEOUT_TIMEDELTA, FROM_EMAIL, SUPPORT_EMAIL
 
 from scripts import utils as script_utils
@@ -29,8 +29,8 @@ def find_failed_registrations():
     )
     return {node.root for node in [job.dst_node for job in jobs] if node}
 
-
-def report_failed_registrations(dry_run=True):
+@signals.user_email_removed.connect
+def report_failed_registrations(dry_run):
     init_app(set_backends=True, routes=False)
     count = 0
     failed = find_failed_registrations()
@@ -56,20 +56,18 @@ def report_failed_registrations(dry_run=True):
             total = 'Total: {} failed registrations on {}'.format(count, yesterday)
             logging.info(total)
             message += total
-            send_mail(
+            mails.send_mail(
+                to_addr=SUPPORT_EMAIL,
                 subject='Failed registration on {}'.format(yesterday),
-                message=message,
-                from_email=FROM_EMAIL,
-                recipient_list=[SUPPORT_EMAIL]
+                message=message
             )
         else:
-            send_mail(
+            mails.send_mail(
+                to_addr=SUPPORT_EMAIL,
                 subject='None failed registration on {}'.format(yesterday),
                 message='There are no failed registration on {}'.format(
                     yesterday
-                ),
-                from_email=FROM_EMAIL,
-                recipient_list=[SUPPORT_EMAIL]
+                )
             )
 
 
