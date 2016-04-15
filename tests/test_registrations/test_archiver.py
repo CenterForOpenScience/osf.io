@@ -16,7 +16,7 @@ from nose.tools import *  # noqa PEP8 asserts
 import httpretty
 from modularodm import Q
 
-from scripts import cleanup_failed_registrations as scripts
+from scripts import failed_registrations as scripts
 
 from framework.auth import Auth
 from framework.celery_tasks import handlers
