@@ -2,14 +2,15 @@ var $ = require('jquery');
 var ko = require('knockout');
 var $osf = require('js/osfHelpers');
 
-var DevModeModel = function() {
+var DevModeModel = function(source_file) {
     self = this;
+    self.source_file = source_file;
     self.pullRequests = ko.observableArray([]);
     self.showMetaInfo = ko.observable(false);
     self.showHideMetaInfo = function() {
         if(self.pullRequests().length === 0) {
             if(!self.showMetaInfo()) {
-                $.getJSON('/static/git_logs.json')
+                $.getJSON(self.source_file)
                     .done(function (data) {
                         dataLength = data.length;
                         for (i = 0; i < dataLength; i++) {
@@ -32,8 +33,8 @@ var PullRequestItem = function(prItem) {
 
 };
 
-var DevModeControls = function(selector) {
-    this.viewModel = new DevModeModel();
+var DevModeControls = function(selector, source_file) {
+    this.viewModel = new DevModeModel(source_file);
     $osf.applyBindings(this.viewModel, selector);
 };
 

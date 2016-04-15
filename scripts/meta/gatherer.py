@@ -1,7 +1,8 @@
 import json
+import os
 from website.settings import GITHUB_API_TOKEN
 
-the_filename = 'website/static/git_logs.json'
+GIT_LOGS_FILE = os.path.join('website', 'static', 'built', 'git_logs.json')
 
 
 def gather_pr_data():
@@ -34,7 +35,7 @@ def gather_pr_data():
 def main():
     if GITHUB_API_TOKEN:
         pr_data = json.dumps(gather_pr_data())
-        with open(the_filename, 'w') as f:
+        with open(GIT_LOGS_FILE, 'w') as f:
             f.write(pr_data)
 
 if __name__ == '__main__':

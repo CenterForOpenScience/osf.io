@@ -112,7 +112,7 @@ $(function() {
         $osf.initializeResponsiveAffix();
     }
     new NavbarControl('.osf-nav-wrapper');
-    new DevModeHelper('.dev-mode-helper');
+    new DevModeHelper('#devModeHelper', '/static/built/git_logs.json');
     if(window.contextVars.keenProjectId){
         var params = {};
         params.currentUser = window.contextVars.currentUser;
