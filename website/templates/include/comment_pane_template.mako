@@ -39,15 +39,6 @@
                     <div class="text-danger">{{errorMessage}}</div>
                 </form>
             </div>
-##             <div>
-##                 <ul id="itemsUL" data-bind="foreach: items.infinitescroll.displayItems">
-##                     <li class="item" style="display:block; position:relative; height: 20px;">
-##                         <!-- ko if: $index() >= $root.items.infinitescroll.firstHiddenIndex() -->
-##                         <span data-bind="text: ($index() + 1) + '.' + $data"></span>
-##                         <!-- /ko -->
-##                     </li>
-##                 </ul>
-##             </div>
             <div data-bind="template: {name: 'commentTemplate', foreach: comments.infinitescroll.displayItems}"></div>
             <!-- ko if: loadingComments -->
             <div style="text-align: center;">
