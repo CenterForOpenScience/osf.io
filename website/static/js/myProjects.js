@@ -678,18 +678,25 @@ var MyProjects = {
                         if(self.users[u.id] === undefined) {
                             self.users[u.id] = {
                                 data : u,
-                                count: 1
+                                count: 1,
+                                unregistered_contributors: u.attributes.unregistered_contributor
                         };
                     } else {
                         self.users[u.id].count++;
                             var currentUnregisteredName = lodashGet(u, 'attributes.unregistered_contributor');
                             if (currentUnregisteredName) {
-                                var otherUnregisteredName = lodashGet(self.users[u.id], 'data.attributes.unregistered_contributor');
-                                if (otherUnregisteredName.indexOf(currentUnregisteredName) === -1) {
-                                    self.users[u.id].data.attributes.unregistered_contributor += ' a.k.a. ' + currentUnregisteredName;
+                                var otherUnregisteredName = lodashGet(self.users[u.id], 'unregistered_contributors');
+                                if (otherUnregisteredName) {
+                                     if (otherUnregisteredName.indexOf(currentUnregisteredName) === -1) {
+                                         self.users[u.id].unregistered_contributors += ' a.k.a. ' + currentUnregisteredName;
+                                     }
+                                }
+                                else {
+                                    self.users[u.id].unregistered_contributors = currentUnregisteredName;
                                 }
                             }
-                    }}
+                        }
+                    }
                     var tags = item.attributes.tags || [];
                     for(var j = 0; j < tags.length; j++) {
                         var t = tags[j];
@@ -719,8 +726,8 @@ var MyProjects = {
             self.nameFilters = [];
 
             var userFinder = function(lo) {
-                if (lodashGet(u2, 'data.attributes.unregistered_contributor')) {
-                    return lo.label === u2.data.attributes.unregistered_contributor;
+                if (lodashGet(u2, 'unregistered_contributors')) {
+                    return lo.label === u2.unregistered_contributors;
                 }
               return lo.label === u2.data.embeds.users.data.attributes.full_name;
             };
@@ -730,8 +737,8 @@ var MyProjects = {
                 var u2 = self.users[user];
                 if (u2.data.embeds.users.data) {
                     var name;
-                    if (lodashGet(u2, 'data.attributes.unregistered_contributor')) {
-                        name = u2.data.attributes.unregistered_contributor;
+                    if (lodashGet(u2, 'unregistered_contributors')) {
+                        name = u2.unregistered_contributors;
                     }
                     else {
                         name = u2.data.embeds.users.data.attributes.full_name;
