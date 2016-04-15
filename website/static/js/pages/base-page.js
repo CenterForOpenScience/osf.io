@@ -20,7 +20,7 @@ var NavbarControl = require('js/navbarControl');
 var Raven = require('raven-js');
 var moment = require('moment');
 var KeenTracker = require('js/keen');
-var DevModeHelper = require('js/devModeHelper');
+var DevModeControls = require('js/devModeControls');
 
 // Prevent IE from caching responses
 $.ajaxSetup({cache: false});
@@ -112,7 +112,7 @@ $(function() {
         $osf.initializeResponsiveAffix();
     }
     new NavbarControl('.osf-nav-wrapper');
-    new DevModeHelper('#devModeHelper', '/static/built/git_logs.json');
+    new DevModeControls('#devModeControls', '/static/built/git_logs.json');
     if(window.contextVars.keenProjectId){
         var params = {};
         params.currentUser = window.contextVars.currentUser;

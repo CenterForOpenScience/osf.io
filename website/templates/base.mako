@@ -52,7 +52,7 @@
 <body data-spy="scroll" data-target=".scrollspy">
 
     % if dev_mode:
-    <div class="dev-mode-helper scripted" id="devModeHelper">
+        <div class="dev-mode-helper scripted" id="devModeControls">
         <div id="metaInfo" data-bind="visible: showMetaInfo">
             <table>
                 <thead>
@@ -85,7 +85,7 @@
         <div id='devmode' data-bind='click: showHideMetaInfo'><strong>WARNING</strong>: This site is running in development mode.</div>
     </div>
     %else:
-        <div id="devModeHelper"></div>
+        <div id="devModeControls"></div>
     % endif
 
     <%namespace name="nav_file" file="nav.mako"/>
