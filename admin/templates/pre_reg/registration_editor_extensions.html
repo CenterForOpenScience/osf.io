@@ -11,7 +11,7 @@
             style="margin-left: 5px;"
             class="btn btn-xs btn-danger fa fa-times"></button>
   </div>
-  <div data-bind="attr.id: $data.id, osfUploader"></div>
+  <div data-bind="attr: {id: $data.id}, osfUploader"></div><!-- TODO: osfUploader attribute may not connect to anything? -->
 </script>
 
 <script type="text/html" id="osf-upload-toggle">
@@ -24,6 +24,6 @@
   </div>
   <a data-bind="click: toggleUploader">Attach File</a>
   <span data-bind="visible: showUploader">
-    <div data-bind="attr.id: $data.id, osfUploader"></div>
+    <div data-bind="attr: {id: $data.id}, osfUploader"></div><!-- TODO: osfUploader attribute may not connect to anything? -->
   </span>
 </script>
