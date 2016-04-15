@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import datetime
 import logging
 import httplib
 import httplib as http  # TODO: Inconsistent usage of aliased import
@@ -777,11 +778,20 @@ def unserialize_schools(auth, **kwargs):
 
 @must_be_logged_in
 def request_export(auth):
+    user = auth.user
+    now = datetime.datetime.utcnow()
+    if user.email_last_sent and (now - user.email_last_sent).total_seconds() < settings.SEND_EMAIL_THROTTLE:
+        raise HTTPError(httplib.BAD_REQUEST,
+                        data={'message_long': 'Please wait 30 seconds before sending another account export request.',
+                              'error_type': 'throttle_error'})
+
     mails.send_mail(
         to_addr=settings.SUPPORT_EMAIL,
         mail=mails.REQUEST_EXPORT,
         user=auth.user,
     )
+    user.email_last_sent = now
+    user.save()
     return {'message': 'Sent account export request'}
 
 
