@@ -268,18 +268,22 @@ function _formatDataforPO(item) {
     if (contributorsData){
         item.embeds.contributors.data.forEach(function(c){
             var attr;
-            var users = lodashGet(c, 'embeds.users.data', null);
-            if (users) {
-                if (users.errors) {
-                    attr = users.errors[0].meta;
-                } else {
-                    attr = users.attributes;
-                }
-            }
-            if (attr) {
-                item.contributors += attr.full_name + ' ' + attr.middle_names + ' ' + attr.given_name + ' ' + attr.family_name + ' ' ;
-            }
 
+            if (lodashGet(c, 'attributes.unregistered_contributor', null)) {
+                item.contributors += c.attributes.unregistered_contributor;
+            }
+            else {
+                var users = lodashGet(c, 'embeds.users.data', null);
+                if (users) {
+                    if (users.errors) {
+                        attr = users.errors[0].meta;
+                    } else {
+                        attr = users.attributes;
+                    }
+                }
+                if (attr)
+                    item.contributors += attr.full_name + ' ' + attr.middle_names + ' ' + attr.given_name + ' ' + attr.family_name + ' ' ;
+            }
         });
     }
     item.date = new $osf.FormattableDate(item.attributes.date_modified);
@@ -678,6 +682,13 @@ var MyProjects = {
                         };
                     } else {
                         self.users[u.id].count++;
+                            var currentUnregisteredName = lodashGet(u, 'attributes.unregistered_contributor');
+                            if (currentUnregisteredName) {
+                                var otherUnregisteredName = lodashGet(self.users[u.id], 'data.attributes.unregistered_contributor');
+                                if (otherUnregisteredName.indexOf(currentUnregisteredName) === -1) {
+                                    self.users[u.id].data.attributes.unregistered_contributor += ' a.k.a. ' + currentUnregisteredName;
+                                }
+                            }
                     }}
                     var tags = item.attributes.tags || [];
                     for(var j = 0; j < tags.length; j++) {
@@ -690,7 +701,6 @@ var MyProjects = {
                     }
                 }
             });
-
 
             // Sorting by number of items utility function
             function sortByCountDesc (a,b){
@@ -709,6 +719,9 @@ var MyProjects = {
             self.nameFilters = [];
 
             var userFinder = function(lo) {
+                if (lodashGet(u2, 'data.attributes.unregistered_contributor')) {
+                    return lo.label === u2.data.attributes.unregistered_contributor;
+                }
               return lo.label === u2.data.embeds.users.data.attributes.full_name;
             };
 
@@ -716,7 +729,14 @@ var MyProjects = {
             for (var user in self.users) {
                 var u2 = self.users[user];
                 if (u2.data.embeds.users.data) {
-                  var link = oldNameFilters.find(userFinder) || new LinkObject('contributor', {id: u2.data.id, count: u2.count, query: { 'related_counts' : 'children' }}, u2.data.embeds.users.data.attributes.full_name, options.institutionId || false);
+                    var name;
+                    if (lodashGet(u2, 'data.attributes.unregistered_contributor')) {
+                        name = u2.data.attributes.unregistered_contributor;
+                    }
+                    else {
+                        name = u2.data.embeds.users.data.attributes.full_name;
+                    }
+                  var link = oldNameFilters.find(userFinder) || new LinkObject('contributor', {id: u2.data.id, count: u2.count, query: { 'related_counts' : 'children' }}, name, options.institutionId || false);
                   link.data.count = u2.count;
                   self.nameFilters.push(link);
                 }
