@@ -28,7 +28,7 @@ def find_failed_registrations():
     )
     return {node.root for node in [job.dst_node for job in jobs] if node}
 
-@signals.user_email_removed.connect
+
 def report_failed_registrations(dry_run):
     init_app(set_backends=True, routes=False)
     count = 0
