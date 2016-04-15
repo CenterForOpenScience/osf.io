@@ -81,6 +81,10 @@ var BaseComment = function() {
     self.replying = ko.observable(false);
     self.replyContent = ko.observable('');
 
+    self.atBottomOfScroll = ko.observable(false);
+    self.urlForNext = ko.observable();
+    self.readyForMore = ko.observable(false);
+
     self.submittingReply = ko.observable(false);
 
     self.comments = ko.observableArray();
@@ -99,20 +103,19 @@ var BaseComment = function() {
     });
 };
 
-BaseComment.prototype.get_more_stuff = function() {
+BaseComment.prototype.updateViewportDimensions = function() {
     var self = this;
+    var itemsRef = $('.cp-sidebar-content'),
+        itemRef = $('.comment-body').first(),
+        itemsWidth = 300,
+        itemsHeight = 1238,
+        itemWidth = 100,
+        itemHeight = 86;
 
-    var comments = self.comments();
-    var url = self.get_url();
-    var response = self.fetchNext(url, comments);
-
-    self.comments.infinitescroll.scrollY($('#comments_window').scrollTop());
-
-    if (response.links.next =! null) {
-        if (self.comments.peek().length - self.comments.infinitescroll.lastVisibleIndex.peek() <= 10) {
-            self.fetchNext(response.links.next, comments);
-        }
-    }
+    self.comments.infinitescroll.viewportWidth(itemsWidth);
+    self.comments.infinitescroll.viewportHeight(itemsHeight);
+    self.comments.infinitescroll.itemWidth(itemWidth);
+    self.comments.infinitescroll.itemHeight(itemHeight);
 };
 
 BaseComment.prototype.abuseLabel = function(item) {
@@ -160,6 +163,7 @@ BaseComment.prototype.get_url = function() {
 
 BaseComment.prototype.fetch = function() {
     var self = this;
+
     var setUnread = self.getTargetType() !== 'comments' && !osfHelpers.urlParams().view_only && self.author.id !== '';
     if (self.comments().length === 0) {
         var urlParams = osfHelpers.urlParams();
@@ -201,13 +205,31 @@ BaseComment.prototype.fetchNext = function(url, comments, setUnread) {
         });
         self.configureCommentsVisibility();
         if (response.links.next !== null) {
-            self.fetchNext(response.links.next, comments, setUnread);
+            self.readyForMore(true);
+            self.urlForNext(response.links.next);
         } else {
+            self.urlForNext('there are no more');
             self.loadingComments(false);
         }
+
     }).fail(function () {
         self.loadingComments(false);
     });
+};
+
+BaseComment.prototype.get_more_comments = function() {
+    var self = this;
+    var next_url = self.urlForNext();
+    var comments = self.comments();
+    var setUnread = self.getTargetType() !== 'comments' && !osfHelpers.urlParams().view_only && self.author.id !== '';
+
+    self.readyForMore(false);
+
+    if (self.urlForNext() === 'there are no more') {
+        self.loadingComments(false);
+    } else {
+        self.fetchNext(next_url, comments, setUnread);
+    }
 };
 
 BaseComment.prototype.configureCommentsVisibility = function() {
@@ -647,33 +669,30 @@ var CommentListModel = function(options) {
         self.unreadComments(0);
     };
 
-    // detect resize
+     // detect resize
     $(window).resize(function() {
-        updateViewportDimensions();
+        self.updateViewportDimensions();
     });
 
     $('#comments_window').scroll(function() {
-        console.log('in the scroll function.')
-        self.get_more_stuff();
+
+        self.comments.infinitescroll.scrollY($('#comments_window').scrollTop());
+
+        var last = self.comments.infinitescroll.lastVisibleIndex();
+        var first = self.comments.infinitescroll.firstVisibleIndex();
+        var numberOfComments = self.comments.peek().length;
+        var checkNumber = ((last + numberOfComments) - first) * numberOfComments;
+
+        if ( $('#comments_window').scrollTop() >= checkNumber) {
+            console.log('I am at the bottom!!!');
+            self.atBottomOfScroll(true);
+            if (self.readyForMore()) {
+                self.get_more_comments();
+            }
+        }
     });
 
-    // update dimensions of infinite-scroll viewport and item
-    function updateViewportDimensions() {
-        var itemsRef = $('#comments_window'),
-            itemRef = $('.item').first(),
-            itemsWidth = 240,
-            itemsHeight = 300,
-            itemWidth = 220,
-            itemHeight = 20;
-
-        self.comments.infinitescroll.viewportWidth(itemsWidth);
-        self.comments.infinitescroll.viewportHeight(itemsHeight);
-        self.comments.infinitescroll.itemWidth(itemWidth);
-        self.comments.infinitescroll.itemHeight(itemHeight);
-
-    }
-    updateViewportDimensions();
-
+    self.updateViewportDimensions();
     self.fetch(options.nodeId);
 
 };
