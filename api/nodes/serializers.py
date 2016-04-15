@@ -291,6 +291,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
     permission = ser.ChoiceField(choices=osf_permissions.PERMISSIONS, required=False, allow_null=True,
                                  default=osf_permissions.reduce_permissions(osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS),
                                  help_text='User permission level. Must be "read", "write", or "admin". Defaults to "write".')
+    unregistered_contributor = ser.SerializerMethodField()
 
     links = LinksField({
         'self': 'get_absolute_url'
@@ -315,6 +316,10 @@ class NodeContributorsSerializer(JSONAPISerializer):
             }
         )
 
+    def get_unregistered_contributor(self, obj):
+        unclaimed_records = obj.unclaimed_records.get(obj.node_id, None)
+        if unclaimed_records:
+            return unclaimed_records.get('name', None)
 
 class NodeContributorsCreateSerializer(NodeContributorsSerializer):
     """
