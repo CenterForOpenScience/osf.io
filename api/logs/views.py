@@ -12,7 +12,7 @@ from api.logs.permissions import (
 
 from api.base.filters import ODMFilterMixin
 from api.base import permissions as base_permissions
-from api.users.serializers import UserSerializer
+from api.users.serializers import UnregisteredContributorSerializer
 from api.logs.serializers import NodeLogSerializer
 from api.base.views import JSONAPIBaseView
 
@@ -220,7 +220,7 @@ class NodeLogContributors(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin,
     required_read_scopes = [CoreScopes.USERS_READ]
     required_write_scopes = [CoreScopes.NULL]
 
-    serializer_class = UserSerializer
+    serializer_class = UnregisteredContributorSerializer
 
     view_category = 'logs'
     view_name = 'log-contributors'
@@ -232,4 +232,9 @@ class NodeLogContributors(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin,
         if associated_contrib_ids is None:
             return []
         associated_users = User.find(Q('_id', 'in', associated_contrib_ids))
-        return associated_users
+        modified_users = []
+        for contrib in associated_users:
+            if contrib.unclaimed_records.get(log.original_node._id):
+                contrib.unregistered_name = contrib.unclaimed_records[log.original_node._id]['name']
+            modified_users.append(contrib)
+        return modified_users
