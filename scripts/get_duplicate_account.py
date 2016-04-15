@@ -13,7 +13,8 @@ logger = logging.getLogger(__name__)
 
 pipeline = [
     {"$unwind": "$emails"},
-    {"$group": {"_id": {"$toLower": "$emails"}, "count": {"$sum": 1}}},
+    {"$project": {"emails": {"$toLower": "$emails"}}},
+    {"$group": {"_id": "$emails", "count": {"$sum": 1}}},
     {"$sort": SON([("count", -1), ("_id", -1)])}
 ]
 
@@ -50,7 +51,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-
-
