@@ -14,6 +14,8 @@ var $ = require('jquery');
 var m = require('mithril');
 var moment = require('moment');
 var $osf = require('js/osfHelpers');
+var lodashGet = require('lodash.get');
+
 
 
 var LinkObject;
@@ -67,13 +69,17 @@ function _poContributors(item) {
         var familyName;
         var givenName;
         var fullName;
-        if (person.embeds.users.data) {
+
+        if (lodashGet(person, 'attributes.unregistered_contributor')) {
+            familyName = person.attributes.unregistered_contributor;
+        }
+        else if (person.embeds.users.data) {
             familyName = person.embeds.users.data.attributes.family_name;
             givenName = person.embeds.users.data.attributes.given_name;
             fullName = person.embeds.users.data.attributes.full_name;
 
         }
-        if (person.embeds.users.errors) {
+        else if (person.embeds.users.errors) {
             familyName = person.embeds.users.errors[0].meta.family_name;
             givenName = person.embeds.users.errors[0].meta.given_name;
             fullName = person.embeds.users.errors[0].meta.full_name;
