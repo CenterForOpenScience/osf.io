@@ -49,7 +49,10 @@ class DraftListView(PreregAdmin, ListView):
         paginator, page, query_set, is_paginated = self.paginate_queryset(
             query_set, page_size)
         return {
-            'drafts': [serializers.serialize_draft_registration(d, json_safe=False) for d in query_set],
+            'drafts': [
+                serializers.serialize_draft_registration(d, json_safe=False)
+                for d in query_set
+                ],
             'page': page,
         }
 
@@ -62,15 +65,8 @@ class DraftDetailView(PreregAdmin, DetailView):
         try:
             return super(DraftDetailView, self).get(request, *args, **kwargs)
         except AttributeError:
-            return page_not_found(
-                request,
-                AttributeError(
-                    '{} with id "{}" not found.'.format(
-                        self.context_object_name.title(),
-                        kwargs.get('draft_pk')
-                    )
-                )
-            )
+            return handle_attribute_error(request, self.context_object_name,
+                                          self.kwargs.get('draft_pk'))
 
     def get_object(self, queryset=None):
         return serializers.serialize_draft_registration(
@@ -87,29 +83,15 @@ class DraftFormView(PreregAdmin, FormView):
         try:
             return super(DraftFormView, self).get(request, *args, **kwargs)
         except AttributeError:
-            return page_not_found(
-                request,
-                AttributeError(
-                    '{} with id "{}" not found.'.format(
-                        self.context_object_name.title(),
-                        kwargs.get('draft_pk')
-                    )
-                )
-            )
+            return handle_attribute_error(request, self.context_object_name,
+                                          self.kwargs.get('draft_pk'))
 
     def post(self, request, *args, **kwargs):
         try:
             return super(DraftFormView, self).post(request, *args, **kwargs)
         except AttributeError:
-            return page_not_found(
-                request,
-                AttributeError(
-                    '{} with id "{}" not found.'.format(
-                        self.context_object_name.title(),
-                        kwargs.get('draft_pk')
-                    )
-                )
-            )
+            return handle_attribute_error(request, self.context_object_name,
+                                          self.kwargs.get('draft_pk'))
         except PermissionsError as e:
             return permission_denied(request, e)
 
@@ -182,15 +164,8 @@ class CommentUpdateView(PreregAdmin, UpdateView):
             )
             return JsonResponse(serializers.serialize_draft_registration(draft))
         except AttributeError:
-            return page_not_found(
-                request,
-                AttributeError(
-                    '{} with id "{}" not found.'.format(
-                        self.context_object_name.title(),
-                        kwargs.get('draft_pk')
-                    )
-                )
-            )
+            return handle_attribute_error(request, self.context_object_name,
+                                          self.kwargs.get('draft_pk'))
         except NodeStateError as e:
             return bad_request(request, e)
 
@@ -199,3 +174,15 @@ def view_file(request, node_id, provider, file_id):
     fp = FileNode.load(file_id)
     wb_url = fp.generate_waterbutler_url()
     return redirect(wb_url)
+
+
+def handle_attribute_error(request, object_name, draft_id):
+    return page_not_found(
+        request,
+        AttributeError(
+            '{} with id "{}" not found.'.format(
+                object_name.title(),
+                draft_id
+            )
+        )
+    )
