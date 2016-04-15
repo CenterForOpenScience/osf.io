@@ -313,6 +313,7 @@ CELERY_IMPORTS = (
     'website.archiver.tasks',
     'website.search.search',
     'api.caching.tasks',
+    'scripts.get_failed_registrations',
     'scripts.populate_new_and_noteworthy_projects',
     'scripts.refresh_box_tokens',
     'scripts.retract_registrations',
@@ -348,7 +349,12 @@ else:
         },
         'refresh_box': {
             'task': 'scripts.refresh_box_tokens',
-            'schedule': crontab(minute=0, hour= 2),  # Daily 2:00 a.m
+            'schedule': crontab(minute=0, hour=2),  # Daily 2:00 a.m
+            'kwargs': {'dry_run': False},
+        },
+        'get_failed_registration': {
+            'task': 'scripts.get_failed_registrations',
+            'schedule': crontab(minute=0, hour=2),  # Daily 2:00 a.m
             'kwargs': {'dry_run': False},
         },
         'retract_registrations': {
