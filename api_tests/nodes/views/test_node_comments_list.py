@@ -110,15 +110,6 @@ class TestNodeCommentsList(NodeCommentsListMixin, ApiTestCase):
         self.registration_comment = CommentFactory(node=self.registration, user=self.user)
         self.registration_url = '/{}registrations/{}/comments/'.format(API_BASE, self.registration._id)
 
-    def test_cannot_access_retracted_comments(self):
-        self.public_project = ProjectFactory(is_public=True, creator=self.user)
-        self.public_comment = CommentFactory(node=self.public_project, user=self.user)
-        registration = RegistrationFactory(creator=self.user, project=self.public_project)
-        url = '/{}nodes/{}/comments/'.format(API_BASE, registration._id)
-        retraction = RetractedRegistrationFactory(registration=registration, user=self.user)
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
-
 
 class TestNodeCommentsListFiles(NodeCommentsListMixin, ApiTestCase):
 

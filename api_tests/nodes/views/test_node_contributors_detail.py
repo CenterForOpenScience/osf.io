@@ -92,13 +92,6 @@ class TestContributorDetail(NodeCRUDTestCase):
         res = self.app.get(self.private_url_base.format('invalid'), auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
-    def test_can_not_access_retracted_contributor_detail(self):
-        registration = RegistrationFactory(creator=self.user, project=self.public_project)
-        url = '/{}nodes/{}/contributors/{}/'.format(API_BASE, registration._id, self.user._id)
-        retraction = RetractedRegistrationFactory(registration=registration, user=registration.creator)
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
-
 
 class TestNodeContributorUpdate(ApiTestCase):
     def setUp(self):

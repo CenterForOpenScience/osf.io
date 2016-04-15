@@ -90,14 +90,6 @@ class TestNodeList(ApiTestCase):
         ids = [each['id'] for each in res.json['data']]
         assert_not_in(registration._id, ids)
 
-    def test_omit_retracted_registration(self):
-        registration = RegistrationFactory(creator=self.user, project=self.public)
-        res = self.app.get(self.url, auth=self.user.auth)
-        assert_equal(len(res.json['data']), 2)
-        retraction = RetractedRegistrationFactory(registration=registration, user=registration.creator)
-        res = self.app.get(self.url, auth=self.user.auth)
-        assert_equal(len(res.json['data']), 2)
-
     def test_node_list_has_root(self):
         res = self.app.get(self.url, auth=self.user.auth)
         projects_with_root = 0

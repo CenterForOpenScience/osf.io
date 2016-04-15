@@ -106,13 +106,6 @@ class TestNodeContributorList(NodeCRUDTestCase):
         assert_equal(res.status_code, 403)
         assert 'detail' in res.json['errors'][0]
 
-    def test_can_not_access_retracted_contributors(self):
-        registration = RegistrationFactory(creator=self.user, project=self.public_project)
-        url = '/{}nodes/{}/contributors/'.format(API_BASE, registration._id)
-        retraction = RetractedRegistrationFactory(registration=registration, user=registration.creator)
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
-
     def test_filtering_on_obsolete_fields(self):
         # regression test for changes in filter fields
         url_fullname = '{}?filter[fullname]=foo'.format(self.public_url)

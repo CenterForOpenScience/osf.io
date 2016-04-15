@@ -63,12 +63,3 @@ class TestNodeRegistrationList(ApiTestCase):
         assert_equal(urlparse(url).path, '/{}nodes/{}/'.format(API_BASE, self.project._id))
         assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data'][0]['type'], 'registrations')
-
-    def test_cannot_access_retracted_registrations_list(self):
-        registration = RegistrationFactory(creator=self.user, project=self.public_project)
-        retraction = RetractedRegistrationFactory(registration=registration, user=registration.creator)
-        registration.save()
-        url = '/{}nodes/{}/registrations/'.format(API_BASE, registration._id)
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
-
