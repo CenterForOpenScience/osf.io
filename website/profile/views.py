@@ -801,11 +801,22 @@ def request_export(auth):
 
 @must_be_logged_in
 def request_deactivation(auth):
+    user = auth.user
+    now = datetime.datetime.utcnow()
+    if user.email_last_sent and (now - user.email_last_sent).total_seconds() < settings.SEND_EMAIL_THROTTLE:
+        raise HTTPError(http.BAD_REQUEST,
+                        data={
+                            'message_long': 'Please wait 30 seconds before sending another account deactivation request.',
+                            'error_type': 'throttle_error'
+                        })
+
     mails.send_mail(
         to_addr=settings.SUPPORT_EMAIL,
         mail=mails.REQUEST_DEACTIVATION,
         user=auth.user,
     )
+    user.email_last_sent = now
+    user.save()
     return {'message': 'Sent account deactivation request'}
 
 
