@@ -100,9 +100,9 @@ class DraftFormView(PreregAdmin, FormView):
         flags = draft.flags
         self.initial = {
             'notes': draft.notes,
-            'assignee': flags['assignee'],
-            'payment_sent': flags['payment_sent'],
-            'proof_of_publication': flags['proof_of_publication'],
+            'assignee': flags.get('assignee'),
+            'payment_sent': flags.get('payment_sent'),
+            'proof_of_publication': flags.get('proof_of_publication'),
         }
         return super(DraftFormView, self).get_initial()
 
