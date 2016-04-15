@@ -1,8 +1,15 @@
 # -*- coding: utf-8 -*-
 import httplib as http
 
+from framework.auth.core import Auth
+
 from nose.tools import *  # noqa
 from test_log_detail import LogsTestCase
+from tests.factories import (
+    ProjectFactory,
+)
+
+from api.base.settings.defaults import API_BASE
 
 
 class TestLogContributors(LogsTestCase):
@@ -61,3 +68,12 @@ class TestLogContributors(LogsTestCase):
         assert_equal(attributes['baiduScholar'], None)
         assert_equal(res.json['data'][0]['links'], {})
         assert_not_in('relationships', res.json['data'][0])
+
+    def test_unregistered_contributors_return_name_associated_with_project(self):
+        project = ProjectFactory(creator=self.user)
+        project.add_unregistered_contributor('Robert Jackson', 'robert@gmail.com', auth=Auth(self.user), save=True)
+        relevant_log = project.logs[-1]
+        url = '/{}logs/{}/contributors/'.format(API_BASE, relevant_log._id)
+        res = self.app.get(url, auth=self.user.auth)
+
+        assert_equal(res.json['data'][0]['attributes']['unregistered_contributor'], 'Robert Jackson')
