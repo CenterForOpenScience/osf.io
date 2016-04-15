@@ -95,10 +95,10 @@ var BaseComment = function() {
 
     self.loadingComments = ko.observable(true);
 
-    self.replyNotEmpty = ko.pureComputed(function () {
+    self.replyNotEmpty = ko.pureComputed(function() {
         return notEmpty(self.replyContent());
     });
-    self.commentButtonText = ko.computed(function () {
+    self.commentButtonText = ko.computed(function() {
         return self.submittingReply() ? 'Commenting' : 'Comment';
     });
 
@@ -213,7 +213,6 @@ BaseComment.prototype.fetchNext = function(url, comments, setUnread) {
             self.urlForNext('there are no more');
             self.loadingComments(false);
         }
-
     }).fail(function () {
         self.loadingComments(false);
     });
