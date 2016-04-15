@@ -839,7 +839,7 @@ def _get_summary(node, auth, primary=True, link_id=None, show_path=False):
         'is_pending_retraction': node.is_pending_retraction,
         'embargo_end_date': node.embargo_end_date.strftime("%A, %b. %d, %Y") if node.embargo_end_date else False,
         'is_pending_embargo': node.is_pending_embargo,
-        'archiving': node.archiving,
+        'archiving': node.archiving or node.root.archiving,
     }
 
     if node.can_view(auth):
