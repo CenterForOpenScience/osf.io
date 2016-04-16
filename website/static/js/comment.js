@@ -676,7 +676,6 @@ var CommentListModel = function(options) {
     });
 
     $('#comments_window').scroll(function() {
-
         self.comments.infinitescroll.scrollY($('#comments_window').scrollTop());
 
         var last = self.comments.infinitescroll.lastVisibleIndex();
@@ -684,7 +683,7 @@ var CommentListModel = function(options) {
         var numberOfComments = self.comments.peek().length;
         var checkNumber = ((last + numberOfComments) - first) * numberOfComments;
 
-        if ( $('#comments_window').scrollTop() >= checkNumber) {
+        if ( $('#comments_window').scrollTop() - numberOfComments >= checkNumber) {
             self.atBottomOfScroll(true);
             if (self.readyForMore()) {
                 self.getMoreComments();
