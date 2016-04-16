@@ -206,11 +206,12 @@ BaseComment.prototype.fetchNext = function(url, comments, setUnread) {
             );
         });
         self.configureCommentsVisibility();
+        self.totalComments = response.links.meta.total;
         if (response.links.next !== null) {
             self.readyForMore(true);
             self.urlForNext(response.links.next);
         } else {
-            self.urlForNext('there are no more');
+            self.readyForMore(false);
             self.loadingComments(false);
         }
     }).fail(function () {
@@ -218,19 +219,18 @@ BaseComment.prototype.fetchNext = function(url, comments, setUnread) {
     });
 };
 
-BaseComment.prototype.get_more_comments = function() {
+BaseComment.prototype.getMoreComments = function() {
     var self = this;
     var next_url = self.urlForNext();
     var comments = self.comments();
     var setUnread = self.getTargetType() !== 'comments' && !osfHelpers.urlParams().view_only && self.author.id !== '';
 
-    self.readyForMore(false);
-
-    if (self.urlForNext() === 'there are no more') {
-        self.loadingComments(false);
-    } else {
+    if (self.readyForMore) {
         self.fetchNext(next_url, comments, setUnread);
+    } else {
+        self.loadingComments(false);
     }
+    self.readyForMore(false);
 };
 
 BaseComment.prototype.configureCommentsVisibility = function() {
@@ -687,7 +687,7 @@ var CommentListModel = function(options) {
         if ( $('#comments_window').scrollTop() >= checkNumber) {
             self.atBottomOfScroll(true);
             if (self.readyForMore()) {
-                self.get_more_comments();
+                self.getMoreComments();
             }
         }
     });
