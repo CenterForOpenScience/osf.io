@@ -153,6 +153,7 @@ class TestRetractions(NodeCRUDTestCase):
         assert_not_in('forked_from', res.json['data']['relationships'])
         assert_not_in('files', res.json['data']['relationships'])
         assert_not_in('logs', res.json['data']['relationships'])
+        assert_not_in('primary_institution', res.json['data']['relationships'])
 
     def test_field_specific_related_counts_ignored_if_hidden_field_on_retraction(self):
         url = '/{}registrations/{}/?related_counts=children'.format(API_BASE, self.registration._id)
