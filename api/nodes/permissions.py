@@ -2,10 +2,11 @@
 from rest_framework import permissions
 from rest_framework import exceptions
 
+from website.addons.base import AddonNodeSettingsBase
 from website.models import Node, Pointer, User, Institution
 from website.util import permissions as osf_permissions
 
-from api.base.utils import get_user_auth
+from api.base.utils import get_user_auth, extract_object_from_dict
 
 
 class ContributorOrPublic(permissions.BasePermission):
@@ -22,7 +23,9 @@ class ContributorOrPublic(permissions.BasePermission):
 class AdminOrPublic(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (Node, User, Institution)), 'obj must be a Node, User or Institution, got {}'.format(obj)
+        if isinstance(obj, dict):
+            obj = extract_object_from_dict(obj)
+        assert isinstance(obj, (Node, User, Institution, AddonNodeSettingsBase)), 'obj must be a Node, User, Institution, or <Addon>NodeSettings, got {}'.format(obj)
         auth = get_user_auth(request)
         node = Node.load(request.parser_context['kwargs'][view.node_lookup_url_kwarg])
         if request.method in permissions.SAFE_METHODS:

@@ -1380,7 +1380,7 @@ class NodeAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, Node
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        ContributorOrPublic,
+        AdminOrPublic,
         ExcludeRetractions,
         base_permissions.TokenHasScope,
     )
@@ -1421,7 +1421,9 @@ class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
+        AdminOrPublic,
         ExcludeRetractions,
+        ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
     )
 
@@ -1466,7 +1468,8 @@ class NodeAddonAccountList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixi
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        ContributorOrPublic,
+        AdminOrPublic,
+        ReadOnlyIfRegistration,
         ExcludeRetractions,
         base_permissions.TokenHasScope,
     )
@@ -1502,6 +1505,8 @@ class NodeAddonAccountDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, N
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
+        AdminOrPublic,
+        ReadOnlyIfRegistration,
         ExcludeRetractions,
         base_permissions.TokenHasScope,
     )

@@ -137,3 +137,6 @@ def default_node_permission_query(user):
 
 def extend_querystring_params(url, params):
     return furl.furl(url).add(args=params).url
+
+def extract_object_from_dict(self, obj):
+        return obj.get('object', obj)
