@@ -20,7 +20,7 @@ EVENT = 'mailing_list_events'
 SUBSCRIPTION_TYPE = 'email_transactional'
 
 def get_targets():
-    return list(Node.find())
+    return Node.find()
 
 def migrate(dry_run=True):
     successful_enables = []
@@ -30,7 +30,7 @@ def migrate(dry_run=True):
     ncount = len(nodes)
     logger.info('Preparing to migrate {} nodes.'.format(ncount))
     for node in nodes:
-        if node.is_registration or node.is_dashboard:
+        if node.is_registration or node.is_dashboard or node.is_deleted:
             try:
                 logger.info('({0}/{1})Disabling mailing list for registration/dashboard {2}'.format(nodes.index(node)+1, ncount, node._id))
                 node.mailing_enabled = False    
