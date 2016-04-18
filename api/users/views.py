@@ -1,27 +1,30 @@
 
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
-from rest_framework.exceptions import NotAuthenticated
+from rest_framework.exceptions import NotAuthenticated, NotFound
 from django.contrib.auth.models import AnonymousUser
 
 from modularodm import Q
 
 from framework.auth.oauth_scopes import CoreScopes
 
-from website.models import User, Node
+from website.models import User, Node, ExternalAccount
+from website.settings import ADDONS_AVAILABLE_DICT
 
 from api.base import permissions as base_permissions
 from api.base.utils import get_object_or_error
 from api.base.exceptions import Conflict
+from api.base.serializers import AddonAccountSerializer
 from api.base.views import JSONAPIBaseView
-from api.base.filters import ODMFilterMixin
+from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.parsers import JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON
 from api.nodes.serializers import NodeSerializer
 from api.institutions.serializers import InstitutionSerializer
 from api.registrations.serializers import RegistrationSerializer
 from api.base.utils import default_node_list_query, default_node_permission_query
+from api.base.settings import ADDONS_NON_OAUTH
 
-from .serializers import UserSerializer, UserDetailSerializer, UserInstitutionsRelationshipSerializer
+from .serializers import UserSerializer, UserAddonSettingsSerializer, UserDetailSerializer, UserInstitutionsRelationshipSerializer
 from .permissions import ReadOnlyOrCurrentUser, ReadOnlyOrCurrentUserRelationship
 
 
@@ -227,6 +230,81 @@ class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
         context = JSONAPIBaseView.get_serializer_context(self)
         context['request'] = self.request
         return context
+
+
+class UserAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, UserMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    serializer_class = UserAddonSettingsSerializer
+    view_category = 'users'
+    view_name = 'user-addons'
+
+    def get_queryset(self):
+        return self.get_user().get_addons()
+
+
+class UserAddonDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    serializer_class = UserAddonSettingsSerializer
+    view_category = 'users'
+    view_name = 'user-addon-detail'
+
+    def get_object(self):
+        user = self.get_user()
+        provider = self.kwargs['provider']
+        if provider not in ADDONS_AVAILABLE_DICT.keys() or provider in ADDONS_NON_OAUTH:
+            raise NotFound('Requested addon unavailable')
+
+        return user.get_addon(provider)
+
+
+class UserAddonAccountList(JSONAPIBaseView, generics.ListAPIView, UserMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    serializer_class = AddonAccountSerializer
+    view_category = 'users'
+    view_name = 'user-external_accounts'
+
+    def get_queryset(self):
+        user = self.get_user()
+        provider = self.kwargs['provider']
+
+        if provider not in ADDONS_AVAILABLE_DICT.keys() or provider in ADDONS_NON_OAUTH:
+            raise NotFound('Requested addon unavailable')
+
+        return user.get_addon(provider).external_accounts
+
+class UserAddonAccountDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    serializer_class = AddonAccountSerializer
+    view_category = 'users'
+    view_name = 'user-external_account-detail'
+
+    def get_object(self):
+        user = self.get_user()
+        provider = self.kwargs['provider']
+        account_id = self.kwargs['account_id']
+
+        if (provider not in ADDONS_AVAILABLE_DICT.keys()
+         or provider in ADDONS_NON_OAUTH
+         or not user.has_addon(provider)
+         or account_id not in user.get_addon(provider).external_accounts):
+            raise NotFound('Requested addon unavailable')
+        return ExternalAccount.load(account_id)
 
 
 class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin):
