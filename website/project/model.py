@@ -1624,7 +1624,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         new.is_fork = False
         new.is_registration = False
         new.piwik_site_id = None
-        new.mailing_enabled = not new.is_folder
+        new.mailing_enabled = not new.is_collection
         new.node_license = self.license.copy() if self.license else None
 
         # If that title hasn't been changed, apply the default prefix (once)
@@ -2150,7 +2150,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         forked.forked_from = original
         forked.creator = user
         forked.piwik_site_id = None
-        forked.mailing_enabled = not forked.is_folder
+        forked.mailing_enabled = not forked.is_collection
         forked.node_license = original.license.copy() if original.license else None
 
         # Forks default to private status
