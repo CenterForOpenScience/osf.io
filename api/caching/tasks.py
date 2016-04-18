@@ -13,8 +13,7 @@ def get_varnish_servers():
     #  TODO: this should get the varnish servers from HAProxy or a setting
     return settings.VARNISH_SERVERS
 
-    #  fields_changed will eventually let us ban even more accurately
-def get_bannable_urls(instance, fields_changed):
+def get_bannable_urls(instance):
     bannable_urls = []
     parsed_absolute_url = {}
 
@@ -42,11 +41,11 @@ def get_bannable_urls(instance, fields_changed):
     return bannable_urls, parsed_absolute_url.hostname
 
 
-def ban_url(instance, fields_changed):
+def ban_url(instance):
     # TODO: Refactor; Pull url generation into postcommit_task handling so we only ban urls once per request
     timeout = 0.3  # 300ms timeout for bans
     if settings.ENABLE_VARNISH:
-        bannable_urls, hostname = get_bannable_urls(instance, fields_changed)
+        bannable_urls, hostname = get_bannable_urls(instance)
 
         for url_to_ban in set(bannable_urls):
             try:

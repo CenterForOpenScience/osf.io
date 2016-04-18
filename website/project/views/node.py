@@ -24,7 +24,6 @@ from website.project import new_node, new_private_link
 from website.project.decorators import (
     must_be_contributor_or_public_but_not_anonymized,
     must_be_contributor_or_public,
-    must_be_contributor,
     must_be_valid_project,
     must_have_permission,
     must_not_be_registration,
@@ -246,7 +245,7 @@ def node_forks(auth, node, **kwargs):
 
 @must_be_valid_project
 @must_be_logged_in
-@must_be_contributor
+@must_have_permission(READ)
 def node_setting(auth, node, **kwargs):
 
     #check institutions:
@@ -652,6 +651,10 @@ def _view_project(node, auth, primary=False):
     widgets, configs, js, css = _render_addon(node)
     redirect_url = node.url + '?view_only=None'
 
+    disapproval_link = ''
+    if (node.is_pending_registration and node.has_permission(user, ADMIN)):
+        disapproval_link = node.registration_approval.stashed_urls.get(user._id, {}).get('reject', '')
+
     # Before page load callback; skip if not primary call
     if primary:
         for addon in node.get_addons():
@@ -660,6 +663,7 @@ def _view_project(node, auth, primary=False):
                 status.push_status_message(message, kind='info', dismissible=False, trust=True)
     data = {
         'node': {
+            'disapproval_link': disapproval_link,
             'id': node._primary_key,
             'title': node.title,
             'category': node.category_display,
@@ -835,7 +839,7 @@ def _get_summary(node, auth, primary=True, link_id=None, show_path=False):
         'is_pending_retraction': node.is_pending_retraction,
         'embargo_end_date': node.embargo_end_date.strftime("%A, %b. %d, %Y") if node.embargo_end_date else False,
         'is_pending_embargo': node.is_pending_embargo,
-        'archiving': node.archiving,
+        'archiving': node.archiving or getattr(node.root, 'archiving', False),
     }
 
     if node.can_view(auth):
