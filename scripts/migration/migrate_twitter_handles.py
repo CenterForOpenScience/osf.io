@@ -4,6 +4,7 @@ import sys
 from modularodm import Q
 
 from framework.transactions.context import TokuTransaction
+from nose.tools import *
 from tests.base import OsfTestCase
 from tests.factories import UserFactory
 from website.app import init_app
@@ -19,6 +20,7 @@ def migrate(targets, dry_run=True):
     # iterate over targets
     # log things
     users = targets
+    logging.info(len(users))
     for user in users:
         twitter = user.social['twitter'].replace("@", "")
         logger.info('Setting `social.twitter` field of user {0} to {1}'.format(user._id, twitter))
@@ -44,12 +46,21 @@ if __name__ == "__main__":
     main()
 
 class TestMigrateTwitterHandles(OsfTestCase):
+    def setUp(self):
+        super(TestMigrateTwitterHandles, self).setUp()
+        self.user1 = UserFactory()
+        self.user1.social['twitter'] = "@@user1"
+        self.user1.save()
     def test_get_targets(self):
-        #user = UserFactory()
-        #user.social['twitter'] = "@@user"
-        targets = get_targets()
-        for user in targets:
+        users = get_targets()
+        for user in users:
             logging.info(user)
+            logging.info(user.social['twitter'])
+        logging.info(len(users))
+        assert_equal(len(users), 1)
 
     def test_migrate(self):
-        pass
+        users = get_targets()
+        migrate(users, dry_run=False)
+        updated_users = get_targets()
+        assert_equal(len(updated_users), 0)
