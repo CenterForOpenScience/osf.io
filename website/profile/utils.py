@@ -7,7 +7,7 @@ from framework import auth
 from website import settings
 from website.filters import gravatar
 from website.project.model import Node
-from website.project.mailing_list import get_recipients
+from website.mailing_list.utils import get_recipients
 from website.util.permissions import reduce_permissions
 
 

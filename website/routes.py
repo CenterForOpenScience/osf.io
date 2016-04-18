@@ -40,6 +40,7 @@ from website.addons.base import views as addon_views
 from website.discovery import views as discovery_views
 from website.conferences import views as conference_views
 from website.notifications import views as notification_views
+from website.mailing_list import views as mailing_list_views
 
 def get_globals():
     """Context variables that are available for every template rendered by
@@ -1500,7 +1501,7 @@ def make_url_map(app):
                 '/project/<pid>/node/<nid>/mailing_list/',
             ],
             'get',
-            project_views.mailing_list.get_node_mailing_list,
+            mailing_list_views.get_node_mailing_list,
             json_renderer,
         ),
 
@@ -1510,7 +1511,7 @@ def make_url_map(app):
                 '/project/<pid>/node/<nid>/mailing_list/',
             ],
             'post',
-            project_views.mailing_list.enable_mailing_list,
+            mailing_list_views.enable_mailing_list,
             json_renderer,
         ),
 
@@ -1520,7 +1521,7 @@ def make_url_map(app):
                 '/project/<pid>/node/<nid>/mailing_list/',
             ],
             'delete',
-            project_views.mailing_list.disable_mailing_list,
+            mailing_list_views.disable_mailing_list,
             json_renderer,
         ),
 
@@ -1529,7 +1530,7 @@ def make_url_map(app):
                 '/mailing_list/messages/',
             ],
             'post',
-            project_views.mailing_list.route_message,
+            mailing_list_views.route_message,
             json_renderer,
         ),
 

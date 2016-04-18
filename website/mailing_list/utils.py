@@ -8,12 +8,13 @@ from framework.auth.signals import user_confirmed
 
 from website import mails
 from website import settings
-from website.models import Node, NotificationSubscription
 from website.notifications.utils import to_subscription_key
 
-from website.project.model import MailingListEventLog
+from website.mailing_list.model import MailingListEventLog
 from website.project.signals import contributor_added
 from website.util.sanitize import unescape_entities
+
+ANGLE_BRACKETS_REGEX = re.compile(r'<(.*?)>')
 
 ###############################################################################
 # Signalled Functions
@@ -40,11 +41,12 @@ def address(node_id):
 
 def find_email(long_email):
     # allow for both "{email}" syntax and "{name} <{email}>" syntax
-    if ' ' in long_email:
-        email = re.search(r'<\S*>$', long_email).group(0)[1:-1]
+    if '<' in long_email:
+        email = ANGLE_BRACKETS_REGEX.search(long_email).groups[0]
         return email
-    else:
+    elif '@' in long_email:
         return long_email
+    return None
 
 def reason_for_rejection(sender, node, message):
     if 'multipart/report' in message['Content-Type'] and 'delivery-status' in message['Content-Type']:
@@ -77,6 +79,7 @@ def reason_for_rejection(sender, node, message):
 def route_message(**kwargs):
     """ Acquires messages sent through Mailgun, validates them, and warns the
     user if they are not valid"""
+    from website.models import Node  # avoid circular imports
     message = request.form
     target = find_email(message['To'])
     # node_id = re.search(r'[a-z0-9]*@', target).group(0)[:-1]
@@ -108,6 +111,7 @@ def route_message(**kwargs):
 
 def get_recipients(node, sender=None):
     if node.mailing_enabled:
+        from website.models import NotificationSubscription  # avoid circular import
         subscription = NotificationSubscription.load(to_subscription_key(node._id, 'mailing_list_events'))
         return [u for u in subscription.email_transactional if not u == sender]
     return []

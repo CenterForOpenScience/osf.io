@@ -6,7 +6,7 @@ from website.project.decorators import (
 )
 from website.util.permissions import ADMIN
 
-from website.project.mailing_list import route_message
+from website.mailing_list.utils import route_message
 
 
 ###############################################################################
@@ -25,6 +25,7 @@ def get_node_mailing_list(node, auth, **kwargs):
 def enable_mailing_list(node, **kwargs):
     node.mailing_enabled = True
     node.save()
+    return {'message': 'Successfully enabled mailing lists', 'success': True}
 
 
 @must_be_valid_project

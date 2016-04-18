@@ -15,8 +15,8 @@ from framework.auth.signals import user_confirmed
 from werkzeug.datastructures import ImmutableMultiDict
 
 from website import mails, settings
-from website.project.mailing_list import get_unsubscribes
-from website.project.model import MailingListEventLog
+from website.mailing_list.utils import get_unsubscribes
+from website.mailing_list.model import MailingListEventLog
 from website.util import api_url_for
 
 
@@ -115,7 +115,7 @@ class TestEmailRejections(OsfTestCase):
         self.post_url = api_url_for('route_message')
 
     @mock.patch('website.mails.send_mail')
-    @mock.patch('website.project.mailing_list.send_acception')
+    @mock.patch('website.mailing_list.utils.send_acception')
     def test_working_email(self, mock_send_list, mock_send_mail):
         user2 = AuthUserFactory()
         self.project.add_contributor(user2, save=True)
@@ -132,7 +132,7 @@ class TestEmailRejections(OsfTestCase):
             for key in self.message.keys()]
 
     @mock.patch('website.mails.send_mail')
-    @mock.patch('website.project.mailing_list.send_acception')
+    @mock.patch('website.mailing_list.utils.send_acception')
     def test_no_recipients(self, mock_send_list, mock_send_mail):
         self.app.post(self.post_url, self.message)
 
@@ -151,7 +151,7 @@ class TestEmailRejections(OsfTestCase):
 
             
     @mock.patch('website.mails.send_mail')
-    @mock.patch('website.project.mailing_list.send_acception')
+    @mock.patch('website.mailing_list.utils.send_acception')
     def test_bounce(self, mock_send_list, mock_send_mail):
         user2 = AuthUserFactory()
         self.project.add_contributor(user2, save=True)
@@ -173,7 +173,7 @@ class TestEmailRejections(OsfTestCase):
         assert mock_send_list.call_count == 0
 
     @mock.patch('website.mails.send_mail')
-    @mock.patch('website.project.mailing_list.send_acception')
+    @mock.patch('website.mailing_list.utils.send_acception')
     def test_email_from_non_registered_user(self, mock_send_list, mock_send_mail):
         self.message['From'] = 'non-email@osf.fake'
 
@@ -193,7 +193,7 @@ class TestEmailRejections(OsfTestCase):
         assert mock_send_list.call_count == 0
 
     @mock.patch('website.mails.send_mail')
-    @mock.patch('website.project.mailing_list.send_acception')
+    @mock.patch('website.mailing_list.utils.send_acception')
     def test_email_to_nonexistent_project(self, mock_send_list, mock_send_mail):
         self.message['To'] = 'notarealprojectid@osf.io'
 
@@ -213,7 +213,7 @@ class TestEmailRejections(OsfTestCase):
         assert mock_send_list.call_count == 0
 
     @mock.patch('website.mails.send_mail')
-    @mock.patch('website.project.mailing_list.send_acception')
+    @mock.patch('website.mailing_list.utils.send_acception')
     def test_email_to_deleted_project(self, mock_send_list, mock_send_mail):
         self.project.remove_node(auth=Auth(user=self.user))
 
@@ -233,7 +233,7 @@ class TestEmailRejections(OsfTestCase):
         assert mock_send_list.call_count == 0
 
     @mock.patch('website.mails.send_mail')
-    @mock.patch('website.project.mailing_list.send_acception')
+    @mock.patch('website.mailing_list.utils.send_acception')
     def test_email_to_private_project_without_access(self, mock_send_list, mock_send_mail):
         self.user = UserFactory()
         self.user.reload()
@@ -255,7 +255,7 @@ class TestEmailRejections(OsfTestCase):
         assert mock_send_list.call_count == 0
 
     @mock.patch('website.mails.send_mail')
-    @mock.patch('website.project.mailing_list.send_acception')
+    @mock.patch('website.mailing_list.utils.send_acception')
     def test_email_to_public_project_without_access(self, mock_send_list, mock_send_mail):
         self.project.is_public = True
         self.project.save()
@@ -279,7 +279,7 @@ class TestEmailRejections(OsfTestCase):
         assert mock_send_list.call_count == 0
 
     @mock.patch('website.mails.send_mail')
-    @mock.patch('website.project.mailing_list.send_acception')
+    @mock.patch('website.mailing_list.utils.send_acception')
     def test_email_to_project_with_mailing_list_disabled_as_admin(self, mock_send_list, mock_send_mail):
         self.project.mailing_enabled = False
         self.project.save()
@@ -300,7 +300,7 @@ class TestEmailRejections(OsfTestCase):
         assert mock_send_list.call_count == 0
 
     @mock.patch('website.mails.send_mail')
-    @mock.patch('website.project.mailing_list.send_acception')
+    @mock.patch('website.mailing_list.utils.send_acception')
     def test_email_to_project_with_mailing_list_disabled_as_non_admin(self, mock_send_list, mock_send_mail):
         self.user = UserFactory()
         self.user.reload()
