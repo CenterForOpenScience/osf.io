@@ -132,11 +132,14 @@ var callbacks = {
     }
 };
 
+var headerTemplate = '<div class="atwho-header">Contributors<small>&nbsp;↑&nbsp;↓&nbsp;</small></div>';
+var displayTemplate = '<li>${fullName}</li>';
+
 var at_config = {
     at: '@',
-    headerTpl: '<div class="atwho-header">Contributors<small>&nbsp;↑&nbsp;↓&nbsp;</small></div>',
+    headerTpl: headerTemplate,
     insertTpl: '@${fullName}',
-    displayTpl: '<li>${fullName}</li>',
+    displayTpl: displayTemplate,
     searchKey: 'fullName',
     limit: 6,
     callbacks: callbacks
@@ -144,9 +147,9 @@ var at_config = {
 
 var plus_config = {
     at: '+',
-    headerTpl: '<div class="atwho-header">Contributors<small>&nbsp;↑&nbsp;↓&nbsp;</small></div>',
+    headerTpl: headerTemplate,
     insertTpl: '+${fullName}',
-    displayTpl: '<li>${fullName}</li>',
+    displayTpl: displayTemplate,
     searchKey: 'fullName',
     limit: 6,
     callbacks: callbacks
@@ -162,7 +165,10 @@ var getContributorList = function(input, nodeId) {
         url,
         {'isCors': true});
     request.done(function(response) {
-        var data = response.data.map(function(item) {
+        var activeContributors = response.data.filter(function(item) {
+            return item.embeds.users.data.attributes.active === true;
+        });
+        var data = activeContributors.map(function(item) {
             return {
                 'id': item.id,
                 'name': item.embeds.users.data.attributes.given_name,
@@ -518,7 +524,6 @@ var CommentModel = function(data, $parent, $root) {
                 content = content.replace(match[0], '<span class="atwho-inserted" data-atwho-guid="'+ guid + '" data-atwho-at-query="' + atwho + '">' + atwho + mention + '</span>');
             }
         }
-        content += '<br>';
         return content.replace(/\x0D\x0A/g, '<br>');
     });
 
