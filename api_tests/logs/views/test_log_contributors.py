@@ -76,4 +76,6 @@ class TestLogContributors(LogsTestCase):
         url = '/{}logs/{}/contributors/'.format(API_BASE, relevant_log._id)
         res = self.app.get(url, auth=self.user.auth)
 
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data'][0]['attributes']['full_name'], 'Robert Jackson')
         assert_equal(res.json['data'][0]['attributes']['unregistered_contributor'], 'Robert Jackson')
