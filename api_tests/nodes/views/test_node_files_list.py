@@ -1,14 +1,16 @@
+import datetime
 import json
 
-from nose.tools import *  # flake8: noqa
 import httpretty
+from nose.tools import *  # flake8: noqa
 
 from framework.auth.core import Auth
 
-from website.addons.github import model
+from website.addons.github.tests.factories import GitHubAccountFactory
 from website.models import Node
 from website.util import waterbutler_api_url_for
 from api.base.settings.defaults import API_BASE
+from api_tests import utils as api_utils
 from tests.base import ApiTestCase
 from tests.factories import (
     ProjectFactory,
@@ -162,11 +164,12 @@ class TestNodeFilesList(ApiTestCase):
         addon = self.project.get_addon('github')
         addon.repo = 'something'
         addon.user = 'someone'
-        oauth_settings = model.AddonGitHubOauthSettings(github_user_id='plstowork', oauth_access_token='foo')
+        oauth_settings = GitHubAccountFactory()
         oauth_settings.save()
-        user_settings = model.AddonGitHubUserSettings(oauth_settings=oauth_settings)
-        user_settings.save()
-        addon.user_settings = user_settings
+        self.user.add_addon('github')
+        self.user.external_accounts.append(oauth_settings)
+        self.user.save()
+        addon.user_settings = self.user.get_addon('github')
         addon.save()
         self.project.save()
         res = self.app.get(self.private_url, auth=self.user.auth)
@@ -313,6 +316,26 @@ class TestNodeFilesListFiltering(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 1)  # filters out 'xyz'
         assert_equal(res.json['data'][0]['attributes']['name'], 'abc')
+
+    def test_node_files_external_provider_can_filter_by_last_touched(self):
+        yesterday_stamp = datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        url = '/{}nodes/{}/files/github/?filter[last_touched][gt]={}'.format(API_BASE,
+                                                                             self.project._id,
+                                                                             yesterday_stamp.isoformat())
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']), 2)
+
+    def test_node_files_osfstorage_cannot_filter_by_last_touched(self):
+        yesterday_stamp = datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        self.file = api_utils.create_test_file(self.project, self.user)
+
+        url = '/{}nodes/{}/files/osfstorage/?filter[last_touched][gt]={}'.format(API_BASE,
+                                                                                 self.project._id,
+                                                                                 yesterday_stamp.isoformat())
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(len(res.json['errors']), 1)
 
 
 class TestNodeFilesListPagination(ApiTestCase):

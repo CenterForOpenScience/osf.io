@@ -222,9 +222,6 @@
             <div class="header" data-bind="visible: $root.collapsed() && expanded()"></div>
             <div class="td-content" data-bind="visible: !$root.collapsed() || expanded()">
                 <span data-bind="html: anonymousDisplay"></span>
-                <!-- ko if: $root.nodeIsPublic && anonymous -->
-                <i data-bind="tooltip: {title: 'Public projects are not anonymized.'}" class="fa fa-question-circle fa-sm"></i>
-                <!-- /ko -->
             </div>
         </td>
         <td>

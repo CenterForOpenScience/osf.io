@@ -71,10 +71,8 @@ class OAuthAddonSerializer(AddonSerializer):
 
         user_accounts = self.user_settings.external_accounts
         return bool(
-            (
-                self.node_settings.has_auth and
-                (self.node_settings.external_account in user_accounts)
-            ) or len(user_accounts)
+            self.node_settings.has_auth and
+            self.node_settings.external_account in user_accounts
         )
 
     @property
@@ -185,12 +183,20 @@ class CitationsAddonSerializer(OAuthAddonSerializer):
 
     REQUIRED_URLS = ('importAuth', 'folders', 'config', 'deauthorize', 'accounts')
 
+    serialized_root_folder = {
+        'name': 'All Documents',
+        'provider_list_id': None,
+        'id': 'ROOT',
+        'parent_list_id': '__',
+        'kind': 'folder',
+    }
+
     @property
     def serialized_urls(self):
         external_account = self.node_settings.external_account
         ret = {
             'auth': api_url_for('oauth_connect',
-                                service_name=self.node_settings.provider_name),
+                                service_name=self.addon_short_name),
             'files': self.node_settings.owner.url,
         }
         if external_account and external_account.profile_url:
@@ -203,30 +209,38 @@ class CitationsAddonSerializer(OAuthAddonSerializer):
     def serialized_node_settings(self):
         result = super(CitationsAddonSerializer, self).serialized_node_settings
         result['folder'] = {
-            'name': self.node_settings.selected_folder_name
+            'name': self.node_settings.fetch_folder_name
         }
         return result
-
-    @property
-    def user_is_owner(self):
-        if self.user_settings is None:
-            return False
-
-        user_accounts = self.user_settings.external_accounts
-        return bool(
-            (
-                self.node_settings.has_auth and
-                (self.node_settings.external_account in user_accounts)
-            ) or len(user_accounts)
-        )
 
     @property
     def credentials_owner(self):
         return self.node_settings.user_settings.owner
 
-    @abc.abstractmethod
     def serialize_folder(self, folder):
-        pass
+        return {
+            'data': folder,
+            'kind': 'folder',
+            'name': folder['name'],
+            'id': folder['id'],
+            'urls': {
+                'fetch': self.node_settings.owner.api_url_for(
+                    '{0}_citation_list'.format(self.addon_short_name),
+                    list_id=folder['id']
+                ),
+            },
+        }
+
+    @property
+    def addon_serialized_urls(self):
+        node = self.node_settings.owner
+        return {
+            'importAuth': node.api_url_for('{0}_import_auth'.format(self.addon_short_name)),
+            'folders': node.api_url_for('{0}_citation_list'.format(self.addon_short_name)),
+            'config': node.api_url_for('{0}_set_config'.format(self.addon_short_name)),
+            'deauthorize': node.api_url_for('{0}_deauthorize_node'.format(self.addon_short_name)),
+            'accounts': node.api_url_for('{0}_account_list'.format(self.addon_short_name)),
+        }
 
     def serialize_citation(self, citation):
         return {

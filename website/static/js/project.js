@@ -6,6 +6,7 @@
 var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
+var ko = require('knockout');
 
 var $osf = require('js/osfHelpers');
 var LogFeed = require('js/logFeed.js');
@@ -235,9 +236,16 @@ NodeActions.openCloseNode = function(nodeId) {
 // TODO: remove this
 $(document).ready(function() {
     var permissionInfoHtml = '<dl>' +
-        '<dt>Read</dt><dd>View project content and comment</dd>' +
-        '<dt>Read + Write</dt><dd>Read privileges plus add and configure components; add and edit content</dd>' +
-        '<dt>Administrator</dt><dd>Read and write privileges; manage contributors; delete and register project; public-private settings</dd>' +
+        '<dt>Read</dt>' +
+            '<dd><ul><li>View project content and comment</li></ul></dd>' +
+        '<dt>Read + Write</dt>' +
+            '<dd><ul><li>Read privileges</li> ' +
+                '<li>Add and configure components</li> ' +
+                '<li>Add and edit content</li></ul></dd>' +
+        '<dt>Administrator</dt><dd><ul>' +
+            '<li>Read and write privileges</li>' +
+            '<li>Manage contributor</li>' +
+            '<li>Delete and register project</li><li>Public-private settings</li></ul></dd>' +
         '</dl>';
 
     $('.permission-info').attr(
@@ -327,12 +335,10 @@ $(document).ready(function() {
             }
         });
 
-        // If not viewing the project or file detail page, remove the Comments Link
-        var excluded = ['files', 'wiki', 'analytics', 'registrations', 'forks', 'contributors', 'settings'];
-        for (var i=0; i < excluded.length; i++) {
-            if (path.indexOf(excluded[i]) > -1) {
-                $('.project-nav #commentsLink').remove();
-            }
+        // Remove Comments link from project nav bar for pages not bound to the comment view model
+        var commentsLinkElm = document.getElementById('commentsLink');
+        if (!ko.dataFor(commentsLinkElm)) {
+             commentsLinkElm.remove();
         }
     });
 });

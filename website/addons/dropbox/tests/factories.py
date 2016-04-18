@@ -10,14 +10,16 @@ from website.addons.dropbox.model import (
 
 
 class DropboxUserSettingsFactory(ModularOdmFactory):
-    FACTORY_FOR = DropboxUserSettings
+    class Meta:
+        model = DropboxUserSettings
 
     owner = SubFactory(UserFactory)
     access_token = Sequence(lambda n: 'abcdef{0}'.format(n))
 
 
 class DropboxNodeSettingsFactory(ModularOdmFactory):
-    FACTORY_FOR = DropboxNodeSettings
+    class Meta:
+        model = DropboxNodeSettings
 
     owner = SubFactory(ProjectFactory)
     user_settings = SubFactory(DropboxUserSettingsFactory)

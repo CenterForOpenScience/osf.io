@@ -1,7 +1,7 @@
 from nose.tools import *
 
 from tests.base import ApiTestCase
-from tests.factories import InstitutionFactory, AuthUserFactory, NodeFactory
+from tests.factories import InstitutionFactory, AuthUserFactory, ProjectFactory
 
 from framework.auth import Auth
 from api.base.settings.defaults import API_BASE
@@ -10,16 +10,16 @@ class TestInstitutionNodeList(ApiTestCase):
     def setUp(self):
         super(TestInstitutionNodeList, self).setUp()
         self.institution = InstitutionFactory()
-        self.node1 = NodeFactory(is_public=True)
+        self.node1 = ProjectFactory(is_public=True)
         self.node1.primary_institution = self.institution
         self.node1.save()
         self.user1 = AuthUserFactory()
         self.user2 = AuthUserFactory()
-        self.node2 = NodeFactory(creator=self.user1, is_public=False)
+        self.node2 = ProjectFactory(creator=self.user1, is_public=False)
         self.node2.primary_institution = self.institution
         self.node2.add_contributor(self.user2, auth=Auth(self.user1))
         self.node2.save()
-        self.node3 = NodeFactory(creator=self.user2, is_public=False)
+        self.node3 = ProjectFactory(creator=self.user2, is_public=False)
         self.node3.primary_institution = self.institution
         self.node3.save()
 

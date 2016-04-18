@@ -5,17 +5,26 @@ User usage is defined as the total usage of all projects they have > READ access
 Project usage is defined as the total usage of it and all its children
 total usage is defined as the sum of the size of all verions associated with X via OsfStorageFileNode and OsfStorageTrashedFileNode
 """
+
 import os
+import gc
 import sys
 import json
 import logging
 import functools
+
 from collections import defaultdict
 
+import progressbar
 from modularodm import Q
+
+from framework.celery_tasks import app as celery_app
+
 from website import mails
+from website.models import User
 from website.app import init_app
 from website.project.model import Node
+from website.files.models import FileVersion
 from website.files.models import OsfStorageFile
 from website.files.models import TrashedFileNode
 
@@ -51,16 +60,31 @@ def add_to_white_list(gtg):
 
 
 def get_usage(node):
-    usage = (
-        sum([v.size or 0 for file_node in OsfStorageFile.find(Q('node', 'eq', node)) for v in file_node.versions]),  # Sum all versions of all files of this node
-        sum([v.size or 0 for file_node in TrashedFileNode.find(Q('node', 'eq', node) & Q('is_file', 'eq', True) & Q('provider', 'eq', 'osfstorage')) for v in file_node.versions]),  # Sum all versions of all deleted files of this node
-    )
-    return map(sum, zip(*([usage] + [get_usage(child) for child in node.nodes_primary])))  # Adds tuples together, map(sum, zip((a, b), (c, d))) -> (a+c, b+d)
+    vids = sum([
+        file_node.to_storage().get('versions', [])
+        for file_node in
+        OsfStorageFile.find(Q('node', 'eq', node))
+    ], [])
+
+    t_vids = sum([
+        file_node.to_storage().get('versions', [])
+        for file_node in
+        TrashedFileNode.find(
+            Q('node', 'eq', node) &
+            Q('is_file', 'eq', True) &
+            Q('provider', 'eq', 'osfstorage')
+        )
+    ], [])
+
+    usage = sum([v.size or 0 for v in FileVersion.find(Q('_id', 'in', vids))])
+    trashed_usage = sum([v.size or 0 for v in FileVersion.find(Q('_id', 'in', t_vids))])
+
+    return map(sum, zip(*([(usage, trashed_usage)] + [get_usage(child) for child in node.nodes_primary])))  # Adds tuples together, map(sum, zip((a, b), (c, d))) -> (a+c, b+d)
 
 
 def limit_filter(limit, (item, usage)):
     """Note: usage is a tuple(current_usage, deleted_usage)"""
-    return item._id not in WHITE_LIST and sum(usage) >= limit
+    return item not in WHITE_LIST and sum(usage) >= limit
 
 def main(send_email=False):
     logger.info('Starting Project storage audit')
@@ -70,24 +94,36 @@ def main(send_email=False):
     projects = {}
     users = defaultdict(lambda: (0, 0))
 
-    for node in Node.find(Q('__backrefs.parent.node.nodes', 'eq', None)):  # ODM hack to ignore all nodes with parents
+    progress_bar = progressbar.ProgressBar(maxval=Node.find(Q('parent_node', 'eq', None)).count()).start()
+
+    for i, node in enumerate(Node.find(Q('parent_node', 'eq', None))):
+        progress_bar.update(i+1)
         if node._id in WHITE_LIST:
             continue  # Dont count whitelisted nodes against users
-        projects[node] = get_usage(node)
+        projects[node._id] = get_usage(node)
         for contrib in node.contributors:
             if node.can_edit(user=contrib):
-                users[contrib] = tuple(map(sum, zip(users[contrib], projects[node])))  # Adds tuples together, map(sum, zip((a, b), (c, d))) -> (a+c, b+d)
+                users[contrib._id] = tuple(map(sum, zip(users[contrib._id], projects[node._id])))  # Adds tuples together, map(sum, zip((a, b), (c, d))) -> (a+c, b+d)
 
-    for collection, limit in ((users, USER_LIMIT), (projects, PROJECT_LIMIT)):
+        if i % 25 == 0:
+            # Clear all caches
+            for key in ('node', 'user', 'fileversion', 'storedfilenode'):
+                Node._cache.data.get(key, {}).clear()
+                Node._object_cache.data.get(key, {}).clear()
+            # Collect garbage
+            gc.collect()
+    progress_bar.finish()
+
+    for model, collection, limit in ((User, users, USER_LIMIT), (Node, projects, PROJECT_LIMIT)):
         for item, (used, deleted) in filter(functools.partial(limit_filter, limit), collection.items()):
-            line = '{!r} has exceeded the limit {:.2f}GBs ({}b) with {:.2f}GBs ({}b) used and {:.2f}GBs ({}b) deleted.'.format(item, limit / GBs, limit, used / GBs, used, deleted / GBs, deleted)
+            line = '{!r} has exceeded the limit {:.2f}GBs ({}b) with {:.2f}GBs ({}b) used and {:.2f}GBs ({}b) deleted.'.format(model.load(item), limit / GBs, limit, used / GBs, used, deleted / GBs, deleted)
             logger.info(line)
             lines.append(line)
 
     if lines:
         if send_email:
             logger.info('Sending email...')
-            mails.send_mail('support@osf.io', mails.EMPTY, body='\n'.join(lines), subject='Script: OsfStorage usage audit')
+            mails.send_mail('support+scripts@osf.io', mails.EMPTY, body='\n'.join(lines), subject='Script: OsfStorage usage audit')
         else:
             logger.info('send_email is False, not sending email'.format(len(lines)))
         logger.info('{} offending project(s) and user(s) found'.format(len(lines)))
@@ -95,9 +131,10 @@ def main(send_email=False):
         logger.info('No offending projects or users found')
 
 
-if __name__ == '__main__':
+@celery_app.task(name='scripts.osfstorage.usage_audit')
+def run_main(send_mail=False, white_list=None):
     scripts_utils.add_file_logger(logger, __file__)
-    if len(sys.argv) > 1 and sys.argv[1] == 'whitelist':
-        add_to_white_list(sys.argv[2:])
+    if white_list:
+        add_to_white_list(white_list)
     else:
-        main(send_email='send_mail' in sys.argv)
+        main(send_mail)

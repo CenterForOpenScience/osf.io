@@ -8,19 +8,105 @@ from github3 import GitHubError
 from github3.repos import Repository
 
 from tests.base import OsfTestCase, get_default_metaschema
-from tests.factories import UserFactory, ProjectFactory
+from tests.factories import ExternalAccountFactory, ProjectFactory, UserFactory
 
 from framework.auth import Auth
 
 from website.addons.github.exceptions import NotFoundError
 from website.addons.github import settings as github_settings
-from website.addons.github.tests.factories import GitHubOauthSettingsFactory
-from website.addons.github.model import AddonGitHubUserSettings
-from website.addons.github.model import AddonGitHubNodeSettings
-from website.addons.github.model import AddonGitHubOauthSettings
+from website.addons.github.model import GitHubUserSettings
+from website.addons.github.model import GitHubNodeSettings
+from website.addons.github.tests.factories import (
+    GitHubAccountFactory,
+    GitHubNodeSettingsFactory,
+    GitHubUserSettingsFactory
+)
+from website.addons.base.testing import models
 
 from .utils import create_mock_github
 mock_github = create_mock_github()
+
+
+class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, OsfTestCase):
+
+    short_name = 'github'
+    full_name = 'GitHub'
+    ExternalAccountFactory = GitHubAccountFactory
+
+    NodeSettingsFactory = GitHubNodeSettingsFactory
+    NodeSettingsClass = GitHubNodeSettings
+    UserSettingsFactory = GitHubUserSettingsFactory
+
+    ## Mixin Overrides ##
+
+    def _node_settings_class_kwargs(self, node, user_settings):
+        return {
+            'user_settings': self.user_settings,
+            'repo': 'mock',
+            'user': 'abc',
+            'owner': self.node
+        }
+
+    def test_set_folder(self):
+        # GitHub doesn't use folderpicker, and the nodesettings model
+        # does not need a `set_repo` method
+        pass
+
+    def test_serialize_settings(self):
+        # GitHub's serialized_settings are a little different from 
+        # common storage addons.
+        settings = self.node_settings.serialize_waterbutler_settings()
+        expected = {'owner': self.node_settings.user, 'repo': self.node_settings.repo}
+        assert_equal(settings, expected)
+
+    @mock.patch(
+        'website.addons.github.model.GitHubUserSettings.revoke_remote_oauth_access',
+        mock.PropertyMock()
+    )
+    def test_complete_has_auth_not_verified(self):
+        super(TestNodeSettings, self).test_complete_has_auth_not_verified()
+
+    @mock.patch('website.addons.github.api.GitHubClient.repos')
+    @mock.patch('website.addons.github.api.GitHubClient.my_org_repos')
+    def test_to_json(self, mock_org, mock_repos):
+        mock_repos.return_value = {}
+        mock_org.return_value = {}
+        super(TestNodeSettings, self).test_to_json()
+
+    @mock.patch('website.addons.github.api.GitHubClient.repos')
+    @mock.patch('website.addons.github.api.GitHubClient.my_org_repos')
+    def test_to_json_user_is_owner(self, mock_org, mock_repos):
+        mock_repos.return_value = {}
+        mock_org.return_value = {}
+        result = self.node_settings.to_json(self.user)
+        assert_true(result['user_has_auth'])
+        assert_equal(result['github_user'], 'abc')
+        assert_true(result['is_owner'])
+        assert_true(result['valid_credentials'])
+        assert_equal(result.get('repo_names', None), [])
+
+    @mock.patch('website.addons.github.api.GitHubClient.repos')
+    @mock.patch('website.addons.github.api.GitHubClient.my_org_repos')
+    def test_to_json_user_is_not_owner(self, mock_org, mock_repos):
+        mock_repos.return_value = {}
+        mock_org.return_value = {}
+        not_owner = UserFactory()
+        result = self.node_settings.to_json(not_owner)
+        assert_false(result['user_has_auth'])
+        assert_equal(result['github_user'], 'abc')
+        assert_false(result['is_owner'])
+        assert_true(result['valid_credentials'])
+        assert_equal(result.get('repo_names', None), None)
+
+
+class TestUserSettings(models.OAuthAddonUserSettingTestSuiteMixin, OsfTestCase):
+
+    short_name = 'github'
+    full_name = 'GitHub'
+    ExternalAccountFactory = GitHubAccountFactory
+
+    def test_public_id(self):
+        assert_equal(self.user.external_accounts[0].display_name, self.user_settings.public_id)
 
 
 class TestCallbacks(OsfTestCase):
@@ -41,21 +127,27 @@ class TestCallbacks(OsfTestCase):
 
         self.project.add_addon('github', auth=self.consolidated_auth)
         self.project.creator.add_addon('github')
+        self.external_account = GitHubAccountFactory()
+        self.project.creator.external_accounts.append(self.external_account)
+        self.project.creator.save()
         self.node_settings = self.project.get_addon('github')
         self.user_settings = self.project.creator.get_addon('github')
         self.node_settings.user_settings = self.user_settings
         self.node_settings.user = 'Queen'
         self.node_settings.repo = 'Sheer-Heart-Attack'
+        self.node_settings.external_account = self.external_account
         self.node_settings.save()
+        self.node_settings.set_auth
 
-    @mock.patch('website.addons.github.api.GitHub.repo')
+
+    @mock.patch('website.addons.github.api.GitHubClient.repo')
     def test_before_make_public(self, mock_repo):
         mock_repo.side_effect = NotFoundError
 
         result = self.node_settings.before_make_public(self.project)
         assert_is(result, None)
 
-    @mock.patch('website.addons.github.api.GitHub.repo')
+    @mock.patch('website.addons.github.api.GitHubClient.repo')
     def test_before_page_load_osf_public_gh_public(self, mock_repo):
         self.project.is_public = True
         self.project.save()
@@ -67,7 +159,7 @@ class TestCallbacks(OsfTestCase):
         )
         assert_false(message)
 
-    @mock.patch('website.addons.github.api.GitHub.repo')
+    @mock.patch('website.addons.github.api.GitHubClient.repo')
     def test_before_page_load_osf_public_gh_private(self, mock_repo):
         self.project.is_public = True
         self.project.save()
@@ -79,7 +171,7 @@ class TestCallbacks(OsfTestCase):
         )
         assert_true(message)
 
-    @mock.patch('website.addons.github.api.GitHub.repo')
+    @mock.patch('website.addons.github.api.GitHubClient.repo')
     def test_before_page_load_osf_private_gh_public(self, mock_repo):
         mock_repo.return_value = Repository.from_json({'private': False})
         message = self.node_settings.before_page_load(self.project, self.project.creator)
@@ -89,7 +181,7 @@ class TestCallbacks(OsfTestCase):
         )
         assert_true(message)
 
-    @mock.patch('website.addons.github.api.GitHub.repo')
+    @mock.patch('website.addons.github.api.GitHubClient.repo')
     def test_before_page_load_osf_private_gh_private(self, mock_repo):
         mock_repo.return_value = Repository.from_json({'private': True})
         message = self.node_settings.before_page_load(self.project, self.project.creator)
@@ -151,57 +243,6 @@ class TestCallbacks(OsfTestCase):
             None,
         )
 
-    @unittest.skipIf(not github_settings.SET_PRIVACY, 'Setting privacy is disabled.')
-    @mock.patch('website.addons.github.api.GitHub.set_privacy')
-    def test_after_set_privacy_private_authenticated(self, mock_set_privacy):
-        mock_set_privacy.return_value = {}
-        message = self.node_settings.after_set_privacy(
-            self.project, 'private',
-        )
-        mock_set_privacy.assert_called_with(
-            self.node_settings.user,
-            self.node_settings.repo,
-            True,
-        )
-        assert_true(message)
-        assert_in('made private', message.lower())
-
-    @unittest.skipIf(not github_settings.SET_PRIVACY, 'Setting privacy is disabled.')
-    @mock.patch('website.addons.github.api.GitHub.set_privacy')
-    def test_after_set_privacy_public_authenticated(self, mock_set_privacy):
-        mock_set_privacy.return_value = {}
-        message = self.node_settings.after_set_privacy(
-            self.project, 'public'
-        )
-        mock_set_privacy.assert_called_with(
-            self.node_settings.user,
-            self.node_settings.repo,
-            False,
-        )
-        assert_true(message)
-        assert_in('made public', message.lower())
-
-    @unittest.skipIf(not github_settings.SET_PRIVACY, 'Setting privacy is disabled.')
-    @mock.patch('website.addons.github.api.GitHub.repo')
-    @mock.patch('website.addons.github.api.GitHub.set_privacy')
-    def test_after_set_privacy_not_authenticated(self, mock_set_privacy, mock_repo):
-        mock_set_privacy.return_value = {'errors': ['it broke']}
-        mock_repo.return_value = {'private': True}
-        message = self.node_settings.after_set_privacy(
-            self.project, 'private',
-        )
-        mock_set_privacy.assert_called_with(
-            self.node_settings.user,
-            self.node_settings.repo,
-            True,
-        )
-        mock_repo.assert_called_with(
-            self.node_settings.user,
-            self.node_settings.repo,
-        )
-        assert_true(message)
-        assert_in('could not set privacy', message.lower())
-
     def test_after_fork_authenticator(self):
         fork = ProjectFactory()
         clone, message = self.node_settings.after_fork(
@@ -238,97 +279,20 @@ class TestCallbacks(OsfTestCase):
         assert_false(registration.has_addon('github'))
 
 
-class TestAddonGithubUserSettings(OsfTestCase):
 
-    def setUp(self):
-        OsfTestCase.setUp(self)
-        self.user_settings = AddonGitHubUserSettings()
-        self.oauth_settings = AddonGitHubOauthSettings()
-        self.oauth_settings.github_user_id = 'testuser'
-        self.oauth_settings.save()
-        self.user_settings.oauth_settings = self.oauth_settings
-        self.user_settings.save()
-
-    def test_repr(self):
-        self.user_settings.owner = UserFactory()
-        assert_in(self.user_settings.owner._id, repr(self.user_settings))
-        oauth_settings = GitHubOauthSettingsFactory()
-
-    def test_public_id_is_none_if_no_oauth_settings_attached(self):
-        self.user_settings.oauth_settings = None
-        self.user_settings.save()
-        # Regression test for:
-        #  https://github.com/CenterForOpenScience/openscienceframework.org/issues/1053
-        assert_is_none(self.user_settings.public_id)
-
-    def test_github_user_name(self):
-        self.oauth_settings.github_user_name = "test user name"
-        self.oauth_settings.save()
-        assert_equal(self.user_settings.github_user_name, "test user name")
-
-    def test_oauth_access_token(self):
-        self.oauth_settings.oauth_access_token = "test access token"
-        self.oauth_settings.save()
-        assert_equal(self.user_settings.oauth_access_token, "test access token")
-
-    def test_oauth_token_type(self):
-        self.oauth_settings.oauth_token_type = "test token type"
-        self.oauth_settings.save()
-        assert_equal(self.user_settings.oauth_token_type, "test token type")
-
-    @mock.patch('website.addons.github.api.GitHub.revoke_token')
-    def test_clear_auth(self, mock_revoke_token):
-        mock_revoke_token.return_value = True
-        self.user_settings.clear_auth(save=True)
-        assert_false(self.user_settings.github_user_name)
-        assert_false(self.user_settings.oauth_token_type)
-        assert_false(self.user_settings.oauth_access_token)
-        assert_false(self.user_settings.oauth_settings)
-
-
-class TestAddonGithubNodeSettings(OsfTestCase):
+class TestGithubNodeSettings(OsfTestCase):
 
     def setUp(self):
         OsfTestCase.setUp(self)
         self.user = UserFactory()
         self.user.add_addon('github')
         self.user_settings = self.user.get_addon('github')
-        self.oauth_settings = AddonGitHubOauthSettings(oauth_access_token='foobar')
-        self.oauth_settings.github_user_id = 'testuser'
-        self.oauth_settings.save()
-        self.user_settings.oauth_settings = self.oauth_settings
-        self.user_settings.save()
-        self.node_settings = AddonGitHubNodeSettings(
-            owner=ProjectFactory(),
-            user='chrisseto',
-            repo='openpokemon',
-            user_settings=self.user_settings,
-        )
-        self.node_settings.save()
+        self.external_account = GitHubAccountFactory()
+        self.user_settings.owner.external_accounts.append(self.external_account)
+        self.user_settings.owner.save()
+        self.node_settings = GitHubNodeSettingsFactory(user_settings=self.user_settings)
 
-    def test_complete_true(self):
-        assert_true(self.node_settings.has_auth)
-        assert_true(self.node_settings.complete)
-
-    def test_complete_false(self):
-        self.node_settings.user = None
-
-        assert_true(self.node_settings.has_auth)
-        assert_false(self.node_settings.complete)
-
-    def test_complete_repo_false(self):
-        self.node_settings.repo = None
-
-        assert_true(self.node_settings.has_auth)
-        assert_false(self.node_settings.complete)
-
-    def test_complete_auth_false(self):
-        self.node_settings.user_settings = None
-
-        assert_false(self.node_settings.has_auth)
-        assert_false(self.node_settings.complete)
-
-    @mock.patch('website.addons.github.api.GitHub.delete_hook')
+    @mock.patch('website.addons.github.api.GitHubClient.delete_hook')
     def test_delete_hook(self, mock_delete_hook):
         self.node_settings.hook_id = 'hook'
         self.node_settings.save()
@@ -341,13 +305,13 @@ class TestAddonGithubNodeSettings(OsfTestCase):
         assert_true(res)
         mock_delete_hook.assert_called_with(*args)
 
-    @mock.patch('website.addons.github.api.GitHub.delete_hook')
+    @mock.patch('website.addons.github.api.GitHubClient.delete_hook')
     def test_delete_hook_no_hook(self, mock_delete_hook):
         res = self.node_settings.delete_hook()
         assert_false(res)
         assert_false(mock_delete_hook.called)
 
-    @mock.patch('website.addons.github.api.GitHub.delete_hook')
+    @mock.patch('website.addons.github.api.GitHubClient.delete_hook')
     def test_delete_hook_not_found(self, mock_delete_hook):
         self.node_settings.hook_id = 'hook'
         self.node_settings.save()
@@ -361,7 +325,7 @@ class TestAddonGithubNodeSettings(OsfTestCase):
         assert_false(res)
         mock_delete_hook.assert_called_with(*args)
 
-    @mock.patch('website.addons.github.api.GitHub.delete_hook')
+    @mock.patch('website.addons.github.api.GitHubClient.delete_hook')
     def test_delete_hook_error(self, mock_delete_hook):
         self.node_settings.hook_id = 'hook'
         self.node_settings.save()
@@ -374,17 +338,3 @@ class TestAddonGithubNodeSettings(OsfTestCase):
         res = self.node_settings.delete_hook()
         assert_false(res)
         mock_delete_hook.assert_called_with(*args)
-
-    def test_to_json_noauthorizing_authed_user(self):
-        user = UserFactory()
-        user.add_addon('github')
-        user_settings = user.get_addon('github')
-
-        oauth_settings = AddonGitHubOauthSettings(oauth_access_token='foobar')
-        oauth_settings.github_user_id = 'testuser'
-        oauth_settings.save()
-
-        user_settings.oauth_settings = self.oauth_settings
-        user_settings.save()
-
-        self.node_settings.to_json(user)

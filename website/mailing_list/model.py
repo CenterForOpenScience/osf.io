@@ -3,8 +3,8 @@ import datetime
 
 from modularodm import fields, StoredObject
 
-from framework.mongo import unique_on, ObjectId
-
+from framework.mongo import ObjectId
+from framework.mongo.utils import unique_on
 
 @unique_on(['destination_node', '_id'])
 class MailingListEventLog(StoredObject):

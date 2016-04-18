@@ -6,12 +6,9 @@ from framework.auth.core import User
 from framework.guid.model import Guid, BlacklistGuid
 from framework.sessions.model import Session
 
-from website.institutions.model import Institution
-
 from website.project.model import (
-    Node, NodeLog, MailingListEventLog,
-    Tag, WatchConfig, MetaSchema, Pointer,
-    Comment, PrivateLink, MetaData,
+    Node, NodeLog, Tag, WatchConfig, MetaSchema, 
+    Pointer, Comment, PrivateLink, MetaData,
     Retraction, Embargo, RegistrationApproval,
     AlternativeCitation,
     DraftRegistrationApproval, DraftRegistration,
@@ -19,12 +16,14 @@ from website.project.model import (
 from website.oauth.models import ApiOAuth2Application, ExternalAccount, ApiOAuth2PersonalToken
 from website.identifiers.model import Identifier
 from website.citations.models import CitationStyle
+from website.institutions.model import Institution  # flake8: noqa
 
 from website.mails import QueuedMail
 from website.files.models.base import FileVersion
 from website.files.models.base import StoredFileNode
 from website.files.models.base import TrashedFileNode
 from website.conferences.model import Conference, MailRecord
+from website.mailing_list.model import MailingListEventLog
 from website.notifications.model import NotificationDigest
 from website.notifications.model import NotificationSubscription
 from website.archiver.model import ArchiveJob, ArchiveTarget
@@ -32,7 +31,7 @@ from website.project.licenses import NodeLicense, NodeLicenseRecord
 
 # All models
 MODELS = (
-    User, Institution,
+    User,
     ApiOAuth2Application, ApiOAuth2PersonalToken, Node,
     NodeLog, StoredFileNode, TrashedFileNode, FileVersion,
     Tag, WatchConfig, Session, Guid, MetaSchema, Pointer,

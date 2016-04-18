@@ -2,21 +2,26 @@ import functools
 import httplib as http
 import json
 import operator
-from copy import deepcopy
 
-from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.decorators import user_passes_test
 from django.core.paginator import Paginator, EmptyPage
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseBadRequest
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.views.decorators.csrf import csrf_exempt
+from modularodm import Q
 
+from admin.common_auth.logs import (
+    update_admin_log,
+    ACCEPT_PREREG,
+    REJECT_PREREG,
+    COMMENT_PREREG,
+)
 from admin.pre_reg import serializers
 from admin.pre_reg.forms import DraftRegistrationForm
 from framework.exceptions import HTTPError
 from framework.mongo.utils import get_or_http_error
-from modularodm import Q
 from website.exceptions import NodeStateError
 from website.files.models import FileNode
 from website.project.model import MetaSchema, DraftRegistration
@@ -53,7 +58,6 @@ def is_in_prereg_group(user):
     return user.is_in_group('prereg_group')
 
 
-@login_required
 @user_passes_test(is_in_prereg_group)
 def prereg(request):
     """Redirects to prereg page if user has prereg access
@@ -85,7 +89,6 @@ def prereg(request):
     return render(request, 'pre_reg/prereg.html', context)
 
 
-@login_required
 @user_passes_test(is_in_prereg_group)
 def view_draft(request, draft_pk):
     """Redirects to prereg form review page if user has prereg access
@@ -98,15 +101,15 @@ def view_draft(request, draft_pk):
     }
     return render(request, 'pre_reg/edit_draft_registration.html', context)
 
-@login_required
+
 @user_passes_test(is_in_prereg_group)
 def view_file(request, node_id, provider, file_id):
     file = FileNode.load(file_id)
     wb_url = file.generate_waterbutler_url()
     return redirect(wb_url)
 
+
 @csrf_exempt
-@login_required
 @user_passes_test(is_in_prereg_group)
 def approve_draft(request, draft_pk):
     """Approves current draft
@@ -118,11 +121,14 @@ def approve_draft(request, draft_pk):
 
     user = request.user.osf_user
     draft.approve(user)
+    update_admin_log(
+        request.user.id, draft._id, 'Draft Registration',
+        'approved', action_flag=ACCEPT_PREREG
+    )
     return redirect(reverse('pre_reg:prereg') + "?page={0}".format(request.POST.get('page', 1)), permanent=True)
 
 
 @csrf_exempt
-@login_required
 @user_passes_test(is_in_prereg_group)
 def reject_draft(request, draft_pk):
     """Rejects current draft
@@ -134,11 +140,14 @@ def reject_draft(request, draft_pk):
 
     user = request.user.osf_user
     draft.reject(user)
+    update_admin_log(
+        request.user.id, draft._id, 'Draft Registration',
+        'rejected', action_flag=REJECT_PREREG
+    )
     return redirect(reverse('pre_reg:prereg') + "?page={0}".format(request.POST.get('page', 1)), permanent=True)
 
 
 @csrf_exempt
-@login_required
 def update_draft(request, draft_pk):
     """Updates current draft to save admin comments
 
@@ -159,12 +168,21 @@ def update_draft(request, draft_pk):
         draft.save()
     else:
         schema_data = data.get('schema_data', {})
-        data = deepcopy(draft.registration_metadata)
-        for key, value in data.items():
-            data[key]['comments'] = schema_data.get(key, {}).get('comments', [])
+        log_message = list()
+        for key, value in schema_data.iteritems():
+            comments = schema_data.get(key, {}).get('comments', [])
+            for comment in comments:
+                log_message.append('{}: {}'.format(key, comment['value']))
         try:
-            draft.update_metadata(data)
+            draft.update_metadata(schema_data)
             draft.save()
+            update_admin_log(
+                user_id=request.user.id,
+                object_id=draft._id,
+                object_repr='Draft Registration',
+                message='Comments: <p>{}</p>'.format('</p><p>'.join(log_message)),
+                action_flag=COMMENT_PREREG
+            )
         except (NodeStateError):
             raise HTTPError(http.BAD_REQUEST)
     return JsonResponse(serializers.serialize_draft_registration(draft))

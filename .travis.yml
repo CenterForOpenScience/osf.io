@@ -13,9 +13,6 @@ cache:
     - node_modules
     - website/static/vendor/bower_components
 
-matrix:
-  fast_finish: true
-
 env:
   global:
     - PROJECT_DIR="$PWD"
@@ -93,7 +90,10 @@ before_install:
     - |
       export LD_LIBRARY_PATH=/tmp/libpcre/lib/x86_64-linux-gnu:/tmp/libjemalloc/usr/lib/x86_64-linux-gnu:/tmp/varnish/usr/lib/varnish
       /tmp/varnish/usr/sbin/varnishd -n /tmp -p feature=+esi_disable_xml_check -p vmod_dir=/tmp/varnish/usr/lib/varnish/vmods -F -f $PROJECT_DIR/tests/test_files/varnish.vcl -a *:8080 > /dev/null &
-
+    - |
+      if [ "$TEST_BUILD" = "varnish" ]; then
+        export ENABLE_VARNISH=True
+      fi
 install:
     - cd $PROJECT_DIR
     - cp website/settings/local-travis.py website/settings/local.py

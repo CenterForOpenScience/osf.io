@@ -9,6 +9,10 @@
 ## Use full page width
 <%def name="container_class()">container-xxl</%def>
 
+% if (user['can_comment'] or node['has_comments']):
+    <%include file="include/comment_pane_template.mako"/>
+% endif
+
 <div class="row" style="margin-bottom: 5px;">
     <div class="col-sm-6">
         <%include file="wiki/templates/status.mako"/>
@@ -25,7 +29,7 @@
 
             <!-- Menu with toggle normal -->
             <div class="osf-panel panel panel-default reset-height ${'' if 'menu' in panels_used else 'hidden visible-xs' | n}" data-bind="css: {  'osf-panel-flex': !$root.singleVis() }">
-                <div class="panel-heading clearfix" data-bind="css: {  'osf-panel-heading-flex': !$root.singleVis()}">
+                <div class="panel-heading wiki-panel-header clearfix" data-bind="css: {  'osf-panel-heading-flex': !$root.singleVis()}">
                     % if user['can_edit']:
                         <div class="wiki-toolbar-icon text-success" data-toggle="modal" data-target="#newWiki">
                             <i class="fa fa-plus text-success"></i><span>New</span>
@@ -71,7 +75,7 @@
                class="${'col-sm-{0}'.format(12 / num_columns) | n}"
                style="${'' if 'view' in panels_used else 'display: none' | n}">
               <div class="osf-panel panel panel-default no-border" data-bind="css: { 'no-border reset-height': $root.singleVis() === 'view', 'osf-panel-flex': $root.singleVis() !== 'view' }">
-                <div class="panel-heading wiki-single-heading" data-bind="css: { 'osf-panel-heading-flex': $root.singleVis() !== 'view', 'wiki-single-heading': $root.singleVis() === 'view' }">
+                <div class="panel-heading wiki-panel-header wiki-single-heading" data-bind="css: { 'osf-panel-heading-flex': $root.singleVis() !== 'view', 'wiki-single-heading': $root.singleVis() === 'view' }">
                     <div class="row">
                         <div class="col-sm-4">
                             <span class="panel-title" > <i class="fa fa-eye"> </i>  View</span>
@@ -121,7 +125,7 @@
                  style="${'' if 'edit' in panels_used else 'display: none' | n}">
               <form id="wiki-form" action="${urls['web']['edit']}" method="POST">
                 <div class="osf-panel panel panel-default" data-bind="css: { 'no-border': $root.singleVis() === 'edit' }">
-                  <div class="panel-heading clearfix" data-bind="css : { 'wiki-single-heading': $root.singleVis() === 'edit' }">
+                  <div class="panel-heading wiki-panel-header clearfix" data-bind="css : { 'wiki-single-heading': $root.singleVis() === 'edit' }">
                     <div class="row">
                       <div class="col-md-6">
                            <h3 class="panel-title" > <i class="fa fa-pencil-square-o"> </i>   Edit </h3>
@@ -147,15 +151,17 @@
                         <div class="row">
                         <div class="col-xs-12">
                           <div class="form-group wmd-panel">
-                              <ul class="list-inline" data-bind="foreach: activeUsers" class="pull-right">
-                                  <!-- ko ifnot: id === '${user_id}' -->
-                                      <li><a data-bind="attr: { href: url }" >
+                          <ul class="list-inline" class="pull-right">
+                          <!-- ko foreach: showCollaborators -->
+                             <!-- ko ifnot: id === '${user_id}' -->
+                                <li><a data-bind="attr: { href: url }" >
                                           <img data-container="body" data-bind="attr: {src: gravatar}, tooltip: {title: name, placement: 'top'}"
-                                               style="border: 1px solid black;">
+                                               style="border: 1px solid black;" width="30px" height="30px">
                                       </a></li>
-                                  <!-- /ko -->
+                             <!-- /ko -->
+                          <!-- /ko --> 
+                                <li><span data-bind="text: andOthersMessage"></span></li>      
                               </ul>
-
                               <div id="wmd-button-bar"></div>
                               <div id="editor" class="wmd-input wiki-editor"
                                    data-bind="ace: currentText">Loading. . .</div>
@@ -367,6 +373,7 @@ ${parent.javascript_bottom()}
         versionSettings: ${json.dumps(version_settings) | n},
         panelsUsed: ${json.dumps(panels_used) | n},
         wikiID: '${wiki_id}',
+        wikiName: '${wiki_name}',
         urls: {
             draft: '${urls['api']['draft']}',
             content: '${urls['api']['content']}',
@@ -385,6 +392,7 @@ ${parent.javascript_bottom()}
             userGravatar: '${urls['gravatar']}'.replace('&amp;', '&')
         }
     };
+    
 </script>
 <script src="//${sharejs_url}/text.js"></script>
 <script src="//${sharejs_url}/share.js"></script>

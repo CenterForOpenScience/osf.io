@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
 import abc
+import datetime
 
+import mock
 from nose.tools import *  # noqa (PEP8 asserts)
 
 from framework.auth import Auth
+from framework.exceptions import HTTPError
 
 from website.addons.base import exceptions
+from website.addons.base.testing.utils import MockFolder
 
 from tests.factories import ProjectFactory, UserFactory
 from tests.utils import mock_auth
@@ -169,6 +173,16 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         self.node.remove()
         self.user.remove()
 
+    def test_configured_true(self):
+        assert_true(self.node_settings.has_auth)
+        assert_true(self.node_settings.complete)
+        assert_true(self.node_settings.configured)
+
+    def test_configured_false(self):
+        self.node_settings.clear_settings()
+        self.node_settings.save()
+        assert_false(self.node_settings.configured)
+
     def test_complete_true(self):
         assert_true(self.node_settings.has_auth)
         assert_true(self.node_settings.complete)
@@ -177,6 +191,7 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         with mock_auth(self.user):
             self.user_settings.revoke_oauth_access(self.external_account)
 
+        self.node_settings.reload()
         assert_false(self.node_settings.has_auth)
         assert_false(self.node_settings.complete)
 
@@ -247,7 +262,7 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         assert_is(self.node_settings.user_settings, None)
         assert_is(self.node_settings.folder_id, None)
         assert_true(self.node_settings.deleted)
-        assert_equal(self.node.logs, old_logs)
+        assert_equal(list(self.node.logs), list(old_logs))
 
     def test_deauthorize(self):
         assert_true(self.node_settings.user_settings)
@@ -286,7 +301,7 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         node_settings.save()
 
         assert_true(node_settings.has_auth)
-        assert_equal(node_settings.user_settings, user_settings)
+        assert_equal(node_settings.user_settings._id, user_settings._id)
         # A log was saved
         last_log = node_settings.owner.logs[-1]
         assert_equal(last_log.action, '{0}_node_authorized'.format(self.short_name))
@@ -344,7 +359,7 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         clone, message = self.node_settings.after_fork(
             node=self.node, fork=fork, user=self.user_settings.owner
         )
-        assert_equal(clone.user_settings, self.user_settings)
+        assert_equal(clone.user_settings._id, self.user_settings._id)
 
     def test_after_fork_by_unauthorized_user(self):
         fork = ProjectFactory()
@@ -390,3 +405,228 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         self.node_settings.reload()
         assert_is_none(self.node_settings.user_settings)
         assert_is_none(self.node_settings.folder_id)
+
+
+class OAuthCitationsTestSuiteMixinBase(OAuthAddonModelTestSuiteMixinBase):
+    @abc.abstractproperty
+    def ProviderClass(self):
+        pass
+
+    @abc.abstractproperty
+    def OAuthProviderClass(self):
+        pass
+
+
+class OAuthCitationsNodeSettingsTestSuiteMixin(OAuthAddonNodeSettingsTestSuiteMixin, OAuthCitationsTestSuiteMixinBase):
+
+    def setUp(self):
+        super(OAuthCitationsNodeSettingsTestSuiteMixin, self).setUp()
+        self.user_settings.grant_oauth_access(
+            node=self.node,
+            external_account=self.external_account,
+            metadata={'folder': 'fake_folder_id'}
+        )
+        self.user_settings.save()
+
+    def test_fetch_folder_name_root(self):
+        self.node_settings.list_id = 'ROOT'
+
+        assert_equal(
+            self.node_settings.fetch_folder_name,
+            "All Documents"
+        )
+
+    def test_selected_folder_name_empty(self):
+        self.node_settings.list_id = None
+
+        assert_equal(
+            self.node_settings.fetch_folder_name,
+            ''
+        )
+
+    def test_selected_folder_name(self):
+        # Mock the return from api call to get the folder's name
+        mock_folder = MockFolder()
+        name = None
+
+        with mock.patch.object(self.OAuthProviderClass, '_folder_metadata', return_value=mock_folder):
+            name = self.node_settings.fetch_folder_name
+
+        assert_equal(
+            name,
+            'Fake Folder'
+        )
+
+    def test_api_not_cached(self):
+        # The first call to .api returns a new object
+        with mock.patch.object(self.NodeSettingsClass, 'oauth_provider') as mock_api:
+            api = self.node_settings.api
+            mock_api.assert_called_once()
+            assert_equal(api, mock_api())
+
+    def test_api_cached(self):
+        # Repeated calls to .api returns the same object
+        with mock.patch.object(self.NodeSettingsClass, 'oauth_provider') as mock_api:
+            self.node_settings._api = 'testapi'
+            api = self.node_settings.api
+            assert_false(mock_api.called)
+            assert_equal(api, 'testapi')
+
+    ############# Overrides ##############
+    # `pass` due to lack of waterbutler- #
+    # related events for citation addons #
+    ######################################
+
+    def _node_settings_class_kwargs(self, node, user_settings):
+        return {
+            'user_settings': self.user_settings,
+            'list_id': 'fake_folder_id',
+            'owner': self.node
+        }
+
+    def test_serialize_credentials(self):
+        pass
+
+    def test_serialize_credentials_not_authorized(self):
+        pass
+
+    def test_serialize_settings(self):
+        pass
+
+    def test_serialize_settings_not_configured(self):
+        pass
+
+    def test_create_log(self):
+        pass
+
+    def test_set_folder(self):
+        folder_id = 'fake-folder-id'
+        folder_name = 'fake-folder-name'
+
+        self.node_settings.clear_settings()
+        self.node_settings.save()
+        assert_is_none(self.node_settings.list_id)
+
+        provider = self.ProviderClass()
+
+        provider.set_config(
+            self.node_settings,
+            self.user,
+            folder_id,
+            folder_name,
+            auth=Auth(user=self.user),
+        )
+
+        # instance was updated
+        assert_equal(
+            self.node_settings.list_id,
+            'fake-folder-id',
+        )
+
+        # user_settings was updated
+        # TODO: the call to grant_oauth_access should be mocked
+        assert_true(
+            self.user_settings.verify_oauth_access(
+                node=self.node,
+                external_account=self.external_account,
+                metadata={'folder': 'fake-folder-id'}
+            )
+        )
+
+        log = self.node.logs[-1]
+        assert_equal(log.action, '{}_folder_selected'.format(self.short_name))
+        assert_equal(log.params['folder_id'], folder_id)
+        assert_equal(log.params['folder_name'], folder_name)
+
+    @mock.patch('framework.status.push_status_message')
+    def test_remove_contributor_authorizer(self, mock_push_status):
+        contributor = UserFactory()
+        self.node.add_contributor(contributor, permissions=['read', 'write', 'admin'])
+        self.node.remove_contributor(self.node.creator, auth=Auth(user=contributor))
+
+        assert_false(self.node_settings.has_auth)
+        assert_false(self.user_settings.verify_oauth_access(self.node, self.external_account))
+
+    def test_remove_contributor_not_authorizer(self):
+        contributor = UserFactory()
+        self.node.add_contributor(contributor)
+        self.node.remove_contributor(contributor, auth=Auth(user=self.node.creator))
+
+        assert_true(self.node_settings.has_auth)
+        assert_true(self.user_settings.verify_oauth_access(self.node, self.external_account))
+
+    @mock.patch('framework.status.push_status_message')
+    def test_fork_by_authorizer(self, mock_push_status):
+        fork = self.node.fork_node(auth=Auth(user=self.node.creator))
+
+        self.user_settings.reload()
+        assert_true(fork.get_addon(self.short_name).has_auth)
+        assert_true(self.user_settings.verify_oauth_access(fork, self.external_account))
+
+    @mock.patch('framework.status.push_status_message')
+    def test_fork_not_by_authorizer(self, mock_push_status):
+        contributor = UserFactory()
+        self.node.add_contributor(contributor)
+        fork = self.node.fork_node(auth=Auth(user=contributor))
+
+        assert_false(fork.get_addon(self.short_name).has_auth)
+        assert_false(self.user_settings.verify_oauth_access(fork, self.external_account))
+
+class CitationAddonProviderTestSuiteMixin(OAuthCitationsTestSuiteMixinBase):
+
+    @abc.abstractproperty
+    def ApiExceptionClass(self):
+        pass
+
+    def setUp(self):
+        super(CitationAddonProviderTestSuiteMixin, self).setUp()
+        self.provider = self.OAuthProviderClass()
+
+    @abc.abstractmethod
+    def test_handle_callback(self):
+        pass
+
+    def test_citation_lists(self):
+        mock_client = mock.Mock()
+        mock_folders = [MockFolder()]
+        mock_list = mock.Mock()
+        mock_list.items = mock_folders
+        mock_client.folders.list.return_value = mock_list
+        mock_client.collections.return_value = mock_folders
+        self.provider._client = mock_client
+        mock_account = mock.Mock()
+        self.provider.account = mock_account
+        res = self.provider.citation_lists(self.ProviderClass()._extract_folder)
+        assert_equal(res[1]['name'], mock_folders[0].name)
+        assert_equal(res[1]['id'], mock_folders[0].json['id'])
+
+    def test_client_not_cached(self):
+        # The first call to .client returns a new client
+        with mock.patch.object(self.OAuthProviderClass, '_get_client') as mock_get_client:
+            mock_account = mock.Mock()
+            mock_account.expires_at = datetime.datetime.now()
+            self.provider.account = mock_account
+            self.provider.client
+            mock_get_client.assert_called
+            assert_true(mock_get_client.called)
+
+    def test_client_cached(self):
+        # Repeated calls to .client returns the same client
+        with mock.patch.object(self.OAuthProviderClass, '_get_client') as mock_get_client:
+            self.provider._client = mock.Mock()
+            res = self.provider.client
+            assert_equal(res, self.provider._client)
+            assert_false(mock_get_client.called)
+
+    def test_has_access(self):
+        with mock.patch.object(self.OAuthProviderClass, '_get_client') as mock_get_client:
+            mock_client = mock.Mock()
+            mock_error = mock.PropertyMock()
+            mock_error.status_code = 403
+            mock_error.text = 'Mocked 403 ApiException'
+            mock_client.folders.list.side_effect = self.ApiExceptionClass(mock_error)
+            mock_client.collections.side_effect = self.ApiExceptionClass(mock_error)
+            mock_get_client.return_value = mock_client
+            with assert_raises(HTTPError) as exc_info:
+                self.provider.client
+            assert_equal(exc_info.exception.code, 403)

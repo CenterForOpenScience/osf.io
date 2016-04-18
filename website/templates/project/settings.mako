@@ -50,7 +50,7 @@
                     % if node['is_registration']:
 
                         % if (node['is_public'] or node['embargo_end_date']) and 'admin' in user['permissions']:
-                            <li><a href="#retractRegistrationAnchor">Retract Public Registration</a></li>
+                            <li><a href="#withdrawRegistrationAnchor">Withdraw Public Registration</a></li>
                         % endif
 
                     % endif
@@ -77,11 +77,7 @@
                     <div id="projectSettings" class="panel-body">
                         <div class="form-group">
                             <label>Category:</label>
-                            <select data-bind="attr.disabled: disabled,
-                                                         options: categoryOptions,
-                                                         optionsValue: 'value',
-                                                         optionsText: 'label',
-                                                         value: selectedCategory"></select>
+                            <select data-bind="attr.disabled: disabled, options: categoryOptions, optionsValue: 'value', optionsText: 'label', value: selectedCategory"></select>
                             <span data-bind="if: disabled" class="help-block">
                               A top-level project's category cannot be changed
                             </span>
@@ -96,7 +92,7 @@
                             <label for="description">Description:</label>
                             <textarea placeholder="Optional" data-bind="value: description,
                                              valueUpdate: 'afterkeydown'",
-                            class="form-control resize-vertical"></textarea>
+                            class="form-control resize-vertical" style="max-width: 100%"></textarea>
                         </div>
                            <button data-bind="click: cancelAll"
                             class="btn btn-default">Cancel</button>
@@ -167,9 +163,6 @@
 
                             <br />
 
-                            <button id="settings-submit" class="btn btn-success">
-                                Apply
-                            </button>
                             <div class="addon-settings-message text-success" style="padding-top: 10px;"></div>
 
                         </form>
@@ -305,41 +298,50 @@
 
                 </div>
                 % if enable_institutions:
-                    <div class="panel panel-default" id="institutionSettings">
+                    <div class="panel panel-default scripted" id="institutionSettings">
                     <span id="configureInstitutionAnchor" class="anchor"></span>
                     <div class="panel-heading clearfix">
                         <h3 class="panel-title">Project Affiliation / Branding</h3>
                     </div>
                     <div class="panel-body">
                         % if not node['institution']['name']:
-                            <!-- ko if: availableInstitutions -->
-                            <div class="help-block">
-                                Projects affiliated with institutions will show some institutional branding (such as logos) and if public, will be discoverable on OSF institutional landing pages.
+                            <div data-bind="visible: !loading()">
+                                <div data-bind="visible: error()">
+                                    <div class="help-block">
+                                        Could not load up available institutions. Please wait a few minutes and try again, or contact <a href="mailto:support@osf.io">support@osf.io</a> if the problem persists.
+                                    </div>
+                                </div>
+                                <div data-bind="visible: !error()">
+                                    <div data-bind="visible: availableInstitutions().length">
+                                        <div class="help-block">
+                                            Projects affiliated with institutions will show some institutional branding (such as logos) and if public, will be discoverable on OSF institutional landing pages.
 
-                                You are authorized to affiliate your projects with the following institutions:
-                            </div>
-                            <div class="radio">
-                                <div data-bind="foreach: {data: availableInstitutions, as: 'item'}">
-                                    <div>
-                                    <label>
-                                        <input type="radio" data-bind="value: item.id, checked: $parent.selectedInstitution" name="primaryInst">
-                                        <p data-bind="text: item.attributes.name"></p>
-                                    </label>
+                                            You are authorized to affiliate your projects with the following institutions:
+                                        </div>
+                                        <div class="radio">
+                                            <div data-bind="foreach: {data: availableInstitutions, as: 'item'}">
+                                                <div>
+                                                <label>
+                                                    <input type="radio" data-bind="value: item.id, checked: $parent.selectedInstitution" name="primaryInst">
+                                                    <p data-bind="text: item.attributes.name"></p>
+                                                </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <button data-bind="click: submitInst, css: {disabled: selectedInstitution() == null}" class="btn btn-success">Affiliate</button>
+                                    </div>
+                                    <div data-bind="visible: !availableInstitutions().length">
+                                        <div class="help-block">
+                                            Projects can be affiliated with institutions that have created OSF for Institution accounts. This allows:
+                                            <ul>
+                                                <li>institutional logos to be displayed on public projects</li>
+                                                <li>public projects to be discoverable on specific institutional landing pages</li>
+                                                <li>single-sign on to the OSF with institutional credentials</li>
+                                            </ul>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            <button data-bind="click: submitInst" class="btn btn-success">Affiliate</button>
-                            <!-- /ko -->
-                            <!-- ko ifnot: availableInstitutions-->
-                            <div class="help-block">
-                                Projects can be affiliated with institutions that have created OSF for Institution accounts. This allows:
-                                <ul>
-                                    <li>institutional logos to be displayed on public projects</li>
-                                    <li>public projects to be discoverable on specific institutional landing pages</li>
-                                    <li>single-sign on to the OSF with institutional credentials</li>
-                                </ul>
-                            </div>
-                            <!-- /ko -->
                         % endif
                         % if node['institution']['name']:
                             <div class="help-block">Your project is currently affiliated with: </div>
@@ -417,10 +419,10 @@
                 % if node['is_public'] or node['embargo_end_date']:
 
                     <div class="panel panel-default">
-                        <span id="retractRegistrationAnchor" class="anchor"></span>
+                        <span id="withdrawRegistrationAnchor" class="anchor"></span>
 
                         <div class="panel-heading clearfix">
-                            <h3 class="panel-title">Retract Registration</h3>
+                            <h3 class="panel-title">Withdraw Registration</h3>
                         </div>
 
                         <div class="panel-body">
@@ -428,23 +430,23 @@
                             % if parent_node['exists']:
 
                                 <div class="help-block">
-                                  Retracting children components of a registration is not allowed. Should you wish to
-                                  retract this component, please retract its parent registration <a href="${web_url_for('node_setting', pid=node['root_id'])}">here</a>.
+                                  Withdrawing children components of a registration is not allowed. Should you wish to
+                                  withdraw this component, please withdraw its parent registration <a href="${web_url_for('node_setting', pid=node['root_id'])}">here</a>.
                                 </div>
 
                             % else:
 
                                 <div class="help-block">
-                                    Retracting a registration will remove its content from the OSF, but leave basic metadata
-                                    behind. The title of a retracted registration and its contributor list will remain, as will
-                                    justification or explanation of the retraction, should you wish to provide it. Retracted
-                                    registrations will be marked with a <strong>retracted</strong> tag.
+                                    Withdrawing a registration will remove its content from the OSF, but leave basic metadata
+                                    behind. The title of a withdrawn registration and its contributor list will remain, as will
+                                    justification or explanation of the withdrawal, should you wish to provide it. Withdrawn
+                                    registrations will be marked with a <strong>withdrawn</strong> tag.
                                 </div>
 
                                 %if not node['is_pending_retraction']:
-                                    <a class="btn btn-danger" href="${web_url_for('node_registration_retraction_get', pid=node['id'])}">Retract Registration</a>
+                                    <a class="btn btn-danger" href="${web_url_for('node_registration_retraction_get', pid=node['id'])}">Withdraw Registration</a>
                                 % else:
-                                    <p><strong>This registration is already pending a retraction.</strong></p>
+                                    <p><strong>This registration is already pending withdrawal.</strong></p>
                                 %endif
 
                             % endif

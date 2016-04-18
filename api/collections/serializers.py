@@ -2,9 +2,10 @@ from rest_framework import serializers as ser
 from rest_framework import exceptions
 from modularodm.exceptions import ValidationValueError
 from framework.exceptions import PermissionsError
+from website.exceptions import NodeStateError
 
 from website.models import Node
-from api.base.serializers import LinksField, RelationshipField, DevOnly, JSONAPIRelationshipSerializer
+from api.base.serializers import LinksField, RelationshipField, JSONAPIRelationshipSerializer
 from api.base.serializers import JSONAPISerializer, IDField, TypeField, relationship_diff
 from api.base.exceptions import InvalidModelValueError, RelationshipPostMakesNoChanges
 from api.base.utils import absolute_reverse, get_user_auth
@@ -24,23 +25,24 @@ class CollectionSerializer(JSONAPISerializer):
     title = ser.CharField(required=True)
     date_created = ser.DateTimeField(read_only=True)
     date_modified = ser.DateTimeField(read_only=True)
+    bookmarks = ser.BooleanField(read_only=False, default=False, source='is_bookmark_collection')
 
     links = LinksField({})
 
-    node_links = DevOnly(RelationshipField(
+    node_links = RelationshipField(
         related_view='collections:node-pointers',
         related_view_kwargs={'collection_id': '<pk>'},
         related_meta={'count': 'get_node_links_count'}
-    ))
+    )
 
     # TODO: Add a self link to this when it's available
-    linked_nodes = DevOnly(RelationshipField(
+    linked_nodes = RelationshipField(
         related_view='collections:linked-nodes',
         related_view_kwargs={'collection_id': '<pk>'},
         related_meta={'count': 'get_node_links_count'},
         self_view='collections:collection-node-pointer-relationship',
         self_view_kwargs={'collection_id': '<pk>'}
-    ))
+    )
 
     class Meta:
         type_ = 'collections'
@@ -49,16 +51,23 @@ class CollectionSerializer(JSONAPISerializer):
         return absolute_reverse('collections:collection-detail', kwargs={'collection_id': obj._id})
 
     def get_node_links_count(self, obj):
-        return len(obj.nodes_pointer)
+        count = 0
+        auth = get_user_auth(self.context['request'])
+        for pointer in obj.nodes_pointer:
+            if not pointer.node.is_deleted and not pointer.node.is_collection and pointer.node.can_view(auth):
+                count += 1
+        return count
 
     def create(self, validated_data):
         node = Node(**validated_data)
-        node.is_folder = True
+        node.is_collection = True
         node.category = ''
         try:
             node.save()
         except ValidationValueError as e:
             raise InvalidModelValueError(detail=e.message)
+        except NodeStateError:
+            raise ser.ValidationError('Each user cannot have more than one Bookmark collection.')
         return node
 
     def update(self, node, validated_data):
@@ -139,7 +148,7 @@ class CollectionLinkedNodesRelationshipSerializer(ser.Serializer):
         return {'data': [
             pointer for pointer in
             obj.nodes_pointer
-            if not pointer.node.is_deleted and not pointer.node.is_folder
+            if not pointer.node.is_deleted and not pointer.node.is_collection
         ], 'self': obj}
 
     def update(self, instance, validated_data):

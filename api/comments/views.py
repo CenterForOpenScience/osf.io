@@ -1,13 +1,10 @@
-import requests
-
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import NotFound, ValidationError, PermissionDenied
-from rest_framework.status import is_server_error
 
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
-from api.base.exceptions import Gone, ServiceUnavailableError
+from api.base.exceptions import Gone
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
 from api.comments.permissions import (
@@ -25,9 +22,6 @@ from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
 from framework.exceptions import PermissionsError
 from website.project.model import Comment
-from website.files.models import StoredFileNode, TrashedFileNode
-from website.files.models.dropbox import DropboxFile
-from website.util import waterbutler_api_url_for
 
 
 class CommentMixin(object):
@@ -47,52 +41,12 @@ class CommentMixin(object):
 
         # Deleted root targets still appear as tuples in the database and are included in
         # the above query, requiring an additional check
-        if isinstance(comment.root_target.referent, TrashedFileNode):
+        if comment.root_target.referent.is_deleted:
             comment.root_target = None
             comment.save()
 
         if comment.root_target is None:
             raise NotFound
-
-        if isinstance(comment.root_target.referent, StoredFileNode):
-            root_target = comment.root_target
-            referent = root_target.referent
-
-            if referent.provider == 'osfstorage':
-                try:
-                    StoredFileNode.find(
-                        Q('node', 'eq', comment.node._id) &
-                        Q('_id', 'eq', referent._id) &
-                        Q('is_file', 'eq', True)
-                    )
-                except NoResultsFound:
-                    Comment.update(Q('root_target', 'eq', root_target), data={'root_target': None})
-                    del comment.node.commented_files[root_target._id]
-                    raise NotFound
-            else:
-                if referent.provider == 'dropbox':
-                    referent = DropboxFile.load(referent._id)
-                url = waterbutler_api_url_for(comment.node._id, referent.provider, referent.path, meta=True)
-                waterbutler_request = requests.get(
-                    url,
-                    cookies=self.request.COOKIES,
-                    headers={'Authorization': self.request.META.get('HTTP_AUTHORIZATION')},
-                )
-
-                if waterbutler_request.status_code == 401:
-                    raise PermissionDenied
-
-                if waterbutler_request.status_code == 404:
-                    Comment.update(Q('root_target', 'eq', root_target), data={'root_target': None})
-                    raise NotFound
-
-                if is_server_error(waterbutler_request.status_code):
-                    raise ServiceUnavailableError(detail='Could not retrieve files information at this time.')
-
-                try:
-                    waterbutler_request.json()['data']
-                except KeyError:
-                    raise ServiceUnavailableError(detail='Could not retrieve files information at this time.')
 
         if check_permissions:
             # May raise a permission denied
@@ -116,7 +70,7 @@ class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Comm
     OSF comment entities have the "comments" `type`.
 
         name           type               description
-        ---------------------------------------------------------------------------------
+        =================================================================================
         content        string             content of the comment
         date_created   iso8601 timestamp  timestamp that the comment was created
         date_modified  iso8601 timestamp  timestamp when the comment was last updated
@@ -238,7 +192,7 @@ class CommentReportsList(JSONAPIBaseView, generics.ListCreateAPIView, CommentMix
     OSF comment report entities have the "comment_reports" `type`.
 
         name           type               description
-        -------------------------------------------------------------------------------------
+        =====================================================================================
         category        string            the type of spam, must be one of the allowed values
         message         string            description of why the comment was reported
 
@@ -312,7 +266,7 @@ class CommentReportDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView
     OSF comment report entities have the "comment_reports" `type`.
 
         name           type               description
-        -------------------------------------------------------------------------------------
+        =====================================================================================
         category        string            the type of spam, must be one of the allowed values
         message         string            description of why the comment was reported
 

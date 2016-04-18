@@ -25,7 +25,7 @@ from framework.auth import exceptions as auth_exc
 from framework.auth.exceptions import ChangePasswordError, ExpiredTokenError
 from framework.auth.utils import impute_names_model
 from framework.auth.signals import user_merged
-from framework.tasks import handlers
+from framework.celery_tasks import handlers
 from framework.bcrypt import check_password_hash
 from website import filters, language, settings, mailchimp_utils
 from website.exceptions import NodeStateError
@@ -59,7 +59,7 @@ from tests.factories import (
     ProjectFactory, NodeLogFactory, WatchConfigFactory,
     NodeWikiFactory, RegistrationFactory, UnregUserFactory,
     ProjectWithAddonFactory, UnconfirmedUserFactory, PrivateLinkFactory,
-    AuthUserFactory, DashboardFactory, FolderFactory,
+    AuthUserFactory, BookmarkCollectionFactory, CollectionFactory,
     NodeLicenseRecordFactory, InstitutionFactory
 )
 from tests.test_features import requires_piwik
@@ -89,10 +89,35 @@ class TestUserValidation(OsfTestCase):
         self.user.save()
         assert_equal(self.user.social['profileWebsites'], [])
 
-    def test_validate_social_valid(self):
+    def test_validate_social_valid_website_simple(self):
         self.user.social = {'profileWebsites': ['http://cos.io/']}
         self.user.save()
         assert_equal(self.user.social['profileWebsites'], ['http://cos.io/'])
+
+    def test_validate_social_valid_website_protocol(self):
+        self.user.social = {'profileWebsites': ['https://definitelyawebsite.com']}
+        self.user.save()
+        assert_equal(self.user.social['profileWebsites'], ['https://definitelyawebsite.com'])
+
+    def test_validate_social_valid_website_ipv4(self):
+        self.user.social = {'profileWebsites': ['http://127.0.0.1']}
+        self.user.save()
+        assert_equal(self.user.social['profileWebsites'], ['http://127.0.0.1'])
+
+    def test_validate_social_valid_website_path(self):
+        self.user.social = {'profileWebsites': ['http://definitelyawebsite.com/definitelyapage/']}
+        self.user.save()
+        assert_equal(self.user.social['profileWebsites'], ['http://definitelyawebsite.com/definitelyapage/'])
+
+    def test_validate_social_valid_website_portandpath(self):
+        self.user.social = {'profileWebsites': ['http://127.0.0.1:5000/hello/']}
+        self.user.save()
+        assert_equal(self.user.social['profileWebsites'], ['http://127.0.0.1:5000/hello/'])
+
+    def test_validate_social_valid_website_querystrings(self):
+        self.user.social = {'profileWebsites': ['http://definitelyawebsite.com?real=yes&page=definitely']}
+        self.user.save()
+        assert_equal(self.user.social['profileWebsites'], ['http://definitelyawebsite.com?real=yes&page=definitely'])
 
     def test_validate_multiple_profile_websites_valid(self):
         self.user.social = {'profileWebsites': ['http://cos.io/', 'http://thebuckstopshere.com', 'http://dinosaurs.com']}
@@ -933,6 +958,11 @@ class TestDisablingUsers(OsfTestCase):
         assert_true(isinstance(self.user.date_disabled, datetime.datetime))
         assert_false(self.user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST])
 
+    def test_disable_account_api(self):
+        settings.ENABLE_EMAIL_SUBSCRIPTIONS = True
+        with assert_raises(mailchimp_utils.mailchimp.InvalidApiKeyError):
+            self.user.disable_account()
+
 
 class TestMergingUsers(OsfTestCase):
 
@@ -956,8 +986,8 @@ class TestMergingUsers(OsfTestCase):
         self.master.merge_user(self.dupe)
         self.master.save()
 
-    def test_dashboard_nodes_arent_merged(self):
-        dashnode = ProjectFactory(creator=self.dupe, is_dashboard=True)
+    def test_bookmark_collection_nodes_arent_merged(self):
+        dashnode = ProjectFactory(creator=self.dupe, is_bookmark_collection=True)
 
         self._merge_dupe()
 
@@ -1233,7 +1263,6 @@ class TestUpdateNodeWiki(OsfTestCase):
         invalid_name = 'invalid/name'
         with assert_raises(NameInvalidError):
             self.project.update_node_wiki(invalid_name, 'more valid content', self.auth)
-
 
 class TestRenameNodeWiki(OsfTestCase):
 
@@ -1599,7 +1628,7 @@ class TestNode(OsfTestCase):
             NodeLog.ADDON_REMOVED
         )
 
-    @mock.patch('website.addons.github.model.AddonGitHubNodeSettings.config')
+    @mock.patch('website.addons.github.model.GitHubNodeSettings.config')
     def test_delete_mandatory_addon(self, mock_config):
         mock_config.added_mandatory = ['node']
         self.node.add_addon('github', self.auth)
@@ -1681,8 +1710,8 @@ class TestNode(OsfTestCase):
         pointed_project = ProjectFactory(creator=user)  # project that other project points to
         pointer_project.add_pointer(pointed_project, Auth(pointer_project.creator), save=True)
 
-        # Project is in a dashboard folder
-        folder = FolderFactory(creator=pointed_project.creator)
+        # Project is in a organizer collection
+        folder = CollectionFactory(creator=pointed_project.creator)
         folder.add_pointer(pointed_project, Auth(pointed_project.creator), save=True)
 
         assert_in(pointer_project, pointed_project.get_points(folders=False))
@@ -1780,29 +1809,17 @@ class TestNode(OsfTestCase):
         pass
 
     def test_not_a_folder(self):
-        assert_equal(self.node.is_folder, False)
+        assert_equal(self.node.is_collection, False)
 
-    def test_not_a_dashboard(self):
-        assert_equal(self.node.is_dashboard, False)
+    def test_not_a_bookmark_collection(self):
+        assert_equal(self.node.is_bookmark_collection, False)
 
     def test_cannot_link_to_folder_more_than_once(self):
-        folder = FolderFactory(creator=self.user)
+        folder = CollectionFactory(creator=self.user)
         node_two = ProjectFactory(creator=self.user)
         self.node.add_pointer(folder, auth=self.auth)
         with assert_raises(ValueError):
             node_two.add_pointer(folder, auth=self.auth)
-
-    def test_is_expanded_default_false_with_user(self):
-        assert_equal(self.node.is_expanded(user=self.user), False)
-
-    def test_expand_sets_true_with_user(self):
-        self.node.expand(user=self.user)
-        assert_equal(self.node.is_expanded(user=self.user), True)
-
-    def test_collapse_sets_false_with_user(self):
-        self.node.expand(user=self.user)
-        self.node.collapse(user=self.user)
-        assert_equal(self.node.is_expanded(user=self.user), False)
 
     def test_cannot_register_deleted_node(self):
         self.node.is_deleted = True
@@ -2119,7 +2136,7 @@ class TestNodeTraversals(OsfTestCase):
         NodeFactory(parent=comp2)
         reg = RegistrationFactory(project=proj)
         reg.delete_registration_tree(save=True)
-        assert_false(proj.node__registrations)
+        assert_false(proj.registrations_all)
 
     def test_get_active_contributors_recursive_with_duplicate_users(self):
         parent = ProjectFactory(creator=self.user)
@@ -2300,45 +2317,45 @@ class TestRemoveNode(OsfTestCase):
         assert_false(target.is_deleted)
 
 
-class TestDashboard(OsfTestCase):
+class TestBookmarkCollection(OsfTestCase):
 
     def setUp(self):
-        super(TestDashboard, self).setUp()
+        super(TestBookmarkCollection, self).setUp()
         # Create project with component
         self.user = UserFactory()
         self.auth = Auth(user=self.user)
-        self.project = DashboardFactory(creator=self.user)
+        self.project = BookmarkCollectionFactory(creator=self.user)
 
-    def test_dashboard_is_dashboard(self):
-        assert_equal(self.project.is_dashboard, True)
+    def test_bookmark_collection_is_bookmark_collection(self):
+        assert_equal(self.project.is_bookmark_collection, True)
 
-    def test_dashboard_is_folder(self):
-        assert_equal(self.project.is_folder, True)
+    def test_bookmark_collection_is_collection(self):
+        assert_equal(self.project.is_collection, True)
 
-    def test_cannot_remove_dashboard(self):
+    def test_cannot_remove_bookmark_collection(self):
         with assert_raises(NodeStateError):
             self.project.remove_node(self.auth)
 
-    def test_cannot_have_two_dashboards(self):
+    def test_cannot_have_two_bookmark_collection(self):
         with assert_raises(NodeStateError):
-            DashboardFactory(creator=self.user)
+            BookmarkCollectionFactory(creator=self.user)
 
-    def test_cannot_link_to_dashboard(self):
+    def test_cannot_link_to_bookmark_collection(self):
         new_node = ProjectFactory(creator=self.user)
         with assert_raises(ValueError):
             new_node.add_pointer(self.project, auth=self.auth)
 
     def test_can_remove_empty_folder(self):
-        new_folder = FolderFactory(creator=self.user)
-        assert_equal(new_folder.is_folder, True)
+        new_folder = CollectionFactory(creator=self.user)
+        assert_equal(new_folder.is_collection, True)
         new_folder.remove_node(auth=self.auth)
         assert_true(new_folder.is_deleted)
 
     def test_can_remove_folder_structure(self):
-        outer_folder = FolderFactory(creator=self.user)
-        assert_equal(outer_folder.is_folder, True)
-        inner_folder = FolderFactory(creator=self.user)
-        assert_equal(inner_folder.is_folder, True)
+        outer_folder = CollectionFactory(creator=self.user)
+        assert_equal(outer_folder.is_collection, True)
+        inner_folder = CollectionFactory(creator=self.user)
+        assert_equal(inner_folder.is_collection, True)
         outer_folder.add_pointer(inner_folder, self.auth)
         outer_folder.remove_node(auth=self.auth)
         assert_true(outer_folder.is_deleted)
@@ -2357,12 +2374,20 @@ class TestAddonCallbacks(OsfTestCase):
     }
 
     def setUp(self):
+        def mock_get_addon(addon_name, deleted=False):
+            # Overrides AddonModelMixin.get_addon -- without backrefs,
+            # no longer guaranteed to return the same set of objects-in-memory
+            return self.patched_addons.get(addon_name, None)
+
         super(TestAddonCallbacks, self).setUp()
         # Create project with component
         self.user = UserFactory()
         self.auth = Auth(user=self.user)
         self.parent = ProjectFactory()
         self.node = NodeFactory(creator=self.user, project=self.parent)
+        self.patches = []
+        self.patched_addons = {}
+        self.original_get_addon = Node.get_addon
 
         # Mock addon callbacks
         for addon in self.node.addons:
@@ -2370,14 +2395,28 @@ class TestAddonCallbacks(OsfTestCase):
             for callback, return_value in self.callbacks.iteritems():
                 mock_callback = getattr(mock_settings, callback)
                 mock_callback.return_value = return_value
-                setattr(
+                patch = mock.patch.object(
                     addon,
                     callback,
                     getattr(mock_settings, callback)
                 )
+                patch.start()
+                self.patches.append(patch)
+            self.patched_addons[addon.config.short_name] = addon
+        n_patch = mock.patch.object(
+            self.node,
+            'get_addon',
+            mock_get_addon
+        )
+        n_patch.start()
+        self.patches.append(n_patch)
+
+    def tearDown(self):
+        super(TestAddonCallbacks, self).tearDown()
+        for patcher in self.patches:
+            patcher.stop()
 
     def test_remove_contributor_callback(self):
-
         user2 = UserFactory()
         self.node.add_contributor(contributor=user2, auth=self.auth)
         self.node.remove_contributor(contributor=user2, auth=self.auth)
@@ -2388,7 +2427,6 @@ class TestAddonCallbacks(OsfTestCase):
             )
 
     def test_set_privacy_callback(self):
-
         self.node.set_privacy('public', self.auth)
         for addon in self.node.addons:
             callback = addon.after_set_privacy
@@ -2494,7 +2532,7 @@ class TestProject(OsfTestCase):
         config1 = WatchConfigFactory(node=self.project)
         user.watched.append(config1)
         user.save()
-        assert_in(config1._id, self.project.watchconfig__watched)
+        assert_in(config1._id, [e._id for e in self.project.watches])
 
     def test_add_contributor(self):
         # A user is added as a contributor
@@ -2624,7 +2662,7 @@ class TestProject(OsfTestCase):
         link = PrivateLinkFactory()
         link.nodes.append(self.project)
         link.save()
-        assert_in(link, self.project.private_links)
+        assert_in(link._id, [e._id for e in self.project.private_links])
 
     @mock.patch('framework.auth.core.Auth.private_link')
     def test_has_anonymous_link(self, mock_property):
@@ -3144,15 +3182,17 @@ class TestProject(OsfTestCase):
     def test_get_recent_logs(self):
         # Add some logs
         for _ in range(5):
-            self.project.logs.append(NodeLogFactory())
+            self.project.add_log('file_added', params={'node': self.project._id}, auth=self.auth)
+
         # Expected logs appears
         assert_equal(
-            self.project.get_recent_logs(3),
-            list(reversed(self.project.logs)[:3])
+            list(self.project.get_recent_logs(3)),
+            list(self.project.logs.sort('-date')[:3])
         )
+
         assert_equal(
-            self.project.get_recent_logs(),
-            list(reversed(self.project.logs))
+            list(self.project.get_recent_logs()),
+            list(self.project.logs.sort('-date'))
         )
 
     def test_date_modified(self):
@@ -3220,6 +3260,7 @@ class TestParentNode(OsfTestCase):
         self.auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user, description='The Dudleys strike again')
         self.child = NodeFactory(parent=self.project, creator=self.user, description="Devon.")
+        self.deleted_child = NodeFactory(parent=self.project, creator=self.user, title='Deleted', is_deleted=True)
 
         self.registration = RegistrationFactory(project=self.project)
         self.template = self.project.use_as_template(auth=self.auth)
@@ -3274,6 +3315,13 @@ class TestParentNode(OsfTestCase):
         new_project_grandchild = NodeFactory(parent=template_child)
         assert_equal(new_project_grandchild.parent_node._id, template_child._id)
 
+    def test_template_project_does_not_copy_deleted_components(self):
+        """Regression test for https://openscience.atlassian.net/browse/OSF-5942. """
+        new_project = self.project.use_as_template(auth=self.auth)
+        new_nodes = [node.title for node in new_project.nodes]
+        assert_equal(len(new_project.nodes), 1)
+        assert_not_in(self.deleted_child.title, new_nodes)
+
 
 class TestRoot(OsfTestCase):
     def setUp(self):
@@ -3286,7 +3334,7 @@ class TestRoot(OsfTestCase):
         self.registration = RegistrationFactory(project=self.project)
 
     def test_top_level_project_has_own_root(self):
-        assert(self.project.root._id, self.project._id)
+        assert_equal(self.project.root._id, self.project._id)
 
     def test_child_project_has_root_of_parent(self):
         child = NodeFactory(parent=self.project)
@@ -3323,6 +3371,7 @@ class TestRoot(OsfTestCase):
 
     def test_fork_has_own_root(self):
         fork = self.project.fork_node(auth=self.auth)
+        fork.save()
         assert_equal(fork.root._id, fork._id)
 
     def test_fork_children_have_correct_root(self):
@@ -3620,8 +3669,8 @@ class TestForkNode(OsfTestCase):
         assert_equal(title_prepend + original.title, fork.title)
         assert_equal(original.category, fork.category)
         assert_equal(original.description, fork.description)
-        assert_equal(original.logs, fork.logs[:-1])
         assert_true(len(fork.logs) == len(original.logs) + 1)
+        assert_not_equal(original.logs[-1].action, NodeLog.NODE_FORKED)
         assert_equal(fork.logs[-1].action, NodeLog.NODE_FORKED)
         assert_equal(original.tags, fork.tags)
         assert_equal(original.parent_node is None, fork.parent_node is None)
@@ -3630,7 +3679,7 @@ class TestForkNode(OsfTestCase):
         assert_true(fork.is_fork)
         assert_equal(len(fork.private_links), 0)
         assert_equal(fork.forked_from, original)
-        assert_in(fork._id, original.node__forked)
+        assert_in(fork._id, [n._id for n in original.forks])
         # Note: Must cast ForeignList to list for comparison
         assert_equal(list(fork.contributors), [fork_user])
         assert_true((fork_date - fork.date_created) < datetime.timedelta(seconds=30))
@@ -3878,7 +3927,12 @@ class TestRegisterNode(OsfTestCase):
 
     def test_logs(self):
         # Registered node has all logs except for registration approval initiated
-        assert_equal(self.registration.logs, self.project.logs[:-1])
+        assert_equal(len(self.project.logs) - 1, len(self.registration.logs))
+        assert_equal(len(self.registration.logs), 1)
+        assert_equal(self.registration.logs[0].action, 'project_created')
+        assert_equal(len(self.project.logs), 2)
+        assert_equal(self.project.logs[0].action, 'project_created')
+        assert_equal(self.project.logs[1].action, 'registration_initiated')
 
     def test_tags(self):
         assert_equal(self.registration.tags, self.project.tags)
@@ -3989,7 +4043,7 @@ class TestRegisterNode(OsfTestCase):
         )
 
     def test_registration_list(self):
-        assert_in(self.registration._id, self.project.node__registrations)
+        assert_in(self.registration._id, [n._id for n in self.project.registrations_all])
 
     def test_registration_gets_institution_affiliation(self):
         node = NodeFactory()
@@ -4043,40 +4097,6 @@ class TestNodeLog(OsfTestCase):
         unparsed = self.log.tz_date
         assert_equal(parsed, unparsed)
 
-    def test_resolve_node_same_as_self_node(self):
-        project = ProjectFactory()
-        assert_equal(
-            project.logs[-1].resolve_node(project),
-            project,
-        )
-
-    def test_resolve_node_in_nodes_list(self):
-        component = NodeFactory()
-        assert_equal(
-            component.logs[-1].resolve_node(component.parent_node),
-            component,
-        )
-
-    def test_resolve_node_fork_of_self_node(self):
-        project = ProjectFactory()
-        fork = project.fork_node(auth=Auth(project.creator))
-        assert_equal(
-            fork.logs[-1].resolve_node(fork),
-            fork,
-        )
-
-    def test_resolve_node_fork_of_self_in_nodes_list(self):
-        user = UserFactory()
-        component = ProjectFactory(creator=user)
-        project = ProjectFactory(creator=user)
-        project.nodes.append(component)
-        project.save()
-        forked_project = project.fork_node(auth=Auth(user=user))
-        assert_equal(
-            forked_project.nodes[0].logs[-1].resolve_node(forked_project),
-            forked_project.nodes[0],
-        )
-
     def test_can_view(self):
         project = ProjectFactory(is_public=False)
 
@@ -4092,6 +4112,39 @@ class TestNodeLog(OsfTestCase):
 
         created_log = project.logs[0]
         assert_false(created_log.can_view(unrelated, Auth(user=project.creator)))
+
+
+    def test_original_node_and_current_node_for_registration_logs(self):
+        user = UserFactory()
+        project = ProjectFactory(creator=user)
+        registration = RegistrationFactory(project=project)
+
+        log_project_created_original = project.logs[0]
+        log_registration_initiated = project.logs[1]
+        log_project_created_registration = registration.logs[0]
+
+        assert_equal(project._id, log_project_created_original.original_node._id)
+        assert_equal(project._id, log_project_created_original.node._id)
+        assert_equal(project._id, log_registration_initiated.original_node._id)
+        assert_equal(project._id, log_registration_initiated.node._id)
+        assert_equal(project._id, log_project_created_registration.original_node._id)
+        assert_equal(registration._id, log_project_created_registration.node._id)
+
+    def test_original_node_and_current_node_for_fork_logs(self):
+        user = UserFactory()
+        project = ProjectFactory(creator=user)
+        fork = project.fork_node(auth=Auth(user))
+
+        log_project_created_original = project.logs[0]
+        log_project_created_fork = fork.logs[0]
+        log_node_forked = fork.logs[1]
+
+        assert_equal(project._id, log_project_created_original.original_node._id)
+        assert_equal(project._id, log_project_created_original.node._id)
+        assert_equal(project._id, log_project_created_fork.original_node._id)
+        assert_equal(fork._id, log_project_created_fork.node._id)
+        assert_equal(project._id, log_node_forked.original_node._id)
+        assert_equal(fork._id, log_node_forked.node._id)
 
 
 class TestPermissions(OsfTestCase):

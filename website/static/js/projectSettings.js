@@ -56,9 +56,11 @@ var ProjectSettings = oop.extend(
                 errorMessage = language.updateErrorMessage;
             }
             Raven.captureMessage(errorMessage, {
-                url: self.updateUrl,
-                textStatus: status,
-                err: error
+                extra: {
+                    url: self.updateUrl,
+                    textStatus: status,
+                    err: error
+                }
             });
         },
         /*update handler*/
@@ -69,7 +71,7 @@ var ProjectSettings = oop.extend(
                 return;
             }
             var requestPayload = self.serialize();
-            var request = $osf.ajaxJSON('put',
+            var request = $osf.ajaxJSON('patch',
                 self.updateUrl,
                 { data: requestPayload,
                 isCors: true });
@@ -133,9 +135,11 @@ request.done(function(response) {
 });
 request.fail(function(xhr, textStatus, err) {
     Raven.captureMessage('Error requesting contributors', {
-        url: contribURL,
-        textStatus: textStatus,
-        err: err,
+        extra: {
+            url: contribURL,
+            textStatus: textStatus,
+            err: err,
+        }
     });
 });
 
