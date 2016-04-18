@@ -24,7 +24,6 @@ from website.project import new_node, new_private_link
 from website.project.decorators import (
     must_be_contributor_or_public_but_not_anonymized,
     must_be_contributor_or_public,
-    must_be_contributor,
     must_be_valid_project,
     must_have_permission,
     must_not_be_registration,
@@ -246,7 +245,7 @@ def node_forks(auth, node, **kwargs):
 
 @must_be_valid_project
 @must_be_logged_in
-@must_be_contributor
+@must_have_permission(READ)
 def node_setting(auth, node, **kwargs):
 
     #check institutions:
@@ -481,7 +480,7 @@ def watch_post(auth, node, **kwargs):
 
     return {
         'status': 'success',
-        'watchCount': len(node.watchconfig__watched)
+        'watchCount': node.watches.count()
     }
 
 
@@ -500,7 +499,7 @@ def unwatch_post(auth, node, **kwargs):
 
     return {
         'status': 'success',
-        'watchCount': len(node.watchconfig__watched)
+        'watchCount': node.watches.count()
     }
 
 
@@ -528,7 +527,7 @@ def togglewatch_post(auth, node, **kwargs):
 
     return {
         'status': 'success',
-        'watchCount': len(node.watchconfig__watched),
+        'watchCount': node.watches.count(),
         'watched': user.is_watching(node)
     }
 
@@ -652,6 +651,10 @@ def _view_project(node, auth, primary=False):
     widgets, configs, js, css = _render_addon(node)
     redirect_url = node.url + '?view_only=None'
 
+    disapproval_link = ''
+    if (node.is_pending_registration and node.has_permission(user, ADMIN)):
+        disapproval_link = node.registration_approval.stashed_urls.get(user._id, {}).get('reject', '')
+
     # Before page load callback; skip if not primary call
     if primary:
         for addon in node.get_addons():
@@ -660,6 +663,7 @@ def _view_project(node, auth, primary=False):
                 status.push_status_message(message, kind='info', dismissible=False, trust=True)
     data = {
         'node': {
+            'disapproval_link': disapproval_link,
             'id': node._primary_key,
             'title': node.title,
             'category': node.category_display,
@@ -692,14 +696,14 @@ def _view_project(node, auth, primary=False):
             'root_id': node.root._id if node.root else None,
             'registered_meta': node.registered_meta,
             'registered_schemas': serialize_meta_schemas(node.registered_schema),
-            'registration_count': len(node.node__registrations),
+            'registration_count': node.registrations_all.count(),
             'is_fork': node.is_fork,
             'forked_from_id': node.forked_from._primary_key if node.is_fork else '',
             'forked_from_display_absolute_url': node.forked_from.display_absolute_url if node.is_fork else '',
             'forked_date': iso8601format(node.forked_date) if node.is_fork else '',
-            'fork_count': len(node.forks),
-            'templated_count': len(node.templated_list),
-            'watched_count': len(node.watchconfig__watched),
+            'fork_count': node.forks.count(),
+            'templated_count': node.templated_list.count(),
+            'watched_count': node.watches.count(),
             'private_links': [x.to_json() for x in node.private_links_active],
             'link': view_only_link,
             'anonymous': anonymous,
@@ -835,7 +839,7 @@ def _get_summary(node, auth, primary=True, link_id=None, show_path=False):
         'is_pending_retraction': node.is_pending_retraction,
         'embargo_end_date': node.embargo_end_date.strftime("%A, %b. %d, %Y") if node.embargo_end_date else False,
         'is_pending_embargo': node.is_pending_embargo,
-        'archiving': node.archiving,
+        'archiving': node.archiving or getattr(node.root, 'archiving', False),
     }
 
     if node.can_view(auth):
@@ -977,13 +981,13 @@ def get_node_tree(auth, **kwargs):
 
 @must_be_contributor_or_public
 def get_forks(auth, node, **kwargs):
-    fork_list = sorted(node.forks, key=lambda fork: fork.forked_date, reverse=True)
+    fork_list = node.forks.sort('-forked_date')
     return _render_nodes(nodes=fork_list, auth=auth)
 
 
 @must_be_contributor_or_public
 def get_registrations(auth, node, **kwargs):
-    registrations = [n for n in reversed(node.node__registrations) if not n.is_deleted]  # get all registrations, including archiving
+    registrations = [n for n in reversed(node.registrations_all) if not n.is_deleted]  # get all registrations, including archiving
     return _render_nodes(registrations, auth)
 
 

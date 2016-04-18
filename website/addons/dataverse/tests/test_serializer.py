@@ -5,122 +5,58 @@ import mock
 
 from tests.factories import AuthUserFactory
 
+from framework.auth import Auth
 
-from website.util import api_url_for
+from website.addons.base.testing.serializers import OAuthAddonSerializerTestSuiteMixin
 from website.addons.dataverse.tests.utils import (
     create_mock_connection, DataverseAddonTestCase, create_external_account,
 )
 from website.addons.dataverse.serializer import DataverseSerializer
+from website.addons.dataverse.model import DataverseProvider
+from website.addons.dataverse.tests.factories import DataverseAccountFactory
+from website.util import api_url_for
 
 
-class TestDataverseSerializerConfig(DataverseAddonTestCase):
+class TestDataverseSerializer(DataverseAddonTestCase, OAuthAddonSerializerTestSuiteMixin):
+    addon_short_name = 'dataverse'
+    
+    Serializer = DataverseSerializer
+    ExternalAccountFactory = DataverseAccountFactory
+    client =DataverseProvider
+
+    required_settings = ('userIsOwner', 'nodeHasAuth', 'urls', 'userHasAuth')
+    required_settings_authorized = ('ownerName', )
 
     def setUp(self):
-        super(TestDataverseSerializerConfig, self).setUp()
-
-        self.host = 'my.host.name'
-        self.external_account = create_external_account(self.host)
-        self.user.external_accounts.append(self.external_account)
-        self.node_settings.set_auth(self.external_account, self.user)
-        self.serializer = DataverseSerializer(
+        super(TestDataverseSerializer, self).setUp()
+        self.ser = self.Serializer(
             user_settings=self.user_settings,
-            node_settings=self.node_settings,
+            node_settings=self.node_settings
         )
+        self.mock_api = mock.patch('website.addons.dataverse.serializer.client.connect_from_settings')
+        self.mock_api.return_value = create_mock_connection()
+        self.mock_api.start()
 
-    def test_serialize_account(self):
+    def tearDown(self):
+        self.mock_api.stop()
+        super(TestDataverseSerializer, self).tearDown()
 
-        ret = self.serializer.serialize_account(self.external_account)
-        assert_equal(ret['host'], self.host)
-        assert_equal(ret['host_url'], 'https://{0}'.format(self.host))
+    def set_node_settings(self, user):
+        self.node = self.project
+        self.node_settings = self.node.get_or_add_addon(self.addon_short_name, auth=Auth(user))
+        self.node_settings.set_auth(self.user_settings.external_accounts[0], self.user)
 
-    def test_user_is_owner(self):
-
-        # No user is not owner
-        serializer = DataverseSerializer(node_settings=self.node_settings)
-        assert_false(serializer.user_is_owner)
-
-        # Different user is not owner
-        serializer.user_settings = AuthUserFactory()
-        assert_false(serializer.user_is_owner)
-
-        # Owner is owner
-        serializer.user_settings = self.user_settings
-        assert_true(serializer.user_is_owner)
-
-    def test_credentials_owner(self):
-        assert_equal(self.node_settings.user_settings.owner, self.user)
-
-
-    @mock.patch('website.addons.dataverse.views.config.client.connect_from_settings')
-    def test_serialize_settings_helper_returns_correct_auth_info(self, mock_connection):
-        mock_connection.return_value = create_mock_connection()
-
-        result = self.serializer.serialized_node_settings
-        assert_equal(result['nodeHasAuth'], self.node_settings.has_auth)
-        assert_true(result['userHasAuth'])
-        assert_true(result['userIsOwner'])
-
-    @mock.patch('website.addons.dataverse.views.config.client.connect_from_settings')
-    def test_serialize_settings_helper_non_owner(self, mock_connection):
-        mock_connection.return_value = create_mock_connection()
-
-        # Non-owner user without add-on
-        serializer = DataverseSerializer(node_settings=self.node_settings)
-        result = serializer.serialized_node_settings
-        assert_equal(result['nodeHasAuth'], self.node_settings.has_auth)
-        assert_false(result['userHasAuth'])
-        assert_false(result['userIsOwner'])
-
-        # Non-owner user with add-on
-        stranger = AuthUserFactory()
-        stranger.add_addon('dataverse')
-        stranger.external_accounts.append(create_external_account())
-        serializer.user_settings = stranger.get_addon('dataverse')
-        result = serializer.serialized_node_settings
-        assert_equal(result['nodeHasAuth'], self.node_settings.has_auth)
-        assert_true(result['userHasAuth'])
-        assert_false(result['userIsOwner'])
-
-    @mock.patch('website.addons.dataverse.views.config.client.connect_from_settings')
-    def test_serialize_settings_helper_returns_correct_urls(self, mock_connection):
-        mock_connection.return_value = create_mock_connection()
-
-        # result =
-        urls = self.serializer.serialized_urls
-
-        assert_equal(urls['create'], api_url_for('dataverse_add_user_account'))
-        assert_equal(urls['set'], self.project.api_url_for('dataverse_set_config'))
-        assert_equal(urls['importAuth'], self.project.api_url_for('dataverse_add_user_auth'))
-        assert_equal(urls['deauthorize'], self.project.api_url_for('dataverse_remove_user_auth'))
-        assert_equal(urls['getDatasets'], self.project.api_url_for('dataverse_get_datasets'))
-        assert_equal(urls['datasetPrefix'], 'http://dx.doi.org/')
-        assert_equal(urls['dataversePrefix'], 'http://{0}/dataverse/'.format(self.host))
-        assert_equal(urls['accounts'], api_url_for('dataverse_get_user_accounts'))
-
-    @mock.patch('website.addons.dataverse.views.config.client.connect_from_settings')
-    def test_serialize_settings_helper_returns_dv_info(self, mock_connection):
-        mock_connection.return_value = create_mock_connection()
-
-        result = self.serializer.serialized_node_settings
-
-        assert_equal(len(result['dataverses']), 3)
-        assert_true(result['connected'])
-        assert_equal(result['dataverseHost'], self.host)
-        assert_equal(result['savedDataverse']['title'], self.node_settings.dataverse)
-        assert_equal(result['savedDataverse']['alias'], self.node_settings.dataverse_alias)
-        assert_equal(result['savedDataset']['title'], self.node_settings.dataset)
-        assert_equal(result['savedDataset']['doi'], self.node_settings.dataset_doi)
-
-    @mock.patch('website.addons.dataverse.views.config.client.connect_from_settings')
-    def test_serialize_settings_helper_no_connection(self, mock_connection):
-        mock_connection.return_value = None
-
-        result = self.serializer.serialized_node_settings
-
-        assert_false(result['dataverses'])
-        assert_false(result['connected'])
-        assert_equal(result['dataverseHost'], self.host)
-        assert_equal(result['savedDataverse']['title'], self.node_settings.dataverse)
-        assert_equal(result['savedDataverse']['alias'], self.node_settings.dataverse_alias)
-        assert_equal(result['savedDataset']['title'], self.node_settings.dataset)
-        assert_equal(result['savedDataset']['doi'], self.node_settings.dataset_doi)
+    def test_serialize_acccount(self):
+        ea = self.ExternalAccountFactory()
+        expected = {
+            'id': ea._id,
+            'provider_id': ea.provider_id,
+            'provider_name': ea.provider_name,
+            'provider_short_name': ea.provider,
+            'display_name': ea.display_name,
+            'profile_url': ea.profile_url,
+            'nodes': [],
+            'host': ea.oauth_key,
+            'host_url': 'https://{0}'.format(ea.oauth_key),
+        }
+        assert_equal(self.ser.serialize_account(ea), expected)

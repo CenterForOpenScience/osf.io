@@ -7,7 +7,6 @@ var Treebeard = require('treebeard');
 var $osf = require('js/osfHelpers');
 var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 
-
 function expandOnLoad() {
     var tb = this;  // jshint ignore: line
     for (var i = 0; i < tb.treeData.children.length; i++) {

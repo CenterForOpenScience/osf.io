@@ -36,8 +36,7 @@
             <span data-bind="getIcon: '${summary['category']}'"></span>
             % if not summary['archiving']:
                 <a href="${summary['url']}">${summary['title']}</a>
-            % endif
-            % if summary['archiving']:
+            % else:
                 <span class="f-w-lg">${summary['title']}</span>
             % endif
 
@@ -51,7 +50,7 @@
             <!-- Show/Hide recent activity log -->
             % if not summary['archiving']:
             <div class="pull-right">
-                % if not summary['primary'] and 'admin' in user['permissions'] and not node['is_registration']:
+                % if not summary['primary'] and 'write' in user['permissions'] and not node['is_registration']:
                     <i class="fa fa-times remove-pointer" data-id="${summary['id']}" data-toggle="tooltip" title="Remove link"></i>
                     <i class="fa fa-code-fork" onclick="NodeActions.forkPointer('${summary['id']}', '${summary['primary_id']}');" data-toggle="tooltip" title="Fork this ${summary['node_type']} into ${node['node_type']} ${node['title']}"></i>
                 % endif
@@ -145,6 +144,12 @@
             %else:
                 Private Component
             %endif
+            % if not summary['primary'] and 'write' in user['permissions'] and not node['is_registration']:
+                ## Allow deletion of pointers, even if user doesn't know what they are deleting
+                <span class="pull-right">
+                    <i class="fa fa-times remove-pointer pointer" data-id="${summary['id']}" data-toggle="tooltip" title="Remove link"></i>
+                </span>
+            % endif
         </p>
     </li>
 

@@ -2,7 +2,7 @@
 import httplib as http
 
 from nose.tools import *  # noqa
-from test_log_nodes_list import LogsTestCase
+from test_log_detail import LogsTestCase
 
 
 class TestLogContributors(LogsTestCase):

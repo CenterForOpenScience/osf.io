@@ -11,6 +11,7 @@ from website import models
 from framework.auth.core import Auth
 from scripts import utils as script_utils
 from framework.mongo import database as db
+from framework.celery_tasks import app as celery_app
 from framework.transactions.context import TokuTransaction
 from website.discovery.views import activity
 from website.settings import POPULAR_LINKS_NODE, NEW_AND_NOTEWORTHY_LINKS_NODE, NEW_AND_NOTEWORTHY_CONTRIBUTOR_BLACKLIST
@@ -94,10 +95,8 @@ def main(dry_run=True):
         raise RuntimeError('Dry run -- transaction rolled back.')
 
 
-if __name__ == '__main__':
-    dry_run = 'dry' in sys.argv
-    if not dry_run:
-        script_utils.add_file_logger(logger, __file__)
+@celery_app.task(name='scripts.populate_new_and_noteworthy_projects')
+def run_main(dry_run=True):
+    scripts_utils.add_file_logger(logger, __file__)
     with TokuTransaction():
         main(dry_run=dry_run)
-

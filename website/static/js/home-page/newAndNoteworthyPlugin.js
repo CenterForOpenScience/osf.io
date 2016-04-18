@@ -6,6 +6,8 @@ var $ = require('jquery');
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
+var lodashGet = require('lodash.get');
+
 
 // CSS
 require('css/new-and-noteworthy-plugin.css');
@@ -32,7 +34,9 @@ var NewAndNoteworthy = {
         // Switches errorLoading to true
         self.requestError = function(result){
             self.errorLoading = m.prop(true);
-            Raven.captureMessage('Error loading new and noteworthy projects on home page.', {requestReturn: result});
+            Raven.captureMessage('Error loading new and noteworthy projects on home page.', {
+                extra: { requestReturn: result }
+            });
         };
 
         // Load new and noteworthy nodes
@@ -41,8 +45,11 @@ var NewAndNoteworthy = {
         newAndNoteworthyPromise.then(function(result){
             var numNew = Math.min(result.data.length, self.SHOW_TOTAL);
             for (var l = 0; l < numNew; l++) {
-                self.newAndNoteworthyNodes().push(result.data[l]);
-                self.fetchContributors(result.data[l]);
+                var data = result.data[l];
+                if (lodashGet(data, 'embeds.target_node.data', null)) {
+                    self.newAndNoteworthyNodes().push(result.data[l]);
+                    self.fetchContributors(result.data[l]);
+                }
             }
             self.someDataLoaded(true);
         }, function _error(result){
@@ -56,8 +63,11 @@ var NewAndNoteworthy = {
         popularPromise.then(function(result){
             var numPopular = Math.min(result.data.length, self.SHOW_TOTAL);
             for (var l = 0; l < numPopular; l++) {
-                self.popularNodes().push(result.data[l]);
-                self.fetchContributors(result.data[l]);
+                var data = result.data[l];
+                if (lodashGet(data, 'embeds.target_node.data', null)) {
+                    self.popularNodes().push(result.data[l]);
+                    self.fetchContributors(result.data[l]);
+                }
             }
             self.someDataLoaded(true);
         }, function _error(result){
@@ -67,7 +77,7 @@ var NewAndNoteworthy = {
 
         // Additional API call to fetch node link contributors
         self.fetchContributors = function(nodeLink) {
-            var url = nodeLink.embeds.target_node.data.relationships.contributors.links.related.href;
+            var url = lodashGet(nodeLink, 'embeds.target_node.data.relationships.contributors.links.related.href', null);
             var promise = m.request({method: 'GET', url : url, config: xhrconfig});
             promise.then(function(result){
                 var contribNames = [];
