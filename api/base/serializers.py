@@ -1151,3 +1151,13 @@ def relationship_diff(current_items, new_items):
         'add': {k: new_items[k] for k in (set(new_items.keys()) - set(current_items.keys()))},
         'remove': {k: current_items[k] for k in (set(current_items.keys()) - set(new_items.keys()))}
     }
+
+
+class AddonAccountSerializer(JSONAPISerializer):
+    _id = ser.CharField(read_only=True)
+    provider = ser.CharField(read_only=True)
+    profile_url = ser.CharField(required=False, read_only=True)
+    display_name = ser.CharField(required=False, read_only=True)
+
+    class Meta:
+        type_ = 'external_accounts'

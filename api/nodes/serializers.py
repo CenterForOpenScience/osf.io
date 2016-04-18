@@ -13,9 +13,9 @@ from website.util import permissions as osf_permissions
 from website.project.model import NodeUpdateError
 
 from api.base.utils import get_user_auth, get_object_or_error, absolute_reverse
-from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
-                                  TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly,
-                                  HideIfRegistration)
+from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField,
+                                  IDField, TypeField, TargetTypeField, JSONAPIListField, LinksField, RelationshipField,
+                                  DevOnly, HideIfRegistration)
 from api.base.exceptions import InvalidModelValueError
 
 
@@ -264,6 +264,24 @@ class NodeSerializer(JSONAPISerializer):
                 raise exceptions.ValidationError(detail=e.reason)
 
         return node
+
+
+class NodeAddonSettingsSerializer(JSONAPISerializer):
+    """
+    Overrides AddonSettingsSerializer to return node-specific fields
+    """
+    class Meta:
+        type_ = 'node_addons'
+
+    id = ser.CharField(source='_id', read_only=True)
+    enabled = ser.BooleanField(read_only=True)
+    has_auth = ser.BooleanField(source='object.has_auth', read_only=True)
+    complete = ser.BooleanField(source='object.complete', read_only=True)
+    configured = ser.BooleanField(source='object.configured', read_only=True)
+    node = ser.CharField(source='object.owner._id', read_only=True)
+
+    def to_representation(self, data, envelope='data'):
+        return super(NodeAddonSettingsSerializer, self).to_representation(data, envelope=envelope)
 
 
 class NodeDetailSerializer(NodeSerializer):

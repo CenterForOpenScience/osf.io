@@ -7,7 +7,8 @@ from api.base.serializers import AllowMissing, JSONAPIRelationshipSerializer, Hi
 from website.models import User
 
 from api.base.serializers import (
-    JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField
+    JSONAPISerializer, AddonAccountSerializer,
+    LinksField, RelationshipField, DevOnly, IDField, TypeField
 )
 from api.base.utils import absolute_reverse
 
@@ -112,6 +113,30 @@ class UserSerializer(JSONAPISerializer):
             raise InvalidModelValueError(detail=e.message)
         return instance
 
+
+class UserAddonSettingsSerializer(JSONAPISerializer):
+    """
+    Overrides UserSerializer to make id required.
+    """
+    id = ser.CharField(source='config.short_name', read_only=True)
+    has_auth = ser.BooleanField(read_only=True)
+
+    links = LinksField({
+        'accounts': 'account_links'
+    })
+
+    class Meta:
+        type_ = 'user_addons'
+
+    def account_links(self, obj):
+        l = {}
+        for account in obj.external_accounts:
+            l[account._id] = {
+                'account': absolute_reverse('users:user-external_account-detail', kwargs={'user_id': obj.owner._id, 'provider': obj.config.short_name, 'account_id': obj._id}),
+                'nodes_connected': [n.absolute_api_v2_url for n in obj.get_attached_nodes(account)]
+            }
+
+        return l
 
 class UserDetailSerializer(UserSerializer):
     """
