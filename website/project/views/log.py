@@ -53,11 +53,10 @@ def _get_logs(node, count, auth, page=0):
     start = page * count
     stop = start + count
 
-    # TODO: @caseyrollins -- fix this complicated list comprehension?
     logs = [
         serialize_log(log, auth=auth, anonymous=has_anonymous_link(node, auth))
         for log in logs_set[start:stop]
-        if log.node == node or log.node.can_view(auth) or (not log.node.can_view(auth) and log.action in related_log_actions)
+        if log.node.can_view(auth) or log.action in related_log_actions
     ]
 
     return logs, total, pages

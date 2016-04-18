@@ -165,7 +165,7 @@ def serialize_log(node_log, auth=None, anonymous=False):
         'action': node_log.action,
         'params': sanitize_params(auth, node_log),
         'date': utils.iso8601format(node_log.date),
-        'node': sanitize_node(auth, node_log.original_node) if node_log.original_node else None,
+        'node': sanitize_node(auth, node_log),
         'anonymous': anonymous
     }
 
@@ -215,16 +215,16 @@ def sanitize_node(auth, log):
     potential_unsafe_actions = [NodeLog.PROJECT_CREATED, NodeLog.NODE_REMOVED,
                                 NodeLog.FILE_MOVED, NodeLog.FILE_COPIED]
     if log.action not in potential_unsafe_actions:
-        return log.node.serialize(auth) if log.node else None
+        return log.original_node.serialize(auth) if log.original_node else None
     else:
-        node = Node.load(log.node._id)
+        node = Node.load(log.original_node._id)
         if not node.can_view(auth):
             safe_node = {
                 'private': True
             }
             return safe_node
         else:
-            return log.node.serialize(auth) if log.node else None
+            return log.original_node.serialize(auth) if log.original_node else None
 
 
 def reproducibility():
