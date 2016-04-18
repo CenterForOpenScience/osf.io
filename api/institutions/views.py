@@ -12,6 +12,7 @@ from website.models import Node, User, Institution
 from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin
 from api.base.views import JSONAPIBaseView
+from api.base.serializers import JSONAPISerializer
 from api.base.utils import get_object_or_error
 from api.nodes.serializers import NodeSerializer
 from api.users.serializers import UserSerializer
@@ -142,6 +143,8 @@ class InstitutionNodeList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
     view_category = 'institutions'
     view_name = 'institution-nodes'
 
+    ordering = ('-date_modified', )
+
     base_node_query = (
         Q('is_deleted', 'ne', True) &
         Q('is_folder', 'ne', True) &
@@ -200,6 +203,8 @@ class InstitutionAuth(JSONAPIBaseView, generics.CreateAPIView):
         drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope,
     )
+
+    serializer_class = JSONAPISerializer
 
     required_read_scopes = [CoreScopes.NULL]
     required_write_scopes = [CoreScopes.NULL]

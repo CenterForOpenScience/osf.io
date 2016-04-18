@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 from django.contrib import messages
 from django.contrib.auth import views
 from django.contrib.auth.decorators import login_required
@@ -60,12 +62,16 @@ class GuidFormView(FormView):
 
 
 class GuidView(DetailView):
-    def __init__(self):
-        self.guid = None
-        super(GuidView, self).__init__()
-
     def get(self, request, *args, **kwargs):
         try:
             return super(GuidView, self).get(request, *args, **kwargs)
         except AttributeError:
-            return page_not_found(request)
+            return page_not_found(
+                request,
+                AttributeError(
+                    '{} with id "{}" not found.'.format(
+                        self.context_object_name.title(),
+                        kwargs.get('spam_id')
+                    )
+                )
+            )

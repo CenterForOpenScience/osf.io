@@ -3,27 +3,22 @@ from framework.routing import Rule, json_renderer
 from website.addons.s3 import views
 
 
-settings_routes = {
+api_routes = {
     'rules': [
         Rule(
             [
-                '/project/<pid>/s3/newbucket/',
-                '/project/<pid>/node/<nid>/s3/newbucket/',
+                '/settings/s3/accounts/',
             ],
             'post',
-            views.crud.create_bucket,
-            json_renderer
+            views.s3_add_user_account,
+            json_renderer,
         ),
         Rule(
-            '/settings/s3/',
-            'post',
-            views.config.s3_post_user_settings,
-            json_renderer
-        ),
-        Rule(
-            '/settings/s3/',
-            'delete',
-            views.config.s3_delete_user_settings,
+            [
+                '/settings/s3/accounts/',
+            ],
+            'get',
+            views.s3_account_list,
             json_renderer,
         ),
         Rule(
@@ -31,8 +26,8 @@ settings_routes = {
                 '/project/<pid>/s3/settings/',
                 '/project/<pid>/node/<nid>/s3/settings/',
             ],
-            'post',
-            views.config.s3_post_node_settings,
+            'put',
+            views.s3_set_config,
             json_renderer,
         ),
         Rule(
@@ -41,36 +36,25 @@ settings_routes = {
                 '/project/<pid>/node/<nid>/s3/settings/',
             ],
             'get',
-            views.config.s3_get_node_settings,
+            views.s3_get_config,
             json_renderer,
         ),
         Rule(
             [
-                '/project/<pid>/s3/settings/',
-                '/project/<pid>/node/<nid>/s3/settings/',
-                '/project/<pid>/s3/config/',
-                '/project/<pid>/node/<nid>/s3/config/',
+                '/project/<pid>/s3/user-auth/',
+                '/project/<pid>/node/<nid>/s3/user-auth/',
+            ],
+            'put',
+            views.s3_import_auth,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/s3/user-auth/',
+                '/project/<pid>/node/<nid>/s3/user-auth/',
             ],
             'delete',
-            views.config.s3_delete_node_settings,
-            json_renderer,
-        ),
-        Rule(
-            [
-                '/project/<pid>/s3/import-auth/',
-                '/project/<pid>/node/<nid>/s3/import-auth/',
-            ],
-            'post',
-            views.config.s3_node_import_auth,
-            json_renderer,
-        ),
-        Rule(
-            [
-                '/project/<pid>/s3/authorize/',
-                '/project/<pid>/node/<nid>/s3/authorize/',
-            ],
-            'post',
-            views.config.s3_authorize_node,
+            views.s3_deauthorize_node,
             json_renderer,
         ),
         Rule(
@@ -79,8 +63,17 @@ settings_routes = {
                 '/project/<pid>/node/<nid>/s3/buckets/',
             ],
             'get',
-            views.config.s3_get_bucket_list,
+            views.s3_folder_list,
             json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/s3/newbucket/',
+                '/project/<pid>/node/<nid>/s3/newbucket/',
+            ],
+            'post',
+            views.create_bucket,
+            json_renderer
         ),
     ],
     'prefix': '/api/v1',

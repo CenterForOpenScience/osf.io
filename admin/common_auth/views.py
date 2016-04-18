@@ -1,32 +1,53 @@
+from __future__ import absolute_import
+
+from django.views.generic.edit import FormView
 from django.contrib import messages
-from django.contrib.auth import authenticate, logout as logout_user, login as auth_login
 from django.contrib.auth.forms import PasswordResetForm
-from django.shortcuts import render, redirect
+from django.contrib.auth import login, REDIRECT_FIELD_NAME, authenticate, logout
+from django.shortcuts import redirect, resolve_url, render
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import never_cache
+from django.views.decorators.csrf import csrf_protect
+from django.conf import settings
 
-from forms import LoginForm, CustomUserRegistrationForm
-from .models import MyUser
+from admin.common_auth.forms import LoginForm, CustomUserRegistrationForm
+from admin.common_auth.models import MyUser
 
 
-def login(request):
-    if request.user.is_authenticated():
-        return redirect('home')
-    form = LoginForm(request.POST or None)
-    if request.POST and form.is_valid():
-        email = request.POST['email']
-        password = request.POST['password']
-        user = authenticate(username=email, password=password)
+class LoginView(FormView):
+    form_class = LoginForm
+    redirect_field_name = REDIRECT_FIELD_NAME
+    template_name = 'login.html'
+
+    @method_decorator(csrf_protect)
+    @method_decorator(never_cache)
+    def dispatch(self, request, *args, **kwargs):
+        return super(LoginView, self).dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        user = authenticate(
+            username=form.cleaned_data.get('email').strip(),
+            password=form.cleaned_data.get('password').strip()
+        )
         if user is not None:
-            auth_login(request, user)
-            return redirect('home')
+            login(self.request, user)
         else:
-            messages.error(request, 'Email and/or Password incorrect. Please try again.')
+            messages.error(
+                self.request,
+                'Email and/or Password incorrect. Please try again.'
+            )
             return redirect('auth:login')
-    context = {'form': form}
-    return render(request, 'login.html', context)
+        return super(LoginView, self).form_valid(form)
+
+    def get_success_url(self):
+        redirect_to = self.request.GET.get(self.redirect_field_name, '')
+        if not redirect_to:
+            redirect_to = resolve_url(settings.LOGIN_REDIRECT_URL)
+        return redirect_to
 
 
-def logout(request):
-    logout_user(request)
+def logout_user(request):
+    logout(request)
     return redirect('auth:login')
 
 

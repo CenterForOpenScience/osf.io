@@ -1,7 +1,7 @@
 /**
  * Parses text to return to the log items
  * Created by cos-caner on 12/4/15.
- * Remember to embed nodes, user, linked_node and template_node in api call i.e. var url = $osf.apiV2Url('nodes/' + nodeId + '/logs/', { query : { 'embed' : ['nodes', 'user']}});
+ * Remember to embed original_node, user, linked_node and template_node in api call i.e. var url = $osf.apiV2Url('nodes/' + nodeId + '/logs/', { query : { 'embed' : ['original_node', 'user']}});
  */
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
 var logActions = require('json!js/_allLogTexts.json');
@@ -76,10 +76,8 @@ var returnTextParams = function (param, text, logObject, view_url) {
 };
 
 var LogText = {
-    controller: function(logObject){
-        var self = this;
-
-        self.userInfoReturned = function(userObject){
+    view : function(ctrl, logObject) {
+        var userInfoReturned = function(userObject){
             if (userObject){
                 if (userObject.data){
                     return true;
@@ -90,13 +88,12 @@ var LogText = {
             }
             return false;
         };
-
-        self.logText = function() {
+        var logText = function() {
             var text = logActions[logObject.attributes.action];
             if (text) {
                 if (text.indexOf('${user}') !== -1) {
                     var userObject = logObject.embeds.user;
-                    if (self.userInfoReturned(userObject)) {
+                    if (userInfoReturned(userObject)) {
                         return text;
                     }
                     else {
@@ -108,13 +105,11 @@ var LogText = {
             }
         return null;
         };
-    },
-    view : function(ctrl, logObject) {
         var message = '';
-        var text = ctrl.logText();
+        var text = logText();
         if(text){
             var list = text.split(/(\${.*?})/);
-            return m('span.osf-log-item',[
+            return m('span.osf-log-item', [
                 list.map(function(piece){
                     if (piece === '') {
                         return m('span');
@@ -163,20 +158,20 @@ var LogPieces = {
     // Node involved
     node: {
         view: function (ctrl, logObject) {
-            var nodeObject = logObject.embeds.nodes;
+            var nodeObject = logObject.embeds.original_node;
 
             if (logObject.attributes.action === 'node_removed') {
                 if (logObject.attributes.params.params_node) {
                 return m('span', logObject.attributes.params.params_node.title);
             }}
-            else if(paramIsReturned(nodeObject, logObject) && nodeObject.data[0]){
-                if (nodeObject.data[0].links && nodeObject.data[0].attributes) {
-                    return m('a', {href: nodeObject.data[0].links.html, onclick: function() {
+            else if(paramIsReturned(nodeObject, logObject) && nodeObject.data){
+                if (nodeObject.data.links && nodeObject.data.attributes) {
+                    return m('a', {href: nodeObject.data.links.html, onclick: function() {
                         $osf.trackClick(logObject.trackingCategory, logObject.trackingAction, 'navigate-to-project-from-logs');
-                    }}, nodeObject.data[0].attributes.title);
+                    }}, nodeObject.data.attributes.title);
                 }
-                else if (nodeObject.data[0].attributes) {
-                    return m('span', nodeObject.data[0].attributes.title);
+                else if (nodeObject.data.attributes) {
+                    return m('span', nodeObject.data.attributes.title);
                 }
             } else {
                 return m('span', 'a project');
@@ -309,13 +304,19 @@ var LogPieces = {
         }
     },
         //
+    kind: {
+        view: function (ctrl, logObject) {
+            return returnTextParams('kind', '', logObject);
+        }
+    },
+        //
     path: {
         controller: function(logObject){
             var self = this;
             self.returnLinkForPath = function() {
                 if (logObject) {
                     var action = logObject.attributes.action;
-                    var acceptableLinkedItems = ['osf_storage_file_added', 'osf_storage_file_updated'];
+                    var acceptableLinkedItems = ['osf_storage_file_added', 'osf_storage_file_updated', 'checked_out', 'checked_in'];
                     if (acceptableLinkedItems.indexOf(action) !== -1) {
                         return logObject.attributes.params.view_url;
                     }

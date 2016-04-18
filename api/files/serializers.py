@@ -12,7 +12,7 @@ from website.project.model import Comment
 from api.base.utils import absolute_reverse
 from api.base.serializers import NodeFileHyperLinkField, WaterbutlerLink, format_relationship_links, FileCommentRelationshipField
 from api.base.serializers import Link, JSONAPISerializer, LinksField, IDField, TypeField
-
+from website.util import api_v2_url
 
 class CheckoutField(ser.HyperlinkedRelatedField):
 
@@ -189,7 +189,11 @@ class FileSerializer(JSONAPISerializer):
     def update(self, instance, validated_data):
         assert isinstance(instance, FileNode), 'Instance must be a FileNode'
         for attr, value in validated_data.items():
-            setattr(instance, attr, value)
+            if attr == 'checkout':
+                user = self.context['request'].user
+                instance.check_in_or_out(user, value)
+            else:
+                setattr(instance, attr, value)
         instance.save()
         return instance
 
@@ -202,6 +206,9 @@ class FileSerializer(JSONAPISerializer):
             if guid:
                 return guid._id
         return None
+
+    def get_absolute_url(self, obj):
+        return api_v2_url('files/{}/'.format(obj._id))
 
 
 class FileDetailSerializer(FileSerializer):
@@ -241,3 +248,6 @@ class FileVersionSerializer(JSONAPISerializer):
             path=(fobj.node._id, 'files', fobj.provider, fobj.path.lstrip('/')),
             query={fobj.version_identifier: obj.identifier}  # TODO this can probably just be changed to revision or version
         ).url
+
+    def get_absolute_url(self, obj):
+        return self.self_url(obj)

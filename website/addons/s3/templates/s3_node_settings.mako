@@ -1,4 +1,8 @@
  <div id="s3Scope" class="scripted">
+
+    <!-- Add credentials modal -->
+    <%include file="s3_credentials_modal.mako"/>
+
     <h4 class="addon-title">
         <img class="addon-icon" src="${addon_icon_url}"></img>
         Amazon S3
@@ -16,6 +20,11 @@
             <span data-bind="if: showImport">
                 <a data-bind="click: importAuth" class="text-primary pull-right addon-auth">
                   Import Account from Profile
+                </a>
+            </span>
+            <span data-bind="if: showCreateCredentials">
+                <a href="#s3InputCredentials" data-toggle="modal" class="pull-right text-primary addon-auth">
+                    Connect  Account
                 </a>
             </span>
         </small>
@@ -64,22 +73,8 @@
       </div>
       </div>
     </div>
-    <div data-bind="if: showCreateCredentials">
-      <div class="form-group">
-        <label for="s3Addon">Access Key</label>
-        <input data-bind="value: accessKey" class="form-control" id="access_key" name="access_key" />
-      </div>
-      <div class="form-group">
-        <label for="s3Addon">Secret Key</label>
-        <input data-bind="value: secretKey" type="password" class="form-control" id="secret_key" name="secret_key" />
-      </div>
-      <button data-bind="click: createCredentials,
-                         attr.disabled: creatingCredentials" class="btn btn-success addon-settings-submit">
-        Save
-      </button>
-    </div>
     <!-- Flashed Messages -->
     <div class="help-block">
-        <p data-bind="html: message, attr.class: messageClass"></p>
+        <p data-bind="html: node_message, attr.class: messageClass"></p>
     </div>
 </div>

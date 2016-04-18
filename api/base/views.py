@@ -38,8 +38,9 @@ class JSONAPIBaseView(generics.GenericAPIView):
             field = field.field
         def partial(item):
             # resolve must be implemented on the field
-            v, view_args, view_kwargs = field.resolve(item)
-
+            v, view_args, view_kwargs = field.resolve(item, field_name)
+            if not v:
+                return None
             if isinstance(self.request._request, EmbeddedRequest):
                 request = self.request._request
             else:
@@ -71,11 +72,11 @@ class JSONAPIBaseView(generics.GenericAPIView):
             ser = CACHE[self.request._request][view.get_serializer_class()]
 
             try:
+                ser._context = view.get_serializer_context()
+
                 if not isinstance(view, ListModelMixin):
-                    ser._context = view.get_serializer_context()
                     ret = ser.to_representation(view.get_object())
                 else:
-                    ser._context = view.get_serializer_context()
                     queryset = view.filter_queryset(view.get_queryset())
                     page = view.paginate_queryset(queryset)
 
@@ -129,7 +130,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
         context.update({
             'enable_esi': (
                 is_truthy(self.request.query_params.get('esi', django_settings.ENABLE_ESI)) and
-                self.request.accepted_media_type in django_settings.ESI_MEDIA_TYPES
+                self.request.accepted_renderer.media_type in django_settings.ESI_MEDIA_TYPES
             ),
             'embed': embeds_partials,
             'envelope': self.request.query_params.get('envelope', 'data'),

@@ -291,6 +291,8 @@ class User(GuidStoredObject, AddonModelMixin):
     # verification key used for resetting password
     verification_key = fields.StringField()
 
+    forgot_password_last_post = fields.DateTimeField()
+
     # confirmed emails
     #   emails should be stripped of whitespace and lower-cased before appending
     # TODO: Add validator to ensure an email address only exists once across
@@ -419,11 +421,6 @@ class User(GuidStoredObject, AddonModelMixin):
     @property
     def pk(self):
         return self._id
-
-    @property
-    def contributed(self):
-        from website.project.model import Node
-        return Node.find(Q('contributors', 'eq', self._id))
 
     @property
     def email(self):
@@ -1073,20 +1070,27 @@ class User(GuidStoredObject, AddonModelMixin):
         return '/{}/'.format(self._id)
 
     @property
+    def contributed(self):
+        from website.project.model import Node
+        return Node.find(Q('contributors', 'eq', self._id))
+
+    @property
     def contributor_to(self):
-        return (
-            node for node in self.contributed
-            if not (
-                node.is_deleted
-                or node.is_bookmark_collection
-            )
+        from website.project.model import Node
+        return Node.find(
+            Q('contributors', 'eq', self._id) &
+            Q('is_deleted', 'ne', True) &
+            Q('is_collection', 'ne', True)
         )
 
     @property
     def visible_contributor_to(self):
-        return (
-            node for node in self.contributor_to
-            if self._id in node.visible_contributor_ids
+        from website.project.model import Node
+        return Node.find(
+            Q('contributors', 'eq', self._id) &
+            Q('is_deleted', 'ne', True) &
+            Q('is_collection', 'ne', True) &
+            Q('visible_contributor_ids', 'eq', self._id)
         )
 
     def get_summary(self, formatter='long'):
@@ -1197,9 +1201,9 @@ class User(GuidStoredObject, AddonModelMixin):
             # The first 4 bytes of Mongo's ObjectId encodes time
             # This prevents having to load each Log Object and access their
             # date fields
-            node_log_ids = [log_id for log_id in config.node.logs._to_primary_keys()
-                                   if bson.ObjectId(log_id).generation_time > since_date and
-                                   log_id not in log_ids]
+            node_log_ids = [log.pk for log in config.node.logs
+                                   if bson.ObjectId(log.pk).generation_time > since_date and
+                                   log.pk not in log_ids]
             # Log ids in reverse chronological order
             log_ids = _merge_into_reversed(log_ids, node_log_ids)
         return (l_id for l_id in log_ids)
@@ -1414,7 +1418,7 @@ class User(GuidStoredObject, AddonModelMixin):
         return AffiliatedInstitutionsList([Institution(inst) for inst in self._affiliated_institutions], obj=self, private_target='_affiliated_institutions')
 
     def get_node_comment_timestamps(self, target_id):
-        """ Returns the timestamp for when comments were last viewed on a node or file.
+        """ Returns the timestamp for when comments were last viewed on a node, file or wiki.
         """
         default_timestamp = dt.datetime(1970, 1, 1, 12, 0, 0)
         return self.comments_viewed_timestamp.get(target_id, default_timestamp)
