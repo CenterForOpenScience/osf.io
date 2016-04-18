@@ -182,7 +182,13 @@ var Question = function(questionSchema, data) {
     self.properties = questionSchema.properties || [];
     self.match = questionSchema.match || '';
 
-    self.extra = ko.observable(self.data.extra || {});
+    self.extra = ko.observableArray(self.data.extra || []);
+
+    self.formattedFileList = ko.pureComputed(function() {
+        return self.extra().map(function(elem) {
+            return elem.selectedFileName;
+        }).join(', ');
+    });
     self.showExample = ko.observable(false);
 
     self.comments = ko.observableArray(
@@ -275,7 +281,7 @@ var Question = function(questionSchema, data) {
                 var ret = true;
                 $.each(self.properties, function(_, subQuestion) {
                     var value = subQuestion.value();
-                    if (subQuestion.required && !(Boolean(value === true || (value && value.length)))) {
+                    if (!subQuestion.isComplete()) {
                         ret = false;
                         return;
                     }
@@ -320,7 +326,19 @@ Question.prototype.toggleExample = function() {
 };
 
 Question.prototype.validationInfo = function() {
-    return ko.validation.group(this, {deep: true})();
+    var errors = ko.validation.group(this, {deep: true})();
+
+    var errorSet = ko.utils.arrayGetDistinctValues(errors);
+    var finalErrorSet = [];
+    $.each(errorSet, function(_, error) {
+        if (errors.indexOf(error) !== errors.lastIndexOf(error)) {
+            finalErrorSet.push(VALIDATOR_LOOKUP[error].messagePlural);
+        }
+        else {
+            finalErrorSet.push(error);
+        }
+    });
+    return ko.utils.arrayGetDistinctValues(finalErrorSet);
 };
 
 /**
@@ -370,17 +388,7 @@ var Page = function(schemaPage, schemaData) {
             return Boolean(errors);
         });
 
-        var errorSet = ko.utils.arrayGetDistinctValues(errors);
-        var finalErrorSet = [];
-        $.each(errorSet, function(_, error) {
-            if (errors.indexOf(error) !== errors.lastIndexOf(error)) {
-                finalErrorSet.push(VALIDATOR_LOOKUP[error].messagePlural);
-            }
-            else {
-                finalErrorSet.push(error);
-            }
-        });
-        return finalErrorSet;
+        return ko.utils.arrayGetDistinctValues(errors);
     }, {deferEvaluation: true});
 
     self.hasValidationInfo = ko.computed(function() {
@@ -697,6 +705,11 @@ Draft.prototype.register = function(url, data) {
                     if (self.urls.registrations) {
                         window.location.assign(self.urls.registrations);
                     }
+                },
+                buttons: {
+                    ok: {
+                        label: 'Back to project',
+                    }
                 }
             });
         })
@@ -848,33 +861,38 @@ var RegistrationEditor = function(urls, editorId, preview) {
 
     preview = preview || false;
     if (preview) {
+	var unwrap = function(question) {
+	    var $elem = $('<span>');
+	    if (question.type === 'object') {
+                $elem.append(
+		    $('<p class="breaklines"><small><em>' + question.description + '</em></small></p>'),
+                    $.map(question.properties, function(subQuestion) {
+                        subQuestion = self.context(subQuestion, self, true);
+			return unwrap(subQuestion);
+		    })
+                );
+            } else {
+                var value;
+                if (self.extensions[question.type] ) {
+                    value = question.preview();
+                } else {
+                    value = $osf.htmlEscape(question.value() || '');
+                }
+		$elem.append(
+		    $('<span class="col-md-12">').append(
+			$('<p class="breaklines"><small><em>' + question.description + '</em></small></p>'),
+			$('<span class="well col-md-12">' + value + '</span>')
+		    )
+		);
+            }
+	    return $elem;
+	};
+
         ko.bindingHandlers.previewQuestion = {
             init: function(elem, valueAccessor) {
                 var question = valueAccessor();
                 var $elem = $(elem);
-
-                if (question.type === 'object') {
-                    $elem.append(
-                        $.map(question.properties, function(subQuestion) {
-                            subQuestion = self.context(subQuestion, self, true);
-                            var value;
-                            if (self.extensions[subQuestion.type] ) {
-                                value = subQuestion.preview();
-                            } else {
-                                value = $osf.htmlEscape(subQuestion.value() || '');
-                            }
-                            return $('<p>').append(value);
-                        })
-                    );
-                } else {
-                    var value;
-                    if (self.extensions[question.type] ) {
-                        value = question.preview();
-                    } else {
-                        value = $osf.htmlEscape(question.value() || '');
-                    }
-                    $elem.append(value);
-                }
+		$elem.append(unwrap(question));
             }
         };
     }
@@ -908,7 +926,7 @@ RegistrationEditor.prototype.init = function(draft) {
             return self.draft().updated;
         }
         else {
-            return 'never';            
+            return 'never';
         }
     });
 
