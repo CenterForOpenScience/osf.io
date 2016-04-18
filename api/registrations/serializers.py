@@ -6,12 +6,29 @@ from api.base.utils import absolute_reverse
 from api.files.serializers import FileSerializer
 from api.nodes.serializers import NodeSerializer
 from api.nodes.serializers import NodeLinksSerializer
-from api.nodes.serializers import NodeContributorsSerializer
+from api.nodes.serializers import NodeContributorsSerializer, NodeTagField
 from api.base.serializers import (IDField, RelationshipField, LinksField, HideIfRetraction,
-                                  FileCommentRelationshipField, NodeFileHyperLinkField, HideIfRegistration)
+                                  FileCommentRelationshipField, NodeFileHyperLinkField, HideIfRegistration, JSONAPIListField)
 
 
 class RegistrationSerializer(NodeSerializer):
+
+    category_choices = NodeSerializer.category_choices
+    category_choices_string = NodeSerializer.category_choices_string
+    category = HideIfRetraction(ser.ChoiceField(choices=category_choices, help_text="Choices: " + category_choices_string))
+
+    date_modified = HideIfRetraction(ser.DateTimeField(read_only=True))
+    fork = HideIfRetraction(ser.BooleanField(read_only=True, source='is_fork'))
+    collection = HideIfRetraction(ser.BooleanField(read_only=True, source='is_collection'))
+    tags = HideIfRetraction(JSONAPIListField(child=NodeTagField(), required=False))
+    public = HideIfRetraction(ser.BooleanField(source='is_public', required=False,
+                              help_text='Nodes that are made public will give read-only access '
+                                        'to everyone. Private nodes require explicit read '
+                                        'permission. Write and admin access are the same for '
+                                        'public and private nodes. Administrators on a parent '
+                                        'node have implicit read permissions for all child nodes'))
+    current_user_permissions = HideIfRetraction(ser.SerializerMethodField(help_text='List of strings representing the permissions '
+                                                                   'for the current user on this node.'))
 
     pending_embargo_approval = HideIfRetraction(ser.BooleanField(read_only=True, source='is_pending_embargo',
         help_text='The associated Embargo is awaiting approval by project admins.'))
@@ -133,6 +150,9 @@ class RegistrationSerializer(NodeSerializer):
                 return None
             return schema.name
         return None
+
+    def get_current_user_permissions(self, obj):
+        return NodeSerializer.get_current_user_permissions(self, obj)
 
     def update(self, *args, **kwargs):
         raise exceptions.APIException('Registrations cannot be modified.')
