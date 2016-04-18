@@ -826,13 +826,10 @@ ListViewModel.prototype = Object.create(BaseViewModel.prototype);
 ListViewModel.prototype.addContent = function() {
     if (!this.institutionObjectsEmpty() && this.isValid()) {
         this.contents.push(new this.ContentModel(this));
+        this.showMessages(false);
     }
     else {
-        this.changeMessage(
-            'Institution field is required.',
-            'text-danger',
-            5000
-        );
+        this.showMessages(true);
     }
 };
 
