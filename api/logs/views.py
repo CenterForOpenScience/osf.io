@@ -46,6 +46,7 @@ class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView, LogMixin):
     * 'pointer_forked': A Pointer is forked
     * 'pointer_removed': A Pointer is removed
     * 'node_removed': A component is deleted
+    * 'node_forked': A Node is forked (_deprecated_)
     ---
     * 'made_public': A Node is made public
     * 'made_private': A Node is made private
@@ -96,7 +97,6 @@ class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView, LogMixin):
     * 'registration_cancelled': A proposed Registration is cancelled
     ---
     * 'node_created': A Node is created (_deprecated_)
-    * 'node_forked': A Node is forked (_deprecated_)
 
    ##Log Attributes
 
