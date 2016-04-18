@@ -6,7 +6,7 @@ from nose.tools import *  # noqa; PEP8 asserts
 
 from tests.factories import (
     ProjectFactory, NodeFactory, RegistrationFactory,
-    UserFactory, AuthUserFactory, DashboardFactory,
+    UserFactory, AuthUserFactory, CollectionFactory,
 )
 from tests.base import OsfTestCase
 
@@ -57,9 +57,9 @@ class TestNodeCreationMailingConfig(OsfTestCase):
         reg = RegistrationFactory()
         assert_false(reg.mailing_enabled)
 
-    def test_dashboard_disables_mailing_list(self):
-        dash = DashboardFactory()
-        assert_false(dash.mailing_enabled)
+    def test_collection_disables_mailing_list(self):
+        coll = CollectionFactory()
+        assert_false(coll.mailing_enabled)
 
 
 class TestMailingListViews(OsfTestCase):
@@ -162,7 +162,7 @@ class TestEmailRejections(OsfTestCase):
         assert mock_send_list.call_count == 0    
 
     @mock.patch('website.mails.send_mail')
-    @mock.patch('website.project.mailing_list.send_acception')
+    @mock.patch('website.mailing_list.utils.send_acception')
     def test_auto_reply(self, mock_send_list, mock_send_mail):
         user2 = AuthUserFactory()
         self.project.add_contributor(user2, save=True)
