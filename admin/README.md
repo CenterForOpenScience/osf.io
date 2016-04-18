@@ -29,3 +29,15 @@ If you need to do prereg work then you need to add a group and add an OSF id to 
 
 You should now be able to see the **OSF Prereg** link on the left when you navigate back to `localhost:8001/admin`
 
+
+#### Approving and rejecting preregistrations
+In order to approve or reject preregistrations, your user will need special permission. To add this, run the following in `inv shell`:
+
+```
+from website.settings import PREREG_ADMIN_TAG
+user_id = 'id_you_added_to_osf_id_field'
+user = models.User.load(user_id)
+user.system_tags.append(PREREG_ADMIN_TAG)
+user.save()
+commit()
+```
