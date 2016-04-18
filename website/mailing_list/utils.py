@@ -42,8 +42,9 @@ def address(node_id):
 def find_email(long_email):
     # allow for both "{email}" syntax and "{name} <{email}>" syntax
     if '<' in long_email:
-        email = ANGLE_BRACKETS_REGEX.search(long_email).groups[0]
-        return email
+        email_match = ANGLE_BRACKETS_REGEX.search(long_email)
+        if email_match:
+            return email_match.groups()[0]
     elif '@' in long_email:
         return long_email
     return None
