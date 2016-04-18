@@ -189,3 +189,6 @@ ENABLE_VARNISH = osf_settings.ENABLE_VARNISH
 ENABLE_ESI = osf_settings.ENABLE_ESI
 VARNISH_SERVERS = osf_settings.VARNISH_SERVERS
 ESI_MEDIA_TYPES = osf_settings.ESI_MEDIA_TYPES
+
+ADDONS_UNMANAGEABLE = ['forward', 'osfstorage', 'twofactor', 'wiki']
+ADDONS_NON_OAUTH = ADDONS_UNMANAGEABLE + ['figshare']
