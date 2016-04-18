@@ -16,12 +16,14 @@
                     <div class="col-sm-3 col-sm-offset-2"><img class="img-circle" height="110" width="110" src=${ logo_path }></div>
                     <div class="col-sm-3">
                         <h2>${ name }</h2>
-                        % if description:
-                            <h4><small class="hidden-sm">${description}</small></h4>
-                        % endif
                     </div>
                 % endif
             </div>
+            % if description:
+                <div class="row" style="text-align: center">
+                    <h4>${description | n}</h4>
+                </div>
+            % endif
         </div>
       <div id="fileBrowser" class="dashboard clearfix" >
         <div class="ball-scale text-center m-v-xl"><div></div></div>
