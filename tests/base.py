@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 '''Base TestCase class for OSF unittests. Uses a temporary MongoDB database.'''
+import abc
 import os
 import re
 import shutil
@@ -27,6 +28,7 @@ from api.base.wsgi import application as api_django_app
 from admin.base.wsgi import application as admin_django_app
 from framework.mongo import set_up_storage
 from framework.auth import User
+from framework.auth.core import Auth
 from framework.sessions.model import Session
 from framework.guid.model import Guid
 from framework.mongo import client as client_proxy
@@ -335,6 +337,88 @@ class ApiTestCase(DbTestCase, ApiAppTestCase, UploadTestCase, MockRequestTestCas
     def setUp(self):
         super(ApiTestCase, self).setUp()
         settings.USE_EMAIL = False
+
+class ApiAddonTestCase(ApiTestCase):
+    """Base `TestCase` for tests that require interaction with addons.
+
+    """
+
+    @abc.abstractproperty
+    def short_name(self):
+        pass
+
+    @abc.abstractproperty
+    def AccountFactory(self):
+        pass
+
+    @abc.abstractproperty
+    def addon_type(self):
+        pass
+
+    @abc.abstractmethod
+    def _apply_auth_configuration(self):
+        pass
+
+    def _settings_kwargs(self, node, user_settings):
+        return {
+            'user_settings': self.user_settings,
+            'folder_id': '1234567890',
+            'owner': self.node
+        }
+
+    def setUp(self):
+        super(ApiAddonTestCase, self).setUp()
+        from tests.factories import (
+            ProjectFactory,
+            AuthUserFactory,
+        )
+        from website.addons.base import (
+            AddonOAuthNodeSettingsBase, AddonOAuthUserSettingsBase
+        )
+        # TODO(mfraezz:) handle type-specific setUp for each type individually
+        assert self.addon_type in ('OAUTH', 'NON_OAUTH', 'UNMANAGEABLE', 'INVALID')  
+        self.account = None
+        self.user = AuthUserFactory()
+        self.auth = Auth(self.user)
+        self.node = ProjectFactory(creator=self.user)
+
+        if not self.addon_type == 'UNMANAGEABLE':
+            if self.addon_type == 'OAUTH':
+                self.account = self.AccountFactory()
+                self.user.external_accounts.append(self.account)
+                self.user.save()
+
+            self.user_settings = self.user.get_or_add_addon(self.short_name)
+
+            if self.addon_type == 'OAUTH':
+                self.user_settings.grant_oauth_access(
+                    node=self.node,
+                    external_account=self.account,
+                    metadata={'folder': '1234567890'}
+                )
+
+            self.node.add_addon(self.short_name, auth=self.auth)
+            self.node_settings = self.node.get_addon(self.short_name)
+
+            self._apply_auth_configuration()
+
+        if self.addon_type == 'OAUTH':
+            assert isinstance(self.node_settings, AddonOAuthNodeSettingsBase)
+            assert isinstance(self.user_settings, AddonOAuthUserSettingsBase)
+        elif self.addon_type == 'NON_OAUTH':
+            assert not isinstance(self.node_settings, AddonOAuthNodeSettingsBase)
+            assert not isinstance(self.user_settings, AddonOAuthUserSettingsBase)
+            assert isinstance(self.node_settings, AddonNodeSettingsBase)
+            assert isinstance(self.user_settings, AddonUserSettingsBase)
+
+    def tearDown(self):
+        super(ApiAddonTestCase, self).tearDown()
+        self.user.remove()
+        self.node.remove()
+        self.node_settings.remove()
+        self.user_settings.remove()
+        if self.account:
+            self.account.remove()
 
 
 class AdminTestCase(DbTestCase, AdminAppTestCase, UploadTestCase, MockRequestTestCase):
