@@ -16,6 +16,7 @@ class MailingListEventLog(StoredObject):
     sending_email = fields.StringField(index=True)
     sending_user = fields.ForeignField('user', index=True)
     destination_node = fields.ForeignField('node', index=True)
+    intended_recipients = fields.ForeignField('user', list=True)
     status = fields.StringField()
 
     # Possible statuses
@@ -23,17 +24,8 @@ class MailingListEventLog(StoredObject):
     NOT_FOUND = 'node_dne'
     DELETED = 'node_deleted'
     FORBIDDEN = 'no_access'
-    DISABLED = 'discussions_disabled'
+    DISABLED = 'mailing_list_disabled'
+    NO_RECIPIENTS = 'no_recipients'
+    BOUNCED = 'bounced'
+    AUTOREPLY = 'auto_reply'
     OK = 'sent'
-
-    @classmethod
-    def create_from_event(cls, content, status, node, email, user):
-        event = cls(
-            content=content,
-            status=status,
-            destination_node=node,
-            sending_email=email,
-            user=user
-        )
-        event.save()
-        return event
