@@ -4,11 +4,8 @@
 
 {% block content %}
 <div class="register-box">
-    <div class="register-logo">
-        <b>OSF</b>Admin
-    </div>
     <div class="register-box-body">
-        <p class="login-box-msg">Register a new account</p>
+        <h4>Add an OSF Admin user</h4>
         <form action="" method="post">
             {% csrf_token %}
 
@@ -55,7 +52,6 @@
                 </div><!-- /.col -->
             </div>
         </form>
-        <a href="{% url 'auth:login' %}" class="text-center">Return to login page</a>
         <div>
           {% if messages %}
             <ul class="login_page_messages">

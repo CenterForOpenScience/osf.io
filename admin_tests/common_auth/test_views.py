@@ -1,10 +1,11 @@
 from django.test import Client, TestCase
+from tests.base import AdminTestCase
 from admin.common_auth.models import MyUser
 from django.core.urlresolvers import reverse
 from admin.common_auth.forms import CustomUserRegistrationForm
 
 
-class UserRegFormTestCase(TestCase):
+class UserRegFormTestCase(AdminTestCase):
     def test_user_reg_form_success(self):
         form_data = {
             'email': 'example@example.com',
@@ -28,7 +29,8 @@ class UserRegFormTestCase(TestCase):
         form = CustomUserRegistrationForm(form_data)
         self.assertFalse(form.is_valid())
 
-class UserRegSaveTestCase(TestCase):
+
+class UserRegSaveTestCase(AdminTestCase):
     def setUp(self):
         self.client = Client()
         user = MyUser.objects.create_user(email='zak@zak.com',
