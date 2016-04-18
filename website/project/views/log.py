@@ -41,6 +41,10 @@ def _get_logs(node, count, auth, page=0):
             boolean: if there are more logs
 
     """
+    related_log_actions = [NodeLog.PROJECT_CREATED, NodeLog.NODE_REMOVED,
+                           NodeLog.FILE_COPIED, NodeLog.FILE_MOVED,
+                           NodeLog.POINTER_CREATED, NodeLog.POINTER_REMOVED]
+
     logs_set = node.get_aggregate_logs_queryset(auth)
     total = logs_set.count()
     pages = math.ceil(total / float(count))
@@ -48,9 +52,11 @@ def _get_logs(node, count, auth, page=0):
 
     start = page * count
     stop = start + count
+
     logs = [
         serialize_log(log, auth=auth, anonymous=has_anonymous_link(node, auth))
         for log in logs_set[start:stop]
+        if log.node.can_view(auth) or log.action in related_log_actions
     ]
 
     return logs, total, pages
