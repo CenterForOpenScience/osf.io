@@ -8,11 +8,14 @@ from framework.auth.oauth_scopes import CoreScopes
 
 from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
+from api.base.exceptions import Conflict
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.parsers import JSONAPIOnetoOneRelationshipParser, JSONAPIOnetoOneRelationshipParserForRegularJSON
 from api.base.pagination import CommentPagination
+from api.base.serializers import AddonAccountSerializer
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
+from api.base.settings import ADDONS_UNMANAGEABLE, ADDONS_NON_OAUTH
 from api.files.serializers import FileSerializer
 from api.comments.serializers import CommentSerializer, CommentCreateSerializer
 from api.comments.permissions import CanCommentOrPublic
@@ -20,6 +23,7 @@ from api.users.views import UserMixin
 
 from api.nodes.serializers import (
     NodeSerializer,
+    NodeAddonSettingsSerializer,
     NodeLinksSerializer,
     NodeDetailSerializer,
     NodeProviderSerializer,
@@ -45,8 +49,9 @@ from api.logs.serializers import NodeLogSerializer
 
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
-from website.models import Node, Pointer, Comment, NodeLog, Institution
+from website.models import Node, Pointer, Comment, NodeLog, Institution, ExternalAccount
 from website.files.models import FileNode
+from website.settings import ADDONS_AVAILABLE_DICT
 from framework.auth.core import User
 from api.base.utils import default_node_list_query, default_node_permission_query
 
@@ -1366,6 +1371,159 @@ class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin
 
         return fobj
 
+
+class NodeAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, NodeMixin):
+    """List of addons connected to this node *Read-only*
+
+    TODO: More Docs
+    """
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        ContributorOrPublic,
+        ExcludeRetractions,
+        base_permissions.TokenHasScope,
+    )
+
+    serializer_class = NodeAddonSettingsSerializer
+    view_category = 'nodes'
+    view_name = 'node-addons'
+
+    def get_default_queryset(self):
+        qs = []
+        for addon in ADDONS_AVAILABLE_DICT.keys():
+            if addon not in ADDONS_UNMANAGEABLE:
+                addon_settings = ADDONS_AVAILABLE_DICT[addon].settings_models.get('node', None)
+                obj = None
+                enabled = False
+                try:
+                    obj = addon_settings.find_one(Q('owner', 'eq', self.get_node()._id))
+                    enabled = True
+                except:
+                    pass
+                qs.append(
+                    {
+                        '_id': addon,
+                        'enabled': enabled,
+                        'object': obj
+                    }
+                )
+
+        return qs
+
+    get_queryset = get_default_queryset
+
+
+class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin):
+    """
+    TODO: docs
+    """
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        ExcludeRetractions,
+        base_permissions.TokenHasScope,
+    )
+
+    serializer_class = NodeAddonSettingsSerializer
+    view_category = 'nodes'
+    view_name = 'node-addon-detail'
+
+    def get_object(self):
+        addon = self.kwargs['provider']
+        if addon in ADDONS_AVAILABLE_DICT.keys():
+            if addon not in ADDONS_UNMANAGEABLE:
+                addon_settings = ADDONS_AVAILABLE_DICT[addon].settings_models.get('node', None)
+                obj = None
+                enabled = False
+                try:
+                    obj = addon_settings.find_one(Q('owner', 'eq', self.get_node()))
+                    enabled = True
+                except:
+                    pass
+                return {
+                    '_id': addon,
+                    'enabled': enabled,
+                    'object': obj
+                }
+        raise NotFound('Requested addon unavailable.')
+
+    def update(self):
+        instance = self.get_object()
+        node = self.get_node()
+        user = get_user_auth(self.request)
+        if not instance['enabled']:
+            node.add_addon(instance['_id'], user)
+        elif instance['has_auth']:
+            raise Conflict('Addon must be deauthorized before being disabled.')
+        node.delete_addon(instance['_id'], user)
+
+
+class NodeAddonAccountList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin):
+    """
+    TODO: docs
+    """
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        ContributorOrPublic,
+        ExcludeRetractions,
+        base_permissions.TokenHasScope,
+    )
+
+    serializer_class = AddonAccountSerializer
+    view_category = 'nodes'
+    view_name = 'node-external_accounts'
+
+    def get_queryset(self):
+        qs = []
+        node = self.get_node()
+        for addon in node.get_addons():
+            if addon.config.short_name not in ADDONS_NON_OAUTH:
+                if addon.external_account:
+                    qs.append(addon.external_account)
+        return qs
+
+    def perform_create(self, serializer):
+        account_id = serializer.validated_data['_id']
+        account = ExternalAccount.load(account_id)
+        if not account:
+            raise NotFound
+        node = self.get_node()
+        auth = get_user_auth(self.request)
+        node_settings = node.get_or_add_addon(account.provider, auth=auth)
+        node_settings.set_auth(account, auth)
+
+
+class NodeAddonAccountDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixin):
+    """
+    TODO: docs
+    """
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        ExcludeRetractions,
+        base_permissions.TokenHasScope,
+    )
+
+    serializer_class = AddonAccountSerializer
+    view_category = 'nodes'
+    view_name = 'node-external_account-detail'
+
+    def get_object(self):
+        addon = self.kwargs['provider']
+        account_id = self.kwargs['account_id']
+        if addon in ADDONS_AVAILABLE_DICT.keys():
+            if addon not in ADDONS_NON_OAUTH:
+                if self.get_node().has_addon(addon):
+                    account = ExternalAccount.load(account_id)
+                    if account and account.provider == addon:
+                        return account
+        raise NotFound('Requested account unavailable.')
+
+    def perform_destroy(self, instance):
+        auth = get_user_auth(self.request)
+        self.get_node().get_addon(instance.provider).deauthorize(auth=auth)
 
 class NodeProvider(object):
 
