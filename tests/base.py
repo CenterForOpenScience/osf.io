@@ -348,15 +348,15 @@ class ApiAddonTestCase(ApiTestCase):
         pass
 
     @abc.abstractproperty
-    def AccountFactory(self):
-        pass
-
-    @abc.abstractproperty
     def addon_type(self):
         pass
 
     @abc.abstractmethod
     def _apply_auth_configuration(self):
+        pass
+
+    @abc.abstractmethod
+    def _set_urls(self):
         pass
 
     def _settings_kwargs(self, node, user_settings):
@@ -373,16 +373,19 @@ class ApiAddonTestCase(ApiTestCase):
             AuthUserFactory,
         )
         from website.addons.base import (
-            AddonOAuthNodeSettingsBase, AddonOAuthUserSettingsBase
+            AddonOAuthNodeSettingsBase, AddonNodeSettingsBase,
+            AddonOAuthUserSettingsBase, AddonUserSettingsBase
         )
         # TODO(mfraezz:) handle type-specific setUp for each type individually
         assert self.addon_type in ('OAUTH', 'NON_OAUTH', 'UNMANAGEABLE', 'INVALID')  
         self.account = None
+        self.node_settings = None
+        self.user_settings = None
         self.user = AuthUserFactory()
         self.auth = Auth(self.user)
         self.node = ProjectFactory(creator=self.user)
 
-        if not self.addon_type == 'UNMANAGEABLE':
+        if self.addon_type not in ('UNMANAGEABLE', 'INVALID'):
             if self.addon_type == 'OAUTH':
                 self.account = self.AccountFactory()
                 self.user.external_accounts.append(self.account)
@@ -398,10 +401,12 @@ class ApiAddonTestCase(ApiTestCase):
                 )
 
             self.node.add_addon(self.short_name, auth=self.auth)
+
             self.node_settings = self.node.get_addon(self.short_name)
 
-            self._apply_auth_configuration()
-
+            if self.addon_type == 'OAUTH':
+                self._apply_auth_configuration()
+            
         if self.addon_type == 'OAUTH':
             assert isinstance(self.node_settings, AddonOAuthNodeSettingsBase)
             assert isinstance(self.user_settings, AddonOAuthUserSettingsBase)
@@ -411,12 +416,16 @@ class ApiAddonTestCase(ApiTestCase):
             assert isinstance(self.node_settings, AddonNodeSettingsBase)
             assert isinstance(self.user_settings, AddonUserSettingsBase)
 
+        self.set_urls()
+
     def tearDown(self):
         super(ApiAddonTestCase, self).tearDown()
         self.user.remove()
         self.node.remove()
-        self.node_settings.remove()
-        self.user_settings.remove()
+        if self.node_settings:
+            self.node_settings.remove()
+        if self.user_settings:
+            self.user_settings.remove()
         if self.account:
             self.account.remove()
 

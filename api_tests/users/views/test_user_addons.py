@@ -7,6 +7,13 @@ from api.base.settings.defaults import API_BASE
 from tests.base import ApiAddonTestCase
 
 from website.addons.box.tests.factories import BoxAccountFactory
+from website.addons.dataverse.tests.factories import DataverseAccountFactory
+from website.addons.dropbox.tests.factories import DropboxAccountFactory
+from website.addons.github.tests.factories import GitHubAccountFactory
+from website.addons.googledrive.tests.factories import GoogleDriveAccountFactory
+from website.addons.mendeley.tests.factories import MendeleyAccountFactory
+from website.addons.s3.tests.factories import S3AccountFactory
+from website.addons.zotero.tests.factories import ZoteroAccountFactory
 
 class UserAddonListMixin(object):
     def set_setting_list_url(self):
@@ -103,16 +110,89 @@ class UserAddonTestSuiteMixin(UserAddonListMixin, UserAddonDetailMixin, UserAddo
         self.set_account_list_url()
         self.set_account_detail_url()
 
-
 class UserOAuthAddonTestSuiteMixin(UserAddonTestSuiteMixin):
     addon_type = 'OAUTH'
+
+    @abc.abstractproperty
+    def AccountFactory(self):
+        pass
+
+
+class UserNonOAuthAddonTestSuiteMixin(UserAddonTestSuiteMixin):
+    addon_type = 'NON_OAUTH'
+
+
+class UserUnmanageableAddonTestSuiteMixin(UserAddonTestSuiteMixin):
+    addon_type = 'UNMANAGEABLE'
+
+# UNMANAGEABLE
+
+class TestUserForwardAddon(UserUnmanageableAddonTestSuiteMixin, ApiAddonTestCase):
+    short_name = 'forward'
+
+
+class TestUserOsfStorageAddon(UserUnmanageableAddonTestSuiteMixin, ApiAddonTestCase):
+    short_name = 'osfstorage'
+
+
+class TestUserTwoFactorAddon(UserUnmanageableAddonTestSuiteMixin, ApiAddonTestCase):
+    short_name = 'twofactor'
+
+
+class TestUserWikiAddon(UserUnmanageableAddonTestSuiteMixin, ApiAddonTestCase):
+    short_name = 'wiki'
+
+
+# NON_OAUTH
+
+
+class TestUserFigshareAddon(UserNonOAuthAddonTestSuiteMixin, ApiAddonTestCase):
+    short_name = 'figshare'
+
+
+# OAUTH
 
 
 class TestUserBoxAddon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'box'
     AccountFactory = BoxAccountFactory
 
-    def setUp(self):
-        super(TestUserBoxAddon, self).setUp()
-        self.set_urls()
 
+class TestUserDataverseAddon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):
+    short_name = 'dataverse'
+    AccountFactory = DataverseAccountFactory
+
+
+class TestUserDropboxAddon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):
+    short_name = 'dropbox'
+    AccountFactory = DropboxAccountFactory
+
+
+class TestUserGitHubAddon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):
+    short_name = 'github'
+    AccountFactory = GitHubAccountFactory
+
+
+class TestUserGoogleDriveAddon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):
+    short_name = 'googledrive'
+    AccountFactory = GoogleDriveAccountFactory
+
+
+class TestUserMendeleyAddon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):
+    short_name = 'mendeley'
+    AccountFactory = MendeleyAccountFactory
+
+
+class TestUserS3Addon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):
+    short_name = 's3'
+    AccountFactory = S3AccountFactory
+
+
+class TestUserZoteroAddon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):
+    short_name = 'zotero'
+    AccountFactory = ZoteroAccountFactory
+
+
+class TestUserInvalidAddon(UserAddonTestSuiteMixin, ApiAddonTestCase):
+    addon_type = 'INVALID'
+    short_name = 'fake'
