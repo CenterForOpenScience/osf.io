@@ -52,7 +52,7 @@ class DraftListView(PreregAdmin, ListView):
             'drafts': [
                 serializers.serialize_draft_registration(d, json_safe=False)
                 for d in query_set
-                ],
+            ],
             'page': page,
         }
 

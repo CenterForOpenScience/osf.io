@@ -7,8 +7,8 @@ def draft_reg_util():
     DraftRegistration.remove()
     ensure_schemas()
     return MetaSchema.find_one(
-            Q('name', 'eq', 'Prereg Challenge') &
-            Q('schema_version', 'eq', 2)
+        Q('name', 'eq', 'Prereg Challenge') &
+        Q('schema_version', 'eq', 2)
     )
 
 

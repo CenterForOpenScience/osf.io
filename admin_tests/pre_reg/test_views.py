@@ -1,3 +1,4 @@
+import mock
 from nose import tools as nt
 from django.test import RequestFactory
 from django.db import transaction
@@ -81,10 +82,9 @@ class TestDraftFormView(AdminTestCase):
     def setUp(self):
         super(TestDraftFormView, self).setUp()
         self.user = AuthUserFactory()
-        schema = utils.draft_reg_util()
         self.dr1 = DraftRegistrationFactory(
             initiator=self.user,
-            registration_schema=schema,
+            registration_schema=utils.draft_reg_util(),
             registration_metadata=utils.SCHEMA_DATA
         )
         self.dr1.submit_for_review(self.user, {}, save=True)
@@ -118,7 +118,7 @@ class TestDraftFormView(AdminTestCase):
         nt.assert_is_instance(res['draft'], dict)
         nt.assert_in('IMMEDIATE', res)
 
-    def test_form_valid_notes_and_stuff(self):
+    def test_form_valid_notes(self):
         form = DraftRegistrationForm(data=self.form_data)
         nt.assert_true(form.is_valid())
         view = setup_form_view(self.post_view, self.post, form,
@@ -130,25 +130,51 @@ class TestDraftFormView(AdminTestCase):
         self.dr1.reload()
         nt.assert_equal(self.dr1.notes, self.form_data['notes'])
 
+    @mock.patch('admin.pre_reg.views.DraftRegistration.approve')
+    def test_form_valid_approve(self, mock_approve):
+        self.form_data.update(approve_reject='approve')
+        form = DraftRegistrationForm(data=self.form_data)
+        nt.assert_true(form.is_valid())
+        view = setup_form_view(self.post_view, self.post, form,
+                               draft_pk=self.dr1._id)
+        count = OSFLogEntry.objects.count()
+        with transaction.atomic():
+            view.form_valid(form)
+        nt.assert_true(mock_approve.called)
+        nt.assert_equal(count + 1, OSFLogEntry.objects.count())
 
-# class TestPreReg(AdminTestCase):
-#     def setUp(self):
-#         super(TestPreReg, self).setUp()
-#         self.request = RequestFactory().post('/nothing', data={'bleh': 'arg'})
-#         self.request.user = UserFactory
-#
-#     @mock.patch('admin.pre_reg.views.DraftRegistration.approve')
-#     @mock.patch('admin.pre_reg.views.csrf_exempt')
-#     @mock.patch('admin.pre_reg.views.get_draft_or_error')
-#     def test_add_log_approve(self, mock_1, mock_2, mock_3):
-#         count = OSFLogEntry.objects.count()
-#         approve_draft(self.request, 1)
-#         nt.assert_equal(OSFLogEntry.objects.count(), count + 1)
-#
-#     @mock.patch('admin.pre_reg.views.DraftRegistration.approve')
-#     @mock.patch('admin.pre_reg.views.csrf_exempt')
-#     @mock.patch('admin.pre_reg.views.get_draft_or_error')
-#     def test_add_log_reject(self, mock_1, mock_2, mock_3):
-#         count = OSFLogEntry.objects.count()
-#         reject_draft(self.request, 1)
-#         nt.assert_equal(OSFLogEntry.objects.count(), count + 1)
+    @mock.patch('admin.pre_reg.views.DraftRegistration.reject')
+    def test_form_valid_reject(self, mock_reject):
+        self.form_data.update(approve_reject='reject')
+        form = DraftRegistrationForm(data=self.form_data)
+        nt.assert_true(form.is_valid())
+        view = setup_form_view(self.post_view, self.post, form,
+                               draft_pk=self.dr1._id)
+        count = OSFLogEntry.objects.count()
+        with transaction.atomic():
+            view.form_valid(form)
+        nt.assert_true(mock_reject.called)
+        nt.assert_equal(count + 1, OSFLogEntry.objects.count())
+
+
+class TestCommentUpdateView(AdminTestCase):
+    def setUp(self):
+        super(TestCommentUpdateView, self).setUp()
+        self.user = AuthUserFactory()
+        self.dr1 = DraftRegistrationFactory(
+            initiator=self.user,
+            registration_schema=utils.draft_reg_util(),
+            registration_metadata=utils.SCHEMA_DATA
+        )
+        self.dr1.submit_for_review(self.user, {}, save=True)
+        self.request = RequestFactory().post('/fake_path', data={'blah': 'arg'})
+        self.request.user = UserFactory()
+        self.view = CommentUpdateView()
+        self.view = setup_view(self.view, self.request, draft_pk=self.dr1._id)
+
+    @mock.patch('admin.pre_reg.views.json.loads')
+    @mock.patch('admin.pre_reg.views.DraftRegistration.update_metadata')
+    def test_post_comments(self, mock_json, mock_meta):
+        count = OSFLogEntry.objects.count()
+        self.view.post(self.request)
+        nt.assert_equal(OSFLogEntry.objects.count(), count + 1)
