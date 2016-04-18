@@ -176,12 +176,6 @@ var LogPieces = {
             var nodeObject = logObject.embeds.original_node;
             var logAction = logObject.attributes.action;
 
-            var originalNodeNeeded = ['retraction_cancelled', 'registration_cancelled', 'embargo_approved',
-                'embargo_cancelled', 'embargo_completed'];
-
-            if (originalNodeNeeded.indexOf(logAction) > -1) {
-                nodeObject = logObject.embeds.node;
-            }
             // Log action is node_removed
             if (logObject.attributes.action === 'node_removed') {
                 if (logObject.attributes.params.params_node) {
