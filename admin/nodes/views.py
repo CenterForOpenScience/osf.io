@@ -144,7 +144,7 @@ class NodeDeleteView(OSFAdmin, DeleteView):
                 AttributeError(
                     '{} with id "{}" not found.'.format(
                         self.context_object_name.title(),
-                        kwargs.get('node_id')
+                        kwargs.get('guid')
                     )
                 )
             )

@@ -165,7 +165,7 @@ def serialize_log(node_log, auth=None, anonymous=False):
         'action': node_log.action,
         'params': sanitize_params(auth, node_log),
         'date': utils.iso8601format(node_log.date),
-        'node': sanitize_node(auth, node_log),
+        'node': sanitize_node(auth, node_log.original_node) if node_log.original_node else None,
         'anonymous': anonymous
     }
 

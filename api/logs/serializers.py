@@ -38,6 +38,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     github_user = ser.CharField(read_only=True, source='github.user')
     github_repo = ser.CharField(read_only=True, source='github.repo')
     filename = ser.CharField(read_only=True)
+    kind = ser.CharField(read_only=True)
     folder = ser.CharField(read_only=True)
     folder_name = ser.CharField(read_only=True)
     identifiers = NodeLogIdentifiersSerializer(read_only=True)
@@ -102,10 +103,16 @@ class NodeLogSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'logs'
 
-    nodes = RelationshipField(
-        related_view='logs:log-nodes',
-        related_view_kwargs={'log_id': '<pk>'},
+    node = RelationshipField(
+        related_view=lambda n: 'registrations:registration-detail' if getattr(n, 'is_registration', False) else 'nodes:node-detail',
+        related_view_kwargs={'node_id': '<node._id>'},
     )
+
+    original_node = RelationshipField(
+        related_view=lambda n: 'registrations:registration-detail' if getattr(n, 'is_registration', False) else 'nodes:node-detail',
+        related_view_kwargs={'node_id': '<original_node._id>'},
+    )
+
     user = RelationshipField(
         related_view='users:user-detail',
         related_view_kwargs={'user_id': '<user._id>'},
