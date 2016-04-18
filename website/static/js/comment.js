@@ -99,9 +99,6 @@ var callbacks = {
             model.replyMentions().push(data.id);
         }
         this.query.el.attr('data-atwho-guid', '' + data.id);
-        // this.query.el.attr('display', '' + 'inline-block');
-        this.query.el.attr('contenteditable', '' + 'false');
-        // this.query.el.after('&zwj;&nbsp;');
         return value;
     },
     highlighter: function(li, query) {
@@ -532,7 +529,7 @@ var CommentModel = function(data, $parent, $root) {
                 let guid = match[3];
                 let mention = match[2];
 
-                content = content.replace(match[0], '<span class="atwho-inserted" data-atwho-guid="'+ guid + '" data-atwho-at-query="' + atwho + '">' + atwho + mention + '</span>');
+                content = content.replace(match[0], '<span class="atwho-inserted" contenteditable="false" data-atwho-guid="'+ guid + '" data-atwho-at-query="' + atwho + '">' + atwho + mention + '</span>');
             }
         }
         return content.replace(/\x0D\x0A/g, '<br>');
