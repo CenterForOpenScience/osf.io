@@ -54,7 +54,7 @@ function ProjectNotifications(data) {
         naturalScrollLimit : 0,
         onload : function () {
             var tb = this;
-             $tb.expandOnLoad.call(tb);
+            $tb.expandOnLoad.call(tb);
         },
         resolveRows: function notificationResolveRows(item){
             var options = [];
@@ -188,6 +188,7 @@ function ProjectNotifications(data) {
         }
     });
     var grid = new Treebeard(tbOptions);
+    $tb.expandOnLoad.call(grid);
 }
 
 module.exports = ProjectNotifications;
