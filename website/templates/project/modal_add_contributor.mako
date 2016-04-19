@@ -272,5 +272,3 @@
     </div><!-- end modal-dialog -->
 </div><!-- end modal -->
 
-<link href="/static/css/add-contributors.css" rel="stylesheet">
-
