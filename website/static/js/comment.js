@@ -189,7 +189,6 @@ var getContributorList = function(input, nodeId) {
     return request;
 };
 
-// should only need to do this once
 getContributorList(input, nodeId);
 input.atwho(at_config).atwho(plus_config).bind('paste', onPaste).on('focusin keyup', lastElementBr).on('focusout', onlyElementBr).keydown(function(e) {
     if(e.which === 13) {
@@ -292,13 +291,18 @@ var BaseComment = function() {
 
     self.comments = ko.observableArray();
 
-    self.loadingComments = ko.observable(true);
+	self.loadingComments = ko.observable(true);
+
+    self.underMaxLength = ko.observable(true);
 
     self.replyNotEmpty = ko.pureComputed(function() {
         return notEmpty(self.replyContent());
     });
     self.commentButtonText = ko.computed(function() {
         return self.submittingReply() ? 'Commenting' : 'Comment';
+    });
+    self.validateReply = ko.pureComputed(function() {
+        return self.replyNotEmpty() && self.underMaxLength();
     });
 
 };
@@ -582,6 +586,10 @@ var CommentModel = function(data, $parent, $root) {
 
     self.editNotEmpty = ko.pureComputed(function() {
         return notEmpty(self.content());
+    });
+
+    self.validateEdit = ko.pureComputed(function() {
+        return self.editNotEmpty() && self.underMaxLength();
     });
 
     self.toggleIcon = ko.computed(function() {
