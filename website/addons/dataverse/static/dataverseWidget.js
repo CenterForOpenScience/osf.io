@@ -1,9 +1,6 @@
 'use strict';
 var ko = require('knockout');
-require('knockout.punches');
 var $ = require('jquery');
-
-ko.punches.enableAll();
 
 var $osf = require('js/osfHelpers');
 var language = require('js/osfLanguage').Addons.dataverse;

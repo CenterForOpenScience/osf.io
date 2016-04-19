@@ -12,8 +12,7 @@ var DEFAULT_LICENSE = siteLicenses.DEFAULT_LICENSE;
 var OTHER_LICENSE = siteLicenses.OTHER_LICENSE;
 
 var $osf = require('js/osfHelpers');
-// Enable knockout punches
-ko.punches.enableAll();
+
 
 // Disable IE Caching of JSON
 $.ajaxSetup({ cache: false });
