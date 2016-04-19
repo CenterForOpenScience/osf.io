@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import datetime
 import logging
 import httplib
 import httplib as http  # TODO: Inconsistent usage of aliased import
@@ -102,6 +103,9 @@ def resend_confirmation(auth):
     data = request.get_json()
 
     validate_user(data, user)
+    now = datetime.datetime.utcnow()
+    if user.email_last_sent and (now - user.email_last_sent).total_seconds() < settings.SEND_EMAIL_THROTTLE:
+        raise HTTPError(httplib.BAD_REQUEST, data={'message_long': 'Please wait 30 seconds before sending another confirmation email.'})
 
     try:
         primary = data['email']['primary']
@@ -118,6 +122,7 @@ def resend_confirmation(auth):
     # TODO: This setting is now named incorrectly.
     if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
         send_confirm_email(user, email=address)
+        user.email_last_sent = now
 
     user.save()
 
