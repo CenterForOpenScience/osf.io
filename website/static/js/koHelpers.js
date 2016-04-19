@@ -396,34 +396,41 @@ ko.bindingHandlers.datePicker = {
 };
 
  /**
- * Bind content of content editable to observable. Looks for maxlength attr
- * to limit input. If no attr then no limit.
+ * Bind content of contenteditable to observable. Looks for maxlength attr
+ * and underMaxLength binding to limit input.
  * Example:
  * <div contenteditable="true" data-bind="editableHTML: <observable_name>" maxlength="500"></div>
  */
 ko.bindingHandlers.editableHTML = {
-    init: function(element, valueAccessor) {
+    init: function(element, valueAccessor, allBindings, bindingContext) {
         var $element = $(element);
         var initialValue = ko.utils.unwrapObservable(valueAccessor());
         $element.html(initialValue);
         $element.on('change input paste keyup blur', function() {
             var observable = valueAccessor();
-            // limit input to maxlength
-            var charLimit = $element.attr('maxlength');
-            if (charLimit) {
-                if ($element.text().length < charLimit) {
-                    observable($element.html());
-                } else {
-                    $element.html(observable());
-                }
-            } else {
-                observable($element.html());
-            }
+            observable($element.html());
         });
     },
-    update: function(element, valueAccessor) {
+    update: function(element, valueAccessor, allBindings, bindingContext) {
         var $element = $(element);
         var initialValue = ko.utils.unwrapObservable(valueAccessor());
+        var bindings = bindingContext;
+        var charLimit = $element.attr('maxlength');
+        if (charLimit && bindingContext.underMaxLength) {
+            var inputTextLength = $element[0].innerText.length;
+            var errorExceedsCharacterLimit = 'Exceeds character limit. Please reduce to ' + charLimit + ' characters or less.';
+            if (inputTextLength > charLimit) {
+                bindingContext.underMaxLength(false);
+                if (bindingContext.errorMessage) {
+                    bindingContext.errorMessage(errorExceedsCharacterLimit);
+                }
+            } else {
+                bindingContext.underMaxLength(true);
+                if (bindingContext.errorMessage) {
+                    bindingContext.errorMessage('');
+                }
+            }
+        }
         if (initialValue === '') {
             $(element).html(initialValue);
         }
