@@ -26,6 +26,7 @@ from website import settings
 from website import mails
 from website import language
 from website import security
+from website.project.views.contributor import throttle_period_expired
 from website.models import User
 from website.util import web_url_for
 from website.util.sanitize import strip_html
@@ -77,10 +78,9 @@ def forgot_password_post():
                           'should have, please contact OSF Support. ').format(email)
         user_obj = get_user(email=email)
         if user_obj:
-            now = datetime.datetime.utcnow()
-            if not user_obj.email_last_sent or (now - user_obj.email_last_sent).total_seconds() > settings.SEND_EMAIL_THROTTLE:
+            if throttle_period_expired(user_obj.email_last_sent, settings.SEND_EMAIL_THROTTLE):
                 user_obj.verification_key = security.random_string(20)
-                user_obj.email_last_sent = now
+                user_obj.email_last_sent = datetime.datetime.utcnow()
                 user_obj.save()
                 reset_link = "http://{0}{1}".format(
                     request.host,

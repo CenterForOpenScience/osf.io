@@ -28,6 +28,7 @@ from website.project.model import Node
 from website.models import ApiOAuth2Application, ApiOAuth2PersonalToken, User
 from website.oauth.utils import get_available_scopes
 from website.profile import utils as profile_utils
+from website.project.views.contributor import throttle_period_expired
 from website.util import api_v2_url, web_url_for, paths
 from website.util.sanitize import escape_html
 from website.util.sanitize import strip_html
@@ -103,8 +104,7 @@ def resend_confirmation(auth):
     data = request.get_json()
 
     validate_user(data, user)
-    now = datetime.datetime.utcnow()
-    if user.email_last_sent and (now - user.email_last_sent).total_seconds() < settings.SEND_EMAIL_THROTTLE:
+    if not throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
         raise HTTPError(httplib.BAD_REQUEST, data={'message_long': 'Please wait 30 seconds before sending another confirmation email.'})
 
     try:
@@ -122,7 +122,7 @@ def resend_confirmation(auth):
     # TODO: This setting is now named incorrectly.
     if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
         send_confirm_email(user, email=address)
-        user.email_last_sent = now
+        user.email_last_sent = datetime.datetime.utcnow()
 
     user.save()
 
@@ -783,8 +783,7 @@ def unserialize_schools(auth, **kwargs):
 @must_be_logged_in
 def request_export(auth):
     user = auth.user
-    now = datetime.datetime.utcnow()
-    if user.email_last_sent and (now - user.email_last_sent).total_seconds() < settings.SEND_EMAIL_THROTTLE:
+    if not throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
         raise HTTPError(httplib.BAD_REQUEST,
                         data={'message_long': 'Please wait 30 seconds before sending another account export request.',
                               'error_type': 'throttle_error'})
@@ -794,7 +793,7 @@ def request_export(auth):
         mail=mails.REQUEST_EXPORT,
         user=auth.user,
     )
-    user.email_last_sent = now
+    user.email_last_sent = datetime.datetime.utcnow()
     user.save()
     return {'message': 'Sent account export request'}
 
@@ -802,8 +801,7 @@ def request_export(auth):
 @must_be_logged_in
 def request_deactivation(auth):
     user = auth.user
-    now = datetime.datetime.utcnow()
-    if user.email_last_sent and (now - user.email_last_sent).total_seconds() < settings.SEND_EMAIL_THROTTLE:
+    if not throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
         raise HTTPError(http.BAD_REQUEST,
                         data={
                             'message_long': 'Please wait 30 seconds before sending another account deactivation request.',
@@ -815,7 +813,7 @@ def request_deactivation(auth):
         mail=mails.REQUEST_DEACTIVATION,
         user=auth.user,
     )
-    user.email_last_sent = now
+    user.email_last_sent = datetime.datetime.utcnow()
     user.save()
     return {'message': 'Sent account deactivation request'}
 
