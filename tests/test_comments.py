@@ -106,6 +106,7 @@ class TestCommentModel(OsfTestCase):
             user=self.comment.user,
             node=self.comment.node,
             target=self.comment.target,
+            root_target=self.comment.root_target,
             page='node',
             is_public=True,
             content='This is a comment.'
@@ -170,6 +171,7 @@ class TestCommentModel(OsfTestCase):
                 user=self.comment.user,
                 node=self.comment.node,
                 target=self.comment.target,
+                root_target=self.comment.root_target,
                 is_public=True,
                 content='This is a comment.'
             )

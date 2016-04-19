@@ -50,7 +50,7 @@
                     % if node['is_registration']:
 
                         % if (node['is_public'] or node['embargo_end_date']) and 'admin' in user['permissions']:
-                            <li><a href="#retractRegistrationAnchor">Withdraw Public Registration</a></li>
+                            <li><a href="#withdrawRegistrationAnchor">Withdraw Public Registration</a></li>
                         % endif
 
                     % endif
@@ -77,7 +77,7 @@
                     <div id="projectSettings" class="panel-body">
                         <div class="form-group">
                             <label>Category:</label>
-                            <select data-bind="attr.disabled: disabled, options: categoryOptions, optionsValue: 'value', optionsText: 'label', value: selectedCategory"></select>
+                            <select data-bind="attr: {disabled: disabled}, options: categoryOptions, optionsValue: 'value', optionsText: 'label', value: selectedCategory"></select>
                             <span data-bind="if: disabled" class="help-block">
                               A top-level project's category cannot be changed
                             </span>
@@ -408,7 +408,7 @@
                 % if node['is_public'] or node['embargo_end_date']:
 
                     <div class="panel panel-default">
-                        <span id="retractRegistrationAnchor" class="anchor"></span>
+                        <span id="withdrawRegistrationAnchor" class="anchor"></span>
 
                         <div class="panel-heading clearfix">
                             <h3 class="panel-title">Withdraw Registration</h3>

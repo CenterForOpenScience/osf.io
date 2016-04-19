@@ -11,6 +11,7 @@ var Raven = require('raven-js');
 var LogText = require('js/logTextParser');
 var AddProject = require('js/addProjectPlugin');
 var mC = require('js/mithrilComponents');
+var lodashGet = require('lodash.get');
 
 var MOBILE_WIDTH = 767; // Mobile view break point for responsiveness
 var NODE_PAGE_SIZE = 10; // Load 10 nodes at a time from server
@@ -164,7 +165,7 @@ NodeFetcher.prototype = {
     this.nextLink = results.links.next;
     this.loaded += results.data.length;
     for(var i = 0; i < results.data.length; i++) {
-      if (this.type === 'registrations' && (results.data[i].attributes.retracted === true || results.data[i].attributes.pending_registration_approval === true))
+      if (this.type === 'registrations' && (results.data[i].attributes.withdrawn === true || results.data[i].attributes.pending_registration_approval === true))
           continue; // Exclude retracted and pending registrations
       else if (results.data[i].relationships.parent && this._handleOrphans)
           this._orphans.push(results.data[i]);
@@ -263,16 +264,21 @@ function _formatDataforPO(item) {
     item.name = item.attributes.title;
     item.tags = item.attributes.tags.toString();
     item.contributors = '';
-    if (item.embeds.contributors.data){
+    var contributorsData = lodashGet(item, 'embeds.contributors.data', null);
+    if (contributorsData){
         item.embeds.contributors.data.forEach(function(c){
             var attr;
-            if (c.embeds.users.data) {
-                attr = c.embeds.users.data.attributes;
+            var users = lodashGet(c, 'embeds.users.data', null);
+            if (users) {
+                if (users.errors) {
+                    attr = users.errors[0].meta;
+                } else {
+                    attr = users.attributes;
+                }
             }
-            else {
-                attr = c.embeds.users.errors[0].meta;
+            if (attr) {
+                item.contributors += attr.full_name + ' ' + attr.middle_names + ' ' + attr.given_name + ' ' + attr.family_name + ' ' ;
             }
-            item.contributors += attr.full_name + ' ' + attr.middle_names + ' ' + attr.given_name + ' ' + attr.family_name + ' ' ;
 
         });
     }
@@ -539,17 +545,15 @@ var MyProjects = {
         self.unselectContributor = function (id){
             self.currentView().contributor.forEach(function (c, index, arr) {
                 if(c.data.id === id){
-                    arr.splice(index, 1);
-                    self.updateList();
+                    self.updateFilesData(c);
                 }
             });
         };
 
         self.unselectTag = function (tag){
-            self.currentView().tag.forEach(function (c, index, arr) {
-                if(c.data.tag === tag){
-                    arr.splice(index, 1);
-                    self.updateList();
+            self.currentView().tag.forEach(function (t, index, arr) {
+                if(t.data.tag === tag){
+                    self.updateFilesData(t);
                 }
             });
         };
@@ -659,30 +663,32 @@ var MyProjects = {
             self.users = {};
 
             self.filteredData().forEach(function(item) {
-              var contributors = item.embeds.contributors.data || [];
-              for(var i = 0; i < contributors.length; i++) {
-                var u = contributors[i];
-                if ((u.id === window.contextVars.currentUser.id) && !(self.institutionId)) {
-                  continue;
+                var contributors = lodashGet(item, 'embeds.contributors.data', []);
+
+                if (contributors) {
+                    for(var i = 0; i < contributors.length; i++) {
+                        var u = contributors[i];
+                        if ((u.id === window.contextVars.currentUser.id) && !(self.institutionId)) {
+                          continue;
+                        }
+                        if(self.users[u.id] === undefined) {
+                            self.users[u.id] = {
+                                data : u,
+                                count: 1
+                        };
+                    } else {
+                        self.users[u.id].count++;
+                    }}
+                    var tags = item.attributes.tags || [];
+                    for(var j = 0; j < tags.length; j++) {
+                        var t = tags[j];
+                        if(self.tags[t] === undefined) {
+                             self.tags[t] = 1;
+                        } else {
+                            self.tags[t]++;
+                        }
+                    }
                 }
-                if(self.users[u.id] === undefined) {
-                  self.users[u.id] = {
-                    data : u,
-                    count: 1
-                  };
-                } else {
-                  self.users[u.id].count++;
-                }
-              }
-              var tags = item.attributes.tags || [];
-              for(var j = 0; j < tags.length; j++) {
-                var t = tags[j];
-                if(self.tags[t] === undefined) {
-                  self.tags[t] = 1;
-                } else {
-                  self.tags[t]++;
-                }
-              }
             });
 
 

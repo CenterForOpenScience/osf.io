@@ -65,7 +65,6 @@ var entry = {
         // Vendor libraries
         'knockout',
         'knockout.validation',
-        'knockout.punches',
         'moment',
         'bootstrap',
         'bootbox',
@@ -75,6 +74,7 @@ var entry = {
         'knockout-sortable',
         'loaders.css',
         'treebeard',
+        'lodash.get',
         'jquery.cookie',
         'URIjs',
         // Common internal modules

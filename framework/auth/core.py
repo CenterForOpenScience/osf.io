@@ -1418,7 +1418,7 @@ class User(GuidStoredObject, AddonModelMixin):
         return AffiliatedInstitutionsList([Institution(inst) for inst in self._affiliated_institutions], obj=self, private_target='_affiliated_institutions')
 
     def get_node_comment_timestamps(self, target_id):
-        """ Returns the timestamp for when comments were last viewed on a node or file.
+        """ Returns the timestamp for when comments were last viewed on a node, file or wiki.
         """
         default_timestamp = dt.datetime(1970, 1, 1, 12, 0, 0)
         return self.comments_viewed_timestamp.get(target_id, default_timestamp)
