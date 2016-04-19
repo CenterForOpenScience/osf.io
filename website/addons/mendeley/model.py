@@ -16,6 +16,7 @@ from website.util import web_url_for
 
 from framework.exceptions import HTTPError
 
+
 class Mendeley(CitationsOauthProvider):
     name = 'Mendeley'
     short_name = 'mendeley'
@@ -25,6 +26,7 @@ class Mendeley(CitationsOauthProvider):
 
     auth_url_base = 'https://api.mendeley.com/oauth/authorize'
     callback_url = 'https://api.mendeley.com/oauth/token'
+    auto_refresh_url = callback_url
     default_scopes = ['all']
 
     serializer = MendeleySerializer
@@ -68,11 +70,14 @@ class Mendeley(CitationsOauthProvider):
         try:
             self._client.folders.list()
         except MendeleyApiException as error:
-            self._client = None
-            if error.status == 403:
-                raise HTTPError(403)
+            if error.status == 401 and 'Token has expired' in error.message:
+                self.refresh_oauth_key()
             else:
-                raise HTTPError(error.status)
+                self._client = None
+                if error.status == 403:
+                    raise HTTPError(403)
+                else:
+                    raise HTTPError(error.status)
 
     def _folder_metadata(self, folder_id):
         folder = self.client.folders.get(folder_id)
