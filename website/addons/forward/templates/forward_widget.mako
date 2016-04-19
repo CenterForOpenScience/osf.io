@@ -6,10 +6,10 @@
 
         <div>
             This project contains a forward to
-            <a data-bind="attr.href: url">{{ url }}</a>.
+            <a data-bind="attr: {href: url}, text: url"></a>.
         </div>
 
-        <p>You will be automatically forwarded in {{ timeLeft }} seconds.</p>
+        <p>You will be automatically forwarded in <span data-bind="text: timeLeft"></span> seconds.</p>
 
         <div class="spaced-buttons" data-bind="visible: redirecting">
             <a class="btn btn-default" data-bind="click: cancelRedirect">Cancel</a>
@@ -22,7 +22,7 @@
 
         <div>
             This project contains a forward to
-            <a data-bind="attr.href: url" target="_blank">{{ linkDisplay }}</a>.
+            <a data-bind="attr: {href: url}, text: linkDisplay" target="_blank"></a>.
         </div>
 
         <div class="spaced-buttons m-t-sm">

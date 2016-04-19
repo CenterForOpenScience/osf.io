@@ -9,9 +9,7 @@ var moment = require('moment');
 var Raven = require('raven-js');
 var koHelpers = require('./koHelpers');
 require('./knockout-js-infinite-scroll');
-require('knockout.punches');
 require('jquery-autosize');
-ko.punches.enableAll();
 
 var osfHelpers = require('js/osfHelpers');
 var CommentPane = require('js/commentpane');
@@ -119,7 +117,6 @@ var BaseComment = function() {
     });
 };
 
-
 BaseComment.prototype.abuseLabel = function(item) {
     return ABUSE_CATEGORIES[item];
 };
@@ -165,7 +162,6 @@ BaseComment.prototype.get_url = function() {
 
 BaseComment.prototype.fetch = function() {
     var self = this;
-
     var setUnread = self.getTargetType() !== 'comments' && !osfHelpers.urlParams().view_only && self.author.id !== '';
     if (self.comments().length === 0) {
         var urlParams = osfHelpers.urlParams();

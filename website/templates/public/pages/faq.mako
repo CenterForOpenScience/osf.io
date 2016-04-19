@@ -73,7 +73,7 @@
                         </div>
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> What is a registration?</h5>
-                            <div class="support-body">A registration is a frozen version of your project that can never be edited or deleted, but you can issue a retraction of it later, leaving behind basic metadata. When you create the registration, you have the option of either making it public immediately or making it private for up to four years through an embargo. A registration is useful for certifying what you did in a project in advance of data analysis, or for confirming the exact state of the project at important points of the lifecycle, such as manuscript submission or the onset of data collection.</div>
+                            <div class="support-body">A registration is a frozen version of your project that can never be edited or deleted, but you can issue a withdrawal of it later, leaving behind basic metadata. When you create the registration, you have the option of either making it public immediately or making it private for up to four years through an embargo. A registration is useful for certifying what you did in a project in advance of data analysis, or for confirming the exact state of the project at important points of the lifecycle, such as manuscript submission or the onset of data collection.</div>
                         </div>
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> What if I don't want to register anything in the OSF?</h5>

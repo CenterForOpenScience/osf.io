@@ -120,6 +120,5 @@ $(function() {
         if(!(/PhantomJS/.test(navigator.userAgent))){
             new KeenTracker(window.contextVars.keenProjectId, window.contextVars.keenWriteKey, params);
         }
-
     }
 });
