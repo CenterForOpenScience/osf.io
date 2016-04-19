@@ -227,3 +227,8 @@ class InstitutionRegistrationList(InstitutionNodeList):
         Q('is_folder', 'ne', True) &
         Q('is_registration', 'eq', True)
     )
+
+    def get_queryset(self):
+        query = self.get_query_from_request()
+        nodes = list(Node.find(query))
+        return [node for node in nodes if not node.is_retracted]
