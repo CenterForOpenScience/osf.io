@@ -27,6 +27,7 @@ def sort_multiple(fields):
         reverse = False
         while fields:
             field = fields.pop(0).strip()
+
             if field[0] == '-':
                 field = field[1:]
                 reverse = True
