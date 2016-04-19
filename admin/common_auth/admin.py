@@ -9,7 +9,7 @@ from django.core.urlresolvers import reverse
 from django.utils.html import escape
 
 from admin.common_auth.logs import OSFLogEntry
-from admin.common_auth.forms import CustomUserRegistrationForm
+from admin.common_auth.forms import UserRegistrationForm
 from admin.common_auth.models import MyUser
 
 
@@ -18,7 +18,7 @@ class PermissionAdmin(admin.ModelAdmin):
 
 
 class CustomUserAdmin(UserAdmin):
-    add_form = CustomUserRegistrationForm
+    add_form = UserRegistrationForm
     list_display = ['email', 'first_name', 'last_name', 'is_active', 'confirmed', 'osf_id']
     fieldsets = (
         (None, {'fields': ('email', 'password',)}),

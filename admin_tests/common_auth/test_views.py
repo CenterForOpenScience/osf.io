@@ -1,65 +1,49 @@
-from django.test import Client
+from nose import tools as nt
+import mock
+
+from django.test import RequestFactory
 from tests.base import AdminTestCase
+from tests.factories import AuthUserFactory
+
+from admin_tests.utilities import setup_form_view
+
 from admin.common_auth.models import MyUser
-from django.core.urlresolvers import reverse
-from admin.common_auth.forms import CustomUserRegistrationForm
+from admin.common_auth.views import RegisterUser
+from admin.common_auth.forms import UserRegistrationForm
 
 
-class UserRegFormTestCase(AdminTestCase):
-    def test_user_reg_form_success(self):
-        form_data = {
-            'email': 'example@example.com',
-            'first_name': 'Zak',
-            'last_name': 'K',
-            'password1': 'password',
-            'password2': 'password',
-        }
-        form = CustomUserRegistrationForm(form_data)
-        self.assertTrue(form.is_valid())
-
-    def test_user_reg_form_failure(self):
-        # Every field is required, password length should be >= 5
-        form_data = {
-            'email': '',
-            'first_name': '',
-            'last_name': '',
-            'password1': 'pass',
-            'password2': 'pass',
-        }
-        form = CustomUserRegistrationForm(form_data)
-        self.assertFalse(form.is_valid())
-
-
-class UserRegSaveTestCase(AdminTestCase):
+class TestRegisterUser(AdminTestCase):
     def setUp(self):
-        self.client = Client()
-        user = MyUser.objects.create_user(email='zak@zak.com',
-            password='secret')
-        user.is_staff = True
-        user.save()
-
-    def test_registration_view_success(self):
-        post_data = {
-            'email': 'example@example.com',
+        super(TestRegisterUser, self).setUp()
+        self.user = AuthUserFactory()
+        self.data = {
+            'email': self.user.email,
             'first_name': 'Zak',
             'last_name': 'K',
             'password1': 'password',
             'password2': 'password',
+            'osf_id': 'abc12',
         }
+        self.view = RegisterUser()
+        self.request = RequestFactory().post('fake_path')
 
-        self.client.login(email='zak@zak.com', password='secret')
-        response = self.client.post(reverse('auth:register'), post_data)
-        self.assertEqual(response.status_code, 302)
+    def test_osf_id_invalid(self):
+        form = UserRegistrationForm(data=self.data)
+        nt.assert_true(form.is_valid())
+        view = setup_form_view(self.view, self.request, form)
+        res = view.form_valid(form)
+        nt.assert_equal(res.status_code, 404)
+        nt.assert_in('OSF user with id', res.content)
 
-    def test_registration_view_failure(self):
-        post_data = {
-            'email': 'example@example.com',
-            'first_name': '',
-            'last_name': 'K',
-            'password1': 'password',
-            'password2': 'password',
-        }
-
-        self.client.login(email='zak@zak.com', password='secret')
-        response = self.client.post(reverse('auth:register'), post_data)
-        self.assertEqual(response.status_code, 400)
+    @mock.patch('admin.common_auth.views.PasswordResetForm.save')
+    @mock.patch('admin.common_auth.views.messages.success')
+    def test_add_user(self, mock_save, mock_message):
+        count = MyUser.objects.count()
+        self.data.update(osf_id=self.user._id)
+        form = UserRegistrationForm(data=self.data)
+        nt.assert_true(form.is_valid())
+        view = setup_form_view(self.view, self.request, form)
+        view.form_valid(form)
+        nt.assert_true(mock_save.called)
+        nt.assert_true(mock_message.called)
+        nt.assert_equal(MyUser.objects.count(), count + 1)

@@ -16,7 +16,7 @@ from website.project.model import User
 from website.settings import PREREG_ADMIN_TAG
 
 from admin.base.utils import SuperUser
-from admin.common_auth.forms import LoginForm, CustomUserRegistrationForm
+from admin.common_auth.forms import LoginForm, UserRegistrationForm
 from admin.common_auth.models import MyUser
 
 
@@ -58,7 +58,7 @@ def logout_user(request):
 
 
 class RegisterUser(SuperUser, FormView):
-    form_class = CustomUserRegistrationForm
+    form_class = UserRegistrationForm
     template_name = 'register.html'
 
     def form_valid(self, form):
