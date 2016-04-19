@@ -422,7 +422,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             # Ignore related_counts for these fields
             fetched_field = self.parent.fields.get(count_field)
 
-            hidden = fetched_field and isinstance(fetched_field, HideIfWithdrawal) and getattr(value, 'is_retracted', True)
+            hidden = fetched_field and isinstance(fetched_field, HideIfWithdrawal) and getattr(value, 'is_retracted', False)
 
             if not hidden and count_field not in countable_fields:
                 raise InvalidQueryStringError(
