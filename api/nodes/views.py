@@ -15,7 +15,7 @@ from api.base.parsers import JSONAPIOnetoOneRelationshipParser, JSONAPIOnetoOneR
 from api.base.pagination import CommentPagination
 from api.base.serializers import AddonAccountSerializer
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
-from api.base.settings import ADDONS_UNMANAGEABLE, ADDONS_NON_OAUTH
+from api.base.settings import ADDONS_MANAGEABLE, ADDONS_OAUTH
 from api.files.serializers import FileSerializer
 from api.comments.serializers import CommentSerializer, CommentCreateSerializer
 from api.comments.permissions import CanCommentOrPublic
@@ -1391,23 +1391,22 @@ class NodeAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, Node
 
     def get_default_queryset(self):
         qs = []
-        for addon in ADDONS_AVAILABLE_DICT.keys():
-            if addon not in ADDONS_UNMANAGEABLE:
-                addon_settings = ADDONS_AVAILABLE_DICT[addon].settings_models.get('node', None)
-                obj = None
-                enabled = False
-                try:
-                    obj = addon_settings.find_one(Q('owner', 'eq', self.get_node()._id))
-                    enabled = True
-                except:
-                    pass
-                qs.append(
-                    {
-                        '_id': addon,
-                        'enabled': enabled,
-                        'object': obj
-                    }
-                )
+        for addon in ADDONS_MANAGEABLE:
+            addon_settings = ADDONS_AVAILABLE_DICT[addon].settings_models.get('node', None)
+            obj = None
+            enabled = False
+            try:
+                obj = addon_settings.find_one(Q('owner', 'eq', self.get_node()._id))
+                enabled = True
+            except:
+                pass
+            qs.append(
+                {
+                    '_id': addon,
+                    'enabled': enabled,
+                    'object': obj
+                }
+            )
 
         return qs
 
@@ -1433,21 +1432,20 @@ class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin
 
     def get_object(self):
         addon = self.kwargs['provider']
-        if addon in ADDONS_AVAILABLE_DICT.keys():
-            if addon not in ADDONS_UNMANAGEABLE:
-                addon_settings = ADDONS_AVAILABLE_DICT[addon].settings_models.get('node', None)
-                obj = None
-                enabled = False
-                try:
-                    obj = addon_settings.find_one(Q('owner', 'eq', self.get_node()))
-                    enabled = True
-                except:
-                    pass
-                return {
-                    '_id': addon,
-                    'enabled': enabled,
-                    'object': obj
-                }
+        for addon in ADDONS_MANAGEABLE:
+            addon_settings = ADDONS_AVAILABLE_DICT[addon].settings_models.get('node', None)
+            obj = None
+            enabled = False
+            try:
+                obj = addon_settings.find_one(Q('owner', 'eq', self.get_node()))
+                enabled = True
+            except:
+                pass
+            return {
+                '_id': addon,
+                'enabled': enabled,
+                'object': obj
+            }
         raise NotFound('Requested addon unavailable.')
 
     def update(self):
@@ -1482,7 +1480,7 @@ class NodeAddonAccountList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixi
         qs = []
         node = self.get_node()
         for addon in node.get_addons():
-            if addon.config.short_name not in ADDONS_NON_OAUTH:
+            if addon.config.short_name in ADDONS_OAUTH:
                 if addon.external_account:
                     qs.append(addon.external_account)
         return qs
@@ -1518,12 +1516,11 @@ class NodeAddonAccountDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, N
     def get_object(self):
         addon = self.kwargs['provider']
         account_id = self.kwargs['account_id']
-        if addon in ADDONS_AVAILABLE_DICT.keys():
-            if addon not in ADDONS_NON_OAUTH:
-                if self.get_node().has_addon(addon):
-                    account = ExternalAccount.load(account_id)
-                    if account and account.provider == addon:
-                        return account
+        if addon in ADDONS_OAUTH:
+            if self.get_node().has_addon(addon):
+                account = ExternalAccount.load(account_id)
+                if account and account.provider == addon:
+                    return account
         raise NotFound('Requested account unavailable.')
 
     def perform_destroy(self, instance):
