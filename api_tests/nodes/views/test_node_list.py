@@ -18,7 +18,6 @@ from tests.factories import (
     RegistrationFactory,
     AuthUserFactory,
     UserFactory,
-    RetractedRegistrationFactory
 )
 
 

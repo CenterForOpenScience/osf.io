@@ -10,7 +10,6 @@ from website.util import permissions
 from website.util.sanitize import strip_html
 
 from api.base.settings.defaults import API_BASE
-from api_tests import utils as test_utils
 
 from tests.base import ApiTestCase, fake
 from tests.factories import (
@@ -20,7 +19,6 @@ from tests.factories import (
     AuthUserFactory,
     CollectionFactory,
     CommentFactory,
-    RetractedRegistrationFactory
 )
 
 from tests.utils import assert_logs, assert_not_logs
@@ -174,7 +172,7 @@ class TestNodeDetail(ApiTestCase):
         )
         assert_equal(res.status_code, 404)
 
-    def test_can_not_return_registrations_at_node_detail_endpoint(self):
+    def test_cannot_return_registrations_at_node_detail_endpoint(self):
         registration = RegistrationFactory(project=self.public_project, creator=self.user)
         res = self.app.get('/{}nodes/{}/'.format(API_BASE, registration._id), auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)

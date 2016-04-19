@@ -12,7 +12,6 @@ from tests.factories import (
     ProjectFactory,
     RegistrationFactory,
     AuthUserFactory,
-    RetractedRegistrationFactory
 )
 from tests.utils import assert_logs
 

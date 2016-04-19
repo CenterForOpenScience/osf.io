@@ -14,9 +14,7 @@ from api_tests import utils as api_utils
 from tests.base import ApiTestCase
 from tests.factories import (
     ProjectFactory,
-    AuthUserFactory,
-    RegistrationFactory,
-    RetractedRegistrationFactory
+    AuthUserFactory
 )
 
 def prepare_mock_wb_response(

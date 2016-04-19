@@ -11,8 +11,6 @@ from tests.base import ApiTestCase, assert_datetime_equal
 from tests.factories import (
     ProjectFactory,
     AuthUserFactory,
-    RegistrationFactory,
-    RetractedRegistrationFactory
 )
 import datetime
 

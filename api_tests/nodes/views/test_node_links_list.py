@@ -11,8 +11,7 @@ from tests.base import ApiTestCase
 from tests.factories import (
     ProjectFactory,
     RegistrationFactory,
-    AuthUserFactory,
-    RetractedRegistrationFactory
+    AuthUserFactory
 )
 from tests.utils import assert_logs
 

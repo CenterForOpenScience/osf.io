@@ -13,7 +13,6 @@ from tests.factories import (
     RegistrationFactory,
     AuthUserFactory,
     CommentFactory,
-    RetractedRegistrationFactory,
     NodeWikiFactory
 )
 

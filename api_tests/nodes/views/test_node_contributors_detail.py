@@ -10,8 +10,6 @@ from tests.base import ApiTestCase
 from tests.factories import (
     ProjectFactory,
     AuthUserFactory,
-    RegistrationFactory,
-    RetractedRegistrationFactory
 )
 from tests.utils import assert_logs, assert_not_logs
 
