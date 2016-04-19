@@ -27,13 +27,13 @@ class TestRegisterUser(AdminTestCase):
         self.view = RegisterUser()
         self.request = RequestFactory().post('fake_path')
 
-    def test_osf_id_invalid(self):
+    @mock.patch('admin.common_auth.views.page_not_found')
+    def test_osf_id_invalid(self, mock_404):
         form = UserRegistrationForm(data=self.data)
         nt.assert_true(form.is_valid())
         view = setup_form_view(self.view, self.request, form)
-        res = view.form_valid(form)
-        nt.assert_equal(res.status_code, 404)
-        nt.assert_in('OSF user with id', res.content)
+        view.form_valid(form)
+        nt.assert_true(mock_404.called_with(self.request, AttributeError))
 
     @mock.patch('admin.common_auth.views.PasswordResetForm.save')
     @mock.patch('admin.common_auth.views.messages.success')
