@@ -230,7 +230,5 @@ class InstitutionRegistrationList(InstitutionNodeList):
 
     def get_queryset(self):
         query = self.get_query_from_request()
-        nodes = Node.find(query)
-        non_retracted_list = [node._id for node in nodes if not node.is_retracted]
-        non_retracted_nodes = Node.find(Q('_id', 'in', non_retracted_list))  # querysets can be ordered
-        return non_retracted_nodes
+        nodes = list(Node.find(query))
+        return [node for node in nodes if not node.is_retracted]
