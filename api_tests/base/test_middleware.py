@@ -51,7 +51,7 @@ class TestCorsMiddleware(MiddlewareTestCase):
             institution_domains=[domain.netloc.lower()],
             title="Institute for Sexy Lizards"
         )
-        CorsMiddleware.INSTITUTION_ORIGINS_WHITELIST = CorsMiddleware.INSTITUTION_ORIGINS_WHITELIST + (domain.netloc.lower(),)
+        settings.load_institutions()
         request = self.request_factory.get(url, HTTP_ORIGIN=domain.geturl())
         response = {}
         self.middleware.process_request(request)
@@ -108,4 +108,3 @@ class TestCorsMiddleware(MiddlewareTestCase):
         self.middleware.process_request(request)
         processed = self.middleware.process_response(request, response)
         assert_equal(response['Access-Control-Allow-Origin'], domain.geturl())
-
