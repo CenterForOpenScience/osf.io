@@ -105,7 +105,8 @@ def resend_confirmation(auth):
 
     validate_user(data, user)
     if not throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
-        raise HTTPError(httplib.BAD_REQUEST, data={'message_long': 'Please wait 30 seconds before sending another confirmation email.'})
+        raise HTTPError(httplib.BAD_REQUEST,
+                        data={'message_long': 'Too many requests. Please wait a while before sending another confirmation email.'})
 
     try:
         primary = data['email']['primary']
@@ -785,7 +786,7 @@ def request_export(auth):
     user = auth.user
     if not throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
         raise HTTPError(httplib.BAD_REQUEST,
-                        data={'message_long': 'Please wait 30 seconds before sending another account export request.',
+                        data={'message_long': 'Too many requests. Please wait a while before sending another account export request.',
                               'error_type': 'throttle_error'})
 
     mails.send_mail(
@@ -804,7 +805,7 @@ def request_deactivation(auth):
     if not throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
         raise HTTPError(http.BAD_REQUEST,
                         data={
-                            'message_long': 'Please wait 30 seconds before sending another account deactivation request.',
+                            'message_long': 'Too many requests. Please wait a while before sending another account deactivation request.',
                             'error_type': 'throttle_error'
                         })
 
