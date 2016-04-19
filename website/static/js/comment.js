@@ -80,7 +80,7 @@ var onReturn = function (e) {
 
         let range = document.selection.createRange();
 
-        range.pasteHTML('<BR><SPAN class="--IE-BR-HACK"></SPAN>');
+        range.pasteHTML('<BR>');
 
         // Move the caret after the BR
         range.moveStart('character', 1);
@@ -193,7 +193,7 @@ var getContributorList = function(input, nodeId) {
 
 getContributorList(input, nodeId);
 input.atwho(at_config).atwho(plus_config).bind('paste', onPaste).on('focusin keyup', lastElementBr).on('focusout', onlyElementBr).keydown(function(e) {
-    if(e.which === 13) {
+    if(e.which === 13 && !e.isDefaultPrevented()) {
         onReturn(e);
     }
 });
@@ -633,7 +633,7 @@ CommentModel.prototype.edit = function() {
 CommentModel.prototype.autosizeText = function(elm) {
     $(elm).find('textarea').autosize().focus();
     $(elm).find('.atwho-input').atwho(at_config).atwho(plus_config).bind('paste', onPaste).on('focusin', lastElementBr).on('focusout', onlyElementBr).keydown(function(e) {
-        if(e.which === 13) {
+        if(e.which === 13 && !e.isDefaultPrevented()) {
             onReturn(e);
         }
     });
