@@ -239,7 +239,7 @@ class AddonSettingsBase(StoredObject):
 
 class AddonUserSettingsBase(AddonSettingsBase):
 
-    owner = fields.ForeignField('user', backref='addons')
+    owner = fields.ForeignField('user')
 
     _meta = {
         'abstract': True,
@@ -260,9 +260,6 @@ class AddonUserSettingsBase(AddonSettingsBase):
         """Whether the user has added credentials for this addon."""
         return False
 
-    def get_backref_key(self, schema, backref_name):
-        return schema._name + '__' + backref_name
-
     # TODO: Test me @asmacdo
     @property
     def nodes_authorized(self):
@@ -274,10 +271,9 @@ class AddonUserSettingsBase(AddonSettingsBase):
             schema = self.config.settings_models['node']
         except KeyError:
             return []
-        nodes_backref = self.get_backref_key(schema, 'authorized')
         return [
             node_addon.owner
-            for node_addon in getattr(self, nodes_backref)
+            for node_addon in schema.find(Q('user_settings', 'eq', self))
             if node_addon.owner and not node_addon.owner.is_deleted
         ]
 
@@ -522,7 +518,7 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
 
 class AddonNodeSettingsBase(AddonSettingsBase):
 
-    owner = fields.ForeignField('node', backref='addons')
+    owner = fields.ForeignField('node')
 
     _meta = {
         'abstract': True,
@@ -534,6 +530,13 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         :rtype bool:
         """
         raise NotImplementedError()
+
+    @property
+    def configured(self):
+        """Whether or not this addon has had a folder connected.
+        :rtype bool:
+        """
+        return self.complete
 
     @property
     def has_auth(self):
@@ -786,8 +789,7 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
 
     # TODO: Validate this field to be sure it matches the provider's short_name
     # NOTE: Do not set this field directly. Use ``set_auth()``
-    external_account = fields.ForeignField('externalaccount',
-                                           backref='connected')
+    external_account = fields.ForeignField('externalaccount')
 
     # NOTE: Do not set this field directly. Use ``set_auth()``
     user_settings = fields.AbstractForeignField()
@@ -843,6 +845,13 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
                 node=self.owner,
                 external_account=self.external_account,
             )
+        )
+
+    @property
+    def configured(self):
+        return bool(
+            self.complete and
+            (self.folder_id or self.folder_name or self.folder_path)
         )
 
     @property
