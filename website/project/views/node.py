@@ -754,7 +754,7 @@ def _view_project(node, auth, primary=False):
             'can_comment': node.can_comment(auth),
             'show_wiki_widget': _should_show_wiki_widget(node, user),
             'dashboard_id': bookmark_collection_id,
-            'institutions': get_affiliated_institutions(user),
+            'institutions': get_affiliated_institutions(user) if user else [],
         },
         'badges': _get_badge(user),
         # TODO: Namespace with nested dicts
