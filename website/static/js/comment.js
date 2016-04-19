@@ -59,9 +59,9 @@ var onReturn = function (e) {
     else if (window.getSelection) {
         e.preventDefault();
 
-        let selection = window.getSelection(),
-            range = selection.getRangeAt(0),
+        var selection = window.getSelection(),
             br = document.createElement('br');
+        range = selection.getRangeAt(0);
 
         range.deleteContents();
         range.insertNode(br);
@@ -77,7 +77,7 @@ var onReturn = function (e) {
     else if ($.browser.msie) {
         e.preventDefault();
 
-        let range = document.selection.createRange();
+        range = document.selection.createRange();
 
         range.pasteHTML('<BR>');
 
@@ -274,10 +274,10 @@ var BaseComment = function() {
         var matches = content.match(/<span.*?data-atwho-guid="([a-z\d]{5})".*?>((@|\+)[\w\s]+)<\/span>/g);
         if (matches) {
             for (var i = 0; i < matches.length; i++) {
-                let match = regex.exec(matches[i]);
-                let guid = match[1];
-                let mention = match[2];
-                let url = '/' + guid + '/';
+                var match = regex.exec(matches[i]);
+                var guid = match[1];
+                var mention = match[2];
+                var url = '/' + guid + '/';
                 content = content.replace(match[0], '['+ mention + '](' + url + ')');
 
                 if (guid && self.replyMentions.indexOf(guid) === -1) {
@@ -552,10 +552,10 @@ var CommentModel = function(data, $parent, $root) {
         var matches = content.match(/\[(@|\+)(.*?)\]\(\/([a-z\d]{5})\/\)/g);
         if (matches) {
             for (var i = 0; i < matches.length; i++) {
-                let match = regex.exec(matches[i]);
+                var match = regex.exec(matches[i]);
                 var atwho = match[1];
-                let guid = match[3];
-                let mention = match[2];
+                var guid = match[3];
+                var mention = match[2];
 
                 content = content.replace(match[0], '<span class="atwho-inserted" contenteditable="false" data-atwho-guid="'+ guid + '" data-atwho-at-query="' + atwho + '">' + atwho + mention + '</span>');
             }
@@ -572,10 +572,10 @@ var CommentModel = function(data, $parent, $root) {
         var matches = content.match(/<span.*?data-atwho-guid="([a-z\d]{5})".*?>((@|\+)[\w\s]+)<\/span>/g);
         if (matches) {
             for (var i = 0; i < matches.length; i++) {
-                let match = regex.exec(matches[i]);
-                let guid = match[1];
-                let mention = match[2];
-                let url = '/' + guid + '/';
+                var match = regex.exec(matches[i]);
+                var guid = match[1];
+                var mention = match[2];
+                var url = '/' + guid + '/';
                 content = content.replace(match[0], '['+ mention + '](' + url + ')');
 
                 if (guid && self.replyMentions.indexOf(guid) === -1) {
