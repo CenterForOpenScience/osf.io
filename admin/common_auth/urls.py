@@ -7,5 +7,5 @@ from admin.common_auth import views
 urlpatterns = [
     url(r'^login/?$', views.LoginView.as_view(), name='login'),
     url(r'^logout/$', views.logout_user, name='logout'),
-    url(r'^register/$', views.register, name='register'),
+    url(r'^register/$', views.RegisterUser.as_view(), name='register'),
 ]

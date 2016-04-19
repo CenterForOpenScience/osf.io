@@ -1,15 +1,21 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
+from django.core.urlresolvers import reverse
 from django.views.generic.edit import FormView
+from django.views.defaults import page_not_found
 from django.contrib import messages
 from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth import login, REDIRECT_FIELD_NAME, authenticate, logout
-from django.shortcuts import redirect, resolve_url, render
+from django.shortcuts import redirect, resolve_url
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect
 from django.conf import settings
 
+from website.project.model import User
+from website.settings import PREREG_ADMIN_TAG
+
+from admin.base.utils import SuperUser
 from admin.common_auth.forms import LoginForm, CustomUserRegistrationForm
 from admin.common_auth.models import MyUser
 
@@ -51,38 +57,43 @@ def logout_user(request):
     return redirect('auth:login')
 
 
-def register(request):
-    if not request.user.is_staff:
-        messages.error(request, 'You do not have permission to access the registration page.')
-        return redirect('auth:login')
+class RegisterUser(SuperUser, FormView):
+    form_class = CustomUserRegistrationForm
+    template_name = 'register.html'
 
-    if request.method != 'POST':
-        reg_form = CustomUserRegistrationForm()
-        context = {'form': reg_form}
-        return render(request, 'register.html', context)
+    def form_valid(self, form):
+        osf_id = form.cleaned_data.get('osf_id')
+        try:
+            osf_user = User.load(osf_id)
+            osf_user.system_tags.append(PREREG_ADMIN_TAG)
+        except AttributeError:
+            return page_not_found(
+                self.request,
+                AttributeError(
+                    'OSF user with id "{}" not found. Please double check.'.format(
+                        osf_id
+                    )
+                )
+            )
+        new_user = MyUser.objects.create_user(
+            email=form.cleaned_data.get('email'),
+            password=form.cleaned_data.get('password1')
+        )
+        new_user.first_name = form.cleaned_data.get('first_name')
+        new_user.last_name = form.cleaned_data.get('last_name')
+        new_user.osf_id = osf_id
+        for group in form.cleaned_data.get('group_perms'):
+            new_user.groups.add(group)
+        new_user.save()
+        reset_form = PasswordResetForm({'email': new_user.email})
+        if reset_form.is_valid():
+            reset_form.save(
+                subject_template_name='emails/account_creation_subject.txt',
+                email_template_name='emails/password_reset_email.html',
+                request=self.request,
+            )
+        messages.success(self.request, 'Registration successful!')
+        return super(RegisterUser, self).form_valid(form)
 
-    reg_form = CustomUserRegistrationForm(request.POST)
-    if not reg_form.is_valid():
-        context = {'form': reg_form}
-        return render(request, 'register.html', context, status=400)
-
-    email = reg_form.cleaned_data['email']
-    password = reg_form.cleaned_data['password1']
-    new_user = MyUser.objects.create_user(email=email, password=password)
-    new_user.first_name = reg_form.cleaned_data['first_name']
-    new_user.last_name = reg_form.cleaned_data['last_name']
-    group_perms = reg_form.cleaned_data['group_perms']
-
-    for group in group_perms:
-        new_user.groups.add(group)
-
-    new_user.save()
-    reset_form = PasswordResetForm({'email': new_user.email}, request.POST)
-    assert reset_form.is_valid()
-    reset_form.save(
-        subject_template_name='emails/account_creation_subject.txt',
-        email_template_name='emails/password_reset_email.html',
-        request=request
-    )
-    messages.success(request, 'Registration successful')
-    return redirect('auth:register')
+    def get_success_url(self):
+        return reverse('auth:register')

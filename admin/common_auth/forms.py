@@ -30,3 +30,4 @@ class CustomUserRegistrationForm(UserCreationForm):
         super(CustomUserRegistrationForm, self).__init__(*args, **kwargs)
         self.fields['first_name'].required = True
         self.fields['last_name'].required = True
+        self.fields['osf_id'].required = True

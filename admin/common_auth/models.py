@@ -46,7 +46,7 @@ class MyUser(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=datetime.now)
     confirmed = models.BooleanField(default=False)
-    osf_id = models.CharField(default=False, max_length=10, blank=True)
+    osf_id = models.CharField(default='', max_length=5, blank=True)
 
     objects = MyUserManager()
 

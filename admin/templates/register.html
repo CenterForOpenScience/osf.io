@@ -42,6 +42,11 @@
                 {% if form.password2.errors %}<span class="text-danger"> {{ form.password2.errors }}</span>{% endif %}
             </div>
             <div class="form-group">
+                <label for="email">OSF ID:</label>
+                <p>{{ form.osf_id }}</p>
+                {% if form.osf_id.errors %}<span class="text-danger"> {{ form.osf_id.errors }}</span>{% endif %}
+            </div>
+            <div class="form-group">
                 <label for="perms">Select account Permissions:</label>
                 <p>{{ form.group_perms }}</p>
                 {% if form.group_perms.errors %}<span class="text-danger"> {{ form.group_perms.errors }}</span>{% endif %}
