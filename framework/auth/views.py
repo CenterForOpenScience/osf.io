@@ -244,8 +244,8 @@ def confirm_email_get(token, auth=None, **kwargs):
 
             if token in auth.user.email_verifications:
                 status.push_status_message(language.CONFIRM_ALTERNATE_EMAIL_ERROR, 'danger')
-            # Go to home page
-            return redirect(web_url_for('index'))
+            # Go to dashboard
+            return redirect(web_url_for('dashboard'))
 
         status.push_status_message(language.MERGE_COMPLETE, 'success')
         return redirect(web_url_for('user_account'))
@@ -316,11 +316,11 @@ def confirm_email_remove(auth=None, **kwargs):
     """
     user = auth.user
     confirmed_email = request.json.get('address')
-    email_verifications = user.email_verifications.copy()
+    email_verifications = user.email_verifications.deepcopy()
     for token in user.email_verifications:
         if user.email_verifications[token]['email'] == confirmed_email:
             if user.confirm_token(token):
-                email_verifications.pop(token)
+                user.email_verifications.pop(token)
     user.email_verifications = email_verifications
     user.save()
     return {
@@ -389,12 +389,12 @@ def send_confirm_email(user, email):
     # Choose the appropriate email template to use and add existing_user flag if a merge or adding an email.
     if merge_target:
         mail_template = mails.CONFIRM_MERGE
-        confirmation_url += '?existing_user={}'.format(user.email)
+        confirmation_url = '{}?existing_user={}'.format(confirmation_url, user.email)
     elif campaign:
         mail_template = campaigns.email_template_for_campaign(campaign)
     elif user.is_active:
         mail_template = mails.CONFIRM_EMAIL
-        confirmation_url += '?existing_user={}'.format(user.email)
+        confirmation_url = '{}?existing_user={}'.format(confirmation_url, user.email)
     else:
         mail_template = mails.INITIAL_CONFIRM_EMAIL
 

@@ -859,8 +859,7 @@ class User(GuidStoredObject, AddonModelMixin):
         # Check token for existance and date
         if (
             'expiration' in verification and
-            (verification['expiration'] < dt.datetime.utcnow() or
-                token not in self.email_verifications)
+            verification['expiration'] < dt.datetime.utcnow()
         ):
             return False
         return True

@@ -42,17 +42,7 @@
     /*height: 320px;*/
     background-color: #EEE;
     border-radius: 4px;
-}
-
-@media (min-width: 768px) {
-    .existing-user-container {
-        height: 650px;
-    }
-}
-
-.existing-user-instructions {
     margin-top: 75px;
-    font-size: 20px;
 }
 
 .logo-no-spin {

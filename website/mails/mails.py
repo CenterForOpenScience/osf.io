@@ -129,11 +129,10 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
 TEST = Mail('test', subject='A test email to ${name}', categories=['test'])
 
 INITIAL_CONFIRM_EMAIL = Mail('initial_confirm', subject='Open Science Framework Account Verification')
-CONFIRM_EMAIL = Mail('confirm', subject='Open Science Framework Email Verification')
+CONFIRM_EMAIL = Mail('confirm', subject='Add a new email to your OSF account')
 CONFIRM_EMAIL_PREREG = Mail('confirm_prereg', subject='Open Science Framework Account Verification, Preregistration Challenge')
 
 CONFIRM_MERGE = Mail('confirm_merge', subject='Confirm account merge')
-CONFIRM_EMAIL_ADD = Mail('confirm_email_add', subject='Add a new email to your OSF account')
 
 REMOVED_EMAIL = Mail('email_removed', subject='Email address removed from your OSF account')
 PRIMARY_EMAIL_CHANGED = Mail('primary_email_changed', subject='Primary email changed')
