@@ -34,6 +34,9 @@ with open(os.path.join(APP_PATH, 'package.json'), 'r') as fobj:
 EMAIL_TOKEN_EXPIRATION = 24
 CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'static', 'vendor', 'bower_components', 'styles')
 
+# Minimum seconds between forgot password email attempts
+FORGOT_PASSWORD_MINIMUM_TIME = 30
+
 # Hours before pending embargo/retraction/registration automatically becomes active
 RETRACTION_PENDING_TIME = datetime.timedelta(days=2)
 EMBARGO_PENDING_TIME = datetime.timedelta(days=2)
@@ -308,7 +311,21 @@ CELERY_IMPORTS = (
     'website.mailchimp_utils',
     'website.notifications.tasks',
     'website.archiver.tasks',
-    'website.search.search'
+    'website.search.search',
+    'api.caching.tasks',
+    'scripts.populate_new_and_noteworthy_projects',
+    'scripts.refresh_box_tokens',
+    'scripts.retract_registrations',
+    'scripts.embargo_registrations',
+    'scripts.approve_registrations',
+    'scripts.osfstorage.glacier_inventory',
+    'scripts.osfstorage.glacier_audit',
+    'scripts.triggered_mails',
+    'scripts.send_queued_mails',
+    'scripts.osfstorage.usage_audit',
+    'scripts.osfstorage.files_audit',
+    'scripts.analytics.tasks',
+    'scripts.analytics.upload'
 )
 
 # celery.schedule will not be installed when running invoke requirements the first time.
@@ -329,7 +346,88 @@ else:
             'schedule': crontab(minute=0, hour=0),
             'args': ('email_digest',),
         },
+        'refresh_box': {
+            'task': 'scripts.refresh_box_tokens',
+            'schedule': crontab(minute=0, hour= 2),  # Daily 2:00 a.m
+            'kwargs': {'dry_run': False},
+        },
+        'retract_registrations': {
+            'task': 'scripts.retract_registrations',
+            'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+            'kwargs': {'dry_run': False},
+        },
+        'embargo_registrations': {
+            'task': 'scripts.embargo_registrations',
+            'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+            'kwargs': {'dry_run': False},
+        },
+        'approve_registrations': {
+            'task': 'scripts.approve_registrations',
+            'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+            'kwargs': {'dry_run': False},
+        },
+        'triggered_mails': {
+            'task': 'scripts.triggered_mails',
+            'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+            'kwargs': {'dry_run': False},
+        },
+        'send_queued_mails': {
+            'task': 'scripts.send_queued_mails',
+            'schedule': crontab(minute=0, hour=12),  # Daily 12 p.m.
+            'kwargs': {'dry_run': False},
+        },
+        'new-and-noteworthy': {
+            'task': 'scripts.populate_new_and_noteworthy_projects',
+            'schedule': crontab(minute=0, hour=2, day_of_week=6),  # Saturday 2:00 a.m.
+            'kwargs': {'dry_run': True}
+        },
+        # 'usage_audit': {
+        #     'task': 'scripts.osfstorage.usage_audit',
+        #     'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+        #     'kwargs': {'send_mail': True},
+        # },
+        # 'glacier_inventory': {
+        #     'task': 'scripts.osfstorage.glacier_inventory',
+        #     'schedule': crontab(minute=0, hour= 0, day_of_week=0),  # Sunday 12:00 a.m.
+        #     'args': (),
+        # },
+        # 'glacier_audit': {
+        #     'task': 'scripts.osfstorage.glacier_audit',
+        #     'schedule': crontab(minute=0, hour=6, day_of_week=0),  # Sunday 6:00 a.m.
+        #     'kwargs': {'dry_run': False},
+        # },
+        # 'files_audit_0': {
+        #     'task': 'scripts.osfstorage.files_audit_0',
+        #     'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
+        #     'kwargs': {'num_of_workers': 4, 'dry_run': False},
+        # },
+        # 'files_audit_1': {
+        #     'task': 'scripts.osfstorage.files_audit_1',
+        #     'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
+        #     'kwargs': {'num_of_workers': 4, 'dry_run': False},
+        # },
+        # 'files_audit_2': {
+        #     'task': 'scripts.osfstorage.files_audit_2',
+        #     'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
+        #     'kwargs': {'num_of_workers': 4, 'dry_run': False},
+        # },
+        # 'files_audit_3': {
+        #     'task': 'scripts.osfstorage.files_audit_3',
+        #     'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
+        #     'kwargs': {'num_of_workers': 4, 'dry_run': False},
+        # },
+        # 'analytics': {
+        #     'task': 'scripts.analytics.tasks',
+        #     'schedule': crontab(minute=0, hour=2),  # Daily 2:00 a.m.
+        #     'kwargs': {}
+        # },
+        # 'analytics-upload': {
+        #     'task': 'scripts.analytics.upload',
+        #     'schedule': crontab(minute=0, hour=6),  # Daily 6:00 a.m.
+        #     'kwargs': {}
+        # },
     }
+
 
 WATERBUTLER_JWE_SALT = 'yusaltydough'
 WATERBUTLER_JWE_SECRET = 'CirclesAre4Squares'

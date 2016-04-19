@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block top_includes %}
+    <script>
+        var keenProjectId = '{{ keen_project_id }}';
+        var keenReadKey = '{{ keen_read_key }}';
+    </script>
+{% endblock %}
+
+{% block title %}
+    <title>OSF Sales Analytics</title>
+{% endblock title %}
+
+{% block bottom_js %}
+    <script src="{% static 'public/js/metrics-sales-analytics.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+    <h1>Sales Analytics</h1>
+    <h3>Average User Session Length</h3>
+    <div id='keen-chart-average-session-user'>...</div>
+    <h3>Average MAU Session Length (MAU)</h3>
+    <div id='keen-chart-average-session-mau'>...</div>
+    <h3>Average User/MAU Session Length History</h3>
+    <div id='keen-chart-average-session-history'>...</div>
+{% endblock content %}

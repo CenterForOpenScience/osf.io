@@ -39,6 +39,8 @@ var logActions = {
     'file_updated':     '${user} updated file in ${node}',
     'file_removed':     '${user} removed file ${path} from ${node}',
     'file_restored':    '${user} restored file ${path} from ${node}',
+    'checked_out':  '${user} checked out ${kind} ${path} from ${node}',
+    'checked_in':   '${user} checked in ${kind} ${path} to ${node}',
     'comment_added':    '${user} added a comment to ${node}',
     'comment_removed':  '${user} deleted a comment from ${node}',
     'comment_updated':  '${user} updated a comment on ${node}',
