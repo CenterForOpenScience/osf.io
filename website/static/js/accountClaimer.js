@@ -28,7 +28,7 @@ function getClaimUrl() {
 }
 
 function alertFinished(email) {
-    $osf.growl('Email will arrive shortly', ['Please check <em>', email, '</em>'].join(''), 'success');
+    $osf.growl('Email will arrive shortly', ['Please check <em>', $osf.htmlEscape(email), '</em>'].join(''), 'success');
 }
 
 function onClickIfLoggedIn() {
