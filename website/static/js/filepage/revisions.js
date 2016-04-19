@@ -1,6 +1,6 @@
 var m = require('mithril');
 var $ = require('jquery');
-var bootbox = require('bootbox');
+var bootbox = require('bootbox');  // TODO: Why is this required? Is it?
 var $osf = require('js/osfHelpers');
 var waterbutler = require('js/waterbutler');
 

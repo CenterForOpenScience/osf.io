@@ -6,7 +6,7 @@ var faker = require('faker');
 
 var licenses = require('json!list-of-licenses');
 var $ = require('jquery');
-var bootbox = require('bootbox');
+var bootbox = require('bootbox');  // TODO: Why is this required? Is it?
 
 var LicensePicker = require('js/licensePicker');
 

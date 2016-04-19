@@ -646,7 +646,7 @@ var isSafari = function(userAgent) {
   * Confirm a dangerous action by requiring the user to enter specific text
   *
   * This is an abstraction over bootbox, and passes most options through to
-  * bootbox.dailog(). The exception to this is `callback`, which is called only
+  * bootbox.dialog(). The exception to this is `callback`, which is called only
   * if the user correctly confirms the action.
   *
   * @param  {Object} options
@@ -696,7 +696,7 @@ var confirmDangerousAction = function (options) {
 
     bootboxOptions.message += [
         '<p>Type the following to continue: <strong>',
-        confirmationString,
+        htmlEscape(confirmationString),
         '</strong></p>',
         '<input id="bbConfirmText" class="form-control">'
     ].join('');

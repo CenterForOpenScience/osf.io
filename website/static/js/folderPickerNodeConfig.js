@@ -80,15 +80,16 @@ var FolderPickerViewModel = oop.defclass({
 
         self.messages = {
             invalidCredOwner: ko.pureComputed(function() {
-                return 'Could not retrieve ' + self.addonName + ' settings at ' +
-                    'this time. The credentials associated with this ' + self.addonName + ' account may no longer be valid.' +
-                    ' Try disconnecting and reconnecting the ' + self.addonName + ' account on your <a href="' +
+                var addonName = $osf.htmlEscape(self.addonName);
+                return 'Could not retrieve ' + addonName + ' settings at ' +
+                    'this time. The credentials associated with this ' + addonName + ' account may no longer be valid.' +
+                    ' Try disconnecting and reconnecting the ' + addonName + ' account on your <a href="' +
                     self.urls().settings + '">account settings page</a>.';
             }),
             invalidCredNotOwner: ko.pureComputed(function() {
-                return 'Could not retrieve ' + self.addonName + ' settings at ' +
-                    'this time. The ' + self.addonName + ' addon credentials may no longer be valid.' +
-                    ' Contact ' + self.ownerName() + ' to verify.';
+                return 'Could not retrieve ' + addonName + ' settings at ' +
+                    'this time. The ' + addonName + ' addon credentials may no longer be valid.' +
+                    ' Contact ' + $osf.htmlEscape(self.ownerName()) + ' to verify.';
             }),
             cantRetrieveSettings: ko.pureComputed(function() {
                 return 'Could not retrieve ' + self.addonName + ' settings at ' +
@@ -357,7 +358,7 @@ var FolderPickerViewModel = oop.defclass({
     importAuth: function() {
         var self = this;
         bootbox.confirm({
-            title: 'Import ' + self.addonName + ' Account?',
+            title: 'Import ' + $osf.htmlEscape(self.addonName) + ' Account?',
             message: self.messages.confirmAuth(),
             callback: function(confirmed) {
                 if (confirmed) {
@@ -408,7 +409,7 @@ var FolderPickerViewModel = oop.defclass({
     deauthorize: function() {
         var self = this;
         bootbox.confirm({
-            title: 'Disconnect ' + self.addonName + ' Account?',
+            title: 'Disconnect ' + $osf.htmlEscape(self.addonName) + ' Account?',
             message: self.messages.confirmDeauth(),
             callback: function(confirmed) {
                 if (confirmed) {

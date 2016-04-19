@@ -1,7 +1,7 @@
 
 var $ = require('jquery');
 var ko = require('knockout');
-var bootbox = require('bootbox');
+var bootbox = require('bootbox'); // TODO: Why is this import required? Is it?
 var signIn = require('js/signIn');
 var $osf = require('js/osfHelpers');
 

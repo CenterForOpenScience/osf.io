@@ -51,7 +51,7 @@ var ExternalAccount = oop.defclass({
         var self = this;
         bootbox.confirm({
             title: 'Remove addon?',
-            message: 'Are you sure you want to remove the ' + self.providerName + ' authorization from this project?',
+            message: 'Are you sure you want to remove the ' + $osf.htmlEscape(self.providerName) + ' authorization from this project?',
             callback: function(confirm) {
                 if (confirm) {
                     self._deauthorizeNodeConfirm(node);
@@ -99,8 +99,8 @@ var OAuthAddonSettingsViewModel = oop.defclass({
         bootbox.confirm({
             title: 'Disconnect Account?',
             message: '<p class="overflow">' +
-                'Are you sure you want to disconnect the ' + self.properName + ' account <strong>' +
-                account.name + '</strong>? This will revoke access to ' + self.properName + ' for all projects you have authorized.' +
+                'Are you sure you want to disconnect the ' + $osf.htmlEscape(self.properName) + ' account <strong>' +
+                $osf.htmlEscape(account.name) + '</strong>? This will revoke access to ' + $osf.htmlEscape(self.properName) + ' for all projects you have authorized.' +
                 '</p>',
             callback: function(confirm) {
                 if (confirm) {

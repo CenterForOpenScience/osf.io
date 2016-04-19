@@ -461,13 +461,13 @@ ViewModel.prototype.importAuth = function() {
         .then(function(){
             if (self.accounts().length > 1) {
                 bootbox.prompt({
-                    title: 'Choose ' + self.addonName + ' Access Token to Import',
+                    title: 'Choose ' + $osf.htmlEscape(self.addonName) + ' Access Token to Import',
                     inputType: 'select',
                     inputOptions: ko.utils.arrayMap(
                         self.accounts(),
                         function(item) {
                             return {
-                                text: item.name,
+                                text: $osf.htmlEscape(item.name),
                                 value: item.id
                             };
                         }
@@ -486,7 +486,7 @@ ViewModel.prototype.importAuth = function() {
                 });
             } else {
                 bootbox.confirm({
-                    title: 'Import ' + self.addonName + ' Access Token?',
+                    title: 'Import ' + $osf.htmlEscape(self.addonName) + ' Access Token?',
                     message: self.messages.confirmAuth(),
                     callback: function(confirmed) {
                         if (confirmed) {
@@ -535,7 +535,7 @@ ViewModel.prototype._deauthorizeConfirm = function() {
 ViewModel.prototype.deauthorize = function() {
     var self = this;
     bootbox.confirm({
-        title: 'Disconnect ' + self.addonName + ' Account?',
+        title: 'Disconnect ' + $osf.htmlEscape(self.addonName) + ' Account?',
         message: self.messages.confirmDeauth(),
         callback: function(confirmed) {
             if (confirmed) {

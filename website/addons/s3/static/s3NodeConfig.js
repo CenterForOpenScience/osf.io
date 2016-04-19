@@ -258,7 +258,7 @@ ViewModel.prototype.importAuth = function() {
                             accounts,
                             function(item) {
                                 return {
-                                    text: item.name,
+                                    text: $osf.htmlEscape(item.name),
                                     value: item.id
                                 };
                             }
@@ -377,8 +377,8 @@ ViewModel.prototype.createBucket = function(bucketName, bucketLocation) {
             message = 'Looks like that name is taken. Try another name?';
         }
         bootbox.confirm({
-            title: title,
-            message: message,
+            title: $osf.htmlEscape(title),
+            message: $osf.htmlEscape(message),
             callback: function(result) {
                 if (result) {
                     self.openCreateBucket();
@@ -401,7 +401,7 @@ ViewModel.prototype.openCreateBucket = function() {
         var options = '';
         for (var location in locations) {
             if (self.settings.bucketLocations.hasOwnProperty(location)) {
-                options = options + ['<option value="', location, '">', locations[location], '</option>', '\n'].join('');
+                options = options + ['<option value="', location, '">', $osf.htmlEscape(locations[location]), '</option>', '\n'].join('');
             }
         }
         return options;
