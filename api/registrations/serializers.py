@@ -7,7 +7,7 @@ from api.files.serializers import FileSerializer
 from api.nodes.serializers import NodeSerializer
 from api.nodes.serializers import NodeLinksSerializer
 from api.nodes.serializers import NodeContributorsSerializer, NodeTagField
-from api.base.serializers import (IDField, RelationshipField, LinksField, HideIfRetraction,
+from api.base.serializers import (IDField, RelationshipField, LinksField, HideIfWithdrawal,
                                   FileCommentRelationshipField, NodeFileHyperLinkField, HideIfRegistration, JSONAPIListField)
 
 
@@ -15,55 +15,55 @@ class RegistrationSerializer(NodeSerializer):
 
     category_choices = NodeSerializer.category_choices
     category_choices_string = NodeSerializer.category_choices_string
-    category = HideIfRetraction(ser.ChoiceField(choices=category_choices, help_text="Choices: " + category_choices_string))
+    category = HideIfWithdrawal(ser.ChoiceField(choices=category_choices, help_text="Choices: " + category_choices_string))
 
-    date_modified = HideIfRetraction(ser.DateTimeField(read_only=True))
-    fork = HideIfRetraction(ser.BooleanField(read_only=True, source='is_fork'))
-    collection = HideIfRetraction(ser.BooleanField(read_only=True, source='is_collection'))
-    tags = HideIfRetraction(JSONAPIListField(child=NodeTagField(), required=False))
-    public = HideIfRetraction(ser.BooleanField(source='is_public', required=False,
-                              help_text='Nodes that are made public will give read-only access '
+    date_modified = HideIfWithdrawal(ser.DateTimeField(read_only=True))
+    fork = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_fork'))
+    collection = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_collection'))
+    tags = HideIfWithdrawal(JSONAPIListField(child=NodeTagField(), required=False))
+    public = HideIfWithdrawal(ser.BooleanField(source='is_public', required=False,
+                                               help_text='Nodes that are made public will give read-only access '
                                         'to everyone. Private nodes require explicit read '
                                         'permission. Write and admin access are the same for '
                                         'public and private nodes. Administrators on a parent '
                                         'node have implicit read permissions for all child nodes'))
-    current_user_permissions = HideIfRetraction(ser.SerializerMethodField(help_text='List of strings representing the permissions '
+    current_user_permissions = HideIfWithdrawal(ser.SerializerMethodField(help_text='List of strings representing the permissions '
                                                                    'for the current user on this node.'))
 
-    pending_embargo_approval = HideIfRetraction(ser.BooleanField(read_only=True, source='is_pending_embargo',
-        help_text='The associated Embargo is awaiting approval by project admins.'))
-    pending_registration_approval = HideIfRetraction(ser.BooleanField(source='is_pending_registration', read_only=True,
-        help_text='The associated RegistrationApproval is awaiting approval by project admins.'))
-    pending_withdrawal = HideIfRetraction(ser.BooleanField(source='is_pending_retraction', read_only=True,
-        help_text='The registration is awaiting withdrawal approval by project admins.'))
+    pending_embargo_approval = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_pending_embargo',
+                                                                 help_text='The associated Embargo is awaiting approval by project admins.'))
+    pending_registration_approval = HideIfWithdrawal(ser.BooleanField(source='is_pending_registration', read_only=True,
+                                                                      help_text='The associated RegistrationApproval is awaiting approval by project admins.'))
+    pending_withdrawal = HideIfWithdrawal(ser.BooleanField(source='is_pending_retraction', read_only=True,
+                                                           help_text='The registration is awaiting withdrawal approval by project admins.'))
     withdrawn = ser.BooleanField(source='is_retracted', read_only=True,
                                  help_text='The registration has been withdrawn.')
 
     date_registered = ser.DateTimeField(source='registered_date', read_only=True, help_text='Date time of registration.')
-    embargo_end_date = HideIfRetraction(ser.SerializerMethodField(help_text='When the embargo on this registration will be lifted.'))
+    embargo_end_date = HideIfWithdrawal(ser.SerializerMethodField(help_text='When the embargo on this registration will be lifted.'))
 
     withdrawal_justification = ser.CharField(source='retraction.justification', read_only=True)
     registration_supplement = ser.SerializerMethodField()
-    registered_meta = HideIfRetraction(ser.SerializerMethodField(
+    registered_meta = HideIfWithdrawal(ser.SerializerMethodField(
         help_text='A dictionary with supplemental registration questions and responses.'))
 
-    registered_by = HideIfRetraction(RelationshipField(
+    registered_by = HideIfWithdrawal(RelationshipField(
         related_view='users:user-detail',
         related_view_kwargs={'user_id': '<registered_user_id>'}
     ))
 
-    registered_from = HideIfRetraction(RelationshipField(
+    registered_from = HideIfWithdrawal(RelationshipField(
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<registered_from_id>'}
     ))
 
-    children = HideIfRetraction(RelationshipField(
+    children = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-children',
         related_view_kwargs={'node_id': '<pk>'},
         related_meta={'count': 'get_node_count'},
     ))
 
-    comments = HideIfRetraction(RelationshipField(
+    comments = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-comments',
         related_view_kwargs={'node_id': '<pk>'},
         related_meta={'unread': 'get_unread_comments_count'}))
@@ -74,39 +74,39 @@ class RegistrationSerializer(NodeSerializer):
         related_meta={'count': 'get_contrib_count'}
     )
 
-    files = HideIfRetraction(RelationshipField(
+    files = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-providers',
         related_view_kwargs={'node_id': '<pk>'}
     ))
 
-    forked_from = HideIfRetraction(RelationshipField(
+    forked_from = HideIfWithdrawal(RelationshipField(
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<forked_from_id>'}
     ))
 
-    node_links = HideIfRetraction(RelationshipField(
+    node_links = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-pointers',
         related_view_kwargs={'node_id': '<pk>'},
         related_meta={'count': 'get_pointers_count'}
     ))
 
-    parent = HideIfRetraction(RelationshipField(
+    parent = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-detail',
         related_view_kwargs={'node_id': '<parent_node._id>'},
         filter_key='parent_node'
     ))
 
-    logs = HideIfRetraction(RelationshipField(
+    logs = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-logs',
         related_view_kwargs={'node_id': '<pk>'},
     ))
 
-    root = HideIfRetraction(RelationshipField(
+    root = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-detail',
         related_view_kwargs={'node_id': '<root._id>'}
     ))
 
-    primary_institution = HideIfRetraction(RelationshipField(
+    primary_institution = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-institution-detail',
         related_view_kwargs={'node_id': '<pk>'}
     ))
