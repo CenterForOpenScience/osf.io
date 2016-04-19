@@ -308,11 +308,12 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
         )
 
         if (comment.new_mentions):
-            # TODO lauren: make shorter by pulling out lamda and then filtering
-            comment.new_mentions = [m for m in comment.new_mentions if m not in comment.old_mentions and validate_contributor(m, comment.node.contributors)]
+            old_mentions = comment.old_mentions
+            validate = lambda m: m not in old_mentions and validate_contributor(m, comment.node.contributors)
+            comment.new_mentions = filter(validate, comment.new_mentions)
             if len(comment.new_mentions) > 0:
                 project_signals.mention_added.send(comment, auth=auth)
-                comment.old_mentions.extend(comment.new_mentions)
+                old_mentions.extend(comment.new_mentions)
             comment.save()
 
         comment.node.save()
@@ -335,8 +336,9 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
         self.date_modified = datetime.datetime.utcnow()
 
         if (self.new_mentions):
-            # TODO lauren: make shorter by pulling out lamda and then filtering
-            self.new_mentions = [m for m in self.new_mentions if m not in self.old_mentions and validate_contributor(m, self.node.contributors)]
+            old_mentions = self.old_mentions
+            validate = lambda m: m not in old_mentions and validate_contributor(m, self.node.contributors)
+            self.new_mentions = filter(validate, self.new_mentions)
             if len(self.new_mentions) > 0:
                 if save:
                     project_signals.mention_added.send(self, auth=auth)
