@@ -2,7 +2,7 @@
 
 import httplib as http
 import time
-from datetime import datetime
+import datetime
 
 from flask import request
 from modularodm.exceptions import ValidationError, ValidationValueError
@@ -368,8 +368,8 @@ def get_timestamp():
 def throttle_period_expired(timestamp, throttle):
     if not timestamp:
         return True
-    elif isinstance(timestamp, datetime):
-        return (datetime.utcnow() - timestamp).total_seconds() > throttle
+    elif isinstance(timestamp, datetime.datetime):
+        return (datetime.datetime.utcnow() - timestamp).total_seconds() > throttle
     else:
         return (get_timestamp() - timestamp) > throttle
 

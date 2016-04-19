@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import time
+import datetime
 from nose.tools import *  # noqa; PEP8 asserts
 
 from tests.factories import ProjectFactory, NodeFactory, AuthUserFactory
@@ -8,6 +10,7 @@ from tests.base import OsfTestCase
 from framework.auth.decorators import Auth
 
 from website.profile import utils
+from website.project.views.contributor import throttle_period_expired
 
 
 class TestContributorUtils(OsfTestCase):
@@ -131,3 +134,23 @@ class TestContributorViews(OsfTestCase):
             len(res.json['contributors']),
             2,
         )
+
+    def test_throttle_period_expired_no_timestamp(self):
+        is_expired = throttle_period_expired(timestamp=None,  throttle=30)
+        assert_true(is_expired)
+
+    def test_throttle_period_expired_using_datetime(self):
+        timestamp = datetime.datetime.utcnow()
+        is_expired = throttle_period_expired(timestamp=(timestamp + datetime.timedelta(seconds=29)),  throttle=30)
+        assert_false(is_expired)
+
+        is_expired = throttle_period_expired(timestamp=(timestamp - datetime.timedelta(seconds=31)),  throttle=30)
+        assert_true(is_expired)
+
+    def test_throttle_period_expired_using_timestamp_in_seconds(self):
+        timestamp = int(time.time())
+        is_expired = throttle_period_expired(timestamp=(timestamp + 29),  throttle=30)
+        assert_false(is_expired)
+
+        is_expired = throttle_period_expired(timestamp=(timestamp - 31),  throttle=30)
+        assert_true(is_expired)
