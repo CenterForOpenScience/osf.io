@@ -452,10 +452,11 @@ class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bu
 
     `type` is "contributors"
 
-        name           type     description
+        name                        type     description
         ======================================================================================================
-        bibliographic  boolean  Whether the user will be included in citations for this node. Default is true.
-        permission     string   User permission level. Must be "read", "write", or "admin". Default is "write".
+        bibliographic               boolean  Whether the user will be included in citations for this node. Default is true.
+        permission                  string   User permission level. Must be "read", "write", or "admin". Default is "write".
+        unregistered_contributor    string   Contributor's assigned name if contributor hasn't yet claimed account
 
     ##Links
 
@@ -605,10 +606,11 @@ class NodeContributorDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVi
 
     `type` is "contributors"
 
-        name           type     description
+        name                        type     description
         ======================================================================================================
-        bibliographic  boolean  Whether the user will be included in citations for this node. Default is true.
-        permission     string   User permission level. Must be "read", "write", or "admin". Default is "write".
+        bibliographic               boolean  Whether the user will be included in citations for this node. Default is true.
+        permission                  string   User permission level. Must be "read", "write", or "admin". Default is "write".
+        unregistered_contributor    string   Contributor's assigned name if contributor hasn't yet claimed account
 
     ##Relationships
 

@@ -177,14 +177,15 @@ class NodeLogContributors(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin,
 
     OSF User entities have the "users" `type`.
 
-        name               type               description
+        name                        type                description
         ========================================================================================
-        full_name          string             full name of the user; used for display
-        given_name         string             given name of the user; for bibliographic citations
-        middle_names       string             middle name of user; for bibliographic citations
-        family_name        string             family name of user; for bibliographic citations
-        suffix             string             suffix of user's name for bibliographic citations
-        date_registered    iso8601 timestamp  timestamp when the user's account was created
+        unregistered_contributor    string             contributor's assigned name if contributor hasn't yet claimed account
+        full_name                   string             full name of the user; used for display
+        given_name                  string             given name of the user; for bibliographic citations
+        middle_names                string             middle name of user; for bibliographic citations
+        family_name                 string             family name of user; for bibliographic citations
+        suffix                      string             suffix of user's name for bibliographic citations
+        date_registered             iso8601 timestamp  timestamp when the user's account was created
 
 
     ##Links
