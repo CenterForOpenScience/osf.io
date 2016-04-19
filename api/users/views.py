@@ -232,11 +232,11 @@ class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
 class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin):
     """List of nodes that the user contributes to. *Read-only*.
 
-    Paginated list of nodes that the user contributes to ordered by `date_modified`.  Each resource contains the
-    full representation of the node, meaning additional requests to an individual node's detail view are not necessary.
-    If the user id in the path is the same as the logged-in user, all nodes will be visible.  Otherwise, you will only be
-    able to see the other user's publicly-visible nodes.  The special user id `me` can be used to represent the currently
-    logged-in user.
+    Paginated list of nodes that the user contributes to ordered by `date_modified`.  User registrations are not available
+    at this endpoint. Each resource contains the full representation of the node, meaning additional requests to an individual
+    node's detail view are not necessary. If the user id in the path is the same as the logged-in user, all nodes will be
+    visible.  Otherwise, you will only be able to see the other user's publicly-visible nodes.  The special user id `me`
+    can be used to represent the currently logged-in user.
 
     ##Node Attributes
 
@@ -244,18 +244,19 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin
 
     OSF Node entities have the "nodes" `type`.
 
-        name           type               description
+        name                            type               description
         =================================================================================
-        title          string             title of project or component
-        description    string             description of the node
-        category       string             node category, must be one of the allowed values
-        date_created   iso8601 timestamp  timestamp that the node was created
-        date_modified  iso8601 timestamp  timestamp when the node was last updated
-        tags           array of strings   list of tags that describe the node
-        fork           boolean            is this project a fork?
-        registration   boolean            has this project been registered?
-        fork           boolean            is this node a fork of another node?
-        public         boolean            has this node been made publicly-visible?
+        title                           string             title of project or component
+        description                     string             description of the node
+        category                        string             node category, must be one of the allowed values
+        date_created                    iso8601 timestamp  timestamp that the node was created
+        date_modified                   iso8601 timestamp  timestamp when the node was last updated
+        tags                            array of strings   list of tags that describe the node
+        current_user_permissions        array of strings   list of strings representing the permissions for the current user on this node
+        registration                    boolean            is this a registration? (always false - may be deprecated in future versions)
+        fork                            boolean            is this node a fork of another node?
+        public                          boolean            has this node been made publicly-visible?
+        collection                      boolean            is this a collection? (always false - may be deprecated in future versions)
 
     ##Links
 
@@ -273,10 +274,11 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin
 
     <!--- Copied Query Params from NodeList -->
 
-    Nodes may be filtered by their `title`, `category`, `description`, `public`, `registration`, or `tags`.  `title`,
-    `description`, and `category` are string fields and will be filtered using simple substring matching.  `public` and
-    `registration` are booleans, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note
-    that quoting `true` or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
+    Nodes may be filtered by their `id`, `title`, `category`, `description`, `public`, `tags`, `date_created`, `date_modified`,
+    `root`, `parent`, and `contributors`.  Most are string fields and will be filtered using simple substring matching.  `public`
+    is a boolean, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note that quoting `true`
+    or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
+
 
     #This Request/Response
 
@@ -336,8 +338,12 @@ class UserRegistrations(UserNodes):
     registration, meaning additional requests to an individual registration's detail view are not necessary. If the user
     id in the path is the same as the logged-in user, all nodes will be visible.  Otherwise, you will only be able to
     see the other user's publicly-visible nodes.  The special user id `me` can be used to represent the currently
-    logged-in user. Retracted registrations will display a limited number of fields, namely, title, description,
-    date_created, registration, retracted, date_registered, retraction_justification, and registration supplement.
+    logged-in user.
+
+    A withdrawn registration will display a limited subset of information, namely, title, description,
+    date_created, registration, withdrawn, date_registered, withdrawal_justification, and registration supplement. All
+    other fields will be displayed as null. Additionally, the only relationships permitted to be accessed for a withdrawn
+    registration are the contributors - other relationships will return a 403.
 
     ##Registration Attributes
 
@@ -347,24 +353,24 @@ class UserRegistrations(UserNodes):
 
         name                            type               description
         =======================================================================================================
-        title                           string             Title of the registered project or component
-        description                     string             Description of the registered node
-        category                        string             Node category, must be one of the allowed values
-        date_created                    iso8601 timestamp  Timestamp that the node was created
-        date_modified                   iso8601 timestamp  Timestamp when the node was last updated
-        tags                            array of strings   List of tags that describe the registered node
-        current_user_permissions        array of strings   List of strings representing the permissions for the current user on this node
-        fork                            boolean            Is this project a fork?
-        registration                    boolean            Has this project been registered?
-        dashboard                       boolean            Is this registered node visible on the user dashboard?
-        public                          boolean            Has this registration been made publicly-visible?
-        retracted                       boolean            Has this registration been retracted?
-        date_registered                 iso8601 timestamp  Timestamp that the registration was created
-        embargo_end_date                iso8601 timestamp  When the embargo on this registration will be lifted (if applicable)
-        retraction_justification        string             Reasons for retracting the registration
-        pending_retraction              boolean            Is this registration pending retraction?
-        pending_registration_approval   boolean            Is this registration pending approval?
-        pending_embargo_approval        boolean            Is the associated Embargo awaiting approval by project admins?
+        title                           string             title of the registered project or component
+        description                     string             description of the registered node
+        category                        string             bode category, must be one of the allowed values
+        date_created                    iso8601 timestamp  timestamp that the node was created
+        date_modified                   iso8601 timestamp  timestamp when the node was last updated
+        tags                            array of strings   list of tags that describe the registered node
+        current_user_permissions        array of strings   list of strings representing the permissions for the current user on this node
+        fork                            boolean            is this project a fork?
+        registration                    boolean            has this project been registered? (always true - may be deprecated in future versions)
+        collection                      boolean            is this registered node a collection? (always false - may be deprecated in future versions)
+        public                          boolean            has this registration been made publicly-visible?
+        withdrawn                       boolean            has this registration been withdrawn?
+        date_registered                 iso8601 timestamp  timestamp that the registration was created
+        embargo_end_date                iso8601 timestamp  when the embargo on this registration will be lifted (if applicable)
+        withdrawal_justification        string             reasons for withdrawing the registration
+        pending_withdrawal              boolean            is this registration pending withdrawal?
+        pending_withdrawal_approval     boolean            is this registration pending approval?
+        pending_embargo_approval        boolean            is the associated Embargo awaiting approval by project admins?
         registered_meta                 dictionary         registration supplementary information
         registration_supplement         string             registration template
 
@@ -399,10 +405,10 @@ class UserRegistrations(UserNodes):
 
     <!--- Copied Query Params from NodeList -->
 
-    Registrations may be filtered by their `title`, `category`, `description`, `public`, or `tags`.  `title`, `description`,
-    and `category` are string fields and will be filtered using simple substring matching.  `public` is a boolean and
-    can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note that quoting `true` or `false` in
-    the query will cause the match to fail regardless.  `tags` is an array of simple strings.
+     Registrations may be filtered by their `id`, `title`, `category`, `description`, `public`, `tags`, `date_created`, `date_modified`,
+    `root`, `parent`, and `contributors`.  Most are string fields and will be filtered using simple substring matching.  `public`
+    is a boolean, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note that quoting `true`
+    or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
 
     #This Request/Response
 

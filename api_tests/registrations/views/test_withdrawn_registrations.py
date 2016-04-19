@@ -99,7 +99,7 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-    def test_cannot_access_retracted_node_logs(self):
+    def test_cannot_access_withdrawn_node_logs(self):
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
         url = '/{}registrations/{}/logs/'.format(API_BASE, self.registration._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
