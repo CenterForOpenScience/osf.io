@@ -67,3 +67,4 @@ pyjwe==1.0.0
 django-webpack-loader==0.2.3
 django-nose==1.4.3
 django-ckeditor==5.0.2
+django-password_reset==0.8.2

@@ -10,8 +10,6 @@
 {% endblock %}
 {% block sidebar %}
 {% endblock %}
-{% block user_account_menu %}
-{% endblock %}
 
 {% block content %}
 
@@ -46,7 +44,7 @@
                         <button type="submit" class="btn btn-primary btn-block btn-flat">Sign In</button>
                     </div><!-- /.col -->
                 </div>
-                <a href="{% url 'reset_password' %}">Forgot your password?</a>
+                <a href="{% url 'password_reset_recover' %}">Forgot your password?</a>
                 <div>
                     {% if messages %}
                         <ul class="register_page_messages">

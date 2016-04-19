@@ -26,7 +26,6 @@ ALLOWED_HOSTS = [
     '.osf.io'
 ]
 
-# AUTH_PASSWORD_VALIDATORS available only in Django 1.9
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -73,6 +72,7 @@ INSTALLED_APPS = (
     'webpack_loader',
     'django_nose',
     'ckeditor',
+    'password_reset',
 )
 
 # Custom user model (extends AbstractBaseUser)
@@ -158,10 +158,10 @@ DATABASES = {
 
 ROOT_URLCONF = 'admin.base.urls'
 WSGI_APPLICATION = 'admin.base.wsgi.application'
-ADMIN_BASE = 'admin/'
+ADMIN_BASE = ''
 STATIC_URL = '/static/'
-LOGIN_URL = '/admin/auth/login/'
-LOGIN_REDIRECT_URL = '/admin/'
+LOGIN_URL = 'account/login/'
+LOGIN_REDIRECT_URL = ADMIN_BASE
 
 STATIC_ROOT = os.path.join(os.path.dirname(BASE_DIR), 'static_root')
 

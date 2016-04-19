@@ -18,7 +18,7 @@ class UserRegFormTestCase(AdminTestCase):
         self.assertTrue(form.is_valid())
 
     def test_user_reg_form_failure(self):
-        # Every field is required, password length should be >= 5 (need Django 1.9 to use AUTH_PASSWORD_VALIDATORS)
+        # Every field is required, password length should be >= 5
         form_data = {
             'email': '',
             'first_name': '',
