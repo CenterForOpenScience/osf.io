@@ -421,7 +421,8 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             # Some fields will hide relationships, e.g. HideIfRetraction
             # Ignore related_counts for these fields
             fetched_field = self.parent.fields.get(count_field)
-            hidden = fetched_field and fetched_field.get_attribute(value) is None
+
+            hidden = fetched_field and isinstance(fetched_field, HideIfRetraction) and getattr(value, 'is_retracted', True)
 
             if not hidden and count_field not in countable_fields:
                 raise InvalidQueryStringError(

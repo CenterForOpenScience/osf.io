@@ -163,6 +163,7 @@ class TestRetractions(NodeCRUDTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_not_in('children', res.json['data']['relationships'])
+        assert_in('contributors', res.json['data']['relationships'])
 
     def test_field_specific_related_counts_retrieved_if_visible_field_on_retraction(self):
         url = '/{}registrations/{}/?related_counts=contributors'.format(API_BASE, self.registration._id)
