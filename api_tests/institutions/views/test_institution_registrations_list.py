@@ -58,6 +58,7 @@ class TestInstitutionRegistrationList(ApiTestCase):
 
     def test_doesnt_return_retractions_without_auth(self):
         self.registration1.retraction = RetractionFactory()
+        self.registration1.save()
         self.registration1.retraction.state = Sanction.APPROVED
         self.registration1.retraction.save()
         assert_true(self.registration1.is_retracted)
@@ -71,6 +72,7 @@ class TestInstitutionRegistrationList(ApiTestCase):
 
     def test_doesnt_return_retractions_with_auth(self):
         self.registration1.retraction = RetractionFactory()
+        self.registration1.save()
         self.registration1.retraction.state = Sanction.APPROVED
         self.registration1.retraction.save()
         assert_true(self.registration1.is_retracted)
