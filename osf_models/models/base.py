@@ -2,6 +2,8 @@ import random
 
 from django.db import models
 
+from osf_models.models.mixins import Versioned
+
 ALPHABET = '23456789abcdefghjkmnpqrstuvwxyz'
 
 
@@ -34,6 +36,7 @@ class BlackListGuid(models.Model):
 def generate_guid_instance():
     return Guid.objects.create().id
 
+
 class GuidMixin(models.Model):
     _guid = models.OneToOneField(Guid, default=generate_guid_instance, unique=True, related_name='referent_%(class)s')
 
@@ -50,7 +53,6 @@ class GuidMixin(models.Model):
 
 
 class BaseModel(models.Model):
-    id = models.AutoField(primary_key=True)
 
     class Meta:
         abstract = True

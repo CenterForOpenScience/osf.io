@@ -9,15 +9,31 @@ class Migration(migrations.Migration):
     dependencies = [
         ('osf_models', '0001_initial'),
     ]
-    tables = ['osf_models_node', ]
-    fields = [
-        'registered_meta',
-        'wiki_pages_current',
-        'wiki_pages_versions',
-        'wiki_private_uuids',
-        'file_guid_to_share_uuids',
-        'child_node_subscriptions'
-    ]
+    mapping = {
+        'osf_models_node': [
+            'registered_meta',
+            'wiki_pages_current',
+            'wiki_pages_versions',
+            'wiki_private_uuids',
+            'file_guid_to_share_uuids',
+            'child_node_subscriptions'
+        ],
+        'osf_models_user': [
+            'security_messages',
+            'unclaimed_records',
+            'contributor_added_email_records',
+            'emails',
+            'email_verifications',
+            'mailing_lists',
+            'mailchimp_mailing_lists',
+            'osf_mailing_lists',
+            'jobs',
+            'schools',
+            'social',
+            'comments_viewed_timestamp',
+        ]
+    }
+
     base_create_sql = "CREATE INDEX indx_{}_ops ON {} USING GIN ({} jsonb_path_ops);"
     base_drop_sql = "DROP INDEX indx_{}_ops ON {};"
 
@@ -25,7 +41,7 @@ class Migration(migrations.Migration):
         # migrations.RunSQL(, reverse_sql="")
     ]
 
-    for table in tables:
+    for table, fields in mapping.iteritems():
         for field in fields:
             operations.append(
                 migrations.RunSQL(base_create_sql.format(field, table, field),
