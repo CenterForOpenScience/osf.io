@@ -11,53 +11,53 @@ from tests.factories import (
     ProjectFactory,
     CommentFactory,
     RegistrationFactory,
-    RetractedRegistrationFactory,
-
+    WithdrawnRegistrationFactory,
 )
 
-class TestRetractions(NodeCRUDTestCase):
+
+class TestWithdrawnRegistrations(NodeCRUDTestCase):
 
     def setUp(self):
-        super(TestRetractions, self).setUp()
+        super(TestWithdrawnRegistrations, self).setUp()
         self.registration = RegistrationFactory(creator=self.user, project=self.public_project)
-        self.retraction = RetractedRegistrationFactory(registration=self.registration, user=self.registration.creator)
+        self.withdrawn_registration = WithdrawnRegistrationFactory(registration=self.registration, user=self.registration.creator)
 
         self.public_pointer_project = ProjectFactory(is_public=True)
         self.public_pointer = self.public_project.add_pointer(self.public_pointer_project,
                                                               auth=Auth(self.user),
                                                               save=True)
-        self.retraction_url = '/{}registrations/{}/'.format(API_BASE, self.registration._id)
-        self.retraction.justification = 'We made a major error.'
-        self.retraction.save()
+        self.withdrawn_url = '/{}registrations/{}/'.format(API_BASE, self.registration._id)
+        self.withdrawn_registration.justification = 'We made a major error.'
+        self.withdrawn_registration.save()
 
-    def test_can_access_retracted_contributors(self):
+    def test_can_access_withdrawn_contributors(self):
         url = '/{}registrations/{}/contributors/'.format(API_BASE, self.registration._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 200)
 
-    def test_cannot_access_retracted_children(self):
+    def test_cannot_access_withdrawn_children(self):
         url = '/{}registrations/{}/children/'.format(API_BASE, self.registration._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-    def test_cannot_access_retracted_comments(self):
+    def test_cannot_access_withdrawn_comments(self):
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
         self.public_comment = CommentFactory(node=self.public_project, user=self.user)
         url = '/{}registrations/{}/comments/'.format(API_BASE, self.registration._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-    def test_can_access_retracted_contributor_detail(self):
+    def test_can_access_withdrawn_contributor_detail(self):
         url = '/{}registrations/{}/contributors/{}/'.format(API_BASE, self.registration._id, self.user._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 200)
 
-    def test_cannot_return_a_retraction_at_node_detail_endpoint(self):
+    def test_cannot_return_a_withdrawn_registration_at_node_detail_endpoint(self):
         url = '/{}nodes/{}/'.format(API_BASE, self.registration._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
-    def test_cannot_update_a_retraction(self):
+    def test_cannot_update_a_withdrawn_registration(self):
         url = '/{}registrations/{}/'.format(API_BASE, self.registration._id)
         res = self.app.put_json_api(url, {
             'data': {
@@ -76,7 +76,7 @@ class TestRetractions(NodeCRUDTestCase):
         assert_equal(self.registration.title, self.registration.title)
         assert_equal(self.registration.description, self.registration.description)
 
-    def test_cannot_delete_a_retraction(self):
+    def test_cannot_delete_a_withdrawn_registration(self):
         url = '/{}registrations/{}/'.format(API_BASE, self.registration._id)
         res = self.app.delete_json_api(url, auth=self.user.auth, expect_errors=True)
         self.registration.reload()
@@ -84,17 +84,17 @@ class TestRetractions(NodeCRUDTestCase):
         assert_equal(self.registration.title, self.registration.title)
         assert_equal(self.registration.description, self.registration.description)
 
-    def test_cannot_access_retracted_files_list(self):
+    def test_cannot_access_withdrawn_files_list(self):
         url = '/{}registrations/{}/files/'.format(API_BASE, self.registration._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-    def test_cannot_access_retracted_node_links_detail(self):
+    def test_cannot_access_withdrawn_node_links_detail(self):
         url = '/{}registrations/{}/node_links/{}/'.format(API_BASE, self.registration._id, self.public_pointer._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-    def test_cannot_access_retracted_node_links_list(self):
+    def test_cannot_access_withdrawn_node_links_list(self):
         url = '/{}registrations/{}/node_links/'.format(API_BASE, self.registration._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
@@ -105,15 +105,15 @@ class TestRetractions(NodeCRUDTestCase):
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-    def test_cannot_access_retracted_registrations_list(self):
+    def test_cannot_access_withdrawn_registrations_list(self):
         self.registration.save()
         url = '/{}registrations/{}/registrations/'.format(API_BASE, self.registration._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-    def test_retractions_display_limited_fields(self):
+    def test_withdrawn_registrations_display_limited_fields(self):
         registration = self.registration
-        res = self.app.get(self.retraction_url, auth=self.user.auth)
+        res = self.app.get(self.withdrawn_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         attributes = res.json['data']['attributes']
         expected_attributes = {
@@ -158,14 +158,14 @@ class TestRetractions(NodeCRUDTestCase):
         assert_not_in('registered_from', res.json['data']['relationships'])
         assert_not_in('root', res.json['data']['relationships'])
 
-    def test_field_specific_related_counts_ignored_if_hidden_field_on_retraction(self):
+    def test_field_specific_related_counts_ignored_if_hidden_field_on_withdrawn_registration(self):
         url = '/{}registrations/{}/?related_counts=children'.format(API_BASE, self.registration._id)
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_not_in('children', res.json['data']['relationships'])
         assert_in('contributors', res.json['data']['relationships'])
 
-    def test_field_specific_related_counts_retrieved_if_visible_field_on_retraction(self):
+    def test_field_specific_related_counts_retrieved_if_visible_field_on_withdrawn_registration(self):
         url = '/{}registrations/{}/?related_counts=contributors'.format(API_BASE, self.registration._id)
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)

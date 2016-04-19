@@ -149,9 +149,9 @@ class HideIfDisabled(ser.Field):
         return self.field.to_esi_representation(value, envelope)
 
 
-class HideIfRetraction(HideIfRegistration):
+class HideIfWithdrawal(HideIfRegistration):
     """
-    If node is retracted, this field will return None.
+    If registration is withdrawn, this field will return None.
     """
 
     def get_attribute(self, instance):
@@ -418,11 +418,11 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                             getattr(self.parent.fields[field], 'json_api_link', False) or
                             getattr(getattr(self.parent.fields[field], 'field', None), 'json_api_link', None)}
         for count_field in field_counts_requested:
-            # Some fields will hide relationships, e.g. HideIfRetraction
+            # Some fields will hide relationships, e.g. HideIfWithdrawal
             # Ignore related_counts for these fields
             fetched_field = self.parent.fields.get(count_field)
 
-            hidden = fetched_field and isinstance(fetched_field, HideIfRetraction) and getattr(value, 'is_retracted', True)
+            hidden = fetched_field and isinstance(fetched_field, HideIfWithdrawal) and getattr(value, 'is_retracted', True)
 
             if not hidden and count_field not in countable_fields:
                 raise InvalidQueryStringError(
