@@ -71,7 +71,7 @@
 
                           <!-- Flashed Messages -->
                           <div class="help-block osf-box-lt" >
-                              <p data-bind="html: flashMessage, attr.class: flashMessageClass" class=""></p>
+                              <p data-bind="html: flashMessage, attr: {class: flashMessageClass}" class=""></p>
                           </div>
                           <!-- ko ifnot: submitted -->
                           <div>

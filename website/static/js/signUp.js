@@ -2,12 +2,10 @@
 
 var ko = require('knockout');
 require('knockout.validation');
-require('knockout.punches');
 var $ = require('jquery');
 
 var $osf = require('./osfHelpers');
 
-ko.punches.enableAll();
 
 var ViewModel = function(submitUrl, campaign) {
 

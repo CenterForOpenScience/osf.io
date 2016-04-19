@@ -945,7 +945,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
     @property
     def registered_from_id(self):
-        """The ID of the user who registered this node if this is a registration, else None.
+        """The ID of the node that was registered, else None.
         """
         if self.registered_from:
             return self.registered_from._id
@@ -3337,6 +3337,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             action=NodeLog.RETRACTION_INITIATED,
             params={
                 'node': self.registered_from_id,
+                'registration': self._id,
                 'retraction_id': retraction._id,
             },
             auth=Auth(user),
@@ -3395,6 +3396,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             action=NodeLog.EMBARGO_INITIATED,
             params={
                 'node': self.registered_from_id,
+                'registration': self._id,
                 'embargo_id': embargo._id,
             },
             auth=Auth(user),
@@ -3475,6 +3477,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             action=NodeLog.REGISTRATION_APPROVAL_INITIATED,
             params={
                 'node': self.registered_from_id,
+                'registration': self._id,
                 'registration_approval_id': approval._id,
             },
             auth=Auth(user),
@@ -4135,7 +4138,8 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
         parent_registration.registered_from.add_log(
             action=NodeLog.EMBARGO_CANCELLED,
             params={
-                'node': parent_registration._id,
+                'node': parent_registration.registered_from_id,
+                'registration': parent_registration._id,
                 'embargo_id': self._id,
             },
             auth=Auth(user),
@@ -4160,6 +4164,7 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
             action=NodeLog.EMBARGO_APPROVED,
             params={
                 'node': parent_registration.registered_from_id,
+                'registration': parent_registration._id,
                 'embargo_id': self._id,
             },
             auth=Auth(self.initiated_by),
@@ -4263,7 +4268,8 @@ class Retraction(EmailApprovableSanction):
         parent_registration.registered_from.add_log(
             action=NodeLog.RETRACTION_CANCELLED,
             params={
-                'node': parent_registration._id,
+                'node': parent_registration.registered_from_id,
+                'registration': parent_registration._id,
                 'retraction_id': self._id,
             },
             auth=Auth(user),
@@ -4277,6 +4283,7 @@ class Retraction(EmailApprovableSanction):
             params={
                 'node': parent_registration.registered_from_id,
                 'retraction_id': self._id,
+                'registration': parent_registration._id
             },
             auth=Auth(self.initiated_by),
         )
@@ -4286,7 +4293,8 @@ class Retraction(EmailApprovableSanction):
             parent_registration.registered_from.add_log(
                 action=NodeLog.EMBARGO_CANCELLED,
                 params={
-                    'node': parent_registration._id,
+                    'node': parent_registration.registered_from_id,
+                    'registration': parent_registration._id,
                     'embargo_id': parent_registration.embargo._id,
                 },
                 auth=Auth(self.initiated_by),
@@ -4413,6 +4421,7 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
             action=NodeLog.REGISTRATION_APPROVAL_APPROVED,
             params={
                 'node': registered_from._id,
+                'registration': register._id,
                 'registration_approval_id': self._id,
             },
             auth=auth,
@@ -4430,7 +4439,8 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
         registered_from.add_log(
             action=NodeLog.REGISTRATION_APPROVAL_CANCELLED,
             params={
-                'node': register._id,
+                'node': registered_from._id,
+                'registration': register._id,
                 'registration_approval_id': self._id,
             },
             auth=Auth(user),

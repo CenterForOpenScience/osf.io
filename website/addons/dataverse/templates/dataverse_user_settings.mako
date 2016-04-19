@@ -7,7 +7,7 @@
 
     <h4 class="addon-title">
         <img class="addon-icon" src=${addon_icon_url}>
-        {{ properName }}
+        <span data-bind="text: properName"></span> <!-- TODO: Can we use mako addon_full_name as some other addons do? -->
         <small>
             <a href="#dataverseInputCredentials" data-toggle="modal" class="pull-right text-primary">Connect Account</a>
         </small>
@@ -20,14 +20,14 @@
             <table class="table table-hover">
                 <thead>
                     <tr class="user-settings-addon-auth">
-                        <th class="text-muted default-authorized-by">Authorized on <a data-bind="attr.href: dataverseUrl"><em>{{ dataverseHost }}</em></a></th>
+                        <th class="text-muted default-authorized-by">Authorized on <a data-bind="attr: {href: dataverseUrl}"><em data-bind="text: dataverseHost"></em></a></th>
                     </tr>
                 </thead>
                 <!-- ko if: connectedNodes().length > 0 -->
                 <tbody data-bind="foreach: connectedNodes()">
                     <tr>
                         <td class="authorized-nodes">
-                            <!-- ko if: title --><a data-bind="attr.href: urls.view">{{ title }}</a><!-- /ko -->
+                            <!-- ko if: title --><a data-bind="attr: {href: urls.view}, text: title"></a><!-- /ko -->
                             <!-- ko if: !title --><em>Private project</em><!-- /ko -->
                         </td>
                         <td>

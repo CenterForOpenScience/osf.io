@@ -54,11 +54,11 @@
             <tbody>
                 <tr>
                     <td>APA</td>
-                    <td class="overflow-block" width="30%">{{ citeApa }}</td>
+                    <td class="overflow-block" width="30%"><span data-bind="text: citeApa"></span></td>
                 </tr>
                 <tr>
                     <td>MLA</td>
-                    <td class="overflow-block" width="30%">{{ citeMla }}</td>
+                    <td class="overflow-block" width="30%"><span data-bind="text: citeMla"></span></td>
                 </tr>
             </tbody>
         </table>
@@ -80,7 +80,7 @@
 
         <!-- Flashed Messages -->
         <div class="help-block">
-            <p data-bind="html: message, attr.class: messageClass"></p>
+            <p data-bind="html: message, attr: {class: messageClass}"></p>
         </div>
 
     </form>

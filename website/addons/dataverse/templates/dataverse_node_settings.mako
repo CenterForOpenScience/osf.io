@@ -9,9 +9,7 @@
 
         <small class="authorized-by">
             <span data-bind="if: nodeHasAuth">
-                authorized by <a data-bind="attr.href: urls().owner">
-                    {{ownerName}}
-                </a>
+                authorized by <a data-bind="attr: {href: urls().owner}, text: ownerName"></a>
                 % if not is_registration:
                     <a data-bind="click: deauthorize"
                         class="text-danger pull-right addon-auth">Disconnect Account</a>
@@ -43,7 +41,7 @@
                 <!-- The linked Dataverse Host -->
                 <p class="break-word">
                     <strong>Dataverse Repository:</strong>
-                    <a data-bind="attr.href: savedHostUrl()">{{ savedHost }}</a>
+                    <a data-bind="attr: {href: savedHostUrl()}, text: savedHost"></a>
                 </p>
 
                 <!-- The linked dataset -->
@@ -51,8 +49,8 @@
                     <strong>Current Dataset:</strong>
                     <span data-bind="ifnot: submitting">
                         <span data-bind="if: showLinkedDataset">
-                            <a data-bind="attr.href: savedDatasetUrl()"> {{ savedDatasetTitle }}</a> on
-                            <a data-bind="attr.href: savedDataverseUrl()"> {{ savedDataverseTitle }} Dataverse</a>.
+                            <a data-bind="attr: {href: savedDatasetUrl()}, text: savedDatasetTitle"></a> on
+                            <a data-bind="attr: {href: savedDataverseUrl()}, text: savedDataverseTitle || '' + Dataverse"></a>.
                         </span>
                         <span data-bind="ifnot: showLinkedDataset" class="text-muted">
                             None
@@ -128,6 +126,6 @@
     </div>
     <!-- Flashed Messages -->
     <div class="help-block">
-        <p data-bind="html: message, attr.class: messageClass"></p>
+        <p data-bind="html: message, attr: {class: messageClass}"></p>
     </div>
 </div>
