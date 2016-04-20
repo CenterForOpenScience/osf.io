@@ -42,18 +42,18 @@ var lastElementBr = function(){
 
 // ensure that return inserts a <br> in all browsers
 var onReturn = function (e) {
-    var doxExec = false;
+    var docExec = false;
     var range;
 
     // Gecko
     try {
-        doxExec = document.execCommand('insertBrOnReturn', false, true);
+        docExec = document.execCommand('insertBrOnReturn', false, true);
     }
     catch (error) {
         // IE throws an error if it does not recognize the command...
     }
 
-    if (doxExec) {
+    if (docExec) {
         return true;
     }
     // Standard
@@ -319,6 +319,7 @@ BaseComment.prototype.cancelReply = function() {
     this.replying(false);
     this.submittingReply(false);
     this.replyErrorMessage('');
+    this.errorMessage('');
 };
 
 BaseComment.prototype.setupToolTips = function(elm) {
@@ -643,6 +644,7 @@ CommentModel.prototype.cancelEdit = function() {
     this.editing(false);
     this.$root.editors -= 1;
     this.editErrorMessage('');
+    this.errorMessage('');
     this.content(this._content);
 };
 
