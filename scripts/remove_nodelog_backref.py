@@ -95,10 +95,10 @@ def migrate(dry=True):
             should_copy = migrate_log(log=log, node_id=node['_id'])
             if should_copy:
                 clone = copy_log(log=log, node_id=node['_id'])
-                remaining_log_ids.add(clone['_id'])  # XX
+                remaining_log_ids.add(clone['_id'])
                 to_insert.append(clone)
             else:
-                remaining_log_ids.remove(log['_id'])  # XX
+                remaining_log_ids.remove(log['_id'])
                 done += 1
 
             if len(to_insert) > 9999:
@@ -135,6 +135,8 @@ def migrate(dry=True):
             node_ids.append(log_subject)
 
         for node_id in node_ids:
+            if db.node.find_one({'_id': node_id, 'logs': log['_id']}):
+                continue
             should_copy = migrate_log(log=log, node_id=node_id)
             if should_copy:
                 clone = copy_log(log=log, node_id=node_id)
