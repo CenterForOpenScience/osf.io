@@ -229,12 +229,14 @@ class TestRemoveContributor(OsfTestCase):
         assert_in(self.contributor, self.subscription.email_transactional)
         self.project.remove_contributor(self.contributor, auth=Auth(self.project.creator))
         assert_not_in(self.contributor, self.project.contributors)
+        self.subscription.reload()
         assert_not_in(self.contributor, self.subscription.email_transactional)
 
     def test_removed_non_parent_admin_contributor_is_removed_from_subscriptions(self):
         assert_in(self.node.creator, self.node_subscription.email_transactional)
         self.node.remove_contributor(self.node.creator, auth=Auth(self.node.creator))
         assert_not_in(self.node.creator, self.node.contributors)
+        self.node_subscription.reload()
         assert_not_in(self.node.creator, self.node_subscription.email_transactional)
 
     def test_removed_contributor_admin_on_parent_not_removed_from_node_subscription(self):
@@ -253,29 +255,29 @@ class TestRemoveContributor(OsfTestCase):
 
 
 class TestRemoveNodeSignal(OsfTestCase):
-        def test_node_subscriptions_and_backrefs_removed_when_node_is_deleted(self):
-            project = factories.ProjectFactory()
-            subscription = factories.NotificationSubscriptionFactory(
-                _id=project._id + '_comments',
-                owner=project
-            )
-            subscription.save()
-            subscription.email_transactional.append(project.creator)
-            subscription.save()
+    def test_node_subscriptions_and_backrefs_removed_when_node_is_deleted(self):
+        project = factories.ProjectFactory()
+        subscription = factories.NotificationSubscriptionFactory(
+            _id=project._id + '_comments',
+            owner=project
+        )
+        subscription.save()
+        subscription.email_transactional.append(project.creator)
+        subscription.save()
 
-            s = getattr(project.creator, 'email_transactional', [])
-            assert_equal(len(s), 1)
+        s = NotificationSubscription.find(Q('email_transactional', 'eq', project.creator._id))
+        assert_equal(s.count(), 1)
 
-            with capture_signals() as mock_signals:
-                project.remove_node(auth=Auth(project.creator))
-            assert_true(project.is_deleted)
-            assert_equal(mock_signals.signals_sent(), set([node_deleted]))
+        with capture_signals() as mock_signals:
+            project.remove_node(auth=Auth(project.creator))
+        assert_true(project.is_deleted)
+        assert_equal(mock_signals.signals_sent(), set([node_deleted]))
 
-            s = getattr(project.creator, 'email_transactional', [])
-            assert_equal(len(s), 0)
+        s = NotificationSubscription.find(Q('email_transactional', 'eq', project.creator._id))
+        assert_equal(s.count(), 0)
 
-            with assert_raises(NoResultsFound):
-                NotificationSubscription.find_one(Q('owner', 'eq', project))
+        with assert_raises(NoResultsFound):
+            NotificationSubscription.find_one(Q('owner', 'eq', project))
 
 
 def list_or_dict(data):
@@ -1115,6 +1117,7 @@ class TestSendEmails(OsfTestCase):
             node=project,
             content=content,
             target=Guid.load(target._id),
+            root_target=Guid.load(project._id),
             is_public=True,
         )
         assert_true(mock_notify.called)

@@ -508,12 +508,14 @@ function doItemOp(operation, to, from, rename, conflict) {
         $osf.growl(operation.verb + ' failed.', message);
 
         Raven.captureMessage('Failed to move or copy file', {
-            xhr: xhr,
-            requestData: {
-                rename: rename,
-                conflict: conflict,
-                source: waterbutler.toJsonBlob(from),
-                destination: waterbutler.toJsonBlob(to),
+            extra: {
+                xhr: xhr,
+                requestData: {
+                    rename: rename,
+                    conflict: conflict,
+                    source: waterbutler.toJsonBlob(from),
+                    destination: waterbutler.toJsonBlob(to),
+                }
             }
         });
 

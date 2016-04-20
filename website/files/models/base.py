@@ -12,7 +12,6 @@ from modularodm import fields, Q
 from modularodm.exceptions import NoResultsFound
 from dateutil.parser import parse as parse_date
 
-from api.base.utils import absolute_reverse
 from framework.guid.model import Guid
 from framework.mongo import StoredObject
 from framework.mongo.utils import unique_on
@@ -21,6 +20,7 @@ from framework.analytics import get_basic_counters
 from website import util
 from website.files import utils
 from website.files import exceptions
+from website.project.commentable import Commentable
 
 
 __all__ = (
@@ -37,8 +37,18 @@ PROVIDER_MAP = {}
 logger = logging.getLogger(__name__)
 
 
-class TrashedFileNode(StoredObject):
+class TrashedFileNode(StoredObject, Commentable):
     """The graveyard for all deleted FileNodes"""
+
+    __indices__ = [{
+        'unique': False,
+        'key_or_list': [
+            ('node', pymongo.ASCENDING),
+            ('is_file', pymongo.ASCENDING),
+            ('provider', pymongo.ASCENDING),
+        ]
+    }]
+
     _id = fields.StringField(primary=True)
 
     last_touched = fields.DateTimeField()
@@ -67,6 +77,28 @@ class TrashedFileNode(StoredObject):
         """
         return self.node.web_url_for('addon_deleted_file', trashed_id=self._id)
 
+    # For Comment API compatibility
+    @property
+    def target_type(self):
+        """The object "type" used in the OSF v2 API."""
+        return 'files'
+
+    @property
+    def root_target_page(self):
+        """The comment page type associated with TrashedFileNodes."""
+        return 'files'
+
+    @property
+    def is_deleted(self):
+        return True
+
+    def belongs_to_node(self, node_id):
+        """Check whether the file is attached to the specified node."""
+        return self.node._id == node_id
+
+    def get_extra_log_params(self, comment):
+        return {'file': {'name': self.name, 'url': comment.get_comment_page_url()}}
+
     def restore(self, recursive=True, parent=None):
         """Recreate a StoredFileNode from the data in this object
         Will re-point all guids and finally remove itself
@@ -94,7 +126,7 @@ class TrashedFileNode(StoredObject):
 
 
 @unique_on(['node', 'name', 'parent', 'is_file', 'provider', 'path'])
-class StoredFileNode(StoredObject):
+class StoredFileNode(StoredObject, Commentable):
     """The storage backend for FileNode objects.
     This class should generally not be used or created manually as FileNode
     contains all the helpers required.
@@ -168,7 +200,31 @@ class StoredFileNode(StoredObject):
 
     @property
     def absolute_api_v2_url(self):
-        return absolute_reverse('files:file-detail', kwargs={'file_id': self._id})
+        path = '/files/{}/'.format(self._id)
+        return util.api_v2_url(path)
+
+    # For Comment API compatibility
+    @property
+    def target_type(self):
+        """The object "type" used in the OSF v2 API."""
+        return 'files'
+
+    @property
+    def root_target_page(self):
+        """The comment page type associated with StoredFileNodes."""
+        return 'files'
+
+    @property
+    def is_deleted(self):
+        if self.provider == 'osfstorage':
+            return False
+
+    def belongs_to_node(self, node_id):
+        """Check whether the file is attached to the specified node."""
+        return self.node._id == node_id
+
+    def get_extra_log_params(self, comment):
+        return {'file': {'name': self.name, 'url': comment.get_comment_page_url()}}
 
     # used by django and DRF
     def get_absolute_url(self):

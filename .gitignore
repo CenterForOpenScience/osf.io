@@ -54,6 +54,7 @@ website/static/vendor/bower_components/
 node_modules
 # Allow robots.txt to be deployment-specific
 website/static/robots.local.txt
+/website/static/git_logs.txt
 
 # OSF-specific
 ##############
@@ -107,6 +108,9 @@ celery_beat.py.db
 # GUIDS
 scripts/guid_blacklist.txt
 
+# Generated json
+website/static/js/_allLogTexts.json
+
 # Admin Specific
 #################
 admin/static/public/
@@ -116,3 +120,10 @@ admin/webpack-stats.json
 admin/static/vendor/
 admin/db.sqlite3
 admin/db.sqlite3-journal
+
+# Celery Beat
+celerybeat-schedule
+celerybeat.pid
+
+# Analytics Output
+website/analytics/

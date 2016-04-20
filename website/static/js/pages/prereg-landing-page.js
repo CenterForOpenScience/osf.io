@@ -2,10 +2,10 @@
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
-var ko = require('knockout');
+var m = require('mithril');
 require('js/qToggle');
-require('js/onboarder.js');
 require('js/components/autocomplete');
+require('js/projectsSelect.js');
 
 $(function(){
     $('.prereg-button').qToggle();
@@ -14,6 +14,7 @@ $(function(){
         var input = $(target).find('input').first().focus();
     });
 
+    // New projects
     $('#newProject, #newProjectXS').click( function() {
         var title = $(this).parent().find('.new-project-title').val();
         if (!title) {
@@ -29,35 +30,57 @@ $(function(){
         });
     });
 
-    // Activate "existing projects" typeahead.
-    var url = '/api/v1/dashboard/get_nodes/';
-    $.getJSON(url).done(function(response) {
-        var allNodes = response.nodes;
-
-        // If we need to change what nodes can be registered, filter here
-        var registrationSelection = ko.utils.arrayFilter(allNodes, function(node) {
-            return $.inArray(node.permissions, ['admin']) !== -1;
+    // Existing Nodes
+    var allNodes = [];
+    function onSelectProject (event, data) {
+        var link = data.links.html + 'registrations/';
+        $('#existingProject .projectRegButton').removeClass('disabled').attr('href', link);
+        $('#existingProjectXS .projectRegButton').removeClass('disabled').attr('href', link);
+    }
+    // Get all projects with multiple calls to get all pages
+    function collectProjects (url) {
+        var promise = $.ajax({
+            method: 'GET',
+            url: url,
+            xhrFields: {
+                withCredentials: true
+            }
         });
-
-        $osf.applyBindings({
-            nodes: registrationSelection,
-            enableComponents: true
-        }, '#existingProject');
-        $osf.applyBindings({
-            nodes: registrationSelection,
-            enableComponents: true
-        }, '#existingProjectXS');
-    }).fail(function(xhr, textStatus, error) {
-        Raven.captureMessage('Could not fetch dashboard nodes.', {
-            url: '/api/v1/dashboard/get_nodes/', textStatus: textStatus, error: error
+        promise.done(function(result){
+            // loop through items and check for admin permission first
+            result.data.forEach(function(item){
+                item.formattedDate = new $osf.FormattableDate(item.attributes.date_modified);
+                if(item.attributes.current_user_permissions.indexOf('admin') > -1){
+                    allNodes.push(item);
+                }
+            });
+            if(result.links.next){
+                collectProjects(result.links.next);
+            }
+            else {
+                $('#projectSearch').projectsSelect({data : allNodes, complete : onSelectProject});
+                $('#projectSearchXS').projectsSelect({data : allNodes, complete : onSelectProject});
+            }
         });
-    });
+        promise.fail(function(xhr, textStatus, error) {
+            Raven.captureMessage('Next page load failed for user nodes.', {
+                extra: { url: url, textStatus: textStatus, error: error }
+            });
+        });
+    }
+    var nodeLink = $osf.apiV2Url('users/me/nodes/', { query : { 'page[size]' : 100}});
+    collectProjects(nodeLink);
 
-    // Activate autocomplete for draft registrations
+    function onSelectRegistrations (event, data) {
+        $('#existingPrereg .regDraftButton').removeClass('disabled').attr('href', data.url);
+        $('#existingPreregXS .regDraftButton').removeClass('disabled').attr('href', data.url);
+    }
+
+    // Existing Draft Registrations
     $.getJSON('/api/v1/prereg/draft_registrations/').then(function(response){
         if (response.draftRegistrations.length) {
-            $osf.applyBindings({}, '#existingPrereg');
-            $osf.applyBindings({}, '#existingPreregXS');
+            $('#regDraftSearch').projectsSelect({data : response.draftRegistrations, type : 'registration', complete : onSelectRegistrations});
+            $('#regDraftSearchXS').projectsSelect({data : response.draftRegistrations, type : 'registration', complete : onSelectRegistrations});
         }
     });
 });

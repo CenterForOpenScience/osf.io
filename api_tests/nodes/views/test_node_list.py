@@ -12,8 +12,8 @@ from api.base.settings.defaults import API_BASE, MAX_PAGE_SIZE
 
 from tests.base import ApiTestCase
 from tests.factories import (
-    DashboardFactory,
-    FolderFactory,
+    BookmarkCollectionFactory,
+    CollectionFactory,
     ProjectFactory,
     RegistrationFactory,
     AuthUserFactory,
@@ -139,8 +139,8 @@ class TestNodeFiltering(ApiTestCase):
         self.private_project_user_two = ProjectFactory(title="Private Project User Two",
                                                        is_public=False,
                                                        creator=self.user_two)
-        self.folder = FolderFactory()
-        self.dashboard = DashboardFactory()
+        self.folder = CollectionFactory()
+        self.bookmark_collection = BookmarkCollectionFactory()
 
         self.url = "/{}nodes/".format(API_BASE)
 
@@ -269,7 +269,7 @@ class TestNodeFiltering(ApiTestCase):
         assert_in(self.private_project_user_one._id, ids)
         assert_not_in(self.private_project_user_two._id, ids)
         assert_not_in(self.folder._id, ids)
-        assert_not_in(self.dashboard._id, ids)
+        assert_not_in(self.bookmark_collection._id, ids)
 
     def test_get_all_projects_with_no_filter_not_logged_in(self):
         res = self.app.get(self.url)
@@ -281,7 +281,7 @@ class TestNodeFiltering(ApiTestCase):
         assert_not_in(self.private_project_user_one._id, ids)
         assert_not_in(self.private_project_user_two._id, ids)
         assert_not_in(self.folder._id, ids)
-        assert_not_in(self.dashboard._id, ids)
+        assert_not_in(self.bookmark_collection._id, ids)
 
     def test_get_one_project_with_exact_filter_logged_in(self):
         url = "/{}nodes/?filter[title]=Project%20One".format(API_BASE)
@@ -296,7 +296,7 @@ class TestNodeFiltering(ApiTestCase):
         assert_not_in(self.private_project_user_one._id, ids)
         assert_not_in(self.private_project_user_two._id, ids)
         assert_not_in(self.folder._id, ids)
-        assert_not_in(self.dashboard._id, ids)
+        assert_not_in(self.bookmark_collection._id, ids)
 
     def test_get_one_project_with_exact_filter_not_logged_in(self):
         url = "/{}nodes/?filter[title]=Project%20One".format(API_BASE)
@@ -311,7 +311,7 @@ class TestNodeFiltering(ApiTestCase):
         assert_not_in(self.private_project_user_one._id, ids)
         assert_not_in(self.private_project_user_two._id, ids)
         assert_not_in(self.folder._id, ids)
-        assert_not_in(self.dashboard._id, ids)
+        assert_not_in(self.bookmark_collection._id, ids)
 
     def test_get_some_projects_with_substring_logged_in(self):
         url = "/{}nodes/?filter[title]=Two".format(API_BASE)
@@ -326,7 +326,7 @@ class TestNodeFiltering(ApiTestCase):
         assert_not_in(self.private_project_user_one._id, ids)
         assert_not_in(self.private_project_user_two._id, ids)
         assert_not_in(self.folder._id, ids)
-        assert_not_in(self.dashboard._id, ids)
+        assert_not_in(self.bookmark_collection._id, ids)
 
     def test_get_some_projects_with_substring_not_logged_in(self):
         url = "/{}nodes/?filter[title]=Two".format(API_BASE)
@@ -341,7 +341,7 @@ class TestNodeFiltering(ApiTestCase):
         assert_not_in(self.private_project_user_one._id, ids)
         assert_not_in(self.private_project_user_two._id, ids)
         assert_not_in(self.folder._id, ids)
-        assert_not_in(self.dashboard._id, ids)
+        assert_not_in(self.bookmark_collection._id, ids)
 
     def test_get_only_public_or_my_projects_with_filter_logged_in(self):
         url = "/{}nodes/?filter[title]=Project".format(API_BASE)
@@ -356,7 +356,7 @@ class TestNodeFiltering(ApiTestCase):
         assert_in(self.private_project_user_one._id, ids)
         assert_not_in(self.private_project_user_two._id, ids)
         assert_not_in(self.folder._id, ids)
-        assert_not_in(self.dashboard._id, ids)
+        assert_not_in(self.bookmark_collection._id, ids)
 
     def test_get_only_public_projects_with_filter_not_logged_in(self):
         url = "/{}nodes/?filter[title]=Project".format(API_BASE)
@@ -371,7 +371,7 @@ class TestNodeFiltering(ApiTestCase):
         assert_not_in(self.private_project_user_one._id, ids)
         assert_not_in(self.private_project_user_two._id, ids)
         assert_not_in(self.folder._id, ids)
-        assert_not_in(self.dashboard._id, ids)
+        assert_not_in(self.bookmark_collection._id, ids)
 
     def test_alternate_filtering_field_logged_in(self):
         url = "/{}nodes/?filter[description]=Three".format(API_BASE)
@@ -386,7 +386,7 @@ class TestNodeFiltering(ApiTestCase):
         assert_not_in(self.private_project_user_one._id, ids)
         assert_not_in(self.private_project_user_two._id, ids)
         assert_not_in(self.folder._id, ids)
-        assert_not_in(self.dashboard._id, ids)
+        assert_not_in(self.bookmark_collection._id, ids)
 
     def test_alternate_filtering_field_not_logged_in(self):
         url = "/{}nodes/?filter[description]=Three".format(API_BASE)
@@ -401,7 +401,7 @@ class TestNodeFiltering(ApiTestCase):
         assert_not_in(self.private_project_user_one._id, ids)
         assert_not_in(self.private_project_user_two._id, ids)
         assert_not_in(self.folder._id, ids)
-        assert_not_in(self.dashboard._id, ids)
+        assert_not_in(self.bookmark_collection._id, ids)
 
     def test_incorrect_filtering_field_not_logged_in(self):
         url = '/{}nodes/?filter[notafield]=bogus'.format(API_BASE)

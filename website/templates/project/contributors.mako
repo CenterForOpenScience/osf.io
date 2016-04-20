@@ -182,7 +182,7 @@
             <div>
                 <div class="btn-group">
                     <button title="Copy to clipboard" class="btn btn-default btn-sm m-r-xs copy-button"
-                            data-bind="attr: {data-clipboard-text: linkUrl}" >
+                            data-bind="attr: {'data-clipboard-text': linkUrl}" >
                         <i class="fa fa-copy"></i>
                     </button>
                     <input class="link-url" type="text" data-bind="value: linkUrl, attr:{readonly: readonly}, click: toggle, clickBubble: false"  />
@@ -216,9 +216,6 @@
             <div class="header" data-bind="visible: $root.collapsed() && expanded()"></div>
             <div class="td-content" data-bind="visible: !$root.collapsed() || expanded()">
                 <span data-bind="html: anonymousDisplay"></span>
-                <!-- ko if: $root.nodeIsPublic && anonymous -->
-                <i data-bind="tooltip: {title: 'Public projects are not anonymized.'}" class="fa fa-question-circle fa-sm"></i>
-                <!-- /ko -->
             </div>
         </td>
         <td>
@@ -317,7 +314,7 @@
                             options: $parents[1].permissionList,
                             value: permission,
                             optionsText: optionsText.bind(permission),
-                             style: { font-weight: permissionChange() ? 'normal' : 'bold' }"
+                             style: { 'font-weight': permissionChange() ? 'normal' : 'bold' }"
                         >
                         </select>
                     </span>
@@ -360,7 +357,7 @@
         </div>
     % endif
         <div data-bind="foreach: messages">
-            <div data-bind="css: cssClass">{{ text }}</div>
+            <div data-bind="css: cssClass, text: text"></div>
         </div>
 </%def>
 

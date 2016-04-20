@@ -192,7 +192,7 @@ class FilterMixin(object):
                 # Special case date(time)s to allow for ambiguous date matches
                 if isinstance(field, self.DATE_FIELDS):
                     query[field_name].extend(self._parse_date_param(field, field_name, op, value))
-                elif not isinstance(value, int) and field_name == '_id':
+                elif not isinstance(value, int) and (field_name == '_id' or field_name == 'root'):
                     query[field_name].append({
                         'op': 'in',
                         'value': self.bulk_get_values(value, field)
@@ -209,6 +209,7 @@ class FilterMixin(object):
         :param basestring field_name: text representation of the field name
         :param rest_framework.fields.Field field: Field instance
         """
+        field = utils.decompose_field(field)
         source = field.source
         if source == '*':
             source = getattr(field, 'filter_key', None)
@@ -219,6 +220,7 @@ class FilterMixin(object):
         :param basestring value: value to be resolved
         :param rest_framework.fields.Field field: Field instance
         """
+        field = utils.decompose_field(field)
         if isinstance(field, ser.BooleanField):
             if utils.is_truthy(value):
                 return True
@@ -284,7 +286,7 @@ class ODMFilterMixin(FilterMixin):
         if self.request.parser_context['kwargs'].get('is_embedded'):
             param_query = None
         else:
-            param_query = self.query_params_to_odm_query(self.request.QUERY_PARAMS)
+            param_query = self.query_params_to_odm_query(self.request.query_params)
         default_query = self.get_default_odm_query()
 
         if param_query:
@@ -340,8 +342,8 @@ class ListFilterMixin(FilterMixin):
 
     def get_queryset_from_request(self):
         default_queryset = self.get_default_queryset()
-        if not self.kwargs.get('is_embedded') and self.request.QUERY_PARAMS:
-            param_queryset = self.param_queryset(self.request.QUERY_PARAMS, default_queryset)
+        if not self.kwargs.get('is_embedded') and self.request.query_params:
+            param_queryset = self.param_queryset(self.request.query_params, default_queryset)
             return param_queryset
         else:
             return default_queryset
@@ -372,10 +374,13 @@ class ListFilterMixin(FilterMixin):
                 if params['value'].lower() in getattr(item, field_name, {}).lower()
             ]
         else:
-            return_val = [
-                item for item in default_queryset
-                if self.FILTERS[params['op']](getattr(item, field_name, None), params['value'])
-            ]
+            try:
+                return_val = [
+                    item for item in default_queryset
+                    if self.FILTERS[params['op']](getattr(item, field_name, None), params['value'])
+                ]
+            except TypeError:
+                raise InvalidFilterValue(detail='Could not apply filter to specified field')
 
         return return_val
 

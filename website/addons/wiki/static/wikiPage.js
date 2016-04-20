@@ -160,7 +160,6 @@ var defaultOptions = {
 
 function ViewModel(options){
     var self = this;
-    
     // enabled?
     self.editVis = ko.observable(options.editVisible);
     self.viewVis = ko.observable(options.viewVisible);
@@ -216,7 +215,6 @@ function ViewModel(options){
         }
         return versionString;
     });
-
     // Save initial query params (except for the "mode" query params, which are handled
     // by self.currentURL), so that we can preserve them when we mutate window.history.state
     var initialParams = $osf.urlParams();
@@ -239,7 +237,6 @@ function ViewModel(options){
             url += paramPrefix + self.initialQueryParams;
             paramPrefix = '&';
         }
-
         // Default view is special cased
         if (!self.editVis() && self.viewVis() && self.viewVersion() === 'current' && !self.compareVis() && self.menuVis()) {
             window.history.replaceState({}, '', url);
@@ -286,9 +283,7 @@ function ViewModel(options){
     bodyElement.on('togglePanel', function (event, panel, display) {
         // Update self.editVis, self.viewVis, or self.compareVis in viewmodel
         self[panel + 'Vis'](display);
-
         //URL needs to be a computed observable, and this should just update the panel states, which will feed URL
-
         // Switch view to correct version
         if (panel === 'edit') {
             if (display) {

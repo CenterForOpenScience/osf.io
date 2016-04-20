@@ -1,8 +1,9 @@
-from nose.tools import *  # flake8: noqa
-
 import urlparse
-from framework.auth.core import Auth
 
+from nose.tools import *  # flake8: noqa
+from dateutil.parser import parse as parse_date
+
+from framework.auth.core import Auth
 from website.models import NodeLog
 from api.base.settings.defaults import API_BASE
 
@@ -75,7 +76,7 @@ class TestNodeLogList(ApiTestCase):
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), len(self.public_project.logs))
-        assert_datetime_equal(datetime.datetime.strptime(res.json['data'][API_FIRST]['attributes']['date'], "%Y-%m-%dT%H:%M:%S.%f"),
+        assert_datetime_equal(parse_date(res.json['data'][API_FIRST]['attributes']['date']),
                               self.public_project.logs[OSF_FIRST].date)
         assert_equal(res.json['data'][API_FIRST]['attributes']['action'], self.public_project.logs[OSF_FIRST].action)
 

@@ -5,8 +5,6 @@ var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
 require('knockout.validation');
-require('knockout.punches');
-ko.punches.enableAll();
 require('knockout-sortable');
 
 var $osf = require('./osfHelpers');
@@ -23,7 +21,13 @@ var socialRules = {
     github: /github\.com\/(\w+)/i,
     researchGate: /researchgate\.net\/profile\/(\w+)/i,
     academia: /(\w+)\.academia\.edu\/(\w+)/i,
-    baiduScholar: /xueshu\.baidu\.com\/scholarID\/(\w+)/i
+    baiduScholar: /xueshu\.baidu\.com\/scholarID\/(\w+)/i,
+    url: '^(https?:\\/\\/)?'+ // protocol
+            '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|'+ // domain name
+            '((\\d{1,3}\\.){3}\\d{1,3}))'+ // OR ip (v4) address
+            '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*'+ // port and path
+            '(\\?[;&a-z\\d%_.~+=-]*)?'+ // query string
+            '(\\#[-a-z\\d_]*)?$'
 };
 
 var cleanByRule = function(rule) {
@@ -353,7 +357,6 @@ BaseViewModel.prototype.submit = function() {
     } else {
         this.showMessages(true);
     }
-
 };
 
 var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
@@ -497,8 +500,12 @@ var SocialViewModel = function(urls, modes) {
 
     self.addons = ko.observableArray();
 
+    self.profileWebsite = ko.observable('').extend({
+        ensureHttp: true
+    });
+
     // Start with blank profileWebsite for new users without a profile.
-    self.profileWebsites = ko.observableArray(['']);
+    self.profileWebsites = ko.observableArray([self.profileWebsite]);
 
     self.hasProfileWebsites = ko.pureComputed(function() {
         //Check to see if any valid profileWebsites exist
@@ -509,6 +516,18 @@ var SocialViewModel = function(urls, modes) {
             }
         }
         return false;
+    });
+
+    self.hasValidWebsites = ko.pureComputed(function() {
+        //Check to see if there are bad profile websites
+        var profileWebsites = ko.toJS(self.profileWebsites());
+        var urlexp = new RegExp(socialRules.url,'i'); // fragment locator
+        for (var i=0; i<profileWebsites.length; i++) {
+            if (profileWebsites[i] && !urlexp.test(profileWebsites[i])) {
+                return false;
+            }
+        }
+        return true;
     });
 
     self.orcid = extendLink(
@@ -683,6 +702,30 @@ SocialViewModel.prototype.unserialize = function(data) {
     return self;
 };
 
+SocialViewModel.prototype.submit = function() {
+    if (!this.hasValidWebsites()) {
+        this.changeMessage(
+            'Please update your website',
+            'text-danger',
+            5000
+        );
+    }
+    else if (this.hasValidProperty() && this.isValid()) {
+        $osf.putJSON(
+            this.urls.crud,
+            this.serialize()
+        ).done(
+            this.handleSuccess.bind(this)
+        ).done(
+            this.setOriginal.bind(this)
+        ).fail(
+            this.handleError.bind(this)
+        );
+    } else {
+        this.showMessages(true);
+    }
+};
+
 var ListViewModel = function(ContentModel, urls, modes) {
     var self = this;
     BaseViewModel.call(self, urls, modes);
@@ -779,13 +822,10 @@ ListViewModel.prototype = Object.create(BaseViewModel.prototype);
 ListViewModel.prototype.addContent = function() {
     if (!this.institutionObjectsEmpty() && this.isValid()) {
         this.contents.push(new this.ContentModel(this));
+        this.showMessages(false);
     }
     else {
-        this.changeMessage(
-            'Institution field is required.',
-            'text-danger',
-            5000
-        );
+        this.showMessages(true);
     }
 };
 
@@ -1016,6 +1056,8 @@ module.exports = {
     Jobs: Jobs,
     Schools: Schools,
     // Expose private viewmodels
-    _NameViewModel: NameViewModel
+    _NameViewModel: NameViewModel,
+    SocialViewModel: SocialViewModel,
+    BaseViewModel: BaseViewModel
 };
 
