@@ -21,8 +21,8 @@
                     % endif
                 % endif
                 <h2 class="node-title">
-                    % if node['institution']['name'] and enable_institutions and not node['anonymous']:
-                        <a href="/institutions/${node['institution']['id']}"><img class="img-circle" height="75" width="75" id="instLogo" src="${node['institution']['logo_path']}"></a>
+                    % if node['institutions'] != [] and enable_institutions and not node['anonymous']:
+                        <a href="/institutions/${node['institutions'][0]['id']}"><img class="img-circle" height="75" width="75" id="instLogo" src="${node['institutions'][0]['logo_path']}"></a>
                     % endif
                     <span id="nodeTitleEditable" class="overflow">${node['title']}</span>
                 </h2>
@@ -111,16 +111,16 @@
                 % endif
                 </div>
                 % if enable_institutions and not node['anonymous']:
-                    % if ('admin' in user['permissions'] and not node['is_registration']) and (node['institution']['id'] or len(user['institutions']) != 0):
-                        <a class="link-dashed" href="${node['url']}settings/#configureInstitutionAnchor" id="institution">Affiliated Institution:</a>
-                        % if node['institution']['id']:
-                            <a href="/institutions/${node['institution']['id']}">${node['institution']['name']}</a>
+                    % if ('admin' in user['permissions'] and not node['is_registration']) and (len(node['institutions']) != 0 or len(user['institutions']) != 0):
+                        <a class="link-dashed" href="${node['url']}settings/#configureInstitutionAnchor" id="institution">Affiliated Institutions:</a>
+                        % if node['institutions'] != []:
+                            <a href="/institutions/${node['institutions'][0]['id']}">${node['institutions'][0]['name']}</a>
                         % else:
                             <span> None </span>
                         % endif
                     % endif
-                    % if not ('admin' in user['permissions'] and not node['is_registration']) and node['institution']['id']:
-                        Affiliated institution: <a href="/institutions/${node['institution']['id']}">${node['institution']['name']}</a>
+                    % if not ('admin' in user['permissions'] and not node['is_registration']) and node['institutions'] != []:
+                        Affiliated institutions: <a href="/institutions/${node['institutions'][0]['id']}">${node['institutions'][0]['name']}</a>
                     % endif
                 % endif
                 % if node['is_fork']:

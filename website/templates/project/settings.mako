@@ -304,7 +304,7 @@
                         <h3 class="panel-title">Project Affiliation / Branding</h3>
                     </div>
                     <div class="panel-body">
-                        % if not node['institution']['name']:
+                        % if not node['institutions'] != []:
                             <div data-bind="visible: !loading()">
                                 <div data-bind="visible: error()">
                                     <div class="help-block">
@@ -343,7 +343,7 @@
                                 </div>
                             </div>
                         % endif
-                        % if node['institution']['name']:
+                        % if node['institutions'] != []:
                             <div class="help-block">Your project is currently affiliated with: </div>
                             <p data-bind="text: primaryInstitution"></p>
                             <div class="help-block">
