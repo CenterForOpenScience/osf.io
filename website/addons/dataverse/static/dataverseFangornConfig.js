@@ -29,13 +29,33 @@ var _dataverseItemButtons = {
             tb.dropzone.hiddenFileInput.click();
             tb.dropzoneItemCache = item;
         }
-        function dataversePublish(event, item, col) {
+        // Get the external Dataverse host before publishing
+        function getDataverseHost(event, item, col) {
+            var host;
+            $.ajax({
+                url: '/api/v1/project/'+ item.data.nodeId +'/dataverse/settings/',
+                type: 'GET',
+                dataType: 'json'
+            }).done(function(response) {
+                host = response.result.dataverseHost;
+                dataversePublish(event, item, col, host)
+            }).fail(function(xhr, textStatus, error) {
+                Raven.captureMessage('Could not GET dataverse settings', {
+                    url: '/api/v1/project/'+ item.data.nodeId +'/dataverse/settings/',
+                    textStatus: textStatus,
+                    error: error
+                });
+            });
+        }
+        function dataversePublish(event, item, col, host) {
+            console.log(host);
             var both = !item.data.dataverseIsPublished;
             var url = item.data.urls.publish;
             var toPublish = both ? 'Dataverse and dataset' : 'dataset';
+            // Set the modal content to reflect the file's external host
             var modalContent = [
                 m('p.m-md', both ? 'This dataset cannot be published until ' + item.data.dataverse + ' Dataverse is published. ' : ''),
-                m('p.m-md', 'By publishing this ' + toPublish + ', all content will be made available through the Harvard Dataverse using their internal privacy settings, regardless of your OSF project settings. '),
+                m('p.m-md', 'By publishing this ' + toPublish + ', all content will be made available through ' + host + ' using their internal privacy settings, regardless of your OSF project settings. '),
                 m('p.font-thick.m-md', both ? 'Do you want to publish this Dataverse AND this dataset?' : 'Are you sure you want to publish this dataset?')
             ];
             var modalActions = [
@@ -139,7 +159,7 @@ var _dataverseItemButtons = {
                     }, 'Upload'),
                     m.component(Fangorn.Components.button, {
                         onclick: function (event) {
-                            dataversePublish.call(tb, event, item);
+                            getDataverseHost.call(tb, event, item);
                         },
                         icon: 'fa fa-globe',
                         className: 'text-primary'
