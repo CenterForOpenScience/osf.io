@@ -318,7 +318,7 @@ def serialize_event(user, subscription=None, node=None, event_description=None):
         event_type = event_description
     if node and node.node__parent:
         notification_type = 'adopt_parent'
-    elif "global" in event_type:
+    elif 'global' in event_type:
         notification_type = 'email_transactional'
     else:
         notification_type = 'none'

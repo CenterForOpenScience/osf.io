@@ -126,6 +126,70 @@ class TestNotificationsModels(OsfTestCase):
         assert_in('file_updated', event_types)
         assert_in('comments', event_types)
 
+    def test_new_node_creator_is_subscribed_with_global_settings(self):
+        user = factories.UserFactory()
+
+        factories.NotificationSubscriptionFactory(
+            _id=user._id + '_' + 'global_comments',
+            owner=user,
+            event_name='global_comments'
+        ).add_user_to_subscription(user, 'email_digest')
+
+        factories.NotificationSubscriptionFactory(
+            _id=user._id + '_' + 'global_file_updated',
+            owner=user,
+            event_name='global_file_updated'
+        ).add_user_to_subscription(user, 'none')
+
+        node = factories.NodeFactory(creator=user)
+
+        user_subscriptions = [x for x in utils.get_all_user_subscriptions(user)]
+        event_types = [sub.event_name for sub in user_subscriptions]
+
+        file_updated_subscription = NotificationSubscription.find_one(Q('_id', 'eq', node._id + '_file_updated'))
+        comments_subscription = NotificationSubscription.find_one(Q('_id', 'eq', node._id + '_comments'))
+
+        assert_equal(len(user_subscriptions), 4)  # subscribed to both node and user settings
+        assert_in('file_updated', event_types)
+        assert_in('comments', event_types)
+        assert_in('global_file_updated', event_types)
+        assert_in('global_comments', event_types)
+        assert_equal(len(file_updated_subscription.none), 1)
+        assert_equal(len(file_updated_subscription.email_transactional), 0)
+        assert_equal(len(comments_subscription.email_digest), 1)
+        assert_equal(len(comments_subscription.email_transactional), 0)
+
+    def test_new_node_creator_is_subscribed_with_default_global_settings(self):
+        user = factories.UserFactory()
+
+        factories.NotificationSubscriptionFactory(
+            _id=user._id + '_' + 'global_comments',
+            owner=user,
+            event_name='global_comments'
+        ).add_user_to_subscription(user, 'email_transactional')
+
+        factories.NotificationSubscriptionFactory(
+            _id=user._id + '_' + 'global_file_updated',
+            owner=user,
+            event_name='global_file_updated'
+        ).add_user_to_subscription(user, 'email_transactional')
+
+        node = factories.NodeFactory(creator=user)
+
+        user_subscriptions = [x for x in utils.get_all_user_subscriptions(user)]
+        event_types = [sub.event_name for sub in user_subscriptions]
+
+        file_updated_subscription = NotificationSubscription.find_one(Q('_id', 'eq', node._id + '_file_updated'))
+        comments_subscription = NotificationSubscription.find_one(Q('_id', 'eq', node._id + '_comments'))
+
+        assert_equal(len(user_subscriptions), 4)  # subscribed to both node and user settings
+        assert_in('file_updated', event_types)
+        assert_in('comments', event_types)
+        assert_in('global_file_updated', event_types)
+        assert_in('global_comments', event_types)
+        assert_equal(len(file_updated_subscription.email_transactional), 1)
+        assert_equal(len(comments_subscription.email_transactional), 1)
+
     def test_contributor_subscribed_when_added(self):
         user = factories.UserFactory()
         contributor = factories.UserFactory()
