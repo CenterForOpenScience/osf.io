@@ -139,4 +139,7 @@ def extend_querystring_params(url, params):
     return furl.furl(url).add(args=params).url
 
 def extract_object_from_dict(self, obj):
-        return obj.get('object', obj)
+        try:
+            return obj['object'].owner
+        except (AttributeError, KeyError):
+            return obj
