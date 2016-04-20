@@ -122,6 +122,10 @@ $(document).ready(function(){
     });
 });
 
+$(window).load(function () {
+    $(window).trigger('resize');
+});
+
 /* Before closing the page, Check whether the newly checked addon are updated or not */
 $(window).on('beforeunload',function() {
     //new checked items but not updated
