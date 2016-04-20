@@ -39,23 +39,23 @@ class Node(GuidMixin, BaseModel):
     is_collection = models.BooleanField(default=False, db_index=True)
 
     is_deleted = models.BooleanField(default=False, db_index=True)
-    deleted_date = models.DateTimeField()
+    deleted_date = models.DateTimeField(null=True)
 
     is_registration = models.BooleanField(default=False, db_index=True)
-    registered_date = models.DateTimeField(db_index=True)
+    registered_date = models.DateTimeField(db_index=True, null=True)
     registered_user = models.ForeignKey(User, related_name='related_to', on_delete=models.SET_NULL, null=True)
 
     # registered_schema = models.ManyToManyField(Metaschema)
 
-    registered_meta = DatetimeAwareJSONField()
+    registered_meta = DatetimeAwareJSONField(default={})
     # registration_approval = models.ForeignKey(RegistrationApproval)
     # retraction = models.ForeignKey(Retraction)
     # embargo = models.ForeignKey(Embargo)
 
     is_fork = models.BooleanField(default=False, db_index=True)
-    forked_date = models.DateTimeField(db_index=True)
+    forked_date = models.DateTimeField(db_index=True, null=True)
 
-    title = models.CharField(validators=[validate_title], max_length=200)
+    title = models.TextField(validators=[validate_title]) # this should be a charfield but data from mongo didn't fit in 255
     description = models.TextField()
     category = models.CharField(max_length=255, choices=CATEGORY_MAP, default=CATEGORY_MAP[-1])
     # node_license = models.ForeignKey(NodeLicenseRecord)
@@ -88,7 +88,7 @@ class Node(GuidMixin, BaseModel):
     # The node (if any) used as a template for this node's creation
     template_node = models.ForeignKey('self', related_name='templated_from', on_delete=models.SET_NULL, null=True)
 
-    piwik_site_id = models.IntegerField()
+    piwik_site_id = models.IntegerField(null=True)
 
     # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
     # {<User.id>: [<Node._id>, <Node2._id>, ...] }

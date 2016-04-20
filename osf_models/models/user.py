@@ -105,7 +105,7 @@ class User(GuidMixin, BaseModel):
     merged_by = models.ForeignKey('self', null=True)
 
     # verification key used for resetting password
-    verification_key = models.CharField(max_length=255)
+    verification_key = models.CharField(max_length=255, blank=True, null=True)
 
     # confirmed emails
     #   emails should be stripped of whitespace and lower-cased before appending
