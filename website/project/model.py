@@ -151,9 +151,12 @@ class MetaData(GuidStoredObject):
 
 def validate_contributor(guid, contributors):
     if guid != '':
-        user = User.find(Q('_id', 'eq', guid))
+        user = User.find(
+            Q('_id', 'eq', guid) &
+            Q('is_claimed', 'eq', True)
+        )
         if user.count() != 1:
-            raise ValidationValueError('User does not exist.')
+            raise ValidationValueError('User does not exist or is not active.')
         elif guid not in contributors:
             raise ValidationValueError('Mentioned user is not a contributor.')
     return True
@@ -278,10 +281,12 @@ class Comment(GuidStoredObject, SpamMixin):
         )
 
         if (comment.new_mentions):
-            comment.new_mentions = [mention for mention in comment.new_mentions if mention not in comment.old_mentions and validate_contributor(mention, comment.node.contributors)]
+            old_mentions = comment.old_mentions
+            validate = lambda m: m not in old_mentions and validate_contributor(m, comment.node.contributors)
+            comment.new_mentions = filter(validate, comment.new_mentions)
             if len(comment.new_mentions) > 0:
                 project_signals.mention_added.send(comment, auth=auth)
-                comment.old_mentions.extend(comment.new_mentions)
+                old_mentions.extend(comment.new_mentions)
             comment.save()
 
         comment.node.save()
@@ -305,7 +310,9 @@ class Comment(GuidStoredObject, SpamMixin):
         self.date_modified = datetime.datetime.utcnow()
 
         if (self.new_mentions):
-            self.new_mentions = [mention for mention in self.new_mentions if mention not in self.old_mentions and validate_contributor(mention, self.node.contributors)]
+            old_mentions = self.old_mentions
+            validate = lambda m: m not in old_mentions and validate_contributor(m, self.node.contributors)
+            self.new_mentions = filter(validate, self.new_mentions)
             if len(self.new_mentions) > 0:
                 if save:
                     project_signals.mention_added.send(self, auth=auth)

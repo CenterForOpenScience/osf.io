@@ -32,7 +32,7 @@
                         <div class="clearfix">
                             <div class="pull-right">
                                 <a class="btn btn-default btn-sm" data-bind="click: cancelReply, css: {disabled: submittingReply}">Cancel</a>
-                                <a class="btn btn-success btn-sm" data-bind="click: submitReply, css: {disabled: submittingReply}">{{commentButtonText}}</a>
+                                <a class="btn btn-success btn-sm" data-bind="click: submitReply, visible: validateReply(), css: {disabled: submittingReply}">{{commentButtonText}}</a>
                                 <span data-bind="text: replyErrorMessage" class="text-danger"></span>
                             </div>
                         </div>

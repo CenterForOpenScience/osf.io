@@ -204,7 +204,7 @@ class TestCommentModel(OsfTestCase):
                     new_mentions=['noncontributor']
                 )
         assert_equal(mock_signals.signals_sent(), set([]))
-        assert_equal(error.exception.message, 'User does not exist.')
+        assert_equal(error.exception.message, 'User does not exist or is not active.')
 
     def test_edit(self):
         self.comment.edit(
@@ -237,7 +237,7 @@ class TestCommentModel(OsfTestCase):
                     save=True
                 )
         assert_equal(mock_signals.signals_sent(), set([]))
-        assert_equal(error.exception.message, 'User does not exist.')
+        assert_equal(error.exception.message, 'User does not exist or is not active.')
 
     def test_edit_does_not_send_mention_added_signal_if_already_mentioned(self):
         with capture_signals() as mock_signals:
