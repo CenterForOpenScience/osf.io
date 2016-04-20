@@ -1420,7 +1420,7 @@ class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        AdminOrPublic,
+        ContributorOrPublic,
         ExcludeRetractions,
         ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
@@ -1432,7 +1432,7 @@ class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin
 
     def get_object(self):
         addon = self.kwargs['provider']
-        for addon in ADDONS_MANAGEABLE:
+        if addon in ADDONS_MANAGEABLE:
             addon_settings = ADDONS_AVAILABLE_DICT[addon].settings_models.get('node', None)
             obj = None
             enabled = False
@@ -1448,84 +1448,6 @@ class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin
             }
         raise NotFound('Requested addon unavailable.')
 
-    def update(self):
-        instance = self.get_object()
-        node = self.get_node()
-        user = get_user_auth(self.request)
-        if not instance['enabled']:
-            node.add_addon(instance['_id'], user)
-        elif instance['has_auth']:
-            raise Conflict('Addon must be deauthorized before being disabled.')
-        node.delete_addon(instance['_id'], user)
-
-
-class NodeAddonAccountList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin):
-    """
-    TODO: docs
-    """
-
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        AdminOrPublic,
-        ReadOnlyIfRegistration,
-        ExcludeRetractions,
-        base_permissions.TokenHasScope,
-    )
-
-    serializer_class = AddonAccountSerializer
-    view_category = 'nodes'
-    view_name = 'node-external_accounts'
-
-    def get_queryset(self):
-        qs = []
-        node = self.get_node()
-        for addon in node.get_addons():
-            if addon.config.short_name in ADDONS_OAUTH:
-                if addon.external_account:
-                    qs.append(addon.external_account)
-        return qs
-
-    def perform_create(self, serializer):
-        account_id = serializer.validated_data['_id']
-        account = ExternalAccount.load(account_id)
-        if not account:
-            raise NotFound
-        node = self.get_node()
-        auth = get_user_auth(self.request)
-        node_settings = node.get_or_add_addon(account.provider, auth=auth)
-        node_settings.set_auth(account, auth)
-
-
-class NodeAddonAccountDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixin):
-    """
-    TODO: docs
-    """
-
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        AdminOrPublic,
-        ReadOnlyIfRegistration,
-        ExcludeRetractions,
-        base_permissions.TokenHasScope,
-    )
-
-    serializer_class = AddonAccountSerializer
-    view_category = 'nodes'
-    view_name = 'node-external_account-detail'
-
-    def get_object(self):
-        addon = self.kwargs['provider']
-        account_id = self.kwargs['account_id']
-        if addon in ADDONS_OAUTH:
-            if self.get_node().has_addon(addon):
-                account = ExternalAccount.load(account_id)
-                if account and account.provider == addon:
-                    return account
-        raise NotFound('Requested account unavailable.')
-
-    def perform_destroy(self, instance):
-        auth = get_user_auth(self.request)
-        self.get_node().get_addon(instance.provider).deauthorize(auth=auth)
 
 class NodeProvider(object):
 
