@@ -40,26 +40,32 @@ var _dataverseItemButtons = {
                 host = response.result.dataverseHost;
                 dataversePublish(event, item, col, host)
             }).fail(function(xhr, textStatus, error) {
+                var errorMessage = 'Something went wrong when attempting to publish your dataset.';
                 Raven.captureMessage('Could not GET dataverse settings', {
                     url: '/api/v1/project/'+ item.data.nodeId +'/dataverse/settings/',
                     textStatus: textStatus,
                     error: error
                 });
+                dataversePublish(event, item, col, host, errorMessage);
             });
         }
-        function dataversePublish(event, item, col, host) {
-            console.log(host);
+        function dataversePublish(event, item, col, host, errorMessage) {
             var both = !item.data.dataverseIsPublished;
             var url = item.data.urls.publish;
             var toPublish = both ? 'Dataverse and dataset' : 'dataset';
             // Set the modal content to reflect the file's external host
-            var modalContent = [
+            var modalContent = errorMessage ? m('p.m-md', errorMessage) : [
                 m('p.m-md', both ? 'This dataset cannot be published until ' + item.data.dataverse + ' Dataverse is published. ' : ''),
                 m('p.m-md', 'By publishing this ' + toPublish + ', all content will be made available through ' + host + ' using their internal privacy settings, regardless of your OSF project settings. '),
                 m('p.font-thick.m-md', both ? 'Do you want to publish this Dataverse AND this dataset?' : 'Are you sure you want to publish this dataset?')
             ];
-            var modalActions = [
+            var modalActions = errorMessage ? 
                 m('button.btn.btn-default', {
+                    'onclick': function () {
+                        tb.modal.dismiss();
+                    }
+                }, 'Cancel') :
+                [m('button.btn.btn-default', {
                     'onclick': function () {
                         tb.modal.dismiss();
                     }
@@ -68,10 +74,10 @@ var _dataverseItemButtons = {
                     'onclick': function () {
                         publishDataset();
                     }
-                }, 'Publish')
-            ];
+                }, 'Publish')];
 
-            tb.modal.update(modalContent, modalActions, m('h3.break-word.modal-title', 'Publish this ' + toPublish + '?'));
+            var modalHeader= errorMessage ? m('h3.break-word.modal-title','Error in publishing this ' + toPublish + '.') : m('h3.break-word.modal-title', 'Publish this ' + toPublish + '?');
+            tb.modal.update(modalContent, modalActions, modalHeader);
 
             function publishDataset() {
                 tb.modal.dismiss();
