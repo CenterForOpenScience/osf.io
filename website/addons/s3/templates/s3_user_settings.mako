@@ -6,8 +6,8 @@
     <%include file="s3_credentials_modal.mako"/>
 
     <h4 class="addon-title">
-        <img class="addon-icon" src=${addon_icon_url}></img>
-        {{ properName }}
+        <img class="addon-icon" src=${addon_icon_url}>
+        <span data-bind="text: properName"></span>
         <small>
             <a href="#s3InputCredentials" data-toggle="modal" class="pull-right text-primary">Connect Account</a>
         </small>
@@ -28,7 +28,7 @@
                 <tbody data-bind="foreach: connectedNodes()">
                     <tr>
                         <td class="authorized-nodes">
-                            <!-- ko if: title --><a data-bind="attr.href: urls.view, text: title"></a><!-- /ko -->
+                            <!-- ko if: title --><a data-bind="attr: {href: urls.view}, text: title"></a><!-- /ko -->
                             <!-- ko if: !title --><em>Private project</em><!-- /ko -->
                         </td>
                         <td>

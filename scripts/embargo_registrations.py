@@ -83,7 +83,8 @@ def main(dry_run=True):
                         parent_registration.registered_from.add_log(
                             action=NodeLog.EMBARGO_COMPLETED,
                             params={
-                                'node': parent_registration._id,
+                                'node': parent_registration.registered_from_id,
+                                'registration': parent_registration._id,
                                 'embargo_id': embargo._id,
                             },
                             auth=None,

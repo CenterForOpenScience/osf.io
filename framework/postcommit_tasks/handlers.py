@@ -1,8 +1,6 @@
 import logging
 import threading
 
-import gevent
-
 from website import settings
 
 _local = threading.local()
@@ -21,7 +19,8 @@ def postcommit_after_request(response, base_status_error_code=500):
         _local.postcommit_queue = set()
         return response
     try:
-        if postcommit_queue():
+        if settings.ENABLE_VARNISH and postcommit_queue():
+            import gevent
             threads = [gevent.spawn(func, *args) for func, args in postcommit_queue()]
             gevent.joinall(threads)
     except AttributeError:

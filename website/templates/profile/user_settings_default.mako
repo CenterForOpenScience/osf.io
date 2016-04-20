@@ -24,7 +24,7 @@
                 <tbody data-bind="foreach: connectedNodes()">
                     <tr>
                         <td class="authorized-nodes">
-                            <!-- ko if: title --><a data-bind="attr.href: urls.view, text: title"></a><!-- /ko -->
+                            <!-- ko if: title --><a data-bind="attr: {href: urls.view}, text: title"></a><!-- /ko -->
                             <!-- ko if: !title --><em>Private project</em><!-- /ko -->
                         </td>
                         <td>
