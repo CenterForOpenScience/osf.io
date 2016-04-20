@@ -50,10 +50,16 @@ class NodeAddonDetailMixin(object):
     def test_settings_detail_GET_returns_disabled_if_disabled(self):
         pass
 
-    def test_settings_detail_PUT_toggles_enabled_disabled(self):
+    def test_settings_detail_PUT_all_sets(self):
+        pass
+
+    def test_settings_detail_PUT_none_disables(self):
         pass
 
     def test_settings_detail_PATCH_toggles_enabled_disabled(self):
+        pass
+
+    def test_settings_detail_PATCH_readcontrib_raises_error(self):
         pass
 
     def test_settings_detail_raises_error_if_DELETE_or_POST(self):
@@ -74,77 +80,14 @@ class NodeAddonDetailMixin(object):
     def test_settings_detail_noncontrib_public_cannot_edit(self):
         pass
 
-class NodeAddonAccountListMixin(object):
-    def set_account_list_url(self):
-        self.account_list_url = '/{}nodes/{}/addons/{}/accounts/?page[size]=100'.format(
-            API_BASE, self.node._id, self.short_name
-        )
 
-    def test_account_list_GET_returns_account_if_enabled(self):
-        pass
-
-    def test_account_list_returns_nothing_if_disabled(self):
-        pass
-
-    def test_account_list_POST_account_enables_addon(self):
-        pass
-
-    def test_account_list_POST_by_nonadmin_raises_error(self):
-        pass
-
-    def test_account_list_raises_error_if_DELETE_PUT_or_PATCH(self):
-        pass
-
-    def test_account_list_raises_error_if_noncontrib_not_public(self):
-        pass
-
-    def test_account_list_noncontrib_public_can_view(self):
-        pass
-
-    def test_account_list_noncontrib_public_cannot_edit(self):
-        pass
-
-
-class NodeAddonAccountDetailMixin(object):
-    def set_account_detail_url(self):
-        self.account_detail_url = '/{}nodes/{}/addons/{}/accounts/{}'.format(
-            API_BASE, self.node._id, self.short_name,
-            self.account._id if self.account else ''
-        )
-
-    def test_account_detail_GET_returns_account_if_enabled(self):
-        pass
-
-    def test_account_detail_raises_error_if_disabled(self):
-        pass
-
-    def test_account_detail_DELETE_account_disables_addon(self):
-        pass
-
-    def test_account_detail_raises_error_if_POST_PUT_or_PATCH(self):
-        pass
-
-    def test_account_detail_DELETE_raises_error_if_contrib_not_admin(self):
-        pass
-
-    def test_account_detail_raises_error_if_noncontrib_not_public(self):
-        pass
-
-    def test_account_detail_noncontrib_public_can_view(self):
-        pass
-
-    def test_account_detail_noncontrib_public_cannot_edit(self):
-        pass
-
-
-class NodeAddonTestSuiteMixin(NodeAddonListMixin, NodeAddonDetailMixin, NodeAddonAccountListMixin, NodeAddonAccountDetailMixin):
+class NodeAddonTestSuiteMixin(NodeAddonListMixin, NodeAddonDetailMixin):
     def set_urls(self):
         self.set_setting_list_url()
         self.set_setting_detail_url()
-        self.set_account_list_url()
-        self.set_account_detail_url()
 
-class NodeOAuthAddonTestSuiteMixin(NodeAddonTestSuiteMixin):
+
+class NodeOAuthAddonTestSuiteMixin(NodeAddonTestSuiteMixin)
     addon_type = 'OAUTH'
 
     @abc.abstractproperty
@@ -163,6 +106,13 @@ class NodeOAuthAddonTestSuiteMixin(NodeAddonTestSuiteMixin):
         self.node_settings.save()
 
 
+class NodeConfigurableAddonTestSuiteMixin(NodeOAuthAddonTestSuiteMixin):
+    addon_type = 'CONFIGURABLE'
+
+    def _folder_info(self):
+        return '0987654321'
+
+
 class NodeOAuthCitationAddonTestSuiteMixin(NodeOAuthAddonTestSuiteMixin):
     def _settings_kwargs(self, node, user_settings):
         return {
@@ -172,14 +122,21 @@ class NodeOAuthCitationAddonTestSuiteMixin(NodeOAuthAddonTestSuiteMixin):
         }
 
 
-class NodeNonOAuthAddonTestSuiteMixin(NodeAddonTestSuiteMixin):
-    addon_type = 'NON_OAUTH'
+class NodeManageableAddonTestSuiteMixin(NodeAddonTestSuiteMixin):
+    addon_type = 'MANAGEABLE'
 
 
 class NodeUnmanageableAddonTestSuiteMixin(NodeAddonTestSuiteMixin):
     addon_type = 'UNMANAGEABLE'
 
+
+class TestNodeInvalidAddon(NodeAddonTestSuiteMixin, ApiAddonTestCase):
+    addon_type = 'INVALID'
+    short_name = 'fake'
+
+
 # UNMANAGEABLE
+
 
 class TestNodeForwardAddon(NodeUnmanageableAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'forward'
@@ -197,20 +154,14 @@ class TestNodeWikiAddon(NodeUnmanageableAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'wiki'
 
 
-# NON_OAUTH
+# MANAGEABLE
 
 
-class TestNodeFigshareAddon(NodeNonOAuthAddonTestSuiteMixin, ApiAddonTestCase):
+class TestNodeFigshareAddon(NodeManageableAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'figshare'
 
 
 # OAUTH
-
-
-class TestNodeBoxAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
-    short_name = 'box'
-    AccountFactory = BoxAccountFactory
-    NodeSettingsFactory = BoxNodeSettingsFactory
 
 
 class TestNodeDataverseAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
@@ -222,19 +173,6 @@ class TestNodeDataverseAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
         return {
             'user_settings': self.user_settings,
             '_dataset_id': '1234567890',
-            'owner': self.node
-        }
-
-
-class TestNodeDropboxAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
-    short_name = 'dropbox'
-    AccountFactory = DropboxAccountFactory
-    NodeSettingsFactory = DropboxNodeSettingsFactory
-
-    def _settings_kwargs(self, node, user_settings):
-        return {
-            'user_settings': self.user_settings,
-            'folder': '1234567890',
             'owner': self.node
         }
 
@@ -253,16 +191,50 @@ class TestNodeGitHubAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
         }
 
 
+class TestNodeMendeleyAddon(NodeOAuthCitationAddonTestSuiteMixin, ApiAddonTestCase):
+    short_name = 'mendeley'
+    AccountFactory = MendeleyAccountFactory
+    NodeSettingsFactory = MendeleyNodeSettingsFactory
+
+
+class TestNodeZoteroAddon(NodeOAuthCitationAddonTestSuiteMixin, ApiAddonTestCase):
+    short_name = 'zotero'
+    AccountFactory = ZoteroAccountFactory
+    NodeSettingsFactory = ZoteroNodeSettingsFactory
+
+
+# CONFIGURABLE
+
+
+class TestNodeBoxAddon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTestCase):
+    short_name = 'box'
+    AccountFactory = BoxAccountFactory
+    NodeSettingsFactory = BoxNodeSettingsFactory
+
+
+class TestNodeDropboxAddon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTestCase):
+    short_name = 'dropbox'
+    AccountFactory = DropboxAccountFactory
+    NodeSettingsFactory = DropboxNodeSettingsFactory
+
+    def _settings_kwargs(self, node, user_settings):
+        return {
+            'user_settings': self.user_settings,
+            'folder': '1234567890',
+            'owner': self.node
+        }
+
+
 class TestNodeGoogleDriveAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'googledrive'
     AccountFactory = GoogleDriveAccountFactory
     NodeSettingsFactory = GoogleDriveNodeSettingsFactory
 
-
-class TestNodeMendeleyAddon(NodeOAuthCitationAddonTestSuiteMixin, ApiAddonTestCase):
-    short_name = 'mendeley'
-    AccountFactory = MendeleyAccountFactory
-    NodeSettingsFactory = MendeleyNodeSettingsFactory
+    def _folder_info(self):
+        return {
+            'id': '0987654321',
+            'path': '/'
+        }
 
 
 class TestNodeS3Addon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
@@ -275,14 +247,3 @@ class TestNodeS3Addon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
             'user_settings': self.user_settings,
             'owner': self.node
         }
-
-
-class TestNodeZoteroAddon(NodeOAuthCitationAddonTestSuiteMixin, ApiAddonTestCase):
-    short_name = 'zotero'
-    AccountFactory = ZoteroAccountFactory
-    NodeSettingsFactory = ZoteroNodeSettingsFactory
-
-
-class TestNodeInvalidAddon(NodeAddonTestSuiteMixin, ApiAddonTestCase):
-    addon_type = 'INVALID'
-    short_name = 'fake'
