@@ -797,7 +797,6 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
             child.removeSelf();
         }
     }
-    console.log(file);
     treebeard.options.uploadInProgress = false;
     if (msgText !== 'Upload canceled.') {
         addFileStatus(treebeard, file, false, msgText, '');
