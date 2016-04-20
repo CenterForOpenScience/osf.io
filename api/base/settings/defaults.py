@@ -190,5 +190,6 @@ ENABLE_ESI = osf_settings.ENABLE_ESI
 VARNISH_SERVERS = osf_settings.VARNISH_SERVERS
 ESI_MEDIA_TYPES = osf_settings.ESI_MEDIA_TYPES
 
-ADDONS_OAUTH = ['box', 'dataverse', 'dropbox', 'figshare', 'github', 'mendeley', 'zotero', 's3', 'googledrive']
+ADDONS_FOLDER_CONFIGURABLE = ['box', 'dropbox', 's3', 'googledrive']
+ADDONS_OAUTH = ADDONS_FOLDER_CONFIGURABLE + ['dataverse', 'github', 'mendeley', 'zotero']
 ADDONS_MANAGEABLE = ADDONS_OAUTH + ['figshare']
