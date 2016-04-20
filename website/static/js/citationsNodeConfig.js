@@ -71,7 +71,6 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         var request = $.get(self.urls().accounts);
         request.then(function(data) {
             ret.resolve(data.accounts);
-            $('.addon-auth-table').osfToggleHeight({height: 140});
         });
         request.fail(function(xhr, textStatus, error) {
             self.changeMessage(self.messages.updateAccountsError(), 'text-danger');

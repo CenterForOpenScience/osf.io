@@ -115,7 +115,11 @@ for (var i=0; i < addonEnabledSettings.length; i++) {
 }
 
 $(document).ready(function(){
-    $('.addon-auth-table').osfToggleHeight({height: 140});
+// Separately load addons whose data is loaded on the backend as opposed to async javascript.
+    var makoLoadedAddons = ['dropbox', 'github', 'box', 'figshare', 'googledrive', 's3'];
+    makoLoadedAddons.forEach(function(addon){
+        $('#'+ addon + '-header').osfToggleHeight({height: 140});
+    });
 });
 
 /* Before closing the page, Check whether the newly checked addon are updated or not */
@@ -135,6 +139,8 @@ $(window).on('beforeunload',function() {
 ****************/
 
 $('.addon-oauth').each(function(index, elem) {
+// Applies to Mendeley, Zotero.  There is a separate code for dataverse in DataverseUserConfig.js
+
     var viewModel = new addonSettings.OAuthAddonSettingsViewModel(
         $(elem).data('addon-short-name'),
         $(elem).data('addon-name')
