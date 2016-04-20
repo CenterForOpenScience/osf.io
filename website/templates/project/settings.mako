@@ -341,7 +341,7 @@
                                                 <ul>
                                                     <li>institutional logos to be displayed on public projects</li>
                                                     <li>public projects to be discoverable on specific institutional landing pages</li>
-                                                    <li>single-sign on to the OSF with institutional credentials</li>
+                                                    <li>single sign-on to the OSF with institutional credentials</li>
                                                 </ul>
                                             </div>
                                         </div>
@@ -353,7 +353,7 @@
                                     <ul>
                                         <li>institutional logos to be displayed on public projects</li>
                                         <li>public projects to be discoverable on specific institutional landing pages</li>
-                                        <li>single-sign on to the OSF with institutional credentials</li>
+                                        <li>single sign-on to the OSF with institutional credentials</li>
                                     </ul>
                                 </div>
                             % endif

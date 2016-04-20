@@ -1,11 +1,10 @@
 from nose.tools import *
 
 from tests.base import ApiTestCase
-from tests.factories import InstitutionFactory, AuthUserFactory, RegistrationFactory, RetractionFactory
+from tests.factories import InstitutionFactory, AuthUserFactory, RegistrationFactory, RetractedRegistrationFactory
 
 from framework.auth import Auth
 from api.base.settings.defaults import API_BASE
-from website.project.model import Sanction
 
 class TestInstitutionRegistrationList(ApiTestCase):
     def setUp(self):
@@ -57,29 +56,26 @@ class TestInstitutionRegistrationList(ApiTestCase):
         assert_in(self.registration3._id, ids)
 
     def test_doesnt_return_retractions_without_auth(self):
-        self.registration1.retraction = RetractionFactory()
-        self.registration1.save()
-        self.registration1.retraction.state = Sanction.APPROVED
-        self.registration1.retraction.save()
-        assert_true(self.registration1.is_retracted)
+        self.registration2.is_public = True
+        self.registration2.save()
+        retraction = RetractedRegistrationFactory(registration=self.registration2, user=self.user1)
+        assert_true(self.registration2.is_retracted)
 
         res = self.app.get(self.institution_node_url)
 
         assert_equal(res.status_code, 200)
         ids = [each['id'] for each in res.json['data']]
 
-        assert_not_in(self.registration1._id, ids)
+        assert_not_in(self.registration2._id, ids)
 
     def test_doesnt_return_retractions_with_auth(self):
-        self.registration1.retraction = RetractionFactory()
-        self.registration1.save()
-        self.registration1.retraction.state = Sanction.APPROVED
-        self.registration1.retraction.save()
-        assert_true(self.registration1.is_retracted)
+        retraction = RetractedRegistrationFactory(registration=self.registration2, user=self.user1)
 
-        res = self.app.get(self.institution_node_url, auth=self.user2.auth)
+        assert_true(self.registration2.is_retracted)
+
+        res = self.app.get(self.institution_node_url, auth=self.user1.auth)
 
         assert_equal(res.status_code, 200)
         ids = [each['id'] for each in res.json['data']]
 
-        assert_not_in(self.registration1._id, ids)
+        assert_not_in(self.registration2._id, ids)

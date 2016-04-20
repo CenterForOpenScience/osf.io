@@ -228,6 +228,8 @@ class InstitutionRegistrationList(InstitutionNodeList):
         Q('is_registration', 'eq', True)
     )
 
+    ordering = ('-date_modified', )
+
     def get_queryset(self):
         query = self.get_query_from_request()
         nodes = list(Node.find(query))
