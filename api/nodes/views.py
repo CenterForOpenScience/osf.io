@@ -1,6 +1,6 @@
 from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
+from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed
 from rest_framework.status import HTTP_204_NO_CONTENT
 from rest_framework.response import Response
 
@@ -8,14 +8,12 @@ from framework.auth.oauth_scopes import CoreScopes
 
 from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
-from api.base.exceptions import Conflict
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.parsers import JSONAPIOnetoOneRelationshipParser, JSONAPIOnetoOneRelationshipParserForRegularJSON
 from api.base.pagination import CommentPagination
-from api.base.serializers import AddonAccountSerializer
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
-from api.base.settings import ADDONS_MANAGEABLE, ADDONS_OAUTH
+from api.base.settings import ADDONS_MANAGEABLE
 from api.files.serializers import FileSerializer
 from api.comments.serializers import CommentSerializer, CommentCreateSerializer
 from api.comments.permissions import CanCommentOrPublic
@@ -35,6 +33,7 @@ from api.nodes.serializers import (
 )
 from api.nodes.utils import get_file_object
 
+from api.addons.serializers import NodeAddonFolderSerializer
 from api.registrations.serializers import RegistrationSerializer
 from api.institutions.serializers import InstitutionSerializer
 from api.nodes.permissions import (
@@ -49,7 +48,7 @@ from api.logs.serializers import NodeLogSerializer
 
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
-from website.models import Node, Pointer, Comment, NodeLog, Institution, ExternalAccount
+from website.models import Node, Pointer, Comment, NodeLog, Institution
 from website.files.models import FileNode
 from website.settings import ADDONS_AVAILABLE_DICT
 from framework.auth.core import User
@@ -1380,7 +1379,7 @@ class NodeAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, Node
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        AdminOrPublic,
+        ContributorOrPublic,
         ExcludeRetractions,
         base_permissions.TokenHasScope,
     )
@@ -1447,6 +1446,92 @@ class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin
                 'object': obj
             }
         raise NotFound('Requested addon unavailable.')
+
+class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
+    """
+    TODO: docs
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        ContributorOrPublic,
+        ExcludeRetractions,
+        base_permissions.TokenHasScope,
+    )
+
+    serializer_class = NodeAddonFolderSerializer
+    view_category = 'nodes'
+    view_name = 'node-addon-folders'
+
+    def _to_hgrid(self, item, addon, path):
+        """
+        :param item: contents returned from Google Drive API
+        :return: results formatted as required for Hgrid display
+        """
+        # quote fails on unicode objects with unicode characters
+        # covert to str with .encode('utf-8')
+        import os
+        from urllib import quote
+        # TODO: MVP deadlines make code bad
+        safe_name = quote(item['title'].encode('utf-8'), safe='')
+        path = os.path.join(path, safe_name)
+
+        serialized = {
+            'path': path,
+            'folder_id': item['id'],
+            'kind': 'folder',
+            'name': safe_name,
+            'provider': addon
+        }
+        return serialized
+
+    def get_queryset(self):
+        # TODO: refactor this/NS models to be generalizable
+        addon = self.kwargs['provider']
+        if addon != 'googledrive':
+            raise MethodNotAllowed('Requested addon unavailable.')
+
+        node = self.get_node()
+        node_addon = node.get_addon(addon)
+
+        if not node_addon:
+            raise NotFound('Requested addon not enabled.')
+
+        path = self.request.query_params.get('path', '')
+        folder_id = self.request.query_params.get('folder_id', 'root')
+
+        # TODO: MVP deadlines make code bad
+        from website.addons.base.exceptions import InvalidAuthError
+        from website.addons.googledrive.client import GoogleDriveClient
+
+        try:
+            access_token = node_addon.fetch_access_token()
+        except InvalidAuthError:
+            raise PermissionDenied('Invalid credentials.')
+
+        client = GoogleDriveClient(access_token)
+
+        if folder_id == 'root':
+            about = client.about()
+
+            return [{
+                'path': '/',
+                'kind': 'folder',
+                'folder_id': about['rootFolderId'],
+                'name': '/ (Full Google Drive)',
+                'provider': addon
+            }]
+
+        contents = [
+            self._to_hgrid(item, addon, path=path)
+            for item in client.folders(folder_id)
+        ]
+        return contents
+
+    def get_serializer_class(self):
+        # TODO: determine serializer based on addon
+        if self.kwargs['provider'] == 'googledrive':
+            return NodeAddonFolderSerializer
+        raise MethodNotAllowed('Requested addon unavailable.')
 
 
 class NodeProvider(object):

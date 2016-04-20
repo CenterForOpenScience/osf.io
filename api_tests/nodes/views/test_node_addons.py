@@ -81,10 +81,21 @@ class NodeAddonDetailMixin(object):
         pass
 
 
-class NodeAddonTestSuiteMixin(NodeAddonListMixin, NodeAddonDetailMixin):
+class NodeAddonFolderMixin(object):
+    def set_folder_url(self):
+        self.folder_url = '/{}/nodes/{}/addons/{}/folders/'.format(
+            API_BASE, self.node._id, self.short_name
+        )
+
+    def test_folder_list_GET_expected_behavior(self):
+        pass
+
+
+class NodeAddonTestSuiteMixin(NodeAddonListMixin, NodeAddonDetailMixin, NodeAddonFolderMixin):
     def set_urls(self):
         self.set_setting_list_url()
         self.set_setting_detail_url()
+        self.set_folder_url()
 
 
 class NodeOAuthAddonTestSuiteMixin(NodeAddonTestSuiteMixin)
@@ -109,9 +120,20 @@ class NodeOAuthAddonTestSuiteMixin(NodeAddonTestSuiteMixin)
 class NodeConfigurableAddonTestSuiteMixin(NodeOAuthAddonTestSuiteMixin):
     addon_type = 'CONFIGURABLE'
 
-    def _folder_info(self):
+    def _mock_folder_info(self):
         return '0987654321'
 
+    def test_folder_list_raises_error_if_not_GET(self):
+        pass
+
+    def test_folder_list_GET_raises_error_noncontrib_not_public(self):
+        pass
+
+    def test_folder_list_GET_raises_error_writecontrib_not_authorizer(self):
+        pass
+
+    def test_folder_list_GET_raises_error_admin_not_authorizer(self):
+        pass
 
 class NodeOAuthCitationAddonTestSuiteMixin(NodeOAuthAddonTestSuiteMixin):
     def _settings_kwargs(self, node, user_settings):
@@ -230,7 +252,7 @@ class TestNodeGoogleDriveAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
     AccountFactory = GoogleDriveAccountFactory
     NodeSettingsFactory = GoogleDriveNodeSettingsFactory
 
-    def _folder_info(self):
+    def _mock_folder_info(self):
         return {
             'id': '0987654321',
             'path': '/'

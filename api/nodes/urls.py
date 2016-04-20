@@ -11,6 +11,7 @@ urlpatterns = [
     url(r'^(?P<node_id>\w+)/$', views.NodeDetail.as_view(), name=views.NodeDetail.view_name),
     url(r'^(?P<node_id>\w+)/addons/$', views.NodeAddonList.as_view(), name=views.NodeAddonList.view_name),
     url(r'^(?P<node_id>\w+)/addons/(?P<provider>\w+)/$', views.NodeAddonDetail.as_view(), name=views.NodeAddonDetail.view_name),
+    url(r'^(?P<node_id>\w+)/addons/(?P<provider>\w+)/folders/$', views.NodeAddonFolderList.as_view(), name=views.NodeAddonFolderList.view_name),
     url(r'^(?P<node_id>\w+)/contributors/$', views.NodeContributorsList.as_view(), name=views.NodeContributorsList.view_name),
     url(r'^(?P<node_id>\w+)/contributors/(?P<user_id>\w+)/$', views.NodeContributorDetail.as_view(), name=views.NodeContributorDetail.view_name),
     url(r'^(?P<node_id>\w+)/children/$', views.NodeChildrenList.as_view(), name=views.NodeChildrenList.view_name),
