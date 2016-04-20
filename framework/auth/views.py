@@ -303,7 +303,6 @@ def confirm_user_get(auth=None, **kwargs):
                                         'confirmed': user.email_verifications[token]['confirmed'],
                                         'user_merge': user_merge.email if user_merge else False})
             else:
-                #todo migrate to remove this hack
                 user.email_verifications[token]['confirmed'] = False
     user.save()
     return verified_emails

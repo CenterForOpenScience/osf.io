@@ -85,7 +85,7 @@ class TestAuthUtils(OsfTestCase):
         res = res.follow()
 
         assert_equal(res.status_code, 302)
-        assert_equal('/', urlparse.urlparse(res.location).path)
+        assert_equal('/myprojects/', urlparse.urlparse(res.location).path)
         assert_equal(len(mock_mail.call_args_list), 1)
         session = Session.find(
             Q('data.auth_user_id', 'eq', user._id)
