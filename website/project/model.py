@@ -1656,7 +1656,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         new.nodes = [
             x.use_as_template(auth, changes, top_level=False)
             for x in self.nodes
-            if x.can_view(auth)
+            if x.can_view(auth) and not x.is_deleted
         ]
 
         new.save()
