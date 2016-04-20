@@ -2,7 +2,7 @@ from django import forms
 from django.core.validators import validate_email
 
 from modularodm import Q
-from website.models import Conference
+from website.models import Conference, User
 
 
 class MeetingForm(forms.Form):
@@ -50,14 +50,52 @@ class MeetingForm(forms.Form):
         required=True,
         initial=True,
     )
+    field_sub1 = forms.CharField(
+        label='Name for Submission 1 (poster)'
+    )
+    field_sub2 = forms.CharField(
+        label='Name for Submission 2 (talk)'
+    )
+    field_plural1 = forms.CharField(
+        label='Plural for submission 1'
+    )
+    field_plural2 = forms.CharField(
+        label='Plural for submission 2'
+    )
+    field_meeting_title_type = forms.CharField(
+        label='Title for the type of meeting'
+    )
+    field_add_submission = forms.CharField(
+        label='Add submission'
+    )
+    field_mail_subject = forms.CharField(
+        label='Mail subject'
+    )
+    field_mail_message = forms.CharField(
+        label='Message body for mail'
+    )
+    field_mail_attachment = forms.CharField(
+        label='Mail attachment message'
+    )
+
 
     def clean_endpoint(self):
         data = self.cleaned_data['endpoint']
         edit = self.cleaned_data['edit']
         if not edit:
-            if Conference.find(Q('endpoint', 'eq', data)).count() > 0:
+            if Conference.find(Q('endpoint', 'iexact', data)).count() > 0:
                 raise forms.ValidationError(
                     'A meeting with this endpoint exists already.'
+                )
+        return data
+
+    def clean_admins(self):
+        data = self.cleaned_data['admins']
+        for email in data:
+            user = User.get_user(email=email)
+            if not user or user is None:
+                raise forms.ValidationError(
+                    '{} does not have an OSF account'.format(email)
                 )
         return data
 

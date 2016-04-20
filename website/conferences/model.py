@@ -27,8 +27,7 @@ class Conference(StoredObject):
     talk = fields.BooleanField(default=True)
     # field_names are used to customize the text on the conference page, the categories
     # of submissions, and the email adress to send material to.
-    field_names = fields.DictionaryField(
-        default=lambda: {
+    DEFAULT_FIELD_NAMES = {
             'submission1': 'poster',
             'submission2': 'talk',
             'submission1_plural': 'posters',
@@ -38,8 +37,8 @@ class Conference(StoredObject):
             'mail_subject': 'Presentation title',
             'mail_message_body': 'Presentation abstract (if any)',
             'mail_attachment': 'Your presentation file (e.g., PowerPoint, PDF, etc.)'
-        }
-    )
+    }
+    field_names = fields.DictionaryField(default=DEFAULT_FIELD_NAMES)
 
     # Cached number of submissions
     num_submissions = fields.IntegerField(default=0)
