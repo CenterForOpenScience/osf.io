@@ -9,6 +9,10 @@
 ## Use full page width
 <%def name="container_class()">container-xxl</%def>
 
+% if (user['can_comment'] or node['has_comments']):
+    <%include file="include/comment_pane_template.mako"/>
+% endif
+
 <div class="row" style="margin-bottom: 5px;">
     <div class="col-sm-6">
         <%include file="wiki/templates/status.mako"/>
@@ -148,7 +152,6 @@
                         <div class="col-xs-12">
                           <div class="form-group wmd-panel">
                           <ul class="list-inline" class="pull-right">
-                          
                           <!-- ko foreach: showCollaborators -->
                              <!-- ko ifnot: id === '${user_id}' -->
                                 <li><a data-bind="attr: { href: url }" >
@@ -157,12 +160,8 @@
                                       </a></li>
                              <!-- /ko -->
                           <!-- /ko --> 
-                             
-                                <li><span data-bind="text: andOthersMessage"></span></li>    
-                                 
+                                <li><span data-bind="text: andOthersMessage"></span></li>      
                               </ul>
-                              
-
                               <div id="wmd-button-bar"></div>
                               <div id="editor" class="wmd-input wiki-editor"
                                    data-bind="ace: currentText">Loading. . .</div>
@@ -374,6 +373,7 @@ ${parent.javascript_bottom()}
         versionSettings: ${json.dumps(version_settings) | n},
         panelsUsed: ${json.dumps(panels_used) | n},
         wikiID: '${wiki_id}',
+        wikiName: '${wiki_name}',
         urls: {
             draft: '${urls['api']['draft']}',
             content: '${urls['api']['content']}',

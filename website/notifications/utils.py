@@ -189,7 +189,8 @@ def check_project_subscriptions_are_all_none(user, node):
 def get_all_user_subscriptions(user):
     """ Get all Subscription objects that the user is subscribed to"""
     for notification_type in constants.NOTIFICATION_TYPES:
-        for subscription in getattr(user, notification_type, []):
+        query = NotificationSubscription.find(Q(notification_type, 'eq', user._id))
+        for subscription in query:
             yield subscription
 
 

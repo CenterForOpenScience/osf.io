@@ -28,10 +28,18 @@ from website.util import web_url_for, api_url_for
 
 logging.getLogger('website.project.model').setLevel(logging.ERROR)
 
+
 def assert_in_html(member, container, **kwargs):
     """Looks for the specified member in markupsafe-escaped HTML output"""
     member = markupsafe.escape(member)
     return assert_in(member, container, **kwargs)
+
+
+def assert_not_in_html(member, container, **kwargs):
+    """Looks for the specified member in markupsafe-escaped HTML output"""
+    member = markupsafe.escape(member)
+    return assert_not_in(member, container, **kwargs)
+
 
 class TestDisabledUser(OsfTestCase):
 
@@ -77,18 +85,24 @@ class TestAUser(OsfTestCase):
         res = self.app.get('/login/', auth=self.user.auth)
         assert_equal(res.status_code, 302)
         res = res.follow(auth=self.user.auth)
-        assert_equal(res.request.path, '/dashboard/')
+        assert_equal(res.request.path, '/myprojects/')
 
     def test_sees_projects_in_her_dashboard(self):
         # the user already has a project
         project = ProjectFactory(creator=self.user)
         project.add_contributor(self.user)
         project.save()
-        # Goes to homepage, already logged in
-        res = self.app.get('/', auth=self.user.auth).follow(auth=self.user.auth)
-        # Clicks Dashboard link in navbar
-        res = res.click('My Dashboard', index=0, auth=self.user.auth)
+        res = self.app.get('/myprojects/', auth=self.user.auth)
         assert_in('Projects', res)  # Projects heading
+
+    def test_logged_in_index_route_renders_home_template(self):
+        res = self.app.get('/', auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_in('My Projects', res)  # Will change once home page populated
+
+    def test_logged_out_index_route_renders_landing_page(self):
+        res = self.app.get('/')
+        assert_in('Simplified Scholarly Collaboration', res)
 
     def test_does_not_see_osffiles_in_user_addon_settings(self):
         res = self.app.get('/settings/addons/', auth=self.auth, auto_follow=True)
@@ -131,9 +145,9 @@ class TestAUser(OsfTestCase):
 
     def test_sees_correct_title_on_dashboard(self):
         # User goes to dashboard
-        res = self.app.get('/dashboard/', auth=self.auth, auto_follow=True)
+        res = self.app.get('/myprojects/', auth=self.auth, auto_follow=True)
         title = res.html.title.string
-        assert_equal('OSF | Dashboard', title)
+        assert_equal('OSF | My Projects', title)
 
     def test_can_see_make_public_button_if_admin(self):
         # User is a contributor on a project
@@ -192,6 +206,8 @@ class TestAUser(OsfTestCase):
         res = self.app.get('/{0}/wiki/home/'.format(project._primary_key), auth=self.auth)
         # Sees a message indicating no content
         assert_in('No wiki content', res)
+        # Sees that edit panel is open by default when home wiki has no content
+        assert_in('panelsUsed: ["view", "menu", "edit"]', res)
 
     def test_wiki_content(self):
         project = ProjectFactory(creator=self.user)
@@ -204,6 +220,7 @@ class TestAUser(OsfTestCase):
         ), auth=self.auth)
         assert_not_in('No wiki content', res)
         assert_in(wiki_content, res)
+        assert_in('panelsUsed: ["view", "menu"]', res)
 
     def test_wiki_page_name_non_ascii(self):
         project = ProjectFactory(creator=self.user)
@@ -264,6 +281,30 @@ class TestAUser(OsfTestCase):
         assert_equal(res.status_code, 200)
         # URL is /forgotpassword
         assert_equal(res.request.path, web_url_for('forgot_password_post'))
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_cannot_reset_password_twice_quickly(self, mock_send_mail):
+        # A registered user
+        user = UserFactory()
+        # goes to the login page
+        url = web_url_for('forgot_password_get')
+        res = self.app.get(url)
+        # and fills out forgot password form
+        form = res.forms['forgotPasswordForm']
+        form['forgot_password-email'] = user.username
+        # submits
+        res = form.submit()
+        # mail was sent
+        mock_send_mail.assert_called
+        # gets 200 response
+        assert_equal(res.status_code, 200)
+        assert_in_html('If there is an OSF account', res)
+        assert_not_in_html('Please wait', res)
+        # URL is /forgotpassword
+        assert_equal(res.request.path, web_url_for('forgot_password_post'))
+        res = form.submit()
+        assert_in_html('Please wait', res)
+        assert_not_in_html('If there is an OSF account', res)
 
 class TestComponents(OsfTestCase):
 
@@ -875,7 +916,6 @@ class TestForgotAndResetPasswordViews(OsfTestCase):
         assert_not_in(another_user.fullname, res)
         # make sure the form is on the page
         assert_true(res.forms['resetPasswordForm'])
-
 
 class TestAUserProfile(OsfTestCase):
 

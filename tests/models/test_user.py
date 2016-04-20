@@ -124,6 +124,43 @@ class TestUser(base.OsfTestCase):
         projects_contributed_to = project.model.Node.find(Q('contributors', 'eq', self.user._id))
         assert_equal(list(self.user.contributed), list(projects_contributed_to))
 
+    def test_contributor_to_property(self):
+        normal_node = factories.ProjectFactory(creator=self.user)
+        normal_contributed_node = factories.ProjectFactory()
+        normal_contributed_node.add_contributor(self.user)
+        normal_contributed_node.save()
+        deleted_node = factories.ProjectFactory(creator=self.user, is_deleted=True)
+        bookmark_collection_node = factories.BookmarkCollectionFactory(creator=self.user)
+        collection_node = factories.CollectionFactory(creator=self.user)
+        project_to_be_invisible_on = factories.ProjectFactory()
+        project_to_be_invisible_on.add_contributor(self.user, visible=False)
+        project_to_be_invisible_on.save()
+        contributor_to_nodes = [node._id for node in self.user.contributor_to]
+
+        assert_in(normal_node._id, contributor_to_nodes)
+        assert_in(normal_contributed_node._id, contributor_to_nodes)
+        assert_in(project_to_be_invisible_on._id, contributor_to_nodes)
+        assert_not_in(deleted_node._id, contributor_to_nodes)
+        assert_not_in(bookmark_collection_node._id, contributor_to_nodes)
+        assert_not_in(collection_node._id, contributor_to_nodes)
+
+    def test_visible_contributor_to_property(self):
+        invisible_contributor = factories.UserFactory()
+        normal_node = factories.ProjectFactory(creator=invisible_contributor)
+        deleted_node = factories.ProjectFactory(creator=invisible_contributor, is_deleted=True)
+        bookmark_collection_node = factories.BookmarkCollectionFactory(creator=invisible_contributor)
+        collection_node = factories.CollectionFactory(creator=invisible_contributor)
+        project_to_be_invisible_on = factories.ProjectFactory()
+        project_to_be_invisible_on.add_contributor(invisible_contributor, visible=False)
+        project_to_be_invisible_on.save()
+        visible_contributor_to_nodes = [node._id for node in invisible_contributor.visible_contributor_to]
+
+        assert_in(normal_node._id, visible_contributor_to_nodes)
+        assert_not_in(deleted_node._id, visible_contributor_to_nodes)
+        assert_not_in(bookmark_collection_node._id, visible_contributor_to_nodes)
+        assert_not_in(collection_node._id, visible_contributor_to_nodes)
+        assert_not_in(project_to_be_invisible_on._id, visible_contributor_to_nodes)
+
     def test_created_property(self):
         # make sure there's at least one project
         factories.ProjectFactory(creator=self.user)
@@ -305,6 +342,7 @@ class TestUserMerging(base.OsfTestCase):
             'date_last_login',
             'date_registered',
             'family_name',
+            'forgot_password_last_post',
             'fullname',
             'given_name',
             'is_claimed',
@@ -324,7 +362,7 @@ class TestUserMerging(base.OsfTestCase):
             'username',
             'mailing_lists',
             'verification_key',
-            'affiliated_institutions',
+            '_affiliated_institutions',
             'contributor_added_email_records'
         ]
 

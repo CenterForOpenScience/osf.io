@@ -321,7 +321,8 @@ def project_remove_contributor(auth, **kwargs):
     contributor = User.load(contributor_id)
     if contributor is None:
         raise HTTPError(http.BAD_REQUEST, data={'message_long': 'Contributor not found.'})
-
+    redirect_url = {}
+    parent_id = node_ids[0]
     for node_id in node_ids:
         # Update permissions and order
         node = Node.load(node_id)
@@ -343,19 +344,20 @@ def project_remove_contributor(auth, **kwargs):
             raise HTTPError(http.BAD_REQUEST, data={
                 'message_long': 'Could not remove contributor.'})
 
-        # If user has removed herself from project, alert; redirect to user
+        # On parent node, if user has removed herself from project, alert; redirect to user
         # dashboard if node is private, else node dashboard
-        if not node.is_contributor(auth.user):
+        if not node.is_contributor(auth.user) and node_id == parent_id:
             status.push_status_message(
                 'You have removed yourself as a contributor from this project',
                 kind='success',
                 trust=False
             )
             if node.is_public:
-                return {'redirectUrl': node.url}
-            return {'redirectUrl': web_url_for('dashboard')}
-        # Else stay on current page
-    return {}
+                redirect_url = {'redirectUrl': node.url}
+            # Else stay on current page
+            else:
+                redirect_url = {'redirectUrl': web_url_for('dashboard')}
+    return redirect_url
 
 
 def get_timestamp():

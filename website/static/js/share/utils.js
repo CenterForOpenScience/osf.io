@@ -263,12 +263,9 @@ utils.loadRawNormalized = function(result){
         url: '/api/v1/share/documents/' + source + '/' + docID + '/',
         unwrapSuccess: function(data) {
             var unwrapped = {};
-            var normed = JSON.parse(data.normalized);
-            var allRaw = JSON.parse(data.raw);
-            unwrapped.normalized = JSON.parse(data.normalized);
-            unwrapped.raw = allRaw.doc;
-            unwrapped.rawfiletype = allRaw.filetype;
-            unwrapped.normalized = normed;
+            unwrapped.raw = data.raw.doc;
+            unwrapped.rawfiletype = data.raw.filetype;
+            unwrapped.normalized = data.normalized;
 
             return unwrapped;
         },
@@ -279,7 +276,7 @@ utils.loadRawNormalized = function(result){
             error.raw = '"Raw data not found."';
             if (xhr.status >= 500) {
                 Raven.captureMessage('SHARE Raw and Normalized API Internal Server Error.', {
-                    textStatus: status
+                    extra: {textStatus: xhr.status}
                 });
             }
 

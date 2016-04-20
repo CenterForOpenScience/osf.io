@@ -536,6 +536,13 @@ class TestArchiverTasks(ArchiverTestCase):
                 )
                 patch.start()
                 patches.append(patch)
+                n_patch = mock.patch.object(
+                    n,
+                    'get_addon',
+                    mock.Mock(return_value=osfstorage)
+                )
+                n_patch.start()
+                patches.append(n_patch)
             job = factories.ArchiveJobFactory()
             archive_success(registration._id, job._id)
 
@@ -776,6 +783,13 @@ class TestArchiverUtils(ArchiverTestCase):
             patch = mock.patch.object(osfstorage, '_get_file_tree', mock.Mock(return_value=file_tree))
             patch.start()
             patches.append(patch)
+            n_patch = mock.patch.object(
+                n,
+                'get_addon',
+                mock.Mock(return_value=osfstorage)
+            )
+            n_patch.start()
+            patches.append(n_patch)
 
         file_map = archiver_utils.get_file_map(node)
         stack = file_trees.values()
@@ -816,6 +830,14 @@ class TestArchiverUtils(ArchiverTestCase):
             patch.start()
             patches[n._id] = patch
             mocks[n._id] = mocked
+            n_patch = mock.patch.object(
+                n,
+                'get_addon',
+                mock.Mock(return_value=osfstorage)
+            )
+            n_patch.start()
+            patches[osfstorage._id] = n_patch
+
         # first call
         file_map = archiver_utils.get_file_map(node)
         file_map = {

@@ -4,7 +4,6 @@ var WikiEditor = require('./WikiEditor.js');
 var LanguageTools = ace.require('ace/ext/language_tools');
 
 var activeUsers = [];
-
 var collaborative = (typeof WebSocket !== 'undefined' && typeof sharejs !== 'undefined');
 
 var ShareJSDoc = function(url, metadata, viewText, editor) {
@@ -12,13 +11,11 @@ var ShareJSDoc = function(url, metadata, viewText, editor) {
     self.editor = editor;
     var wikiEditor = new WikiEditor(url, viewText, self.editor);
     self.wikiEditor = wikiEditor;
-
     var viewModel = wikiEditor.viewModel;
     var ctx = window.contextVars.wiki;
     var deleteModal = $('#deleteModal');
     var renameModal = $('#renameModal');
     var permissionsModal = $('#permissionsModal');
-
     // Initialize Ace and configure settings
     self.editor.getSession().setMode('ace/mode/markdown');
     self.editor.getSession().setUseSoftTabs(true);   // Replace tabs with spaces
@@ -55,12 +52,10 @@ var ShareJSDoc = function(url, metadata, viewText, editor) {
         });
         return;
     }
-
     // Requirements load order is specific in this case to compensate
     // for older browsers.
     var ReconnectingWebSocket = require('reconnectingWebsocket');
     require('addons/wiki/static/ace.js');
-
     // Configure connection
     var wsPrefix = (window.location.protocol === 'https:') ? 'wss://' : 'ws://';
     var wsUrl = wsPrefix + ctx.urls.sharejs;
@@ -73,13 +68,11 @@ var ShareJSDoc = function(url, metadata, viewText, editor) {
     var canEdit = true;
 
     function whenReady() {
-
         // Create a text document if one does not exist
         if (!doc.type) {
             doc.create('text');
         }
 
-        /* This hook does not run without ShareJS connected */
         viewModel.fetchData().done(function(response) {
             doc.attachAce(self.editor);
             if (viewModel.wikisDiffer(viewModel.currentText(), response.wiki_draft)) {
@@ -99,7 +92,6 @@ var ShareJSDoc = function(url, metadata, viewText, editor) {
         self.editor.getSession().setUndoManager(undoManager);
         self.editor.setReadOnly(false);
     }
-
     // Send user metadata
     function register() {
         socket.send(JSON.stringify(metadata));
@@ -114,7 +106,6 @@ var ShareJSDoc = function(url, metadata, viewText, editor) {
             }
         }
     }
-
     // Handle our custom messages separately
     var onmessage = socket.onmessage;
     socket.onmessage = function (message) {
@@ -173,7 +164,6 @@ var ShareJSDoc = function(url, metadata, viewText, editor) {
                 break;
         }
     };
-
     // Update status when reconnecting
     var onclose = socket.onclose;
     socket.onclose = function (event) {
@@ -188,13 +178,10 @@ var ShareJSDoc = function(url, metadata, viewText, editor) {
             viewModel.status('connected');
         }
     };
-    
     // This will be called on both connect and reconnect
     doc.on('subscribe', register);
-
     // This will be called when we have a live copy of the server's data.
     doc.whenReady(whenReady);
-
     // Subscribe to changes
     doc.subscribe();
 };

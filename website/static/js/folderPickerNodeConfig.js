@@ -5,7 +5,6 @@
 'use strict';
 require('css/addon_folderpicker.css');
 var ko = require('knockout');
-require('knockout.punches');
 var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
@@ -19,7 +18,6 @@ var $osf = require('js/osfHelpers');
 
 var oop = require('js/oop');
 
-ko.punches.enableAll();
 
 /**
  * @class FolderPickerViewModel
@@ -285,9 +283,11 @@ var FolderPickerViewModel = oop.defclass({
         request.fail(function(xhr, textStatus, error) {
             self.changeMessage(self.messages.cantRetrieveSettings(), 'text-danger');
             Raven.captureMessage('Could not GET ' + self.addonName + 'settings', {
-                url: self.url,
-                textStatus: textStatus,
-                error: error
+                extra: {
+                    url: self.url,
+                    textStatus: textStatus,
+                    error: error
+                }
             });
             ret.reject(xhr, textStatus, error);
         });
@@ -311,9 +311,11 @@ var FolderPickerViewModel = oop.defclass({
         function onSubmitError(xhr, status, error) {
             self.changeMessage(self.messages.submitSettingsError(), 'text-danger');
             Raven.captureMessage('Failed to update ' + self.addonName + ' settings.', {
-                xhr: xhr,
-                status: status,
-                error: error
+                extra: {
+                    xhr: xhr,
+                    status: status,
+                    error: error
+                }
             });
         }
         return $osf.putJSON(self.urls().config, self._serializeSettings())
@@ -333,9 +335,11 @@ var FolderPickerViewModel = oop.defclass({
         var self = this;
         self.changeMessage(self.messages.tokenImportError(), 'text-danger');
         Raven.captureMessage('Failed to import ' + self.addonName + ' access token.', {
-            xhr: xhr,
-            status: status,
-            error: error
+            extra: {
+                xhr: xhr,
+                status: status,
+                error: error
+            }
         });
     },
     _importAuthPayload: function() {
@@ -389,9 +393,11 @@ var FolderPickerViewModel = oop.defclass({
         request.fail(function(xhr, textStatus, error) {
             self.changeMessage(self.messages.deauthorizeFail(), 'text-danger');
             Raven.captureMessage('Could not deauthorize ' + self.addonName + ' account from node', {
-                url: self.urls().deauthorize,
-                textStatus: textStatus,
-                error: error
+                extra: {
+                    url: self.urls().deauthorize,
+                    textStatus: textStatus,
+                    error: error
+                }
             });
         });
         return request;
@@ -471,8 +477,10 @@ var FolderPickerViewModel = oop.defclass({
                     self.loading(false);
                     self.changeMessage(self.messages.connectError(), 'text-danger');
                     Raven.captureMessage('Could not GET get ' + self.addonName + ' contents.', {
-                        textStatus: textStatus,
-                        error: error
+                        extra: {
+                            textStatus: textStatus,
+                            error: error
+                        }
                     });
                 }
             },

@@ -8,9 +8,6 @@ var oop = require('js/oop');
 var Raven = require('raven-js');
 var ChangeMessageMixin = require('js/changeMessage');
 
-require('knockout.punches');
-ko.punches.enableAll();
-
 
 var UserEmail = oop.defclass({
     constructor: function(params) {
@@ -81,9 +78,11 @@ var UserProfileClient = oop.defclass({
         request.fail(function(xhr, status, error) {
             $osf.growl('Error', 'Could not fetch user profile.', 'danger');
             Raven.captureMessage('Error fetching user profile', {
-                url: this.urls.fetch,
-                status: status,
-                error: error
+                extra: {
+                    url: this.urls.fetch,
+                    status: status,
+                    error: error
+                }
             });
             ret.reject(xhr, status, error);
         }.bind(this));
@@ -112,9 +111,11 @@ var UserProfileClient = oop.defclass({
             }
 
             Raven.captureMessage('Error fetching user profile', {
-                url: this.urls.update,
-                status: status,
-                error: error
+                extra: {
+                    url: this.urls.update,
+                    status: status,
+                    error: error
+                }
             });
             ret.reject(xhr, status, error);
         }.bind(this));
@@ -321,9 +322,11 @@ var DeactivateAccountViewModel = oop.defclass({
                 'danger'
             );
             Raven.captureMessage('Error requesting account deactivation', {
-                url: this.urls.update,
-                status: status,
-                error: error
+                extra: {
+                    url: this.urls.update,
+                    status: status,
+                    error: error
+                }
             });
         }.bind(this));
         return request;
@@ -369,9 +372,11 @@ var ExportAccountViewModel = oop.defclass({
                 'danger'
             );
             Raven.captureMessage('Error requesting account export', {
-                url: this.urls.update,
-                status: status,
-                error: error
+                extra: {
+                    url: this.urls.update,
+                    status: status,
+                    error: error
+                }
             });
         }.bind(this));
         return request;

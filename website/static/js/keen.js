@@ -4,6 +4,7 @@ var keen = require('keen-js');
 var oop = require('js/oop');
 var $ = require('jquery');
 var uuid = require('uuid');
+var Raven = require('raven-js');
 
 var KeenTracker = oop.defclass({
     constructor: function(keenProjectId, keenWriteKey, params) {
@@ -11,21 +12,17 @@ var KeenTracker = oop.defclass({
             projectId: keenProjectId,
             writeKey: keenWriteKey
         });
-        this.currentUser = params.user || null;
+        this.currentUser = params.currentUser || null;
         this.node = params.node || null;
         this.init();
     },
 
     createOrUpdateKeenSession: function() {
-        var date = new Date();
+        var expDate = new Date();
         var expiresInMinutes = 25;
-        var expDate = date.setTime(date.getTime() + (expiresInMinutes*60*1000));
-        if(!$.cookie('keenSessionId')){
-            $.cookie('keenSessionId', uuid.v1(), {expires: expDate, path: '/'});
-        } else {
-            var sessionId = $.cookie('keenSessionId');
-            $.cookie('keenSessionId', sessionId, {expires: expDate, path: '/'});
-        }
+        expDate.setTime(expDate.getTime() + (expiresInMinutes*60*1000));
+        var currentSessionId = $.cookie('keenSessionId') || uuid.v1();
+        $.cookie('keenSessionId', currentSessionId, {expires: expDate, path: '/'});
     },
 
     getOrCreateKeenId: function() {
@@ -80,6 +77,13 @@ var KeenTracker = oop.defclass({
                             'url' : 'pageUrl'
                         },
                         'output' : 'parsedPageUrl'
+                    },
+                    {
+                        'name' : 'keen:url_parser',
+                        'input' : {
+                            'url' : 'referrer.url'
+                        },
+                        'output' : 'parsedReferrerUrl'
                     }
                 ]
             }
@@ -103,7 +107,9 @@ var KeenTracker = oop.defclass({
 
         this.keenClient.addEvent('pageviews', pageView, function(err){
             if(err){
-                throw new Error('Error sending Keen data: ' + err);
+                Raven.captureMessage('Error sending Keen data: <' + err + '>', {
+                    extra: { payload: pageView, },
+                });
             }
         });
     },
