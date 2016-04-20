@@ -69,7 +69,7 @@
                         -->
                         <div data-bind="template {if: editing, afterRender: autosizeText}">
                             <div class="form-group" style="padding-top: 10px">
-                                <div class="form-control atwho-input" placeholder="Add a comment" data-bind="editableHTML: content, attr: {maxlength: $root.MAXLENGTH}" contenteditable="true"></div>
+                                <div class="form-control atwho-input" placeholder="Edit comment" data-bind="editableHTML: content, attr: {maxlength: $root.MAXLENGTH}" contenteditable="true"></div>
                             </div>
                             <div class="clearfix">
                                 <div class="form-inline pull-right">
