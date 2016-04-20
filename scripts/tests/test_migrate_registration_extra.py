@@ -4,13 +4,21 @@ from tests.base import OsfTestCase
 from tests.factories import UserFactory
 from tests.factories import DraftRegistrationFactory
 
+from website.models import MetaSchema
+from website.project.model import ensure_schemas
+from website.prereg.utils import get_prereg_schema
 from scripts.migration.migrate_registration_extra import main
+
 
 
 class TestMigrateRegistrationExtra(OsfTestCase):
     def setUp(self):
         super(TestMigrateRegistrationExtra, self).setUp()
         self.user = UserFactory()
+        MetaSchema.remove()
+        ensure_schemas()
+
+
         self.file_ans = {
             'file': {
                 'data':{
@@ -46,8 +54,12 @@ class TestMigrateRegistrationExtra(OsfTestCase):
         self.simple_metadata = {
             'Summary': 'Some airy'
         }
+        self.schema = get_prereg_schema()
         self.draft1 = DraftRegistrationFactory(
             registration_metadata=self.complex_metadata,
+            registration_schema=self.schema,
+            approval=None,
+            registered_node=None
 
         )
         self.draft2 = DraftRegistrationFactory(
@@ -55,6 +67,7 @@ class TestMigrateRegistrationExtra(OsfTestCase):
         )
 
     def test_migrate_registration_extra(self):
+
         assert_equal(type(self.draft1.registration_metadata['q1']['extra']), list)
         assert_equal(type(self.draft1.registration_metadata['q2']['extra']), dict)
         assert_equal(type(self.draft1.registration_metadata['q2']['extra']), dict)
