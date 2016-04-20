@@ -2161,6 +2161,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             save=False
         )
 
+        # Need this save in order to access _primary_key
         forked.save()
 
         forked.add_log(
@@ -2168,7 +2169,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             params={
                 'parent_node': original.parent_id,
                 'node': original._primary_key,
-                'registration': forked._primary_key,
+                'registration': forked._primary_key,  # TODO: Remove this in favor of 'fork'
+                'fork': forked._primary_key,
             },
             auth=auth,
             log_date=when,
@@ -3363,6 +3365,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             action=NodeLog.RETRACTION_INITIATED,
             params={
                 'node': self.registered_from_id,
+                'registration': self._id,
                 'retraction_id': retraction._id,
             },
             auth=Auth(user),
@@ -3422,6 +3425,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             action=NodeLog.EMBARGO_INITIATED,
             params={
                 'node': self.registered_from_id,
+                'registration': self._id,
                 'embargo_id': embargo._id,
             },
             auth=Auth(user),
@@ -3547,6 +3551,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             action=NodeLog.REGISTRATION_APPROVAL_INITIATED,
             params={
                 'node': self.registered_from_id,
+                'registration': self._id,
                 'registration_approval_id': approval._id,
             },
             auth=Auth(user),
