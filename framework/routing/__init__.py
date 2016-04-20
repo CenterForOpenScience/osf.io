@@ -1,22 +1,24 @@
 # -*- coding: utf-8 -*-
-import os
-import logging
+
 import copy
-import json
 import functools
 import httplib as http
+import json
+import logging
+import os
 
-import lxml.html
-import werkzeug.wrappers
-from werkzeug.exceptions import NotFound
-from mako.template import Template
-from mako.lookup import TemplateLookup
 from flask import request, make_response
+import lxml.html
+import markupsafe
+from mako.lookup import TemplateLookup
+from mako.template import Template
+from werkzeug.exceptions import NotFound
+import werkzeug.wrappers
 
 from framework import sentry
+from framework.exceptions import HTTPError
 from framework.flask import app, redirect
 from framework.sessions import session
-from framework.exceptions import HTTPError
 
 from website import settings
 
@@ -482,7 +484,7 @@ class WebRenderer(Renderer):
             element_meta = json.loads(attributes_string)
         except ValueError:
             return '<div>No JSON object could be decoded: {}</div>'.format(
-                attributes_string
+                markupsafe.escape(attributes_string)
             ), True
 
         uri = element_meta.get('uri')
@@ -502,11 +504,11 @@ class WebRenderer(Renderer):
                 uri_data = call_url(uri, view_kwargs=view_kwargs)
                 render_data.update(uri_data)
             except NotFound:
-                return '<div>URI {} not found</div>'.format(uri), is_replace
+                return '<div>URI {} not found</div>'.format(markupsafe.escape(uri)), is_replace
             except Exception as error:
                 logger.exception(error)
                 if error_msg:
-                    return '<div>{}</div>'.format(error_msg), is_replace
+                    return '<div>{}</div>'.format(markupsafe.escape(unicode(error_msg))), is_replace
                 return '<div>Error retrieving URI {}: {}</div>'.format(
                     uri,
                     repr(error)
