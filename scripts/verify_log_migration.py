@@ -3,7 +3,8 @@ import os
 import json
 import logging
 
-from framework.mongo import database as db
+from framework.mongo import database
+
 from website import models
 from website.app import init_app
 
@@ -15,13 +16,20 @@ logger = logging.getLogger()
 def main():
     init_app()
     verify = os.path.exists(FILE_NAME)
-    total = db.node.count()
+    total = models.Node.find().count()
 
     logger.info('{}unning in verify mode'.format('R' if verify else 'Not r'))
 
     counts = {}
     for i, node in enumerate(models.Node.find()):
-        counts[node._id] = len(node.logs)
+        if verify:
+            counts[node._id] = len(node.logs)
+        else:
+            counts[node._id] = len(
+                set(database.node.find_one({'_id': node._id}, {'logs': True})['logs'])
+                | set(log['_id'] for log in database.nodelog.find({'__backrefs.logged.node.logs': node._id}, {}))
+            )
+
         if i % 5000 == 0:
             print('{:.2f}% finished'.format(float(i) / total * 100))
             models.Node._cache.data.clear()
