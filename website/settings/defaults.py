@@ -79,11 +79,16 @@ SHARE_ELASTIC_INDEX = 'share'
 SHARE_ELASTIC_INDEX_TEMPLATE = 'share_v{}'
 
 # Sessions
+COOKIE_NAME = 'osf'
 # TODO: Override OSF_COOKIE_DOMAIN in local.py in production
 OSF_COOKIE_DOMAIN = None
-COOKIE_NAME = 'osf'
+# TODO: Override OSF_COOKIE_SECURE in local.py in production
+COOKIE_SECURE = False
 # TODO: Override SECRET_KEY in local.py in production
 SECRET_KEY = 'CHANGEME'
+# only for local https test only, override them in local.py in develop
+OSF_SERVER_KEY = 'CHANGEME'
+OSF_SERVER_CERT = 'CHANGEME'
 
 # Change if using `scripts/cron.py` to manage crontab
 CRON_USER = None

@@ -51,7 +51,7 @@ def task(*args, **kwargs):
 
 
 @task
-def server(host=None, port=5000, debug=True, live=False, gitlogs=False):
+def server(host=None, port=5000, debug=True, live=False, gitlogs=False, https=False):
     """Run the app server."""
     if gitlogs:
         git_logs()
@@ -66,7 +66,13 @@ def server(host=None, port=5000, debug=True, live=False, gitlogs=False):
         server.watch(os.path.join(HERE, 'website', 'static', 'public'))
         server.serve(port=port)
     else:
-        app.run(host=host, port=port, debug=debug, threaded=debug, extra_files=[settings.ASSET_HASH_PATH])
+        if https:
+            # for local https test, generate self-signed cert (and key if necessary) and put the path in local.py
+            context = (settings.OSF_SERVER_CERT, settings.OSF_SERVER_KEY)
+            app.run(host=host, port=5000, debug=debug, threaded=debug, extra_files=[settings.ASSET_HASH_PATH], ssl_context=context)
+        else:
+            app.run(host=host, port=port, debug=debug, threaded=debug, extra_files=[settings.ASSET_HASH_PATH])
+
 
 @task
 def git_logs(count=100, pretty='format:"%s - %b"', grep='"Merge pull request"'):
