@@ -8,7 +8,7 @@ var ko = require('knockout');
 var moment = require('moment');
 var Raven = require('raven-js');
 var koHelpers = require('./koHelpers');
-require('./knockout-js-infinite-scroll');
+require('knockout-js-infinite-scroll');
 require('jquery-autosize');
 
 var osfHelpers = require('js/osfHelpers');
