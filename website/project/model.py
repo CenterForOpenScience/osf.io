@@ -2104,6 +2104,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             save=False
         )
 
+        # Need this save in order to access _primary_key
         forked.save()
 
         forked.add_log(
@@ -2111,7 +2112,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             params={
                 'parent_node': original.parent_id,
                 'node': original._primary_key,
-                'registration': forked._primary_key,
+                'registration': forked._primary_key,  # TODO: Remove this in favor of 'fork'
+                'fork': forked._primary_key,
             },
             auth=auth,
             log_date=when,
