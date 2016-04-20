@@ -9,13 +9,13 @@
       <div class="col-md-2">
         <ul class="nav nav-stacked list-group" data-bind="foreach: {data: metaSchema.schema.pages, as: 'page'}, visible: metaSchema.schema.pages.length > 1">
           <li class="re-navbar">
-            <a class="registration-editor-page" id="top-nav" style="text-align: left; font-weight:bold;" data-bind="text: title, attr.href: '#' + page.id">
+            <a class="registration-editor-page" id="top-nav" style="text-align: left; font-weight:bold;" data-bind="text: title, attr: {href: '#' + page.id}">
             </a>
             <span class="btn-group-vertical" role="group">
               <ul class="list-group" data-bind="foreach: {data: Object.keys(page.questions), as: 'qid'}">
                 <span data-bind="with: page.questions[qid]">
                   <li class="registration-editor-question list-group-item">
-                    <a data-bind="text: nav, attr.href: '#' + qid"></a>
+                    <a data-bind="text: $data.nav || $data.title, attr: {href: '#' + qid}"></a>
                   </li>
                 </span>
               </ul>
@@ -25,18 +25,15 @@
       </div>
       <div class="col-md-9" style="padding-left: 30px">
         <div data-bind="foreach: {data: metaSchema.pages, as: 'page'}">
-          <h3 data-bind="attr.id: page.id, text: page.title"></h3>
+          <h3 data-bind="attr: {id: page.id}, text: page.title"></h3>
           <div class="row">
             <div data-bind="foreach: {data: page.questions, as: 'question'}">
               <div class="row">
-                <h4 data-bind="attr.id: question.id, text: question.title"></h4>
-                <small><em data-bind="text: question.description"></em></small>
-                <div class="col-md-12 well">
-                  <span data-bind="if: question.value()">
-                    <p>
-                      <span data-bind="previewQuestion: $root.editor.context(question, $root.editor)"></span>
-                    </p>
-                  </span>
+                <h4 data-bind="attr: {id: question.id}, text: question.title"></h4>
+                <div class="col-md-12">
+                  <p>
+                    <span data-bind="previewQuestion: $root.editor.context(question, $root.editor)"></span>
+                  </p>
                 </div>
               </div>
             </div>

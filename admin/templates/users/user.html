@@ -7,42 +7,58 @@
 {% block content %}
     <div class="container-fluid">
         <div class="row"> {# Action and link buttons #}
+            <span class="col-sm-1">
             <a href="{% url 'users:search' %}"
-               class="btn btn-primary"><i class="fa fa-search"></i> </a>
+               class="btn btn-primary">
+                <i class="fa fa-search"></i>
+            </a>
+            </span>
+            <span class="col-md-2">
             <a href="{% url 'spam:user_spam' user.id %}"
                class="btn btn-primary">
                 Associated spam
             </a>
+            </span>
+            <span class="col-md-2">
             <a href=""
                class="btn btn-primary disabled">
                 User notes
             </a>
-            {% if not user.disabled %}
-            <button data-toggle="modal" data-target="#disableModal"
-                    class="btn btn-danger">
-                Disable account
-            </button>
-            <div class="modal" id="disableModal" style="display: none">
+            </span>
+            <span class="col-md-2">
+            <a href="{% url 'users:reset_password' user.id %}"
+               data-toggle="modal" data-target="#resetModal"
+               class="btn btn-primary">
+                Send reset
+            </a>
+            </span>
+            <div class="modal" id="resetModal" style="display: none">
                 <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h3>Are you sure you want to disable this user?</h3>
-                    </div>
-                    <div class="modal-body">
-                        Please be sure that you need to deactivate this user.
-                    </div>
-                    <div class="modal-footer">
-                        <a href="{% url 'users:disable' user.id %}"
-                           class="btn btn-danger">Disable</a>
-                        <button class="btn" data-dismiss="modal">Cancel</button>
-                    </div>
+                    <div class="modal-content"></div>
+                    {# Data from above link #}
                 </div>
+            </div>
+            <span class="col-md-2">
+            {% if not user.disabled %}
+                <a href="{% url 'users:disable' user.id %}"
+                   data-toggle="modal" data-target="#disableModal"
+                   class="btn btn-danger">
+                    Disable account
+                </a>
+            <div class="modal" id="disableModal">
+                <div class="modal-dialog">
+                    <div class="modal-content"></div>
                 </div>
             </div>
             {% else %}
-                <a href="{% url 'users:reactivate' user.id %}"
-                   class="btn btn-success">Reactivate account</a>
+                <form method="post"
+                      action="{% url 'users:reactivate' user.id %}">
+                    {% csrf_token %}
+                    <input class="btn btn-success" type="submit"
+                           value="Reactivate account"/>
+                </form>
             {% endif %}
+            </span>
         </div>
         <div class="row">
             <h3>User details</h3>
@@ -96,37 +112,15 @@
                     <td>
                         {{ user.two_factor }}
                         {% if user.two_factor %}
-                            <button data-toggle="modal"
-                                    data-target="#twoFactorModal"
-                                    class="btn btn-default">
+                            <a href="{% url 'users:remove2factor' user.id %}"
+                               class="btn btn-default"
+                               data-toggle="modal"
+                               data-target="#twoFactorModal">
                                 Deactivate
-                            </button>
-                            <div class="modal" id="twoFactorModal"
-                                 style="display: none;">
+                            </a>
+                            <div class="modal" id="twoFactorModal">
                                 <div class="modal-dialog">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h3>
-                                            This will remove two factor auth.
-                                        </h3>
-                                    </div>
-                                    <div class="modal-body">
-                                        Removing this will let the user log in
-                                        with only one form of authentication.
-                                        The only way to reverse this action is
-                                        for the user to re-enable the addon
-                                        after logging in.
-                                    </div>
-                                    <div class="modal-footer">
-                                        <a href="{% url 'users:remove2factor' user.id %}"
-                                           class="btn btn-danger">
-                                            Deactivate
-                                        </a>
-                                        <button class="btn" data-dismiss="modal">
-                                            Cancel
-                                        </button>
-                                    </div>
-                                </div>
+                                    <div class="modal-content"></div>
                                 </div>
                             </div>
                         {% endif %}
@@ -141,7 +135,9 @@
                                 <th>GUID</th>
                                 <th>Name</th>
                                 <th>Public</th>
+                                <th>Registration</th>
                                 <th># of Contributors</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -154,7 +150,33 @@
                                 </td>
                                 <td>{{ node.title | truncatechars:20 }}</td>
                                 <td>{{ node.public }}</td>
+                                <td>{{ node.is_registration }}</td>
                                 <td>{{ node.number_contributors }}</td>
+                                <td>
+                                {% if node.number_contributors < 2 and not node.is_registration %}
+                                    {% if node.deleted %}
+                                        <form method="post"
+                                              action="{% url 'nodes:restore' guid=node.id %}">
+                                            {% csrf_token %}
+                                            <input class="btn btn-success"
+                                                   type="submit"
+                                                   value="Restore Node" />
+                                        </form>
+                                    {% else %}
+                                    <a href="{% url 'nodes:remove' guid=node.id %}"
+                                       data-toggle="modal" data-target="#deleteModal{{ node.id }}"
+                                       class="btn btn-danger">
+                                        Delete Node
+                                    </a>
+                                    <div class="modal" id="deleteModal{{ node.id }}">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                {% endif %}
+                                </td>
                             </tr>
                         {% endfor %}
                         </tbody>

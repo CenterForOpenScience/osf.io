@@ -20,6 +20,8 @@ def main():
         record['date_created']
         for record in comment_collection.find({}, {'date_created': True})
     ]
+    if not dates:
+        return
     plot_dates(dates)
     plt.title('comments ({0} total)'.format(len(dates)))
     plt.savefig(os.path.join(FIG_PATH, 'comment-actions.png'))

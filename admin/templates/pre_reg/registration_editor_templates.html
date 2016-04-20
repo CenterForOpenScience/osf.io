@@ -11,7 +11,7 @@
 <script type="text/html" id="match">
   <input data-bind="valueUpdate: 'keyup',
                     value: value,
-                    attr.placeholder: match" type="text" class="form-control" />
+                    attr: {placeholder: match}" type="text" class="form-control" />
 </script>
 <script type="text/html" id="textarea">
   <textarea data-bind="valueUpdate: 'keyup',
@@ -39,7 +39,7 @@
 <script type="text/html" id="multiselect">
   <div class="col-md-12" data-bind="foreach: {data: options, as: 'option'}">
     <p>
-      <input type="checkbox" data-bind="attr.value: option,
+      <input type="checkbox" data-bind="attr: {value: option},
                                         checked: $parent.value,
                                         checkedValue: option" />
       <span data-bind="text: option"></span>
@@ -133,7 +133,7 @@
                 <div class="col-sm-9">
                   <strong><span data-bind="text: comment.getAuthor"></span></strong> said ...
                 </div>
-                <div class="col-sm-3">
+                <div class="col-sm-3"  data-bind="ifnot: $root.draft().isApproved">
                   <div style="text-align: right;" class="btn-group">
                     <button data-bind="disable: comment.saved,
                                        click: comment.toggleSaved.bind(comment, $root.save.bind($root))" class="btn btn-success fa fa-save registration-editor-comment-save"></button>
@@ -147,8 +147,7 @@
               </div>
               <br />
               <div class="row">
-                <div class="col-md-12 form-group">
-                  <textarea class="form-control"
+                <div class="col-md-12 form-group">                  <textarea class="form-control"
                           style="resize: none; overflow: scroll"
                             data-bind="disable: comment.saved,
                                        value: comment.value" type="text"></textarea>
@@ -158,7 +157,7 @@
           </div>
         </li>
     </ul>
-    <div class="input-group">
+    <div class="input-group" data-bind="ifnot: $root.draft().isApproved">
       <input class="form-control registration-editor-comment" type="text"
              data-bind="value: currentQuestion.nextComment,
                         valueUpdate: 'keyup'" />

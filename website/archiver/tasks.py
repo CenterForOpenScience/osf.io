@@ -6,8 +6,8 @@ import celery
 from celery.utils.log import get_task_logger
 from modularodm import Q
 
-from framework.tasks import app as celery_app
-from framework.tasks.utils import logged
+from framework.celery_tasks import app as celery_app
+from framework.celery_tasks.utils import logged
 from framework.exceptions import HTTPError
 
 from website.archiver import (

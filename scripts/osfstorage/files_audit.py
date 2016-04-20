@@ -10,15 +10,20 @@ Note: Must have par2 installed to run
 
 from __future__ import division
 
+import gc
 import os
 import math
+import thread
+import hashlib
 import logging
 
 import pyrax
-import progressbar
+
 from modularodm import Q
 from boto.glacier.layer2 import Layer2
 from pyrax.exceptions import NoSuchObject
+
+from framework.celery_tasks import app as celery_app
 
 from website.app import init_app
 from website.files import models
@@ -33,26 +38,10 @@ container_parity = None
 vault = None
 audit_temp_path = None
 
+
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 logging.getLogger('boto').setLevel(logging.CRITICAL)
-
-
-def download_from_cloudfiles(version):
-    path = os.path.join(audit_temp_path, version.location['object'])
-    if os.path.exists(path):
-        return path
-    try:
-        obj = container_primary.get_object(version.location['object'])
-        obj.download(audit_temp_path)
-        return path
-    except NoSuchObject as err:
-        logger.error('*** FILE NOT FOUND ***')
-        logger.error('Exception:')
-        logger.exception(err)
-        logger.error('Version info:')
-        logger.error(version.to_storage())
-        return None
 
 
 def delete_temp_file(version):
@@ -61,6 +50,35 @@ def delete_temp_file(version):
         os.remove(path)
     except OSError:
         pass
+
+
+def download_from_cloudfiles(version):
+    path = os.path.join(audit_temp_path, version.location['object'])
+    if os.path.exists(path):
+        # we cannot assume the file is valid and not from a previous failure.
+        delete_temp_file(version)
+    try:
+        obj = container_primary.get_object(version.location['object'])
+        with open(path, 'wb') as fp:
+            hasher = hashlib.sha256()
+            fetcher = obj.fetch(chunk_size=262144000)  # 256mb chunks
+            while True:
+                try:
+                    chunk = next(fetcher)
+                except StopIteration:
+                    break
+                hasher.update(chunk)
+                fp.write(chunk)
+        if hasher.hexdigest() != version.metadata['sha256']:
+            raise Exception('SHA256 mismatch, cannot continue')
+        return path
+    except NoSuchObject as err:
+        logger.error('*** FILE NOT FOUND ***')
+        logger.error('Exception:')
+        logger.exception(err)
+        logger.error('Version info:')
+        logger.error(version.to_storage())
+        return None
 
 
 def ensure_glacier(version, dry_run):
@@ -99,39 +117,78 @@ def ensure_parity(version, dry_run):
 
 
 def ensure_backups(version, dry_run):
-    if version.size == 0:
-        return
     ensure_glacier(version, dry_run)
     ensure_parity(version, dry_run)
     delete_temp_file(version)
 
 
-def get_targets():
+def glacier_targets():
     return models.FileVersion.find(
         Q('status', 'ne', 'cached') &
-        Q('location.object', 'exists', True)
+        Q('location.object', 'exists', True) &
+        Q('metadata.archive', 'eq', None)
     )
 
 
-def main(nworkers, worker_id, dry_run):
-    targets = get_targets()
+def parity_targets():
+    # TODO: Add metadata.parity information from wb so we do not need to check remote services
+    return models.FileVersion.find(
+        Q('status', 'ne', 'cached') &
+        Q('location.object', 'exists', True)
+        # & Q('metadata.parity', 'eq', None)
+    )
+
+
+def audit(targets, nworkers, worker_id, dry_run):
     maxval = math.ceil(targets.count() / nworkers)
-    progress_bar = progressbar.ProgressBar(maxval=maxval).start()
     idx = 0
+    last_progress = -1
     for version in targets:
         if hash(version._id) % nworkers == worker_id:
+            if version.size == 0:
+                continue
             ensure_backups(version, dry_run)
             idx += 1
-            if idx < maxval:
-                progress_bar.update(idx)
-    progress_bar.finish()
+            progress = int(idx / maxval * 100)
+            if last_progress < 100 and last_progress < progress:
+                logger.info(str(progress) + '%')
+                last_progress = progress
+                # clear modm cache so we don't run out of memory from the cursor enumeration
+                models.FileVersion._cache.clear()
+                models.FileVersion._object_cache.clear()
+                gc.collect()
 
 
-if __name__ == '__main__':
-    import sys
-    nworkers = int(sys.argv[1])
-    worker_id = int(sys.argv[2])
-    dry_run = 'dry' in sys.argv
+def main(nworkers, worker_id, dry_run):
+    logger.info('glacier audit start')
+    audit(glacier_targets(), nworkers, worker_id, dry_run)
+    logger.info('glacier audit complete')
+
+    logger.info('parity audit start')
+    audit(parity_targets(), nworkers, worker_id, dry_run)
+    logger.info('parity audit complete')
+
+@celery_app.task(name='scripts.osfstorage.files_audit_0')
+def file_audit_1(num_of_workers=4, dry_run=True):
+    run_main(num_of_workers, 0, dry_run)
+
+
+@celery_app.task(name='scripts.osfstorage.files_audit_1')
+def file_audit_2(num_of_workers=4, dry_run=True):
+    run_main(num_of_workers, 1, dry_run)
+
+
+@celery_app.task(name='scripts.osfstorage.files_audit_2')
+def file_audit_3(num_of_workers=4, dry_run=True):
+    run_main(num_of_workers, 2, dry_run)
+
+
+@celery_app.task(name='scripts.osfstorage.files_audit_3')
+def file_audit_4(num_of_workers=4, dry_run=True):
+    run_main(num_of_workers, 3, dry_run)
+
+
+def run_main(num_of_workers, worker_id, dry_run):
 
     # Set up storage backends
     init_app(set_backends=True, routes=False)
@@ -162,7 +219,8 @@ if __name__ == '__main__':
                 os.makedirs(audit_temp_path)
             except OSError:
                 pass
-            main(nworkers, worker_id, dry_run=dry_run)
+        main(num_of_workers, worker_id, dry_run)
+
     except Exception as err:
         logger.error('=== Unexpected Error ===')
         logger.exception(err)

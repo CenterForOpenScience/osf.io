@@ -144,16 +144,16 @@
         </div>
         <div class="row org-logo m-b-lg">
             <div class="col-sm-3 col-xs-6  text-center">
-                <a href="http://www.psychologicalscience.org/"><img src="/static/img/meeting-page/APS.jpg" alt="Logo for American Physiological Society (APS)" class="img-responsive"></a>
+                <a href="http://www.psychologicalscience.org/" target="_blank"><img src="/static/img/meeting-page/APS.jpg" alt="Logo for American Physiological Society (APS)" class="img-responsive"></a>
             </div>
             <div class="col-sm-3 col-xs-6 text-center">
-                <a href="http://www.bitss.org/"><img src="/static/img/meeting-page/BITSS.png" alt="Logo for Berkeley Initiative for Transparency in the Social Sciences (BITSS)" class="img-responsive"></a>
+                <a href="http://www.bitss.org/" target="_blank"><img src="/static/img/meeting-page/BITSS.png" alt="Logo for Berkeley Initiative for Transparency in the Social Sciences (BITSS)" class="img-responsive"></a>
             </div>
             <div class="col-sm-3 col-xs-6 text-center">
-                <a href="http://www.nrao.edu/"><img src="/static/img/meeting-page/NRAO.jpg" alt="Logo for National Radio Astronomy Observatory (NRAO)" class="img-responsive"></a>
+                <a href="http://www.nrao.edu/" target="_blank"><img src="/static/img/meeting-page/NRAO.jpg" alt="Logo for National Radio Astronomy Observatory (NRAO)" class="img-responsive"></a>
             </div>
             <div class="col-sm-3 col-xs-6 text-center">
-                <a href="http://www.spsp.org/"><img src="/static/img/meeting-page/SPSP.jpg" alt="Logo for Society for Personality and Social Psychology (SPSP)" class="img-responsive"></a>
+                <a href="http://www.spsp.org/" target="_blank"><img src="/static/img/meeting-page/SPSP.jpg" alt="Logo for Society for Personality and Social Psychology (SPSP)" class="img-responsive"></a>
             </div>
         </div>
     </div>

@@ -149,7 +149,7 @@ var NodesPrivacyViewModel = function(parentIsPublic) {
         }).fail(function(xhr, status, error) {
             $osf.growl('Error', 'Unable to retrieve project settings');
             Raven.captureMessage('Could not GET project settings.', {
-                url: treebeardUrl, status: status, error: error
+                extra: { url: treebeardUrl, status: status, error: error }
             });
         });
     };

@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 import httplib as http
-import sys
-import inspect
 import pkgutil
 
 import mock
@@ -62,9 +60,9 @@ class TestApiBaseViews(ApiTestCase):
             for cls in base_permissions:
                 if isinstance(cls, tuple):
                     has_cls = any([c in view.permission_classes for c in cls])
-                    assert_true(has_cls, "{0} lacks the appropriate permission classes".format(name))
+                    assert_true(has_cls, "{0} lacks the appropriate permission classes".format(view))
                 else:
-                    assert_in(cls, view.permission_classes, "{0} lacks the appropriate permission classes".format(name))
+                    assert_in(cls, view.permission_classes, "{0} lacks the appropriate permission classes".format(view))
             for key in ['read', 'write']:
                 scopes = getattr(view, 'required_{}_scopes'.format(key), None)
                 assert_true(bool(scopes))
@@ -74,6 +72,11 @@ class TestApiBaseViews(ApiTestCase):
     def test_view_classes_support_embeds(self):
         for view in VIEW_CLASSES:
             assert_true(hasattr(view, '_get_embed_partial'), "{0} lacks embed support".format(view))
+
+    def test_view_classes_define_or_override_serializer_class(self):
+        for view in VIEW_CLASSES:
+            has_serializer_class = getattr(view, 'serializer_class', None) or getattr(view, 'get_serializer_class', None)
+            assert_true(has_serializer_class, "{0} should include serializer class or override get_serializer_class()".format(view))
 
     @mock.patch('framework.auth.core.User.is_confirmed', mock.PropertyMock(return_value=False))
     def test_unconfirmed_user_gets_error(self):

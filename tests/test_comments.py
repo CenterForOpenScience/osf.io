@@ -53,7 +53,7 @@ class TestCommentViews(OsfTestCase):
         }, auth=self.user.auth)
         self.user.reload()
 
-        user_timestamp = self.user.comments_viewed_timestamp[self.project._id]['node']
+        user_timestamp = self.user.comments_viewed_timestamp[self.project._id]
         view_timestamp = dt.datetime.utcnow()
         assert_datetime_equal(user_timestamp, view_timestamp)
 
@@ -88,7 +88,7 @@ class TestCommentViews(OsfTestCase):
         }, auth=self.user.auth)
         self.user.reload()
 
-        user_timestamp = self.user.comments_viewed_timestamp[self.project._id]['files'][test_file._id]
+        user_timestamp = self.user.comments_viewed_timestamp[test_file._id]
         view_timestamp = dt.datetime.utcnow()
         assert_datetime_equal(user_timestamp, view_timestamp)
 
@@ -106,6 +106,7 @@ class TestCommentModel(OsfTestCase):
             user=self.comment.user,
             node=self.comment.node,
             target=self.comment.target,
+            root_target=self.comment.root_target,
             page='node',
             is_public=True,
             content='This is a comment.'
@@ -170,6 +171,7 @@ class TestCommentModel(OsfTestCase):
                 user=self.comment.user,
                 node=self.comment.node,
                 target=self.comment.target,
+                root_target=self.comment.root_target,
                 is_public=True,
                 content='This is a comment.'
             )

@@ -384,7 +384,7 @@ def create_waterbutler_log(payload, **kwargs):
 
 
 @file_signals.file_updated.connect
-def addon_delete_file_node(self, node, event_type, payload, user=None):
+def addon_delete_file_node(self, node, user, event_type, payload):
     """ Get addon StoredFileNode(s), move it into the TrashedFileNode collection
     and remove it from StoredFileNode.
 
@@ -403,7 +403,7 @@ def addon_delete_file_node(self, node, event_type, payload, user=None):
             )
             for item in folder_children:
                 if item.kind == 'file' and not TrashedFileNode.load(item._id):
-                    item.delete()
+                    item.delete(user=user)
                 elif item.kind == 'folder':
                     StoredFileNode.remove_one(item.stored_object)
         else:
@@ -416,7 +416,7 @@ def addon_delete_file_node(self, node, event_type, payload, user=None):
                 file_node = None
 
             if file_node and not TrashedFileNode.load(file_node._id):
-                file_node.delete()
+                file_node.delete(user=user)
 
 
 @must_be_valid_project

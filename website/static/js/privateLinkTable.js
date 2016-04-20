@@ -31,17 +31,7 @@ function LinkViewModel(data, $root) {
     self.anonymousDisplay = ko.computed(function() {
         var openTag = '<span>';
         var closeTag = '</span>';
-        var text;
-        if (data.anonymous) {
-            text = 'Yes';
-            // Strikethrough if node is public
-            if ($root.nodeIsPublic) {
-                openTag = '<del>';
-                closeTag = '</del>';
-            }
-        } else{
-            text = 'No';
-        }
+        var text = data.anonymous ? 'Yes' : 'No' ;
         return [openTag, text, closeTag].join('');
     });
 

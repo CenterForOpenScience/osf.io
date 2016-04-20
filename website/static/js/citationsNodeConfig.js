@@ -5,7 +5,6 @@
 'use strict';
 
 var ko = require('knockout');
-require('knockout.punches');
 var $ = require('jquery');
 var Raven = require('raven-js');
 var bootbox = require('bootbox');
@@ -15,7 +14,6 @@ var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
 var FolderPickerViewModel = require('js/folderPickerNodeConfig');
 
-ko.punches.enableAll();
 
 /**
  * View model to support instances of CitationsNodeConfig (folder picker widget)
@@ -76,9 +74,11 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         request.fail(function(xhr, textStatus, error) {
             self.changeMessage(self.messages.updateAccountsError(), 'text-danger');
             Raven.captureMessage('Could not GET ' + self.addonName + ' accounts for user', {
-                url: self.url,
-                textStatus: textStatus,
-                error: error
+                extra: {
+                    url: self.url,
+                    textStatus: textStatus,
+                    error: error
+                }
             });
             ret.reject(xhr, textStatus, error);
         });

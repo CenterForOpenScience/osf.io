@@ -21,9 +21,9 @@
                   % if summary['is_pending_registration']:
                     <span class="label label-info"><strong>Pending registration</strong></span> |
                   % elif summary['is_retracted']:
-                    <span class="label label-danger"><strong>Retracted</strong></span> |
+                    <span class="label label-danger"><strong>Withdrawn</strong></span> |
                   % elif summary['is_pending_retraction']:
-                    <span class="label label-info"><strong>Pending retraction</strong></span> |
+                    <span class="label label-info"><strong>Pending withdrawal</strong></span> |
                   % elif summary['embargo_end_date']:
                     <span class="label label-info"><strong>Embargoed</strong></span> |
                   % elif summary['is_pending_embargo']:
@@ -36,8 +36,7 @@
             <span data-bind="getIcon: '${summary['category']}'"></span>
             % if not summary['archiving']:
                 <a href="${summary['url']}">${summary['title']}</a>
-            % endif
-            % if summary['archiving']:
+            % else:
                 <span class="f-w-lg">${summary['title']}</span>
             % endif
 
@@ -51,7 +50,7 @@
             <!-- Show/Hide recent activity log -->
             % if not summary['archiving']:
             <div class="pull-right">
-                % if not summary['primary'] and 'admin' in user['permissions'] and not node['is_registration']:
+                % if not summary['primary'] and 'write' in user['permissions'] and not node['is_registration']:
                     <i class="fa fa-times remove-pointer" data-id="${summary['id']}" data-toggle="tooltip" title="Remove link"></i>
                     <i class="fa fa-code-fork" onclick="NodeActions.forkPointer('${summary['id']}', '${summary['primary_id']}');" data-toggle="tooltip" title="Fork this ${summary['node_type']} into ${node['node_type']} ${node['title']}"></i>
                 % endif
@@ -97,7 +96,7 @@
             <div class="body hide" id="body-${summary['id']}" style="overflow:hidden;">
             <hr />
             % if summary['is_retracted']:
-                <h4>Recent activity information has been retracted.</h4>
+                <h4>Recent activity information has been withdrawn.</h4>
             % else:
                 Recent activity
                 <!-- ko stopBinding: true -->
@@ -145,6 +144,12 @@
             %else:
                 Private Component
             %endif
+            % if not summary['primary'] and 'write' in user['permissions'] and not node['is_registration']:
+                ## Allow deletion of pointers, even if user doesn't know what they are deleting
+                <span class="pull-right">
+                    <i class="fa fa-times remove-pointer pointer" data-id="${summary['id']}" data-toggle="tooltip" title="Remove link"></i>
+                </span>
+            % endif
         </p>
     </li>
 
