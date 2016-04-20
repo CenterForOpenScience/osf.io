@@ -1,0 +1,51 @@
+.-confirm-selection {
+    padding-top: 10px;
+}
+.dmptool-folder-picker {
+    margin-top: 10px;
+}
+
+.selected-folder {
+    margin: 12px;
+    font-size: 1.3em;
+}
+
+.dmptool-loading-text {
+    padding-top: 20px;
+}
+
+.dmptool-test {
+  font-weight: bold;
+}
+
+#dmptool-notedisplay {
+  border-color: #ccc;
+}
+
+#dmptool-note-title {
+  font-weight: bold;
+}
+
+
+.btn-dmptool {
+    color: #333;
+    background-color: #fff;
+    border-color: #ccc;
+}
+
+.btn-dmptool:hover,
+.btn-dmptool:focus,
+.btn-dmptool:active,
+.btn-dmptool.active,
+.open .dropdown-toggle.btn-dmptool {
+    color: #333;
+    background-color: #ebebeb;
+    border-color: #adadad;
+}
+
+.dmptool-folderpicker-odd {
+    background-color: #f5f5f5;
+}
+.dmptool-folderpicker-even {
+    background-color: #fff;
+}

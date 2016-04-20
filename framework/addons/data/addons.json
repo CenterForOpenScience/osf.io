@@ -150,6 +150,32 @@
                 "text": "Dataverse content will be registered, but version history will not be copied to the registration."
             }
         },
+        "DMPTool": {
+            "Permissions": {
+                "status": "partial",
+                "text": "Making an OSF project public or private is independent of making an DMPTool document public or private. The OSF does not alter the permissions of a linked DMPTool document."
+            },
+            "View / download file versions": {
+                "status": "NA"
+            },
+            "Add / update files": {
+                "status": "NA"
+            },
+            "Delete files": {
+                "status": "NA"
+            },
+            "Logs": {
+                "status": "NA"
+            },
+            "Forking": {
+                "status": "partial",
+                "text": "Forking a project or component does not copy DMPTool authorization unless the user forking the project is the same user who authorized the DMPTool add-on in the source project being forked."
+            },
+            "Registering": {
+                "status": "none",
+                "text": "DMPTool content will not be registered."
+            }
+        },
         "Evernote": {
             "Permissions": {
                 "status": "partial",
