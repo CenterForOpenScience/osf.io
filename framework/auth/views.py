@@ -142,7 +142,7 @@ def auth_login(auth, **kwargs):
         if not request.args.get('logout'):
             if next_url:
                 return redirect(next_url)
-            return redirect(web_url_for('dashboard'))
+            return redirect('/')
         # redirect user to CAS for logout, return here w/o authentication
         return auth_logout(redirect_url=request.url)
     if kwargs.get('first', False):
