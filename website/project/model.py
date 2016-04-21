@@ -730,6 +730,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 ('institution_email_domains', pymongo.ASCENDING),
             ]
         },
+        {
+            'unique': False,
+            'key_or_list': [
+                ('institution_id', pymongo.ASCENDING),
+                ('registration_approval', pymongo.ASCENDING),
+            ]
+        },
     ]
 
     # Node fields that trigger an update to Solr on save
@@ -2143,6 +2150,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             save=False
         )
 
+        # Need this save in order to access _primary_key
         forked.save()
 
         forked.add_log(
@@ -2150,7 +2158,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             params={
                 'parent_node': original.parent_id,
                 'node': original._primary_key,
-                'registration': forked._primary_key,
+                'registration': forked._primary_key,  # TODO: Remove this in favor of 'fork'
+                'fork': forked._primary_key,
             },
             auth=auth,
             log_date=when,
