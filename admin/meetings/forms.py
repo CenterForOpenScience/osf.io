@@ -3,6 +3,19 @@ from django.core.validators import validate_email
 
 from modularodm import Q
 from website.models import Conference, User
+from website.conferences.exceptions import ConferenceError
+
+
+class MultiEmailField(forms.Field):
+    def to_python(self, value):
+        if not value:
+            return []
+        return [r.strip() for r in value.split(',')]
+
+    def validate(self, value):
+        super(MultiEmailField, self).validate(value)
+        for email in value:
+            validate_email(email)
 
 
 class MeetingForm(forms.Form):
@@ -50,16 +63,16 @@ class MeetingForm(forms.Form):
         required=True,
         initial=True,
     )
-    field_sub1 = forms.CharField(
+    field_submission1 = forms.CharField(
         label='Name for Submission 1 (poster)'
     )
-    field_sub2 = forms.CharField(
+    field_submission2 = forms.CharField(
         label='Name for Submission 2 (talk)'
     )
-    field_plural1 = forms.CharField(
+    field_submission1_plural = forms.CharField(
         label='Plural for submission 1'
     )
-    field_plural2 = forms.CharField(
+    field_submission2_plural = forms.CharField(
         label='Plural for submission 2'
     )
     field_meeting_title_type = forms.CharField(
@@ -71,13 +84,12 @@ class MeetingForm(forms.Form):
     field_mail_subject = forms.CharField(
         label='Mail subject'
     )
-    field_mail_message = forms.CharField(
+    field_mail_message_body = forms.CharField(
         label='Message body for mail'
     )
     field_mail_attachment = forms.CharField(
         label='Mail attachment message'
     )
-
 
     def clean_endpoint(self):
         data = self.cleaned_data['endpoint']
@@ -86,6 +98,13 @@ class MeetingForm(forms.Form):
             if Conference.find(Q('endpoint', 'iexact', data)).count() > 0:
                 raise forms.ValidationError(
                     'A meeting with this endpoint exists already.'
+                )
+        else:
+            try:
+                Conference.get_by_endpoint(data)
+            except ConferenceError:
+                raise forms.ValidationError(
+                    'Meeting not found with this endpoint to update'
                 )
         return data
 
@@ -98,15 +117,3 @@ class MeetingForm(forms.Form):
                     '{} does not have an OSF account'.format(email)
                 )
         return data
-
-
-class MultiEmailField(forms.Field):
-    def to_python(self, value):
-        if not value:
-            return []
-        return [r.strip() for r in value.split(',')]
-
-    def validate(self, value):
-        super(MultiEmailField, self).validate(value)
-        for email in value:
-            validate_email(email)
