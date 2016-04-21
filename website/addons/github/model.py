@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
+import itertools
 import os
 import urlparse
-import itertools
 
 from github3 import GitHubError
 import markupsafe
@@ -302,11 +302,11 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             message = (
                 'Warning: This OSF {category} is {node_perm}, but the GitHub '
                 'repo {user} / {repo} is {repo_perm}.'.format(
-                    category=node.project_or_component,
-                    node_perm=node_permissions,
-                    repo_perm=repo_permissions,
-                    user=self.user,
-                    repo=self.repo,
+                    category=markupsafe.escape(node.project_or_component),
+                    node_perm=markupsafe.escape(node_permissions),
+                    repo_perm=markupsafe.escape(repo_permissions),
+                    user=markupsafe.escape(self.user),
+                    repo=markupsafe.escape(self.repo),
                 )
             )
             if repo_permissions == 'private':

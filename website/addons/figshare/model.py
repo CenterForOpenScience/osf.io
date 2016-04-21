@@ -278,7 +278,8 @@ class AddonFigShareNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
             )
             if article_permissions == 'private' and node_permissions == 'public':
                 message += messages.BEFORE_PAGE_LOAD_PUBLIC_NODE_PRIVATE_FS
-            return [message]
+            # No HTML snippets, so escape message all at once
+            return [markupsafe.escape(message)]
 
     def before_remove_contributor(self, node, removed):
         """

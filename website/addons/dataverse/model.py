@@ -173,6 +173,7 @@ class AddonDataverseNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         )
 
     ##### Callback overrides #####
+
     def after_delete(self, node, user):
         self.deauthorize(Auth(user=user), add_log=True)
         self.save()
