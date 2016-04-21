@@ -1148,7 +1148,7 @@ class TestCommentFiltering(ApiTestCase):
         self.base_url = '/{}nodes/{}/comments/'.format(API_BASE, self.project._id)
 
         self.formatted_date_created = self.comment.date_created.strftime('%Y-%m-%dT%H:%M:%S.%f')
-        self.comment.edit('Edited comment', auth=core.Auth(self.user), save=True)
+        self.comment.edit('Edited comment', [], auth=core.Auth(self.user), save=True)
         self.formatted_date_modified = self.comment.date_modified.strftime('%Y-%m-%dT%H:%M:%S.%f')
 
     def test_node_comments_with_no_filter_returns_all_comments(self):
