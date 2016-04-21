@@ -86,7 +86,7 @@ def bulk_insert(logs, remaining):
 def migrate(dry=True):
 
     cursor = db.node.find({},
-                          {'_id': True, 'logs': True, 'is_registration': True, 'is_fork': True})
+                          {'_id': True, 'logs': True})
     cursor = cursor.batch_size(10000)
 
     count = db.nodelog.count()
