@@ -92,8 +92,9 @@ class CommentSerializer(JSONAPISerializer):
                     raise PermissionDenied('Not authorized to undelete this comment.')
             elif 'get_content' in validated_data:
                 content = validated_data.pop('get_content')
+                new_mentions = validated_data.pop('new_mentions')
                 try:
-                    comment.edit(content, auth=auth, save=True)
+                    comment.edit(content, new_mentions, auth=auth, save=True)
                 except PermissionsError:
                     raise PermissionDenied('Not authorized to edit this comment.')
         return comment

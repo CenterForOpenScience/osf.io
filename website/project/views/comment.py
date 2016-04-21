@@ -149,7 +149,7 @@ def send_mention_added_notification(comment, auth):
         url=comment.get_comment_page_url()
     )
     time_now = datetime.utcnow().replace(tzinfo=pytz.utc)
-    sent_subscribers = notify(
+    notify(
         event="mentions",
         user=auth.user,
         node=node,
@@ -157,15 +157,6 @@ def send_mention_added_notification(comment, auth):
         **context
     )
 
-    if is_reply(target):
-        if target.referent.user and target.referent.user not in sent_subscribers:
-            notify(
-                event='mention_replies',
-                user=auth.user,
-                node=node,
-                timestamp=time_now,
-                **context
-            )
 
 def is_reply(target):
     return isinstance(target.referent, Comment)
