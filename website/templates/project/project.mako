@@ -20,10 +20,14 @@
                         </h2>
                     % endif
                 % endif
-                <h2 class="node-title">
-                    % if node['institutions'] != [] and enable_institutions and not node['anonymous']:
-                        <a href="/institutions/${node['institutions'][0]['id']}"><img class="img-circle" height="75" width="75" id="instLogo" src="${node['institutions'][0]['logo_path']}"></a>
-                    % endif
+
+                % if node['institutions'] != [] and enable_institutions and not node['anonymous']:
+                    <div style="float: left; width: 86px; text-align: center">
+                        <div id="instLogo"></div>
+                    </div>
+                % endif
+
+                <h2 class="node-title" style="float: left;">
                     <span id="nodeTitleEditable" class="overflow">${node['title']}</span>
                 </h2>
             </div>
@@ -414,12 +418,13 @@ ${parent.javascript_bottom()}
     window.contextVars = $.extend(true, {}, window.contextVars, {
         currentUser: {
             canComment: ${ user['can_comment'] | sjson, n },
-            canEdit: ${ user['can_edit'] | sjson, n }
+            canEdit: ${ user['can_edit'] | sjson, n },
         },
         node: {
             hasChildren: ${ node['has_children'] | sjson, n },
             isRegistration: ${ node['is_registration'] | sjson, n },
-            tags: ${ node['tags'] | sjson, n }
+            tags: ${ node['tags'] | sjson, n },
+            institutions: ${node['institutions'] | sjson, n},
         }
     });
 </script>

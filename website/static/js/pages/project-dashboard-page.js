@@ -62,11 +62,35 @@ if ($comments.length) {
     };
     Comment.init('#commentsLink', '.comment-pane', options);
 }
+var institutionLogos = {
+    controller: function(args){
+        var self = this;
+        self.institutions = args.institutions;
+        self.nLogos = Math.min(self.institutions.length, 5);
+        self.side = self.nLogos > 1 ? '35px': '75px';
+        self.makeLogo = function(institution){
+            return m('a', {href: '/institutions/' + institution.id},
+                m('img.img-circle', {
+                    height: self.side, width: self.side,
+                    style: {margin: '3px'},
+                    dataToggle: 'tooltip', dataPlacement: 'top', title: institution.name,
+                    src: institution.logo_path
+                })
+            )
+        }
+    },
+    view: function(ctrl, args){
+        var tooltips = function(){
+            $('[data-toggle="tooltip"]').tooltip();
+        };
+        return m('', {config: tooltips}, [$.map(ctrl.institutions, ctrl.makeLogo)]);
+    }
+};
 
 $(document).ready(function () {
 
+    m.mount(document.getElementById('instLogo'), m.component(institutionLogos, {institutions: window.contextVars.node.institutions}));
     $('#contributorsList').osfToggleHeight();
-
     if (!ctx.node.isRetracted) {
         // Treebeard Files view
         $.ajax({
