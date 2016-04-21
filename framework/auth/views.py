@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import datetime
 import httplib as http
+from copy import deepcopy
 
 from flask import request
 
@@ -310,11 +311,11 @@ def confirm_email_remove(auth=None, **kwargs):
     """
     user = auth.user
     confirmed_email = request.json.get('address')
-    email_verifications = user.email_verifications.deepcopy()
+    email_verifications = deepcopy(user.email_verifications)
     for token in user.email_verifications:
         if user.email_verifications[token]['email'] == confirmed_email:
             if user.confirm_token(token):
-                user.email_verifications.pop(token)
+                email_verifications.pop(token)
     user.email_verifications = email_verifications
     user.save()
     return {

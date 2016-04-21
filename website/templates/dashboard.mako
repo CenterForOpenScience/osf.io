@@ -27,8 +27,6 @@
         currentUser: {
             'id': '${user_id}'
         },
-        confirmedEmailURL: ${ api_url_for('confirm_user_get') | sjson, n},
-        removeConfirmedEmailURL: ${ api_url_for('confirm_email_remove') | sjson, n}
     });
 </script>
 <script src=${"/static/public/js/dashboard-page.js" | webpack_asset}></script>

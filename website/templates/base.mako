@@ -190,7 +190,9 @@
                     timezone: ${ user_timezone | sjson, n }
                 },
                 popular: ${ popular_links_node | sjson, n},
-                newAndNoteworthy: ${ noteworthy_links_node | sjson, n}
+                newAndNoteworthy: ${ noteworthy_links_node | sjson, n},
+                confirmedEmailURL: ${ api_url_for('confirm_user_get') | sjson, n},
+                removeConfirmedEmailURL: ${ api_url_for('confirm_email_remove') | sjson, n}
             });
         </script>
 
