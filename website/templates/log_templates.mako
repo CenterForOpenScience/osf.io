@@ -182,16 +182,15 @@ to
 </script>
 
 <script type="text/html" id="project_registered">
-   {{#if params.is_prereg}}
+   <!-- ko if: params.is_prereg -->
         initiated registration of
         <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: projectUrl}"></a>.
         It was submitted for review to the Preregistration Challenge on
-        <span class="date log-date" data-bind="text: log.params.submitted_time.local, tooltip: {title: log.params.submitted_time.utc}"></span>
-   {{/if}}
-   {{#ifnot params.is_prereg}}
+    <!-- /ko -->
+    <!-- ko ifnot: params.is_prereg -->
         registered
         <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
-   {{/if}}
+    <!-- /ko -->
 </script>
 
 <script type="text/html" id="project_registered_no_user">
