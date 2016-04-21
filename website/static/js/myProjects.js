@@ -268,21 +268,13 @@ function _formatDataforPO(item) {
     if (contributorsData){
         item.embeds.contributors.data.forEach(function(c){
             var attr;
+            var contribNames = $osf.extractContributorNamesFromAPIData(c);
 
             if (lodashGet(c, 'attributes.unregistered_contributor', null)) {
-                item.contributors += c.attributes.unregistered_contributor;
+                item.contributors += contribNames.fullName;
             }
             else {
-                var users = lodashGet(c, 'embeds.users.data', null);
-                if (users) {
-                    if (users.errors) {
-                        attr = users.errors[0].meta;
-                    } else {
-                        attr = users.attributes;
-                    }
-                }
-                if (attr)
-                    item.contributors += attr.full_name + ' ' + attr.middle_names + ' ' + attr.given_name + ' ' + attr.family_name + ' ' ;
+                item.contributors += contribNames.fullName + ' ' + contribNames.middleNames + ' ' + contribNames.givenName + ' ' + contribNames.familyName + ' ' ;
             }
         });
     }
