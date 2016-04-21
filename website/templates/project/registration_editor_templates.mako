@@ -11,12 +11,22 @@
 <script type="text/html" id="match">
   <input data-bind="valueUpdate: 'keyup',
                     value: value,
-                    attr.placeholder: match" type="text" class="form-control" />
+                    attr: {placeholder: match}" type="text" class="form-control" />
 </script>
 <script type="text/html" id="textarea">
   <textarea data-bind="valueUpdate: 'keyup',
                        textInput: value"
             class="form-control"> </textarea>
+</script>
+<script type="text/html" id="textarea-lg">
+  <textarea data-bind="valueUpdate: 'keyup',
+                       textInput: value"
+            class="form-control registration-editor-textarea-lg"> </textarea>
+</script>
+<script type="text/html" id="textarea-xl">
+  <textarea data-bind="valueUpdate: 'keyup',
+                       textInput: value"
+            class="form-control registration-editor-textarea-xl"> </textarea>
 </script>
 <!-- Number Types -->
 <script type="text/html" id="number">
@@ -37,7 +47,7 @@
     <p data-bind="if: Boolean(option.tooltip)">
       <input type="radio" data-bind="checked: $parent.value,
                                      value: option.text"/>
-        {{option.text}}
+        <label data-bind="text: option.text"></label>
       <span data-bind="tooltip: {title: option.tooltip}" class="fa fa-info-circle"></span>
     </p>
   </div>
@@ -45,15 +55,15 @@
 <script type="text/html" id="multiselect">
   <div class="col-md-12" data-bind="foreach: {data: options, as: 'option'}">
     <p data-bind="if: !Boolean(option.tooltip)">
-      <input type="checkbox" data-bind="attr.value: option,
+      <input type="checkbox" data-bind="attr: {value: option},
                                         checked: $parent.value,
                                         checkedValue: option" />
       <span data-bind="text: option"></span>
     </p>
-    <p data-bind="if: Boolean(option.tooltip)">
-      <input type="checkbox" data-bind="attr.value: option.text,
+    <p data-bind="if: Boolean(option.tooltip)"> <!-- TODO: Verify checkboxes -->
+      <input type="checkbox" data-bind="attr: {value: option.text},
                                         checked: $parent.value,
-                                        checkedValue: option"
+                                        checkedValue: option">
       <span data-bind="text: option.text, tooltip: {title: option.tooltip}"></span>
     </p>
   </div>

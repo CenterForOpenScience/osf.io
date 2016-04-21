@@ -1256,6 +1256,7 @@ class TestSendEmails(NotificationTestCase):
             node=project,
             content=content,
             target=Guid.load(target._id),
+            root_target=Guid.load(project._id),
             is_public=True,
         )
         assert_true(mock_notify.called)

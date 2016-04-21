@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import json
 import httplib
 import logging
 from datetime import datetime
@@ -216,7 +215,7 @@ def conference_results(meeting):
     data = conference_data(meeting)
 
     return {
-        'data': json.dumps(data),
+        'data': data,
         'label': meeting,
         'meeting': conf.to_storage(),
         # Needed in order to use base.mako namespace

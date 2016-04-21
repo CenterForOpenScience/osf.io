@@ -143,6 +143,8 @@ class InstitutionNodeList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
     view_category = 'institutions'
     view_name = 'institution-nodes'
 
+    ordering = ('-date_modified', )
+
     base_node_query = (
         Q('is_deleted', 'ne', True) &
         Q('is_folder', 'ne', True) &

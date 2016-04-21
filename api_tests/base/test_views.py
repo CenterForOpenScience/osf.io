@@ -73,6 +73,11 @@ class TestApiBaseViews(ApiTestCase):
         for view in VIEW_CLASSES:
             assert_true(hasattr(view, '_get_embed_partial'), "{0} lacks embed support".format(view))
 
+    def test_view_classes_define_or_override_serializer_class(self):
+        for view in VIEW_CLASSES:
+            has_serializer_class = getattr(view, 'serializer_class', None) or getattr(view, 'get_serializer_class', None)
+            assert_true(has_serializer_class, "{0} should include serializer class or override get_serializer_class()".format(view))
+
     @mock.patch('framework.auth.core.User.is_confirmed', mock.PropertyMock(return_value=False))
     def test_unconfirmed_user_gets_error(self):
 
