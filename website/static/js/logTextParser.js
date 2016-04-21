@@ -1,7 +1,7 @@
 /**
  * Parses text to return to the log items
  * Created by cos-caner on 12/4/15.
- * Remember to embed original_node, node, user, linked_node and template_node in api call i.e. var url = $osf.apiV2Url('nodes/' + nodeId + '/logs/', { query : { 'embed' : ['original_node', 'user']}});
+ * Remember to embed original_node, user, linked_node and template_node in api call i.e. var url = $osf.apiV2Url('nodes/' + nodeId + '/logs/', { query : { 'embed' : ['original_node', 'user']}});
  */
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
 var logActions = require('json!js/_allLogTexts.json');
