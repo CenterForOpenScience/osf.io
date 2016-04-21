@@ -4,7 +4,8 @@ from django.views.generic import ListView, FormView
 from django.views.defaults import page_not_found
 from django.core.urlresolvers import reverse
 
-from website.models import Conference, User
+from framework.auth.core import get_user
+from website.models import Conference
 from admin.base.views import GuidFormView
 
 from admin.meetings.forms import MeetingForm
@@ -12,7 +13,7 @@ from admin.meetings.serializers import serialize_meeting
 
 
 class MeetingListView(ListView):
-    template_name = 'meetings/create.html'
+    template_name = 'meetings/list.html'
     paginate_by = 10
     paginate_orphans = 1
     context_object_name = 'meeting'
@@ -48,6 +49,11 @@ class MeetingFormView(GuidFormView):
         except AttributeError:
             handle_attribute_error(request, 'meeting',
                                    self.kwargs.get('endpoint'))
+
+    def get_context_data(self, **kwargs):
+        self.kwargs.setdefault('meeting', serialize_meeting(
+            Conference.get_by_endpoint(self.kwargs.get('endpoint'))
+        ))
 
     def get_initial(self):
         self.initial = serialize_meeting(
@@ -85,8 +91,12 @@ class MeetingCreateFormView(FormView):
     form_class = MeetingForm
 
     def get_initial(self):
-        self.initial.update(Conference.DEFAULT_FIELD_NAMES)  # Fills in default
+        self.initial.update(add_field(Conference.DEFAULT_FIELD_NAMES))  # Fills in default
         self.initial.setdefault('edit', False)
+        return super(MeetingCreateFormView, self).get_initial()
+
+    def form_invalid(self, form):
+        return super(MeetingCreateFormView, self).form_invalid(form)
 
     def form_valid(self, form):
         custom_fields, data = get_custom_fields(form.cleaned_data)
@@ -131,10 +141,14 @@ def get_custom_fields(data):
     return fields, non_fields
 
 
+def add_field(data):
+    return {'field_{}'.format(k): data[k] for k in data.keys()}
+
+
 def get_admin_users(admins):
     """Returns a list of user objects
 
     If used in conjunction with MeetingForm it will already have checked for
     emails that don't match OSF users.
     """
-    return [User.get_user(email=e) for e in admins]
+    return [get_user(email=e) for e in admins]

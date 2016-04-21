@@ -2,7 +2,8 @@ from django import forms
 from django.core.validators import validate_email
 
 from modularodm import Q
-from website.models import Conference, User
+from framework.auth.core import get_user
+from website.models import Conference
 from website.conferences.exceptions import ConferenceError
 
 
@@ -21,8 +22,9 @@ class MultiEmailField(forms.Field):
 class MeetingForm(forms.Form):
     # Value to tell if this is being created or is an edit
     edit = forms.BooleanField(
-        required=True,
+        label='edit',
         initial=False,
+        widget=forms.HiddenInput(),
     )
     endpoint = forms.CharField(
         label='Endpoint (Unique, short id)',
@@ -31,13 +33,17 @@ class MeetingForm(forms.Form):
     name = forms.CharField(
         label='Conference name',
         required=True,
+        widget=forms.TextInput(attrs={'size': '40'}),
     )
     info_url = forms.CharField(
         label='Info url',
         required=True,
+        widget=forms.TextInput(attrs={'size': '60'}),
     )
     logo_url = forms.CharField(
         label='Logo url',
+        required=False,
+        widget=forms.TextInput(attrs={'size': '60'}),
     )
     active = forms.BooleanField(
         label='Conference is active',
@@ -46,7 +52,7 @@ class MeetingForm(forms.Form):
     )
     admins = MultiEmailField(
         label='Conference administrator emails (comma separated)',
-        widget=forms.CharField
+        widget=forms.TextInput(attrs={'size': '50'}),
     )
     public_projects = forms.BooleanField(
         label='Projects are public',
@@ -85,16 +91,17 @@ class MeetingForm(forms.Form):
         label='Mail subject'
     )
     field_mail_message_body = forms.CharField(
-        label='Message body for mail'
+        label='Message body for mail',
+        widget=forms.TextInput(attrs={'size': '60'}),
     )
     field_mail_attachment = forms.CharField(
-        label='Mail attachment message'
+        label='Mail attachment message',
+        widget=forms.TextInput(attrs={'size': '60'}),
     )
 
     def clean_endpoint(self):
         data = self.cleaned_data['endpoint']
-        edit = self.cleaned_data['edit']
-        if not edit:
+        if self.data.get('edit') == 'False':
             if Conference.find(Q('endpoint', 'iexact', data)).count() > 0:
                 raise forms.ValidationError(
                     'A meeting with this endpoint exists already.'
@@ -111,7 +118,7 @@ class MeetingForm(forms.Form):
     def clean_admins(self):
         data = self.cleaned_data['admins']
         for email in data:
-            user = User.get_user(email=email)
+            user = get_user(email=email)
             if not user or user is None:
                 raise forms.ValidationError(
                     '{} does not have an OSF account'.format(email)

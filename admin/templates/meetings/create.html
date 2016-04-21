@@ -1,1 +1,25 @@
 {% extends 'base.html' %}
+{% load render_bundle from webpack_loader %}
+
+{% load static %}
+{% block title %}
+    <title>OSF Admin | Meetings</title>
+{% endblock title %}
+
+{% block content %}
+    <form action="{% url 'meetings:create' %}" method="post">
+    {{ form.non_field_errors }}
+    {% csrf_token %}
+    {% for field in form %}
+        <div class="fieldWrapper">
+            <span class="text-danger">{{ field.errors }}</span>
+            {% if not field.is_hidden %}
+            {{ field.label_tag }} <br>
+            {% endif %}
+            {{ field }}
+        </div>
+        <br>
+    {% endfor %}
+    <input type="submit" class="btn btn-primary" value="Save">
+    </form>
+{% endblock content %}
