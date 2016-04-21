@@ -34,8 +34,7 @@
 	                </div>
                 </span>
                 <p data-bind="if: !logs().length && !loading()" class="help-block">
-                    No logs to show. Click the watch icon (<i class="fa fa-eye"></i>) on a
-                    project's page to get activity updates here.
+                    No logs to show.g
                 </p>
                 <span data-bind="if: !loading()">
                     <dl class="dl-horizontal activity-log" data-bind="foreach: {data: logs, as: 'log'}"  >
