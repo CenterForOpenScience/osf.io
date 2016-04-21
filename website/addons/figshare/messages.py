@@ -25,21 +25,22 @@ FIGSHARE_VIEW_FILE_PRIVATE = 'Since this figshare file is unpublished we cannot 
 
 FIGSHARE_VIEW_FILE_OVERSIZED = 'This figshare file is too large to render; <u><a href="{url}">download file</a></u> to view it. '
 
-'''
-Publishing this article is an irreversible operation. Once a figshare article is published it can never be deleted. Proceed with caution.
-<br /><br />
-Also, figshare requires some additional info before this article can be published: <br />
-<form id='figsharePublishForm' action='${nodeApiUrl}figshare/publish/article/${parent_id}/'>
-    <h3><label><Title></label></h3>
-    <input name='title' type='text' value='${figshare_title}'>
-    <h3><label>Category:</label></h3>
-    <select name='cat' id='figshareCategory' value='${figshare_category}'>${figshare_categories}</select><br />
-    <h3><label>Tag(s):</label></h3>
-    <input name='tags' type='text' value='${figshare_tags}' placeholder='e.g. neuroscience, cognition'><br />
-    <h3><label>Description</label></h3>
-    <textarea name='description' placeholder='Please type a description of this file here'>${figshare_desc}</textarea>
-</form>
-'''
+# Language not associated with any string
+# '''
+# Publishing this article is an irreversible operation. Once a figshare article is published it can never be deleted. Proceed with caution.
+# <br /><br />
+# Also, figshare requires some additional info before this article can be published: <br />
+# <form id='figsharePublishForm' action='${nodeApiUrl}figshare/publish/article/${parent_id}/'>
+#     <h3><label><Title></label></h3>
+#     <input name='title' type='text' value='${figshare_title}'>
+#     <h3><label>Category:</label></h3>
+#     <select name='cat' id='figshareCategory' value='${figshare_category}'>${figshare_categories}</select><br />
+#     <h3><label>Tag(s):</label></h3>
+#     <input name='tags' type='text' value='${figshare_tags}' placeholder='e.g. neuroscience, cognition'><br />
+#     <h3><label>Description</label></h3>
+#     <textarea name='description' placeholder='Please type a description of this file here'>${figshare_desc}</textarea>
+# </form>
+# '''
 
 OAUTH_INVALID = 'Your OAuth key for figshare is no longer valid. Please re-authenticate. '
 
