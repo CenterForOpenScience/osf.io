@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import httplib as http
-import time
-import datetime
 
 from flask import request
 from modularodm.exceptions import ValidationError, ValidationValueError
@@ -21,6 +19,7 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions import session
 from framework.transactions.handlers import no_auto_transaction
 
+from website.util.time import get_timestamp, throttle_period_expired
 from website import mails
 from website import language
 from website import security
@@ -359,19 +358,6 @@ def project_remove_contributor(auth, **kwargs):
             else:
                 redirect_url = {'redirectUrl': web_url_for('dashboard')}
     return redirect_url
-
-
-def get_timestamp():
-    return int(time.time())
-
-
-def throttle_period_expired(timestamp, throttle):
-    if not timestamp:
-        return True
-    elif isinstance(timestamp, datetime.datetime):
-        return (datetime.datetime.utcnow() - timestamp).total_seconds() > throttle
-    else:
-        return (get_timestamp() - timestamp) > throttle
 
 
 def send_claim_registered_email(claimer, unreg_user, node, throttle=24 * 3600):
