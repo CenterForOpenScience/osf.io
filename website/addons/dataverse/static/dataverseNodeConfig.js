@@ -118,7 +118,7 @@ function ViewModel(url) {
         }),
         setInfoSuccess: ko.pureComputed(function() {
             var filesUrl = window.contextVars.node.urls.web + 'files/';
-            return 'Successfully linked dataset \'' + self.savedDatasetTitle() + '\'. Go to the <a href="' +
+            return 'Successfully linked dataset \'' + $osf.htmlEscape(self.savedDatasetTitle()) + '\'. Go to the <a href="' +
                 filesUrl + '">Files page</a> to view your content.';
         }),
         setDatasetError: ko.pureComputed(function() {
