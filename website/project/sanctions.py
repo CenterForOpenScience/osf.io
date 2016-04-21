@@ -950,7 +950,11 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
             }
 
     def _email_template_context(self, user, node, is_authorizer=False, urls=None):
-        context = super(EmbargoTerminationApproval, self)._email_template_context(user, node, is_authorizer, urls)
+        context = super(EmbargoTerminationApproval, self)._email_template_context(
+            user,
+            node,
+            is_authorizer=is_authorizer
+        )
         urls = urls or self.stashed_urls.get(user._id, {})
         registration_link = urls.get('view', self._view_url(user._id, node))
         if is_authorizer:
