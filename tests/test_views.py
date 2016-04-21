@@ -1813,6 +1813,24 @@ class TestUserAccount(OsfTestCase):
         for password in ('', '      '):
             self.test_password_change_invalid_blank_password('password', 'new password', password)
 
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_user_cannot_request_account_export_before_throttle_expires(self, send_mail):
+        url = api_url_for('request_export')
+        self.app.post(url, auth=self.user.auth)
+        assert_true(send_mail.called)
+        res = self.app.post(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(send_mail.call_count, 1)
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_user_cannot_request_account_deactivation_before_throttle_expires(self, send_mail):
+        url = api_url_for('request_deactivation')
+        self.app.post(url, auth=self.user.auth)
+        assert_true(send_mail.called)
+        res = self.app.post(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(send_mail.call_count, 1)
+
 
 class TestAddingContributorViews(OsfTestCase):
 
@@ -3451,6 +3469,18 @@ class TestAuthViews(OsfTestCase):
         res = self.app.put_json(url, {'id': self.user._id, 'email': header}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['message_long'], 'Cannnot resend confirmation for confirmed emails')
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_resend_confirmation_does_not_send_before_throttle_expires(self, send_mail):
+        email = 'test@example.com'
+        self.user.save()
+        url = api_url_for('resend_confirmation')
+        header = {'address': email, 'primary': False, 'confirmed': False}
+        self.app.put_json(url, {'id': self.user._id, 'email': header}, auth=self.user.auth)
+        assert_true(send_mail.called)
+        # 2nd call does not send email because throttle period has not expired
+        res = self.app.put_json(url, {'id': self.user._id, 'email': header}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
 
     def test_confirm_email_clears_unclaimed_records_and_revokes_token(self):
         unclaimed_user = UnconfirmedUserFactory()

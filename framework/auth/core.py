@@ -291,7 +291,7 @@ class User(GuidStoredObject, AddonModelMixin):
     # verification key used for resetting password
     verification_key = fields.StringField()
 
-    forgot_password_last_post = fields.DateTimeField()
+    email_last_sent = fields.DateTimeField()
 
     # confirmed emails
     #   emails should be stripped of whitespace and lower-cased before appending

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import datetime
 import logging
 import httplib
 import httplib as http  # TODO: Inconsistent usage of aliased import
@@ -27,6 +28,7 @@ from website.project.model import Node
 from website.models import ApiOAuth2Application, ApiOAuth2PersonalToken, User
 from website.oauth.utils import get_available_scopes
 from website.profile import utils as profile_utils
+from website.util.time import throttle_period_expired
 from website.util import api_v2_url, web_url_for, paths
 from website.util.sanitize import escape_html
 from website.util.sanitize import strip_html
@@ -102,6 +104,9 @@ def resend_confirmation(auth):
     data = request.get_json()
 
     validate_user(data, user)
+    if not throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
+        raise HTTPError(httplib.BAD_REQUEST,
+                        data={'message_long': 'Too many requests. Please wait a while before sending another confirmation email.'})
 
     try:
         primary = data['email']['primary']
@@ -118,6 +123,7 @@ def resend_confirmation(auth):
     # TODO: This setting is now named incorrectly.
     if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
         send_confirm_email(user, email=address)
+        user.email_last_sent = datetime.datetime.utcnow()
 
     user.save()
 
@@ -777,21 +783,39 @@ def unserialize_schools(auth, **kwargs):
 
 @must_be_logged_in
 def request_export(auth):
+    user = auth.user
+    if not throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
+        raise HTTPError(httplib.BAD_REQUEST,
+                        data={'message_long': 'Too many requests. Please wait a while before sending another account export request.',
+                              'error_type': 'throttle_error'})
+
     mails.send_mail(
         to_addr=settings.SUPPORT_EMAIL,
         mail=mails.REQUEST_EXPORT,
         user=auth.user,
     )
+    user.email_last_sent = datetime.datetime.utcnow()
+    user.save()
     return {'message': 'Sent account export request'}
 
 
 @must_be_logged_in
 def request_deactivation(auth):
+    user = auth.user
+    if not throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
+        raise HTTPError(http.BAD_REQUEST,
+                        data={
+                            'message_long': 'Too many requests. Please wait a while before sending another account deactivation request.',
+                            'error_type': 'throttle_error'
+                        })
+
     mails.send_mail(
         to_addr=settings.SUPPORT_EMAIL,
         mail=mails.REQUEST_DEACTIVATION,
         user=auth.user,
     )
+    user.email_last_sent = datetime.datetime.utcnow()
+    user.save()
     return {'message': 'Sent account deactivation request'}
 
 
