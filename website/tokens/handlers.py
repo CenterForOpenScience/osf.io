@@ -24,6 +24,14 @@ def embargo_handler(action, registration, registered_from):
     # Allow decorated view function to return response
     return None
 
+def embargo_termination_handler(action, registration, registered_from):
+    status.push_status_message({
+        'approve': 'Your approval of making this emabrgo public has been accepted.',
+        'reject': 'Your disapproval has been accepted and this embargo will not be made public.',
+    }[action], kind='success', trust=False)
+    # Allow decorated view function to return response
+    return None
+
 def retraction_handler(action, registration, registered_from):
     status.push_status_message({
         'approve': 'Your withdrawal approval has been accepted.',
@@ -34,11 +42,18 @@ def retraction_handler(action, registration, registered_from):
 
 @must_be_logged_in
 def sanction_handler(kind, action, payload, encoded_token, auth, **kwargs):
-    from website.models import Node, RegistrationApproval, Embargo, Retraction
+    from website.models import (
+        Node,
+        Embargo,
+        EmbargoTerminationApproval,
+        RegistrationApproval,
+        Retraction
+    )
 
     Model = {
         'registration': RegistrationApproval,
         'embargo': Embargo,
+        'embargo_termination_approval': EmbargoTerminationApproval,
         'retraction': Retraction
     }.get(kind, None)
     if not Model:
@@ -83,5 +98,6 @@ def sanction_handler(kind, action, payload, encoded_token, auth, **kwargs):
         return {
             'registration': registration_approval_handler,
             'embargo': embargo_handler,
+            'embargo_termination_approval': embargo_termination_handler,
             'retraction': retraction_handler,
         }[kind](action, registration, registered_from)
