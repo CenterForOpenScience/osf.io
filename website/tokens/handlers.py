@@ -1,4 +1,5 @@
 import httplib as http
+from flask import redirect, request
 
 from modularodm import Q
 
@@ -68,8 +69,8 @@ def sanction_handler(kind, action, payload, encoded_token, auth, **kwargs):
         err_code = http.BAD_REQUEST
         err_message = 'There is no {0} associated with this token.'.format(Model.DISPLAY_NAME)
     elif sanction.is_approved:
-        err_code = http.BAD_REQUEST if kind in ['registration', 'embargo'] else http.GONE
-        err_message = "This registration is not pending {0}.".format(sanction.DISPLAY_NAME)
+        # Simply strip query params and redirect if already approved
+        return redirect(request.base_url)
     elif sanction.is_rejected:
         err_code = http.GONE if kind in ['registration', 'embargo'] else http.BAD_REQUEST
         err_message = "This registration {0} has been rejected.".format(sanction.DISPLAY_NAME)
