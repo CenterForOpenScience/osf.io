@@ -1,18 +1,21 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-import sys
+
 import logging
 import datetime
 
 from modularodm import Q
 from dateutil.relativedelta import relativedelta
 
+from framework.celery_tasks import app as celery_app
+
 from scripts import utils as scripts_utils
+
 from website.app import init_app
+from website.addons.box.model import Box
 from website.oauth.models import ExternalAccount
 from website.addons.base.exceptions import AddonError
-from website.addons.box.model import Box
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -42,15 +45,15 @@ def main(delta, dry_run):
                 logger.error(ex.message)
 
 
-if __name__ == '__main__':
+@celery_app.task(name='scripts.refresh_box_tokens')
+def run_main(days=None, dry_run=True):
     init_app(set_backends=True, routes=False)
-    dry_run = 'dry' in sys.argv
     try:
-        days = int(sys.argv[2])
-    except (IndexError, ValueError, TypeError):
+        days = int(days)
+    except (ValueError, TypeError):
         days = 60 - 7  # refresh tokens that expire this week
     delta = relativedelta(days=days)
-    # Log to file
     if not dry_run:
         scripts_utils.add_file_logger(logger, __file__)
     main(delta, dry_run=dry_run)
+

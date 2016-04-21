@@ -71,10 +71,10 @@ module.exports = {
                 'This will revoke access to GitHub for all projects you have ' +
                 'associated with this account.',
         },
-        s3: {
-            confirmDeauth: 'Are you sure you want to disconnect the S3 account? ' +
-                'This will revoke access to S3 for all projects you have ' +
-                'associated with this account.',
+        s3:{
+            authError: 'Could not connect to Amazon S3 at this time. Please try again later.',
+            userSettingsError: 'Could not retrieve settings. Please refresh the page or ' +
+                'contact ' + SUPPORT_LINK + ' if the problem persists.',
         },
         googledrive: {
           // Shown on clicking "Delete Access Token" for googledrive

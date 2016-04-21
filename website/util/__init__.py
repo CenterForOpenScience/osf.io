@@ -24,6 +24,7 @@ guid_url_node_pattern = re.compile('^/project/[a-zA-Z0-9]{5,}/node(?=/[a-zA-Z0-9
 guid_url_project_pattern = re.compile('^/project(?=/[a-zA-Z0-9]{5,})')
 guid_url_profile_pattern = re.compile('^/profile(?=/[a-zA-Z0-9]{5,})')
 
+
 waterbutler_action_map = {
     'upload': 'file',
     'delete': 'file',
@@ -33,7 +34,7 @@ waterbutler_action_map = {
 }
 
 
-# Function courtesty of @brianjgeiger and @abought, moved from API utils
+# Function courtesy of @brianjgeiger and @abought, moved from API utils
 def rapply(data, func, *args, **kwargs):
     """Recursively apply a function to all values in an iterable
     :param dict | list | basestring data: iterable to apply func to
@@ -52,6 +53,7 @@ def rapply(data, func, *args, **kwargs):
     else:
         return func(data, *args, **kwargs)
 
+
 def conjunct(words, conj='and'):
     words = list(words)
     num_words = len(words)
@@ -64,6 +66,7 @@ def conjunct(words, conj='and'):
     elif num_words > 2:
         return ', '.join(words[:-1]) + ', {0} {1}'.format(conj, words[-1])
 
+
 def _get_guid_url_for(url):
     """URL Post-processor transforms specific `/project/<pid>` or `/project/<pid>/node/<nid>`
     urls into guid urls. Ex: `<nid>/wiki/home`.
@@ -72,6 +75,7 @@ def _get_guid_url_for(url):
     guid_url = guid_url_project_pattern.sub('', guid_url, count=1)
     guid_url = guid_url_profile_pattern.sub('', guid_url, count=1)
     return guid_url
+
 
 def api_url_for(view_name, _absolute=False, _xml=False, *args, **kwargs):
     """Reverse URL lookup for API routes (that use the JSONRenderer or XMLRenderer).
@@ -146,7 +150,7 @@ def waterbutler_url_for(route, provider, path, node, user=None, **kwargs):
     :param str path: The path of the requested file or folder
     :param Node node: The node being accessed
     :param User user: The user whos cookie will be used or None
-    :param dict **query: Addition query parameters to be appended
+    :param dict kwargs: Addition query parameters to be appended
     """
     url = furl.furl(website_settings.WATERBUTLER_URL)
     url.path.segments.append(waterbutler_action_map[route])
@@ -173,6 +177,7 @@ def waterbutler_url_for(route, provider, path, node, user=None, **kwargs):
     url.args.update(kwargs)
     return url.url
 
+
 def waterbutler_api_url_for(node_id, provider, path='/', **kwargs):
     assert path.startswith('/'), 'Path must always start with /'
     url = furl.furl(website_settings.WATERBUTLER_URL)
@@ -180,6 +185,7 @@ def waterbutler_api_url_for(node_id, provider, path='/', **kwargs):
     url.path.segments.extend([urllib.quote(x.encode('utf-8')) for x in segments])
     url.args.update(kwargs)
     return url.url
+
 
 @contextmanager
 def disconnected_from(signal, listener):
