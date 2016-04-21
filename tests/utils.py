@@ -82,6 +82,9 @@ def mock_archive(project, schema=None, auth=None, data=None, parent=None,
     :param bool embargo: embargo the registration (rather than RegistrationApproval)
     :param bool autocomplete: automatically finish archival?
     :param bool autoapprove: automatically approve registration approval?
+    :param bool retraction: retract the registration?
+    :param str justification: a justification for the retraction
+    :param bool autoapprove_retraction: automatically approve retraction?
 
     Example use:
 
@@ -141,6 +144,7 @@ def mock_archive(project, schema=None, auth=None, data=None, parent=None,
         sanction.save()
 
     if retraction:
+        justification = justification or "Because reasons"
         retraction = registration.retract_registration(project.creator, justification=justification)
         if autoapprove_retraction:
             retraction.state = Sanction.APPROVED
