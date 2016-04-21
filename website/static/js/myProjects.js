@@ -726,7 +726,7 @@ var MyProjects = {
             self.nameFilters = [];
 
             var userFinder = function(lo) {
-                if (lodashGet(u2, 'unregistered_contributors')) {
+                if (u2.unregistered_contributors) {
                     return lo.label === u2.unregistered_contributors;
                 }
               return lo.label === u2.data.embeds.users.data.attributes.full_name;
@@ -737,7 +737,7 @@ var MyProjects = {
                 var u2 = self.users[user];
                 if (u2.data.embeds.users.data) {
                     var name;
-                    if (lodashGet(u2, 'unregistered_contributors')) {
+                    if (u2.unregistered_contributors) {
                         name = u2.unregistered_contributors;
                     }
                     else {
