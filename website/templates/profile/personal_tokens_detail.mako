@@ -62,12 +62,12 @@
 
                     <div id="token-keys" class="border-box text-left"
                          data-bind="visible: $root.showToken()">
-                        <div class="bg-danger lead token-warning">This is the only time your token will be displayed.</div>
+                        <div class="bg-danger f-w-xl token-warning">This is the only time your token will be displayed.</div>
                         <label class="f-w-xl">Token ID</label>
                         <i class="fa fa-info-circle text-muted" data-bind="tooltip: {title:'ID used to authenticate with this token. This will be shown only once.',        placement: 'bottom'}"></i>
                         <span data-bind="text: token_id" id="token-id-text"></span>
                         <div>
-                            <button type="button" class="btn btn-primary" data-clipboard-target="#token-id-text" id="copy-button">Copy Token to Clipboard</button>
+                            <button type="button" class="btn btn-primary" data-clipboard-target="#token-id-text" id="copy-button"><i class="fa fa-copy"></i> Copy to clipboard</button>
                         </div>
                     </div>
                 </form>

@@ -655,4 +655,11 @@ button.close {
 .token-warning {
     margin-bottom: 5px;
     margin-top: 15px;
+    padding-left: 10px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+#copy-button {
+    margin-top: 10px;
 }
