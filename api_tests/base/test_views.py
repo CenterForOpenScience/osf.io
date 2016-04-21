@@ -102,7 +102,6 @@ class TestJSONAPIBaseView(ApiTestCase):
         self.user = factories.AuthUserFactory()
         self.node = factories.ProjectFactory(creator=self.user)
         self.url = '/{0}nodes/{1}/'.format(API_BASE, self.node._id)
-        self.reverse_sort_url = '/{0}users/me/nodes/{1}/'.format(API_BASE, '?sort=-title')
         for i in range(5):
             factories.ProjectFactory(parent=self.node, creator=self.user)
         for i in range(5):

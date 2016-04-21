@@ -17,8 +17,6 @@ from api.base.filters import ODMOrderingFilter
 
 import api.base.filters as filters 
 
-from rest_framework.test import force_authenticate
-
 from api.base.exceptions import (
     InvalidFilterError,
     InvalidFilterOperator,
@@ -261,7 +259,7 @@ class TestODMOrderingFilter(ApiTestCase):
 
     def test_filter_queryset_forward_duplicate(self):
         query_to_be_sorted = [self.query(x) for x in 'NewProj Activity Zip Activity'.split()]
-        sorted_query = sorted(query_to_be_sorted, cmp=filters.sort_multiple(['-title']))
+        sorted_query = sorted(query_to_be_sorted, cmp=filters.sort_multiple(['title']))
         sorted_output = [str(i) for i in sorted_query]
         assert_equal((sorted_output) , ['Activity', 'Activity', 'NewProj', 'Zip'])
 
