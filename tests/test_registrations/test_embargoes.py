@@ -968,6 +968,33 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         assert_true(reg.embargo_termination_approval)
         assert_true(reg.embargo_termination_approval.is_pending_approval)
 
+    @mock.patch('website.mails.send_mail')
+    def test_embargoed_registration_set_privacy_multiple_admins_send_mail(self, mock_send_mail):
+        """
+        Integration test for https://github.com/CenterForOpenScience/osf.io/pull/5294#issuecomment-212613668
+        """
+        # Initiate and approve embargo
+        for i in range(3):
+            c = AuthUserFactory()
+            self.registration.add_contributor(c, [permissions.ADMIN], auth=Auth(self.user))
+        self.registration.save()
+        self.registration.embargo_registration(
+            self.user,
+            datetime.datetime.utcnow() + datetime.timedelta(days=10)
+        )
+        for user_id, embargo_tokens in self.registration.embargo.approval_state.iteritems():
+            approval_token = embargo_tokens['approval_token']
+            self.registration.embargo.approve_embargo(User.load(user_id), approval_token)
+        self.registration.save()
+
+        res = self.app.post(
+            self.registration.api_url_for('project_set_privacy', permissions='public'),
+            auth=self.user.auth,
+        )
+        assert_equal(res.status_code, 200)
+        for admin in self.registration.admin_contributors:
+            assert_true(any([c[0][0] == admin.username for c in mock_send_mail.call_args_list]))
+
     @mock.patch('website.project.sanctions.TokenApprovableSanction.ask')
     def test_make_child_embargoed_registration_public_asks_all_admins_in_tree(self, mock_ask):
         # Initiate and approve embargo
