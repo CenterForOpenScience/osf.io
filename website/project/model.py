@@ -351,7 +351,7 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
 
         return comment
 
-    def edit(self, content, auth, save=False):
+    def edit(self, content, new_mentions, auth, save=False):
         if not self.node.can_comment(auth) or self.user._id != auth.user._id:
             raise PermissionsError('{0!r} does not have permission to edit this comment'.format(auth.user))
         log_dict = {
@@ -365,7 +365,8 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
         self.modified = True
         self.date_modified = datetime.datetime.utcnow()
 
-        if (self.new_mentions):
+        if (new_mentions):
+            self.new_mentions = new_mentions
             old_mentions = self.old_mentions
             validate = lambda m: m not in old_mentions and validate_contributor(m, self.node.contributors)
             self.new_mentions = filter(validate, self.new_mentions)
@@ -1487,6 +1488,34 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
         if save:
             self.save()
+
+    def subscribe_user_to_notifications(self, user):
+        """ Update the notification settings for the creator or contributors
+
+        :param user: User to subscribe to notifications
+        """
+        from website.notifications.utils import to_subscription_key
+        from website.notifications.utils import get_global_notification_type
+        from website.notifications.model import NotificationSubscription
+
+        events = ['file_updated', 'comments', 'mentions']
+        notification_type = 'email_transactional'
+        target_id = self._id
+
+        for event in events:
+            event_id = to_subscription_key(target_id, event)
+            global_event_id = to_subscription_key(user._id, 'global_' + event)
+            global_subscription = NotificationSubscription.load(global_event_id)
+
+            subscription = NotificationSubscription.load(event_id)
+            if not subscription:
+                subscription = NotificationSubscription(_id=event_id, owner=self, event_name=event)
+            if global_subscription:
+                global_notification_type = get_global_notification_type(global_subscription, user)
+                subscription.add_user_to_subscription(user, global_notification_type)
+            else:
+                subscription.add_user_to_subscription(user, notification_type)
+            subscription.save()
 
     def update(self, fields, auth=None, save=True):
         """Update the node with the given fields.

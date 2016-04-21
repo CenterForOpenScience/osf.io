@@ -270,6 +270,7 @@ var BaseComment = function() {
         if (!content) {
             content = '';
         }
+        self.replyMentions([]);
         var regex = /<span.*?data-atwho-guid="([a-z\d]{5})".*?>((@|\+)[\w\s]+)<\/span>/;
         var matches = content.match(/<span.*?data-atwho-guid="([a-z\d]{5})".*?>((@|\+)[\w\s]+)<\/span>/g);
         if (matches) {
@@ -322,6 +323,7 @@ BaseComment.prototype.cancelReply = function() {
     this.submittingReply(false);
     this.replyErrorMessage('');
     this.errorMessage('');
+    this.replyMentions([]);
 };
 
 BaseComment.prototype.setupToolTips = function(elm) {
@@ -569,6 +571,7 @@ var CommentModel = function(data, $parent, $root) {
         if (!content) {
             content = '';
         }
+        self.replyMentions([]);
         var regex = /<span.*?data-atwho-guid="([a-z\d]{5})".*?>((@|\+)[\w\s]+)<\/span>/;
         var matches = content.match(/<span.*?data-atwho-guid="([a-z\d]{5})".*?>((@|\+)[\w\s]+)<\/span>/g);
         if (matches) {
@@ -666,6 +669,7 @@ CommentModel.prototype.cancelEdit = function() {
     this.$root.editors -= 1;
     this.editErrorMessage('');
     this.errorMessage('');
+    this.replyMentions([]);
     this.content(this._content);
 };
 
