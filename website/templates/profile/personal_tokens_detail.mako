@@ -44,20 +44,7 @@
                         <p data-bind="validationMessage: scopes, visible: $root.showMessages()" class="text-danger"></p>
                     </div>
 
-                    <br/>
-                    <div id="token-keys" class="border-box text-left"
-                         data-bind="visible: $root.showToken()">
-                        <label>Token ID</label>
-                        <i class="fa fa-info-circle text-muted" data-bind="tooltip: {title:'ID used to authenticate with this token. This will be shown only once.',        placement: 'bottom'}"></i>
-                        <span data-bind="text: token_id"></span>
-                    </div>
-
-                    <!-- Flashed Messages -->
-                    <div class="help-block">
-                        <p data-bind="html: $root.message, attr: {class: $root.messageClass}"></p>
-                    </div>
-
-                    <div class="padded">
+                    <div class="padded action-buttons">
                         <button type="reset" class="btn btn-default"
                                 data-bind="click: $root.cancelChange.bind($root)">Cancel</button>
                         <button type="submit" class="btn btn-success"
@@ -66,6 +53,22 @@
                                 data-bind="visible: !$root.isCreateView(), click: $root.deleteToken.bind($root)">Delete</button>
                         <button type="submit" class="btn btn-success"
                                 data-bind="visible: !$root.isCreateView()">Save</button>
+                    </div>
+
+                    <!-- Flashed Messages -->
+                    <div class="help-block">
+                        <p data-bind="html: $root.message, attr: {class: $root.messageClass}"></p>
+                    </div>
+
+                    <div id="token-keys" class="border-box text-left"
+                         data-bind="visible: $root.showToken()">
+                        <div class="bg-warning lead token-warning">This is the only time your token will be displayed.</div>
+                        <label>Token ID</label>
+                        <i class="fa fa-info-circle text-muted" data-bind="tooltip: {title:'ID used to authenticate with this token. This will be shown only once.',        placement: 'bottom'}"></i>
+                        <span data-bind="text: token_id" id="token-id-text"></span>
+                        <div>
+                            <button type="button" class="btn btn-primary" data-clipboard-target="#token-id-text" id="copy-button">Copy Token to Clipboard</button>
+                        </div>
                     </div>
                 </form>
 
