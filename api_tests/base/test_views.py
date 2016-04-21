@@ -17,6 +17,8 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticate
 from api.base.permissions import TokenHasScope
 from website.settings import DEBUG_MODE
 
+from django.contrib.auth.models import User
+
 import importlib
 
 URLS_MODULES = []
@@ -100,6 +102,7 @@ class TestJSONAPIBaseView(ApiTestCase):
         self.user = factories.AuthUserFactory()
         self.node = factories.ProjectFactory(creator=self.user)
         self.url = '/{0}nodes/{1}/'.format(API_BASE, self.node._id)
+        self.reverse_sort_url = '/{0}users/me/nodes/{1}/'.format(API_BASE, '?sort=-title')
         for i in range(5):
             factories.ProjectFactory(parent=self.node, creator=self.user)
         for i in range(5):
@@ -109,5 +112,9 @@ class TestJSONAPIBaseView(ApiTestCase):
     def test_request_added_to_serializer_context(self, mock_to_representation):
         self.app.get(self.url, auth=self.user.auth)
         assert_in('request', mock_to_representation.call_args[0][0].context)
+
+    def test_reverse_sort_possible(self):
+        response = self.app.get('http://localhost:8000/v2/users/me/nodes/?sort=-title', auth=self.user.auth)
+        assert_equal(response.status_code, 200)
 
 

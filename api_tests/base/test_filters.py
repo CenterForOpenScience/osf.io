@@ -17,6 +17,8 @@ from api.base.filters import ODMOrderingFilter
 
 import api.base.filters as filters 
 
+from rest_framework.test import force_authenticate
+
 from api.base.exceptions import (
     InvalidFilterError,
     InvalidFilterOperator,
@@ -283,11 +285,4 @@ class TestODMOrderingFilter(ApiTestCase):
                 self.query_with_num(title='Activity', number=40)]
         actual = [x.number for x in sorted(objs, cmp=filters.sort_multiple(['title', '-number']))]
         assert_equal(actual, [40, 30, 10, 20])
-
-
-class TestAPIResponse(ApiTestCase):
-    def test_gives_500_error(self):
-        response = self.app.get('http://localhost:5000/v2/users/me/nodes/?sort=-title', follow=True)
-        assert_equal(response.status_code, 500)
-
 
