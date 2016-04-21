@@ -78,8 +78,14 @@ class AddonWikiNodeSettings(AddonNodeSettingsBase):
 
         self.save()
 
+    def after_fork(self, node, fork, user, save=True):
+        """Copy wiki settings and wiki pages to forks."""
+        NodeWikiPage.clone_wiki_versions(node, fork, user, save)
+        return super(AddonWikiNodeSettings, self).after_fork(node, fork, user, save)
+
     def after_register(self, node, registration, user, save=True):
-        """Copy wiki settings to registrations."""
+        """Copy wiki settings and wiki pages to registrations."""
+        NodeWikiPage.clone_wiki_versions(node, registration, user, save)
         clone = self.clone()
         clone.owner = registration
         if save:
@@ -257,3 +263,29 @@ class NodeWikiPage(GuidStoredObject, Commentable):
 
     def to_json(self):
         return {}
+
+    @classmethod
+    def clone_wiki_versions(cls, node, copy, user, save=True):
+        """Clone wiki pages for a forked or registered project.
+        :param node: The Node that was forked/registered
+        :param copy: The fork/registration
+        :param user: The user who forked or registered the node
+        :param save: Whether to save the fork/registration
+        :return: copy
+        """
+        copy.wiki_pages_versions = {}
+        copy.wiki_pages_current = {}
+
+        for key in node.wiki_pages_versions:
+            copy.wiki_pages_versions[key] = []
+            for wiki_id in node.wiki_pages_versions[key]:
+                node_wiki = NodeWikiPage.load(wiki_id)
+                cloned_version = node_wiki.clone()
+                cloned_version.node = copy
+                cloned_version.save()
+                copy.wiki_pages_versions[key].append(cloned_version._id)
+                if node_wiki.is_current:
+                    copy.wiki_pages_current[key] = cloned_version._id
+        if save:
+            copy.save()
+        return copy
