@@ -462,7 +462,11 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
             }
 
     def _email_template_context(self, user, node, is_authorizer=False, urls=None):
-        context = super(Embargo, self)._email_template_context(user, node, is_authorizer, urls)
+        context = super(Embargo, self)._email_template_context(
+            user,
+            node,
+            is_authorizer=is_authorizer
+        )
         urls = urls or self.stashed_urls.get(user._id, {})
         registration_link = urls.get('view', self._view_url(user._id, node))
         if is_authorizer:
@@ -986,3 +990,8 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
         super(EmbargoTerminationApproval, self)._on_complete(user)
         registration = self._get_registration()
         registration.terminate_embargo(Auth(user) if user else None)
+
+    def _on_reject(self, user=None):
+        # Just forget this ever happened.
+        self.embargoed_registration.embargo_termination_approval = None
+        self.embargoed_registration.save()
