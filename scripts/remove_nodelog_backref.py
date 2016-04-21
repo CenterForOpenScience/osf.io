@@ -100,6 +100,8 @@ def migrate(dry=True):
         logs = db.nodelog.find({'_id': {'$in': node['logs']}})
 
         for log in logs:
+            if node['_id'] in log.get('was_connected_to', []):
+                continue
             should_copy = migrate_log(log=log, node_id=node['_id'])
             if should_copy:
                 clone = copy_log(log=log, node_id=node['_id'])
@@ -133,7 +135,7 @@ def migrate(dry=True):
         except KeyError:
             node_ids = []
 
-        if not node_ids and not log.get('was_connected_to'):
+        if not node_ids or log.get('was_connected_to'):
             logger.warn('Null or empty backref for log {}'.format(log_id))
             no_backref.append(log_id)
             continue
