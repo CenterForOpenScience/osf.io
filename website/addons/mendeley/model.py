@@ -7,12 +7,14 @@ from mendeley.exception import MendeleyApiException
 from modularodm import fields
 
 from website.addons.base import AddonOAuthUserSettingsBase
+from website.addons.base.exceptions import InvalidAuthError
 from website.addons.mendeley.serializer import MendeleySerializer
 from website.addons.mendeley import settings
 from website.addons.mendeley.api import APISession
 from website.citations.models import AddonCitationsNodeSettings
 from website.citations.providers import CitationsOauthProvider
 from website.util import web_url_for
+
 
 from framework.exceptions import HTTPError
 
@@ -71,7 +73,10 @@ class Mendeley(CitationsOauthProvider):
             self._client.folders.list()
         except MendeleyApiException as error:
             if error.status == 401 and 'Token has expired' in error.message:
-                self.refresh_oauth_key()
+                try:
+                    self.refresh_oauth_key()
+                except InvalidAuthError:
+                    raise HTTPError(401)
             else:
                 self._client = None
                 if error.status == 403:
