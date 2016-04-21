@@ -2099,11 +2099,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if original.is_deleted:
             raise NodeStateError('Cannot fork deleted node.')
 
-        # Note: Cloning a node copies its `wiki_pages_current` and
-        # `wiki_pages_versions` fields, but does not clone the underlying
-        # database objects to which these dictionaries refer. This means that
-        # the cloned node must pass itself to its wiki objects to build the
-        # correct URLs to that content.
+        # Note: Cloning a node will clone each node wiki page version and add it to
+        # `registered.wiki_pages_current` and `registered.wiki_pages_versions`.
         forked = original.clone()
 
         forked.tags = self.tags
@@ -2127,6 +2124,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         forked.creator = user
         forked.piwik_site_id = None
         forked.node_license = original.license.copy() if original.license else None
+        forked.wiki_private_uuids = {}
 
         # Forks default to private status
         forked.is_public = False
@@ -2204,11 +2202,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
         original = self.load(self._primary_key)
 
-        # Note: Cloning a node copies its `wiki_pages_current` and
-        # `wiki_pages_versions` fields, but does not clone the underlying
-        # database objects to which these dictionaries refer. This means that
-        # the cloned node must pass itself to its wiki objects to build the
-        # correct URLs to that content.
+        # Note: Cloning a node will clone each node wiki page version and add it to
+        # `registered.wiki_pages_current` and `registered.wiki_pages_versions`.
         if original.is_deleted:
             raise NodeStateError('Cannot register deleted node.')
 
@@ -2232,6 +2227,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         registered._affiliated_institutions = self._affiliated_institutions
         registered.alternative_citations = self.alternative_citations
         registered.node_license = original.license.copy() if original.license else None
+        registered.wiki_private_uuids = {}
 
         registered.save()
 
