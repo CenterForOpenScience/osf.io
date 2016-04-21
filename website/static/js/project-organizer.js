@@ -57,9 +57,6 @@ function _poContributors(item) {
     if (item.data && item.data.embeds && item.data.embeds.contributors) {
         contributorList = item.data.embeds.contributors.data;
     }
-    if(!contributorList){
-        return '';
-    }
     if (contributorList.length === 0) {
         return '';
     }

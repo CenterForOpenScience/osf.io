@@ -174,7 +174,6 @@ var LogPieces = {
     node: {
         view: function (ctrl, logObject) {
             var nodeObject = logObject.embeds.original_node;
-            var logAction = logObject.attributes.action;
 
             // Log action is node_removed
             if (logObject.attributes.action === 'node_removed') {
@@ -198,9 +197,7 @@ var LogPieces = {
                      return m('span', deletedNode.title);
                 }
             }
-            else {
-                return m('span', 'a project');
-            }
+            return m('span', 'a project');
         }
     },
 
@@ -327,21 +324,15 @@ var LogPieces = {
     },
     // The new title of node involved
     title_new: {
-        controller: function(logObject){
-            var self = this;
+        view: function (ctrl, logObject) {
+            var url = null;
             var nodeObject = logObject.embeds.original_node;
 
-            self.returnLinkForPath = function(){
-                if(paramIsReturned(nodeObject, logObject) && nodeObject.data){
-                    if (nodeObject.data.links && nodeObject.data.attributes) {
-                        return nodeObject.data.links.html;
-                    }
-                }
-                return null;
-            };
-        },
-        view: function (ctrl, logObject) {
-            var url = ctrl.returnLinkForPath();
+            if (paramIsReturned(nodeObject, logObject && nodeObject.data)){
+                 if (nodeObject.data.links && nodeObject.data.attributes) {
+                     url = nodeObject.data.links.html;
+                 }
+            }
             return returnTextParams('title_new', 'a title', logObject, url);
         }
     },
@@ -368,29 +359,29 @@ var LogPieces = {
                 if (doi && ark) {
                     return m('span', 'doi:' + doi + ' and ark:' + ark);
                 }
+                if (doi) {
+                    return m('span', 'doi:' + doi);
+                }
+                if (ark) {
+                    return m('span', 'ark:' + ark );
+                }
             }
             return m('span', '');
         }
     },
     // Wiki page name
     page: {
-        controller: function(logObject){
-            var self = this;
-            self.action = logObject.attributes.action;
-            self.acceptableLinkedItems = ['wiki_updated', 'wiki_renamed'];
-            self.page_id = logObject.attributes.params.page_id;
-
-            self.returnLinkForPath = function() {
-                if (self.acceptableLinkedItems.indexOf(self.action) !== -1) {
-                    if (paramIsReturned(self.page_id, logObject)){
-                        return '/' + self.page_id;
-                    }
-                }
-                return null;
-            };
-        },
         view: function (ctrl, logObject) {
-            var url = ctrl.returnLinkForPath();
+            var url = null;
+            var action = logObject.attributes.action;
+            var acceptableLinkedItems = ['wiki_updated', 'wiki_renamed'];
+            var page_id = logObject.attributes.params.page_id;
+
+            if (acceptableLinkedItems.indexOf(action) !== -1) {
+                if (paramIsReturned(page_id, logObject)){
+                    url = '/' + page_id;
+                }
+            }
             return returnTextParams('page', 'a title', logObject, url);
         }
     },
@@ -415,10 +406,7 @@ var LogPieces = {
         view: function (ctrl, logObject) {
             var source = logObject.attributes.params.source;
             if(paramIsReturned(source, logObject)){
-                var sourceMaterialized = source.materialized;
-                if (sourceMaterialized.endsWith('/')) {
-                    sourceMaterialized = stripBackslash(source.materialized);
-                }
+                var sourceMaterialized = stripBackslash(source.materialized);
                 return m('span', [sourceMaterialized, ' in ', source.addon]);
             }
             return m('span','a name/location' );
