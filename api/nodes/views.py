@@ -13,7 +13,7 @@ from api.base.views import JSONAPIBaseView
 from api.base.parsers import JSONAPIOnetoOneRelationshipParser, JSONAPIOnetoOneRelationshipParserForRegularJSON
 from api.base.pagination import CommentPagination
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
-from api.base.settings import ADDONS_MANAGEABLE
+from api.base.settings import ADDONS_OAUTH
 from api.files.serializers import FileSerializer
 from api.comments.serializers import CommentSerializer, CommentCreateSerializer
 from api.comments.permissions import CanCommentOrPublic
@@ -1390,14 +1390,14 @@ class NodeAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, Node
 
     def get_default_queryset(self):
         qs = []
-        for addon in ADDONS_MANAGEABLE:
+        for addon in ADDONS_OAUTH:
             addon_settings = ADDONS_AVAILABLE_DICT[addon].settings_models.get('node', None)
             obj = None
             enabled = False
             try:
-                obj = addon_settings.find_one(Q('owner', 'eq', self.get_node()._id))
+                obj = addon_settings.find(Q('owner', 'eq', self.get_node()._id) & Q('deleted', 'eq', False))[0]
                 enabled = True
-            except:
+            except IndexError:
                 pass
             qs.append(
                 {
@@ -1406,7 +1406,6 @@ class NodeAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, Node
                     'object': obj
                 }
             )
-
         return qs
 
     get_queryset = get_default_queryset
@@ -1431,14 +1430,14 @@ class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin
 
     def get_object(self):
         addon = self.kwargs['provider']
-        if addon in ADDONS_MANAGEABLE:
+        if addon in ADDONS_OAUTH:
             addon_settings = ADDONS_AVAILABLE_DICT[addon].settings_models.get('node', None)
             obj = None
             enabled = False
             try:
-                obj = addon_settings.find_one(Q('owner', 'eq', self.get_node()))
+                obj = addon_settings.find(Q('owner', 'eq', self.get_node()) & Q('deleted', 'eq', False))[0]
                 enabled = True
-            except:
+            except IndexError:
                 pass
             return {
                 '_id': addon,
