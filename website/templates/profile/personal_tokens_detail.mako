@@ -62,8 +62,8 @@
 
                     <div id="token-keys" class="border-box text-left"
                          data-bind="visible: $root.showToken()">
-                        <div class="bg-warning lead token-warning">This is the only time your token will be displayed.</div>
-                        <label>Token ID</label>
+                        <div class="bg-danger lead token-warning">This is the only time your token will be displayed.</div>
+                        <label class="f-w-xl">Token ID</label>
                         <i class="fa fa-info-circle text-muted" data-bind="tooltip: {title:'ID used to authenticate with this token. This will be shown only once.',        placement: 'bottom'}"></i>
                         <span data-bind="text: token_id" id="token-id-text"></span>
                         <div>
