@@ -146,13 +146,3 @@ class UserInstitutionsRelationshipSerializer(ser.Serializer):
 
     class Meta:
         type_ = 'institutions'
-
-
-class UnregisteredContributorSerializer(UserSerializer):
-
-    unregistered_contributor = ser.SerializerMethodField()
-
-    def get_unregistered_contributor(self, obj):
-        if getattr(obj, 'unregistered_name', None):
-            return obj.unregistered_name
-        return None

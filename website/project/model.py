@@ -3046,7 +3046,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         :param permissions: A string, either 'public' or 'private'
         :param auth: All the auth information including user, API key.
         :param bool log: Whether to add a NodeLog for the privacy change.
-        :param bool meeting_creation: Whther this was creayed due to a meetings email.
+        :param bool meeting_creation: Whether this was created due to a meetings email.
         """
         if auth and not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Must be an admin to change privacy settings.')

@@ -1,8 +1,6 @@
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import NotFound
 
-from modularodm import Q
-from framework.auth.core import User
 from framework.auth.oauth_scopes import CoreScopes
 
 from website.models import NodeLog
@@ -10,9 +8,7 @@ from api.logs.permissions import (
     ContributorOrPublicForLogs
 )
 
-from api.base.filters import ODMFilterMixin
 from api.base import permissions as base_permissions
-from api.users.serializers import UnregisteredContributorSerializer
 from api.logs.serializers import NodeLogSerializer
 from api.base.views import JSONAPIBaseView
 
@@ -161,81 +157,3 @@ class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView, LogMixin):
     # overrides RetrieveUpdateDestroyAPIView
     def perform_destroy(self, instance):
         pass
-
-
-class NodeLogContributors(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin, LogMixin):
-    """List of contributors that a given log is associated with. *Read-only*.
-
-    Paginated list of users that were associated with a contributor log action. For example, if a log action was `contributor_added`,
-    the new contributors' names would be found at this endpoint. If the relevant log had nothing to do with contributors,
-    an empty list would be returned. Each resource contains the full representation of the user, meaning additional requests
-    to an individual user's detail view are not necessary.
-
-    ##User Attributes
-
-    <!--- Copied Attributes from UserDetail -->
-
-    OSF User entities have the "users" `type`.
-
-        name                        type                description
-        ========================================================================================
-        unregistered_contributor    string             contributor's assigned name if contributor hasn't yet claimed account
-        full_name                   string             full name of the user; used for display
-        given_name                  string             given name of the user; for bibliographic citations
-        middle_names                string             middle name of user; for bibliographic citations
-        family_name                 string             family name of user; for bibliographic citations
-        suffix                      string             suffix of user's name for bibliographic citations
-        date_registered             iso8601 timestamp  timestamp when the user's account was created
-
-
-    ##Links
-
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
-
-    ##Actions
-
-    *None*.
-
-    <!--- Copied Query Params from UserList -->
-
-    ##Query Params
-
-    + `page=<Int>` -- page number of results to view, default 1
-
-    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
-
-    Users may be filtered by their `id`, `full_name`, `given_name`, `middle_names`, or `family_name`.
-
-    + `profile_image_size=<Int>` -- Modifies `/links/profile_image_url` of the user entities so that it points to
-    the user's profile image scaled to the given size in pixels.  If left blank, the size depends on the image provider.
-
-    #This Request/Response
-    """
-
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope,
-        ContributorOrPublicForLogs
-    )
-
-    required_read_scopes = [CoreScopes.USERS_READ]
-    required_write_scopes = [CoreScopes.NULL]
-
-    serializer_class = UnregisteredContributorSerializer
-
-    view_category = 'logs'
-    view_name = 'log-contributors'
-
-    # overrides ListAPIView
-    def get_queryset(self):
-        log = self.get_log()
-        associated_contrib_ids = log.params.get('contributors')
-        if associated_contrib_ids is None:
-            return []
-        associated_users = User.find(Q('_id', 'in', associated_contrib_ids))
-        modified_users = []
-        for contrib in associated_users:
-            if contrib.unclaimed_records.get(log.original_node._id):
-                contrib.unregistered_name = contrib.unclaimed_records[log.original_node._id]['name']
-            modified_users.append(contrib)
-        return modified_users
