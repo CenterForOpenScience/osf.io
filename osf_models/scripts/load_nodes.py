@@ -7,7 +7,7 @@ init_app()
 from website.models import Node as MODMNode
 from website.models import Tag as MODMTag
 from modularodm import Q
-from osf_models.models import Node, User, Tag, Guid
+from osf_models.models import Node, User, Tag, Guid, Contributor
 import pytz
 from datetime import datetime
 
@@ -72,7 +72,7 @@ def process_node_fk_fields(modm_object):
     for fk_node_field in fk_node_fields:
         value = getattr(modm_object, fk_node_field, None)
         if value is not None:
-            if fk_node_field != 'root' and value != modm_object:
+            if fk_node_field in ['root', 'forked_from', ] and value != modm_object:
                 node = get_or_create_node(value)
                 if node is not None:
                     fk_nodes[fk_node_field] = node
@@ -127,17 +127,14 @@ def process_user_m2m_fields(modm_object):
                         m2m_users[m2m_user_field].append(user)
                     else:
                         m2m_users[m2m_user_field] = [user, ]
-
     return m2m_users
 
 
 def process_tag_m2m_fields(modm_object):
-    print 'Processing m2m tag fields'
     m2m_tags = {}
     for m2m_tag_field in m2m_tag_fields:
         value = getattr(modm_object, m2m_tag_field, None)
         if isinstance(value, list):
-            print 'Found {} tags in {}'.format(len(value), m2m_tag_field)
             for tv in value:
                 if m2m_tag_field == 'system_tags':
                     system = True
@@ -149,8 +146,6 @@ def process_tag_m2m_fields(modm_object):
                         m2m_tags[m2m_tag_field].append(tag)
                     else:
                         m2m_tags[m2m_tag_field] = [tag, ]
-        else:
-            print 'm2m tag field {} ain\'t no list... it\'s a {}'.format(m2m_tag_field, type(value))
 
     return m2m_tags
 
@@ -172,6 +167,7 @@ def get_or_create_user(modm_user):
         user_m2m_users = process_user_m2m_fields(modm_user)
         user_m2m_tags = process_tag_m2m_fields(modm_user)
         user_fields = {}
+        user_fields['_guid'] = Guid.objects.get(guid=modm_user._id)
         user_fields.update(modm_user.to_storage())
         user_fields.update(user_fk_nodes)
         user_fields.update(user_fk_users)
@@ -191,24 +187,39 @@ def get_or_create_tag(modm_tag, system=False):
     if isinstance(modm_tag, unicode):
         try:
             tag = Tag.objects.get(_id=modm_tag, system=system)
-            print 'Found existing `unicode` tag {}'.format(modm_tag)
         except Tag.DoesNotExist:
             tag = Tag.objects.create(lower=modm_tag.lower(), _id=modm_tag, system=system)
-            print 'Created `unicode` tag {}'.format(modm_tag)
     else:
         if system is True:
+            # this should never happen.
             print 'Encountered `unicode` tag that was not a system_tag {}'.format(modm_tag._id)
         try:
             tag = Tag.objects.get(_id=modm_tag._id, system=system)
-            print 'Found existing tag {}'.format(modm_tag._id)
         except Tag.DoesNotExist:
             tag_fields = modm_tag.to_storage()
             cleaned_tag = {key: tag_fields[key] for key in tag_fields if key not in tag_key_blacklist}
             cleaned_tag['system'] = system
             tag = Tag.objects.create(**cleaned_tag)
-            print 'Created tag {}'.format(modm_tag._id)
     tag_cache.append(tag)
     return tag
+
+
+def set_contributors(node, modm_node):
+    for modm_contributor in modm_node.contributors:
+        try:
+            user = User.objects.get(_guid__guid=modm_contributor._id)
+        except User.DoesNotExist:
+            user = get_or_create_user(modm_contributor)
+        visible = modm_contributor._id in modm_node.visible_contributor_ids
+        admin = 'admin' in modm_node.permissions[modm_contributor._id]
+        read = 'read' in modm_node.permissions[modm_contributor._id]
+        write = 'write' in modm_node.permissions[modm_contributor._id]
+        try:
+            contributor = Contributor.objects.get_or_create(user=user, visible=visible, admin=admin, read=read, write=write,
+                                                     node=node)
+        except BaseException as ex:
+            print 'Caught exception creating contributor for node {} and user {}: {}'.format(node._id,
+                                                                                             modm_contributor._id, ex)
 
 
 def get_or_create_node(modm_node):
@@ -234,6 +245,7 @@ def get_or_create_node(modm_node):
             m2m_tags = process_tag_m2m_fields(modm_node)
 
             node_fields = {}
+            node_fields['_guid'] = guid
             node_fields.update(modm_node.to_storage())
             node_fields.update(fk_nodes)
             node_fields.update(fk_users)
@@ -246,17 +258,25 @@ def get_or_create_node(modm_node):
             cleaned_node['is_bookmark_collection'] = cleaned_node.pop('is_dashboard')
             # remove empty fields, sql angry, sql smash
             cleaned_node = {k: v for k, v in cleaned_node.iteritems() if v is not None}
+
+            for fk_field in fk_node_fields + fk_user_fields:
+                if fk_field in cleaned_node.keys() and isinstance(cleaned_node[fk_field], basestring):
+                    bad = cleaned_node.pop(fk_field)
+                    print 'Removed {} {} from node {} because it no longer exists.'.format(fk_field, bad, guid.guid)
+
             node = Node.objects.create(**cleaned_node)
             set_m2m_fields(node, m2m_nodes)
             set_m2m_fields(node, m2m_users)
             set_m2m_fields(node, m2m_tags)
+    set_contributors(node, modm_node)
     if modm_node._id not in node_cache:
         node_cache[modm_node._id] = dict()
     node_cache[modm_node._id]['django'] = node
     return node
 
+
 def main():
-    modm_nodes = MODMNode.find(Q('tags','ne',{}))[:100]
+    modm_nodes = MODMNode.find()[19000:]
 
     total = len(modm_nodes)
     count = 0

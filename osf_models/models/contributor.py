@@ -12,3 +12,6 @@ class Contributor(models.Model):
 
     user = models.ForeignKey('User')
     node = models.ForeignKey('Node')
+
+    class Meta:
+        unique_together = ('user', 'node')
