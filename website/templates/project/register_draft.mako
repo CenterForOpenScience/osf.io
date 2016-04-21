@@ -12,10 +12,10 @@
     <div class="row">
       <div class="col-lg-12 large-12" style="padding-left: 30px">
          <div data-bind="foreach: {data: draft.pages, as: 'page'}">
-           <h3 data-bind="attr.id: page.id, text: page.title"></h3>
+           <h3 data-bind="attr: {id: page.id}, text: page.title"></h3>
              <div data-bind="foreach: {data: page.questions, as: 'question'}">
                <p>
-                 <strong data-bind="attr.id: question.id, text: question.title"></strong>:
+                 <strong data-bind="attr: {id: question.id}, text: question.title"></strong>:
                  <span data-bind="previewQuestion: $root.editor.context(question, $root.editor)"></span>
                </p>
              </div>
