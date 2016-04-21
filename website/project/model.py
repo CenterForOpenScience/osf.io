@@ -2720,6 +2720,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         for addon in self.get_addons():
             message = addon.after_remove_contributor(self, contributor, auth)
             if message:
+                # Because addons can return HTML strings, addons are responsible for markupsafe-escaping any messages returned
                 status.push_status_message(message, kind='info', trust=True)
 
         if log:
