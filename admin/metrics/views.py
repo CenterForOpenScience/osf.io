@@ -29,7 +29,6 @@ class OSFStatisticsListView(ListView):
 
 
 def sales_analytics(request):
-    # TODO: pass keen project id, read key and write key through context
     context = {
         'keen_project_id': KEEN_PROJECT_ID,
         'keen_read_key': KEEN_READ_KEY
