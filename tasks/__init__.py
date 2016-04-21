@@ -81,7 +81,7 @@ def git_logs(count=100, pretty='format:"%s - %b"', grep='"Merge pull request"'):
 
 
 @task
-def apiserver(port=8000, wait=True):
+def apiserver(port=8000, wait=True, https=False):
     """Run the API server."""
     env = os.environ.copy()
     cmd = 'DJANGO_SETTINGS_MODULE=api.base.settings {} manage.py runserver {} --nothreading'.format(sys.executable, port)
@@ -218,6 +218,7 @@ def format_context(context):
         line = "{name}: {obj!r}".format(**locals())
         lines.append(line)
     return '\n'.join(lines)
+
 
 # Shell command adapted from Flask-Script. See NOTICE for license info.
 @task
@@ -401,6 +402,7 @@ def migrate_search(delete=False, index=settings.ELASTIC_INDEX):
     from website.search_migration.migrate import migrate
     migrate(delete, index=index)
 
+
 @task
 def rebuild_search():
     """Delete and recreate the index for elasticsearch"""
@@ -486,10 +488,12 @@ def test_osf():
     """Run the OSF test suite."""
     test_module(module="tests/")
 
+
 @task
 def test_api():
     """Run the API test suite."""
     test_module(module="api_tests/")
+
 
 @task
 def test_admin():
@@ -498,6 +502,7 @@ def test_admin():
     module = "admin_tests/"
     module_fmt = ' '.join(module) if isinstance(module, list) else module
     admin_tasks.manage('test {}'.format(module_fmt))
+
 
 @task
 def test_varnish():
@@ -536,6 +541,7 @@ def test(all=False, syntax=False):
         test_addons()
         karma(single=True, browsers='PhantomJS')
 
+
 @task
 def test_travis_osf():
     """
@@ -555,9 +561,11 @@ def test_travis_else():
     test_admin()
     karma(single=True, browsers='PhantomJS')
 
+
 @task
 def test_travis_varnish():
     test_varnish()
+
 
 @task
 def karma(single=False, sauce=False, browsers=None):
@@ -689,6 +697,7 @@ def copy_settings(addons=False):
     if addons:
         copy_addon_settings()
 
+
 @task
 def packages():
     brew_commands = [
@@ -711,6 +720,7 @@ def packages():
         # TODO: Write a script similar to brew bundle for Ubuntu
         # e.g., run('sudo apt-get install [list of packages]')
         pass
+
 
 @task(aliases=['bower'])
 def bower_install():
@@ -926,6 +936,7 @@ def assets(dev=False, watch=False):
     # on prod
     webpack(clean=False, watch=watch, dev=dev)
 
+
 @task
 def generate_self_signed(domain):
     """Generate self-signed SSL key and certificate.
@@ -935,6 +946,7 @@ def generate_self_signed(domain):
         ' -keyout {0}.key -out {0}.crt'
     ).format(domain)
     run(cmd)
+
 
 @task
 def update_citation_styles():

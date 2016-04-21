@@ -83,7 +83,7 @@ COOKIE_NAME = 'osf'
 # TODO: Override OSF_COOKIE_DOMAIN in local.py in production
 OSF_COOKIE_DOMAIN = None
 # TODO: Override OSF_COOKIE_SECURE in local.py in production
-COOKIE_SECURE = False
+OSF_COOKIE_SECURE = False
 # TODO: Override SECRET_KEY in local.py in production
 SECRET_KEY = 'CHANGEME'
 # only for local https test only, override them in local.py in develop
