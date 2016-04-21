@@ -277,9 +277,9 @@ class NodeAddonSettingsSerializer(JSONAPISerializer):
         type_ = 'node_addons'
 
     id = ser.CharField(source='_id', read_only=True)
-    enabled = ser.BooleanField(source='object', required=True)
-    auth_id = ser.CharField(source='object.external_account._id', required=True)
-    folder = ser.CharField(source='object.folder_id', required=True)
+    enabled = ser.BooleanField(required=True)
+    auth_id = ser.CharField(source='object.external_account._id')
+    folder = ser.CharField(source='object.folder_id')
     has_auth = ser.BooleanField(source='object.has_auth', read_only=True)
     complete = ser.BooleanField(source='object.complete', read_only=True)
     configured = ser.BooleanField(source='object.configured', read_only=True)
@@ -289,50 +289,77 @@ class NodeAddonSettingsSerializer(JSONAPISerializer):
         return super(NodeAddonSettingsSerializer, self).to_representation(data, envelope=envelope)
 
     def update(self, instance, validated_data):
-        if self.id not in ADDONS_FOLDER_CONFIGURABLE:
+        addon_name = instance.get('_id', None)
+        if addon_name not in ADDONS_FOLDER_CONFIGURABLE:
             raise exceptions.MethodNotAllowed('Requested addon not currently configurable via API.')
 
-        auth = get_user_auth(self.request)
+        auth = get_user_auth(self.context['request'])
         node_settings = instance.get('object', None)
-        auth_id = validated_data.get('auth_id', None)
-        folder_id = validated_data.get('folder', None)
+
+        try:
+            auth_id = validated_data['object']['external_account']['_id']
+            set_auth = True
+        except KeyError:
+            auth_id = None
+            set_auth = False
+
+        try:
+            folder_id = validated_data['object']['folder_id']
+            set_folder = True
+        except KeyError:
+            folder_id = None
+            set_folder = False
+
         enabled = validated_data.get('enabled', None)
 
         if enabled is False and (folder_id or auth_id):
             raise exceptions.Conflict('Cannot disable the addon and set the folder/authorization at the same time.')
 
+        node = self.context['view'].get_node()
+
         if node_settings and enabled is False:
-            self.node.delete_addon(self.id, auth)
-            return
+            node.delete_addon(addon_name, auth)
+            node_settings = None
+            auth_id = None
+            folder_id = None
+            enabled = False
 
         if not node_settings and enabled is True:
-            node = self.context['view'].get_node()
-            node_settings = node.get_or_add_addon(self.id)
+            node_settings = node.get_or_add_addon(addon_name, auth=auth)
 
-        if node_settings and node_settings.configured and 'folder' in validated_data and not folder_id:
+        if node_settings and node_settings.configured and set_folder and not folder_id:
             node_settings.clear_settings()
             node_settings.save()
 
-        if node_settings and node_settings.has_auth and 'auth_id' in validated_data and not auth_id:
+        if node_settings and node_settings.has_auth and set_auth and not auth_id:
             node_settings.deauthorize(auth=auth)  # clear_auth performs save
-            return
 
-        if auth_id and auth_id != self.auth_id:
+        elif auth_id and (not node_settings.external_account
+                or auth_id != node_settings.external_account._id):
             external_account = ExternalAccount.load(auth_id)
             if not external_account:
                 raise exceptions.NotFound('Unable to find requested account.')
             if external_account not in auth.user.external_accounts:
                 raise exceptions.PermissionDenied('Requested action requires account ownership.')
-            self.node.delete_addon(self.id, auth)
-            node_settings = self.node.get_or_add_addon(self.id)
+            node.delete_addon(addon_name, auth)
+            node_settings = node.get_or_add_addon(addon_name, auth=auth)
             node_settings.set_auth(external_account, auth.user)
 
-        if folder_id != self.folder or folder_id.get('folder_id', False) != self.folder:
+        if (folder_id
+            and not (instance['object']
+                and instance['object'].get('folder_id', False)
+                and (instance['object']['folder_id'] == folder_id
+                    or instance['object']['folder_id'] == folder_id.get('folder_id', False)
+                     ))):
             if auth.user._id != node_settings.user_settings.owner._id:
                 raise exceptions.PermissionDenied('Requested action requires addon ownership.')
-            node_settings.set_folder(folder_id)
+            node_settings.set_folder(folder_id, auth)
 
-        return node_settings
+        return {
+            '_id': addon_name,
+            'enabled': enabled,
+            'object': node_settings if enabled else None
+        }
 
 class NodeDetailSerializer(NodeSerializer):
     """
