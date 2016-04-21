@@ -90,7 +90,7 @@ class SpamList(ListView):
     template_name = 'spam/spam_list.html'
     paginate_by = 10
     paginate_orphans = 1
-    ordering = 'date_created'
+    ordering = '-date_last_reported'
     context_object_name = 'spam'
 
     def get_queryset(self):
