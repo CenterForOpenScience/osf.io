@@ -26,10 +26,10 @@ from website import settings
 from website import mails
 from website import language
 from website import security
+from website.project.views.contributor import throttle_period_expired
 from website.models import User
 from website.util import web_url_for
 from website.util.sanitize import strip_html
-from website.settings import FORGOT_PASSWORD_MINIMUM_TIME
 
 
 @collect_auth
@@ -79,13 +79,9 @@ def forgot_password_post():
                           'should have, please contact OSF Support. ').format(email)
         user_obj = get_user(email=email)
         if user_obj:
-            #TODO: Remove this rate limiting and replace it with something that doesn't write to the User model
-            now = datetime.datetime.utcnow()
-            last_attempt = user_obj.forgot_password_last_post or now - datetime.timedelta(seconds=FORGOT_PASSWORD_MINIMUM_TIME)
-            user_obj.forgot_password_last_post = now
-            time_since_last_attempt = now - last_attempt
-            if time_since_last_attempt.seconds >= FORGOT_PASSWORD_MINIMUM_TIME:
+            if throttle_period_expired(user_obj.email_last_sent, settings.SEND_EMAIL_THROTTLE):
                 user_obj.verification_key = security.random_string(20)
+                user_obj.email_last_sent = datetime.datetime.utcnow()
                 user_obj.save()
                 reset_link = "http://{0}{1}".format(
                     request.host,
@@ -101,7 +97,6 @@ def forgot_password_post():
                 )
                 status.push_status_message(status_message, kind='success', trust=False)
             else:
-                user_obj.save()
                 status.push_status_message('You have recently requested to change your password. Please wait a little '
                                            'while before trying again.',
                                            kind='error',

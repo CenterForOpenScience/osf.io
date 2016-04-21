@@ -2,6 +2,7 @@
 
 import httplib as http
 import time
+import datetime
 
 from flask import request
 from modularodm.exceptions import ValidationError, ValidationValueError
@@ -365,7 +366,12 @@ def get_timestamp():
 
 
 def throttle_period_expired(timestamp, throttle):
-    return timestamp is None or (get_timestamp() - timestamp) > throttle
+    if not timestamp:
+        return True
+    elif isinstance(timestamp, datetime.datetime):
+        return (datetime.datetime.utcnow() - timestamp).total_seconds() > throttle
+    else:
+        return (get_timestamp() - timestamp) > throttle
 
 
 def send_claim_registered_email(claimer, unreg_user, node, throttle=24 * 3600):
