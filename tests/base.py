@@ -386,28 +386,19 @@ class ApiAddonTestCase(ApiTestCase):
         self.node = ProjectFactory(creator=self.user)
 
         if self.addon_type not in ('UNMANAGEABLE', 'INVALID'):
-            if self.addon_type == 'OAUTH':
+            if self.addon_type in ('OAUTH', 'CONFIGURABLE'):
                 self.account = self.AccountFactory()
                 self.user.external_accounts.append(self.account)
                 self.user.save()
 
             self.user_settings = self.user.get_or_add_addon(self.short_name)
+            self.node_settings = self.node.get_or_add_addon(self.short_name, auth=self.auth)
 
-            if self.addon_type == 'OAUTH':
-                self.user_settings.grant_oauth_access(
-                    node=self.node,
-                    external_account=self.account,
-                    metadata={'folder': '1234567890'}
-                )
-
-            self.node.add_addon(self.short_name, auth=self.auth)
-
-            self.node_settings = self.node.get_addon(self.short_name)
-
-            if self.addon_type == 'OAUTH':
+            if self.addon_type in ('OAUTH', 'CONFIGURABLE'):
+                self.node_settings.set_auth(self.account, self.user)
                 self._apply_auth_configuration()
             
-        if self.addon_type == 'OAUTH':
+        if self.addon_type in ('OAUTH', 'CONFIGURABLE'):
             assert isinstance(self.node_settings, AddonOAuthNodeSettingsBase)
             assert isinstance(self.user_settings, AddonOAuthUserSettingsBase)
         elif self.addon_type == 'MANAGEABLE':
