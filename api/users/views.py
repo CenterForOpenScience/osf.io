@@ -21,7 +21,7 @@ from api.nodes.serializers import NodeSerializer
 from api.institutions.serializers import InstitutionSerializer
 from api.registrations.serializers import RegistrationSerializer
 from api.base.utils import default_node_list_query, default_node_permission_query
-from api.base.settings import ADDONS_MANAGEABLE
+from api.base.settings import ADDONS_OAUTH
 
 from .serializers import UserSerializer, UserAddonSettingsSerializer, UserDetailSerializer, UserInstitutionsRelationshipSerializer
 from .permissions import ReadOnlyOrCurrentUser, ReadOnlyOrCurrentUserRelationship
@@ -258,7 +258,7 @@ class UserAddonDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixin):
     def get_object(self):
         user = self.get_user()
         provider = self.kwargs['provider']
-        if provider not in ADDONS_MANAGEABLE:
+        if provider not in ADDONS_OAUTH:
             raise NotFound('Requested addon unavailable')
 
         return user.get_addon(provider)
@@ -278,7 +278,7 @@ class UserAddonAccountList(JSONAPIBaseView, generics.ListAPIView, UserMixin):
         user = self.get_user()
         provider = self.kwargs['provider']
 
-        if provider not in ADDONS_MANAGEABLE:
+        if provider not in ADDONS_OAUTH:
             raise NotFound('Requested addon unavailable')
 
         return user.get_addon(provider).external_accounts
@@ -298,7 +298,7 @@ class UserAddonAccountDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixi
         provider = self.kwargs['provider']
         account_id = self.kwargs['account_id']
 
-        if (provider not in ADDONS_MANAGEABLE
+        if (provider not in ADDONS_OAUTH
          or not user.has_addon(provider)
          or account_id not in user.get_addon(provider).external_accounts):
             raise NotFound('Requested addon unavailable')

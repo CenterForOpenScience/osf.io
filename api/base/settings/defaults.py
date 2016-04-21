@@ -192,4 +192,3 @@ ESI_MEDIA_TYPES = osf_settings.ESI_MEDIA_TYPES
 
 ADDONS_FOLDER_CONFIGURABLE = ['box', 'dropbox', 's3', 'googledrive']
 ADDONS_OAUTH = ADDONS_FOLDER_CONFIGURABLE + ['dataverse', 'github', 'mendeley', 'zotero']
-ADDONS_MANAGEABLE = ADDONS_OAUTH + ['figshare']
