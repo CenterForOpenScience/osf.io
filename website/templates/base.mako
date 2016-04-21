@@ -188,6 +188,7 @@
                     id: ${ user_id | sjson, n },
                     locale: ${ user_locale | sjson, n },
                     timezone: ${ user_timezone | sjson, n }
+                    entry_point: ${ user_entry_point | sjson, n }
                 },
                 popular: ${ popular_links_node | sjson, n},
                 newAndNoteworthy: ${ noteworthy_links_node | sjson, n}
