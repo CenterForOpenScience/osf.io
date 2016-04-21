@@ -646,3 +646,13 @@ button.close {
 .comma-separated:last-of-type:after {
     content: "";
 }
+
+.action-buttons {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.token-warning {
+    margin-bottom: 5px;
+    margin-top: 15px;
+}
