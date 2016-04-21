@@ -904,7 +904,7 @@ class DraftRegistrationApproval(Sanction):
 class EmbargoTerminationApproval(EmailApprovableSanction):
 
     DISPLAY_NAME = 'Embargo Termination Request'
-    SHORT_NAME = 'embargo-termination-approval'
+    SHORT_NAME = 'embargo_termination_approval'
 
     AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_EMBARGO_TERMINATION_ADMIN
     NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_EMBARGO_TERMINATION_NON_ADMIN
