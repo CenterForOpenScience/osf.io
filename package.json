@@ -58,8 +58,8 @@
     "style-loader": "^0.8.3",
     "treebeard": "git://github.com/caneruguz/treebeard.git#89895536486e3535d9980b8f20a73f72bbb64222",
     "typeahead.js": "^0.10.5",
-    "url-loader": "^0.5.5",
     "uuid": "^2.0.1",
+    "url-loader": "^0.5.5",
     "webpack": "^1.7.2",
     "ws": "~0.4.32"
   },
