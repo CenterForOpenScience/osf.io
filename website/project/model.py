@@ -730,6 +730,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 ('institution_email_domains', pymongo.ASCENDING),
             ]
         },
+        {
+            'unique': False,
+            'key_or_list': [
+                ('institution_id', pymongo.ASCENDING),
+                ('registration_approval', pymongo.ASCENDING),
+            ]
+        },
     ]
 
     # Node fields that trigger an update to Solr on save
