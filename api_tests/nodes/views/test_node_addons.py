@@ -29,11 +29,8 @@ class NodeAddonListMixin(object):
                 return datum['attributes']
         return None
 
-    def should_expect_errors(self, success_types=['CONFIGURABLE']):
-        return self.addon_type not in success_types
-
     def test_settings_list_GET_enabled(self):
-        wrong_type = self.should_expect_errors(['OAUTH', 'CONFIGURABLE'])
+        wrong_type = self.should_expect_errors()
         res = self.app.get(
             self.setting_list_url,
             auth=self.user.auth)
@@ -48,7 +45,7 @@ class NodeAddonListMixin(object):
             assert_equal(addon_data, None)
 
     def test_settings_list_GET_disabled(self):
-        wrong_type = self.should_expect_errors(['OAUTH', 'CONFIGURABLE'])
+        wrong_type = self.should_expect_errors()
         try:
             self.node.delete_addon(self.short_name, auth=self.auth)
         except ValueError:
@@ -97,7 +94,7 @@ class NodeAddonListMixin(object):
 
     def test_settings_list_noncontrib_public_can_view(self):
         self.node.set_privacy('public', auth=self.auth)
-        wrong_type = self.should_expect_errors(['OAUTH', 'CONFIGURABLE'])
+        wrong_type = self.should_expect_errors()
         noncontrib = AuthUserFactory()
         res = self.app.get(
             self.setting_list_url,
@@ -117,14 +114,68 @@ class NodeAddonDetailMixin(object):
             API_BASE, self.node._id, self.short_name
         )
 
-    def test_settings_detail_GET_returns_node_settings_if_enabled(self):
-        pass
+    def test_settings_detail_GET_enabled(self):
+        wrong_type = self.should_expect_errors()
+        res = self.app.get(
+            self.setting_detail_url,
+            auth=self.user.auth)
 
-    def test_settings_detail_GET_returns_disabled_if_disabled(self):
-        pass
+        addon_data = self.get_response_for_addon(res)
+        if not wrong_type:
+            assert_equal(self.account._id, addon_data['auth_id'])
+            assert_equal(self.node._id, addon_data['node'])
+            assert_equal(self.node_settings.has_auth, addon_data['has_auth'])
+            assert_equal(self.node_settings.folder_id, addon_data['folder'])
+        if wrong_type:
+            assert_equal(addon_data, None)
+
+    def test_settings_detail_GET_disabled(self):
+        wrong_type = self.should_expect_errors()
+        try:
+            self.node.delete_addon(self.short_name, auth=self.auth)
+        except ValueError:
+            # If addon was mandatory -- OSFStorage
+            pass
+        res = self.app.get(
+            self.setting_detail_url,
+            auth=self.user.auth,
+            expect_errors=wrong_type)
+        addon_data = res.json['data'].get('attributes', None)
+        if not wrong_type:
+            assert_equal(addon_data['auth_id'], None)
+            assert_equal(addon_data['node'], None)
+            assert_false(addon_data['has_auth'])
+        if wrong_type:
+            assert_equal(addon_data, None)
 
     def test_settings_detail_PUT_all_sets(self):
-        pass
+        wrong_type = self.should_expect_errors()
+        try:
+            self.node.delete_addon(self.short_name, auth=self.auth)
+        except ValueError:
+            # If addon was mandatory -- OSFStorage
+            pass
+        res = self.app.put_json_api(self.setting_detail_url, 
+            {'data': { 
+                'id': self.short_name,
+                'type': 'node_addons',
+                'attributes': {
+                    'auth_id': self.account._id,
+                    'folder': '1234567890',
+                    'enabled': True
+                    }
+                }
+            }, auth=self.user.auth,
+            expect_errors=wrong_type)
+        if not wrong_type:
+            addon_data = res.json['data']['attributes']
+            assert_equal(addon_data['auth_id'], self.account._id)
+            assert_equal(addon_data['node'], self.node._id)
+            assert_equal(addon_data['folder'], '1234567890')
+            assert_true(addon_data['has_auth'])
+        if wrong_type:
+            assert_equal(res.status_code, 405)
+
 
     def test_settings_detail_PUT_none_disables(self):
         pass
@@ -169,6 +220,9 @@ class NodeAddonTestSuiteMixin(NodeAddonListMixin, NodeAddonDetailMixin, NodeAddo
         self.set_setting_list_url()
         self.set_setting_detail_url()
         self.set_folder_url()
+
+    def should_expect_errors(self, success_types=['CONFIGURABLE', 'OAUTH']):
+        return self.addon_type not in success_types
 
 
 class NodeOAuthAddonTestSuiteMixin(NodeAddonTestSuiteMixin):
