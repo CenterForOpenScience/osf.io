@@ -31,6 +31,7 @@ def clone_wiki_pages(nodes):
                     if node_wiki.node._id != node._id:
                         clone = node_wiki.clone()
                         clone.node = node
+                        clone.user = node_wiki.user
                         clone.save()
                         logger.info('Cloned wiki page {} from node {} to {}'.format(wiki_id, node_wiki.node._id, node._id))
                         cloned_wiki_pages[key].append(clone._id)
