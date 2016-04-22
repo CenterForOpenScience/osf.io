@@ -69,6 +69,11 @@ def update_file(file_, index=None, delete=False):
     search_engine.update_file(file_, index=index, delete=delete)
 
 @requires_search
+def update_institution(institution, index=None):
+    index = index or settings.ELASTIC_INDEX
+    search_engine.update_institution(institution, index=index)
+
+@requires_search
 def delete_all():
     search_engine.delete_all()
 
