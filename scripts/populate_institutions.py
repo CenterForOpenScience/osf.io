@@ -10,6 +10,7 @@ from modularodm import Q
 from website import settings
 from website.app import init_app
 from website.models import Institution, Node
+from website.search.search import update_institution
 from framework.transactions.context import TokuTransaction
 
 logger = logging.getLogger(__name__)
@@ -31,13 +32,16 @@ def update_or_create(inst_data):
         changed_fields = inst.node.save()
         if changed_fields:
             print('Updated {}: {}'.format(inst.name, changed_fields))
+        update_institution(inst)
         return inst, False
     else:
         inst = Institution(None)
         inst_data = {inst.attribute_map[k]: v for k, v in inst_data.iteritems()}
         new_inst = Node(**inst_data)
         new_inst.save()
+        inst = Institution.load(new_inst.institution_id)
         print('Added new institution: {}'.format(new_inst.institution_id))
+        update_institution(inst)
         return new_inst, True
 
 
