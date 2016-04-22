@@ -67,7 +67,7 @@
                         <i class="fa fa-info-circle text-muted" data-bind="tooltip: {title:'ID used to authenticate with this token. This will be shown only once.',        placement: 'bottom'}"></i>
                         <span data-bind="text: token_id" id="token-id-text"></span>
                         <div>
-                            <button type="button" class="btn btn-primary" data-clipboard-target="#token-id-text" id="copy-button"><i class="fa fa-copy"></i> Copy to clipboard</button>
+                            <button type="button" class="btn btn-primary" data-bind="attr: {'data-clipboard-text': token_id}" id="copy-button"><i class="fa fa-copy"></i> Copy to clipboard</button>
                         </div>
                     </div>
                 </form>
