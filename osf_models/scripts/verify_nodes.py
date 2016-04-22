@@ -80,4 +80,5 @@ def main():
 
         if count % 1000 == 0:
             garbage = gc.collect()
-            print '{}:{} Collected {} whole garbages...'.format(count, total, garbage)
+            print '{}:{} Collected {} whole garbages...'.format(count, total,
+                                                                garbage)
