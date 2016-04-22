@@ -756,7 +756,9 @@ class User(GuidStoredObject, AddonModelMixin):
         if not self.email_verifications:
             self.email_verifications = {}
 
-        self.email_verifications[token] = {'email': email}
+        # confirmed used to check if link has been clicked
+        self.email_verifications[token] = {'email': email,
+                                           'confirmed': False}
         self._set_email_token_expiration(token, expiration=expiration)
         return token
 
@@ -827,8 +829,11 @@ class User(GuidStoredObject, AddonModelMixin):
         return "{0}confirm/{1}/{2}/".format(base, self._primary_key, token)
 
     def _get_unconfirmed_email_for_token(self, token):
-        """Return whether or not a confirmation token is valid for this user.
+        """Return email if valid.
         :rtype: bool
+        :raises: ExpiredTokenError if trying to access a token that is expired.
+        :raises: InvalidTokenError if trying to access a token that is invalid.
+
         """
         if token not in self.email_verifications:
             raise InvalidTokenError
@@ -842,6 +847,22 @@ class User(GuidStoredObject, AddonModelMixin):
             raise ExpiredTokenError
 
         return verification['email']
+
+    def confirm_token(self, token):
+        """Return whether or not a confirmation token is valid for this user.
+        :rtype: bool
+        """
+        try:
+            verification = self.email_verifications[token]
+        except KeyError:
+            return False
+        # Check token for existance and date
+        if (
+            'expiration' in verification and
+            verification['expiration'] < dt.datetime.utcnow()
+        ):
+            return False
+        return True
 
     def verify_claim_token(self, token, project_id):
         """Return whether or not a claim token is valid for this user for

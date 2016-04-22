@@ -337,6 +337,17 @@ def make_url_map(app):
             json_renderer,
         )
     ], prefix='/api/v1')
+
+    process_rules(app, [
+        Rule('/dashboard/confirmed_emails/', 'get', auth_views.confirm_user_get, json_renderer),
+        Rule('/dashboard/confirmed_emails/', 'put', auth_views.add_confirmed_email, json_renderer)
+
+    ], prefix='/api/v1')
+
+    process_rules(app, [
+        Rule('/dashboard/remove_confirmed_emails/', 'put', auth_views.confirm_email_remove, json_renderer)
+    ], prefix='/api/v1')
+
     ### Metadata ###
     process_rules(app, [
 

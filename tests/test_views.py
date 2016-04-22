@@ -3358,6 +3358,89 @@ class TestAuthViews(OsfTestCase):
         with assert_raises(InvalidTokenError):
             self.user._get_unconfirmed_email_for_token(token)
 
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_click_confirmation_email(self, send_mail):
+        email = 'test@example.com'
+        token = self.user.add_unconfirmed_email(email)
+        self.user.save()
+        self.user.reload()
+        assert_equal(self.user.email_verifications[token]['confirmed'], False)
+        url = '/confirm/{}/{}/?existing_user={}'.format(self.user._id, token, self.user.username)
+        res = self.app.get(url)
+        self.user.reload()
+        assert_equal(self.user.email_verifications[token]['confirmed'], True)
+        assert_equal(res.status_code, 302)
+        login_url = '/login/?existing_user={}'.format(self.user.username)
+        assert_in(login_url, res.body)
+
+    def test_get_email_to_add_no_email(self):
+        url = api_url_for('confirm_user_get')
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(res.json_body, [])
+
+    def test_get_unconfirmed_email(self):
+        email = 'test@example.com'
+        self.user.add_unconfirmed_email(email)
+        self.user.save()
+        self.user.reload()
+        url = api_url_for('confirm_user_get')
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(res.json_body, [])
+
+    def test_get_email_to_add(self):
+        email = 'test@example.com'
+        token = self.user.add_unconfirmed_email(email)
+        self.user.save()
+        self.user.reload()
+        assert_equal(self.user.email_verifications[token]['confirmed'], False)
+        url = '/confirm/{}/{}/?existing_user={}'.format(self.user._id, token, self.user.username)
+        self.app.get(url)
+        self.user.reload()
+        assert_equal(self.user.email_verifications[token]['confirmed'], True)
+        url = api_url_for('confirm_user_get')
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(res.json_body[0]['address'], 'test@example.com')
+
+    def test_add_email(self):
+        email = 'test@example.com'
+        token = self.user.add_unconfirmed_email(email)
+        self.user.save()
+        self.user.reload()
+        assert_equal(self.user.email_verifications[token]['confirmed'], False)
+        url = '/confirm/{}/{}/?existing_user={}'.format(self.user._id, token, self.user.username)
+        self.app.get(url)
+        self.user.reload()
+        get_email_url = api_url_for('confirm_user_get')
+        email_to_add = self.app.get(get_email_url, auth=self.auth)
+        put_email_url = api_url_for('add_confirmed_email')
+        res = self.app.put_json(put_email_url, email_to_add.json_body[0], auth=self.user.auth)
+        self.user.reload()
+        assert_equal(res.json_body['status'], 'success')
+        assert_equal(self.user.emails[1], 'test@example.com')
+
+    def test_add_email_merge(self):
+        email = "copy@cat.com"
+        dupe = UserFactory(
+            username=email,
+            emails=[email]
+        )
+        dupe.set_password("copycat")
+        dupe.save()
+        token = self.user.add_unconfirmed_email(email)
+        self.user.save()
+        self.user.reload()
+        assert_equal(self.user.email_verifications[token]['confirmed'], False)
+        url = '/confirm/{}/{}/?existing_user={}'.format(self.user._id, token, self.user.username)
+        self.app.get(url)
+        self.user.reload()
+        get_email_url = api_url_for('confirm_user_get')
+        email_to_add = self.app.get(get_email_url, auth=self.auth)
+        put_email_url = api_url_for('add_confirmed_email')
+        res = self.app.put_json(put_email_url, email_to_add.json_body[0], auth=self.user.auth)
+        self.user.reload()
+        assert_equal(res.json_body['status'], 'success')
+        assert_equal(self.user.emails[1], 'copy@cat.com')
+
     def test_resend_confirmation_without_user_id(self):
         email = 'test@example.com'
         url = api_url_for('resend_confirmation')

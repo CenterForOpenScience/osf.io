@@ -38,3 +38,35 @@
     background-color: #CCC;
     border-color: #BBB;
 }
+.existing-user-signin {
+    /*height: 320px;*/
+    background-color: #EEE;
+    border-radius: 4px;
+    margin-top: 75px;
+}
+
+.logo-no-spin {
+    background: url(../img/logo_spin.png);
+}
+
+.login-forgot-password {
+    padding-left: 10px;
+}
+
+.login-title {
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+.login-logo {
+  display: inline-block;
+  vertical-align: middle;
+  background-image: url(/static/img/cos-logo-150-px.png);
+  background-size: 100%;
+  width: 150px;
+  height: 150px;
+}
+
+.remember-me-checkbox {
+    margin-left: -20px !important;
+}

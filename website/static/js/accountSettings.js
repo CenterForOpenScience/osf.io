@@ -217,13 +217,13 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
                     var addrText = $osf.htmlEscape(email.address());
                     bootbox.alert({
                                 title: 'Confirmation email sent',
-                                message: '<em>' + addrText + '</em>' + ' was added to your account.' +
-                                ' You will receive a confirmation email at ' + '<em>' + addrText + '</em>.' +
-                                ' Please log out of this account and check your email to confirm this action.',
+                                message: '<b>' + addrText + '</b>' + ' was added to your account.' +
+                                ' You will receive a confirmation email at ' + '<b>' + addrText + '</b>.' +
+                                ' Please check your email to confirm this action.',
                                 buttons: {
                                     ok: {
                                         label: 'Close',
-                                        className: 'btn-default'
+                                        className: 'btn-primary'
                                     }
                                 }
                             });
@@ -251,7 +251,7 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
                         $osf.growl(
                             'Email confirmation resent to <em>' + addrText + '</em>',
                             'You will receive a new confirmation email at <em>' + addrText  + '</em>.' +
-                            ' Please log out of this account and check your email to confirm this action.',
+                            ' Please check your email to confirm this action.',
                             'success');
                     });
                 }

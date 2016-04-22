@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import datetime
 import httplib as http
+from copy import deepcopy
 
 from flask import request
 
@@ -17,6 +18,7 @@ from framework.auth import exceptions
 from framework.exceptions import HTTPError
 from framework.auth import (logout, get_user, DuplicateEmailError)
 from framework.auth.decorators import collect_auth, must_be_logged_in
+from framework.sessions.utils import remove_sessions_for_user
 from framework.auth.forms import (
     MergeAccountForm, RegistrationForm, ResendConfirmationForm,
     ResetPasswordForm, ForgotPasswordForm
@@ -150,7 +152,7 @@ def auth_login(auth, **kwargs):
 
     status_message = request.args.get('status', '')
     if status_message == 'expired':
-        status.push_status_message('The private link you used is expired.')
+        status.push_status_message('The private link you used is expired.  Please Resend email.')
 
     if next_url and must_login_warning:
         status.push_status_message(language.MUST_LOGIN)
@@ -167,6 +169,7 @@ def auth_login(auth, **kwargs):
     data['redirect_url'] = next_url
 
     data['sign_up'] = request.args.get('sign_up', False)
+    data['existing_user'] = request.args.get('existing_user', None)
 
     return data, http.OK
 
@@ -185,6 +188,27 @@ def auth_logout(redirect_url=None):
     return resp
 
 
+def auth_email_logout(token, user):
+    """When a user is adding an email or merging an account, add the email to the user and log them out.
+    """
+    redirect_url = web_url_for('auth_login') + '?existing_user={}'.format(user.email)
+    if user.confirm_token(token):
+        try:
+            user_merge = User.find_one(Q('emails', 'eq', user.email_verifications[token]['email'].lower()))
+        except NoResultsFound:
+            user_merge = False
+        if user_merge:
+            remove_sessions_for_user(user_merge)
+        user.email_verifications[token]['confirmed'] = True
+        user.save()
+        remove_sessions_for_user(user)
+    else:
+        status.push_status_message('The private link you used is expired.')
+    resp = redirect(redirect_url)
+    resp.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
+    return resp
+
+
 @collect_auth
 def confirm_email_get(token, auth=None, **kwargs):
     """View for email confirmation links.
@@ -196,9 +220,12 @@ def confirm_email_get(token, auth=None, **kwargs):
     user = User.load(kwargs['uid'])
     is_merge = 'confirm_merge' in request.args
     is_initial_confirmation = not user.date_confirmed
-
+    existing_user = request.args.get('existing_user', None)
     if user is None:
         raise HTTPError(http.NOT_FOUND)
+    # if the user is merging or adding an email (they already are an osf user)
+    elif existing_user:
+        return auth_email_logout(token, user)
 
     if auth and auth.user and (auth.user._id == user._id or auth.user._id == user.merged_by._id):
         if not is_merge:
@@ -213,8 +240,8 @@ def confirm_email_get(token, auth=None, **kwargs):
 
             if token in auth.user.email_verifications:
                 status.push_status_message(language.CONFIRM_ALTERNATE_EMAIL_ERROR, 'danger')
-            # Go to home page
-            return redirect(web_url_for('index'))
+            # Go to dashboard
+            return redirect(web_url_for('dashboard'))
 
         status.push_status_message(language.MERGE_COMPLETE, 'success')
         return redirect(web_url_for('user_account'))
@@ -251,6 +278,91 @@ def confirm_email_get(token, auth=None, **kwargs):
     ))
 
 
+@collect_auth
+def confirm_user_get(auth=None, **kwargs):
+    """Called at login to see if there are emails to add or users to merge.
+    methods: GET
+    """
+    # user = User.load(kwargs['uid'])
+    user = auth.user
+    verified_emails = []
+    for token in user.email_verifications:
+        if user.confirm_token(token):
+            if user.email_verifications[token]['confirmed']:
+                try:
+                    user_merge = User.find_one(Q('emails', 'eq', user.email_verifications[token]['email'].lower()))
+                except NoResultsFound:
+                    user_merge = False
+
+                verified_emails.append({'address': user.email_verifications[token]['email'],
+                                        'token': token,
+                                        'confirmed': user.email_verifications[token]['confirmed'],
+                                        'user_merge': user_merge.email if user_merge else False})
+            else:
+                user.email_verifications[token]['confirmed'] = False
+    user.save()
+    return verified_emails
+
+
+@collect_auth
+def confirm_email_remove(auth=None, **kwargs):
+    """Called at login if user cancels their merge or email add.
+    methods: PUT
+    """
+    user = auth.user
+    confirmed_email = request.json.get('address')
+    email_verifications = deepcopy(user.email_verifications)
+    for token in user.email_verifications:
+        if user.email_verifications[token]['email'] == confirmed_email:
+            if user.confirm_token(token):
+                email_verifications.pop(token)
+    user.email_verifications = email_verifications
+    user.save()
+    return {
+        'status': 'success',
+        'removed_email': confirmed_email
+    }, 200
+
+
+@collect_auth
+def add_confirmed_email(auth=None, **kwargs):
+    """Called at login if user confirms their merge or email add.
+    methods: PUT
+    """
+    user = auth.user
+    confirmed_email = request.json.get('address')
+    token = request.json.get('token')
+
+    if user is None:
+        raise HTTPError(http.NOT_FOUND)
+
+    try:
+        user.confirm_email(token, merge=True)
+    except exceptions.EmailConfirmTokenError as e:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': e.message_short,
+            'message_long': e.message_long
+        })
+
+    if confirmed_email:
+        user.save()
+        return {
+            'status': 'success',
+            'removed_email': confirmed_email
+        }, 200
+
+    # Redirect to CAS and authenticate the user with a verification key.
+    user.verification_key = security.random_string(20)
+    user.save()
+
+    return redirect(cas.get_login_url(
+        request.url,
+        auto=True,
+        username=user.username,
+        verification_key=user.verification_key
+    ))
+
+
 def send_confirm_email(user, email):
     """Sends a confirmation email to `user` to a given email.
 
@@ -269,13 +381,15 @@ def send_confirm_email(user, email):
         merge_target = None
 
     campaign = campaigns.campaign_for_user(user)
-    # Choose the appropriate email template to use
+    # Choose the appropriate email template to use and add existing_user flag if a merge or adding an email.
     if merge_target:
         mail_template = mails.CONFIRM_MERGE
+        confirmation_url = '{}?existing_user={}'.format(confirmation_url, user.email)
     elif campaign:
         mail_template = campaigns.email_template_for_campaign(campaign)
     elif user.is_active:
         mail_template = mails.CONFIRM_EMAIL
+        confirmation_url = '{}?existing_user={}'.format(confirmation_url, user.email)
     else:
         mail_template = mails.INITIAL_CONFIRM_EMAIL
 
