@@ -54,7 +54,6 @@ class TestLogContributors(LogsTestCase):
         assert_equal(contributors['family_name'], 'Jackson')
         assert_equal(contributors['full_name'], 'Robert Jackson')
         assert_equal(contributors['given_name'], 'Robert')
-        assert_equal(contributors['html'], '/' + unregistered_contributor._id + '/')
         assert_equal(contributors['unregistered_name'], 'Robert Jackson')
 
     def test_params_do_not_appear_on_private_project_with_anonymous_view_only_link(self):

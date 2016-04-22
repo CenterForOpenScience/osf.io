@@ -193,7 +193,7 @@ var LogPieces = {
                     }
 
                     if (item.active) {
-                        return [ m('a', {href: item.html}, item.full_name), comma];
+                        return [ m('a', {href: '/' + item.id + '/'}, item.full_name), comma];
                     }
                     else {
                         if (item.unregistered_name) {

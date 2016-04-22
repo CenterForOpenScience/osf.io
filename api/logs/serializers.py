@@ -112,8 +112,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
                     'middle_names': user.middle_names,
                     'family_name': user.family_name,
                     'unregistered_name': unregistered_name,
-                    'active': user.is_active,
-                    'html': '/' + contrib_id + '/'
+                    'active': user.is_active
                 })
         return contributor_info
 
