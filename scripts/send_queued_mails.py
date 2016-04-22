@@ -42,6 +42,8 @@ def main(dry_run=True):
                     logger.error('Email of type {0} to be sent to {1} caused an ERROR'.format(mail.email_type, mail.to_addr))
                     logger.exception(error)
                     pass
+        else:
+            logger.info('Email of type {} will be sent to {}'.format(mail.email_type, mail.to_addr))
 
 
 def find_queued_mails_ready_to_be_sent():
