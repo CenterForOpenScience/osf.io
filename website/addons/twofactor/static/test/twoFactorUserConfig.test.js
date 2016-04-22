@@ -171,7 +171,7 @@ describe('Two-factor User Config', () => {
             after(() => {
                 server.restore();
             });
-            it("makes a PUT request contianing the VM's tfaCode to the settingsUrl passed on instantiation", (done) => {
+            it("makes a PUT request containing the VM's tfaCode to the settingsUrl passed on instantiation", (done) => {
                 var code = faker.finance.account();
                 vm.tfaCode(code);
                 vm.submitSettings()

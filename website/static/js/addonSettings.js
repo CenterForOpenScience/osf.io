@@ -6,6 +6,9 @@ var bootbox = require('bootbox');
 var Raven = require('raven-js');
 var oop = require('js/oop');
 
+var $osf = require('js/osfHelpers');
+
+
 var ConnectedProject = function(data) {
     var self = this;
     self.title = data.title;

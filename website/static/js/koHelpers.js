@@ -381,7 +381,7 @@ ko.bindingHandlers.groupOptions = {
         var mapChild = function(child) {
             return $('<option>', {
                 value: optionsValue(child),
-                html: $osf.htmlEscape(optionsText(child))
+                html: optionsText(child)
             });
         };
 
