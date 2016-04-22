@@ -278,7 +278,6 @@
 <%def name="content_wrap()">
     <div class="watermarked">
         <div class="container ${self.container_class()}">
-
             % if status:
                 ${self.alert()}
             % endif
