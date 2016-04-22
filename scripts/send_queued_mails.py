@@ -43,7 +43,7 @@ def main(dry_run=True):
                     logger.exception(error)
                     pass
         else:
-            logger.info('Email of type {} attempted to being sent to {}'.format(mail.email_type, mail.to_addr))
+            logger.info('Email of type {} will be sent to {}'.format(mail.email_type, mail.to_addr))
 
 
 def find_queued_mails_ready_to_be_sent():
