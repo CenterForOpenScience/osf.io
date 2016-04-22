@@ -31,7 +31,6 @@ class TestLogContributors(LogsTestCase):
         assert_equal(contributors['family_name'], self.user.family_name)
         assert_equal(contributors['full_name'], self.user.fullname)
         assert_equal(contributors['given_name'], self.user.given_name)
-        assert_equal(contributors['html'], '/' + self.user._id + '/')
         assert_equal(contributors['unregistered_name'], None)
 
     def test_unregistered_contributor_added_has_contributor_info_in_params(self):
