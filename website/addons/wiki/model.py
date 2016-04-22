@@ -282,6 +282,7 @@ class NodeWikiPage(GuidStoredObject, Commentable):
                 node_wiki = NodeWikiPage.load(wiki_id)
                 cloned_version = node_wiki.clone()
                 cloned_version.node = copy
+                cloned_version.user = node_wiki.user
                 cloned_version.save()
                 copy.wiki_pages_versions[key].append(cloned_version._id)
                 if node_wiki.is_current:
