@@ -93,6 +93,7 @@ def prepare_private_key():
     private_link = get_private_link(key_from_args)
 
     # Done if not a valid private link; If not a valid key remove it
+    # checking key_from_args prevents infinite loop
     if not private_link and key_from_args:
         return redirect(request.base_url, code=http.TEMPORARY_REDIRECT, strip_view_only=True)
 
