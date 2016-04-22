@@ -5,6 +5,7 @@ from api.base.serializers import (
     RelationshipField,
     RestrictedDictSerializer,
     LinksField,
+    is_anonymized
 )
 from website.project.model import Node
 from framework.auth.core import User
@@ -88,7 +89,12 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
         return {}
 
     def get_contributors(self, obj):
+
         contributor_info = []
+
+        if is_anonymized(self.context['request']):
+            return contributor_info
+
         contributor_ids = obj.get('contributors', None)
         params_node = obj.get('node', None)
 

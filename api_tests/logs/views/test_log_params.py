@@ -7,6 +7,7 @@ from nose.tools import *  # noqa
 from test_log_detail import LogsTestCase
 from tests.factories import (
     ProjectFactory,
+    PrivateLinkFactory
 )
 
 from api.base.settings.defaults import API_BASE
@@ -55,3 +56,21 @@ class TestLogContributors(LogsTestCase):
         assert_equal(contributors['given_name'], 'Robert')
         assert_equal(contributors['html'], '/' + unregistered_contributor._id + '/')
         assert_equal(contributors['unregistered_name'], 'Robert Jackson')
+
+    def test_params_do_not_appear_on_private_project_with_anonymous_view_only_link(self):
+
+        private_link = PrivateLinkFactory(anonymous=True)
+        private_link.nodes.append(self.node)
+        private_link.save()
+
+        url = self.url + '{}/'.format(self.log_add_contributor._id)
+
+        res = self.app.get(url, {'view_only': private_link.key}, expect_errors=True)
+        assert_equal(res.status_code, 200)
+        data = res.json['data']
+        assert_in('attributes', data)
+        assert_not_in('params', data['attributes'])
+        body = res.body
+        assert_not_in(self.user._id, body)
+
+
