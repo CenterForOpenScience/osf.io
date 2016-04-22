@@ -19,6 +19,7 @@ var koHelpers = require('./koHelpers');  // URL validators etc
 var $osf = require('./osfHelpers');
 var oop = require('js/oop');
 var language = require('js/osfLanguage');
+var makeClient = require('js/clipboard');
 
 
 /*
@@ -314,6 +315,7 @@ var TokenDetailViewModel = oop.extend(ChangeMessageMixin, {
             this.tokenData(dataObj);
             this.originalValues(dataObj.serialize());
             this.showToken(true);
+            makeClient(document.getElementById('copy-button'));
             this.changeMessage(language.apiOauth2Token.creationSuccess, 'text-success');
             this.apiDetailUrl(dataObj.apiDetailUrl); // Toggle ViewModel --> act like a display view now.
             historyjs.replaceState({}, '', dataObj.webDetailUrl);  // Update address bar to show new detail page
