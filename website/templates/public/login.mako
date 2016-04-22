@@ -237,8 +237,8 @@
     ${parent.javascript_bottom()}
     <script type="text/javascript">
         window.contextVars = $.extend(true, {}, window.contextVars, {
-            'campaign': ${campaign or '' | sjson, n},
-            'institution_redirect': ${institution_redirect or '' | sjson, n}
+            'campaign': ${ campaign or '' | sjson, n },
+            'institution_redirect': ${ institution_redirect or '' | sjson, n }
         });
     </script>
     <script src=${"/static/public/js/login-page.js" | webpack_asset}></script>
