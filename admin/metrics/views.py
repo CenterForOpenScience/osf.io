@@ -6,8 +6,9 @@ from django.core.urlresolvers import reverse
 
 from admin.metrics.utils import get_osf_statistics
 from admin.metrics.models import OSFWebsiteStatistics
-from admin.base.settings import KEEN_PROJECT_ID, KEEN_READ_KEY
+from admin.base.settings import KEEN_PROJECT_ID, KEEN_READ_KEY, ENTRY_POINTS
 
+from framework.mongo import database as db
 
 def update_metrics(request):
     get_osf_statistics()
@@ -17,6 +18,14 @@ def update_metrics(request):
 def download_csv(request):
     queryset = OSFWebsiteStatistics.objects.all().order_by('-date')
     return render_to_csv_response(queryset)
+
+
+def get_user_count(db=db, entry_points=ENTRY_POINTS):
+    counts = []
+    for i in entry_points:
+        counts.append({'Product': i, 'Count': db.user.find({'system_tags': i}).count()})
+    counts.append({'Product': 'osf', 'Count': db.user.find({'system_tags': {'$nin': entry_points}}).count()})
+    return {'items': counts}
 
 
 class OSFStatisticsListView(ListView):
@@ -30,8 +39,14 @@ class OSFStatisticsListView(ListView):
 
 def sales_analytics(request):
     # TODO: pass keen project id, read key and write key through context
+
+    # Compute metrics from OSF Database
+    # User count for each product
+    user_count = get_user_count(db, ENTRY_POINTS)
+
     context = {
         'keen_project_id': KEEN_PROJECT_ID,
-        'keen_read_key': KEEN_READ_KEY
+        'keen_read_key': KEEN_READ_KEY,
+        'user_count': user_count,
     }
     return render(request, 'metrics/sales_analytics.html', context)

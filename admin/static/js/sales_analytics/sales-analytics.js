@@ -1,5 +1,6 @@
 'use strict';
 
+var c3 = require('c3');
 var keen = require('keen-js');
 var ss = require('simple-statistics');
 
@@ -173,6 +174,32 @@ var SalesAnalytics = function() {
         });
     };
 
+    self.getUserCount = function(userCount) {
+        var chart = c3.generate({
+            bindto: '#db-chart-user-count',
+            data: {
+                json: userCount.items,
+                type: 'bar',
+                keys: {
+                    x: 'Product',
+                    value: ['Count']
+                },
+            },
+            axis: {
+                x: {
+                    type: 'category'
+                }
+            },
+            bar: {
+                width: {
+                    ratio: 0.5 // this makes bar width 50% of length between ticks
+                }
+                // or
+                //width: 100 // this makes bar width 100px
+            }
+        });
+    };
+
     self.init = function() {
         console.log('init');
         keen.ready(self.run());
@@ -183,6 +210,7 @@ var SalesAnalytics = function() {
         self.getAverageUserSessionLength();
         self.getAverageMAUSessionLength();
         self.getAverageUserSessionHistory(true, 12, null, null, null);
+        self.getUserCount(userCount);
     };
 
     self.clean = function() {
