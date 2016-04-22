@@ -1,9 +1,8 @@
 <%inherit file="project/addon/widget.mako"/>
-<%page expression_filter="h"/>
 
 <div id="markdownRender" class="break-word">
     % if wiki_content:
-        ${wiki_content | n}
+        ${wiki_content}
     % else:
         <p><em>No wiki content</em></p>
     % endif
@@ -15,13 +14,12 @@
     % endif
 </div>
 
-<% import json %>
 <script>
     window.contextVars = $.extend(true, {}, window.contextVars, {
         wikiWidget: true,
-        usePythonRender: ${json.dumps(use_python_render)},
+        usePythonRender: ${ use_python_render | sjson, n },
         urls: {
-            wikiContent: '${wiki_content_url}'
+            wikiContent: ${wiki_content_url | sjson, n }
         }
     })
 </script>

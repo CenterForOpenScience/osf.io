@@ -6,7 +6,7 @@
 
 <div class="media well">
   %if badge.is_system_badge:
-  <span class="pull-right" style="text-align:end;">System Badge
+    <span class="pull-right" style="text-align:end;">System Badge
   %else:
     <span class="pull-right" style="text-align:end;">Endorsed by <a href="${badge.creator.owner.profile_url}">${badge.creator.owner.fullname}</a>
   %endif
@@ -32,7 +32,7 @@
 <script src="/static/vendor/dropzone/dropzone.js"></script> -->
 <script>
 $script.ready('hgrid', function() {
-
+    // TODO: Rewrite substantially before reactivating addon
     var data = [
       %for assertion in assertions:
         %if not assertion.revoked:
