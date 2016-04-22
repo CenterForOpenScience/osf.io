@@ -65,7 +65,9 @@
                         % endfor
 
                         % if node['is_public'] or user['is_contributor']:
-                            <li><a href="${node['url']}analytics/">Analytics</a></li>
+                            % if not private_link:
+                                <li><a href="${node['url']}analytics/">Analytics</a></li>
+                            % endif
                         % endif
 
                         % if not node['is_registration'] and not node['anonymous']:
