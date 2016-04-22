@@ -276,7 +276,7 @@ def get_or_create_node(modm_node):
 
 
 def main():
-    modm_nodes = MODMNode.find()[19000:]
+    modm_nodes = MODMNode.find()
 
     total = len(modm_nodes)
     count = 0
