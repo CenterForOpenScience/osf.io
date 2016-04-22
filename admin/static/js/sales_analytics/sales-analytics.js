@@ -1,3 +1,8 @@
+//  TODO: add functionality to let user choose what to query
+//  TODO: add descriptions to visualization
+//  TODO: move sales analytics to an independent section
+//  TODO: improve ui
+
 'use strict';
 
 var c3 = require('c3');
@@ -16,7 +21,7 @@ var SalesAnalytics = function() {
         nullUserFilter: {
             property_name: 'user.id',
             operator: 'ne',
-            property_value: 'null'
+            property_value: null
         },
         inactiveUserFilter: {
             property_name: 'user.id',
@@ -24,7 +29,6 @@ var SalesAnalytics = function() {
             property_value: ''
         }
     };
-
     self.getAverageUserSessionLength = function () {
         var query = new keen.Query('select_unique', {
             event_collection: 'pageviews',
@@ -34,10 +38,9 @@ var SalesAnalytics = function() {
             filters: [self.keenFilters.nullUserFilter]
         });
 
-        var chart = new keen.Dataviz();
-        chart.el(document.getElementById('keen-chart-average-session-user')).prepare();
+        var chart = self.prepareChart('keen-chart-average-session-user');
 
-        var request = self.keenClient.run(query, function(error, response) {
+        self.keenClient.run(query, function(error, response) {
             if (error) {
                 document.getElementById('keen-chart-average-session-user').innerHTML = 'Keen Query Failure';
                 console.log(error);
@@ -45,16 +48,13 @@ var SalesAnalytics = function() {
             else {
                 var dataSet = self.extractDataSet(response);
                 var result = ss.mean(dataSet);
+                self.drawChart(chart, 'metric', 'Minutes', result/1000/60);
                 console.log('average user session length is ' + result + " ms" );
-
-                chart.attributes({ title: 'Average User Session Length', width: 600 });
-                chart.adapter({chartType: 'metric'});
-                chart.parseRawData({result: result/1000/60});
-                chart.render();
             }
         });
     };
 
+    // TODO: add functionality to let user choose what to query
     self.getAverageMAUSessionLength = function() {
         var query = new keen.Query('select_unique', {
             event_collection: 'pageviews',
@@ -64,23 +64,18 @@ var SalesAnalytics = function() {
             filters: [self.keenFilters.nullUserFilter, self.keenFilters.inactiveUserFilter]
         });
 
-        var chart = new keen.Dataviz();
-        chart.el(document.getElementById('keen-chart-average-session-mau')).prepare();
+        var chart = self.prepareChart('keen-chart-average-session-mau');
 
-        var request = self.keenClient.run(query, function(error, response) {
+        self.keenClient.run(query, function(error, response) {
             if (error) {
-                document.getElementById('keen-chart-average-session-mau').innerHTML = 'Keen Query Failure';
+                document.getElementById('keen-chart-average-session-mau').innerHTML = 'Keen Query Failure.';
                 console.log(error);
             }
             else {
                 var dataSet = self.extractDataSet(response);
                 var result = ss.mean(dataSet);
                 console.log('average mau session length is ' + result + " ms" );
-
-                chart.attributes({ title: 'Average MAU Session Length', width: 600 });
-                chart.adapter({chartType: 'metric'});
-                chart.parseRawData({result: result/1000/60});
-                chart.render();
+                self.drawChart(chart, 'metric', 'Minutes', result/1000/60);
             }
         });
     };
@@ -98,27 +93,18 @@ var SalesAnalytics = function() {
         }
 
         if (numberOfWeeks == 0) {
-            var chart = new keen.Dataviz();
-            chart.el(document.getElementById('keen-chart-average-session-history')).prepare();
-            chart.attributes({title: 'Average User Session History of the Past 12 Weeks', width: 1000, height: 500});
+            var chart = self.prepareChart('keen-chart-average-session-history');
+            chart.attributes({title: 'Average User/MAU Session Length History of Past 12 Weeks', width: 600, height: 450});
             chart.adapter({chartType: 'columnchart'});
             chart.chartOptions({
-                hAxis: {
-                    title: "Week"
-                },
-                vAxis: {
-                    title: "Minutes"
-                }
+                hAxis: {title: "Week"},
+                vAxis: {title: "Minutes"}
             });
-
-            chart.parseRawData({result: weeklyResult});
-            chart.render();
+            chart.parseRawData({result: weeklyResult}).render();
             return;
         }
 
-        console.log(numberOfWeeks + ': ' + weekEnd.toISOString());
-        document.getElementById('keen-chart-average-session-history').innerHTML = numberOfWeeks;
-
+        document.getElementById('keen-chart-average-session-history').innerHTML = 'loading ... : ' + (12 - numberOfWeeks) + ' / 12';
         var queryUser = new keen.Query('select_unique', {
             event_collection: 'pageviews',
             timeframe: {
@@ -129,7 +115,6 @@ var SalesAnalytics = function() {
             group_by: ['user.id', 'sessionId'],
             filters: [self.keenFilters.nullUserFilter]
         });
-
         var queryMAU = new keen.Query('select_unique', {
             event_collection: 'pageviews',
             timeframe: {
@@ -141,19 +126,20 @@ var SalesAnalytics = function() {
             filters: [self.keenFilters.nullUserFilter, self.keenFilters.inactiveUserFilter]
         });
 
-        var request = self.keenClient.run([queryUser, queryMAU], function (error, response) {
+        self.keenClient.run([queryUser, queryMAU], function (error, response) {
             var resultUser;
             var resultMAU;
             if (error) {
-                document.getElementById('keen-chart-average-session-history').innerHTML = 'Keen Query Failure';
+                document.getElementById('keen-chart-average-session-history').innerHTML = 'failure ... : ' + (12 - numberOfWeeks) + ' / 12';
                 console.log(error);
-                //resultUser = resultMAU = -1;
+                resultUser = resultMAU = -1;
             }
             else {
                 var dataSetUser = self.extractDataSet(response[0]);
                 var dataSetMAU = self.extractDataSet(response[1]);
                 resultUser = ss.mean(dataSetUser);
                 resultMAU = ss.mean(dataSetMAU);
+                console.log('Week ' + numberOfWeeks + ' (' + weekEnd.toISOString() + '): ' + resultUser + ', ' + resultMAU);
             }
             var item = {
                 timeframe: {
@@ -196,9 +182,61 @@ var SalesAnalytics = function() {
                 }
                 // or
                 //width: 100 // this makes bar width 100px
+
+    self.getOSFProductUsage = function() {
+        var query = new Keen.Query('select_unique', {
+            event_collection: 'pageviews',
+            timeframe: 'previous_1_months',
+            target_property: 'parsedPageUrl.path',
+            group_by: ['user.id', 'parsedPageUrl.domain'],
+            filters: [self.keenFilters.nullUserFilter, self.keenFilters.inactiveUserFilter]
+        });
+
+        var chartMoreThanTwo = self.prepareChart('keen-chart-osf-product-usage-mt2');
+        var chartMeetings = self.prepareChart('keen-chart-osf-product-usage-mee');
+        var chartPrereg = self.prepareChart('keen-chart-osf-product-usage-pre');
+        var chartInstitutions = self.prepareChart('keen-chart-osf-product-usage-ins');
+
+        var request = self.keenClient.run(query, function(error, response) {
+            if (error) {
+                document.getElementById('keen-chart-osf-product-usage-mt2').innerHTML = 'Keen Query Failure';
+            }
+            else {
+                var userProductMap = self.numberOfUsers(response);
+                self.drawChart(chartMoreThanTwo, 'piechart', '', [
+                    {products: 'OSF Only', count: userProductMap.osf.length - userProductMap.moreThanTwo.length},
+                    {products: '2+ Products', count: userProductMap.moreThanTwo.length}
+                ]);
+                self.drawChart(chartMeetings, 'piechart', '', [
+                    {products: 'No Meetings', count: userProductMap.osf.length - userProductMap.meetings.length},
+                    {products: 'Meetings', count: userProductMap.meetings.length}
+                ]);
+                self.drawChart(chartPrereg, 'piechart', '', [
+                    {products: 'No Prereg', count: userProductMap.osf.length - userProductMap.prereg.length},
+                    {products: 'Prereg', count: userProductMap.prereg.length}
+                ]);
+                self.drawChart(chartInstitutions, 'piechart', '', [
+                    {products: 'No Institutions', count: userProductMap.osf.length - userProductMap.institutions.length},
+                    {products: 'Institutions', count: userProductMap.institutions.length}
+                ]);
+
             }
         });
     };
+
+
+    self.prepareChart = function(elementId) {
+        var chart = new keen.Dataviz();
+        return chart.el(document.getElementById(elementId)).prepare();
+    };
+
+    self.drawChart = function(chart, type, title, result) {
+        chart.attributes({title: title, width: 600});
+        chart.adapter({chartType: type});
+        chart.parseRawData({result: result});
+        chart.render();
+    };
+
 
     self.init = function() {
         console.log('init');
@@ -207,6 +245,7 @@ var SalesAnalytics = function() {
 
     self.run = function() {
         console.log('run');
+        self.getOSFProductUsage();
         self.getAverageUserSessionLength();
         self.getAverageMAUSessionLength();
         self.getAverageUserSessionHistory(true, 12, null, null, null);
@@ -226,7 +265,7 @@ var SalesAnalytics = function() {
         var endTime;
         var deltaSet = [];
 
-        for ( var i in keenResult.result) {
+        for (var i in keenResult.result) {
             var session = keenResult.result[i];
             if (session.hasOwnProperty('result')) {
                 if (session.result.length == 1) {
@@ -239,6 +278,49 @@ var SalesAnalytics = function() {
             }
         }
         return deltaSet;
+    };
+
+    self.numberOfUsers = function(keenResult, filters) {
+        var userProductMap = {
+            'osf': [],
+            'meetings': [],
+            'prereg': [],
+            'institutions': [],
+            'moreThanTwo': []
+        };
+        for (var i in keenResult.result) {
+            var session = keenResult.result[i];
+            if (session.hasOwnProperty('result') && session.hasOwnProperty('user.id')) {
+                if (session.hasOwnProperty('parsedPageUrl.domain') && session['parsedPageUrl.domain'] == 'staging.osf.io') {
+                    userProductMap.osf.push(session['user.id']);
+                    var paths = session['result'];
+                    var numberOfProducts = 0;
+                    var meetings, prereg, institutions;
+                    meetings = prereg = institutions = false;
+                    for (var i in paths) {
+                        if (meetings == false && paths[i].startsWith('/meetings/')) {
+                            userProductMap.meetings.push(session['user.id']);
+                            meetings = true;
+                            numberOfProducts ++;
+                        }
+                        else if (prereg == false && paths[i].startsWith('/prereg/')) {
+                            userProductMap.prereg.push(session['user.id']);
+                            prereg = true;
+                            numberOfProducts ++;
+                        }
+                        else if (institutions == false && paths[i].startsWith('/institutions/')) {
+                            userProductMap.institutions.push(session['user.id']);
+                            meetings = true;
+                            numberOfProducts ++;
+                        }
+                    }
+                    if (numberOfProducts > 0) {
+                        userProductMap.moreThanTwo.push(session['user.id']);
+                    }
+                }
+            }
+        }
+        return userProductMap;
     };
 };
 
