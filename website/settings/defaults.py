@@ -379,7 +379,7 @@ else:
         'new-and-noteworthy': {
             'task': 'scripts.populate_new_and_noteworthy_projects',
             'schedule': crontab(minute=0, hour=2, day_of_week=6),  # Saturday 2:00 a.m.
-            'kwargs': {'dry_run': True}
+            'kwargs': {'dry_run': False}
         },
         # 'usage_audit': {
         #     'task': 'scripts.osfstorage.usage_audit',
