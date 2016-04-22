@@ -48,7 +48,7 @@ class MeetingForm(forms.Form):
     )
     active = forms.BooleanField(
         label='Conference is active',
-        required=True,
+        required=False,
         initial=True,
     )
     admins = MultiEmailField(
@@ -57,7 +57,7 @@ class MeetingForm(forms.Form):
     )
     public_projects = forms.BooleanField(
         label='Projects are public',
-        required=True,
+        required=False,
         initial=True,
     )
     poster = forms.BooleanField(
@@ -102,7 +102,8 @@ class MeetingForm(forms.Form):
 
     def clean_endpoint(self):
         data = self.cleaned_data['endpoint']
-        if self.data.get('edit') == 'False':
+        edit = self.cleaned_data['edit']
+        if not edit:
             if Conference.find(Q('endpoint', 'iexact', data)).count() > 0:
                 raise forms.ValidationError(
                     'A meeting with this endpoint exists already.'

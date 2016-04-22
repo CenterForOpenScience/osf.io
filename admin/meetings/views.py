@@ -3,10 +3,10 @@ from __future__ import unicode_literals
 from django.views.generic import ListView, FormView
 from django.views.defaults import page_not_found
 from django.core.urlresolvers import reverse
-from django.contrib import messages
 
 from framework.auth.core import get_user
 from website.models import Conference
+from website.conferences.exceptions import ConferenceError
 
 from admin.base.utils import OSFAdmin
 from admin.meetings.forms import MeetingForm
@@ -40,16 +40,16 @@ class MeetingFormView(OSFAdmin, FormView):
     def get(self, request, *args, **kwargs):
         try:
             return super(MeetingFormView, self).get(request, *args, **kwargs)
-        except AttributeError:
-            return handle_attribute_error(request, 'meeting',
-                                          self.kwargs.get('endpoint'))
+        except ConferenceError:
+            return handle_conference_error(request, 'meeting',
+                                           self.kwargs.get('endpoint'))
 
     def post(self, request, *args, **kwargs):
         try:
             return super(MeetingFormView, self).post(request, *args, **kwargs)
-        except AttributeError:
-            return handle_attribute_error(request, 'meeting',
-                                          self.kwargs.get('endpoint'))
+        except ConferenceError:
+            return handle_conference_error(request, 'meeting',
+                                           self.kwargs.get('endpoint'))
 
     def get_context_data(self, **kwargs):
         kwargs.setdefault('meeting', serialize_meeting(
@@ -63,9 +63,6 @@ class MeetingFormView(OSFAdmin, FormView):
         )
         self.initial.setdefault('edit', True)
         return super(MeetingFormView, self).get_initial()
-
-    def form_invalid(self, form):
-        return super(MeetingFormView, self).form_invalid(form)
 
     def form_valid(self, form):
         custom_fields, data = get_custom_fields(form.cleaned_data)
@@ -96,7 +93,9 @@ class MeetingCreateFormView(OSFAdmin, FormView):
     form_class = MeetingForm
 
     def get_initial(self):
-        self.initial.update(add_field(Conference.DEFAULT_FIELD_NAMES))  # Fills in default
+        data = Conference.DEFAULT_FIELD_NAMES
+        self.initial.update({'field_{}'.format(k): data[k]
+                             for k in data.keys()})  # Fills in default
         self.initial.setdefault('edit', False)
         return super(MeetingCreateFormView, self).get_initial()
 
@@ -114,7 +113,6 @@ class MeetingCreateFormView(OSFAdmin, FormView):
         )
         new_conf.field_names.update(custom_fields)
         new_conf.save()
-        messages.success(self.request, 'Meeting update successful')
         return super(MeetingCreateFormView, self).form_valid(form)
 
     def get_success_url(self):
@@ -122,10 +120,10 @@ class MeetingCreateFormView(OSFAdmin, FormView):
                        kwargs={'endpoint': self.kwargs.get('endpoint')})
 
 
-def handle_attribute_error(request, object_name, endpoint):
+def handle_conference_error(request, object_name, endpoint):
     return page_not_found(
         request,
-        AttributeError(
+        ConferenceError(
             '{} with endpoint "{}" not found'.format(
                 object_name.title(),
                 endpoint
@@ -142,10 +140,6 @@ def get_custom_fields(data):
               for k in data.keys() if 'field' in k}
     non_fields = {k: data[k] for k in data.keys() if 'field' not in k}
     return fields, non_fields
-
-
-def add_field(data):
-    return {'field_{}'.format(k): data[k] for k in data.keys()}
 
 
 def get_admin_users(admins):

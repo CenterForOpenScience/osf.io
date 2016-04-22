@@ -18,6 +18,7 @@
             <th>Name</th>
             <th>Active</th>
             <th>Public Projects</th>
+            <th>Submissions</th>
         </tr>
     </thead>
     <tbody>
@@ -37,6 +38,9 @@
             </td>
             <td>
                 {{ meeting.public_projects }}
+            </td>
+            <td>
+                {{ meeting.num_submissions }}
             </td>
         </tr>
     {% endfor %}
