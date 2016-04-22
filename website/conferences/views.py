@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import json
 import httplib
 import logging
 from datetime import datetime
@@ -216,7 +215,7 @@ def conference_results(meeting):
     data = conference_data(meeting)
 
     return {
-        'data': json.dumps(data),
+        'data': data,
         'label': meeting,
         'meeting': conf.to_storage(),
         # Needed in order to use base.mako namespace
@@ -230,13 +229,19 @@ def conference_submissions(**kwargs):
     in the Conference.num_submissions field.
     """
     submissions = []
+    #  TODO: Revisit this loop, there has to be a way to optimize it
     for conf in Conference.find():
         # For efficiency, we filter by tag first, then node
         # instead of doing a single Node query
         projects = set()
-        for tag in Tag.find(Q('lower', 'eq', conf.endpoint.lower())):
-            for node in Node.find(Q('tags', 'eq', tag._id) & Q('is_public', 'eq', True) & Q('is_deleted', 'eq', False)):
-                projects.add(node)
+
+        tags = Tag.find(Q('lower', 'eq', conf.endpoint.lower())).get_keys()
+        nodes = Node.find(
+            Q('tags', 'in', tags) &
+            Q('is_public', 'eq', True) &
+            Q('is_deleted', 'ne', True)
+        )
+        projects.update(list(nodes))
 
         for idx, node in enumerate(projects):
             submissions.append(_render_conference_node(node, idx, conf))

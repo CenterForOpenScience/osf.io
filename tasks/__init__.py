@@ -17,6 +17,7 @@ from invoke import run, Collection
 from website import settings
 from admin import tasks as admin_tasks
 from utils import pip_install, bin_prefix
+from scripts.meta import gatherer
 
 logging.getLogger('invoke').setLevel(logging.CRITICAL)
 
@@ -69,9 +70,8 @@ def server(host=None, port=5000, debug=True, live=False, gitlogs=False):
         app.run(host=host, port=port, debug=debug, threaded=debug, extra_files=[settings.ASSET_HASH_PATH])
 
 @task
-def git_logs(count=100, pretty='format:"%s - %b"', grep='"Merge pull request"'):
-    cmd = 'git log --grep={1} -n {0} --pretty={2} > website/static/git_logs.txt'.format(count, grep, pretty)
-    run(cmd, echo=True)
+def git_logs():
+    gatherer.main()
 
 
 @task
@@ -726,24 +726,6 @@ def setup():
     # Build nodeCategories.json before building assets
     build_js_config_files(settings)
     assets(dev=True, watch=False)
-
-
-@task
-def analytics():
-    from website.app import init_app
-    import matplotlib
-    matplotlib.use('Agg')
-    init_app()
-    from scripts.analytics import (
-        logs, addons, comments, folders, links, watch, email_invites,
-        permissions, profile, benchmarks
-    )
-    modules = (
-        logs, addons, comments, folders, links, watch, email_invites,
-        permissions, profile, benchmarks
-    )
-    for module in modules:
-        module.main()
 
 
 @task

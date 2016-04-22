@@ -14,6 +14,27 @@ a {
     cursor: pointer;
 }
 
+/*Meta Info
+----------------------------------------------------*/
+
+#metaInfo {
+    text-shadow: 0 1px 0 #fff;
+    border-top: 1px solid #e5e5e5;
+    border-bottom: 1px solid #e5e5e5;
+    width: 100%;
+    color: #555;
+    position: relative;
+    padding-top:20px;
+    padding-bottom:20px;
+    z-index:10;
+    background-color:white;
+    border-top:2px solid black;
+}
+
+#metaInfo th, #metaInfo td{
+    padding-left: 15px;
+    text-align: left;
+}
 
 /* Footer
 -------------------------------------------------- */
@@ -191,7 +212,6 @@ a {
         line-height: 27px !important;
         padding: 11px 15px 10px 15px !important;
     }
-
     .osf-navbar-logo {
         margin-top: 0px !important;
     }
@@ -606,10 +626,6 @@ button.close {
     display: inline-block
 }
 
-.view-only-navbar-brand{
-        color: white !important;
-    }
-
 /* Navigation -- general style should be in style guide
 -------------------------------------------------- */
 #navbarScope a.nav-user-dropdown {
@@ -651,6 +667,20 @@ button.close {
 .comma-separated:last-of-type:after {
     content: "";
 }
-.breaklines {
-    white-space: pre-wrap;
+
+.action-buttons {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.token-warning {
+    margin-bottom: 5px;
+    margin-top: 15px;
+    padding-left: 10px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+#copy-button {
+    margin-top: 10px;
 }

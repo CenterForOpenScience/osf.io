@@ -189,7 +189,11 @@ class FileSerializer(JSONAPISerializer):
     def update(self, instance, validated_data):
         assert isinstance(instance, FileNode), 'Instance must be a FileNode'
         for attr, value in validated_data.items():
-            setattr(instance, attr, value)
+            if attr == 'checkout':
+                user = self.context['request'].user
+                instance.check_in_or_out(user, value)
+            else:
+                setattr(instance, attr, value)
         instance.save()
         return instance
 
@@ -244,3 +248,6 @@ class FileVersionSerializer(JSONAPISerializer):
             path=(fobj.node._id, 'files', fobj.provider, fobj.path.lstrip('/')),
             query={fobj.version_identifier: obj.identifier}  # TODO this can probably just be changed to revision or version
         ).url
+
+    def get_absolute_url(self, obj):
+        return self.self_url(obj)

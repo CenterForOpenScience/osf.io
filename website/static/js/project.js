@@ -6,6 +6,7 @@
 var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
+var ko = require('knockout');
 
 var $osf = require('js/osfHelpers');
 var LogFeed = require('js/logFeed.js');
@@ -334,12 +335,10 @@ $(document).ready(function() {
             }
         });
 
-        // If not viewing the project or file detail page, remove the Comments Link
-        var excluded = ['files', 'wiki', 'analytics', 'registrations', 'forks', 'contributors', 'settings'];
-        for (var i=0; i < excluded.length; i++) {
-            if (path.indexOf(excluded[i]) > -1) {
-                $('.project-nav #commentsLink').remove();
-            }
+        // Remove Comments link from project nav bar for pages not bound to the comment view model
+        var commentsLinkElm = document.getElementById('commentsLink');
+        if (!ko.dataFor(commentsLinkElm)) {
+             commentsLinkElm.remove();
         }
     });
 });
