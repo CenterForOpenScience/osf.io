@@ -365,7 +365,7 @@ ViewModel.prototype.createBucket = function(bucketName, bucketLocation) {
         self.loadedBucketList(true);
         self.selectedBucket(bucketName);
         self.showSelect(true);
-        var msg = 'Successfully created bucket "' + bucketName + '". You can now select it from the drop down list.';
+        var msg = 'Successfully created bucket "' + $osf.htmlEscape(bucketName) + '". You can now select it from the drop down list.';
         var msgType = 'text-success';
         self.changeMessage(msg, msgType, null, true);
     }).fail(function(xhr) {
@@ -531,7 +531,7 @@ ViewModel.prototype.updateFromData = function(data) {
             else {
                 message = 'Could not retrieve S3 settings at ' +
                     'this time. The S3 addon credentials may no longer be valid.' +
-                    ' Contact ' + self.ownerName() + ' to verify.';
+                    ' Contact ' + $osf.htmlEscape(self.ownerName()) + ' to verify.';
             }
             self.changeMessage(message, 'text-danger', null, true);
         }

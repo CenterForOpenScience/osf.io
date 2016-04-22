@@ -253,7 +253,7 @@ var joinPrompts = function(prompts, base) {
         prompt += '<hr />';
         prompt += '<ul>';
         for (var i=0; i<prompts.length; i++) {
-            prompt += '<li>' + prompts[i] + '</li>';
+            prompt += '<li>' + htmlEscape(prompts[i]) + '</li>';
         }
         prompt += '</ul>';
     }

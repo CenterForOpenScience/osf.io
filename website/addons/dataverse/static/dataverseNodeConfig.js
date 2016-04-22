@@ -86,7 +86,7 @@ function ViewModel(url) {
             return 'Could not disconnect because of an error. Please try again later.';
         }),
         authInvalid: ko.pureComputed(function() {
-            return 'The API token provided for ' + self.host() + ' is invalid.';
+            return 'The API token provided for ' + $osf.htmlEscape(self.host()) + ' is invalid.';
         }),
         authError: ko.pureComputed(function() {
             return 'Sorry, but there was a problem connecting to that instance of Dataverse. It ' +
@@ -116,7 +116,7 @@ function ViewModel(url) {
         }),
         setInfoSuccess: ko.pureComputed(function() {
             var filesUrl = window.contextVars.node.urls.web + 'files/';
-            return 'Successfully linked dataset \'' + self.savedDatasetTitle() + '\'. Go to the <a href="' +
+            return 'Successfully linked dataset \'' + $osf.htmlEscape(self.savedDatasetTitle()) + '\'. Go to the <a href="' +
                 filesUrl + '">Files page</a> to view your content.';
         }),
         setDatasetError: ko.pureComputed(function() {

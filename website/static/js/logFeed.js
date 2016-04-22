@@ -31,8 +31,7 @@ var Log = function(params) {
       * Given an item in self.contributors, return its anchor element representation.
       */
     self._asContribLink = function(person) {
-        var fullnameText = $osf.htmlEscape(person.fullname);
-        return '<a class="contrib-link" href="/profile/' + person.id + '/">' + fullnameText + '</a>';
+        return '<a class="contrib-link" href="/profile/' + person.id + '/">' +  $osf.htmlEscape(person.fullname) + '</a>';
     };
 
     /**
@@ -77,8 +76,7 @@ var Log = function(params) {
                 if (person.registered) {
                     ret += self._asContribLink(person);
                 } else {
-                    var fullnameText = $osf.htmlEscape(person.fullname);
-                    ret += '<span>' + fullnameText + '</span>';
+                    ret += '<span>' + $osf.htmlEscape(person.fullname) + '</span>';
                 }
                 if (i < self.contributors.length - 1 && self.contributors.length > 2) {
                     ret += ', ';
