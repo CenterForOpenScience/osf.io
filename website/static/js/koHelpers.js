@@ -262,7 +262,6 @@ ko.bindingHandlers.tooltip = {
 };
 
 var clipboard = function(el, valueAccessor) {
-    console.log(textToCopy);
     makeClient($(el));
     $(el).attr("data-clipboard-text", valueAccessor());
 };
