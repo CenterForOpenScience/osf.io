@@ -35,7 +35,7 @@ EMAIL_TOKEN_EXPIRATION = 24
 CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'static', 'vendor', 'bower_components', 'styles')
 
 # Minimum seconds between forgot password email attempts
-FORGOT_PASSWORD_MINIMUM_TIME = 30
+SEND_EMAIL_THROTTLE = 30
 
 # Hours before pending embargo/retraction/registration automatically becomes active
 RETRACTION_PENDING_TIME = datetime.timedelta(days=2)
@@ -447,3 +447,6 @@ ENABLE_VARNISH = False
 ENABLE_ESI = False
 VARNISH_SERVERS = []  # This should be set in local.py or cache invalidation won't work
 ESI_MEDIA_TYPES = {'application/vnd.api+json', 'application/json'}
+
+# Used for gathering meta information about the current build
+GITHUB_API_TOKEN = None

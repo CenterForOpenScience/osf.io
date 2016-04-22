@@ -14,6 +14,27 @@ a {
     cursor: pointer;
 }
 
+/*Meta Info
+----------------------------------------------------*/
+
+#metaInfo {
+    text-shadow: 0 1px 0 #fff;
+    border-top: 1px solid #e5e5e5;
+    border-bottom: 1px solid #e5e5e5;
+    width: 100%;
+    color: #555;
+    position: relative;
+    padding-top:20px;
+    padding-bottom:20px;
+    z-index:10;
+    background-color:white;
+    border-top:2px solid black;
+}
+
+#metaInfo th, #metaInfo td{
+    padding-left: 15px;
+    text-align: left;
+}
 
 /* Footer
 -------------------------------------------------- */
