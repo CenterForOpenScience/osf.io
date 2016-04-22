@@ -100,6 +100,10 @@
             % else:
                 Recent activity
                 <!-- ko stopBinding: true -->
+                    <div class="spinner-loading-wrapper">
+                        </br>
+                    <div class="logo-spin logo-lg"></div>
+                    </div>
                     <div id="logs-${summary['id']}" class="log-container" data-uri="${summary['api_url']}log/">
                         <dl class="dl-horizontal activity-log" data-bind="foreach: {data: logs, as: 'log'}">
                             <dt><span class="date log-date" data-bind="text: log.date.local, tooltip: {title: log.date.utc}"></span></dt>

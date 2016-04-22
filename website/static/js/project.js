@@ -13,6 +13,7 @@ var LogFeed = require('js/logFeed.js');
 
 var ctx = window.contextVars;
 var NodeActions = {}; // Namespace for NodeActions
+require('css/style.css');
 
 // TODO: move me to the NodeControl or separate module
 NodeActions.beforeForkNode = function(url, done) {
@@ -217,10 +218,12 @@ NodeActions.openCloseNode = function(nodeId) {
     var $logs = $('#logs-' + nodeId);
     if (!$logs.hasClass('active')) {
         if (!$logs.hasClass('served')) {
+            $('.spinner-loading-wrapper').show();
             $.getJSON(
                 $logs.attr('data-uri'),
                 {count: 3}
             ).done(function(response) {
+                $('.spinner-loading-wrapper').hide();
                 new LogFeed('#logs-' + nodeId, response.logs);
                 $logs.addClass('served');
             });
