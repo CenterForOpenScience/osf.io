@@ -1,10 +1,13 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load filters %}
 
 {% block top_includes %}
     <script>
         var keenProjectId = '{{ keen_project_id }}';
         var keenReadKey = '{{ keen_read_key }}';
+        var userCount = {{ user_count | jsonify | safe}};
+        // debugger;
     </script>
 {% endblock %}
 
@@ -24,9 +27,6 @@
     <div id='keen-chart-average-session-mau'>...</div>
     <h3>Average User/MAU Session Length History of past 12 weeks</h3>
     <div id='keen-chart-average-session-history'>...</div>
-    <h3>OSF Products Users View in the Past Month</h3>
-    <div id='keen-chart-osf-product-usage-mt2'>...</div>
-    <div id='keen-chart-osf-product-usage-mee'>...</div>
-    <div id='keen-chart-osf-product-usage-pre'>...</div>
-    <div id='keen-chart-osf-product-usage-ins'>...</div>
+    <h3>User Count</h3>
+    <div id='db-chart-user-count'></div>
 {% endblock content %}

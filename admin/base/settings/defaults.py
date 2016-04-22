@@ -202,3 +202,5 @@ CKEDITOR_CONFIGS = {
 KEEN_PROJECT_ID = 'override_me_in_local_py'
 KEEN_READ_KEY = 'override_me_in_local_py'
 KEEN_WRITE_KEY = 'override_me_in_local_py'
+
+ENTRY_POINTS = ['osf4m', 'prereg_challenge_campaign', 'institution_campaign']
