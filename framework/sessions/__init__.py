@@ -16,6 +16,9 @@ from weakref import WeakKeyDictionary
 from framework.flask import redirect
 from framework.mongo import database
 
+from modularodm import Q
+from modularodm.exceptions import QueryException
+
 from website import settings
 
 from .model import Session
@@ -44,6 +47,26 @@ def add_key_to_url(url, scheme, key):
     parsed_redirect_url = parsed_url._replace(**replacements)
     return urlparse.urlunparse(parsed_redirect_url)
 
+def get_node_id(url):
+    try:
+        node_id = [x for x in url.split("/") if x][2]
+        # Avoid circular import
+        from website.models import Node
+        if Node.find(Q('_id', 'eq', node_id)).count() == 1:
+            return node_id
+    except IndexError:
+        return None
+    return None
+
+def get_private_link(key):
+    try:
+        # Avoid circular import
+        from website.project.model import PrivateLink
+        return PrivateLink.find_one(
+            Q('key', 'eq', key)
+        )
+    except QueryException:
+        return None
 
 def prepare_private_key():
     """`before_request` handler that checks the Referer header to see if the user
@@ -58,10 +81,26 @@ def prepare_private_key():
     if request.method != 'GET':
         return
 
-    # Done if private_key in args
+    node_id = get_node_id(request.url)
     key_from_args = request.args.get('view_only', '')
-    if key_from_args:
+
+    # Done if not on a node; If not on a node remove the key
+    if not node_id:
+        if key_from_args:
+            return redirect(request.base_url, code=http.TEMPORARY_REDIRECT, strip_view_only=True)
         return
+
+    private_link = get_private_link(key_from_args)
+
+    # Done if not a valid private link; If not a valid key remove it
+    if not private_link and key_from_args:
+        return redirect(request.base_url, code=http.TEMPORARY_REDIRECT, strip_view_only=True)
+
+    # Done if private link and a valid node; If not a valid node for the link, remove link
+    if private_link and node_id:
+        if node_id in private_link.nodes:
+            return
+        return redirect(request.base_url, code=http.TEMPORARY_REDIRECT, strip_view_only=True)
 
     # grab query key from previous request for not login user
     if request.referrer:
@@ -76,11 +115,11 @@ def prepare_private_key():
         scheme = None
         key = None
 
-    # Update URL and redirect
+    # Update URL and redirect`
     if key and not session.is_authenticated:
         new_url = add_key_to_url(request.url, scheme, key)
         return redirect(new_url, code=http.TEMPORARY_REDIRECT)
-
+    return
 
 def get_session():
     session = sessions.get(request._get_current_object())
