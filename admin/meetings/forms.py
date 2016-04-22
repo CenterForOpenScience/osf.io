@@ -24,6 +24,7 @@ class MeetingForm(forms.Form):
     edit = forms.BooleanField(
         label='edit',
         initial=False,
+        required=False,
         widget=forms.HiddenInput(),
     )
     endpoint = forms.CharField(

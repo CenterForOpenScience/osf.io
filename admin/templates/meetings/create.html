@@ -11,14 +11,17 @@
     {{ form.non_field_errors }}
     {% csrf_token %}
     {% for field in form %}
+        {% if not field.is_hidden %}
         <div class="fieldWrapper">
             <span class="text-danger">{{ field.errors }}</span>
-            {% if not field.is_hidden %}
             {{ field.label_tag }} <br>
-            {% endif %}
             {{ field }}
         </div>
+        {% endif %}
         <br>
+    {% endfor %}
+    {% for hidden in form.hidden_fields %}
+        {{ hidden }}
     {% endfor %}
     <input type="submit" class="btn btn-primary" value="Save">
     </form>
