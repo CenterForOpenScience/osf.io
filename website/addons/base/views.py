@@ -641,8 +641,8 @@ def addon_view_file(auth, node, file_node, version):
 
 
 def get_archived_from_url(node, file_node):
-    if file_node.copied_from_id:
-        trashed = TrashedFileNode.load(file_node.copied_from_id)
+    if file_node.copied_from:
+        trashed = TrashedFileNode.load(file_node.copied_from._id)
         if not trashed:
-            return node.registered_from.web_url_for('addon_view_or_download_file', provider=file_node.provider, path=file_node.copied_from_id)
+            return node.registered_from.web_url_for('addon_view_or_download_file', provider=file_node.provider, path=file_node.copied_from._id)
     return None

@@ -70,7 +70,7 @@ class TrashedFileNode(StoredObject, Commentable):
     deleted_on = fields.DateTimeField(auto_now_add=True)
     tags = fields.ForeignField('Tag', list=True)
 
-    copied_from_id = fields.StringField(default=None)
+    copied_from = fields.ForeignField('StoredFileNode', default=None)
 
     @property
     def deep_url(self):
@@ -170,8 +170,7 @@ class StoredFileNode(StoredObject, Commentable):
 
     node = fields.ForeignField('Node', required=True)
     parent = fields.ForeignField('StoredFileNode', default=None)
-
-    copied_from_id = fields.StringField(default=None)
+    copied_from = fields.ForeignField('StoredFileNode', default=None)
 
     is_file = fields.BooleanField(default=True)
     provider = fields.StringField(required=True)
@@ -421,6 +420,18 @@ class FileNode(object):
         if isinstance(val, FileNode):
             val = val.stored_object
         self.stored_object.parent = val
+
+    @property
+    def copied_from(self):
+        if self.stored_object.copied_from:
+            return self.stored_object.copied_from
+        return None
+
+    @copied_from.setter
+    def copied_from(self, val):
+        if isinstance(val, FileNode):
+            val = val.stored_object
+        self.stored_object.copied_from = val
 
     @property
     def deep_url(self):
