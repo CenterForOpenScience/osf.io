@@ -10,6 +10,13 @@ from . import defaults
 DEV_MODE = True
 DEBUG_MODE = True  # Sets app to debug mode, turns off template caching, etc.
 
+LOCAL_MODE = True
+SECURE_MODE = False  # if true, use https for osf and api server
+PROTOCOL = 'https://' if SECURE_MODE else 'http://'
+
+DOMAIN = PROTOCOL + 'localhost:5000/'
+API_DOMAIN = PROTOCOL + 'localhost:8000/'
+
 SEARCH_ENGINE = 'elastic'
 ELASTIC_TIMEOUT = 10
 
@@ -32,9 +39,13 @@ MAIL_PASSWORD = 'CHANGEME'
 ENABLE_EMAIL_SUBSCRIPTIONS = False
 
 # Session
-OSF_COOKIE_DOMAIN = None
 COOKIE_NAME = 'osf'
-SECRET_KEY = "CHANGEME"
+OSF_COOKIE_DOMAIN = None
+SECRET_KEY = 'CHANGEME'
+
+# certificate for local SECURE_MODE development
+OSF_SERVER_KEY = 'PATH_TO_LOCAL_PRIVATE_KEY'
+OSF_SERVER_CERT = 'PATH_TO_LOCAL_PRIVATE_KEY'
 
 # Uncomment if GPG was installed with homebrew
 # GNUPG_BINARY = '/usr/local/bin/gpg'

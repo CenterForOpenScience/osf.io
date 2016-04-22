@@ -48,6 +48,9 @@ INSTALLED_APPS = (
     'raven.contrib.django.raven_compat',
 )
 
+if osf_settings.SECURE_MODE and osf_settings.LOCAL_MODE:
+    INSTALLED_APPS += ('sslserver',)
+
 # TODO: Are there more granular ways to configure reporting specifically related to the API?
 RAVEN_CONFIG = {
     'tags': {'App': 'api'},

@@ -51,7 +51,7 @@ def task(*args, **kwargs):
 
 
 @task
-def server(host=None, port=5000, debug=True, live=False, gitlogs=False, https=False):
+def server(host=None, port=5000, debug=True, live=False, gitlogs=False):
     """Run the app server."""
     if gitlogs:
         git_logs()
@@ -66,12 +66,11 @@ def server(host=None, port=5000, debug=True, live=False, gitlogs=False, https=Fa
         server.watch(os.path.join(HERE, 'website', 'static', 'public'))
         server.serve(port=port)
     else:
-        if https:
-            # for local https test, generate self-signed cert (and key if necessary) and put the path in local.py
+        if settings.SECURE_MODE:
             context = (settings.OSF_SERVER_CERT, settings.OSF_SERVER_KEY)
-            app.run(host=host, port=5000, debug=debug, threaded=debug, extra_files=[settings.ASSET_HASH_PATH], ssl_context=context)
         else:
-            app.run(host=host, port=port, debug=debug, threaded=debug, extra_files=[settings.ASSET_HASH_PATH])
+            context = None
+        app.run(host=host, port=port, debug=debug, threaded=debug, extra_files=[settings.ASSET_HASH_PATH],ssl_context=context)
 
 
 @task
@@ -81,10 +80,14 @@ def git_logs(count=100, pretty='format:"%s - %b"', grep='"Merge pull request"'):
 
 
 @task
-def apiserver(port=8000, wait=True, https=False):
+def apiserver(port=8000, wait=True):
     """Run the API server."""
     env = os.environ.copy()
-    cmd = 'DJANGO_SETTINGS_MODULE=api.base.settings {} manage.py runserver {} --nothreading'.format(sys.executable, port)
+    if settings.SECURE_MODE:
+        cmd = 'DJANGO_SETTINGS_MODULE=api.base.settings HTTPS=on {} manage.py runsslserver {} --nothreading' \
+              ' --certificate {} --key {}'.format(sys.executable, port, settings.OSF_SERVER_CERT, settings.OSF_SERVER_KEY)
+    else:
+        cmd = 'DJANGO_SETTINGS_MODULE=api.base.settings {} manage.py runserver {} --nothreading'.format(sys.executable, port)
     if wait:
         return run(cmd, echo=True, pty=True)
     from subprocess import Popen
@@ -434,7 +437,7 @@ def flake():
 
 
 @task(aliases=['req'])
-def requirements(base=False, addons=False, release=False, dev=False, metrics=False, quick=False):
+def requirements(base=False, addons=False, release=False, dev=False, metrics=False, secure=False, quick=False):
     """Install python dependencies.
 
     Examples:
@@ -470,6 +473,11 @@ def requirements(base=False, addons=False, release=False, dev=False, metrics=Fal
         if base:  # then base requirements
             req_file = os.path.join(HERE, 'requirements.txt')
             run(pip_install(req_file), echo=True)
+
+    # local development using https, --secure will recursively install --dev and --base
+    if secure:
+        req_file = os.path.join(HERE, 'requirements', 'secure.txt')
+        run(pip_install(req_file), echo=True)
 
 
 @task
