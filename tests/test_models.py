@@ -28,6 +28,7 @@ from framework.auth.signals import user_merged
 from framework.celery_tasks import handlers
 from framework.bcrypt import check_password_hash
 from website import filters, language, settings, mailchimp_utils
+from website.addons.wiki.model import NodeWikiPage
 from website.exceptions import NodeStateError
 from website.profile.utils import serialize_user
 from website.project.signals import contributor_added
@@ -3852,6 +3853,28 @@ class TestForkNode(OsfTestCase):
             self.registration,
         )
 
+    def test_fork_project_with_no_wiki_pages(self):
+        project = ProjectFactory(creator=self.user)
+        fork = project.fork_node(self.auth)
+        assert_equal(fork.wiki_pages_versions, {})
+        assert_equal(fork.wiki_pages_current, {})
+        assert_equal(fork.wiki_private_uuids, {})
+
+    def test_forking_clones_project_wiki_pages(self):
+        project = ProjectFactory(creator=self.user, is_public=True)
+        wiki = NodeWikiFactory(node=project)
+        current_wiki = NodeWikiFactory(node=project, version=2, is_current=True)
+        fork = project.fork_node(self.auth)
+        assert_equal(fork.wiki_private_uuids, {})
+
+        registration_wiki_current = NodeWikiPage.load(fork.wiki_pages_current[current_wiki.page_name])
+        assert_equal(registration_wiki_current.node, fork)
+        assert_not_equal(registration_wiki_current._id, current_wiki._id)
+
+        registration_wiki_version = NodeWikiPage.load(fork.wiki_pages_versions[wiki.page_name][0])
+        assert_equal(registration_wiki_version.node, fork)
+        assert_not_equal(registration_wiki_version._id, wiki._id)
+
 
 class TestRegisterNode(OsfTestCase):
 
@@ -4062,6 +4085,27 @@ class TestRegisterNode(OsfTestCase):
         registration = RegistrationFactory(project=node)
         assert_equal(registration.primary_institution._id, node.primary_institution._id)
         assert_equal(set(registration.affiliated_institutions), set(node.affiliated_institutions))
+
+    def test_registration_of_project_with_no_wiki_pages(self):
+        assert_equal(self.registration.wiki_pages_versions, {})
+        assert_equal(self.registration.wiki_pages_current, {})
+        assert_equal(self.registration.wiki_private_uuids, {})
+
+    def test_registration_clones_project_wiki_pages(self):
+        project = ProjectFactory(creator=self.user, is_public=True)
+        wiki = NodeWikiFactory(node=project)
+        current_wiki = NodeWikiFactory(node=project, version=2, is_current=True)
+        registration = project.register_node(get_default_metaschema(), Auth(self.user), '', None)
+        assert_equal(self.registration.wiki_private_uuids, {})
+
+        registration_wiki_current = NodeWikiPage.load(registration.wiki_pages_current[current_wiki.page_name])
+        assert_equal(registration_wiki_current.node, registration)
+        assert_not_equal(registration_wiki_current._id, current_wiki._id)
+
+        registration_wiki_version = NodeWikiPage.load(registration.wiki_pages_versions[wiki.page_name][0])
+        assert_equal(registration_wiki_version.node, registration)
+        assert_not_equal(registration_wiki_version._id, wiki._id)
+
 
 class TestNodeLog(OsfTestCase):
 
