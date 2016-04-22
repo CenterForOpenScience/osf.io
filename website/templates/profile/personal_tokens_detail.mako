@@ -65,7 +65,7 @@
                         <div class="bg-danger f-w-xl token-warning">This is the only time your token will be displayed.</div>
                         <label class="f-w-xl">Token ID</label>
                         <i class="fa fa-info-circle text-muted" data-bind="tooltip: {title:'ID used to authenticate with this token. This will be shown only once.',        placement: 'bottom'}"></i>
-                        <pre data-bind="text: token_id"></pre>
+                        <samp data-bind="text: token_id"></samp>
                         <div>
                             <button type="button" class="btn btn-default" data-bind="clipboard: token_id()" id="copy-button"><i class="fa fa-copy"></i> Copy to clipboard</button>
                         </div>
