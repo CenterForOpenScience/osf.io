@@ -263,7 +263,7 @@ ko.bindingHandlers.tooltip = {
 
 var clipboard = function(el, valueAccessor) {
     makeClient(el);
-    $(el).attr("data-clipboard-text", ko.unwrap(valueAccessor()));
+    $(el).attr('data-clipboard-text', ko.unwrap(valueAccessor()));
 };
 ko.bindingHandlers.clipboard = {
     init: clipboard
