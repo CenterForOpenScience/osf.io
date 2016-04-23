@@ -1,3 +1,4 @@
+import os
 from website.addons.dmptool import model, routes
 
 # MUST
@@ -47,3 +48,7 @@ MODELS = [
 
 USER_SETTINGS_MODEL = model.DmptoolUserSettings
 NODE_SETTINGS_MODEL = model.DmptoolNodeSettings
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+NODE_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 'dmptool_node_settings.mako')
+USER_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 'dmptool_user_settings.mako')

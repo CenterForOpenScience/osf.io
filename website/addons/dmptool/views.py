@@ -6,6 +6,7 @@ from framework.exceptions import HTTPError, PermissionsError
 
 from website.addons.base import generic_views
 from website.addons.dmptool import utils
+from website.addons.dmptool.model import DmptoolProvider
 from website.addons.dmptool.serializer import DmptoolSerializer
 from website.oauth.models import ExternalAccount
 from website.util import permissions
@@ -22,6 +23,51 @@ logger = logging.getLogger(__name__)
 
 SHORT_NAME = 'dmptool'
 FULL_NAME = 'DMPTool'
+
+@must_be_logged_in
+def dmptool_add_user_account(auth, **kwargs):
+    """Verifies new external account credentials and adds to user's list"""
+    user = auth.user
+    provider = dmptoolProvider()
+
+    host = request.json.get('host').rstrip('/')
+    api_token = request.json.get('api_token')
+
+    # Verify that credentials are valid
+    client.connect_or_error(host, api_token)
+
+    # Note: `dmptoolSerializer` expects display_name to be a URL
+    try:
+        provider.account = ExternalAccount(
+            provider=provider.short_name,
+            provider_name=provider.name,
+            display_name=host,       # no username; show host
+            oauth_key=host,          # hijacked; now host
+            oauth_secret=api_token,  # hijacked; now api_token
+            provider_id=api_token,   # Change to username if dmptool allows
+        )
+        provider.account.save()
+    except KeyExistsException:
+        # ... or get the old one
+        provider.account = ExternalAccount.find_one(
+            Q('provider', 'eq', provider.short_name) &
+            Q('provider_id', 'eq', api_token)
+        )
+
+    if provider.account not in user.external_accounts:
+        user.external_accounts.append(provider.account)
+
+    user_addon = auth.user.get_addon('dmptool')
+    if not user_addon:
+        user.add_addon('dmptool')
+    user.save()
+
+    # Need to ensure that the user has dmptool enabled at this point
+    user.get_or_add_addon('dmptool', auth=auth)
+    user.save()
+
+    return {}
+
 
 @must_be_logged_in
 def dmptool_get_user_settings(auth):
