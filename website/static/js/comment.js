@@ -8,7 +8,6 @@ var ko = require('knockout');
 var moment = require('moment');
 var Raven = require('raven-js');
 var koHelpers = require('./koHelpers');
-require('knockout-js-infinite-scroll');
 require('jquery-autosize');
 
 var osfHelpers = require('js/osfHelpers');
@@ -81,15 +80,10 @@ var BaseComment = function() {
 
     self.atBottomOfScroll = ko.observable(false);
     self.urlForNext = ko.observable();
-    self.readyForMore = ko.observable(false);
 
     self.submittingReply = ko.observable(false);
 
     self.comments = ko.observableArray();
-
-    self.comments.extend({
-        infinitescroll: {}
-    });
 
     self.loadingComments = ko.observable(true);
 
@@ -98,22 +92,6 @@ var BaseComment = function() {
     });
     self.commentButtonText = ko.computed(function() {
         return self.submittingReply() ? 'Commenting' : 'Comment';
-    });
-
-    self.updateViewportDimensions = ko.computed(function () {
-        var commentSidebarRef = $('.cp-sidebar-content');
-        var commentRef = $('.comment-body').first();
-
-        var commentsWidth = self.atBottomOfScroll() ? commentSidebarRef.width() : 300;
-        var commentsHeight = self.atBottomOfScroll() ? commentSidebarRef.width() : 1238;
-        var commentWidth = self.atBottomOfScroll() ? commentRef.width() : 100;
-        var commentHeight = self.atBottomOfScroll() ? commentRef.height() : 86;
-
-        self.comments.infinitescroll.viewportWidth(commentsWidth);
-        self.comments.infinitescroll.viewportHeight(commentsHeight);
-        self.comments.infinitescroll.itemWidth(commentWidth);
-        self.comments.infinitescroll.itemHeight(commentHeight);
-
     });
 };
 
@@ -143,23 +121,6 @@ BaseComment.prototype.setupToolTips = function(elm) {
     });
 };
 
-BaseComment.prototype.get_url = function() {
-    var self = this;
-    if (self.comments().length === 0) {
-        var urlParams = osfHelpers.urlParams();
-        var query = 'embed=user';
-        if (urlParams.view_only && !window.contextVars.node.isPublic) {
-            query += '&view_only=' + urlParams.view_only;
-        }
-        if (self.id() !== undefined) {
-            query += '&filter[target]=' + self.id();
-        }
-        var url = osfHelpers.apiV2Url(self.nodeType + '/' + window.contextVars.node.id + '/comments/', {query: query});
-
-        return url;
-    }
-};
-
 BaseComment.prototype.fetch = function() {
     var self = this;
     var setUnread = self.getTargetType() !== 'comments' && !osfHelpers.urlParams().view_only && self.author.id !== '';
@@ -187,6 +148,7 @@ BaseComment.prototype.fetchNext = function(url, comments, setUnread) {
         'GET',
         url,
         {'isCors': true});
+    self.loadingComments(true);
     request.done(function(response) {
         comments = response.data;
         if (self._loaded !== true) {
@@ -203,14 +165,8 @@ BaseComment.prototype.fetchNext = function(url, comments, setUnread) {
         });
         self.configureCommentsVisibility();
         self.totalComments = response.links.meta.total;
-        if (response.links.next !== null) {
-            self.readyForMore(true);
-            self.urlForNext(response.links.next);
-        } else {
-            self.readyForMore(false);
-            self.loadingComments(false);
-        }
-    }).fail(function () {
+        self.urlForNext(response.links.next);
+    }).always(function () {
         self.loadingComments(false);
     });
 };
@@ -221,12 +177,11 @@ BaseComment.prototype.getMoreComments = function() {
     var comments = self.comments();
     var setUnread = self.getTargetType() !== 'comments' && !osfHelpers.urlParams().view_only && self.author.id !== '';
 
-    if (self.readyForMore) {
-        self.fetchNext(next_url, comments, setUnread);
-    } else {
-        self.loadingComments(false);
+    if (self.urlForNext()) {
+        if (!self.loadingComments()) {
+            self.fetchNext(next_url, comments, setUnread);
+        }
     }
-    self.readyForMore(false);
 };
 
 BaseComment.prototype.configureCommentsVisibility = function() {
@@ -666,30 +621,13 @@ var CommentListModel = function(options) {
         self.unreadComments(0);
     };
 
-     // detect resize
-    $(window).resize(function() {
-        self.updateViewportDimensions();
-    });
-
     $('#comments_window').scroll(function() {
-        self.comments.infinitescroll.scrollY($('#comments_window').scrollTop());
-
-        var last = self.comments.infinitescroll.lastVisibleIndex();
-        var first = self.comments.infinitescroll.firstVisibleIndex();
-        var numberOfComments = self.comments.peek().length;
-        var checkNumber = ((last + numberOfComments) - first) * numberOfComments;
-
-        if ( $('#comments_window').scrollTop() - numberOfComments >= checkNumber) {
-            self.atBottomOfScroll(true);
-            if (self.readyForMore()) {
-                self.getMoreComments();
-            }
+        var $this = $(this);
+        if ($this.scrollTop() + $this.innerHeight() >= $this[0].scrollHeight) {
+            self.getMoreComments();
         }
     });
-
-    self.updateViewportDimensions();
     self.fetch(options.nodeId);
-
 };
 
 CommentListModel.prototype = new BaseComment();
