@@ -78,7 +78,6 @@ var BaseComment = function() {
     self.replying = ko.observable(false);
     self.replyContent = ko.observable('');
 
-    self.atBottomOfScroll = ko.observable(false);
     self.urlForNext = ko.observable();
 
     self.submittingReply = ko.observable(false);
@@ -621,12 +620,8 @@ var CommentListModel = function(options) {
         self.unreadComments(0);
     };
 
-    $('#comments_window').scroll(function() {
-        var $this = $(this);
-        if ($this.scrollTop() + $this.innerHeight() >= $this[0].scrollHeight) {
-            self.getMoreComments();
-        }
-    });
+    osfHelpers.onScrollToBottom(document.getElementById('comments_window'), self.getMoreComments.bind(self));
+
     self.fetch(options.nodeId);
 };
 
