@@ -163,7 +163,6 @@ BaseComment.prototype.fetchNext = function(url, comments, setUnread) {
             );
         });
         self.configureCommentsVisibility();
-        self.totalComments = response.links.meta.total;
         self.urlForNext(response.links.next);
     }).always(function () {
         self.loadingComments(false);
