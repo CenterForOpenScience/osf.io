@@ -171,13 +171,13 @@ BaseComment.prototype.fetchNext = function(url, comments, setUnread) {
 
 BaseComment.prototype.getMoreComments = function() {
     var self = this;
-    var next_url = self.urlForNext();
+    var nextUrl = self.urlForNext();
     var comments = self.comments();
     var setUnread = self.getTargetType() !== 'comments' && !osfHelpers.urlParams().view_only && self.author.id !== '';
 
     if (self.urlForNext()) {
         if (!self.loadingComments()) {
-            self.fetchNext(next_url, comments, setUnread);
+            self.fetchNext(nextUrl, comments, setUnread);
         }
     }
 };
