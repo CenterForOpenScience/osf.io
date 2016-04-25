@@ -140,7 +140,7 @@ ViewModel.prototype.selectBucket = function() {
             )
             .done(function (response) {
                 self.updateFromData(response);
-                self.changeMessage('Successfully linked S3 bucket "' + self.currentBucket() + '". Go to the <a href="' +
+                self.changeMessage('Successfully linked S3 bucket "' + $osf.htmlEscape(self.currentBucket()) + '". Go to the <a href="' +
                     self.urls().files + '">Files page</a> to view your content.', 'text-success', null, true);
                 self.loading(false);
                 ret.resolve(response);
