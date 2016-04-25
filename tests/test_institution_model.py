@@ -25,7 +25,6 @@ class TestInstitution(OsfTestCase):
             'title': ' A Completely Different name omg.',
             'institution_logo_name': ' A different ',
             'system_tags': ['new_tags', 'other', 'busta', 'rhymes'],
-            'piwik_site_id': 'is this an id'
         }
         self.institution.name = new['title']
         self.institution.logo_name = new['institution_logo_name']

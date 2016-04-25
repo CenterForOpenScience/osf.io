@@ -31,7 +31,6 @@ from framework.auth import signals as auth_signals
 from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject, Guid
 from framework.auth.utils import privacy_info_handle
-from framework.analytics import tasks as piwik_tasks
 from framework.mongo.utils import to_mongo_key, unique_on
 from framework.analytics import (
     get_basic_counters, increment_user_activity_counters
@@ -868,6 +867,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     # The node (if any) used as a template for this node's creation
     template_node = fields.ForeignField('node', index=True)
 
+    keenio_read_key = fields.StringField()
+
     piwik_site_id = fields.StringField()
 
     # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
@@ -1492,7 +1493,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         return updated
 
     def save(self, *args, **kwargs):
-        update_piwik = kwargs.pop('update_piwik', True)
         self.adjust_permissions()
 
         first_save = not self._is_loaded
@@ -1567,10 +1567,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             if children:
                 Node.bulk_update_search(children)
 
-        # This method checks what has changed.
-        if settings.PIWIK_HOST and update_piwik:
-            piwik_tasks.update_node(self._id, saved_fields)
-
         # Return expected value for StoredObject::save
         return saved_fields
 
@@ -1622,7 +1618,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         new.add_contributor(contributor=auth.user, permissions=CREATOR_PERMISSIONS, log=False, save=False)
         new.is_fork = False
         new.is_registration = False
-        new.piwik_site_id = None
         new.node_license = self.license.copy() if self.license else None
 
         # If that title hasn't been changed, apply the default prefix (once)
@@ -2146,7 +2141,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         forked.forked_date = when
         forked.forked_from = original
         forked.creator = user
-        forked.piwik_site_id = None
         forked.node_license = original.license.copy() if original.license else None
 
         # Forks default to private status
@@ -2248,7 +2242,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         registered.forked_from = self.forked_from
         registered.creator = self.creator
         registered.tags = self.tags
-        registered.piwik_site_id = None
         registered.primary_institution = self.primary_institution
         registered._affiliated_institutions = self._affiliated_institutions
         registered.alternative_citations = self.alternative_citations
