@@ -319,6 +319,7 @@ CELERY_IMPORTS = (
     'scripts.retract_registrations',
     'scripts.embargo_registrations',
     'scripts.approve_registrations',
+    'scripts.approve_embargo_terminations',
     'scripts.osfstorage.glacier_inventory',
     'scripts.osfstorage.glacier_audit',
     'scripts.triggered_mails',
@@ -364,6 +365,11 @@ else:
         },
         'approve_registrations': {
             'task': 'scripts.approve_registrations',
+            'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+            'kwargs': {'dry_run': False},
+        },
+        'approve_embargo_terminations': {
+            'task': 'scripts.approve_emabrgo_terminations',
             'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
             'kwargs': {'dry_run': False},
         },
