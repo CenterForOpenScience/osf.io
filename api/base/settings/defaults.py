@@ -48,6 +48,7 @@ INSTALLED_APPS = (
     'raven.contrib.django.raven_compat',
 )
 
+# only for local development using https
 if osf_settings.SECURE_MODE and osf_settings.LOCAL_MODE:
     INSTALLED_APPS += ('sslserver',)
 

@@ -3,4 +3,4 @@
 # Requirements that are used in the DEVELOPMENT and LOCAL environment only
 
 # django-sslserver
-django-sslserver==0.1w9
+django-sslserver==0.19

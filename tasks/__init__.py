@@ -70,7 +70,7 @@ def server(host=None, port=5000, debug=True, live=False, gitlogs=False):
             context = (settings.OSF_SERVER_CERT, settings.OSF_SERVER_KEY)
         else:
             context = None
-        app.run(host=host, port=port, debug=debug, threaded=debug, extra_files=[settings.ASSET_HASH_PATH],ssl_context=context)
+        app.run(host=host, port=port, debug=debug, threaded=debug, extra_files=[settings.ASSET_HASH_PATH], ssl_context=context)
 
 
 @task

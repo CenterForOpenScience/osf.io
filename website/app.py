@@ -128,6 +128,11 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
 
     app.debug = settings.DEBUG_MODE
 
+    # default config for flask, however, this does not affect setting cookie using:
+    # set_cookie(key, value='', max_age=None, expires=None, path='/', domain=None, secure=None, httponly=False)
+    app.config['SESSION_COOKIE_SECURE'] = settings.SESSION_COOKIE_SECURE
+    app.config['SESSION_COOKIE_HTTPONLY'] = settings.SESSION_COOKIE_HTTPONLY
+
     if set_backends:
         do_set_backends(settings)
     if routes:
