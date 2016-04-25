@@ -869,8 +869,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
     keenio_read_key = fields.StringField()
 
-    piwik_site_id = fields.StringField()
-
     # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
     # {<User.id>: [<Node._id>, <Node2._id>, ...] }
     child_node_subscriptions = fields.DictionaryField(default=dict)
