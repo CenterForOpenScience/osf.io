@@ -70,7 +70,6 @@ var objectify = function(array, key) {
 };
 
 var formatResult = function(state) {
-    // TODO: Investigate whether CSL requires escaping
     return '<div class="citation-result-title">' + state.title + '</div>';
 };
 
