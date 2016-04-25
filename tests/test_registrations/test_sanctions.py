@@ -150,8 +150,8 @@ class TestSanction(SanctionsTestCase):
             (self.user, factories.ProjectFactory()),
         ]
         self.sanction.ask(group)
-        assert_true(mock_notify_non_authorizer.called_once_with(other_user))
-        assert_true(mock_notify_authorizer.called_once_with(self.user))
+        mock_notify_non_authorizer.assert_called_once_with(other_user)
+        mock_notify_authorizer.assert_called_once_with(self.user)
 
 
 class TestEmailApprovableSanction(SanctionsTestCase):
@@ -182,8 +182,8 @@ class TestEmailApprovableSanction(SanctionsTestCase):
     def test_notify_authorizer(self, mock_get_email_template_context, mock_send_approval_email):
         mock_get_email_template_context.return_value = 'context'
         self.sanction._notify_authorizer(self.user, self.sanction._get_registration())
-        assert_true(mock_get_email_template_context.called_once_with(self.user, True))
-        assert_true(mock_send_approval_email.called_once_with(self.user, 'authorizer', 'context'))
+        mock_get_email_template_context.assert_called_once_with(self.user, True)
+        mock_send_approval_email.assert_called_once_with(self.user, 'authorizer', 'context')
 
     @mock.patch.object(EmailApprovableSanctionTestClass, '_send_approval_request_email')
     @mock.patch.object(EmailApprovableSanctionTestClass, '_email_template_context')
@@ -191,8 +191,8 @@ class TestEmailApprovableSanction(SanctionsTestCase):
         mock_get_email_template_context.return_value = 'context'
         other_user = factories.UserFactory()
         self.sanction._notify_non_authorizer(other_user, self.sanction._get_registration())
-        assert_true(mock_get_email_template_context.called_once_with(other_user, False))
-        assert_true(mock_send_approval_email.called_once_with(other_user, 'non-authorizer', 'context'))
+        mock_get_email_template_context.assert_called_once_with(other_user, False)
+        mock_send_approval_email.assert_called_once_with(other_user, 'non-authorizer', 'context')
 
     def test_add_authorizer(self):
         assert_is_not_none(self.sanction.stashed_urls.get(self.user._id))
@@ -243,7 +243,7 @@ class TestEmailApprovableSanction(SanctionsTestCase):
         sanction.save()
         with mock.patch.object(EmailApprovableSanctionTestClass, '_notify_initiator') as mock_notify:
             sanction._on_complete(self.user)
-        mock_notify.assert_called()
+        assert_equal(mock_notify.call_count, 1)
 
     def test_notify_initiator_with_PreregCallbackMixin(self):
         sanction = EmailApprovableSanctionTestClass(
@@ -255,7 +255,7 @@ class TestEmailApprovableSanction(SanctionsTestCase):
         sanction.save()
         with mock.patch.object(PreregCallbackMixin, '_notify_initiator') as mock_notify:
             sanction._on_complete(self.user)
-        mock_notify.assert_called()
+        assert_equal(mock_notify.call_count, 1)
 
 
 class TestRegistrationApproval(OsfTestCase):
