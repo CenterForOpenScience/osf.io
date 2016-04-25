@@ -896,53 +896,8 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         # Logs: Created, registered, embargo initiated
         assert_equal(len(self.project.logs), initial_project_logs + 1)
 
-    def test_embargoed_registration_can_be_made_public_by_sole_admin(self):
-        # Initiate and approve embargo
-        self.registration.embargo_registration(
-            self.user,
-            datetime.datetime.utcnow() + datetime.timedelta(days=10)
-        )
-        approval_token = self.registration.embargo.approval_state[self.user._id]['approval_token']
-        self.registration.embargo.approve_embargo(self.user, approval_token)
-        self.registration.save()
-
-        res = self.app.post(
-            self.registration.api_url_for('project_set_privacy', permissions='public'),
-            auth=self.user.auth,
-        )
-        assert_equal(res.status_code, 200)
-        self.registration.reload()
-        assert_true(self.registration.is_public)
-
-    def test_make_embargoed_registration_by_sole_admin_makes_tree_public(self):
-        # Initiate and approve embargo
-        node = NodeFactory(creator=self.user)
-        child = NodeFactory(parent=node, creator=self.user)
-        NodeFactory(parent=child, creator=self.user)
-        registration = RegistrationFactory(project=node)
-        registration.embargo_registration(
-            self.user,
-            datetime.datetime.utcnow() + datetime.timedelta(days=10)
-        )
-        approval_token = registration.embargo.approval_state[self.user._id]['approval_token']
-        registration.embargo.approve_embargo(self.user, approval_token)
-        registration.save()
-
-        for node in registration.node_and_primary_descendants():
-            assert_false(node.is_public)
-
-        res = self.app.post(
-            registration.api_url_for('project_set_privacy', permissions='public'),
-            auth=self.user.auth,
-        )
-        assert_equal(res.status_code, 200)
-        registration.reload()
-        for node in registration.node_and_primary_descendants():
-            node.reload()
-            assert_true(node.is_public)
-
     @mock.patch('website.project.sanctions.TokenApprovableSanction.ask')
-    def test_embargoed_registration_set_privacy_multiple_admins_requests_embargo_termination(self, mock_ask):
+    def test_embargoed_registration_set_privacy_requests_embargo_termination(self, mock_ask):
         # Initiate and approve embargo
         for i in range(3):
             c = AuthUserFactory()
@@ -969,7 +924,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         assert_true(reg.embargo_termination_approval.is_pending_approval)
 
     @mock.patch('website.mails.send_mail')
-    def test_embargoed_registration_set_privacy_multiple_admins_send_mail(self, mock_send_mail):
+    def test_embargoed_registration_set_privacy_sends_mail(self, mock_send_mail):
         """
         Integration test for https://github.com/CenterForOpenScience/osf.io/pull/5294#issuecomment-212613668
         """
