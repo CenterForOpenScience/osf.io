@@ -32,7 +32,8 @@ class CommentDetailMixin(object):
                 'id': target_id,
                 'type': 'comments',
                 'attributes': {
-                    'deleted': False
+                    'deleted': False,
+                    'new_mentions': []
                 }
             }
         }
