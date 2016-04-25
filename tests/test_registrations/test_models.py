@@ -189,8 +189,7 @@ class TestDraftRegistrationApprovals(RegistrationsTestBase):
     def test_on_reject(self, mock_send_mail):
         self.approval._on_reject(self.user)
         assert_equal(self.approval.meta, {})
-        assert_true(mock_send_mail.called_once)
-
+        assert_equal(mock_send_mail.call_count, 1)
 
 class TestEmbargoTerminationApprovals(OsfTestCase):
 

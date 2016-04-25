@@ -276,7 +276,7 @@ class TestAUser(OsfTestCase):
         # submits
         res = form.submit()
         # mail was sent
-        mock_send_mail.assert_called
+        assert_true(mock_send_mail.called)
         # gets 200 response
         assert_equal(res.status_code, 200)
         # URL is /forgotpassword
@@ -295,7 +295,7 @@ class TestAUser(OsfTestCase):
         # submits
         res = form.submit()
         # mail was sent
-        mock_send_mail.assert_called
+        assert_true(mock_send_mail.called)
         # gets 200 response
         assert_equal(res.status_code, 200)
         assert_in_html('If there is an OSF account', res)

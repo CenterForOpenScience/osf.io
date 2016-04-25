@@ -493,4 +493,4 @@ class TestUserMerging(base.OsfTestCase):
         other_user = factories.UserFactory()
         self.user.merge_user(other_user)
         assert_equal(other_user.merged_by._id, self.user._id)
-        mock_notify.assert_not_called()
+        assert_false(mock_notify.called)

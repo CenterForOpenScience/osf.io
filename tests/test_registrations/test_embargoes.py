@@ -402,7 +402,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         self.registration.save()
         with mock.patch.object(PreregCallbackMixin, '_notify_initiator') as mock_notify:
             self.registration.embargo._on_complete(self.user)
-        mock_notify.assert_called()
+        assert_equal(mock_notify.call_count, 1)
 
 
 class RegistrationWithChildNodesEmbargoModelTestCase(OsfTestCase):
