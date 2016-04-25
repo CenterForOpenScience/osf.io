@@ -17,10 +17,10 @@ logger = logging.getLogger(__name__)
 
 def main():
     nodes = Node.find()
-    clone_wiki_pages(nodes)
+    update_wiki_pages(nodes)
 
 
-def clone_wiki_pages(nodes):
+def update_wiki_pages(nodes):
     for i, node in enumerate(nodes):
         if node.wiki_pages_versions:
             cloned_wiki_pages = {}
@@ -29,10 +29,7 @@ def clone_wiki_pages(nodes):
                 for wiki_id in node.wiki_pages_versions[key]:
                     node_wiki = NodeWikiPage.load(wiki_id)
                     if node_wiki.node._id != node._id:
-                        clone = node_wiki.clone()
-                        clone.node = node
-                        clone.user = node_wiki.user
-                        clone.save()
+                        clone = node_wiki.clone_wiki(node)
                         logger.info('Cloned wiki page {} from node {} to {}'.format(wiki_id, node_wiki.node._id, node._id))
                         cloned_wiki_pages[key].append(clone._id)
 
