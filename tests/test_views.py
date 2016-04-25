@@ -120,11 +120,17 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         assert_true(has_anonymous_link(self.project, auth))
 
     def test_has_private_link_key(self):
-        res = self.app.get(self.project_url, {'view_only': self.link.key}, follow_redirects=True)
-        assert_equal(res.status_code, 200)
+        res = self.app.get(self.project_url, {'view_only': self.link.key})
+        assert_equal(res.status_code, 307)
+        res = res.follow()
+        asset_equal(res.status_code, 200)
+
+    def test_has_bad_private_link_key(self):
+        res = self.app.get(self.project_url, {'view_only': 'not_valid_link'})
+        assert_equal(res.status_code, 307)
 
     def test_not_logged_in_no_key(self):
-        res = self.app.get(self.project_url, {'view_only': None}, follow_redirects=True)
+        res = self.app.get(self.project_url)
         assert_is_redirect(res)
         res = res.follow(expect_errors=True)
         assert_equal(res.status_code, 301)
@@ -135,12 +141,16 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
 
     def test_logged_in_no_private_key(self):
         res = self.app.get(self.project_url, {'view_only': None}, auth=self.user.auth,
-                           expect_errors=True, follow_redirects=True)
+            expect_errors=True)
+        assert_equal(res.status_code, 307)
+        res = res.follow(expect_errors=True)
         assert_equal(res.status_code, http.FORBIDDEN)
 
     def test_logged_in_has_key(self):
         res = self.app.get(
-            self.project_url, {'view_only': self.link.key}, auth=self.user.auth, follow_redirects=True)
+            self.project_url, {'view_only': self.link.key}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 307)
+        res = res.follow()
         assert_equal(res.status_code, 200)
 
     @unittest.skip('Skipping for now until we find a way to mock/set the referrer')
@@ -161,15 +171,19 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         anonymous_link.save()
         self.project.is_public = False
         self.project.save()
-        url = self.project_url + 'registrations/?view_only={}'.format(anonymous_link.key)
-        res = self.app.get(url, expect_errors=True, follow_redirects=True)
 
+        url = self.project_url + 'registrations/?view_only={}'.format(anonymous_link.key)
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 307)
+
+        res = res.follow(expect_errors=True)
         assert_equal(res.status_code, 401)
 
         url = self.project_url + 'forks/?view_only={}'.format(anonymous_link.key)
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 307)
 
-        res = self.app.get(url, expect_errors=True, follow_redirects=True)
-
+        res = res.follow(expect_errors=True)
         assert_equal(res.status_code, 401)
 
     def test_cannot_access_registrations_and_forks_with_not_anon_key(self):
@@ -178,15 +192,19 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         link.save()
         self.project.is_public = False
         self.project.save()
+        
         url = self.project_url + 'registrations/?view_only={}'.format(self.link.key)
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 307)
 
-        res = self.app.get(url, expect_errors=True, follow_redirects=True)
-
+        res = res.follow(expect_errors=True)
         assert_equal(res.status_code, 401)
 
         url = self.project_url + 'forks/?view_only={}'.format(self.link.key)
-        res = self.app.get(url, expect_errors=True, follow_redirects=True)
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 307)
 
+        res = res.follow(expect_errors=True)
         assert_equal(res.status_code, 401)
 
     def test_check_can_access_valid(self):
