@@ -59,8 +59,8 @@ from tests.factories import (
     ProjectFactory, NodeLogFactory, WatchConfigFactory,
     NodeWikiFactory, RegistrationFactory, UnregUserFactory,
     ProjectWithAddonFactory, UnconfirmedUserFactory, PrivateLinkFactory,
-    AuthUserFactory, DashboardFactory, FolderFactory,
-    NodeLicenseRecordFactory, InstitutionFactory,
+    AuthUserFactory, BookmarkCollectionFactory, CollectionFactory,
+    NodeLicenseRecordFactory, InstitutionFactory
 )
 from tests.test_features import requires_piwik
 from tests.utils import mock_archive
@@ -3135,20 +3135,7 @@ class TestProject(OsfTestCase):
             registration.set_privacy('public', auth=self.auth)
         assert_false(registration.is_public)
 
-    def test_set_privacy_terminates_embargo_if_sole_admin_on_embargoed_registration(self):
-        registration = RegistrationFactory(project=self.project)
-        registration.embargo_registration(
-            self.user,
-            datetime.datetime.utcnow() + datetime.timedelta(days=10)
-        )
-        assert_equal(len([a for a in registration.get_admin_contributors_recursive(unique_users=True)]), 1)
-        with mock.patch('website.project.model.Node.is_embargoed', mock.PropertyMock(return_value=True)):
-            with mock.patch('website.project.model.Node.is_pending_embargo', mock.PropertyMock(return_value=False)):
-                with mock.patch('website.project.model.Node.terminate_embargo') as mock_terminate:
-                    registration.set_privacy('public', auth=self.auth)
-                    assert_equal(mock_terminate.call_count, 1)
-
-    def test_set_privacy_requests_embargo_termination_if_many_admins_on_embargoed_registration(self):
+    def test_set_privacy_requests_embargo_termination_on_embargoed_registration(self):
         for i in range(3):
             c = AuthUserFactory()
             self.project.add_contributor(c, [ADMIN])
