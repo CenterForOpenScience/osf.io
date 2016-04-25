@@ -264,6 +264,17 @@ class NodeWikiPage(GuidStoredObject, Commentable):
     def to_json(self):
         return {}
 
+    def clone_wiki(self, node):
+        """Clone a node wiki page.
+        :param node: The Node of the cloned wiki page
+        :return: The cloned wiki page
+        """
+        clone = self.clone()
+        clone.node = node
+        clone.user = self.user
+        clone.save()
+        return clone
+
     @classmethod
     def clone_wiki_versions(cls, node, copy, user, save=True):
         """Clone wiki pages for a forked or registered project.
@@ -280,13 +291,10 @@ class NodeWikiPage(GuidStoredObject, Commentable):
             copy.wiki_pages_versions[key] = []
             for wiki_id in node.wiki_pages_versions[key]:
                 node_wiki = NodeWikiPage.load(wiki_id)
-                cloned_version = node_wiki.clone()
-                cloned_version.node = copy
-                cloned_version.user = node_wiki.user
-                cloned_version.save()
-                copy.wiki_pages_versions[key].append(cloned_version._id)
+                cloned_wiki = node_wiki.clone_wiki(copy)
+                copy.wiki_pages_versions[key].append(cloned_wiki._id)
                 if node_wiki.is_current:
-                    copy.wiki_pages_current[key] = cloned_version._id
+                    copy.wiki_pages_current[key] = cloned_wiki._id
         if save:
             copy.save()
         return copy
