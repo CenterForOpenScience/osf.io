@@ -7,8 +7,7 @@ from api.base.serializers import AllowMissing, JSONAPIRelationshipSerializer, Hi
 from website.models import User
 
 from api.base.serializers import (
-    JSONAPISerializer, AddonAccountSerializer,
-    LinksField, RelationshipField, DevOnly, IDField, TypeField
+    JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField
 )
 from api.base.utils import absolute_reverse
 
