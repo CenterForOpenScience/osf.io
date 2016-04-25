@@ -85,7 +85,7 @@ class TestAUser(OsfTestCase):
         res = self.app.get('/login/', auth=self.user.auth)
         assert_equal(res.status_code, 302)
         res = res.follow(auth=self.user.auth)
-        assert_equal(res.request.path, '/myprojects/')
+        assert_equal(res.request.path, '/')
 
     def test_sees_projects_in_her_dashboard(self):
         # the user already has a project
