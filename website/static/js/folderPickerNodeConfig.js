@@ -78,41 +78,41 @@ var FolderPickerViewModel = oop.defclass({
         // Whether the folders have been loaded from the API
         self.loadedFolders = ko.observable(false);
 
+        var addonSafeName = $osf.htmlEscape(self.addonName);
         self.messages = {
             invalidCredOwner: ko.pureComputed(function() {
-                var addonName = $osf.htmlEscape(self.addonName);
-                return 'Could not retrieve ' + $osf.htmlEscape(addonName) + ' settings at ' +
-                    'this time. The credentials associated with this ' + $osf.htmlEscape(addonName) + ' account may no longer be valid.' +
-                    ' Try disconnecting and reconnecting the ' + $osf.htmlEscape(addonName) + ' account on your <a href="' +
+                return 'Could not retrieve ' + addonSafeName + ' settings at ' +
+                    'this time. The credentials associated with this ' + addonSafeName + ' account may no longer be valid.' +
+                    ' Try disconnecting and reconnecting the ' + addonSafeName + ' account on your <a href="' +
                     self.urls().settings + '">account settings page</a>.';
             }),
             invalidCredNotOwner: ko.pureComputed(function() {
-                return 'Could not retrieve ' + $osf.htmlEscape(addonName) + ' settings at ' +
-                    'this time. The ' + $osf.htmlEscape(addonName) + ' addon credentials may no longer be valid.' +
+                return 'Could not retrieve ' + addonSafeName + ' settings at ' +
+                    'this time. The ' + addonSafeName + ' addon credentials may no longer be valid.' +
                     ' Contact ' + $osf.htmlEscape(self.ownerName()) + ' to verify.';
             }),
             cantRetrieveSettings: ko.pureComputed(function() {
-                return 'Could not retrieve ' + $osf.htmlEscape(self.addonName) + ' settings at ' +
+                return 'Could not retrieve ' + addonSafeName + ' settings at ' +
                     'this time. Please refresh ' +
                     'the page. If the problem persists, email ' +
                     '<a href="mailto:support@osf.io">support@osf.io</a>.';
             }),
             updateAccountsError: ko.pureComputed(function() {
-                return 'Could not retrieve ' + $osf.htmlEscape(self.addonName) + ' account list at ' +
+                return 'Could not retrieve ' + addonSafeName + ' account list at ' +
                     'this time. Please refresh the page. If the problem persists, email ' +
                     '<a href="mailto:support@osf.io">support@osf.io</a>.';
             }),
             deauthorizeSuccess: ko.pureComputed(function() {
-                return 'Disconnected ' + $osf.htmlEscape(self.addonName) + '.';
+                return 'Disconnected ' + addonSafeName + '.';
             }),
             deauthorizeFail: ko.pureComputed(function() {
-                return 'Could not disconnect ' + $osf.htmlEscape(self.addonName) + ' account because of an error. Please try again later.';
+                return 'Could not disconnect ' + addonSafeName + ' account because of an error. Please try again later.';
             }),
             connectAccountSuccess: ko.pureComputed(function() {
-                return 'Successfully connected a ' + $osf.htmlEscape(self.addonName) + ' account';
+                return 'Successfully connected a ' + addonSafeName + ' account';
             }),
             connectAccountDenied: ko.pureComputed(function() {
-                return 'Error while authorizing addon. Please log in to your ' + $osf.htmlEscape(self.addonName) + ' account and grant access to the OSF to enable this addon.';
+                return 'Error while authorizing addon. Please log in to your ' + addonSafeName + ' account and grant access to the OSF to enable this addon.';
             }),
             submitSettingsSuccess: ko.pureComputed(function() {
                 throw new Error('Subclasses of FolderPickerViewModel must provide a message for successful settings updates. ' +
@@ -120,22 +120,22 @@ var FolderPickerViewModel = oop.defclass({
                                 '{PAGE_NAME} to view your {CONTENT_TYPE}.');
             }),
             submitSettingsError: ko.pureComputed(function() {
-                return 'Could not change ' + $osf.htmlEscape(self.addonName) + ' settings. Please try again later.';
+                return 'Could not change ' + addonSafeName + ' settings. Please try again later.';
             }),
             confirmDeauth: ko.pureComputed(function() {
-                return 'Are you sure you want to remove this ' + $osf.htmlEscape(self.addonName) + ' account?';
+                return 'Are you sure you want to remove this ' + addonSafeName + ' account?';
             }),
             confirmAuth: ko.pureComputed(function() {
-                return 'Are you sure you want to link your ' + $osf.htmlEscape(self.addonName) + ' account with this project?';
+                return 'Are you sure you want to link your ' + addonSafeName + ' account with this project?';
             }),
             tokenImportSuccess: ko.pureComputed(function() {
-                return 'Successfully imported ' + $osf.htmlEscape(self.addonName) + ' account from profile.';
+                return 'Successfully imported ' + addonSafeName + ' account from profile.';
             }),
             tokenImportError: ko.pureComputed(function() {
-                return 'Error occurred while importing ' + $osf.htmlEscape(self.addonName) + ' account.';
+                return 'Error occurred while importing ' + addonSafeName + ' account.';
             }),
             connectError: ko.pureComputed(function() {
-                return 'Could not connect to ' + $osf.htmlEscape(self.addonName) + ' at this time. Please try again later.';
+                return 'Could not connect to ' + addonSafeName + ' at this time. Please try again later.';
             })
         };
 
