@@ -252,8 +252,9 @@ var joinPrompts = function(prompts, base) {
     if (prompts.length !==0) {
         prompt += '<hr />';
         prompt += '<ul>';
+        // Assumes prompts are pre-escaped before constructing this string
         for (var i=0; i<prompts.length; i++) {
-            prompt += '<li>' + htmlEscape(prompts[i]) + '</li>';
+            prompt += '<li>' + prompts[i] + '</li>';
         }
         prompt += '</ul>';
     }

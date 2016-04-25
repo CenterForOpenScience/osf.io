@@ -45,6 +45,14 @@ USER_SETTINGS_TEMPLATE_DEFAULT = os.path.join(
 lookup = TemplateLookup(
     directories=[
         settings.TEMPLATES_PATH
+    ],
+    default_filters=[
+        'unicode',  # default filter; must set explicitly when overriding
+        'temp_ampersand_fixer',  # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe.
+        'h',
+    ],
+    imports=[
+        'from website.util.sanitize import temp_ampersand_fixer',  # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe.
     ]
 )
 
@@ -125,7 +133,17 @@ class AddonConfig(object):
         )
         if template_dirs:
             self.template_lookup = TemplateLookup(
-                directories=template_dirs
+                directories=template_dirs,
+                default_filters=[
+                    'unicode',  # default filter; must set explicitly when overriding
+                    'temp_ampersand_fixer',
+                    # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe.
+                    'h',
+                ],
+                imports=[
+                    'from website.util.sanitize import temp_ampersand_fixer',
+                    # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe.
+                ]
             )
         else:
             self.template_lookup = None
