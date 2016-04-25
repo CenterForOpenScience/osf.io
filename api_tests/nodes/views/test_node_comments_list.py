@@ -803,7 +803,8 @@ class TestWikiCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
             'data': {
                 'type': 'comments',
                 'attributes': {
-                    'content': 'This is a comment'
+                    'content': 'This is a comment',
+                    'new_mentions': []
                 },
                 'relationships': {
                     'target': {
@@ -863,7 +864,8 @@ class TestWikiCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
             'data': {
                 'type': 'comments',
                 'attributes': {
-                    'content': 'This is a comment'
+                    'content': 'This is a comment',
+                    'new_mentions': []
                 },
                 'relationships': {
                     'target': {
