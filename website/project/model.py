@@ -307,7 +307,7 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
             save=False,
         )
 
-        if (comment.new_mentions):
+        if comment.new_mentions:
             old_mentions = comment.old_mentions
             validate = lambda m: m not in old_mentions and validate_contributor(m, comment.node.contributors)
             comment.new_mentions = filter(validate, comment.new_mentions)
@@ -335,7 +335,7 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
         self.modified = True
         self.date_modified = datetime.datetime.utcnow()
 
-        if (new_mentions):
+        if new_mentions:
             self.new_mentions = new_mentions
             old_mentions = self.old_mentions
             validate = lambda m: m not in old_mentions and validate_contributor(m, self.node.contributors)
