@@ -356,17 +356,18 @@
                             <button data-bind="click: clearInst" class="btn btn-danger">Remove affiliation</button>
                             -->
                             <div data-bind="visible: !error()">
-                                <table><thead></thead>
-                            <tbody>
-                                <!-- ko foreach: {data: affiliatedInstitutions, as: 'item'} -->
-                                <tr>
-                                    <td><img class="img-circle" width="50px" height="50px" data-bind="attr: {src: item.attributes.logo_path}"></td>
-                                    <td><span data-bind="text: item.attributes.name"></span></td>
-                                    <td><a><i class="fa fa-times"></i></a></td>
-                                </tr>
-                                <!-- /ko -->
-
-                            </tbody>
+                                <table class="table"><thead>
+                                </thead>
+                                    <tbody>
+                                        <!-- ko foreach: {data: affiliatedInstitutions, as: 'item'} -->
+                                        <tr>
+                                            <td><img class="img-circle" width="50px" height="50px" data-bind="attr: {src: item.attributes.logo_path}"></td>
+                                            <td><span data-bind="text: item.attributes.name"></span></td>
+                                            <td><a data-bind="click: $parent.clearInst"><i class="fa fa-times"></i></a></td>
+                                        </tr>
+                                        <!-- /ko -->
+                                        <tr></tr>
+                                    </tbody>
                                 </table>
                             </div>
                         % endif

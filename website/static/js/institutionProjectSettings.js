@@ -101,20 +101,21 @@ var ViewModel = function(data) {
             });
         });
     };
-    self.clearInst = function() {
-        var url = data.apiV2Prefix + 'nodes/' + data.node.id + '/relationships/institution/';
+    self.clearInst = function(item) {
+        var url = data.apiV2Prefix + 'nodes/' + data.node.id + '/relationships/institutions/';
         return $osf.ajaxJSON(
             'PUT',
             url,
             {
-                'isCors': true,
-                'data': {
-                     'data': null
+                isCors: true,
+                data: {
+                     'data': {'type': 'institutions', 'id': item.id}
                 },
                 fields: {xhrFields: {withCredentials: true}}
             }
         ).done(function (response) {
-            window.location.reload();
+            var indexes = self.affiliatedInstitutions().map(function(each){return each.id});
+            self.affiliatedInstitutions().splice(indexes.indexOf(item.id), 1);
         }).fail(function (xhr, status, error) {
             $osf.growl('Unable to remove institution from this node. Please try again. If the problem persists, email <a href="mailto:support@osf.io.">support@osf.io</a>');
             Raven.captureMessage('Unable to remove institution from this node!', {
