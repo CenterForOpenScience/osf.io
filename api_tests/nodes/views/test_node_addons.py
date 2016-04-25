@@ -5,7 +5,7 @@ from nose.tools import *  # flake8: noqa
 
 from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
-from website.util.permissions import READ, WRITE
+from website.util.permissions import READ, WRITE, ADMIN
 
 from tests.base import ApiAddonTestCase
 from tests.factories import AuthUserFactory
@@ -175,7 +175,6 @@ class NodeAddonDetailMixin(object):
             addon_data = res.json['data']['attributes']
             assert_equal(addon_data['auth_id'], self.account_id)
             assert_equal(addon_data['node'], self.node._id)
-            # import ipdb; ipdb.set_trace()
             assert_equal(addon_data['folder_id'], '0987654321')
             assert_true(addon_data['has_auth'])
         if wrong_type:
@@ -484,12 +483,81 @@ class NodeAddonDetailMixin(object):
 
 class NodeAddonFolderMixin(object):
     def set_folder_url(self):
-        self.folder_url = '/{}/nodes/{}/addons/{}/folders/'.format(
+        self.folder_url = '/{}nodes/{}/addons/{}/folders/'.format(
             API_BASE, self.node._id, self.short_name
         )
 
     def test_folder_list_GET_expected_behavior(self):
-        pass
+        wrong_type = self.short_name != 'googledrive'
+        res = self.app.get(
+            self.folder_url,
+            auth=self.user.auth,
+            expect_errors=wrong_type)
+
+        if not wrong_type:
+            addon_data = res.json['data'][0]['attributes']
+            assert_equal(addon_data['path'], '/')
+            assert_equal(addon_data['kind'], 'folder')
+            assert_equal(addon_data['name'], '/ (Full Google Drive)')
+            assert_equal(addon_data['folder_id'], 'FAKEROOTID')
+        if wrong_type:
+            assert_equal(res.status_code, 405)
+
+
+    def test_folder_list_raises_error_if_not_GET(self):
+        put_res = self.app.put_json_api(self.folder_url, {
+            'id': self.short_name,
+            'type': 'node-addon-folders'
+            }, auth=self.user.auth,
+            expect_errors=True)
+        patch_res = self.app.patch_json_api(self.folder_url, {
+            'id': self.short_name,
+            'type': 'node-addon-folders'
+            }, auth=self.user.auth,
+            expect_errors=True)
+        del_res = self.app.delete(
+            self.folder_url,
+            auth=self.user.auth,
+            expect_errors=True)
+        assert_equal(put_res.status_code, 405)
+        assert_equal(patch_res.status_code, 405)
+        assert_equal(del_res.status_code, 405)
+
+    def test_folder_list_GET_raises_error_noncontrib_not_public(self):
+        wrong_type = self.short_name != 'googledrive'
+        noncontrib = AuthUserFactory()
+        res = self.app.get(
+            self.folder_url,
+            auth=noncontrib.auth,
+            expect_errors=True)
+        if not wrong_type:
+            assert_equal(res.status_code, 403)
+        if wrong_type:
+            assert_equal(res.status_code, 405)
+
+    def test_folder_list_GET_raises_error_writecontrib_not_authorizer(self):
+        wrong_type = self.short_name != 'googledrive'
+        write_user = AuthUserFactory()
+        self.node.add_contributor(write_user, permissions=[WRITE], auth=self.auth)
+        res = self.app.get(self.folder_url, 
+            auth=write_user.auth,
+            expect_errors=True)
+        if not wrong_type:
+            assert_equal(res.status_code, 403)
+        if wrong_type:
+            assert_equal(res.status_code, 405)
+
+    def test_folder_list_GET_raises_error_admin_not_authorizer(self):
+        wrong_type = self.short_name != 'googledrive'
+        admin_user = AuthUserFactory()
+        self.node.add_contributor(admin_user, permissions=[ADMIN], auth=self.auth)
+        res = self.app.get(self.folder_url, 
+            auth=admin_user.auth,
+            expect_errors=True)
+        if not wrong_type:
+            assert_equal(res.status_code, 403)
+        if wrong_type:
+            assert_equal(res.status_code, 405)
 
 
 class NodeAddonTestSuiteMixin(NodeAddonListMixin, NodeAddonDetailMixin, NodeAddonFolderMixin):
@@ -528,17 +596,6 @@ class NodeOAuthAddonTestSuiteMixin(NodeAddonTestSuiteMixin):
 class NodeConfigurableAddonTestSuiteMixin(NodeOAuthAddonTestSuiteMixin):
     addon_type = 'CONFIGURABLE'
 
-    def test_folder_list_raises_error_if_not_GET(self):
-        pass
-
-    def test_folder_list_GET_raises_error_noncontrib_not_public(self):
-        pass
-
-    def test_folder_list_GET_raises_error_writecontrib_not_authorizer(self):
-        pass
-
-    def test_folder_list_GET_raises_error_admin_not_authorizer(self):
-        pass
 
 class NodeOAuthCitationAddonTestSuiteMixin(NodeOAuthAddonTestSuiteMixin):
     def _settings_kwargs(self, node, user_settings):
@@ -694,4 +751,10 @@ class TestNodeGoogleDriveAddon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTest
             'folder_id': '0987654321',
             'folder_path': '/'
         }
+
+    @mock.patch('website.addons.googledrive.client.GoogleDriveClient.about')
+    def test_folder_list_GET_expected_behavior(self, mock_about):
+        mock_about.return_value = {'rootFolderId': 'FAKEROOTID'}
+        with mock.patch.object(self.node_settings.__class__, 'fetch_access_token', return_value='asdfghjkl') as mock_fetch:
+            super(TestNodeGoogleDriveAddon, self).test_folder_list_GET_expected_behavior()
 
