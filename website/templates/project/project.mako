@@ -285,7 +285,7 @@
                             <span data-bind="text: chicago"></span>
                         <div data-bind="validationOptions: {insertMessages: false, messagesOnModified: false}, foreach: citations">
                             <!-- ko if: view() === 'view' -->
-                                <div class="f-w-xl m-t-md">{{name}}
+                                <div class="f-w-xl m-t-md"><span data-bind="text: name"></span>
                                     % if 'admin' in user['permissions'] and not node['is_registration']:
                                         <!-- ko ifnot: $parent.editing() -->
                                             <button class="btn btn-default btn-sm" data-bind="click: function() {edit($parent)}"><i class="fa fa-edit"></i> Edit</button>
