@@ -393,7 +393,7 @@
 
             % if node['is_registration']:
 
-                % if node['is_public'] or node['embargo_end_date']:
+                % if node['is_public'] or node['is_embargoed']:
 
                     <div class="panel panel-default">
                         <span id="withdrawRegistrationAnchor" class="anchor"></span>

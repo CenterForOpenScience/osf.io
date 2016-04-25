@@ -71,4 +71,4 @@ class TestSentry(OsfTestCase):
     @mock.patch('framework.sentry.sentry.captureException')
     def test_log_not_enabled(self, mock_capture):
         sentry.log_exception()
-        mock_capture.assert_not_called()
+        assert_false(mock_capture.called)

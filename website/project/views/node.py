@@ -691,6 +691,11 @@ def _view_project(node, auth, primary=False):
             'retracted_justification': getattr(node.retraction, 'justification', None),
             'embargo_end_date': node.embargo_end_date.strftime("%A, %b. %d, %Y") if node.embargo_end_date else False,
             'is_pending_embargo': node.is_pending_embargo,
+            'is_embargoed': node.is_embargoed,
+            'is_pending_embargo_termination': node.is_embargoed and (
+                node.embargo_termination_approval and
+                node.embargo_termination_approval.is_pending_approval
+            ),
             'registered_from_url': node.registered_from.url if node.is_registration else '',
             'registered_date': iso8601format(node.registered_date) if node.is_registration else '',
             'root_id': node.root._id if node.root else None,
@@ -839,7 +844,8 @@ def _get_summary(node, auth, primary=True, link_id=None, show_path=False):
         'is_pending_retraction': node.is_pending_retraction,
         'embargo_end_date': node.embargo_end_date.strftime("%A, %b. %d, %Y") if node.embargo_end_date else False,
         'is_pending_embargo': node.is_pending_embargo,
-        'archiving': node.archiving or getattr(node.root, 'archiving', False),
+        'is_embargoed': node.is_embargoed,
+        'archiving': node.archiving,
     }
 
     if node.can_view(auth):

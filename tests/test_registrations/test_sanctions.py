@@ -5,14 +5,18 @@ import unittest  # noqa
 from nose.tools import *  # noqa (PEP8 asserts)
 
 import datetime
-from modularodm import fields, storage
+from modularodm import fields, storage, Q
 
 from tests.base import OsfTestCase
 from tests import factories
+from tests.utils import mock_archive, assert_logs
 
+from framework.auth import Auth
 from framework.mongo import handlers
 
-from website.project.model import Sanction, TokenApprovableSanction, EmailApprovableSanction, ensure_schemas, PreregCallbackMixin
+from website.exceptions import NodeStateError
+from website.project.model import ensure_schemas, Node, NodeLog
+from website.project.sanctions import Sanction, TokenApprovableSanction, EmailApprovableSanction, PreregCallbackMixin
 
 def valid_user():
     return factories.UserFactory(system_tags=['flag'])
@@ -146,8 +150,8 @@ class TestSanction(SanctionsTestCase):
             (self.user, factories.ProjectFactory()),
         ]
         self.sanction.ask(group)
-        assert_true(mock_notify_non_authorizer.called_once_with(other_user))
-        assert_true(mock_notify_authorizer.called_once_with(self.user))
+        mock_notify_non_authorizer.assert_called_once_with(other_user)
+        mock_notify_authorizer.assert_called_once_with(self.user)
 
 
 class TestEmailApprovableSanction(SanctionsTestCase):
@@ -178,8 +182,8 @@ class TestEmailApprovableSanction(SanctionsTestCase):
     def test_notify_authorizer(self, mock_get_email_template_context, mock_send_approval_email):
         mock_get_email_template_context.return_value = 'context'
         self.sanction._notify_authorizer(self.user, self.sanction._get_registration())
-        assert_true(mock_get_email_template_context.called_once_with(self.user, True))
-        assert_true(mock_send_approval_email.called_once_with(self.user, 'authorizer', 'context'))
+        mock_get_email_template_context.assert_called_once_with(self.user, True)
+        mock_send_approval_email.assert_called_once_with(self.user, 'authorizer', 'context')
 
     @mock.patch.object(EmailApprovableSanctionTestClass, '_send_approval_request_email')
     @mock.patch.object(EmailApprovableSanctionTestClass, '_email_template_context')
@@ -187,8 +191,8 @@ class TestEmailApprovableSanction(SanctionsTestCase):
         mock_get_email_template_context.return_value = 'context'
         other_user = factories.UserFactory()
         self.sanction._notify_non_authorizer(other_user, self.sanction._get_registration())
-        assert_true(mock_get_email_template_context.called_once_with(other_user, False))
-        assert_true(mock_send_approval_email.called_once_with(other_user, 'non-authorizer', 'context'))
+        mock_get_email_template_context.assert_called_once_with(other_user, False)
+        mock_send_approval_email.assert_called_once_with(other_user, 'non-authorizer', 'context')
 
     def test_add_authorizer(self):
         assert_is_not_none(self.sanction.stashed_urls.get(self.user._id))
@@ -239,7 +243,7 @@ class TestEmailApprovableSanction(SanctionsTestCase):
         sanction.save()
         with mock.patch.object(EmailApprovableSanctionTestClass, '_notify_initiator') as mock_notify:
             sanction._on_complete(self.user)
-        mock_notify.assert_called()
+        assert_equal(mock_notify.call_count, 1)
 
     def test_notify_initiator_with_PreregCallbackMixin(self):
         sanction = EmailApprovableSanctionTestClass(
@@ -251,7 +255,7 @@ class TestEmailApprovableSanction(SanctionsTestCase):
         sanction.save()
         with mock.patch.object(PreregCallbackMixin, '_notify_initiator') as mock_notify:
             sanction._on_complete(self.user)
-        mock_notify.assert_called()
+        assert_equal(mock_notify.call_count, 1)
 
 
 class TestRegistrationApproval(OsfTestCase):
@@ -298,3 +302,180 @@ class TestRegistrationApprovalHooks(OsfTestCase):
         assert_true(registration.registration_approval.is_pending_approval)  # sanity check
         registration.registration_approval._on_complete(None)
         assert_false(registration.registration_approval.is_pending_approval)
+
+class TestNodeSanctionStates(OsfTestCase):
+
+    def test_sanction_none(self):
+        node = factories.NodeFactory()
+        assert_false(node.sanction)
+
+    def test_sanction_embargo_termination_first(self):
+        embargo_termination_approval = factories.EmbargoTerminationApprovalFactory()
+        registration = Node.find_one(Q('embargo_termination_approval', 'eq', embargo_termination_approval))
+        assert_equal(registration.sanction, embargo_termination_approval)
+
+    def test_sanction_retraction(self):
+        retraction = factories.RetractionFactory()
+        registration = Node.find_one(Q('retraction', 'eq', retraction))
+        assert_equal(registration.sanction, retraction)
+
+    def test_sanction_embargo(self):
+        embargo = factories.EmbargoFactory()
+        registration = Node.find_one(Q('embargo', 'eq', embargo))
+        assert_equal(registration.sanction, embargo)
+
+    def test_sanction_registration_approval(self):
+        registration_approval = factories.RegistrationApprovalFactory()
+        registration = Node.find_one(Q('registration_approval', 'eq', registration_approval))
+        assert_equal(registration.sanction, registration_approval)
+
+    def test_sanction_searches_parents(self):
+        user = factories.AuthUserFactory()
+        node = factories.NodeFactory(creator=user)
+        child = factories.NodeFactory(creator=user, parent=node)
+        factories.NodeFactory(creator=user, parent=child)
+        with mock_archive(node) as registration:
+            approval = registration.registration_approval
+            sub_reg = registration.nodes[0].nodes[0]
+            assert_equal(sub_reg.sanction, approval)
+
+    def test_is_pending_registration(self):
+        registration_approval = factories.RegistrationApprovalFactory()
+        registration = Node.find_one(Q('registration_approval', 'eq', registration_approval))
+        assert_true(registration_approval.is_pending_approval)
+        assert_true(registration.is_pending_registration)
+
+    def test_is_pending_registration_searches_parents(self):
+        user = factories.AuthUserFactory()
+        node = factories.NodeFactory(creator=user)
+        child = factories.NodeFactory(creator=user, parent=node)
+        factories.NodeFactory(creator=user, parent=child)
+        with mock_archive(node) as registration:
+            sub_reg = registration.nodes[0].nodes[0]
+            assert_true(sub_reg.is_pending_registration)
+
+    def test_is_registration_approved(self):
+        registration_approval = factories.RegistrationApprovalFactory()
+        registration = Node.find_one(Q('registration_approval', 'eq', registration_approval))
+        with mock.patch('website.project.sanctions.Sanction.is_approved', mock.Mock(return_value=True)):
+            assert_true(registration.is_registration_approved)
+
+    def test_is_registration_approved_searches_parents(self):
+        user = factories.AuthUserFactory()
+        node = factories.NodeFactory(creator=user)
+        child = factories.NodeFactory(creator=user, parent=node)
+        factories.NodeFactory(creator=user, parent=child)
+        with mock_archive(node) as registration:
+            with mock.patch('website.project.sanctions.Sanction.is_approved', mock.Mock(return_value=True)):
+                sub_reg = registration.nodes[0].nodes[0]
+                assert_true(sub_reg.is_registration_approved)
+
+    def test_is_retracted(self):
+        retraction = factories.RetractionFactory()
+        registration = Node.find_one(Q('retraction', 'eq', retraction))
+        with mock.patch('website.project.sanctions.Sanction.is_approved', mock.Mock(return_value=True)):
+            assert_true(registration.is_retracted)
+
+    def test_is_retracted_searches_parents(self):
+        user = factories.AuthUserFactory()
+        node = factories.NodeFactory(creator=user)
+        child = factories.NodeFactory(creator=user, parent=node)
+        factories.NodeFactory(creator=user, parent=child)
+        with mock_archive(node, autoapprove=True, retraction=True, autoapprove_retraction=True) as registration:
+            sub_reg = registration.nodes[0].nodes[0]
+            assert_true(sub_reg.is_retracted)
+
+    def test_is_pending_retraction(self):
+        retraction = factories.RetractionFactory()
+        registration = Node.find_one(Q('retraction', 'eq', retraction))
+        assert_true(retraction.is_pending_approval)
+        assert_true(registration.is_pending_retraction)
+
+    def test_is_pending_retraction_searches_parents(self):
+        user = factories.AuthUserFactory()
+        node = factories.NodeFactory(creator=user)
+        child = factories.NodeFactory(creator=user, parent=node)
+        factories.NodeFactory(creator=user, parent=child)
+        with mock_archive(node, autoapprove=True, retraction=True) as registration:
+            sub_reg = registration.nodes[0].nodes[0]
+            assert_true(sub_reg.is_pending_retraction)
+
+    def test_embargo_end_date(self):
+        embargo = factories.EmbargoFactory()
+        registration = Node.find_one(Q('embargo', 'eq', embargo))
+        assert_equal(registration.embargo_end_date, embargo.end_date)
+
+    def test_embargo_end_date_searches_parents(self):
+        user = factories.AuthUserFactory()
+        node = factories.NodeFactory(creator=user)
+        child = factories.NodeFactory(creator=user, parent=node)
+        factories.NodeFactory(creator=user, parent=child)
+        with mock_archive(node, embargo=True) as registration:
+            sub_reg = registration.nodes[0].nodes[0]
+            assert_equal(sub_reg.embargo_end_date, registration.embargo_end_date)
+
+    def test_is_pending_embargo(self):
+        embargo = factories.EmbargoFactory()
+        registration = Node.find_one(Q('embargo', 'eq', embargo))
+        assert_true(embargo.is_pending_approval)
+        assert_true(registration.is_pending_embargo)
+
+    def test_is_pending_embargo_searches_parents(self):
+        user = factories.AuthUserFactory()
+        node = factories.NodeFactory(creator=user)
+        child = factories.NodeFactory(creator=user, parent=node)
+        factories.NodeFactory(creator=user, parent=child)
+        with mock_archive(node, embargo=True) as registration:
+            sub_reg = registration.nodes[0].nodes[0]
+            assert_true(sub_reg.is_pending_embargo)
+
+    def test_is_embargoed(self):
+        embargo = factories.EmbargoFactory()
+        registration = Node.find_one(Q('embargo', 'eq', embargo))
+        with mock.patch('website.project.sanctions.Sanction.is_approved', mock.Mock(return_value=True)):
+            assert_true(registration.is_embargoed)
+
+    def test_is_embargoed_searches_parents(self):
+        user = factories.AuthUserFactory()
+        node = factories.NodeFactory(creator=user)
+        child = factories.NodeFactory(creator=user, parent=node)
+        factories.NodeFactory(creator=user, parent=child)
+        with mock_archive(node, embargo=True, autoapprove=True) as registration:
+            sub_reg = registration.nodes[0].nodes[0]
+            assert_true(sub_reg.is_embargoed)
+
+class TestNodeEmbargoTerminations(OsfTestCase):
+
+    def tearDown(self):
+        with mock.patch('framework.celery_tasks.handlers.queue', mock.Mock(return_value=None)):
+            super(TestNodeEmbargoTerminations, self).tearDown()
+
+    def setUp(self):
+        super(TestNodeEmbargoTerminations, self).setUp()
+
+        self.user = factories.AuthUserFactory()
+        self.node = factories.ProjectFactory(creator=self.user)
+        with mock_archive(self.node, embargo=True, autoapprove=True) as registration:
+            self.registration = registration
+
+        self.not_embargoed = factories.RegistrationFactory()
+
+    def test_request_embargo_termination_not_embargoed(self):
+        with assert_raises(NodeStateError):
+            self.not_embargoed.request_embargo_termination(Auth(self.user))
+
+    def test_terminate_embargo_makes_registrations_public(self):
+        self.registration.terminate_embargo(Auth(self.user))
+        for node in self.registration.node_and_primary_descendants():
+            assert_true(node.is_public)
+            assert_false(node.is_embargoed)
+
+    @assert_logs(NodeLog.EMBARGO_TERMINATED, 'node')
+    def test_terminate_embargo_adds_log_to_registered_from(self):
+        self.registration.terminate_embargo(Auth(self.user))
+
+    def test_terminate_embargo_log_is_nouser(self):
+        self.registration.terminate_embargo(Auth(self.user))
+        last_log = self.node.logs[-1]
+        assert_equal(last_log.action, NodeLog.EMBARGO_TERMINATED)
+        assert_equal(last_log.user, None)

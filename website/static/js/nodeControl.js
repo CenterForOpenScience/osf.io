@@ -13,6 +13,7 @@ require('bootstrap-editable');
 
 var osfHelpers = require('js/osfHelpers');
 var NodeActions = require('js/project.js');
+var NodesPrivacy = require('js/nodesPrivacy').NodesPrivacy;
 var iconmap = require('js/iconmap');
 
 /**
@@ -37,6 +38,7 @@ var ProjectViewModel = function(data) {
     self.dashboard = data.user.dashboard_id;
     self.userCanEdit = data.user.can_edit;
     self.userPermissions = data.user.permissions;
+    self.node = data.node;
     self.description = data.node.description;
     self.title = data.node.title;
     self.category = data.node.category;
@@ -45,6 +47,13 @@ var ProjectViewModel = function(data) {
     self.nodeIsPublic = data.node.is_public;
     self.nodeType = data.node.node_type;
 
+    self.nodeIsPendingEmbargoTermination = ko.observable(data.node.is_pending_embargo_termination);
+    self.makePublicTooltip = ko.computed(function() {
+        if(self.nodeIsPendingEmbargoTermination()) {
+            return 'A request to make this registration public is pending';
+        }
+        return null;
+    });
 
     // WATCH button is removed, functionality is still here in case of future implementation -- CU
     // The button text to display (e.g. "Watch" if not watching)
@@ -265,6 +274,21 @@ function NodeControl (selector, data, options) {
 NodeControl.prototype.init = function() {
     var self = this;
     osfHelpers.applyBindings(self.viewModel, this.selector);
+    if (self.data.user.is_admin && !self.data.node.is_retracted) {
+        new NodesPrivacy('#nodesPrivacy', self.data.node, function(nodesChanged, requestedEmbargoTermination) {
+            // TODO: The goal here is to update the UI of the project dashboard to
+            // reflect the new privacy state(s). Unfortunately, since the components
+            // view is rendered server-side we have a relatively limited capacity to
+            // update the page. Once the components list is componentized we can
+            // rerender just that section of the DOM (as well as updating the
+            // project-specific UI).
+            // For now, this method only needs to handle requests for making embargoed
+            // nodes public.
+            if (requestedEmbargoTermination) {
+                self.viewModel.nodeIsPendingEmbargoTermination(true);
+            }
+        });
+    }
 };
 
 module.exports = {
