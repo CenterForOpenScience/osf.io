@@ -16,7 +16,7 @@ from api.base.utils import get_user_auth, get_object_or_error, absolute_reverse
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField,
                                   IDField, TypeField, TargetTypeField, JSONAPIListField, LinksField, RelationshipField,
                                   DevOnly, HideIfRegistration)
-from api.base.exceptions import InvalidModelValueError
+from api.base.exceptions import InvalidModelValueError, Conflict
 from api.base.settings import ADDONS_FOLDER_CONFIGURABLE
 
 from website.oauth.models import ExternalAccount
@@ -278,8 +278,9 @@ class NodeAddonSettingsSerializer(JSONAPISerializer):
 
     id = ser.CharField(source='_id', read_only=True)
     enabled = ser.BooleanField(required=True)
-    auth_id = ser.CharField(source='object.external_account._id')
-    folder = ser.CharField(source='object.folder_id')
+    auth_id = ser.CharField(source='object.external_account._id', allow_null=True)
+    folder_id = ser.CharField(source='object.folder_id', allow_null=True)
+    folder_path = ser.CharField(source='object.folder_path', required=False, allow_null=True)
     has_auth = ser.BooleanField(source='object.has_auth', read_only=True)
     complete = ser.BooleanField(source='object.complete', read_only=True)
     configured = ser.BooleanField(source='object.configured', read_only=True)
@@ -310,12 +311,25 @@ class NodeAddonSettingsSerializer(JSONAPISerializer):
             folder_id = None
             set_folder = False
 
+        if folder_id and addon_name == 'googledrive':
+            try:
+                folder_path = validated_data['object']['folder_path']
+            except KeyError:
+                folder_path = None
+            folder_id = {
+                'id': folder_id,
+                'path': folder_path
+            }
+
         enabled = validated_data.get('enabled', None)
 
         if enabled is False and (folder_id or auth_id):
-            raise exceptions.Conflict('Cannot disable the addon and set the folder/authorization at the same time.')
+            raise Conflict('Cannot disable the addon and set the folder/authorization at the same time.')
 
         node = self.context['view'].get_node()
+        if ((not node_settings or not node_settings.has_auth)
+           and folder_id and not auth_id):
+            raise Conflict('Cannot set folder without authorization')
 
         if node_settings and enabled is False:
             node.delete_addon(addon_name, auth)
@@ -324,7 +338,7 @@ class NodeAddonSettingsSerializer(JSONAPISerializer):
             folder_id = None
             enabled = False
 
-        if not node_settings and enabled is True:
+        if not node_settings and (enabled is not False or (folder_id or auth_id)):
             node_settings = node.get_or_add_addon(addon_name, auth=auth)
 
         if node_settings and node_settings.configured and set_folder and not folder_id:
@@ -334,15 +348,14 @@ class NodeAddonSettingsSerializer(JSONAPISerializer):
         if node_settings and node_settings.has_auth and set_auth and not auth_id:
             node_settings.deauthorize(auth=auth)  # clear_auth performs save
 
-        elif auth_id and (not node_settings.external_account
-                or auth_id != node_settings.external_account._id):
+        elif auth_id:
             external_account = ExternalAccount.load(auth_id)
             if not external_account:
                 raise exceptions.NotFound('Unable to find requested account.')
             if external_account not in auth.user.external_accounts:
                 raise exceptions.PermissionDenied('Requested action requires account ownership.')
-            node.delete_addon(addon_name, auth)
-            node_settings = node.get_or_add_addon(addon_name, auth=auth)
+            if node_settings.external_account and auth_id != node_settings.external_account._id:
+                node_settings.deauthorize(auth=auth)
             node_settings.set_auth(external_account, auth.user)
 
         if (folder_id
@@ -357,8 +370,8 @@ class NodeAddonSettingsSerializer(JSONAPISerializer):
 
         return {
             '_id': addon_name,
-            'enabled': enabled,
-            'object': node_settings if enabled else None
+            'enabled': enabled is not False,
+            'object': node_settings if enabled is not False else None
         }
 
 class NodeDetailSerializer(NodeSerializer):
