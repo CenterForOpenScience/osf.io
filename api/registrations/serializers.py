@@ -67,6 +67,11 @@ class RegistrationSerializer(NodeSerializer):
         related_view_kwargs={'node_id': '<forked_from_id>'}
     ))
 
+    forks = HideIfRetraction(RelationshipField(
+        related_view='registrations:registration-forks',
+        related_view_kwargs={'node_id': '<pk>'}
+    ))
+
     node_links = HideIfRetraction(RelationshipField(
         related_view='registrations:registration-pointers',
         related_view_kwargs={'node_id': '<pk>'},
