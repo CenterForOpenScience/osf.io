@@ -20,6 +20,10 @@ var Log = function(params) {
 
     $.extend(self, params);
     self.date = new $osf.FormattableDate(params.date);
+
+    if(params.params.submitted_time)
+        self.params.submitted_time = new $osf.FormattableDate(params.params.submitted_time);
+
     self.wikiUrl = ko.computed(function() {
         return self.nodeUrl + 'wiki/' + encodeURIComponent(self.params.page);
     });

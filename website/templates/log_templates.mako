@@ -201,8 +201,15 @@ to
 </script>
 
 <script type="text/html" id="project_registered">
-registered
-<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+   <!-- ko if: params.is_prereg -->
+        initiated registration of
+        <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: projectUrl}"></a>.
+        It was submitted for review to the Preregistration Challenge on
+    <!-- /ko -->
+    <!-- ko ifnot: params.is_prereg -->
+        registered
+        <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+    <!-- /ko -->
 </script>
 
 <script type="text/html" id="project_registered_no_user">
