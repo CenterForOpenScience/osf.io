@@ -15,7 +15,6 @@ from website.citations.models import AddonCitationsNodeSettings
 from website.citations.providers import CitationsOauthProvider
 from website.util import web_url_for
 
-
 from framework.exceptions import HTTPError
 
 
@@ -74,8 +73,10 @@ class Mendeley(CitationsOauthProvider):
         except MendeleyApiException as error:
             if error.status == 401 and 'Token has expired' in error.message:
                 try:
-                    self.refresh_oauth_key()
+                    refreshed_key = self.refresh_oauth_key()
                 except InvalidAuthError:
+                    raise HTTPError(401)
+                if not refreshed_key:
                     raise HTTPError(401)
             else:
                 self._client = None
