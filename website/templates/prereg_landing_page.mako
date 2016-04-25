@@ -23,7 +23,7 @@
 
 <%def name="existingPrereg(size=None)">
 <% size = size or '' %>
-<div id="existingPrereg${size}" class="prereg-existing-prereg p-md osf-box box-round clearfix m-b-lg" style="display:none; style="width: 100%;"">
+<div id="existingPrereg${size}" class="prereg-existing-prereg p-md osf-box box-round clearfix m-b-lg" style="display:none; width: 100%;">
   <p>Go to an existing preregistration:</p>
     <input id="regDraftSearch${size}" class="form-control"></input>
     <div class="p-xs"><a href="#" class="regDraftButton btn btn-primary disabled pull-right">Preregister</a></div>

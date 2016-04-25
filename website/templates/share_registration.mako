@@ -10,7 +10,7 @@
         window.contextVars = $.extend(true, {}, window.contextVars, {
             share: {
                 urls: {
-                    register: '${register | js_str}'
+                    register: ${ register | sjson, n }
                 }
             }
         });

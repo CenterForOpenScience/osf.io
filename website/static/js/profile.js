@@ -5,8 +5,6 @@ var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
 require('knockout.validation');
-require('knockout.punches');
-ko.punches.enableAll();
 require('knockout-sortable');
 
 var $osf = require('./osfHelpers');
@@ -824,13 +822,10 @@ ListViewModel.prototype = Object.create(BaseViewModel.prototype);
 ListViewModel.prototype.addContent = function() {
     if (!this.institutionObjectsEmpty() && this.isValid()) {
         this.contents.push(new this.ContentModel(this));
+        this.showMessages(false);
     }
     else {
-        this.changeMessage(
-            'Institution field is required.',
-            'text-danger',
-            5000
-        );
+        this.showMessages(true);
     }
 };
 
