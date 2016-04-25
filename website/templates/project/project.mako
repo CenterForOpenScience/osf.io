@@ -118,7 +118,13 @@
                     % if ('admin' in user['permissions'] and not node['is_registration']) and (len(node['institutions']) != 0 or len(user['institutions']) != 0):
                         <a class="link-dashed" href="${node['url']}settings/#configureInstitutionAnchor" id="institution">Affiliated Institutions:</a>
                         % if node['institutions'] != []:
-                            <a href="/institutions/${node['institutions'][0]['id']}">${node['institutions'][0]['name']}</a>
+                            % for inst in node['institutions']:
+                                % if inst != node['institutions'][-1]:
+                                    <span><a href="/institutions/${inst['id']}">${inst['name']}</a>, </span>
+                                % else:
+                                    <a href="/institutions/${inst['id']}">${inst['name']}</a>
+                                % endif
+                            % endfor
                         % else:
                             <span> None </span>
                         % endif
