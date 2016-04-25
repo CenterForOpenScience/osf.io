@@ -290,7 +290,7 @@ var urlParams = function(str, isEmail) {
 };
 
 /**
-  * Get email address as an object.
+  * Get query string arguments as an object.
   * If `str` is falsy, return {}.
   * Modified from getQueryParameters plugin by Nicholas Ortenzio (MIT Licensed).
   */
