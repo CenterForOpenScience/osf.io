@@ -311,6 +311,7 @@
                                         Could not load up available institutions. Please wait a few minutes and try again, or contact <a href="mailto:support@osf.io">support@osf.io</a> if the problem persists.
                                     </div>
                                 </div>
+                                <!--
                                 <div data-bind="visible: !error()">
                                     <div data-bind="visible: availableInstitutions().length">
                                         <div class="help-block">
@@ -341,15 +342,33 @@
                                         </div>
                                     </div>
                                 </div>
+                                -->
+
                             </div>
                         % endif
                         % if node['institutions'] != []:
+                            <!--
                             <div class="help-block">Your project is currently affiliated with: </div>
                             <p data-bind="text: primaryInstitution"></p>
                             <div class="help-block">
                                 Projects affiliated with institutions will show some institutional branding (such as logos), and if public, will be discoverable on OSF institutional landing pages.
                             </div>
                             <button data-bind="click: clearInst" class="btn btn-danger">Remove affiliation</button>
+                            -->
+                            <div data-bind="visible: !error()">
+                                <table><thead></thead>
+                            <tbody>
+                                <!-- ko foreach: {data: affiliatedInstitutions, as: 'item'} -->
+                                <tr>
+                                    <td><img class="img-circle" width="50px" height="50px" data-bind="attr: {src: item.attributes.logo_path}"></td>
+                                    <td><span data-bind="text: item.attributes.name"></span></td>
+                                    <td><a><i class="fa fa-times"></i></a></td>
+                                </tr>
+                                <!-- /ko -->
+
+                            </tbody>
+                                </table>
+                            </div>
                         % endif
                     </div>
                 </div>
@@ -441,6 +460,8 @@
     <!-- End right column -->
 
 </div>
+
+
 
 <%def name="render_node_settings(data)">
     <%

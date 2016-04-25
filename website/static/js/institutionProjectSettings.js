@@ -13,6 +13,7 @@ var ViewModel = function(data) {
     self.institutionHref = ko.observable('');
     self.availableInstitutions = ko.observable(false);
     self.selectedInstitution = ko.observable();
+    self.affiliatedInstitutions = ko.observable(false);
 
     self.fetchUserInstitutions = function() {
         var url = data.apiV2Prefix + 'users/' + data.currentUser.id + '/?embed=institutions';
@@ -35,7 +36,7 @@ var ViewModel = function(data) {
             });
         });
     };
-    self.fetchNodeInstitutions = function() {
+    var fetchNodeInstitutions = function() {
         var url = data.apiV2Prefix + 'nodes/' + data.node.id + '/?embed=primary_institution';
         return $osf.ajaxJSON(
             'GET',
@@ -46,6 +47,24 @@ var ViewModel = function(data) {
                 self.primaryInstitution(response.data.embeds.primary_institution.data.attributes.name);
                 self.institutionHref(response.data.embeds.primary_institution.data.links.html);
             }
+        }).fail(function (xhr, status, error) {
+            Raven.captureMessage('Unable to fetch node with embedded institutions', {
+                extra: {
+                    url: url,
+                    status: status,
+                    error: error
+                }
+            });
+        });
+    };
+    self.fetchNodeInstitutions = function() {
+        var url = data.apiV2Prefix + 'nodes/' + data.node.id + '/institutions/';
+        return $osf.ajaxJSON(
+            'GET',
+            url,
+            {isCors: true}
+        ).done(function (response) {
+            self.affiliatedInstitutions(response.data);
         }).fail(function (xhr, status, error) {
             Raven.captureMessage('Unable to fetch node with embedded institutions', {
                 extra: {
