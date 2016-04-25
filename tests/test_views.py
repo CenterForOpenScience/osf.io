@@ -2319,8 +2319,14 @@ class TestUserInviteViews(OsfTestCase):
         assert_true(send_mail.called)
         # email was sent to referrer
         send_mail.assert_called_with(
-            to_addr=referrer.username,
-            mail=mails.FORWARD_INVITE
+            referrer.username,
+            mails.FORWARD_INVITE,
+            user=unreg_user,
+            referrer=referrer,
+            claim_url=unreg_user.get_claim_url(project._id, external=True),
+            email=real_email.lower().strip(),
+            fullname=unreg_user.get_unclaimed_record(project._id)['name'],
+            node=project
         )
 
     @mock.patch('website.project.views.contributor.mails.send_mail')
@@ -2334,6 +2340,7 @@ class TestUserInviteViews(OsfTestCase):
         )
         project.save()
         send_claim_email(email=fake.email(), user=unreg_user, node=project)
+        send_mail.reset_mock()
         # 2nd call raises error because throttle hasn't expired
         with assert_raises(HTTPError):
             send_claim_email(email=fake.email(), user=unreg_user, node=project)
@@ -2372,9 +2379,14 @@ class TestClaimViews(OsfTestCase):
         res = self.app.post_json(url, payload)
 
         # mail was sent
-        assert_true(send_mail.called)
+        assert_equal(send_mail.call_count, 2)
         # ... to the correct address
-        send_mail.assert_called_with(to_addr=self.given_email)
+        referrer_call = send_mail.call_args_list[0]
+        claimer_call = send_mail.call_args_list[1]
+        args, _ = referrer_call
+        assert_equal(args[0], self.referrer.username)
+        args, _ = claimer_call
+        assert_equal(args[0], reg_user.username)    
 
         # view returns the correct JSON
         assert_equal(res.json, {
@@ -2405,6 +2417,7 @@ class TestClaimViews(OsfTestCase):
             unreg_user=self.user,
             node=self.project,
         )
+        mock_send_mail.reset_mock()
         # second call raises error because it was called before throttle period
         with assert_raises(HTTPError):
             send_claim_registered_email(

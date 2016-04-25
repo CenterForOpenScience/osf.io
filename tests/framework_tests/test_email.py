@@ -47,7 +47,7 @@ class TestEmail(unittest.TestCase):
         )
         assert_true(ret)
 
-        assert_equal(mock_client.call_count, 1)
+        assert_equal(mock_client.send.call_count, 1)
         # First call's argument should be a Mail object with
         # the correct configuration
         first_call_arg = mock_client.send.call_args[0][0]

@@ -876,6 +876,7 @@ class TestArchiverListeners(ArchiverTestCase):
         reg = factories.RegistrationFactory(project=proj)
         rc1 = reg.nodes[0]
         rc2 = rc1.nodes[0]
+        mock_chain.reset_mock()
         listeners.after_register(c1, rc1, self.user)
         assert_false(mock_chain.called)
         listeners.after_register(c2, rc2, self.user)
@@ -947,7 +948,7 @@ class TestArchiverListeners(ArchiverTestCase):
         self.dst.archive_job.save()
         with mock.patch('website.archiver.utils.handle_archive_fail') as mock_fail:
             listeners.archive_callback(self.dst)
-        mock_fail.assert_called_with(ARCHIVER_NETWORK_ERROR, self.src, self.dst, self.user, self.dst.archive_job.target_addons)
+        mock_fail.assert_called_with(ARCHIVER_UNCAUGHT_ERROR, self.src, self.dst, self.user, self.dst.archive_job.target_addons)
 
     def test_archive_callback_updates_archiving_state_when_done(self):
         proj = factories.NodeFactory()
@@ -1030,7 +1031,7 @@ class TestArchiverListeners(ArchiverTestCase):
             rchild2.archive_job.update_target(addon, ARCHIVER_SUCCESS)
         rchild2.save()
         listeners.archive_callback(rchild2)
-        assert_equal(mock_send.call_count, 1)
+        assert_equal(mock_send_success.call_count, 1)
         assert_true(mock_send_success.called)
 
 class TestArchiverScripts(ArchiverTestCase):

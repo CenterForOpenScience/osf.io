@@ -5,6 +5,7 @@ import mock
 
 from tests.base import OsfTestCase
 from tests.factories import UserFactory
+from nose.tools import assert_false
 
 import functools
 
