@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 import abc
+import mock
 from nose.tools import *  # flake8: noqa
 
 from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
+from website.util.permissions import READ, WRITE
 
 from tests.base import ApiAddonTestCase
 from tests.factories import AuthUserFactory
@@ -37,10 +39,10 @@ class NodeAddonListMixin(object):
 
         addon_data = self.get_response_for_addon(res)
         if not wrong_type:
-            assert_equal(self.account._id, addon_data['auth_id'])
+            assert_equal(self.account_id, addon_data['auth_id'])
             assert_equal(self.node._id, addon_data['node'])
             assert_equal(self.node_settings.has_auth, addon_data['has_auth'])
-            assert_equal(self.node_settings.folder_id, addon_data['folder'])
+            assert_equal(self.node_settings.folder_id, addon_data['folder_id'])
         if wrong_type:
             assert_equal(addon_data, None)
 
@@ -101,10 +103,10 @@ class NodeAddonListMixin(object):
             auth=noncontrib.auth)
         addon_data = self.get_response_for_addon(res)
         if not wrong_type:
-            assert_equal(self.account._id, addon_data['auth_id'])
+            assert_equal(self.account_id, addon_data['auth_id'])
             assert_equal(self.node._id, addon_data['node'])
             assert_equal(self.node_settings.has_auth, addon_data['has_auth'])
-            assert_equal(self.node_settings.folder_id, addon_data['folder'])
+            assert_equal(self.node_settings.folder_id, addon_data['folder_id'])
         if wrong_type:
             assert_equal(addon_data, None)
 
@@ -118,16 +120,17 @@ class NodeAddonDetailMixin(object):
         wrong_type = self.should_expect_errors()
         res = self.app.get(
             self.setting_detail_url,
-            auth=self.user.auth)
+            auth=self.user.auth,
+            expect_errors=wrong_type)
 
-        addon_data = self.get_response_for_addon(res)
         if not wrong_type:
-            assert_equal(self.account._id, addon_data['auth_id'])
+            addon_data = res.json['data']['attributes']
+            assert_equal(self.account_id, addon_data['auth_id'])
             assert_equal(self.node._id, addon_data['node'])
             assert_equal(self.node_settings.has_auth, addon_data['has_auth'])
-            assert_equal(self.node_settings.folder_id, addon_data['folder'])
+            assert_equal(self.node_settings.folder_id, addon_data['folder_id'])
         if wrong_type:
-            assert_equal(addon_data, None)
+            assert_equal(res.status_code, 404)
 
     def test_settings_detail_GET_disabled(self):
         wrong_type = self.should_expect_errors()
@@ -140,28 +143,54 @@ class NodeAddonDetailMixin(object):
             self.setting_detail_url,
             auth=self.user.auth,
             expect_errors=wrong_type)
-        addon_data = res.json['data'].get('attributes', None)
         if not wrong_type:
+            addon_data = res.json['data']['attributes']
             assert_equal(addon_data['auth_id'], None)
             assert_equal(addon_data['node'], None)
             assert_false(addon_data['has_auth'])
         if wrong_type:
-            assert_equal(addon_data, None)
+            assert_equal(res.status_code, 404)
 
-    def test_settings_detail_PUT_all_sets(self):
-        wrong_type = self.should_expect_errors()
+    def test_settings_detail_PUT_all_sets_settings(self):
+        wrong_type = self.should_expect_errors(success_types=['CONFIGURABLE'])
         try:
             self.node.delete_addon(self.short_name, auth=self.auth)
         except ValueError:
             # If addon was mandatory -- OSFStorage
             pass
+        data = {'data': { 
+                'id': self.short_name,
+                'type': 'node_addons',
+                'attributes': {
+                    'auth_id': self.account_id,
+                    'enabled': True,
+                    }
+                }
+            }
+        data['data']['attributes'].update(self._mock_folder_info)
+        res = self.app.put_json_api(self.setting_detail_url, 
+            data, auth=self.user.auth,
+            expect_errors=wrong_type)
+        if not wrong_type:
+            addon_data = res.json['data']['attributes']
+            assert_equal(addon_data['auth_id'], self.account_id)
+            assert_equal(addon_data['node'], self.node._id)
+            # import ipdb; ipdb.set_trace()
+            assert_equal(addon_data['folder_id'], '0987654321')
+            assert_true(addon_data['has_auth'])
+        if wrong_type:
+            assert_in(res.status_code, [404, 405])
+
+
+    def test_settings_detail_PUT_none_and_enabled_clears_settings(self):
+        wrong_type = self.should_expect_errors(success_types=['CONFIGURABLE'])
         res = self.app.put_json_api(self.setting_detail_url, 
             {'data': { 
                 'id': self.short_name,
                 'type': 'node_addons',
                 'attributes': {
-                    'auth_id': self.account._id,
-                    'folder': '1234567890',
+                    'auth_id': None,
+                    'folder_id': None,
                     'enabled': True
                     }
                 }
@@ -169,40 +198,288 @@ class NodeAddonDetailMixin(object):
             expect_errors=wrong_type)
         if not wrong_type:
             addon_data = res.json['data']['attributes']
-            assert_equal(addon_data['auth_id'], self.account._id)
+            assert_equal(addon_data['auth_id'], None)
             assert_equal(addon_data['node'], self.node._id)
-            assert_equal(addon_data['folder'], '1234567890')
+            assert_equal(addon_data['folder_id'], None)
+            assert_false(addon_data['has_auth'])
+        if wrong_type:
+            assert_in(res.status_code, [404, 405])
+
+    def test_settings_detail_PUT_none_and_disabled_deauthorizes(self):
+        wrong_type = self.should_expect_errors(success_types=['CONFIGURABLE'])
+        res = self.app.put_json_api(self.setting_detail_url, 
+            {'data': { 
+                'id': self.short_name,
+                'type': 'node_addons',
+                'attributes': {
+                    'auth_id': None,
+                    'folder_id': None,
+                    'enabled': False
+                    }
+                }
+            }, auth=self.user.auth,
+            expect_errors=wrong_type)
+        if not wrong_type:
+            addon_data = res.json['data']['attributes']
+            assert_equal(addon_data['auth_id'], None)
+            assert_equal(addon_data['node'], None)
+            assert_equal(addon_data['folder_id'], None)
+            assert_false(addon_data['has_auth'])
+        if wrong_type:
+            assert_in(res.status_code, [404, 405])
+
+    def test_settings_detail_PATCH_enabled_false_disables(self):
+        wrong_type = self.should_expect_errors(success_types=['CONFIGURABLE'])
+        res = self.app.patch_json_api(self.setting_detail_url, 
+            {'data': { 
+                'id': self.short_name,
+                'type': 'node_addons',
+                'attributes': {
+                    'enabled': False
+                    }
+                }
+            }, auth=self.user.auth,
+            expect_errors=wrong_type)
+        if not wrong_type:
+            addon_data = res.json['data']['attributes']
+            assert_equal(addon_data['auth_id'], None)
+            assert_equal(addon_data['node'], None)
+            assert_equal(addon_data['folder_id'], None)
+            assert_false(addon_data['has_auth'])
+        if wrong_type:
+            assert_in(res.status_code, [404, 405])
+
+    def test_settings_detail_PATCH_enabled_true_enables(self):
+        wrong_type = self.should_expect_errors(success_types=['CONFIGURABLE'])
+        try:
+            self.node.delete_addon(self.short_name, auth=self.auth)
+        except ValueError:
+            # If addon was mandatory -- OSFStorage
+            pass
+        res = self.app.patch_json_api(self.setting_detail_url, 
+            {'data': { 
+                'id': self.short_name,
+                'type': 'node_addons',
+                'attributes': {
+                    'enabled': True
+                    }
+                }
+            }, auth=self.user.auth,
+            expect_errors=wrong_type)
+        if not wrong_type:
+            addon_data = res.json['data']['attributes']
+            assert_equal(addon_data['auth_id'], None)
+            assert_equal(addon_data['node'], self.node._id)
+            assert_equal(addon_data['folder_id'], None)
+            assert_false(addon_data['has_auth'])
+        if wrong_type:
+            assert_in(res.status_code, [404, 405])
+
+    def test_settings_detail_PATCH_to_enable_and_add_auth_id(self):
+        wrong_type = self.should_expect_errors(success_types=['CONFIGURABLE'])
+        try:
+            self.node.delete_addon(self.short_name, auth=self.auth)
+        except ValueError:
+            # If addon was mandatory -- OSFStorage
+            pass
+        res = self.app.patch_json_api(self.setting_detail_url, 
+            {'data': { 
+                'id': self.short_name,
+                'type': 'node_addons',
+                'attributes': {
+                    'auth_id': self.account_id,
+                    }
+                }
+            }, auth=self.user.auth,
+            expect_errors=wrong_type)
+        if not wrong_type:
+            addon_data = res.json['data']['attributes']
+            assert_equal(addon_data['auth_id'], self.account_id)
+            assert_equal(addon_data['node'], self.node._id)
+            assert_equal(addon_data['folder_id'], None)
             assert_true(addon_data['has_auth'])
         if wrong_type:
-            assert_equal(res.status_code, 405)
+            assert_in(res.status_code, [404, 405])
 
+    def test_settings_detail_PATCH_to_remove_auth_id(self):
+        wrong_type = self.should_expect_errors(success_types=['CONFIGURABLE'])
+        res = self.app.patch_json_api(self.setting_detail_url, 
+            {'data': { 
+                'id': self.short_name,
+                'type': 'node_addons',
+                'attributes': {
+                    'auth_id': None,
+                    }
+                }
+            }, auth=self.user.auth,
+            expect_errors=wrong_type)
+        if not wrong_type:
+            addon_data = res.json['data']['attributes']
+            assert_equal(addon_data['auth_id'], None)
+            assert_equal(addon_data['node'], self.node._id)
+            assert_equal(addon_data['folder_id'], None)
+            assert_false(addon_data['has_auth'])
+        if wrong_type:
+            assert_in(res.status_code, [404, 405])
 
-    def test_settings_detail_PUT_none_disables(self):
-        pass
-
-    def test_settings_detail_PATCH_toggles_enabled_disabled(self):
-        pass
+    def test_settings_detail_PATCH_to_add_folder_without_auth_conflict(self):
+        wrong_type = self.should_expect_errors(success_types=['CONFIGURABLE'])
+        try:
+            self.node.delete_addon(self.short_name, auth=self.auth)
+        except ValueError:
+            # If addon was mandatory -- OSFStorage
+            pass
+        res = self.app.patch_json_api(self.setting_detail_url, 
+            {'data': { 
+                'id': self.short_name,
+                'type': 'node_addons',
+                'attributes': {
+                    'folder_id': 'asdfghjkl',
+                    }
+                }
+            }, auth=self.user.auth,
+            expect_errors=True)
+        if not wrong_type:
+            assert_equal(res.status_code, 409)
+            assert_equal('Cannot set folder without authorization',
+                         res.json['errors'][0]['detail'])
+        if wrong_type:
+            assert_in(res.status_code, [404, 405])
 
     def test_settings_detail_PATCH_readcontrib_raises_error(self):
-        pass
+        wrong_type = self.should_expect_errors()
+        read_user = AuthUserFactory()
+        self.node.add_contributor(read_user, permissions=[READ], auth=self.auth)
+        res = self.app.patch_json_api(self.setting_detail_url, 
+            {'data': { 
+                'id': self.short_name,
+                'type': 'node_addons',
+                'attributes': {
+                    'auth_id': None,
+                    }
+                }
+            }, auth=read_user.auth,
+            expect_errors=True)
+        if not wrong_type:
+            assert_equal(res.status_code, 403)
+        if wrong_type:
+            assert_equal(res.status_code, 404)
 
     def test_settings_detail_raises_error_if_DELETE_or_POST(self):
-        pass
+        post_res = self.app.post_json_api(self.setting_detail_url, 
+            {'data': { 
+                'id': self.short_name,
+                'type': 'node_addons',
+                'attributes': {
+                    'auth_id': None,
+                    'folder_id':  None,
+                    'enabled': False
+                    }
+                }
+            }, auth=self.user.auth,
+            expect_errors=True)
+        del_res = self.app.delete(self.setting_detail_url, 
+            {'data': { 
+                'id': self.short_name,
+                'type': 'node_addons',
+                'attributes': {
+                    'auth_id': self.account_id,
+                    'folder_id': '1234567890',
+                    'enabled': True
+                    }
+                }
+            }, auth=self.user.auth,
+            expect_errors=True)
+        assert_equal(post_res.status_code, 405)
+        assert_equal(del_res.status_code, 405)
 
     def test_settings_detail_raises_error_if_noncontrib_not_public_GET(self):
-        pass
+        wrong_type = self.should_expect_errors()
+        noncontrib = AuthUserFactory()
+        res = self.app.get(
+            self.setting_detail_url,
+            auth=noncontrib.auth,
+            expect_errors=True)
+        if not wrong_type:
+            assert_equal(res.status_code, 403)
+        if wrong_type:
+            assert_equal(res.status_code, 404)
 
     def test_settings_detail_raises_error_if_noncontrib_not_public_PUT(self):
-        pass
+        wrong_type = self.should_expect_errors()
+        noncontrib = AuthUserFactory()
+        res = self.app.put_json_api(self.setting_detail_url, 
+            {'data': { 
+                'id': self.short_name,
+                'type': 'node_addons',
+                'attributes': {
+                    'auth_id': None,
+                    'folder_id': None,
+                    'enabled': False
+                    }
+                }
+            }, auth=noncontrib.auth,
+            expect_errors=True)
+        if not wrong_type:
+            assert_equal(res.status_code, 403)
+        if wrong_type:
+            assert_equal(res.status_code, 404)
 
     def test_settings_detail_raises_error_if_noncontrib_not_public_PATCH(self):
-        pass
+        wrong_type = self.should_expect_errors()
+        noncontrib = AuthUserFactory()
+        res = self.app.patch_json_api(self.setting_detail_url, 
+            {'data': { 
+                'id': self.short_name,
+                'type': 'node_addons',
+                'attributes': {
+                    'enabled': False
+                    }
+                }
+            }, auth=noncontrib.auth,
+            expect_errors=True)
+        if not wrong_type:
+            assert_equal(res.status_code, 403)
+        if wrong_type:
+            assert_equal(res.status_code, 404)
 
     def test_settings_detail_noncontrib_public_can_view(self):
-        pass
+        self.node.set_privacy('public', auth=self.auth)
+        noncontrib = AuthUserFactory()
+        wrong_type = self.should_expect_errors()
+        res = self.app.get(
+            self.setting_detail_url,
+            auth=noncontrib.auth,
+            expect_errors=wrong_type)
+
+        if not wrong_type:
+            assert_equal(res.status_code, 200)
+            addon_data = res.json['data']['attributes']
+            assert_equal(self.account_id, addon_data['auth_id'])
+            assert_equal(self.node._id, addon_data['node'])
+            assert_equal(self.node_settings.has_auth, addon_data['has_auth'])
+            assert_equal(self.node_settings.folder_id, addon_data['folder_id'])
+        if wrong_type:
+            assert_equal(res.status_code, 404)
 
     def test_settings_detail_noncontrib_public_cannot_edit(self):
-        pass
+        wrong_type = self.should_expect_errors()
+        self.node.set_privacy('public', auth=self.auth)
+        noncontrib = AuthUserFactory()
+        res = self.app.patch_json_api(self.setting_detail_url, 
+            {'data': { 
+                'id': self.short_name,
+                'type': 'node_addons',
+                'attributes': {
+                    'enabled': False
+                    }
+                }
+            }, auth=noncontrib.auth,
+            expect_errors=True)
+        if not wrong_type:
+            assert_equal(res.status_code, 403)
+        if wrong_type:
+            assert_equal(res.status_code, 404)
 
 
 class NodeAddonFolderMixin(object):
@@ -223,6 +500,10 @@ class NodeAddonTestSuiteMixin(NodeAddonListMixin, NodeAddonDetailMixin, NodeAddo
 
     def should_expect_errors(self, success_types=['CONFIGURABLE', 'OAUTH']):
         return self.addon_type not in success_types
+
+    @property
+    def _mock_folder_info(self):
+        return {'folder_id': '0987654321'}
 
 
 class NodeOAuthAddonTestSuiteMixin(NodeAddonTestSuiteMixin):
@@ -247,9 +528,6 @@ class NodeOAuthAddonTestSuiteMixin(NodeAddonTestSuiteMixin):
 class NodeConfigurableAddonTestSuiteMixin(NodeOAuthAddonTestSuiteMixin):
     addon_type = 'CONFIGURABLE'
 
-    def _mock_folder_info(self):
-        return '0987654321'
-
     def test_folder_list_raises_error_if_not_GET(self):
         pass
 
@@ -270,9 +548,22 @@ class NodeOAuthCitationAddonTestSuiteMixin(NodeOAuthAddonTestSuiteMixin):
             'owner': self.node
         }
 
+    def test_settings_list_noncontrib_public_can_view(self):
+        with mock.patch.object(self.node_settings.__class__, '_fetch_folder_name', return_value='fake_folder'):
+            super(NodeOAuthCitationAddonTestSuiteMixin, self).test_settings_list_noncontrib_public_can_view
 
-class NodeManageableAddonTestSuiteMixin(NodeAddonTestSuiteMixin):
-    addon_type = 'MANAGEABLE'
+    def test_settings_list_GET_enabled(self):
+        with mock.patch.object(self.node_settings.__class__, '_fetch_folder_name', return_value='fake_folder'):
+            super(NodeOAuthCitationAddonTestSuiteMixin, self).test_settings_list_GET_enabled
+
+    def test_settings_detail_noncontrib_public_can_view(self):
+        with mock.patch.object(self.node_settings.__class__, '_fetch_folder_name', return_value='fake_folder'):
+            super(NodeOAuthCitationAddonTestSuiteMixin, self).test_settings_detail_noncontrib_public_can_view
+
+    def test_settings_detail_GET_enabled(self):
+        with mock.patch.object(self.node_settings.__class__, '_fetch_folder_name', return_value='fake_folder'):
+            super(NodeOAuthCitationAddonTestSuiteMixin, self).test_settings_detail_GET_enabled
+
 
 
 class NodeUnmanageableAddonTestSuiteMixin(NodeAddonTestSuiteMixin):
@@ -348,14 +639,20 @@ class TestNodeZoteroAddon(NodeOAuthCitationAddonTestSuiteMixin, ApiAddonTestCase
     AccountFactory = ZoteroAccountFactory
     NodeSettingsFactory = ZoteroNodeSettingsFactory
 
+# CONFIGURABLE
 
-class TestNodeBoxAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
+
+class TestNodeBoxAddon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'box'
     AccountFactory = BoxAccountFactory
     NodeSettingsFactory = BoxNodeSettingsFactory
 
+    def test_settings_detail_PUT_all_sets_settings(self):
+        with mock.patch.object(self.node_settings.__class__, '_update_folder_data') as mock_update:
+            super(TestNodeBoxAddon, self).test_settings_detail_PUT_all_sets_settings()
 
-class TestNodeDropboxAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
+
+class TestNodeDropboxAddon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'dropbox'
     AccountFactory = DropboxAccountFactory
     NodeSettingsFactory = DropboxNodeSettingsFactory
@@ -368,7 +665,7 @@ class TestNodeDropboxAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
         }
 
 
-class TestNodeS3Addon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
+class TestNodeS3Addon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 's3'
     AccountFactory = S3AccountFactory
     NodeSettingsFactory = S3NodeSettingsFactory
@@ -378,9 +675,6 @@ class TestNodeS3Addon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
             'user_settings': self.user_settings,
             'owner': self.node
         }
-
-
-# CONFIGURABLE
 
 
 class TestNodeGoogleDriveAddon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTestCase):
@@ -394,9 +688,10 @@ class TestNodeGoogleDriveAddon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTest
             'folder_path': '/1234567890'
         }
 
+    @property
     def _mock_folder_info(self):
         return {
-            'id': '0987654321',
-            'path': '/'
+            'folder_id': '0987654321',
+            'folder_path': '/'
         }
 

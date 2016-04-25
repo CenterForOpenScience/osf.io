@@ -407,6 +407,7 @@ class ApiAddonTestCase(ApiTestCase):
             assert isinstance(self.node_settings, AddonNodeSettingsBase)
             assert isinstance(self.user_settings, AddonUserSettingsBase)
 
+        self.account_id = self.account._id if self.account else None
         self.set_urls()
 
     def tearDown(self):
