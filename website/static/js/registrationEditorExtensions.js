@@ -231,7 +231,7 @@ var Uploader = function(question) {
             var files = question.extra();
             var elem = '';
             $.each(files, function(_, file) {
-                elem += '<a target="_blank" href="' + file.viewUrl + '">' + $osf.htmlEscape(file.selectedFileName) + ' </a>';
+                elem += '<a target="_blank" href="' + file.viewUrl + '">' + $osf.htmlEscape(file.selectedFileName) + ' </a>' + '</br>';
             });
             return $(elem);
         }
