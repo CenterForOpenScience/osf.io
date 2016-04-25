@@ -145,13 +145,15 @@ class TestSanction(SanctionsTestCase):
     @mock.patch.object(SanctionTestClass, '_notify_non_authorizer')
     def test_ask(self, mock_notify_non_authorizer, mock_notify_authorizer):
         other_user = factories.UserFactory()
+        p1 = factories.ProjectFactory()
+        p2 = factories.ProjectFactory()
         group = [
-            (other_user, factories.ProjectFactory()),
-            (self.user, factories.ProjectFactory()),
+            (other_user, p1),
+            (self.user, p2),
         ]
         self.sanction.ask(group)
-        mock_notify_non_authorizer.assert_called_once_with(other_user)
-        mock_notify_authorizer.assert_called_once_with(self.user)
+        mock_notify_non_authorizer.assert_called_once_with(other_user, p1)
+        mock_notify_authorizer.assert_called_once_with(self.user, p2)
 
 
 class TestEmailApprovableSanction(SanctionsTestCase):
@@ -181,8 +183,13 @@ class TestEmailApprovableSanction(SanctionsTestCase):
     @mock.patch.object(EmailApprovableSanctionTestClass, '_email_template_context')
     def test_notify_authorizer(self, mock_get_email_template_context, mock_send_approval_email):
         mock_get_email_template_context.return_value = 'context'
-        self.sanction._notify_authorizer(self.user, self.sanction._get_registration())
-        mock_get_email_template_context.assert_called_once_with(self.user, True)
+        reg  = self.sanction._get_registration()
+        self.sanction._notify_authorizer(self.user, reg)
+        mock_get_email_template_context.assert_called_once_with(
+            self.user,
+            reg, 
+            is_authorizer=True
+        )
         mock_send_approval_email.assert_called_once_with(self.user, 'authorizer', 'context')
 
     @mock.patch.object(EmailApprovableSanctionTestClass, '_send_approval_request_email')
@@ -190,8 +197,12 @@ class TestEmailApprovableSanction(SanctionsTestCase):
     def test_notify_non_authorizer(self, mock_get_email_template_context, mock_send_approval_email):
         mock_get_email_template_context.return_value = 'context'
         other_user = factories.UserFactory()
-        self.sanction._notify_non_authorizer(other_user, self.sanction._get_registration())
-        mock_get_email_template_context.assert_called_once_with(other_user, False)
+        reg = self.sanction._get_registration()
+        self.sanction._notify_non_authorizer(other_user, reg)
+        mock_get_email_template_context.assert_called_once_with(
+            other_user,
+            reg
+        )
         mock_send_approval_email.assert_called_once_with(other_user, 'non-authorizer', 'context')
 
     def test_add_authorizer(self):
