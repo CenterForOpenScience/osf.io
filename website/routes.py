@@ -1272,6 +1272,9 @@ def make_url_map(app):
         Rule([
             '/project/<pid>/drafts/<draft_id>/submit/',
         ], 'post', project_views.drafts.submit_draft_for_review, json_renderer),
+        Rule([
+            '/project/<pid>/drafts/<draft_id>/reject/',
+        ], 'post', project_views.drafts.forcibly_reject_draft_registration, json_renderer),
 
         # Meta Schemas
         Rule([

@@ -237,6 +237,7 @@ var Uploader = function(question) {
         }
     };
 
+
     $.extend(self, question);
 };
 

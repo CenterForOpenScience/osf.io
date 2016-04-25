@@ -10,6 +10,7 @@ var m = require('mithril');
 var URI = require('URIjs');
 var Raven = require('raven-js');
 var Treebeard = require('treebeard');
+var bootbox = require('bootbox');
 
 var $osf = require('js/osfHelpers');
 var waterbutler = require('js/waterbutler');
@@ -1036,30 +1037,97 @@ function _removeEvent (event, items, col) {
     }
 }
 
+
+
 function doCheckout(item, checkout, showError) {
-    return $osf.ajaxJSON(
-        'PUT',
-        window.contextVars.apiV2Prefix + 'files' + item.data.path + '/',
-        {
-            isCors: true,
-            data: {
+    var checkoutRequest = function() {
+        return $osf.ajaxJSON(
+            'PUT',
+            window.contextVars.apiV2Prefix + 'files' + item.data.path + '/',
+            {
+                isCors: true,
                 data: {
-                    id: item.data.path.replace('/', ''),
-                    type: 'files',
-                    attributes: {
-                        checkout: checkout
+                    data: {
+                        id: item.data.path.replace('/', ''),
+                        type: 'files',
+                        attributes: {
+                            checkout: checkout
+                        }
                     }
                 }
             }
-        }
-    ).done(function(xhr) {
-        if (showError) {
-            window.location.reload();
-        }
-    }).fail(function(xhr) {
-        if (showError) {
-            $osf.growl('Error', 'Unable to check out file. This is most likely due to the file being already checked-out' +
-                ' by another user.');
+        ).done( function(){
+            if(showError)
+                window.location.reload();
+        }).fail(function() {
+            if (showError) {
+                $osf.growl('Error', 'Unable to check out file. This is most likely due to the file being already checked-out' +
+                           ' by another user.');
+            }
+        });
+    };
+    return $osf.ajaxJSON(
+        'GET',
+        window.contextVars.node.urls.api + 'drafts/'
+    ).then(function(resp) {
+        var filesPending = [];
+        var fileMap = {};
+        $.each(resp.drafts, function(_, draft) {
+            fileMap[draft.pk] = [];
+            $.each(draft.registration_metadata, function(q, ans) {
+                if(ans.extra.length !== 0) {
+                    var hashes = $.map(ans.extra, function(file) {
+                        var hash = file.sha256;
+                        fileMap[draft.pk].push(hash);
+                        if(filesPending.indexOf(hash) === -1)
+                            return hash;
+                    });
+                    filesPending.push.apply(filesPending, hashes);
+                }
+            });
+        });
+        return {
+            filesPending: filesPending,
+            fileMap: fileMap
+        };
+    }).done(function(resp) {
+        var itemHash = item.data.extra.hashes.sha256;
+        if(!checkout && resp.filesPending.indexOf(itemHash) !== -1) {
+            bootbox.confirm({
+                title: 'Confirm file check in?',
+                message: 'This file is attached to one or more draft registrations. ' +
+                    'Checking in this file will cancel all submissions that include this file. ' +
+                    'Are you sure you want to check in this file?',
+                callback: function(confirm) {
+                    if (!confirm) {
+                        return;
+                    }
+                    var currentNode = window.contextVars.node;
+                    $.each(resp.fileMap, function(draft, files) {
+                        if(files.indexOf(itemHash) !== -1) {
+                            var url = window.contextVars.node.urls.api + 'drafts/' + draft + '/reject/';
+                            $osf.postJSON(url, {
+                                node: currentNode
+                            }).done(checkoutRequest)
+                              .fail(function() {
+                                  if (showError) {
+                                      $osf.growl('Error', 'Unable to check out file. This is most likely due to the file being already checked-out' +
+                                                 ' by another user.');
+                                  }
+                              });
+                        }
+                    });
+
+                },
+                buttons:{
+                    confirm:{
+                        label: 'Check in file',
+                        className: 'btn-danger'
+                    }
+                }
+            });
+        } else {
+            return checkoutRequest();
         }
     });
 }
