@@ -27,8 +27,6 @@ from admin.base.utils import PreregAdmin
 
 class DraftListView(PreregAdmin, ListView):
     template_name = 'pre_reg/draft_list.html'
-    paginate_by = 10
-    paginate_orphans = 1
     ordering = '-approval.initiation_date'
     context_object_name = 'draft'
 
@@ -54,7 +52,16 @@ class DraftListView(PreregAdmin, ListView):
                 for d in query_set
             ],
             'page': page,
+            'p': self.paginate_by,
         }
+
+    @property
+    def paginate_by(self):
+        return int(self.request.GET.get('p', 10))
+
+    @property
+    def paginate_orphans(self):
+        return int(self.paginate_by / 11.0) + 1
 
 
 class DraftDetailView(PreregAdmin, DetailView):
