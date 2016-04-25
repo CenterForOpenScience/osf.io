@@ -3472,7 +3472,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     @classmethod
     def find_by_institution(cls, inst, query=None):
         inst_node = inst.node
-        query = query & Q('_primary_institution', 'eq', inst_node)
+        query = query & Q('_primary_institution', 'eq', inst_node) if query else Q('_primary_institution', 'eq', inst_node)
         return cls.find(query, allow_institution=True)
 
     # Primary institution node is attached to

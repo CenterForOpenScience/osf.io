@@ -10,7 +10,7 @@ from modularodm import Q
 from website import settings
 from website.app import init_app
 from website.models import Institution, Node
-from website.search.search import update_institution
+from website.search.search import update_institution, update_node
 from framework.transactions.context import TokuTransaction
 
 logger = logging.getLogger(__name__)
@@ -175,6 +175,12 @@ def main(env):
     with TokuTransaction():
         for inst_data in INSTITUTIONS:
             new_inst, inst_created = update_or_create(inst_data)
+            # update the nodes elastic docs, to have current names of institutions. This will
+            # only work properly if this file is the only thign changing institution attributes
+            if not inst_created:
+                nodes = Node.find_by_institution(new_inst, query=Q('is_deleted', 'ne', True))
+                for node in nodes:
+                    update_node(node, async=False)
         for extra_inst in Institution.find(Q('_id', 'nin', [x['_id'] for x in INSTITUTIONS])):
             logger.warn('Extra Institution : {} - {}'.format(extra_inst._id, extra_inst.name))
 
