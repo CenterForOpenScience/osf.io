@@ -3,7 +3,7 @@ from nose.tools import *  # noqa
 
 from website.models import Node, NotificationSubscription
 from tests.base import OsfTestCase
-from tests.factories import DashboardFactory
+from tests.factories import CollectionFactory
 from tests.factories import NodeFactory
 from tests.factories import ProjectFactory
 from tests.factories import RegistrationFactory
@@ -39,7 +39,7 @@ class TestMigrateMailingLists(OsfTestCase):
 
 
     def test_migrate_dashboard(self):
-        node = DashboardFactory()
+        node = CollectionFactory()
         NotificationSubscription.remove()
         migrate(dry_run=False)
         assert_false(node.mailing_enabled)

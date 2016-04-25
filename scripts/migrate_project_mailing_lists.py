@@ -29,10 +29,10 @@ def migrate(dry_run=True):
     nodes = get_targets()
     ncount = len(nodes)
     logger.info('Preparing to migrate {} nodes.'.format(ncount))
-    for node in nodes:
+    for i, node in enumerate(nodes):
         if node.is_registration or node.is_collection or node.is_deleted:
             try:
-                logger.info('({0}/{1})Disabling mailing list for registration/dashboard {2}'.format(nodes.index(node)+1, ncount, node._id))
+                logger.info('({0}/{1})Disabling mailing list for registration/dashboard {2}'.format(i+1, ncount, node._id))
                 node.mailing_enabled = False    
                 node.save()
                 successful_disables.append(node._id)
@@ -45,7 +45,7 @@ def migrate(dry_run=True):
                     owner=node,
                     event_name=EVENT
                 )
-                logger.info('({0}/{1})Enabling mailing list for node {2}'.format(nodes.index(node)+1, ncount, node._id))
+                logger.info('({0}/{1})Enabling mailing list for node {2}'.format(i+1, ncount, node._id))
                 node.mailing_enabled = True
 
                 for user in node.contributors:
