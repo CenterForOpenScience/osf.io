@@ -9,7 +9,7 @@ var History = require('exports?History!history');
 var siteLicenses = require('js/licenses');
 var licenses = siteLicenses.list;
 var DEFAULT_LICENSE = siteLicenses.DEFAULT_LICENSE;
-var OTHER_LICENSE = siteLicenses.OTHER_LICENSE;  // TODO: Why is this required? Is it?
+var OTHER_LICENSE = siteLicenses.OTHER_LICENSE;  // TODO: Why is this required? Is it? See [#OSF-6100]
 
 var $osf = require('js/osfHelpers');
 

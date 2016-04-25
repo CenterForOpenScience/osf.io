@@ -5,7 +5,7 @@
 
 var $ = require('jquery');
 var ko = require('knockout');
-var bootbox = require('bootbox');  // TODO: Why is this required? Is it?
+var bootbox = require('bootbox');  // TODO: Why is this required? Is it? See [#OSF-6100]
 var Raven = require('raven-js');
 
 var oop = require('./oop');
