@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load render_bundle from webpack_loader %}
-{% load node_extras %}
+{% load prereg_extras %}
 
 {% load static %}
 {% block title %}
@@ -9,14 +9,41 @@
 
 {% block content %}
     <h2>List of Preregistration Drafts</h2>
-    {% include "util/pagination.html" with items=page status=status pagin=p %}
+    <div>
+        {# Add types here #}
+    </div>
+    {% include "util/pagination.html" with items=page status=status pagin=p order=order %}
     <table class="table table-striped table-hover table-responsive">
     <thead>
         <tr>
             <th>Status</th>
-            <th>Title</th>
-            <th>Applicant</th>
-            <th>Date initiated</th>
+            <th>
+                Title
+                <a href="{% reverse_list p=p order_by=SORT_BY.title status=status page=page.number %}"
+                   class="caret"></a>
+                <span class="dropup">
+                <a href="{% reverse_list p=p order_by=SORT_BY.n_title status=status page=page.number %}"
+                   class="caret"></a>
+                </span>
+            </th>
+            <th>
+                Applicant
+                <a href="{% reverse_list p=p order_by=SORT_BY.initiator status=status page=page.number %}"
+                   class="caret"></a>
+                <span class="dropup">
+                <a href="{% reverse_list p=p order_by=SORT_BY.n_initiator status=status page=page.number %}"
+                   class="caret"></a>
+                </span>
+            </th>
+            <th>
+                Date submitted
+                <a href="{% reverse_list p=p order_by=SORT_BY.date status=status page=page.number %}"
+                   class="caret"></a>
+                <span class="dropup">
+                <a href="{% reverse_list p=p order_by=SORT_BY.n_date status=status page=page.number %}"
+                   class="caret"></a>
+                </span>
+            </th>
             <th></th>
         </tr>
     </thead>
