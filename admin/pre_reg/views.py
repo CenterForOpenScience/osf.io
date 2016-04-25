@@ -7,7 +7,6 @@ from django.views.defaults import permission_denied, bad_request
 from django.core.urlresolvers import reverse
 from django.http import JsonResponse, Http404
 from django.shortcuts import redirect
-from modularodm import Q
 
 from admin.common_auth.logs import (
     update_admin_log,
@@ -17,29 +16,26 @@ from admin.common_auth.logs import (
 )
 from admin.pre_reg import serializers
 from admin.pre_reg.forms import DraftRegistrationForm
+from admin.pre_reg.utils import sort_drafts, build_query, SORT_BY, VIEW_STATUS
 from framework.exceptions import PermissionsError
 from website.exceptions import NodeStateError
 from website.files.models import FileNode
-from website.project.model import MetaSchema, DraftRegistration
+from website.project.model import DraftRegistration
 
 from admin.base.utils import PreregAdmin
 
 
 class DraftListView(PreregAdmin, ListView):
     template_name = 'pre_reg/draft_list.html'
-    ordering = '-approval.initiation_date'
+    ordering = 'n_date'
     context_object_name = 'draft'
 
     def get_queryset(self):
-        prereg_schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Prereg Challenge') &
-            Q('schema_version', 'eq', 2)
-        )
-        query = (
-            Q('registration_schema', 'eq', prereg_schema) &
-            Q('approval', 'ne', None)
-        )
-        return DraftRegistration.find(query).sort(self.ordering)
+        query = build_query(self.request.GET.get('status', 'all'))
+        ordering = self.get_ordering()
+        if 'initiator' in ordering:
+            return DraftRegistration.find(query).sort(ordering)
+        return sort_drafts(DraftRegistration.find(query), ordering)
 
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)
@@ -52,16 +48,21 @@ class DraftListView(PreregAdmin, ListView):
                 for d in query_set
             ],
             'page': page,
-            'p': self.paginate_by,
+            'p': self.get_paginate_by(query_set),
+            'SORT_BY': SORT_BY,
+            'order': self.get_ordering(),
+            'VIEW_STATUS': VIEW_STATUS,
+            'status': self.request.GET.get('status', 'all')
         }
 
-    @property
-    def paginate_by(self):
+    def get_paginate_by(self, queryset):
         return int(self.request.GET.get('p', 10))
 
-    @property
-    def paginate_orphans(self):
-        return int(self.paginate_by / 11.0) + 1
+    def get_paginate_orphans(self):
+        return int(self.get_paginate_by(None) / 11.0) + 1
+
+    def get_ordering(self):
+        return self.request.GET.get('order_by', self.ordering)
 
 
 class DraftDetailView(PreregAdmin, DetailView):
