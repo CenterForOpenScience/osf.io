@@ -25,7 +25,7 @@ FIGSHARE_VIEW_FILE_PRIVATE = 'Since this figshare file is unpublished we cannot 
 
 FIGSHARE_VIEW_FILE_OVERSIZED = 'This figshare file is too large to render; <u><a href="{url}">download file</a></u> to view it. '
 
-# Language not associated with any string
+# TODO: Language not associated with any string; trace intent before deleting.
 # '''
 # Publishing this article is an irreversible operation. Once a figshare article is published it can never be deleted. Proceed with caution.
 # <br /><br />

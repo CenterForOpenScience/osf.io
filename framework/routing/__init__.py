@@ -9,9 +9,9 @@ import os
 
 from flask import request, make_response
 import lxml.html
-import markupsafe
 from mako.lookup import TemplateLookup
 from mako.template import Template
+import markupsafe
 from werkzeug.exceptions import NotFound
 import werkzeug.wrappers
 
