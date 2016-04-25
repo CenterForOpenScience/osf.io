@@ -56,11 +56,11 @@ lookup = TemplateLookup(
     directories=[os.path.join(here, 'templates')],
     default_filters=[
         'unicode',  # default filter; must set explicitly when overriding
-        'temp_ampersand_fixer',  # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe.
+        'temp_ampersand_fixer',  # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe. See [#OSF-4432]
         'h',
     ],
     imports=[
-        'from website.util.sanitize import temp_ampersand_fixer',  # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe.
+        'from website.util.sanitize import temp_ampersand_fixer',  # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe. See [#OSF-4432]
     ]
 )
 template = lookup.get_template('capabilities.mako')

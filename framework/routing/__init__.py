@@ -40,11 +40,11 @@ _TPL_LOOKUP = TemplateLookup(
 _TPL_LOOKUP_SAFE = TemplateLookup(
     default_filters=[
         'unicode',  # default filter; must set explicitly when overriding
-        'temp_ampersand_fixer',  # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe.
+        'temp_ampersand_fixer',  # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe. See [#OSF-4432]
         'h',
     ],
     imports=[
-        'from website.util.sanitize import temp_ampersand_fixer',  # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe.
+        'from website.util.sanitize import temp_ampersand_fixer',  # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe. See [#OSF-4432]
     ],
     directories=[
         TEMPLATE_DIR,
@@ -235,7 +235,7 @@ def render_mako_string(tpldir, tplname, data, trust=True):
             input_encoding='utf-8',
             output_encoding='utf-8',
             default_filters=lookup_obj.template_args['default_filters'],
-            imports=lookup_obj.template_args['imports']  # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe.
+            imports=lookup_obj.template_args['imports']  # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe. See [#OSF-4432]
         )
     # Don't cache in debug mode
     if not app.debug:
