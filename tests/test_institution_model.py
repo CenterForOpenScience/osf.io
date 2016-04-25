@@ -19,7 +19,6 @@ class TestInstitution(OsfTestCase):
             'title': node.title,
             'institution_logo_name': node.institution_logo_name,
             'system_tags': node.system_tags,
-            'piwik_site_id': node.piwik_site_id
         }
         new = {
             'title': ' A Completely Different name omg.',
@@ -29,7 +28,6 @@ class TestInstitution(OsfTestCase):
         self.institution.name = new['title']
         self.institution.logo_name = new['institution_logo_name']
         self.institution.system_tags = new['system_tags']
-        self.institution.piwik_site_id = new['piwik_site_id']
         self.institution.save()
 
         node.reload()
@@ -40,8 +38,6 @@ class TestInstitution(OsfTestCase):
         #assert remained same
         assert_equal(node.system_tags, old['system_tags'])
         assert_not_equal(node.system_tags, new['system_tags'])
-        assert_equal(node.piwik_site_id, old['piwik_site_id'])
-        assert_not_equal(node.piwik_site_id, new['piwik_site_id'])
 
     def test_institution_mappings(self):
         for key, val in self.institution.attribute_map.iteritems():
