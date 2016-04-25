@@ -280,14 +280,27 @@ var isEmail = function(value) {
   * If `str` is falsy, return {}.
   * Modified from getQueryParameters plugin by Nicholas Ortenzio (MIT Licensed).
   */
-var urlParams = function(str) {
+var urlParams = function(str, isEmail) {
     var stringToParse = str || document.location.search;
     if (!stringToParse) {
         return {};
     }
     return (stringToParse).replace(/(^\?)/,'').split('&')
-        .map(function(n){return n = n.split('='),this[n[0]] = decodeURIComponent(n[1]).replace(/\+/g, ' '),this;}.bind({}))[0];
+        .map(function(n){return n = n.split('='),this[n[0]] = decodeURIComponent(n[1]),this;}.bind({}))[0];
 };
+
+/**
+  * Get email address as an object.
+  * If `str` is falsy, return {}.
+  * Modified from getQueryParameters plugin by Nicholas Ortenzio (MIT Licensed).
+  */
+var urlEmail = function(str) {
+    var stringToParse = str || document.location.search;
+    if (!stringToParse) {
+        return {};
+    }
+    return (stringToParse).replace(/(^\?)/,'').split('&')
+        .map(function(n){return n = n.split('='),this[n[0]] = decodeURIComponent(n[1]),this;}.bind({}))[0];};
 
 
 /**
@@ -862,6 +875,7 @@ module.exports = window.$.osf = {
     mapByProperty: mapByProperty,
     isEmail: isEmail,
     urlParams: urlParams,
+    urlEmail: urlEmail,
     trackPiwik: trackPiwik,
     applyBindings: applyBindings,
     FormattableDate: FormattableDate,

@@ -32,7 +32,7 @@
 %endif
 %if campaign == "institution" and enable_institutions:
     <div class="col-sm-6 col-sm-offset-3 toggle-box toggle-box-active">
-        <h3 class="m-b-lg"> Login through institution</h3>
+        <h3 class="m-b-lg"> Sign in through institution</h3>
         <div id="inst">
             <div class="form-group">
                 <label for="selectedInst" class="control-label">Select Institution</label>
@@ -45,7 +45,7 @@
             </div>
             <div class="form-group" style="padding-top: 15px">
                 <div class="text-center m-t-lg">
-                    <p>For non-institutional login, click <a href="/login/">here</a>.</p>
+                    <p>For non-institutional sign in, click <a href="/login/">here</a>.</p>
                 </div>
             </div>
         </div>
@@ -66,7 +66,7 @@
                 method="POST"
                 data-bind="submit: submit"
             >
-            <h3 class=${'m-b-lg' if not existing_user else 'm-b-lg m-l-md'}> Login </h3>
+            <h3 class=${'m-b-lg' if not existing_user else 'm-b-lg m-l-md'}> Sign in </h3>
             <div class="form-group">
                 <label for="inputEmail3" class="col-sm-2 control-label">Email</label>
                 <div class="col-sm-10">
@@ -255,9 +255,9 @@
     %endif
 %endif
             %if redirect_url:
-            <div class="text-center m-b-sm col-sm-12" style="padding-top: 15px"> <a href="${domain}login/?campaign=institution&redirect_url=${redirect_url}">Login through your institution  <i class="fa fa-arrow-right"></i></a></div>
+            <div class="text-center m-b-sm col-sm-12" style="padding-top: 15px"> <a href="${domain}login/?campaign=institution&redirect_url=${redirect_url}">Sign in through your institution  <i class="fa fa-arrow-right"></i></a></div>
         %else:
-            <div class="text-center m-b-sm col-sm-12" style="padding-top: 15px"> <a href="${domain}login/?campaign=institution">Login through your institution  <i class="fa fa-arrow-right"></i></a></div>
+            <div class="text-center m-b-sm col-sm-12" style="padding-top: 15px"> <a href="${domain}login/?campaign=institution">Sign in through your institution  <i class="fa fa-arrow-right"></i></a></div>
         %endif
 </%def>
 

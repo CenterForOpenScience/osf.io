@@ -15,9 +15,9 @@ var SignInViewModel = oop.extend(formViewModel.FormViewModel, {
     constructor: function () {
         var self = this;
         self.super.constructor.call(self);
-        var urlParams = $osf.urlParams();
-        if (urlParams.existing_user) {
-            self.username = ko.observable(urlParams.existing_user).extend({
+        var urlEmail = $osf.urlEmail();
+        if (urlEmail.existing_user) {
+            self.username = ko.observable(urlEmail.existing_user).extend({
                 required: true,
                 email: true
             });
