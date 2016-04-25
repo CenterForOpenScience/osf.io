@@ -405,7 +405,7 @@ class TestPrivateLinkView(OsfTestCase):
         self.project_url = self.project.web_url_for('view_project')
 
     def test_anonymous_link_hide_contributor(self):
-        res = self.app.get(self.project_url, {'view_only': self.link.key})
+        res = self.app.get(self.project_url, {'view_only': self.link.key}, follow_redirects=True)
         assert_in("Anonymous Contributors", res.body)
         assert_not_in(self.user.fullname, res)
 
