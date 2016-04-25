@@ -394,7 +394,7 @@ class TestComponents(OsfTestCase):
 
 
 class TestPrivateLinkView(OsfTestCase):
-
+    #  Some of these tests pass but are no long doing anything useful
     def setUp(self):
         super(TestPrivateLinkView, self).setUp()
         self.user = AuthUserFactory()  # Is NOT a contributor
@@ -404,18 +404,18 @@ class TestPrivateLinkView(OsfTestCase):
         self.link.save()
         self.project_url = self.project.web_url_for('view_project')
 
+        self.patcher = mock.patch('framework.sessions.get_node_id', **{'return_value': self.project})
+        self.patcher.start()
+
     def test_anonymous_link_hide_contributor(self):
         res = self.app.get(self.project_url, {'view_only': self.link.key})
-
-        assert_equal(res.status_code, 307)
-        res.follow()
-        
-        assert_equal(res.status_code, 200)
         assert_in("Anonymous Contributors", res.body)
+        assert_equal(res.status_code, 200)
         assert_not_in(self.user.fullname, res)
 
     def test_anonymous_link_hides_citations(self):
         res = self.app.get(self.project_url, {'view_only': self.link.key})
+        assert_equal(res.status_code, 200)                
         assert_not_in('Citation:', res)
 
     def test_no_warning_for_read_only_user_with_valid_link(self):
@@ -429,6 +429,7 @@ class TestPrivateLinkView(OsfTestCase):
         )
         res = self.app.get(self.project_url, {'view_only': link2.key},
                            auth=self.user.auth)
+        assert_equal(res.status_code, 200)        
         assert_not_in(
             "is being viewed through a private, view-only link. "
             "Anyone with the link can view this project. Keep "
@@ -450,6 +451,9 @@ class TestPrivateLinkView(OsfTestCase):
             "the link safe.",
             res.body
         )
+
+    def tearDown(self):
+        self.patcher.stop()        
 
 
 class TestMergingAccounts(OsfTestCase):
