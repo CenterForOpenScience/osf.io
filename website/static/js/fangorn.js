@@ -1152,8 +1152,28 @@ function _fangornUploadMethod(item) {
     return configOption || 'PUT';
 }
 
+function gotoMetaEvent (item) {
+    var tb = this;
+    tb.modal.update(m('',
+        [ m('p', 'This file is not viewable.'),
+          m('p', 'MimeType: ' + item.data.contentType),
+          m('p', 'Last modified: ' + item.data.modified)
+        ]),
+                    m('',
+        [ m('a.btn.btn-default',
+            {onclick: function() {tb.modal.dismiss();}},
+            'Close')
+        ]), //jshint ignore:line
+                    m('h3.break-word.modal-title', 'File Info: ' +
+                        item.data.name));
+}
+
 function gotoFileEvent (item) {
     var tb = this;
+    if (storageAddons[item.data.provider].nonViewableMimes.indexOf(item.data.contentType) >= 0) {
+        gotoMetaEvent.call(tb, item);
+        return;
+    }
     var redir = new URI(item.data.nodeUrl);
     redir.segment('files').segment(item.data.provider).segmentCoded(item.data.path.substring(1));
     var fileurl  = redir.toString() + '/';
@@ -1561,14 +1581,26 @@ var FGItemButtons = {
                 }
             }
             if (item.kind === 'file') {
-                rowButtons.push(
-                    m.component(FGButton, {
-                        onclick: function (event) { _downloadEvent.call(tb, event, item); },
-                        icon: 'fa fa-download',
-                        className: 'text-primary'
-                    }, 'Download')
-                );
-                if (item.data.permissions && item.data.permissions.view) {
+                if (storageAddons[item.data.provider].nonDownloadableMimes.indexOf(item.data.contentType) === -1) {
+                    rowButtons.push(
+                        m.component(FGButton, {
+                            onclick: function (event) { _downloadEvent.call(tb, event, item); },
+                            icon: 'fa fa-download',
+                            className: 'text-primary'
+                        }, 'Download')
+                    );
+                }
+                if (storageAddons[item.data.provider].nonViewableMimes.indexOf(item.data.contentType) >= 0) {
+                    rowButtons.push(
+                        m.component(FGButton, {
+                            onclick: function (event) {
+                                gotoFileEvent.call(tb, item);
+                            },
+                            icon: 'fa fa-file-o',
+                            className: 'text-info'
+                        }, 'File Info'));
+                }
+                if (item.data.permissions && item.data.permissions.view && storageAddons[item.data.provider].nonViewableMimes.indexOf(item.data.contentType) === -1) {
                     rowButtons.push(
                         m.component(FGButton, {
                             onclick: function (event) {
@@ -2172,6 +2204,7 @@ function getCopyMode(folder, items) {
 
     for(var i = 0; i < items.length; i++) {
         var item = items[i];
+        mustBeIntra = mustBeIntra || storageAddons[item.data.provider].nonDownloadableMimes.indexOf(item.data.contentType) >= 0;
         if (
             item.data.nodeType ||
             item.data.isAddonRoot ||

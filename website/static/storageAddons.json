@@ -1,34 +1,52 @@
 {
     "box": {
         "fullName": "Box",
-        "externalView": false
+        "externalView": false,
+        "nonDownloadableMimes": [],
+        "nonViewableMimes": []
     },
     "dataverse": {
         "fullName": "Dataverse",
-        "externalView": false
+        "externalView": false,
+        "nonDownloadableMimes": [],
+        "nonViewableMimes": []
     },
     "dropbox": {
         "fullName": "Dropbox",
-        "externalView": false
+        "externalView": false,
+        "nonDownloadableMimes": [],
+        "nonViewableMimes": []
     },
     "figshare": {
         "fullName": "figshare",
-        "externalView": true
+        "externalView": true,
+        "nonDownloadableMimes": [],
+        "nonViewableMimes": []
     },
     "github": {
         "fullName": "GitHub",
-        "externalView": true
+        "externalView": true,
+        "nonDownloadableMimes": [],
+        "nonViewableMimes": []
     },
     "googledrive": {
         "fullName": "Google Drive",
-        "externalView": true
+        "externalView": true,
+        "nonDownloadableMimes": ["application/vnd.google-apps.map",
+                                 "application/vnd.google-apps.form"],
+        "nonViewableMimes": ["application/vnd.google-apps.map",
+                             "application/vnd.google-apps.form"]
     },
     "osfstorage": {
         "fullName": "OSF Storage",
-        "externalView": false
+        "externalView": false,
+        "nonDownloadableMimes": [],
+        "nonViewableMimes": []
     },
     "s3": {
         "fullName": "Amazon S3",
-        "externalView": false
+        "externalView": false,
+        "nonDownloadableMimes": [],
+        "nonViewableMimes": []
     }
 }
