@@ -3087,13 +3087,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                     raise NodeStateError("An unapproved embargoed registration cannot be made public.")
                 elif self.is_embargoed:
                     # Embargoed registrations can be made public early
-                    admins = [admin for admin, node in self.root.get_admin_contributors_recursive(unique_users=True)]
-                    # Of more admins than just the current user
-                    if len(admins) > 1:
-                        self.request_embargo_termination(auth=auth)
-                        return False
-                    else:
-                        return self.terminate_embargo(auth=auth)
+                    self.request_embargo_termination(auth=auth)
+                    return False
             self.is_public = True
         elif permissions == 'private' and self.is_public:
             if self.is_registration and not self.is_pending_embargo:

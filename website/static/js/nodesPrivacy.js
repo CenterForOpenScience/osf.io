@@ -288,28 +288,15 @@ NodesPrivacyViewModel.prototype.makeEmbargoPublic = function() {
     });
     $osf.block('Submitting request to end embargo early ...');
     var nodesChanged = $.map(self.nodesOriginal, function(node) {return node;});
-    patchNodesPrivacy(nodesChanged).then(function (res) {        
+    patchNodesPrivacy(nodesChanged).then(function (res) {
         $osf.unblock();
         $('.modal').modal('hide');
-        // Non-error response with Nodes still private implies more than one
-        // admin in this registration tree, and approval is needed before the
-        // embargo is lifted.
-        // Non-error response with Nodes made public implies this user is the
-        // only admin on the registration tree, and the privacy was changed
-        // immediately.
-        if (res.data[0].attributes.public) {
-            // TODO move all logic to onSetPrivacy handler and don't reload the page.
-            // Requires the components list to be rendered client-side.
-            window.location.reload();
-        }
-        else {
-            self.onSetPrivacy(nodesChanged, true);
-            $osf.growl(
-                'Request Initiated',
-                'You have initiated a request to end this registration\'s embargo early, and to make it and all of its components public immediately. All adminstrators on this registration have 48 hours to approve or disapprove of this action.',
-                'success'
-            );  
-        }
+        self.onSetPrivacy(nodesChanged, true);
+        $osf.growl(
+            'Request Initiated',
+            'You have initiated a request to end this registration\'s embargo early, and to make it and all of its components public immediately. All adminstrators on this registration have 48 hours to approve or disapprove of this action.',
+            'success'
+        );
     });
 };
 
