@@ -81,7 +81,7 @@ class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Comm
         has_report     boolean            has the current user reported this as spam?
         has_children   boolean            does this comment have replies?
         can_edit       boolean            can the current user edit this comment?
-        new_mentions   List               guids of mentioned users in content of comment
+        new_mentions   list               guids of mentioned users in content of comment
 
     ##Relationships
 
