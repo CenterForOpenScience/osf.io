@@ -2319,10 +2319,10 @@ class TestUserInviteViews(OsfTestCase):
 
         assert_true(send_mail.called)
         # email was sent to referrer
-        assert_true(send_mail.called_with(
+        send_mail.assert_called_with(
             to_addr=referrer.username,
             mail=mails.FORWARD_INVITE
-        ))
+        )
 
     @mock.patch('website.project.views.contributor.mails.send_mail')
     def test_send_claim_email_before_throttle_expires(self, send_mail):
@@ -2338,7 +2338,7 @@ class TestUserInviteViews(OsfTestCase):
         # 2nd call raises error because throttle hasn't expired
         with assert_raises(HTTPError):
             send_claim_email(email=fake.email(), user=unreg_user, node=project)
-        send_mail.assert_not_called()
+        assert_false(send_mail.called)
 
 
 class TestClaimViews(OsfTestCase):
@@ -2375,7 +2375,7 @@ class TestClaimViews(OsfTestCase):
         # mail was sent
         assert_true(send_mail.called)
         # ... to the correct address
-        assert_true(send_mail.called_with(to_addr=self.given_email))
+        send_mail.assert_called_with(to_addr=self.given_email)
 
         # view returns the correct JSON
         assert_equal(res.json, {
@@ -2392,7 +2392,6 @@ class TestClaimViews(OsfTestCase):
             unreg_user=self.user,
             node=self.project
         )
-        mock_send_mail.assert_called()
         assert_equal(mock_send_mail.call_count, 2)
         first_call_args = mock_send_mail.call_args_list[0][0]
         assert_equal(first_call_args[0], self.referrer.username)
@@ -2414,7 +2413,7 @@ class TestClaimViews(OsfTestCase):
                 unreg_user=self.user,
                 node=self.project,
             )
-        mock_send_mail.assert_not_called()
+        assert_false(mock_send_mail.called)
 
     @mock.patch('website.project.views.contributor.send_claim_registered_email')
     def test_claim_user_post_with_email_already_registered_sends_correct_email(
@@ -3320,7 +3319,7 @@ class TestAuthViews(OsfTestCase):
             )
         assert_equal(mock_signals.signals_sent(), set([auth.signals.user_registered,
                                                        auth.signals.unconfirmed_user_created]))
-        mock_send_confirm_email.assert_called()
+        assert_true(mock_send_confirm_email.called)
 
     @mock.patch('framework.auth.views.send_confirm_email')
     def test_register_post_sends_user_registered_signal(self, mock_send_confirm_email):
@@ -3336,7 +3335,7 @@ class TestAuthViews(OsfTestCase):
             })
         assert_equal(mock_signals.signals_sent(), set([auth.signals.user_registered,
                                                        auth.signals.unconfirmed_user_created]))
-        mock_send_confirm_email.assert_called()
+        assert_true(mock_send_confirm_email.called)
 
     def test_resend_confirmation_get(self):
         res = self.app.get('/resend/')

@@ -128,7 +128,7 @@ class TestNodeSettings(OsfTestCase):
         self.user_settings.revoke_oauth_access(self.external_account, auth=Auth(self.user))
         self.user_settings.reload()
 
-        mock_deauth.assert_called()
+        assert_true(mock_deauth.called)
         assert_equal(
             self.user_settings.oauth_grants,
             {self.project._id: {}}

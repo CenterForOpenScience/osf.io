@@ -3109,13 +3109,13 @@ class TestProject(OsfTestCase):
     def test_set_privacy_sends_mail_default(self, mock_queue):
         self.project.set_privacy('private', auth=self.auth)
         self.project.set_privacy('public', auth=self.auth)
-        assert_true(mock_queue.called_once())
+        assert_equal(mock_queue.call_count, 1)
 
     @mock.patch('website.mails.queue_mail')
     def test_set_privacy_sends_mail(self, mock_queue):
         self.project.set_privacy('private', auth=self.auth)
         self.project.set_privacy('public', auth=self.auth, meeting_creation=False)
-        assert_true(mock_queue.called_once())
+        assert_equal(mock_queue.call_count, 1)
 
     @mock.patch('website.mails.queue_mail')
     def test_set_privacy_skips_mail(self, mock_queue):
@@ -3146,7 +3146,7 @@ class TestProject(OsfTestCase):
             with mock.patch('website.project.model.Node.is_pending_embargo', mock.PropertyMock(return_value=False)):
                 with mock.patch('website.project.model.Node.terminate_embargo') as mock_terminate:
                     registration.set_privacy('public', auth=self.auth)
-                    mock_terminate.assert_called()
+                    assert_equal(mock_terminate.call_count, 1)
 
     def test_set_privacy_requests_embargo_termination_if_many_admins_on_embargoed_registration(self):
         for i in range(3):
@@ -3162,7 +3162,7 @@ class TestProject(OsfTestCase):
             with mock.patch('website.project.model.Node.is_pending_embargo', mock.PropertyMock(return_value=False)):
                 with mock.patch('website.project.model.Node.request_embargo_termination') as mock_request_embargo_termination:
                     registration.set_privacy('public', auth=self.auth)
-                    mock_request_embargo_termination.assert_called()
+                    assert_equal(mock_request_embargo_termination.call_count, 1)
 
     def test_set_description(self):
         old_desc = self.project.description
