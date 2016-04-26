@@ -292,7 +292,7 @@ NodesPrivacyViewModel.prototype.makeEmbargoPublic = function() {
         $('.modal').modal('hide');
         self.onSetPrivacy(nodesChanged, true);
         $osf.growl(
-            'Request Initiated',
+            'Request initiated',
             'You have initiated a request to end this registration\'s embargo early, and to make it and all of its components public immediately. All adminstrators on this registration have 48 hours to approve or disapprove of this action.',
             'success'
         );
