@@ -11,7 +11,7 @@
 
 Hello ${user.fullname},<br>
 <br>
-Thank you for verifying your OSF account, a free, open-source service maintained by the Center for Open Science. Here are a few things you can do with the OSF:<br>
+Thank you for verifying your OSF account, a free, open source service maintained by the Center for Open Science. Here are a few things you can do with the OSF:<br>
 <br>
 <h4>Store your files</h4>
 Archive your materials, data, manuscripts, or anything else associated with your research during the research process or after it is complete.<br>
