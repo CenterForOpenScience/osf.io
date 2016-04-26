@@ -281,10 +281,6 @@ class NodeAddonSettingsSerializer(JSONAPISerializer):
     node_has_auth = ser.BooleanField(source='settings.has_auth', read_only=True)
     complete = ser.BooleanField(source='settings.complete', read_only=True)
     configured = ser.BooleanField(source='settings.configured', read_only=True)
-    node = ser.CharField(source='settings.owner._id', read_only=True)
-
-    def to_representation(self, data, envelope='data'):
-        return super(NodeAddonSettingsSerializer, self).to_representation(data, envelope=envelope)
 
     def update(self, instance, validated_data):
         addon_name = instance.get('_id', None)
