@@ -25,7 +25,7 @@ def sort_multiple(fields):
     fields = list(fields)
     def sort_fn(a, b):
         sort_direction = 1
-        for index, field in enumerate(fields):
+        for field in fields:
             if field[0] == '-':
                 sort_direction = -1
                 field = field[1:]
