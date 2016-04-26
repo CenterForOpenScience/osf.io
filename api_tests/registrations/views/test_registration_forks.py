@@ -287,9 +287,3 @@ class TestRegistrationForkCreate(ApiTestCase):
 
         res = self.app.post_json_api(url, self.fork_data, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
-
-
-
-
-
-
