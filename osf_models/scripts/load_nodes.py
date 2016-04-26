@@ -37,15 +37,6 @@ m2m_tag_fields = [
     'system_tags'
 ]
 
-node_cache = {
-    # 'xyz12': {
-    #     'modm': modm_object,
-    #     'django': django_object,
-    # }
-}
-user_cache = []
-tag_cache = []
-
 node_key_blacklist = [
                          '__backrefs',
                          '_version',
@@ -65,6 +56,10 @@ user_key_blacklist = ['__backrefs', '_version', 'affiliated_institutions', 'watc
                       'external_accounts', ] + m2m_node_fields + m2m_user_fields + m2m_tag_fields
 
 tag_key_blacklist = ['_version', '__backrefs', ] + m2m_node_fields + m2m_user_fields + m2m_tag_fields
+
+nodes = 0
+tags = 0
+users = 0
 
 
 def process_node_fk_fields(modm_object):
@@ -176,10 +171,12 @@ def get_or_create_user(modm_user):
             if isinstance(v, datetime):
                 user_fields[k] = pytz.utc.localize(v)
         user = User.objects.create(**{key: user_fields[key] for key in user_fields if key not in user_key_blacklist})
+        global users
+        users += 1
         set_m2m_fields(user, user_m2m_nodes)
         set_m2m_fields(user, user_m2m_users)
         set_m2m_fields(user, user_m2m_tags)
-    user_cache.append(user)
+
     return user
 
 
@@ -200,7 +197,8 @@ def get_or_create_tag(modm_tag, system=False):
             cleaned_tag = {key: tag_fields[key] for key in tag_fields if key not in tag_key_blacklist}
             cleaned_tag['system'] = system
             tag = Tag.objects.create(**cleaned_tag)
-    tag_cache.append(tag)
+            global tags
+            tags += 1
     return tag
 
 
@@ -223,6 +221,8 @@ def set_contributors(node, modm_node):
 
 
 def get_or_create_node(modm_node):
+    if modm_node is None:
+        return None
     try:
         # try and get the node
         node = Node.objects.get(_guid__guid=modm_node._id)
@@ -265,13 +265,13 @@ def get_or_create_node(modm_node):
                     print 'Removed {} {} from node {} because it no longer exists.'.format(fk_field, bad, guid.guid)
 
             node = Node.objects.create(**cleaned_node)
+            global nodes
+            nodes += 1
             set_m2m_fields(node, m2m_nodes)
             set_m2m_fields(node, m2m_users)
             set_m2m_fields(node, m2m_tags)
     set_contributors(node, modm_node)
-    if modm_node._id not in node_cache:
-        node_cache[modm_node._id] = dict()
-    node_cache[modm_node._id]['django'] = node
+
     return node
 
 
@@ -283,15 +283,11 @@ def main():
     print 'Doing {} Nodes...'.format(total)
 
     for modm_node in modm_nodes:
-        node_cache[modm_node._id] = {'modm': modm_node}
         noooood = get_or_create_node(modm_node)
         count += 1
         if count % 1000 == 0:
             print count
-
-    print 'Nodes: {}'.format(len(node_cache))
-    print 'Users: {}'.format(len(user_cache))
-    print 'Tags: {}'.format(len(tag_cache))
+            print 'Nodes: {}, Users: {}, Tags: {}'.format(nodes, users, tags)
 
     print 'MODM: {}'.format(total)
     print 'PG: {}'.format(count)

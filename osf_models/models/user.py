@@ -134,7 +134,8 @@ class User(GuidMixin, BaseModel):
     # }
 
     # email lists to which the user has chosen a subscription setting, being sent from osf, rather than mailchimp
-    osf_mailing_lists = DatetimeAwareJSONField(default=get_default_mailing_lists)
+    osf_mailing_lists = DatetimeAwareJSONField(
+        default=get_default_mailing_lists)
     # Format: {
     #   'list1': True,
     #   'list2: False,
@@ -143,7 +144,8 @@ class User(GuidMixin, BaseModel):
 
     # the date this user was registered
     # TODO: consider removal - this can be derived from date_registered
-    date_registered = models.DateTimeField(db_index=True, auto_now_add=True)
+    date_registered = models.DateTimeField(db_index=True
+                                           )  #, auto_now_add=True)
 
     # watched nodes are stored via a list of WatchConfigs
     # watched = fields.ForeignField("WatchConfig", list=True)

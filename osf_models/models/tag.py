@@ -4,6 +4,6 @@ from .base import BaseModel
 
 
 class Tag(BaseModel):
-    _id = models.CharField(max_length=1024, db_index=True)
-    lower = models.CharField(max_length=1024, db_index=True)
+    _id = models.CharField(max_length=1024)
+    lower = models.CharField(max_length=1024)
     system = models.BooleanField(default=False)

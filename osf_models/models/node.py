@@ -24,8 +24,8 @@ class Node(GuidMixin, BaseModel):
         ('', 'Uncategorized')
     )
 
-    date_created = models.DateTimeField(auto_now_add=True)
-    date_modified = models.DateTimeField(auto_now=True)
+    date_created = models.DateTimeField(null=False) # auto_now_add=True)
+    date_modified = models.DateTimeField(null=True) # auto_now=True)
 
     is_public = models.BooleanField(default=False, db_index=True)
 
@@ -112,4 +112,3 @@ class Node(GuidMixin, BaseModel):
             self.public_comments = False
         else:
             raise ValidationError('comment_level must be either `public` or `private`')
-
