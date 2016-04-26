@@ -40,13 +40,13 @@ def main():
     for request in pending_embargo_termination_requests:
         registration = models.Node.find_one(Q('embargo_termination_approval', 'eq', request))
         if not registration.is_embargoed:
-            raise RuntimeError("Registration {0} associated with this embargo termination request ({0}) is not embargoed.".format(
+            logger.warning("Registration {0} associated with this embargo termination request ({0}) is not embargoed.".format(
                 registration._id,
                 request._id
             ))
         embargo = registration.embargo
         if not embargo:
-            raise RuntimeError("No Embargo associated with this embargo termination request ({0}) on Node: {1}".format(
+            logger.warning("No Embargo associated with this embargo termination request ({0}) on Node: {1}".format(
                 request._id,
                 registration._id
             ))
