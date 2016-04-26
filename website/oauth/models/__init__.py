@@ -423,13 +423,11 @@ class ExternalProvider(object):
         except InvalidGrantError:
             raise InvalidAuthError()
         else:
-            if self.account.oauth_key != token[resp_auth_token_key]:
-                self.account.oauth_key = token[resp_auth_token_key]
-                self.account.refresh_token = token[resp_refresh_token_key]
-                self.account.expires_at = resp_expiry_fn(token)
-                self.account.save()
-                return True
-            return False
+            self.account.oauth_key = token[resp_auth_token_key]
+            self.account.refresh_token = token[resp_refresh_token_key]
+            self.account.expires_at = resp_expiry_fn(token)
+            self.account.save()
+            return True
 
     def _needs_refresh(self):
         """Determines whether or not an associated ExternalAccount needs

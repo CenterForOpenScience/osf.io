@@ -75,8 +75,10 @@ class Mendeley(CitationsOauthProvider):
                 try:
                     refreshed_key = self.refresh_oauth_key()
                 except InvalidAuthError:
+                    self._client = None
                     raise HTTPError(401)
                 if not refreshed_key:
+                    self._client = None
                     raise HTTPError(401)
             else:
                 self._client = None
