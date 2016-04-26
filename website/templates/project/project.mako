@@ -116,15 +116,16 @@
                 % endif
                 </div>
                 % if enable_institutions and not node['anonymous']:
-                    % if 'admin' in user['permissions'] and not node['is_registration']:
+                    % if ('admin' in user['permissions'] and not node['is_registration']) and (node['institution']['id'] or len(user['institutions']) != 0):
                         <a class="link-dashed" href="${node['url']}settings/#configureInstitutionAnchor" id="institution">Affiliated Institution:</a>
-                    % else:
-                        Affiliated institution:
+                        % if node['institution']['id']:
+                            <a href="/institutions/${node['institution']['id']}">${node['institution']['name']}</a>
+                        % else:
+                            <span> None </span>
+                        % endif
                     % endif
-                    % if node['institution']['id']:
-                        <a href="/institutions/${node['institution']['id']}">${node['institution']['name']}</a>
-                    % else:
-                        <span> None </span>
+                    % if not ('admin' in user['permissions'] and not node['is_registration']) and node['institution']['id']:
+                        Affiliated institution: <a href="/institutions/${node['institution']['id']}">${node['institution']['name']}</a>
                     % endif
                 % endif
                 % if node['is_fork']:
