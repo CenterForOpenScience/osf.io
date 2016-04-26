@@ -785,6 +785,7 @@ CommentModel.prototype.submitUndelete = function() {
                     'type': 'comments',
                     'attributes': {
                         'content': self.content(),
+                        'new_mentions': [],
                         'deleted': false
                     }
                 }
@@ -936,7 +937,7 @@ var onOpen = function(page, rootId, nodeApiUrl, currentUserId) {
  *      rootId: Node._id,
  *      fileId: StoredFileNode._id,
  *      canComment: User.canComment,
- *      hasChildren: Node.hasChildren, 
+ *      hasChildren: Node.hasChildren,
  *      currentUser: window.contextVars.currentUser,
  *      pageTitle: Node.title
  * }
