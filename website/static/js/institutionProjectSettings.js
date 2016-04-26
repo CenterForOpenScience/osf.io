@@ -62,8 +62,9 @@ var ViewModel = function(data) {
     self.submitInst = function() {
         var url = data.apiV2Prefix + 'nodes/' + data.node.id + '/relationships/institutions/';
         var inst = self.selectedInstitution();
+
         return $osf.ajaxJSON(
-            'PUT',
+            'POST',
             url,
             {
                 'isCors': true,
@@ -73,7 +74,11 @@ var ViewModel = function(data) {
                 fields: {xhrFields: {withCredentials: true}}
             }
         ).done(function (response) {
-            self.affiliatedInstitutions().push(inst);
+            var indexes = self.availableInstitutions().map(function(each){return each.id});
+            var added = self.availableInstitutions().splice(indexes.indexOf(self.selectedInstitution()), 1)[0];
+            self.affiliatedInstitutions().push(added);
+            self.affiliatedInstitutions(self.affiliatedInstitutions())
+            self.showAdd(false);
         }).fail(function (xhr, status, error) {
             $osf.growl('Unable to add institution to this node. Please try again. If the problem persists, email <a href="mailto:support@osf.io.">support@osf.io</a>');
             Raven.captureMessage('Unable to add institution to this node', {
@@ -88,7 +93,7 @@ var ViewModel = function(data) {
     self.clearInst = function(item) {
         var url = data.apiV2Prefix + 'nodes/' + data.node.id + '/relationships/institutions/';
         return $osf.ajaxJSON(
-            'PUT',
+            'DELETE',
             url,
             {
                 isCors: true,
@@ -100,6 +105,7 @@ var ViewModel = function(data) {
         ).done(function (response) {
             var indexes = self.affiliatedInstitutions().map(function(each){return each.id});
             self.affiliatedInstitutions().splice(indexes.indexOf(item.id), 1);
+            self.affiliatedInstitutions(self.affiliatedInstitutions());
         }).fail(function (xhr, status, error) {
             $osf.growl('Unable to remove institution from this node. Please try again. If the problem persists, email <a href="mailto:support@osf.io.">support@osf.io</a>');
             Raven.captureMessage('Unable to remove institution from this node!', {
