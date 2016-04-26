@@ -20,6 +20,15 @@ SECRET_KEY = osf_settings.SECRET_KEY
 DEBUG = osf_settings.DEBUG_MODE
 DEBUG_PROPAGATE_EXCEPTIONS = True
 
+# secure mode for using https in local development
+SECURE = osf_settings.SECURE_MODE
+LOCAL = osf_settings.LOCAL_MODE
+
+# session:
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SECURE = SECURE
+
+
 ALLOWED_HOSTS = [
     '.osf.io'
 ]
@@ -49,6 +58,10 @@ INSTALLED_APPS = (
     'django_nose',
     'ckeditor',
 )
+
+# only for local development using https
+if osf_settings.SECURE_MODE and osf_settings.LOCAL_MODE:
+    INSTALLED_APPS += ('sslserver',)
 
 # Custom user model (extends AbstractBaseUser)
 AUTH_USER_MODEL = 'common_auth.MyUser'

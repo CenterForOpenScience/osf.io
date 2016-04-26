@@ -29,6 +29,14 @@ AUTHENTICATION_BACKENDS = (
 DEBUG = osf_settings.DEBUG_MODE
 DEBUG_PROPAGATE_EXCEPTIONS = True
 
+# secure mode for using https in local development
+SECURE = osf_settings.SECURE_MODE
+LOCAL = osf_settings.LOCAL_MODE
+
+# session:
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SECURE = SECURE
+
 ALLOWED_HOSTS = [
     '.osf.io'
 ]

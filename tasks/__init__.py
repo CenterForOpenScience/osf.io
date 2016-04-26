@@ -83,11 +83,10 @@ def git_logs(count=100, pretty='format:"%s - %b"', grep='"Merge pull request"'):
 def apiserver(port=8000, wait=True):
     """Run the API server."""
     env = os.environ.copy()
+    cmd = 'DJANGO_SETTINGS_MODULE=api.base.settings {} manage.py runserver {} --nothreading'.format(sys.executable, port)
     if settings.SECURE_MODE:
-        cmd = 'DJANGO_SETTINGS_MODULE=api.base.settings HTTPS=on {} manage.py runsslserver {} --nothreading' \
-              ' --certificate {} --key {}'.format(sys.executable, port, settings.OSF_SERVER_CERT, settings.OSF_SERVER_KEY)
-    else:
-        cmd = 'DJANGO_SETTINGS_MODULE=api.base.settings {} manage.py runserver {} --nothreading'.format(sys.executable, port)
+        cmd = cmd.replace('runserver', 'runsslserver')
+        cmd += ' --certificate {} --key {}'.format(settings.OSF_SERVER_CERT, settings.OSF_SERVER_KEY)
     if wait:
         return run(cmd, echo=True, pty=True)
     from subprocess import Popen
@@ -100,6 +99,9 @@ def adminserver(port=8001):
     """Run the Admin server."""
     env = 'DJANGO_SETTINGS_MODULE="admin.base.settings"'
     cmd = '{} python manage.py runserver {} --nothreading'.format(env, port)
+    if settings.SECURE_MODE:
+        cmd = cmd.replace('runserver', 'runsslserver')
+        cmd += ' --certificate {} --key {}'.format(settings.OSF_SERVER_CERT, settings.OSF_SERVER_KEY)
     run(cmd, echo=True, pty=True)
 
 
