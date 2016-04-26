@@ -27,7 +27,7 @@ from admin.base.utils import PreregAdmin
 
 class DraftListView(PreregAdmin, ListView):
     template_name = 'pre_reg/draft_list.html'
-    ordering = 'n_date'
+    ordering = '-date'
     context_object_name = 'draft'
 
     def get_queryset(self):
