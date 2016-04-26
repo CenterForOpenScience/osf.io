@@ -10,7 +10,7 @@ setup(name='osf_models',
       packages=['osf_models'],
       install_requires=[
         'django>=1.9',
-        'psycopg2'
-          'django-extensions==1.6.1'
+        'psycopg2',
+        'django-extensions==1.6.1'
       ],
       zip_safe=False)
