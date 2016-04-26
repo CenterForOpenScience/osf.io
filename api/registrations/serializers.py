@@ -43,6 +43,13 @@ class RegistrationSerializer(NodeSerializer):
     embargo_end_date = HideIfWithdrawal(ser.SerializerMethodField(help_text='When the embargo on this registration will be lifted.'))
 
     withdrawal_justification = ser.CharField(source='retraction.justification', read_only=True)
+    template_from = HideIfWithdrawal(ser.CharField(required=False, allow_blank=False, allow_null=False,
+                help_text='Specify a node id for a node you would like to use as a template for the '
+                'new node. Templating is like forking, except that you do not copy the '
+                'files, only the project structure. Some information is changed on the top '
+                'level project by submitting the appropriate fields in the request body, '
+                'and some information will not change. By default, the description will '
+                'be cleared and the project will be made private.'))
     registration_supplement = ser.SerializerMethodField()
     registered_meta = HideIfWithdrawal(ser.SerializerMethodField(
         help_text='A dictionary with supplemental registration questions and responses.'))
