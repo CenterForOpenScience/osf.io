@@ -3,9 +3,6 @@ from api.base.serializers import JSONAPISerializer, LinksField
 from api.base.utils import absolute_reverse
 
 class NodeAddonFolderSerializer(JSONAPISerializer):
-    """
-    Overrides AddonSettingsSerializer to return node-specific fields
-    """
     class Meta:
         type_ = 'node_addon_folders'
 
