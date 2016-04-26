@@ -809,7 +809,35 @@ class TestExplorePublicActivity(OsfTestCase):
         self.registration = RegistrationFactory(project=self.project)
         self.private_project = ProjectFactory(title="Test private project")
 
-    def test_newest_public_project_and_registrations_show_in_explore_activity(self):
+    @mock.patch('website.discovery.views.KeenClient')
+    def test_newest_public_project_and_registrations_show_in_explore_activity(self, mock_client):
+
+        mock_client.count.return_value = {
+            'result': [
+                {
+                    'result': 5,
+                    'node.id': self.project._id
+                },
+                {
+                    'result': 5,
+                    'node.id': self.registration._id
+                }
+            ]
+        }
+
+        mock_client.count_unique.return_value = {
+            'result': [
+                {
+                    'result': 2,
+                    'node.id': self.project._id
+                },
+                {
+                    'result': 2,
+                    'node.id': self.registration._id
+                }
+            ]
+        }
+
         url = self.project.web_url_for('activity')
         res = self.app.get(url)
 

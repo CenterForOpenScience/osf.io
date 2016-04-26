@@ -302,7 +302,6 @@ CELERY_IMPORTS = (
     'framework.celery_tasks',
     'framework.celery_tasks.signals',
     'framework.email.tasks',
-    'framework.analytics.tasks',
     'website.mailchimp_utils',
     'website.notifications.tasks',
     'website.archiver.tasks',

@@ -1,5 +1,3 @@
-import datetime
-
 from website import settings
 from website.project import Node
 from website.project.utils import recent_public_registrations
@@ -48,7 +46,7 @@ def activity():
             ]
         )
 
-        node_data = [{'node': x['node.id'], 'views': x['result']} for x in node_pageviews if x['node.id']]
+        node_data = [{'node': x['node.id'], 'views': x['result']} for x in node_pageviews]
 
         for node_visit in node_visits:
             for node_result in node_data:
