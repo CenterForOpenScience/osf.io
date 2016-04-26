@@ -2318,10 +2318,16 @@ class TestUserInviteViews(OsfTestCase):
 
         assert_true(send_mail.called)
         # email was sent to referrer
-        assert_true(send_mail.called_with(
-            to_addr=referrer.username,
-            mail=mails.FORWARD_INVITE
-        ))
+        send_mail.assert_called_with(
+            referrer.username,
+            mails.FORWARD_INVITE,
+            user=unreg_user,
+            referrer=referrer,
+            claim_url=unreg_user.get_claim_url(project._id, external=True),
+            email=real_email.lower().strip(),
+            fullname=unreg_user.get_unclaimed_record(project._id)['name'],
+            node=project
+        )
 
     @mock.patch('website.project.views.contributor.mails.send_mail')
     def test_send_claim_email_before_throttle_expires(self, send_mail):
@@ -2334,10 +2340,11 @@ class TestUserInviteViews(OsfTestCase):
         )
         project.save()
         send_claim_email(email=fake.email(), user=unreg_user, node=project)
+        send_mail.reset_mock()
         # 2nd call raises error because throttle hasn't expired
         with assert_raises(HTTPError):
             send_claim_email(email=fake.email(), user=unreg_user, node=project)
-        send_mail.assert_not_called()
+        assert_false(send_mail.called)
 
 
 class TestClaimViews(OsfTestCase):
@@ -2372,9 +2379,14 @@ class TestClaimViews(OsfTestCase):
         res = self.app.post_json(url, payload)
 
         # mail was sent
-        assert_true(send_mail.called)
+        assert_equal(send_mail.call_count, 2)
         # ... to the correct address
-        assert_true(send_mail.called_with(to_addr=self.given_email))
+        referrer_call = send_mail.call_args_list[0]
+        claimer_call = send_mail.call_args_list[1]
+        args, _ = referrer_call
+        assert_equal(args[0], self.referrer.username)
+        args, _ = claimer_call
+        assert_equal(args[0], reg_user.username)    
 
         # view returns the correct JSON
         assert_equal(res.json, {
@@ -2391,7 +2403,6 @@ class TestClaimViews(OsfTestCase):
             unreg_user=self.user,
             node=self.project
         )
-        mock_send_mail.assert_called()
         assert_equal(mock_send_mail.call_count, 2)
         first_call_args = mock_send_mail.call_args_list[0][0]
         assert_equal(first_call_args[0], self.referrer.username)
@@ -2406,6 +2417,7 @@ class TestClaimViews(OsfTestCase):
             unreg_user=self.user,
             node=self.project,
         )
+        mock_send_mail.reset_mock()
         # second call raises error because it was called before throttle period
         with assert_raises(HTTPError):
             send_claim_registered_email(
@@ -2413,7 +2425,7 @@ class TestClaimViews(OsfTestCase):
                 unreg_user=self.user,
                 node=self.project,
             )
-        mock_send_mail.assert_not_called()
+        assert_false(mock_send_mail.called)
 
     @mock.patch('website.project.views.contributor.send_claim_registered_email')
     def test_claim_user_post_with_email_already_registered_sends_correct_email(
@@ -3319,7 +3331,7 @@ class TestAuthViews(OsfTestCase):
             )
         assert_equal(mock_signals.signals_sent(), set([auth.signals.user_registered,
                                                        auth.signals.unconfirmed_user_created]))
-        mock_send_confirm_email.assert_called()
+        assert_true(mock_send_confirm_email.called)
 
     @mock.patch('framework.auth.views.send_confirm_email')
     def test_register_post_sends_user_registered_signal(self, mock_send_confirm_email):
@@ -3335,7 +3347,7 @@ class TestAuthViews(OsfTestCase):
             })
         assert_equal(mock_signals.signals_sent(), set([auth.signals.user_registered,
                                                        auth.signals.unconfirmed_user_created]))
-        mock_send_confirm_email.assert_called()
+        assert_true(mock_send_confirm_email.called)
 
     def test_resend_confirmation_get(self):
         res = self.app.get('/resend/')
