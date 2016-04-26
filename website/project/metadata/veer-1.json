@@ -218,7 +218,7 @@
             }, {
                 "qid": "confirmatory-analyses-second",
                 "type": "object",
-                "title": "Second Analysis",
+                "title": "Second Prediction",
                 "properties": [{
                     "id": "second",
                     "type": "object",
@@ -253,7 +253,7 @@
             }, {
                 "qid": "confirmatory-analyses-third",
                 "type": "object",
-                "title": "Third Analysis",
+                "title": "Third Prediction",
                 "properties": [{
                     "id": "third",
                     "type": "object",
@@ -288,7 +288,7 @@
             }, {
                 "qid": "confirmatory-analyses-fourth",
                 "type": "object",
-                "title": "Fourth Analysis",
+                "title": "Fourth Prediction",
                 "properties": [{
                     "id": "fourth",
                     "type": "object",
@@ -323,7 +323,7 @@
             }, {
                 "qid": "confirmatory-analyses-further",
                 "type": "object",
-                "title": "Further Analyses",
+                "title": "Further Predictions",
                 "properties": [{
                     "id": "further",
                     "type": "object",
