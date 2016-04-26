@@ -35,7 +35,6 @@ def sort_multiple(fields):
                 return 1 * sort_direction
             elif a_field < b_field:
                 return -1 * sort_direction
-            continue
         return 0
     return sort_fn
 
