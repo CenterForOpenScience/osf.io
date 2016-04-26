@@ -19,42 +19,38 @@ BACKUP_COLLECTION = 'unmigratedwikipages'
 
 
 def main():
-    nodes = db.node.find({}, {'_id': True})
+    nodes = db.node.find({}, {'_id': True, 'wiki_pages_versions': True, 'wiki_pages_current': True})
     nodes = nodes.batch_size(200)
     update_wiki_pages(nodes)
 
 
 def update_wiki_pages(nodes):
     for i, node in enumerate(nodes):
-        if node.wiki_pages_versions:
+        if node['wiki_pages_versions']:
             cloned_wiki_pages = {}
-            for key, wiki_versions in node.wiki_pages_versions.items():
+            for key, wiki_versions in node['wiki_pages_versions'].items():
                 cloned_wiki_pages[key] = []
                 for wiki_id in wiki_versions:
                     node_wiki = NodeWikiPage.load(wiki_id)
                     if not node_wiki:
                         continue
-                    if node_wiki.to_storage()['node'] != node._id:
-                        clone = node_wiki.clone_wiki(node)
-                        logger.info('Cloned wiki page {} from node {} to {}'.format(wiki_id, node_wiki.node, node))
+                    if node_wiki.to_storage()['node'] != node['_id']:
+                        clone = node_wiki.clone_wiki(node['_id'])
+                        logger.info('Cloned wiki page {} from node {} to {}'.format(wiki_id, node_wiki.node, node['_id']))
                         cloned_wiki_pages[key].append(clone._id)
 
                         # update current wiki page
                         if node_wiki.is_current:
-                            node.wiki_pages_current[key] = clone._id
+                            wiki_pages_current = node['wiki_pages_current']
+                            wiki_pages_current[key] = clone._id
+                            db.node.update({'_id': node['_id']}, {'$set': {'wiki_pages_current': wiki_pages_current}})
 
                         if not node_wiki.node:
                             move_to_backup_collection(node_wiki._id)
                     else:
                         cloned_wiki_pages[key].append(wiki_id)
-            node.wiki_pages_versions = cloned_wiki_pages
-            node.save()
 
-        # clear ODM cache
-        if i % 1000 == 0:
-            for key in ('node', 'user','fileversion', 'storedfilenode'):
-                Node._cache.data.get(key, {}).clear()
-                Node._object_cache.data.get(key, {}).clear()
+            db.node.update({'_id': node['_id']}, {'$set': {'wiki_pages_versions': cloned_wiki_pages}})
 
 
 # Wiki pages with nodes that no longer exist are removed from NodeWikiPage
