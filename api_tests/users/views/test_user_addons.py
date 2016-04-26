@@ -52,24 +52,28 @@ class UserAddonListMixin(object):
         addon_data = res.json['data']
         assert_equal(addon_data, [])
 
-    def test_settings_list_raises_error_if_not_GET(self):
-        put_res = self.app.put_json_api(self.setting_list_url, {
+    def test_settings_list_raises_error_if_PUT(self):
+        res = self.app.put_json_api(self.setting_list_url, {
             'id': self.short_name,
             'type': 'user-addons'
             }, auth=self.user.auth,
             expect_errors=True)
-        patch_res = self.app.patch_json_api(self.setting_list_url, {
+        assert_equal(res.status_code, 405)
+
+    def test_settings_list_raises_error_if_PATCH(self):
+        res = self.app.patch_json_api(self.setting_list_url, {
             'id': self.short_name,
             'type': 'user-addons'
             }, auth=self.user.auth,
             expect_errors=True)
-        del_res = self.app.delete(
+        assert_equal(res.status_code, 405)
+
+    def test_settings_list_raises_error_if_DELETE(self):
+        res = self.app.delete(
             self.setting_list_url,
             auth=self.user.auth,
             expect_errors=True)
-        assert_equal(put_res.status_code, 405)
-        assert_equal(patch_res.status_code, 405)
-        assert_equal(del_res.status_code, 405)
+        assert_equal(res.status_code, 405)
 
     def test_settings_list_raises_error_if_nonauthenticated(self):
         res = self.app.get(
@@ -127,24 +131,28 @@ class UserAddonDetailMixin(object):
         if wrong_type:
             assert_in('Requested addon unavailable', res.json['errors'][0]['detail'])
 
-    def test_settings_detail_raises_error_if_not_GET(self):
-        put_res = self.app.put_json_api(self.setting_detail_url, {
+    def test_settings_detail_raises_error_if_PUT(self):
+        res = self.app.put_json_api(self.setting_detail_url, {
             'id': self.short_name,
             'type': 'user-addon-detail'
             }, auth=self.user.auth,
             expect_errors=True)
-        patch_res = self.app.patch_json_api(self.setting_detail_url, {
+        assert_equal(res.status_code, 405)
+
+    def test_settings_detail_raises_error_if_PATCH(self):
+        res = self.app.patch_json_api(self.setting_detail_url, {
             'id': self.short_name,
             'type': 'user-addon-detail'
             }, auth=self.user.auth,
             expect_errors=True)
-        del_res = self.app.delete(
+        assert_equal(res.status_code, 405)
+
+    def test_settings_detail_raises_error_if_DELETE(self):
+        res = self.app.delete(
             self.setting_detail_url,
             auth=self.user.auth,
             expect_errors=True)
-        assert_equal(put_res.status_code, 405)
-        assert_equal(patch_res.status_code, 405)
-        assert_equal(del_res.status_code, 405)
+        assert_equal(res.status_code, 405)
 
     def test_settings_detail_raises_error_if_nonauthenticated(self):
         res = self.app.get(
@@ -204,24 +212,28 @@ class UserAddonAccountListMixin(object):
         if wrong_type:
             assert_in('Requested addon unavailable', res.json['errors'][0]['detail'])
 
-    def test_account_list_raises_error_if_not_GET(self):
-        put_res = self.app.put_json_api(self.account_list_url, {
+    def test_account_list_raises_error_if_PUT(self):
+        res = self.app.put_json_api(self.account_list_url, {
             'id': self.short_name,
             'type': 'user-external_accounts'
             }, auth=self.user.auth,
             expect_errors=True)
-        patch_res = self.app.patch_json_api(self.account_list_url, {
+        assert_equal(res.status_code, 405)
+
+    def test_account_list_raises_error_if_PATCH(self):
+        res = self.app.patch_json_api(self.account_list_url, {
             'id': self.short_name,
             'type': 'user-external_accounts'
             }, auth=self.user.auth,
             expect_errors=True)
-        del_res = self.app.delete(
+        assert_equal(res.status_code, 405)
+
+    def test_account_list_raises_error_if_DELETE(self):
+        res = self.app.delete(
             self.account_list_url,
             auth=self.user.auth,
             expect_errors=True)
-        assert_equal(put_res.status_code, 405)
-        assert_equal(patch_res.status_code, 405)
-        assert_equal(del_res.status_code, 405)
+        assert_equal(res.status_code, 405)
 
     def test_account_list_raises_error_if_nonauthenticated(self):
         res = self.app.get(
@@ -281,24 +293,28 @@ class UserAddonAccountDetailMixin(object):
         if wrong_type:
             assert_in('Requested addon unavailable', res.json['errors'][0]['detail'])
 
-    def test_account_detail_raises_error_if_not_GET(self):
-        put_res = self.app.put_json_api(self.account_detail_url, {
+    def test_account_detail_raises_error_if_PUT(self):
+        res = self.app.put_json_api(self.account_detail_url, {
             'id': self.short_name,
             'type': 'user-external_account-detail'
             }, auth=self.user.auth,
             expect_errors=True)
-        patch_res = self.app.patch_json_api(self.account_detail_url, {
+        assert_equal(res.status_code, 405)
+
+    def test_account_detail_raises_error_if_PATCH(self):
+        res = self.app.patch_json_api(self.account_detail_url, {
             'id': self.short_name,
             'type': 'user-external_account-detail'
             }, auth=self.user.auth,
             expect_errors=True)
-        del_res = self.app.delete(
+        assert_equal(res.status_code, 405)
+
+    def test_account_detail_raises_error_if_DELETE(self):
+        res = self.app.delete(
             self.account_detail_url,
             auth=self.user.auth,
             expect_errors=True)
-        assert_equal(put_res.status_code, 405)
-        assert_equal(patch_res.status_code, 405)
-        assert_equal(del_res.status_code, 405)
+        assert_equal(res.status_code, 405)
 
     def test_account_detail_raises_error_if_nonauthenticated(self):
         res = self.app.get(

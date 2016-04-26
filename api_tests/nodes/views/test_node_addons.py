@@ -63,26 +63,30 @@ class NodeAddonListMixin(object):
         if wrong_type:
             assert_equal(addon_data, None)        
 
-    def test_settings_list_raises_error_if_not_GET(self):
-        put_res = self.app.put_json_api(self.setting_list_url, {
+    def test_settings_list_raises_error_if_PUT(self):
+        res = self.app.put_json_api(self.setting_list_url, {
             'id': self.short_name,
             'type': 'node-addons',
             'enabled': False
             }, auth=self.user.auth,
             expect_errors=True)
-        patch_res = self.app.patch_json_api(self.setting_list_url, {
+        assert_equal(res.status_code, 405)
+
+    def test_settings_list_raises_error_if_PATCH(self):
+        res = self.app.patch_json_api(self.setting_list_url, {
             'id': self.short_name,
             'type': 'node-addons',
             'enabled': False
             }, auth=self.user.auth,
             expect_errors=True)
-        del_res = self.app.delete(
+        assert_equal(res.status_code, 405)
+
+    def test_settings_list_raises_error_if_DELETE(self):
+        res = self.app.delete(
             self.setting_list_url,
             auth=self.user.auth,
             expect_errors=True)
-        assert_equal(put_res.status_code, 405)
-        assert_equal(patch_res.status_code, 405)
-        assert_equal(del_res.status_code, 405)
+        assert_equal(res.status_code, 405)
 
     def test_settings_list_raises_error_if_noncontrib_not_public(self):
         noncontrib = AuthUserFactory()
@@ -352,20 +356,8 @@ class NodeAddonDetailMixin(object):
         if wrong_type:
             assert_equal(res.status_code, 404)
 
-    def test_settings_detail_raises_error_if_DELETE_or_POST(self):
-        post_res = self.app.post_json_api(self.setting_detail_url, 
-            {'data': { 
-                'id': self.short_name,
-                'type': 'node_addons',
-                'attributes': {
-                    'external_account_id': None,
-                    'folder_id':  None,
-                    'enabled': False
-                    }
-                }
-            }, auth=self.user.auth,
-            expect_errors=True)
-        del_res = self.app.delete(self.setting_detail_url, 
+    def test_settings_detail_raises_error_if_DELETE(self):
+        res = self.app.delete(self.setting_detail_url, 
             {'data': { 
                 'id': self.short_name,
                 'type': 'node_addons',
@@ -377,8 +369,22 @@ class NodeAddonDetailMixin(object):
                 }
             }, auth=self.user.auth,
             expect_errors=True)
-        assert_equal(post_res.status_code, 405)
-        assert_equal(del_res.status_code, 405)
+        assert_equal(res.status_code, 405)
+
+    def test_settings_detail_raises_error_if_POST(self):
+        res = self.app.post_json_api(self.setting_detail_url, 
+            {'data': { 
+                'id': self.short_name,
+                'type': 'node_addons',
+                'attributes': {
+                    'external_account_id': None,
+                    'folder_id':  None,
+                    'enabled': False
+                    }
+                }
+            }, auth=self.user.auth,
+            expect_errors=True)
+        assert_equal(res.status_code, 405)
 
     def test_settings_detail_raises_error_if_noncontrib_not_public_GET(self):
         wrong_type = self.should_expect_errors()
@@ -491,24 +497,28 @@ class NodeAddonFolderMixin(object):
             assert_equal(res.status_code, 405)
 
 
-    def test_folder_list_raises_error_if_not_GET(self):
-        put_res = self.app.put_json_api(self.folder_url, {
+    def test_folder_list_raises_error_if_PUT(self):
+        res = self.app.put_json_api(self.folder_url, {
             'id': self.short_name,
             'type': 'node-addon-folders'
             }, auth=self.user.auth,
             expect_errors=True)
+        assert_equal(es.status_code, 405)
+
+    def test_folder_list_raises_error_if_PATCH(self):
         patch_res = self.app.patch_json_api(self.folder_url, {
             'id': self.short_name,
             'type': 'node-addon-folders'
             }, auth=self.user.auth,
             expect_errors=True)
-        del_res = self.app.delete(
+        assert_equal(res.status_code, 405)
+
+    def test_folder_list_raises_error_if_DELETE(self):
+        res = self.app.delete(
             self.folder_url,
             auth=self.user.auth,
             expect_errors=True)
-        assert_equal(put_res.status_code, 405)
-        assert_equal(patch_res.status_code, 405)
-        assert_equal(del_res.status_code, 405)
+        assert_equal(res.status_code, 405)
 
     def test_folder_list_GET_raises_error_noncontrib_not_public(self):
         wrong_type = self.short_name != 'googledrive'
