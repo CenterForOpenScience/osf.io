@@ -270,9 +270,6 @@ class NodeSerializer(JSONAPISerializer):
 
 
 class NodeAddonSettingsSerializer(JSONAPISerializer):
-    """
-    Overrides AddonSettingsSerializer to return node-specific fields
-    """
     class Meta:
         type_ = 'node_addons'
 
