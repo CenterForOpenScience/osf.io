@@ -6,6 +6,7 @@ from rest_framework import generics
 from rest_framework import renderers
 from rest_framework import permissions as drf_permissions
 
+from api.base.renderers import JSONAPIRenderer, JSONRendererWithESISupport
 from modularodm import Q
 
 from framework.auth import cas
@@ -37,7 +38,7 @@ class TokenList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
     view_category = 'tokens'
     view_name = 'token-list'
 
-    renderer_classes = [renderers.JSONRenderer]  # Hide from web-browsable API tool
+    renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer, ]  # Hide from web-browsable API tool
 
     def get_default_odm_query(self):
 
@@ -77,7 +78,7 @@ class TokenDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
     view_category = 'tokens'
     view_name = 'token-detail'
 
-    renderer_classes = [renderers.JSONRenderer]  # Hide from web-browsable API tool
+    renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer, ]  # Hide from web-browsable API tool
 
     # overrides RetrieveAPIView
     def get_object(self):
