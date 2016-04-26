@@ -254,27 +254,27 @@ class TestODMOrderingFilter(ApiTestCase):
         query_to_be_sorted = [self.query(x) for x in 'NewProj Zip Proj Activity'.split()]
         sorted_query = sorted(query_to_be_sorted, cmp=filters.sort_multiple(['title']))
         sorted_output = [str(i) for i in sorted_query]
-        assert_equal((sorted_output) , ['Activity', 'NewProj', 'Proj', 'Zip'])
+        assert_equal(sorted_output , ['Activity', 'NewProj', 'Proj', 'Zip'])
 
 
     def test_filter_queryset_forward_duplicate(self):
         query_to_be_sorted = [self.query(x) for x in 'NewProj Activity Zip Activity'.split()]
         sorted_query = sorted(query_to_be_sorted, cmp=filters.sort_multiple(['title']))
         sorted_output = [str(i) for i in sorted_query]
-        assert_equal((sorted_output) , ['Activity', 'Activity', 'NewProj', 'Zip'])
+        assert_equal(sorted_output , ['Activity', 'Activity', 'NewProj', 'Zip'])
 
 
     def test_filter_queryset_reverse(self):
         query_to_be_sorted = [self.query(x) for x in 'NewProj Zip Proj Activity'.split()]
         sorted_query = sorted(query_to_be_sorted, cmp=filters.sort_multiple(['-title']))
         sorted_output = [str(i) for i in sorted_query]
-        assert_equal((sorted_output) , ['Zip', 'Proj', 'NewProj', 'Activity'])
+        assert_equal(sorted_output , ['Zip', 'Proj', 'NewProj', 'Activity'])
     
     def test_filter_queryset_reverse_duplicate(self):
         query_to_be_sorted = [self.query(x) for x in 'NewProj Activity Zip Activity'.split()]
         sorted_query = sorted(query_to_be_sorted, cmp=filters.sort_multiple(['-title']))
         sorted_output = [str(i) for i in sorted_query]
-        assert_equal((sorted_output) , ['Zip', 'NewProj', 'Activity', 'Activity'])
+        assert_equal(sorted_output , ['Zip', 'NewProj', 'Activity', 'Activity'])
 
     def test_filter_queryset_handles_multiple_fields(self):
         objs = [self.query_with_num(title='NewProj', number=10),

@@ -36,10 +36,7 @@ def sort_multiple(fields):
             elif a_field < b_field:
                 return -1 * sort_direction
             elif a_field == b_field:
-                if index < len(fields) - 1:
-                    continue
-                else:
-                    return 0
+                continue
         return 0
     return sort_fn
 
