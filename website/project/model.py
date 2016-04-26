@@ -161,6 +161,19 @@ def validate_contributor(guid, contributors):
             raise ValidationValueError('Mentioned user is not a contributor.')
     return True
 
+def add_new_mentions(old_mentions, new_mentions, contributors):
+        """ Check if there are new_mentions that are not in old_mentions
+
+        :param list old_mentions: List of old_mentions for comment
+        :param list new_mentions: List of new_mentions for comment
+        :param list contributors: List of contributors on the node
+        :return bool new_mentions_added: Whether there are new_mentions that are not in old_mentions
+        """
+        validate = lambda m: m not in old_mentions and validate_contributor(m, contributors)
+        new_mentions = filter(validate, new_mentions)
+        if len(new_mentions) > 0:
+            return True
+        return False
 
 class Comment(GuidStoredObject, SpamMixin, Commentable):
 
@@ -308,12 +321,10 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
         )
 
         if comment.new_mentions:
-            old_mentions = comment.old_mentions
-            validate = lambda m: m not in old_mentions and validate_contributor(m, comment.node.contributors)
-            comment.new_mentions = filter(validate, comment.new_mentions)
-            if len(comment.new_mentions) > 0:
+            new_mentions_added = add_new_mentions(comment.old_mentions, comment.new_mentions, comment.node.contributors)
+            if new_mentions_added:
                 project_signals.mention_added.send(comment, auth=auth)
-                old_mentions.extend(comment.new_mentions)
+                comment.old_mentions.extend(comment.new_mentions)
             comment.save()
 
         comment.node.save()
@@ -336,14 +347,10 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
         self.date_modified = datetime.datetime.utcnow()
 
         if new_mentions:
-            self.new_mentions = new_mentions
-            old_mentions = self.old_mentions
-            validate = lambda m: m not in old_mentions and validate_contributor(m, self.node.contributors)
-            self.new_mentions = filter(validate, self.new_mentions)
-            if len(self.new_mentions) > 0:
-                if save:
-                    project_signals.mention_added.send(self, auth=auth)
-                    self.old_mentions.extend(self.new_mentions)
+            new_mentions_added = add_new_mentions(self.old_mentions, self.new_mentions, self.node.contributors)
+            if new_mentions_added and save:
+                project_signals.mention_added.send(self, auth=auth)
+                self.old_mentions.extend(self.new_mentions)
 
         if save:
             self.save()
