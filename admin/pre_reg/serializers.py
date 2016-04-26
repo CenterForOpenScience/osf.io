@@ -52,6 +52,7 @@ def serialize_draft_registration(draft, json_safe=True):
         'embargo': embargo,
         'registered_node': node_url,
         'status': status,
+        'logs': draft.logs,
     }
 
 
