@@ -338,7 +338,6 @@ class NodeAddonDetailMixin(object):
             assert_in(res.status_code, [404, 405])
 
     def test_settings_detail_PATCH_readcontrib_raises_error(self):
-        wrong_type = self.should_expect_errors()
         read_user = AuthUserFactory()
         self.node.add_contributor(read_user, permissions=[READ], auth=self.auth)
         res = self.app.patch_json_api(self.setting_detail_url, 
@@ -351,10 +350,7 @@ class NodeAddonDetailMixin(object):
                 }
             }, auth=read_user.auth,
             expect_errors=True)
-        if not wrong_type:
-            assert_equal(res.status_code, 403)
-        if wrong_type:
-            assert_equal(res.status_code, 404)
+        assert_equal(res.status_code, 403)
 
     def test_settings_detail_raises_error_if_DELETE(self):
         res = self.app.delete(self.setting_detail_url, 
@@ -387,19 +383,14 @@ class NodeAddonDetailMixin(object):
         assert_equal(res.status_code, 405)
 
     def test_settings_detail_raises_error_if_noncontrib_not_public_GET(self):
-        wrong_type = self.should_expect_errors()
         noncontrib = AuthUserFactory()
         res = self.app.get(
             self.setting_detail_url,
             auth=noncontrib.auth,
             expect_errors=True)
-        if not wrong_type:
-            assert_equal(res.status_code, 403)
-        if wrong_type:
-            assert_equal(res.status_code, 404)
+        assert_equal(res.status_code, 403)
 
     def test_settings_detail_raises_error_if_noncontrib_not_public_PUT(self):
-        wrong_type = self.should_expect_errors()
         noncontrib = AuthUserFactory()
         res = self.app.put_json_api(self.setting_detail_url, 
             {'data': { 
@@ -413,13 +404,9 @@ class NodeAddonDetailMixin(object):
                 }
             }, auth=noncontrib.auth,
             expect_errors=True)
-        if not wrong_type:
-            assert_equal(res.status_code, 403)
-        if wrong_type:
-            assert_equal(res.status_code, 404)
+        assert_equal(res.status_code, 403)
 
     def test_settings_detail_raises_error_if_noncontrib_not_public_PATCH(self):
-        wrong_type = self.should_expect_errors()
         noncontrib = AuthUserFactory()
         res = self.app.patch_json_api(self.setting_detail_url, 
             {'data': { 
@@ -431,10 +418,7 @@ class NodeAddonDetailMixin(object):
                 }
             }, auth=noncontrib.auth,
             expect_errors=True)
-        if not wrong_type:
-            assert_equal(res.status_code, 403)
-        if wrong_type:
-            assert_equal(res.status_code, 404)
+        assert_equal(res.status_code, 403)
 
     def test_settings_detail_noncontrib_public_can_view(self):
         self.node.set_privacy('public', auth=self.auth)
@@ -455,7 +439,6 @@ class NodeAddonDetailMixin(object):
             assert_equal(res.status_code, 404)
 
     def test_settings_detail_noncontrib_public_cannot_edit(self):
-        wrong_type = self.should_expect_errors()
         self.node.set_privacy('public', auth=self.auth)
         noncontrib = AuthUserFactory()
         res = self.app.patch_json_api(self.setting_detail_url, 
@@ -468,10 +451,7 @@ class NodeAddonDetailMixin(object):
                 }
             }, auth=noncontrib.auth,
             expect_errors=True)
-        if not wrong_type:
-            assert_equal(res.status_code, 403)
-        if wrong_type:
-            assert_equal(res.status_code, 404)
+        assert_equal(res.status_code, 403)
 
 
 class NodeAddonFolderMixin(object):
@@ -503,10 +483,10 @@ class NodeAddonFolderMixin(object):
             'type': 'node-addon-folders'
             }, auth=self.user.auth,
             expect_errors=True)
-        assert_equal(es.status_code, 405)
+        assert_equal(res.status_code, 405)
 
     def test_folder_list_raises_error_if_PATCH(self):
-        patch_res = self.app.patch_json_api(self.folder_url, {
+        res = self.app.patch_json_api(self.folder_url, {
             'id': self.short_name,
             'type': 'node-addon-folders'
             }, auth=self.user.auth,

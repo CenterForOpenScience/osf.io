@@ -5,7 +5,7 @@ from api.base.settings import ADDONS_OAUTH
 
 
 class AddonSettingsMixin(object):
-    """Mixin with convenience methods for retrieving the current addon settings based on the
+    """Mixin with convenience method for retrieving the current <Addon><Node|User>Settings based on the
     current URL. By default, fetches the settings based on the user or node available in self context.
     """
 
