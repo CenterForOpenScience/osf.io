@@ -11,8 +11,7 @@ from api.base.utils import get_user_auth, extract_object_from_dict
 class ContributorOrPublic(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
-        if isinstance(obj, dict):
-            obj = extract_object_from_dict(obj)
+        obj = extract_object_from_dict(obj)
         assert isinstance(obj, (Node, Pointer)), 'obj must be a Node or Pointer, got {}'.format(obj)
         auth = get_user_auth(request)
         if request.method in permissions.SAFE_METHODS:
@@ -24,8 +23,7 @@ class ContributorOrPublic(permissions.BasePermission):
 class AdminOrPublic(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
-        if isinstance(obj, dict):
-            obj = extract_object_from_dict(obj)
+        obj = extract_object_from_dict(obj)
         assert isinstance(obj, (Node, User, Institution)), 'obj must be a Node, User, or Institution got {}'.format(obj)
         auth = get_user_auth(request)
         node = Node.load(request.parser_context['kwargs'][view.node_lookup_url_kwarg])
