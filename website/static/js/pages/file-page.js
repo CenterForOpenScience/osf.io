@@ -28,6 +28,10 @@ $(function() {
             });
         },
         onRemoveTag: function (tag) {
+            // Don't try to delete a blank tag (would result in a server error)
+            if (!tag) {
+                return false;
+            }
             var request = $osf.ajaxJSON('DELETE', tagUrl, {'data': {'tag': tag}});
             request.fail(function (xhr, textStatus, error) {
                 $osf.growl('Error', 'Could not remove tag.');

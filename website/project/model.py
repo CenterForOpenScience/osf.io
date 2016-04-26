@@ -2274,7 +2274,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         return registered
 
     def remove_tag(self, tag, auth, save=True):
-        if tag in self.tags:
+        if tag and tag in self.tags:
             self.tags.remove(tag)
             self.add_log(
                 action=NodeLog.TAG_REMOVED,
@@ -2288,6 +2288,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             )
             if save:
                 self.save()
+            return True
+        return False
 
     def add_tag(self, tag, auth, save=True, log=True):
         if not isinstance(tag, Tag):

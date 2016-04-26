@@ -53,9 +53,7 @@ def project_add_tag(auth, node, **kwargs):
 @must_have_permission('write')
 @must_not_be_registration
 def project_remove_tag(auth, node, **kwargs):
-
     data = request.get_json()
-    tag = data['tag']
-    if tag:
-        node.remove_tag(tag=tag, auth=auth)
-        return {'status': 'success'}
+    if node.remove_tag(tag=data['tag'], auth=auth):
+        return {'status': 'success'}, http.OK
+    return {'status': 'failure'}, http.BAD_REQUEST
