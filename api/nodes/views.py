@@ -766,7 +766,7 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
         tags                            array of strings   list of tags that describe the registered node
         current_user_permissions        array of strings   list of strings representing the permissions for the current user on this node
         fork                            boolean            is this project a fork?
-        registration                    boolean            has this project been registered? (always true - may be deprecated in future versions)
+        registration                    boolean            is this node a registration? (always true - may be deprecated in future versions)
         collection                      boolean            is this registered node a collection? (always false - may be deprecated in future versions)
         public                          boolean            has this registration been made publicly-visible?
         withdrawn                       boolean            has this registration been withdrawn?
