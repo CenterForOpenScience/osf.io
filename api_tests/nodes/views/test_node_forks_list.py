@@ -202,7 +202,7 @@ class TestNodeForkCreate(ApiTestCase):
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
 
     def test_can_fork_private_node_logged_in_contributor(self):
-        res = self.app.post_json_api(self.private_project_url + '?embed=children&embed=node_links&embed=logs&embed=contributors&embed=forked_from', self.fork_data, auth=self.user.auth, expect_errors=True)
+        res = self.app.post_json_api(self.private_project_url + '?embed=children&embed=node_links&embed=logs&embed=contributors&embed=forked_from', self.fork_data, auth=self.user.auth)
         assert_equal(res.status_code, 201)
 
         data = res.json['data']
