@@ -16,10 +16,12 @@ import sys
 from modularodm import Q
 
 from framework.transactions.context import TokuTransaction
+from framework.celery_tasks import app as celery_app
+
 from website import models, settings
 from website.app import init_app
-from scripts import utils as scripts_utils
 
+from scripts import utils as scripts_utils
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -56,9 +58,9 @@ def main():
             assert registration.is_embargoed is False
             assert registration.is_public is True
     logger.info("Auto-approved {0} of {1} embargo termination requests".format(count, len(pending_embargo_termination_requests)))
-            
-if __name__ == '__main__':
-    dry_run = 'dry' in sys.argv
+
+@celery_app.task(name='scripts.approve_embargo_terminations')
+def run_main(dry_run=True):
     if not dry_run:
         scripts_utils.add_file_logger(logger, __file__)
     init_app(routes=False)
