@@ -139,7 +139,12 @@ def extend_querystring_params(url, params):
     return furl.furl(url).add(args=params).url
 
 def extract_object_from_dict(self, obj):
-        try:
-            return obj['object'].owner
-        except (AttributeError, KeyError):
-            return obj
+    """ Extracts an object against which permissions can be checked.
+
+        :param dict obj:    Dict that may contain an addon settings object
+        :returns:           Node or User object, or `obj`
+    """
+    try:
+        return obj['object'].owner
+    except (AttributeError, KeyError):
+        return obj
