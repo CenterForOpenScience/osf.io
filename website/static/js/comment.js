@@ -820,6 +820,7 @@ CommentModel.prototype.submitUndelete = function() {
                     'type': 'comments',
                     'attributes': {
                         'content': self.content(),
+                        'new_mentions': [],
                         'deleted': false
                     }
                 }
