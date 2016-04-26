@@ -21,7 +21,7 @@ from api.nodes.serializers import NodeSerializer
 from api.institutions.serializers import InstitutionSerializer
 from api.registrations.serializers import RegistrationSerializer
 from api.base.utils import default_node_list_query, default_node_permission_query
-from api.base.settings import ADDONS_OAUTH
+from api.addons.views import AddonSettingsMixin
 
 from .serializers import UserSerializer, UserAddonSettingsSerializer, UserDetailSerializer, UserInstitutionsRelationshipSerializer
 from .permissions import ReadOnlyOrCurrentUser, ReadOnlyOrCurrentUserRelationship, CurrentUser
@@ -249,7 +249,7 @@ class UserAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, User
         return self.get_user().get_addons()
 
 
-class UserAddonDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixin):
+class UserAddonDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixin, AddonSettingsMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -264,18 +264,10 @@ class UserAddonDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixin):
     view_name = 'user-addon-detail'
 
     def get_object(self):
-        user = self.get_user()
-        provider = self.kwargs['provider']
-        if provider not in ADDONS_OAUTH:
-            raise NotFound('Requested addon unavailable')
-
-        addon_settings = user.get_addon(provider)
-        if not addon_settings:
-            raise NotFound('Requested addon not enabled')
-        return addon_settings
+        return self.get_addon_settings()
 
 
-class UserAddonAccountList(JSONAPIBaseView, generics.ListAPIView, UserMixin):
+class UserAddonAccountList(JSONAPIBaseView, generics.ListAPIView, UserMixin, AddonSettingsMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -290,19 +282,9 @@ class UserAddonAccountList(JSONAPIBaseView, generics.ListAPIView, UserMixin):
     view_name = 'user-external_accounts'
 
     def get_queryset(self):
-        user = self.get_user()
-        provider = self.kwargs['provider']
+        return self.get_addon_settings().external_accounts
 
-        if provider not in ADDONS_OAUTH:
-            raise NotFound('Requested addon unavailable')
-
-        addon_settings = user.get_addon(provider)
-        if not addon_settings or not addon_settings.external_accounts:
-            raise NotFound('Requested addon not enabled')
-
-        return addon_settings.external_accounts
-
-class UserAddonAccountDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixin):
+class UserAddonAccountDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixin, AddonSettingsMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -317,17 +299,11 @@ class UserAddonAccountDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixi
     view_name = 'user-external_account-detail'
 
     def get_object(self):
-        user = self.get_user()
-        provider = self.kwargs['provider']
+        user_settings = self.get_addon_settings()
         account_id = self.kwargs['account_id']
 
-        if provider not in ADDONS_OAUTH:
-            raise NotFound('Requested addon unavailable')
-        if not user.has_addon(provider):
-            raise NotFound('Requested addon not enabled')
-
         account = ExternalAccount.load(account_id)
-        if not (account and account in user.get_addon(provider).external_accounts):
+        if not (account and account in user_settings.external_accounts):
             raise NotFound('Requested addon unavailable')
         return account
 

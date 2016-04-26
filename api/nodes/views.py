@@ -14,6 +14,7 @@ from api.base.parsers import JSONAPIOnetoOneRelationshipParser, JSONAPIOnetoOneR
 from api.base.pagination import CommentPagination
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
 from api.base.settings import ADDONS_OAUTH
+from api.addons.views import AddonSettingsMixin
 from api.files.serializers import FileSerializer
 from api.comments.serializers import CommentSerializer, CommentCreateSerializer
 from api.comments.permissions import CanCommentOrPublic
@@ -1371,7 +1372,7 @@ class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin
         return fobj
 
 
-class NodeAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, NodeMixin):
+class NodeAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, NodeMixin, AddonSettingsMixin):
     """List of addons connected to this node *Read-only*
 
     TODO: More Docs
@@ -1394,27 +1395,19 @@ class NodeAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, Node
     def get_default_queryset(self):
         qs = []
         for addon in ADDONS_OAUTH:
-            addon_settings = ADDONS_AVAILABLE_DICT[addon].settings_models.get('node', None)
-            obj = None
-            enabled = False
-            try:
-                obj = addon_settings.find(Q('owner', 'eq', self.get_node()._id) & Q('deleted', 'eq', False))[0]
-                enabled = True
-            except IndexError:
-                pass
+            obj = self.get_addon_settings(provider=addon, fail_if_absent=False)
             qs.append(
                 {
                     '_id': addon,
-                    'enabled': enabled,
+                    'enabled': bool(obj),
                     'settings': obj
-                }
-            )
+                })
         return qs
 
     get_queryset = get_default_queryset
 
 
-class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin):
+class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin, AddonSettingsMixin):
     """
     TODO: docs
     """
@@ -1435,22 +1428,12 @@ class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin
     view_name = 'node-addon-detail'
 
     def get_object(self):
-        addon = self.kwargs['provider']
-        if addon in ADDONS_OAUTH:
-            addon_settings = ADDONS_AVAILABLE_DICT[addon].settings_models.get('node', None)
-            obj = None
-            enabled = False
-            try:
-                obj = addon_settings.find(Q('owner', 'eq', self.get_node()) & Q('deleted', 'eq', False))[0]
-                enabled = True
-            except IndexError:
-                pass
-            return {
-                '_id': addon,
-                'enabled': enabled,
-                'settings': obj
-            }
-        raise NotFound('Requested addon unavailable.')
+        obj = self.get_addon_settings(fail_if_absent=False)
+        return {
+            '_id': self.kwargs['provider'],
+            'enabled': bool(obj),
+            'settings': obj
+        }
 
 class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     """
