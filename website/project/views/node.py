@@ -759,6 +759,7 @@ def _view_project(node, auth, primary=False):
             'can_comment': node.can_comment(auth),
             'show_wiki_widget': _should_show_wiki_widget(node, user),
             'dashboard_id': bookmark_collection_id,
+            'institutions': get_affiliated_institutions(user) if user else [],
         },
         'badges': _get_badge(user),
         # TODO: Namespace with nested dicts
@@ -771,6 +772,15 @@ def _view_project(node, auth, primary=False):
     }
     return data
 
+def get_affiliated_institutions(obj):
+    ret = []
+    for institution in obj.affiliated_institutions:
+        ret.append({
+            'name': institution.name,
+            'logo_path': institution.logo_path,
+            'id': institution._id,
+        })
+    return ret
 
 def _get_badge(user):
     if user:
