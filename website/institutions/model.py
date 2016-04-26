@@ -93,7 +93,7 @@ class Institution(object):
         self.node.save()
 
     @classmethod
-    def find(cls, query=None, **kwargs):
+    def find(cls, query=None, deleted=False, **kwargs):
         from website.models import Node  # done to prevent import error
         if query and getattr(query, 'nodes', False):
             for node in query.nodes:
@@ -103,11 +103,12 @@ class Institution(object):
             replacement_attr = cls.attribute_map.get(query.attribute, False)
             query.attribute = replacement_attr or query.attribute
         query = query & Q('institution_id', 'ne', None) if query else Q('institution_id', 'ne', None)
+        query = query & Q('is_deleted', 'ne', True) if not deleted else query
         nodes = Node.find(query, allow_institution=True, **kwargs)
         return InstitutionQuerySet(nodes)
 
     @classmethod
-    def find_one(cls, query=None, **kwargs):
+    def find_one(cls, query=None, deleted=False, **kwargs):
         from website.models import Node
         if query and getattr(query, 'nodes', False):
             for node in query.nodes:
@@ -117,6 +118,7 @@ class Institution(object):
             replacement_attr = cls.attribute_map.get(query.attribute, False)
             query.attribute = replacement_attr if replacement_attr else query.attribute
         query = query & Q('institution_id', 'ne', None) if query else Q('institution_id', 'ne', None)
+        query = query & Q('is_deleted', 'ne', True) if not deleted else query
         node = Node.find_one(query, allow_institution=True, **kwargs)
         return cls(node)
 

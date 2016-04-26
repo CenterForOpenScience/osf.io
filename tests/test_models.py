@@ -3260,6 +3260,7 @@ class TestParentNode(OsfTestCase):
         self.auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user, description='The Dudleys strike again')
         self.child = NodeFactory(parent=self.project, creator=self.user, description="Devon.")
+        self.deleted_child = NodeFactory(parent=self.project, creator=self.user, title='Deleted', is_deleted=True)
 
         self.registration = RegistrationFactory(project=self.project)
         self.template = self.project.use_as_template(auth=self.auth)
@@ -3313,6 +3314,13 @@ class TestParentNode(OsfTestCase):
         template_child = NodeFactory(parent=self.template)
         new_project_grandchild = NodeFactory(parent=template_child)
         assert_equal(new_project_grandchild.parent_node._id, template_child._id)
+
+    def test_template_project_does_not_copy_deleted_components(self):
+        """Regression test for https://openscience.atlassian.net/browse/OSF-5942. """
+        new_project = self.project.use_as_template(auth=self.auth)
+        new_nodes = [node.title for node in new_project.nodes]
+        assert_equal(len(new_project.nodes), 1)
+        assert_not_in(self.deleted_child.title, new_nodes)
 
 
 class TestRoot(OsfTestCase):
@@ -3782,6 +3790,15 @@ class TestForkNode(OsfTestCase):
         self.project.set_privacy('public')
         fork = self.project.fork_node(self.auth)
         assert_false(fork.is_public)
+
+    def test_fork_log_has_correct_log(self):
+        fork = self.project.fork_node(self.auth)
+        last_log = list(fork.logs)[-1]
+        assert_equal(last_log.action, NodeLog.NODE_FORKED)
+        # Legacy 'registration' param should be the ID of the fork
+        assert_equal(last_log.params['registration'], fork._primary_key)
+        # 'node' param is the original node's ID
+        assert_equal(last_log.params['node'], self.project._primary_key)
 
     def test_not_fork_private_link(self):
         link = PrivateLinkFactory()
