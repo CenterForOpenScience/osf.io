@@ -177,7 +177,7 @@ class UserAddonAccountListMixin(object):
 
         if not wrong_type:
             addon_data = res.json['data'][0]
-            assert_equal(addon_data['attributes']['_id'], self.account._id)
+            assert_equal(addon_data['id'], self.account._id)
             assert_equal(addon_data['attributes']['display_name'], self.account.display_name)
             assert_equal(addon_data['attributes']['provider'], self.account.provider)
             assert_equal(addon_data['attributes']['profile_url'], self.account.profile_url)
@@ -254,7 +254,7 @@ class UserAddonAccountDetailMixin(object):
 
         if not wrong_type:
             addon_data = res.json['data']
-            assert_equal(addon_data['attributes']['_id'], self.account._id)
+            assert_equal(addon_data['id'], self.account._id)
             assert_equal(addon_data['attributes']['display_name'], self.account.display_name)
             assert_equal(addon_data['attributes']['provider'], self.account.provider)
             assert_equal(addon_data['attributes']['profile_url'], self.account.profile_url)

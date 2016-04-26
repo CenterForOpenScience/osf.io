@@ -238,6 +238,9 @@ class UserAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, User
         CurrentUser,
     )
 
+    required_read_scopes = [CoreScopes.USERS_ADDON_READ]
+    required_write_scopes = [CoreScopes.USERS_ADDON_WRITE]
+
     serializer_class = UserAddonSettingsSerializer
     view_category = 'users'
     view_name = 'user-addons'
@@ -252,6 +255,9 @@ class UserAddonDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixin):
         base_permissions.TokenHasScope,
         CurrentUser,
     )
+
+    required_read_scopes = [CoreScopes.USERS_ADDON_READ]
+    required_write_scopes = [CoreScopes.USERS_ADDON_WRITE]
 
     serializer_class = UserAddonSettingsSerializer
     view_category = 'users'
@@ -276,6 +282,9 @@ class UserAddonAccountList(JSONAPIBaseView, generics.ListAPIView, UserMixin):
         CurrentUser,
     )
 
+    required_read_scopes = [CoreScopes.USERS_ADDON_READ]
+    required_write_scopes = [CoreScopes.USERS_ADDON_WRITE]
+
     serializer_class = AddonAccountSerializer
     view_category = 'users'
     view_name = 'user-external_accounts'
@@ -299,6 +308,9 @@ class UserAddonAccountDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixi
         base_permissions.TokenHasScope,
         CurrentUser,
     )
+
+    required_read_scopes = [CoreScopes.USERS_ADDON_READ]
+    required_write_scopes = [CoreScopes.USERS_ADDON_WRITE]
 
     serializer_class = AddonAccountSerializer
     view_category = 'users'

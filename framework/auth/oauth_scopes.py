@@ -20,6 +20,9 @@ class CoreScopes(object):
     USERS_READ = 'users_read'
     USERS_WRITE = 'users_write'
 
+    USERS_ADDON_READ = 'users.addon_read'
+    USERS_ADDON_WRITE = 'users.addon_write'
+
     NODE_BASE_READ = 'nodes.base_read'
     NODE_BASE_WRITE = 'nodes.base_write'
 
@@ -31,6 +34,9 @@ class CoreScopes(object):
 
     NODE_FILE_READ = 'nodes.files_read'
     NODE_FILE_WRITE = 'nodes.files_write'
+
+    NODE_ADDON_READ = 'nodes.addon_read'
+    NODE_ADDON_WRITE = 'nodes.addon_write'
 
     NODE_LINKS_READ = 'nodes.links_read'
     NODE_LINKS_WRITE = 'nodes.links_write'
@@ -71,6 +77,9 @@ class ComposedScopes(object):
     USERS_READ = (CoreScopes.USERS_READ,)
     USERS_WRITE = USERS_READ + (CoreScopes.USERS_WRITE,)
 
+    USERS_FULL_READ = USERS_READ + (CoreScopes.USERS_ADDON_READ,)
+    USERS_FULL_WRITE = USERS_FULL_READ + (CoreScopes.USERS_ADDON_WRITE,)
+
     # Applications collection
     APPLICATIONS_READ = (CoreScopes.APPLICATIONS_READ,)
     APPLICATIONS_WRITE = APPLICATIONS_READ + (CoreScopes.APPLICATIONS_WRITE,)
@@ -97,9 +106,9 @@ class ComposedScopes(object):
     ORGANIZER_WRITE = ORGANIZER_READ + (CoreScopes.ORGANIZER_COLLECTIONS_BASE_WRITE, CoreScopes.NODE_LINKS_WRITE)
 
     # Privileges relating to editing content uploaded under that node # TODO: Add wiki etc when implemented
-    NODE_DATA_READ = (CoreScopes.NODE_FILE_READ, )
+    NODE_DATA_READ = (CoreScopes.NODE_FILE_READ, CoreScopes.NODE_ADDON_READ)
     NODE_DATA_WRITE = NODE_DATA_READ + \
-                        (CoreScopes.NODE_FILE_WRITE, )
+                        (CoreScopes.NODE_FILE_WRITE, CoreScopes.NODE_ADDON_WRITE)
 
     # Privileges relating to who can access a node (via contributors or registrations)
     NODE_ACCESS_READ = (CoreScopes.NODE_CONTRIBUTORS_READ, CoreScopes.NODE_REGISTRATIONS_READ)

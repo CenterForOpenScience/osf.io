@@ -282,6 +282,21 @@ class NodeAddonSettingsSerializer(JSONAPISerializer):
     complete = ser.BooleanField(source='settings.complete', read_only=True)
     configured = ser.BooleanField(source='settings.configured', read_only=True)
 
+    links = links = LinksField({
+        'self': 'get_absolute_url',
+    })
+
+    def get_absolute_url(self, obj):
+        settings = obj.get('settings', None)
+        if settings:
+            kwargs = self.context['request'].parser_context['kwargs']
+            kwargs.update({'provider': settings.config.short_name})
+            return absolute_reverse(
+                'nodes:node-addon-detail',
+                kwargs=kwargs
+            )
+        return None
+
     def update(self, instance, validated_data):
         addon_name = instance.get('_id', None)
         if addon_name not in ADDONS_FOLDER_CONFIGURABLE:

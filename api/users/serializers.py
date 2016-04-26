@@ -121,21 +121,31 @@ class UserAddonSettingsSerializer(JSONAPISerializer):
     user_has_auth = ser.BooleanField(source='has_auth', read_only=True)
 
     links = LinksField({
+        'self': 'get_absolute_url',
         'accounts': 'account_links'
     })
 
     class Meta:
         type_ = 'user_addons'
 
+    def get_absolute_url(self, obj):
+        user_id = self.context['request'].parser_context['kwargs']['user_id']
+        return absolute_reverse(
+            'users:user-addon-detail',
+            kwargs={
+                'user_id': user_id,
+                'provider': obj.config.short_name
+            }
+        )
+
     def account_links(self, obj):
-        l = {}
-        for account in obj.external_accounts:
-            l[account._id] = {
-                'account': absolute_reverse('users:user-external_account-detail', kwargs={'user_id': obj.owner._id, 'provider': obj.config.short_name, 'account_id': obj._id}),
+        return {
+            account._id: {
+                'account': absolute_reverse('users:user-external_account-detail', kwargs={'user_id': obj.owner._id, 'provider': obj.config.short_name, 'account_id': account._id}),
                 'nodes_connected': [n.absolute_api_v2_url for n in obj.get_attached_nodes(account)]
             }
-
-        return l
+            for account in obj.external_accounts
+        }
 
 class UserDetailSerializer(UserSerializer):
     """

@@ -13,10 +13,10 @@ class NodeAddonFolderSerializer(JSONAPISerializer):
     folder_id = ser.CharField(read_only=True)
 
     links = LinksField({
-        'children': 'get_child_folders'
+        'children': 'get_absolute_url'
     })
 
-    def get_child_folders(self, obj):
+    def get_absolute_url(self, obj):
         node_id = self.context['request'].parser_context['kwargs']['node_id']
         addon_name = self.context['request'].parser_context['kwargs']['provider']
 

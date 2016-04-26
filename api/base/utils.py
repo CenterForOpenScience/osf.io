@@ -138,7 +138,7 @@ def default_node_permission_query(user):
 def extend_querystring_params(url, params):
     return furl.furl(url).add(args=params).url
 
-def extract_object_from_dict(self, obj):
+def extract_object_from_dict(obj):
     """ Extracts an object against which permissions can be checked.
 
         :param dict obj:    Dict that may contain an addon settings object
@@ -146,5 +146,5 @@ def extract_object_from_dict(self, obj):
     """
     try:
         return obj['settings'].owner
-    except (AttributeError, KeyError):
+    except (AttributeError, KeyError, TypeError):
         return obj
