@@ -21,7 +21,7 @@ def main():
         new_title = node['title'][:MAX_TITLE_LENGTH]
         logger.info('New title: {}'.format(new_title))
         db.node.update({'_id': node['_id']}, {
-            'title': new_title
+            '$set': {'title': new_title}
         })
         count += 1
     logger.info('Updated {} nodes'.format(count))
