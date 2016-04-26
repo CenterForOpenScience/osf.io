@@ -52,7 +52,7 @@ def sort_drafts(query_set, order_by):
             query_set,
             key=lambda d: d.approval.initiation_date
         )
-    elif order_by == SORT_BY['n_date']:
+    else:
         return sorted(
             query_set,
             key=lambda d: d.approval.initiation_date,
