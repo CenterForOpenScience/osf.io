@@ -53,12 +53,17 @@
         <td>
             <h4 style="margin-top: 0px">
             {% if draft.is_pending_approval %}
-            <span class="label label-warning">Pending Approval</span>
+            <span class="label label-warning">
             {% elif draft.is_approved %}
-            <span class="label label-lg label-success">Approved</span>
+                {% if 'but' in draft.status %}
+                    <span class="label label-lg label-default">
+                {% else %}
+                    <span class="label label-lg label-success">
+                {% endif %}
             {% elif draft.is_rejected %}
-            <span class="label label-lg label-danger">Rejected</span>
+            <span class="label label-lg label-danger">
             {% endif %}
+                {{ draft.status }}</span>
             </h4>
         </td>
         <td>
