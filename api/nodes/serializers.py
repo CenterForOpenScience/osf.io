@@ -278,7 +278,7 @@ class NodeAddonSettingsSerializer(JSONAPISerializer):
     external_account_id = ser.CharField(source='settings.external_account._id', allow_null=True)
     folder_id = ser.CharField(source='settings.folder_id', allow_null=True)
     folder_path = ser.CharField(source='settings.folder_path', required=False, allow_null=True)
-    has_auth = ser.BooleanField(source='settings.has_auth', read_only=True)
+    node_has_auth = ser.BooleanField(source='settings.has_auth', read_only=True)
     complete = ser.BooleanField(source='settings.complete', read_only=True)
     configured = ser.BooleanField(source='settings.configured', read_only=True)
     node = ser.CharField(source='settings.owner._id', read_only=True)

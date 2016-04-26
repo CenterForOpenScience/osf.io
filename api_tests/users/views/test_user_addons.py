@@ -31,7 +31,7 @@ class UserAddonListMixin(object):
 
         if not wrong_type:
             addon_data = res.json['data'][0]
-            assert_true(addon_data['attributes']['has_auth'])
+            assert_true(addon_data['attributes']['user_has_auth'])
             assert_in(self.node._id, addon_data['links']['accounts'][self.account_id]['nodes_connected'][0])
         if wrong_type:
             assert_equal(res.status_code, 200)
@@ -102,7 +102,7 @@ class UserAddonDetailMixin(object):
 
         if not wrong_type:
             addon_data = res.json['data']
-            assert_true(addon_data['attributes']['has_auth'])
+            assert_true(addon_data['attributes']['user_has_auth'])
             assert_in(self.node._id, addon_data['links']['accounts'][self.account_id]['nodes_connected'][0])
         if wrong_type:
             assert_equal(res.status_code, 404)
