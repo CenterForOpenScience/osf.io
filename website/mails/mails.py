@@ -266,6 +266,11 @@ WELCOME = Mail(
     subject='Welcome to the Open Science Framework'
 )
 
+WELCOME_OSF4I = Mail(
+    'welcome_osf4i',
+    subject='Welcome to the Open Science Framework'
+)
+
 PREREG_CHALLENGE_REJECTED = Mail(
     'prereg_challenge_rejected',
     subject='Revisions required, your submission for the Preregistration Challenge is not yet registered'
