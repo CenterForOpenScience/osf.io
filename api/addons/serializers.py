@@ -6,28 +6,30 @@ class NodeAddonFolderSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'node_addon_folders'
 
-    id = ser.CharField(source='provider', read_only=True)
+    id = ser.CharField(read_only=True)
     kind = ser.CharField(default='folder', read_only=True)
     name = ser.CharField(read_only=True)
+    folder_id = ser.CharField(source='id', read_only=True)
     path = ser.CharField(read_only=True)
-    folder_id = ser.CharField(read_only=True)
+    provider = ser.CharField(read_only=True)
 
     links = LinksField({
-        'children': 'get_absolute_url'
+        'children': 'get_absolute_url',
+        'root': 'get_root_folder',
     })
 
     def get_absolute_url(self, obj):
-        node_id = self.context['request'].parser_context['kwargs']['node_id']
-        addon_name = self.context['request'].parser_context['kwargs']['provider']
-
         return absolute_reverse(
             'nodes:node-addon-folders',
-            kwargs={
-                'node_id': node_id,
-                'provider': addon_name
-            },
+            kwargs=self.context['request'].parser_context['kwargs'],
             query_kwargs={
                 'path': obj['path'],
-                'folder_id': obj['folder_id']
+                'id': obj['id']
             }
+        )
+
+    def get_root_folder(self, obj):
+        return absolute_reverse(
+            'nodes:node-addon-folders',
+            kwargs=self.context['request'].parser_context['kwargs'],
         )

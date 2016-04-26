@@ -1384,6 +1384,9 @@ class NodeAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, Node
         base_permissions.TokenHasScope,
     )
 
+    required_read_scopes = [CoreScopes.NODE_ADDON_READ]
+    required_write_scopes = [CoreScopes.NODE_ADDON_WRITE]
+
     serializer_class = NodeAddonSettingsSerializer
     view_category = 'nodes'
     view_name = 'node-addons'
@@ -1424,6 +1427,9 @@ class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin
         base_permissions.TokenHasScope,
     )
 
+    required_read_scopes = [CoreScopes.NODE_ADDON_READ]
+    required_write_scopes = [CoreScopes.NODE_ADDON_WRITE]
+
     serializer_class = NodeAddonSettingsSerializer
     view_category = 'nodes'
     view_name = 'node-addon-detail'
@@ -1457,14 +1463,19 @@ class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
         base_permissions.TokenHasScope,
     )
 
+    required_read_scopes = [CoreScopes.NODE_ADDON_READ]
+    required_write_scopes = [CoreScopes.NODE_ADDON_WRITE]
+
     serializer_class = NodeAddonFolderSerializer
     view_category = 'nodes'
     view_name = 'node-addon-folders'
 
-    def _to_hgrid(self, item, addon, path):
+    def _from_third_party_format(self, item, addon, path):
         """
-        :param item: contents returned from Google Drive API
-        :return: results formatted as required for Hgrid display
+        :param dict item: contents returned from Google Drive API
+        :param str addon: provider short_name
+        :param str path:  path to folder
+        :return: results formatted as required for serialization
         """
         # quote fails on unicode objects with unicode characters
         # covert to str with .encode('utf-8')
@@ -1476,7 +1487,7 @@ class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
 
         serialized = {
             'path': path,
-            'folder_id': item['id'],
+            'id': item['id'],
             'kind': 'folder',
             'name': safe_name,
             'provider': addon
@@ -1496,7 +1507,7 @@ class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
             raise NotFound('Requested addon not enabled.')
 
         path = self.request.query_params.get('path', '')
-        folder_id = self.request.query_params.get('folder_id', 'root')
+        folder_id = self.request.query_params.get('id', 'root')
 
         # TODO: MVP deadlines make code bad
         from website.addons.base.exceptions import InvalidAuthError
@@ -1515,13 +1526,13 @@ class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
             return [{
                 'path': '/',
                 'kind': 'folder',
-                'folder_id': about['rootFolderId'],
+                'id': about['rootFolderId'],
                 'name': '/ (Full Google Drive)',
                 'provider': addon
             }]
 
         contents = [
-            self._to_hgrid(item, addon, path=path)
+            self._from_third_party_format(item, addon, path=path)
             for item in client.folders(folder_id)
         ]
         return contents
