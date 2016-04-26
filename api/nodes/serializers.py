@@ -297,89 +297,116 @@ class NodeAddonSettingsSerializer(JSONAPISerializer):
             )
         return None
 
+    def check_for_update_errors(self, node_settings, set_enabled, enabled, folder_info, external_account_id):
+        if set_enabled and not enabled and (folder_info or external_account_id):
+            raise Conflict('Cannot disable the addon and set the folder/authorization at the same time.')
+
+        if ((not node_settings or not node_settings.has_auth)
+           and folder_info and not external_account_id):
+            raise Conflict('Cannot set folder without authorization')
+
+    def get_enablement_info(self, data):
+        set_enabled = 'enabled' in data
+        enabled = data.get('enabled', False)
+        return set_enabled, enabled
+
+    def get_account_info(self, data):
+        try:
+            external_account_id = data['settings']['external_account']['_id']
+            set_account = True
+        except KeyError:
+            external_account_id = None
+            set_account = False
+        return set_account, external_account_id
+
+    def get_folder_info(self, data, addon_name):
+        try:
+            folder_info = data['settings']['folder_id']
+            set_folder = True
+        except KeyError:
+            folder_info = None
+            set_folder = False
+
+        if folder_info and addon_name == 'googledrive':
+            try:
+                folder_path = data['settings']['folder_path']
+            except KeyError:
+                folder_path = None
+            folder_info = {
+                'id': folder_info,
+                'path': folder_path
+            }
+        return set_folder, folder_info
+
+    def get_account_or_error(self, external_account_id, auth):
+            external_account = ExternalAccount.load(external_account_id)
+            if not external_account:
+                raise exceptions.NotFound('Unable to find requested account.')
+            if external_account not in auth.user.external_accounts:
+                raise exceptions.PermissionDenied('Requested action requires account ownership.')
+            return external_account
+
+    def should_call_set_folder(self, folder_info, instance_settings, auth, node_settings):
+        if (folder_info and not (   # If we have folder information to set
+                instance_settings and instance_settings.get('folder_id', False) and (  # and the settings aren't already configured with this folder
+                    instance_settings['folder_id'] == folder_info or instance_settings['folder_id'] == folder_info.get('id', False)
+                ))):
+            if auth.user._id != node_settings.user_settings.owner._id:  # And the user is allowed to do this
+                raise exceptions.PermissionDenied('Requested action requires addon ownership.')
+            return True
+        return False
+
     def update(self, instance, validated_data):
         addon_name = instance.get('_id', None)
         if addon_name not in ADDONS_FOLDER_CONFIGURABLE:
             raise exceptions.MethodNotAllowed('Requested addon not currently configurable via API.')
 
         auth = get_user_auth(self.context['request'])
+        node = self.context['view'].get_node()
         node_settings = instance.get('settings', None)
 
-        try:
-            external_account_id = validated_data['settings']['external_account']['_id']
-            set_auth = True
-        except KeyError:
-            external_account_id = None
-            set_auth = False
+        set_account, external_account_id = self.get_account_info(validated_data)
+        set_folder, folder_info = self.get_folder_info(validated_data, addon_name)
+        set_enabled, enabled = self.get_enablement_info(validated_data)
 
-        try:
-            folder_id = validated_data['settings']['folder_id']
-            set_folder = True
-        except KeyError:
-            folder_id = None
-            set_folder = False
+        # Maybe raise errors
+        self.check_for_update_errors(node_settings, set_enabled, enabled, folder_info, external_account_id)
 
-        if folder_id and addon_name == 'googledrive':
-            try:
-                folder_path = validated_data['settings']['folder_path']
-            except KeyError:
-                folder_path = None
-            folder_id = {
-                'id': folder_id,
-                'path': folder_path
-            }
-
-        enabled = validated_data.get('enabled', None)
-
-        if enabled is False and (folder_id or external_account_id):
-            raise Conflict('Cannot disable the addon and set the folder/authorization at the same time.')
-
-        node = self.context['view'].get_node()
-        if ((not node_settings or not node_settings.has_auth)
-           and folder_id and not external_account_id):
-            raise Conflict('Cannot set folder without authorization')
-
-        if node_settings and enabled is False:
+        if node_settings and not enabled and set_enabled:
+            # Enabled, should disable
             node.delete_addon(addon_name, auth)
-            node_settings = None
-            external_account_id = None
-            folder_id = None
-            enabled = False
-
-        if not node_settings and (enabled is not False or (folder_id or external_account_id)):
+            # Disabled, unset locals
+            node_settings = external_account_id = folder_info = None
+            enabled = set_enabled = set_account = set_folder = False
+        elif not node_settings and (set_enabled or (folder_info or external_account_id)):
+            # Not enabled, should enable
             node_settings = node.get_or_add_addon(addon_name, auth=auth)
+            enabled = True
 
-        if node_settings and node_settings.configured and set_folder and not folder_id:
+        if node_settings and node_settings.configured and set_folder and not folder_info:
+            # Enabled and configured, user requesting folder unset
             node_settings.clear_settings()
             node_settings.save()
 
-        if node_settings and node_settings.has_auth and set_auth and not external_account_id:
+        if node_settings and node_settings.has_auth and set_account and not external_account_id:
+            # Settings authorized, User requesting deauthorization
             node_settings.deauthorize(auth=auth)  # clear_auth performs save
-
         elif external_account_id:
-            external_account = ExternalAccount.load(external_account_id)
-            if not external_account:
-                raise exceptions.NotFound('Unable to find requested account.')
-            if external_account not in auth.user.external_accounts:
-                raise exceptions.PermissionDenied('Requested action requires account ownership.')
+            # Settings may or may not be authorized, user requesting to set node_settings.external_account
+            account = self.get_account_or_error(external_account_id, auth)
             if node_settings.external_account and external_account_id != node_settings.external_account._id:
+                # Ensure node settings are deauthorized first, logs
                 node_settings.deauthorize(auth=auth)
-            node_settings.set_auth(external_account, auth.user)
+            node_settings.set_auth(account, auth.user)
 
-        if (folder_id
-            and not (instance['settings']
-                and instance['settings'].get('folder_id', False)
-                and (instance['settings']['folder_id'] == folder_id
-                    or instance['settings']['folder_id'] == folder_id.get('folder_id', False)
-                     ))):
-            if auth.user._id != node_settings.user_settings.owner._id:
-                raise exceptions.PermissionDenied('Requested action requires addon ownership.')
-            node_settings.set_folder(folder_id, auth)
+        if set_folder and self.should_call_set_folder(folder_info, instance.get('settings', None), auth, node_settings):
+            # Enabled, user requesting to set folder
+            node_settings.set_folder(folder_info, auth)
 
         return {
             '_id': addon_name,
-            'enabled': enabled is not False,
-            'settings': node_settings if enabled is not False else None
+            'enabled': enabled,
+            'settings': node_settings if enabled else None
         }
 
 class NodeDetailSerializer(NodeSerializer):
