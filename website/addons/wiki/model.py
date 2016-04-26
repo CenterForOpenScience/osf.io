@@ -21,6 +21,7 @@ from website.addons.base import AddonNodeSettingsBase
 from website.addons.wiki import utils as wiki_utils
 from website.addons.wiki.settings import WIKI_CHANGE_DATE
 from website.project.commentable import Commentable
+from website.project.model import Node
 from website.project.signals import write_permissions_revoked
 
 from website.exceptions import NodeStateError
@@ -264,11 +265,14 @@ class NodeWikiPage(GuidStoredObject, Commentable):
     def to_json(self):
         return {}
 
-    def clone_wiki(self, node):
+    def clone_wiki(self, node_id):
         """Clone a node wiki page.
         :param node: The Node of the cloned wiki page
         :return: The cloned wiki page
         """
+        node = Node.load(node_id)
+        if not node:
+            raise ValueError('Invalid node')
         clone = self.clone()
         clone.node = node
         clone.user = self.user
@@ -291,7 +295,7 @@ class NodeWikiPage(GuidStoredObject, Commentable):
             copy.wiki_pages_versions[key] = []
             for wiki_id in node.wiki_pages_versions[key]:
                 node_wiki = NodeWikiPage.load(wiki_id)
-                cloned_wiki = node_wiki.clone_wiki(copy)
+                cloned_wiki = node_wiki.clone_wiki(copy._id)
                 copy.wiki_pages_versions[key].append(cloned_wiki._id)
                 if node_wiki.is_current:
                     copy.wiki_pages_current[key] = cloned_wiki._id

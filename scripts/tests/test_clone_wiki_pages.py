@@ -1,7 +1,7 @@
 from framework.auth.core import Auth
 from framework.mongo import database as db
 
-from scripts.clone_wiki_pages import update_wiki_pages
+from scripts.clone_wiki_pages import main
 
 from website.addons.wiki.model import NodeWikiPage
 from website.project.model import Node
@@ -24,26 +24,30 @@ class TestCloneWikiPages(OsfTestCase):
         self.current_wiki = NodeWikiFactory(node=self.project_with_wikis, version=2, is_current=True)
         return self.project_with_wikis
 
+    def tearDown(self):
+        super(TestCloneWikiPages, self).tearDown()
+        db.node.remove({})
+
     def test_project_no_wiki_pages(self):
-        update_wiki_pages([self.project])
+        main()
         assert_equal(self.project.wiki_pages_versions, {})
         assert_equal(self.project.wiki_pages_current, {})
 
     def test_forked_project_no_wiki_pages(self):
         fork = self.project.fork_node(auth=Auth(self.user))
-        update_wiki_pages([fork])
+        main()
         assert_equal(fork.wiki_pages_versions, {})
         assert_equal(fork.wiki_pages_current, {})
 
     def test_registration_no_wiki_pages(self):
         registration = RegistrationFactory()
-        update_wiki_pages([registration])
+        main()
         assert_equal(registration.wiki_pages_versions, {})
         assert_equal(registration.wiki_pages_current, {})
 
     def test_project_wiki_pages_do_not_get_cloned(self):
         project = self.set_up_project_with_wiki_page()
-        update_wiki_pages([project])
+        main()
         assert_equal(project.wiki_pages_versions, {self.wiki.page_name: [self.wiki._id, self.current_wiki._id]})
         assert_equal(project.wiki_pages_current, {self.current_wiki.page_name: self.current_wiki._id})
 
@@ -53,7 +57,8 @@ class TestCloneWikiPages(OsfTestCase):
         NodeWikiPage.remove_one(wiki._id)
         # deleted wiki record in node.wiki_pages_versions
         assert_in(wiki._id, project.wiki_pages_versions[wiki.page_name])
-        update_wiki_pages([project])
+        main()
+        project.reload()
         # wiki_id gets removed from node.wiki_pages_versions
         assert_not_in(wiki._id, project.wiki_pages_versions[wiki.page_name])
 
@@ -69,7 +74,8 @@ class TestCloneWikiPages(OsfTestCase):
         Node.remove_one(project._id)
 
         # clone wiki page
-        update_wiki_pages([fork])
+        main()
+        fork.reload()
         cloned_wiki_id = fork.wiki_pages_versions[wiki.page_name][0]
         cloned_wiki = NodeWikiPage.load(cloned_wiki_id)
         assert_equal(cloned_wiki.node._id, fork._id)
@@ -83,7 +89,7 @@ class TestCloneWikiPages(OsfTestCase):
         fork = self.project.fork_node(auth=Auth(fork_creator))
         wiki = NodeWikiFactory(node=fork)
         current_wiki = NodeWikiFactory(node=fork, version=2, is_current=True)
-        update_wiki_pages([fork])
+        main()
         assert_equal(fork.wiki_pages_versions, {wiki.page_name: [wiki._id, current_wiki._id]})
         assert_equal(fork.wiki_pages_current, {wiki.page_name: current_wiki._id})
 
@@ -95,9 +101,10 @@ class TestCloneWikiPages(OsfTestCase):
         fork.wiki_pages_current = project.wiki_pages_current
         fork.save()
 
-        update_wiki_pages([fork])
+        main()
+        # update_wiki_pages(self.find_node_record(fork._id))
+        fork.reload()
         wiki_versions = fork.wiki_pages_versions[self.wiki.page_name]
-
         current_wiki = NodeWikiPage.load(fork.wiki_pages_current[self.current_wiki.page_name])
         assert_equal(current_wiki.node, fork)
         assert_not_equal(current_wiki._id, self.current_wiki._id)
@@ -114,7 +121,8 @@ class TestCloneWikiPages(OsfTestCase):
         registration.wiki_pages_current = project.wiki_pages_current
         registration.save()
 
-        update_wiki_pages([registration])
+        main()
+        registration.reload()
         wiki_versions = registration.wiki_pages_versions[self.wiki.page_name]
 
         current_wiki = NodeWikiPage.load(registration.wiki_pages_current[self.current_wiki.page_name])
