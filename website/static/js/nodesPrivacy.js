@@ -19,7 +19,7 @@ var MESSAGES = {
     '<br><br>Once they are made public, you should assume they will always be public. You can ' +
         'return them to private later, but search engines (including Google’s cache) or others may access files before you do.',
     makeEmbargoPublicWarning: 'By making this registration public, you will end the embargo period and the registration will be open to the public. Making this registration public will automatically make all of its components public as well. This action is irreversible.',
-    makeEmbargoPublicTitle: 'End Embargo Early',
+    makeEmbargoPublicTitle: 'End embargo early',
     selectNodes: 'Adjust your privacy settings by checking the boxes below. ' +
     '<br><br><b>Checked</b> projects and components will be <b>public</b>.  <br><b>Unchecked</b> components will be <b>private</b>.',
     confirmWarning: {

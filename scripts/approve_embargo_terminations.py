@@ -44,12 +44,14 @@ def main():
                 registration._id,
                 request._id
             ))
+            continue
         embargo = registration.embargo
         if not embargo:
             logger.warning("No Embargo associated with this embargo termination request ({0}) on Node: {1}".format(
                 request._id,
                 registration._id
             ))
+            continue
         else:
             count += 1
             logger.info("Ending the Embargo ({0}) of Registration ({1}) early. Making the registration and all of its children public now.".format(embargo._id, registration._id))
