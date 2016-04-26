@@ -153,6 +153,9 @@
             <!-- ko if: showChildren() -->
                 <!-- ko template: {name:  'commentTemplate', foreach: comments} -->
                 <!-- /ko -->
+                <!-- ko if: urlForNext() -->
+                    <button class="btn btn-primary" type="button" data-bind="click: getMoreComments">Load more replies</button>
+                <!-- /ko -->
             <!-- /ko -->
 
         </ul>
