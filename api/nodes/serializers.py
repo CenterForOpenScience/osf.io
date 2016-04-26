@@ -275,7 +275,7 @@ class NodeAddonSettingsSerializer(JSONAPISerializer):
 
     id = ser.CharField(source='_id', read_only=True)
     enabled = ser.BooleanField(required=True)
-    auth_id = ser.CharField(source='settings.external_account._id', allow_null=True)
+    external_account_id = ser.CharField(source='settings.external_account._id', allow_null=True)
     folder_id = ser.CharField(source='settings.folder_id', allow_null=True)
     folder_path = ser.CharField(source='settings.folder_path', required=False, allow_null=True)
     has_auth = ser.BooleanField(source='settings.has_auth', read_only=True)
@@ -295,10 +295,10 @@ class NodeAddonSettingsSerializer(JSONAPISerializer):
         node_settings = instance.get('settings', None)
 
         try:
-            auth_id = validated_data['settings']['external_account']['_id']
+            external_account_id = validated_data['settings']['external_account']['_id']
             set_auth = True
         except KeyError:
-            auth_id = None
+            external_account_id = None
             set_auth = False
 
         try:
@@ -320,38 +320,38 @@ class NodeAddonSettingsSerializer(JSONAPISerializer):
 
         enabled = validated_data.get('enabled', None)
 
-        if enabled is False and (folder_id or auth_id):
+        if enabled is False and (folder_id or external_account_id):
             raise Conflict('Cannot disable the addon and set the folder/authorization at the same time.')
 
         node = self.context['view'].get_node()
         if ((not node_settings or not node_settings.has_auth)
-           and folder_id and not auth_id):
+           and folder_id and not external_account_id):
             raise Conflict('Cannot set folder without authorization')
 
         if node_settings and enabled is False:
             node.delete_addon(addon_name, auth)
             node_settings = None
-            auth_id = None
+            external_account_id = None
             folder_id = None
             enabled = False
 
-        if not node_settings and (enabled is not False or (folder_id or auth_id)):
+        if not node_settings and (enabled is not False or (folder_id or external_account_id)):
             node_settings = node.get_or_add_addon(addon_name, auth=auth)
 
         if node_settings and node_settings.configured and set_folder and not folder_id:
             node_settings.clear_settings()
             node_settings.save()
 
-        if node_settings and node_settings.has_auth and set_auth and not auth_id:
+        if node_settings and node_settings.has_auth and set_auth and not external_account_id:
             node_settings.deauthorize(auth=auth)  # clear_auth performs save
 
-        elif auth_id:
-            external_account = ExternalAccount.load(auth_id)
+        elif external_account_id:
+            external_account = ExternalAccount.load(external_account_id)
             if not external_account:
                 raise exceptions.NotFound('Unable to find requested account.')
             if external_account not in auth.user.external_accounts:
                 raise exceptions.PermissionDenied('Requested action requires account ownership.')
-            if node_settings.external_account and auth_id != node_settings.external_account._id:
+            if node_settings.external_account and external_account_id != node_settings.external_account._id:
                 node_settings.deauthorize(auth=auth)
             node_settings.set_auth(external_account, auth.user)
 

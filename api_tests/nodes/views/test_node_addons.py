@@ -39,7 +39,7 @@ class NodeAddonListMixin(object):
 
         addon_data = self.get_response_for_addon(res)
         if not wrong_type:
-            assert_equal(self.account_id, addon_data['auth_id'])
+            assert_equal(self.account_id, addon_data['external_account_id'])
             assert_equal(self.node._id, addon_data['node'])
             assert_equal(self.node_settings.has_auth, addon_data['has_auth'])
             assert_equal(self.node_settings.folder_id, addon_data['folder_id'])
@@ -59,7 +59,7 @@ class NodeAddonListMixin(object):
             expect_errors=wrong_type)
         addon_data = self.get_response_for_addon(res)
         if not wrong_type:
-            assert_equal(addon_data['auth_id'], None)
+            assert_equal(addon_data['external_account_id'], None)
             assert_equal(addon_data['node'], None)
             assert_false(addon_data['has_auth'])
         if wrong_type:
@@ -103,7 +103,7 @@ class NodeAddonListMixin(object):
             auth=noncontrib.auth)
         addon_data = self.get_response_for_addon(res)
         if not wrong_type:
-            assert_equal(self.account_id, addon_data['auth_id'])
+            assert_equal(self.account_id, addon_data['external_account_id'])
             assert_equal(self.node._id, addon_data['node'])
             assert_equal(self.node_settings.has_auth, addon_data['has_auth'])
             assert_equal(self.node_settings.folder_id, addon_data['folder_id'])
@@ -125,7 +125,7 @@ class NodeAddonDetailMixin(object):
 
         if not wrong_type:
             addon_data = res.json['data']['attributes']
-            assert_equal(self.account_id, addon_data['auth_id'])
+            assert_equal(self.account_id, addon_data['external_account_id'])
             assert_equal(self.node._id, addon_data['node'])
             assert_equal(self.node_settings.has_auth, addon_data['has_auth'])
             assert_equal(self.node_settings.folder_id, addon_data['folder_id'])
@@ -145,7 +145,7 @@ class NodeAddonDetailMixin(object):
             expect_errors=wrong_type)
         if not wrong_type:
             addon_data = res.json['data']['attributes']
-            assert_equal(addon_data['auth_id'], None)
+            assert_equal(addon_data['external_account_id'], None)
             assert_equal(addon_data['node'], None)
             assert_false(addon_data['has_auth'])
         if wrong_type:
@@ -162,7 +162,7 @@ class NodeAddonDetailMixin(object):
                 'id': self.short_name,
                 'type': 'node_addons',
                 'attributes': {
-                    'auth_id': self.account_id,
+                    'external_account_id': self.account_id,
                     'enabled': True,
                     }
                 }
@@ -173,7 +173,7 @@ class NodeAddonDetailMixin(object):
             expect_errors=wrong_type)
         if not wrong_type:
             addon_data = res.json['data']['attributes']
-            assert_equal(addon_data['auth_id'], self.account_id)
+            assert_equal(addon_data['external_account_id'], self.account_id)
             assert_equal(addon_data['node'], self.node._id)
             assert_equal(addon_data['folder_id'], '0987654321')
             assert_true(addon_data['has_auth'])
@@ -188,7 +188,7 @@ class NodeAddonDetailMixin(object):
                 'id': self.short_name,
                 'type': 'node_addons',
                 'attributes': {
-                    'auth_id': None,
+                    'external_account_id': None,
                     'folder_id': None,
                     'enabled': True
                     }
@@ -197,7 +197,7 @@ class NodeAddonDetailMixin(object):
             expect_errors=wrong_type)
         if not wrong_type:
             addon_data = res.json['data']['attributes']
-            assert_equal(addon_data['auth_id'], None)
+            assert_equal(addon_data['external_account_id'], None)
             assert_equal(addon_data['node'], self.node._id)
             assert_equal(addon_data['folder_id'], None)
             assert_false(addon_data['has_auth'])
@@ -211,7 +211,7 @@ class NodeAddonDetailMixin(object):
                 'id': self.short_name,
                 'type': 'node_addons',
                 'attributes': {
-                    'auth_id': None,
+                    'external_account_id': None,
                     'folder_id': None,
                     'enabled': False
                     }
@@ -220,7 +220,7 @@ class NodeAddonDetailMixin(object):
             expect_errors=wrong_type)
         if not wrong_type:
             addon_data = res.json['data']['attributes']
-            assert_equal(addon_data['auth_id'], None)
+            assert_equal(addon_data['external_account_id'], None)
             assert_equal(addon_data['node'], None)
             assert_equal(addon_data['folder_id'], None)
             assert_false(addon_data['has_auth'])
@@ -241,7 +241,7 @@ class NodeAddonDetailMixin(object):
             expect_errors=wrong_type)
         if not wrong_type:
             addon_data = res.json['data']['attributes']
-            assert_equal(addon_data['auth_id'], None)
+            assert_equal(addon_data['external_account_id'], None)
             assert_equal(addon_data['node'], None)
             assert_equal(addon_data['folder_id'], None)
             assert_false(addon_data['has_auth'])
@@ -267,14 +267,14 @@ class NodeAddonDetailMixin(object):
             expect_errors=wrong_type)
         if not wrong_type:
             addon_data = res.json['data']['attributes']
-            assert_equal(addon_data['auth_id'], None)
+            assert_equal(addon_data['external_account_id'], None)
             assert_equal(addon_data['node'], self.node._id)
             assert_equal(addon_data['folder_id'], None)
             assert_false(addon_data['has_auth'])
         if wrong_type:
             assert_in(res.status_code, [404, 405])
 
-    def test_settings_detail_PATCH_to_enable_and_add_auth_id(self):
+    def test_settings_detail_PATCH_to_enable_and_add_external_account_id(self):
         wrong_type = self.should_expect_errors(success_types=['CONFIGURABLE'])
         try:
             self.node.delete_addon(self.short_name, auth=self.auth)
@@ -286,35 +286,35 @@ class NodeAddonDetailMixin(object):
                 'id': self.short_name,
                 'type': 'node_addons',
                 'attributes': {
-                    'auth_id': self.account_id,
+                    'external_account_id': self.account_id,
                     }
                 }
             }, auth=self.user.auth,
             expect_errors=wrong_type)
         if not wrong_type:
             addon_data = res.json['data']['attributes']
-            assert_equal(addon_data['auth_id'], self.account_id)
+            assert_equal(addon_data['external_account_id'], self.account_id)
             assert_equal(addon_data['node'], self.node._id)
             assert_equal(addon_data['folder_id'], None)
             assert_true(addon_data['has_auth'])
         if wrong_type:
             assert_in(res.status_code, [404, 405])
 
-    def test_settings_detail_PATCH_to_remove_auth_id(self):
+    def test_settings_detail_PATCH_to_remove_external_account_id(self):
         wrong_type = self.should_expect_errors(success_types=['CONFIGURABLE'])
         res = self.app.patch_json_api(self.setting_detail_url, 
             {'data': { 
                 'id': self.short_name,
                 'type': 'node_addons',
                 'attributes': {
-                    'auth_id': None,
+                    'external_account_id': None,
                     }
                 }
             }, auth=self.user.auth,
             expect_errors=wrong_type)
         if not wrong_type:
             addon_data = res.json['data']['attributes']
-            assert_equal(addon_data['auth_id'], None)
+            assert_equal(addon_data['external_account_id'], None)
             assert_equal(addon_data['node'], self.node._id)
             assert_equal(addon_data['folder_id'], None)
             assert_false(addon_data['has_auth'])
@@ -354,7 +354,7 @@ class NodeAddonDetailMixin(object):
                 'id': self.short_name,
                 'type': 'node_addons',
                 'attributes': {
-                    'auth_id': None,
+                    'external_account_id': None,
                     }
                 }
             }, auth=read_user.auth,
@@ -370,7 +370,7 @@ class NodeAddonDetailMixin(object):
                 'id': self.short_name,
                 'type': 'node_addons',
                 'attributes': {
-                    'auth_id': None,
+                    'external_account_id': None,
                     'folder_id':  None,
                     'enabled': False
                     }
@@ -382,7 +382,7 @@ class NodeAddonDetailMixin(object):
                 'id': self.short_name,
                 'type': 'node_addons',
                 'attributes': {
-                    'auth_id': self.account_id,
+                    'external_account_id': self.account_id,
                     'folder_id': '1234567890',
                     'enabled': True
                     }
@@ -412,7 +412,7 @@ class NodeAddonDetailMixin(object):
                 'id': self.short_name,
                 'type': 'node_addons',
                 'attributes': {
-                    'auth_id': None,
+                    'external_account_id': None,
                     'folder_id': None,
                     'enabled': False
                     }
@@ -454,7 +454,7 @@ class NodeAddonDetailMixin(object):
         if not wrong_type:
             assert_equal(res.status_code, 200)
             addon_data = res.json['data']['attributes']
-            assert_equal(self.account_id, addon_data['auth_id'])
+            assert_equal(self.account_id, addon_data['external_account_id'])
             assert_equal(self.node._id, addon_data['node'])
             assert_equal(self.node_settings.has_auth, addon_data['has_auth'])
             assert_equal(self.node_settings.folder_id, addon_data['folder_id'])
