@@ -44,15 +44,19 @@ node_key_blacklist = [
                          # foreign keys not yet implemented
                          'logs',
                          'primary_institution',
+                         '_primary_institution',
+                         'institution_email_domains',
+                         'institution_domains',
                          'registration_approval',
                          'alternative_citations',
                          'registered_schema',
                          'affiliated_institutions',
+                         '_affiliated_institutions',
                          'retraction',
                          'embargo',
                          'node_license',
                      ] + m2m_node_fields + m2m_user_fields + m2m_tag_fields
-user_key_blacklist = ['__backrefs', '_version', 'affiliated_institutions', 'watched',
+user_key_blacklist = ['__backrefs', '_version', 'affiliated_institutions', '_affiliated_institutions','watched',
                       'external_accounts', ] + m2m_node_fields + m2m_user_fields + m2m_tag_fields
 
 tag_key_blacklist = ['_version', '__backrefs', ] + m2m_node_fields + m2m_user_fields + m2m_tag_fields
@@ -181,6 +185,8 @@ def get_or_create_user(modm_user):
 
 
 def get_or_create_tag(modm_tag, system=False):
+    if not modm_tag:
+        return None
     if isinstance(modm_tag, unicode):
         try:
             tag = Tag.objects.get(_id=modm_tag, system=system)
@@ -254,8 +260,10 @@ def get_or_create_node(modm_node):
                 if isinstance(v, datetime):
                     cleaned_node[k] = pytz.utc.localize(v)
             # this shouldn't need to be here, not sure why it has to be
-            cleaned_node['is_collection'] = cleaned_node.pop('is_folder')
-            cleaned_node['is_bookmark_collection'] = cleaned_node.pop('is_dashboard')
+            if 'is_folder' in cleaned_node:
+                cleaned_node['is_collection'] = cleaned_node.pop('is_folder')
+            if 'is_dashboard' in cleaned_node:
+                cleaned_node['is_bookmark_collection'] = cleaned_node.pop('is_dashboard')
             # remove empty fields, sql angry, sql smash
             cleaned_node = {k: v for k, v in cleaned_node.iteritems() if v is not None}
 
