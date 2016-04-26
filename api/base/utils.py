@@ -145,6 +145,6 @@ def extract_object_from_dict(self, obj):
         :returns:           Node or User object, or `obj`
     """
     try:
-        return obj['object'].owner
+        return obj['settings'].owner
     except (AttributeError, KeyError):
         return obj

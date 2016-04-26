@@ -278,13 +278,13 @@ class NodeAddonSettingsSerializer(JSONAPISerializer):
 
     id = ser.CharField(source='_id', read_only=True)
     enabled = ser.BooleanField(required=True)
-    auth_id = ser.CharField(source='object.external_account._id', allow_null=True)
-    folder_id = ser.CharField(source='object.folder_id', allow_null=True)
-    folder_path = ser.CharField(source='object.folder_path', required=False, allow_null=True)
-    has_auth = ser.BooleanField(source='object.has_auth', read_only=True)
-    complete = ser.BooleanField(source='object.complete', read_only=True)
-    configured = ser.BooleanField(source='object.configured', read_only=True)
-    node = ser.CharField(source='object.owner._id', read_only=True)
+    auth_id = ser.CharField(source='settings.external_account._id', allow_null=True)
+    folder_id = ser.CharField(source='settings.folder_id', allow_null=True)
+    folder_path = ser.CharField(source='settings.folder_path', required=False, allow_null=True)
+    has_auth = ser.BooleanField(source='settings.has_auth', read_only=True)
+    complete = ser.BooleanField(source='settings.complete', read_only=True)
+    configured = ser.BooleanField(source='settings.configured', read_only=True)
+    node = ser.CharField(source='settings.owner._id', read_only=True)
 
     def to_representation(self, data, envelope='data'):
         return super(NodeAddonSettingsSerializer, self).to_representation(data, envelope=envelope)
@@ -295,17 +295,17 @@ class NodeAddonSettingsSerializer(JSONAPISerializer):
             raise exceptions.MethodNotAllowed('Requested addon not currently configurable via API.')
 
         auth = get_user_auth(self.context['request'])
-        node_settings = instance.get('object', None)
+        node_settings = instance.get('settings', None)
 
         try:
-            auth_id = validated_data['object']['external_account']['_id']
+            auth_id = validated_data['settings']['external_account']['_id']
             set_auth = True
         except KeyError:
             auth_id = None
             set_auth = False
 
         try:
-            folder_id = validated_data['object']['folder_id']
+            folder_id = validated_data['settings']['folder_id']
             set_folder = True
         except KeyError:
             folder_id = None
@@ -313,7 +313,7 @@ class NodeAddonSettingsSerializer(JSONAPISerializer):
 
         if folder_id and addon_name == 'googledrive':
             try:
-                folder_path = validated_data['object']['folder_path']
+                folder_path = validated_data['settings']['folder_path']
             except KeyError:
                 folder_path = None
             folder_id = {
@@ -359,10 +359,10 @@ class NodeAddonSettingsSerializer(JSONAPISerializer):
             node_settings.set_auth(external_account, auth.user)
 
         if (folder_id
-            and not (instance['object']
-                and instance['object'].get('folder_id', False)
-                and (instance['object']['folder_id'] == folder_id
-                    or instance['object']['folder_id'] == folder_id.get('folder_id', False)
+            and not (instance['settings']
+                and instance['settings'].get('folder_id', False)
+                and (instance['settings']['folder_id'] == folder_id
+                    or instance['settings']['folder_id'] == folder_id.get('folder_id', False)
                      ))):
             if auth.user._id != node_settings.user_settings.owner._id:
                 raise exceptions.PermissionDenied('Requested action requires addon ownership.')
@@ -371,7 +371,7 @@ class NodeAddonSettingsSerializer(JSONAPISerializer):
         return {
             '_id': addon_name,
             'enabled': enabled is not False,
-            'object': node_settings if enabled is not False else None
+            'settings': node_settings if enabled is not False else None
         }
 
 class NodeDetailSerializer(NodeSerializer):

@@ -1403,7 +1403,7 @@ class NodeAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, Node
                 {
                     '_id': addon,
                     'enabled': enabled,
-                    'object': obj
+                    'settings': obj
                 }
             )
         return qs
@@ -1442,7 +1442,7 @@ class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin
             return {
                 '_id': addon,
                 'enabled': enabled,
-                'object': obj
+                'settings': obj
             }
         raise NotFound('Requested addon unavailable.')
 
