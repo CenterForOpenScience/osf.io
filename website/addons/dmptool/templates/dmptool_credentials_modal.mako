@@ -3,7 +3,7 @@
         <div class="modal-content">
 
             <div class="modal-header">
-                <h3>Connect a dmptool Account</h3>
+                <h3>Connect a DMPtool Account</h3>
             </div>
 
             <form>
@@ -15,11 +15,11 @@
 
                             <!-- Select dmptool installation -->
                             <div class="form-group">
-                                <label for="hostSelect">dmptool Repository</label>
+                                <label for="hostSelect">DMPtool Repository</label>
                                 <select class="form-control"
                                         id="hostSelect"
                                         data-bind="options: visibleHosts,
-                                                   optionsCaption: 'Select a dmptool repository',
+                                                   optionsCaption: 'Select a DMPtool repository',
                                                    value: selectedHost,
                                                    event: { change: selectionChanged }">
                                 </select>
@@ -32,7 +32,7 @@
                                     <input type="text" class="form-control" name="customHost" data-bind="value: customHost">
                                 </div>
                                 <div class="text-info" style="text-align: center">
-                                    <em>Only dmptool repositories v4.0 or higher are supported.</em>
+                                    <em>Only DMPtool repositories v4.0 or higher are supported.</em>
                                 </div>
                             </div>
 

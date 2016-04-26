@@ -24,7 +24,7 @@ function ViewModel(url) {
     var self = this;
     const otherString = 'Other (Please Specify)';
 
-    self.properName = 'dmptool';
+    self.properName = 'DMPTool';
     self.apiToken = ko.observable();
     self.urls = ko.observable({});
     self.hosts = ko.observableArray([]);
