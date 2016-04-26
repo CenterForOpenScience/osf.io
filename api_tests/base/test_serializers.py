@@ -14,6 +14,7 @@ from api.base.settings.defaults import API_BASE
 from api.base.serializers import JSONAPISerializer
 from api.base import serializers as base_serializers
 from api.nodes.serializers import NodeSerializer, RelationshipField
+from api.registrations.serializers import RegistrationSerializer
 
 
 class FakeModel(object):
@@ -51,6 +52,27 @@ class FakeSerializer(base_serializers.JSONAPISerializer):
 
     def valued_field(*args, **kwargs):
         return 'http://foo.com'
+
+
+class TestNodeSerializerandRegistrationSerializer(ApiTestCase):
+    """
+    All fields on the Node Serializer other than the few we can serialize for withdrawals must be redeclared on the
+    Registration Serializer and wrapped in HideIfWithdrawal
+    """
+    def test_registration_serializer(self):
+
+        # fields that are visible for withdrawals
+        visible_on_withdrawals = ['contributors', 'date_created', 'description', 'id', 'links', 'registration', 'title', 'type']
+        # fields that do not appear on registrations
+        non_registration_fields = ['registrations']
+
+        for field in NodeSerializer._declared_fields:
+            assert_in(field, RegistrationSerializer._declared_fields)
+            reg_field = RegistrationSerializer._declared_fields[field]
+
+            if field not in visible_on_withdrawals and field not in non_registration_fields:
+                assert_true(isinstance(reg_field, base_serializers.HideIfWithdrawal))
+
 
 class TestNullLinks(ApiTestCase):
 
