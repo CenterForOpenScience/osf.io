@@ -356,8 +356,8 @@
                             <button data-bind="click: clearInst" class="btn btn-danger">Remove affiliation</button>
                             -->
                             <div data-bind="visible: !error()">
-                                <table class="table"><thead>
-                                </thead>
+                                <table class="table">
+                                    <thead><span>Affiliated Institutions:</span></thead>
                                     <tbody>
                                         <!-- ko foreach: {data: affiliatedInstitutions, as: 'item'} -->
                                         <tr>
@@ -366,9 +366,29 @@
                                             <td><a data-bind="click: $parent.clearInst"><i class="fa fa-times"></i></a></td>
                                         </tr>
                                         <!-- /ko -->
-                                        <tr></tr>
+
                                     </tbody>
                                 </table>
+                                <div data-bind="visible: availableInstitutions().length">
+
+                                                <a data-bind="click: toggle">Add institution</a>
+                                                <div data-bind="visible: showAdd()">
+                                                    <div class="help-block">
+                                                        You are authorized to affiliate your projects with the following institutions:
+                                                    </div>
+                                                    <div class="radio">
+                                                        <div data-bind="foreach: {data: availableInstitutions, as: 'item'}">
+                                                            <div>
+                                                            <label>
+                                                                <input type="radio" data-bind="value: item.id, checked: $parent.selectedInstitution" name="primaryInst">
+                                                                <p data-bind="text: item.attributes.name"></p>
+                                                            </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <button data-bind="click: submitInst, css: {disabled: selectedInstitution() == null}" class="btn btn-success">Affiliate</button>
+                                                </div>
+                                           </div>
                             </div>
                         % endif
                     </div>

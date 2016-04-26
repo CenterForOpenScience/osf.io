@@ -10,10 +10,15 @@ var ViewModel = function(data) {
     self.primaryInstitution = ko.observable('Loading...');
     self.loading = ko.observable(true);
     self.error = ko.observable(false);
+    self.showAdd = ko.observable(false);
     self.institutionHref = ko.observable('');
     self.availableInstitutions = ko.observable(false);
     self.selectedInstitution = ko.observable();
     self.affiliatedInstitutions = ko.observable(false);
+
+    self.toggle = function() {
+        self.showAdd(self.showAdd() ? false : true);
+    };
 
     self.fetchUserInstitutions = function() {
         var url = data.apiV2Prefix + 'users/' + data.currentUser.id + '/?embed=institutions';
@@ -28,27 +33,6 @@ var ViewModel = function(data) {
             self.error(true);
             self.loading(false);
             Raven.captureMessage('Unable to fetch user with embedded institutions', {
-                extra: {
-                    url: url,
-                    status: status,
-                    error: error
-                }
-            });
-        });
-    };
-    var fetchNodeInstitutions = function() {
-        var url = data.apiV2Prefix + 'nodes/' + data.node.id + '/?embed=primary_institution';
-        return $osf.ajaxJSON(
-            'GET',
-            url,
-            {isCors: true}
-        ).done(function (response) {
-            if (response.data.embeds.primary_institution.data) {
-                self.primaryInstitution(response.data.embeds.primary_institution.data.attributes.name);
-                self.institutionHref(response.data.embeds.primary_institution.data.links.html);
-            }
-        }).fail(function (xhr, status, error) {
-            Raven.captureMessage('Unable to fetch node with embedded institutions', {
                 extra: {
                     url: url,
                     status: status,
@@ -76,7 +60,7 @@ var ViewModel = function(data) {
         });
     };
     self.submitInst = function() {
-        var url = data.apiV2Prefix + 'nodes/' + data.node.id + '/relationships/institution/';
+        var url = data.apiV2Prefix + 'nodes/' + data.node.id + '/relationships/institutions/';
         var inst = self.selectedInstitution();
         return $osf.ajaxJSON(
             'PUT',
@@ -84,12 +68,12 @@ var ViewModel = function(data) {
             {
                 'isCors': true,
                 'data': {
-                     'data': {'type': 'institutions', 'id': inst}
+                     'data': [{'type': 'institutions', 'id': inst}]
                 },
                 fields: {xhrFields: {withCredentials: true}}
             }
         ).done(function (response) {
-            window.location.reload();
+            self.affiliatedInstitutions().push(inst);
         }).fail(function (xhr, status, error) {
             $osf.growl('Unable to add institution to this node. Please try again. If the problem persists, email <a href="mailto:support@osf.io.">support@osf.io</a>');
             Raven.captureMessage('Unable to add institution to this node', {
@@ -109,7 +93,7 @@ var ViewModel = function(data) {
             {
                 isCors: true,
                 data: {
-                     'data': {'type': 'institutions', 'id': item.id}
+                     'data': [{'type': 'institutions', 'id': item.id}]
                 },
                 fields: {xhrFields: {withCredentials: true}}
             }
