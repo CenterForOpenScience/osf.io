@@ -54,11 +54,23 @@ class FakeSerializer(base_serializers.JSONAPISerializer):
         return 'http://foo.com'
 
 
-class TestNodeSerializerandRegistrationSerializer(ApiTestCase):
+class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
     """
     All fields on the Node Serializer other than the few we can serialize for withdrawals must be redeclared on the
     Registration Serializer and wrapped in HideIfWithdrawal
+
+    HideIfRegistration fields should not be serialized on registrations.
     """
+
+    def setUp(self):
+        super(TestNodeSerializerAndRegistrationSerializerDifferences, self).setUp()
+
+        self.node = factories.ProjectFactory(is_public=True)
+        self.registration = factories.RegistrationFactory(project = self.node, is_public=True)
+
+        self.url = '/{}nodes/{}/'.format(API_BASE, self.node._id)
+        self.reg_url = '/{}registrations/{}/'.format(API_BASE, self.registration._id)
+
     def test_registration_serializer(self):
 
         # fields that are visible for withdrawals
@@ -72,6 +84,20 @@ class TestNodeSerializerandRegistrationSerializer(ApiTestCase):
 
             if field not in visible_on_withdrawals and field not in non_registration_fields:
                 assert_true(isinstance(reg_field, base_serializers.HideIfWithdrawal))
+
+    def test_hide_if_registration_fields(self):
+
+        node_res = self.app.get(self.url)
+        node_relationships = node_res.json['data']['relationships']
+
+        registration_res = self.app.get(self.reg_url)
+        registration_relationships = registration_res.json['data']['relationships']
+
+        hide_if_registration_fields = [field for field in NodeSerializer._declared_fields if isinstance(NodeSerializer._declared_fields[field], base_serializers.HideIfRegistration)]
+
+        for field in hide_if_registration_fields:
+            assert_in(field, node_relationships)
+            assert_not_in(field, registration_relationships)
 
 
 class TestNullLinks(ApiTestCase):
