@@ -51,7 +51,6 @@ from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
 from website.models import Node, Pointer, Comment, NodeLog, Institution
 from website.files.models import FileNode
-from website.settings import ADDONS_AVAILABLE_DICT
 from framework.auth.core import User
 from api.base.utils import default_node_list_query, default_node_permission_query
 
