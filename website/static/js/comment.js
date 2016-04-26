@@ -140,7 +140,7 @@ BaseComment.prototype.fetch = function() {
     }
 };
 
-/* Go through the paginated API response to fetch all comments for the specified target */
+/* Go get the next specified page of the API response, and add to the comments list */
 BaseComment.prototype.fetchNext = function(url, comments, setUnread) {
     var self = this;
     var request = osfHelpers.ajaxJSON(
@@ -175,10 +175,8 @@ BaseComment.prototype.getMoreComments = function() {
     var comments = self.comments();
     var setUnread = self.getTargetType() !== 'comments' && !osfHelpers.urlParams().view_only && self.author.id !== '';
 
-    if (self.urlForNext()) {
-        if (!self.loadingComments()) {
-            self.fetchNext(nextUrl, comments, setUnread);
-        }
+    if (self.urlForNext() && !self.loadingComments()) {
+        self.fetchNext(nextUrl, comments, setUnread);
     }
 };
 
