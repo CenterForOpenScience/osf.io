@@ -1,8 +1,10 @@
 from framework.auth.core import Auth
+from framework.mongo import database as db
 
 from scripts.clone_wiki_pages import update_wiki_pages
 
 from website.addons.wiki.model import NodeWikiPage
+from website.project.model import Node
 
 from tests.base import OsfTestCase, get_default_metaschema
 from tests.factories import NodeWikiFactory, ProjectFactory, RegistrationFactory, AuthUserFactory
@@ -44,6 +46,37 @@ class TestCloneWikiPages(OsfTestCase):
         update_wiki_pages([project])
         assert_equal(project.wiki_pages_versions, {self.wiki.page_name: [self.wiki._id, self.current_wiki._id]})
         assert_equal(project.wiki_pages_current, {self.current_wiki.page_name: self.current_wiki._id})
+
+    def test_wiki_pages_that_do_not_exist_do_not_get_cloned(self):
+        project = ProjectFactory(creator=self.user, is_public=True)
+        wiki = NodeWikiFactory(node=project)
+        NodeWikiPage.remove_one(wiki._id)
+        # deleted wiki record in node.wiki_pages_versions
+        assert_in(wiki._id, project.wiki_pages_versions[wiki.page_name])
+        update_wiki_pages([project])
+        # wiki_id gets removed from node.wiki_pages_versions
+        assert_not_in(wiki._id, project.wiki_pages_versions[wiki.page_name])
+
+    def test_wiki_pages_with_invalid_nodes_are_removed_after_cloning(self):
+        project = ProjectFactory(creator=self.user, is_public=True)
+        wiki = NodeWikiFactory(node=project)
+        fork = project.fork_node(auth=Auth(self.user))
+        fork.wiki_pages_versions = project.wiki_pages_versions
+        fork.wiki_pages_current = project.wiki_pages_current
+        fork.save()
+
+        # Remove original node - wiki.node no longer points to an existing project
+        Node.remove_one(project._id)
+
+        # clone wiki page
+        update_wiki_pages([fork])
+        cloned_wiki_id = fork.wiki_pages_versions[wiki.page_name][0]
+        cloned_wiki = NodeWikiPage.load(cloned_wiki_id)
+        assert_equal(cloned_wiki.node._id, fork._id)
+
+        # move original wiki page to unmigratedwikipages collection
+        assert_false(db.nodewikipage.find_one({'_id': wiki._id}))
+        assert_true(db.unmigratedwikipages.find_one({'_id': wiki._id}))
 
     def test_forked_project_wiki_pages_created_post_fork_do_not_get_cloned(self):
         fork_creator = AuthUserFactory()
