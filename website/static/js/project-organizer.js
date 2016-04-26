@@ -60,9 +60,18 @@ function _poContributors(item) {
     if (contributorList.length === 0) {
         return '';
     }
-    var totalContributors = item.data.embeds.contributors.links.meta.total;
+    var visibleContributors = [];
+    for (var i=0; i < contributorList.length; i++) {
+        if (contributorList[i].attributes.bibliographic) {
+            visibleContributors.push(contributorList[i]);
+        }
+    }
+    if (visibleContributors.length === 0) {
+        return '';
+    }
+    var totalVisibleContributors = item.data.embeds.contributors.links.meta.total_bibliographic;
 
-    return contributorList.map(function (person, index, arr) {
+    return visibleContributors.map(function (person, index, arr) {
         var name;
         var familyName;
         var givenName;
@@ -97,7 +106,7 @@ function _poContributors(item) {
             return m('span');
         }
         if (index === 2) {
-            return m('span', ' + ' + (totalContributors -2)); // We already show names of the two
+            return m('span', ' + ' + (totalVisibleContributors -2)); // We already show names of the two
         }
         return m('span', comma + name);
     });
