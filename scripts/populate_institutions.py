@@ -53,7 +53,7 @@ def main(env):
             {
                 '_id': 'cos',
                 'name': 'Center For Open Science',
-                'description': 'Center for Open Science',
+                'description': None,
                 'banner_name': 'cos-banner.png',
                 'logo_name': 'cos-shield.png',
                 'auth_url': None,
@@ -63,7 +63,7 @@ def main(env):
             # {
             #     '_id': 'nd',
             #     'name': 'University of Notre Dame',
-            #     'description': 'University of Notre Dame',
+            #     'description': None,
             #     'banner_name': 'nd-banner.png',
             #     'logo_name': 'nd-shield.png',
             #     'auth_url': SHIBBOLETH_SP.format(encode_uri_component('https://login.nd.edu/idp/shibboleth')),
@@ -73,7 +73,7 @@ def main(env):
             # {
             #     '_id': 'ucr',
             #     'name': 'University of California Riverside',
-            #     'description': 'University of California Riverside',
+            #     'description': None,
             #     'banner_name': 'ucr-banner.png',
             #     'logo_name': 'ucr-shield.png',
             #     'auth_url': SHIBBOLETH_SP.format(encode_uri_component('urn:mace:incommon:ucr.edu')),
@@ -83,7 +83,7 @@ def main(env):
             {
                 '_id': 'usc',
                 'name': 'University of Southern California',
-                'description': 'University of Southern California',
+                'description': 'Projects must abide by <a href="http://policy.usc.edu/info-security/">USC\'s Information Security Policy</a>. Data stored for human subject research repositories must abide by <a href="http://policy.usc.edu/biorepositories/">USC\'s Biorepository Policy</a>. The OSF may not be used for storage of Personal Health Information that is subject to <a href="http://policy.usc.edu/hipaa/">HIPPA regulations</a>.',
                 'banner_name': 'usc-banner.png',
                 'logo_name': 'usc-shield.png',
                 'auth_url': SHIBBOLETH_SP.format(encode_uri_component('urn:mace:incommon:usc.edu')),
