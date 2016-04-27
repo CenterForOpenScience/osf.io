@@ -980,16 +980,11 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
             registration.embargo.approve_embargo(User.load(user_id), approval_token)
         self.registration.save()
 
-        sub_reg = registration.nodes[0].nodes[0]
         res = self.app.post(
-            sub_reg.api_url_for('project_set_privacy', permissions='public'),
-            auth=c2.auth,
-            expect_errors=True
+            registration.api_url_for('project_set_privacy', permissions='public'),
+            auth=self.user.auth
         )
         assert_equal(res.status_code, 200)
-        sub_reg.reload()
-        assert_true(sub_reg.embargo_termination_approval)
-        assert_true(sub_reg.embargo_termination_approval.is_pending_approval)
         asked_admins = [(admin._id, n._id) for admin, n in mock_ask.call_args[0][0]]
         for admin, node in registration.get_admin_contributors_recursive():
             assert_in((admin._id, node._id), asked_admins)
