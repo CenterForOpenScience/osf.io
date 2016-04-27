@@ -93,6 +93,9 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                     return this.options.onPickFolder.call(this, evt, item);
                 }.bind(this),
                 resolveLazyloadUrl: function(item) {
+                    if (item.data.links) {
+                        return item.data.links.children;
+                    }
                     return item.data.urls.folders;
                 }
             }

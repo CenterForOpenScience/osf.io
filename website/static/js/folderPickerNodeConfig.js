@@ -510,7 +510,21 @@ var FolderPickerViewModel = oop.defclass({
                     custom : FolderPicker.selectView
                 }
             ];
-            }
+            },
+            xhrconfig : function(xhr) {
+                xhr.withCredentials = true;
+            },
+            lazyLoadPreprocess: function(data) {
+                // Also handle data from API -- squash `attributes` to what TB expects
+                if (data.data) {
+                    for (var i = 0; i < data.data.length; i++) {
+                        $.each(data.data[i].attributes, function(key, value) {
+                            data.data[i][key] = value;
+                        }); // jshint ignore: line
+                    }
+                }
+                return data;
+            },
         }, self.treebeardOptions);
         self.currentDisplay(self.PICKER);
         // Only load folders if they haven't already been requested
