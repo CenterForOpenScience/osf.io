@@ -29,23 +29,18 @@ var _dataverseItemButtons = {
             tb.dropzone.hiddenFileInput.click();
             tb.dropzoneItemCache = item;
         }
-        function dataversePublish(event, item, col, errorMessage) {
+        function dataversePublish(event, item, col) {
             var both = !item.data.dataverseIsPublished;
             var url = item.data.urls.publish;
             var host = item.data.host;
             var toPublish = both ? 'Dataverse and dataset' : 'dataset';
             // Set the modal content to reflect the file's external host
-            var modalContent = errorMessage ? m('p.m-md', errorMessage) : [
+            var modalContent = [
                 m('p.m-md', both ? 'This dataset cannot be published until ' + item.data.dataverse + ' Dataverse is published. ' : ''),
                 m('p.m-md', 'By publishing this ' + toPublish + ', all content will be made available through ' + host + ' using their internal privacy settings, regardless of your OSF project settings. '),
                 m('p.font-thick.m-md', both ? 'Do you want to publish this Dataverse AND this dataset?' : 'Are you sure you want to publish this dataset?')
             ];
-            var modalActions = errorMessage ? 
-                m('button.btn.btn-default', {
-                    'onclick': function () {
-                        tb.modal.dismiss();
-                    }
-                }, 'Cancel') :
+            var modalActions = 
                 [m('button.btn.btn-default', {
                     'onclick': function () {
                         tb.modal.dismiss();
@@ -57,7 +52,6 @@ var _dataverseItemButtons = {
                     }
                 }, 'Publish')];
 
-            var modalHeader= errorMessage ? m('h3.break-word.modal-title','Error in publishing this ' + toPublish + '.') : m('h3.break-word.modal-title', 'Publish this ' + toPublish + '?');
             tb.modal.update(modalContent, modalActions, modalHeader);
 
             function publishDataset() {
