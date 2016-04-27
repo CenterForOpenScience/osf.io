@@ -16,7 +16,7 @@
                 <div>
 
                     <div class="well well-sm sort-handle">
-                        <span>Position {{ $index() + 1 }}</span>
+                        <span>Position <span data-bind="text: $index() + 1"></span></span>
                         <span data-bind="visible: $parent.contentsLength() > 1">
                             [ drag to reorder ]
                         </span>
@@ -117,7 +117,7 @@
 
             <!-- Flashed Messages -->
             <div class="help-block">
-                <p data-bind="html: message, attr.class: messageClass"></p>
+                <p data-bind="html: message, attr: {class: messageClass}"></p>
             </div>
 
         </form>
@@ -138,16 +138,20 @@
                         <div class="panel panel-default">
                             <div class="panel-heading card-heading" data-bind="click: toggle(), attr: {id: 'jobHeading' + $index(), href: '#jobCard' + $index()}" role="button" data-toggle="collapse" aria-controls="card" aria-expanded="false">
                                 <div class="header-content">
-                                    <h5 class="institution">{{ institution }}</h5>
-                                    <span data-bind="if: startYear()" class="subheading">{{ startMonth }} {{startYear }} - {{ endView }}</span>
+                                    <h5 class="institution" data-bind="text: institution"></h5>
+                                    <span data-bind="if: startYear()" class="subheading">
+                                        <span data-bind="text: startMonth"></span> <span data-bind="text: startYear"></span> - <span data-bind="text: endView"></span>
+                                    </span>
                                 </div>
                                 <span data-bind="attr: {class: expanded() ? 'fa toggle-icon fa-angle-down' : 'fa toggle-icon fa-angle-up'}"></span>
                             </div>
-                            <div data-bind="attr: {id: 'jobCard' + $index(), aria-labelledby: 'jobHeading' + $index()}" class="panel-collapse collapse">
+                            <div data-bind="attr: {id: 'jobCard' + $index(), 'aria-labelledby': 'jobHeading' + $index()}" class="panel-collapse collapse">
                                 <div class="panel-body">
-                                    <span data-bind="if: department().length"><h5>Department:</h5> {{ department }}</span>
-                                    <span data-bind="if: title().length"><h5>Title:</h5> {{ title }}</span>
-                                    <span data-bind="if: startYear()"><h5>Dates:</h5> {{ startMonth }} {{startYear }} - {{ endView }}</span>
+                                    <span data-bind="if: department().length"><h5>Department:</h5> <span data-bind="text: department"></span></span>
+                                    <span data-bind="if: title().length"><h5>Title:</h5> <span data-bind="text: title"></span></span>
+                                    <span data-bind="if: startYear()"><h5>Dates:</h5>
+                                        <span data-bind="text: startMonth"></span> <span data-bind="text: startYear"></span> - <span data-bind="text: endView"></span>
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -156,7 +160,7 @@
                         <div class="panel panel-default">
                             <div class="panel-heading no-bottom-border">
                                 <div>
-                                    <h5>{{ institution }}</h5>
+                                    <h5 data-bind="text: institution"></h5>
                                 </div>
                             </div>
                         </div>
