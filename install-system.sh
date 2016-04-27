@@ -1,4 +1,5 @@
-# Install dependancies
+#!/bin/bash
+# Install system dependancies
 apt-get update \
     && apt-get install -y \
         python2.7-dev \
@@ -13,6 +14,8 @@ apt-get update \
         libssl-dev \
         libffi-dev \
         python-dev \
+        python-virtualenv \
+        openjdk-7-jre-headless \
     && apt-get clean \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
@@ -37,36 +40,16 @@ apt-get update \
         curl \
     && rm -rf /var/lib/apt/lists/*
 
-# tokumx
-apt-key adv --keyserver keyserver.ubuntu.com --recv-key 505A7412
-echo "deb [arch=amd64] http://s3.amazonaws.com/tokumx-debs $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/tokumx.list
-apt-get update
-apt-get install tokumx
-
-# fakecas
-curl https://github.com/CenterForOpenScience/fakecas/releases/download/0.2.0/fakecas.linux
-mv fakecas.linux fakecas
-chmod +x fakecas
-
-
-pip install -U pip
-
-npm install -g bower \
-    && pip install \
-        invoke==0.11.0 \
-        uwsgi==2.0.10
-
-# copy config
-cp website/settings/local-dist.py cp website/settings/local.py
-cp api/base/settings/local-dist.py api/base/settings/local.py
-
-# install things
-invoke requirements --base --addons --dev
-invoke setup
+npm install -g bower
 
 # tokumx
 apt-key adv --keyserver keyserver.ubuntu.com --recv-key 505A7412
 echo "deb [arch=amd64] http://s3.amazonaws.com/tokumx-debs $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/tokumx.list
 apt-get update
-apt-get install tokumx
+apt-get install -y tokumx
+
+# elasticsearch
+wget -qO - https://packages.elastic.co/GPG-KEY-elasticsearch | apt-key add -
+echo "deb http://packages.elastic.co/elasticsearch/1.7/debian stable main" | tee -a /etc/apt/sources.list.d/elasticsearch-1.7.list
+apt-get update && apt-get install elasticsearch
 
