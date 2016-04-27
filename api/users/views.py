@@ -232,6 +232,34 @@ class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
 
 
 class UserAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, UserMixin):
+    """List of addons authorized by this user *Read-only*
+
+    Paginated list of user addons ordered by their `id` or `addon_short_name`.
+
+    ###Permissions
+
+    <Addon>UserSettings are visible only to the user that "owns" them.
+
+    ## <Addon\>UserSettings Attributes
+
+    OSF <Addon\>UserSettings entities have the "user_addons" `type`, and their `id` indicates the addon
+    service provider (eg. `box`, `googledrive`, etc).
+
+        name                type        description
+        =====================================================================================
+        user_has_auth       boolean     does this user have access to use an ExternalAccount?
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+        self:  the canonical api endpoint of this user_addon
+        accounts: dict keyed on an external_account_id
+            nodes_connected:    list of canonical api endpoints of connected nodes
+            account:            canonical api endpoint for this account
+
+    #This Request/Response
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -246,10 +274,38 @@ class UserAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, User
     view_name = 'user-addons'
 
     def get_queryset(self):
-        return self.get_user().get_addons()
+        qs = self.get_user().get_addons()
+        qs.sort()
+        return qs
 
 
 class UserAddonDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixin, AddonSettingsMixin):
+    """Detail of an individual addon authorized by this user *Read-only*
+
+    ##Permissions
+
+    <Addon>UserSettings are visible only to the user that "owns" them.
+
+    ## <Addon\>UserSettings Attributes
+
+    OSF <Addon\>UserSettings entities have the "user_addons" `type`, and their `id` indicates the addon
+    service provider (eg. `box`, `googledrive`, etc).
+
+        name                type        description
+        =====================================================================================
+        user_has_auth       boolean     does this user have access to use an ExternalAccount?
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+        self:  the canonical api endpoint of this user_addon
+        accounts: dict keyed on an external_account_id
+            nodes_connected:    list of canonical api endpoints of connected nodes
+            account:            canonical api endpoint for this account
+
+    #This Request/Response
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -268,6 +324,31 @@ class UserAddonDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixin, Addo
 
 
 class UserAddonAccountList(JSONAPIBaseView, generics.ListAPIView, UserMixin, AddonSettingsMixin):
+    """List of an external_accounts authorized by this user *Read-only*
+
+    ##Permissions
+
+    ExternalAccounts are visible only to the user that has ownership of them.
+
+    ## ExternalAccount Attributes
+
+    OSF ExternalAccount entities have the "external_accounts" `type`, with `id` indicating the
+    `external_account_id` according to the OSF
+
+        name            type        description
+        =====================================================================================================
+        display_name    string      Display name on the third-party service
+        profile_url     string      Link to users profile on third-party service *presence varies by service*
+        provider        string      short_name of third-party service provider
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+        self:  the canonical api endpoint of this external_account
+
+    #This Request/Response
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -285,6 +366,31 @@ class UserAddonAccountList(JSONAPIBaseView, generics.ListAPIView, UserMixin, Add
         return self.get_addon_settings().external_accounts
 
 class UserAddonAccountDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixin, AddonSettingsMixin):
+    """Detail of an individual external_account authorized by this user *Read-only*
+
+    ##Permissions
+
+    ExternalAccounts are visible only to the user that has ownership of them.
+
+    ## ExternalAccount Attributes
+
+    OSF ExternalAccount entities have the "external_accounts" `type`, with `id` indicating the
+    `external_account_id` according to the OSF
+
+        name            type        description
+        =====================================================================================================
+        display_name    string      Display name on the third-party service
+        profile_url     string      Link to users profile on third-party service *presence varies by service*
+        provider        string      short_name of third-party service provider
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+        self:  the canonical api endpoint of this external_account
+
+    #This Request/Response
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
