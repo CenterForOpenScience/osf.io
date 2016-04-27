@@ -60,18 +60,27 @@ function _poContributors(item) {
     if (contributorList.length === 0) {
         return '';
     }
-    var visibleContributors = [];
+    var totalContributors = item.data.embeds.contributors.links.meta.total;
+    // whether the logged in user is a contributor of the project
+    var isContributor = false;
     for (var i=0; i < contributorList.length; i++) {
-        if (contributorList[i].attributes.bibliographic) {
-            visibleContributors.push(contributorList[i]);
+        if (contributorList[i].id === window.contextVars.currentUser.id) {
+            isContributor = true;
         }
     }
-    if (visibleContributors.length === 0) {
-        return '';
+    if (!isContributor) {
+        // bibliographic contributors
+        var visibleContributors = [];
+        for (var j=0; j < contributorList.length; j++) {
+            if (contributorList[j].attributes.bibliographic) {
+                visibleContributors.push(contributorList[j]);
+            }
+        }
+        contributorList = visibleContributors;
+        totalContributors = item.data.embeds.contributors.links.meta.total_bibliographic;
     }
-    var totalVisibleContributors = item.data.embeds.contributors.links.meta.total_bibliographic;
 
-    return visibleContributors.map(function (person, index, arr) {
+    return contributorList.map(function (person, index, arr) {
         var name;
         var familyName;
         var givenName;
@@ -106,7 +115,7 @@ function _poContributors(item) {
             return m('span');
         }
         if (index === 2) {
-            return m('span', ' + ' + (totalVisibleContributors -2)); // We already show names of the two
+            return m('span', ' + ' + (totalContributors - 2)); // We already show names of the two
         }
         return m('span', comma + name);
     });
