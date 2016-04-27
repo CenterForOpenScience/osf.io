@@ -4,15 +4,17 @@ import httplib as http
 import json
 
 from modularodm import Q
+from modularodm.exceptions import ValidationValueError
 
 import mock
 from nose.tools import *  # noqa
+
 from tests.base import fake, OsfTestCase
 from tests.factories import (
     AuthUserFactory, EmbargoFactory, NodeFactory, ProjectFactory,
     RegistrationFactory, UserFactory, UnconfirmedUserFactory, DraftRegistrationFactory
 )
-from modularodm.exceptions import ValidationValueError
+from tests import utils
 
 from framework.exceptions import PermissionsError
 from framework.auth import Auth
@@ -24,6 +26,7 @@ from website.models import Embargo, Node, User
 from website.project.model import ensure_schemas
 from website.project.sanctions import PreregCallbackMixin
 from website.util import permissions
+from website.exceptions import NodeStateError
 
 DUMMY_TOKEN = tokens.encode({
     'dummy': 'token'
@@ -922,6 +925,14 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
             assert_false(reg.is_public)
         assert_true(reg.embargo_termination_approval)
         assert_true(reg.embargo_termination_approval.is_pending_approval)
+
+    def test_cannot_request_termination_on_component_of_embargo(self):
+        node = ProjectFactory()
+        child = ProjectFactory(parent=node, creator=node.creator)
+
+        with utils.mock_archive(node, embargo=True, autocomplete=True, autoapprove=True) as reg:
+            with assert_raises(NodeStateError):
+                reg.nodes[0].request_embargo_termination(Auth(node.creator))
 
     @mock.patch('website.mails.send_mail')
     def test_embargoed_registration_set_privacy_sends_mail(self, mock_send_mail):

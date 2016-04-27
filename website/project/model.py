@@ -3437,6 +3437,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         embargo early."""
         if not self.is_embargoed:
             raise NodeStateError("This node is not under active embargo")
+        if not self.root == self:
+            raise NodeStateError("Only the root of an embargoed registration can request termination")
 
         approval = EmbargoTerminationApproval(
             initiated_by=auth.user,
