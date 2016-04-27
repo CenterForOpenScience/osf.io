@@ -1,8 +1,3 @@
-//  TODO: add functionality to let user choose what to query
-//  TODO: add descriptions to visualization
-//  TODO: move sales analytics to an independent section
-//  TODO: improve ui
-
 'use strict';
 
 var keen = require('keen-js');
