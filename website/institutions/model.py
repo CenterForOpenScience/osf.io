@@ -116,11 +116,10 @@ class Institution(object):
         from website.models import Node
         if query and getattr(query, 'nodes', False):
             for node in query.nodes:
-                replacement_attr = cls.attribute_map.get(node.attribute, False)
-                node.attribute = replacement_attr if replacement_attr else node.attribute
-        elif isinstance(query, RawQuery):
-            replacement_attr = cls.attribute_map.get(query.attribute, False)
-            query.attribute = replacement_attr if replacement_attr else query.attribute
+                if node._Q__key in cls.attribute_map:
+                    node._Q__key = cls.attribute_map[node._Q__key]
+        elif isinstance(query, RawQuery) and query._Q__key in cls.attribute_map:
+            query._Q__key = cls.attribute_map[query._Q__key]
         query = query & Q('institution_id', 'ne', None) if query else Q('institution_id', 'ne', None)
         query = query & Q('is_deleted', 'ne', True) if not deleted else query
         node = Node.find_one(query, allow_institution=True, **kwargs)

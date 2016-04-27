@@ -3,9 +3,11 @@
 import importlib
 import json
 import os
+import sys
 from collections import OrderedDict
 
 import django
+import modularodm
 from werkzeug.contrib.fixers import ProxyFix
 
 import framework
@@ -102,6 +104,8 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.base.settings')
     django.setup()
 
+    patch_models(settings)
+
     app.debug = settings.DEBUG_MODE
 
     # default config for flask app, however, this does not affect setting cookie using set_cookie()
@@ -140,3 +144,15 @@ def apply_middlewares(flask_app, settings):
         flask_app.wsgi_app = ProxyFix(flask_app.wsgi_app)
 
     return flask_app
+
+
+def patch_models(settings):
+    if not settings.USE_POSTGRES:
+        return
+    from osf_models import models
+    for module in sys.modules.values():
+        if not module:
+            continue
+        for model in ('Node', 'User', 'Tag'):
+            if hasattr(module, model) and issubclass(getattr(module, model), modularodm.StoredObject):
+                setattr(module, model, getattr(models, model))

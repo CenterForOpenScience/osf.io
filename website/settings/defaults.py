@@ -52,6 +52,8 @@ ANONYMIZED_TITLES = ['Authors']
 LOAD_BALANCER = False
 PROXY_ADDRS = []
 
+USE_POSTGRES = False
+
 # May set these to True in local.py for development
 DEV_MODE = False
 DEBUG_MODE = False

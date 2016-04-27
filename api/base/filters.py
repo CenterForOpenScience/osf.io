@@ -4,6 +4,7 @@ import operator
 from dateutil import parser as date_parser
 import datetime
 
+from django.db.models import QuerySet as DjangoQuerySet
 from django.core.exceptions import ValidationError
 from modularodm import Q
 from modularodm.query import queryset as modularodm_queryset
@@ -48,6 +49,8 @@ class ODMOrderingFilter(OrderingFilter):
     """Adaptation of rest_framework.filters.OrderingFilter to work with modular-odm."""
     # override
     def filter_queryset(self, request, queryset, view):
+        if isinstance(queryset, DjangoQuerySet):
+            return super(ODMOrderingFilter, self).filter_queryset(request, queryset, view)
         ordering = self.get_ordering(request, queryset, view)
         if ordering:
             if not isinstance(queryset, modularodm_queryset.BaseQuerySet) and isinstance(ordering, (list, tuple)):

@@ -1017,7 +1017,10 @@ class JSONAPISerializer(ser.Serializer):
                 data['attributes'][field.field_name] = None
             else:
                 try:
-                    representation = field.to_representation(attribute)
+                    if hasattr(attribute, 'all'):
+                        representation = field.to_representation(attribute.all())
+                    else:
+                        representation = field.to_representation(attribute)
                 except SkipField:
                     continue
                 if getattr(field, 'json_api_link', False) or getattr(nested_field, 'json_api_link', False):
