@@ -47,13 +47,12 @@ function _flattenNodeTree(nodeTree) {
  */
 function getNodesOriginal(nodeTree, nodesOriginal) {
     var flatNodes = _flattenNodeTree(nodeTree);
-    $.each(flatNodes, function(_, node) {
-        var nodeId = nodeTree.node.id;
-        nodesOriginal[nodeId] = {
-            public: nodeTree.node.is_public,
-            id: nodeTree.node.id,
-            title: nodeTree.node.title,
-            canWrite: nodeTree.node.can_write,
+    $.each(flatNodes, function(_, nodeMeta) {
+        nodesOriginal[nodeMeta.node.id] = {
+            public: nodeMeta.node.is_public,
+            id: nodeMeta.node.id,
+            title: nodeMeta.node.title,
+            canWrite: nodeMeta.node.can_write,
             changed: false
         };
     });
