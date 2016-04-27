@@ -1,5 +1,9 @@
+import urlparse
+
 from django.core.exceptions import ValidationError
 from django.db import models
+
+from modularodm import Q
 
 from osf_models.models.contributor import Contributor
 from osf_models.models.tag import Tag
@@ -8,9 +12,11 @@ from osf_models.models.validators import validate_title
 from osf_models.utils.datetime_aware_jsonfield import DatetimeAwareJSONField
 from .base import BaseModel, GuidMixin
 
+from website import settings
+
 
 class Node(GuidMixin, BaseModel):
-    CATEGORY_MAP = (
+    CATEGORY_MAP = dict((
         ('analysis', 'Analysis'),
         ('communication', 'Communication'),
         ('data', 'Data'),
@@ -22,7 +28,13 @@ class Node(GuidMixin, BaseModel):
         ('software', 'Software'),
         ('other', 'Other'),
         ('', 'Uncategorized')
-    )
+    ))
+
+    @classmethod
+    def find_one(cls, query=None, allow_institution=False, **kwargs):
+        if not allow_institution:
+            query = (query & Q('institution_id', 'eq', None)) if query else Q('institution_id', 'eq', None)
+        return super(Node, cls).find_one(query, **kwargs)
 
     date_created = models.DateTimeField(null=False) # auto_now_add=True)
     date_modified = models.DateTimeField(null=True) # auto_now=True)
@@ -57,7 +69,7 @@ class Node(GuidMixin, BaseModel):
 
     title = models.TextField(validators=[validate_title]) # this should be a charfield but data from mongo didn't fit in 255
     description = models.TextField()
-    category = models.CharField(max_length=255, choices=CATEGORY_MAP, default=CATEGORY_MAP[-1])
+    category = models.CharField(max_length=255, choices=CATEGORY_MAP.items(), default=CATEGORY_MAP[''])
     # node_license = models.ForeignKey(NodeLicenseRecord)
 
     public_comments = models.BooleanField(default=True)
@@ -112,3 +124,49 @@ class Node(GuidMixin, BaseModel):
             self.public_comments = False
         else:
             raise ValidationError('comment_level must be either `public` or `private`')
+
+    def get_permissions(self, user):
+        contrib = user.contributor_set.get(node=self)
+        perm = []
+        if contrib.admin:
+            perm.append('admin')
+        if contrib.write:
+            perm.append('write')
+        if contrib.read:
+            perm.append('read')
+        return []
+
+    def has_permission(self, user, permission):
+        return getattr(user.contributor_set.get(node=self), permission, False)
+
+    @property
+    def url(self):
+        return '/{}/'.format(self._id)
+
+    @property
+    def absolute_url(self):
+        if not self.url:
+            return None
+        return urlparse.urljoin(settings.DOMAIN, self.url)
+
+    def can_view(self, auth):
+        if auth and getattr(auth.private_link, 'anonymous', False):
+            return self._id in auth.private_link.nodes
+
+        if not auth and not self.is_public:
+            return False
+
+        return (
+            self.is_public or
+            (auth.user and self.has_permission(auth.user, 'read')) or
+            auth.private_key in self.private_link_keys_active or
+            self.is_admin_parent(auth.user)
+        )
+
+    @property
+    def is_retracted(self):
+        return False
+
+    @property
+    def nodes_pointer(self):
+        return []

@@ -1,3 +1,4 @@
+import datetime
 from .base import BaseModel, GuidMixin
 from django.db import models
 from .tag import Tag
@@ -230,3 +231,36 @@ class User(GuidMixin, BaseModel):
 
     # user language and locale data (e.g. 'en_US')
     locale = models.CharField(max_length=255, default='en_US')
+
+    @property
+    def url(self):
+        return '/{}/'.format(self._id)
+
+    @property
+    def api_url(self):
+        return '/api/v1/profile/{}/'.format(self._id)
+
+    @property
+    def is_disabled(self):
+        return self.date_disabled is not None
+
+    @is_disabled.setter
+    def is_disabled(self, val):
+        """Set whether or not this account has been disabled."""
+        if val and not self.date_disabled:
+            self.date_disabled = datetime.datetime.utcnow()
+        elif val is False:
+            self.date_disabled = None
+
+    @property
+    def is_confirmed(self):
+        return bool(self.date_confirmed)
+
+    def is_authenticated(self):  # Needed for django compat
+        return True
+
+    def is_anonymous(self):
+        return False
+
+    def get_addon_names(self):
+        return []
