@@ -34,7 +34,7 @@
 	                </div>
                 </span>
                 <p data-bind="if: !logs().length && !loading()" class="help-block">
-                    No logs to show.g
+                    No logs to show.
                 </p>
                 <span data-bind="if: !loading()">
                     <dl class="dl-horizontal activity-log" data-bind="foreach: {data: logs, as: 'log'}"  >
