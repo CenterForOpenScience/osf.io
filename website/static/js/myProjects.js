@@ -664,13 +664,17 @@ var MyProjects = {
 
             self.filteredData().forEach(function(item) {
                 var contributors = lodashGet(item, 'embeds.contributors.data', []);
-
+                var isContributor = $osf.userIsContributor(window.contextVars.currentUser.id, contributors);
                 if (contributors) {
                     for(var i = 0; i < contributors.length; i++) {
                         var u = contributors[i];
                         if ((u.id === window.contextVars.currentUser.id) && !(self.institutionId)) {
                           continue;
                         }
+                        if (!isContributor && !u.attributes.bibliographic) {
+                            continue;
+                        }
+
                         if(self.users[u.id] === undefined) {
                             self.users[u.id] = {
                                 data : u,

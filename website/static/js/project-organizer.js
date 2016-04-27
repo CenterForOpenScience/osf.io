@@ -46,6 +46,7 @@ function _poTitleColumn(item) {
     }
 }
 
+
 /**
  * Contributors have first person's name and then number of contributors. This function returns the proper html
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
@@ -61,19 +62,13 @@ function _poContributors(item) {
         return '';
     }
     var totalContributors = item.data.embeds.contributors.links.meta.total;
-    // whether the logged in user is a contributor of the project
-    var isContributor = false;
-    for (var i=0; i < contributorList.length; i++) {
-        if (contributorList[i].id === window.contextVars.currentUser.id) {
-            isContributor = true;
-        }
-    }
+    var isContributor = $osf.userIsContributor(window.contextVars.currentUser.id, contributorList);
     if (!isContributor) {
         // bibliographic contributors
         var visibleContributors = [];
-        for (var j=0; j < contributorList.length; j++) {
-            if (contributorList[j].attributes.bibliographic) {
-                visibleContributors.push(contributorList[j]);
+        for (var i=0; i < contributorList.length; i++) {
+            if (contributorList[i].attributes.bibliographic) {
+                visibleContributors.push(contributorList[i]);
             }
         }
         contributorList = visibleContributors;
