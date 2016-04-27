@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import sys
 import logging
 
@@ -30,14 +31,15 @@ def get_duplicate_email():
 
 def log_duplicate_acount(dry):
     duplicate_emails = get_duplicate_email()
+    count = 0
     if duplicate_emails:
         for email in duplicate_emails:
-            users = User.find(Q('emails', 'eq', email) & Q('merged_by', 'ne', None) & Q('username', 'ne', None))
+            users = User.find(Q('emails', 'eq', email) & Q('merged_by', 'eq', None) & Q('username', 'ne', None))
             for user in users:
+                count += 1
                 logger.info("User {}, username {}, id {}, email {} is a duplicate"
                             .format(user.fullname, user.username, user._id, user.emails))
-    else:
-        logger.info("There is no duplicate emails.")
+    logger.info("Found {} users with duplicate emails".format(count))
 
 
 def main():
