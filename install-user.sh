@@ -3,7 +3,7 @@
 
 # make a virtualenv and activate it 
 mkdir -p ~/venv
-python -m ~/venv
+python -m virtualenv ~/venv
 source ~/venv/bin/activate
 export PATH=$PATH:~/project/node_modules/.bin
 
@@ -30,7 +30,7 @@ echo 'source ~/venv/bin/activate' >> ~/.bashrc
 echo 'export PATH=$PATH:~/project/node_modules/.bin' >> ~/.bashrc
 
 # install python dependencies
-invoke requirements --base --addons --dev
+invoke requirements --quick
 
 # fix uritemplate
 pip uninstall -y uritemplate.py

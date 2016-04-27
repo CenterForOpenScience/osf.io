@@ -210,11 +210,16 @@ Consult the [optional extras](#optional-extras) section for more details.
 ```
 vagrant box update
 vagrant up
-vagrant ssh
+# tokumx's install requires manual interaction so we can't run it from Vagrantfile
+vagrant ssh -c "sudo ~/project/install-tokumx.sh"
 ```
 
 Your git checkout directory will be mounted at `~/project` inside the VM:
 ```
+vagrant ssh
+
+<inside VM>
+
 cd project
 invoke apiserver
 invoke server
