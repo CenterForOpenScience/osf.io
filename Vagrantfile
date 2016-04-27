@@ -58,6 +58,6 @@ Vagrant.configure(2) do |config|
   # documentation for more information about their specific syntax and use.
   # config.vm.provision "shell", path: "scripts/install-vagrant.sh"
 
-  config.vm.provision "shell", path:"install-system.sh"
-  config.vm.provision "shell", path:"install-user.sh", priviliged: false
+  config.vm.provision "shell", path: "install-system.sh"
+  config.vm.provision "shell", path: "install-user.sh", privileged: false
 end

@@ -42,12 +42,6 @@ apt-get update \
 
 npm install -g bower
 
-# tokumx
-apt-key adv --keyserver keyserver.ubuntu.com --recv-key 505A7412
-echo "deb [arch=amd64] http://s3.amazonaws.com/tokumx-debs $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/tokumx.list
-apt-get update
-apt-get install -y tokumx
-
 # elasticsearch
 wget -qO - https://packages.elastic.co/GPG-KEY-elasticsearch | apt-key add -
 echo "deb http://packages.elastic.co/elasticsearch/1.7/debian stable main" | tee -a /etc/apt/sources.list.d/elasticsearch-1.7.list
