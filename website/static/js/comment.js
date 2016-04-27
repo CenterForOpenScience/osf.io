@@ -292,7 +292,7 @@ var BaseComment = function() {
 
     self.comments = ko.observableArray();
 
-	self.loadingComments = ko.observable(true);
+    self.loadingComments = ko.observable(true);
 
     self.underMaxLength = ko.observable(true);
 

@@ -18,9 +18,7 @@ from website.notifications.constants import PROVIDERS
 from website.notifications.emails import notify
 from website.project.decorators import must_be_contributor_or_public
 from website.project.model import Node
-from website.project.signals import comment_added
-from website.project.signals import mention_added
-from website import settings
+from website.project.signals import comment_added, mention_added
 
 
 @file_updated.connect
