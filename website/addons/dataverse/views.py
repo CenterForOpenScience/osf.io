@@ -250,6 +250,9 @@ def _dataverse_root_folder(node_addon, auth, **kwargs):
     urls = {
         'publish': node.api_url_for('dataverse_publish_dataset'),
     }
+    
+    # Get the dataverse host
+    dataverse_host = node_addon.external_account.oauth_key
 
     return [rubeus.build_addon_root(
         node_addon,
@@ -262,6 +265,7 @@ def _dataverse_root_folder(node_addon, auth, **kwargs):
         hasPublishedFiles=bool(published_files),
         dataverseIsPublished=dataverse.is_published,
         version=version,
+        host=dataverse_host,
     )]
 
 

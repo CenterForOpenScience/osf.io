@@ -29,29 +29,10 @@ var _dataverseItemButtons = {
             tb.dropzone.hiddenFileInput.click();
             tb.dropzoneItemCache = item;
         }
-        // Get the external Dataverse host before publishing
-        function getDataverseHost(event, item, col) {
-            var host;
-            $.ajax({
-                url: '/api/v1/project/'+ item.data.nodeId +'/dataverse/settings/',
-                type: 'GET',
-                dataType: 'json'
-            }).done(function(response) {
-                host = response.result.dataverseHost;
-                dataversePublish(event, item, col, host)
-            }).fail(function(xhr, textStatus, error) {
-                var errorMessage = 'Something went wrong when attempting to publish your dataset.';
-                Raven.captureMessage('Could not GET dataverse settings', {
-                    url: '/api/v1/project/'+ item.data.nodeId +'/dataverse/settings/',
-                    textStatus: textStatus,
-                    error: error
-                });
-                dataversePublish(event, item, col, host, errorMessage);
-            });
-        }
-        function dataversePublish(event, item, col, host, errorMessage) {
+        function dataversePublish(event, item, col, errorMessage) {
             var both = !item.data.dataverseIsPublished;
             var url = item.data.urls.publish;
+            var host = item.data.host;
             var toPublish = both ? 'Dataverse and dataset' : 'dataset';
             // Set the modal content to reflect the file's external host
             var modalContent = errorMessage ? m('p.m-md', errorMessage) : [
@@ -168,7 +149,7 @@ var _dataverseItemButtons = {
                     }, 'Upload'),
                     m.component(Fangorn.Components.button, {
                         onclick: function (event) {
-                            getDataverseHost.call(tb, event, item);
+                            dataversePublish.call(tb, event, item);
                         },
                         icon: 'fa fa-globe',
                         className: 'text-primary'
