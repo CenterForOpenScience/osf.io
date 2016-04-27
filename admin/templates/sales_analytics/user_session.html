@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block top_includes %}
+    <script>
+        var keenProjectId = '{{ keen_project_id }}';
+        var keenReadKey = '{{ keen_read_key }}';
+    </script>
+{% endblock %}
+
+{% block title %}
+    <title>Product Usage</title>
+{% endblock title %}
+
+{% block bottom_js %}
+    <script src="{% static 'public/js/sales-analytics-utils.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+    <h3>Average User Session Length of Previous 7 days</h3>
+    <div id='keen-chart-average-session-user'>...</div>
+    <h3>Average MAU Session Length of Previous 7 days</h3>
+    <div id='keen-chart-average-session-mau'>...</div>
+    <h3>Average User/MAU Session Length History of past 12 weeks</h3>
+    <div id='keen-chart-average-session-history'>...</div>
+{% endblock content %}
