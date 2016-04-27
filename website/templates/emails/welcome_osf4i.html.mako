@@ -16,6 +16,8 @@ Thank you for verifying your OSF account, a free, open source service maintained
 <h4>Store your files</h4>
 Archive your materials, data, manuscripts, or anything else associated with your research during the research process or after it is complete.<br>
 <br>
+<h4>Affiliate your projects with your institution</h4>
+Associate your projects with your institution. They will be added to your institution's central commons, improving discoverability of your work and fostering collaboration.<br>
 <h4>Share your work</h4>
 Keep your research materials and data private, make it accessible to specific others with view-only links, or make it publicly accessible. You have full control of what parts of your research are public and what remains private.<br>
 <br>
