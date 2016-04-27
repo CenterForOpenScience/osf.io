@@ -133,23 +133,27 @@
                         'has-error': password() && !password.isValid(),
                         'has-success': password() && password.isValid()
                     }"
-                >
-                    <label for="inputPassword3" class="col-sm-4 control-label">Password</label>
-                    <div class="col-sm-8">
-                        <input
-                                type="password"
-                                class="form-control"
-                                id="inputPassword3"
-                                placeholder="Password"
-                                data-bind="
+            >
+                <label for="inputPassword3" class="col-sm-4 control-label">Password</label>
+                <div class="col-sm-8">
+                    <input
+                        type="password"
+                        class="form-control"
+                        id="inputPassword3"
+                        placeholder="Password"
+                        data-bind="
+                            textInput: typedPassword,
                             value: password,
                             disable: submitted(),
                             event: {
                                 blur: trim.bind($data, password)
                             }"
-                        >
-                        <p class="help-block" data-bind="validationMessage: password" style="display: none;"></p>
+                    >
+                    <div data-bind="text: passwordFeedback"></div>
+                    <div class="progress">
+                        <div class="progress-bar progress-bar-success" role="progressbar" data-bind="attr: passwordComplexityBar"></div>
                     </div>
+                    <p class="help-block" data-bind="validationMessage: password" style="display: none;"></p>
                 </div>
                 <!-- Flashed Messages -->
                 <div class="help-block" >
