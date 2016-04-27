@@ -42,6 +42,7 @@ INSTALLED_APPS = (
     'admin.spam',
     'admin.nodes',
     'admin.users',
+    'admin.sales_analytics',
 
     # 3rd party
     'raven.contrib.django.raven_compat',
@@ -157,3 +158,8 @@ CKEDITOR_CONFIGS = {
         ]
     },
 }
+
+# Keen.io settings in local.py
+KEEN_PROJECT_ID = 'override_me_in_local_py'
+KEEN_READ_KEY = 'override_me_in_local_py'
+KEEN_WRITE_KEY = 'override_me_in_local_py'

@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    <title>OSF Sales Analytics</title>
+{% endblock title %}
+
+{% block content %}
+    <a href="{% url 'sales_analytics:dashboard' %}" class="btn btn-primary">
+        Dashboard
+    </a>
+    <a href="{% url 'sales_analytics:user_session' %}" class="btn btn-primary">
+        User Session
+    </a>
+    <a href="{% url 'sales_analytics:product_usage' %}" class="btn btn-primary">
+        Product Usage
+    </a>
+{% endblock content %}
