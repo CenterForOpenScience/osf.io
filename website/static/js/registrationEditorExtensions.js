@@ -165,6 +165,9 @@ var Uploader = function(question) {
     var self = this;
 
     question.showUploader = ko.observable(false);
+    self.toggleUploader = function() {
+        question.showUploader(!question.showUploader());
+    };
     question.uid = 'uploader_' + uploaderCount;
     uploaderCount++;
     self.selectedFiles = ko.observableArray(question.extra() || []);
