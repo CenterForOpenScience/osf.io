@@ -1,5 +1,6 @@
 from django.db import transaction
 from django.test import RequestFactory
+from django.http import Http404
 from nose import tools as nt
 from datetime import datetime, timedelta
 
@@ -133,6 +134,13 @@ class TestSpamDetail(AdminTestCase):
         nt.assert_equal(obj.object_id, self.comment._id)
         nt.assert_in('Confirmed HAM:', obj.message())
 
+    def test_form_valid_bad_id(self):
+        form = ConfirmForm()
+        view = SpamDetail()
+        view = setup_form_view(view, self.request, form, spam_id='a1')
+        with nt.assert_raises(Http404):
+            view.form_valid(form)
+
     def test_get_context_data(self):
         view = SpamDetail()
         view = setup_view(view, self.request, spam_id=self.comment._id)
@@ -144,6 +152,11 @@ class TestSpamDetail(AdminTestCase):
         nt.assert_equal(res['SPAM'], Comment.SPAM)
         nt.assert_equal(res['HAM'], Comment.HAM)
         nt.assert_equal(res['FLAGGED'], Comment.FLAGGED)
+
+    def test_get_context_data_bad_id(self):
+        view = setup_view(SpamDetail(), self.request, spam_id='a1')
+        with nt.assert_raises(Http404):
+            view.get_context_data()
 
 
 class TestEmailFormView(AdminTestCase):
@@ -170,12 +183,22 @@ class TestEmailFormView(AdminTestCase):
         nt.assert_equal(res['page_number'], '1')
         nt.assert_is_instance(res['comment'], dict)
 
+    def test_get_context_data_bad_id(self):
+        view = setup_view(EmailFormView(), self.request, spam_id='a1')
+        with nt.assert_raises(Http404):
+            view.get_context_data()
+
     def test_get_initial(self):
         self.view.get_initial()
         res = self.view.initial
         nt.assert_is_instance(res, dict)
         nt.assert_is_instance(res['email'], list)
         nt.assert_is_instance(res['email'][0], tuple)
+
+    def test_get_initial_bad_id(self):
+        view = setup_view(EmailFormView(), self.request, spam_id='a1')
+        with nt.assert_raises(Http404):
+            view.get_initial()
 
 
 class TestUserSpamListView(AdminTestCase):

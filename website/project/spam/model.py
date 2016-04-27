@@ -93,8 +93,7 @@ class SpamMixin(StoredObject):
         if user == self.user:
             raise ValueError('User cannot report self.')
         self.flag_spam()
-        date = datetime.utcnow()
-        report = {'date': date, 'retracted': False}
+        report = {'date': datetime.utcnow(), 'retracted': False}
         report.update(kwargs)
         if 'text' not in report:
             report['text'] = None

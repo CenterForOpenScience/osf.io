@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 from django.shortcuts import render
 from django.core.mail import send_mail
 from django.views.generic import FormView, ListView
-from django.views.defaults import page_not_found
+from django.http import Http404
 
 from modularodm import Q
 from website.project.model import Comment
@@ -36,39 +36,23 @@ class EmailFormView(OSFAdmin, FormView):
     form_class = EmailForm
     template_name = "spam/email.html"
 
-    def get(self, request, *args, **kwargs):
-        try:
-            return super(EmailFormView, self).get(request, *args, **kwargs)
-        except AttributeError:
-            return page_not_found(
-                request,
-                AttributeError(
-                    'Spam with id {} not found.'.format(kwargs.get('spam_id'))
-                )
-            )
-
-    def post(self, request, *args, **kwargs):
-        try:
-            return super(EmailFormView, self).post(request, *args, **kwargs)
-        except AttributeError:
-            return page_not_found(
-                request,
-                AttributeError(
-                    'Spam with id {} not found.'.format(kwargs.get('spam_id'))
-                )
-            )
-
     def get_context_data(self, **kwargs):
-        kwargs.setdefault(
-            'comment',
-            serialize_comment(Comment.load(self.kwargs.get('spam_id')))
-        )
+        spam_id = self.kwargs.get('spam_id')
+        try:
+            kwargs.setdefault('comment',
+                              serialize_comment(Comment.load(spam_id)))
+        except AttributeError:
+            raise Http404('Spam with id {} not found.'.format(spam_id))
         kwargs.setdefault('page_number', self.request.GET.get('page', '1'))
         kwargs.setdefault('status', self.request.GET.get('status', '1'))
         return super(EmailFormView, self).get_context_data(**kwargs)
 
     def get_initial(self):
-        spam = serialize_comment(Comment.load(self.kwargs.get('spam_id')))
+        spam_id = self.kwargs.get('spam_id')
+        try:
+            spam = serialize_comment(Comment.load(spam_id))
+        except AttributeError:
+            raise Http404('Spam with id {} not found.'.format(spam_id))
         self.initial = {
             'author': spam['author'].fullname,
             'email': [(r, r) for r in spam['author'].emails],
@@ -84,6 +68,12 @@ class EmailFormView(OSFAdmin, FormView):
     def form_valid(self, form):
         message = form.cleaned_data.get('message')
         email = form.cleaned_data.get('email')
+        send_mail(
+            subject=form.cleaned_data.get('subject').strip(),
+            message=message,
+            from_email=SUPPORT_EMAIL,
+            recipient_list=[email]
+        )
         update_admin_log(
             user_id=self.request.user.id,
             object_id=self.kwargs.get('spam_id'),
@@ -92,12 +82,6 @@ class EmailFormView(OSFAdmin, FormView):
                 email, message
             ),
             action_flag=USER_EMAILED
-        )
-        send_mail(
-            subject=form.cleaned_data.get('subject').strip(),
-            message=message,
-            from_email=SUPPORT_EMAIL,
-            recipient_list=[email]
         )
         return super(EmailFormView, self).form_valid(form)
 
@@ -171,35 +155,15 @@ class SpamDetail(OSFAdmin, FormView):
     form_class = ConfirmForm
     template_name = 'spam/detail.html'
 
-    def get(self, request, *args, **kwargs):
-        try:
-            return super(SpamDetail, self).get(request, *args, **kwargs)
-        except AttributeError:
-            return page_not_found(
-                request,
-                AttributeError(
-                    'Spam with id "{}" not found.'.format(
-                        kwargs.get('spam_id', 'None'))
-                )
-            )
-
-    def post(self, request, *args, **kwargs):
-        try:
-            return super(SpamDetail, self).post(request, *args, **kwargs)
-        except AttributeError:
-            return page_not_found(
-                request,
-                AttributeError(
-                    'Spam with id "{}" not found.'.format(
-                        kwargs.get('spam_id', 'None'))
-                )
-            )
-
     def get_context_data(self, **kwargs):
-        item = Comment.load(self.kwargs.get('spam_id'))
+        spam_id = self.kwargs.get('spam_id')
         kwargs = super(SpamDetail, self).get_context_data(**kwargs)
+        try:
+            kwargs.setdefault('comment',
+                              serialize_comment(Comment.load(spam_id)))
+        except AttributeError:
+            raise Http404('Spam with id "{}" not found.'.format(spam_id))
         kwargs.setdefault('page_number', self.request.GET.get('page', '1'))
-        kwargs.setdefault('comment', serialize_comment(item))
         kwargs.setdefault('status', self.request.GET.get('status', '1'))
         kwargs.update(STATUS)  # Pass status in to check against
         return kwargs
@@ -207,14 +171,17 @@ class SpamDetail(OSFAdmin, FormView):
     def form_valid(self, form):
         spam_id = self.kwargs.get('spam_id')
         item = Comment.load(spam_id)
-        if int(form.cleaned_data.get('confirm')) == Comment.SPAM:
-            item.confirm_spam(save=True)
-            log_message = 'Confirmed SPAM: {}'.format(spam_id)
-            log_action = CONFIRM_SPAM
-        else:
-            item.confirm_ham(save=True)
-            log_message = 'Confirmed HAM: {}'.format(spam_id)
-            log_action = CONFIRM_HAM
+        try:
+            if int(form.cleaned_data.get('confirm')) == Comment.SPAM:
+                item.confirm_spam(save=True)
+                log_message = 'Confirmed SPAM: {}'.format(spam_id)
+                log_action = CONFIRM_SPAM
+            else:
+                item.confirm_ham(save=True)
+                log_message = 'Confirmed HAM: {}'.format(spam_id)
+                log_action = CONFIRM_HAM
+        except AttributeError:
+            raise Http404('Spam with id "{}" not found.'.format(spam_id))
         update_admin_log(
             user_id=self.request.user.id,
             object_id=spam_id,
