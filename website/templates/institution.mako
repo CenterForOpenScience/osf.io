@@ -11,7 +11,7 @@
         <div class="dashboard-header dashboard-header-institution">
             <div class="row" style="text-align: center">
                 % if banner_path:
-                    <div class="col-sm-6 col-sm-offset-3"><img alt="${ name }" class="img-responsive" src="${ banner_path }"></div>
+                    <div class="col-sm-6 col-sm-offset-3"><img alt="${ name }" style="max-height: 100%; max-width: 100%" src="${ banner_path }"></div>
                 % else:
                     <div class="col-sm-3 col-sm-offset-2"><img alt="${ name }" class="img-circle" height="110px" width="110px" src=${ logo_path }></div>
                     <div class="col-sm-3">
