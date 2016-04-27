@@ -91,13 +91,10 @@ class TestRegistrationDetail(ApiTestCase):
     def test_hide_if_registration(self):
         # Registrations are a HideIfRegistration field
         node_url = '/{}nodes/{}/'.format(API_BASE, self.private_project._id)
-
         res = self.app.get(node_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
-
         assert_in('registrations', res.json['data']['relationships'])
 
         res = self.app.get(self.private_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
-
         assert_not_in('registrations', res.json['data']['relationships'])
