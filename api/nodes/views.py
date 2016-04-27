@@ -1520,7 +1520,7 @@ class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin
             'settings': obj
         }
 
-class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
+class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, AddonSettingsMixin):
     """List of folders that this node can connect to *Read-only*.
 
     Paginated list of folders retrieved from the associated third-party service
@@ -1565,78 +1565,17 @@ class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     view_category = 'nodes'
     view_name = 'node-addon-folders'
 
-    def _from_third_party_format(self, item, addon, path):
-        """
-        :param dict item: contents returned from Google Drive API
-        :param str addon: provider short_name
-        :param str path:  path to folder
-        :return: results formatted as required for serialization
-        """
-        # quote fails on unicode objects with unicode characters
-        # covert to str with .encode('utf-8')
-        import os
-        from urllib import quote
-        # TODO: MVP deadlines make code bad
-        safe_name = quote(item['title'].encode('utf-8'), safe='')
-        path = os.path.join(path, safe_name)
-
-        serialized = {
-            'path': path,
-            'id': item['id'],
-            'kind': 'folder',
-            'name': safe_name,
-            'provider': addon
-        }
-        return serialized
-
     def get_queryset(self):
         # TODO: refactor this/NS models to be generalizable
-        addon = self.kwargs['provider']
-        if addon != 'googledrive':
-            raise MethodNotAllowed('Requested addon unavailable.')
-
-        node = self.get_node()
-        node_addon = node.get_addon(addon)
-
-        if not node_addon:
-            raise NotFound('Requested addon not enabled.')
+        node_addon = self.get_addon_settings()
 
         path = self.request.query_params.get('path', '')
         folder_id = self.request.query_params.get('id', 'root')
 
-        # TODO: MVP deadlines make code bad
-        from website.addons.base.exceptions import InvalidAuthError
-        from website.addons.googledrive.client import GoogleDriveClient
+        if not hasattr(node_addon, 'get_folders'):
+            raise MethodNotAllowed('Requested addon unavailable.')
 
-        try:
-            access_token = node_addon.fetch_access_token()
-        except InvalidAuthError:
-            raise PermissionDenied('Invalid credentials.')
-
-        client = GoogleDriveClient(access_token)
-
-        if folder_id == 'root':
-            about = client.about()
-
-            return [{
-                'path': '/',
-                'kind': 'folder',
-                'id': about['rootFolderId'],
-                'name': '/ (Full Google Drive)',
-                'provider': addon
-            }]
-
-        contents = [
-            self._from_third_party_format(item, addon, path=path)
-            for item in client.folders(folder_id)
-        ]
-        return contents
-
-    def get_serializer_class(self):
-        # TODO: determine serializer based on addon
-        if self.kwargs['provider'] == 'googledrive':
-            return NodeAddonFolderSerializer
-        raise MethodNotAllowed('Requested addon unavailable.')
+        return node_addon.get_folders(path=path, folder_id=folder_id)
 
 
 class NodeProvider(object):

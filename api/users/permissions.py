@@ -19,7 +19,6 @@ class CurrentUser(permissions.BasePermission):
     """
 
     def has_permission(self, request, view):
-        # import ipdb; ipdb.set_trace()
         requested_user = view.get_user()
         assert isinstance(requested_user, User), 'obj must be a User, got {}'.format(requested_user)
         return requested_user == request.user

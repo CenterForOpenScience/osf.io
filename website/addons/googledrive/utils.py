@@ -4,11 +4,12 @@
 import os
 from urllib import quote
 
+from api.base.utils import absolute_reverse
 
 def build_googledrive_urls(item, node, path):
     return {
-        'fetch': node.api_url_for('googledrive_folder_list', folderId=item['id']),
-        'folders': node.api_url_for('googledrive_folder_list', folderId=item['id'], path=path),
+        'fetch': absolute_reverse('nodes:node-addon-folders', kwargs={'node_id': node._id, 'provider': 'googledrive'}, query_kwargs={'path': path}),
+        'folders': absolute_reverse('nodes:node-addon-folders', kwargs={'node_id': node._id, 'provider': 'googledrive'}, query_kwargs={'path': path, 'id': item['id']}),
     }
 
 def to_hgrid(item, node, path):
@@ -27,6 +28,7 @@ def to_hgrid(item, node, path):
         'kind': 'folder',
         'name': safe_name,
         'addon': 'googledrive',
+        'provider': 'googledrive',  # TODO: remove duplication -- APIv2
         'urls': build_googledrive_urls(item, node, path=path)
     }
     return serialized
