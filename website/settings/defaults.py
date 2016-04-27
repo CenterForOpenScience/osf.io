@@ -52,12 +52,15 @@ PROXY_ADDRS = []
 DEV_MODE = False
 DEBUG_MODE = False
 
-# Should be True in local development and False on staging, staging2, production
+# True if in local development and False if on staging, staging2, production
 LOCAL_MODE = False
 
-# Should be True in production
+# True if in staging, staging2 and production, or if using https in local development
 SECURE_MODE = False
+
 PROTOCOL = 'https://' if SECURE_MODE else 'http://'
+DOMAIN = PROTOCOL + 'localhost:5000/'
+API_DOMAIN = PROTOCOL + 'localhost:8000/'
 
 LOG_PATH = os.path.join(APP_PATH, 'logs')
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
@@ -65,9 +68,6 @@ ANALYTICS_PATH = os.path.join(BASE_PATH, 'analytics')
 
 CORE_TEMPLATES = os.path.join(BASE_PATH, 'templates/log_templates.mako')
 BUILT_TEMPLATES = os.path.join(BASE_PATH, 'templates/_log_templates.mako')
-
-DOMAIN = PROTOCOL + 'localhost:5000/'
-API_DOMAIN = PROTOCOL + 'localhost:8000/'
 
 GNUPG_HOME = os.path.join(BASE_PATH, 'gpg')
 GNUPG_BINARY = 'gpg'
@@ -88,14 +88,17 @@ SHARE_ELASTIC_INDEX_TEMPLATE = 'share_v{}'
 
 # Sessions
 COOKIE_NAME = 'osf'
+# TODO: Override OSF_COOKIE_DOMAIN in local.py in production
 OSF_COOKIE_DOMAIN = None
+# TODO: Override SECRET_KEY in local.py in production
 SECRET_KEY = 'CHANGEME'
 SESSION_COOKIE_SECURE = SECURE_MODE
+# TODO: Change to True after ticket #SEC-16 has been resolved
 SESSION_COOKIE_HTTPONLY = False
 
-# certificate for local SECURE_MODE development
-OSF_SERVER_KEY = 'PATH_TO_LOCAL_PRIVATE_KEY'
-OSF_SERVER_CERT = 'PATH_TO_LOCAL_PRIVATE_KEY'
+# local path to private key and certificate for local development using https, overwrite them in local.py
+OSF_SERVER_KEY = None
+OSF_SERVER_CERT = None
 
 # Change if using `scripts/cron.py` to manage crontab
 CRON_USER = None

@@ -11,9 +11,9 @@ DEV_MODE = True
 DEBUG_MODE = True  # Sets app to debug mode, turns off template caching, etc.
 
 LOCAL_MODE = True
-SECURE_MODE = False  # if true, use https for osf and api server
-PROTOCOL = 'https://' if SECURE_MODE else 'http://'
+SECURE_MODE = False
 
+PROTOCOL = 'https://' if SECURE_MODE else 'http://'
 DOMAIN = PROTOCOL + 'localhost:5000/'
 API_DOMAIN = PROTOCOL + 'localhost:8000/'
 
@@ -45,9 +45,9 @@ SECRET_KEY = 'CHANGEME'
 SESSION_COOKIE_SECURE = SECURE_MODE
 SESSION_COOKIE_HTTPONLY = False
 
-# certificate for local SECURE_MODE development
-OSF_SERVER_KEY = 'PATH_TO_LOCAL_PRIVATE_KEY'
-OSF_SERVER_CERT = 'PATH_TO_LOCAL_PRIVATE_KEY'
+# local private key and certificate
+OSF_SERVER_KEY = None
+OSF_SERVER_CERT = None
 
 # Uncomment if GPG was installed with homebrew
 # GNUPG_BINARY = '/usr/local/bin/gpg'

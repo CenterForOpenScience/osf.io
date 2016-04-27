@@ -20,14 +20,18 @@ SECRET_KEY = osf_settings.SECRET_KEY
 DEBUG = osf_settings.DEBUG_MODE
 DEBUG_PROPAGATE_EXCEPTIONS = True
 
-# secure mode for using https in local development
-SECURE = osf_settings.SECURE_MODE
-LOCAL = osf_settings.LOCAL_MODE
 
 # session:
-SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SECURE = SECURE
+SESSION_COOKIE_SECURE = osf_settings.SECURE_MODE
+CSRF_COOKIE_SECURE = osf_settings.SECURE_MODE
 
+SESSION_COOKIE_HTTPONLY = True
+# TODO: use osf settings below instead after ticket #SEC-16 has been resolved
+# SESSION_COOKIE_HTTPONLY = settings.SESSION_COOKIE_HTPPONLY
+
+CSRF_COOKIE_HTTPONLY = False
+# TODO: use osf settings below instead if ticket #SEC-16 has been resolved and we don't use javascript to pull CSRF token in admin
+# CSRF_COOKIE_HTTPONLY = settings.CSRF_COOKIE_HTPPONLY
 
 ALLOWED_HOSTS = [
     '.osf.io'
@@ -59,7 +63,7 @@ INSTALLED_APPS = (
     'ckeditor',
 )
 
-# only for local development using https
+# use django-sslserver when running https locally, admin shares osf config for secure and local mode
 if osf_settings.SECURE_MODE and osf_settings.LOCAL_MODE:
     INSTALLED_APPS += ('sslserver',)
 

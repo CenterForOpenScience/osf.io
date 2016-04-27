@@ -1,6 +1,3 @@
--r ./dev.txt
+# Requirements for running https in local development (apiserver and amdinserver)
 
-# Requirements that are used in the DEVELOPMENT and LOCAL environment only
-
-# django-sslserver
 django-sslserver==0.19
