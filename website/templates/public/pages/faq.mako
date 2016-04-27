@@ -36,7 +36,7 @@
                         </div>
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> How will the OSF be useful to my research?</h5>
-                            <div class="support-body">The OSF integrates with the scientist's daily workflow. The OSF helps document and archive study designs, materials, and data. The OSF facilitates sharing of materials and data within a laboratory or across laboratories. The OSF also facilitates transparency of laboratory research and provides a network design that details and credits individual contributions for all aspects of the research process. To see how it works, read our <a href="http://help.osf.io" target="_blank">Guides</a>, see the <a href="https://osf.io/4znZP/wiki/home">OSF Features</a> page, or see how other scientists <a href="https://osf.io/svje2/">use the OSF.</a></div>
+                            <div class="support-body">The OSF integrates with the scientist's daily workflow. The OSF helps document and archive study designs, materials, and data. The OSF facilitates sharing of materials and data within a laboratory or across laboratories. The OSF also facilitates transparency of laboratory research and provides a network design that details and credits individual contributions for all aspects of the research process. To see how it works, read our <a href="http://help.osf.io" target="_blank" rel="noreferrer">Guides</a>, see the <a href="https://osf.io/4znZP/wiki/home">OSF Features</a> page, or see how other scientists <a href="https://osf.io/svje2/">use the OSF.</a></div>
                         </div>
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> How can I help develop the OSF?</h5>
@@ -56,7 +56,7 @@
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> How can I get started on using the OSF?</h5>
                             <div class="support-body">OSF membership is open and free, so you can
-                                just register and check out our <a href="http://help.osf.io" target="_blank">Guides</a>
+                                just register and check out our <a href="http://help.osf.io" target="_blank" rel="noreferrer">Guides</a>
                                 for a thorough run-down of how it works. This FAQ page will only cover a few of the most basic questions about the OSF, so it’s highly recommended that you read through Getting Started if you have any issues.</div>
                         </div>
                         <div class="support-item">
@@ -65,7 +65,7 @@
                         </div>
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> What services can I use with the OSF?</h5>
-                            <div class="support-body">The OSF supports many third-party add-ons. For storage, you can connect to Amazon S3, Box, Dataverse, Dropbox, Figshare, Github, and Google Drive, and the OSF has its own default storage add-on, OSF Storage, if you choose not to connect to any third-party add-ons. The OSF also supports Mendeley and Zotero as citation managers. Please refer to the helpful <a href="http://help.osf.io/m/addons" target="_blank">Add-ons section</a> of our Guides for more information on how to use add-ons.</div>
+                            <div class="support-body">The OSF supports many third-party add-ons. For storage, you can connect to Amazon S3, Box, Dataverse, Dropbox, Figshare, Github, and Google Drive, and the OSF has its own default storage add-on, OSF Storage, if you choose not to connect to any third-party add-ons. The OSF also supports Mendeley and Zotero as citation managers. Please refer to the helpful <a href="http://help.osf.io/m/addons" target="_blank" rel="noreferrer">Add-ons section</a> of our Guides for more information on how to use add-ons.</div>
                         </div>
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> What can I do with a file after uploading it into a storage add-on?</h5>
