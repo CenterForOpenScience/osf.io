@@ -200,12 +200,17 @@
                         id="inputPassword3"
                         placeholder="Password"
                         data-bind="
+                            textInput: typedPassword,
                             value: password,
                             disable: submitted(),
                             event: {
                                 blur: trim.bind($data, password)
                             }"
                     >
+                    <div data-bind="text: passwordFeedback"></div>
+                    <div class="progress">
+                        <div class="progress-bar progress-bar-success" role="progressbar" data-bind="attr: passwordComplexityBar"></div>
+                    </div>
                     <p class="help-block" data-bind="validationMessage: password" style="display: none;"></p>
                 </div>
             </div>
