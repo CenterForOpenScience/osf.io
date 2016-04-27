@@ -200,6 +200,6 @@ CKEDITOR_CONFIGS = {
 }
 
 # Keen.io settings in local.py
-KEEN_PROJECT_ID = 'override_me_in_local_py'
-KEEN_READ_KEY = 'override_me_in_local_py'
-KEEN_WRITE_KEY = 'override_me_in_local_py'
+KEEN_PROJECT_ID = 'CHANGEME'
+KEEN_READ_KEY = 'CHANGEME'
+KEEN_WRITE_KEY = 'CHANGEME'

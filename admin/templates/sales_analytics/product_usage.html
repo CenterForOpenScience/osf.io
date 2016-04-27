@@ -1,25 +1,15 @@
-{% extends 'base.html' %}
+{% extends 'base_analytics.html' %}
 {% load static %}
 
-{% block top_includes %}
-    <script>
-        var keenProjectId = '{{ keen_project_id }}';
-        var keenReadKey = '{{ keen_read_key }}';
-    </script>
-{% endblock %}
+{% block top_analytics %}
+{% endblock top_analytics %}
 
-{% block title %}
-    <title>Product Usage</title>
-{% endblock title %}
+{% block title_analytics %}
+    <h1>OSF Products Usage</h1>
+{% endblock title_analytics %}
+
+{% block content_analytics %}
+{% endblock content_analytics %}
 
 {% block bottom_js %}
-    <script src="{% static 'public/js/sales-analytics-utils.js' %}"></script>
-{% endblock %}
-
-{% block content %}
-    <h3>OSF Products Views in the Past Month</h3>
-    <div id='keen-chart-osf-product-usage-mt2'>...</div>
-    <div id='keen-chart-osf-product-usage-mee'>...</div>
-    <div id='keen-chart-osf-product-usage-pre'>...</div>
-    <div id='keen-chart-osf-product-usage-ins'>...</div>
-{% endblock content %}
+{% endblock bottom_js %}

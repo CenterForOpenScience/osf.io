@@ -1,23 +1,11 @@
-{% extends 'base.html' %}
+{% extends 'base_analytics.html' %}
 {% load static %}
 
-{% block top_includes %}
-    <script>
-        var keenProjectId = '{{ keen_project_id }}';
-        var keenReadKey = '{{ keen_read_key }}';
-    </script>
-{% endblock %}
+{% block title_analytics %}
+    <h1>Debug and Test</h1>
+{% endblock title_analytics %}
 
-{% block title %}
-    <title>OSF Sales Analytics</title>
-{% endblock title %}
-
-{% block bottom_js %}
-    <script src="{% static 'public/js/metrics-sales-analytics.js' %}"></script>
-{% endblock %}
-
-{% block content %}
-    <h1>Sales Analytics</h1>
+{% block content_analytics %}
     <h3>Average User Session Length of Previous 7 days</h3>
     <div id='keen-chart-average-session-user'>...</div>
     <h3>Average MAU Session Length of Previous 7 days</h3>
@@ -29,4 +17,8 @@
     <div id='keen-chart-osf-product-usage-mee'>...</div>
     <div id='keen-chart-osf-product-usage-pre'>...</div>
     <div id='keen-chart-osf-product-usage-ins'>...</div>
-{% endblock content %}
+{% endblock content_analytics %}
+
+{% block bottom_js %}
+    <script src="{% static 'public/js/sales-analytics-keen.js' %}"></script>
+{% endblock bottom_js %}
