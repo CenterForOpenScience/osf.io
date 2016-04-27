@@ -3,7 +3,6 @@ Views related to OAuth2 platform applications. Intended for OSF internal use onl
 """
 from rest_framework.exceptions import APIException
 from rest_framework import generics
-from rest_framework import renderers
 from rest_framework import permissions as drf_permissions
 
 from api.base.renderers import JSONAPIRenderer, JSONRendererWithESISupport
@@ -51,7 +50,7 @@ class ApplicationList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixi
     view_category = 'applications'
     view_name = 'application-list'
 
-    renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer,]  # Hide from web-browsable API tool
+    renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer, ]  # Hide from web-browsable API tool
 
     def get_default_odm_query(self):
 
@@ -91,7 +90,7 @@ class ApplicationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, 
     view_category = 'applications'
     view_name = 'application-detail'
 
-    renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer,]  # Hide from web-browsable API tool
+    renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer, ]  # Hide from web-browsable API tool
 
     def get_object(self):
         return self.get_app()
