@@ -48,6 +48,7 @@ from website.util import sanitize
 from website.exceptions import (
     NodeStateError,
     InvalidSanctionApprovalToken, InvalidSanctionRejectionToken,
+    InvalidTagError, TagNotFoundError,
     UserNotAffiliatedError,
 )
 from website.institutions.model import Institution, AffiliatedInstitutionsList
@@ -2274,7 +2275,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         return registered
 
     def remove_tag(self, tag, auth, save=True):
-        if tag and tag in self.tags:
+        if not tag:
+            raise InvalidTagError
+        elif tag not in self.tags:
+            raise TagNotFoundError
+        else:
             self.tags.remove(tag)
             self.add_log(
                 action=NodeLog.TAG_REMOVED,
@@ -2289,7 +2294,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             if save:
                 self.save()
             return True
-        return False
 
     def add_tag(self, tag, auth, save=True, log=True):
         if not isinstance(tag, Tag):

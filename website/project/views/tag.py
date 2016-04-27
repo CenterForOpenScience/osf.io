@@ -5,6 +5,7 @@ from modularodm import Q
 from modularodm.exceptions import ValidationError
 
 from framework.auth.decorators import collect_auth
+from website.exceptions import InvalidTagError, NodeStateError, TagNotFoundError
 from website.project.model import Node, Tag
 from website.project.decorators import (
     must_be_valid_project, must_have_permission, must_not_be_registration
@@ -54,6 +55,11 @@ def project_add_tag(auth, node, **kwargs):
 @must_not_be_registration
 def project_remove_tag(auth, node, **kwargs):
     data = request.get_json()
-    if node.remove_tag(tag=data['tag'], auth=auth):
+    try:
+        node.remove_tag(tag=data['tag'], auth=auth)
+    except TagNotFoundError:
+        return {'status': 'failure'}, http.CONFLICT
+    except (InvalidTagError, NodeStateError):
+        return {'status': 'failure'}, http.BAD_REQUEST
+    else:
         return {'status': 'success'}, http.OK
-    return {'status': 'failure'}, http.BAD_REQUEST

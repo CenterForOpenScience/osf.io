@@ -686,7 +686,7 @@ class TestProjectViews(OsfTestCase):
         self.project.add_tag('narf', auth=self.consolidate_auth1, save=True)
         url = self.project.api_url_for('project_remove_tag')
         res= self.app.delete_json(url, {'tag': 'troz'}, auth=self.auth, expect_errors=True)
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http.CONFLICT)
 
     # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/1478
     @mock.patch('website.archiver.tasks.archive')

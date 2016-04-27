@@ -34,10 +34,13 @@ $(function() {
             }
             var request = $osf.ajaxJSON('DELETE', tagUrl, {'data': {'tag': tag}});
             request.fail(function (xhr, textStatus, error) {
-                $osf.growl('Error', 'Could not remove tag.');
-                Raven.captureMessage('Failed to remove tag', {
-                    extra: { tag: tag, url: tagUrl, textStatus: textStatus, error: error }
-                });
+                // Suppress "tag not found" errors, as the end result is what the user wanted (tag is gone)- eg could be because two people were working at same time
+                if (xhr.status !== 409) {
+                    $osf.growl('Error', 'Could not remove tag.');
+                    Raven.captureMessage('Failed to remove tag', {
+                        extra: {tag: tag, url: tagUrl, textStatus: textStatus, error: error}
+                    });
+                }
             });
         }
     });

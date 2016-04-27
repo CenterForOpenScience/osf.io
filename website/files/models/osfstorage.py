@@ -6,6 +6,7 @@ from modularodm import Q
 
 from framework.auth import Auth
 from framework.guid.model import Guid
+from website.exceptions import InvalidTagError, NodeStateError, TagNotFoundError
 from website.files import exceptions
 from website.files.models.base import File, Folder, FileNode, FileVersion, TrashedFileNode
 from website.util import permissions
@@ -238,14 +239,20 @@ class OsfStorageFile(OsfStorageFileNode, File):
     def remove_tag(self, tag, auth, save=True, log=True):
         from website.models import Tag, NodeLog  # Prevent import error
         tag = Tag.load(tag)
-        if tag and tag in self.tags and not self.node.is_registration:
+        if not tag:
+            raise InvalidTagError
+        elif tag not in self.tags:
+            raise TagNotFoundError
+        elif self.node.is_registration:
+            # Can't perform edits on a registration
+            raise NodeStateError
+        else:
             self.tags.remove(tag)
             if log:
                 self.add_tag_log(NodeLog.FILE_TAG_REMOVED, tag._id, auth)
             if save:
                 self.save()
             return True
-        return False
 
     def delete(self, user=None, parent=None):
         from website.search import search
