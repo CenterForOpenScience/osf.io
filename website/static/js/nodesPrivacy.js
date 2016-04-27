@@ -47,13 +47,12 @@ function _flattenNodeTree(nodeTree) {
  */
 function getNodesOriginal(nodeTree, nodesOriginal) {
     var flatNodes = _flattenNodeTree(nodeTree);
-    $.each(flatNodes, function(_, node) {
-        var nodeId = nodeTree.node.id;
-        nodesOriginal[nodeId] = {
-            public: nodeTree.node.is_public,
-            id: nodeTree.node.id,
-            title: nodeTree.node.title,
-            canWrite: nodeTree.node.can_write,
+    $.each(flatNodes, function(_, nodeMeta) {
+        nodesOriginal[nodeMeta.node.id] = {
+            public: nodeMeta.node.is_public,
+            id: nodeMeta.node.id,
+            title: nodeMeta.node.title,
+            canWrite: nodeMeta.node.can_write,
             changed: false
         };
     });
@@ -293,7 +292,7 @@ NodesPrivacyViewModel.prototype.makeEmbargoPublic = function() {
         $('.modal').modal('hide');
         self.onSetPrivacy(nodesChanged, true);
         $osf.growl(
-            'Request Initiated',
+            'Request initiated',
             'You have initiated a request to end this registration\'s embargo early, and to make it and all of its components public immediately. All adminstrators on this registration have 48 hours to approve or disapprove of this action.',
             'success'
         );
