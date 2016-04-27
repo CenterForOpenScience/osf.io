@@ -17,7 +17,7 @@
                 <ul class="nav nav-stacked list-group" data-bind="foreach: {data: pages, as: 'page'}, visible: pages().length > 1">
                   <li class="re-navbar">
                     <a class="registration-editor-page" id="top-nav" style="text-align: left;"
-                       data-bind="text: title, click: $root.selectPage,
+                       data-bind="text: title, click: $root.selectPage.bind($root),
                                   style:{'font-weight': active() ? 'bold' : 'normal'},
                                   css: {'bg-danger': ($root.showValidation() && page.hasValidationInfo())}">
                     </a>
