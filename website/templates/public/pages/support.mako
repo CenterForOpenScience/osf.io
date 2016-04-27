@@ -35,13 +35,13 @@
             <div class="col-sm-4">
                 <div class="support-col">
                     <div class="support-col-header bg-color-select">
-                        <h4 class="f-w-lg"><a href="/getting-started">Getting Started</a></h4>
+                        <h4 class="f-w-lg"><a href="/getting-started">OSF Guides</a></h4>
                     </div>
                     <div class="support-col-body clearfix">
-                        <p> Learn how to use the OSF for improving your research workflow. <a href="/getting-started">
-                            Getting Started </a> has step-by-step video tutorials and screenshots that show you the basics
+                        <p> Learn how to use the OSF for improving your research workflow. Read our <a href="http://help.osf.io">
+                            Guides </a> for step-by-step screenshots that show you the basics
                             of project structures, version control, privacy, files, add-on support, and more! </p>
-                            <a href="/getting-started" class="btn btn-info m-t-lg pull-right" > Visit Getting Started <i class="fa fa-angle-right"></i> </a>
+                            <a href="http://help.osf.io" class="btn btn-info m-t-lg pull-right" > Visit Guides <i class="fa fa-angle-right"></i> </a>
 
                     </div>
                 </div>
