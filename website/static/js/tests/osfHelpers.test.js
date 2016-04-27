@@ -57,6 +57,19 @@ describe('osfHelpers', () => {
     });
 
 
+    describe('userIsContributor', () => {
+        var contributors = [{'id': 'abcde'}];
+        it('returns true if user is in contributors list', () => {
+            var userId = 'abcde';
+            assert.isTrue($osf.userIsContributor(userId, contributors));
+        });
+
+        it('returns false if user is not in contributors list', () => {
+            var userId = '12345';
+            assert.isFalse($osf.userIsContributor(userId, contributors));
+        });
+    });
+
     describe('handleJSONError', () => {
 
         var growlStub;
