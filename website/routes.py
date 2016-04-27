@@ -214,7 +214,7 @@ def make_url_map(app):
 
         Rule('/faq/', 'get', {}, OsfWebRenderer('public/pages/faq.mako')),
         Rule('/getting-started/', 'get', website_views.redirect_getting_started, notemplate),
-        Rule('/getting-started/email/', 'get', website_views.redirect_meetings_analytics_link, json_renderer),
+        Rule('/getting-started/email/', 'get', website_views.redirect_getting_started, notemplate),
         Rule('/support/', 'get', {}, OsfWebRenderer('public/pages/support.mako')),
 
         Rule('/explore/', 'get', {}, OsfWebRenderer('public/explore.mako')),
