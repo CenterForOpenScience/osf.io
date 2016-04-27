@@ -5,11 +5,61 @@ require('knockout.validation');
 var $ = require('jquery');
 
 var $osf = require('./osfHelpers');
+var zxcvbn = require('zxcvbn');
+
+
+ko.validation.rules['trial'] = {
+    validator: function (val, otherVal) {
+        return val === otherVal;
+    },
+    message: 'The field must equal {0}'
+};
+ko.validation.registerExtenders();
 
 
 var ViewModel = function(submitUrl, campaign) {
 
     var self = this;
+
+    self.typedPassword = ko.observable('').extend({ notify: 'always' });
+
+    self.passwordFeedback = ko.observable('');
+
+    self.passwordComplexity = ko.pureComputed(function() {
+        var current = zxcvbn(self.typedPassword());
+        self.passwordFeedback(current.feedback.warning);
+        return current.score;
+    });
+
+    self.passwordComplexityBar = ko.computed(function() {
+        if (self.passwordComplexity() == 0) {
+            return {
+                class: 'progress-bar progress-bar-danger',
+                style: 'width: 0%'
+            };
+        }
+        if (self.passwordComplexity() == 1) {
+            return {
+                class: 'progress-bar progress-bar-danger',
+                style: 'width: 25%'
+            };
+        } else if (self.passwordComplexity() == 2) {
+            return {
+                class: 'progress-bar progress-bar-warning progress-bar-striped active',
+                style: 'width: 50%'
+            };
+        } else if (self.passwordComplexity() == 3) {
+            return {
+                class: 'progress-bar progress-bar-warning progress-bar-striped active',
+                style: 'width: 75%'
+            };
+        } else if (self.passwordComplexity() == 4) {
+            return {
+                class: 'progress-bar progress-bar-success',
+                style: 'width: 100%'
+            };
+        }
+    });
 
     self.fullName = ko.observable('').extend({
         required: true,
