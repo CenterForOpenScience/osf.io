@@ -2,6 +2,7 @@ from nose import tools as nt
 import mock
 
 from django.test import RequestFactory
+from django.http import Http404
 from tests.base import AdminTestCase
 from tests.factories import AuthUserFactory
 
@@ -27,13 +28,12 @@ class TestRegisterUser(AdminTestCase):
         self.view = RegisterUser()
         self.request = RequestFactory().post('fake_path')
 
-    @mock.patch('admin.common_auth.views.page_not_found')
-    def test_osf_id_invalid(self, mock_404):
+    def test_osf_id_invalid(self):
         form = UserRegistrationForm(data=self.data)
         nt.assert_true(form.is_valid())
         view = setup_form_view(self.view, self.request, form)
-        view.form_valid(form)
-        nt.assert_true(mock_404.called_with(self.request, AttributeError))
+        with nt.assert_raises(Http404):
+            view.form_valid(form)
 
     @mock.patch('admin.common_auth.views.PasswordResetForm.save')
     @mock.patch('admin.common_auth.views.messages.success')

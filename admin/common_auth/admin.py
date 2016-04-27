@@ -39,8 +39,8 @@ class CustomUserAdmin(UserAdmin):
             reset_form = PasswordResetForm({'email': user.email}, request.POST)
             assert reset_form.is_valid()
             reset_form.save(
-                subject_template_name='common_auth/emails/account_creation_subject.txt',
-                email_template_name='common_auth/emails/invitation_email.html',
+                subject_template_name='emails/account_creation_subject.txt',
+                email_template_name='emails/password_reset_email.html',
                 request=request
             )
 

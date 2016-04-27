@@ -1,5 +1,8 @@
-from datetime import datetime
-from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
+from django.contrib.auth.models import (
+    AbstractBaseUser,
+    PermissionsMixin,
+    BaseUserManager,
+)
 from django.db import models
 
 from website.models import User as OsfUserModel
@@ -44,9 +47,9 @@ class MyUser(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
-    date_joined = models.DateTimeField(default=datetime.now)
+    date_joined = models.DateTimeField(auto_now_add=True)
     confirmed = models.BooleanField(default=False)
-    osf_id = models.CharField(default='', max_length=5, blank=True)
+    osf_id = models.CharField(max_length=5, blank=True)
 
     objects = MyUserManager()
 

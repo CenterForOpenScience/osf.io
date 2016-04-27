@@ -2,7 +2,6 @@ from __future__ import absolute_import, unicode_literals
 
 from django.core.urlresolvers import reverse
 from django.views.generic.edit import FormView
-from django.views.defaults import page_not_found
 from django.contrib import messages
 from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth import login, REDIRECT_FIELD_NAME, authenticate, logout
@@ -11,6 +10,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect
 from django.conf import settings
+from django.http import Http404
 
 from website.project.model import User
 from website.settings import PREREG_ADMIN_TAG
@@ -63,18 +63,12 @@ class RegisterUser(SuperUser, FormView):
 
     def form_valid(self, form):
         osf_id = form.cleaned_data.get('osf_id')
+        osf_user = User.load(osf_id)
         try:
-            osf_user = User.load(osf_id)
             osf_user.system_tags.append(PREREG_ADMIN_TAG)
         except AttributeError:
-            return page_not_found(
-                self.request,
-                AttributeError(
-                    'OSF user with id "{}" not found. Please double check.'.format(
-                        osf_id
-                    )
-                )
-            )
+            raise Http404(('OSF user with id "{}" not found.'
+                           ' Please double check.').format(osf_id))
         new_user = MyUser.objects.create_user(
             email=form.cleaned_data.get('email'),
             password=form.cleaned_data.get('password1')
