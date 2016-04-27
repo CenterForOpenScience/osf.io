@@ -11,7 +11,7 @@
 <script type="text/html" id="match">
   <input data-bind="valueUpdate: 'keyup',
                     value: value,
-                    attr.placeholder: match" type="text" class="form-control" />
+                    attr: {placeholder: match}" type="text" class="form-control" />
 </script>
 <script type="text/html" id="textarea">
   <textarea data-bind="valueUpdate: 'keyup',
@@ -39,7 +39,7 @@
 <script type="text/html" id="multiselect">
   <div class="col-md-12" data-bind="foreach: {data: options, as: 'option'}">
     <p>
-      <input type="checkbox" data-bind="attr.value: option,
+      <input type="checkbox" data-bind="attr: {value: option},
                                         checked: $parent.value,
                                         checkedValue: option" />
       <span data-bind="text: option"></span>
