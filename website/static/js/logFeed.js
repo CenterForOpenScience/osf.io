@@ -8,12 +8,9 @@ var $ = require('jquery');
 var moment = require('moment');
 var Paginator = require('js/paginator');
 var oop = require('js/oop');
-require('knockout.punches');
 
 var $osf = require('js/osfHelpers');  // Injects 'listing' binding handler to to Knockout
 var nodeCategories = require('json!built/nodeCategories.json');
-
-ko.punches.enableAll();  // Enable knockout punches
 
 /**
   * Log model.
@@ -176,7 +173,6 @@ var createLogs = function(logData){
             nodeCategory: item.node.category,
             contributors: item.contributors,
             nodeUrl: item.node.url,
-            projectUrl: item.node.node_type === 'project' ? '/' + item.node.registered_from_id + '/' : item.node.url,
             userFullName: item.user.fullname,
             userURL: item.user.url,
             params: item.params,

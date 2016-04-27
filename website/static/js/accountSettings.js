@@ -8,9 +8,6 @@ var oop = require('js/oop');
 var Raven = require('raven-js');
 var ChangeMessageMixin = require('js/changeMessage');
 
-require('knockout.punches');
-ko.punches.enableAll();
-
 
 var UserEmail = oop.defclass({
     constructor: function(params) {

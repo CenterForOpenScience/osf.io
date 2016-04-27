@@ -26,6 +26,15 @@ class QueuedMail(StoredObject):
     data = fields.DictionaryField()
     sent_at = fields.DateTimeField(index=True)
 
+    def __repr__(self):
+        if self.sent_at is not None:
+            return '<QueuedMail {} of type {} sent to {} at {}>'.format(
+                self._id, self.email_type, self.to_addr, self.sent_at
+            )
+        return '<QueuedMail {} of type {} to be sent to {} on {}>'.format(
+            self._id, self.email_type, self.to_addr, self.send_at
+        )
+
     def send_mail(self):
         """
         Grabs the data from this email, checks for user subscription to help mails,

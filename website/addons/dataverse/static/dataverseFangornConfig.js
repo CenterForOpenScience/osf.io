@@ -76,6 +76,9 @@ var _dataverseItemButtons = {
                     item.data.dataverseIsPublished = true;
                     item.data.hasPublishedFiles = item.children.length > 0;
                     item.data.version = item.data.hasPublishedFiles ? 'latest-published' : 'latest';
+                    for (var i = 0; i < item.children.length; i++) { // Brute force the child files to be set as "latest-published" without page reload
+                        item.children[i].data.extra.datasetVersion = item.data.version;
+                    }
                 }).fail(function (xhr, status, error) {
                     var statusCode = xhr.responseJSON.code;
                     var message;

@@ -1,5 +1,5 @@
 """
-
+Routes associated with the wiki page
 """
 
 import os
@@ -32,43 +32,71 @@ page_routes = {
     'rules': [
 
         # Home (Base) | GET
-        Rule([
-            '/project/<pid>/wiki/',
-            '/project/<pid>/node/<nid>/wiki/',
-        ], 'get', views.project_wiki_home, OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'edit.mako'))),
+        Rule(
+            [
+                '/project/<pid>/wiki/',
+                '/project/<pid>/node/<nid>/wiki/',
+            ],
+            'get',
+            views.project_wiki_home,
+            OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'edit.mako'), trust=False)
+        ),
 
         # View (Id) | GET
-        Rule([
-            '/project/<pid>/wiki/id/<wid>/',
-            '/project/<pid>/node/<nid>/wiki/id/<wid>/',
-        ], 'get', views.project_wiki_id_page, OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'edit.mako'))),
+        Rule(
+            [
+                '/project/<pid>/wiki/id/<wid>/',
+                '/project/<pid>/node/<nid>/wiki/id/<wid>/',
+            ],
+            'get',
+            views.project_wiki_id_page,
+            OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'edit.mako'), trust=False)
+        ),
 
         # Wiki | GET
-        Rule([
-            '/project/<pid>/wiki/<wname>/',
-            '/project/<pid>/node/<nid>/wiki/<wname>/',
-        ], 'get', views.project_wiki_view, OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'edit.mako'))),
+        Rule(
+            [
+                '/project/<pid>/wiki/<wname>/',
+                '/project/<pid>/node/<nid>/wiki/<wname>/',
+            ],
+            'get',
+            views.project_wiki_view,
+            OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'edit.mako'), trust=False)
+        ),
 
         # Edit | GET (legacy url, trigger redirect)
-        Rule([
-            '/project/<pid>/wiki/<wname>/edit/',
-            '/project/<pid>/node/<nid>/wiki/<wname>/edit/',
-        ], 'get', views.project_wiki_edit, OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'edit.mako'))),
+        Rule(
+            [
+                '/project/<pid>/wiki/<wname>/edit/',
+                '/project/<pid>/node/<nid>/wiki/<wname>/edit/',
+            ],
+            'get',
+            views.project_wiki_edit,
+            OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'edit.mako'), trust=False)
+        ),
 
         # Compare | GET (legacy url, trigger redirect)
-        Rule([
-            '/project/<pid>/wiki/<wname>/compare/<int:wver>/',
-            '/project/<pid>/node/<nid>/wiki/<wname>/compare/<int:wver>/',
-        ], 'get', views.project_wiki_compare, OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'edit.mako'))),
+        Rule(
+            [
+                '/project/<pid>/wiki/<wname>/compare/<int:wver>/',
+                '/project/<pid>/node/<nid>/wiki/<wname>/compare/<int:wver>/',
+            ],
+            'get',
+            views.project_wiki_compare,
+            OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'edit.mako'), trust=False)
+        ),
 
         # Edit | POST
-        Rule([
-            '/project/<pid>/wiki/<wname>/',
-            '/project/<pid>/node/<nid>/wiki/<wname>/',
-        ], 'post', views.project_wiki_edit_post, OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'edit.mako'))),
-
+        Rule(
+            [
+                '/project/<pid>/wiki/<wname>/',
+                '/project/<pid>/node/<nid>/wiki/<wname>/',
+            ],
+            'post',
+            views.project_wiki_edit_post,
+            OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'edit.mako'), trust=False)
+        ),
     ]
-
 }
 
 api_routes = {

@@ -1,3 +1,5 @@
+import markupsafe
+
 from framework.exceptions import FrameworkError
 from website import language
 
@@ -51,9 +53,11 @@ class MergeConfirmedRequiredError(EmailConfirmTokenError):
 
     @property
     def message_long(self):
+        src_user = markupsafe.escape(self.user.username)
+        dest_user = markupsafe.escape(self.user_to_merge.username)
         return language.MERGE_CONFIRMATION_REQUIRED_LONG.format(
-            user=self.user,
-            user_to_merge=self.user_to_merge,
+            src_user=src_user,
+            dest_user=dest_user,
         )
 
 

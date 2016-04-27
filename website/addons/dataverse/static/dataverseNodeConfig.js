@@ -5,14 +5,12 @@
 
 var ko = require('knockout');
 var bootbox = require('bootbox');
-require('knockout.punches');
 var Raven = require('raven-js');
 
 var $osf = require('js/osfHelpers');
 
 var $modal = $('#dataverseInputCredentials');
 
-ko.punches.enableAll();
 
 function ViewModel(url) {
     var self = this;
@@ -118,7 +116,7 @@ function ViewModel(url) {
         }),
         setInfoSuccess: ko.pureComputed(function() {
             var filesUrl = window.contextVars.node.urls.web + 'files/';
-            return 'Successfully linked dataset \'' + self.savedDatasetTitle() + '\'. Go to the <a href="' +
+            return 'Successfully linked dataset \'' + $osf.htmlEscape(self.savedDatasetTitle()) + '\'. Go to the <a href="' +
                 filesUrl + '">Files page</a> to view your content.';
         }),
         setDatasetError: ko.pureComputed(function() {

@@ -1,5 +1,3 @@
-<%page expression_filter="h"/>
-
 <!-- New Component Modal -->
 <div class="modal fade" id="newWiki">
     <div class="modal-dialog">
@@ -61,11 +59,11 @@
                 var request = $.ajax({
                     type: 'GET',
                     cache: false,
-                    url: '${urls['api']['base']}' + encodeURIComponent(wikiName) + '/validate/',
+                    url: ${ urls['api']['base'] | sjson, n } + encodeURIComponent(wikiName) + '/validate/',
                     dataType: 'json'
                 });
                 request.done(function (response) {
-                    window.location.href = '${urls['web']['base']}' + encodeURIComponent(wikiName) + '/edit/';
+                    window.location.href = ${ urls['web']['base'] | sjson, n } + encodeURIComponent(wikiName) + '/edit/';
                 });
                 request.fail(function (response, textStatus, error) {
                     if (response.status === 409) {
@@ -74,7 +72,7 @@
                     else if (response.status === 403){
                         $alert.text('You do not have permission to perform this action.');
                         Raven.captureMessage('Unauthorized user can view wiki add button', {
-                            url: '${urls['api']['base']}' + encodeURIComponent(wikiName) + '/validate/',
+                            url: ${ urls['api']['base'] | sjson, n } + encodeURIComponent(wikiName) + '/validate/',
                             textStatus: textStatus,
                             error: error
                         });
@@ -82,7 +80,7 @@
                     else {
                         $alert.text('Could not validate wiki page. Please try again.'+response.status);
                         Raven.captureMessage('Error occurred while validating page', {
-                            url: '${urls['api']['base']}' + encodeURIComponent(wikiName) + '/validate/',
+                            url: ${ urls['api']['base'] | sjson, n } + encodeURIComponent(wikiName) + '/validate/',
                             textStatus: textStatus,
                             error: error
                         });

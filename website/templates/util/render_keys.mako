@@ -1,3 +1,4 @@
+<!-- TODO: File is unused; candidate for deletion? -->
 <div>
     <h2>Keys</h2>
     <form id="create_key" class="form-inline">
@@ -23,7 +24,7 @@
 <script type="text/javascript">
     $('#create_key').on('submit', function() {
         $.post(
-            '/api/v1${route}create_key/',
+            ${ '/api/v1' + route + 'create_key/' | sjson, n },
             $(this).serialize(),
             function(response) {
                 window.location.reload();
@@ -33,7 +34,7 @@
     });
     $('.revoke_key').on('click', function() {
         $.post(
-            '/api/v1${route}revoke_key/',
+            ${'/api/v1' + route + 'revoke_key/'},
             {key : $(this).attr('data-key')},
             function(response) {
                 window.location.reload();

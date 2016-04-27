@@ -473,7 +473,12 @@ var hasTimeComponent = function(dateString) {
   * A date object with two formats: local time or UTC time.
   * @param {String} date The original date as a string. Should be an standard
   *                      format such as RFC or ISO. If the date is a datetime string
-  *                      with no offset, an offset of UTC +00:00 will be assumed
+  *                      with no offset, an offset of UTC +00:00 will be assumed. However,
+  *                      if the date is just a date (no time component), the time
+  *                      component will be set to midnight local time.  Ergo, if date
+  *                      is '2016-04-08' the imputed time will be '2016-04-08 04:00 UTC'
+  *                      if run in EDT. But if date is '2016-04-08:00:00:00.000' it will
+  *                      always be '2016-04-08 00:00 UTC', regardless of the local timezone.
   */
 var LOCAL_DATEFORMAT = 'YYYY-MM-DD hh:mm A';
 var UTC_DATEFORMAT = 'YYYY-MM-DD HH:mm UTC';

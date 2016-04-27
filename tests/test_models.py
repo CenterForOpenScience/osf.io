@@ -1264,7 +1264,6 @@ class TestUpdateNodeWiki(OsfTestCase):
         with assert_raises(NameInvalidError):
             self.project.update_node_wiki(invalid_name, 'more valid content', self.auth)
 
-
 class TestRenameNodeWiki(OsfTestCase):
 
     def setUp(self):
@@ -2375,12 +2374,20 @@ class TestAddonCallbacks(OsfTestCase):
     }
 
     def setUp(self):
+        def mock_get_addon(addon_name, deleted=False):
+            # Overrides AddonModelMixin.get_addon -- without backrefs,
+            # no longer guaranteed to return the same set of objects-in-memory
+            return self.patched_addons.get(addon_name, None)
+
         super(TestAddonCallbacks, self).setUp()
         # Create project with component
         self.user = UserFactory()
         self.auth = Auth(user=self.user)
         self.parent = ProjectFactory()
         self.node = NodeFactory(creator=self.user, project=self.parent)
+        self.patches = []
+        self.patched_addons = {}
+        self.original_get_addon = Node.get_addon
 
         # Mock addon callbacks
         for addon in self.node.addons:
@@ -2388,14 +2395,28 @@ class TestAddonCallbacks(OsfTestCase):
             for callback, return_value in self.callbacks.iteritems():
                 mock_callback = getattr(mock_settings, callback)
                 mock_callback.return_value = return_value
-                setattr(
+                patch = mock.patch.object(
                     addon,
                     callback,
                     getattr(mock_settings, callback)
                 )
+                patch.start()
+                self.patches.append(patch)
+            self.patched_addons[addon.config.short_name] = addon
+        n_patch = mock.patch.object(
+            self.node,
+            'get_addon',
+            mock_get_addon
+        )
+        n_patch.start()
+        self.patches.append(n_patch)
+
+    def tearDown(self):
+        super(TestAddonCallbacks, self).tearDown()
+        for patcher in self.patches:
+            patcher.stop()
 
     def test_remove_contributor_callback(self):
-
         user2 = UserFactory()
         self.node.add_contributor(contributor=user2, auth=self.auth)
         self.node.remove_contributor(contributor=user2, auth=self.auth)
@@ -2406,7 +2427,6 @@ class TestAddonCallbacks(OsfTestCase):
             )
 
     def test_set_privacy_callback(self):
-
         self.node.set_privacy('public', self.auth)
         for addon in self.node.addons:
             callback = addon.after_set_privacy
@@ -3162,15 +3182,17 @@ class TestProject(OsfTestCase):
     def test_get_recent_logs(self):
         # Add some logs
         for _ in range(5):
-            self.project.logs.append(NodeLogFactory())
+            self.project.add_log('file_added', params={'node': self.project._id}, auth=self.auth)
+
         # Expected logs appears
         assert_equal(
-            self.project.get_recent_logs(3),
-            list(reversed(self.project.logs)[:3])
+            list(self.project.get_recent_logs(3)),
+            list(self.project.logs.sort('-date')[:3])
         )
+
         assert_equal(
-            self.project.get_recent_logs(),
-            list(reversed(self.project.logs))
+            list(self.project.get_recent_logs()),
+            list(self.project.logs.sort('-date'))
         )
 
     def test_date_modified(self):
@@ -3238,6 +3260,7 @@ class TestParentNode(OsfTestCase):
         self.auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user, description='The Dudleys strike again')
         self.child = NodeFactory(parent=self.project, creator=self.user, description="Devon.")
+        self.deleted_child = NodeFactory(parent=self.project, creator=self.user, title='Deleted', is_deleted=True)
 
         self.registration = RegistrationFactory(project=self.project)
         self.template = self.project.use_as_template(auth=self.auth)
@@ -3292,6 +3315,13 @@ class TestParentNode(OsfTestCase):
         new_project_grandchild = NodeFactory(parent=template_child)
         assert_equal(new_project_grandchild.parent_node._id, template_child._id)
 
+    def test_template_project_does_not_copy_deleted_components(self):
+        """Regression test for https://openscience.atlassian.net/browse/OSF-5942. """
+        new_project = self.project.use_as_template(auth=self.auth)
+        new_nodes = [node.title for node in new_project.nodes]
+        assert_equal(len(new_project.nodes), 1)
+        assert_not_in(self.deleted_child.title, new_nodes)
+
 
 class TestRoot(OsfTestCase):
     def setUp(self):
@@ -3341,6 +3371,7 @@ class TestRoot(OsfTestCase):
 
     def test_fork_has_own_root(self):
         fork = self.project.fork_node(auth=self.auth)
+        fork.save()
         assert_equal(fork.root._id, fork._id)
 
     def test_fork_children_have_correct_root(self):
@@ -3638,8 +3669,8 @@ class TestForkNode(OsfTestCase):
         assert_equal(title_prepend + original.title, fork.title)
         assert_equal(original.category, fork.category)
         assert_equal(original.description, fork.description)
-        assert_equal(original.logs, fork.logs[:-1])
         assert_true(len(fork.logs) == len(original.logs) + 1)
+        assert_not_equal(original.logs[-1].action, NodeLog.NODE_FORKED)
         assert_equal(fork.logs[-1].action, NodeLog.NODE_FORKED)
         assert_equal(original.tags, fork.tags)
         assert_equal(original.parent_node is None, fork.parent_node is None)
@@ -3759,6 +3790,15 @@ class TestForkNode(OsfTestCase):
         self.project.set_privacy('public')
         fork = self.project.fork_node(self.auth)
         assert_false(fork.is_public)
+
+    def test_fork_log_has_correct_log(self):
+        fork = self.project.fork_node(self.auth)
+        last_log = list(fork.logs)[-1]
+        assert_equal(last_log.action, NodeLog.NODE_FORKED)
+        # Legacy 'registration' param should be the ID of the fork
+        assert_equal(last_log.params['registration'], fork._primary_key)
+        # 'node' param is the original node's ID
+        assert_equal(last_log.params['node'], self.project._primary_key)
 
     def test_not_fork_private_link(self):
         link = PrivateLinkFactory()
@@ -3896,7 +3936,12 @@ class TestRegisterNode(OsfTestCase):
 
     def test_logs(self):
         # Registered node has all logs except for registration approval initiated
-        assert_equal(self.registration.logs, self.project.logs[:-1])
+        assert_equal(len(self.project.logs) - 1, len(self.registration.logs))
+        assert_equal(len(self.registration.logs), 1)
+        assert_equal(self.registration.logs[0].action, 'project_created')
+        assert_equal(len(self.project.logs), 2)
+        assert_equal(self.project.logs[0].action, 'project_created')
+        assert_equal(self.project.logs[1].action, 'registration_initiated')
 
     def test_tags(self):
         assert_equal(self.registration.tags, self.project.tags)
@@ -4061,40 +4106,6 @@ class TestNodeLog(OsfTestCase):
         unparsed = self.log.tz_date
         assert_equal(parsed, unparsed)
 
-    def test_resolve_node_same_as_self_node(self):
-        project = ProjectFactory()
-        assert_equal(
-            project.logs[-1].resolve_node(project),
-            project,
-        )
-
-    def test_resolve_node_in_nodes_list(self):
-        component = NodeFactory()
-        assert_equal(
-            component.logs[-1].resolve_node(component.parent_node),
-            component,
-        )
-
-    def test_resolve_node_fork_of_self_node(self):
-        project = ProjectFactory()
-        fork = project.fork_node(auth=Auth(project.creator))
-        assert_equal(
-            fork.logs[-1].resolve_node(fork),
-            fork,
-        )
-
-    def test_resolve_node_fork_of_self_in_nodes_list(self):
-        user = UserFactory()
-        component = ProjectFactory(creator=user)
-        project = ProjectFactory(creator=user)
-        project.nodes.append(component)
-        project.save()
-        forked_project = project.fork_node(auth=Auth(user=user))
-        assert_equal(
-            forked_project.nodes[0].logs[-1].resolve_node(forked_project),
-            forked_project.nodes[0],
-        )
-
     def test_can_view(self):
         project = ProjectFactory(is_public=False)
 
@@ -4110,6 +4121,39 @@ class TestNodeLog(OsfTestCase):
 
         created_log = project.logs[0]
         assert_false(created_log.can_view(unrelated, Auth(user=project.creator)))
+
+
+    def test_original_node_and_current_node_for_registration_logs(self):
+        user = UserFactory()
+        project = ProjectFactory(creator=user)
+        registration = RegistrationFactory(project=project)
+
+        log_project_created_original = project.logs[0]
+        log_registration_initiated = project.logs[1]
+        log_project_created_registration = registration.logs[0]
+
+        assert_equal(project._id, log_project_created_original.original_node._id)
+        assert_equal(project._id, log_project_created_original.node._id)
+        assert_equal(project._id, log_registration_initiated.original_node._id)
+        assert_equal(project._id, log_registration_initiated.node._id)
+        assert_equal(project._id, log_project_created_registration.original_node._id)
+        assert_equal(registration._id, log_project_created_registration.node._id)
+
+    def test_original_node_and_current_node_for_fork_logs(self):
+        user = UserFactory()
+        project = ProjectFactory(creator=user)
+        fork = project.fork_node(auth=Auth(user))
+
+        log_project_created_original = project.logs[0]
+        log_project_created_fork = fork.logs[0]
+        log_node_forked = fork.logs[1]
+
+        assert_equal(project._id, log_project_created_original.original_node._id)
+        assert_equal(project._id, log_project_created_original.node._id)
+        assert_equal(project._id, log_project_created_fork.original_node._id)
+        assert_equal(fork._id, log_project_created_fork.node._id)
+        assert_equal(project._id, log_node_forked.original_node._id)
+        assert_equal(fork._id, log_node_forked.node._id)
 
 
 class TestPermissions(OsfTestCase):
