@@ -52,7 +52,7 @@ var _dataverseItemButtons = {
                     }
                 }, 'Publish')];
 
-            tb.modal.update(modalContent, modalActions, modalHeader);
+            tb.modal.update(modalContent, modalActions, m('h3.break-word.modal-title', 'Publish this ' + toPublish + '?'));
 
             function publishDataset() {
                 tb.modal.dismiss();
