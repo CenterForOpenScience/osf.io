@@ -101,28 +101,28 @@ class MeetingForm(forms.Form):
     )
 
     def clean_endpoint(self):
-        data = self.cleaned_data['endpoint']
+        endpoint = self.cleaned_data['endpoint']
         edit = self.cleaned_data['edit']
         if not edit:
-            if Conference.find(Q('endpoint', 'iexact', data)).count() > 0:
+            if Conference.find(Q('endpoint', 'iexact', endpoint)).count() > 0:
                 raise forms.ValidationError(
                     'A meeting with this endpoint exists already.'
                 )
         else:
             try:
-                Conference.get_by_endpoint(data)
+                Conference.get_by_endpoint(endpoint)
             except ConferenceError:
                 raise forms.ValidationError(
                     'Meeting not found with this endpoint to update'
                 )
-        return data
+        return endpoint
 
     def clean_admins(self):
-        data = self.cleaned_data['admins']
-        for email in data:
+        emails = self.cleaned_data['admins']
+        for email in emails:
             user = get_user(email=email)
             if not user or user is None:
                 raise forms.ValidationError(
                     '{} does not have an OSF account'.format(email)
                 )
-        return data
+        return emails

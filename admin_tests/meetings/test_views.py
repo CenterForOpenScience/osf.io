@@ -1,7 +1,7 @@
 from nose import tools as nt
-import mock
 
 from django.test import RequestFactory
+from django.http import Http404
 from modularodm import Q
 from tests.base import AdminTestCase
 from tests.factories import AuthUserFactory
@@ -49,31 +49,25 @@ class TestMeetingFormView(AdminTestCase):
         self.form = MeetingForm(data=mod_data)
         self.form.is_valid()
 
-    @mock.patch('admin.meetings.views.handle_conference_error')
-    def test_get_raise_attribute(self, mock_handle):
+    def test_dispatch_raise_404(self):
         view = setup_form_view(self.view, self.request, self.form,
                                endpoint='meh')
-        view.get(self.request, endpoint='meh')
-        nt.assert_true(mock_handle.called)
-
-    @mock.patch('admin.meetings.views.handle_conference_error')
-    def test_post_raise_attribute(self, mock_handle):
-        view = setup_form_view(self.view, self.request, self.form,
-                               endpoint='meh')
-        view.post(self.request, endpoint='meh')
-        nt.assert_true(mock_handle.called)
+        with nt.assert_raises(Http404):
+            view.dispatch(self.request, endpoint='meh')
 
     def test_get_context(self):
         view = setup_form_view(self.view, self.request, self.form,
                                endpoint=self.conf.endpoint)
+        view.conf = self.conf
         res = view.get_context_data()
         nt.assert_is_instance(res, dict)
-        nt.assert_in('meeting', res)
-        nt.assert_is_instance(res['meeting'], dict)
+        nt.assert_in('endpoint', res)
+        nt.assert_equal(res['endpoint'], self.conf.endpoint)
 
     def test_get_initial(self):
         view = setup_form_view(self.view, self.request, self.form,
                                endpoint=self.conf.endpoint)
+        view.conf = self.conf
         res = view.get_initial()
         nt.assert_is_instance(res, dict)
         nt.assert_in('endpoint', res)
@@ -82,6 +76,7 @@ class TestMeetingFormView(AdminTestCase):
     def test_form_valid(self):
         view = setup_form_view(self.view, self.request, self.form,
                                endpoint=self.conf.endpoint)
+        view.conf = self.conf
         view.form_valid(self.form)
         self.conf.reload()
         nt.assert_equal(self.conf.admins[0].emails[0], self.user.emails[0])

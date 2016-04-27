@@ -1,8 +1,8 @@
 from __future__ import unicode_literals
 
 from django.views.generic import ListView, FormView
-from django.views.defaults import page_not_found
 from django.core.urlresolvers import reverse
+from django.http import Http404
 
 from framework.auth.core import get_user
 from website.models import Conference
@@ -37,49 +37,39 @@ class MeetingFormView(OSFAdmin, FormView):
     template_name = 'meetings/detail.html'
     form_class = MeetingForm
 
-    def get(self, request, *args, **kwargs):
+    def dispatch(self, request, *args, **kwargs):
+        endpoint = self.kwargs.get('endpoint')
         try:
-            return super(MeetingFormView, self).get(request, *args, **kwargs)
+            self.conf = Conference.get_by_endpoint(endpoint)
         except ConferenceError:
-            return handle_conference_error(request, 'meeting',
-                                           self.kwargs.get('endpoint'))
-
-    def post(self, request, *args, **kwargs):
-        try:
-            return super(MeetingFormView, self).post(request, *args, **kwargs)
-        except ConferenceError:
-            return handle_conference_error(request, 'meeting',
-                                           self.kwargs.get('endpoint'))
+            raise Http404('Meeting with endpoint "{}" not found'.format(
+                endpoint
+            ))
+        return super(MeetingFormView, self).dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
-        kwargs.setdefault('meeting', serialize_meeting(
-            Conference.get_by_endpoint(self.kwargs.get('endpoint'))
-        ))
+        kwargs.setdefault('endpoint', self.kwargs.get('endpoint'))
         return super(MeetingFormView, self).get_context_data(**kwargs)
 
     def get_initial(self):
-        self.initial = serialize_meeting(
-            Conference.get_by_endpoint(self.kwargs.get('endpoint'))
-        )
+        self.initial = serialize_meeting(self.conf)
         self.initial.setdefault('edit', True)
         return super(MeetingFormView, self).get_initial()
 
     def form_valid(self, form):
         custom_fields, data = get_custom_fields(form.cleaned_data)
-        # Form validation already catches if there is no conference
-        conf = Conference.get_by_endpoint(data.get('endpoint'))
         if 'admins' in form.changed_data:
             admin_users = get_admin_users(data.get('admins'))
-            conf.admins = admin_users
-        conf.name = data.get('name')
-        conf.info_url = data.get('info_url')
-        conf.logo_url = data.get('logo_url')
-        conf.active = data.get('active')
-        conf.public_projects = data.get('public_projects')
-        conf.poster = data.get('poster')
-        conf.talk = data.get('talk')
-        conf.field_names.update(custom_fields)
-        conf.save()
+            self.conf.admins = admin_users
+        self.conf.name = data.get('name')
+        self.conf.info_url = data.get('info_url')
+        self.conf.logo_url = data.get('logo_url')
+        self.conf.active = data.get('active')
+        self.conf.public_projects = data.get('public_projects')
+        self.conf.poster = data.get('poster')
+        self.conf.talk = data.get('talk')
+        self.conf.field_names.update(custom_fields)
+        self.conf.save()
         return super(MeetingFormView, self).form_valid(form)
 
     @property
@@ -93,9 +83,9 @@ class MeetingCreateFormView(OSFAdmin, FormView):
     form_class = MeetingForm
 
     def get_initial(self):
-        data = Conference.DEFAULT_FIELD_NAMES
-        self.initial.update({'field_{}'.format(k): data[k]
-                             for k in data.keys()})  # Fills in default
+        default_field_names = Conference.DEFAULT_FIELD_NAMES
+        self.initial.update({'field_{}'.format(k): default_field_names[k]
+                             for k in default_field_names.keys()})
         self.initial.setdefault('edit', False)
         return super(MeetingCreateFormView, self).get_initial()
 
@@ -118,18 +108,6 @@ class MeetingCreateFormView(OSFAdmin, FormView):
     def get_success_url(self):
         return reverse('meetings:detail',
                        kwargs={'endpoint': self.kwargs.get('endpoint')})
-
-
-def handle_conference_error(request, object_name, endpoint):
-    return page_not_found(
-        request,
-        ConferenceError(
-            '{} with endpoint "{}" not found'.format(
-                object_name.title(),
-                endpoint
-            )
-        )
-    )
 
 
 def get_custom_fields(data):

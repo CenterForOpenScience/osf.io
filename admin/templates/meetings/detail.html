@@ -16,7 +16,7 @@
         {% endfor %}
     </ul>
     {% endif %}
-    <form action="{% url 'meetings:detail' endpoint=meeting.endpoint %}" method="post">
+    <form action="{% url 'meetings:detail' endpoint=endpoint %}" method="post">
     {{ form.non_field_errors }}
     {% csrf_token %}
     {% for field in form %}
