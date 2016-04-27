@@ -27,10 +27,10 @@ def migrate(targets, dry_run=True):
         if not dry_run:
             user.social['twitter'] = twitter
             user.save()
-    '''
+    
     if dry_run:
         raise RuntimeError('Dry run, transaction rolled back.')
-    '''
+
 
 def main():
     dry_run = False
