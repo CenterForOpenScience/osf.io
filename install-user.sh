@@ -36,6 +36,3 @@ invoke requirements --quick
 pip uninstall -y uritemplate.py
 pip install uritemplate.py==0.3.0
 
-# install node dependencies
-invoke assets --dev
-
