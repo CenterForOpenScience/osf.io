@@ -177,7 +177,16 @@ var Uploader = function(question) {
         question.value(question.formattedFileList());
     });
 
+    self.UPLOAD_LANGUAGE = 'You may attach up to 5 files to this question. You may attach files that you already have' +
+        'in this OSF project, or upload a new file from your computer. Uploaded files will automatically be added to this project' +
+        'so that they can be registered.';
+
     self.addFile = function(file) {
+        if(self.selectedFiles().length === 5) {
+            bootbox.alert('Too many files. Cannot attach more than 5 files to a question.');
+            return false;
+        }
+
         if(self.fileAlreadySelected(file))
             return false;
 
