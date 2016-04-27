@@ -4296,7 +4296,8 @@ class TestStaticFileViews(OsfTestCase):
 
     def test_getting_started_page(self):
         res = self.app.get('/getting-started/')
-        assert_equal(res.status_code, 200)
+        assert_equal(res.status_code, 302)
+        assert_equal(res.request.location, 'http://help.osf.io/')
 
 
 class TestUserConfirmSignal(OsfTestCase):
