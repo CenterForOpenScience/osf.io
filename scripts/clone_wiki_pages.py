@@ -5,6 +5,8 @@ using the same NodeWikiPage objects as the original node.
 import logging
 import sys
 
+from modularodm import Q
+
 from framework.mongo import database as db
 from framework.transactions.context import TokuTransaction
 
@@ -35,6 +37,9 @@ def update_wiki_pages(nodes):
                     if not node_wiki:
                         continue
                     if node_wiki.to_storage()['node'] != node['_id']:
+                        if not node_wiki.node:
+                            move_to_backup_collection(node_wiki)
+                            continue
                         clone = node_wiki.clone_wiki(node['_id'])
                         logger.info('Cloned wiki page {} from node {} to {}'.format(wiki_id, node_wiki.node, node['_id']))
                         cloned_wiki_pages[key].append(clone._id)
@@ -45,8 +50,6 @@ def update_wiki_pages(nodes):
                             wiki_pages_current[key] = clone._id
                             db.node.update({'_id': node['_id']}, {'$set': {'wiki_pages_current': wiki_pages_current}})
 
-                        if not node_wiki.node:
-                            move_to_backup_collection(node_wiki._id)
                     else:
                         cloned_wiki_pages[key].append(wiki_id)
 
@@ -55,11 +58,9 @@ def update_wiki_pages(nodes):
 
 # Wiki pages with nodes that no longer exist are removed from NodeWikiPage
 # and put into a separate collection
-def move_to_backup_collection(wiki_id):
-    wiki = db.nodewikipage.find_one({'_id': wiki_id})
-    assert wiki
-    db[BACKUP_COLLECTION].insert(wiki)
-    db.nodewikipage.remove({'_id': wiki_id}, just_one=True)
+def move_to_backup_collection(node_wiki_page):
+    db[BACKUP_COLLECTION].insert(node_wiki_page.to_storage())
+    NodeWikiPage.remove_one(Q('_id', 'eq', node_wiki_page._id))
 
 
 if __name__ == '__main__':
