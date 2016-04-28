@@ -25,6 +25,7 @@ from api.nodes.serializers import (
     NodeProviderSerializer,
     NodeContributorsSerializer,
     NodeContributorDetailSerializer,
+    NodeDraftRegistrationSerializer,
     NodeInstitutionRelationshipSerializer,
     NodeAlternativeCitationSerializer,
     NodeContributorsCreateSerializer
@@ -46,7 +47,7 @@ from api.logs.serializers import NodeLogSerializer
 
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
-from website.models import Node, Pointer, Comment, NodeLog, Institution
+from website.models import Node, Pointer, Comment, NodeLog, Institution, DraftRegistration
 from website.files.models import FileNode
 from framework.auth.core import User
 from api.base.utils import default_node_list_query, default_node_permission_query
@@ -705,7 +706,50 @@ class NodeContributorDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVi
             raise ValidationError("Must have at least one registered admin contributor")
 
 
-# TODO: Support creating registrations
+class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin):
+    """Draft registrations of the current node.
+
+    ##Draft Registration Attributes
+
+    Draft Registrations have the "draft_registrations" `type`.
+
+        name                            type               description
+        ===========================================================================
+
+    ##Relationships
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    #This request/response
+
+    """
+    permission_classes = (
+        IsAdmin,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ExcludeRetractions
+    )
+
+    required_read_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_READ]
+    required_write_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_WRITE]
+
+    serializer_class = NodeDraftRegistrationSerializer
+    view_category = 'nodes'
+    view_name = 'node-draft-registrations'
+
+    # overrides ListCreateAPIView
+    def get_queryset(self):
+        node = self.get_node()
+        drafts = DraftRegistration.find(Q('branched_from', 'eq', node) & Q('registered_node', 'eq', None))
+        return drafts
+
+    # overrides ListBulkCreateJSONAPIView
+    def perform_create(self, serializer):
+        user = self.request.user
+        serializer.save(initiator=user, node=self.get_node())
+
 class NodeRegistrationsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     """Registrations of the current node.
 
