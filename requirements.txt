@@ -1,5 +1,6 @@
 # Base requirements for running the OSF.
 # NOTE: This does not include addon, development, metrics or release requirements.
+# NOTE: When updating pinned version, you may also need to update constraints.txt
 # To install addon requirements: inv requirements --addons
 # To install dev requirements: inv requirements --dev
 # To install metrics requirements: inv requirements --metrics

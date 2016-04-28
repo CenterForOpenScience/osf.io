@@ -1,0 +1,15 @@
+{% extends 'base_analytics.html' %}
+{% load static %}
+
+{% block title_analytics %}
+    <h1>User Session</h1>
+{% endblock title_analytics %}
+
+{% block content_analytics %}
+    <h3>Average User Session Length of Previous 7 days</h3>
+    <div id='keen-chart-average-session-user'>...</div>
+    <h3>Average MAU Session Length of Previous 7 days</h3>
+    <div id='keen-chart-average-session-mau'>...</div>
+    <h3>Average User/MAU Session Length History of past 12 weeks</h3>
+    <div id='keen-chart-average-session-history'>...</div>
+{% endblock content_analytics %}

@@ -1,8 +1,3 @@
-//  TODO: add functionality to let user choose what to query
-//  TODO: add descriptions to visualization
-//  TODO: move sales analytics to an independent section
-//  TODO: improve ui
-
 'use strict';
 
 var c3 = require('c3');
@@ -92,13 +87,13 @@ var SalesAnalytics = function() {
             return;
         }
 
-        if (numberOfWeeks === 0) {
+        if (numberOfWeeks == 0) {
             var chart = self.prepareChart('keen-chart-average-session-history');
-            chart.attributes({title: 'Average User/MAU Session Length History of Past 12 Weeks', width: '100%', height: '300', responsive: true});
+            chart.attributes({title: 'Average User/MAU Session Length History of Past 12 Weeks', width: '100%', height: 450});
             chart.adapter({chartType: 'columnchart'});
             chart.chartOptions({
-                hAxis: {title: 'Week'},
-                vAxis: {title: 'Minutes'}
+                hAxis: {title: "Week"},
+                vAxis: {title: "Minutes"}
             });
             chart.parseRawData({result: weeklyResult}).render();
             return;
@@ -196,11 +191,9 @@ var SalesAnalytics = function() {
                     {products: 'No Institutions', count: userProductMap.osf.length - userProductMap.institutions.length},
                     {products: 'Institutions', count: userProductMap.institutions.length}
                 ]);
-
             }
         });
     };
-
     self.getUserCount = function(userCount) {
         var chart = c3.generate({
             bindto: '#db-chart-user-count',
@@ -287,12 +280,11 @@ var SalesAnalytics = function() {
     };
 
     self.drawChart = function(chart, type, title, result) {
-        chart.attributes({title: title, width: '100%', responsive: true});
+        chart.attributes({title: title, width: '100%'});
         chart.adapter({chartType: type});
         chart.parseRawData({result: result});
         chart.render();
     };
-
 
     self.init = function() {
         console.log('init');

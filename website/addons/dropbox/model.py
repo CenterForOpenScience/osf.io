@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
-import os
 import httplib as http
 import logging
+import os
 
-from flask import request
-from modularodm import fields
 from dropbox.client import DropboxOAuth2Flow, DropboxClient
 from dropbox.rest import ErrorResponse
+from flask import request
+import markupsafe
+
+from modularodm import fields
 
 from framework.auth import Auth
 from framework.exceptions import HTTPError
@@ -297,9 +299,9 @@ class DropboxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                 u'Because the Dropbox add-on for {category} "{title}" was authenticated '
                 u'by {user}, authentication information has been deleted.'
             ).format(
-                category=node.category_display,
-                title=node.title,
-                user=removed.fullname
+                category=markupsafe.escape(node.category_display),
+                title=markupsafe.escape(node.title),
+                user=markupsafe.escape(removed.fullname)
             )
 
             if not auth or auth.user != removed:

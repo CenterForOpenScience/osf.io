@@ -14,7 +14,7 @@ var staticAdminPath = function(dir) {
 // Adding bundle tracker to plugins
 var plugins = common.plugins.concat([
     // for using webpack with Django
-    new BundleTracker({filename: './webpack-stats.json'})
+    new BundleTracker({filename: './webpack-stats.json'}),
 ]);
 
 common.output = {
@@ -29,8 +29,9 @@ var config = assign({}, common, {
         'admin-base-page': staticAdminPath('js/pages/base-page.js'),
         'prereg-admin-page': staticAdminPath('js/pages/prereg-admin-page.js'),
         'admin-registration-edit-page': staticAdminPath('js/pages/admin-registration-edit-page.js'),
-        'metrics-sales-analytics': staticAdminPath('js/sales_analytics/sales-analytics.js'),
-        'dashboard': staticAdminPath('js/sales_analytics/dashboard.js'),
+        'sales-analytics-keen': staticAdminPath('js/sales_analytics/sales-analytics.js'),
+        'sales-analytics-utils': staticAdminPath('js/sales_analytics/utils.js'),
+		'dashboard': staticAdminPath('js/sales_analytics/dashboard.js'),
     },
     plugins: plugins,
     debug: true,

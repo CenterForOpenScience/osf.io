@@ -9,6 +9,7 @@ from framework import status
 from website.tokens.exceptions import UnsupportedSanctionHandlerKind, TokenError
 
 def registration_approval_handler(action, registration, registered_from):
+    # TODO: Unnecessary and duplicated dictionary.
     status.push_status_message({
         'approve': 'Your registration approval has been accepted.',
         'reject': 'Your disapproval has been accepted and the registration has been cancelled.',

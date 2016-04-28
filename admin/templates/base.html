@@ -85,7 +85,7 @@
             {% if 'prereg_group' in request.user.group_names %}
             <li><a href="{% url 'pre_reg:prereg' %}"><i class='fa fa-link'></i> <span>OSF Prereg</span></a></li>
             {% endif %}
-            <li><a href="{% url 'metrics:stats_list' %}"><i class='fa fa-link'></i> <span>OSF Stats</span></a></li>
+            <li><a href="{% url 'sales_analytics:dashboard' %}"><i class='fa fa-link'></i> <span>OSF Sales Analytics</span></a></li>
           </ul><!-- /.sidebar-menu -->
         </section>
         <!-- /.sidebar -->

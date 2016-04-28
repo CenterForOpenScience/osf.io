@@ -40,9 +40,9 @@ INSTALLED_APPS = (
     'admin.base',
     'admin.pre_reg',
     'admin.spam',
-    'admin.metrics',
     'admin.nodes',
     'admin.users',
+    'admin.sales_analytics',
 
     # 3rd party
     'raven.contrib.django.raven_compat',
@@ -134,10 +134,10 @@ LOGIN_URL = '/admin/auth/login/'
 LOGIN_REDIRECT_URL = '/admin/'
 
 STATIC_ROOT = os.path.join(os.path.dirname(BASE_DIR), 'static_root')
-
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'static'),
 )
+
 
 LANGUAGE_CODE = 'en-us'
 
@@ -162,6 +162,11 @@ CKEDITOR_CONFIGS = {
         ]
     },
 }
+
+# Keen.io settings in local.py
+KEEN_PROJECT_ID = 'CHANGEME'
+KEEN_READ_KEY = 'CHANGEME'
+KEEN_WRITE_KEY = 'CHANGEME'
 
 # Keen.io settings in local.py
 KEEN_PROJECT_ID = 'override_me_in_local_py'
