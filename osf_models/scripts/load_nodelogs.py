@@ -21,7 +21,7 @@ def main():
 
     print 'Migrating {} logs...'.format(total)
     while count < total:
-        with transaction.atom():
+        with transaction.atomic():
             print 'Migrating {} through {}'.format(count, count + page_size)
             for modm_nodelog in modm_nodelogs[count:count + page_size]:
                 if NodeLog.objects.filter(guid=modm_nodelog._id).exists():
