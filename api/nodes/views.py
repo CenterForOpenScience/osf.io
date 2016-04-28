@@ -23,9 +23,10 @@ from api.nodes.serializers import (
     NodeLinksSerializer,
     NodeDetailSerializer,
     NodeProviderSerializer,
+    DraftRegistrationSerializer,
+    DraftRegistrationDetailSerializer,
     NodeContributorsSerializer,
     NodeContributorDetailSerializer,
-    NodeDraftRegistrationSerializer,
     NodeInstitutionRelationshipSerializer,
     NodeAlternativeCitationSerializer,
     NodeContributorsCreateSerializer
@@ -763,7 +764,7 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
     required_read_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_WRITE]
 
-    serializer_class = NodeDraftRegistrationSerializer
+    serializer_class = DraftRegistrationSerializer
     view_category = 'nodes'
     view_name = 'node-draft-registrations'
 
@@ -816,12 +817,18 @@ class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestro
     required_read_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_WRITE]
 
-    serializer_class = NodeDraftRegistrationSerializer
+    serializer_class = DraftRegistrationDetailSerializer
     view_category = 'nodes'
     view_name = 'node-draft-registration-detail'
 
     def get_object(self):
         return self.get_draft()
+
+    def perform_destroy(self, draft):
+        if draft.registered_node and not draft.registered_node.is_deleted:
+            raise PermissionDenied('This draft has already been registered and cannot be deleted')
+
+        DraftRegistration.remove_one(draft)
 
 
 class NodeRegistrationsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
