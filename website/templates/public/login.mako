@@ -207,9 +207,11 @@
                                 blur: trim.bind($data, password)
                             }"
                     >
-                    <div data-bind="text: passwordFeedback"></div>
-                    <div class="progress">
+                    <div class="progress create-password">
                         <div class="progress-bar progress-bar-success" role="progressbar" data-bind="attr: passwordComplexityBar"></div>
+                    </div>
+                    <div class="password-feedback" data-bind="attr: passwordFeedbackDiv">
+                        <div data-bind="text: passwordFeedback"></div>
                     </div>
                     <p class="help-block" data-bind="validationMessage: password" style="display: none;"></p>
                 </div>
