@@ -174,4 +174,7 @@ def after_request(response):
     if session.data.get('auth_user_id'):
         session.save()
 
+    # Disallow embeding in frames
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+
     return response
