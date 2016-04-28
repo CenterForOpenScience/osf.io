@@ -3486,7 +3486,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         for node in self.node_and_primary_descendants():
             node.set_privacy(
                 Node.PUBLIC,
-                auth=auth,
+                auth=None,
                 log=False,
                 save=True
             )

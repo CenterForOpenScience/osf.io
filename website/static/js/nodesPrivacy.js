@@ -18,7 +18,7 @@ var MESSAGES = {
     'Please review your projects, components, and add-ons for sensitive or restricted information before making them public.' +
     '<br><br>Once they are made public, you should assume they will always be public. You can ' +
         'return them to private later, but search engines (including Google’s cache) or others may access files before you do.',
-    makeEmbargoPublicWarning: 'By making this registration public, you will end the embargo period and the registration will be open to the public. Making this registration public will automatically make all of its components public as well. This action is irreversible.',
+    makeEmbargoPublicWarning: 'By clicking confirm, an email will be sent to project administrator(s) to approve ending the embargo. If approved, this registration, including any components, will be made public immediately. This action is irreversible.',
     makeEmbargoPublicTitle: 'End embargo early',
     selectNodes: 'Adjust your privacy settings by checking the boxes below. ' +
     '<br><br><b>Checked</b> projects and components will be <b>public</b>.  <br><b>Unchecked</b> components will be <b>private</b>.',
@@ -296,8 +296,8 @@ NodesPrivacyViewModel.prototype.makeEmbargoPublic = function() {
         $('.modal').modal('hide');
         self.onSetPrivacy(nodesChanged, true);
         $osf.growl(
-            'Request initiated',
-            'You have initiated a request to end this registration\'s embargo early, and to make it and all of its components public immediately. All adminstrators on this registration have 48 hours to approve or disapprove of this action.',
+            'Email sent',
+            'The administrator(s) can approve or cancel the action within 48 hours. If 48 hours pass without any action taken, then the registration will become public.',
             'success'
         );
     });
