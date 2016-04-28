@@ -29,7 +29,8 @@ var config = assign({}, common, {
         'admin-base-page': staticAdminPath('js/pages/base-page.js'),
         'prereg-admin-page': staticAdminPath('js/pages/prereg-admin-page.js'),
         'admin-registration-edit-page': staticAdminPath('js/pages/admin-registration-edit-page.js'),
-        'metrics-sales-analytics': staticAdminPath('js/sales_analytics/sales-analytics.js')
+        'metrics-sales-analytics': staticAdminPath('js/sales_analytics/sales-analytics.js'),
+        'dashboard': staticAdminPath('js/sales_analytics/dashboard.js'),
     },
     plugins: plugins,
     debug: true,
