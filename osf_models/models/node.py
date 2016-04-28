@@ -39,7 +39,7 @@ class Node(GuidMixin, BaseModel):
         return super(Node, cls).find_one(query, **kwargs)
 
     date_created = models.DateTimeField(null=False) # auto_now_add=True)
-    date_modified = models.DateTimeField(null=True) # auto_now=True)
+    date_modified = models.DateTimeField(null=True, db_index=True) # auto_now=True)
 
     is_public = models.BooleanField(default=False, db_index=True)
 
@@ -47,7 +47,7 @@ class Node(GuidMixin, BaseModel):
     # visible_contributor_ids =
     @property
     def visible_contributor_ids(self):
-        return self.contributors.filter(visible=True)
+        return self.contributor_set.filter(visible=True)
 
     is_bookmark_collection = models.BooleanField(default=False, db_index=True)
     is_collection = models.BooleanField(default=False, db_index=True)
