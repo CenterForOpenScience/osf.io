@@ -76,12 +76,29 @@ class NodeMixin(object):
             self.check_object_permissions(self.request, node)
         return node
 
+
 class DraftMixin(object):
 
-    serializer_class = NodeDraftRegistrationSerializer
+    serializer_class = DraftRegistrationSerializer
 
     def get_draft(self):
+        node_id = self.kwargs['node_id']
         draft = get_object_or_error(DraftRegistration, self.kwargs['draft_id'])
+
+        if not draft.branched_from._id == node_id:
+            raise ValidationError('This draft registration is not created from the given node.')
+
+        if self.request.method == 'PATCH' or self.request.method == 'PUT':
+            registered_and_deleted = draft.registered_node and draft.registered_node.is_deleted
+
+            if draft.registered_node and not registered_and_deleted:
+                raise PermissionDenied('This draft has already been registered and cannot be modified.')
+
+            if draft.is_pending_review:
+                raise PermissionDenied('This draft is pending review and cannot be modified.')
+
+            if draft.requires_approval and draft.is_approved and (not registered_and_deleted):
+                raise PermissionDenied('This draft has already been approved and cannot be modified.')
 
         self.check_object_permissions(self.request, draft)
         return draft
