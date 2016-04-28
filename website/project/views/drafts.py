@@ -13,7 +13,6 @@ from framework.mongo import database
 from framework.mongo.utils import get_or_http_error, autoload
 from framework.exceptions import HTTPError
 from framework.status import push_status_message
-from framework.utils import iso8601format
 
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
