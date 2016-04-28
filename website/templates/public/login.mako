@@ -41,7 +41,11 @@
             </div>
             <div class="form-group" style="padding-top: 15px">
                 <div class="text-center m-t-lg">
-                    <p>For non-institutional login, click <a href="/login/">here</a>.</p>
+                    %if redirect_url:
+                        <p>For non-institutional login, click <a href="/login/?redirect_url=${redirect_url}">here</a>.</p>
+                    %else:
+                        <p>For non-institutional login, click <a href="/login/">here</a>.</p>
+                    %endif
                 </div>
             </div>
         </div>
