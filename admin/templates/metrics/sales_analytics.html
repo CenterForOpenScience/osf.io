@@ -6,7 +6,9 @@
     <script>
         var keenProjectId = '{{ keen_project_id }}';
         var keenReadKey = '{{ keen_read_key }}';
-        var userCount = {{ user_count | jsonify | safe}};
+        var userCount = {{ user_count | jsonify | safe }};
+        var multiProductMetricsYearly = {{ multi_product_metrics_yearly | jsonify | safe }};
+        var multiProductMetricsMonthly = {{ multi_product_metrics_monthly | jsonify | safe }};
         // debugger;
     </script>
 {% endblock %}
@@ -17,6 +19,7 @@
 
 {% block bottom_js %}
     <script src="{% static 'public/js/metrics-sales-analytics.js' %}"></script>
+    <script src="{% static 'public/js/dashboard.js' %}"></script>
 {% endblock %}
 
 {% block content %}
