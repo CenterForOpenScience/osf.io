@@ -238,14 +238,15 @@ class OsfStorageFile(OsfStorageFileNode, File):
 
     def remove_tag(self, tag, auth, save=True, log=True):
         from website.models import Tag, NodeLog  # Prevent import error
+        if self.node.is_registration:
+            # Can't perform edits on a registration
+            raise NodeStateError
+
         tag = Tag.load(tag)
         if not tag:
             raise InvalidTagError
         elif tag not in self.tags:
             raise TagNotFoundError
-        elif self.node.is_registration:
-            # Can't perform edits on a registration
-            raise NodeStateError
         else:
             self.tags.remove(tag)
             if log:
