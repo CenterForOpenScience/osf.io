@@ -207,7 +207,7 @@ var Uploader = function(question) {
     self.fileAlreadySelected = function(file) {
         var selected = false;
         $.each(question.extra(), function(idx, alreadyFile) {
-            if(alreadyFile.sha256 === file.data.extra.hashes.sha256){
+            if(alreadyFile.selectedFileName === file.data.name && alreadyFile.sha256 === file.data.extra.hashes.sha256){
                 selected = true;
                 return;
             }
