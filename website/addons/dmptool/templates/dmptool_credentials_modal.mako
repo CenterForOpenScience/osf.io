@@ -47,7 +47,7 @@
                                     <!-- Link to API token generation page -->
                                     <a data-bind="attr: {href: tokenUrl}"
                                        target="_blank" class="text-muted addon-external-link">
-                                        (Get from dmptool <i class="fa fa-external-link-square"></i>)
+                                        (Get from DMPTool (Click on "My Profile" from <i class="fa fa-external-link-square"></i>)
                                     </a>
                                 </label>
                                 <input class="form-control" name="apiToken" data-bind="value: apiToken"/>
