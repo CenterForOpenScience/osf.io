@@ -31,6 +31,14 @@ var ViewModel = function(submitUrl, campaign) {
         return current.score;
     });
 
+    self.passwordFeedbackDiv = ko.computed(function() {
+        if (self.passwordFeedback()) {
+            return {style: 'padding-top: 0px; padding-bottom: 0px'};
+        } else {
+            return {style: 'padding-top: 10px; padding-bottom: 10px'};
+        }
+    });
+
     self.passwordComplexityBar = ko.computed(function() {
         if (self.passwordComplexity() == 0) {
             return {
