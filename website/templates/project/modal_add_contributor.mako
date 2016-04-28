@@ -155,7 +155,7 @@
                                         <td class="p-r-sm" class="osf-icon-td">
                                             <a
                                                     class="btn btn-default contrib-button btn-mini"
-                                                    data-bind="click:$root.remove, tooltip: {title: 'Remove contributor'}"
+                                                    data-bind="click:$root.remove.bind($root), tooltip: {title: 'Remove contributor'}"
                                                 ><i class="fa fa-minus"></i></a>
                                         </td>
                                         <td>
