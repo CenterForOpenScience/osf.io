@@ -56,6 +56,7 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
             changed: false
         };
     });
+    nodesOriginal[nodeTree.node.id].isRoot = true;
     return nodesOriginal;
 }
 
@@ -282,11 +283,14 @@ NodesPrivacyViewModel.prototype.back = function() {
 NodesPrivacyViewModel.prototype.makeEmbargoPublic = function() {
     var self = this;
 
-    $.each(self.nodesOriginal, function(key, node) {
-        node.public = true;
-    });
+    var nodesChanged = $.map(self.nodesOriginal, function(node) {
+	if (node.isRoot) {
+            node.public = true;
+	    return node;
+	}
+	return null;
+    }).filter(Boolean);
     $osf.block('Submitting request to end embargo early ...');
-    var nodesChanged = $.map(self.nodesOriginal, function(node) {return node;});
     patchNodesPrivacy(nodesChanged).then(function (res) {
         $osf.unblock();
         $('.modal').modal('hide');
