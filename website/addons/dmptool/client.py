@@ -1,16 +1,128 @@
 __all__ = ['DMPTool']
 
+import httplib as http
+
+from framework.exceptions import HTTPError
+from website.addons.dmptool import settings
+
 import requests
 import urlparse
 
+
+def connect_from_settings(node_settings):
+    if not (node_settings and node_settings.external_account):
+        return None
+
+    host = node_settings.external_account.oauth_key
+    token = node_settings.external_account.oauth_secret
+
+    try:
+        return _connect(host, token)
+    except UnauthorizedError:
+        return None
+
+
+def connect_or_error(host, token):
+
+    # TO DO -- actually do a check if possible
+    # https://github.com/CDLUC3/dmptool/issues/183
+
+    # in the mean time return a DMPTool
+
+    # need to change DMPTool to account for host
+    return DMPTool(token, host)
+
+    # try:
+    #     connection = _connect(host, token)
+    #     if not connection:
+    #         raise HTTPError(http.SERVICE_UNAVAILABLE)
+    #     return connection
+    # except UnauthorizedError:
+    #     raise HTTPError(http.UNAUTHORIZED)
+
+
+def connect_from_settings_or_401(node_settings):
+    if not (node_settings and node_settings.external_account):
+        return None
+
+    host = node_settings.external_account.oauth_key
+    token = node_settings.external_account.oauth_secret
+
+    return connect_or_error(host, token)
+
+
+def get_files(dataset, published=False):
+    version = 'latest-published' if published else 'latest'
+    return dataset.get_files(version)
+
+
+def publish_dmptool(dmptool):
+    try:
+        dmptool.publish()
+    except OperationFailedError:
+        raise HTTPError(http.BAD_REQUEST)
+
+
+def publish_dataset(dataset):
+    if dataset.get_state() == 'RELEASED':
+        raise HTTPError(http.CONFLICT, data=dict(
+            message_short='Dataset conflict',
+            message_long='This version of the dataset has already been published.'
+        ))
+    if not dataset.dmptool.is_published:
+        raise HTTPError(http.METHOD_NOT_ALLOWED, data=dict(
+            message_short='Method not allowed',
+            message_long='A dataset cannot be published until its parent Dmptool is published.'
+        ))
+
+    try:
+        dataset.publish()
+    except OperationFailedError:
+        raise HTTPError(http.BAD_REQUEST)
+
+
+def get_datasets(dmptool):
+    if dmptool is None:
+        return []
+    return dmptool.get_datasets(timeout=settings.REQUEST_TIMEOUT)
+
+
+def get_dataset(dmptool, doi):
+    if dmptool is None:
+        return
+    dataset = dmptool.get_dataset_by_doi(doi, timeout=settings.REQUEST_TIMEOUT)
+    try:
+        if dataset and dataset.get_state() == 'DEACCESSIONED':
+            raise HTTPError(http.GONE, data=dict(
+                message_short='Dataset deaccessioned',
+                message_long='This dataset has been deaccessioned and can no longer be linked to the OSF.'
+            ))
+        return dataset
+    except UnicodeDecodeError:
+        raise HTTPError(http.NOT_ACCEPTABLE, data=dict(
+            message_short='Not acceptable',
+            message_long='This dataset cannot be connected due to forbidden '
+                         'characters in one or more of the file names.'
+        ))
+
+
+def get_dmptools(connection):
+    if connection is None:
+        return []
+    return connection.get_dmptools()
+
+
+def get_dmptool(connection, alias):
+    if connection is None:
+        return
+    return connection.get_dmptool(alias)
+
+
 class DMPTool(object):
-    def __init__(self, token, prod=True):
+    def __init__(self, token, host="dmptool.org"):
         self.token = token
-        self.prod = prod
-        if prod:
-            self.base_url = "https://dmptool.org/api/v1/"
-        else:
-            self.base_url = "https://dmp2-staging.cdlib.org/api/v1/"
+        self.host = host
+        self.base_url = "https://{}/api/v1/".format(host)
         self.headers = {'Authorization': 'Token token={}'.format(self.token)}
                 
     def get_url(self, path, headers=None):
@@ -18,8 +130,11 @@ class DMPTool(object):
             headers = self.headers
             
         url = self.base_url + path
-        return requests.get(url, headers=headers)
-    
+        response = requests.get(url, headers=headers)
+        
+        response.raise_for_status()
+        return response 
+
     def plans(self, id_=None):
         """
         https://dmptool.org/api/v1/plans
