@@ -10,6 +10,10 @@ from settings import settings as script_settings
 from website.models import User
 
 def db_setup():
+    """
+    Function that creates the initial sqlite3 database to hold Piwik User ID's and new matching Keen ID's. Manually run once.
+    :return:
+    """
 
     conn = sqlite3.connect('piwik_users.sqlite')
 
@@ -22,6 +26,16 @@ def db_setup():
 
 
 def migrate_data(mysql_db, sqlite_db, start_date, end_date):
+
+    """
+    This script parses day to day data from Piwik backend for OSF and uploads them to Keen. Keeps timestamp of last actions
+    written and parsed to Keen under timestamps.txt
+    :param mysql_db: MySQLdb connection passed into representing Piwik backend database
+    :param sqlite_db: SQLite db connection representing Piwik User ID -> Keen ID pairings
+    :param start_date: Date the script starts working back from (ie. 2016-01-01 moves backwards to 2016-12-31)
+    :param end_date:  Date (in the past) the script stops working on (if start date is 2016-01-01, end date is 2015-12-31, etc)
+    :return:
+    """
 
     my_cursor = mysql_db.cursor(MySQLdb.cursors.DictCursor)
     sqlite_cursor = sqlite_db.cursor()
@@ -167,6 +181,14 @@ def get_visits(cursor, previous_day, current_day):
 
 def get_actions_for_visit(cursor, visit_id):
 
+    """
+    Get actions for a specific Piwik visit. Mostly pageviews, sometimes it's searches, but that shouldn't make a difference
+    in the long run.
+    :param cursor: Piwik MySQLdb connection cursor
+    :param visit_id: Piwik Visit Id, obtained from MySQL rows
+    :return: dict of all actions for a given website, each action also a dict
+    """
+
     query = ("SELECT COALESCE(log_action_event_category.type, log_action.type, log_action_title.type) AS type, "
                  "log_action.name AS url, "
                  "log_action.url_prefix, "
@@ -196,6 +218,14 @@ def get_actions_for_visit(cursor, visit_id):
 
 
 def get_or_create_new_id(user_id, sqlite_cursor, sqlite_conn):
+
+    """
+    Gets or creates a new Keen Id given a Piwik User Id from the db
+    :param user_id: Piwik User Id from current row in database
+    :param sqlite_cursor:
+    :param sqlite_conn: Required to save changes to sqlite db
+    :return: Keen Id as str
+    """
     query = "SELECT * FROM matched_ids WHERE piwik_id='{p_id}'".format(p_id=user_id)
     sqlite_cursor.execute(query)
 
@@ -215,6 +245,12 @@ def get_or_create_new_id(user_id, sqlite_cursor, sqlite_conn):
 
 
 def parse_os_family(os_name):
+
+    """
+    Attempts to parse Piwik OS key codes into corresponding OS names
+    :param os_name: Operating System keycode
+    :return: Operating System name
+    """
 
     if os_name == 'UNK':
         return 'Unknown'
@@ -338,6 +374,12 @@ def parse_os_family(os_name):
 
 
 def parse_browser_family(browser_name):
+
+    """
+    Attempts to parse Piwik browser key codes into corresponding OS names
+    :param browser_name: Browser keycode
+    :return: Browser name
+    """
 
     if browser_name == 'UNK':
         return 'Unknown'
@@ -485,6 +527,12 @@ def parse_browser_family(browser_name):
 
 
 def parse_page_url(page_url):
+
+    """
+    Adds missing protocol to PageUrl for Keen parsing
+    :param page_url: Url from Piwik row
+    :return: Parsed url including protocol if missing
+    """
 
     if page_url:
         if page_url.startswith('osf.io'):

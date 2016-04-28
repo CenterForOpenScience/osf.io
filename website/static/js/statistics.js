@@ -55,14 +55,15 @@ var KeenViz = function(){
     };
 
     self.parseTopReferrers = function(data){
-        self.referrers(function(){
+        self.referrers(
+            (function(){
             return data.map(function(obj){
                 return {
                     'referrer': obj['parsedReferrerUrl.domain'],
                     'count': obj.result
                 };
-            });
-        }());
+            });}())
+        );
 
     };
 
