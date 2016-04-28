@@ -41,6 +41,12 @@ initiated an embargoed registration of
 <!-- /ko -->
 </script>
 
+<script type="text/html" id="embargo_terminated_no_user">
+Embargo for
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+ended.
+</script>
+
 ## Retraction related logs
 <script type="text/html" id="retraction_approved">
 approved withdrawal of registration of

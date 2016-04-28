@@ -10,6 +10,7 @@ from modularodm import Q
 from website import settings
 from website.app import init_app
 from website.models import Institution, Node
+from website.search.search import update_institution, update_node
 from framework.transactions.context import TokuTransaction
 
 logger = logging.getLogger(__name__)
@@ -31,13 +32,16 @@ def update_or_create(inst_data):
         changed_fields = inst.node.save()
         if changed_fields:
             print('Updated {}: {}'.format(inst.name, changed_fields))
+        update_institution(inst)
         return inst, False
     else:
         inst = Institution(None)
         inst_data = {inst.attribute_map[k]: v for k, v in inst_data.iteritems()}
         new_inst = Node(**inst_data)
         new_inst.save()
+        inst = Institution.load(new_inst.institution_id)
         print('Added new institution: {}'.format(new_inst.institution_id))
+        update_institution(inst)
         return new_inst, True
 
 
@@ -49,27 +53,27 @@ def main(env):
             {
                 '_id': 'cos',
                 'name': 'Center For Open Science',
-                'description': 'Center for Open Science',
+                'description': None,
                 'banner_name': 'cos-banner.png',
                 'logo_name': 'cos-shield.png',
                 'auth_url': None,
                 'domains': ['osf.cos.io'],
                 'email_domains': ['cos.io'],
             },
-            {
-                '_id': 'nd',
-                'name': 'University of Notre Dame',
-                'description': 'University of Notre Dame',
-                'banner_name': 'nd-banner.png',
-                'logo_name': 'nd-shield.png',
-                'auth_url': SHIBBOLETH_SP.format(encode_uri_component('https://login.nd.edu/idp/shibboleth')),
-                'domains': ['osf.nd.edu'],
-                'email_domains': [],
-            },
+            # {
+            #     '_id': 'nd',
+            #     'name': 'University of Notre Dame',
+            #     'description': None,
+            #     'banner_name': 'nd-banner.png',
+            #     'logo_name': 'nd-shield.png',
+            #     'auth_url': SHIBBOLETH_SP.format(encode_uri_component('https://login.nd.edu/idp/shibboleth')),
+            #     'domains': ['osf.nd.edu'],
+            #     'email_domains': [],
+            # },
             {
                 '_id': 'ucr',
                 'name': 'University of California Riverside',
-                'description': 'University of California Riverside',
+                'description': 'Policy prohibits storing PII or HIPAA data on this site, please see C&amp;C\'s <a href="http://cnc.ucr.edu/security/researchers.html">security site</a> for more information.',
                 'banner_name': 'ucr-banner.png',
                 'logo_name': 'ucr-shield.png',
                 'auth_url': SHIBBOLETH_SP.format(encode_uri_component('urn:mace:incommon:ucr.edu')),
@@ -79,7 +83,7 @@ def main(env):
             {
                 '_id': 'usc',
                 'name': 'University of Southern California',
-                'description': 'University of Southern California',
+                'description': 'Projects must abide by <a href="http://policy.usc.edu/info-security/">USC\'s Information Security Policy</a>. Data stored for human subject research repositories must abide by <a href="http://policy.usc.edu/biorepositories/">USC\'s Biorepository Policy</a>. The OSF may not be used for storage of Personal Health Information that is subject to <a href="http://policy.usc.edu/hipaa/">HIPPA regulations</a>.',
                 'banner_name': 'usc-banner.png',
                 'logo_name': 'usc-shield.png',
                 'auth_url': SHIBBOLETH_SP.format(encode_uri_component('urn:mace:incommon:usc.edu')),
@@ -171,6 +175,12 @@ def main(env):
     with TokuTransaction():
         for inst_data in INSTITUTIONS:
             new_inst, inst_created = update_or_create(inst_data)
+            # update the nodes elastic docs, to have current names of institutions. This will
+            # only work properly if this file is the only thign changing institution attributes
+            if not inst_created:
+                nodes = Node.find_by_institution(new_inst, query=Q('is_deleted', 'ne', True))
+                for node in nodes:
+                    update_node(node, async=False)
         for extra_inst in Institution.find(Q('_id', 'nin', [x['_id'] for x in INSTITUTIONS])):
             logger.warn('Extra Institution : {} - {}'.format(extra_inst._id, extra_inst.name))
 

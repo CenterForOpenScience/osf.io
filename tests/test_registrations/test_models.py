@@ -10,6 +10,10 @@ import datetime as dt
 from website.models import MetaSchema, DraftRegistrationApproval
 from website.settings import PREREG_ADMIN_TAG
 
+from framework.auth import Auth
+
+from tests.base import OsfTestCase
+from tests import utils
 from tests.factories import (
     UserFactory, ApiOAuth2ApplicationFactory, NodeFactory, PointerFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory,
@@ -185,4 +189,25 @@ class TestDraftRegistrationApprovals(RegistrationsTestBase):
     def test_on_reject(self, mock_send_mail):
         self.approval._on_reject(self.user)
         assert_equal(self.approval.meta, {})
-        assert_true(mock_send_mail.called_once)
+        assert_equal(mock_send_mail.call_count, 1)
+
+class TestEmbargoTerminationApprovals(OsfTestCase):
+
+    def setUp(self):
+        super(TestEmbargoTerminationApprovals, self).setUp()
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user)
+
+        with utils.mock_archive(self.project, embargo=True, autocomplete=True, autoapprove=True) as registration:
+            registration.request_embargo_termination(Auth(self.user))
+            self.registration = registration
+
+    @mock.patch('website.project.model.Node.terminate_embargo')
+    def test__on_complete_terminates_embargo(self, mock_terminate):
+        self.registration.embargo_termination_approval._on_complete(self.user)
+        assert_equal(mock_terminate.call_count, 1)
+
+    def test_on_reject_removes_reference_from_embargo(self):
+        user_token = self.registration.embargo_termination_approval.approval_state[self.user._id]['rejection_token']
+        self.registration.embargo_termination_approval.reject(self.user, user_token)
+        assert_false(self.registration.embargo_termination_approval)
