@@ -119,7 +119,7 @@ class TestNotificationsModels(OsfTestCase):
     def test_new_node_creator_is_subscribed(self):
         user = factories.UserFactory()
         factories.NodeFactory(creator=user)
-        user_subscriptions = [x for x in utils.get_all_user_subscriptions(user)]
+        user_subscriptions = list(utils.get_all_user_subscriptions(user))
         event_types = [sub.event_name for sub in user_subscriptions]
 
         assert_equal(len(user_subscriptions), 2)  # subscribed to both file_updated and comments
@@ -143,7 +143,7 @@ class TestNotificationsModels(OsfTestCase):
 
         node = factories.NodeFactory(creator=user)
 
-        user_subscriptions = [x for x in utils.get_all_user_subscriptions(user)]
+        user_subscriptions = list(utils.get_all_user_subscriptions(user))
         event_types = [sub.event_name for sub in user_subscriptions]
 
         file_updated_subscription = NotificationSubscription.find_one(Q('_id', 'eq', node._id + '_file_updated'))
@@ -176,7 +176,7 @@ class TestNotificationsModels(OsfTestCase):
 
         node = factories.NodeFactory(creator=user)
 
-        user_subscriptions = [x for x in utils.get_all_user_subscriptions(user)]
+        user_subscriptions = list(utils.get_all_user_subscriptions(user))
         event_types = [sub.event_name for sub in user_subscriptions]
 
         file_updated_subscription = NotificationSubscription.find_one(Q('_id', 'eq', node._id + '_file_updated'))
@@ -195,7 +195,7 @@ class TestNotificationsModels(OsfTestCase):
         contributor = factories.UserFactory()
         project = factories.NodeFactory(creator=user)
         project.add_contributor(contributor=contributor)
-        contributor_subscriptions = [x for x in utils.get_all_user_subscriptions(contributor)]
+        contributor_subscriptions = list(utils.get_all_user_subscriptions(contributor))
         event_types = [sub.event_name for sub in contributor_subscriptions]
 
         assert_equal(len(contributor_subscriptions), 2)
@@ -207,7 +207,7 @@ class TestNotificationsModels(OsfTestCase):
         unregistered_contributor = factories.UnregUserFactory()
         project = factories.NodeFactory(creator=user)
         project.add_contributor(contributor=unregistered_contributor)
-        contributor_subscriptions = [x for x in utils.get_all_user_subscriptions(unregistered_contributor)]
+        contributor_subscriptions = list(utils.get_all_user_subscriptions(unregistered_contributor))
         assert_equal(len(contributor_subscriptions), 0)
 
 
@@ -494,7 +494,7 @@ class TestNotificationUtils(OsfTestCase):
         })
 
     def test_get_all_user_subscriptions(self):
-        user_subscriptions = [x for x in utils.get_all_user_subscriptions(self.user)]
+        user_subscriptions = list(utils.get_all_user_subscriptions(self.user))
         assert_in(self.project_subscription, user_subscriptions)
         assert_in(self.node_comments_subscription, user_subscriptions)
         for x in self.user_subscription:
