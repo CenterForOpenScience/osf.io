@@ -73,7 +73,7 @@ def main(env):
             {
                 '_id': 'ucr',
                 'name': 'University of California Riverside',
-                'description': None,
+                'description': 'Policy prohibits storing PII or HIPAA data on this site, please see C&amp;C\'s <a href="http://cnc.ucr.edu/security/researchers.html">security site</a> for more information.',
                 'banner_name': 'ucr-banner.png',
                 'logo_name': 'ucr-shield.png',
                 'auth_url': SHIBBOLETH_SP.format(encode_uri_component('urn:mace:incommon:ucr.edu')),
