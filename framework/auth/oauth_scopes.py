@@ -35,6 +35,9 @@ class CoreScopes(object):
     NODE_LINKS_READ = 'nodes.links_read'
     NODE_LINKS_WRITE = 'nodes.links_write'
 
+    NODE_DRAFT_REGISTRATIONS_READ = 'nodes.draft_registrations_read'
+    NODE_DRAFT_REGISTRATIONS_WRITE = 'nodes.draft_registrations_write'
+
     NODE_REGISTRATIONS_READ = 'nodes.registrations_read'
     NODE_REGISTRATIONS_WRITE = 'nodes.registrations_write'
 
