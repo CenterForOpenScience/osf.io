@@ -182,13 +182,7 @@ var Question = function(questionSchema, data) {
     self.properties = questionSchema.properties || [];
     self.match = questionSchema.match || '';
 
-    self.extra = ko.observableArray(self.data.extra || []);
-
-    self.formattedFileList = ko.pureComputed(function() {
-        return self.extra().map(function(elem) {
-            return elem.selectedFileName;
-        }).join(', ');
-    });
+    self.extra = ko.observable(self.data.extra || {});
     self.showExample = ko.observable(false);
 
     self.comments = ko.observableArray(
