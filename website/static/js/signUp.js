@@ -8,20 +8,11 @@ var $osf = require('./osfHelpers');
 var zxcvbn = require('zxcvbn');
 
 
-ko.validation.rules['trial'] = {
-    validator: function (val, otherVal) {
-        return val === otherVal;
-    },
-    message: 'The field must equal {0}'
-};
-ko.validation.registerExtenders();
-
-
 var ViewModel = function(submitUrl, campaign) {
 
     var self = this;
 
-    self.typedPassword = ko.observable('').extend({ notify: 'always' });
+    self.typedPassword = ko.observable('');
 
     self.passwordFeedback = ko.observable('');
 
@@ -31,37 +22,29 @@ var ViewModel = function(submitUrl, campaign) {
         return current.score;
     });
 
-    self.passwordFeedbackDiv = ko.computed(function() {
-        if (self.passwordFeedback()) {
-            return {style: 'padding-top: 0px; padding-bottom: 0px'};
-        } else {
-            return {style: 'padding-top: 10px; padding-bottom: 10px'};
-        }
-    });
-
     self.passwordComplexityBar = ko.computed(function() {
-        if (self.passwordComplexity() == 0) {
+        if (self.passwordComplexity() === 0) {
             return {
                 class: 'progress-bar progress-bar-danger',
                 style: 'width: 0%'
             };
         }
-        if (self.passwordComplexity() == 1) {
+        if (self.passwordComplexity() === 1) {
             return {
                 class: 'progress-bar progress-bar-danger',
                 style: 'width: 25%'
             };
-        } else if (self.passwordComplexity() == 2) {
+        } else if (self.passwordComplexity() === 2) {
             return {
                 class: 'progress-bar progress-bar-warning progress-bar-striped active',
                 style: 'width: 50%'
             };
-        } else if (self.passwordComplexity() == 3) {
+        } else if (self.passwordComplexity() === 3) {
             return {
                 class: 'progress-bar progress-bar-warning progress-bar-striped active',
                 style: 'width: 75%'
             };
-        } else if (self.passwordComplexity() == 4) {
+        } else if (self.passwordComplexity() === 4) {
             return {
                 class: 'progress-bar progress-bar-success',
                 style: 'width: 100%'
