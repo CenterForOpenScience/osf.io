@@ -218,16 +218,18 @@ NodeActions.openCloseNode = function(nodeId) {
     var $logs = $('#logs-' + nodeId);
     if (!$logs.hasClass('active')) {
         if (!$logs.hasClass('served')) {
-            $('.spinner-loading-wrapper').show();
+            $('.ball-scale').show();
             $.getJSON(
                 $logs.attr('data-uri'),
                 {count: 3}
             ).done(function(response) {
-                $('.spinner-loading-wrapper').hide();
+                $('.ball-scale').hide();
                 new LogFeed('#logs-' + nodeId, response.logs);
                 $logs.addClass('served');
-            }).always(function() {
-                $('.spinner-loading-wrapper').hide();
+            }).fail(function() {
+                $('.ball-scale').hide();
+                $osf.growl('Error:', 'Can not show recent activity right now.  Please try again later.');
+                Raven.captureMessage('Error occurred retrieving log');
             });
         }
         $logs.addClass('active');

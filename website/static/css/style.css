@@ -667,3 +667,7 @@ button.close {
 .comma-separated:last-of-type:after {
     content: "";
 }
+
+#render-node .ball-pulse-sync>div, #render-node .ball-pulse>div, #render-node .ball-scale>div, #render-node .ball-beat-sync>div, #render-node .ball-beat>div, #render-node .ball-beat>div {
+    background-color: #BED1E2;
+}
