@@ -1,8 +1,7 @@
 import random
 
-from django.db import models
 import modularodm.exceptions
-
+from django.db import models
 from osf_models.models.mixins import Versioned
 
 ALPHABET = '23456789abcdefghjkmnpqrstuvwxyz'
@@ -26,7 +25,10 @@ def generate_guid(length=5):
 
 class Guid(models.Model):
     id = models.AutoField(primary_key=True)
-    guid = models.fields.CharField(max_length=255, default=generate_guid, unique=True, db_index=True)
+    guid = models.fields.CharField(max_length=255,
+                                   default=generate_guid,
+                                   unique=True,
+                                   db_index=True)
 
 
 class BlackListGuid(models.Model):
@@ -50,7 +52,10 @@ class PKIDStr(str):
 
 
 class GuidMixin(models.Model):
-    _guid = models.OneToOneField(Guid, default=generate_guid_instance, unique=True, related_name='referent_%(class)s')
+    _guid = models.OneToOneField(Guid,
+                                 default=generate_guid_instance,
+                                 unique=True,
+                                 related_name='referent_%(class)s')
 
     @property
     def guid(self):
@@ -65,7 +70,6 @@ class GuidMixin(models.Model):
 
 
 class BaseModel(models.Model):
-
     class Meta:
         abstract = True
 

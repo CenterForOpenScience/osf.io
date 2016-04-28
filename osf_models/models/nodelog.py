@@ -83,7 +83,7 @@ class NodeLog(BaseModel):
 
     was_connected_to = models.ManyToManyField('Node')
 
-    user = models.ForeignKey('User', related_name='logs', db_index=True)
+    user = models.ForeignKey('User', related_name='logs', db_index=True, null=True)
     foreign_user = models.CharField(max_length=255, blank=True)
     node = models.ForeignKey('Node', related_name='logs', db_index=True)
 

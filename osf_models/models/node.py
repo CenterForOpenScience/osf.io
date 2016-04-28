@@ -12,6 +12,8 @@ from osf_models.models.validators import validate_title
 from osf_models.utils.datetime_aware_jsonfield import DatetimeAwareJSONField
 from .base import BaseModel, GuidMixin
 
+from website.util import api_v2_url
+
 from website import settings
 
 
@@ -148,6 +150,20 @@ class Node(GuidMixin, BaseModel):
         if not self.url:
             return None
         return urlparse.urljoin(settings.DOMAIN, self.url)
+
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url
+
+    @property
+    def absolute_api_v2_url(self):
+        if self.is_registration:
+            path = '/registrations/{}/'.format(self._id)
+            return api_v2_url(path)
+        if self.is_collection:
+            path = '/collections/{}/'.format(self._id)
+            return api_v2_url(path)
+        path = '/nodes/{}/'.format(self._id)
+        return api_v2_url(path)
 
     def can_view(self, auth):
         if auth and getattr(auth.private_link, 'anonymous', False):

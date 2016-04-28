@@ -14,7 +14,7 @@ def main():
     modm_nodelogs = MODMNodeLog.find()
     total = len(modm_nodelogs)
     count = 0
-    page_size = 10000
+    page_size = 1000
     django_nodelogs = []
     django_nodelogs_was_connected_to = {}
 
@@ -22,7 +22,10 @@ def main():
     while count < total:
         print 'Migrating {} through {}'.format(count, count + page_size)
         for modm_nodelog in modm_nodelogs[count:count + page_size]:
-            user = get_or_create_user(modm_nodelog.user)
+            if modm_nodelog.user is not None:
+                user = get_or_create_user(modm_nodelog.user)
+            else:
+                user = None
             node_id = modm_nodelog.params.get(
                 'node', modm_nodelog.params.get('project'))
 
