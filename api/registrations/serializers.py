@@ -1,17 +1,31 @@
 import json
+from dateutil.parser import parse as parse_date
+
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 
-from api.base.utils import absolute_reverse
+from api.base.utils import absolute_reverse, get_user_auth, extract_expected_responses_from_schema
+
 from api.files.serializers import FileSerializer
 from api.nodes.serializers import NodeSerializer
 from api.nodes.serializers import NodeLinksSerializer
 from api.nodes.serializers import NodeContributorsSerializer
+from modularodm.exceptions import ValidationValueError
+from website.exceptions import NodeStateError
+
+
 from api.base.serializers import (IDField, RelationshipField, LinksField, HideIfRetraction,
                                   FileCommentRelationshipField, NodeFileHyperLinkField, HideIfRegistration)
 
 
 class RegistrationSerializer(NodeSerializer):
+
+    title = ser.CharField(read_only=True)
+    category = ser.CharField(read_only=True)
+
+    draft_registration = ser.CharField(write_only=True)
+    registration_choice = ser.ChoiceField(write_only=True, choices=['immediate', 'embargo'])
+    lift_embargo = ser.DateTimeField(write_only=True, default=None)
 
     pending_embargo_approval = HideIfRetraction(ser.BooleanField(read_only=True, source='is_pending_embargo',
         help_text='The associated Embargo is awaiting approval by project admins.'))
@@ -109,6 +123,41 @@ class RegistrationSerializer(NodeSerializer):
 
     def get_absolute_url(self, obj):
         return self.get_registration_url(obj)
+
+    def create(self, validated_data):
+        auth = get_user_auth(self.context['request'])
+        draft = validated_data.pop('draft')
+        registration_choice = validated_data.pop('registration_choice', 'immediate')
+        embargo_lifted = validated_data.pop('lift_embargo', None)
+
+        self.all_required_questions_answered(draft)
+
+        registration = draft.register(auth, save=True)
+
+        if registration_choice == 'embargo':
+            embargo_end_date = parse_date(embargo_lifted, ignoretz=True)
+            try:
+                registration.embargo_registration(auth.user, embargo_end_date)
+            except ValidationValueError as err:
+                raise exceptions.ValidationError(err)
+        else:
+            try:
+                registration.require_approval(auth.user)
+            except NodeStateError as err:
+                raise exceptions.ValidationError(err)
+
+        registration.save()
+        return registration
+
+    def all_required_questions_answered(self, draft):
+        form = extract_expected_responses_from_schema(draft)
+        for question in form:
+            if form[question]['required']:
+                if not draft.registration_metadata.get(question):
+                    raise exceptions.ValidationError('Response required for {} in registration_metadata for {}'.format(question, draft.registration_schema.name))
+                if not draft.registration_metadata.get(question).get('value', False):
+                    raise exceptions.ValidationError('Value required for {} in registration_metadata for {}'.format(question, draft.registration_schema.name))
+        return
 
     def get_registered_meta(self, obj):
         if obj.registered_meta:
