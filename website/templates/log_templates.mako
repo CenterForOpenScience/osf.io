@@ -21,12 +21,12 @@ cancelled embargoed registration of
 </script>
 
 <script type="text/html" id="embargo_completed">
-completed embargo of
+completed embargoed registration of
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
 </script>
 
 <script type="text/html" id="embargo_completed_no_user">
-Embargo for
+Embargo of registration of
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a> completed
 </script>
 
