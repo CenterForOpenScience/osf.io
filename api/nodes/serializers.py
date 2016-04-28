@@ -7,7 +7,9 @@ from modularodm.exceptions import ValidationValueError
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 
-from website.models import Node, User, Comment, Institution
+from website.project.metadata.schemas import ACTIVE_META_SCHEMAS
+
+from website.models import Node, User, Comment, Institution, MetaSchema, DraftRegistration
 from website.exceptions import NodeStateError, UserNotAffiliatedError
 from website.util import permissions as osf_permissions
 from website.project.model import NodeUpdateError
@@ -27,6 +29,60 @@ class NodeTagField(ser.Field):
 
     def to_internal_value(self, data):
         return data
+
+
+class NodeDraftRegistrationSerializer(JSONAPISerializer):
+
+    schema_choices = list(ACTIVE_META_SCHEMAS)
+    schema_choices_string = ', '.join(["'{}'".format(choice) for choice in schema_choices])
+
+    id = IDField(source='_id', read_only=True)
+    type = TypeField()
+    registration_form = ser.ChoiceField(source='registration_schema.name', choices=schema_choices, help_text="Choices: " + schema_choices_string)
+    registration_metadata = ser.DictField(required=False)
+    datetime_initiated = ser.DateTimeField(read_only=True)
+    datetime_updated = ser.DateTimeField(read_only=True)
+
+    branched_from = RelationshipField(
+        related_view='nodes:node-detail',
+        related_view_kwargs={'node_id': '<branched_from._id>'}
+    )
+
+    initiator = RelationshipField(
+        related_view='users:user-detail',
+        related_view_kwargs={'user_id': '<initiator._id>'},
+    )
+
+    links = LinksField({
+        'html': 'get_html'
+    })
+
+    def get_html(self, obj):
+        return obj.absolute_url
+
+    def create(self, validated_data):
+        node = validated_data.pop('node')
+        initiator = validated_data.pop('initiator')
+        schema_name = validated_data.pop('registration_schema').get('name')
+        schema = MetaSchema.find_one(Q('name', 'eq', schema_name) & Q('schema_version', 'eq', 2))
+
+        draft = DraftRegistration.create_from_node(node = node, user=initiator, schema = schema)
+        return draft
+
+
+    def update(self, draft, validated_data):
+        """Update instance with the validated data. Requires
+        the request to be in the serializer context.
+        """
+        metadata = validated_data.pop('registration_metadata', None)
+        draft.update_metadata(metadata)
+        draft.save()
+        return draft
+
+    class Meta:
+        type_ = 'draft_registrations'
+
+
 
 
 class NodeSerializer(JSONAPISerializer):
