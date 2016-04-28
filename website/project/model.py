@@ -3172,6 +3172,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         name = (name or '').strip()
         key = to_mongo_key(name)
         has_comments = False
+        current = None
 
         if key not in self.wiki_pages_current:
             if key in self.wiki_pages_versions:
@@ -3199,6 +3200,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if has_comments:
             Comment.update(Q('root_target', 'eq', current._id), data={'root_target': Guid.load(new_page._id)})
             Comment.update(Q('target', 'eq', current._id), data={'target': Guid.load(new_page._id)})
+
+        if current:
+            for contrib in self.contributors:
+                if contrib.comments_viewed_timestamp.get(current._id, None):
+                    auth.user.comments_viewed_timestamp[new_page._id] = auth.user.comments_viewed_timestamp[current._id]
+                    auth.user.save()
+                    del auth.user.comments_viewed_timestamp[current._id]
 
         # check if the wiki page already exists in versions (existed once and is now deleted)
         if key not in self.wiki_pages_versions:
