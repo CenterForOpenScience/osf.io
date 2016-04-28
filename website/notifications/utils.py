@@ -371,12 +371,9 @@ def get_global_notification_type(global_subscription, user):
     :param obj user: modular odm User object
     :return: str notification type (e.g. 'email_transactional')
     """
-    if global_subscription and isinstance(global_subscription, NotificationSubscription):
-        for notification_type in constants.NOTIFICATION_TYPES:
-            if user in getattr(global_subscription, notification_type):
-                return notification_type
-    else:
-        return None
+    for notification_type in constants.NOTIFICATION_TYPES:
+        if user in getattr(global_subscription, notification_type):
+            return notification_type
 
 
 def format_user_and_project_subscriptions(user):
