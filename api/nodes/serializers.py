@@ -18,7 +18,7 @@ from api.base.utils import get_user_auth, get_object_or_error, absolute_reverse
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
                                   TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly,
                                   HideIfRegistration)
-from api.base.exceptions import InvalidModelValueError
+from api.base.exceptions import InvalidModelValueError, JSONAPIAttributeException
 
 
 class NodeTagField(ser.Field):
@@ -31,14 +31,15 @@ class NodeTagField(ser.Field):
         return data
 
 
-class NodeDraftRegistrationSerializer(JSONAPISerializer):
+class DraftRegistrationSerializer(JSONAPISerializer):
 
     schema_choices = list(ACTIVE_META_SCHEMAS)
     schema_choices_string = ', '.join(["'{}'".format(choice) for choice in schema_choices])
 
     id = IDField(source='_id', read_only=True)
     type = TypeField()
-    registration_form = ser.ChoiceField(source='registration_schema.name', choices=schema_choices, help_text="Choices: " + schema_choices_string)
+    registration_form = ser.ChoiceField(source='registration_schema.name', choices=schema_choices, help_text="Choices: " + schema_choices_string, required=True)
+    # registration_schema = ser.DictField(source='registration_schema.schema', read_only=True)
     registration_metadata = ser.DictField(required=False)
     datetime_initiated = ser.DateTimeField(read_only=True)
     datetime_updated = ser.DateTimeField(read_only=True)
@@ -62,6 +63,8 @@ class NodeDraftRegistrationSerializer(JSONAPISerializer):
 
     def create(self, validated_data):
         node = validated_data.pop('node')
+        if node.is_registration:
+            raise exceptions.ValidationError('Creating draft registrations on registered projects is not allowed.')
         initiator = validated_data.pop('initiator')
         schema_name = validated_data.pop('registration_schema').get('name')
         schema = MetaSchema.find_one(Q('name', 'eq', schema_name) & Q('schema_version', 'eq', 2))
@@ -69,15 +72,61 @@ class NodeDraftRegistrationSerializer(JSONAPISerializer):
         draft = DraftRegistration.create_from_node(node = node, user=initiator, schema = schema)
         return draft
 
-
     def update(self, draft, validated_data):
-        """Update instance with the validated data. Requires
-        the request to be in the serializer context.
+        """Update draft instance with the validated data."
         """
         metadata = validated_data.pop('registration_metadata', None)
-        draft.update_metadata(metadata)
-        draft.save()
+        if metadata:
+            self.validate_metadata(draft, metadata)
+            draft.update_metadata(metadata)
+            draft.save()
         return draft
+
+    def validate_metadata(self, draft, metadata):
+        """
+        Validates registration_metadata field.  Called in update and create methods because the draft is
+        needed in the context.
+        """
+        for question, response in metadata.iteritems():
+            if not isinstance(response, dict):
+                raise JSONAPIAttributeException(attribute='registration_metadata',
+                                                detail='Expected type "dictionary" for {}'.format(question))
+            if 'value' not in response.keys():
+                raise JSONAPIAttributeException(attribute='registration_metadata',
+                                                detail='Key "value" missing from {}.'.format(question))
+
+        form = self.extract_expected_responses_from_schema(draft)
+
+        for entry in metadata:
+            value = metadata[entry]['value']
+            if entry not in form:
+                raise JSONAPIAttributeException(attribute='registration_metadata',
+                                                detail='"{}" is not in schema "{}"'.format(entry, draft.registration_schema.name))
+
+
+            options = form[entry].get('options')
+            if options:
+                if value not in options:
+                    raise JSONAPIAttributeException(attribute='registration_metadata',
+                                                    detail='Value for {} is invalid. Expected one of {}.'.format(entry, options))
+        return
+
+    def extract_expected_responses_from_schema(self, draft):
+        """
+        Pull expected questions and answers from schema
+        """
+        schema = draft.registration_schema.schema
+        form = {}
+        for page in schema['pages']:
+            for question in page['questions']:
+                options = question.get('options', None)
+                if options:
+                    for item, option in enumerate(options):
+                        if isinstance(option, dict) and option.get('text'):
+                            options[item] = option.get('text')
+
+                form[question['qid']] = {"options": options}
+        return form
 
     class Meta:
         type_ = 'draft_registrations'
