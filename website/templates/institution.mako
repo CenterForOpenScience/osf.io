@@ -21,7 +21,7 @@
             </div>
             % if description:
                 <div class="row" style="text-align: center">
-                    <h4>${description | n}</h4>
+                    <div class="text-muted text-smaller">${description | n}</div>
                 </div>
             % endif
         </div>
