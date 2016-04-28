@@ -18,7 +18,7 @@
                         <h2>${ name }</h2>
                     </div>
                 % endif
-            </div>
+            </div><br>
             % if description:
                 <div class="row" style="text-align: center">
                     <div class="text-muted text-smaller">${description | n}</div>

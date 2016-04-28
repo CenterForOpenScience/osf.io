@@ -27,7 +27,7 @@
             <section id='newPublicProjects'>
                 <h3 class='anchor'>Newest public projects</h3>
                 <div class='project-list'>
-                    ${node_list(recent_public_projects, prefix='newest_public', metric='date_created')}
+                    ${node_list(recent_apublic_projects, prefix='newest_public', metric='date_created')}
                 </div>
             </section>
             <section id='newPublicRegistrations' class="m-t-lg">
