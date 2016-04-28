@@ -21,7 +21,11 @@ urlpatterns = [
     url(r'^(?P<node_id>\w+)/institution/$', views.NodeInstitutionDetail.as_view(), name=views.NodeInstitutionDetail.view_name),
     url(r'^(?P<node_id>\w+)/relationships/institution/$', views.NodeInstitutionRelationship.as_view(), name=views.NodeInstitutionRelationship.view_name),
     url(r'^(?P<node_id>\w+)/node_links/$', views.NodeLinksList.as_view(), name=views.NodeLinksList.view_name),
-    url(r'^(?P<node_id>\w+)/node_links/(?P<node_link_id>\w+)/', views.NodeLinksDetail.as_view(), name=views.NodeLinksDetail.view_name),
+    url(r'^(?P<node_id>\w+)/node_links/(?P<node_link_id>\w+)/$', views.NodeLinksDetail.as_view(), name=views.NodeLinksDetail.view_name),
+    url(r'^(?P<node_id>\w+)/draft_registrations/$', views.NodeDraftRegistrationsList.as_view(), name=views.NodeDraftRegistrationsList.view_name),
+    url(r'^(?P<node_id>\w+)/draft_registrations/(?P<draft_id>\w+)/$', views.NodeDraftRegistrationDetail.as_view(), name=views.NodeDraftRegistrationDetail.view_name),
+
+
 ]
 
 # Routes only active in local/staging environments
