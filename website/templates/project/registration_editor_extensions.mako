@@ -7,7 +7,7 @@
   <div id="selectedFile">File(s) selected for upload:
     <br>
     <br>
-        1<div data-bind="foreach: selectedFiles">
+        <div data-bind="foreach: selectedFiles">
             <span data-bind="text: data.name"></span>
             <button data-bind="click: $parent.unselectFile"
                     style="margin-left: 5px;"
