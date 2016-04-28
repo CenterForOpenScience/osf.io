@@ -34,6 +34,7 @@ from api.nodes.utils import get_file_object
 from api.registrations.serializers import RegistrationSerializer
 from api.institutions.serializers import InstitutionSerializer
 from api.nodes.permissions import (
+    IsAdmin,
     AdminOrPublic,
     ContributorOrPublic,
     ContributorOrPublicForPointers,

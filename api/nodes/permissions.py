@@ -2,7 +2,7 @@
 from rest_framework import permissions
 from rest_framework import exceptions
 
-from website.models import Node, Pointer, User, Institution
+from website.models import Node, Pointer, User, Institution, DraftRegistration
 from website.util import permissions as osf_permissions
 
 from api.base.utils import get_user_auth
@@ -17,6 +17,14 @@ class ContributorOrPublic(permissions.BasePermission):
             return obj.is_public or obj.can_view(auth)
         else:
             return obj.can_edit(auth)
+
+
+class IsAdmin(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        assert isinstance(obj, (Node, DraftRegistration)), 'obj must be a Node or a Draft Registration, got {}'.format(obj)
+        auth = get_user_auth(request)
+        node = Node.load(request.parser_context['kwargs']['node_id'])
+        return node.has_permission(auth.user, osf_permissions.ADMIN)
 
 
 class AdminOrPublic(permissions.BasePermission):
