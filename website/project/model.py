@@ -114,10 +114,6 @@ class MetaSchema(StoredObject):
     def requires_consent(self):
         return self._config.get('requiresConsent', False)
 
-    @property
-    def has_files(self):
-        return self._config.get('hasFiles', False)
-
 def ensure_schema(schema, name, version=1):
     schema_obj = None
     try:
