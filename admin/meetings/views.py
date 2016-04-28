@@ -40,7 +40,7 @@ class MeetingFormView(OSFAdmin, FormView):
     def dispatch(self, request, *args, **kwargs):
         endpoint = self.kwargs.get('endpoint')
         try:
-            self.conf = Conference.get_by_endpoint(endpoint)
+            self.conf = Conference.get_by_endpoint(endpoint, active=False)
         except ConferenceError:
             raise Http404('Meeting with endpoint "{}" not found'.format(
                 endpoint

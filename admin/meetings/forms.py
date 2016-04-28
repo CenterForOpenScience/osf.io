@@ -38,7 +38,7 @@ class MeetingForm(forms.Form):
     )
     info_url = forms.CharField(
         label='Info url',
-        required=True,
+        required=False,
         widget=forms.TextInput(attrs={'size': '60'}),
     )
     logo_url = forms.CharField(
@@ -54,6 +54,7 @@ class MeetingForm(forms.Form):
     admins = MultiEmailField(
         label='Conference administrator emails (comma separated)',
         widget=forms.TextInput(attrs={'size': '50'}),
+        required=False,
     )
     public_projects = forms.BooleanField(
         label='Projects are public',
@@ -62,12 +63,12 @@ class MeetingForm(forms.Form):
     )
     poster = forms.BooleanField(
         label='Posters',
-        required=True,
+        required=False,
         initial=True,
     )
     talk = forms.BooleanField(
         label='Talks',
-        required=True,
+        required=False,
         initial=True,
     )
     field_submission1 = forms.CharField(
