@@ -134,15 +134,10 @@ def submit_draft_for_review(auth, node, draft, *args, **kwargs):
     )
 
     if prereg_utils.get_prereg_schema() == draft.registration_schema:
-        params = {
-            'is_prereg': True,
-            'submitted_time': iso8601format(draft.approval.initiation_date),
-            'node': node._primary_key
-        }
 
         node.add_log(
-            action=NodeLog.PROJECT_REGISTERED,
-            params=params,
+            action=NodeLog.PREREG_REGISTRATION_INITIATED,
+            params={'node': node._primary_key},
             auth=auth,
             save=False
         )
