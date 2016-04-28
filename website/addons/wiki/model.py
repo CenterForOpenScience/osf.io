@@ -213,11 +213,6 @@ class NodeWikiPage(GuidStoredObject, Commentable):
     def get_absolute_url(self):
         return '{}wiki/{}/'.format(self.node.absolute_url, self.page_name)
 
-    @property
-    def absolute_api_v2_url(self):
-        # using v1 since there are no v2 routes
-        return self.get_absolute_url()
-
     def html(self, node):
         """The cleaned HTML of the page"""
         sanitized_content = render_content(self.content, node=node)
