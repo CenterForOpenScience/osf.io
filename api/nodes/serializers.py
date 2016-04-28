@@ -69,17 +69,7 @@ class DraftRegistrationSerializer(JSONAPISerializer):
         schema_name = validated_data.pop('registration_schema').get('name')
         schema = MetaSchema.find_one(Q('name', 'eq', schema_name) & Q('schema_version', 'eq', 2))
 
-        draft = DraftRegistration.create_from_node(node = node, user=initiator, schema = schema)
-        return draft
-
-    def update(self, draft, validated_data):
-        """Update draft instance with the validated data."
-        """
-        metadata = validated_data.pop('registration_metadata', None)
-        if metadata:
-            self.validate_metadata(draft, metadata)
-            draft.update_metadata(metadata)
-            draft.save()
+        draft = DraftRegistration.create_from_node(node=node, user=initiator, schema=schema)
         return draft
 
     def validate_metadata(self, draft, metadata):
@@ -102,7 +92,6 @@ class DraftRegistrationSerializer(JSONAPISerializer):
             if entry not in form:
                 raise JSONAPIAttributeException(attribute='registration_metadata',
                                                 detail='"{}" is not in schema "{}"'.format(entry, draft.registration_schema.name))
-
 
             options = form[entry].get('options')
             if options:
@@ -132,6 +121,25 @@ class DraftRegistrationSerializer(JSONAPISerializer):
         type_ = 'draft_registrations'
 
 
+class DraftRegistrationDetailSerializer(DraftRegistrationSerializer):
+    """
+    Overrides DraftRegistrationSerializer to make id and registration_metadata required.
+
+    Also makes registration_form read-only.
+    """
+    id = IDField(source='_id', required=True)
+    registration_metadata = ser.DictField(required=True)
+    registration_form = ser.CharField(read_only=True, source='registration_schema.name')
+
+    def update(self, draft, validated_data):
+        """Update draft instance with the validated data."
+        """
+        metadata = validated_data.pop('registration_metadata', None)
+        if metadata:
+            self.validate_metadata(draft, metadata)
+            draft.update_metadata(metadata)
+            draft.save()
+        return draft
 
 
 class NodeSerializer(JSONAPISerializer):
