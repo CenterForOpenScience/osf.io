@@ -12,6 +12,14 @@ var ViewModel = function(submitUrl, campaign) {
 
     var self = this;
 
+    ko.validation.rules['complexity'] = {
+        validator: function (val, minimumComplexity) {
+            return self.passwordComplexity() >= minimumComplexity;
+        },
+        message: 'Please enter a more complex password'
+    };
+    ko.validation.registerExtenders();
+
     self.typedPassword = ko.observable('');
 
     self.passwordFeedback = ko.observable('');
@@ -36,12 +44,12 @@ var ViewModel = function(submitUrl, campaign) {
             };
         } else if (self.passwordComplexity() === 2) {
             return {
-                class: 'progress-bar progress-bar-warning progress-bar-striped active',
+                class: 'progress-bar progress-bar-warning',
                 style: 'width: 50%'
             };
         } else if (self.passwordComplexity() === 3) {
             return {
-                class: 'progress-bar progress-bar-warning progress-bar-striped active',
+                class: 'progress-bar progress-bar-warning',
                 style: 'width: 75%'
             };
         } else if (self.passwordComplexity() === 4) {
@@ -74,7 +82,8 @@ var ViewModel = function(submitUrl, campaign) {
     self.password = ko.observable('').extend({
         required: true,
         minLength: 6,
-        maxLength: 256
+        maxLength: 256,
+        complexity: 2
     });
     self.campaign = ko.observable(campaign);
 
