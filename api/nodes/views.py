@@ -76,6 +76,17 @@ class NodeMixin(object):
             self.check_object_permissions(self.request, node)
         return node
 
+class DraftMixin(object):
+
+    serializer_class = NodeDraftRegistrationSerializer
+
+    def get_draft(self):
+        draft = get_object_or_error(DraftRegistration, self.kwargs['draft_id'])
+
+        self.check_object_permissions(self.request, draft)
+        return draft
+
+
 class WaterButlerMixin(object):
 
     path_lookup_url_kwarg = 'path'
@@ -749,6 +760,52 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
     def perform_create(self, serializer):
         user = self.request.user
         serializer.save(initiator=user, node=self.get_node())
+
+
+class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, DraftMixin):
+    """Details about a given draft registration. *Writeable*.
+
+    ###Permissions
+
+    ##Attributes
+
+    Draft registration entities have the "draft_registration" `type`.
+
+        name           type               description
+        =================================================================================
+
+    ##Relationships
+
+
+    ##Actions
+
+    ###Update
+
+    ###Delete
+
+    ##Query Params
+
+    + `view_only=<Str>` -- Allow users with limited access keys to access this node. Note that some keys are anonymous, so using the view_only key will cause user-related information to no longer serialize. This includes blank ids for users and contributors and missing serializer fields and relationships.
+
+    #This Request/Response
+
+    """
+    permission_classes = (
+        IsAdmin,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope
+    )
+
+    required_read_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_READ]
+    required_write_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_WRITE]
+
+    serializer_class = NodeDraftRegistrationSerializer
+    view_category = 'nodes'
+    view_name = 'node-draft-registration-detail'
+
+    def get_object(self):
+        return self.get_draft()
+
 
 class NodeRegistrationsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     """Registrations of the current node.
