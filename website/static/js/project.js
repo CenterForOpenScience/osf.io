@@ -223,9 +223,10 @@ NodeActions.openCloseNode = function(nodeId) {
                 $logs.attr('data-uri'),
                 {count: 3}
             ).done(function(response) {
-                $('.spinner-loading-wrapper').hide();
                 new LogFeed('#logs-' + nodeId, response.logs);
                 $logs.addClass('served');
+            }).always(function(response) {
+                $('.spinner-loading-wrapper').hide();
             });
         }
         $logs.addClass('active');
