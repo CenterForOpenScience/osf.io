@@ -13,6 +13,7 @@ from framework.mongo import database
 from framework.mongo.utils import get_or_http_error, autoload
 from framework.exceptions import HTTPError
 from framework.status import push_status_message
+from framework.utils import iso8601format
 
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
@@ -22,6 +23,8 @@ from website.project.decorators import (
     http_error_if_disk_saving_mode
 )
 from website import language, settings
+from website.models import NodeLog
+from website.prereg import utils as prereg_utils
 from website.project import utils as project_utils
 from website.project.model import MetaSchema, DraftRegistration
 from website.project.metadata.schemas import ACTIVE_META_SCHEMAS
@@ -129,6 +132,21 @@ def submit_draft_for_review(auth, node, draft, *args, **kwargs):
         meta=meta,
         save=True
     )
+
+    if prereg_utils.get_prereg_schema() == draft.registration_schema:
+        params = {
+            'is_prereg': True,
+            'submitted_time': iso8601format(draft.approval.initiation_date),
+            'node': node._primary_key
+        }
+
+        node.add_log(
+            action=NodeLog.PROJECT_REGISTERED,
+            params=params,
+            auth=auth,
+            save=False
+        )
+        node.save()
 
     push_status_message(language.AFTER_SUBMIT_FOR_REVIEW,
                         kind='info',
