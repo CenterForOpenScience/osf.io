@@ -213,10 +213,11 @@ vagrant up
 # tokumx's install requires manual interaction so we can't run it from Vagrantfile
 vagrant ssh -c "sudo ~/project/install-tokumx.sh"
 # building assets requires a running tokumx
-vagrant ssh -c "invoke assets --dev"
+vagrant ssh -c "source ~/venv/bin/activate; cd project; invoke assets --dev"
 ```
 
-Your git checkout directory will be mounted at `~/project` inside the VM:
+Your git checkout directory will be mounted at `~/project` inside the VM, and the virtualenv will be activated for you;
+elasticsearch & mongo will be started by the OS:
 ```
 vagrant ssh
 
