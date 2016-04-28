@@ -53,7 +53,7 @@ def main(env):
             {
                 '_id': 'cos',
                 'name': 'Center For Open Science',
-                'description': 'COS is a non-profit technology company providing free and open services to increase inclusivity and transparency of research. COS supports shifting incentives and practices to align more closely with scientific values. Find out more at <a href="cos.io">cos.io</a>.',
+                'description': 'COS is a non-profit technology company providing free and open services to increase inclusivity and transparency of research. Find out more at <a href="https://cos.io">cos.io</a>.',
                 'banner_name': 'cos-banner.png',
                 'logo_name': 'cos-shield.png',
                 'auth_url': None,
