@@ -12,7 +12,7 @@ var ViewModel = function(submitUrl, campaign) {
 
     var self = this;
 
-    ko.validation.rules['complexity'] = {
+    ko.validation.rules.complexity = {
         validator: function (val, minimumComplexity) {
             return self.passwordComplexity() >= minimumComplexity;
         },
