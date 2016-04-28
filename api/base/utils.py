@@ -127,7 +127,6 @@ def default_node_list_query():
         Q('is_registration', 'ne', True)
     )
 
-
 def default_node_permission_query(user):
     permission_query = Q('is_public', 'eq', True)
     if not user.is_anonymous():
@@ -137,3 +136,29 @@ def default_node_permission_query(user):
 
 def extend_querystring_params(url, params):
     return furl.furl(url).add(args=params).url
+
+def extract_expected_responses_from_schema(draft):
+    """
+    Pull expected questions and answers from schema
+    """
+    schema = draft.registration_schema.schema
+    form = {}
+    for page in schema['pages']:
+        for question in page['questions']:
+            options = question.get('options', None)
+            if options:
+                for item, option in enumerate(options):
+                    if isinstance(option, dict) and option.get('text'):
+                        options[item] = option.get('text')
+
+            required = question.get('required', False)
+            if not required:
+                properties = question.get('properties', False)
+                if properties and isinstance(properties, list):
+                    for item, property in enumerate(properties):
+                        if isinstance(property, dict) and property.get('required', False):
+                            required = True
+                            break
+
+            form[question['qid']] = {'options': options, 'required': required}
+    return form

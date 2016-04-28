@@ -14,7 +14,7 @@ from website.exceptions import NodeStateError, UserNotAffiliatedError
 from website.util import permissions as osf_permissions
 from website.project.model import NodeUpdateError
 
-from api.base.utils import get_user_auth, get_object_or_error, absolute_reverse
+from api.base.utils import get_user_auth, get_object_or_error, absolute_reverse, extract_expected_responses_from_schema
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
                                   TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly,
                                   HideIfRegistration)
@@ -85,7 +85,7 @@ class DraftRegistrationSerializer(JSONAPISerializer):
                 raise JSONAPIAttributeException(attribute='registration_metadata',
                                                 detail='Key "value" missing from {}.'.format(question))
 
-        form = self.extract_expected_responses_from_schema(draft)
+        form = extract_expected_responses_from_schema(draft)
 
         for entry in metadata:
             value = metadata[entry]['value']
@@ -99,23 +99,6 @@ class DraftRegistrationSerializer(JSONAPISerializer):
                     raise JSONAPIAttributeException(attribute='registration_metadata',
                                                     detail='Value for {} is invalid. Expected one of {}.'.format(entry, options))
         return
-
-    def extract_expected_responses_from_schema(self, draft):
-        """
-        Pull expected questions and answers from schema
-        """
-        schema = draft.registration_schema.schema
-        form = {}
-        for page in schema['pages']:
-            for question in page['questions']:
-                options = question.get('options', None)
-                if options:
-                    for item, option in enumerate(options):
-                        if isinstance(option, dict) and option.get('text'):
-                            options[item] = option.get('text')
-
-                form[question['qid']] = {"options": options}
-        return form
 
     class Meta:
         type_ = 'draft_registrations'
