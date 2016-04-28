@@ -20,11 +20,6 @@ cancelled embargoed registration of
 <span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
 </script>
 
-<script type="text/html" id="embargo_completed">
-completed embargoed registration of
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
-</script>
-
 <script type="text/html" id="embargo_completed_no_user">
 Embargo of registration of
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a> completed
