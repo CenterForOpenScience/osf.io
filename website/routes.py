@@ -209,11 +209,11 @@ def make_url_map(app):
         Rule('/reproducibility/', 'get',
              website_views.reproducibility, OsfWebRenderer('', render_mako_string)),
 
-        Rule('/about/', 'get', website_views.redirect_about, notemplate),
-        Rule('/howosfworks/', 'get', website_views.redirect_getting_started, notemplate),
+        Rule('/about/', 'get', website_views.redirect_about, json_renderer,),
+        Rule('/howosfworks/', 'get', website_views.redirect_howosfworks, json_renderer,),
 
         Rule('/faq/', 'get', {}, OsfWebRenderer('public/pages/faq.mako')),
-        Rule('/getting-started/', 'get', website_views.redirect_getting_started, notemplate),
+        Rule('/getting-started/', 'get', {}, OsfWebRenderer('public/pages/getting_started.mako')),
         Rule('/getting-started/email/', 'get', website_views.redirect_meetings_analytics_link, json_renderer),
         Rule('/support/', 'get', {}, OsfWebRenderer('public/pages/support.mako')),
 

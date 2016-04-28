@@ -4,15 +4,17 @@ import httplib as http
 import json
 
 from modularodm import Q
+from modularodm.exceptions import ValidationValueError
 
 import mock
 from nose.tools import *  # noqa
+
 from tests.base import fake, OsfTestCase
 from tests.factories import (
     AuthUserFactory, EmbargoFactory, NodeFactory, ProjectFactory,
     RegistrationFactory, UserFactory, UnconfirmedUserFactory, DraftRegistrationFactory
 )
-from modularodm.exceptions import ValidationValueError
+from tests import utils
 
 from framework.exceptions import PermissionsError
 from framework.auth import Auth
@@ -24,6 +26,7 @@ from website.models import Embargo, Node, User
 from website.project.model import ensure_schemas
 from website.project.sanctions import PreregCallbackMixin
 from website.util import permissions
+from website.exceptions import NodeStateError
 
 DUMMY_TOKEN = tokens.encode({
     'dummy': 'token'
@@ -923,6 +926,14 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         assert_true(reg.embargo_termination_approval)
         assert_true(reg.embargo_termination_approval.is_pending_approval)
 
+    def test_cannot_request_termination_on_component_of_embargo(self):
+        node = ProjectFactory()
+        child = ProjectFactory(parent=node, creator=node.creator)
+
+        with utils.mock_archive(node, embargo=True, autocomplete=True, autoapprove=True) as reg:
+            with assert_raises(NodeStateError):
+                reg.nodes[0].request_embargo_termination(Auth(node.creator))
+
     @mock.patch('website.mails.send_mail')
     def test_embargoed_registration_set_privacy_sends_mail(self, mock_send_mail):
         """
@@ -969,16 +980,11 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
             registration.embargo.approve_embargo(User.load(user_id), approval_token)
         self.registration.save()
 
-        sub_reg = registration.nodes[0].nodes[0]
         res = self.app.post(
-            sub_reg.api_url_for('project_set_privacy', permissions='public'),
-            auth=c2.auth,
-            expect_errors=True
+            registration.api_url_for('project_set_privacy', permissions='public'),
+            auth=self.user.auth
         )
         assert_equal(res.status_code, 200)
-        sub_reg.reload()
-        assert_true(sub_reg.embargo_termination_approval)
-        assert_true(sub_reg.embargo_termination_approval.is_pending_approval)
         asked_admins = [(admin._id, n._id) for admin, n in mock_ask.call_args[0][0]]
         for admin, node in registration.get_admin_contributors_recursive():
             assert_in((admin._id, node._id), asked_admins)
