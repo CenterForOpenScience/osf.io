@@ -55,3 +55,5 @@ VARNISH_SERVERS = ['http://localhost:8080']
 
 # if ENABLE_VARNISH isn't set in python read it from the env var and set it
 locals().setdefault('ENABLE_VARNISH', os.environ.get('ENABLE_VARNISH') == 'True')
+
+KEEN_MASTER_KEY = "123456789abcdef101112131415161718191a1b1c1d1e1f20212223242526272"
