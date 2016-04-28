@@ -82,9 +82,11 @@ class DraftMixin(object):
 
     serializer_class = DraftRegistrationSerializer
 
-    def get_draft(self):
+    def get_draft(self, draft_id=None):
         node_id = self.kwargs['node_id']
-        draft = get_object_or_error(DraftRegistration, self.kwargs['draft_id'])
+        if draft_id is None:
+            draft_id = self.kwargs['draft_id']
+        draft = get_object_or_error(DraftRegistration, draft_id)
 
         if not draft.branched_from._id == node_id:
             raise ValidationError('This draft registration is not created from the given node.')
@@ -831,7 +833,7 @@ class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestro
         DraftRegistration.remove_one(draft)
 
 
-class NodeRegistrationsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
+class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, DraftMixin):
     """Registrations of the current node.
 
     Registrations are read-only snapshots of a project. This view is a list of all the registrations of the current node.
@@ -905,6 +907,15 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
         auth = get_user_auth(self.request)
         registrations = [node for node in nodes if node.can_view(auth)]
         return registrations
+
+    # overrides ListCreateJSONAPIView
+    def perform_create(self, serializer):
+        """Create a registration from a draft.
+        """
+        # On creation, make sure that current user is the creator
+        draft_id = self.request.data.get('draft_registration', None)
+        draft = self.get_draft(draft_id)
+        serializer.save(draft=draft)
 
 
 class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, NodeMixin, ODMFilterMixin):
