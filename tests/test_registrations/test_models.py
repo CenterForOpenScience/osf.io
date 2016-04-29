@@ -211,3 +211,9 @@ class TestEmbargoTerminationApprovals(OsfTestCase):
         user_token = self.registration.embargo_termination_approval.approval_state[self.user._id]['rejection_token']
         self.registration.embargo_termination_approval.reject(self.user, user_token)
         assert_false(self.registration.embargo_termination_approval)
+
+    def test_rejection_url_points_to_registration(self):
+        assert_in(
+            self.registration._id,
+            self.registration.embargo_termination_approval.stashed_urls[self.user._id]['reject']
+        )

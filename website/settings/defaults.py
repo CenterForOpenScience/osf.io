@@ -369,7 +369,7 @@ else:
             'kwargs': {'dry_run': False},
         },
         'approve_embargo_terminations': {
-            'task': 'scripts.approve_emabrgo_terminations',
+            'task': 'scripts.approve_embargo_terminations',
             'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
             'kwargs': {'dry_run': False},
         },

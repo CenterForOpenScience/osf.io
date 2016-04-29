@@ -653,7 +653,7 @@ def _view_project(node, auth, primary=False):
 
     disapproval_link = ''
     if (node.is_pending_registration and node.has_permission(user, ADMIN)):
-        disapproval_link = node.registration_approval.stashed_urls.get(user._id, {}).get('reject', '')
+        disapproval_link = node.root.registration_approval.stashed_urls.get(user._id, {}).get('reject', '')
 
     # Before page load callback; skip if not primary call
     if primary:

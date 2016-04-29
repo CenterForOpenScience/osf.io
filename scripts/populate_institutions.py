@@ -53,7 +53,7 @@ def main(env):
             {
                 '_id': 'cos',
                 'name': 'Center For Open Science',
-                'description': None,
+                'description': 'COS is a non-profit technology company providing free and open services to increase inclusivity and transparency of research. Find out more at <a href="https://cos.io">cos.io</a>.',
                 'banner_name': 'cos-banner.png',
                 'logo_name': 'cos-shield.png',
                 'auth_url': None,
@@ -73,7 +73,7 @@ def main(env):
             {
                 '_id': 'ucr',
                 'name': 'University of California Riverside',
-                'description': None,
+                'description': 'Policy prohibits storing PII or HIPAA data on this site, please see C&amp;C\'s <a href="http://cnc.ucr.edu/security/researchers.html">security site</a> for more information.',
                 'banner_name': 'ucr-banner.png',
                 'logo_name': 'ucr-shield.png',
                 'auth_url': SHIBBOLETH_SP.format(encode_uri_component('urn:mace:incommon:ucr.edu')),

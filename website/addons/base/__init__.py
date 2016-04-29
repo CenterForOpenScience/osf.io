@@ -518,7 +518,7 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
 
 class AddonNodeSettingsBase(AddonSettingsBase):
 
-    owner = fields.ForeignField('node')
+    owner = fields.ForeignField('node', index=True)
 
     _meta = {
         'abstract': True,
