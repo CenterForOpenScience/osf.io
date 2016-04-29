@@ -40,6 +40,7 @@ INSTALLED_APPS = (
     'admin.base',
     'admin.pre_reg',
     'admin.spam',
+    'admin.metrics',
     'admin.nodes',
     'admin.users',
 

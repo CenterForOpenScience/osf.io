@@ -255,6 +255,9 @@ def redirect_about(**kwargs):
 def redirect_howosfworks(**kwargs):
     return redirect('/getting-started/')
 
+def redirect_getting_started(**kwargs):
+    return redirect('http://help.osf.io/')
+
 def redirect_meetings_analytics_link(**kwargs):
     return redirect('/getting-started/?utm_source=osf4m&utm_medium=email&utm_campaign=success')
 

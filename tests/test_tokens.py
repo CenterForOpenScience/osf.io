@@ -13,8 +13,8 @@ from tests.utils import mock_auth
 from framework.exceptions import HTTPError
 
 from website import settings
-from website.models import Node, Embargo, RegistrationApproval, Retraction
-from website.project.model import Sanction
+from website.models import Node
+from website.project.sanctions import Embargo, RegistrationApproval, Retraction, Sanction
 from website.tokens import decode, encode, TokenHandler
 from website.tokens.exceptions import TokenHandlerNotFound
 
