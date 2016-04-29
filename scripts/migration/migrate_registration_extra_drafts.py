@@ -16,6 +16,15 @@ from framework.transactions.context import TokuTransaction
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+def migrate_file_meta(question):
+    files = question.get('extra')
+    if isinstance(files, dict):
+        if len(files) == 0:
+            question['extra'] = []
+        else:
+            question['extra'] = [files]
+
+
 def migrate_drafts(dry):
 
     PREREG_CHALLENGE_METASCHEMA = get_prereg_schema()
@@ -28,13 +37,12 @@ def migrate_drafts(dry):
     for r in draft_registrations:
         data = r.registration_metadata
         for q, ans in data.iteritems():
-            files = ans['extra']
-            if type(files) is dict:
-                if len(files.keys()) == 0:
-                    ans['extra'] = []
-                else:
-                    ans['extra'] = [files]
-                    count += 1
+            if isinstance(ans.get('value'), dict):
+                for value in ans['value'].values():
+                    migrate_file_meta(value)
+            else:
+                migrate_file_meta(ans)
+        count += 1
         if not dry:
             r.save()
     logger.info('Done with {0} drafts migrated.'.format(count))

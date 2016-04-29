@@ -17,8 +17,8 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 def migrate_file_meta(question):
-    wfiles = question.get('extra')        
-    if files and isinstance(files, dict):
+    files = question.get('extra')
+    if isinstance(files, dict):
         if len(files) == 0:
             question['extra'] = []
         else:
@@ -42,7 +42,7 @@ def migrate():
             else:
                 migrate_file_meta(question)
         reg.save()
-        count += 1        
+        count += 1
     logger.info('Done with {0} drafts migrated.'.format(count))
 
 if __name__ == '__main__':
