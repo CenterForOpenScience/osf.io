@@ -125,9 +125,35 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         res = self.app.get(self.project_url, {'view_only': self.link.key})
         assert_equal(res.status_code, 200)
 
-    def test_has_bad_private_link_key(self):
+    def test_has_bad_private_link_key_redirects_properly(self):
         res = self.app.get(self.project_url, {'view_only': 'not_valid_link'})
-        assert_equal(res.status_code, 307)
+        assert_is_redirect(res)
+        res = res.follow(expect_errors=True)
+        assert_equal(res.status_code, 302)
+        res = res.follow(expect_errors=True)
+        assert_equal(res.status_code, 301)
+        res = res.follow(expect_errors=True)
+        assert_equal(res.status_code, 200)
+
+    def test_has_wrong_private_link_for_project(self):
+
+        project2 = ProjectFactory(is_public=False)
+        project_url2 = project2.web_url_for('view_project')
+
+        res = self.app.get(project_url2, {'view_only': 'not_valid_link'})
+        assert_is_redirect(res)
+        res = res.follow(expect_errors=True)
+        assert_equal(res.status_code, 302)
+        res = res.follow(expect_errors=True)
+        assert_equal(res.status_code, 301)
+        res = res.follow(expect_errors=True)
+        assert_equal(res.status_code, 200)
+
+    def test_private_link_not_on_node_redirects_properly(self):
+        res = self.app.get("/", {'view_only': self.link.key})
+        assert_is_redirect(res)
+        res = res.follow(expect_errors=True)
+        assert_equal(res.status_code, 200)
 
     def test_not_logged_in_no_key(self):
         res = self.app.get(self.project_url)
