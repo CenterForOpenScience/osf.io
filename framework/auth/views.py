@@ -138,7 +138,7 @@ def auth_login(auth, **kwargs):
 
     if next_url:
         # Only allow redirects which are relative root or full domain, disallows external redirects.
-        if not (next_url[0] == '/' or next_url.startsWith(settings.DOMAIN)):
+        if not (next_url[0] == '/' or next_url.startswith(settings.DOMAIN)):
             raise HTTPError(http.InvalidURL)
 
     if auth.logged_in:
