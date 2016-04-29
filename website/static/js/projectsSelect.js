@@ -57,13 +57,13 @@ var MAX_RESULTS = 10;
                 templates: {
                     suggestion: function(data) {
                         if(settings.type === 'registration'){
-                            return '<p>' + data.value.node.title + '</p> ' +
+                            return '<p>' + $osf.htmlEscape(data.value.node.title) + '</p> ' +
                             '<p><small class="m-l-md text-muted">'+
-                            'modified ' + data.value.dateUpdated +   '</small></p>';
+                            'modified ' + $osf.htmlEscape(data.value.dateUpdated) + '</small></p>';
                         }
-                        return '<p>' + data.value.attributes.title + '</p> ' +
+                        return '<p>' + $osf.htmlEscape(data.value.attributes.title) + '</p> ' +
                             '<p><small class="m-l-md text-muted">'+
-                            'modified ' + data.value.formattedDate.local +   '</small></p>';
+                            'modified ' + $osf.htmlEscape(data.value.formattedDate.local) + '</small></p>';
                     }
                 },
                 source: substringMatcher(settings.data)

@@ -29,7 +29,7 @@
                             <div class="col-md-12">
                                 <div>
                                     <!-- ko if:parentId -->
-                                        <a class="f-w-lg" data-bind="click:importFromParent, html:'Import contributors from <i>' + parentTitle + '</i>'"></a>
+                                        <a class="f-w-lg" data-bind="click:importFromParent, text:'Import contributors from ' + parentTitle"></a>
                                     <!-- /ko -->
                                 </div>
                             </div>

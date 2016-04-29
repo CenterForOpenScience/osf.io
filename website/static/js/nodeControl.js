@@ -213,7 +213,7 @@ var ProjectViewModel = function(data) {
             title: 'Create identifiers',
             message: '<p class="overflow">' +
                 'Are you sure you want to create a DOI and ARK for this ' +
-                self.nodeType + '?',
+                $osf.htmlEscape(self.nodeType) + '?',
             callback: function(confirmed) {
                 if (confirmed) {
                     self.createIdentifiers();

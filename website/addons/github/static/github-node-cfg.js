@@ -60,7 +60,7 @@ var GithubConfigHelper = (function() {
                     {name: repoName}
                 ).done(function (response) {
                         var repoName = response.user + ' / ' + response.repo;
-                        $select.append('<option value="' + repoName + '">' + repoName + '</option>');
+                        $select.append('<option value="' + repoName + '">' + $osf.htmlEscape(repoName) + '</option>');
                         $select.val(repoName);
                         updateHidden(repoName);
                     }).fail(function () {
@@ -93,7 +93,7 @@ var GithubConfigHelper = (function() {
                         accounts,
                         function(item) {
                             return {
-                                text: item.name,
+                                text: $osf.htmlEscape(item.name),
                                 value: item.id
                             };
                         }
