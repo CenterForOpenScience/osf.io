@@ -30,10 +30,13 @@
             <div data-bind="foreach: {data: page.questions, as: 'question'}">
               <div class="row">
                 <h4 data-bind="attr: {id: question.id}, text: question.title"></h4>
-                <div class="col-md-12">
-                  <p>
-                    <span data-bind="previewQuestion: $root.editor.context(question, $root.editor)"></span>
-                  </p>
+                <small><em data-bind="text: question.description"></em></small>
+                <div class="col-md-12 well">
+                  <span data-bind="if: question.value()">
+                    <p>
+                      <span data-bind="previewQuestion: $root.editor.context(question, $root.editor)"></span>
+                    </p>
+                  </span>
                 </div>
               </div>
             </div>
