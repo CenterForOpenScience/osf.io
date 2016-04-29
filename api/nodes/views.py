@@ -740,14 +740,64 @@ class NodeContributorDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVi
 class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin):
     """Draft registrations of the current node.
 
+     <!--- Copied from NodeDraftRegistrationDetail -->
+
+    Draft registrations are created and edited incrementally until the user is ready to submit. A registration
+    is a frozen version of the project that can never be edited or deleted but can be withdrawn.
+    Your original project remains editable but will now have the registration linked to it.
+
+    A draft registration has an associated registration form with supplemental questions about the registration.  Drafts
+    cannot be created from registrations themselves.
+
+    ###Permissions
+
+    Users must have admin permission on the node in order to view or create a draft registration.
+
     ##Draft Registration Attributes
+
 
     Draft Registrations have the "draft_registrations" `type`.
 
-        name                            type               description
+        name                       type               description
         ===========================================================================
+        registration_form          string             name of registration_schema, must be one of allowed values
+        registration_metadata      dictionary         dictionary of question ids and responses from registration schema
+        datetime_initiated         iso8601 timestamp  timestamp that the draft was created
+        datetime_updated           iso8601 timestamp  timestamp when the draft was last updated
 
     ##Relationships
+
+    ###Branched From
+
+    Node that the draft is branched from.  The node endpoint is available in `/branched_from/links/related/href`.
+
+    ###Initiator
+
+    User who initiated the draft registration.  The user endpoint is available in `/initiator/links/related/href`.
+
+    ##Actions
+
+    ###Create Draft Registration
+
+        Method:        POST
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                        "data": {
+                            "type": "draft_registrations",  # required
+                            "attributes": {
+                                "registration_form": {schema_name}, # required
+                                "registration_metadata": {"question_id": {"value": "question response"}} # optional
+                            }
+                        }
+                    }
+        Success:       201 OK + draft representation
+
+    To create a draft registration, issue a POST request to the `self` link.  Registration form must be the name of an
+    active registration schema, for example, "Open-Ended Registration".  Registration metadata is not required on the creation
+    of the draft. If registration metadata is included, it  must be a dictionary with keys as question ids in the registration
+    form, and values in this format {"value": "<insert response to question here."} If question is multiple-choice, question
+    response must exactly match one of the possible choices.
 
     ##Links
 
@@ -785,27 +835,76 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
 class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, DraftMixin):
     """Details about a given draft registration. *Writeable*.
 
+    Draft registrations are created and edited incrementally until the user is ready to submit. A registration
+    is a frozen version of the project that can never be edited or deleted but can be withdrawn.
+    Your original project remains editable but will now have the registration linked to it.
+
+    A draft registration has an associated registration form with supplemental questions about the registration.  Drafts
+    cannot be created from registrations themselves.
+
     ###Permissions
+
+    Users must have admin permission on the node in order to view, update, or delete a draft registration.
 
     ##Attributes
 
-    Draft registration entities have the "draft_registration" `type`.
+    Draft Registrations have the "draft_registrations" `type`.
 
-        name           type               description
-        =================================================================================
+        name                       type               description
+        ===========================================================================
+        registration_form          string             name of registration_schema
+        registration_metadata      dictionary         dictionary of question ids and responses from registration schema
+        datetime_initiated         iso8601 timestamp  timestamp that the draft was created
+        datetime_updated           iso8601 timestamp  timestamp when the draft was last updated
+
 
     ##Relationships
 
+    ###Branched From
+
+    Node that the draft is branched from.  The node endpoint is available in `/branched_from/links/related/href`.
+
+    ###Initiator
+
+    User who initiated the draft registration.  The user endpoint is available in `/initiator/links/related/href`.
 
     ##Actions
 
-    ###Update
+    ###Update Draft Registration
 
-    ###Delete
+        Method:        PUT/PATCH
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                        "data": {
+                            "id": {draft_registration_id},  # required
+                            "type": "draft_registrations",  # required
+                            "attributes": {
+                                "registration_metadata": {"question_id": {"value": "question response"}} # optional
+                            }
+                        }
+                    }
+        Success:       200 OK + draft representation
+
+    To update a draft registration, issue a PUT/PATCH request to the `self` link.  Registration forms cannot be updated
+    after the draft registration has been created.  Registration metadata is required.  It must be a dictionary with
+    keys as question ids in the registration form, and values in this format {"value": "<insert response to question here."}
+    If question is multiple-choice, question response must exactly match one of the possible choices.
+
+    ###Delete Draft Registration
+
+        Method:        DELETE
+        URL:           /links/self
+        Query Params:  <none>
+        Success:       204 No Content
+
+    To delete a draft registration, issue a DELETE request to the `self` link.  This request will remove the draft completely.
+    A draft that has already been registered cannot be deleted.
 
     ##Query Params
 
-    + `view_only=<Str>` -- Allow users with limited access keys to access this node. Note that some keys are anonymous, so using the view_only key will cause user-related information to no longer serialize. This includes blank ids for users and contributors and missing serializer fields and relationships.
+    + `view_only=<Str>` -- Allow users with limited access keys to access this node. Note that some keys are anonymous,
+    so using the view_only key will cause user-related information to no longer serialize. This includes blank ids for users and contributors and missing serializer fields and relationships.
 
     #This Request/Response
 
