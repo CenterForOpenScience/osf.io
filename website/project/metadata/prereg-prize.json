@@ -7,7 +7,6 @@
         "assignee": null
     },
     "config": {
-	"hasFiles": true,
         "requiresApproval": true,
         "requiresConsent": true,
         "messages": {
