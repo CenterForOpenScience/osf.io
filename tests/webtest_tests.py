@@ -15,10 +15,10 @@ from framework.auth import exceptions as auth_exc
 from framework.auth.core import Auth
 from tests.base import OsfTestCase, fake
 from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
-                             WatchConfigFactory,
-                             NodeFactory, NodeWikiFactory, RegistrationFactory,
-                             UnregUserFactory, UnconfirmedUserFactory,
-                             PrivateLinkFactory)
+             WatchConfigFactory,
+             NodeFactory, NodeWikiFactory, RegistrationFactory,
+             UnregUserFactory, UnconfirmedUserFactory,
+             PrivateLinkFactory)
 from tests.test_features import requires_piwik
 from website import settings, language
 from website.security import random_string
@@ -399,41 +399,98 @@ class TestPrivateLinkView(OsfTestCase):
         super(TestPrivateLinkView, self).setUp()
         self.user = AuthUserFactory()  # Is NOT a contributor
         self.project = ProjectFactory(is_public=False)
-        self.link = PrivateLinkFactory(anonymous=True)
+
+        self.link = PrivateLinkFactory(anonymous=False)
         self.link.nodes.append(self.project)
         self.link.save()
+
         self.project_url = self.project.web_url_for('view_project')
+
+        self.anonymous_link = PrivateLinkFactory(anonymous=True)
+        self.anonymous_link.nodes.append(self.project)
+        self.anonymous_link.save()
+        self.project.add_contributor(
+            self.user,
+            permissions=['read'],
+            save=True,
+        )        
 
         self.patcher = mock.patch('framework.sessions.get_node_id', **{'return_value': self.project})
         self.patcher.start()
 
     def test_anonymous_link_hide_contributor(self):
-        res = self.app.get(self.project_url, {'view_only': self.link.key})
+        res = self.app.get(self.project_url, {'view_only': self.anonymous_link.key})
         assert_in("Anonymous Contributors", res.body)
         assert_equal(res.status_code, 200)
         assert_not_in(self.user.fullname, res)
 
-    def test_anonymous_link_hides_citations(self):
+    def test_view_only_link_shows_contributor(self):
         res = self.app.get(self.project_url, {'view_only': self.link.key})
-        assert_equal(res.status_code, 200)                
+        assert_equal(res.status_code, 200)        
+        assert_in(self.user.fullname, res)        
+
+    def test_view_only_link_hides_citations(self):
+        res = self.app.get(self.project_url, {'view_only': self.link.key})
+        assert_equal(res.status_code, 200)
+        assert_not_in('Citation:', res)   
+
+        res = self.app.get(self.project_url, {'view_only': self.anonymous_link.key})
+        assert_equal(res.status_code, 200)
         assert_not_in('Citation:', res)
+    
+    # Test that all view only links (normal and anonymous) can view wiki and files
+    def test_view_only_link_shows_files_link(self):
+        res = self.app.get(self.project_url, {'view_only': self.link.key})
+        assert_equal(res.status_code, 200)
+        assert_in('Files', res)
+
+        res = self.app.get(self.project_url, {'view_only': self.anonymous_link.key})
+        assert_equal(res.status_code, 200)
+        assert_in('Files', res)
+
+    def test_view_only_link_shows_wiki_link(self):
+        res = self.app.get(self.project_url, {'view_only': self.link.key})
+        assert_equal(res.status_code, 200)
+        assert_in('Wiki', res)  
+
+        res = self.app.get(self.project_url, {'view_only': self.anonymous_link.key})
+        assert_equal(res.status_code, 200)
+        assert_in('Wiki', res)    
+
+    # test that all view only links cannot see certain things
+    def test_view_only_link_hides_analytics(self):
+        res = self.app.get(self.project_url, {'view_only': self.link.key})
+        assert_equal(res.status_code, 200)
+        assert_not_in('Analytics', res)
+
+        res = self.app.get(self.project_url, {'view_only': self.anonymous_link.key})
+        assert_equal(res.status_code, 200)
+        assert_not_in('Analytics', res)
+
+    def test_view_only_link_hides_registrations(self):
+        res = self.app.get(self.project_url, {'view_only': self.link.key})
+        assert_equal(res.status_code, 200)
+        assert_not_in('Registrations', res)
+
+        res = self.app.get(self.project_url, {'view_only': self.anonymous_link.key})
+        assert_equal(res.status_code, 200)
+        assert_not_in('Registrations', res)   
+
+    def test_view_only_link_hides_registrations(self):
+        res = self.app.get(self.project_url, {'view_only': self.link.key})
+        assert_equal(res.status_code, 200)
+        assert_not_in('Settings', res)
+
+        res = self.app.get(self.project_url, {'view_only': self.anonymous_link.key})
+        assert_equal(res.status_code, 200)
+        assert_not_in('Settings', res)   
 
     def test_no_warning_for_read_only_user_with_valid_link(self):
-        link2 = PrivateLinkFactory(anonymous=False)
-        link2.nodes.append(self.project)
-        link2.save()
-        self.project.add_contributor(
-            self.user,
-            permissions=['read'],
-            save=True,
-        )
-        res = self.app.get(self.project_url, {'view_only': link2.key},
-                           auth=self.user.auth)
+        res = self.app.get(self.project_url, {'view_only': self.link.key},
+           auth=self.user.auth)
         assert_equal(res.status_code, 200)        
-        assert_not_in(
-            "is being viewed through a private, view-only link. "
-            "Anyone with the link can view this project. Keep "
-            "the link safe.",
+        assert_in(
+            "This is a View-Only project version on the OSF",
             res.body
         )
 
@@ -444,11 +501,9 @@ class TestPrivateLinkView(OsfTestCase):
             save=True,
         )
         res = self.app.get(self.project_url, {'view_only': "not_valid"},
-                           auth=self.user.auth)
+           auth=self.user.auth)
         assert_not_in(
-            "is being viewed through a private, view-only link. "
-            "Anyone with the link can view this project. Keep "
-            "the link safe.",
+            "This is a View-Only project version on the OSF",
             res.body
         )
 
@@ -801,9 +856,9 @@ class TestConfirmingEmail(OsfTestCase):
         user1.save()
         url = api_url_for('update_user')
         header = {'id': user1.username,
-                  'emails': [{'address': user1.username, 'primary': False, 'confirmed': True},
-                            {'address': email, 'primary': True, 'confirmed': True}
-                  ]}
+  'emails': [{'address': user1.username, 'primary': False, 'confirmed': True},
+            {'address': email, 'primary': True, 'confirmed': True}
+  ]}
         res = self.app.put_json(url, header, auth=user2.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
@@ -813,9 +868,9 @@ class TestConfirmingEmail(OsfTestCase):
         email = 'test@cos.io'
         url = api_url_for('update_user')
         header = {'id': user1.username,
-                  'emails': [{'address': user1.username, 'primary': True, 'confirmed': True},
-                            {'address': email, 'primary': False, 'confirmed': False}
-                  ]}
+  'emails': [{'address': user1.username, 'primary': True, 'confirmed': True},
+            {'address': email, 'primary': False, 'confirmed': False}
+  ]}
         res = self.app.put_json(url, header, auth=user2.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
