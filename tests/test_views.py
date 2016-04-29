@@ -3374,7 +3374,7 @@ class TestAuthViews(OsfTestCase):
         assert_in(login_url, res.body)
 
     def test_get_email_to_add_no_email(self):
-        url = api_url_for('confirm_user_get')
+        url = api_url_for('verified_email_get')
         res = self.app.get(url, auth=self.auth)
         assert_equal(res.json_body, [])
 
@@ -3383,7 +3383,7 @@ class TestAuthViews(OsfTestCase):
         self.user.add_unconfirmed_email(email)
         self.user.save()
         self.user.reload()
-        url = api_url_for('confirm_user_get')
+        url = api_url_for('verified_email_get')
         res = self.app.get(url, auth=self.auth)
         assert_equal(res.json_body, [])
 
@@ -3397,7 +3397,7 @@ class TestAuthViews(OsfTestCase):
         self.app.get(url)
         self.user.reload()
         assert_equal(self.user.email_verifications[token]['confirmed'], True)
-        url = api_url_for('confirm_user_get')
+        url = api_url_for('verified_email_get')
         res = self.app.get(url, auth=self.auth)
         assert_equal(res.json_body[0]['address'], 'test@example.com')
 
@@ -3410,9 +3410,9 @@ class TestAuthViews(OsfTestCase):
         url = '/confirm/{}/{}/?existing_user={}'.format(self.user._id, token, self.user.username)
         self.app.get(url)
         self.user.reload()
-        get_email_url = api_url_for('confirm_user_get')
+        get_email_url = api_url_for('verified_email_get')
         email_to_add = self.app.get(get_email_url, auth=self.auth)
-        put_email_url = api_url_for('add_confirmed_email')
+        put_email_url = api_url_for('verified_email_add')
         res = self.app.put_json(put_email_url, email_to_add.json_body[0], auth=self.user.auth)
         self.user.reload()
         assert_equal(res.json_body['status'], 'success')
@@ -3433,9 +3433,9 @@ class TestAuthViews(OsfTestCase):
         url = '/confirm/{}/{}/?existing_user={}'.format(self.user._id, token, self.user.username)
         self.app.get(url)
         self.user.reload()
-        get_email_url = api_url_for('confirm_user_get')
+        get_email_url = api_url_for('verified_email_get')
         email_to_add = self.app.get(get_email_url, auth=self.auth)
-        put_email_url = api_url_for('add_confirmed_email')
+        put_email_url = api_url_for('verified_email_add')
         res = self.app.put_json(put_email_url, email_to_add.json_body[0], auth=self.user.auth)
         self.user.reload()
         assert_equal(res.json_body['status'], 'success')

@@ -192,8 +192,7 @@
                 },
                 popular: ${ popular_links_node | sjson, n},
                 newAndNoteworthy: ${ noteworthy_links_node | sjson, n},
-                confirmedEmailURL: ${ api_url_for('confirm_user_get') | sjson, n},
-                removeConfirmedEmailURL: ${ api_url_for('confirm_email_remove') | sjson, n}
+                confirmedEmailURL: ${ api_url_for('verified_email_get') | sjson, n}
             });
         </script>
 

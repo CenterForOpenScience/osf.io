@@ -279,7 +279,7 @@ def confirm_email_get(token, auth=None, **kwargs):
 
 
 @collect_auth
-def confirm_user_get(auth=None, **kwargs):
+def verified_email_get(auth=None, **kwargs):
     """Called at login to see if there are emails to add or users to merge.
     methods: GET
     """
@@ -302,7 +302,7 @@ def confirm_user_get(auth=None, **kwargs):
 
 
 @collect_auth
-def confirm_email_remove(auth=None, **kwargs):
+def verified_email_remove(auth=None, **kwargs):
     """Called at login if user cancels their merge or email add.
     methods: PUT
     """
@@ -322,7 +322,7 @@ def confirm_email_remove(auth=None, **kwargs):
 
 
 @collect_auth
-def add_confirmed_email(auth=None, **kwargs):
+def verified_email_add(auth=None, **kwargs):
     """Called at login if user confirms their merge or email add.
     methods: PUT
     """
