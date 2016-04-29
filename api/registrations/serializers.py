@@ -1,4 +1,5 @@
 import json
+import pytz
 from dateutil.parser import parse as parse_date
 
 from rest_framework import serializers as ser
@@ -25,7 +26,7 @@ class RegistrationSerializer(NodeSerializer):
 
     draft_registration = ser.CharField(write_only=True)
     registration_choice = ser.ChoiceField(write_only=True, choices=['immediate', 'embargo'])
-    lift_embargo = ser.DateTimeField(write_only=True, default=None)
+    lift_embargo = ser.DateTimeField(write_only=True, default=None, input_formats=['%Y-%m-%dT%H:%M:%S'])
 
     pending_embargo_approval = HideIfRetraction(ser.BooleanField(read_only=True, source='is_pending_embargo',
         help_text='The associated Embargo is awaiting approval by project admins.'))
@@ -112,10 +113,6 @@ class RegistrationSerializer(NodeSerializer):
         related_view_kwargs={'node_id': '<pk>'}
     ))
 
-    # TODO: Finish me
-
-    # TODO: Override create?
-
     links = LinksField({'self': 'get_registration_url', 'html': 'get_absolute_html_url'})
 
     def get_registration_url(self, obj):
@@ -135,11 +132,11 @@ class RegistrationSerializer(NodeSerializer):
         registration = draft.register(auth, save=True)
 
         if registration_choice == 'embargo':
-            embargo_end_date = parse_date(embargo_lifted, ignoretz=True)
+            embargo_end_date = embargo_lifted.replace(tzinfo=None)
             try:
                 registration.embargo_registration(auth.user, embargo_end_date)
             except ValidationValueError as err:
-                raise exceptions.ValidationError(err)
+                raise exceptions.ValidationError(err.message)
         else:
             try:
                 registration.require_approval(auth.user)
