@@ -251,8 +251,7 @@
             </form>
         </div>
 
-        </div>
-        </div>
+
     </div>
     %else:
         <div id="signUpScope"></div>
@@ -264,7 +263,8 @@
             <div class="text-center m-b-sm col-sm-12" style="padding-top: 15px"> <a href="${domain}login/?campaign=institution">Sign in through your institution  <i class="fa fa-arrow-right"></i></a></div>
         %endif
 </%def>
-
+</div>
+</div>
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
     <script type="text/javascript">
