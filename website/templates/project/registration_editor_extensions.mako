@@ -4,12 +4,13 @@
 </script>
 
 <script type="text/html" id="osf-upload-open">
-  <div id="selectedFile">File selected for upload:
-    <span data-bind="text: extra().selectedFileName">no file selected</span>
-    <button data-bind="visible: hasSelectedFile,
-                       click: unselectFile"
-            style="margin-left: 5px;"
-            class="btn btn-xs btn-danger fa fa-times"></button>
+    <div id="selectedFile">File(s) selected for upload:
+        <div data-bind="foreach: selectedFiles">
+            <span data-bind="text: data.name"></span>
+            <button data-bind="click: $parent.unselectFile"
+                    style="margin-left: 5px;"
+                    class="btn btn-xs btn-danger fa fa-times"></button>
+        </div>
   </div>
   <div data-bind="attr: {id: $data.uid}, osfUploader"><!-- TODO: osfUploader attribute may not connect to anything? -->
     <div class="spinner-loading-wrapper">
@@ -20,12 +21,14 @@
 </script>
 
 <script type="text/html" id="osf-upload-toggle">
-  <div id="selectedFile">File selected for upload:
-    <span id="fileName" data-bind="text: extra().selectedFileName">no file selected</span>
-    <button data-bind="visible: hasSelectedFile,
-                       click: unselectFile"
-            style="margin-left: 5px;"
-            class="btn btn-xs btn-danger fa fa-times"></button>
+    <span data-bind="text: UPLOAD_LANGUAGE"></span><br/>
+    <div id="selectedFile">File(s) selected for upload:
+        <div data-bind="foreach: selectedFiles">
+            <span data-bind="text: data.name"></span>
+            <button data-bind="click: $parent.unselectFile"
+                    style="margin-left: 5px;"
+                    class="btn btn-xs btn-danger fa fa-times"></button>
+        </div>
   </div>
   <a data-bind="click: toggleUploader">Attach File</a>
   <span data-bind="visible: showUploader">
