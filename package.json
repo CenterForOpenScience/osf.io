@@ -63,7 +63,7 @@
     "uuid": "^2.0.1",
     "webpack": "^1.7.2",
     "ws": "~0.4.32",
-    "zxcvbn": "zxcvbn@4.2.0"
+    "zxcvbn": "^4.2.0"
   },
   "devDependencies": {
     "chai": "^2.1.1",
