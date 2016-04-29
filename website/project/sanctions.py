@@ -943,13 +943,10 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
         user_approval_state = self.approval_state.get(user_id, {})
         rejection_token = user_approval_state.get('rejection_token')
         if rejection_token:
-            from website.project.model import Node
-
             root_registration = self._get_registration()
             node_id = user_approval_state.get('node_id', root_registration._id)
-            registration = Node.load(node_id)
             return {
-                'node_id': registration.registered_from,
+                'node_id': node_id,
                 'token': rejection_token,
             }
 

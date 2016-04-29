@@ -61,7 +61,7 @@ from tests.factories import (
     NodeWikiFactory, RegistrationFactory, UnregUserFactory,
     ProjectWithAddonFactory, UnconfirmedUserFactory, PrivateLinkFactory,
     AuthUserFactory, BookmarkCollectionFactory, CollectionFactory,
-    NodeLicenseRecordFactory, InstitutionFactory
+    NodeLicenseRecordFactory, InstitutionFactory, CommentFactory
 )
 from tests.test_features import requires_piwik
 from tests.utils import mock_archive
@@ -1186,7 +1186,7 @@ class TestUpdateNodeWiki(OsfTestCase):
     def setUp(self):
         super(TestUpdateNodeWiki, self).setUp()
         # Create project with component
-        self.user = UserFactory()
+        self.user = AuthUserFactory()
         self.auth = Auth(user=self.user)
         self.project = ProjectFactory()
         self.node = NodeFactory(creator=self.user, parent=self.project)
@@ -1264,6 +1264,30 @@ class TestUpdateNodeWiki(OsfTestCase):
         invalid_name = 'invalid/name'
         with assert_raises(NameInvalidError):
             self.project.update_node_wiki(invalid_name, 'more valid content', self.auth)
+
+    def test_update_wiki_updates_comments_and_user_comments_viewed_timestamp(self):
+        project = ProjectFactory(creator=self.user, is_public=True)
+        wiki = NodeWikiFactory(node=project, page_name='test')
+        comment = CommentFactory(node=project, target=Guid.load(wiki._id), user=UserFactory())
+
+        # user views comments -- sets user.comments_viewed_timestamp
+        url = project.api_url_for('update_comments_timestamp')
+        res = self.app.put_json(url, {
+            'page': 'wiki',
+            'rootId': wiki._id
+        }, auth=self.user.auth)
+        self.user.reload()
+        assert_in(wiki._id, self.user.comments_viewed_timestamp)
+
+        # user updates the wiki
+        project.update_node_wiki('test', 'Updating wiki', self.auth)
+        comment.reload()
+
+        new_version_id = project.wiki_pages_current['test']
+        assert_in(new_version_id, self.user.comments_viewed_timestamp)
+        assert_not_in(wiki._id, self.user.comments_viewed_timestamp)
+        assert_equal(comment.target.referent._id, new_version_id)
+
 
 class TestRenameNodeWiki(OsfTestCase):
 
