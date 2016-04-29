@@ -297,6 +297,7 @@ var SalesAnalytics = function() {
         self.getAverageUserSessionLength();
         self.getAverageMAUSessionLength();
         self.getAverageUserSessionHistory(true, 12, null, null, null);
+        debugger;
         self.getUserCount(userCount);
         self.getUserPercentage(userCount);
         self.getMultiProductCountYearly(multiProductMetricsYearly);
