@@ -1,19 +1,22 @@
 """
 Views related to personal access tokens. Intended for OSF internal use only
 """
-from modularodm import Q
-from rest_framework import permissions as drf_permissions
-from rest_framework import generics
 from rest_framework.exceptions import APIException
+from rest_framework import generics
+from rest_framework import permissions as drf_permissions
 
-from api.base import permissions as base_permissions
-from api.base.filters import ODMFilterMixin
 from api.base.renderers import JSONAPIRenderer, JSONRendererWithESISupport
-from api.base.utils import get_object_or_error
-from api.base.views import JSONAPIBaseView
-from api.tokens.serializers import ApiOAuth2PersonalTokenSerializer
+from modularodm import Q
+
 from framework.auth import cas
 from framework.auth.oauth_scopes import CoreScopes
+
+from api.base.filters import ODMFilterMixin
+from api.base.utils import get_object_or_error
+from api.base.views import JSONAPIBaseView
+from api.base import permissions as base_permissions
+from api.tokens.serializers import ApiOAuth2PersonalTokenSerializer
+
 from website.models import ApiOAuth2PersonalToken
 
 
@@ -21,9 +24,11 @@ class TokenList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
     """
     Get a list of personal access tokens that the user has registered
     """
-    permission_classes = (drf_permissions.IsAuthenticated,
-                          base_permissions.OwnerOnly,
-                          base_permissions.TokenHasScope, )
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        base_permissions.OwnerOnly,
+        base_permissions.TokenHasScope,
+    )
 
     required_read_scopes = [CoreScopes.TOKENS_READ]
     required_write_scopes = [CoreScopes.TOKENS_WRITE]
@@ -32,15 +37,15 @@ class TokenList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
     view_category = 'tokens'
     view_name = 'token-list'
 
-    # TODO: When we switch to Swagger this should be removed in lieu of a better
-    # solution for hiding this api endpoint
-    renderer_classes = [JSONRendererWithESISupport,
-                        JSONAPIRenderer, ]  # Hide from web-browsable API tool
+    renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer, ]  # Hide from web-browsable API tool
 
     def get_default_odm_query(self):
 
         owner = self.request.user._id
-        return (Q('owner', 'eq', owner) & Q('is_active', 'eq', True))
+        return (
+            Q('owner', 'eq', owner) &
+            Q('is_active', 'eq', True)
+        )
 
     # overrides ListAPIView
     def get_queryset(self):
@@ -59,9 +64,11 @@ class TokenDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
 
     Should not return information if the token belongs to a different user
     """
-    permission_classes = (drf_permissions.IsAuthenticated,
-                          base_permissions.OwnerOnly,
-                          base_permissions.TokenHasScope, )
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        base_permissions.OwnerOnly,
+        base_permissions.TokenHasScope,
+    )
 
     required_read_scopes = [CoreScopes.TOKENS_READ]
     required_write_scopes = [CoreScopes.TOKENS_WRITE]
@@ -70,16 +77,13 @@ class TokenDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
     view_category = 'tokens'
     view_name = 'token-detail'
 
-    # TODO: When we switch to Swagger this should be removed in lieu of a better
-    # solution for hiding this api endpoint
-    renderer_classes = [JSONRendererWithESISupport,
-                        JSONAPIRenderer, ]  # Hide from web-browsable API tool
+    renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer, ]  # Hide from web-browsable API tool
 
     # overrides RetrieveAPIView
     def get_object(self):
         obj = get_object_or_error(ApiOAuth2PersonalToken,
-                                  Q('_id', 'eq', self.kwargs['_id'])
-                                  & Q('is_active', 'eq', True))
+                                  Q('_id', 'eq', self.kwargs['_id']) &
+                                  Q('is_active', 'eq', True))
 
         self.check_object_permissions(self.request, obj)
         return obj
@@ -91,8 +95,7 @@ class TokenDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
         try:
             obj.deactivate(save=True)
         except cas.CasHTTPError:
-            raise APIException(
-                "Could not revoke tokens; please try again later")
+            raise APIException("Could not revoke tokens; please try again later")
 
     def perform_update(self, serializer):
         """Necessary to prevent owner field from being blanked on updates"""
