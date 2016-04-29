@@ -63,8 +63,6 @@ class DraftRegistrationSerializer(JSONAPISerializer):
 
     def create(self, validated_data):
         node = validated_data.pop('node')
-        if node.is_registration:
-            raise exceptions.ValidationError('Creating draft registrations on registered projects is not allowed.')
         initiator = validated_data.pop('initiator')
         schema_name = validated_data.pop('registration_schema').get('name')
         schema = MetaSchema.find_one(Q('name', 'eq', schema_name) & Q('schema_version', 'eq', 2))
@@ -80,7 +78,7 @@ class DraftRegistrationSerializer(JSONAPISerializer):
         for question, response in metadata.iteritems():
             if not isinstance(response, dict):
                 raise JSONAPIAttributeException(attribute='registration_metadata',
-                                                detail='Expected type "dictionary" for {}'.format(question))
+                                                detail='Expected type "dictionary" for {}.'.format(question))
             if 'value' not in response.keys():
                 raise JSONAPIAttributeException(attribute='registration_metadata',
                                                 detail='Key "value" missing from {}.'.format(question))
@@ -91,7 +89,7 @@ class DraftRegistrationSerializer(JSONAPISerializer):
             value = metadata[entry]['value']
             if entry not in form:
                 raise JSONAPIAttributeException(attribute='registration_metadata',
-                                                detail='"{}" is not in schema "{}"'.format(entry, draft.registration_schema.name))
+                                                detail='"{}" is not in schema "{}".'.format(entry, draft.registration_schema.name))
 
             options = form[entry].get('options')
             if options:
