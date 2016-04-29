@@ -717,7 +717,7 @@ def _view_project(node, auth, primary=False):
                 'doi': node.get_identifier_value('doi'),
                 'ark': node.get_identifier_value('ark'),
             },
-            'institutions': get_affiliated_institutions(node),
+            'institutions': get_affiliated_institutions(node) if node else [],
             'alternative_citations': [citation.to_json() for citation in node.alternative_citations],
             'has_draft_registrations': node.has_active_draft_registrations,
             'contributors': [contributor._id for contributor in node.contributors]
@@ -751,7 +751,7 @@ def _view_project(node, auth, primary=False):
             'can_comment': node.can_comment(auth),
             'show_wiki_widget': _should_show_wiki_widget(node, user),
             'dashboard_id': bookmark_collection_id,
-            'institutions': get_affiliated_institutions(user),
+            'institutions': get_affiliated_institutions(user) if user else [],
         },
         'badges': _get_badge(user),
         # TODO: Namespace with nested dicts
