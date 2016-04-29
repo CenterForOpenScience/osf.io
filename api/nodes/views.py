@@ -887,7 +887,7 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
 
     """
     permission_classes = (
-        ContributorOrPublic,
+        AdminOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ExcludeRetractions

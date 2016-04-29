@@ -30,7 +30,7 @@ class IsAdmin(permissions.BasePermission):
 class AdminOrPublic(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (Node, User, Institution)), 'obj must be a Node, User or Institution, got {}'.format(obj)
+        assert isinstance(obj, (Node, User, Institution, DraftRegistration)), 'obj must be a Node, User, Institution, or Draft Registration, got {}'.format(obj)
         auth = get_user_auth(request)
         node = Node.load(request.parser_context['kwargs'][view.node_lookup_url_kwarg])
         if request.method in permissions.SAFE_METHODS:
