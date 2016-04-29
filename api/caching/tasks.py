@@ -42,7 +42,6 @@ def get_bannable_urls(instance):
                                                                   path=parsed_target_url.path)
                 bannable_urls.append(url_string)
 
-
             try:
                 parsed_root_target_url = urlparse.urlparse(instance.root_target.referent.absolute_api_v2_url)
             except AttributeError:
@@ -54,9 +53,7 @@ def get_bannable_urls(instance):
                                                               path=parsed_root_target_url.path)
                 bannable_urls.append(url_string)
 
-
     return bannable_urls, parsed_absolute_url.hostname
-
 
 def ban_url(instance):
     # TODO: Refactor; Pull url generation into postcommit_task handling so we only ban urls once per request
