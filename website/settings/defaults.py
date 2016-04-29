@@ -40,6 +40,7 @@ SEND_EMAIL_THROTTLE = 30
 # Hours before pending embargo/retraction/registration automatically becomes active
 RETRACTION_PENDING_TIME = datetime.timedelta(days=2)
 EMBARGO_PENDING_TIME = datetime.timedelta(days=2)
+EMBARGO_TERMINATION_PENDING_TIME = datetime.timedelta(days=2)
 REGISTRATION_APPROVAL_TIME = datetime.timedelta(days=2)
 # Date range for embargo periods
 EMBARGO_END_DATE_MIN = datetime.timedelta(days=2)
@@ -318,6 +319,7 @@ CELERY_IMPORTS = (
     'scripts.retract_registrations',
     'scripts.embargo_registrations',
     'scripts.approve_registrations',
+    'scripts.approve_embargo_terminations',
     'scripts.osfstorage.glacier_inventory',
     'scripts.osfstorage.glacier_audit',
     'scripts.triggered_mails',
@@ -363,6 +365,11 @@ else:
         },
         'approve_registrations': {
             'task': 'scripts.approve_registrations',
+            'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+            'kwargs': {'dry_run': False},
+        },
+        'approve_embargo_terminations': {
+            'task': 'scripts.approve_embargo_terminations',
             'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
             'kwargs': {'dry_run': False},
         },
