@@ -13,11 +13,11 @@ var ViewModel = function(data) {
     self.showAdd = ko.observable(false);
     self.institutionHref = ko.observable('');
     self.userInstitutions = window.contextVars.currentUser.institutions;
-    self.userInstitutionsIds = self.userInstitutions.map(function(item){return item.id});
+    self.userInstitutionsIds = self.userInstitutions.map(function(item){return item.id;});
     self.selectedInstitution = ko.observable();
     self.affiliatedInstitutions = ko.observable(window.contextVars.node.institutions);
 
-    var affiliatedInstitutionsIds = self.affiliatedInstitutions().map(function(item){return item.id});
+    var affiliatedInstitutionsIds = self.affiliatedInstitutions().map(function(item){return item.id;});
     self.availableInstitutions = ko.observable(self.userInstitutions.filter(function(each){
         return ($.inArray(each.id, affiliatedInstitutionsIds)) === -1;
     }));
@@ -45,7 +45,7 @@ var ViewModel = function(data) {
                 fields: {xhrFields: {withCredentials: true}}
             }
         ).done(function (response) {
-            var indexes = self.availableInstitutions().map(function(each){return each.id});
+            var indexes = self.availableInstitutions().map(function(each){return each.id;});
             var index = indexes.indexOf(self.selectedInstitution());
             var added = self.availableInstitutions().splice(index, 1)[0];
             self.availableInstitutions(self.availableInstitutions());
@@ -76,7 +76,7 @@ var ViewModel = function(data) {
                 fields: {xhrFields: {withCredentials: true}}
             }
         ).done(function (response) {
-            var indexes = self.affiliatedInstitutions().map(function(each){return each.id});
+            var indexes = self.affiliatedInstitutions().map(function(each){return each.id;});
             var removed = self.affiliatedInstitutions().splice(indexes.indexOf(item.id), 1)[0];
             if ($.inArray(removed.id, self.userInstitutionsIds) >= 0){
                 self.availableInstitutions().push(removed);

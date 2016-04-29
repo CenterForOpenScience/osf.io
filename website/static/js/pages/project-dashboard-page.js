@@ -77,8 +77,8 @@ var institutionLogos = {
                     dataToggle: 'tooltip', dataPlacement: 'top', title: institution.name,
                     src: institution.logo_path
                 })
-            )
-        }
+            );
+        };
     },
     view: function(ctrl, args){
         var tooltips = function(){
