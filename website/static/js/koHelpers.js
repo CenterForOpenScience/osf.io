@@ -449,6 +449,48 @@ ko.bindingHandlers.datePicker = {
 };
 
  /**
+ * Bind content of contenteditable to observable. Looks for maxlength attr
+ * and underMaxLength binding to limit input.
+ * Example:
+ * <div contenteditable="true" data-bind="editableHTML: <observable_name>" maxlength="500"></div>
+ */
+ko.bindingHandlers.editableHTML = {
+    init: function(element, valueAccessor, allBindings, bindingContext) {
+        var $element = $(element);
+        var initialValue = ko.utils.unwrapObservable(valueAccessor());
+        $element.html(initialValue);
+        $element.on('change input paste keyup blur', function() {
+            var observable = valueAccessor();
+            observable($element.html());
+        });
+    },
+    update: function(element, valueAccessor, allBindings, bindingContext) {
+        var $element = $(element);
+        var initialValue = ko.utils.unwrapObservable(valueAccessor());
+        var bindings = bindingContext;
+        var charLimit = $element.attr('maxlength');
+        if (charLimit && bindingContext.underMaxLength) {
+            var inputTextLength = $element[0].innerText.length;
+            var errorExceedsCharacterLimit = 'Exceeds character limit. Please reduce to ' + charLimit + ' characters or less.';
+            if (inputTextLength > parseInt(charLimit) + 1) {
+                bindingContext.underMaxLength(false);
+                if (bindingContext.errorMessage) {
+                    bindingContext.errorMessage(errorExceedsCharacterLimit);
+                }
+            } else {
+                bindingContext.underMaxLength(true);
+                if (bindingContext.errorMessage) {
+                    bindingContext.errorMessage('');
+                }
+            }
+        }
+        if (initialValue === '') {
+            $(element).html(initialValue);
+        }
+    }
+};
+
+ /**
  * Adds class returned from iconmap to the element. The value accessor should be the
  * category of the node.
  * Example:

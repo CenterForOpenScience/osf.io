@@ -7,7 +7,7 @@ from nose_parameterized import parameterized
 from modularodm.exceptions import ValidationValueError, ValidationError
 from modularodm import Q
 
-from framework.auth import Auth
+from framework.auth import Auth, User
 from framework.exceptions import PermissionsError
 from framework.guid.model import Guid
 from website.addons.osfstorage import settings as osfstorage_settings
@@ -19,7 +19,7 @@ from website.files.models.googledrive import GoogleDriveFile
 from website.files.models.osfstorage import OsfStorageFile
 from website.files.models.s3 import S3File
 from website.project.model import Comment, NodeLog
-from website.project.signals import comment_added
+from website.project.signals import comment_added, mention_added, contributor_added
 from website.project.views.comment import update_file_guid_referent
 from website.util import permissions
 from website import settings
@@ -109,13 +109,16 @@ class TestCommentModel(OsfTestCase):
             root_target=self.comment.root_target,
             page='node',
             is_public=True,
-            content='This is a comment.'
+            content='This is a comment.',
+            new_mentions=self.comment.new_mentions
         )
         assert_equal(comment.user, self.comment.user)
         assert_equal(comment.node, self.comment.node)
         assert_equal(comment.target, self.comment.target)
         assert_equal(len(comment.node.logs), 2)
         assert_equal(comment.node.logs[-1].action, NodeLog.COMMENT_ADDED)
+        assert_equal([], self.comment.old_mentions)
+        assert_equal(comment.new_mentions, self.comment.old_mentions)
 
     def test_create_comment_content_cannot_exceed_max_length(self):
         with assert_raises(ValidationValueError):
@@ -177,9 +180,76 @@ class TestCommentModel(OsfTestCase):
             )
         assert_equal(mock_signals.signals_sent(), set([comment_added]))
 
+    def test_create_sends_mention_added_signal_if_mentions(self):
+        with capture_signals() as mock_signals:
+            comment = Comment.create(
+                auth=self.auth,
+                user=self.comment.user,
+                node=self.comment.node,
+                target=self.comment.target,
+                is_public=True,
+                content='This is a comment.',
+                new_mentions=[self.comment.user._id]
+            )
+        assert_equal(mock_signals.signals_sent(), set([comment_added, mention_added]))
+
+    def test_create_does_not_send_mention_added_signal_if_unconfirmed_contributor_mentioned(self):
+        with assert_raises(ValidationValueError) as error:
+            with capture_signals() as mock_signals:
+                user = UserFactory()
+                user.is_registered = False
+                user.is_claimed = False
+                user.save()
+                self.comment.node.add_contributor(user, visible=False,permissions=[permissions.READ])
+                self.comment.node.save()
+
+                comment = Comment.create(
+                    auth=self.auth,
+                    user=self.comment.user,
+                    node=self.comment.node,
+                    target=self.comment.target,
+                    is_public=True,
+                    content='This is a comment.',
+                    new_mentions=[user._id]
+                )
+        assert_equal(mock_signals.signals_sent(), set([contributor_added]))
+        assert_equal(error.exception.message, 'User does not exist or is not active.')
+
+    def test_create_does_not_send_mention_added_signal_if_noncontributor_mentioned(self):
+        with assert_raises(ValidationValueError) as error:
+            with capture_signals() as mock_signals:
+                user = UserFactory()
+                comment = Comment.create(
+                    auth=self.auth,
+                    user=self.comment.user,
+                    node=self.comment.node,
+                    target=self.comment.target,
+                    is_public=True,
+                    content='This is a comment.',
+                    new_mentions=[user._id]
+                )
+        assert_equal(mock_signals.signals_sent(), set([]))
+        assert_equal(error.exception.message, 'Mentioned user is not a contributor.')
+
+    def test_create_does_not_send_mention_added_signal_if_nonuser_mentioned(self):
+        with assert_raises(ValidationValueError) as error:
+            with capture_signals() as mock_signals:
+                comment = Comment.create(
+                    auth=self.auth,
+                    user=self.comment.user,
+                    node=self.comment.node,
+                    target=self.comment.target,
+                    is_public=True,
+                    content='This is a comment.',
+                    new_mentions=['noncontributor']
+                )
+        assert_equal(mock_signals.signals_sent(), set([]))
+        assert_equal(error.exception.message, 'User does not exist or is not active.')
+
     def test_edit(self):
         self.comment.edit(
             auth=self.auth,
+            new_mentions=[],
             content='edited',
             save=True
         )
@@ -187,6 +257,77 @@ class TestCommentModel(OsfTestCase):
         assert_true(self.comment.modified)
         assert_equal(len(self.comment.node.logs), 2)
         assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_UPDATED)
+
+    def test_edit_sends_mention_added_signal_if_mentions(self):
+        with capture_signals() as mock_signals:
+            self.comment.new_mentions=[self.comment.user._id]
+            self.comment.edit(
+                auth=self.auth,
+                new_mentions=self.comment.new_mentions,
+                content='edited',
+                save=True
+            )
+        assert_equal(mock_signals.signals_sent(), set([mention_added]))
+
+    def test_edit_does_not_send_mention_added_signal_if_nonuser_mentioned(self):
+        with assert_raises(ValidationValueError) as error:
+            with capture_signals() as mock_signals:
+                self.comment.new_mentions=['noncontributor']
+                self.comment.edit(
+                    auth=self.auth,
+                    new_mentions=self.comment.new_mentions,
+                    content='edited',
+                    save=True
+                )
+        assert_equal(mock_signals.signals_sent(), set([]))
+        assert_equal(error.exception.message, 'User does not exist or is not active.')
+
+    def test_edit_does_not_send_mention_added_signal_if_noncontributor_mentioned(self):
+        with assert_raises(ValidationValueError) as error:
+            with capture_signals() as mock_signals:
+                user = UserFactory()
+                self.comment.new_mentions=[user._id]
+                self.comment.edit(
+                    auth=self.auth,
+                    new_mentions=self.comment.new_mentions,
+                    content='edited',
+                    save=True
+                )
+        assert_equal(mock_signals.signals_sent(), set([]))
+        assert_equal(error.exception.message, 'Mentioned user is not a contributor.')
+
+    def test_edit_does_not_send_mention_added_signal_if_unconfirmed_contributor_mentioned(self):
+        with assert_raises(ValidationValueError) as error:
+            with capture_signals() as mock_signals:
+                user = UserFactory()
+                user.is_registered = False
+                user.is_claimed = False
+                user.save()
+                self.comment.node.add_contributor(user, visible=False,permissions=[permissions.READ])
+                self.comment.node.save()
+
+                self.comment.new_mentions=[user._id]
+                self.comment.edit(
+                    auth=self.auth,
+                    new_mentions=self.comment.new_mentions,
+                    content='edited',
+                    save=True
+                )
+        assert_equal(mock_signals.signals_sent(), set([contributor_added]))
+        assert_equal(error.exception.message, 'User does not exist or is not active.')
+
+    def test_edit_does_not_send_mention_added_signal_if_already_mentioned(self):
+        with capture_signals() as mock_signals:
+            self.comment.old_mentions=[self.comment.user._id]
+            self.comment.new_mentions=[self.comment.user._id]
+            self.comment.edit(
+                auth=self.auth,
+                new_mentions=self.comment.new_mentions,
+                content='edited',
+                save=True
+            )
+        assert_equal(mock_signals.signals_sent(), set([]))
+        assert_equal(self.comment.new_mentions, [])
 
     def test_delete(self):
         self.comment.delete(auth=self.auth, save=True)
@@ -280,6 +421,7 @@ class TestCommentModel(OsfTestCase):
         # Edit previously read comment
         comment.edit(
             auth=Auth(project.creator),
+            new_mentions=[],
             content='edited',
             save=True
         )

@@ -69,6 +69,7 @@ GNUPG_BINARY = 'gpg'
 CONFIRM_REGISTRATIONS_BY_EMAIL = True
 ALLOW_REGISTRATION = True
 ALLOW_LOGIN = True
+ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION = True
 
 SEARCH_ENGINE = 'elastic'  # Can be 'elastic', or None
 ELASTIC_URI = 'localhost:9200'
@@ -158,7 +159,8 @@ COOKIE_DOMAIN = '.openscienceframework.org'  # Beaker
 SHORT_DOMAIN = 'osf.io'
 
 # TODO: Combine Python and JavaScript config
-COMMENT_MAXLENGTH = 500
+# Add 500 to account for variable length due to at mentions
+COMMENT_MAXLENGTH = 500 + 500
 
 # Profile image options
 PROFILE_IMAGE_LARGE = 70

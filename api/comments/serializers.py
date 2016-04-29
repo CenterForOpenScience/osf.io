@@ -39,6 +39,8 @@ class CommentSerializer(JSONAPISerializer):
     type = TypeField()
     content = AuthorizedCharField(source='get_content', required=True, max_length=osf_settings.COMMENT_MAXLENGTH)
     page = ser.CharField(read_only=True)
+    new_mentions = ser.ListField(required=True, child=ser.CharField())
+    old_mentions = ser.ListField(ser.CharField())
 
     target = TargetField(link_type='related', meta={'type': 'get_target_type'})
     user = RelationshipField(related_view='users:user-detail', related_view_kwargs={'user_id': '<user._id>'})
@@ -90,8 +92,9 @@ class CommentSerializer(JSONAPISerializer):
                     raise PermissionDenied('Not authorized to undelete this comment.')
             elif 'get_content' in validated_data:
                 content = validated_data.pop('get_content')
+                new_mentions = validated_data.pop('new_mentions')
                 try:
-                    comment.edit(content, auth=auth, save=True)
+                    comment.edit(content, new_mentions, auth=auth, save=True)
                 except PermissionsError:
                     raise PermissionDenied('Not authorized to edit this comment.')
         return comment

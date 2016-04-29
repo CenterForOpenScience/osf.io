@@ -49,7 +49,7 @@
     margin-left: -50px;
     text-align: center;
     border-bottom-left-radius: 15px;
-    padding-top: 10px;    
+    padding-top: 10px;
 }
 
 .comment-handle-icon {
@@ -121,4 +121,21 @@
 
 .comment-gravatar {
     height: 20px;
+}
+
+.atwho-input {
+    display: block;
+    height: auto;
+    min-height: 56px;
+    overflow: hidden;
+    word-wrap: break-word;
+}
+
+.atwho-input[placeholder]:empty:before {
+    content: attr(placeholder);
+    color: #555;
+}
+
+.atwho-input[placeholder]:empty:focus:before {
+    content: "";
 }

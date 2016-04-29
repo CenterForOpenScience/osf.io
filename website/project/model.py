@@ -156,6 +156,31 @@ class MetaData(GuidStoredObject):
     date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
 
 
+def validate_contributor(guid, contributors):
+    if guid != '':
+        user = User.find(
+            Q('_id', 'eq', guid) &
+            Q('is_claimed', 'eq', True)
+        )
+        if user.count() != 1:
+            raise ValidationValueError('User does not exist or is not active.')
+        elif guid not in contributors:
+            raise ValidationValueError('Mentioned user is not a contributor.')
+    return True
+
+def add_new_mentions(comment, contributors):
+        """ Check if there are any new_mentions that are not in old_mentions and are a contributor
+
+        :param Node comment: Node that has new_mentions and old_mentions
+        :param list contributors: List of contributors on the node
+        :return bool new_mentions_added: Whether there are valid new_mentions
+        """
+        validate = lambda m: m not in comment.old_mentions and validate_contributor(m, contributors)
+        comment.new_mentions = filter(validate, comment.new_mentions)
+        if len(comment.new_mentions) > 0:
+            return True
+        return False
+
 class Comment(GuidStoredObject, SpamMixin, Commentable):
 
     __guid_min_length__ = 12
@@ -182,6 +207,9 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
     page = fields.StringField()
     content = fields.StringField(required=True,
                                  validate=[MaxLengthValidator(settings.COMMENT_MAXLENGTH), validators.string_required])
+    # The mentioned users
+    new_mentions = fields.ListField(fields.StringField(default=[]))
+    old_mentions = fields.ListField(fields.StringField())
 
     # For Django compatibility
     @property
@@ -298,12 +326,19 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
             save=False,
         )
 
+        if comment.new_mentions:
+            new_mentions_added = add_new_mentions(comment, comment.node.contributors)
+            if new_mentions_added:
+                project_signals.mention_added.send(comment, auth=auth)
+                comment.old_mentions.extend(comment.new_mentions)
+            comment.save()
+
         comment.node.save()
         project_signals.comment_added.send(comment, auth=auth)
 
         return comment
 
-    def edit(self, content, auth, save=False):
+    def edit(self, content, new_mentions, auth, save=False):
         if not self.node.can_comment(auth) or self.user._id != auth.user._id:
             raise PermissionsError('{0!r} does not have permission to edit this comment'.format(auth.user))
         log_dict = {
@@ -316,6 +351,14 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
         self.content = content
         self.modified = True
         self.date_modified = datetime.datetime.utcnow()
+        self.new_mentions = new_mentions
+
+        if self.new_mentions:
+            new_mentions_added = add_new_mentions(self, self.node.contributors)
+            if new_mentions_added and save:
+                project_signals.mention_added.send(self, auth=auth)
+                self.old_mentions.extend(self.new_mentions)
+
         if save:
             self.save()
             self.node.add_log(
@@ -1410,6 +1453,34 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if save:
             self.save()
 
+    def subscribe_user_to_notifications(self, user):
+        """ Update the notification settings for the creator or contributors
+
+        :param user: User to subscribe to notifications
+        """
+        from website.notifications.utils import to_subscription_key
+        from website.notifications.utils import get_global_notification_type
+        from website.notifications.model import NotificationSubscription
+
+        events = ['file_updated', 'comments', 'mentions']
+        notification_type = 'email_transactional'
+        target_id = self._id
+
+        for event in events:
+            event_id = to_subscription_key(target_id, event)
+            global_event_id = to_subscription_key(user._id, 'global_' + event)
+            global_subscription = NotificationSubscription.load(global_event_id)
+
+            subscription = NotificationSubscription.load(event_id)
+            if not subscription:
+                subscription = NotificationSubscription(_id=event_id, owner=self, event_name=event)
+            if global_subscription:
+                global_notification_type = get_global_notification_type(global_subscription, user)
+                subscription.add_user_to_subscription(user, global_notification_type)
+            else:
+                subscription.add_user_to_subscription(user, notification_type)
+            subscription.save()
+
     def update(self, fields, auth=None, save=True):
         """Update the node with the given fields.
 
@@ -1549,6 +1620,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 log_date=self.date_created,
                 save=True,
             )
+
+            if self.creator and settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION:
+                self.subscribe_user_to_notifications(user=self.creator)
 
         # Only update Solr if at least one stored field has changed, and if
         # public or privacy setting has changed
@@ -2970,6 +3044,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 user.recently_added.insert(0, contrib_to_add)
                 while len(user.recently_added) > MAX_RECENT_LENGTH:
                     user.recently_added.pop()
+
+            if contrib_to_add.is_registered and settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION:
+                self.subscribe_user_to_notifications(contrib_to_add)
 
             if log:
                 self.add_log(

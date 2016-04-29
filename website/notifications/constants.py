@@ -1,10 +1,14 @@
 NODE_SUBSCRIPTIONS_AVAILABLE = {
     'comments': 'Comments added',
-    'file_updated': 'Files updated'
+    'file_updated': 'Files updated',
+    'mentions': 'Mentions added'
 }
 
 USER_SUBSCRIPTIONS_AVAILABLE = {
-    'comment_replies': 'Replies to your comments'
+    'comment_replies': 'Replies to your comments',
+    'global_comments': 'Comments added',
+    'global_file_updated': 'Files updated',
+    'global_mentions': 'Mentions added'
 }
 
 # Note: the python value None mean inherit from parent

@@ -115,6 +115,7 @@
         // Load css with webpack if possible
         if (typeof webpackJsonp !== 'undefined') {
             // NOTE: Assumes that the style-loader and css-loader are used for .css files
+            require('../vendor/bower_components/At.js/dist/css/jquery.atwho.css');
             require('../css/commentpane.css');
         }
         module.exports = CommentPane;

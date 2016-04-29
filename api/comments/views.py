@@ -79,6 +79,7 @@ class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Comm
         is_abuse       boolean            has this comment been reported by the current user?
         has_children   boolean            does this comment have replies?
         can_edit       boolean            can the current user edit this comment?
+        new_mentions   list               guids of mentioned users in content of comment
 
     ##Relationships
 
@@ -119,6 +120,7 @@ class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Comm
                            "id":   {comment_id}, # required
                            "attributes": {
                              "content":       {content},        # mandatory
+                             "new_mentions":  {new_mentions},   # mandatory
                              "deleted":       {is_deleted},     # mandatory
                            }
                          }
