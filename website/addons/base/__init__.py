@@ -239,7 +239,7 @@ class AddonSettingsBase(StoredObject):
 
 class AddonUserSettingsBase(AddonSettingsBase):
 
-    owner = fields.ForeignField('user')
+    owner = fields.ForeignField('user', index=True)
 
     _meta = {
         'abstract': True,
