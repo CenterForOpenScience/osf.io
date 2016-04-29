@@ -53,8 +53,14 @@ class TestMigrateRegistrationExtra(OsfTestCase):
                         },
                         'value': 'file.txt'
                     },
+                    'question': {
+                        'value': 'bar',
+                        'extra': {}
+                    },
                     'other': {
-                        'value': 'foo'
+                        'value': 'foo',
+                        'extra': []
+
                     }
                 }
             }
@@ -80,6 +86,12 @@ class TestMigrateRegistrationExtra(OsfTestCase):
                     list
                 )
             )
+            assert_true(
+                isinstance(
+                    data['nested']['value']['question']['extra'],
+                    list
+                )
+            )
             assert_equal(
                 self.data['uploader']['extra'],
                 data['uploader']['extra'][0]
@@ -87,6 +99,10 @@ class TestMigrateRegistrationExtra(OsfTestCase):
             assert_equal(
                 self.data['nested']['value']['uploader']['extra'],
                 data['nested']['value']['uploader']['extra'][0]
+            )
+            assert_equal(
+                self.data['nested']['value']['question']['value'],
+                data['nested']['value']['question']['value']
             )
             assert_equal(
                 self.data['nested']['value']['other'],

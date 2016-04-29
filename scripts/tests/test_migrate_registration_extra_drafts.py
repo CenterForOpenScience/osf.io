@@ -7,7 +7,7 @@ from tests.factories import DraftRegistrationFactory
 from website.models import MetaSchema
 from website.project.model import ensure_schemas
 from website.prereg.utils import get_prereg_schema
-from scripts.migration.migrate_registration_extra import main
+from scripts.migration.migrate_registration_extra_drafts import main
 
 
 
@@ -49,6 +49,18 @@ class TestMigrateRegistrationExtra(OsfTestCase):
             'q3': {
                 'value': 'Answer 3',
                 'extra': self.file_ans
+            },
+            'q4': {
+                'value': {
+                    'question': {
+                        'value': 'Answer 4',
+                        'extra': {}
+                    },
+                    'uploader': {
+                        'value': '',
+                        'extra': {}
+                    }
+                },
             }
         }
         self.simple_metadata = {
@@ -71,6 +83,7 @@ class TestMigrateRegistrationExtra(OsfTestCase):
         assert_equal(type(self.draft1.registration_metadata['q1']['extra']), list)
         assert_equal(type(self.draft1.registration_metadata['q2']['extra']), dict)
         assert_equal(type(self.draft1.registration_metadata['q2']['extra']), dict)
+        assert_equal(type(self.draft1.registration_metadata['q4']['value']['question']['extra']), dict)
 
         assert_equal(self.draft2.registration_metadata, self.simple_metadata)
 
@@ -83,5 +96,7 @@ class TestMigrateRegistrationExtra(OsfTestCase):
         assert_equal(type(self.draft1.registration_metadata['q3']['extra']), list)
 
         assert_equal(self.draft1.registration_metadata['q3']['extra'][0], self.file_ans)
+
+        assert_equal(type(self.draft1.registration_metadata['q4']['value']['question']['extra']), list)
 
         assert_equal(self.draft2.registration_metadata, self.simple_metadata)
