@@ -34,10 +34,12 @@ from website.settings import FORGOT_PASSWORD_MINIMUM_TIME
 
 @collect_auth
 def reset_password(auth, **kwargs):
+    """ If get request, show reset password page. If POST, attempt to reset password if
+    request form passed
+    """
     if auth.logged_in:
         return auth_logout(redirect_url=request.url)
     verification_key = kwargs['verification_key']
-    form = ResetPasswordForm(request.form)
 
     user_obj = get_user(verification_key=verification_key)
     if not user_obj:
@@ -47,10 +49,10 @@ def reset_password(auth, **kwargs):
         }
         raise HTTPError(400, data=error_data)
 
-    if request.method == 'POST' and form.validate():
+    if request.method == 'POST':  # TODO - and how do we also check that its validated?
         # new random verification key, allows CAS to authenticate the user w/o password one time only.
         user_obj.verification_key = security.random_string(20)
-        user_obj.set_password(form.password.data)
+        user_obj.set_password(request.data.password)  # TODO - how to actually get this...
         user_obj.save()
         status.push_status_message('Password reset', kind='success', trust=False)
         # Redirect to CAS and authenticate the user with a verification key.
@@ -61,7 +63,6 @@ def reset_password(auth, **kwargs):
             verification_key=user_obj.verification_key
         ))
 
-    forms.push_errors_to_status(form.errors)
     return {
         'verification_key': verification_key,
     }
