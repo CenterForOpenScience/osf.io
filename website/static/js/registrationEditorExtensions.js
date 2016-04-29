@@ -188,6 +188,7 @@ var Uploader = function(question) {
             question.value(NO_FILE);
         }
     });
+
     self.hasSelectedFile = ko.computed(function() {
         return !!(question.extra().viewUrl);
     });

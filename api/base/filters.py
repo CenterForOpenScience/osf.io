@@ -379,10 +379,13 @@ class ListFilterMixin(FilterMixin):
                 if params['value'].lower() in getattr(item, field_name, {}).lower()
             ]
         else:
-            return_val = [
-                item for item in default_queryset
-                if self.FILTERS[params['op']](getattr(item, field_name, None), params['value'])
-            ]
+            try:
+                return_val = [
+                    item for item in default_queryset
+                    if self.FILTERS[params['op']](getattr(item, field_name, None), params['value'])
+                ]
+            except TypeError:
+                raise InvalidFilterValue(detail='Could not apply filter to specified field')
 
         return return_val
 

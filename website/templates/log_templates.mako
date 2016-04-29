@@ -41,6 +41,12 @@ initiated an embargoed registration of
 <!-- /ko -->
 </script>
 
+<script type="text/html" id="embargo_terminated_no_user">
+Embargo for
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+ended.
+</script>
+
 ## Retraction related logs
 <script type="text/html" id="retraction_approved">
 approved withdrawal of registration of
@@ -198,8 +204,13 @@ to
 </script>
 
 <script type="text/html" id="project_registered">
-registered
-<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+        registered
+        <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="prereg_registration_initiated">
+    submitted for review to the Preregistration Challenge a registration of
+    <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>.
 </script>
 
 <script type="text/html" id="project_registered_no_user">
@@ -261,6 +272,11 @@ to
 <a data-bind="attr: {href: params.file.url}, text: params.file.name"></a>
 in
 {{/if}}
+{{#if params.wiki}}
+wiki page
+<a data-bind="attr: {href: params.wiki.url}, text: params.wiki.name"></a>
+in
+{{/if}}
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
@@ -269,6 +285,11 @@ updated a comment
 on
 {{#if params.file}}
 <a data-bind="attr: {href: params.file.url}, text: params.file.name"></a>
+in
+{{/if}}
+{{#if params.wiki}}
+wiki page
+<a data-bind="attr: {href: params.wiki.url}, text: params.wiki.name"></a>
 in
 {{/if}}
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
@@ -281,6 +302,11 @@ on
 <a data-bind="attr: {href: params.file.url}, text: params.file.name"></a>
 in
 {{/if}}
+{{#if params.wiki}}
+wiki page
+<a data-bind="attr: {href: params.wiki.url}, text: params.wiki.name"></a>
+in
+{{/if}}
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
@@ -289,6 +315,11 @@ restored a comment
 on
 {{#if params.file}}
 <a data-bind="attr: {href: params.file.url}, text: params.file.name"></a>
+in
+{{/if}}
+{{#if params.wiki}}
+wiki page
+<a data-bind="attr: {href: params.wiki.url}, text: params.wiki.name"></a>
 in
 {{/if}}
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>

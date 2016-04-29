@@ -15,6 +15,7 @@ require('addons/wiki/static/ace-markdown-snippets.js');
 var $osf = require('js/osfHelpers');
 
 var WikiMenu = require('../wikiMenu');
+var Comment = require('js/comment'); //jshint ignore:line
 
 var ctx = window.contextVars.wiki;  // mako context variables
 
@@ -167,3 +168,20 @@ $(document).ready(function () {
     // Tooltip
     $('[data-toggle="tooltip"]').tooltip();
 });
+
+var $comments = $('.comments');
+if ($comments.length && window.contextVars.wiki.wikiID !== 'None') {
+    var options = {
+        nodeId: window.contextVars.node.id,
+        nodeApiUrl: window.contextVars.node.urls.api,
+        isRegistration: window.contextVars.node.isRegistration,
+        page: 'wiki',
+        rootId: window.contextVars.wiki.wikiID,
+        fileId: null,
+        canComment: window.contextVars.currentUser.canComment,
+        hasChildren: window.contextVars.node.hasChildren,
+        currentUser: window.contextVars.currentUser,
+        pageTitle: window.contextVars.wiki.wikiName
+    };
+    Comment.init('#commentsLink', '.comment-pane', options);
+}

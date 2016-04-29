@@ -85,7 +85,7 @@ class TestAUser(OsfTestCase):
         res = self.app.get('/login/', auth=self.user.auth)
         assert_equal(res.status_code, 302)
         res = res.follow(auth=self.user.auth)
-        assert_equal(res.request.path, '/myprojects/')
+        assert_equal(res.request.path, '/')
 
     def test_sees_projects_in_her_dashboard(self):
         # the user already has a project
@@ -206,6 +206,8 @@ class TestAUser(OsfTestCase):
         res = self.app.get('/{0}/wiki/home/'.format(project._primary_key), auth=self.auth)
         # Sees a message indicating no content
         assert_in('No wiki content', res)
+        # Sees that edit panel is open by default when home wiki has no content
+        assert_in('panelsUsed: ["view", "menu", "edit"]', res)
 
     def test_wiki_content(self):
         project = ProjectFactory(creator=self.user)
@@ -218,6 +220,7 @@ class TestAUser(OsfTestCase):
         ), auth=self.auth)
         assert_not_in('No wiki content', res)
         assert_in(wiki_content, res)
+        assert_in('panelsUsed: ["view", "menu"]', res)
 
     def test_wiki_page_name_non_ascii(self):
         project = ProjectFactory(creator=self.user)
@@ -273,7 +276,7 @@ class TestAUser(OsfTestCase):
         # submits
         res = form.submit()
         # mail was sent
-        mock_send_mail.assert_called
+        assert_true(mock_send_mail.called)
         # gets 200 response
         assert_equal(res.status_code, 200)
         # URL is /forgotpassword
@@ -292,7 +295,7 @@ class TestAUser(OsfTestCase):
         # submits
         res = form.submit()
         # mail was sent
-        mock_send_mail.assert_called
+        assert_true(mock_send_mail.called)
         # gets 200 response
         assert_equal(res.status_code, 200)
         assert_in_html('If there is an OSF account', res)
