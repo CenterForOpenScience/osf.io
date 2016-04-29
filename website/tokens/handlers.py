@@ -1,4 +1,5 @@
 import httplib as http
+from flask import redirect, request
 
 from modularodm import Q
 
@@ -25,6 +26,14 @@ def embargo_handler(action, registration, registered_from):
     # Allow decorated view function to return response
     return None
 
+def embargo_termination_handler(action, registration, registered_from):
+    status.push_status_message({
+        'approve': 'Your approval of making this emabrgo public has been accepted.',
+        'reject': 'Your disapproval has been accepted and this embargo will not be made public.',
+    }[action], kind='success', trust=False)
+    # Allow decorated view function to return response
+    return None
+
 def retraction_handler(action, registration, registered_from):
     status.push_status_message({
         'approve': 'Your withdrawal approval has been accepted.',
@@ -35,11 +44,18 @@ def retraction_handler(action, registration, registered_from):
 
 @must_be_logged_in
 def sanction_handler(kind, action, payload, encoded_token, auth, **kwargs):
-    from website.models import Node, RegistrationApproval, Embargo, Retraction
+    from website.models import (
+        Node,
+        Embargo,
+        EmbargoTerminationApproval,
+        RegistrationApproval,
+        Retraction
+    )
 
     Model = {
         'registration': RegistrationApproval,
         'embargo': Embargo,
+        'embargo_termination_approval': EmbargoTerminationApproval,
         'retraction': Retraction
     }.get(kind, None)
     if not Model:
@@ -54,8 +70,8 @@ def sanction_handler(kind, action, payload, encoded_token, auth, **kwargs):
         err_code = http.BAD_REQUEST
         err_message = 'There is no {0} associated with this token.'.format(Model.DISPLAY_NAME)
     elif sanction.is_approved:
-        err_code = http.BAD_REQUEST if kind in ['registration', 'embargo'] else http.GONE
-        err_message = "This registration is not pending {0}.".format(sanction.DISPLAY_NAME)
+        # Simply strip query params and redirect if already approved
+        return redirect(request.base_url)
     elif sanction.is_rejected:
         err_code = http.GONE if kind in ['registration', 'embargo'] else http.BAD_REQUEST
         err_message = "This registration {0} has been rejected.".format(sanction.DISPLAY_NAME)
@@ -84,5 +100,6 @@ def sanction_handler(kind, action, payload, encoded_token, auth, **kwargs):
         return {
             'registration': registration_approval_handler,
             'embargo': embargo_handler,
+            'embargo_termination_approval': embargo_termination_handler,
             'retraction': retraction_handler,
         }[kind](action, registration, registered_from)
