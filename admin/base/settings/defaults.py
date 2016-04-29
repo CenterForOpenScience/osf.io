@@ -14,6 +14,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 # from the OSF settings
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = osf_settings.SECRET_KEY
+SESSION_COOKIE_AGE = osf_settings.OSF_COOKIE_MAX_AGE
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
