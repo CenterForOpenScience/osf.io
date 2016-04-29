@@ -248,6 +248,14 @@ class TestNodeFilesList(ApiTestCase):
         assert_equal(res.status_code, 404)
         assert_in('detail', res.json['errors'][0])
 
+    def test_handles_request_to_provider_not_configured_on_project(self):
+        provider = 'box'
+        url = '/{}nodes/{}/files/{}/'.format(API_BASE, self.project._id, provider)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_false(self.project.has_addon(provider))
+        assert_equal(res.status_code, 404)
+        assert_equal(res.json['errors'][0]['detail'], 'The {} provider is not configured for this project.'.format(provider))
+
     def test_handles_bad_waterbutler_request(self):
         wb_url = waterbutler_api_url_for(self.project._id, provider='github', path='/', meta=True)
         httpretty.register_uri(
