@@ -187,7 +187,8 @@
                 currentUser: {
                     id: ${ user_id | sjson, n },
                     locale: ${ user_locale | sjson, n },
-                    timezone: ${ user_timezone | sjson, n }
+                    timezone: ${ user_timezone | sjson, n },
+                    emailsToAdd: ${ user_email_verifications | sjson, n}
                 },
                 popular: ${ popular_links_node | sjson, n},
                 newAndNoteworthy: ${ noteworthy_links_node | sjson, n},

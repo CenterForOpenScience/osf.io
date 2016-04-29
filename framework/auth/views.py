@@ -152,7 +152,7 @@ def auth_login(auth, **kwargs):
 
     status_message = request.args.get('status', '')
     if status_message == 'expired':
-        status.push_status_message('The private link you used is expired.  Please Resend email.')
+        status.push_status_message('The private link you used is expired.  Please <a href="/settings/account/resend email.')
 
     if next_url and must_login_warning:
         status.push_status_message(language.MUST_LOGIN)
@@ -192,7 +192,7 @@ def auth_email_logout(token, user):
     """When a user is adding an email or merging an account, add the email to the user and log them out.
     """
     redirect_url = web_url_for('auth_login') + '?existing_user={}'.format(escape_html(user.email))
-    if user.confirm_token(token):
+    if user.verify_token(token):
         try:
             user_merge = User.find_one(Q('emails', 'eq', user.email_verifications[token]['email'].lower()))
         except NoResultsFound:
@@ -287,7 +287,7 @@ def confirm_user_get(auth=None, **kwargs):
     user = auth.user
     verified_emails = []
     for token in user.email_verifications:
-        if user.confirm_token(token):
+        if user.verify_token(token):
             if user.email_verifications[token]['confirmed']:
                 try:
                     user_merge = User.find_one(Q('emails', 'eq', user.email_verifications[token]['email'].lower()))
@@ -298,9 +298,6 @@ def confirm_user_get(auth=None, **kwargs):
                                         'token': token,
                                         'confirmed': user.email_verifications[token]['confirmed'],
                                         'user_merge': user_merge.email if user_merge else False})
-            else:
-                user.email_verifications[token]['confirmed'] = False
-    user.save()
     return verified_emails
 
 
@@ -314,7 +311,7 @@ def confirm_email_remove(auth=None, **kwargs):
     email_verifications = deepcopy(user.email_verifications)
     for token in user.email_verifications:
         if user.email_verifications[token]['email'] == confirmed_email:
-            if user.confirm_token(token):
+            if user.verify_token(token):
                 email_verifications.pop(token)
     user.email_verifications = email_verifications
     user.save()

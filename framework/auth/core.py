@@ -848,7 +848,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
         return verification['email']
 
-    def confirm_token(self, token):
+    def verify_token(self, token):
         """Return whether or not a confirmation token is valid for this user.
         :rtype: bool
         """
