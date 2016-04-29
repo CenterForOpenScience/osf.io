@@ -811,8 +811,8 @@ class TestWikiUuid(OsfTestCase):
         assert_equal(fork_res.status_code, 200)
         fork.reload()
 
-        # uuids are stored the same internally
-        assert_equal(
+        # uuids are not copied over to forks
+        assert_not_equal(
             self.project.wiki_private_uuids.get(self.wkey),
             fork.wiki_private_uuids.get(self.wkey)
         )
@@ -831,12 +831,12 @@ class TestWikiUuid(OsfTestCase):
         original_uuid = generate_private_uuid(self.project, self.wname)
         self.project.update_node_wiki(self.wname, 'Hello world', Auth(self.user))
         fork = self.project.fork_node(Auth(self.user))
-        assert_equal(original_uuid, fork.wiki_private_uuids.get(self.wkey))
+        assert_equal(fork.wiki_private_uuids.get(self.wkey), None)
 
         migrate_uuid(self.project, self.wname)
 
         assert_not_equal(original_uuid, self.project.wiki_private_uuids.get(self.wkey))
-        assert_equal(original_uuid, fork.wiki_private_uuids.get(self.wkey))
+        assert_equal(fork.wiki_private_uuids.get(self.wkey), None)
 
     @mock.patch('website.addons.wiki.utils.broadcast_to_sharejs')
     def test_uuid_persists_after_delete(self, mock_sharejs):

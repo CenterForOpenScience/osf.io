@@ -13,7 +13,7 @@ from website.exceptions import (
     InvalidSanctionRejectionToken, InvalidSanctionApprovalToken, NodeStateError,
 )
 from website import tokens
-from website.project.model import (
+from website.project.sanctions import (
     Sanction,
     PreregCallbackMixin,
     RegistrationApproval,
@@ -256,7 +256,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
         self.registration.save()
         with mock.patch.object(PreregCallbackMixin, '_notify_initiator') as mock_notify:
             self.registration.registration_approval._on_complete(self.user)
-        mock_notify.assert_called()
+        assert_equal(mock_notify.call_count, 1)
 
     def test__on_complete_makes_project_and_components_public(self):
         project_admin = UserFactory()

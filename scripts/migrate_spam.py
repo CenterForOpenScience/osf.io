@@ -28,20 +28,21 @@ def migrate_latest(records):
                 date = report.get('date')
             elif date < report.get('date'):
                 date = report.get('date')
-        record.latest_report = date
+        record.date_last_reported = date
         record.save()
-        logger.info('Migrated latest_report for comment {}'.format(record._id))
+        logger.info('Migrated date_last_reported for comment {}'.format(record._id))
 
 
 def get_no_status_targets():
-    return Comment.find(Q('spam_status', 'eq', None))
+    return Comment.find(
+        Q('spam_status', 'eq', 0)
+    )
 
 
 def get_no_latest_targets():
     query = (
-        Q('latest_report', 'eq', None) &
-        Q('spam_status', 'ne', Comment.UNKNOWN) &
-        Q('spam_status', 'ne', None)
+        Q('date_last_reported', 'eq', None) &
+        Q('spam_status', 'ne', Comment.UNKNOWN)
     )
     return Comment.find(query)
 
