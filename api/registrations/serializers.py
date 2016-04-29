@@ -1,6 +1,4 @@
 import json
-import pytz
-from dateutil.parser import parse as parse_date
 
 from rest_framework import serializers as ser
 from rest_framework import exceptions
