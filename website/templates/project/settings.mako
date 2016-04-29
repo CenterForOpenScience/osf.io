@@ -327,7 +327,7 @@
 
                                     </tbody>
                                 </table>
-                                <div data-bind="visible: availableInstitutions().length">
+                                <div data-bind="visible: hasThingsToAdd">
                                     <a data-bind="click: toggle">Add institution</a>
                                     <div data-bind="visible: showAdd()">
                                         <div class="help-block">

@@ -22,9 +22,7 @@
                 % endif
 
                 % if node['institutions'] != [] and enable_institutions and not node['anonymous']:
-                    <div style="float: left; width: 86px; text-align: center">
-                        <div id="instLogo"></div>
-                    </div>
+                    <div id="instLogo"></div>
                 % endif
 
                 <h2 class="node-title" style="float: left;">

@@ -67,7 +67,8 @@ var institutionLogos = {
         var self = this;
         self.institutions = args.institutions;
         self.nLogos = Math.min(self.institutions.length, 5);
-        self.side = self.nLogos > 1 ? '35px': '75px';
+        self.side = self.nLogos > 1 ? (self.nLogos === 2 ? '50px' : '35px') : '75px';
+        self.width = self.nLogos > 1 ? (self.nLogos === 2 ? '115px' : '86px') : '75px';
         self.makeLogo = function(institution){
             return m('a', {href: '/institutions/' + institution.id},
                 m('img.img-circle', {
@@ -83,7 +84,7 @@ var institutionLogos = {
         var tooltips = function(){
             $('[data-toggle="tooltip"]').tooltip();
         };
-        return m('', {config: tooltips}, [$.map(ctrl.institutions, ctrl.makeLogo)]);
+        return m('', {style: {float: 'left', width: ctrl.width, textAlign: 'center'}, config: tooltips}, [$.map(ctrl.institutions, ctrl.makeLogo)]);
     }
 };
 

@@ -16,11 +16,16 @@ var ViewModel = function(data) {
     self.userInstitutionsIds = self.userInstitutions.map(function(item){return item.id});
     self.selectedInstitution = ko.observable();
     self.affiliatedInstitutions = ko.observable(window.contextVars.node.institutions);
+
     var affiliatedInstitutionsIds = self.affiliatedInstitutions().map(function(item){return item.id});
     self.availableInstitutions = ko.observable(self.userInstitutions.filter(function(each){
-        return !(each.id in affiliatedInstitutionsIds)
+        return ($.inArray(each.id, affiliatedInstitutionsIds)) === -1;
     }));
-    
+
+    self.hasThingsToAdd = ko.computed(function(){
+        return self.availableInstitutions().length ? true : false;
+    });
+
     self.toggle = function() {
         self.showAdd(self.showAdd() ? false : true);
     };
@@ -72,9 +77,10 @@ var ViewModel = function(data) {
             }
         ).done(function (response) {
             var indexes = self.affiliatedInstitutions().map(function(each){return each.id});
-            var removed = self.affiliatedInstitutions().splice(indexes.indexOf(item.id), 1);
-            if (removed.id in self.userInstitutionsIds){
-                self.availableInstitutions(self.availableInstitutions().push(removed));
+            var removed = self.affiliatedInstitutions().splice(indexes.indexOf(item.id), 1)[0];
+            if ($.inArray(removed.id, self.userInstitutionsIds) >= 0){
+                self.availableInstitutions().push(removed);
+                self.availableInstitutions(self.availableInstitutions());
             }
             self.affiliatedInstitutions(self.affiliatedInstitutions());
         }).fail(function (xhr, status, error) {
