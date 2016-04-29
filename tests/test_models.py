@@ -7,6 +7,7 @@ from nose.tools import *  # noqa (PEP8 asserts)
 import pytz
 import datetime
 import urlparse
+import urllib
 import itsdangerous
 import random
 import string
@@ -1179,6 +1180,18 @@ class TestNodeWikiPage(OsfTestCase):
     def test_url(self):
         assert_equal(self.wiki.url, '{project_url}wiki/home/'
                                     .format(project_url=self.project.url))
+
+    def test_absolute_url_for_wiki_page_name_with_spaces(self):
+        wiki = NodeWikiFactory(user=self.user, node=self.project, page_name='Test Wiki')
+        url = '{}wiki/{}/'.format(self.project.absolute_url, urllib.quote(wiki.page_name))
+        assert_equal(wiki.get_absolute_url(), url)
+
+    def test_absolute_url_for_wiki_page_name_with_special_characters(self):
+        wiki = NodeWikiFactory(user=self.user, node=self.project)
+        wiki.page_name = 'Wiki!@#$%^&*()+'
+        wiki.save()
+        url = '{}wiki/{}/'.format(self.project.absolute_url, urllib.quote(wiki.page_name))
+        assert_equal(wiki.get_absolute_url(), url)
 
 
 class TestUpdateNodeWiki(OsfTestCase):
