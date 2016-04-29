@@ -32,23 +32,28 @@ def get_bannable_urls(instance):
         if isinstance(instance, Comment):
             try:
                 parsed_target_url = urlparse.urlparse(instance.target.referent.absolute_api_v2_url)
-                url_string = '{scheme}://{netloc}{path}.*'.format(scheme=varnish_parsed_url.scheme,
-                                                                  netloc=varnish_parsed_url.netloc,
-                                                                  path=parsed_target_url.path)
-                bannable_urls.append(url_string)
             except AttributeError:
                 # some referents don't have an absolute_api_v2_url
                 # I'm looking at you NodeWikiPage
                 pass
+            else:
+                url_string = '{scheme}://{netloc}{path}.*'.format(scheme=varnish_parsed_url.scheme,
+                                                                  netloc=varnish_parsed_url.netloc,
+                                                                  path=parsed_target_url.path)
+                bannable_urls.append(url_string)
+
+
             try:
                 parsed_root_target_url = urlparse.urlparse(instance.root_target.referent.absolute_api_v2_url)
+            except AttributeError:
+                # some root_targets don't have an absolute_api_v2_url
+                pass
+            else:
                 url_string = '{scheme}://{netloc}{path}.*'.format(scheme=varnish_parsed_url.scheme,
                                                               netloc=varnish_parsed_url.netloc,
                                                               path=parsed_root_target_url.path)
                 bannable_urls.append(url_string)
-            except AttributeError:
-                # some root_targets don't have an absolute_api_v2_url
-                pass
+
 
     return bannable_urls, parsed_absolute_url.hostname
 
