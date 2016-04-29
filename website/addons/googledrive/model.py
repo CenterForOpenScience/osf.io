@@ -6,7 +6,6 @@ import urllib
 
 from modularodm import fields
 
-from api.base.utils import absolute_reverse
 from framework.auth import Auth
 from framework.exceptions import HTTPError
 from website.oauth.models import ExternalProvider
@@ -14,6 +13,7 @@ from website.oauth.models import ExternalProvider
 from website.addons.base import exceptions
 from website.addons.base import StorageAddonBase
 from website.addons.base import AddonOAuthNodeSettingsBase, AddonOAuthUserSettingsBase
+from website.util import api_v2_url
 
 from website.addons.googledrive import settings as drive_settings
 from website.addons.googledrive.serializer import GoogleDriveSerializer
@@ -122,16 +122,11 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                 'id': about['rootFolderId'],
                 'name': '/ (Full Google Drive)',
                 'urls': {
-                    'folders': absolute_reverse(
-                        'nodes:node-addon-folders',
-                        kwargs={
-                            'node_id': self.owner._id,
-                            'provider': 'googledrive'
-                        },
-                        query_kwargs={
+                    'folders': api_v2_url('nodes/{}/addons/googledrive/folders/'.format(self.owner._id),
+                        params={
                             'path': '/',
                             'id': about['rootFolderId']
-                        })
+                    })
                 }
             }]
 
