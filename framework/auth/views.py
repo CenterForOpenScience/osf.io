@@ -32,6 +32,7 @@ from website.util.time import throttle_period_expired
 from website.models import User
 from website.util import web_url_for
 from website.util.sanitize import strip_html, escape_html
+import urllib
 
 
 @collect_auth
@@ -191,7 +192,7 @@ def auth_logout(redirect_url=None):
 def auth_email_logout(token, user):
     """When a user is adding an email or merging an account, add the email to the user and log them out.
     """
-    redirect_url = web_url_for('auth_login') + '?existing_user={}'.format(escape_html(user.email))
+    redirect_url = web_url_for('auth_login') + '?existing_user={}'.format(urllib.quote_plus(user.email))
     if user.verify_token(token):
         try:
             user_merge = User.find_one(Q('emails', 'eq', user.email_verifications[token]['email'].lower()))
@@ -381,12 +382,12 @@ def send_confirm_email(user, email):
     # Choose the appropriate email template to use and add existing_user flag if a merge or adding an email.
     if merge_target:
         mail_template = mails.CONFIRM_MERGE
-        confirmation_url = '{}?existing_user={}'.format(confirmation_url, escape_html(user.email))
+        confirmation_url = '{}?existing_user={}'.format(confirmation_url, urllib.quote_plus(user.email))
     elif campaign:
         mail_template = campaigns.email_template_for_campaign(campaign)
     elif user.is_active:
         mail_template = mails.CONFIRM_EMAIL
-        confirmation_url = '{}?existing_user={}'.format(confirmation_url, escape_html(user.email))
+        confirmation_url = '{}?existing_user={}'.format(confirmation_url, urllib.quote_plus(user.email))
     else:
         mail_template = mails.INITIAL_CONFIRM_EMAIL
 
