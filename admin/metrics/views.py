@@ -35,24 +35,6 @@ def get_user_count(db=db, entry_points=ENTRY_POINTS):
     return {'items': counts}
 
 
-def get_multi_product_usage(db=db, timedelta=timedelta(days=365)):
-    """
-    Get the number of users using 2+ products within a period of time
-    """
-    start_date = datetime.now() - timedelta
-    map = Code('''function () {
-                    emit(this.user, this.params.node);
-                    };''')
-    reduce = Code('''function (key, values) {
-                        var node_id = [];
-                        for (var i = 0; i < values.length; i++) {
-                            node_id.push(i);
-                        }
-                        return node_id''')
-    user_node = db.nodelog.map_reduce(map, reduce, "user_node", query={'date': {'$gt': start_date}})
-    return user_node
-
-
 def get_multi_product_metrics(db=db, timedelta=timedelta(days=365)):
     """
     Get the number of users using 2+ products within a period of time
