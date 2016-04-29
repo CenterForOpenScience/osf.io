@@ -476,7 +476,7 @@ def requirements(base=False, addons=False, release=False, dev=False, metrics=Fal
             req_file = os.path.join(HERE, 'requirements.txt')
             run(pip_install(req_file), echo=True)
 
-    # local development using https, --secure will recursively install --dev and --base
+    # local development using https
     if secure:
         req_file = os.path.join(HERE, 'requirements', 'secure.txt')
         run(pip_install(req_file), echo=True)
