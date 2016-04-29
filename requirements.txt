@@ -1,5 +1,6 @@
 # Base requirements for running the OSF.
 # NOTE: This does not include addon, development, metrics or release requirements.
+# NOTE: When updating pinned version, you may also need to update constraints.txt
 # To install addon requirements: inv requirements --addons
 # To install dev requirements: inv requirements --dev
 # To install metrics requirements: inv requirements --metrics
@@ -65,5 +66,6 @@ pyjwe==1.0.0
 
 # Admin requirements
 django-webpack-loader==0.2.3
+django-queryset-csv==0.3.3
 django-nose==1.4.3
 django-ckeditor==5.0.2

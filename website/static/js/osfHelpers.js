@@ -845,6 +845,18 @@ var trackClick = function(category, action, label){
     return true;
 };
 
+
+// Call a function when scrolled to the bottom of the element
+/// Useful for triggering an event at the bottom of a window, like infinite scroll
+function onScrollToBottom(element, callback) {
+    $(element).scroll(function() {
+        var $this = $(this);
+        if ($this.scrollTop() + $this.innerHeight() >= $this[0].scrollHeight) {
+            callback();
+        }
+    });
+}
+
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
 module.exports = window.$.osf = {
@@ -883,5 +895,6 @@ module.exports = window.$.osf = {
     dialog: dialog,
     contribNameFormat: contribNameFormat,
     trackClick: trackClick,
-    findContribName: findContribName
+    findContribName: findContribName,
+    onScrollToBottom: onScrollToBottom
 };
