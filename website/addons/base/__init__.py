@@ -1,24 +1,26 @@
 # -*- coding: utf-8 -*-
-import os
 import glob
 import importlib
 import mimetypes
-from bson import ObjectId
-from modularodm import fields
-from mako.lookup import TemplateLookup
+import os
 from time import sleep
 
+from bson import ObjectId
+from mako.lookup import TemplateLookup
+import markupsafe
 import requests
+
+from modularodm import fields
 from modularodm import Q
 
+from framework.auth import Auth
 from framework.auth.decorators import must_be_logged_in
-from framework.mongo import StoredObject
-from framework.routing import process_rules
 from framework.exceptions import (
     PermissionsError,
     HTTPError,
 )
-from framework.auth import Auth
+from framework.mongo import StoredObject
+from framework.routing import process_rules
 
 from website import settings
 from website.addons.base import serializer, logger
@@ -239,7 +241,7 @@ class AddonSettingsBase(StoredObject):
 
 class AddonUserSettingsBase(AddonSettingsBase):
 
-    owner = fields.ForeignField('user')
+    owner = fields.ForeignField('user', index=True)
 
     _meta = {
         'abstract': True,
@@ -518,7 +520,7 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
 
 class AddonNodeSettingsBase(AddonSettingsBase):
 
-    owner = fields.ForeignField('node')
+    owner = fields.ForeignField('node', index=True)
 
     _meta = {
         'abstract': True,
@@ -944,9 +946,9 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
                 u'by {user}, authentication information has been deleted.'
             ).format(
                 addon=self.config.full_name,
-                category=node.category_display,
-                title=node.title,
-                user=removed.fullname
+                category=markupsafe.escape(node.category_display),
+                title=markupsafe.escape(node.title),
+                user=markupsafe.escape(removed.fullname)
             )
 
             if not auth or auth.user != removed:

@@ -8,9 +8,6 @@ var oop = require('js/oop');
 var Raven = require('raven-js');
 var ChangeMessageMixin = require('js/changeMessage');
 
-require('knockout.punches');
-ko.punches.enableAll();
-
 
 var UserEmail = oop.defclass({
     constructor: function(params) {
@@ -320,10 +317,14 @@ var DeactivateAccountViewModel = oop.defclass({
             this.success(true);
         }.bind(this));
         request.fail(function(xhr, status, error) {
-            $osf.growl('Error',
-                'Deactivation request failed. Please contact <a href="mailto: support@osf.io">support@osf.io</a> if the problem persists.',
-                'danger'
-            );
+            if (xhr.responseJSON.error_type === 'throttle_error') {
+                $osf.growl('Error', xhr.responseJSON.message_long, 'danger');
+            } else {
+                $osf.growl('Error',
+                    'Deactivation request failed. Please contact <a href="mailto: support@osf.io">support@osf.io</a> if the problem persists.',
+                    'danger'
+                );
+            }
             Raven.captureMessage('Error requesting account deactivation', {
                 extra: {
                     url: this.urls.update,
@@ -370,10 +371,14 @@ var ExportAccountViewModel = oop.defclass({
             this.success(true);
         }.bind(this));
         request.fail(function(xhr, status, error) {
-            $osf.growl('Error',
-                'Export request failed. Please contact <a href="mailto: support@osf.io">support@osf.io</a> if the problem persists.',
-                'danger'
-            );
+            if (xhr.responseJSON.error_type === 'throttle_error') {
+                $osf.growl('Error', xhr.responseJSON.message_long, 'danger');
+            } else {
+                $osf.growl('Error',
+                    'Export request failed. Please contact <a href="mailto: support@osf.io">support@osf.io</a> if the problem persists.',
+                    'danger'
+                );
+            }
             Raven.captureMessage('Error requesting account export', {
                 extra: {
                     url: this.urls.update,

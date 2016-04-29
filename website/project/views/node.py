@@ -24,7 +24,6 @@ from website.project import new_node, new_private_link
 from website.project.decorators import (
     must_be_contributor_or_public_but_not_anonymized,
     must_be_contributor_or_public,
-    must_be_contributor,
     must_be_valid_project,
     must_have_permission,
     must_not_be_registration,
@@ -246,7 +245,7 @@ def node_forks(auth, node, **kwargs):
 
 @must_be_valid_project
 @must_be_logged_in
-@must_be_contributor
+@must_have_permission(READ)
 def node_setting(auth, node, **kwargs):
 
     #check institutions:
@@ -654,7 +653,7 @@ def _view_project(node, auth, primary=False):
 
     disapproval_link = ''
     if (node.is_pending_registration and node.has_permission(user, ADMIN)):
-        disapproval_link = node.registration_approval.stashed_urls.get(user._id, {}).get('reject', '')
+        disapproval_link = node.root.registration_approval.stashed_urls.get(user._id, {}).get('reject', '')
 
     # Before page load callback; skip if not primary call
     if primary:
@@ -692,6 +691,11 @@ def _view_project(node, auth, primary=False):
             'retracted_justification': getattr(node.retraction, 'justification', None),
             'embargo_end_date': node.embargo_end_date.strftime("%A, %b. %d, %Y") if node.embargo_end_date else False,
             'is_pending_embargo': node.is_pending_embargo,
+            'is_embargoed': node.is_embargoed,
+            'is_pending_embargo_termination': node.is_embargoed and (
+                node.embargo_termination_approval and
+                node.embargo_termination_approval.is_pending_approval
+            ),
             'registered_from_url': node.registered_from.url if node.is_registration else '',
             'registered_date': iso8601format(node.registered_date) if node.is_registration else '',
             'root_id': node.root._id if node.root else None,
@@ -846,6 +850,7 @@ def _get_summary(node, auth, primary=True, link_id=None, show_path=False):
         'is_pending_retraction': node.is_pending_retraction,
         'embargo_end_date': node.embargo_end_date.strftime("%A, %b. %d, %Y") if node.embargo_end_date else False,
         'is_pending_embargo': node.is_pending_embargo,
+        'is_embargoed': node.is_embargoed,
         'archiving': node.archiving,
     }
 

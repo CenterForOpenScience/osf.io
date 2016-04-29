@@ -2,6 +2,48 @@
 Changelog
 *********
 
+0.68.0 (2016-04-28)
+===================
+
+- Wiki commenting.
+- End embargoes early.
+- UI fixes.
+
+Migrations
+----------
+
+See https://openscience.atlassian.net/browse/OSF-6081
+
+0.67.0 (2016-04-21)
+===================
+
+- Change "Retraction" to "Withdrawal".
+- Multiple GitHub accounts can be associated with a user account.
+- Multiple S3 accounts can be associated with a user account.
+- Dev: Remove various unnecessary backrefs, including nodelog -> node backref.
+- Dev: Lots of addons refactoring.
+- Dev: Use celerybeat for periodic task execution.
+- Bug fixes.
+
+Migrations
+----------
+
+See https://openscience.atlassian.net/browse/OSF-5986
+
+0.66.0 (2016-03-16)
+===================
+
+- Redesign of Dashboard and addition of "My Projects" page.
+- OSF4Institutions landing pages.
+- Commenting on addon files.
+- Admin: Marking comments as spam; disabling users; view registrations.
+- Various UI improvements.
+
+Migrations
+----------
+
+See https://openscience.atlassian.net/browse/OSF-5861
+
 0.65.0 (2016-03-02)
 ===================
 

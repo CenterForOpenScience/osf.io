@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import markupsafe
 from modularodm import fields
 
 from framework.auth.decorators import Auth
@@ -277,7 +278,8 @@ class AddonFigShareNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
             )
             if article_permissions == 'private' and node_permissions == 'public':
                 message += messages.BEFORE_PAGE_LOAD_PUBLIC_NODE_PRIVATE_FS
-            return [message]
+            # No HTML snippets, so escape message all at once
+            return [markupsafe.escape(message)]
 
     def before_remove_contributor(self, node, removed):
         """
@@ -311,9 +313,9 @@ class AddonFigShareNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
                 u'Because the FigShare add-on for {category} "{title}" was authenticated '
                 u'by {user}, authentication information has been deleted.'
             ).format(
-                category=node.category_display,
-                title=node.title,
-                user=removed.fullname
+                category=markupsafe.escape(node.category_display),
+                title=markupsafe.escape(node.title),
+                user=markupsafe.escape(removed.fullname)
             )
 
             if not auth or auth.user != removed:

@@ -35,11 +35,12 @@ EMAIL_TOKEN_EXPIRATION = 24
 CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'static', 'vendor', 'bower_components', 'styles')
 
 # Minimum seconds between forgot password email attempts
-FORGOT_PASSWORD_MINIMUM_TIME = 30
+SEND_EMAIL_THROTTLE = 30
 
 # Hours before pending embargo/retraction/registration automatically becomes active
 RETRACTION_PENDING_TIME = datetime.timedelta(days=2)
 EMBARGO_PENDING_TIME = datetime.timedelta(days=2)
+EMBARGO_TERMINATION_PENDING_TIME = datetime.timedelta(days=2)
 REGISTRATION_APPROVAL_TIME = datetime.timedelta(days=2)
 # Date range for embargo periods
 EMBARGO_END_DATE_MIN = datetime.timedelta(days=2)
@@ -318,6 +319,7 @@ CELERY_IMPORTS = (
     'scripts.retract_registrations',
     'scripts.embargo_registrations',
     'scripts.approve_registrations',
+    'scripts.approve_embargo_terminations',
     'scripts.osfstorage.glacier_inventory',
     'scripts.osfstorage.glacier_audit',
     'scripts.triggered_mails',
@@ -366,14 +368,9 @@ else:
             'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
             'kwargs': {'dry_run': False},
         },
-        'glacier_inventory': {
-            'task': 'scripts.osfstorage.glacier_inventory',
-            'schedule': crontab(minute=0, hour= 0, day_of_week=0),  # Sunday 12:00 a.m.
-            'args': (),
-        },
-        'glacier_audit': {
-            'task': 'scripts.osfstorage.glacier_audit',
-            'schedule': crontab(minute=0, hour=6, day_of_week=0),  # Sunday 6:00 a.m.
+        'approve_embargo_terminations': {
+            'task': 'scripts.approve_embargo_terminations',
+            'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
             'kwargs': {'dry_run': False},
         },
         'triggered_mails': {
@@ -386,46 +383,56 @@ else:
             'schedule': crontab(minute=0, hour=12),  # Daily 12 p.m.
             'kwargs': {'dry_run': False},
         },
-        'usage_audit': {
-            'task': 'scripts.osfstorage.usage_audit',
-            'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
-            'kwargs': {'send_mail': True},
-        },
-        'files_audit_0': {
-            'task': 'scripts.osfstorage.files_audit_0',
-            'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
-            'kwargs': {'num_of_workers': 4, 'dry_run': False},
-        },
-        'files_audit_1': {
-            'task': 'scripts.osfstorage.files_audit_1',
-            'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
-            'kwargs': {'num_of_workers': 4, 'dry_run': False},
-        },
-        'files_audit_2': {
-            'task': 'scripts.osfstorage.files_audit_2',
-            'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
-            'kwargs': {'num_of_workers': 4, 'dry_run': False},
-        },
-        'files_audit_3': {
-            'task': 'scripts.osfstorage.files_audit_3',
-            'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
-            'kwargs': {'num_of_workers': 4, 'dry_run': False},
-        },
-        'analytics': {
-            'task': 'scripts.analytics.tasks',
-            'schedule': crontab(minute=0, hour=2),  # Daily 2:00 a.m.
-            'kwargs': {}
-        },
-        'analytics-upload': {
-            'task': 'scripts.analytics.upload',
-            'schedule': crontab(minute=0, hour=6),  # Daily 6:00 a.m.
-            'kwargs': {}
-        },
         'new-and-noteworthy': {
             'task': 'scripts.populate_new_and_noteworthy_projects',
             'schedule': crontab(minute=0, hour=2, day_of_week=6),  # Saturday 2:00 a.m.
             'kwargs': {'dry_run': True}
-        }
+        },
+        # 'usage_audit': {
+        #     'task': 'scripts.osfstorage.usage_audit',
+        #     'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+        #     'kwargs': {'send_mail': True},
+        # },
+        # 'glacier_inventory': {
+        #     'task': 'scripts.osfstorage.glacier_inventory',
+        #     'schedule': crontab(minute=0, hour= 0, day_of_week=0),  # Sunday 12:00 a.m.
+        #     'args': (),
+        # },
+        # 'glacier_audit': {
+        #     'task': 'scripts.osfstorage.glacier_audit',
+        #     'schedule': crontab(minute=0, hour=6, day_of_week=0),  # Sunday 6:00 a.m.
+        #     'kwargs': {'dry_run': False},
+        # },
+        # 'files_audit_0': {
+        #     'task': 'scripts.osfstorage.files_audit_0',
+        #     'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
+        #     'kwargs': {'num_of_workers': 4, 'dry_run': False},
+        # },
+        # 'files_audit_1': {
+        #     'task': 'scripts.osfstorage.files_audit_1',
+        #     'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
+        #     'kwargs': {'num_of_workers': 4, 'dry_run': False},
+        # },
+        # 'files_audit_2': {
+        #     'task': 'scripts.osfstorage.files_audit_2',
+        #     'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
+        #     'kwargs': {'num_of_workers': 4, 'dry_run': False},
+        # },
+        # 'files_audit_3': {
+        #     'task': 'scripts.osfstorage.files_audit_3',
+        #     'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
+        #     'kwargs': {'num_of_workers': 4, 'dry_run': False},
+        # },
+        # 'analytics': {
+        #     'task': 'scripts.analytics.tasks',
+        #     'schedule': crontab(minute=0, hour=2),  # Daily 2:00 a.m.
+        #     'kwargs': {}
+        # },
+        # 'analytics-upload': {
+        #     'task': 'scripts.analytics.upload',
+        #     'schedule': crontab(minute=0, hour=6),  # Daily 6:00 a.m.
+        #     'kwargs': {}
+        # },
     }
 
 
@@ -447,3 +454,6 @@ ENABLE_VARNISH = False
 ENABLE_ESI = False
 VARNISH_SERVERS = []  # This should be set in local.py or cache invalidation won't work
 ESI_MEDIA_TYPES = {'application/vnd.api+json', 'application/json'}
+
+# Used for gathering meta information about the current build
+GITHUB_API_TOKEN = None

@@ -227,3 +227,11 @@ class InstitutionRegistrationList(InstitutionNodeList):
         Q('is_folder', 'ne', True) &
         Q('is_registration', 'eq', True)
     )
+
+    ordering = ('-date_modified', )
+
+    def get_queryset(self):
+        inst = self.get_institution()
+        query = self.get_query_from_request()
+        nodes = list(Node.find_by_institution(inst, query))
+        return [node for node in nodes if not node.is_retracted]

@@ -8,9 +8,7 @@ var ko = require('knockout');
 var moment = require('moment');
 var Raven = require('raven-js');
 var koHelpers = require('./koHelpers');
-require('knockout.punches');
 require('jquery-autosize');
-ko.punches.enableAll();
 
 var osfHelpers = require('js/osfHelpers');
 var CommentPane = require('js/commentpane');
@@ -80,6 +78,8 @@ var BaseComment = function() {
     self.replying = ko.observable(false);
     self.replyContent = ko.observable('');
 
+    self.urlForNext = ko.observable();
+
     self.submittingReply = ko.observable(false);
 
     self.comments = ko.observableArray();
@@ -92,7 +92,6 @@ var BaseComment = function() {
     self.commentButtonText = ko.computed(function() {
         return self.submittingReply() ? 'Commenting' : 'Comment';
     });
-
 };
 
 BaseComment.prototype.abuseLabel = function(item) {
@@ -141,13 +140,14 @@ BaseComment.prototype.fetch = function() {
     }
 };
 
-/* Go through the paginated API response to fetch all comments for the specified target */
+/* Go get the next specified page of the API response, and add to the comments list */
 BaseComment.prototype.fetchNext = function(url, comments, setUnread) {
     var self = this;
     var request = osfHelpers.ajaxJSON(
         'GET',
         url,
         {'isCors': true});
+    self.loadingComments(true);
     request.done(function(response) {
         comments = response.data;
         if (self._loaded !== true) {
@@ -163,14 +163,21 @@ BaseComment.prototype.fetchNext = function(url, comments, setUnread) {
             );
         });
         self.configureCommentsVisibility();
-        if (response.links.next !== null) {
-            self.fetchNext(response.links.next, comments, setUnread);
-        } else {
-            self.loadingComments(false);
-        }
-    }).fail(function () {
+        self.urlForNext(response.links.next);
+    }).always(function () {
         self.loadingComments(false);
     });
+};
+
+BaseComment.prototype.getMoreComments = function() {
+    var self = this;
+    var nextUrl = self.urlForNext();
+    var comments = self.comments();
+    var setUnread = self.getTargetType() !== 'comments' && !osfHelpers.urlParams().view_only && self.author.id !== '';
+
+    if (self.urlForNext() && !self.loadingComments()) {
+        self.fetchNext(nextUrl, comments, setUnread);
+    }
 };
 
 BaseComment.prototype.configureCommentsVisibility = function() {
@@ -610,8 +617,9 @@ var CommentListModel = function(options) {
         self.unreadComments(0);
     };
 
-    self.fetch(options.nodeId);
+    osfHelpers.onScrollToBottom(document.getElementById('comments_window'), self.getMoreComments.bind(self));
 
+    self.fetch(options.nodeId);
 };
 
 CommentListModel.prototype = new BaseComment();

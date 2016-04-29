@@ -39,7 +39,7 @@
                             <li><a href="#configureCommentingAnchor">Commenting</a></li>
                         % endif
 
-                        % if 'admin' in user['permissions'] and enable_institutions:
+                        % if enable_institutions:
                             <li><a href="#configureInstitutionAnchor">Project Affiliation / Branding</a></li>
                         % endif
 
@@ -50,7 +50,7 @@
                     % if node['is_registration']:
 
                         % if (node['is_public'] or node['embargo_end_date']) and 'admin' in user['permissions']:
-                            <li><a href="#retractRegistrationAnchor">Withdraw Public Registration</a></li>
+                            <li><a href="#withdrawRegistrationAnchor">Withdraw Public Registration</a></li>
                         % endif
 
                     % endif
@@ -77,7 +77,7 @@
                     <div id="projectSettings" class="panel-body">
                         <div class="form-group">
                             <label>Category:</label>
-                            <select data-bind="attr.disabled: disabled, options: categoryOptions, optionsValue: 'value', optionsText: 'label', value: selectedCategory"></select>
+                            <select data-bind="attr: {disabled: disabled}, options: categoryOptions, optionsValue: 'value', optionsText: 'label', value: selectedCategory"></select>
                             <span data-bind="if: disabled" class="help-block">
                               A top-level project's category cannot be changed
                             </span>
@@ -297,6 +297,10 @@
                     </div>
 
                 </div>
+                %endif
+            % endif  ## End Configure Commenting
+
+        % if not node['is_registration']:
                 % if enable_institutions:
                     <div class="panel panel-default scripted" id="institutionSettings">
                     <span id="configureInstitutionAnchor" class="anchor"></span>
@@ -342,21 +346,16 @@
                                                 </label>
                                                 </div>
                                             </div>
+                                            <button data-bind="click: submitInst, css: {disabled: selectedInstitution() == null}" class="btn btn-success">Affiliate</button>
                                         </div>
                                         <button data-bind="click: submitInst, css: {disabled: selectedInstitution() == null}" class="btn btn-success">Affiliate</button>
                                     </div>
                                </div>
                             </div>
-
                     </div>
                 </div>
                 % endif
-
-
-            % endif
-
-        % endif  ## End Configure Commenting
-
+        % endif
         % if user['has_read_permissions']:  ## Begin Configure Email Notifications
 
             % if not node['is_registration']:
@@ -390,10 +389,10 @@
 
             % if node['is_registration']:
 
-                % if node['is_public'] or node['embargo_end_date']:
+                % if node['is_public'] or node['is_embargoed']:
 
                     <div class="panel panel-default">
-                        <span id="retractRegistrationAnchor" class="anchor"></span>
+                        <span id="withdrawRegistrationAnchor" class="anchor"></span>
 
                         <div class="panel-heading clearfix">
                             <h3 class="panel-title">Withdraw Registration</h3>

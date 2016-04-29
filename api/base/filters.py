@@ -24,14 +24,19 @@ from api.base.serializers import RelationshipField, TargetField
 def sort_multiple(fields):
     fields = list(fields)
     def sort_fn(a, b):
+        reverse = False
         while fields:
-            field = fields.pop(0)
+            field = fields.pop(0).strip()
+
+            if field[0] == '-':
+                field = field[1:]
+                reverse = True
             a_field = getattr(a, field)
             b_field = getattr(b, field)
             if a_field > b_field:
-                return 1
+                return -1 if reverse else 1
             elif a_field < b_field:
-                return -1
+                return 1 if reverse else -1
         return 0
     return sort_fn
 
@@ -374,10 +379,13 @@ class ListFilterMixin(FilterMixin):
                 if params['value'].lower() in getattr(item, field_name, {}).lower()
             ]
         else:
-            return_val = [
-                item for item in default_queryset
-                if self.FILTERS[params['op']](getattr(item, field_name, None), params['value'])
-            ]
+            try:
+                return_val = [
+                    item for item in default_queryset
+                    if self.FILTERS[params['op']](getattr(item, field_name, None), params['value'])
+                ]
+            except TypeError:
+                raise InvalidFilterValue(detail='Could not apply filter to specified field')
 
         return return_val
 

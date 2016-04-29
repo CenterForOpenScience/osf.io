@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.conf.urls import include, url
 from django.conf.urls.static import static
+from django.views.generic.base import RedirectView
 from settings import API_BASE
 
 from . import views
@@ -22,10 +23,12 @@ urlpatterns = [
                 url(r'^files/', include('api.files.urls', namespace='files')),
                 url(r'^docs/', include('rest_framework_swagger.urls')),
                 url(r'^institutions/', include('api.institutions.urls', namespace='institutions')),
-                url(r'^collections/', include('api.collections.urls', namespace='collections'))
+                url(r'^collections/', include('api.collections.urls', namespace='collections')),
+                url(r'^guids/', include('api.guids.urls', namespace='guids'))
             ],
         )
-        )
+        ),
+    url(r'^$', RedirectView.as_view(pattern_name=views.root), name='redirect-to-root')
 ]
 
 

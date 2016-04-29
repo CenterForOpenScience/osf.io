@@ -8,12 +8,9 @@ var $ = require('jquery');
 var moment = require('moment');
 var Paginator = require('js/paginator');
 var oop = require('js/oop');
-require('knockout.punches');
 
 var $osf = require('js/osfHelpers');  // Injects 'listing' binding handler to to Knockout
 var nodeCategories = require('json!built/nodeCategories.json');
-
-ko.punches.enableAll();  // Enable knockout punches
 
 /**
   * Log model.
@@ -23,6 +20,10 @@ var Log = function(params) {
 
     $.extend(self, params);
     self.date = new $osf.FormattableDate(params.date);
+
+    if(params.params.submitted_time)
+        self.params.submitted_time = new $osf.FormattableDate(params.params.submitted_time);
+
     self.wikiUrl = ko.computed(function() {
         return self.nodeUrl + 'wiki/' + encodeURIComponent(self.params.page);
     });
@@ -38,19 +39,19 @@ var Log = function(params) {
         return '<a class="contrib-link" href="/profile/' + person.id + '/">' + fullnameText + '</a>';
     };
 
+    self.hasUser = ko.pureComputed(function() {
+        return Boolean(self.user && self.user.fullname);
+    });
+
     /**
       * Return whether a knockout template exists for the log.
       */
     self.hasTemplate = ko.computed(function() {
-        if (!self.user) {
+        if (!self.hasUser()) {
             return $('script#' + self.action + '_no_user').length > 0;
         } else {
             return $('script#' + self.action).length > 0;
         }
-    });
-
-    self.hasUser = ko.pureComputed(function() {
-        return Boolean(self.user && self.user.fullname);
     });
 
     self.mapUpdates = function(key, item) {
