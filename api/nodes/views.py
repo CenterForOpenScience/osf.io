@@ -823,8 +823,8 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
     # overrides ListCreateAPIView
     def get_queryset(self):
         node = self.get_node()
-        drafts = DraftRegistration.find(Q('branched_from', 'eq', node) & Q('registered_node', 'eq', None))
-        return drafts
+        drafts = DraftRegistration.find(Q('branched_from', 'eq', node))
+        return [draft for draft in drafts if not draft.registered_node or draft.registered_node.is_deleted]
 
     # overrides ListBulkCreateJSONAPIView
     def perform_create(self, serializer):
@@ -927,7 +927,7 @@ class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestro
 
     def perform_destroy(self, draft):
         if draft.registered_node and not draft.registered_node.is_deleted:
-            raise PermissionDenied('This draft has already been registered and cannot be deleted')
+            raise PermissionDenied('This draft has already been registered and cannot be deleted.')
 
         DraftRegistration.remove_one(draft)
 
