@@ -1288,6 +1288,41 @@ class TestUpdateNodeWiki(OsfTestCase):
         assert_not_in(wiki._id, self.user.comments_viewed_timestamp)
         assert_equal(comment.target.referent._id, new_version_id)
 
+    # Regression test for https://openscience.atlassian.net/browse/OSF-6138
+    def test_update_wiki_updates_contributor_comments_viewed_timestamp(self):
+        contributor = AuthUserFactory()
+        project = ProjectFactory(creator=self.user, is_public=True)
+        project.add_contributor(contributor)
+        project.save()
+        wiki = NodeWikiFactory(node=project, page_name='test')
+        comment = CommentFactory(node=project, target=Guid.load(wiki._id), user=self.user)
+
+        # user views comments -- sets user.comments_viewed_timestamp
+        url = project.api_url_for('update_comments_timestamp')
+        res = self.app.put_json(url, {
+            'page': 'wiki',
+            'rootId': wiki._id
+        }, auth=self.user.auth)
+        self.user.reload()
+        assert_in(wiki._id, self.user.comments_viewed_timestamp)
+
+        # contributor views comments -- sets contributor.comments_viewed_timestamp
+        res = self.app.put_json(url, {
+            'page': 'wiki',
+            'rootId': wiki._id
+        }, auth=contributor.auth)
+        contributor.reload()
+        assert_in(wiki._id, contributor.comments_viewed_timestamp)
+
+        # user updates the wiki
+        project.update_node_wiki('test', 'Updating wiki', self.auth)
+        comment.reload()
+
+        new_version_id = project.wiki_pages_current['test']
+        assert_in(new_version_id, contributor.comments_viewed_timestamp)
+        assert_not_in(wiki._id, contributor.comments_viewed_timestamp)
+        assert_equal(comment.target.referent._id, new_version_id)
+
 
 class TestRenameNodeWiki(OsfTestCase):
 
