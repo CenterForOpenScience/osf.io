@@ -1,11 +1,12 @@
 from __future__ import unicode_literals
 
 import json
+import csv
 
 from django.views.generic import ListView, DetailView, FormView, UpdateView
 from django.views.defaults import page_not_found, permission_denied, bad_request
 from django.core.urlresolvers import reverse
-from django.http import JsonResponse
+from django.http import JsonResponse, Http404, HttpResponse
 from django.shortcuts import redirect
 
 from admin.common_auth.logs import (
@@ -52,7 +53,7 @@ class DraftListView(PreregAdmin, ListView):
             'SORT_BY': SORT_BY,
             'order': self.get_ordering(),
             'VIEW_STATUS': VIEW_STATUS,
-            'status': self.request.GET.get('status', 'all')
+            'status': self.request.GET.get('status', 'all'),
         }
 
     def get_paginate_by(self, queryset):
@@ -63,6 +64,27 @@ class DraftListView(PreregAdmin, ListView):
 
     def get_ordering(self):
         return self.request.GET.get('order_by', self.ordering)
+
+
+class DraftDownloadListView(DraftListView):
+    def get(self, request, *args, **kwargs):
+        try:
+            queryset = map(serializers.serialize_draft_registration,
+                           self.get_queryset())
+        except AttributeError:
+            raise Http404('A draft was malformed.')
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename=prereg.csv;'
+        response['Cache-Control'] = 'no-cache'
+        keys = queryset[0].keys()
+        keys.remove('registration_schema')
+        writer = csv.DictWriter(response, fieldnames=keys)
+        writer.writeheader()
+        for draft in queryset:
+            draft.pop('registration_schema')
+            draft.update({'initiator': draft['initiator']['username']})
+            writer.writerow(draft)
+        return response
 
 
 class DraftDetailView(PreregAdmin, DetailView):

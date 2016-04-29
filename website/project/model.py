@@ -4638,11 +4638,10 @@ class DraftRegistration(StoredObject):
 
     @property
     def logs(self):
-        logs = sorted(
-            [(k, v) for k, v in self.status_logs.iteritems()],
-            key=lambda x: x[0]
-        )
-        return ['{} on {}'.format(v.title(), k) for k, v in logs]
+        return [
+            '{} on {}'.format(v.title(), k)
+            for k, v in sorted(self.status_logs.iteritems(), key=lambda x: x[0])
+            ]
 
     @classmethod
     def create_from_node(cls, node, user, schema, data=None):
@@ -4685,7 +4684,7 @@ class DraftRegistration(StoredObject):
 
     def add_status_log(self, action):
         self.status_logs.update({
-            datetime.datetime.utcnow(): action
+            datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M'): action
         })
 
     def submit_for_review(self, initiated_by, meta, save=False):
