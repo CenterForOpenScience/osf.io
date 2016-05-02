@@ -259,8 +259,17 @@
             </span>
         </p>
         <!-- /ko -->
-      <!-- ko if: primary_institution -->
-        <p><strong>Primary institution:</strong> <span data-bind="text: primary_institution"></span></p>
+      <!-- ko if: affiliated_institutions.length > 0 -->
+        <p><strong>Affiliated institutions:</strong>
+            <!-- ko foreach {data: affiliated_institutions, as: 'item'} -->
+                <!-- ko if: item == $parent.affiliated_institutions[$parent.affiliated_institutions.length -1] -->
+                <span data-bind="text: item"></span>
+                <!-- /ko -->
+                <!-- ko if: item != $parent.affiliated_institutions[$parent.affiliated_institutions.length -1] -->
+                <span data-bind="text: item"></span>, 
+                <!-- /ko -->
+            <!-- /ko -->
+        </p>
         <!-- /ko -->
         <!-- ko if: tags.length > 0 -->
         <div data-bind="template: 'tag-cloud'"></div>
