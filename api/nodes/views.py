@@ -13,8 +13,6 @@ from api.base.views import JSONAPIBaseView
 from api.base.parsers import (
     JSONAPIRelationshipParser,
     JSONAPIRelationshipParserForRegularJSON,
-    JSONAPIOnetoOneRelationshipParser,
-    JSONAPIOnetoOneRelationshipParserForRegularJSON
 )
 from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.base.pagination import CommentPagination
@@ -31,7 +29,6 @@ from api.nodes.serializers import (
     NodeProviderSerializer,
     NodeContributorsSerializer,
     NodeContributorDetailSerializer,
-    NodeInstitutionRelationshipSerializer,
     NodeInstitutionsRelationshipSerializer,
     NodeAlternativeCitationSerializer,
     NodeContributorsCreateSerializer
@@ -1945,7 +1942,7 @@ class NodeInstitutionsList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin
         return node.affiliated_institutions or []
 
 
-class NodeInstitutionRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin):
+class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, generics.CreateAPIView, NodeMixin):
     """ Relationship Endpoint for Node -> Institutions Relationship
 
     Used to set, remove, update and retrieve the affiliated_institutions of a node to an institution
@@ -2001,37 +1998,6 @@ class NodeInstitutionRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIVie
 
     This requires admin permissions in the node.
     """
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope,
-        AdminOrPublic
-    )
-    required_read_scopes = [CoreScopes.NODE_BASE_READ, CoreScopes.INSTITUTION_READ]
-    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
-    serializer_class = NodeInstitutionRelationshipSerializer
-    parser_classes = (JSONAPIOnetoOneRelationshipParser, JSONAPIOnetoOneRelationshipParserForRegularJSON, )
-
-    view_category = 'nodes'
-    view_name = 'node-relationships-institution'
-
-    # overrides RetrieveAPIView
-    def get_object(self):
-        return self.get_node()
-
-    def update(self, request, *args, **kwargs):
-        # same as drf's update method from the update mixin, with the addition of
-        # returning a 204 when successfully deletes relationship with PUT/PATCH
-        partial = kwargs.pop('partial', False)
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        inst = request.data.get('id', None)
-        if not inst:
-            return Response(status=HTTP_204_NO_CONTENT)
-        return Response(serializer.data)
-
-class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, generics.CreateAPIView, NodeMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,

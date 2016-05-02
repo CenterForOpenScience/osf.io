@@ -3595,31 +3595,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         return super(Node, cls).find_one(query, **kwargs)
 
     @classmethod
-    def find_by_institution(cls, inst, query=None):
-        inst_node = inst.node
-        query = query & Q('_primary_institution', 'eq', inst_node) if query else Q('_primary_institution', 'eq', inst_node)
-        return cls.find(query, allow_institution=True)
-
-    @classmethod
     def find_by_institutions(cls, inst, query=None):
         inst_node = inst.node
         query = query & Q('_affiliated_institutions', 'eq', inst_node) if query else Q('_affiliated_institutions', 'eq', inst_node)
         return cls.find(query, allow_institution=True)
-
-    # Primary institution node is attached to
-    _primary_institution = fields.ForeignField('node')
-
-    @property
-    def primary_institution(self):
-        '''
-        Should behave as if this was a foreign field pointing to Institution
-        :return: this node's _primary_institution wrapped with Institution.
-        '''
-        return Institution(self._primary_institution) if self._primary_institution else None
-
-    @primary_institution.setter
-    def primary_institution(self, institution):
-        self._primary_institution = institution.node if institution else None
 
     _affiliated_institutions = fields.ForeignField('node', list=True)
 
@@ -3631,40 +3610,28 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         '''
         return AffiliatedInstitutionsList([Institution(node) for node in self._affiliated_institutions], obj=self, private_target='_affiliated_institutions')
 
-    def add_primary_institution(self, user, inst, log=True):
-        if not isinstance(inst, Institution):
-            raise TypeError
+    def add_affiliated_institution(self, inst, user, save=False, log=True):
         if not user.is_affiliated_with_institution(inst):
             raise UserNotAffiliatedError('User is not affiliated with {}'.format(inst.name))
-        if inst == self.primary_institution:
-            return False
-        previous = self.primary_institution if self.primary_institution else None
-        self.primary_institution = inst
         if inst not in self.affiliated_institutions:
             self.affiliated_institutions.append(inst)
         if log:
             self.add_log(
-                action=NodeLog.PRIMARY_INSTITUTION_CHANGED,
+                action=NodeLog.PRIMARY_INSTITUTION_REMOVED,
                 params={
                     'node': self._primary_key,
                     'institution': {
                         'id': inst._id,
                         'name': inst.name
-                    },
-                    'previous_institution': {
-                        'id': previous._id if previous else None,
-                        'name': previous.name if previous else 'None'
                     }
                 },
                 auth=Auth(user)
             )
+        if save:
+            self.save()
         return True
 
-    def remove_primary_institution(self, user, log=True):
-        inst = self.primary_institution
-        if not inst:
-            return False
-        self.primary_institution = None
+    def remove_affiliated_institution(self, inst, user, save=False, log=True):
         if inst in self.affiliated_institutions:
             self.affiliated_institutions.remove(inst)
         if log:
@@ -3679,23 +3646,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 },
                 auth=Auth(user)
             )
-        return True
-
-    def add_affiliated_institution(self, inst, user, save=False):
-        if not user.is_affiliated_with_institution(inst):
-            raise UserNotAffiliatedError('User is not affiliated with {}'.format(inst.name))
-        self.primary_institution = inst
-        if inst not in self.affiliated_institutions:
-            self.affiliated_institutions.append(inst)
-        if save:
-            self.save()
-        return True
-
-    def remove_affiliated_institution(self, inst, user, save=False):
-        if inst == self.primary_institution:
-            self.primary_institution = None  # TODO: Return false so it doesnt allow removal if its the only (or primary) institution
-        if inst in self.affiliated_institutions:
-            self.affiliated_institutions.remove(inst)
         if save:
             self.save()
         return True
