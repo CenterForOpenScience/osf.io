@@ -185,7 +185,21 @@ var Uploader = function(question) {
     self.addFile = function(file) {
         if(self.selectedFiles().length >= 5 && self.fileWarn()) {
             self.fileWarn(false);
-            bootbox.alert('Too many files. Cannot attach more than 5 files to a question.');
+            bootbox.alert({
+                title: 'Too many files',
+                message: 'You cannot attach more than 5 files to a question.',
+                buttons: {
+                    ok: {
+                        label: 'Close',
+                        className: 'btn-default'
+                    }
+                }
+            }).css({
+                'top': '50%',
+                'margin-top': function () {
+                    return -($(this).height() / 2);
+                }
+            });
             return false;
         } else if(self.selectedFiles().length >= 5 && !self.fileWarn()) {
             return false;
