@@ -149,13 +149,6 @@ class NodeSerializer(JSONAPISerializer):
         related_meta={'count': 'get_registration_count'}
     )))
 
-    primary_institution = RelationshipField(
-        related_view='nodes:node-institution-detail',
-        related_view_kwargs={'node_id': '<pk>'},
-        self_view='nodes:node-relationships-institution',
-        self_view_kwargs={'node_id': '<pk>'}
-    )
-
     affiliated_institutions = RelationshipField(
         related_view='nodes:node-institutions',
         related_view_kwargs={'node_id': '<pk>'},

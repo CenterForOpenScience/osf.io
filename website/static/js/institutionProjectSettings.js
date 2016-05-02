@@ -68,7 +68,7 @@ var ViewModel = function(data) {
             message: 'You are about to remove affiliation with ' + item.name + ' from this project. ' + item.name + ' branding will not longer appear on this project, and the project will not be discoverable on the ' + item.name + ' landing page.',
             callback: function (confirmed) {
                 if (confirmed) {
-                    self._clearInst(item);n
+                    self._clearInst(item);
                 }
             },
             buttons:{

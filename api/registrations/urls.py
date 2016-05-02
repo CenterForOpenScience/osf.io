@@ -20,7 +20,7 @@ urlpatterns = [
     url(r'^(?P<node_id>\w+)/citations/(?P<citation_id>\w+)/$', views.RegistrationAlternativeCitationDetail.as_view(), name=views.RegistrationAlternativeCitationDetail.view_name),
     url(r'^(?P<node_id>\w+)/comments/$', views.RegistrationCommentsList.as_view(), name=views.RegistrationCommentsList.view_name),
     url(r'^(?P<node_id>\w+)/logs/$', views.RegistrationLogList.as_view(), name=views.RegistrationLogList.view_name),
-    url(r'^(?P<node_id>\w+)/institution/$', views.RegistrationInstitutionDetail.as_view(), name=views.RegistrationInstitutionDetail.view_name),
+    url(r'^(?P<node_id>\w+)/institutions/$', views.RegistrationInstitutionsList.as_view(), name=views.RegistrationInstitutionsList.view_name),
     url(r'^(?P<node_id>\w+)/node_links/$', views.RegistrationNodeLinksList.as_view(), name=views.RegistrationNodeLinksList.view_name),
     url(r'^(?P<node_id>\w+)/node_links/(?P<node_link_id>\w+)/', views.RegistrationNodeLinksDetail.as_view(), name=views.RegistrationNodeLinksDetail.view_name),
 ]
