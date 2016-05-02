@@ -33,6 +33,7 @@
         </small>
     </h4>
 
+    <%doc>
     <!-- Settings Pane -->
     <div class="${addon_short_name}-settings" data-bind="visible: showSettings">
         <div class="row">
@@ -124,6 +125,9 @@
         </div>
         <!-- end row -->
     </div>
+
+    </%doc>
+
     <!-- Flashed Messages -->
     <div class="help-block">
         <p data-bind="html: message, attr: {class: messageClass}"></p>

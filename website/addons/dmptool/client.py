@@ -8,6 +8,8 @@ from website.addons.dmptool import settings
 import requests
 import urlparse
 
+def _connect(host, token):
+    return DMPTool (token, host)
 
 def connect_from_settings(node_settings):
     if not (node_settings and node_settings.external_account):

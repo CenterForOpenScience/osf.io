@@ -11,6 +11,7 @@ var $osf = require('js/osfHelpers');
 
 var $modal = $('#dmptoolInputCredentials');
 
+console.log("in dmptoolNodeConfig.js");
 
 function ViewModel(url) {
     var self = this;

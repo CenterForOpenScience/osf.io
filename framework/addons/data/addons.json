@@ -150,7 +150,7 @@
                 "text": "Dataverse content will be registered, but version history will not be copied to the registration."
             }
         },
-        "DMPTool": {
+        "Dmptool": {
             "Permissions": {
                 "status": "partial",
                 "text": "Making an OSF project public or private is independent of making an DMPTool document public or private. The OSF does not alter the permissions of a linked DMPTool document."

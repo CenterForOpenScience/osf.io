@@ -1,6 +1,4 @@
-'use strict';
-
-var OauthAddonNodeConfig = require('js/oauthAddonNodeConfig').OauthAddonNodeConfig;
+var DmptoolNodeConfig = require('./dmptoolNodeConfig.js');
 
 var url = window.contextVars.node.urls.api + 'dmptool/settings/';
-new OauthAddonNodeConfig('DMPTool', '#dmptoolScope', url, '#dmptoolGrid');
+new DmptoolNodeConfig('#dmptoolScope', url);

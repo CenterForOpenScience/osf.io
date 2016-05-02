@@ -1,11 +1,11 @@
 var $osf = require('js/osfHelpers');
-var dmptoolViewModel = require('./dmptoolUserConfig.js').dmptoolViewModel;
+var DmptoolViewModel = require('./dmptoolUserConfig.js').DmptoolViewModel;
 
-// Endpoint for dmptool user settings
+// Endpoint for Dmptool user settings
 var url = '/api/v1/settings/dmptool/';
 
-var dmptoolViewModel = new dmptoolViewModel(url);
+var dmptoolViewModel = new DmptoolViewModel(url);
 $osf.applyBindings(dmptoolViewModel, '#dmptoolAddonScope');
 
-// Load initial dmptool data
+// Load initial Dmptool data
 dmptoolViewModel.fetch();
