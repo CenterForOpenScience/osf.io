@@ -1,7 +1,7 @@
 from django.conf.urls import url
 from django.contrib.auth.decorators import login_required as login
 
-from . import views
+from admin.pre_reg import views
 
 urlpatterns = [
     url(r'^$', views.DraftListView.as_view(), name='prereg'),

@@ -3891,7 +3891,7 @@ class DraftRegistration(StoredObject):
         return [
             '{} on {}'.format(v.title(), k)
             for k, v in sorted(self.status_logs.iteritems(), key=lambda x: x[0])
-            ]
+        ]
 
     @classmethod
     def create_from_node(cls, node, user, schema, data=None):
