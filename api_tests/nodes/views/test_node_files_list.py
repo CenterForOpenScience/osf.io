@@ -252,7 +252,7 @@ class TestNodeFilesList(ApiTestCase):
         provider = 'box'
         url = '/{}nodes/{}/files/{}/'.format(API_BASE, self.project._id, provider)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_false(self.project.has_addon(provider))
+        assert_false(self.project.get_addon(provider))
         assert_equal(res.status_code, 404)
         assert_equal(res.json['errors'][0]['detail'], 'The {} provider is not configured for this project.'.format(provider))
 
