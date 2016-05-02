@@ -704,7 +704,8 @@ class User(GuidStoredObject, AddonModelMixin):
             issues.append('Old password is invalid')
         elif raw_old_password == raw_new_password:
             issues.append('Password cannot be the same')
-
+        elif raw_new_password == self.username:
+            issues.append('Password cannot be the same as your email address')
         if not raw_old_password or not raw_new_password or not raw_confirm_password:
             issues.append('Passwords cannot be blank')
         elif len(raw_new_password) < 6:
