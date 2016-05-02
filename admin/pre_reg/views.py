@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import json
 import csv
+from modularodm import Q
 
 from django.views.generic import ListView, DetailView, FormView, UpdateView
 from django.views.defaults import permission_denied, bad_request
@@ -17,11 +18,11 @@ from admin.common_auth.logs import (
 )
 from admin.pre_reg import serializers
 from admin.pre_reg.forms import DraftRegistrationForm
-from admin.pre_reg.utils import sort_drafts, build_query, SORT_BY, VIEW_STATUS
+from admin.pre_reg.utils import sort_drafts, SORT_BY, VIEW_STATUS
 from framework.exceptions import PermissionsError
 from website.exceptions import NodeStateError
 from website.files.models import FileNode
-from website.project.model import DraftRegistration
+from website.project.model import DraftRegistration, MetaSchema
 
 from admin.base.utils import PreregAdmin
 
@@ -32,10 +33,23 @@ class DraftListView(PreregAdmin, ListView):
     context_object_name = 'draft'
 
     def get_queryset(self):
-        query = build_query(self.request.GET.get('status', 'all'))
+        prereg_schema = MetaSchema.find_one(
+            Q('name', 'eq', 'Prereg Challenge') &
+            Q('schema_version', 'eq', 2)
+        )
+        query = (
+            Q('registration_schema', 'eq', prereg_schema) &
+            Q('approval', 'ne', None)
+        )
         ordering = self.get_ordering()
         if 'initiator' in ordering:
             return DraftRegistration.find(query).sort(ordering)
+        if ordering == SORT_BY['title']:
+            return DraftRegistration.find(query).sort(
+                'registration_metadata.q1.value')
+        if ordering == SORT_BY['n_title']:
+            return DraftRegistration.find(query).sort(
+                '-registration_metadata.q1.value')
         return sort_drafts(DraftRegistration.find(query), ordering)
 
     def get_context_data(self, **kwargs):
