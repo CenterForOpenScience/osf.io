@@ -31,7 +31,7 @@ from website import security
 from website.util.time import throttle_period_expired
 from website.models import User
 from website.util import web_url_for
-from website.util.sanitize import strip_html, escape_html
+from website.util.sanitize import strip_html
 import urllib
 
 
