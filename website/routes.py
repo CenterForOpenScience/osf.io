@@ -262,6 +262,12 @@ def make_url_map(app):
             json_renderer
         ),
         Rule(
+            '/help/',
+            'get',
+            website_views.redirect_help_to_faq,
+            json_renderer
+        ),
+        Rule(
             '/support/',
             'get',
             {},
