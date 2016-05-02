@@ -409,7 +409,7 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
             else:
                 addon_settings.deauthorize(auth=auth)
 
-        if User.find(Q('external_accounts', 'contains', external_account._id)).count() == 1:
+        if User.find(Q('external_accounts', 'eq', external_account._id)).count() == 1:
             # Only this user is using the account, so revoke remote access as well.
             self.revoke_remote_oauth_access(external_account)
 
