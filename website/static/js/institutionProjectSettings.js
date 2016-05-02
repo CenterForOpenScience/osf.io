@@ -9,7 +9,6 @@ var ViewModel = function(data) {
     var self = this;
     self.primaryInstitution = ko.observable('Loading...');
     self.loading = ko.observable(true);
-    self.error = ko.observable(false);
     self.showAdd = ko.observable(false);
     self.institutionHref = ko.observable('');
     self.userInstitutions = window.contextVars.currentUser.institutions;
