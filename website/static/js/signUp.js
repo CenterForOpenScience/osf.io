@@ -16,8 +16,16 @@ var ViewModel = function(submitUrl, campaign) {
         validator: function (val, minimumComplexity) {
             return self.passwordComplexity() >= minimumComplexity;
         },
-        message: 'Please enter a more complex password'
+        message: 'Please enter a more complex password.'
     };
+
+    ko.validation.rules.notmatching = {
+        validator: function(val, otherVal) {
+            return val !== otherVal;
+        },
+        message: 'Your password can not be the same as your email address.'
+    }
+
     ko.validation.registerExtenders();
 
     self.typedPassword = ko.observable('');
@@ -83,7 +91,8 @@ var ViewModel = function(submitUrl, campaign) {
         required: true,
         minLength: 6,
         maxLength: 256,
-        complexity: 2
+        complexity: 2,
+        notmatching: self.email1
     });
     self.campaign = ko.observable(campaign);
 
