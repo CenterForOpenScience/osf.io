@@ -1,7 +1,7 @@
 var $ = require('jquery');
 var ko = require('knockout');
 var m = require('mithril');
-var bootbox = require('bootbox');
+var bootbox = require('bootbox');  // TODO: Why is this required? Is it? See [#OSF-6100]
 
 var FilesWidget = require('js/filesWidget');
 var Fangorn = require('js/fangorn');
