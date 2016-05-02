@@ -12,14 +12,6 @@ var ViewModel = function() {
 
     var self = this;
 
-    ko.validation.rules.complexity = {
-        validator: function (val, minimumComplexity) {
-            return self.passwordComplexity() >= minimumComplexity;
-        },
-        message: 'Please enter a more complex password'
-    };
-    ko.validation.registerExtenders();
-
     self.typedPassword = ko.observable('');
 
     self.passwordFeedback = ko.observable('');
