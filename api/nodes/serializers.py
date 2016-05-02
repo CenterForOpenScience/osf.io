@@ -456,59 +456,6 @@ class NodeProviderSerializer(JSONAPISerializer):
             }
         )
 
-
-class NodeInstitutionRelationshipSerializer(ser.Serializer):
-    id = ser.CharField(source='institution_id', required=False, allow_null=True)
-    type = TypeField(required=False, allow_null=True)
-
-    links = LinksField({
-        'self': 'get_self_link',
-        'related': 'get_related_link',
-    })
-
-    class Meta:
-        type_ = 'institutions'
-
-    def get_self_link(self, obj):
-        return obj.institution_relationship_url()
-
-    def get_related_link(self, obj):
-        return obj.institution_url()
-
-    def update(self, instance, validated_data):
-        node = instance
-        user = self.context['request'].user
-
-        inst = validated_data.get('institution_id', None)
-        if inst:
-            inst = Institution.load(inst)
-            if not inst:
-                raise exceptions.NotFound
-            try:
-                node.add_primary_institution(inst=inst, user=user)
-            except UserNotAffiliatedError:
-                raise exceptions.ValidationError(detail='User not affiliated with institution')
-            node.save()
-            return node
-        node.remove_primary_institution(user)
-        node.save()
-        return node
-
-    def to_representation(self, obj):
-        data = {}
-        meta = getattr(self, 'Meta', None)
-        type_ = getattr(meta, 'type_', None)
-        assert type_ is not None, 'Must define Meta.type_'
-        relation_id_field = self.fields['id']
-        data['data'] = None
-        if obj.primary_institution:
-            attribute = obj.primary_institution._id
-            relationship = relation_id_field.to_representation(attribute)
-            data['data'] = {'type': type_, 'id': relationship}
-        data['links'] = {key: val for key, val in self.fields.get('links').to_representation(obj).iteritems()}
-
-        return data
-
 class InstitutionRelated(JSONAPIRelationshipSerializer):
     id = ser.CharField(source='_id', required=False, allow_null=True)
     class Meta:
