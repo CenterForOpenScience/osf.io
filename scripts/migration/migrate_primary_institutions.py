@@ -18,10 +18,17 @@ def migrate_logs():
         log.save()
 
 def migrate_nodes():
-    pass
+    nodes = Node.find(Q('primary_institution', 'ne', None))
+    for node in nodes:
+        inst = node.primary_institution
+        if inst not in node.affiliated_institutions:
+            node.affiliated_institutions.append(inst)
+        node.primary_institution = None
+        node.save()
 
-def main(dry):
-    pass
+def main():
+    migrate_logs()
+    migrate_nodes()
 
 if __name__ == '__main__':
     init_app()
