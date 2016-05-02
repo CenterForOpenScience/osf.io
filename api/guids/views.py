@@ -37,7 +37,10 @@ class GuidRedirect(JSONAPIBaseView):
 
     def get(self, request, **kwargs):
         url = self.get_redirect_url(**kwargs)
+        view_only_token = self.request.query_params.get('view_only')
         if url:
+            if view_only_token:
+                url += '?view_only={}'.format(view_only_token)
             return http.HttpResponseRedirect(url)
         raise NotFound
 
