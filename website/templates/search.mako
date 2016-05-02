@@ -266,7 +266,7 @@
                 <span data-bind="text: item"></span>
                 <!-- /ko -->
                 <!-- ko if: item != $parent.affiliated_institutions[$parent.affiliated_institutions.length -1] -->
-                <span data-bind="text: item"></span>, 
+                <span data-bind="text: item"></span>,
                 <!-- /ko -->
             <!-- /ko -->
         </p>

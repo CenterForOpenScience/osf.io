@@ -156,6 +156,13 @@ class NodeSerializer(JSONAPISerializer):
         self_view_kwargs={'node_id': '<pk>'}
     )
 
+    affiliated_institutions = RelationshipField(
+        related_view='nodes:node-institutions',
+        related_view_kwargs={'node_id': '<pk>'},
+        self_view='nodes:node-relationships-institutions',
+        self_view_kwargs={'node_id': '<pk>'}
+    )
+
     root = RelationshipField(
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<root._id>'}

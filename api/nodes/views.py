@@ -1961,7 +1961,7 @@ class NodeInstitutionsList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin
 
     model = Institution
     view_category = 'nodes'
-    view_name = 'node-institutions-detail'
+    view_name = 'node-institutions'
 
     def get_queryset(self):
         node = self.get_node()
