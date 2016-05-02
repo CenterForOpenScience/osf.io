@@ -194,12 +194,7 @@ var Uploader = function(question) {
                         className: 'btn-default'
                     }
                 }
-            }).css({
-                'top': '50%',
-                'margin-top': function () {
-                    return -($(this).height() / 2);
-                }
-            });
+            }).css({ 'top': '35%' });
             return false;
         } else if(self.selectedFiles().length >= 5 && !self.fileWarn()) {
             return false;
