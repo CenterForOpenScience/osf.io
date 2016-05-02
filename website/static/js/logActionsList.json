@@ -2,6 +2,7 @@
     "project_created":  "${user} created ${node}",
     "project_registered": "${user} registered ${node}",
     "project_registered_no_user": "${node} registered",
+    "prereg_registration_initiated": "${user} submitted for review to the Preregistration Challenge a registration of ${node}",
     "project_deleted":  "${user} deleted ${node}",
     "created_from":     "${user} created ${node} based on ${template}",
     "pointer_created":  "${user} created a link to ${pointer}",
