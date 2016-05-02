@@ -86,60 +86,13 @@ var ViewModel = function() {
     // Collect validated fields
     self.validatedFields = ko.validatedObservable($.extend({}, validatedFields));
 
-    self.submitted = ko.observable(false);
-
-    self.flashMessage = ko.observable('');
-    self.flashMessageClass = ko.observable('');
-    self.flashTimeout = null;
-
     self.trim = function(observable) {
         observable($.trim(observable()));
-    };
-
-    /** Change the flashed message. */
-    self.changeMessage = function(message, messageClass, text, css, timeout, timeoutClock) {
-        message(text);
-        var cssClass = css || 'text-info';
-        messageClass(cssClass);
-        if (timeout) {
-            // Reset message after timeout period
-            if (timeoutClock) {
-                clearTimeout(timeoutClock);
-            }
-            self.timeout = setTimeout(
-                function() {
-                    message('');
-                    messageClass('');
-                },
-                timeout
-            );
-        }
     };
 
     self.isValid = ko.computed(function() {
         return self.validatedFields.isValid();
     });
-
-    self.submitSuccess = function(response) {
-        self.changeMessage(
-            self.flashMessage,
-            self.flashMessageClass,
-            response.message,
-            'text-info p-xs'
-        );
-        self.submitted(true);
-    };
-
-    self.submitError = function(xhr) {
-        self.changeMessage(
-            self.flashMessage,
-            self.flashMessageClass,
-            xhr.responseJSON.message_long,
-            'text-danger p-xs',
-            5000,
-            self.flashTimeout
-        );
-    };
 
     self.submit = function() {
         // Show errors if invalid
@@ -150,14 +103,10 @@ var ViewModel = function() {
             });
             return false;
         }
-        // Else submit, and send Google Analytics event
+        // Else submit
         $osf.postJSON(
-            // submitUrl,
+            '',
             ko.toJS(self)
-        ).done(
-            self.submitSuccess
-        ).fail(
-            self.submitError
         );
     };
 
