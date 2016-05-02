@@ -19,13 +19,6 @@ var ViewModel = function(submitUrl, campaign) {
         message: 'Please enter a more complex password.'
     };
 
-    ko.validation.rules.notmatching = {
-        validator: function(val, otherVal) {
-            return val !== otherVal;
-        },
-        message: 'Your password can not be the same as your email address.'
-    }
-
     ko.validation.registerExtenders();
 
     self.typedPassword = ko.observable('');
@@ -39,32 +32,34 @@ var ViewModel = function(submitUrl, campaign) {
     });
 
     self.passwordComplexityBar = ko.computed(function() {
-        if (self.passwordComplexity() === 0) {
-            return {
-                class: 'progress-bar progress-bar-danger',
-                style: 'width: 0%'
-            };
-        }
-        if (self.passwordComplexity() === 1) {
-            return {
-                class: 'progress-bar progress-bar-danger',
-                style: 'width: 25%'
-            };
-        } else if (self.passwordComplexity() === 2) {
-            return {
-                class: 'progress-bar progress-bar-warning',
-                style: 'width: 50%'
-            };
-        } else if (self.passwordComplexity() === 3) {
-            return {
-                class: 'progress-bar progress-bar-warning',
-                style: 'width: 75%'
-            };
-        } else if (self.passwordComplexity() === 4) {
-            return {
-                class: 'progress-bar progress-bar-success',
-                style: 'width: 100%'
-            };
+        if (self.typedPassword()) {
+            if (self.passwordComplexity() === 0) {
+                return {
+                    class: 'progress-bar progress-bar-danger',
+                    style: 'width: 10%'
+                };
+            }
+            if (self.passwordComplexity() === 1) {
+                return {
+                    class: 'progress-bar progress-bar-danger',
+                    style: 'width: 25%'
+                };
+            } else if (self.passwordComplexity() === 2) {
+                return {
+                    class: 'progress-bar progress-bar-warning',
+                    style: 'width: 50%'
+                };
+            } else if (self.passwordComplexity() === 3) {
+                return {
+                    class: 'progress-bar progress-bar-warning',
+                    style: 'width: 75%'
+                };
+            } else if (self.passwordComplexity() === 4) {
+                return {
+                    class: 'progress-bar progress-bar-success',
+                    style: 'width: 100%'
+                };
+            }
         }
     });
 
@@ -92,7 +87,7 @@ var ViewModel = function(submitUrl, campaign) {
         minLength: 6,
         maxLength: 256,
         complexity: 2,
-        notmatching: self.email1
+        notEqual: self.email1
     });
     self.campaign = ko.observable(campaign);
 
