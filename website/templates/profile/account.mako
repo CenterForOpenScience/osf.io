@@ -99,9 +99,10 @@
                                     class="form-control"
                                     id="changePassword"
                                     placeholder="Old Password"
+                                    name="old_password"
                                     data-bind="
                                         textInput: oldPassword,
-                                        value: password,
+                                        value: oldPassword,
                                         event: {
                                             blur: trim.bind($data, password)
                                         }"
@@ -114,7 +115,8 @@
                                     type="password"
                                     class="form-control"
                                     id="resetPassword"
-                                    placeholder="Password"
+                                    placeholder="New Password"
+                                    name="new_password"
                                     data-bind="
                                         textInput: typedPassword,
                                         value: password,
@@ -138,6 +140,7 @@
                                     class="form-control"
                                     id="resetPasswordConfirmation"
                                     placeholder="Verify Password"
+                                    name="confirm_password"
                                     data-bind="
                                         value: passwordConfirmation,
                                         event: {
