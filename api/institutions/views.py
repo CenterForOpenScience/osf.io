@@ -233,5 +233,5 @@ class InstitutionRegistrationList(InstitutionNodeList):
     def get_queryset(self):
         inst = self.get_institution()
         query = self.get_query_from_request()
-        nodes = list(Node.find_by_institution(inst, query))
+        nodes = list(Node.find_by_institutions(inst, query))
         return [node for node in nodes if not node.is_retracted]
