@@ -325,13 +325,13 @@
                                         <tr>
                                             <td><img class="img-circle" width="50px" height="50px" data-bind="attr: {src: item.logo_path}"></td>
                                             <td><span data-bind="text: item.name"></span></td>
-                                            <td><a data-bind="click: $parent.clearInst"><i class="fa fa-times"></i></a></td>
+                                            <td><button data-bind="click: modifyInst" class="btn btn-primary">Modify</button></td>
+
                                         </tr>
                                         <!-- /ko -->
 
                                     </tbody>
                                 </table>
-                                <div data-bind="visible: hasThingsToAdd">
                                     <a data-bind="click: toggle">Add institution</a>
                                     <div data-bind="visible: showAdd()">
                                         <div class="help-block">
@@ -350,7 +350,6 @@
                                         </div>
                                         <button data-bind="click: submitInst, css: {disabled: selectedInstitution() == null}" class="btn btn-success">Affiliate</button>
                                     </div>
-                               </div>
                             </div>
                     </div>
                 </div>

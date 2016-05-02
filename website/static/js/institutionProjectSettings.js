@@ -2,8 +2,10 @@
 var $ = require('jquery');
 var ko = require('knockout');
 var Raven = require('raven-js');
-
+var m = require('mithril');
 var $osf = require('js/osfHelpers');
+var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
+var NodeSelectTreebeard = require('js/nodeSelectTreebeard');
 
 var ViewModel = function(data) {
     var self = this;
@@ -16,6 +18,24 @@ var ViewModel = function(data) {
     self.userInstitutionsIds = self.userInstitutions.map(function(item){return item.id;});
     self.selectedInstitution = ko.observable();
     self.affiliatedInstitutions = ko.observable(window.contextVars.node.institutions);
+
+    self.nodesOriginal = {};
+    //state of current nodes
+    self.childrenToChange = ko.observableArray();
+    self.nodesState = ko.observable();
+    //nodesState is passed to nodesSelectTreebeard which can update it and key off needed action.
+    self.nodesState.subscribe(function (newValue) {
+        //The subscribe causes treebeard changes to change which nodes will be affected
+        var childrenToChange = [];
+        for (var key in newValue) {
+            newValue[key].changed = newValue[key].checked !== self.nodesOriginal[key].checked;
+            if (newValue[key].changed && key !== self.nodeId) {
+                childrenToChange.push(key);
+            }
+        }
+        self.childrenToChange(childrenToChange);
+        m.redraw(true);
+    });
 
     var affiliatedInstitutionsIds = self.affiliatedInstitutions().map(function(item){return item.id;});
     self.availableInstitutions = ko.observable(self.userInstitutions.filter(function(each){
@@ -96,9 +116,42 @@ var ViewModel = function(data) {
     };
 };
 
+
+/**
+ * get node tree for treebeard from API V1
+ */
+ViewModel.prototype.fetchNodeTree = function(treebeardUrl) {
+        var self = this;
+        return $.ajax({
+            url: treebeardUrl,
+            type: 'GET',
+            dataType: 'json'
+        }).done(function (response) {
+            self.nodesOriginal = projectSettingsTreebeardBase.getNodesOriginal(response[0], self.nodesOriginal);
+            var nodesState = $.extend(true, {}, self.nodesOriginal);
+            var nodeParent = response[0].node.id;
+            //parent node is changed by default
+            nodesState[nodeParent].checked = true;
+            //parent node cannot be changed
+            nodesState[nodeParent].canWrite = false;
+            self.nodesState(nodesState);
+        }).fail(function (xhr, status, error) {
+            $osf.growl('Error', 'Unable to retrieve project settings');
+            Raven.captureMessage('Could not GET project settings.', {
+                url: treebeardUrl, status: status, error: error
+            });
+        });
+};
+
 var InstitutionProjectSettings = function(selector, data)  {
     this.viewModel = new ViewModel(data);
-    $osf.applyBindings(this.viewModel, selector);
+    var self = this;
+    var treebeardUrl = window.contextVars.node.urls.api + 'tree/';
+    self.viewModel.getContributors();
+    self.viewModel.fetchNodeTree(treebeardUrl).done(function(response) {
+        new NodeSelectTreebeard('addContributorsTreebeard', response, self.viewModel.nodesState);
+    });$osf.applyBindings(this.viewModel, selector);
+
 };
 
 module.exports = InstitutionProjectSettings;
