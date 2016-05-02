@@ -3,6 +3,8 @@ var $ = require('jquery');
 var ko = require('knockout');
 var Raven = require('raven-js');
 var m = require('mithril');
+var bootbox = require('bootbox');
+
 var $osf = require('js/osfHelpers');
 var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 var NodeSelectTreebeard = require('js/nodeSelectTreebeard');
@@ -11,7 +13,6 @@ var ViewModel = function(data) {
     var self = this;
     self.primaryInstitution = ko.observable('Loading...');
     self.loading = ko.observable(true);
-    self.error = ko.observable(false);
     self.showAdd = ko.observable(false);
     self.institutionHref = ko.observable('');
     self.userInstitutions = window.contextVars.currentUser.institutions;
@@ -84,6 +85,22 @@ var ViewModel = function(data) {
         });
     };
     self.clearInst = function(item) {
+        bootbox.confirm({
+            title: 'Are you sure you want to remove institutional affiliation from your project?',
+            message: 'You are about to remove affiliation with ' + item.name + ' from this project. ' + item.name + ' branding will not longer appear on this project, and the project will not be discoverable on the ' + item.name + ' landing page.',
+            callback: function (confirmed) {
+                if (confirmed) {
+                    self._clearInst(item);
+                }
+            },
+            buttons:{
+                confirm:{
+                    label:'Remove affiliation'
+                }
+            }
+        });
+    };
+    self._clearInst = function(item) {
         var url = data.apiV2Prefix + 'nodes/' + data.node.id + '/relationships/institutions/';
         return $osf.ajaxJSON(
             'DELETE',
@@ -148,7 +165,7 @@ var InstitutionProjectSettings = function(selector, data)  {
     var self = this;
     var treebeardUrl = window.contextVars.node.urls.api + 'tree/';
     self.viewModel.fetchNodeTree(treebeardUrl).done(function(response) {
-        new NodeSelectTreebeard('manageInstitution', response, self.viewModel.nodesState);
+        new NodeSelectTreebeard('manageInstitutionTreebeard', response, self.viewModel.nodesState);
     });
     $osf.applyBindings(this.viewModel, selector);
 
