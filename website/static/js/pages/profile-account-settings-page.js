@@ -10,6 +10,11 @@ $(function() {
     viewModel.init();
 
     $osf.applyBindings(
+        new accountSettings.ChangePasswordViewModel(),
+        '#changePassword'
+    );
+
+    $osf.applyBindings(
         new accountSettings.DeactivateAccountViewModel(),
         '#deactivateAccount'
     );
