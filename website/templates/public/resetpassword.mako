@@ -32,7 +32,6 @@
                         data-bind="
                             textInput: typedPassword,
                             value: password,
-                            disable: submitted(),
                             event: {
                                 blur: trim.bind($data, password)
                             }"
@@ -70,7 +69,6 @@
                         placeholder="Verify Password"
                         data-bind="
                             value: password_confirmation,
-                            disable: submitted(),
                             event: {
                                 blur: trim.bind($data, password_confirmation)
                             }"
@@ -79,11 +77,6 @@
                 </div>
             </div>
         </div>
-
-            <!-- Flashed Messages -->
-            <div class="help-block" >
-                <p data-bind="html: flashMessage, attr: {class: flashMessageClass}"></p>
-            </div>
             <button type="submit" class="btn btn-primary pull-right m-t-md">Reset password</button>
         </form>
     </div>
