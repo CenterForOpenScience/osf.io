@@ -339,7 +339,7 @@ class User(GuidStoredObject, AddonModelMixin):
     recently_added = fields.ForeignField("user", list=True)
 
     # Attached external accounts (OAuth)
-    external_accounts = fields.ForeignField("externalaccount", list=True, index=True)
+    external_accounts = fields.ForeignField("externalaccount", list=True)
 
     # CSL names
     given_name = fields.StringField()
