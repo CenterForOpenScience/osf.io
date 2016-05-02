@@ -94,15 +94,57 @@
                         <form id="changePasswordForm" role="form" action="${ web_url_for('user_account_password') }" method="post">
                             <div class="form-group">
                                 <label for="old_password">Old password</label>
-                                <input type="password" class="form-control" name="old_password" required>
+                                <input
+                                    type="password"
+                                    class="form-control"
+                                    id="changePassword"
+                                    placeholder="Old Password"
+                                    data-bind="
+                                        textInput: oldPassword,
+                                        value: password,
+                                        event: {
+                                            blur: trim.bind($data, password)
+                                        }"
+                                >
+                                <p class="help-block" data-bind="validationMessage: oldPassword" style="display: none;"></p>
                             </div>
                             <div class="form-group">
                                 <label for="new_password">New password</label>
-                                <input type="password" class="form-control" name="new_password" required>
+                                <input
+                                    type="password"
+                                    class="form-control"
+                                    id="resetPassword"
+                                    placeholder="Password"
+                                    data-bind="
+                                        textInput: typedPassword,
+                                        value: password,
+                                        event: {
+                                            blur: trim.bind($data, password)
+                                        }"
+                                >
+                                <p class="help-block" data-bind="validationMessage: password" style="display: none;"></p>
+                            </div>
+                            <div class="form-group">
+                                <label for="new_password">Strength</label>
+                                <div class="progress create-password">
+                                    <div class="progress-bar progress-bar-success" role="progressbar" data-bind="attr: passwordComplexityBar"></div>
+                                </div>
+                                <p class="help-block" data-bind="text: passwordFeedback"></p>
                             </div>
                             <div class="form-group">
                                 <label for="confirm_password">Confirm new password</label>
-                                <input type="password" class="form-control" name="confirm_password" required>
+                                <input
+                                    type="password"
+                                    class="form-control"
+                                    id="resetPasswordConfirmation"
+                                    placeholder="Verify Password"
+                                    data-bind="
+                                        value: passwordConfirmation,
+                                        event: {
+                                            blur: trim.bind($data, passwordConfirmation)
+                                        }"
+                                >
+                                <p class="help-block" data-bind="validationMessage: passwordConfirmation" style="display: none;"></p>
                             </div>
                             <button type="submit" class="btn btn-primary">Update password</button>
                         </form>
