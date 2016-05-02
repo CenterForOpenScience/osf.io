@@ -2,6 +2,7 @@
 var $ = require('jquery');
 var ko = require('knockout');
 var Raven = require('raven-js');
+var bootbox = require('bootbox');
 
 var $osf = require('js/osfHelpers');
 
@@ -63,6 +64,22 @@ var ViewModel = function(data) {
         });
     };
     self.clearInst = function(item) {
+        bootbox.confirm({
+            title: 'Are you sure you want to remove institutional affiliation from your project?',
+            message: 'You are about to remove affiliation with ' + item.name + ' from this project. ' + item.name + ' branding will not longer appear on this project, and the project will not be discoverable on the ' + item.name + ' landing page.',
+            callback: function (confirmed) {
+                if (confirmed) {
+                    self._clearInst(item);
+                }
+            },
+            buttons:{
+                confirm:{
+                    label:'Remove affiliation'
+                }
+            }
+        });
+    };
+    self._clearInst = function(item) {
         var url = data.apiV2Prefix + 'nodes/' + data.node.id + '/relationships/institutions/';
         return $osf.ajaxJSON(
             'DELETE',
