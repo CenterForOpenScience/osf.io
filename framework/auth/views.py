@@ -3,6 +3,7 @@ import datetime
 import httplib as http
 
 from flask import request
+import markupsafe
 
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
@@ -138,7 +139,7 @@ def auth_login(auth, **kwargs):
 
     if next_url:
         # Only allow redirects which are relative root or full domain, disallows external redirects.
-        if not (next_url[0] == '/' or next_url.startsWith(settings.DOMAIN)):
+        if not (next_url[0] == '/' or next_url.startswith(settings.DOMAIN)):
             raise HTTPError(http.InvalidURL)
 
     if auth.logged_in:
@@ -333,7 +334,7 @@ def register_user(**kwargs):
             http.BAD_REQUEST,
             data=dict(
                 message_long=language.ALREADY_REGISTERED.format(
-                    email=request.json['email1']
+                    email=markupsafe.escape(request.json['email1'])
                 )
             )
         )

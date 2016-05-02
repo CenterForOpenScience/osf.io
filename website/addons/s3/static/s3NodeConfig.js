@@ -140,7 +140,7 @@ ViewModel.prototype.selectBucket = function() {
             )
             .done(function (response) {
                 self.updateFromData(response);
-                self.changeMessage('Successfully linked S3 bucket "' + self.currentBucket() + '". Go to the <a href="' +
+                self.changeMessage('Successfully linked S3 bucket "' + $osf.htmlEscape(self.currentBucket()) + '". Go to the <a href="' +
                     self.urls().files + '">Files page</a> to view your content.', 'text-success', null, true);
                 self.loading(false);
                 ret.resolve(response);
@@ -258,7 +258,7 @@ ViewModel.prototype.importAuth = function() {
                             accounts,
                             function(item) {
                                 return {
-                                    text: item.name,
+                                    text: $osf.htmlEscape(item.name),
                                     value: item.id
                                 };
                             }
@@ -365,7 +365,7 @@ ViewModel.prototype.createBucket = function(bucketName, bucketLocation) {
         self.loadedBucketList(true);
         self.selectedBucket(bucketName);
         self.showSelect(true);
-        var msg = 'Successfully created bucket "' + bucketName + '". You can now select it from the drop down list.';
+        var msg = 'Successfully created bucket "' + $osf.htmlEscape(bucketName) + '". You can now select it from the drop down list.';
         var msgType = 'text-success';
         self.changeMessage(msg, msgType, null, true);
     }).fail(function(xhr) {
@@ -377,8 +377,8 @@ ViewModel.prototype.createBucket = function(bucketName, bucketLocation) {
             message = 'Looks like that name is taken. Try another name?';
         }
         bootbox.confirm({
-            title: title,
-            message: message,
+            title: $osf.htmlEscape(title),
+            message: $osf.htmlEscape(message),
             callback: function(result) {
                 if (result) {
                     self.openCreateBucket();
@@ -401,7 +401,7 @@ ViewModel.prototype.openCreateBucket = function() {
         var options = '';
         for (var location in locations) {
             if (self.settings.bucketLocations.hasOwnProperty(location)) {
-                options = options + ['<option value="', location, '">', locations[location], '</option>', '\n'].join('');
+                options = options + ['<option value="', location, '">', $osf.htmlEscape(locations[location]), '</option>', '\n'].join('');
             }
         }
         return options;
@@ -531,7 +531,7 @@ ViewModel.prototype.updateFromData = function(data) {
             else {
                 message = 'Could not retrieve S3 settings at ' +
                     'this time. The S3 addon credentials may no longer be valid.' +
-                    ' Contact ' + self.ownerName() + ' to verify.';
+                    ' Contact ' + $osf.htmlEscape(self.ownerName()) + ' to verify.';
             }
             self.changeMessage(message, 'text-danger', null, true);
         }
