@@ -32,7 +32,7 @@
                             <!-- ko if: !title --><em>Private project</em><!-- /ko -->
                         </td>
                         <td>
-                            <a data-bind="click: $parent.deauthorizeNode">
+                            <a data-bind="click: $parent.deauthorizeNode.bind($parent)">
                                 <i class="fa fa-times text-danger pull-right" title="disconnect Project"></i>
                             </a>
                         </td>
