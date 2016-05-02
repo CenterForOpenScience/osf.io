@@ -933,7 +933,7 @@ def node_child_tree(user, node_ids):
         assert node, '{} is not a valid Node.'.format(node_id)
 
         can_read = node.has_permission(user, 'read')
-        is_admin = node.has
+        is_admin = node.has_permission(user, 'admin')
         can_read_children = node.has_permission_on_children(user, 'read')
         if not can_read and not can_read_children:
             continue
@@ -946,6 +946,12 @@ def node_child_tree(user, node_ids):
                 'is_confirmed': contributor.is_confirmed
             })
 
+            affiliated_institutions = []
+        for affiliated_institution in node.affiliated_institutions:
+            affiliated_institutions.append({
+                'id': affiliated_institution.pk,
+                'name': affiliated_institution.name
+            })
         children = []
         # List project/node if user has at least 'read' permissions (contributor or admin viewer) or if
         # user is contributor on a component of the project/node
@@ -968,7 +974,8 @@ def node_child_tree(user, node_ids):
                 'can_write': can_write,
                 'contributors': contributors,
                 'visible_contributors': node.visible_contributor_ids,
-                'is_admin': node.has_permission(user, ADMIN)
+                'is_admin': node.has_permission(user, ADMIN),
+                'affiliated_institutions': affiliated_institutions
             },
             'user_id': user._id,
             'children': children,

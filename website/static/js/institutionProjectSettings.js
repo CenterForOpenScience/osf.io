@@ -147,10 +147,10 @@ var InstitutionProjectSettings = function(selector, data)  {
     this.viewModel = new ViewModel(data);
     var self = this;
     var treebeardUrl = window.contextVars.node.urls.api + 'tree/';
-    self.viewModel.getContributors();
     self.viewModel.fetchNodeTree(treebeardUrl).done(function(response) {
-        new NodeSelectTreebeard('addContributorsTreebeard', response, self.viewModel.nodesState);
-    });$osf.applyBindings(this.viewModel, selector);
+        new NodeSelectTreebeard('manageInstitution', response, self.viewModel.nodesState);
+    });
+    $osf.applyBindings(this.viewModel, selector);
 
 };
 
