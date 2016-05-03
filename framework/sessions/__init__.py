@@ -5,7 +5,7 @@ import urllib
 import urlparse
 import bson.objectid
 import httplib as http
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import itsdangerous
 
@@ -107,19 +107,16 @@ def create_session(response, data=None):
         cookie_value = itsdangerous.Signer(settings.SECRET_KEY).sign(session_id)
         set_session(session)
     if response is not None:
-        now = datetime.utcnow() + timedelta(days=settings.OSF_COOKIE_EXPIRES)
-        exp_date = now.strftime("%a %b %d %H:%M:%S UTC %Y")
-        response.set_cookie(settings.COOKIE_NAME, value=cookie_value, max_age=settings.OSF_COOKIE_MAX_AGE, expires=exp_date, domain=settings.OSF_COOKIE_DOMAIN)
+        response.set_cookie(settings.COOKIE_NAME, value=cookie_value, domain=settings.OSF_COOKIE_DOMAIN)
         return response
 
 
 sessions = WeakKeyDictionary()
 session = LocalProxy(get_session)
 
-# Request callbacks
 
-# NOTE: This gets attached in website.app.init_app to ensure correct callback
-# order
+# Request callbacks
+# NOTE: This gets attached in website.app.init_app to ensure correct callback order
 def before_request():
     from framework.auth import cas
 
@@ -168,9 +165,13 @@ def before_request():
             session = Session.load(session_id) or Session(_id=session_id)
         except itsdangerous.BadData:
             return
-        if session.data.get('auth_user_id') and 'api' not in request.url:
-            database['user'].update({'_id': session.data.get('auth_user_id')}, {'$set': {'date_last_login': datetime.utcnow()}}, w=0)
-        set_session(session)
+
+        delta = (datetime.utcnow() - session.date_created).total_seconds()
+        if delta < settings.COOKIE_TIMEOUT:
+            if session.data.get('auth_user_id') and 'api' not in request.url:
+                database['user'].update({'_id': session.data.get('auth_user_id')}, {'$set': {'date_last_login': datetime.utcnow()}}, w=0)
+            set_session(session)
+
 
 def after_request(response):
     if session.data.get('auth_user_id'):
