@@ -31,3 +31,11 @@ class SuperUser(OSFAdmin):
 
     def test_func(self):
         return self.request.user.is_authenticated() and self.request.user.is_superuser
+
+
+class PreregAdmin(OSFAdmin):
+    """For testing for Prereg credentials of user."""
+    permission_denied_message = 'You are not in the Pre-reg admin group.'
+
+    def test_func(self):
+        return self.request.user.is_authenticated() and self.request.user.is_in_group('prereg_group')
