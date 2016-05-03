@@ -1,17 +1,8 @@
-.link-url{
-    padding: 3px 0px;
-    background-color: #F5F5F5;
-}
-
-.btn-no-pad{
-	margin-right: 0px;
-}
-
 .padded-list{
-	padding-left: 15px;
+    padding-left: 15px;
 }
 
 .contrib-list{
-	background-color: #F5F5F5;
-	border: 1px solid #CCC;
+    background-color: #F5F5F5;
+    border: 1px solid #CCC;
 }
