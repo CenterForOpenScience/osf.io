@@ -1,22 +1,15 @@
 
-from urlparse import urlparse
 from nose.tools import *  # flake8: noqa
 
 from modularodm import Q
-from website.models import Node
 from framework.auth.core import Auth
 from website.models import MetaSchema
 from api.base.settings.defaults import API_BASE
 from website.project.model import ensure_schemas
 from test_node_draft_registration_list import DraftRegistrationTestCase
 
-from tests.base import ApiTestCase
 from tests.factories import (
     ProjectFactory,
-    RegistrationFactory,
-    AuthUserFactory,
-    CollectionFactory,
-    BookmarkCollectionFactory,
     DraftRegistrationFactory
 )
 
@@ -180,8 +173,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         res = self.app.put_json_api(self.url, self.payload, auth=self.user.auth, expect_errors=True)
         errors = res.json['errors'][0]
         assert_equal(res.status_code, 400)
-        assert_equal(errors['source']['pointer'], '/data/attributes/registration_metadata')
-        assert_equal(errors['detail'], 'Expected type "dictionary" for datacompletion.')
+        assert_equal(errors['detail'], "u'No, data collection has not begun' is not of type 'object'")
 
     def test_registration_metadata_question_keys_must_be_value(self):
         self.payload['data']['attributes']['registration_metadata']['datacompletion'] = {
@@ -191,8 +183,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         res = self.app.put_json_api(self.url, self.payload, auth=self.user.auth, expect_errors=True)
         errors = res.json['errors'][0]
         assert_equal(res.status_code, 400)
-        assert_equal(errors['source']['pointer'], '/data/attributes/registration_metadata')
-        assert_equal(errors['detail'], 'Key "value" missing from datacompletion.')
+        assert_equal(errors['detail'], "Additional properties are not allowed (u'incorrect_key' was unexpected)")
 
     def test_question_in_registration_metadata_must_be_in_schema(self):
         self.payload['data']['attributes']['registration_metadata']['q11'] = {
@@ -202,8 +193,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         res = self.app.put_json_api(self.url, self.payload, auth=self.user.auth, expect_errors=True)
         errors = res.json['errors'][0]
         assert_equal(res.status_code, 400)
-        assert_equal(errors['source']['pointer'], '/data/attributes/registration_metadata')
-        assert_equal(errors['detail'], '"q11" is not in schema "OSF-Standard Pre-Data Collection Registration".')
+        assert_equal(errors['detail'], "Additional properties are not allowed (u'q11' was unexpected)")
 
     def test_multiple_choice_question_value_must_match_value_in_schema(self):
         self.payload['data']['attributes']['registration_metadata']['datacompletion'] = {
@@ -213,9 +203,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         res = self.app.put_json_api(self.url, self.payload, auth=self.user.auth, expect_errors=True)
         errors = res.json['errors'][0]
         assert_equal(res.status_code, 400)
-        assert_equal(errors['source']['pointer'], '/data/attributes/registration_metadata')
-        assert_equal(errors['detail'], "Value for datacompletion is invalid. Expected one of "
-                                       "[u'No, data collection has not begun', u'Yes, data collection is underway or complete'].")
+        assert_equal(errors['detail'], "u'Nope, data collection has not begun' is not one of [u'No, data collection has not begun', u'Yes, data collection is underway or complete']")
 
     def test_cannot_update_registration_schema(self):
         self.payload['data']['attributes']['registration_form'] = 'Open-Ended Registration'
