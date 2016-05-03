@@ -4,6 +4,7 @@ from modularodm.exceptions import NoResultsFound
 from rest_framework.exceptions import NotFound
 from rest_framework.reverse import reverse
 import furl
+import jsonschema
 
 from website import util as website_util  # noqa
 from website import settings as website_settings
@@ -137,28 +138,57 @@ def default_node_permission_query(user):
 def extend_querystring_params(url, params):
     return furl.furl(url).add(args=params).url
 
-def extract_expected_responses_from_schema(draft):
+
+def is_required(question):
     """
-    Pull expected questions and answers from schema
+    Returns True if metaschema question is required.
     """
-    schema = draft.registration_schema.schema
-    form = {}
-    for page in schema['pages']:
+    required = question.get('required', False)
+    if not required:
+        properties = question.get('properties', False)
+        if properties and isinstance(properties, list):
+            for item, property in enumerate(properties):
+                if isinstance(property, dict) and property.get('required', False):
+                    required = True
+                    break
+    return required
+
+def create_json_schema_for_metaschema(draft):
+    """
+    Goes through metaschema and creates schema for validation
+    """
+    metaschema = draft.registration_schema.schema
+    json_schema = {
+        "type": "object",
+        "description": metaschema['description'],
+        "title": metaschema['title'],
+        "additionalProperties": False,
+        "properties": {
+        }
+    }
+    required = []
+    for page in metaschema['pages']:
         for question in page['questions']:
-            options = question.get('options', None)
+            if is_required(question):
+                required.append(question.get('qid'))
+            data_type = question['type']
+            options = question.get('options')
+            value = {'type': data_type}
             if options:
                 for item, option in enumerate(options):
                     if isinstance(option, dict) and option.get('text'):
                         options[item] = option.get('text')
+                value = {'enum': options}
 
-            required = question.get('required', False)
-            if not required:
-                properties = question.get('properties', False)
-                if properties and isinstance(properties, list):
-                    for item, property in enumerate(properties):
-                        if isinstance(property, dict) and property.get('required', False):
-                            required = True
-                            break
+            json_schema['properties'][question['qid']] = {
+                "type": "object",
+                 "additionalProperties": False,
+                "properties": {
+                    "value": value
+                }
+            }
+    if required:
+        json_schema['required'] = required
 
-            form[question['qid']] = {'options': options, 'required': required}
-    return form
+    return json_schema
+
