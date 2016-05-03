@@ -40,6 +40,7 @@ INSTALLED_APPS = (
     'admin.base',
     'admin.pre_reg',
     'admin.spam',
+    'admin.metrics',
     'admin.nodes',
     'admin.users',
 
@@ -137,6 +138,10 @@ STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'static'),
 )
 
+
+STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, 'static'),
+)
 
 LANGUAGE_CODE = 'en-us'
 

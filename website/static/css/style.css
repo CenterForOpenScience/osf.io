@@ -685,6 +685,10 @@ button.close {
     margin-top: 10px;
 }
 
+.more-replies {
+    margin-right: 15px;
+}
+
 .create-password {
     margin-top: 10px;
     margin-bottom: 5px;

@@ -87,6 +87,8 @@ class Institution(object):
         return self._id == other._id
 
     def save(self):
+        from website.search.search import update_institution
+        update_institution(self)
         for key, value in self.attribute_map.iteritems():
             if getattr(self, key) != getattr(self.node, value):
                 setattr(self.node, value, getattr(self, key))

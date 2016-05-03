@@ -6,6 +6,8 @@ var pikaday = require('pikaday');
 require('knockout.validation');
 var zxcvbn = require('zxcvbn');
 
+require('css/koHelpers.css');
+
 var iconmap = require('js/iconmap');
 
 var makeExtender = function(interceptor) {
@@ -257,8 +259,19 @@ ko.bindingHandlers.fitText = {
 };
 
 var tooltip = function(el, valueAccessor) {
-    var params = valueAccessor();
-    $(el).tooltip(params);
+    var params = ko.toJS(valueAccessor());
+    if(params.title) {
+        $(el).tooltip(params);
+        if(params.disabled) {
+            // A slight hack to get tooltips to work on
+            // disabled btn/a/etc. '.ensure-bs-tooltips'
+            // lets pointer events get captured on the
+            // disabled element, while the added onclick
+            // handler keeps these events from bubbling
+            $(el).addClass('ensure-bs-tooltips');
+            $(el).on('click', function() {return false;});
+        }
+    }
 };
 // Run Bootstrap tooltip JS automagically
 // http://getbootstrap.com/javascript/#tooltips

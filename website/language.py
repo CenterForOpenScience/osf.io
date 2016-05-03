@@ -188,7 +188,7 @@ TEMPLATED_FROM_PREFIX = "Templated from "
 ERROR_PREFIX = "Unable to render. <a href='?action=download'>Download</a> file to view it."
 SUPPORT = u"Contact support@osf.io for further assistance."
 
-# Custom Error Messages w/ support  # TODO: Where are these used?
+# Custom Error Messages w/ support  # TODO: Where are these used? See [#OSF-6101]
 STATA_VERSION_ERROR = u'Version of given Stata file is not 104, 105, 108, 113 (Stata 8/9), 114 (Stata 10/11) or 115 (Stata 12)<p>{0}</p>'.format(SUPPORT)
 BLANK_OR_CORRUPT_TABLE_ERROR = u'Is this a valid instance of this file type?<p>{0}</p>'.format(SUPPORT)
 

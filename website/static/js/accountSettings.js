@@ -212,11 +212,11 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
                     }
                 }
                 if (emailAdded === true) {
-                    var addrText = $osf.htmlEscape(email.address());
+                    var safeAddr = $osf.htmlEscape(email.address());
                     bootbox.alert({
                                 title: 'Confirmation email sent',
-                                message: '<em>' + addrText + '</em>' + ' was added to your account.' +
-                                ' You will receive a confirmation email at ' + '<em>' + addrText + '</em>.' +
+                                message: '<em>' + safeAddr + '</em>' + ' was added to your account.' +
+                                ' You will receive a confirmation email at ' + '<em>' + safeAddr + '</em>.' +
                                 ' Please log out of this account and check your email to confirm this action.',
                                 buttons: {
                                     ok: {
@@ -239,16 +239,16 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
     resendConfirmation: function(email){
         var self = this;
         self.changeMessage('', 'text-info');
-        var addrText = $osf.htmlEscape(email.address());
+        var safeAddr = $osf.htmlEscape(email.address());
         bootbox.confirm({
             title: 'Resend Email Confirmation?',
-            message: 'Are you sure that you want to resend email confirmation to ' + '<em>' + addrText + '</em>?',
+            message: 'Are you sure that you want to resend email confirmation to ' + '<em>' + safeAddr + '</em>?',
             callback: function (confirmed) {
                 if (confirmed) {
                     self.client.update(self.profile(), email).done(function () {
                         $osf.growl(
-                            'Email confirmation resent to <em>' + addrText + '</em>',
-                            'You will receive a new confirmation email at <em>' + addrText  + '</em>.' +
+                            'Email confirmation resent to <em>' + safeAddr + '</em>',
+                            'You will receive a new confirmation email at <em>' + safeAddr  + '</em>.' +
                             ' Please log out of this account and check your email to confirm this action.',
                             'success');
                     });
@@ -405,10 +405,14 @@ var DeactivateAccountViewModel = oop.defclass({
             this.success(true);
         }.bind(this));
         request.fail(function(xhr, status, error) {
-            $osf.growl('Error',
-                'Deactivation request failed. Please contact <a href="mailto: support@osf.io">support@osf.io</a> if the problem persists.',
-                'danger'
-            );
+            if (xhr.responseJSON.error_type === 'throttle_error') {
+                $osf.growl('Error', xhr.responseJSON.message_long, 'danger');
+            } else {
+                $osf.growl('Error',
+                    'Deactivation request failed. Please contact <a href="mailto: support@osf.io">support@osf.io</a> if the problem persists.',
+                    'danger'
+                );
+            }
             Raven.captureMessage('Error requesting account deactivation', {
                 extra: {
                     url: this.urls.update,
@@ -454,10 +458,14 @@ var ExportAccountViewModel = oop.defclass({
             this.success(true);
         }.bind(this));
         request.fail(function(xhr, status, error) {
-            $osf.growl('Error',
-                'Export request failed. Please contact <a href="mailto: support@osf.io">support@osf.io</a> if the problem persists.',
-                'danger'
-            );
+            if (xhr.responseJSON.error_type === 'throttle_error') {
+                $osf.growl('Error', xhr.responseJSON.message_long, 'danger');
+            } else {
+                $osf.growl('Error',
+                    'Export request failed. Please contact <a href="mailto: support@osf.io">support@osf.io</a> if the problem persists.',
+                    'danger'
+                );
+            }
             Raven.captureMessage('Error requesting account export', {
                 extra: {
                     url: this.urls.update,
