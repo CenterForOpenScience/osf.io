@@ -271,6 +271,47 @@ var mapByProperty = function(list, attr) {
 
 
 /**
+  * Return CSS colors and percentage of a progress bar based on a value.
+  * Used to return a value for password complexity
+  */
+var valueProgressBar = function(value) {
+    if (value >= 0) {
+        if (value === 0) {
+            return {
+                class: 'progress-bar progress-bar-danger',
+                style: 'width: 10%'
+            };
+        }
+        if (value === 1) {
+            return {
+                class: 'progress-bar progress-bar-danger',
+                style: 'width: 25%'
+            };
+        } else if (value === 2) {
+            return {
+                class: 'progress-bar progress-bar-warning',
+                style: 'width: 50%'
+            };
+        } else if (value === 3) {
+            return {
+                class: 'progress-bar progress-bar-warning',
+                style: 'width: 75%'
+            };
+        } else if (value === 4) {
+            return {
+                class: 'progress-bar progress-bar-success',
+                style: 'width: 100%'
+            };
+        }
+    } else {
+        return {
+            style: 'width: 0%'
+        };
+    }
+};
+
+
+/**
   * Return whether or not a value is an email address.
   * Adapted from Knockout-Validation.
   */
@@ -935,5 +976,6 @@ module.exports = window.$.osf = {
     trackClick: trackClick,
     findContribName: findContribName,
     extractContributorNamesFromAPIData: extractContributorNamesFromAPIData,
-    onScrollToBottom: onScrollToBottom
+    onScrollToBottom: onScrollToBottom,
+    valueProgressBar: valueProgressBar
 };

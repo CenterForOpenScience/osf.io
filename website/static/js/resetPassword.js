@@ -14,42 +14,26 @@ var ViewModel = function() {
 
     self.typedPassword = ko.observable('');
 
-    self.passwordFeedback = ko.observable('');
+    self.passwordInfo = ko.computed(function() {
+        if (self.typedPassword()) {
+            return zxcvbn(self.typedPassword());
+        }
+    });
+
+    self.passwordFeedback = ko.computed(function () {
+        if (self.typedPassword()) {
+            return self.passwordInfo().feedback.warning;
+        }
+    });
 
     self.passwordComplexity = ko.pureComputed(function() {
-        var current = zxcvbn(self.typedPassword());
-        self.passwordFeedback(current.feedback.warning);
-        return current.score;
+        if (self.typedPassword()) {
+            return self.passwordInfo().score;
+        }
     });
 
     self.passwordComplexityBar = ko.computed(function() {
-        if (self.passwordComplexity() === 0) {
-            return {
-                class: 'progress-bar progress-bar-danger',
-                style: 'width: 0%'
-            };
-        }
-        if (self.passwordComplexity() === 1) {
-            return {
-                class: 'progress-bar progress-bar-danger',
-                style: 'width: 25%'
-            };
-        } else if (self.passwordComplexity() === 2) {
-            return {
-                class: 'progress-bar progress-bar-warning',
-                style: 'width: 50%'
-            };
-        } else if (self.passwordComplexity() === 3) {
-            return {
-                class: 'progress-bar progress-bar-warning',
-                style: 'width: 75%'
-            };
-        } else if (self.passwordComplexity() === 4) {
-            return {
-                class: 'progress-bar progress-bar-success',
-                style: 'width: 100%'
-            };
-        }
+        return $osf.valueProgressBar(self.passwordComplexity());
     });
 
     self.password = ko.observable('').extend({
