@@ -4,6 +4,7 @@ import itertools
 import logging
 import re
 import urlparse
+from copy import deepcopy
 
 import bson
 import pytz
@@ -848,6 +849,36 @@ class User(GuidStoredObject, AddonModelMixin):
 
         return verification['email']
 
+    def clean_email_verifications(self):
+        email_verifications = deepcopy(self.email_verifications)
+        for token in self.email_verifications:
+            try:
+                self.verify_token(token)
+            except (KeyError, ExpiredTokenError):
+                email_verifications.pop(token)
+        self.email_verifications = email_verifications
+        self.save()
+
+    def verified_email_get(self):
+        """Called at login to see if there are emails to add or users to merge.  Delete expired tokens.
+        methods: GET
+        """
+        self.clean_email_verifications()
+        verified_emails = []
+        email_verifications = deepcopy(self.email_verifications)
+        for token in email_verifications:
+            if self.email_verifications[token]['confirmed']:
+                try:
+                    user_merge = User.find_one(Q('emails', 'eq', self.email_verifications[token]['email'].lower()))
+                except NoResultsFound:
+                    user_merge = False
+
+                verified_emails.append({'address': self.email_verifications[token]['email'],
+                                        'token': token,
+                                        'confirmed': self.email_verifications[token]['confirmed'],
+                                        'user_merge': user_merge.email if user_merge else False})
+        return verified_emails
+
     def verify_token(self, token):
         """Return whether or not a confirmation token is valid for this user.
         :rtype: bool
@@ -855,13 +886,13 @@ class User(GuidStoredObject, AddonModelMixin):
         try:
             verification = self.email_verifications[token]
         except KeyError:
-            return False
+            raise KeyError('No confirmation token for email "{0}"'.format(self.email_verifications[token]))
         # Check token for existance and date
         if (
             'expiration' in verification and
             verification['expiration'] < dt.datetime.utcnow()
         ):
-            return False
+            raise ExpiredTokenError('Token for email "{0}" is expired'.format(self.email_verifications[token]))
         return True
 
     def verify_claim_token(self, token, project_id):

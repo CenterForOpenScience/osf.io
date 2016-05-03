@@ -97,7 +97,7 @@ $(document).on('click', '.panel-heading', function(){
 function confirmEmails(emailsToAdd) {
     if (emailsToAdd.length > 0) {
         var confirmedEmailURL = window.contextVars.confirmedEmailURL;
-        var email = emailsToAdd.splice(0, 1)[0];
+        var email = emailsToAdd[0];
         var title;
         var requestMessage;
         var confirmMessage;
@@ -141,7 +141,7 @@ function confirmEmails(emailsToAdd) {
                             email
                         ).done(function () {
                             $osf.growl('Success', confirmMessage, 'success', 3000);
-                            confirmEmails(emailsToAdd);
+                            confirmEmails(emailsToAdd.slice(1));
                         }).fail(function (xhr, textStatus, error) {
                             Raven.captureMessage('Could not add email', {
                                 url: confirmedEmailURL,
@@ -153,7 +153,7 @@ function confirmEmails(emailsToAdd) {
                                 'danger'
                             );
                         });
-                        confirmEmails(emailsToAdd);
+                        confirmEmails(emailsToAdd.slice(1));
                     }
                 },
                 cancel: {
@@ -168,7 +168,7 @@ function confirmEmails(emailsToAdd) {
                             data: JSON.stringify(email)
                         }).done(function () {
                             $osf.growl('Warning', nopeMessage, 'warning', 8000);
-                            confirmEmails(emailsToAdd);
+                            confirmEmails(emailsToAdd.slice(1));
                         }).fail(function (xhr, textStatus, error) {
                             Raven.captureMessage('Could not remove email', {
                                 url: confirmedEmailURL,
