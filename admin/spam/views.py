@@ -174,6 +174,8 @@ class SpamDetail(OSFAdmin, FormView):
         try:
             if int(form.cleaned_data.get('confirm')) == Comment.SPAM:
                 item.confirm_spam(save=True)
+                item.is_deleted = True
+                item.save()
                 log_message = 'Confirmed SPAM: {}'.format(spam_id)
                 log_action = CONFIRM_SPAM
             else:

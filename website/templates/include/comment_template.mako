@@ -7,7 +7,17 @@
              </div>
 
             <div data-bind="ifnot: loading">
-                <div data-bind="if: isDeleted">
+                <div data-bind="if: isDeletedAbuse">
+                    <div>
+                        <span class="text-muted">
+                            <em>Comment confirmed as spam.</em>
+                        </span>
+                        <span data-bind="if: hasChildren()" class="comment-actions pull-right">
+                            <i data-bind="css: toggleIcon, click: toggle"></i>
+                        </span>
+                    </div>
+                </div>
+                <div data-bind="if: isDeletedNotAbuse">
                     <div>
                         <span class="text-muted">
                             <em>Comment deleted.</em>
@@ -21,14 +31,18 @@
                     </div>
                 </div>
 
-                <div data-bind="if: isAbuse">
+                <div data-bind="if: isAbuseNotDeleted">
                     <div>
-                        <span data-bind="if: hasChildren()">
+                        <span class="text-muted">
+                            <em>Comment reported.</em>
+                        </span>
+                        <span data-bind="if: hasChildren()" class="comment-actions pull-right">
                             <i data-bind="css: toggleIcon, click: toggle"></i>
                         </span>
-                        Comment reported.
                     </div>
-                    <a data-bind="click: submitUnreportAbuse">Not abuse</a>
+                    <div data-bind="if: hasReport">
+                        <a data-bind="click: submitUnreportAbuse">Not abuse</a>
+                    </div>
                 </div>
 
                 <div data-bind="if: isVisible">

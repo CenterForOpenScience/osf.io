@@ -273,6 +273,10 @@ var CommentModel = function(data, $parent, $root) {
     self.isAbuse = ko.observable(data.attributes.is_abuse);
     self.canEdit = ko.observable(data.attributes.can_edit);
     self.hasChildren = ko.observable(data.attributes.has_children);
+    self.hasReport = ko.observable(data.attributes.has_report);
+    self.isDeletedAbuse = ko.observable(self.isDeleted() && self.isAbuse());
+    self.isDeletedNotAbuse = ko.observable(self.isDeleted() && !self.isAbuse());
+    self.isAbuseNotDeleted = ko.observable(!self.isDeleted() && self.isAbuse());
 
     if (window.contextVars.node.anonymous) {
         self.author = {
