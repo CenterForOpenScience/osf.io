@@ -5,7 +5,6 @@ var assign = require('object-assign');
 var BundleTracker = require('webpack-bundle-tracker');
 
 var websiteRoot = path.join(__dirname, '..', 'website', 'static');
-
 var adminRoot = path.join(__dirname, 'static');
 
 var staticAdminPath = function(dir) {
@@ -32,10 +31,12 @@ var config = assign({}, common, {
         'admin-registration-edit-page': staticAdminPath('js/pages/admin-registration-edit-page.js'),
         'sales-analytics-keen': staticAdminPath('js/sales_analytics/sales-analytics.js'),
         'sales-analytics-utils': staticAdminPath('js/sales_analytics/utils.js'),
+		'dashboard': staticAdminPath('js/sales_analytics/dashboard.js'),
     },
     plugins: plugins,
     debug: true,
     devtool: 'source-map'
 });
+
 config.resolve.root = [websiteRoot, adminRoot];
 module.exports = config;

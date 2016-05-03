@@ -1,6 +1,7 @@
 {
   "name": "OSF_admin",
   "dependencies": {
+    "c3": "0.4.10",
     "jquery": "^1.11.2",
     "jquery-ui": "~1.10.4",
     "bootstrap": "^3.3.0",

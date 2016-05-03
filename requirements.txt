@@ -19,6 +19,7 @@ celery==3.1.17
 httplib2==0.9
 hurry.filesize==0.9
 itsdangerous==0.24
+keen==0.3.21
 lxml==3.4.1
 mailchimp==2.0.9
 nameparser==0.3.3
@@ -66,5 +67,6 @@ pyjwe==1.0.0
 
 # Admin requirements
 django-webpack-loader==0.2.3
+django-queryset-csv==0.3.3
 django-nose==1.4.3
 django-ckeditor==5.0.2
