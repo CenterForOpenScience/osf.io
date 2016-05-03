@@ -421,15 +421,12 @@ from
 <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
 </script>
 
-<script type="text/html" id="primary_institution_changed">
-changed primary institution of <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
-<!-- ko if: params.previous_institution.name != 'None' --><!-- TODO: Check datatypes here -->
- from <a class="log-node-title-link overflow" data-bind="attr: {href: '/institutions/' + params.previous_institution.id}, text: params.previous_institution.name"></a>
-<!-- /ko -->
- to <a class="log-node-title-link overflow" data-bind="attr: {href: '/institutions/' + params.institution.id}, text: params.institution.name"></a>.
+<script type="text/html" id="affiliated_institution_added">
+added affiliation to <a class="log-node-title-link overflow" data-bind="attr: {href: '/institutions/' + params.institution.id}, text: params.institution.name"></a>
+ to <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
 </script>
 
-<script type="text/html" id="primary_institution_removed">
-removed <a class="log-node-title-link overflow" data-bind="attr: {href: '/institutions/' + params.institution.id}, text: params.institution.name"></a>
-as the primary institution of <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>.
+<script type="text/html" id="affiliated_institution_removed">
+removed affiliation to <a class="log-node-title-link overflow" data-bind="attr: {href: '/institutions/' + params.institution.id}, text: params.institution.name"></a>
+ in <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>.
 </script>

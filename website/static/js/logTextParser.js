@@ -426,16 +426,6 @@ var LogPieces = {
         }
     },
 
-    previous_institution: {
-        view: function(ctrl, logObject){
-            var previous_institution = logObject.attributes.params.previous_institution;
-            if (paramIsReturned(previous_institution, logObject)){
-                return m('span', previous_institution.name);
-            }
-            return m('span', 'an institution');
-        }
-    },
-
     institution: {
         view: function(ctrl, logObject){
             var institution = logObject.attributes.params.institution;

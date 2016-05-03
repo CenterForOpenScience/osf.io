@@ -61,7 +61,6 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     version = ser.CharField(read_only=True)
     citation_name = ser.CharField(read_only=True, source='citation.name')
     institution = NodeLogInstitutionSerializer(read_only=True)
-    previous_institution = NodeLogInstitutionSerializer(read_only=True)
 
     def get_view_url(self, obj):
         urls = obj.get('urls', None)

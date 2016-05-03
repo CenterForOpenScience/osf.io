@@ -65,6 +65,6 @@
     "osf_storage_folder_created" : "${user} created folder ${path} in OSF Storage in ${node}",
     "osf_storage_file_updated" : "${user} updated file ${path} in OSF Storage in ${node}",
     "osf_storage_file_removed" : "${user} removed file ${path} from OSF Storage in ${node}",
-    "primary_institution_changed": "${user} changed the primary institution in ${node} from ${previous_institution} to ${institution}.",
-    "primary_institution_removed": "${user} removed ${institution} as the primary institution in ${node}."
+    "affiliated_institution_added": "${user} added affiliation to ${institution} to ${node}.",
+    "affiliated_institution_removed": "${user} removed affiliation to ${institution} in ${node}."
 }
