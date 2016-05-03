@@ -58,6 +58,11 @@ def migrate(dry_run=True):
                 successful_enables.append(node._id)
             except Exception as e:
                 unknown_failures[node._id] = e
+        if i % 100 == 0:
+            for key in ('node', 'user', 'fileversion', 'storedfilenode'):
+                Node._cache.data.get(key, {}).clear()
+                Node._object_cache.data.get(key, {}).clear()
+
 
     logger.info(
         "Successfully enabled {0} new mailing lists for nodes:\n{1}".format(
