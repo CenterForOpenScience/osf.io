@@ -1003,8 +1003,10 @@ def get_forks(auth, node, **kwargs):
 
 @must_be_contributor_or_public
 def get_registrations(auth, node, **kwargs):
-    registrations = [n for n in reversed(node.registrations_all) if not n.is_deleted]  # get all registrations, including archiving
-    return _render_nodes(registrations, auth)
+    # get all undeleted registrations, including archiving
+    sorted_registrations = node.registrations_all.sort('-registered_date')
+    undeleted_registrations = [n for n in sorted_registrations if not n.is_deleted]
+    return _render_nodes(undeleted_registrations, auth)
 
 
 @must_be_valid_project
