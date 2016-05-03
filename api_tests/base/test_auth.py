@@ -9,6 +9,7 @@ from nose.tools import *  # flake8: noqa
 from framework.auth import cas
 from website.util import api_v2_url
 from website.addons.twofactor.tests import _valid_code
+from website.settings import API_DOMAIN
 
 from tests.base import ApiTestCase
 from tests.factories import AuthUserFactory, ProjectFactory, UserFactory
@@ -201,13 +202,17 @@ class TestOAuthScopedAccess(ApiTestCase):
         project = ProjectFactory()
         mock_user_info.return_value = self._scoped_response(['osf.full_read'])
         url = api_v2_url('guids/{}/'.format(project._id), base_route='/', base_prefix='v2/')
-        res = self.app.get(url, auth='some_valid_token', auth_type='jwt', expect_errors=True)
+        res = self.app.get(url, auth='some_valid_token', auth_type='jwt')
+        redirect_url = '{}{}nodes/{}/'.format(API_DOMAIN, API_BASE, project._id)
         assert_equal(res.status_code, 302)
+        assert_equal(res.location, redirect_url)
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_full_write_scope_can_read_guid_view(self, mock_user_info):
         project = ProjectFactory()
         mock_user_info.return_value = self._scoped_response(['osf.full_write'])
         url = api_v2_url('guids/{}/'.format(project._id), base_route='/', base_prefix='v2/')
-        res = self.app.get(url, auth='some_valid_token', auth_type='jwt', expect_errors=True)
+        res = self.app.get(url, auth='some_valid_token', auth_type='jwt')
+        redirect_url = '{}{}nodes/{}/'.format(API_DOMAIN, API_BASE, project._id)
         assert_equal(res.status_code, 302)
+        assert_equal(res.location, redirect_url)
