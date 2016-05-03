@@ -23,6 +23,7 @@ var SalesAnalytics = function() {
             property_value: ''
         }
     };
+
     self.getAverageUserSessionLength = function () {
         var query = new keen.Query('select_unique', {
             event_collection: 'pageviews',
@@ -349,18 +350,18 @@ var SalesAnalytics = function() {
                     var numberOfProducts = 0;
                     var meetings, prereg, institutions;
                     meetings = prereg = institutions = false;
-                    for (var i in paths) {
-                        if (meetings == false && paths[i].startsWith('/meetings/')) {
+                    for (var j in paths) {
+                        if (meetings == false && paths[j].startsWith('/meetings/')) {
                             userProductMap.meetings.push(session['user.id']);
                             meetings = true;
                             numberOfProducts ++;
                         }
-                        else if (prereg == false && paths[i].startsWith('/prereg/')) {
+                        else if (prereg == false && paths[j].startsWith('/prereg/')) {
                             userProductMap.prereg.push(session['user.id']);
                             prereg = true;
                             numberOfProducts ++;
                         }
-                        else if (institutions == false && paths[i].startsWith('/institutions/')) {
+                        else if (institutions == false && paths[j].startsWith('/institutions/')) {
                             userProductMap.institutions.push(session['user.id']);
                             meetings = true;
                             numberOfProducts ++;
