@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 {% load render_bundle from webpack_loader %}
+<<<<<<< HEAD
 {% load prereg_extras %}
+=======
+{% load node_extras %}
+>>>>>>> develop
 
 {% load static %}
 {% block title %}
@@ -64,7 +68,7 @@
         <td>
             <h4 style="margin-top: 0px">
             {% if draft.is_pending_approval %}
-            <span class="label label-warning">
+                <span class="label label-warning">
             {% elif draft.is_approved %}
                 {% if 'but' in draft.status %}
                     <span class="label label-lg label-default">

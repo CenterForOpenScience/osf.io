@@ -2,13 +2,13 @@ from __future__ import unicode_literals
 
 import json
 import csv
-from modularodm import Q
 
 from django.views.generic import ListView, DetailView, FormView, UpdateView
-from django.views.defaults import page_not_found, permission_denied, bad_request
+from django.views.defaults import permission_denied, bad_request
 from django.core.urlresolvers import reverse
 from django.http import JsonResponse, Http404, HttpResponse
 from django.shortcuts import redirect
+from modularodm import Q
 
 from admin.common_auth.logs import (
     update_admin_log,
@@ -22,7 +22,7 @@ from admin.pre_reg.utils import sort_drafts, SORT_BY, VIEW_STATUS
 from framework.exceptions import PermissionsError
 from website.exceptions import NodeStateError
 from website.files.models import FileNode
-from website.project.model import DraftRegistration, MetaSchema
+from website.project.model import MetaSchema, DraftRegistration
 
 from admin.base.utils import PreregAdmin
 
@@ -105,17 +105,16 @@ class DraftDetailView(PreregAdmin, DetailView):
     template_name = 'pre_reg/draft_detail.html'
     context_object_name = 'draft'
 
-    def get(self, request, *args, **kwargs):
-        try:
-            return super(DraftDetailView, self).get(request, *args, **kwargs)
-        except AttributeError:
-            return handle_attribute_error(request, self.context_object_name,
-                                          self.kwargs.get('draft_pk'))
-
     def get_object(self, queryset=None):
-        return serializers.serialize_draft_registration(
-            DraftRegistration.load(self.kwargs.get('draft_pk'))
-        )
+        try:
+            return serializers.serialize_draft_registration(
+                DraftRegistration.load(self.kwargs.get('draft_pk'))
+            )
+        except AttributeError:
+            raise Http404('{} with id "{}" not found.'.format(
+                self.context_object_name.title(),
+                self.kwargs.get('draft_pk')
+            ))
 
 
 class DraftFormView(PreregAdmin, FormView):
@@ -123,27 +122,19 @@ class DraftFormView(PreregAdmin, FormView):
     form_class = DraftRegistrationForm
     context_object_name = 'draft'
 
-    def get(self, request, *args, **kwargs):
-        try:
-            return super(DraftFormView, self).get(request, *args, **kwargs)
-        except AttributeError:
-            return handle_attribute_error(request, self.context_object_name,
-                                          self.kwargs.get('draft_pk'))
-
-    def post(self, request, *args, **kwargs):
-        try:
-            return super(DraftFormView, self).post(request, *args, **kwargs)
-        except AttributeError:
-            return handle_attribute_error(request, self.context_object_name,
-                                          self.kwargs.get('draft_pk'))
-        except PermissionsError as e:
-            return permission_denied(request, e)
+    def dispatch(self, request, *args, **kwargs):
+        self.draft = DraftRegistration.load(self.kwargs.get('draft_pk'))
+        if self.draft is None:
+            raise Http404('{} with id "{}" not found.'.format(
+                self.context_object_name.title(),
+                self.kwargs.get('draft_pk')
+            ))
+        return super(DraftFormView, self).dispatch(request, *args, **kwargs)
 
     def get_initial(self):
-        draft = DraftRegistration.load(self.kwargs.get('draft_pk'))
-        flags = draft.flags
+        flags = self.draft.flags
         self.initial = {
-            'notes': draft.notes,
+            'notes': self.draft.notes,
             'assignee': flags.get('assignee'),
             'payment_sent': flags.get('payment_sent'),
             'proof_of_publication': flags.get('proof_of_publication'),
@@ -152,32 +143,34 @@ class DraftFormView(PreregAdmin, FormView):
 
     def get_context_data(self, **kwargs):
         kwargs.setdefault('draft', serializers.serialize_draft_registration(
-            DraftRegistration.load(self.kwargs.get('draft_pk')),
+            self.draft,
             json_safe=False
         ))
         kwargs.setdefault('IMMEDIATE', serializers.IMMEDIATE)
         return super(DraftFormView, self).get_context_data(**kwargs)
 
     def form_valid(self, form):
-        draft = DraftRegistration.load(self.kwargs.get('draft_pk'))
         if 'approve_reject' in form.changed_data:
             osf_user = self.request.user.osf_user
-            if form.cleaned_data.get('approve_reject') == 'approve':
-                flag = ACCEPT_PREREG
-                message = 'Approved'
-                draft.approve(osf_user)
-            else:
-                flag = REJECT_PREREG
-                message = 'Rejected'
-                draft.reject(osf_user)
+            try:
+                if form.cleaned_data.get('approve_reject') == 'approve':
+                    flag = ACCEPT_PREREG
+                    message = 'Approved'
+                    self.draft.approve(osf_user)
+                else:
+                    flag = REJECT_PREREG
+                    message = 'Rejected'
+                    self.draft.reject(osf_user)
+            except PermissionsError as e:
+                return permission_denied(self.request, e)
             update_admin_log(self.request.user.id, self.kwargs.get('draft_pk'),
                              'Draft Registration', message, flag)
         admin_settings = form.cleaned_data
-        draft.notes = admin_settings.get('notes', draft.notes)
+        self.draft.notes = admin_settings.get('notes', self.draft.notes)
         del admin_settings['approve_reject']
         del admin_settings['notes']
-        draft.flags = admin_settings
-        draft.save()
+        self.draft.flags = admin_settings
+        self.draft.save()
         return super(DraftFormView, self).form_valid(form)
 
     def get_success_url(self):
@@ -208,8 +201,10 @@ class CommentUpdateView(PreregAdmin, UpdateView):
             )
             return JsonResponse(serializers.serialize_draft_registration(draft))
         except AttributeError:
-            return handle_attribute_error(request, self.context_object_name,
-                                          self.kwargs.get('draft_pk'))
+            raise Http404('{} with id "{}" not found.'.format(
+                self.context_object_name.title(),
+                self.kwargs.get('draft_pk')
+            ))
         except NodeStateError as e:
             return bad_request(request, e)
 
@@ -218,15 +213,3 @@ def view_file(request, node_id, provider, file_id):
     fp = FileNode.load(file_id)
     wb_url = fp.generate_waterbutler_url()
     return redirect(wb_url)
-
-
-def handle_attribute_error(request, object_name, draft_id):
-    return page_not_found(
-        request,
-        AttributeError(
-            '{} with id "{}" not found.'.format(
-                object_name.title(),
-                draft_id
-            )
-        )
-    )

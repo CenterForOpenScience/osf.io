@@ -2,6 +2,7 @@ import mock
 from nose import tools as nt
 from django.test import RequestFactory
 from django.db import transaction
+from django.http import Http404
 
 from tests.base import AdminTestCase
 from tests.factories import (
@@ -101,7 +102,13 @@ class TestDraftFormView(AdminTestCase):
             'proof_of_publication': 'approved',
         }
 
+    def test_dispatch_raise_404(self):
+        view = setup_view(DraftFormView(), self.request, draft_pk='wrong')
+        with nt.assert_raises(Http404):
+            view.dispatch(self.request)
+
     def test_get_initial(self):
+        self.view.draft = self.dr1
         self.view.get_initial()
         res = self.view.initial
         nt.assert_is_instance(res, dict)
@@ -112,6 +119,7 @@ class TestDraftFormView(AdminTestCase):
                         self.dr1.flags['proof_of_publication'])
 
     def test_get_context_data(self):
+        self.view.draft = self.dr1
         res = self.view.get_context_data()
         nt.assert_is_instance(res, dict)
         nt.assert_in('draft', res)
@@ -123,6 +131,7 @@ class TestDraftFormView(AdminTestCase):
         nt.assert_true(form.is_valid())
         view = setup_form_view(self.post_view, self.post, form,
                                draft_pk=self.dr1._id)
+        view.draft = self.dr1
         count = OSFLogEntry.objects.count()
         with transaction.atomic():
             view.form_valid(form)
@@ -137,6 +146,7 @@ class TestDraftFormView(AdminTestCase):
         nt.assert_true(form.is_valid())
         view = setup_form_view(self.post_view, self.post, form,
                                draft_pk=self.dr1._id)
+        view.draft = self.dr1
         count = OSFLogEntry.objects.count()
         with transaction.atomic():
             view.form_valid(form)
@@ -150,6 +160,7 @@ class TestDraftFormView(AdminTestCase):
         nt.assert_true(form.is_valid())
         view = setup_form_view(self.post_view, self.post, form,
                                draft_pk=self.dr1._id)
+        view.draft = self.dr1
         count = OSFLogEntry.objects.count()
         with transaction.atomic():
             view.form_valid(form)

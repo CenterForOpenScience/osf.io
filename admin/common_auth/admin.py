@@ -9,7 +9,7 @@ from django.core.urlresolvers import reverse
 from django.utils.html import escape
 
 from admin.common_auth.logs import OSFLogEntry
-from admin.common_auth.forms import CustomUserRegistrationForm
+from admin.common_auth.forms import UserRegistrationForm
 from admin.common_auth.models import MyUser
 
 
@@ -18,7 +18,7 @@ class PermissionAdmin(admin.ModelAdmin):
 
 
 class CustomUserAdmin(UserAdmin):
-    add_form = CustomUserRegistrationForm
+    add_form = UserRegistrationForm
     list_display = ['email', 'first_name', 'last_name', 'is_active', 'confirmed', 'osf_id']
     fieldsets = (
         (None, {'fields': ('email', 'password',)}),
@@ -27,7 +27,7 @@ class CustomUserAdmin(UserAdmin):
     )
     add_fieldsets = (
         (None, {'fields':
-                ('email', 'first_name', 'last_name', 'password1', 'password2'),
+                ('email', 'first_name', 'last_name', 'password1', 'password2', 'osf_id'),
                 }),)
     search_fields = ('email', 'first_name', 'last_name',)
     ordering = ('last_name', 'first_name',)
@@ -39,21 +39,13 @@ class CustomUserAdmin(UserAdmin):
             reset_form = PasswordResetForm({'email': user.email}, request.POST)
             assert reset_form.is_valid()
             reset_form.save(
-                #subject_template_name='templates/emails/account_creation_subject.txt',
-                #email_template_name='templates/emails/invitation_email.html',
+                subject_template_name='emails/account_creation_subject.txt',
+                email_template_name='emails/password_reset_email.html',
                 request=request
             )
 
         self.message_user(request, 'Email invitation successfully sent')
     send_email_invitation.short_description = 'Send email invitation to selected users'
-
-    def save_model(self, request, obj, form, change):
-        if change:
-            pass
-        else:
-            obj.is_active = False
-        obj.save()
-
 
 admin.site.register(MyUser, CustomUserAdmin)
 admin.site.register(Permission, PermissionAdmin)
