@@ -4,7 +4,7 @@ from furl import furl
 from django.views.generic import FormView, DeleteView
 from django.core.mail import send_mail
 from django.shortcuts import redirect
-from django.views.defaults import page_not_found
+from django.http import Http404
 
 from website.settings import SUPPORT_EMAIL, DOMAIN
 from website.security import random_string
@@ -40,19 +40,19 @@ class UserDeleteView(OSFAdmin, DeleteView):
     def delete(self, request, *args, **kwargs):
         try:
             user = self.get_object()
-            flag = None
-            message = None
             if user.date_disabled is None:
                 user.disable_account()
+                user.is_registered = False
                 flag = USER_REMOVED
                 message = 'User account {} disabled'.format(user.pk)
             else:
                 user.date_disabled = None
                 subscribe_on_confirm(user)
+                user.is_registered = True
                 flag = USER_RESTORED
                 message = 'User account {} reenabled'.format(user.pk)
             user.save()
-            if flag is not None:
+            if flag:
                 update_admin_log(
                     user_id=self.request.user.id,
                     object_id=user.pk,
@@ -61,15 +61,11 @@ class UserDeleteView(OSFAdmin, DeleteView):
                     action_flag=flag
                 )
         except AttributeError:
-            return page_not_found(
-                request,
-                AttributeError(
-                    '{} with id "{}" not found.'.format(
-                        self.context_object_name.title(),
-                        self.kwargs.get('guid')
-                    )
-                )
-            )
+            raise Http404(
+                '{} with id "{}" not found.'.format(
+                    self.context_object_name.title(),
+                    self.kwargs.get('guid')
+                ))
         return redirect(reverse_user(self.kwargs.get('guid')))
 
     def get_context_data(self, **kwargs):
@@ -100,15 +96,11 @@ class User2FactorDeleteView(UserDeleteView):
                 action_flag=USER_2_FACTOR
             )
         except AttributeError:
-            return page_not_found(
-                request,
-                AttributeError(
-                    '{} with id "{}" not found.'.format(
-                        self.context_object_name.title(),
-                        self.kwargs.get('guid')
-                    )
-                )
-            )
+            raise Http404(
+                '{} with id "{}" not found.'.format(
+                    self.context_object_name.title(),
+                    self.kwargs.get('guid')
+                ))
         return redirect(reverse_user(self.kwargs.get('guid')))
 
 
@@ -132,39 +124,18 @@ class UserView(OSFAdmin, GuidView):
 class ResetPasswordView(OSFAdmin, FormView):
     form_class = EmailResetForm
     template_name = 'users/reset.html'
-
-    def get(self, request, *args, **kwargs):
-        try:
-            return super(ResetPasswordView, self).get(request, *args, **kwargs)
-        except AttributeError:
-            return page_not_found(
-                request,
-                AttributeError(
-                    'User with id "{}" not found.'.format(
-                        self.kwargs.get('guid')
-                    )
-                )
-            )
-
-    def post(self, request, *args, **kwargs):
-        try:
-            return super(ResetPasswordView, self).post(request, *args, **kwargs)
-        except AttributeError:
-            return page_not_found(
-                request,
-                AttributeError(
-                    'User with id "{}" not found.'.format(
-                        self.kwargs.get('guid')
-                    )
-                )
-            )
+    context_object_name = 'user'
 
     def get_context_data(self, **kwargs):
         user = User.load(self.kwargs.get('guid'))
         try:
             self.initial.setdefault('emails', [(r, r) for r in user.emails])
         except AttributeError:
-            raise
+            raise Http404(
+                '{} with id "{}" not found.'.format(
+                    self.context_object_name.title(),
+                    self.kwargs.get('guid')
+                ))
         kwargs.setdefault('guid', user.pk)
         return super(ResetPasswordView, self).get_context_data(**kwargs)
 
@@ -172,7 +143,11 @@ class ResetPasswordView(OSFAdmin, FormView):
         email = form.cleaned_data.get('emails')
         user = get_user(email)
         if user is None or user.pk != self.kwargs.get('guid'):
-            raise AttributeError
+            raise Http404(
+                '{} with id "{}" not found.'.format(
+                    self.context_object_name.title(),
+                    self.kwargs.get('guid')
+                ))
         reset_abs_url = furl(DOMAIN)
         user.verification_key = random_string(20)
         user.save()
