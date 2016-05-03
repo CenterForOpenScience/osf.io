@@ -1012,6 +1012,28 @@ class TestProjectViews(OsfTestCase):
         self.project.reload()
         assert_equal(self.project.title, 'newtitle')
 
+    # Regression test
+    def test_get_registrations_sorted_by_registered_date_descending(self):
+        # register a project several times, with various registered_dates
+        registrations = []
+        for days_ago in (21, 3, 2, 8, 13, 5, 1):
+            registration = RegistrationFactory(project=self.project)
+            reg_date = registration.registered_date - dt.timedelta(days_ago)
+            registration.registered_date = reg_date
+            registration.save()
+            registrations.append(registration)
+
+        registrations.sort(key=lambda r: r.registered_date, reverse=True)
+        expected = [ r._id for r in registrations ]
+
+        registrations_url = self.project.api_url_for('get_registrations')
+        res = self.app.get(registrations_url, auth=self.auth)
+        data = res.json
+        actual = [ n['id'] for n in data['nodes'] ]
+
+        assert_equal(actual, expected)
+
+
 
 class TestEditableChildrenViews(OsfTestCase):
 
