@@ -120,7 +120,7 @@ class ComposedScopes(object):
     FULL_WRITE = NODE_ALL_WRITE + USERS_WRITE + ORGANIZER_WRITE + GUIDS_READ
 
     # Admin permissions- includes functionality not intended for third-party use
-    ADMIN_LEVEL = FULL_WRITE + APPLICATIONS_WRITE + TOKENS_WRITE + COMMENT_REPORTS_WRITE + GUIDS_READ
+    ADMIN_LEVEL = FULL_WRITE + APPLICATIONS_WRITE + TOKENS_WRITE + COMMENT_REPORTS_WRITE
 
 
 # List of all publicly documented scopes, mapped to composed scopes defined above.
