@@ -61,6 +61,8 @@ class CoreScopes(object):
     ORGANIZER_COLLECTIONS_BASE_READ = 'collections.base_read'
     ORGANIZER_COLLECTIONS_BASE_WRITE = 'collections.base_write'
 
+    GUIDS_READ = 'guids.base_read'
+
 
 class ComposedScopes(object):
     """
@@ -111,7 +113,7 @@ class ComposedScopes(object):
     NODE_ALL_WRITE = NODE_ALL_READ + NODE_METADATA_WRITE + NODE_DATA_WRITE + NODE_ACCESS_WRITE
 
     # Full permissions: all routes intended to be exposed to third party API users
-    FULL_READ = NODE_ALL_READ + USERS_READ + ORGANIZER_READ
+    FULL_READ = NODE_ALL_READ + USERS_READ + ORGANIZER_READ + (CoreScopes.GUIDS_READ, )
     FULL_WRITE = NODE_ALL_WRITE + USERS_WRITE + ORGANIZER_WRITE
 
     # Admin permissions- includes functionality not intended for third-party use
