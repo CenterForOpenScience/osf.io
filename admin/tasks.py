@@ -12,9 +12,9 @@ WHEELHOUSE_PATH = os.environ.get('WHEELHOUSE')
 
 @task()
 def manage(cmd_str):
-    """Take command string for manage commands
+    """Take command string and target (-t) for manage commands
 
-    :param cmd_str: ex. runserver, migrate, "migrate module"
+    :param args: ex. runserver, migrate
     """
     manage_cmd = os.path.join(HERE, '..', 'manage.py')
     env = 'DJANGO_SETTINGS_MODULE="admin.base.settings"'
@@ -24,10 +24,7 @@ def manage(cmd_str):
 
 @task()
 def assets(dev=False, watch=False):
-    """Install and build static assets for admin.
-
-    use -d for dev environments
-    """
+    """Install and build static assets for admin."""
     if os.getcwd() != HERE:
         os.chdir(HERE)
     npm = 'npm install'

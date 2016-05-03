@@ -1,17 +1,9 @@
 from django.shortcuts import render
 from admin.sales_analytics import keen
-from admin.sales_analytics.metrics import user_count, multi_product_metrics_yearly, multi_product_metrics_monthly
 
 
 def dashboard(request):
-
-    context = keen.KEEN_CREDENTIALS.copy()
-    context.update({
-        'user_count': user_count,
-        'multi_product_metrics_yearly': multi_product_metrics_yearly,
-        'multi_product_metrics_monthly': multi_product_metrics_monthly,
-    })
-    return render(request, 'sales_analytics/dashboard.html', context)
+    return render(request, 'sales_analytics/dashboard.html', keen.KEEN_CREDENTIALS)
 
 
 def user_session(request):
