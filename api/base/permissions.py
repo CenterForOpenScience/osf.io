@@ -53,6 +53,11 @@ class TokenHasScope(permissions.BasePermission):
             except AttributeError:
                 raise ImproperlyConfigured('TokenHasScope requires the view to define the '
                                            'required_read_scopes attribute')
+            assert isinstance(view.required_read_scopes, list), 'The required_read_scopes must be a list of CoreScopes'
+            if view.required_read_scopes and type(view.required_read_scopes[0]) == tuple:
+                raise ImproperlyConfigured('TokenHasScope requires the view to define the '
+                                           'required_read_scopes attribute using CoreScopes')
+
             return read_scopes
         else:
             # A write operation implicitly also requires access to read scopes
@@ -61,7 +66,10 @@ class TokenHasScope(permissions.BasePermission):
             except AttributeError:
                 raise ImproperlyConfigured('TokenHasScope requires the view to define the '
                                            'required_write_scopes attribute')
-
+            assert isinstance(view.required_write_scopes, list), 'The required_write_scopes must be a list of CoreScopes'
+            if view.required_write_scopes and type(view.required_write_scopes[0]) == tuple:
+                raise ImproperlyConfigured('TokenHasScope requires the view to define the '
+                                           'required_write_scopes attribute using CoreScopes')
             return write_scopes
 
 
