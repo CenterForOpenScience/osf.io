@@ -139,13 +139,13 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             .then(function(){
                 if (self.accounts().length > 1) {
                     bootbox.prompt({
-                        title: 'Choose ' + self.addonName + ' Access Token to Import',
+                        title: 'Choose ' + $osf.htmlEscape(self.addonName) + ' Access Token to Import',
                         inputType: 'select',
                         inputOptions: ko.utils.arrayMap(
                             self.accounts(),
                             function(item) {
                                 return {
-                                    text: item.name,
+                                    text: $osf.htmlEscape(item.name),
                                     value: item.id
                                 };
                             }
@@ -164,7 +164,7 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                     });
                 } else {
                     bootbox.confirm({
-                        title: 'Import ' + self.addonName + ' access token',
+                        title: 'Import ' + $osf.htmlEscape(self.addonName) + ' access token',
                         message: self.messages.confirmAuth(),
                         callback: function(confirmed) {
                             if (confirmed) {
