@@ -100,19 +100,29 @@
                 </div>
             </div>
             %if existing_user:
-                <div class="col-sm-12 m-t-sm">
-                <div class="form-group col-sm-7 remember-me-checkbox">
-                        <div class="checkbox">
-                        <label><input type="checkbox"> Remember me</label>
+
+                <div class="row m-t-sm">
+                    <div class="col-md-11">
+                        <div class="form-group">
+                            <div class="m-l-md checkbox">
+                                <label><input type="checkbox"> Remember me</label>
+                            </div>
+                        </div>
                     </div>
+                    <div class="col-md-1" form-group"="">
+                    <button type="submit" class="btn pull-right btn-success ">Sign in</button>
                 </div>
-                     <div class="form-group pull-right">
-                        <button type="submit" class="btn btn-success">Sign in</button>
-                    </div>
-                </div>
-                <div class="col-sm-8 login-forgot-password">
-                    <a href="/forgotpassword/">Forgot password?</a>
-                </div>
+
+
+            </div>
+                <div class="row>
+                         <div class=" col-sm-12"="">
+                <a href="/forgotpassword/">Forgot password?</a>
+            </div>
+
+
+                </form>
+            </div>
             %else:
                 <div class="form-group">
                     <div class="col-sm-offset-3 col-sm-9">
@@ -271,7 +281,6 @@
         window.contextVars = $.extend(true, {}, window.contextVars, {
             'campaign': ${campaign or '' | sjson, n},
             'institution_redirect': ${institution_redirect or '' | sjson, n},
-            'existing_user': ${existing_user or '' | sjson, n}
         });
     </script>
     <script src=${"/static/public/js/login-page.js" | webpack_asset}></script>
