@@ -28,9 +28,7 @@ var ProjectSettings = oop.extend(
             self.categoryOptions = params.categoryOptions;
             self.categoryPlaceholder = params.category;
             self.selectedCategory = ko.observable(params.category);
-
-            self.disabled = params.disabled || false;
-
+            
             if (!params.updateUrl) {
                 throw new Error(language.instantiationErrorMessage);
             }

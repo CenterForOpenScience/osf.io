@@ -69,7 +69,6 @@ $(document).ready(function() {
             value: keys[i]
         });
     }
-    var disableCategory = !window.contextVars.node.parentExists;
     // need check because node category doesn't exist for registrations
     if ($('#projectSettings').length) {
         var projectSettingsVM = new ProjectSettings.ProjectSettings( {
@@ -79,7 +78,6 @@ $(document).ready(function() {
             categoryOptions: categoryOptions,
             node_id: ctx.node.id,
             updateUrl:  $osf.apiV2Url('nodes/' + ctx.node.id + '/'),
-            disabled: disableCategory
         });
         ko.applyBindings(projectSettingsVM, $('#projectSettings')[0]);
     }
