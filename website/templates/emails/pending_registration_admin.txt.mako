@@ -12,7 +12,7 @@ To approve this registration, click the following link: ${approval_link}
 
 To cancel this registration, click the following link: ${disapproval_link}
 
-Note: Clicking the disapproval link will immediately cancel the pending embargo and the
+Note: Clicking the disapproval link will immediately cancel the pending registration and the
 registration will remain in draft state. If you neither approve nor cancel the registration
 within ${approval_time_span} hours from midnight tonight (EDT) the registration will be
 automatically approved and made public. This operation is irreversible.

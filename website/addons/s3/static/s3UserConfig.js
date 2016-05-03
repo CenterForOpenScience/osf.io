@@ -107,7 +107,7 @@ function ViewModel(url) {
             title: 'Disconnect Amazon S3 Account?',
             message: '<p class="overflow">' +
                 'Are you sure you want to disconnect the S3 account <strong>' +
-                account.name + '</strong>? This will revoke access to S3 for all projects associated with this account.' +
+                $osf.htmlEscape(account.name) + '</strong>? This will revoke access to S3 for all projects associated with this account.' +
                 '</p>',
             callback: function (confirm) {
                 if (confirm) {

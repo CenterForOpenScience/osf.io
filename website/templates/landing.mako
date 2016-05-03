@@ -236,7 +236,7 @@
             <div class="col-md-4 col-md-offset-1">
               <i class="icon icon-nonprofit"></i>
               <h2>We are a <strong>mission-driven non-profit</strong></h2>
-              <p>The OSF is a free, open-source service of the <a href="https://cos.io/">Center for Open Science</a>. We’re aligning scientific practices with scientific values by improving openness, integrity and reproducibility of research. <span class="label label-success">Non-Profit</span></p>
+              <p>The OSF is a free, open source service of the <a href="https://cos.io/">Center for Open Science</a>. We’re aligning scientific practices with scientific values by improving openness, integrity and reproducibility of research. <span class="label label-success">Non-Profit</span></p>
             </div>
           </div>
         </div>
