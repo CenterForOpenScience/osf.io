@@ -188,7 +188,7 @@
             <div>
                 <div class="btn-group">
                     <button title="Copy to clipboard" class="btn btn-default btn-sm m-r-xs copy-button"
-                            data-bind="attr: {data-clipboard-text: linkUrl}" >
+                            data-bind="attr: {'data-clipboard-text': linkUrl}" >
                         <i class="fa fa-copy"></i>
                     </button>
                     <input class="link-url" type="text" data-bind="value: linkUrl, attr:{readonly: readonly}, click: toggle, clickBubble: false"  />
@@ -338,7 +338,7 @@
                             options: $parents[1].permissionList,
                             value: permission,
                             optionsText: optionsText.bind(permission),
-                             style: { font-weight: permissionChange() ? 'normal' : 'bold' }"
+                             style: { 'font-weight': permissionChange() ? 'normal' : 'bold' }"
                         >
                         </select>
                     </span>
@@ -381,7 +381,7 @@
         </div>
     % endif
         <div data-bind="foreach: messages">
-            <div data-bind="css: cssClass">{{ text }}</div>
+            <div data-bind="css: cssClass, text: text"></div>
         </div>
 </%def>
 

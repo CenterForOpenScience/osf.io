@@ -1,8 +1,4 @@
-import itertools
-
 from django import forms
-
-from admin.pre_reg.utils import get_prereg_reviewers
 
 
 class DraftRegistrationForm(forms.Form):
@@ -37,9 +33,18 @@ class DraftRegistrationForm(forms.Form):
         required=False
     )
 
+    approve_reject = forms.ChoiceField(
+        label='Action',
+        choices=(
+            ('approve', 'Approve'),
+            ('reject', 'Reject'),
+        ),
+        required=False,
+        widget=forms.RadioSelect(),
+    )
+
     def __init__(self, *args, **kwargs):
-        prereg_reviewers = itertools.chain(
-            ((None, 'None'), ), get_prereg_reviewers())
+        prereg_reviewers = ((None, 'None'), )
         self.base_fields['assignee'] = forms.ChoiceField(
-            choices=prereg_reviewers)
+            choices=prereg_reviewers, required=False)
         super(DraftRegistrationForm, self).__init__(*args, **kwargs)

@@ -29,7 +29,7 @@
                             <div class="col-md-12">
                                 <div>
                                     <!-- ko if:parentId -->
-                                        <a class="f-w-lg" data-bind="click:importFromParent, html:'Import contributors from <i>' + parentTitle + '</i>'"></a>
+                                        <a class="f-w-lg" data-bind="click:importFromParent, text:'Import contributors from ' + parentTitle"></a>
                                     <!-- /ko -->
                                 </div>
                             </div>
@@ -58,7 +58,7 @@
                                             <a
                                                     class="btn btn-success contrib-button btn-mini"
                                                     data-bind="visible: !contributor.added,
-                                                               click:$root.add,
+                                                               click:$root.add.bind($root),
                                                                tooltip: {title: 'Add contributor'}"
                                                 ><i class="fa fa-plus"></i></a>
                                             <div data-bind="visible: contributor.added,
@@ -112,10 +112,10 @@
                             <div class='help-block'>
                                 <div data-bind='if: foundResults'>
                                     <ul class="pagination pagination-sm" data-bind="foreach: paginators">
-                                        <li data-bind="css: style"><a href="#" data-bind="click: handler, html: text"></a></li>
+                                        <li data-bind="css: style"><a href="#" data-bind="click: handler, text: text"></a></li>
                                     </ul>
                                     <p>
-                                        <a href="#"data-bind="click:gotoInvite">Add <strong><em>{{query}}</em></strong> as an unregistered contributor</a>.
+                                        <a href="#" data-bind="click:gotoInvite">Add <strong><em data-bind="text: query"></em></strong> as an unregistered contributor</a>.
                                     </p>
                                 </div>
                                 <div data-bind="if: showLoading">
@@ -123,7 +123,7 @@
                                 </div>
                                     <div data-bind="if: noResults">
                                         No results found. Try a more specific search or
-                                        <a href="#" data-bind="click:gotoInvite">add <strong><em>{{query}}</em></strong> as an unregistered contributor</a>.
+                                        <a href="#" data-bind="click:gotoInvite">add <strong><em data-bind="text: query"></em></strong> as an unregistered contributor</a>.
                                     </div>
                             </div>
                         </div><!-- ./col-md -->
@@ -155,7 +155,7 @@
                                         <td class="p-r-sm" class="osf-icon-td">
                                             <a
                                                     class="btn btn-default contrib-button btn-mini"
-                                                    data-bind="click:$root.remove, tooltip: {title: 'Remove contributor'}"
+                                                    data-bind="click:$root.remove.bind($root), tooltip: {title: 'Remove contributor'}"
                                                 ><i class="fa fa-minus"></i></a>
                                         </td>
                                         <td>

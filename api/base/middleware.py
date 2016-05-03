@@ -7,11 +7,11 @@ import tempfile
 import StringIO
 import types
 import functools
-import itertools
 
-import corsheaders.middleware
 from django.conf import settings
+from modularodm import Q
 from raven.contrib.django.raven_compat.models import sentry_exception_handler
+import corsheaders.middleware
 
 from framework.mongo.handlers import (
     connection_before_request,
@@ -33,6 +33,7 @@ from framework.transactions.handlers import (
 )
 from website import models
 from .api_globals import api_globals
+from api.base import settings as api_settings
 
 class MongoConnectionMiddleware(object):
     """MongoDB Connection middleware."""
@@ -104,20 +105,21 @@ class DjangoGlobalMiddleware(object):
         return response
 
 class CorsMiddleware(corsheaders.middleware.CorsMiddleware):
-    INSTITUTION_ORIGINS_WHITELIST = tuple(domain.lower() for domain in itertools.chain(*[
-        institution.domains
-        for institution in models.Institution.find()
-    ]))
-
     """
     Augment CORS origin white list with the Institution model's domains.
     """
+    def origin_not_found_in_white_lists(self, origin, url):
+        not_found = super(CorsMiddleware, self).origin_not_found_in_white_lists(origin, url)
+        if not_found:
+            not_found = models.Institution.find(Q('domains', 'eq', url.netloc.lower())).count() == 0
+        return not_found
+
     def process_request(self, request):
         def origin_not_found_in_white_lists(self, request, origin, url):
             not_found = super(CorsMiddleware, self).origin_not_found_in_white_lists(origin, url)
             if not_found:
                 # Check if origin is in the dynamic Institutions whitelist
-                if url.netloc.lower() in self.INSTITUTION_ORIGINS_WHITELIST:
+                if url.netloc.lower() in api_settings.INSTITUTION_ORIGINS_WHITELIST:
                     return False
                 # Check if a cross-origin request using the Authorization header
                 elif not request.COOKIES:

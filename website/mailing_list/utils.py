@@ -44,9 +44,9 @@ def find_email(long_email):
     if '<' in long_email:
         email_match = ANGLE_BRACKETS_REGEX.search(long_email)
         if email_match:
-            return email_match.groups()[0]
+            return email_match.groups()[0].lower().strip()
     elif '@' in long_email:
-        return long_email
+        return long_email.lower().strip()
     return None
 
 def reason_for_rejection(sender, node, message):

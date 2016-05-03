@@ -202,11 +202,19 @@ PENDING_REGISTRATION_NON_ADMIN = Mail(
     'pending_registration_non_admin',
     subject='Registration pending for one of your projects.'
 )
+PENDING_EMBARGO_TERMINATION_ADMIN = Mail(
+    'pending_embargo_termination_admin',
+    subject='Request to end an embargo early for one of your projects.'
+)
+PENDING_EMBARGO_TERMINATION_NON_ADMIN = Mail(
+    'pending_embargo_termination_non_admin',
+    subject='Request to end an embargo early for one of your projects.'
+)
+
 FILE_OPERATION_SUCCESS = Mail(
     'file_operation_success',
     subject='Your ${action} has finished',
 )
-
 FILE_OPERATION_FAILED = Mail(
     'file_operation_failed',
     subject='Your ${action} has failed',
@@ -258,6 +266,11 @@ ARCHIVE_SUCCESS = Mail(
 
 WELCOME = Mail(
     'welcome',
+    subject='Welcome to the Open Science Framework'
+)
+
+WELCOME_OSF4I = Mail(
+    'welcome_osf4i',
     subject='Welcome to the Open Science Framework'
 )
 

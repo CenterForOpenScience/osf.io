@@ -5,7 +5,7 @@
         <br>
         Hello ${fullname},
         <br><br>
-        Thanks for adding your presentation from ${conference} to the conference’s <a href="${osf_url}">Open Science Framework</a> (OSF) page! Sharing virtually is an easy way to increase the impact of your research.
+        Thanks for adding your presentation from ${conference} to the conference's <a href="${osf_url}">Open Science Framework</a> (OSF) page! Sharing virtually is an easy way to increase the impact of your research.
         <br>
         %if downloads > 4:
         Your project files have been downloaded ${downloads} times!
@@ -29,5 +29,5 @@
 </%def>
 <%def name="footer()">
     <br>
-    The <a href="${osf_url}">Open Science Framework</a> is provided as a free, open-source service from the <a href="http://cos.io/">Center for Open Science</a>.
+    The <a href="${osf_url}">Open Science Framework</a> is provided as a free, open source service from the <a href="http://cos.io/">Center for Open Science</a>.
 </%def>

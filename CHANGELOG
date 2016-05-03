@@ -2,7 +2,19 @@
 Changelog
 *********
 
-0.67.0 (unreleased)
+0.68.0 (2016-04-28)
+===================
+
+- Wiki commenting.
+- End embargoes early.
+- UI fixes.
+
+Migrations
+----------
+
+See https://openscience.atlassian.net/browse/OSF-6081
+
+0.67.0 (2016-04-21)
 ===================
 
 - Change "Retraction" to "Withdrawal".

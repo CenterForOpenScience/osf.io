@@ -24,6 +24,8 @@ urlpatterns = [
                 views.password_reset_confirm_custom, name='password_reset_confirm'),
             url(r'^reset/done/$', views.password_reset_done,
                 name='password_reset_complete'),
+            url(r'^metrics/', include('admin.metrics.urls',
+                                      namespace='metrics')),
         ])
         ),
     url(r'^$', RedirectView.as_view(url='/admin/')),
