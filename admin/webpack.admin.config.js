@@ -29,7 +29,11 @@ var config = assign({}, common, {
     entry: {
         'admin-base-page': staticAdminPath('js/pages/base-page.js'),
         'prereg-admin-page': staticAdminPath('js/pages/prereg-admin-page.js'),
-        'admin-registration-edit-page': staticAdminPath('js/pages/admin-registration-edit-page.js')
+        'admin-registration-edit-page': staticAdminPath('js/pages/admin-registration-edit-page.js'),
+        'sales-analytics-keen': staticAdminPath('js/sales_analytics/sales-analytics.js'),
+        'sales-analytics-utils': staticAdminPath('js/sales_analytics/utils.js'),
+        'sa-user-session': staticAdminPath('js/sales_analytics/sa-user-session.js'),
+        'sa-products-view': staticAdminPath('js/sales_analytics/sa-products-view.js')
     },
     plugins: plugins,
     debug: true,
