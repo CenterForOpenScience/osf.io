@@ -52,10 +52,13 @@ def activity():
 
     # Projects
 
+    # Only show top-level projects (any category) in new and noteworthy lists
+    # This means that public children of private nodes will be excluded
     recent_query = (
-        Q('category', 'eq', 'project') &
+        Q('parent_node', 'eq', None) &
         Q('is_public', 'eq', True) &
-        Q('is_deleted', 'eq', False)
+        Q('is_deleted', 'eq', False) &
+        Q('is_collection', 'eq', False)
     )
 
     recent_public_projects = Node.find(

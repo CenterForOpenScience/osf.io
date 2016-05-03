@@ -10,9 +10,10 @@ serialize_node = _view_project
 
 def recent_public_registrations(n=10):
     recent_query = (
-        Q('category', 'eq', 'project') &
+        Q('parent_node', 'eq', None) &
         Q('is_public', 'eq', True) &
-        Q('is_deleted', 'eq', False)
+        Q('is_deleted', 'eq', False) &
+        Q('is_collection', 'eq', False)
     )
     registrations = Node.find(
         recent_query &
@@ -24,6 +25,7 @@ def recent_public_registrations(n=10):
         if not n:
             break
         if reg.is_retracted or reg.is_pending_embargo:
+            # Filter based on calculated properties
             continue
-        n = n - 1
+        n -= 1
         yield reg

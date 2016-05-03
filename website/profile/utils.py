@@ -12,10 +12,12 @@ from website.util.permissions import reduce_permissions
 
 def get_projects(user):
     """Return a list of user's projects, excluding registrations and folders."""
+    # Note: If the user is a contributor to a child (but does not have access to the parent), it will be
+    # excluded from this view
     return list(Node.find_for_user(
         user,
         (
-            Q('category', 'eq', 'project') &
+            Q('parent_node', 'eq', None) &
             Q('is_registration', 'eq', False) &
             Q('is_deleted', 'eq', False) &
             Q('is_collection', 'eq', False)
@@ -24,6 +26,7 @@ def get_projects(user):
 
 def get_public_projects(user):
     """Return a list of a user's public projects."""
+    # FIXME: This seems gratuitously inefficient; do we really need everything from the database?
     return [p for p in get_projects(user) if p.is_public]
 
 
@@ -104,8 +107,8 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False):
         else:
             merged_by = None
         ret.update({
-            'number_projects': len(get_projects(user)),
-            'number_public_projects': len(get_public_projects(user)),
+            'number_projects': len(get_projects(user)),  # TODO: Replace with ODM .count() when possible
+            'number_public_projects': len(get_public_projects(user)),  # TODO: Replace with ODM .count() when possible
             'activity_points': user.get_activity_points(),
             'gravatar_url': gravatar(
                 user, use_ssl=True,
