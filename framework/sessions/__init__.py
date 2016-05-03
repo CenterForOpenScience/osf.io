@@ -5,7 +5,7 @@ import urllib
 import urlparse
 import bson.objectid
 import httplib as http
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import itsdangerous
 
@@ -107,7 +107,9 @@ def create_session(response, data=None):
         cookie_value = itsdangerous.Signer(settings.SECRET_KEY).sign(session_id)
         set_session(session)
     if response is not None:
-        response.set_cookie(settings.COOKIE_NAME, value=cookie_value, max_age=settings.OSF_COOKIE_MAX_AGE, domain=settings.OSF_COOKIE_DOMAIN)
+        now = datetime.utcnow() + timedelta(days=settings.OSF_COOKIE_EXPIRES)
+        exp_date = now.strftime("%a %b %d %H:%M:%S UTC %Y")
+        response.set_cookie(settings.COOKIE_NAME, value=cookie_value, max_age=settings.OSF_COOKIE_MAX_AGE, expires=exp_date, domain=settings.OSF_COOKIE_DOMAIN)
         return response
 
 
