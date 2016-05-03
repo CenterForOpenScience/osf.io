@@ -276,23 +276,23 @@ var valueProgressBar = function(value) {
         if (value === 0) {
             return {
                 class: 'progress-bar progress-bar-danger',
-                style: 'width: 10%'
+                style: 'width: 20%'
             };
         }
         if (value === 1) {
             return {
                 class: 'progress-bar progress-bar-danger',
-                style: 'width: 25%'
+                style: 'width: 40%'
             };
         } else if (value === 2) {
             return {
                 class: 'progress-bar progress-bar-warning',
-                style: 'width: 50%'
+                style: 'width: 60%'
             };
         } else if (value === 3) {
             return {
                 class: 'progress-bar progress-bar-warning',
-                style: 'width: 75%'
+                style: 'width: 80%'
             };
         } else if (value === 4) {
             return {
