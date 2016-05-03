@@ -6,7 +6,7 @@ import mock
 
 from nose.tools import *  # flake8: noqa
 
-from framework.auth import cas
+from framework.auth import cas, core
 from website.util import api_v2_url
 from website.addons.twofactor.tests import _valid_code
 from website.settings import API_DOMAIN
@@ -198,7 +198,31 @@ class TestOAuthScopedAccess(ApiTestCase):
         assert_equal(res.status_code, 403)
 
     @mock.patch('framework.auth.cas.CasClient.profile')
-    def test_full_read_scope_can_read_guid_view(self, mock_user_info):
+    def test_full_read_scope_can_read_guid_view_and_user_can_view_project(self, mock_user_info):
+        project = ProjectFactory(creator=self.user)
+        mock_user_info.return_value = self._scoped_response(['osf.full_read'])
+        url = api_v2_url('guids/{}/'.format(project._id), base_route='/', base_prefix='v2/')
+        res = self.app.get(url, auth='some_valid_token', auth_type='jwt')
+        redirect_url = '{}{}nodes/{}/'.format(API_DOMAIN, API_BASE, project._id)
+        assert_equal(res.status_code, 302)
+        assert_equal(res.location, redirect_url)
+        redirect_res = res.follow(auth='some_valid_token', auth_type='jwt')
+        assert_equal(redirect_res.json['data']['attributes']['title'], project.title)
+
+    @mock.patch('framework.auth.cas.CasClient.profile')
+    def test_full_write_scope_can_read_guid_view_and_user_can_view_project(self, mock_user_info):
+        project = ProjectFactory(creator=self.user)
+        mock_user_info.return_value = self._scoped_response(['osf.full_write'])
+        url = api_v2_url('guids/{}/'.format(project._id), base_route='/', base_prefix='v2/')
+        res = self.app.get(url, auth='some_valid_token', auth_type='jwt')
+        redirect_url = '{}{}nodes/{}/'.format(API_DOMAIN, API_BASE, project._id)
+        assert_equal(res.status_code, 302)
+        assert_equal(res.location, redirect_url)
+        redirect_res = res.follow(auth='some_valid_token', auth_type='jwt')
+        assert_equal(redirect_res.json['data']['attributes']['title'], project.title)
+
+    @mock.patch('framework.auth.cas.CasClient.profile')
+    def test_full_read_scope_can_read_guid_view_and_user_cannot_view_project(self, mock_user_info):
         project = ProjectFactory()
         mock_user_info.return_value = self._scoped_response(['osf.full_read'])
         url = api_v2_url('guids/{}/'.format(project._id), base_route='/', base_prefix='v2/')
@@ -206,9 +230,11 @@ class TestOAuthScopedAccess(ApiTestCase):
         redirect_url = '{}{}nodes/{}/'.format(API_DOMAIN, API_BASE, project._id)
         assert_equal(res.status_code, 302)
         assert_equal(res.location, redirect_url)
+        redirect_res = res.follow(auth='some_valid_token', auth_type='jwt', expect_errors=True)
+        assert_equal(redirect_res.status_code, 403)
 
     @mock.patch('framework.auth.cas.CasClient.profile')
-    def test_full_write_scope_can_read_guid_view(self, mock_user_info):
+    def test_full_write_scope_can_read_guid_view_and_user_cannot_view_project(self, mock_user_info):
         project = ProjectFactory()
         mock_user_info.return_value = self._scoped_response(['osf.full_write'])
         url = api_v2_url('guids/{}/'.format(project._id), base_route='/', base_prefix='v2/')
@@ -216,3 +242,5 @@ class TestOAuthScopedAccess(ApiTestCase):
         redirect_url = '{}{}nodes/{}/'.format(API_DOMAIN, API_BASE, project._id)
         assert_equal(res.status_code, 302)
         assert_equal(res.location, redirect_url)
+        redirect_res = res.follow(auth='some_valid_token', auth_type='jwt', expect_errors=True)
+        assert_equal(redirect_res.status_code, 403)
