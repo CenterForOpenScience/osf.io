@@ -4,9 +4,10 @@ from website import settings
 from website.project import Node
 from website.project.utils import recent_public_registrations
 
+from keen import KeenClient
+
 from modularodm.query.querydialect import DefaultQueryDialect as Q
 
-from framework.analytics.piwik import PiwikClient
 
 def activity():
 
@@ -14,24 +15,50 @@ def activity():
     popular_public_registrations = []
     hits = {}
 
-    # get the date for exactly one week ago
-    target_date = datetime.date.today() - datetime.timedelta(weeks=1)
-
-    if settings.PIWIK_HOST:
-        client = PiwikClient(
-            url=settings.PIWIK_HOST,
-            auth_token=settings.PIWIK_ADMIN_TOKEN,
-            site_id=settings.PIWIK_SITE_ID,
-            period='week',
-            date=target_date.strftime('%Y-%m-%d'),
+    if settings.KEEN_READ_KEY:
+        client = KeenClient(
+            project_id=settings.KEEN_PROJECT_ID,
+            read_key=settings.KEEN_READ_KEY
         )
 
-        popular_project_ids = [
-            x for x in client.custom_variables if x.label == 'Project ID'
-        ][0].values
+        node_pageviews = client.count(
+            event_collection='pageviews',
+            timeframe='this_7_days',
+            group_by='node.id',
+            filters=[
+                {
+                    'property_name': 'node.id',
+                    'operator': 'exists',
+                    'property_value': True
+                }
+            ]
+        )
 
-        for nid in popular_project_ids:
-            node = Node.load(nid.value)
+        node_visits = client.count_unique(
+            event_collection='pageviews',
+            target_property='sessionId',
+            timeframe='this_7_days',
+            group_by='node.id',
+            filters=[
+                {
+                    'property_name': 'node.id',
+                    'operator': 'exists',
+                    'property_value': True
+                }
+            ]
+        )
+
+        node_data = [{'node': x['node.id'], 'views': x['result']} for x in node_pageviews if x['node.id']]
+
+        for node_visit in node_visits:
+            for node_result in node_data:
+                if node_visit['node.id'] == node_result['node']:
+                    node_result.update({'visits': node_visit['result']})
+
+        node_data.sort(key=lambda datum: datum['views'], reverse=True)
+
+        for nid in node_data:
+            node = Node.load(nid['node'])
             if node is None:
                 continue
             if node.is_public and not node.is_registration and not node.is_deleted:
@@ -44,10 +71,10 @@ def activity():
                 break
 
         hits = {
-            x.value: {
-                'hits': x.actions,
-                'visits': x.visits
-            } for x in popular_project_ids
+            datum['node']: {
+                'hits': datum['views'],
+                'visits': datum['visits']
+            } for datum in node_data
         }
 
     # Projects

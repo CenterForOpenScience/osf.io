@@ -380,29 +380,6 @@ var debounce = function(func, wait, immediate) {
   };
 };
 
-///////////
-// Piwik //
-///////////
-
-var trackPiwik = function(host, siteId, cvars, useCookies) {
-    cvars = Array.isArray(cvars) ? cvars : [];
-    useCookies = typeof(useCookies) !== 'undefined' ? useCookies : false;
-    try {
-        var piwikTracker = window.Piwik.getTracker(host + 'piwik.php', siteId);
-        piwikTracker.enableLinkTracking(true);
-        for(var i=0; i<cvars.length;i++)
-        {
-            piwikTracker.setCustomVariable.apply(null, cvars[i]);
-        }
-        if (!useCookies) {
-            piwikTracker.disableCookies();
-        }
-        piwikTracker.trackPageView();
-
-    } catch(err) { return false; }
-    return true;
-};
-
 /**
   * A thin wrapper around ko.applyBindings that ensures that a view model
   * is bound to the expected element. Also shows the element (and child elements) if it was
@@ -862,7 +839,6 @@ module.exports = window.$.osf = {
     mapByProperty: mapByProperty,
     isEmail: isEmail,
     urlParams: urlParams,
-    trackPiwik: trackPiwik,
     applyBindings: applyBindings,
     FormattableDate: FormattableDate,
     throttle: throttle,
