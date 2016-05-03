@@ -56,7 +56,7 @@ class TokenHasScope(permissions.BasePermission):
             assert isinstance(view.required_read_scopes, list), 'The required_read_scopes must be a list of CoreScopes'
             if view.required_read_scopes and type(view.required_read_scopes[0]) == tuple:
                 raise ImproperlyConfigured('TokenHasScope requires the view to define the '
-                                           'required_read_scopes attribute using CoreScopes')
+                                           'required_read_scopes attribute using CoreScopes rather than ComposedScopes')
 
             return read_scopes
         else:
@@ -69,7 +69,7 @@ class TokenHasScope(permissions.BasePermission):
             assert isinstance(view.required_write_scopes, list), 'The required_write_scopes must be a list of CoreScopes'
             if view.required_write_scopes and type(view.required_write_scopes[0]) == tuple:
                 raise ImproperlyConfigured('TokenHasScope requires the view to define the '
-                                           'required_write_scopes attribute using CoreScopes')
+                                           'required_write_scopes attribute using CoreScopes rather than ComposedScopes')
             return write_scopes
 
 
