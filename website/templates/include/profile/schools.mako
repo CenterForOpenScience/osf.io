@@ -22,7 +22,7 @@
                         </span>
                         <a
                                 class="text-danger pull-right"
-                                data-bind="click: $parent.removeContent"
+                                data-bind="click: $parent.removeContent.bind($parent)"
                                 >Remove</a>
                     </div>
 

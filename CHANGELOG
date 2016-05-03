@@ -2,6 +2,23 @@
 Changelog
 *********
 
+0.69.0 (2016-05-03)
+===================
+
+- Add links to new Guides page at http://help.osf.io.
+
+0.68.0 (2016-04-28)
+===================
+
+- Wiki commenting.
+- End embargoes early.
+- UI fixes.
+
+Migrations
+----------
+
+See https://openscience.atlassian.net/browse/OSF-6081
+
 0.67.0 (2016-04-21)
 ===================
 

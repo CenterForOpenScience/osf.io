@@ -12,15 +12,43 @@
 {% render_bundle 'vendor' %}
 <link href="{% static 'css/registrations.css' %}" rel="stylesheet" type="text/css" />
 <script type="application/javascript">
-   window.contextVars = window.contextVars || {};
-   window.contextVars.currentUser = {
-     id: -1,
-     fullname: 'Prereg Admin'
-   };
-   window.contextVars.draft = {{ draft | jsonify | safe }};
-   window.contextVars.urls = {
-     updateDraft: '{% url 'pre_reg:update_draft' draft.pk %}'
-   };
+    window.contextVars = window.contextVars || {};
+    window.contextVars.currentUser = {
+        id: -1,
+        fullname: 'Prereg Admin'
+    };
+    window.contextVars.draft = {{ draft | jsonify | safe }};
+    window.contextVars.urls = {
+        updateDraft: '{% url 'pre_reg:comment' draft.pk %}'
+    };
+    // Grab csrf_token
+    function getCookie(name) {
+        var cookieValue = null;
+        if (document.cookie && document.cookie != '') {
+            var cookies = document.cookie.split(';');
+            for (var i = 0; i < cookies.length; i++) {
+                var cookie = jQuery.trim(cookies[i]);
+                // Does this cookie string begin with the name we want?
+                if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    var csrftoken = getCookie('csrftoken');
+    function csrfSafeMethod(method) {
+    // these HTTP methods do not require CSRF protection
+    return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+    }
+    $.ajaxSetup({
+        beforeSend: function(xhr, settings) {
+            if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                xhr.setRequestHeader("X-CSRFToken", csrftoken);
+            }
+        }
+    });
 </script>
 
 <div class="container-fluid scripted" id="draftRegistrationScope">
@@ -72,7 +100,7 @@
         <a data-bind="click: nextPage" class="btn btn-primary">Next Page</a>
     </div>
 </div>
-{% include "pre_reg/registration_editor_templates.html" %}
+{% include "pre_reg/comment_editor.html" %}
 {% endblock %}
 
 {% block bottom_js %}
