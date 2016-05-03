@@ -3,6 +3,7 @@
 import datetime
 import functools
 import logging
+import urllib
 
 from bleach import linkify
 from bleach.callbacks import nofollow
@@ -211,7 +212,7 @@ class NodeWikiPage(GuidStoredObject, Commentable):
 
     # used by django and DRF - use v1 url since there are no v2 wiki routes
     def get_absolute_url(self):
-        return '{}wiki/{}/'.format(self.node.absolute_url, self.page_name)
+        return '{}wiki/{}/'.format(self.node.absolute_url, urllib.quote(self.page_name))
 
     def html(self, node):
         """The cleaned HTML of the page"""
