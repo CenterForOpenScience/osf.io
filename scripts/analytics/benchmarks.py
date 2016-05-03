@@ -70,17 +70,15 @@ def get_folders():
 def count_user_nodes(users=None):
     users = users or get_active_users()
     return [
-        len(
-            Node.find_for_user(
-                user,
-                (
-                    Q('is_deleted', 'eq', False) &
-                    Q('is_collection', 'ne', True)
-                )
+        Node.find_for_user(
+            user,
+            (
+                Q('is_deleted', 'eq', False) &
+                Q('is_collection', 'ne', True)
             )
-        )
+        ).count()  # TODO: Run and confirm this gives same numbers
         for user in users
-    ]
+        ]
 
 
 def count_user_logs(user, query=None):
@@ -151,24 +149,26 @@ def get_log_counts(users):
 
 def get_projects():
     projects = Node.find(
-        Q('category', 'eq', 'project') &
+        Q('parent_node', 'eq', None) &
         Q('is_deleted', 'eq', False) &
-        Q('is_collection', 'ne', True)
+        Q('is_collection', 'ne', True) &
+        Q('is_bookmark_collection', 'ne', True)
     )
     return projects
 
 def get_projects_forked():
     projects_forked = list(Node.find(
-        Q('category', 'eq', 'project') &
+        Q('parent_node', 'eq', None) &
         Q('is_deleted', 'eq', False) &
         Q('is_collection', 'ne', True) &
+        Q('is_bookmark_collection', 'ne', True) &
         Q('is_fork', 'eq', True)
     ))
     return projects_forked
 
 def get_projects_registered():
     projects_registered = Node.find(
-        Q('category', 'eq', 'project') &
+        Q('parent_node', 'eq', None) &
         Q('is_deleted', 'eq', False) &
         Q('is_collection', 'ne', True) &
         Q('is_registration', 'eq', True)
@@ -177,7 +177,7 @@ def get_projects_registered():
 
 def get_projects_public():
     projects_public = Node.find(
-        Q('category', 'eq', 'project') &
+        Q('parent_node', 'eq', None) &
         Q('is_deleted', 'eq', False) &
         Q('is_collection', 'ne', True) &
         Q('is_public', 'eq', True)
