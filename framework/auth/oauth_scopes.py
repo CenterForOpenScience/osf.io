@@ -81,6 +81,9 @@ class ComposedScopes(object):
     TOKENS_READ = (CoreScopes.TOKENS_READ,)
     TOKENS_WRITE = TOKENS_READ + (CoreScopes.TOKENS_WRITE,)
 
+    # Guid redirect view
+    GUIDS_READ = (CoreScopes.GUIDS_READ, )
+
     # Comment reports collection
     COMMENT_REPORTS_READ = (CoreScopes.COMMENT_REPORTS_READ,)
     COMMENT_REPORTS_WRITE = COMMENT_REPORTS_READ + (CoreScopes.COMMENT_REPORTS_WRITE,)
@@ -113,11 +116,11 @@ class ComposedScopes(object):
     NODE_ALL_WRITE = NODE_ALL_READ + NODE_METADATA_WRITE + NODE_DATA_WRITE + NODE_ACCESS_WRITE
 
     # Full permissions: all routes intended to be exposed to third party API users
-    FULL_READ = NODE_ALL_READ + USERS_READ + ORGANIZER_READ + (CoreScopes.GUIDS_READ, )
-    FULL_WRITE = NODE_ALL_WRITE + USERS_WRITE + ORGANIZER_WRITE
+    FULL_READ = NODE_ALL_READ + USERS_READ + ORGANIZER_READ + GUIDS_READ
+    FULL_WRITE = NODE_ALL_WRITE + USERS_WRITE + ORGANIZER_WRITE + GUIDS_READ
 
     # Admin permissions- includes functionality not intended for third-party use
-    ADMIN_LEVEL = FULL_WRITE + APPLICATIONS_WRITE + TOKENS_WRITE + COMMENT_REPORTS_WRITE
+    ADMIN_LEVEL = FULL_WRITE + APPLICATIONS_WRITE + TOKENS_WRITE + COMMENT_REPORTS_WRITE + GUIDS_READ
 
 
 # List of all publicly documented scopes, mapped to composed scopes defined above.
