@@ -216,7 +216,7 @@ class DropboxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                 u'The contents of Dropbox add-ons cannot be registered at this time; '
                 u'the Dropbox folder linked to this {category} will not be included '
                 u'as part of this registration.'
-            ).format(**locals())
+            ).format(category=markupsafe.escape(category))
 
     # backwards compatibility
     before_register = before_register_message
@@ -229,9 +229,10 @@ class DropboxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             category = node.project_or_component
             name = removed.fullname
             return (u'The Dropbox add-on for this {category} is authenticated by {name}. '
-                    'Removing this user will also remove write access to Dropbox '
-                    'unless another contributor re-authenticates the add-on.'
-                    ).format(**locals())
+                    u'Removing this user will also remove write access to Dropbox '
+                    u'unless another contributor re-authenticates the add-on.'
+                    ).format(category=markupsafe.escape(category),
+                             name=markupsafe.escape(name))
 
     # backwards compatibility
     before_remove_contributor = before_remove_contributor_message
@@ -271,16 +272,16 @@ class DropboxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             message = (
                 'Dropbox authorization copied to forked {cat}.'
             ).format(
-                cat=fork.project_or_component
+                cat=markupsafe.escape(fork.project_or_component)
             )
         else:
             message = (
                 u'Dropbox authorization not copied to forked {cat}. You may '
-                'authorize this fork on the <u><a href="{url}">Settings</a></u> '
-                'page.'
+                u'authorize this fork on the <u><a href="{url}">Settings</a></u> '
+                u'page.'
             ).format(
                 url=fork.web_url_for('node_setting'),
-                cat=fork.project_or_component
+                cat=markupsafe.escape(fork.project_or_component)
             )
         if save:
             clone.save()

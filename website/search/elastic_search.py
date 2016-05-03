@@ -44,6 +44,7 @@ ALIASES = {
     'user': 'Users',
     'total': 'Total',
     'file': 'Files',
+    'institution': 'Institutions',
 }
 
 # Prevent tokenizing and stop word removal.
@@ -483,6 +484,20 @@ def update_file(file_, index=None, delete=False):
     )
 
 @requires_search
+def update_institution(institution, index=None):
+    index = index or INDEX
+
+    institution_doc = {
+        'id': institution._id,
+        'url': '/institutions/{}/'.format(institution._id),
+        'logo_path': institution.logo_path,
+        'category': 'institution',
+        'name': institution.name,
+    }
+
+    es.index(index=index, doc_type='institution', body=institution_doc, id=institution._id, refresh=True)
+
+@requires_search
 def delete_all():
     delete_index(INDEX)
 
@@ -498,7 +513,7 @@ def create_index(index=None):
     all of which are applied to all projects, components, and registrations.
     '''
     index = index or INDEX
-    document_types = ['project', 'component', 'registration', 'user', 'file']
+    document_types = ['project', 'component', 'registration', 'user', 'file', 'institution']
     project_like_types = ['project', 'component', 'registration']
     analyzed_fields = ['title', 'description']
 

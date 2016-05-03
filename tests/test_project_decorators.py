@@ -4,7 +4,7 @@ from nose.tools import *  # noqa
 
 from website.project.decorators import must_be_valid_project
 
-from website.project.model import Sanction
+from website.project.sanctions import Sanction
 
 from tests.base import OsfTestCase
 from tests.factories import ProjectFactory, NodeFactory, RetractionFactory, CollectionFactory

@@ -338,8 +338,8 @@ class TestUserMerging(base.OsfTestCase):
             'date_disabled',
             'date_last_login',
             'date_registered',
+            'email_last_sent',
             'family_name',
-            'forgot_password_last_post',
             'fullname',
             'given_name',
             'is_claimed',
@@ -489,4 +489,4 @@ class TestUserMerging(base.OsfTestCase):
         other_user = factories.UserFactory()
         self.user.merge_user(other_user)
         assert_equal(other_user.merged_by._id, self.user._id)
-        mock_notify.assert_not_called()
+        assert_false(mock_notify.called)

@@ -70,13 +70,13 @@
             <div class="col-md-6">
                 <h4>
                     <strong>Status: </strong>
-                    {% if comment.spam_status == 0 %}
+                    {% if comment.spam_status == {{ UNKNOWN }} %}
                         <span class="label label-default">Unknown</span>
-                    {% elif comment.spam_status == 1 %}
+                    {% elif comment.spam_status == {{ FLAGGED }} %}
                         <span class="label label-warning">Flagged</span>
-                    {% elif comment.spam_status == 2 %}
+                    {% elif comment.spam_status == {{ SPAM }} %}
                         <span class="label label-danger">Spam</span>
-                    {% elif comment.spam_status == 4 %}
+                    {% elif comment.spam_status == {{ HAM }} %}
                         <span class="label label-success">Ham</span>
                     {% endif %}
                 </h4>
