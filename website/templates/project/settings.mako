@@ -390,7 +390,7 @@
                     % endif
                     % if user['is_admin']:
                         <div class="help-block" style="padding-left: 15px">
-                            <p class="text-info">This notification setting applies to ALL project contributors.</p>
+                            <p class="text-muted">This notification setting applies to ALL project contributors.</p>
                         </div>
                         <form id="mailingListTreeSettings" class="osf-treebeard-minimal">
                             <div id="mailingListGrid">
@@ -405,7 +405,7 @@
                         </form>
                     % endif  ## End PML Settings ## Begin Individual Email Notifications
                     <div class="help-block" style="padding-left: 15px">
-                        <p class="text-info">These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>
+                        <p class="text-muted">These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>
                     </div>
                     <form id="notificationSettings" class="osf-treebeard-minimal">
                         <div id="grid">

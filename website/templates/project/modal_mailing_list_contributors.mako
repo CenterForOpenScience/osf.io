@@ -3,16 +3,13 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-              <h3>Project mailing list email.</h3>
+              <h3>Project mailing list email</h3>
             </div>
 
             <div class="modal-body">
                 <h4 class="row text-center">
                 <div class="btn-group">
-                    <button data-clipboard-text="${node['id']}@osf.io" title="Copy to clipboard" class="btn btn-default btn-sm m-r-xs copy-button zeroclipboard-is-hover">
-                        <i class="fa fa-copy"></i>
-                    </button>
-                    <input readonly="readonly" class="link-url", click: toggle, clickBubble: false type="text", value="${node['id']}@osf.io">
+                    <a href="mailto: ${node['id']}@osf.io">${node['id']}@osf.io</a>
                 </div>
                 </h4>
                 
