@@ -252,6 +252,12 @@ class ApiAppTestCase(SimpleTestCase):
         self.app = TestAppJSONAPI(api_django_app)
 
 
+class AdminAppTestCase(DjangoTestCase):
+    def setUp(self):
+        super(AdminAppTestCase, self).setUp()
+        self.app = TestApp(admin_django_app)
+
+
 class UploadTestCase(unittest.TestCase):
 
     @classmethod
@@ -331,7 +337,7 @@ class ApiTestCase(DbTestCase, ApiAppTestCase, UploadTestCase, MockRequestTestCas
         settings.USE_EMAIL = False
 
 
-class AdminTestCase(DbTestCase, DjangoTestCase, UploadTestCase, MockRequestTestCase):
+class AdminTestCase(DbTestCase, AdminAppTestCase, UploadTestCase, MockRequestTestCase):
     pass
 
 

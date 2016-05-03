@@ -1,6 +1,5 @@
 'use strict';
 
-var c3 = require('c3');
 var keen = require('keen-js');
 var ss = require('simple-statistics');
 
@@ -89,7 +88,7 @@ var SalesAnalytics = function() {
 
         if (numberOfWeeks == 0) {
             var chart = self.prepareChart('keen-chart-average-session-history');
-            chart.attributes({title: 'Average User/MAU Session Length History of Past 12 Weeks', width: '100%', height: 450});
+            chart.attributes({title: 'Average User/MAU Session Length History of Past 12 Weeks', width: 600, height: 450});
             chart.adapter({chartType: 'columnchart'});
             chart.chartOptions({
                 hAxis: {title: "Week"},
@@ -194,93 +193,14 @@ var SalesAnalytics = function() {
             }
         });
     };
-    self.getUserCount = function(userCount) {
-        var chart = c3.generate({
-            bindto: '#db-chart-user-count',
-            color: {
-                pattern: [
-                    //rausch    hackb      kazan      babu      lima        beach     barol
-                    '#ff5a5f', '#7b0051', '#007A87', '#00d1c1', '#8ce071', '#ffb400', '#b4a76c',
-                    '#ff8083', '#cc0086', '#00a1b3', '#00ffeb', '#bbedab', '#ffd266', '#cbc29a',
-                    '#ff3339', '#ff1ab1', '#005c66', '#00b3a5', '#55d12e', '#b37e00', '#988b4e'
-                  ]},
-            data: {
-                json: userCount.items,
-                keys: {
-                    x: 'Product',
-                    value: ['Count']
-                },
-                types: {
-                    Count: 'bar'
-                }
-            },
-            axis: {
-                x: {
-                    type: 'category'
-                },
-                rotated: true
-            },
-            bar: {
-                width: {
-                    ratio: 0.5 // this makes bar width 50% of length between ticks
-                }
-                // or
-                //width: 100 // this makes bar width 100px
-            }
-        });
-    };
-
-    self.getUserPercentage = function(userCount) {
-        var chart = c3.generate({
-            bindto: '#db-chart-user-percent',
-            data: {
-                json: userCount.items,
-                keys: {
-                    x: 'Product',
-                    value: ['Percentage']
-                },
-                types: {
-                    Percentage: 'bar'
-                },
-                order: 'desc'
-            },
-            axis: {
-                x: {
-                    type: 'category'
-                },
-                rotated: true
-            }
-        });
-    };
-
-    self.getMultiProductCountYearly = function(multiProductMetricsYearly) {
-        var chart = new keen.Dataviz()
-          .el(document.getElementById('db-chart-multi-product-yearly'))
-          .parseRawData({ result: multiProductMetricsYearly['multi_product_count'] })
-          .chartType("metric")
-          .colors(["#e57fc2"])
-          .title("Users")
-          .render();
-      };
-
-    self.getMultiProductCountMonthly = function(multiProductMetricsMonthly) {
-        var chart = new keen.Dataviz()
-          .el(document.getElementById('db-chart-multi-product-monthly'))
-          .parseRawData({ result: multiProductMetricsMonthly['multi_product_count'] })
-          .chartType("metric")
-          .colors(["#e57fc2"])
-          .title("Users")
-          .render();
-      };
-
 
     self.prepareChart = function(elementId) {
         var chart = new keen.Dataviz();
-        return chart.el(document.getElementById(elementId)).library('c3').prepare();
+        return chart.el(document.getElementById(elementId)).prepare();
     };
 
     self.drawChart = function(chart, type, title, result) {
-        chart.attributes({title: title, width: '100%'});
+        chart.attributes({title: title, width: 600});
         chart.adapter({chartType: type});
         chart.parseRawData({result: result});
         chart.render();
@@ -297,11 +217,6 @@ var SalesAnalytics = function() {
         self.getAverageUserSessionLength();
         self.getAverageMAUSessionLength();
         self.getAverageUserSessionHistory(true, 12, null, null, null);
-        debugger;
-        self.getUserCount(userCount);
-        self.getUserPercentage(userCount);
-        self.getMultiProductCountYearly(multiProductMetricsYearly);
-        self.getMultiProductCountMonthly(multiProductMetricsMonthly);
     };
 
     self.clean = function() {
