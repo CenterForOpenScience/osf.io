@@ -52,7 +52,22 @@
                 User Count by Product
               </div>
               <div class="chart-stage">
-                    <div id='db-chart-user-count'></div>
+                <div class="row">
+                  <div class="col-xs-2">
+                    <div class="tabbable tabs-left">
+                      <ul class="nav nav-tabs">
+                        <li class="active"><a href="#db-chart-user-count" data-toggle="tab">Count</a></li>
+                        <li><a href="#db-chart-user-percent" data-toggle="tab">Percentage</a></li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div class="col-xs-10">
+                    <div class="tab-content">
+                     <div class="tab-pane active" id="db-chart-user-count"></div>
+                     <div class="tab-pane" id="db-chart-user-percent"></div>
+                    </div>
+                  </div>
+                </div>
               </div>
               <div class="chart-notes">
                 Notes about this chart

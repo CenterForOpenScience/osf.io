@@ -197,62 +197,13 @@ var SalesAnalytics = function() {
         });
     };
     self.getUserCount = function(userCount) {
-        var chart = c3.generate({
-            bindto: '#db-chart-user-count',
-            color: {
-                pattern: [
-                    //rausch    hackb      kazan      babu      lima        beach     barol
-                    '#ff5a5f', '#7b0051', '#007A87', '#00d1c1', '#8ce071', '#ffb400', '#b4a76c',
-                    '#ff8083', '#cc0086', '#00a1b3', '#00ffeb', '#bbedab', '#ffd266', '#cbc29a',
-                    '#ff3339', '#ff1ab1', '#005c66', '#00b3a5', '#55d12e', '#b37e00', '#988b4e'
-                  ]},
-            data: {
-                json: userCount.items,
-                keys: {
-                    x: 'Product',
-                    value: ['Count']
-                },
-                types: {
-                    Count: 'bar'
-                }
-            },
-            axis: {
-                x: {
-                    type: 'category'
-                },
-                rotated: true
-            },
-            bar: {
-                width: {
-                    ratio: 0.5 // this makes bar width 50% of length between ticks
-                }
-                // or
-                //width: 100 // this makes bar width 100px
-            }
-        });
+        var chart = new keen.Dataviz()
+          .el(document.getElementById('db-chart-user-count'))
+          .parseRawData({result: userCount.items})
     };
 
     self.getUserPercentage = function(userCount) {
-        var chart = c3.generate({
-            bindto: '#db-chart-user-percent',
-            data: {
-                json: userCount.items,
-                keys: {
-                    x: 'Product',
-                    value: ['Percentage']
-                },
-                types: {
-                    Percentage: 'bar'
-                },
-                order: 'desc'
-            },
-            axis: {
-                x: {
-                    type: 'category'
-                },
-                rotated: true
-            }
-        });
+
     };
 
     self.getMultiProductCountYearly = function(multiProductMetricsYearly) {

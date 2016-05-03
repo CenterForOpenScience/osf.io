@@ -6,6 +6,9 @@ from website.util.metrics import get_entry_point
 
 
 def get_user_count(db=db, entry_points=ENTRY_POINTS):
+    """
+    Get the number of users created from each entry point: osf, osf4m, prereg, and institution.
+    """
     counts = []
     total = db.user.find({}).count()
     for i in entry_points:
