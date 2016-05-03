@@ -1,3 +1,5 @@
+import jsonschema
+
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 
@@ -14,7 +16,7 @@ from website.exceptions import NodeStateError, UserNotAffiliatedError
 from website.util import permissions as osf_permissions
 from website.project.model import NodeUpdateError
 
-from api.base.utils import get_user_auth, get_object_or_error, absolute_reverse, extract_expected_responses_from_schema
+from api.base.utils import get_user_auth, get_object_or_error, absolute_reverse, create_json_schema_for_metaschema
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
                                   TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly,
                                   HideIfRegistration)
@@ -75,27 +77,13 @@ class DraftRegistrationSerializer(JSONAPISerializer):
         Validates registration_metadata field.  Called in update and create methods because the draft is
         needed in the context.
         """
-        for question, response in metadata.iteritems():
-            if not isinstance(response, dict):
-                raise JSONAPIAttributeException(attribute='registration_metadata',
-                                                detail='Expected type "dictionary" for {}.'.format(question))
-            if 'value' not in response.keys():
-                raise JSONAPIAttributeException(attribute='registration_metadata',
-                                                detail='Key "value" missing from {}.'.format(question))
-
-        form = extract_expected_responses_from_schema(draft)
-
-        for entry in metadata:
-            value = metadata[entry]['value']
-            if entry not in form:
-                raise JSONAPIAttributeException(attribute='registration_metadata',
-                                                detail='"{}" is not in schema "{}".'.format(entry, draft.registration_schema.name))
-
-            options = form[entry].get('options')
-            if options:
-                if value not in options:
-                    raise JSONAPIAttributeException(attribute='registration_metadata',
-                                                    detail='Value for {} is invalid. Expected one of {}.'.format(entry, options))
+        schema = create_json_schema_for_metaschema(draft)
+        try:
+            jsonschema.validate(metadata, schema)
+        except jsonschema.ValidationError as e:
+            raise exceptions.ValidationError(e.message)
+        except jsonschema.SchemaError as e:
+            raise exceptions.ValidationError(e.message)
         return
 
     class Meta:
