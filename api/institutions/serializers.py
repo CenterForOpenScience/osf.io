@@ -71,10 +71,10 @@ class InstitutionNodesRelationshipSerializer(JSONAPISerializer):
     def create(self, validated_data):
         inst = self.context['view'].get_object()['self']
         user = self.context['request'].user
-        nodes = validated_data['data']
-
+        node_dicts = validated_data['data']
+        nodes = [Node.load(node_dict['_id']) for node_dict in node_dicts]
+    
         changes_flag = False
-
         for node in nodes:
             if not node.has_permission(user, osf_permissions.ADMIN):
                 raise exceptions.PermissionDenied

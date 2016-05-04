@@ -259,11 +259,12 @@ class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
 
     def get_object(self):
         inst = self.get_institution()
-        self.check_object_permissions(self.request, inst)
-        return {
+        ret = {
             'data': list(Node.find_by_institutions(inst, Q('is_registration', 'eq', False) & Q('is_deleted', 'ne', True))),
             'self': inst
         }
+        self.check_object_permissions(self.request, ret)
+        return ret
 
     def perform_destroy(self, instance):
         data = self.request.data['data']
