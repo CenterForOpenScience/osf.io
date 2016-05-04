@@ -61,6 +61,7 @@ def create_object(name, content_type, node, user, stream=None, kind=None, path='
     :param User user: User whose cookie will be used
     :param str path: Waterbutler V1 path of the requested file
     """
+    assert(kind != 'file' or stream != None)
 
     node_id = node._id
     cookies = {website_settings.COOKIE_NAME: user.get_or_create_cookie()}
@@ -71,19 +72,19 @@ def create_object(name, content_type, node, user, stream=None, kind=None, path='
     resp = requests.get(url, cookies=cookies)
     data = resp.json()['data']
 
-    existing_path = None
+    existing = None
     for item in data:
         if item['attributes']['name'] == name:
-            existing_path = item['attributes']['path']
+            existing = item
 
     if stream:
         stream.seek(0)
 
     # create a new file/folder?
-    if not existing_path:
+    if not existing:
         url = util.waterbutler_api_url_for(node_id, 'osfstorage', path, kind=kind, name=name)
         print('create file or folder: url={}'.format(url))
-        requests.put(
+        resp = requests.put(
             url,
             data=stream,
             headers={'Content-Type': content_type},
@@ -91,11 +92,14 @@ def create_object(name, content_type, node, user, stream=None, kind=None, path='
         )
     elif kind == 'file':
         # path = '/{}'.format(name)
-        url = util.waterbutler_api_url_for(node_id, 'osfstorage', existing_path, kind=kind)
+        url = util.waterbutler_api_url_for(node_id, 'osfstorage', existing['attributes']['path'], kind=kind)
         print('update file: url={}'.format(url))
-        requests.put(
+        resp = requests.put(
             url,
             data=stream,
             headers={'Content-Type': content_type},
             cookies=cookies,
         )
+    else:
+        return existing
+    return resp.json()['data']
