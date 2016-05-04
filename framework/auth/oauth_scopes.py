@@ -88,7 +88,7 @@ class ComposedScopes(object):
     # Nodes collection.
     # Base node data includes node metadata, links, and children.
     NODE_METADATA_READ = (CoreScopes.NODE_BASE_READ, CoreScopes.NODE_CHILDREN_READ, CoreScopes.NODE_LINKS_READ,
-                          CoreScopes.NODE_CITATIONS_READ, CoreScopes.NODE_COMMENTS_READ)
+                          CoreScopes.NODE_CITATIONS_READ, CoreScopes.NODE_COMMENTS_READ, CoreScopes.WIKI_BASE_READ)
     NODE_METADATA_WRITE = NODE_METADATA_READ + \
                     (CoreScopes.NODE_BASE_WRITE, CoreScopes.NODE_CHILDREN_WRITE, CoreScopes.NODE_LINKS_WRITE,
                      CoreScopes.NODE_CITATIONS_WRITE, CoreScopes.NODE_COMMENTS_WRITE)
