@@ -84,6 +84,8 @@ class DraftRegistrationSerializer(JSONAPISerializer):
         needed in the context.
         """
         schema = create_json_schema_for_metaschema(draft)
+        if schema.get('required'):
+            del schema['required']
         try:
             jsonschema.validate(metadata, schema)
         except jsonschema.ValidationError as e:
