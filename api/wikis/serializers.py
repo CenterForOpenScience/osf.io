@@ -22,3 +22,10 @@ class WikiSerializer(JSONAPISerializer):
 
     class Meta:
         type_ = 'wikis'
+
+
+class WikiDetailSerializer(WikiSerializer):
+    """
+    Overrides Wiki Serializer to make id required.
+    """
+    id = IDField(source='_id', required=True)
