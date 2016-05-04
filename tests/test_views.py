@@ -3455,9 +3455,9 @@ class TestAuthViews(OsfTestCase):
         url = '/confirm/{}/{}/?logout=1'.format(self.user._id, token)
         self.app.get(url)
         self.user.reload()
-        email_verifications = self.user.verified_email_get
+        email_verifications = self.user.verified_email_get()
         put_email_url = api_url_for('verified_email_add')
-        res = self.app.put_json(put_email_url, email_verifications.json_body[0], auth=self.user.auth)
+        res = self.app.put_json(put_email_url, email_verifications[0], auth=self.user.auth)
         self.user.reload()
         assert_equal(res.json_body['status'], 'success')
         assert_equal(self.user.emails[1], 'copy@cat.com')
