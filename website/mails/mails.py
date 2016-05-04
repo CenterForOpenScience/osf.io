@@ -74,7 +74,7 @@ def render_message(tpl_name, **context):
 
 
 def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
-            username=None, password=None, callback=None, **context):
+            username=None, password=None, callback=None, use_mailgun=False, **context):
     """Send an email from the OSF.
     Example: ::
 
@@ -86,6 +86,7 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
     :param Mail mail: The mail object
     :param str mimetype: Either 'plain' or 'html'
     :param function callback: celery task to execute after send_mail completes
+    :param bool use_mailgun: indicates to send with Mailgun if API key is set
     :param **context: Context vars for the message template
 
     .. note:
@@ -112,6 +113,7 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
         username=username,
         password=password,
         categories=mail.categories,
+        use_mailgun=use_mailgun
     )
 
     if settings.USE_EMAIL:
