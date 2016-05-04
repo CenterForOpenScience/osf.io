@@ -1,5 +1,6 @@
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
+from rest_framework.exceptions import ValidationError
 from rest_framework import status
 from rest_framework.response import Response
 
@@ -8,18 +9,24 @@ from modularodm import Q
 from framework.auth.oauth_scopes import CoreScopes
 
 from website.models import Node, User, Institution
+from website.util import permissions as osf_permissions
 
 from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.serializers import JSONAPISerializer
 from api.base.utils import get_object_or_error
+from api.base.parsers import (
+    JSONAPIRelationshipParser,
+    JSONAPIRelationshipParserForRegularJSON,
+)
+from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.nodes.serializers import NodeSerializer
 from api.users.serializers import UserSerializer
 
 from .authentication import InstitutionAuthentication
-from .serializers import InstitutionSerializer
-
+from .serializers import InstitutionSerializer, InstitutionNodesRelationshipSerializer
+from .permissions import UserIsAffiliated
 
 class InstitutionMixin(object):
     """Mixin with convenience method get_institution
@@ -235,3 +242,47 @@ class InstitutionRegistrationList(InstitutionNodeList):
         query = self.get_query_from_request()
         nodes = list(Node.find_by_institutions(inst, query))
         return [node for node in nodes if not node.is_retracted]
+
+class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIView, generics.CreateAPIView, InstitutionMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        UserIsAffiliated
+    )
+    required_read_scopes = []
+    required_write_scopes = []
+    serializer_class = InstitutionNodesRelationshipSerializer
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+
+    view_category = 'institutions'
+    view_name = 'institution-relationships-nodes'
+
+    def get_object(self):
+        inst = self.get_institution()
+        self.check_object_permissions(self.request, inst)
+        return {
+            'data': list(Node.find_by_institutions(inst, Q('is_registration', 'eq', False) & Q('is_deleted', 'ne', True))),
+            'self': inst
+        }
+
+    def perform_destroy(self, instance):
+        data = self.request.data['data']
+        user = self.request.user
+        ids = [datum['id'] for datum in data]
+        nodes = []
+        for id_ in ids:
+            node = Node.load(id_)
+            if not node.has_permission(user, osf_permissions.ADMIN):
+                raise drf_permissions.PermissionDenied
+            nodes.append(node)
+
+        for node in nodes:
+            node.remove_affiliated_institution(inst=instance['self'], user=user)
+            node.save()
+
+    def create(self, *args, **kwargs):
+        try:
+            ret = super(InstitutionNodesRelationship, self).create(*args, **kwargs)
+        except RelationshipPostMakesNoChanges:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return ret
