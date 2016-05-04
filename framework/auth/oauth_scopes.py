@@ -61,6 +61,8 @@ class CoreScopes(object):
     ORGANIZER_COLLECTIONS_BASE_READ = 'collections.base_read'
     ORGANIZER_COLLECTIONS_BASE_WRITE = 'collections.base_write'
 
+    WIKI_BASE_READ = 'wikis.base_read'
+
 
 class ComposedScopes(object):
     """

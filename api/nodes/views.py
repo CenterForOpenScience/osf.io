@@ -17,6 +17,7 @@ from api.files.serializers import FileSerializer
 from api.comments.serializers import CommentSerializer, CommentCreateSerializer
 from api.comments.permissions import CanCommentOrPublic
 from api.users.views import UserMixin
+from api.wikis.serializers import WikiSerializer
 
 from api.nodes.serializers import (
     NodeSerializer,
@@ -43,6 +44,7 @@ from api.nodes.permissions import (
 )
 from api.logs.serializers import NodeLogSerializer
 
+from website.addons.wiki.model import NodeWikiPage
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
 from website.models import Node, Pointer, Comment, NodeLog, Institution
@@ -2006,3 +2008,29 @@ class NodeInstitutionRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIVie
         if not inst:
             return Response(status=HTTP_204_NO_CONTENT)
         return Response(serializer.data)
+
+
+class NodeWikiList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ContributorOrPublic
+    )
+
+    required_read_scopes = [CoreScopes.WIKI_BASE_READ]
+    required_write_scopes = [CoreScopes.NULL]
+    serializer_class = WikiSerializer
+
+    view_category = 'wikis'
+    view_name = 'node-wikis'
+
+    ordering = ('-date', )  # default ordering
+
+    def get_queryset(self):
+        node = self.get_node()
+        wiki_versions = node.wiki_pages_versions
+        node_wiki_pages = []
+        for key in wiki_versions:
+            node_wiki_pages = node_wiki_pages + wiki_versions[key]
+        return NodeWikiPage.find(Q('_id', 'in', node_wiki_pages))
