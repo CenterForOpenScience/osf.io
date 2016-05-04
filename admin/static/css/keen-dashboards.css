@@ -87,9 +87,6 @@ body.application .return-link:hover,
   overflow: hidden;
   padding: 5px 10px;
   position: relative;
-  max-width: 100%;
-  height: auto;
-  display: block;
 }
 
 .chart-wrapper .chart-notes {
@@ -98,8 +95,4 @@ body.application .return-link:hover,
   color: #808080;
   font-size: 12px;
   padding: 8px 10px 5px;
-}
-
-.chart {
-  width: 100%;
 }

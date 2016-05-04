@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from admin.sales_analytics import keen
-from admin.sales_analytics.metrics import user_count, multi_product_metrics_yearly, multi_product_metrics_monthly
+from admin.sales_analytics.metrics import user_count, multi_product_metrics_yearly, multi_product_metrics_monthly, repeat_action_user_monthly
 
 
 def dashboard(request):
@@ -10,6 +10,7 @@ def dashboard(request):
         'user_count': user_count,
         'multi_product_metrics_yearly': multi_product_metrics_yearly,
         'multi_product_metrics_monthly': multi_product_metrics_monthly,
+        'repeat_action_user_monthly': repeat_action_user_monthly,
     })
     return render(request, 'sales_analytics/dashboard.html', context)
 

@@ -7,6 +7,7 @@
       var userCount = {{ user_count | jsonify | safe }};
       var multiProductMetricsYearly = {{ multi_product_metrics_yearly | jsonify | safe }};
       var multiProductMetricsMonthly = {{ multi_product_metrics_monthly | jsonify | safe }};
+      var repeatActionUserMonthly = {{repeat_action_user_monthly | jsonify | safe}};
     </script>
 {% endblock top_analytics %}
 
@@ -14,3 +15,209 @@
 {% block title_analytics %}
     <h1>Dashboard</h1>
 {% endblock title_analytics %}
+
+{% block content_analytics %}
+<html>
+<head>
+  <title>Dashboard</title>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no' />
+  <link rel="stylesheet" type="text/css" href="/static/css/keen-dashboards.css" />
+</head>
+<body class="application">
+
+  <div class="container-fluid">
+
+    <div class="row">
+      <div class="col-sm-12 col-md-6">
+        <div class="row", style="display: none;">
+          <div class="col-xs-12">
+            <div class="chart-wrapper">
+              <div class="chart-title">
+                Average User/MAU Session Length History of past 12 weeks
+              </div>
+              <div class="chart-stage">
+                <div id="grid-1-1">
+                  <div id='keen-chart-average-session-history' class="chart">...</div>
+                </div>
+              </div>
+              <div class="chart-notes">
+                Notes about this chart
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-xs-12">
+            <div class="chart-wrapper">
+              <div class="chart-title">
+                User Count by Product
+              </div>
+              <div class="chart-stage">
+                <div class="row">
+                  <div class="col-xs-2">
+                    <div class="tabbable tabs-left">
+                      <ul class="nav nav-tabs">
+                        <li class="active"><a href="#db-chart-user-count" data-toggle="tab">Count</a></li>
+                        <li><a href="#db-chart-user-percent" data-toggle="tab">Percentage</a></li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div class="col-xs-10">
+                    <div class="tab-content">
+                     <div class="tab-pane active" id="db-chart-user-count"></div>
+                     <div class="tab-pane" id="db-chart-user-percent"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="chart-notes">
+                User count/percentage for each peroduct (osf, osf4m, prereg, institution)
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-12 col-md-6">
+        <div class="row">
+          <div class="col-sm-12 col-md-6", style="display: none;">
+            <div class="chart-wrapper">
+              <div class="chart-title">
+                OSF Products Users View in the Past Month
+              </div>
+              <div class="chart-stage">
+                <div id='keen-chart-osf-product-usage-mt2'>...</div>
+                <div id='keen-chart-osf-product-usage-mee'>...</div>
+              </div>
+              <div class="chart-notes">
+                Notes about this chart
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-12 col-md-6", style="display: none;">
+            <div class="chart-wrapper">
+              <div class="chart-title">
+                OSF Products Users View in the Past Month
+              </div>
+              <div class="chart-stage">
+                <div class="img-responsive" id='keen-chart-osf-product-usage-pre'>...</div>
+                <div class="img-responsive" id='keen-chart-osf-product-usage-ins'>...</div>
+              </div>
+              <div class="chart-notes">
+                Notes about this chart
+              </div>
+            </div>
+          </div>
+
+
+          <div class="col-sm-12 col-md-6", style="display: none;">
+            <div class="chart-wrapper">
+              <div class="chart-title">
+                Average User Session Length of Previous 7 days
+              </div>
+              <div class="chart-stage">
+                <div id='keen-chart-average-session-user'></div>
+              </div>
+            </div>
+            <div class="chart-wrapper">
+              <div class="chart-title">
+                Average MAU Session Length of Previous 7 days
+              </div>
+              <div class="chart-stage">
+                <div id='keen-chart-average-session-mau'>...</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-12 col-md-6">
+            <div class="chart-wrapper">
+              <div class="chart-title">
+                Multi-product User Count (Year)
+              </div>
+              <div class="chart-stage">
+                <div id='db-chart-multi-product-yearly'></div>
+              </div>
+            </div>
+            <div class="chart-wrapper">
+              <div class="chart-title">
+                Multi-product User Count (Month)
+              </div>
+              <div class="chart-stage">
+                <div id='db-chart-multi-product-monthly'></div>
+              </div>
+              <div class="chart-notes">
+                Number of users that use 2+ products
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-12 col-md-6">
+            <div class="chart-wrapper">
+              <div class="chart-title">
+                Cross-product User Count (Year)
+              </div>
+              <div class="chart-stage">
+                <div id='db-chart-cross-product-yearly'></div>
+              </div>
+            </div>
+            <div class="chart-wrapper">
+              <div class="chart-title">
+                Cross-product User Count (Month)
+              </div>
+              <div class="chart-stage">
+                <div id='db-chart-cross-product-monthly'></div>
+              </div>
+              <div class="chart-notes">
+                Number of users that use a product other than their entry points.
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-12 col-md-6">
+            <div class="chart-wrapper">
+              <div class="chart-title">
+                Multi-action User Count (Year)
+              </div>
+              <div class="chart-stage">
+                <div id='db-chart-multi-action-yearly'></div>
+              </div>
+            </div>
+            <div class="chart-wrapper">
+              <div class="chart-title">
+                Multi-action User Count (Month)
+              </div>
+              <div class="chart-stage">
+                <div id='db-chart-multi-action-monthly'></div>
+              </div>
+              <div class="chart-notes">
+                Number of users that have more than one type of actions.
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-12 col-md-6">
+            <div class="chart-wrapper">
+              <div class="chart-title">
+                Repetitive actions User Count (Month)
+              </div>
+              <div class="chart-stage">
+                <div id='db-chart-repeat-action-monthly'></div>
+              </div>
+            </div>
+            <div class="chart-wrapper">
+              <div class="chart-title">
+                Total User Count
+              </div>
+              <div class="chart-stage">
+                <div id='db-chart-total-user'></div>
+              </div>
+              <div class="chart-notes">
+                Total number of Users
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+</body>
+</html>
+{% endblock content_analytics %}
+
+{% block bottom_js %}
+    <script src="{% static 'public/js/dashboard.js' %}"></script>
+{% endblock %}

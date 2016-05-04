@@ -1,12 +1,12 @@
 require('bootstrap');
 require('jquery');
-'use strict';
 
 var c3 = require('c3');
 var keen = require('keen-js');
 var ss = require('simple-statistics');
 
 var SalesAnalytics = function() {
+    // Metrics and visualization for the analytics dashboard.
     var self = this;
 
     self.keenClient = new keen({
@@ -51,7 +51,6 @@ var SalesAnalytics = function() {
         });
     };
 
-    // TODO: add functionality to let user choose what to query
     self.getAverageMAUSessionLength = function() {
         var query = new keen.Query('select_unique', {
             event_collection: 'pageviews',
@@ -71,14 +70,14 @@ var SalesAnalytics = function() {
             else {
                 var dataSet = self.extractDataSet(response);
                 var result = ss.mean(dataSet);
-                console.log('average mau session length is ' + result + " ms" );
+                console.log('average mau session length is ' + result + ' ms' );
                 self.drawChart(chart, 'metric', 'Minutes', result/1000/60);
             }
         });
     };
 
     self.getAverageUserSessionHistory = function(init, numberOfWeeks, weekEnd, weekStart, weeklyResult) {
-        if (init == true) {
+        if (init === true) {
             var date = new Date();
             date.setHours(0, 0, 0, 0);
             date.setDate(date.getDate() - date.getDay());
@@ -89,13 +88,13 @@ var SalesAnalytics = function() {
             return;
         }
 
-        if (numberOfWeeks == 0) {
+        if (numberOfWeeks === 0) {
             var chart = self.prepareChart('keen-chart-average-session-history');
             chart.attributes({title: 'Average User/MAU Session Length History of Past 12 Weeks', width: '100%', height: 450});
             chart.adapter({chartType: 'columnchart'});
             chart.chartOptions({
-                hAxis: {title: "Week"},
-                vAxis: {title: "Minutes"}
+                hAxis: {title: 'Week'},
+                vAxis: {title: 'Minutes'}
             });
             chart.parseRawData({result: weeklyResult}).render();
             return;
@@ -197,85 +196,139 @@ var SalesAnalytics = function() {
         });
     };
     self.getUserCount = function(userCount) {
-        var chart = new keen.Dataviz()
-          .el(document.getElementById('db-chart-user-count'))
-          .parseRawData({result: userCount.items})
+        // User count for each peroduct (osf, osf4m, prereg, institution)
+        var chart = c3.generate({
+            bindto: '#db-chart-user-count',
+            data: {
+                columns: [['Count'].concat(userCount.count)],
+                type: 'bar',
+                colors: {
+                    Count: '#ff5a5f',
+                }
+            },
+            axis: {
+                x: {
+                    type: 'category',
+                    categories: userCount.tags,
+                },
+                rotated: true
+            },
+            bar: {
+                width: {
+                    ratio: 0.5 // this makes bar width 50% of length between ticks
+                }
+                // or
+                //width: 100 // this makes bar width 100px
+            }
+        });
     };
 
     self.getUserPercentage = function(userCount) {
-
+        var chart = c3.generate({
+            bindto: '#db-chart-user-percent',
+            data: {
+                columns: [['Percentage'].concat(userCount.percent)],
+                type: 'bar',
+                colors: {
+                    Count: '#ff8083',
+                }
+            },
+            axis: {
+                x: {
+                    type: 'category',
+                    categories: userCount.tags,
+                },
+                rotated: true
+            },
+            bar: {
+                width: {
+                    ratio: 0.5 // this makes bar width 50% of length between ticks
+                }
+                // or
+                //width: 100 // this makes bar width 100px
+            }
+        });
     };
 
     self.getMultiProductCountYearly = function(multiProductMetricsYearly) {
-        var chart = new keen.Dataviz()
-          .el(document.getElementById('db-chart-multi-product-yearly'))
-          .parseRawData({ result: multiProductMetricsYearly['multi_product_count'] })
-          .chartType("metric")
-          .colors(["#e57fc2"])
-          .title("Users")
-          .render();
+        // Number of users that use 2+ products
+        var chart = self.drawMetric('db-chart-multi-product-yearly',
+                                    multiProductMetricsYearly.multi_product_count,
+                                    '#e57fc2',
+                                    'Users');
       };
 
     self.getMultiProductCountMonthly = function(multiProductMetricsMonthly) {
-        var chart = new keen.Dataviz()
-          .el(document.getElementById('db-chart-multi-product-monthly'))
-          .parseRawData({ result: multiProductMetricsMonthly['multi_product_count'] })
-          .chartType("metric")
-          .colors(["#e57fc2"])
-          .title("Users")
-          .render();
+        var chart = self.drawMetric('db-chart-multi-product-monthly',
+                                    multiProductMetricsMonthly.multi_product_count,
+                                    '#e57fc2',
+                                    'Users');
       };
 
     self.getCrossProductCountYearly = function(multiProductMetricsYearly) {
-        var chart = new keen.Dataviz()
-          .el(document.getElementById('db-chart-cross-product-yearly'))
-          .parseRawData({ result: multiProductMetricsYearly['cross_product_count'] })
-          .chartType("metric")
-          .colors(["#aee99b"])
-          .title("Users")
-          .render();
+        // Number of users that use a product different from their entry points.
+        var chart = self.drawMetric('db-chart-cross-product-yearly',
+                                    multiProductMetricsYearly.cross_product_count,
+                                    '#aee99b',
+                                    'Users');
       };
 
     self.getCrossProductCountMonthly = function(multiProductMetricsMonthly) {
-        var chart = new keen.Dataviz()
-          .el(document.getElementById('db-chart-cross-product-monthly'))
-          .parseRawData({ result: multiProductMetricsMonthly['cross_product_count'] })
-          .chartType("metric")
-          .colors(["#aee99b"])
-          .title("Users")
-          .render();
-      };
+        var chart = self.drawMetric('db-chart-cross-product-monthly',
+                                    multiProductMetricsMonthly.cross_product_count,
+                                    '#aee99b',
+                                    'Users');
+    };
 
     self.getMultiActionCountYearly = function(multiProductMetricsYearly) {
-        var chart = new keen.Dataviz()
-          .el(document.getElementById('db-chart-multi-action-yearly'))
-          .parseRawData({ result: multiProductMetricsYearly['multi_action_count'] })
-          .chartType("metric")
-          .colors(["#00d1c1"])
-          .title("Users")
-          .render();
-      };
+        // Number of users that have more than one type of action.
+        var chart = self.drawMetric('db-chart-multi-action-yearly',
+                                    multiProductMetricsYearly.multi_action_count,
+                                    '#00d1c1',
+                                    'Users');
+    };
 
     self.getMultiActionCountMonthly = function(multiProductMetricsMonthly) {
-        var chart = new keen.Dataviz()
-          .el(document.getElementById('db-chart-multi-action-monthly'))
-          .parseRawData({ result: multiProductMetricsMonthly['multi_action_count'] })
-          .chartType("metric")
-          .colors(["#00d1c1"])
-          .title("Users")
-          .render();
-      };
+        var chart = self.drawMetric('db-chart-multi-action-monthly',
+                                    multiProductMetricsMonthly.multi_action_count,
+                                    '#00d1c1',
+                                    'Users');
+    };
+
+    self.getRepeatActionCountMonthly = function(repeatActionUserMonthly) {
+        var chart = self.drawMetric('db-chart-repeat-action-monthly',
+                                    repeatActionUserMonthly.repeat_action_count,
+                                    '#FFD37F',
+                                    'Users');
+    };
+
+    self.getTotalUserCount = function(userCount) {
+        var chart = self.drawMetric('db-chart-total-user',
+                                    userCount.total,
+                                    '#005c66',
+                                    'Users');
+    };
 
     self.prepareChart = function(elementId) {
         var chart = new keen.Dataviz();
         return chart.el(document.getElementById(elementId)).prepare();
     };
 
-    self.drawChart = function(chart, type, title, result) {
+    self.drawChart = function(chart, type, title, result, color) {
         chart.attributes({title: title, width: '100%'});
         chart.adapter({chartType: type});
         chart.parseRawData({result: result});
         chart.render();
+    };
+
+    self.drawMetric = function(elementId, result, color, title) {
+        var chart = new keen.Dataviz()
+          .el(document.getElementById(elementId))
+          .parseRawData({ result: result })
+          .chartType('metric')
+          .colors([color])
+          .title(title)
+          .render();
     };
 
     self.init = function() {
@@ -297,6 +350,8 @@ var SalesAnalytics = function() {
         self.getCrossProductCountMonthly(multiProductMetricsMonthly);
         self.getMultiActionCountYearly(multiProductMetricsYearly);
         self.getMultiActionCountMonthly(multiProductMetricsMonthly);
+        self.getRepeatActionCountMonthly(repeatActionUserMonthly);
+        self.getTotalUserCount(userCount);
     };
 
     self.clean = function() {
@@ -315,7 +370,7 @@ var SalesAnalytics = function() {
         for (var i in keenResult.result) {
             var session = keenResult.result[i];
             if (session.hasOwnProperty('result')) {
-                if (session.result.length == 1) {
+                if (session.result.length === 1) {
                     // TODO: take care of the situation where there is only one 'keen.timestamp'
                     continue;
                 }
@@ -338,24 +393,24 @@ var SalesAnalytics = function() {
         for (var i in keenResult.result) {
             var session = keenResult.result[i];
             if (session.hasOwnProperty('result') && session.hasOwnProperty('user.id')) {
-                if (session.hasOwnProperty('parsedPageUrl.domain') && session['parsedPageUrl.domain'] == 'staging.osf.io') {
+                if (session.hasOwnProperty('parsedPageUrl.domain') && session['parsedPageUrl.domain'] === 'staging.osf.io') {
                     userProductMap.osf.push(session['user.id']);
-                    var paths = session['result'];
+                    var paths = session.result;
                     var numberOfProducts = 0;
                     var meetings, prereg, institutions;
                     meetings = prereg = institutions = false;
-                    for (var i in paths) {
-                        if (meetings == false && paths[i].startsWith('/meetings/')) {
+                    for (var j in paths) {
+                        if (meetings === false && paths[j].startsWith('/meetings/')) {
                             userProductMap.meetings.push(session['user.id']);
                             meetings = true;
                             numberOfProducts ++;
                         }
-                        else if (prereg == false && paths[i].startsWith('/prereg/')) {
+                        else if (prereg === false && paths[j].startsWith('/prereg/')) {
                             userProductMap.prereg.push(session['user.id']);
                             prereg = true;
                             numberOfProducts ++;
                         }
-                        else if (institutions == false && paths[i].startsWith('/institutions/')) {
+                        else if (institutions === false && paths[j].startsWith('/institutions/')) {
                             userProductMap.institutions.push(session['user.id']);
                             meetings = true;
                             numberOfProducts ++;
