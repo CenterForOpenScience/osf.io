@@ -3200,9 +3200,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if current:
             for contrib in self.contributors:
                 if contrib.comments_viewed_timestamp.get(current._id, None):
-                    auth.user.comments_viewed_timestamp[new_page._id] = auth.user.comments_viewed_timestamp[current._id]
-                    auth.user.save()
-                    del auth.user.comments_viewed_timestamp[current._id]
+                    contrib.comments_viewed_timestamp[new_page._id] = contrib.comments_viewed_timestamp[current._id]
+                    contrib.save()
+                    del contrib.comments_viewed_timestamp[current._id]
 
         # check if the wiki page already exists in versions (existed once and is now deleted)
         if key not in self.wiki_pages_versions:

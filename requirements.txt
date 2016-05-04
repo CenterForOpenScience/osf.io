@@ -58,7 +58,7 @@ webcolors==1.4
 Django==1.9
 djangorestframework==3.3.3
 django-cors-headers==1.1.0
-django-rest-swagger==0.3.2
+django-rest-swagger==0.3.6
 djangorestframework-bulk==0.2.1
 pyjwt==1.4.0
 pyjwe==1.0.0
