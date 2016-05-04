@@ -19,8 +19,7 @@ from framework.exceptions import HTTPError
 from framework.auth import (logout, get_user, DuplicateEmailError)
 from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.auth.forms import (
-    MergeAccountForm, RegistrationForm, ResendConfirmationForm,
-    ResetPasswordForm, ForgotPasswordForm
+    MergeAccountForm, RegistrationForm, ResendConfirmationForm, ForgotPasswordForm
 )
 
 from website import settings
