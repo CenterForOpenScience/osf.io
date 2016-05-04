@@ -20,7 +20,7 @@ from api.base.utils import get_user_auth, get_object_or_error, absolute_reverse,
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
                                   TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly,
                                   HideIfRegistration)
-from api.base.exceptions import InvalidModelValueError, JSONAPIAttributeException
+from api.base.exceptions import InvalidModelValueError
 
 
 class NodeTagField(ser.Field):
@@ -66,10 +66,16 @@ class DraftRegistrationSerializer(JSONAPISerializer):
     def create(self, validated_data):
         node = validated_data.pop('node')
         initiator = validated_data.pop('initiator')
+        metadata = validated_data.pop('registration_metadata', None)
+
         schema_name = validated_data.pop('registration_schema').get('name')
         schema = MetaSchema.find_one(Q('name', 'eq', schema_name) & Q('schema_version', 'eq', 2))
 
         draft = DraftRegistration.create_from_node(node=node, user=initiator, schema=schema)
+        if metadata:
+            self.validate_metadata(draft, metadata)
+            draft.update_metadata(metadata)
+            draft.save()
         return draft
 
     def validate_metadata(self, draft, metadata):
