@@ -5,7 +5,7 @@ from django.core.urlresolvers import reverse
 from django.http import Http404
 
 from framework.auth.core import get_user
-from website.models import Conference
+from website.conferences.model import Conference, DEFAULT_FIELD_NAMES
 from website.conferences.exceptions import ConferenceError
 
 from admin.base.utils import OSFAdmin
@@ -83,7 +83,7 @@ class MeetingCreateFormView(OSFAdmin, FormView):
     form_class = MeetingForm
 
     def get_initial(self):
-        default_field_names = Conference.DEFAULT_FIELD_NAMES
+        default_field_names = DEFAULT_FIELD_NAMES
         self.initial.update({'field_{}'.format(k): default_field_names[k]
                              for k in default_field_names.keys()})
         self.initial.setdefault('edit', False)

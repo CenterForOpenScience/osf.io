@@ -1,7 +1,6 @@
 from django import forms
 from django.core.validators import validate_email
 
-from modularodm import Q
 from framework.auth.core import get_user
 from website.models import Conference
 from website.conferences.exceptions import ConferenceError
@@ -11,7 +10,7 @@ class MultiEmailField(forms.Field):
     def to_python(self, value):
         if not value:
             return []
-        return [r.strip() for r in value.split(',')]
+        return [r.strip().lower() for r in value.split(',')]
 
     def validate(self, value):
         super(MultiEmailField, self).validate(value)
@@ -104,15 +103,14 @@ class MeetingForm(forms.Form):
     def clean_endpoint(self):
         endpoint = self.cleaned_data['endpoint']
         edit = self.cleaned_data['edit']
-        if not edit:
-            if Conference.find(Q('endpoint', 'iexact', endpoint)).count() > 0:
+        try:
+            Conference.get_by_endpoint(endpoint)
+            if not edit:
                 raise forms.ValidationError(
                     'A meeting with this endpoint exists already.'
                 )
-        else:
-            try:
-                Conference.get_by_endpoint(endpoint)
-            except ConferenceError:
+        except ConferenceError:
+            if edit:
                 raise forms.ValidationError(
                     'Meeting not found with this endpoint to update'
                 )

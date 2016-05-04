@@ -6,7 +6,7 @@ from modularodm import Q
 from tests.base import AdminTestCase
 from tests.factories import AuthUserFactory
 from tests.test_conferences import ConferenceFactory
-from website.models import Conference
+from website.conferences.model import Conference, DEFAULT_FIELD_NAMES
 
 from admin_tests.utilities import setup_form_view
 from admin_tests.meetings.test_forms import data
@@ -98,7 +98,7 @@ class TestMeetingCreateFormView(AdminTestCase):
         self.view.get_initial()
         nt.assert_equal(self.view.initial['edit'], False)
         nt.assert_equal(self.view.initial['field_submission1'],
-                        Conference.DEFAULT_FIELD_NAMES['submission1'])
+                        DEFAULT_FIELD_NAMES['submission1'])
 
     def test_form_valid(self):
         view = setup_form_view(self.view, self.request, self.form)
