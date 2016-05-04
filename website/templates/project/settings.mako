@@ -350,7 +350,7 @@
                                     <div data-bind="foreach: {data: availableInstitutions, as: 'item'}">
                                         <div>
                                         <label>
-                                            <input type="radio" data-bind="value: item.id, checked: $parent.selectedInstitution" name="primaryInst">
+                                            <input type="radio" data-bind="value: item.id, checked: $parent.selectedInstitution">
                                             <p data-bind="text: item.name"></p>
                                         </label>
 

@@ -11,16 +11,16 @@ class TestInstitutionRegistrationList(ApiTestCase):
         super(TestInstitutionRegistrationList, self).setUp()
         self.institution = InstitutionFactory()
         self.registration1 = RegistrationFactory(is_public=True, is_registration=True)
-        self.registration1.primary_institution = self.institution
+        self.registration1.affiliated_institutions.append(self.institution)
         self.registration1.save()
         self.user1 = AuthUserFactory()
         self.user2 = AuthUserFactory()
         self.registration2 = RegistrationFactory(creator=self.user1, is_public=False, is_registration=True)
-        self.registration2.primary_institution = self.institution
+        self.registration2.affiliated_institutions.append(self.institution)
         self.registration2.add_contributor(self.user2, auth=Auth(self.user1))
         self.registration2.save()
         self.registration3 = RegistrationFactory(creator=self.user2, is_public=False, is_registration=True)
-        self.registration3.primary_institution = self.institution
+        self.registration3.affiliated_institutions.append(self.institution)
         self.registration3.save()
 
         self.institution_node_url = '/{0}institutions/{1}/registrations/'.format(API_BASE, self.institution._id)

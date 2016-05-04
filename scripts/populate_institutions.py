@@ -178,7 +178,7 @@ def main(env):
             # update the nodes elastic docs, to have current names of institutions. This will
             # only work properly if this file is the only thign changing institution attributes
             if not inst_created:
-                nodes = Node.find_by_institution(new_inst, query=Q('is_deleted', 'ne', True))
+                nodes = Node.find_by_institutions(new_inst, query=Q('is_deleted', 'ne', True))
                 for node in nodes:
                     update_node(node, async=False)
         for extra_inst in Institution.find(Q('_id', 'nin', [x['_id'] for x in INSTITUTIONS])):

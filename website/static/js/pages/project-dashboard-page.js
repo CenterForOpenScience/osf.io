@@ -62,7 +62,7 @@ var institutionLogos = {
     controller: function(args){
         var self = this;
         self.institutions = args.institutions;
-        self.nLogos = Math.min(self.institutions.length, 5);
+        self.nLogos = self.institutions.length;
         self.side = self.nLogos > 1 ? (self.nLogos === 2 ? '50px' : '35px') : '75px';
         self.width = self.nLogos > 1 ? (self.nLogos === 2 ? '115px' : '86px') : '75px';
         self.makeLogo = function(institution){
@@ -80,7 +80,15 @@ var institutionLogos = {
         var tooltips = function(){
             $('[data-toggle="tooltip"]').tooltip();
         };
-        return m('', {style: {float: 'left', width: ctrl.width, textAlign: 'center'}, config: tooltips}, [$.map(ctrl.institutions, ctrl.makeLogo)]);
+        var instCircles = $.map(ctrl.institutions, ctrl.makeLogo);
+        if (instCircles.length > 4){
+            instCircles[3] = m('.fa.fa-plus-square-o', {
+                style: {margin: '6px', fontSize: '250%', verticalAlign: 'middle'},
+            });
+            instCircles.splice(4);
+        }
+
+        return m('', {style: {float: 'left', width: ctrl.width, textAlign: 'center'}, config: tooltips}, instCircles);
     }
 };
 
