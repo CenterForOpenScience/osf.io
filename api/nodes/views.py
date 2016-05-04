@@ -17,7 +17,9 @@ from api.files.serializers import FileSerializer
 from api.comments.serializers import CommentSerializer, CommentCreateSerializer
 from api.comments.permissions import CanCommentOrPublic
 from api.users.views import UserMixin
+from api.wikis import permissions as wiki_permissions
 from api.wikis.serializers import WikiSerializer
+from api.wikis.views import WikiMixin
 
 from api.nodes.serializers import (
     NodeSerializer,
@@ -1942,7 +1944,7 @@ class NodeInstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin
         return node.primary_institution
 
 
-class NodeInstitutionRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin):
+class NodeInstitutionRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
     """ Relationship Endpoint for Node -> Institution Relationship
 
     Used to set the primary_institution of a node to an institution
@@ -2034,3 +2036,26 @@ class NodeWikiList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
         for key in wiki_versions:
             node_wiki_pages = node_wiki_pages + wiki_versions[key]
         return NodeWikiPage.find(Q('_id', 'in', node_wiki_pages))
+
+
+class NodeWikiDetail(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        wiki_permissions.ContributorOrPublic
+    )
+
+    required_read_scopes = [CoreScopes.WIKI_BASE_READ]
+    required_write_scopes = [CoreScopes.NULL]
+    serializer_class = WikiSerializer
+
+    view_category = 'wikis'
+    view_name = 'node-wiki-detail'
+
+    def get_object(self):
+        node_id = self.kwargs['node_id']
+        wiki = self.get_wiki()
+        if wiki.node._id != node_id:
+            raise NotFound
+        return wiki
