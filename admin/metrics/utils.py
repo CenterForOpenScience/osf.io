@@ -68,12 +68,10 @@ def get_days_statistics(time, latest=None):
 
 def get_projects(time=None, public=False, registered=False):
     query = (
-        # TODO: Changing how we calculate metrics reported to funders may require careful review
-        # TODO: Should we exclude other specialized types of nodes? (collections etc)
         Q('parent_node', 'eq', None) &
-        Q('is_deleted', 'eq', False) &
+        Q('is_bookmark_collection', 'ne', True) &
         Q('is_collection', 'ne', True) &
-        Q('is_bookmark_collection', 'ne', True)
+        Q('is_deleted', 'eq', False)
     )
     if time:
         query = query & Q('date_created', 'lt', time)

@@ -16,6 +16,7 @@ from website.app import init_app
 from website.files.models import OsfStorageFile
 from website.files.models import TrashedFileNode
 from website.models import User, Node, PrivateLink, NodeLog
+from website.project.utils import CONTENT_NODE_QUERY
 from website.addons.dropbox.model import DropboxUserSettings
 
 from scripts.analytics import profile, tabulate_emails, tabulate_logs
@@ -72,11 +73,7 @@ def count_user_nodes(users=None):
     return [
         Node.find_for_user(
             user,
-            (
-                Q('is_deleted', 'eq', False) &
-                Q('is_collection', 'ne', True) &
-                Q('is_bookmark_collection', 'ne', True)
-            )
+            CONTENT_NODE_QUERY
         ).count()  # TODO: Run and confirm this gives same numbers
         for user in users
         ]
@@ -149,39 +146,34 @@ def get_log_counts(users):
 
 
 def get_projects():
+    # This count includes projects, forks, and registrations
     projects = Node.find(
         Q('parent_node', 'eq', None) &
-        Q('is_deleted', 'eq', False) &
-        Q('is_collection', 'ne', True) &
-        Q('is_bookmark_collection', 'ne', True)
+        CONTENT_NODE_QUERY
     )
     return projects
 
 def get_projects_forked():
     projects_forked = list(Node.find(
         Q('parent_node', 'eq', None) &
-        Q('is_deleted', 'eq', False) &
-        Q('is_collection', 'ne', True) &
-        Q('is_bookmark_collection', 'ne', True) &
-        Q('is_fork', 'eq', True)
+        Q('is_fork', 'eq', True) &
+        CONTENT_NODE_QUERY
     ))
     return projects_forked
 
 def get_projects_registered():
     projects_registered = Node.find(
         Q('parent_node', 'eq', None) &
-        Q('is_deleted', 'eq', False) &
-        Q('is_collection', 'ne', True) &
-        Q('is_registration', 'eq', True)
+        Q('is_registration', 'eq', True) &
+        CONTENT_NODE_QUERY
     )
     return projects_registered
 
 def get_projects_public():
     projects_public = Node.find(
         Q('parent_node', 'eq', None) &
-        Q('is_deleted', 'eq', False) &
-        Q('is_collection', 'ne', True) &
-        Q('is_public', 'eq', True)
+        Q('is_public', 'eq', True) &
+        CONTENT_NODE_QUERY
     )
     return projects_public
 
