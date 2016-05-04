@@ -51,6 +51,7 @@ class CommentSerializer(JSONAPISerializer):
     modified = ser.BooleanField(read_only=True, default=False)
     deleted = ser.BooleanField(read_only=True, source='is_deleted', default=False)
     is_abuse = ser.SerializerMethodField(help_text='If the comment has been reported or confirmed.')
+    is_ham = ser.SerializerMethodField(help_text='Comment has been confirmed as ham.')
     has_report = ser.SerializerMethodField(help_text='If the user reported this comment.')
     has_children = ser.SerializerMethodField(help_text='Whether this comment has any replies.')
     can_edit = ser.SerializerMethodField(help_text='Whether the current user can edit this comment.')
@@ -60,6 +61,11 @@ class CommentSerializer(JSONAPISerializer):
 
     class Meta:
         type_ = 'comments'
+
+    def get_is_ham(self, obj):
+        if obj.spam_status == Comment.HAM:
+            return True
+        return False
 
     def get_has_report(self, obj):
         user = self.context['request'].user

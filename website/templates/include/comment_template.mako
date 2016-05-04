@@ -104,17 +104,27 @@
                         <!-- Action bar -->
                         <div style="display: inline">
                             <div data-bind="ifnot: editing" class="comment-actions pull-right">
-                                <span data-bind="if: canEdit, click: edit">
-                                    <i class="fa fa-pencil"></i>
+                                <span data-bind="ifnot: isHam">
+                                    <span data-bind="if: canEdit, click: edit">
+                                        <i class="fa fa-pencil"></i>
+                                    </span>
+                                    <span data-bind="if: $root.canComment, click: showReply">
+                                        <i class="fa fa-reply"></i>
+                                    </span>
+                                    <span data-bind="if: canReport, click: reportAbuse">
+                                        <i class="fa fa-warning"></i>
+                                    </span>
+                                    <span data-bind="if: canEdit, click: startDelete">
+                                        <i class="fa fa-trash-o"></i>
+                                    </span>
                                 </span>
-                                <span data-bind="if: $root.canComment, click: showReply">
-                                    <i class="fa fa-reply"></i>
-                                </span>
-                                <span data-bind="if: canReport, click: reportAbuse">
-                                    <i class="fa fa-warning"></i>
-                                </span>
-                                <span data-bind="if: canEdit, click: startDelete">
-                                    <i class="fa fa-trash-o"></i>
+                                <span data-bind="if: isHam">
+                                    <span data-bind="if: $root.canComment, click: showReply">
+                                        <i class="fa fa-reply"></i>
+                                    </span>
+                                    <span>
+                                        <i class="text-success fa fa-check-circle-o"></i>
+                                    </span>
                                 </span>
                             </div>
                         </div>
