@@ -148,13 +148,14 @@ class RegistrationSerializer(NodeSerializer):
         return registration
 
     def all_required_questions_answered(self, draft):
-        form = extract_expected_responses_from_schema(draft)
-        for question in form:
-            if form[question]['required']:
-                if not draft.registration_metadata.get(question):
-                    raise exceptions.ValidationError('Response required for {} in registration_metadata for {}'.format(question, draft.registration_schema.name))
-                if not draft.registration_metadata.get(question).get('value', False):
-                    raise exceptions.ValidationError('Value required for {} in registration_metadata for {}'.format(question, draft.registration_schema.name))
+        metadata = draft.registration_metadata
+        schema = create_json_schema_for_metaschema(draft)
+        try:
+            jsonschema.validate(metadata, schema)
+        except jsonschema.ValidationError as e:
+            raise exceptions.ValidationError(e.message)
+        except jsonschema.SchemaError as e:
+            raise exceptions.ValidationError(e.message)
         return
 
     def get_registered_meta(self, obj):
