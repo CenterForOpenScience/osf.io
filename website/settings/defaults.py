@@ -82,6 +82,8 @@ SHARE_ELASTIC_INDEX_TEMPLATE = 'share_v{}'
 # Sessions
 # TODO: Override OSF_COOKIE_DOMAIN in local.py in production
 OSF_COOKIE_DOMAIN = None
+OSF_COOKIE_MAX_AGE = 30 * 24 * 60 * 60  # 30 days in seconds
+OSF_COOKIE_EXPIRES = 30  # 30 days
 COOKIE_NAME = 'osf'
 # TODO: Override SECRET_KEY in local.py in production
 SECRET_KEY = 'CHANGEME'
