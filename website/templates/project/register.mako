@@ -32,11 +32,7 @@
                 <h4 data-bind="attr.id: question.id, text: question.title"></h4>
                 <small><em data-bind="text: question.description"></em></small>
                 <div class="col-md-12 well">
-                  <span data-bind="if: question.value()">
-                    <p>
-                      <span data-bind="previewQuestion: $root.editor.context(question, $root.editor)"></span>
-                    </p>
-                  </span>
+                   <span data-bind="previewQuestion: $root.editor.context(question, $root.editor)"></span>
                 </div>
               </div>
             </div>
