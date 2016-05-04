@@ -428,11 +428,6 @@ else:
         #     'schedule': crontab(minute=0, hour=2),  # Daily 2:00 a.m.
         #     'kwargs': {}
         # },
-        # 'analytics-upload': {
-        #     'task': 'scripts.analytics.upload',
-        #     'schedule': crontab(minute=0, hour=6),  # Daily 6:00 a.m.
-        #     'kwargs': {}
-        # },
     }
 
 
