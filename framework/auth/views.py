@@ -198,13 +198,11 @@ def auth_email_logout(token, user):
         user.verify_token(token)
     except KeyError:
         raise HTTPError(http.BAD_REQUEST, data={
-            'message_short': e.message_short,
-            'message_long': e.message_long
+            'message_short': "Bad token",
+            'message_long': "There was a key error with the token"
         })
     except ExpiredTokenError:
         status.push_status_message('The private link you used is expired.')
-
-
     try:
         user_merge = User.find_one(Q('emails', 'eq', user.email_verifications[token]['email'].lower()))
     except NoResultsFound:
