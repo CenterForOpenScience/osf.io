@@ -4,7 +4,6 @@ from modularodm.exceptions import NoResultsFound
 from rest_framework.exceptions import NotFound
 from rest_framework.reverse import reverse
 import furl
-import jsonschema
 
 from website import util as website_util  # noqa
 from website import settings as website_settings
@@ -171,9 +170,8 @@ def create_json_schema_for_metaschema(draft):
         for question in page['questions']:
             if is_required(question):
                 required.append(question.get('qid'))
-            data_type = question['type']
             options = question.get('options')
-            value = {'type': data_type}
+            value = {'type': 'string'}
             if options:
                 for item, option in enumerate(options):
                     if isinstance(option, dict) and option.get('text'):
@@ -182,7 +180,7 @@ def create_json_schema_for_metaschema(draft):
 
             json_schema['properties'][question['qid']] = {
                 "type": "object",
-                 "additionalProperties": False,
+                "additionalProperties": False,
                 "properties": {
                     "value": value
                 }
@@ -191,4 +189,3 @@ def create_json_schema_for_metaschema(draft):
         json_schema['required'] = required
 
     return json_schema
-

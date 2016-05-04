@@ -91,7 +91,7 @@ class DraftMixin(object):
         if not draft.branched_from._id == node_id:
             raise ValidationError('This draft registration is not created from the given node.')
 
-        if self.request.method == 'PATCH' or self.request.method == 'PUT':
+        if self.request.method not in drf_permissions.SAFE_METHODS:
             registered_and_deleted = draft.registered_node and draft.registered_node.is_deleted
 
             if draft.registered_node and not registered_and_deleted:
