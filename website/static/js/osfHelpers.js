@@ -289,6 +289,7 @@ var urlParams = function(str) {
         .map(function(n){return n = n.split('='),this[n[0]] = decodeURIComponent(n[1]).replace(/\+/g, ' '),this;}.bind({}))[0];
 };
 
+
 /**
  * From Underscore.js, MIT License
  *
