@@ -37,20 +37,11 @@ def create_dir(dir_name, self_id, parent_path, parent_id):
     if parent_path is not None and len(parent_path) > 0:
         path = '/' + parent_id + '/'
     name = dir_name
-    create = True
 
     node = models.Node.load(settings.TABULATE_LOGS_NODE_ID)
     user = models.User.load(settings.TABULATE_LOGS_USER_ID)
 
-    retry = 0
-    while retry < 3:  # server 503 may still happen with sleep(1), retry for 3 times
-        resp = utils.send_file(name, 'folder-upload', None, node, user, create, path)
-        sleep(1)  # walk around 503 error
-        if resp.status_code != 503:
-            break
-        retry += 1
-    if retry == 3:
-        resp.raise_for_status()
+    utils.create_object(name, 'folder-upload', node, user, kind='folder', path=path)
 
 
 def create_or_update_file(file_stream, file_name, self_id, parent_path, parent_id):
@@ -59,25 +50,14 @@ def create_or_update_file(file_stream, file_name, self_id, parent_path, parent_i
         path = '/' + parent_id + '/'
     if self_id is None:
         name = file_name
-        create = True
     else:
         name = self_id
-        create = False
         path = '/'
 
     node = models.Node.load(settings.TABULATE_LOGS_NODE_ID)
     user = models.User.load(settings.TABULATE_LOGS_USER_ID)
 
-    retry = 0
-    while retry < 3:  # server 503 may still happen with sleep(1), retry for 3 times
-        resp = utils.send_file(name, 'file-upload', file_stream, node, user, create, path)
-        sleep(1)  # walk around 503 error
-        if resp.status_code != 503:
-            break
-        retry += 1
-    if retry == 3:
-        logger.debug('response = {}'.format(resp.json()))
-        resp.raise_for_status()
+    utils.create_object(name, 'file-upload', node, user, stream=file_stream, kind='file', path=path)
 
 
 def waterbutler_upload(path, name, test_existence=False):
