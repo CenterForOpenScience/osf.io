@@ -603,4 +603,3 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
             res = self.app.post_json_api(self.url, self.payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_equal(res.json['errors'][0]['detail'], 'This draft has already been approved and cannot be modified.')
-    

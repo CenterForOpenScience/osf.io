@@ -113,7 +113,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         self.url = '/{}nodes/{}/draft_registrations/'.format(API_BASE, self.public_project._id)
         ensure_schemas()
 
-        self.draft_data = {
+        self.payload = {
             "data": {
                 "type": "draft_registrations",
                 "attributes": {
@@ -138,7 +138,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
 
     def test_admin_can_create_draft(self):
         url = '/{}nodes/{}/draft_registrations/?embed=branched_from&embed=initiator'.format(API_BASE, self.public_project._id)
-        res = self.app.post_json_api(url, self.draft_data, auth=self.user.auth)
+        res = self.app.post_json_api(url, self.payload, auth=self.user.auth)
         assert_equal(res.status_code, 201)
         data = res.json['data']
         assert_equal(data['attributes']['registration_form'], 'Open-Ended Registration')
@@ -148,20 +148,20 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
 
     def test_write_only_contributor_cannot_create_draft(self):
         assert_in(self.read_write_user._id, self.public_project.contributors)
-        res = self.app.post_json_api(self.url, self.draft_data, auth=self.read_write_user.auth, expect_errors=True)
+        res = self.app.post_json_api(self.url, self.payload, auth=self.read_write_user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
     def test_read_only_contributor_cannot_create_draft(self):
         assert_in(self.read_only_user._id, self.public_project.contributors)
-        res = self.app.post_json_api(self.url, self.draft_data, auth=self.read_only_user.auth, expect_errors=True)
+        res = self.app.post_json_api(self.url, self.payload, auth=self.read_only_user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
     def test_non_authenticated_user_cannot_create_draft(self):
-        res = self.app.post_json_api(self.url, self.draft_data, expect_errors=True)
+        res = self.app.post_json_api(self.url, self.payload, expect_errors=True)
         assert_equal(res.status_code, 401)
 
     def test_logged_in_non_contributor_cannot_create_draft(self):
-        res = self.app.post_json_api(self.url, self.draft_data, auth=self.non_contributor.auth, expect_errors=True)
+        res = self.app.post_json_api(self.url, self.payload, auth=self.non_contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
     def test_registration_form_must_be_one_of_active_schemas(self):
@@ -182,7 +182,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
     def test_cannot_create_draft_from_a_registration(self):
         registration = RegistrationFactory(project=self.public_project, creator=self.user)
         url = '/{}nodes/{}/draft_registrations/'.format(API_BASE, registration._id)
-        res = self.app.post_json_api(url, self.draft_data, auth=self.user.auth, expect_errors=True)
+        res = self.app.post_json_api(url, self.payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
     def test_registration_form_must_be_supplied(self):
@@ -202,14 +202,14 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
     def test_cannot_create_draft_from_deleted_node(self):
         self.public_project.is_deleted = True
         self.public_project.save()
-        res = self.app.post_json_api(self.url, self.draft_data, auth=self.user.auth, expect_errors=True)
+        res = self.app.post_json_api(self.url, self.payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 410)
         assert_equal(res.json['errors'][0]['detail'], 'The requested node is no longer available.')
 
     def test_cannot_create_draft_from_collection(self):
         collection = CollectionFactory(creator=self.user)
         url = '/{}nodes/{}/draft_registrations/'.format(API_BASE, collection._id)
-        res = self.app.post_json_api(url, self.draft_data, auth=self.user.auth, expect_errors=True)
+        res = self.app.post_json_api(url, self.payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
     def test_required_metaschema_questions_not_required_on_post(self):
@@ -247,3 +247,59 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert_equal(data['attributes']['registration_form'], 'Prereg Challenge')
         assert_equal(data['embeds']['branched_from']['data']['id'], self.public_project._id)
         assert_equal(data['embeds']['initiator']['data']['id'], self.user._id)
+
+    def test_registration_metadata_must_be_a_dictionary(self):
+        self.payload['data']['attributes']['registration_metadata'] = 'Registration data'
+
+        res = self.app.post_json_api(self.url, self.payload, auth=self.user.auth, expect_errors=True)
+        errors = res.json['errors'][0]
+        assert_equal(res.status_code, 400)
+        assert_equal(errors['source']['pointer'], '/data/attributes/registration_metadata')
+        assert_equal(errors['detail'], 'Expected a dictionary of items but got type "unicode".')
+
+    def test_registration_metadata_question_values_must_be_dictionaries(self):
+        self.payload['data']['attributes']['registration_form'] = 'OSF-Standard Pre-Data Collection Registration'
+        self.payload['data']['attributes']['registration_metadata'] = {}
+        self.payload['data']['attributes']['registration_metadata']['datacompletion'] = 'No, data collection has not begun'
+
+        res = self.app.post_json_api(self.url, self.payload, auth=self.user.auth, expect_errors=True)
+        errors = res.json['errors'][0]
+        assert_equal(res.status_code, 400)
+        assert_equal(errors['detail'], "u'No, data collection has not begun' is not of type 'object'")
+
+    def test_registration_metadata_question_keys_must_be_value(self):
+        self.payload['data']['attributes']['registration_form'] = 'OSF-Standard Pre-Data Collection Registration'
+        self.payload['data']['attributes']['registration_metadata'] = {}
+        self.payload['data']['attributes']['registration_metadata']['datacompletion'] = {
+            "incorrect_key": "No, data collection has not begun"
+        }
+
+        res = self.app.post_json_api(self.url, self.payload, auth=self.user.auth, expect_errors=True)
+        errors = res.json['errors'][0]
+        assert_equal(res.status_code, 400)
+        assert_equal(errors['detail'], "Additional properties are not allowed (u'incorrect_key' was unexpected)")
+
+    def test_question_in_registration_metadata_must_be_in_schema(self):
+        self.payload['data']['attributes']['registration_form'] = 'OSF-Standard Pre-Data Collection Registration'
+        self.payload['data']['attributes']['registration_metadata'] = {}
+        self.payload['data']['attributes']['registration_metadata']['q11'] = {
+            "value": "No, data collection has not begun"
+        }
+
+        res = self.app.post_json_api(self.url, self.payload, auth=self.user.auth, expect_errors=True)
+        errors = res.json['errors'][0]
+        assert_equal(res.status_code, 400)
+        assert_equal(errors['detail'], "Additional properties are not allowed (u'q11' was unexpected)")
+
+    def test_multiple_choice_question_value_must_match_value_in_schema(self):
+        self.payload['data']['attributes']['registration_form'] = 'OSF-Standard Pre-Data Collection Registration'
+        self.payload['data']['attributes']['registration_metadata'] = {}
+        self.payload['data']['attributes']['registration_metadata']['datacompletion'] = {
+            "value": "Nope, data collection has not begun"
+        }
+
+        res = self.app.post_json_api(self.url, self.payload, auth=self.user.auth, expect_errors=True)
+        errors = res.json['errors'][0]
+        assert_equal(res.status_code, 400)
+        assert_equal(errors['detail'], "u'Nope, data collection has not begun' is not one of [u'No, data collection has not begun', u'Yes, data collection is underway or complete']")
+

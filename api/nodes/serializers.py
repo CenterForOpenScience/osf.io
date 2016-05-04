@@ -109,7 +109,8 @@ class DraftRegistrationDetailSerializer(DraftRegistrationSerializer):
     registration_form = ser.CharField(read_only=True, source='registration_schema.name')
 
     def update(self, draft, validated_data):
-        """Update draft instance with the validated data."
+        """
+        Update draft instance with the validated metadata.
         """
         metadata = validated_data.pop('registration_metadata', None)
         if metadata:
