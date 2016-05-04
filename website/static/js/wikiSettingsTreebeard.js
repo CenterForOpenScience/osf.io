@@ -16,18 +16,18 @@ function expandOnLoad() {
 }
 
 function beforeChangePermissions(item, permission){
-    var title = item.parent().data.node.title;
+    var safeTitle = $osf.htmlEscape(item.parent().data.node.title);
     if(permission === 'public'){
         bootbox.dialog({
             title: 'Make publicly editable',
-            message: 'Are you sure you want to make the wiki of <b>' +title+
+            message: 'Are you sure you want to make the wiki of <b>' + safeTitle +
                 '</b> publicly editable? This will allow any logged in user to edit the content of this wiki. ' +
                 '<b>Note</b>: Users without write access will not be able to add, delete, or rename pages.',
             buttons: {
                 cancel : {
-                    label : 'Cancel',
-                    className : 'btn-default',
-                    callback : function() {item.notify.update('', 'notify-primary', 1, 10);}
+                    label: 'Cancel',
+                    className: 'btn-default',
+                    callback: function() {item.notify.update('', 'notify-primary', 1, 10);}
                 },
                 success: {
                     label: 'Apply',

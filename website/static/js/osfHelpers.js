@@ -252,6 +252,7 @@ var joinPrompts = function(prompts, base) {
     if (prompts.length !==0) {
         prompt += '<hr />';
         prompt += '<ul>';
+        // Assumes prompts are pre-escaped before constructing this string
         for (var i=0; i<prompts.length; i++) {
             prompt += '<li>' + prompts[i] + '</li>';
         }
@@ -646,7 +647,7 @@ var isSafari = function(userAgent) {
   * Confirm a dangerous action by requiring the user to enter specific text
   *
   * This is an abstraction over bootbox, and passes most options through to
-  * bootbox.dailog(). The exception to this is `callback`, which is called only
+  * bootbox.dialog(). The exception to this is `callback`, which is called only
   * if the user correctly confirms the action.
   *
   * @param  {Object} options
@@ -696,7 +697,7 @@ var confirmDangerousAction = function (options) {
 
     bootboxOptions.message += [
         '<p>Type the following to continue: <strong>',
-        confirmationString,
+        htmlEscape(confirmationString),
         '</strong></p>',
         '<input id="bbConfirmText" class="form-control">'
     ].join('');
@@ -844,6 +845,18 @@ var trackClick = function(category, action, label){
     return true;
 };
 
+
+// Call a function when scrolled to the bottom of the element
+/// Useful for triggering an event at the bottom of a window, like infinite scroll
+function onScrollToBottom(element, callback) {
+    $(element).scroll(function() {
+        var $this = $(this);
+        if ($this.scrollTop() + $this.innerHeight() >= $this[0].scrollHeight) {
+            callback();
+        }
+    });
+}
+
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
 module.exports = window.$.osf = {
@@ -882,5 +895,6 @@ module.exports = window.$.osf = {
     dialog: dialog,
     contribNameFormat: contribNameFormat,
     trackClick: trackClick,
-    findContribName: findContribName
+    findContribName: findContribName,
+    onScrollToBottom: onScrollToBottom
 };
