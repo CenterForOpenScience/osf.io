@@ -29,8 +29,7 @@ def migrate():
     PREREG_CHALLENGE_METASCHEMA = get_prereg_schema()
     registrations = Node.find(
         Q('is_registration', 'eq', True) &
-        Q('registered_schema', 'eq', PREREG_CHALLENGE_METASCHEMA) &
-        Q('is_deleted', 'eq', False)
+        Q('registered_schema', 'eq', PREREG_CHALLENGE_METASCHEMA)
     )
     count = 0
     for reg in registrations:
