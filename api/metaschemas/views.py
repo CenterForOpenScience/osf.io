@@ -47,7 +47,7 @@ class MetaSchemasList(JSONAPIBaseView, generics.ListAPIView):
 
     serializer_class = MetaSchemaSerializer
     view_category = 'metaschemas'
-    view_name = 'metaschemas-list'
+    view_name = 'metaschema-list'
 
     # overrides ListCreateAPIView
     def get_queryset(self):
@@ -83,7 +83,7 @@ class MetaSchemaDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
     serializer_class = MetaSchemaSerializer
     view_category = 'metaschemas'
-    view_name = 'metaschemas_detail'
+    view_name = 'metaschema-detail'
 
     # overrides RetrieveAPIView
     def get_object(self):

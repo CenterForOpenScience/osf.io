@@ -41,7 +41,6 @@ class DraftRegistrationSerializer(JSONAPISerializer):
     id = IDField(source='_id', read_only=True)
     type = TypeField()
     registration_form = ser.ChoiceField(source='registration_schema.name', choices=schema_choices, help_text="Choices: " + schema_choices_string, required=True)
-    # registration_schema = ser.DictField(source='registration_schema.schema', read_only=True)
     registration_metadata = ser.DictField(required=False)
     datetime_initiated = ser.DateTimeField(read_only=True)
     datetime_updated = ser.DateTimeField(read_only=True)
@@ -54,6 +53,11 @@ class DraftRegistrationSerializer(JSONAPISerializer):
     initiator = RelationshipField(
         related_view='users:user-detail',
         related_view_kwargs={'user_id': '<initiator._id>'},
+    )
+
+    registration_schema = RelationshipField(
+        related_view='metaschemas:metaschema-detail',
+        related_view_kwargs={'metaschema_id': '<registration_schema._id>'}
     )
 
     links = LinksField({
