@@ -437,7 +437,6 @@ def make_url_map(app):
         Rule('/forms/registration/', 'get', website_views.registration_form, json_renderer),
         Rule('/forms/signin/', 'get', website_views.signin_form, json_renderer),
         Rule('/forms/forgot_password/', 'get', website_views.forgot_password_form, json_renderer),
-        # Rule('/forms/reset_password/', 'get', website_views.reset_password_form, json_renderer),
     ], prefix='/api/v1')
 
     ### Discovery ###
