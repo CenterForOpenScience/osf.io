@@ -1,3 +1,4 @@
+from furl import furl
 import re
 
 from flask import request
@@ -37,7 +38,7 @@ def resubscribe_on_confirm(user):
 ###############################################################################
 
 def address(node_id):
-    return node_id + '@' + settings.SHORT_DOMAIN
+    return '{}@{}'.format(node_id, furl(settings.DOMAIN).host)
 
 def find_email(long_email):
     # allow for both "{email}" syntax and "{name} <{email}>" syntax
@@ -145,6 +146,8 @@ def send_acception(node, sender, recipients, message):
             to_addr=recipient.username,
             mail=mail,
             from_addr=from_addr,
+            mimetype='html',
+            use_mailgun=True,
             **context
         )
 

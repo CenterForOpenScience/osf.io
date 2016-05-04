@@ -9,7 +9,7 @@
             <div class="modal-body">
                 <h4 class="row text-center">
                 <div class="btn-group">
-                    <a href="mailto: ${node['id']}@osf.io">${node['id']}@osf.io</a>
+                    <a href="mailto: ${node['mailing_list_address']}">${node['mailing_list_address']}</a>
                 </div>
                 </h4>
                 
