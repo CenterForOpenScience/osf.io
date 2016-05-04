@@ -17,6 +17,9 @@ class CoreScopes(object):
     """
     The smallest units of permission that can be granted- all other scopes are built out of these.
     Each named constant is a single string."""
+    # IMPORTANT: All views should be based on the smallest number of Core scopes required to describe
+    # the data in that view
+
     USERS_READ = 'users_read'
     USERS_WRITE = 'users_write'
 
@@ -68,6 +71,8 @@ class ComposedScopes(object):
     """
     Composed scopes, listed in increasing order of access (most restrictive first). Each named constant is a tuple.
     """
+    # IMPORTANT: Composed scopes exist only as an internal implementation detail.
+    # All views should be based on selections from CoreScopes, above
 
     # Users collection
     USERS_READ = (CoreScopes.USERS_READ,)
