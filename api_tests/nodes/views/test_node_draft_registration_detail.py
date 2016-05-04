@@ -211,6 +211,44 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['attributes']['registration_form'], 'OSF-Standard Pre-Data Collection Registration')
 
+    def test_required_metaschema_questions_not_required_on_update(self):
+        prereg_schema = MetaSchema.find_one(
+            Q('name', 'eq', 'Prereg Challenge') &
+            Q('schema_version', 'eq', 2)
+        )
+
+        prereg_draft_registration = DraftRegistrationFactory(
+            initiator=self.user,
+            registration_schema=prereg_schema,
+            branched_from=self.public_project
+        )
+
+        url = '/{}nodes/{}/draft_registrations/{}/'.format(API_BASE, self.public_project._id, prereg_draft_registration._id)
+
+        registration_metadata = self.prereg_metadata(prereg_draft_registration)
+        del registration_metadata['q1']
+        prereg_draft_registration.registration_metadata = registration_metadata
+        prereg_draft_registration.save()
+
+        payload = {
+            "data": {
+                "id": prereg_draft_registration._id,
+                "type": "draft_registrations",
+                "attributes": {
+                    "registration_metadata": {
+                        'q2': {
+                            'value': 'New response'
+                        }
+                    }
+                }
+            }
+        }
+
+        res = self.app.put_json_api(url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['attributes']['registration_metadata']['q2']['value'], 'New response')
+        assert_not_in('q1', res.json['data']['attributes']['registration_metadata'])
+
 
 class TestDraftRegistrationDelete(DraftRegistrationTestCase):
     def setUp(self):

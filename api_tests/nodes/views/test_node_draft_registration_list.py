@@ -200,6 +200,38 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         res = self.app.post_json_api(url, self.draft_data, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
+    def test_required_metaschema_questions_not_required_on_post(self):
+        prereg_schema = MetaSchema.find_one(
+            Q('name', 'eq', 'Prereg Challenge') &
+            Q('schema_version', 'eq', 2)
+        )
 
+        prereg_draft_registration = DraftRegistrationFactory(
+            initiator=self.user,
+            registration_schema=prereg_schema,
+            branched_from=self.public_project
+        )
 
+        url = '/{}nodes/{}/draft_registrations/?embed=initiator&embed=branched_from'.format(API_BASE, self.public_project._id)
 
+        registration_metadata = self.prereg_metadata(prereg_draft_registration)
+        del registration_metadata['q1']
+        prereg_draft_registration.registration_metadata = registration_metadata
+        prereg_draft_registration.save()
+
+        payload = {
+            "data": {
+                "type": "draft_registrations",
+                "attributes": {
+                    "registration_form": "Prereg Challenge",
+                    "registration_metadata": registration_metadata
+                }
+            }
+        }
+        res = self.app.post_json_api(url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 201)
+        data = res.json['data']
+        assert_equal(res.json['data']['attributes']['registration_metadata']['q2']['value'], 'Test response')
+        assert_equal(data['attributes']['registration_form'], 'Prereg Challenge')
+        assert_equal(data['embeds']['branched_from']['data']['id'], self.public_project._id)
+        assert_equal(data['embeds']['initiator']['data']['id'], self.user._id)
