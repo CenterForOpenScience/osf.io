@@ -31,6 +31,18 @@ class DraftRegistrationTestCase(ApiTestCase):
         self.public_project.add_contributor(self.read_write_user, permissions=[permissions.WRITE])
         self.public_project.save()
 
+    def prereg_metadata(self, draft):
+        from api.base.utils import create_json_schema_for_metaschema
+        test_metadata = {}
+        json_schema = create_json_schema_for_metaschema(draft)
+
+        for key, value in json_schema['properties'].iteritems():
+            response = 'Test response'
+            if value['properties']['value'].get('enum'):
+                response = value['properties']['value']['enum'][0]
+
+            test_metadata[key] = {'value': response}
+        return test_metadata
 
 class TestDraftRegistrationList(DraftRegistrationTestCase):
 
