@@ -327,7 +327,6 @@ CELERY_IMPORTS = (
     'scripts.osfstorage.usage_audit',
     'scripts.osfstorage.files_audit',
     'scripts.analytics.tasks',
-    'scripts.analytics.upload'
 )
 
 # celery.schedule will not be installed when running invoke requirements the first time.
