@@ -104,7 +104,7 @@ var ViewModel = function(submitUrl, campaign) {
 
     self.submit = function() {
         if (self.submitted()) {
-            $osf.growl('Already submitted', 'You cannot sign up more than once.', 'error');
+            $osf.growl('Already submitted', 'You cannot sign up more than once.');
             return false;
         }
         // Show errors if invalid
