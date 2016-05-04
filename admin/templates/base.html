@@ -55,15 +55,32 @@
           <div class="navbar-custom-menu">
 
             <ul class="nav navbar-nav">
+              {% if user.is_authenticated %}
               <!-- User Account Menu -->
               <li class="dropdown user user-menu">
                 <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
-                  <span class="hidden-xs">Logged in as {{ request.user.get_username }}</span>
+                  <span class="hidden-xs">
+                      Logged in as {{ request.user.get_username }}
+                      <span class="caret"></span>
+                  </span>
                 </a>
+                <ul class="dropdown-menu user-menu">
+                    <li>
+                        <a href="{% url 'auth:password_change' %}">
+                            Change Password
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'auth:register' %}">
+                            Admin-User Registration
+                        </a>
+                    </li>
+                </ul>
               </li>
               <li>
                 <a href="{% url 'auth:logout' %}" class="btn btn-danger btn-flat">Sign out</a>
               </li>
+              {% endif %}
             </ul>
           </div>
         </nav>
