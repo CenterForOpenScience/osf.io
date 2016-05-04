@@ -73,6 +73,7 @@
                 </ul>
             </div>
         </div>
+    </div>
     <div class="col-sm-8 col-md-9">
 
         <div  id="start" class="p-t-xl">

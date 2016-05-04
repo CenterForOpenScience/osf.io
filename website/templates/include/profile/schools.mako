@@ -22,7 +22,7 @@
                         </span>
                         <a
                                 class="text-danger pull-right"
-                                data-bind="click: $parent.removeContent"
+                                data-bind="click: $parent.removeContent.bind($parent)"
                                 >Remove</a>
                     </div>
 
@@ -144,7 +144,7 @@
                                 </div>
                                 <span data-bind="attr: {class: expanded() ? 'fa toggle-icon fa-angle-down' : 'fa toggle-icon fa-angle-up'}"></span>
                             </div>
-                            <div data-bind="attr: {id: 'schoolCard' + $index(), aria-labelledby: 'schoolHeading' + $index()}" class="panel-collapse collapse">
+                            <div data-bind="attr: {id: 'schoolCard' + $index(), 'aria-labelledby': 'schoolHeading' + $index()}" class="panel-collapse collapse">
                                 <div class="panel-body">
                                     <span data-bind="if: department().length"><h5>Department:</h5> <span data-bind="text: department"></span></span>
                                     <span data-bind="if: degree().length"><h5>Degree:</h5> <span data-bind="text: degree"></span></span>
