@@ -13,7 +13,8 @@ def recent_public_registrations(n=10):
         Q('parent_node', 'eq', None) &
         Q('is_public', 'eq', True) &
         Q('is_deleted', 'eq', False) &
-        Q('is_collection', 'eq', False)
+        Q('is_collection', 'ne', True) &
+        Q('is_bookmark_collection', 'ne', True)
     )
     registrations = Node.find(
         recent_query &

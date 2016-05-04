@@ -58,7 +58,8 @@ def activity():
         Q('parent_node', 'eq', None) &
         Q('is_public', 'eq', True) &
         Q('is_deleted', 'eq', False) &
-        Q('is_collection', 'eq', False)
+        Q('is_collection', 'ne', True) &
+        Q('is_bookmark_collection', 'ne', True)
     )
 
     recent_public_projects = Node.find(

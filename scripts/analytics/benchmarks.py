@@ -74,7 +74,8 @@ def count_user_nodes(users=None):
             user,
             (
                 Q('is_deleted', 'eq', False) &
-                Q('is_collection', 'ne', True)
+                Q('is_collection', 'ne', True) &
+                Q('is_bookmark_collection', 'ne', True)
             )
         ).count()  # TODO: Run and confirm this gives same numbers
         for user in users

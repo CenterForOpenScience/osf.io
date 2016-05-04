@@ -49,7 +49,8 @@ def get_public_projects(uid=None, user=None):
             Q('is_public', 'eq', True) &
             Q('is_registration', 'eq', False) &
             Q('is_deleted', 'eq', False) &
-            Q('is_collection', 'eq', False)
+            Q('is_collection', 'ne', True) &
+            Q('is_bookmark_collection', 'ne', True)
         )
     )
     return _render_nodes(list(nodes))
@@ -67,7 +68,8 @@ def get_public_components(uid=None, user=None):
                 Q('is_public', 'eq', True) &
                 Q('is_registration', 'eq', False) &
                 Q('is_deleted', 'eq', False) &
-                Q('is_collection', 'eq', False)
+                Q('is_collection', 'ne', True) &
+                Q('is_bookmark_collection', 'ne', True)
             )
         )
     )
