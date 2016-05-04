@@ -244,6 +244,43 @@ class InstitutionRegistrationList(InstitutionNodeList):
         return [node for node in nodes if not node.is_retracted]
 
 class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIView, generics.CreateAPIView, InstitutionMixin):
+    """ Relationship Endpoint for Institution -> Nodes Relationship
+
+    Used to set, remove, update and retrieve the affiliated_institution of nodes with this institution
+
+    ##Actions
+
+    ###Create
+
+        Method:        POST
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": [{
+                           "type": "nodes",   # required
+                           "id": <node_id>   # required
+                         }]
+                       }
+        Success:       201
+
+    This requires admin permissions on the nodes requested and for the user making the request to
+    have the institution affiliated in their account.
+
+    ###Destroy
+
+        Method:        DELETE
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": [{
+                           "type": "nodes",   # required
+                           "id": <node_id>   # required
+                         }]
+                       }
+        Success:       204
+
+    This requires admin permissions in the nodes requested.
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
