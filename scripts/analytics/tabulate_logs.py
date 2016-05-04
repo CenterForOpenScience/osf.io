@@ -58,7 +58,11 @@ def main():
         ),
         ['name', 'count'],
     )
-    utils.send_file(settings.TABULATE_LOGS_FILE_NAME, settings.TABULATE_LOGS_CONTENT_TYPE, sio, node, user)
+    utils.create_object(
+        settings.TABULATE_LOGS_FILE_NAME,
+        settings.TABULATE_LOGS_CONTENT_TYPE,
+        node, user, stream=sio, kind='file'
+    )
 
 
 if __name__ == '__main__':
