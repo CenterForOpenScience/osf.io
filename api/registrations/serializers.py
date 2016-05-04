@@ -1,9 +1,10 @@
 import json
+import jsonschema
 
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 
-from api.base.utils import absolute_reverse, get_user_auth, extract_expected_responses_from_schema
+from api.base.utils import absolute_reverse, get_user_auth, create_json_schema_for_metaschema
 
 from api.files.serializers import FileSerializer
 from api.nodes.serializers import NodeSerializer
@@ -130,6 +131,8 @@ class RegistrationSerializer(NodeSerializer):
         registration = draft.register(auth, save=True)
 
         if registration_choice == 'embargo':
+            if not embargo_lifted:
+                raise exceptions.ValidationError('lift_embargo must be specified.')
             embargo_end_date = embargo_lifted.replace(tzinfo=None)
             try:
                 registration.embargo_registration(auth.user, embargo_end_date)
