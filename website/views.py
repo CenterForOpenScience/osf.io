@@ -18,7 +18,6 @@ from framework.exceptions import HTTPError
 from framework.auth.forms import SignInForm
 from framework.forms import utils as form_utils
 from framework.auth.forms import RegistrationForm
-from framework.auth.forms import ResetPasswordForm
 from framework.auth.forms import ForgotPasswordForm
 from framework.auth.decorators import must_be_logged_in
 
@@ -184,9 +183,9 @@ def signin_form():
 def forgot_password_form():
     return form_utils.jsonify(ForgotPasswordForm(prefix='forgot_password'))
 
-
-def reset_password_form():
-    return form_utils.jsonify(ResetPasswordForm())
+#
+# def reset_password_form():
+#     return form_utils.jsonify(ResetPasswordForm())
 
 
 # GUID ###
