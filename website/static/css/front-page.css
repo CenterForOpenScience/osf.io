@@ -73,7 +73,7 @@ h6 {
     /* W3C */
     filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#67a3bf', endColorstr='#000000', GradientType=1);
     /* IE6-9 fallback on horizontal gradient */
-    height: 800px;
+    height: 850px;
     color: #fff;
     padding-top: 100px;
     position: relative;
@@ -112,7 +112,7 @@ h6 {
     background: rgba(255, 255, 255, 0.15);
     position: absolute;
     bottom: 0;
-    height: 300px;
+    height: 350px;
     padding: 25px;
     margin-left: -15px;
 }
@@ -539,6 +539,11 @@ footer {
     #home-hero {
         padding-top: 0;
     }
+
+    #hero-signup {
+        height:400px;
+    }
+
     #hero-signup .icon {
         top: -20px;
     }
