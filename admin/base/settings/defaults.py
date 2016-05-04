@@ -203,3 +203,5 @@ CKEDITOR_CONFIGS = {
 KEEN_PROJECT_ID = 'CHANGEME'
 KEEN_READ_KEY = 'CHANGEME'
 KEEN_WRITE_KEY = 'CHANGEME'
+
+ENTRY_POINTS = ['osf4m', 'prereg_challenge_campaign', 'institution_campaign']

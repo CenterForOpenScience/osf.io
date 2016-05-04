@@ -33,11 +33,12 @@ var config = assign({}, common, {
         'sales-analytics-keen': staticAdminPath('js/sales_analytics/sales-analytics.js'),
         'sales-analytics-utils': staticAdminPath('js/sales_analytics/utils.js'),
         'sa-user-session': staticAdminPath('js/sales_analytics/sa-user-session.js'),
-        'sa-products-view': staticAdminPath('js/sales_analytics/sa-products-view.js')
+        'sa-products-view': staticAdminPath('js/sales_analytics/sa-products-view.js'),
+        'dashboard': staticAdminPath('js/sales_analytics/dashboard.js'),
     },
     plugins: plugins,
     debug: true,
-    devtool: 'source-map'
+    devtool: 'source-map',
 });
 config.resolve.root = [websiteRoot, adminRoot];
 module.exports = config;
