@@ -21,4 +21,6 @@ def analytics():
         permissions, profile, benchmarks
     )
     for module in modules:
+        logger.info('Starting: {}'.format(module.__name__))
         module.main()
+        logger.info('Finished: {}'.format(module.__name__))
