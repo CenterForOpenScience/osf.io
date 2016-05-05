@@ -83,7 +83,6 @@ def create_object(name, content_type, node, user, stream=None, kind=None, path='
     # create a new file/folder?
     if not existing:
         url = util.waterbutler_api_url_for(node_id, 'osfstorage', path, kind=kind, name=name)
-        print('create file or folder: url={}'.format(url))
         resp = requests.put(
             url,
             data=stream,
@@ -91,9 +90,7 @@ def create_object(name, content_type, node, user, stream=None, kind=None, path='
             cookies=cookies,
         )
     elif kind == 'file':
-        # path = '/{}'.format(name)
         url = util.waterbutler_api_url_for(node_id, 'osfstorage', existing['attributes']['path'], kind=kind)
-        print('update file: url={}'.format(url))
         resp = requests.put(
             url,
             data=stream,
