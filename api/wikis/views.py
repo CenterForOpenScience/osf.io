@@ -32,6 +32,10 @@ class WikiMixin(object):
         if wiki.is_deleted:
             raise Gone
 
+        # only show current wiki versions
+        if not wiki.is_current:
+            raise NotFound
+
         if check_permissions:
             # May raise a permission denied
             self.check_object_permissions(self.request, wiki)

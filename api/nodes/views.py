@@ -2031,10 +2031,10 @@ class NodeWikiList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
 
     def get_queryset(self):
         node = self.get_node()
-        wiki_versions = node.wiki_pages_versions
+        wiki_pages = node.wiki_pages_current
         node_wiki_pages = []
-        for key in wiki_versions:
-            node_wiki_pages = node_wiki_pages + wiki_versions[key]
+        for key in wiki_pages:
+            node_wiki_pages.append(wiki_pages[key])
         return NodeWikiPage.find(Q('_id', 'in', node_wiki_pages))
 
 
