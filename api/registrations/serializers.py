@@ -109,6 +109,11 @@ class RegistrationSerializer(NodeSerializer):
         related_view='registrations:registration-institution-detail',
         related_view_kwargs={'node_id': '<pk>'}
     )
+
+    registration_schema = RelationshipField(
+        related_view='metaschemas:metaschema-detail',
+        related_view_kwargs={'metaschema_id': '<registered_schema_id>'}
+    )
     registrations = HideIfRegistration(RelationshipField(
         related_view='nodes:node-registrations',
         related_view_kwargs={'node_id': '<pk>'}
