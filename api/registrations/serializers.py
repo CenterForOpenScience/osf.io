@@ -4,7 +4,9 @@ import jsonschema
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 
-from api.base.utils import absolute_reverse, get_user_auth, create_json_schema_for_metaschema
+from api.base.utils import absolute_reverse, get_user_auth
+from api.registrations.utils import create_jsonschema_from_metaschema
+
 
 from api.files.serializers import FileSerializer
 from api.nodes.serializers import NodeSerializer
@@ -149,7 +151,7 @@ class RegistrationSerializer(NodeSerializer):
 
     def all_required_questions_answered(self, draft):
         metadata = draft.registration_metadata
-        schema = create_json_schema_for_metaschema(draft)
+        schema = create_jsonschema_from_metaschema(draft)
         try:
             jsonschema.validate(metadata, schema)
         except jsonschema.ValidationError as e:

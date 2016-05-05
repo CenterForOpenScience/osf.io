@@ -16,7 +16,8 @@ from website.exceptions import NodeStateError, UserNotAffiliatedError
 from website.util import permissions as osf_permissions
 from website.project.model import NodeUpdateError
 
-from api.base.utils import get_user_auth, get_object_or_error, absolute_reverse, create_json_schema_for_metaschema
+from api.base.utils import get_user_auth, get_object_or_error, absolute_reverse
+from api.registrations.utils import create_jsonschema_from_metaschema
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
                                   TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly,
                                   HideIfRegistration)
@@ -87,7 +88,7 @@ class DraftRegistrationSerializer(JSONAPISerializer):
         Validates registration_metadata field.  Called in update and create methods because the draft is
         needed in the context.
         """
-        schema = create_json_schema_for_metaschema(draft)
+        schema = create_jsonschema_from_metaschema(draft)
         if schema.get('required'):
             del schema['required']
         try:
