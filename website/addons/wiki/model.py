@@ -24,6 +24,7 @@ from website.addons.wiki.settings import WIKI_CHANGE_DATE
 from website.project.commentable import Commentable
 from website.project.model import Node
 from website.project.signals import write_permissions_revoked
+from website.util import api_v2_url
 
 from website.exceptions import NodeStateError
 
@@ -203,6 +204,11 @@ class NodeWikiPage(GuidStoredObject, Commentable):
         key = mongo_utils.to_mongo_key(self.page_name)
         return key not in self.node.wiki_pages_current
 
+    @property
+    def absolute_api_v2_url(self):
+        path = '/wikis/{}/'.format(self._id)
+        return api_v2_url(path)
+
     def belongs_to_node(self, node_id):
         """Check whether the wiki is attached to the specified node."""
         return self.node._id == node_id
@@ -210,9 +216,9 @@ class NodeWikiPage(GuidStoredObject, Commentable):
     def get_extra_log_params(self, comment):
         return {'wiki': {'name': self.page_name, 'url': comment.get_comment_page_url()}}
 
-    # used by django and DRF - use v1 url since there are no v2 wiki routes
+    # used by django and DRF
     def get_absolute_url(self):
-        return '{}wiki/{}/'.format(self.node.absolute_url, urllib.quote(self.page_name))
+        return self.absolute_api_v2_url
 
     def html(self, node):
         """The cleaned HTML of the page"""
