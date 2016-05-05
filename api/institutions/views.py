@@ -1,6 +1,5 @@
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
-from rest_framework.exceptions import ValidationError
 from rest_framework import status
 from rest_framework.response import Response
 
@@ -15,7 +14,7 @@ from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.serializers import JSONAPISerializer
-from api.base.utils import get_object_or_error
+from api.base.utils import get_object_or_error, get_user_auth
 from api.base.parsers import (
     JSONAPIRelationshipParser,
     JSONAPIRelationshipParserForRegularJSON,
@@ -296,8 +295,10 @@ class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
 
     def get_object(self):
         inst = self.get_institution()
+        auth = get_user_auth(self.request)
+        nodes = [node for node in Node.find_by_institutions(inst, Q('is_registration', 'eq', False) & Q('is_deleted', 'ne', True)) if node.is_public or node.can_view(auth)]
         ret = {
-            'data': list(Node.find_by_institutions(inst, Q('is_registration', 'eq', False) & Q('is_deleted', 'ne', True))),
+            'data': nodes,
             'self': inst
         }
         self.check_object_permissions(self.request, ret)
