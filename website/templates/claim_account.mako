@@ -10,11 +10,61 @@
     <p>E-mail: <strong>${ email }</strong></p>
 
         <form method="POST" id='setPasswordForm' role='form'>
-            <div class='form-group'>
-                ${form.password(placeholder='New password') | unicode, n }
+            <div
+                class="form-group"
+                data-bind="
+                    css: {
+                        'has-error': password() && !password.isValid(),
+                        'has-success': password() && password.isValid()
+                    }"
+            >
+                <div>
+                    <input
+                        type="password"
+                        class="form-control"
+                        id="setPassword"
+                        placeholder="Password"
+                        data-bind="
+                            textInput: typedPassword,
+                            value: password,
+                            event: {
+                                blur: trim.bind($data, password)
+                            }"
+                    >
+                    <p class="help-block" data-bind="validationMessage: password" style="display: none;"></p>
+                </div>
             </div>
-            <div class='form-group'>
-                ${form.password2(placeholder='New password again') | unicode, n }
+            <div class="progress create-password">
+                <div class="progress-bar progress-bar-success" role="progressbar" data-bind="attr: passwordComplexityBar"></div>
+            </div>
+            <p class="help-block" data-bind="text: passwordFeedback"></p>
+            <div
+                class="form-group"
+                data-bind="
+                    css: {
+                        'has-error': password_confirmation() && !password_confirmation.isValid(),
+                        'has-success': password_confirmation() && password_confirmation.isValid()
+                    }"
+            >
+                <div>
+                    <input
+                        type="password"
+                        class="form-control"
+                        id="setPasswordConfirmation"
+                        placeholder="Verify Password"
+                        data-bind="
+                            value: password_confirmation,
+                            event: {
+                                blur: trim.bind($data, password_confirmation)
+                            }"
+                    >
+                    <p class="help-block" data-bind="validationMessage: password_confirmation" style="display: none;"></p>
+                </div>
+            </div>
+            <div class='help-block'>
+                <p>If you are not ${fullname}, or if you were erroneously added as a contributor to the project described in the email invitation, please email <a href="mailto:contact@osf.io">contact@osf.io</a>
+                </p>
+                <p>By clicking "Save" and creating an account you agree to our <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md">Terms</a> and that you have read our <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>, including our information on <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md#f-cookies">Cookie Use</a>.</p>
             </div>
             ${form.token | unicode, n }
             %if next_url:
@@ -22,12 +72,9 @@
             %endif
             <button type='submit' class="btn btn-success pull-right">Save</button>
         </form>
-
-        <div class='help-block'>
-            <p>If you are not ${fullname}, or if you were erroneously added as a contributor to the project described in the email invitation, please email <a href="mailto:contact@osf.io">contact@osf.io</a>
-            </p>
-            <p>By clicking "Save" and creating an account you agree to our <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md">Terms</a> and that you have read our <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>, including our information on <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md#f-cookies">Cookie Use</a>.</p>
-        </div>
     </div>
 </div>
+
 </%def>
+
+<script src=${"/static/public/js/claimaccount-page.js" | webpack_asset}></script>
