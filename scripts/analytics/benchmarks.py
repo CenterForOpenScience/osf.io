@@ -74,7 +74,7 @@ def count_user_nodes(users=None):
         Node.find_for_user(
             user,
             CONTENT_NODE_QUERY
-        ).count()  # TODO: Run and confirm this gives same numbers
+        ).count()
         for user in users
         ]
 
@@ -154,11 +154,11 @@ def get_projects():
     return projects
 
 def get_projects_forked():
-    projects_forked = list(Node.find(
+    projects_forked = Node.find(
         Q('parent_node', 'eq', None) &
         Q('is_fork', 'eq', True) &
         CONTENT_NODE_QUERY
-    ))
+    )
     return projects_forked
 
 def get_projects_registered():
@@ -178,14 +178,13 @@ def get_projects_public():
     return projects_public
 
 
-def get_number_downloads_unique_and_total():
+def get_number_downloads_unique_and_total(projects=None):
     number_downloads_unique = 0
     number_downloads_total = 0
 
-    projects = get_projects()
+    projects = projects or get_projects()
 
     for project in projects:
-
         for filenode in OsfStorageFile.find(Q('node', 'eq', project)):
             for idx, version in enumerate(filenode.versions):
                 page = ':'.join(['download', project._id, filenode._id, str(idx)])
@@ -210,15 +209,15 @@ def main():
     projects_forked = get_projects_forked()
     projects_registered = get_projects_registered()
 
-    number_projects = len(projects)
+    number_projects = projects.count()
 
     projects_public = get_projects_public()
     number_projects_public = projects_public.count()
-    number_projects_forked = len(projects_forked)
+    number_projects_forked = projects_forked.count()
 
-    number_projects_registered = len(projects_registered)
+    number_projects_registered = projects_registered.count()
 
-    number_downloads_unique, number_downloads_total = get_number_downloads_unique_and_total()
+    number_downloads_unique, number_downloads_total = get_number_downloads_unique_and_total(projects=projects)
 
     active_users = get_active_users()
     active_users_invited = get_active_users(Q('is_invited', 'eq', True))
