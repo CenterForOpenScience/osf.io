@@ -68,7 +68,6 @@ def create_object(name, content_type, node, user, stream=None, kind=None, path='
 
     # create or update a file
     url = util.waterbutler_api_url_for(node_id, 'osfstorage', path)
-    print('get path: url={}'.format(url))
     resp = requests.get(url, cookies=cookies)
     data = resp.json()['data']
 
