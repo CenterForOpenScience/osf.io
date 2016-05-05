@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 
+import datetime
 import logging
 import httplib
 import httplib as http  # TODO: Inconsistent usage of aliased import
 from dateutil.parser import parse as parse_date
 
 from flask import request
+import markupsafe
 from modularodm.exceptions import ValidationError, NoResultsFound, MultipleResultsFound
 from modularodm import Q
 
@@ -27,6 +29,7 @@ from website.project.model import Node
 from website.models import ApiOAuth2Application, ApiOAuth2PersonalToken, User
 from website.oauth.utils import get_available_scopes
 from website.profile import utils as profile_utils
+from website.util.time import throttle_period_expired
 from website.util import api_v2_url, web_url_for, paths
 from website.util.sanitize import escape_html
 from website.util.sanitize import strip_html
@@ -102,6 +105,9 @@ def resend_confirmation(auth):
     data = request.get_json()
 
     validate_user(data, user)
+    if not throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
+        raise HTTPError(httplib.BAD_REQUEST,
+                        data={'message_long': 'Too many requests. Please wait a while before sending another confirmation email.'})
 
     try:
         primary = data['email']['primary']
@@ -118,6 +124,7 @@ def resend_confirmation(auth):
     # TODO: This setting is now named incorrectly.
     if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
         send_confirm_email(user, email=address)
+        user.email_last_sent = datetime.datetime.utcnow()
 
     user.save()
 
@@ -353,9 +360,10 @@ def user_account_password(auth, **kwargs):
         user.change_password(old_password, new_password, confirm_password)
         user.save()
     except ChangePasswordError as error:
-        push_status_message('<br />'.join(error.messages) + '.', kind='warning')
+        for m in error.messages:
+            push_status_message(m, kind='warning', trust=False)
     else:
-        push_status_message('Password updated successfully.', kind='success')
+        push_status_message('Password updated successfully.', kind='success', trust=False)
 
     return redirect(web_url_for('user_account'))
 
@@ -777,21 +785,39 @@ def unserialize_schools(auth, **kwargs):
 
 @must_be_logged_in
 def request_export(auth):
+    user = auth.user
+    if not throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
+        raise HTTPError(httplib.BAD_REQUEST,
+                        data={'message_long': 'Too many requests. Please wait a while before sending another account export request.',
+                              'error_type': 'throttle_error'})
+
     mails.send_mail(
         to_addr=settings.SUPPORT_EMAIL,
         mail=mails.REQUEST_EXPORT,
         user=auth.user,
     )
+    user.email_last_sent = datetime.datetime.utcnow()
+    user.save()
     return {'message': 'Sent account export request'}
 
 
 @must_be_logged_in
 def request_deactivation(auth):
+    user = auth.user
+    if not throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
+        raise HTTPError(http.BAD_REQUEST,
+                        data={
+                            'message_long': 'Too many requests. Please wait a while before sending another account deactivation request.',
+                            'error_type': 'throttle_error'
+                        })
+
     mails.send_mail(
         to_addr=settings.SUPPORT_EMAIL,
         mail=mails.REQUEST_DEACTIVATION,
         user=auth.user,
     )
+    user.email_last_sent = datetime.datetime.utcnow()
+    user.save()
     return {'message': 'Sent account deactivation request'}
 
 
@@ -813,9 +839,9 @@ def redirect_to_twitter(twitter_handle):
         users = User.find(Q('social.twitter', 'iexact', twitter_handle))
         message_long = 'There are multiple OSF accounts associated with the ' \
                        'Twitter handle: <strong>{0}</strong>. <br /> Please ' \
-                       'select from the accounts below. <br /><ul>'.format(twitter_handle)
+                       'select from the accounts below. <br /><ul>'.format(markupsafe.escape(twitter_handle))
         for user in users:
-            message_long += '<li><a href="{0}">{1}</a></li>'.format(user.url, user.fullname)
+            message_long += '<li><a href="{0}">{1}</a></li>'.format(user.url, markupsafe.escape(user.fullname))
         message_long += '</ul>'
         raise HTTPError(http.MULTIPLE_CHOICES, data={
             'message_short': 'Multiple Users Found',

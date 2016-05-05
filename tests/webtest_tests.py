@@ -85,7 +85,7 @@ class TestAUser(OsfTestCase):
         res = self.app.get('/login/', auth=self.user.auth)
         assert_equal(res.status_code, 302)
         res = res.follow(auth=self.user.auth)
-        assert_equal(res.request.path, '/myprojects/')
+        assert_equal(res.request.path, '/')
 
     def test_sees_projects_in_her_dashboard(self):
         # the user already has a project
@@ -276,7 +276,7 @@ class TestAUser(OsfTestCase):
         # submits
         res = form.submit()
         # mail was sent
-        mock_send_mail.assert_called
+        assert_true(mock_send_mail.called)
         # gets 200 response
         assert_equal(res.status_code, 200)
         # URL is /forgotpassword
@@ -295,7 +295,7 @@ class TestAUser(OsfTestCase):
         # submits
         res = form.submit()
         # mail was sent
-        mock_send_mail.assert_called
+        assert_true(mock_send_mail.called)
         # gets 200 response
         assert_equal(res.status_code, 200)
         assert_in_html('If there is an OSF account', res)

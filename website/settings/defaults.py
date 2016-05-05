@@ -35,11 +35,12 @@ EMAIL_TOKEN_EXPIRATION = 24
 CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'static', 'vendor', 'bower_components', 'styles')
 
 # Minimum seconds between forgot password email attempts
-FORGOT_PASSWORD_MINIMUM_TIME = 30
+SEND_EMAIL_THROTTLE = 30
 
 # Hours before pending embargo/retraction/registration automatically becomes active
 RETRACTION_PENDING_TIME = datetime.timedelta(days=2)
 EMBARGO_PENDING_TIME = datetime.timedelta(days=2)
+EMBARGO_TERMINATION_PENDING_TIME = datetime.timedelta(days=2)
 REGISTRATION_APPROVAL_TIME = datetime.timedelta(days=2)
 # Date range for embargo periods
 EMBARGO_END_DATE_MIN = datetime.timedelta(days=2)
@@ -318,6 +319,7 @@ CELERY_IMPORTS = (
     'scripts.retract_registrations',
     'scripts.embargo_registrations',
     'scripts.approve_registrations',
+    'scripts.approve_embargo_terminations',
     'scripts.osfstorage.glacier_inventory',
     'scripts.osfstorage.glacier_audit',
     'scripts.triggered_mails',
@@ -325,7 +327,6 @@ CELERY_IMPORTS = (
     'scripts.osfstorage.usage_audit',
     'scripts.osfstorage.files_audit',
     'scripts.analytics.tasks',
-    'scripts.analytics.upload'
 )
 
 # celery.schedule will not be installed when running invoke requirements the first time.
@@ -363,6 +364,11 @@ else:
         },
         'approve_registrations': {
             'task': 'scripts.approve_registrations',
+            'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+            'kwargs': {'dry_run': False},
+        },
+        'approve_embargo_terminations': {
+            'task': 'scripts.approve_embargo_terminations',
             'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
             'kwargs': {'dry_run': False},
         },
@@ -419,11 +425,6 @@ else:
         # 'analytics': {
         #     'task': 'scripts.analytics.tasks',
         #     'schedule': crontab(minute=0, hour=2),  # Daily 2:00 a.m.
-        #     'kwargs': {}
-        # },
-        # 'analytics-upload': {
-        #     'task': 'scripts.analytics.upload',
-        #     'schedule': crontab(minute=0, hour=6),  # Daily 6:00 a.m.
         #     'kwargs': {}
         # },
     }

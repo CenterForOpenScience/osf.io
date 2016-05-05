@@ -22,7 +22,7 @@ SPF_PASS_VALUES = ['Pass', 'Neutral']
 
 ANGLE_BRACKETS_REGEX = re.compile(r'<(.*?)>')
 BASE_REGEX = r'''
-        (?P<test>test-)?
+        (?P<test>test-|stage-)?
         (?P<meeting>\w*?)
         -
         (?P<category>{allowed_types})
@@ -123,10 +123,10 @@ class ConferenceMessage(object):
         match = ANGLE_BRACKETS_REGEX.search(self.sender)
         if match:
             # sender format: "some name" <email@domain.tld>
-            return match.groups()[0]
+            return match.groups()[0].lower().strip()
         elif '@' in self.sender:
             # sender format: email@domain.tld
-            return self.sender
+            return self.sender.lower().strip()
         raise ConferenceError('Could not extract sender email')
 
     @cached_property

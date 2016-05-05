@@ -65,6 +65,10 @@ Sometimes and slowly iterating over a large collection the mongo cursor will tim
 The code snippet below will paginate result and load them into memory so timeouts are no longer an issue
 
 ```python
+from framework.mongo.utils import paginated
+```
+
+```python
 def paginated(model, query=None, increment=200):
     last_id = ''
     pages = (model.find(query).count() / increment) + 1
