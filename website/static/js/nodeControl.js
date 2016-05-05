@@ -41,7 +41,7 @@ var ProjectViewModel = function(data) {
     self.node = data.node;
     self.description = ko.observable(data.node.description);
     self.title = data.node.title;
-    self.category = data.node.category;
+    self.category = ko.observable(data.node.category);
     self.isRegistration = data.node.is_registration;
     self.user = data.user;
     self.nodeIsPublic = data.node.is_public;
@@ -70,7 +70,7 @@ var ProjectViewModel = function(data) {
 
 
     // Add icon to title
-    self.icon = '';
+    self.icon = ''; // TODO Dynamically update icon
     var category = data.node.category_short;
     if (Object.keys(iconmap.componentIcons).indexOf(category) >=0 ){
         self.icon = iconmap.componentIcons[category];
@@ -124,9 +124,31 @@ var ProjectViewModel = function(data) {
             emptyclass: 'text-muted',
             value: self.description(),
             success: function(response, newValue) {
+                newValue = response.newValue; // Update display to reflect changes, eg by sanitizer
                 self.description(newValue);
+                return {newValue: newValue};
             }
 
+        }));
+
+        var categoryOptions = ['a', 'b', 'c', 'project', 'Project']; // TODO: Get a list of allowed categories from... somewhere...
+        $('#nodeCategoryEditable').editable($.extend({}, editableOptions, {
+            type: 'select',
+            name: 'category',
+            title: 'Select a category',
+            value: self.category(),
+            validate: function(value) {
+                // If user triggers this, something has gone very wrong
+                if (categoryOptions.indexOf(value) === -1) {
+                    return 'Select a category from the list of available options';
+                }
+            },
+            source: categoryOptions,
+            success: function(response, newValue) {
+                newValue = response.newValue;
+                self.category(newValue);
+                return {newValue: newValue};
+            }
         }));
     }
 
