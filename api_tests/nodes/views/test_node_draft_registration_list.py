@@ -7,6 +7,7 @@ from framework.auth.core import Auth
 from website.util import permissions
 
 from api.base.settings.defaults import API_BASE
+from api.registrations.utils import create_jsonschema_from_metaschema
 
 from tests.base import ApiTestCase
 from tests.factories import (
@@ -32,14 +33,16 @@ class DraftRegistrationTestCase(ApiTestCase):
         self.public_project.save()
 
     def prereg_metadata(self, draft):
-        from api.base.utils import create_json_schema_for_metaschema
         test_metadata = {}
-        json_schema = create_json_schema_for_metaschema(draft)
+        json_schema = create_jsonschema_from_metaschema(draft)
 
         for key, value in json_schema['properties'].iteritems():
             response = 'Test response'
             if value['properties']['value'].get('enum'):
                 response = value['properties']['value']['enum'][0]
+
+            if value['properties']['value'].get('properties'):
+                response = {'question': {'value': 'Test Response'}}
 
             test_metadata[key] = {'value': response}
         return test_metadata
