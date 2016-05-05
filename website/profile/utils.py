@@ -17,7 +17,7 @@ def get_projects(user):
     # Avoid circular import
     from website.project.utils import TOP_LEVEL_PROJECT_QUERY
 
-    return Node.find_for_user(user, TOP_LEVEL_PROJECT_QUERY)
+    return Node.find_for_user(user, subquery=TOP_LEVEL_PROJECT_QUERY)
 
 def get_public_projects(user):
     """Return a list of a user's public projects."""
@@ -26,7 +26,7 @@ def get_public_projects(user):
 
     return Node.find_for_user(
         user,
-        (
+        subquery=(
             Q('is_public', 'eq', True) &
             TOP_LEVEL_PROJECT_QUERY
         )

@@ -60,7 +60,7 @@ def get_public_components(uid=None, user=None):
     nodes = list(
         Node.find_for_user(
             user,
-            (
+            subquery=(
                 PROJECT_QUERY &
                 Q('parent_node', 'ne', None) &
                 Q('is_public', 'eq', True)

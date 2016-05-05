@@ -73,7 +73,7 @@ def count_user_nodes(users=None):
     return [
         Node.find_for_user(
             user,
-            CONTENT_NODE_QUERY
+            subquery=CONTENT_NODE_QUERY
         ).count()
         for user in users
         ]

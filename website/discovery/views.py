@@ -2,7 +2,7 @@ import datetime
 
 from website import settings
 from website.project import Node
-from website.project.utils import recent_public_registrations
+from website.project.utils import CONTENT_NODE_QUERY, recent_public_registrations
 
 from modularodm.query.querydialect import DefaultQueryDialect as Q
 
@@ -57,9 +57,7 @@ def activity():
     recent_query = (
         Q('parent_node', 'eq', None) &
         Q('is_public', 'eq', True) &
-        Q('is_deleted', 'eq', False) &
-        Q('is_collection', 'ne', True) &
-        Q('is_bookmark_collection', 'ne', True)
+        CONTENT_NODE_QUERY
     )
 
     recent_public_projects = Node.find(
