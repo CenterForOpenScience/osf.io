@@ -1,8 +1,7 @@
-from admin.base.settings import KEEN_PROJECT_ID, KEEN_READ_KEY, ENTRY_POINTS
-from admin.sales_analytics.utils import get_sorted_index
+from admin.base.settings import ENTRY_POINTS
+from admin.sales_analytics.utils import get_entry_point, get_sorted_index
 from datetime import datetime, timedelta
 from framework.mongo import database as db
-from website.util.metrics import get_entry_point
 
 
 def get_user_count(db=db, entry_points=ENTRY_POINTS):
@@ -49,8 +48,6 @@ def get_multi_product_metrics(db=db, timedelta=timedelta(days=365)):
             user_id = i['_id']
             node_id = i['node_id']
             product = []
-            if user_id:
-                entry_point = get_entry_point(db.user.find({'_id': user_id}).next()['system_tags'])
             nodes = db.node.find({'_id': {'$in': node_id}})
             for node in nodes:
                 product.append(get_entry_point(node['system_tags']))
