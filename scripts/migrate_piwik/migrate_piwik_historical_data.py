@@ -145,7 +145,7 @@ def migrate_data(mysql_db, sqlite_db, start_date, end_date):
                         user = User.load(str(visit['custom_var_v1'])) or None
                         pageview['user'] = {
                             'id': visit['custom_var_v1'],
-                            'systemTags': get_entry_point(user.system_tags) if user else None
+                            'entryPoint': get_entry_point(user.system_tags) if user else None
                         }
 
                     pageview['keen']['timestamp'] = str(action['serverTimePretty'])
