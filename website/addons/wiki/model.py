@@ -176,6 +176,11 @@ class NodeWikiPage(GuidStoredObject, Commentable):
     user = fields.ForeignField('user')
     node = fields.ForeignField('node')
 
+    # For Django compatibility
+    @property
+    def pk(self):
+        return self._id
+
     @property
     def deep_url(self):
         return '{}wiki/{}/'.format(self.node.deep_url, self.page_name)
