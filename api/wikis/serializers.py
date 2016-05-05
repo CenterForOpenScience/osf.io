@@ -39,6 +39,9 @@ class WikiSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'wikis'
 
+    def get_absolute_url(self, obj):
+        return obj.get_absolute_url()
+
     def get_path(self, obj):
         return '/{}'.format(obj)
 
