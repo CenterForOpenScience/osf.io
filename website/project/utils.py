@@ -31,6 +31,7 @@ TOP_LEVEL_PROJECT_QUERY = (
 def recent_public_registrations(n=10):
     registrations = Node.find(
         CONTENT_NODE_QUERY &
+        Q('parent_node', 'eq', None) &
         Q('is_public', 'eq', True) &
         Q('is_registration', 'eq', True)
     ).sort(

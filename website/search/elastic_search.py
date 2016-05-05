@@ -265,7 +265,7 @@ COMPONENT_CATEGORIES = set(Node.CATEGORY_MAP.keys())
 def get_doctype_from_node(node):
     if node.is_registration:
         return 'registration'
-    elif node.parent_node is None and not node.is_fork:
+    elif node.parent_node is None:
         # ElasticSearch categorizes top-level projects differently than children
         return 'project'
     elif node.category in COMPONENT_CATEGORIES:
