@@ -67,6 +67,7 @@ INSTALLED_APPS = (
     'admin.metrics',
     'admin.nodes',
     'admin.users',
+    'admin.sales_analytics',
 
     # 3rd party
     'raven.contrib.django.raven_compat',
@@ -197,3 +198,8 @@ CKEDITOR_CONFIGS = {
         ]
     },
 }
+
+# Keen.io settings in local.py
+KEEN_PROJECT_ID = 'CHANGEME'
+KEEN_READ_KEY = 'CHANGEME'
+KEEN_WRITE_KEY = 'CHANGEME'
