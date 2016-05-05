@@ -6,7 +6,7 @@ from website.project.model import Node
 
 # Alias the project serializer
 from website.project.views.node import _view_project
-serialize_node = _view_project
+serialize_node = _view_project  # TODO: Seriously?
 
 CONTENT_NODE_QUERY = (
     # Can encompass accessible projects, registrations, or forks
