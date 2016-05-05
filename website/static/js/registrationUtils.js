@@ -880,10 +880,9 @@ var RegistrationEditor = function(urls, editorId, preview) {
                 }
 		$elem.append(
 		    $('<span class="col-md-12">').append(
-                $('<p class="breaklines"><small><em>' + $osf.htmlEscape(question.description) + '</em></small></p>'),
-			    $('<span class="well col-md-12">').append($osf.htmlEscape(value))
-            )
-		);
+			$('<p class="breaklines"><small><em>' + $osf.htmlEscape(question.description) + '</em></small></p>'),
+                            $('<span class="well col-md-12">').append($osf.htmlEscape(value))
+		));
             }
 	    return $elem;
 	};

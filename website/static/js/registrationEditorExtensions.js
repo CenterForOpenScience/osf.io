@@ -188,7 +188,16 @@ var Uploader = function(question) {
     self.addFile = function(file) {
         if(self.selectedFiles().length >= 5 && self.fileWarn()) {
             self.fileWarn(false);
-            bootbox.alert('Too many files. Cannot attach more than 5 files to a question.');
+            bootbox.alert({
+                title: 'Too many files',
+                message: 'You cannot attach more than 5 files to a question.',
+                buttons: {
+                    ok: {
+                        label: 'Close',
+                        className: 'btn-default'
+                    }
+                }
+            }).css({ 'top': '35%' });
             return false;
         } else if(self.selectedFiles().length >= 5 && !self.fileWarn()) {
             return false;
@@ -210,7 +219,7 @@ var Uploader = function(question) {
     self.fileAlreadySelected = function(file) {
         var selected = false;
         $.each(question.extra(), function(idx, alreadyFile) {
-            if(alreadyFile.sha256 === file.data.extra.hashes.sha256){
+            if(alreadyFile.selectedFileName === file.data.name && alreadyFile.sha256 === file.data.extra.hashes.sha256){
                 selected = true;
                 return;
             }
@@ -246,7 +255,7 @@ var Uploader = function(question) {
             var files = question.extra();
             var elem = '';
             $.each(files, function(_, file) {
-                elem += '<a target="_blank" href="' + file.viewUrl + '">' + $osf.htmlEscape(file.selectedFileName) + ' </a>';
+                elem += '<a target="_blank" href="' + file.viewUrl + '">' + $osf.htmlEscape(file.selectedFileName) + ' </a>' + '</br>';
             });
             return $(elem);
         }
