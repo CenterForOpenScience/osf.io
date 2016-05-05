@@ -5,16 +5,16 @@
 'use strict';
 
 var $ = require('jquery');
-var $osf = require('js/osfHelpers');
-var ko = require('knockout');
 var bootbox = require('bootbox');
-var Raven = require('raven-js');
 require('bootstrap-editable');
+var ko = require('knockout');
+var Raven = require('raven-js');
 
-var osfHelpers = require('js/osfHelpers');
+var $osf = require('js/osfHelpers');
+
+var iconmap = require('js/iconmap');
 var NodeActions = require('js/project.js');
 var NodesPrivacy = require('js/nodesPrivacy').NodesPrivacy;
-var iconmap = require('js/iconmap');
 
 /**
  * The ProjectViewModel, scoped to the project header.
@@ -24,16 +24,16 @@ var ProjectViewModel = function(data) {
     var self = this;
     self._id = data.node.id;
     self.apiUrl = data.node.api_url;
-    self.dateCreated = new osfHelpers.FormattableDate(data.node.date_created);
-    self.dateModified = new osfHelpers.FormattableDate(data.node.date_modified);
-    self.dateForked = new osfHelpers.FormattableDate(data.node.forked_date);
+    self.dateCreated = new $osf.FormattableDate(data.node.date_created);
+    self.dateModified = new $osf.FormattableDate(data.node.date_modified);
+    self.dateForked = new $osf.FormattableDate(data.node.forked_date);
     self.parent = data.parent_node;
     self.doi = ko.observable(data.node.identifiers.doi);
     self.ark = ko.observable(data.node.identifiers.ark);
     self.idCreationInProgress = ko.observable(false);
     self.watchedCount = ko.observable(data.node.watched_count);
     self.userIsWatching = ko.observable(data.user.is_watching);
-    self.dateRegistered = new osfHelpers.FormattableDate(data.node.registered_date);
+    self.dateRegistered = new $osf.FormattableDate(data.node.registered_date);
     self.inDashboard = ko.observable(data.node.in_dashboard);
     self.dashboard = data.user.dashboard_id;
     self.userCanEdit = data.user.can_edit;
@@ -97,7 +97,7 @@ var ProjectViewModel = function(data) {
             success: function () {
                 document.location.reload(true);
             },
-            error: osfHelpers.handleEditableError,
+            error: $osf.handleEditableError,
             placement: 'bottom'
         };
 
@@ -135,10 +135,10 @@ var ProjectViewModel = function(data) {
             'toNodeID': self.dashboard,
             'pointerID': self._id
         };
-        osfHelpers.postJSON('/api/v1/pointer/', jsonData)
+        $osf.postJSON('/api/v1/pointer/', jsonData)
             .fail(function(data) {
                 self.inDashboard(false);
-                osfHelpers.handleJSONError(data);
+                $osf.handleJSONError(data);
         });
     };
     /**
@@ -153,7 +153,7 @@ var ProjectViewModel = function(data) {
             'isCors': true
         }).fail(function() {
             self.inDashboard(true);
-            osfHelpers.growl('Error', 'The project could not be removed', 'danger');
+            $osf.growl('Error', 'The project could not be removed', 'danger');
         });
     };
 
@@ -172,7 +172,7 @@ var ProjectViewModel = function(data) {
                 self.watchedCount(self.watchedCount() + 1);
             }
             watchUpdateInProgress = true;
-            osfHelpers.postJSON(
+            $osf.postJSON(
                 self.apiUrl + 'togglewatch/',
                 {}
             ).done(function (data) {
@@ -181,7 +181,7 @@ var ProjectViewModel = function(data) {
                 self.userIsWatching(data.watched);
                 self.watchedCount(data.watchCount);
             }).fail(
-                osfHelpers.handleJSONError
+                $osf.handleJSONError
             );
         }
     };
@@ -245,7 +245,7 @@ var ProjectViewModel = function(data) {
                 'The DOI/ARK acquisition service may be down right now. ' +
                 'Please try again soon and/or contact ' +
                 '<a href="mailto: support@osf.io">support@osf.io</a>';
-            osfHelpers.growl('Error', message, 'danger');
+            $osf.growl('Error', message, 'danger');
             Raven.captureMessage('Could not create identifiers', {extra: {url: url, status: xhr.status}});
         }).always(function() {
             clearTimeout(timeout);
@@ -275,7 +275,7 @@ function NodeControl (selector, data, options) {
 
 NodeControl.prototype.init = function() {
     var self = this;
-    osfHelpers.applyBindings(self.viewModel, this.selector);
+    $osf.applyBindings(self.viewModel, this.selector);
     if (self.data.user.is_admin && !self.data.node.is_retracted) {
         new NodesPrivacy('#nodesPrivacy', self.data.node, function(nodesChanged, requestedEmbargoTermination) {
             // TODO: The goal here is to update the UI of the project dashboard to
