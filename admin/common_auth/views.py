@@ -5,11 +5,10 @@ from django.views.generic.edit import FormView
 from django.contrib import messages
 from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth import login, REDIRECT_FIELD_NAME, authenticate, logout
-from django.shortcuts import redirect, resolve_url
+from django.shortcuts import redirect
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect
-from django.conf import settings
 from django.http import Http404
 
 from website.project.model import User
@@ -47,8 +46,8 @@ class LoginView(FormView):
 
     def get_success_url(self):
         redirect_to = self.request.GET.get(self.redirect_field_name, '')
-        if not redirect_to:
-            redirect_to = resolve_url(settings.LOGIN_REDIRECT_URL)
+        if not redirect_to or redirect_to == '/':
+            redirect_to = reverse('home')
         return redirect_to
 
 
