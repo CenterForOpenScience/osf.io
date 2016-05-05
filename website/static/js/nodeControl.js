@@ -39,7 +39,7 @@ var ProjectViewModel = function(data) {
     self.userCanEdit = data.user.can_edit;
     self.userPermissions = data.user.permissions;
     self.node = data.node;
-    self.description = data.node.description;
+    self.description = ko.observable(data.node.description);
     self.title = data.node.title;
     self.category = data.node.category;
     self.isRegistration = data.node.is_registration;
@@ -121,7 +121,12 @@ var ProjectViewModel = function(data) {
             name: 'description',
             title: 'Edit Description',
             emptytext: 'No description',
-            emptyclass: 'text-muted'
+            emptyclass: 'text-muted',
+            value: self.description(),
+            success: function(response, newValue) {
+                self.description(newValue);
+            }
+
         }));
     }
 
