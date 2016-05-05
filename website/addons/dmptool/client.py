@@ -8,6 +8,10 @@ from website.addons.dmptool import settings
 import requests
 import urlparse
 
+DMPTOOL_HOST = "dmptool.org"
+STAGING_DMPTOOL_HOST = "dmp2-staging.cdlib.org"
+
+
 def _connect(host, token):
     return DMPTool (token, host)
 
@@ -109,22 +113,24 @@ def get_dataset(dmptool, doi):
 
 
 def get_dmptools(connection):
+    # TO DO:  get rid of 
     if connection is None:
         return []
-    return connection.get_dmptools()
+    return []
 
 
 def get_dmptool(connection, alias):
+    # TO DO:  get rid of 
     if connection is None:
         return
-    return connection.get_dmptool(alias)
+    return None
 
 
 class DMPTool(object):
-    def __init__(self, token, host="dmptool.org"):
+    def __init__(self, token, host="dmptool.org", protocol="https"):
         self.token = token
         self.host = host
-        self.base_url = "https://{}/api/v1/".format(host)
+        self.base_url = "{}://{}/api/v1/".format(protocol, host)
         self.headers = {'Authorization': 'Token token={}'.format(self.token)}
                 
     def get_url(self, path, headers=None):
@@ -136,6 +142,14 @@ class DMPTool(object):
         
         response.raise_for_status()
         return response 
+    
+    def _unroll(self, plans):
+        """
+        each plan is a dict with a key plan
+        """
+        return [plan.get('plan') 
+           for plan in plans    
+        ]
 
     def plans(self, id_=None):
         """
@@ -144,32 +158,32 @@ class DMPTool(object):
         """
         
         if id_ is None:
-            return self.get_url("plans").json()
+            return self._unroll(self.get_url("plans").json())
         else:
-            return self.get_url("plans/{}".format(id_)).json()
+            return self.get_url("plans/{}".format(id_)).json().get('plan')
                     
     def plans_full(self, id_=None, format_='json'):
     
         if id_ is None:
             # a json doc for to represent all public docs
             # I **think** if we include token, will get only docs owned
-            return self.get_url("plans_full/", headers={}).json()
+            return self._unroll(self.get_url("plans_full/", headers={}).json())
         else:
             if format_ == 'json':
-                return self.get_url("plans_full/{}".format(id_)).json()
+                return self.get_url("plans_full/{}".format(id_)).json().get('plan')
             elif format_ in ['pdf', 'docx']:
                 return self.get_url("plans_full/{}.{}".format(id_, format_)).content
             else: 
                 return None
 
     def plans_owned(self):
-        return self.get_url("plans_owned").json()
+        return self._unroll(self.get_url("plans_owned").json())
     
     def plans_owned_full(self):
-        return self.get_url("plans_owned_full").json()
+        return self._unroll(self.get_url("plans_owned_full").json())
     
     def plans_templates(self):
-        return self.get_url("plans_templates").json()
+        return self._unroll(self.get_url("plans_templates").json())
         
     def institutions_plans_count(self):
         """
@@ -177,5 +191,4 @@ class DMPTool(object):
         """
         plans_counts = self.get_url("institutions_plans_count").json()
         return plans_counts
-
     

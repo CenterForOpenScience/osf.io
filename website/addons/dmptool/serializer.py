@@ -70,14 +70,14 @@ class DmptoolSerializer(OAuthAddonSerializer):
             dmptool_host = external_account.oauth_key
 
             connection = client.connect_from_settings(self.node_settings)
-            dmptools = client.get_dmptools(connection)
+            # dmptools = client.get_dmptools(connection)
             result.update({
                 'dmptoolHost': dmptool_host,
                 'connected': connection is not None,
-                'dmptools': [
-                    {'title': dmptool.title, 'alias': dmptool.alias}
-                    for dmptool in dmptools
-                ],
+                # 'dmptools': [
+                #     {'title': dmptool.title, 'alias': dmptool.alias}
+                #     for dmptool in dmptools
+                # ],
                 'savedDmptool': {
                     'title': self.node_settings.dmptool,
                     'alias': self.node_settings.dmptool_alias,

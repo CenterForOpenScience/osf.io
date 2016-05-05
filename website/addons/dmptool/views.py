@@ -24,6 +24,7 @@ from website.project.decorators import (
 )
 from website.util import rubeus, api_url_for
 from website.util.sanitize import assert_clean
+import json
 
 SHORT_NAME = 'dmptool'
 FULL_NAME = 'DMPTool'
@@ -299,27 +300,18 @@ def dmptool_get_widget_contents(node_addon, **kwargs):
     if not node_addon.complete:
         return {'data': data}, http.OK
 
-    doi = node_addon.dataset_doi
-    alias = node_addon.dmptool_alias
-
     connection = client.connect_from_settings_or_401(node_addon)
-    dmptool = client.get_dmptool(connection, alias)
-    dataset = client.get_dataset(dmptool, doi)
-
-    if dataset is None:
-        return {'data': data}, http.BAD_REQUEST
-
+    plans = connection.plans_owned()
     dmptool_host = node_addon.external_account.oauth_key
-    dmptool_url = 'http://{0}/dmptool/{1}'.format(dmptool_host, alias)
-    dataset_url = 'http://dx.doi.org/' + doi
+
+    # loop through plans to add plan url to each plan
+    # https://dmptool.org/plans/21222/edit 
+    for plan in plans:
+        plan['url'] = "https://{}/plans/{}/edit".format(dmptool_host, plan['id'])
 
     data.update({
+        'dmptool_host': dmptool_host,
+        'plans': plans,
         'connected': True,
-        'dmptool': node_addon.dmptool,
-        'dmptoolUrl': dmptool_url,
-        'dataset': node_addon.dataset,
-        'doi': doi,
-        'datasetUrl': dataset_url,
-        'citation': dataset.citation,
     })
     return {'data': data}, http.OK

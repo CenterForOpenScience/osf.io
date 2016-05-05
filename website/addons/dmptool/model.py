@@ -64,7 +64,7 @@ class AddonDmptoolNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     @property
     def complete(self):
-        return bool(self.has_auth and self.dataset_doi is not None)
+        return bool(self.has_auth)
 
     @property
     def folder_id(self):
