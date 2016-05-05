@@ -126,6 +126,11 @@ class NodeSerializer(JSONAPISerializer):
         related_view_kwargs={'node_id': '<pk>'}
     )
 
+    wikis = RelationshipField(
+        related_view='nodes:node-wikis',
+        related_view_kwargs={'node_id': '<pk>'}
+    )
+
     forked_from = RelationshipField(
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<forked_from_id>'}

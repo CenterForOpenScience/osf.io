@@ -2024,7 +2024,7 @@ class NodeWikiList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     required_write_scopes = [CoreScopes.NULL]
     serializer_class = WikiSerializer
 
-    view_category = 'wikis'
+    view_category = 'nodes'
     view_name = 'node-wikis'
 
     ordering = ('-date', )  # default ordering
@@ -2050,7 +2050,7 @@ class NodeWikiDetail(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
     required_write_scopes = [CoreScopes.NULL]
     serializer_class = WikiSerializer
 
-    view_category = 'wikis'
+    view_category = 'nodes'
     view_name = 'node-wiki-detail'
 
     def get_object(self):
