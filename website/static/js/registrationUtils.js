@@ -182,7 +182,11 @@ var Question = function(questionSchema, data) {
     self.properties = questionSchema.properties || [];
     self.match = questionSchema.match || '';
 
-    self.extra = ko.observableArray(self.data.extra || []);
+    try {
+	self.extra =  ko.observableArray(self.data.extra || []);
+    } catch(e) {
+	self.extra = ko.observableArray([]);
+    }
 
     self.formattedFileList = ko.pureComputed(function() {
         return self.extra().map(function(elem) {
@@ -871,7 +875,8 @@ var RegistrationEditor = function(urls, editorId, preview) {
 			return unwrap(subQuestion);
 		    })
                 );
-            } else {
+            }
+	    else {
                 var value;
                 if (self.extensions[question.type] ) {
                     value = question.preview();
@@ -881,7 +886,7 @@ var RegistrationEditor = function(urls, editorId, preview) {
 		$elem.append(
 		    $('<span class="col-md-12">').append(
 			$('<p class="breaklines"><small><em>' + $osf.htmlEscape(question.description) + '</em></small></p>'),
-                            $('<span class="well col-md-12">').append($osf.htmlEscape(value))
+                            $('<span class="well col-md-12">').append(value)
 		));
             }
 	    return $elem;
