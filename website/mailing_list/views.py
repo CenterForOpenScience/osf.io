@@ -6,7 +6,7 @@ from website.project.decorators import (
 )
 from website.util.permissions import ADMIN
 
-from website.mailing_list.utils import route_message
+from website.mailing_list.utils import log_message
 
 
 ###############################################################################
@@ -23,6 +23,7 @@ def get_node_mailing_list(node, auth, **kwargs):
 @must_have_permission(ADMIN)
 @must_not_be_registration
 def enable_mailing_list(node, **kwargs):
+    # TODO: queue task
     node.mailing_enabled = True
     node.save()
     return {'message': 'Successfully enabled mailing lists', 'success': True}
@@ -32,10 +33,11 @@ def enable_mailing_list(node, **kwargs):
 @must_have_permission(ADMIN)
 @must_not_be_registration
 def disable_mailing_list(node, **kwargs):
+    # TODO: queue task
     node.mailing_enabled = False
     node.save()
 
-route_message = route_message
+log_message = log_message
 
 def format_node_data_recursive(nodes, user):
     items = []

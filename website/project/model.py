@@ -1582,7 +1582,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             piwik_tasks.update_node(self._id, saved_fields)
 
         # Ensure Mailing list subscription is set up
-        if first_save:
+        if first_save and self.mailing_enabled:
             self.get_or_create_mailing_list_subscription()
 
         # Return expected value for StoredObject::save
@@ -1601,6 +1601,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 )
                 subscription.add_user_to_subscription(self.creator, 'email_transactional', save=True)
                 subscription.save()
+                # TODO queue ml creation
             except KeyExistsException:
                 subscription = NotificationSubscription.load(to_subscription_key(self._id, 'mailing_list_events'))
             finally:

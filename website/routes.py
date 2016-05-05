@@ -1663,7 +1663,7 @@ def make_url_map(app):
                 '/mailing_list/messages/',
             ],
             'post',
-            mailing_list_views.route_message,
+            mailing_list_views.log_message,
             json_renderer,
         ),
 

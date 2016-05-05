@@ -1,7 +1,7 @@
 NODE_SUBSCRIPTIONS_AVAILABLE = {
     'comments': 'Comments added',
     'file_updated': 'Files updated',
-    'mailing_list_events': 'Mailing list emails'
+    'mailing_list_events': 'Mailing list emails',
 }
 
 USER_SUBSCRIPTIONS_AVAILABLE = {

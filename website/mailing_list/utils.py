@@ -2,20 +2,98 @@ from furl import furl
 import re
 
 from flask import request
-from modularodm import Q
 
 from framework.auth.core import get_user
 from framework.auth.signals import user_confirmed
+from framework.celery_tasks import app
+from framework.celery_tasks.handlers import queued_task
 
-from website import mails
 from website import settings
 from website.notifications.utils import to_subscription_key
 
 from website.mailing_list.model import MailingListEventLog
 from website.project.signals import contributor_added
-from website.util.sanitize import unescape_entities
 
 ANGLE_BRACKETS_REGEX = re.compile(r'<(.*?)>')
+
+
+###############################################################################
+# List Management Functions
+###############################################################################
+
+# TODO
+
+def get_list(node):
+    """ Returns information about the mailing list from Mailgun
+    :param Node node: The node in question
+    :returns: info, members: Two dictionaries about list and members
+    """
+    pass
+
+def enable_list(node, unsubs):
+    """ Creates a new mailing list on Mailgun with all emails and subscriptions
+    :param Node node: The node in question
+    """
+    pass
+
+def disable_list(node):
+    """ Prevents further use of this list by users
+    :param Node node: The node in question
+    """
+    pass
+
+def update_title(node):
+    """ Updates the title of a mailing list to match the list's project
+    :param Node node: The node in question
+    """
+    pass
+
+def update_single_user_in_list(node, user, enabled, old_email=None):
+    """ Adds/updates single member of a mailing list on Mailgun
+    :param Node node: The id of the node in question
+    :param User user: User to update
+    :param bool enabled: Enable or disable user?
+    :param str old_email: Previous email of this user in list
+    """
+    pass
+
+def remove_user_from_list(node, user):
+    """ Removes single member of a mailing list on Mailgun
+    :param Node node: The id of the node in question
+    :param User user: User to remove
+    """
+
+def update_multiple_users_in_list(node, users):
+    """ Adds/updates members of a mailing list on Mailgun
+    :param Node node: The id of the node in question
+    :param list users: List of Users to add/enable/update
+    """
+    pass
+
+def check_node_list_synchronized(node, recover=False):
+    """ Checks to see if the list is synchronized with internal representation
+    :param Node node: The node to check
+    :param bool recover: Should attempt to synchronize?
+    :return bool: is synchronized?
+    """
+    pass
+
+def get_recipients_remote(node):
+    pass
+
+###############################################################################
+# Celery Queued tasks
+###############################################################################
+
+# TODO queue above tasks
+
+@queued_task
+@app.task
+def send_message(node, message):
+    """ Sends a message from the node through the given mailing list
+    :param Node node: The id of the node in question
+    :param dict message: Contains subject and text of the email to be sent
+    """
 
 ###############################################################################
 # Signalled Functions
@@ -27,14 +105,16 @@ def subscribe_contributor_to_mailing_list(node, contributor, auth=None):
         subscription = node.get_or_create_mailing_list_subscription()
         subscription.add_user_to_subscription(contributor, 'email_transactional', save=True)
         subscription.save()
+        # TODO queue task
 
 @user_confirmed.connect
 def resubscribe_on_confirm(user):
     for node in user.contributed:
         subscribe_contributor_to_mailing_list(node, user)
+    pass
 
 ###############################################################################
-# Mailing List Functions
+# Mailing List Helper Functions
 ###############################################################################
 
 def address(node_id):
@@ -50,65 +130,21 @@ def find_email(long_email):
         return long_email.lower().strip()
     return None
 
-def reason_for_rejection(sender, node, message):
-    if 'multipart/report' in message['Content-Type'] and 'delivery-status' in message['Content-Type']:
-        return MailingListEventLog.BOUNCED
-    if not sender:
-        return MailingListEventLog.UNAUTHORIZED
-    elif not node:
-        return MailingListEventLog.NOT_FOUND
-    elif node.is_deleted:
-        return MailingListEventLog.DELETED
-    elif sender not in node.contributors:
-        return MailingListEventLog.FORBIDDEN
-    elif not node.mailing_enabled:
-        return MailingListEventLog.DISABLED
-    elif not get_recipients(node, sender):
-        return MailingListEventLog.NO_RECIPIENTS
-
-    p = re.compile('auto[- ]{0,1}reply', re.IGNORECASE)
-    if p.match(message['subject']):
-        return MailingListEventLog.AUTOREPLY
-    try:
-        last_sender_msg = MailingListEventLog.find(Q('sending_user', 'eq', sender) & Q('destination_node', 'eq', node))[0].content
-    except IndexError:
-        pass
-    else:
-        if len(message['stripped-text']) > 10 and message['stripped-text'] == last_sender_msg['stripped-text']:
-            return MailingListEventLog.AUTOREPLY
-    return
-
-def route_message(**kwargs):
-    """ Acquires messages sent through Mailgun, validates them, and warns the
-    user if they are not valid"""
+def log_message(**kwargs):
+    """ Acquires and logs messages sent through Mailgun"""
     from website.models import Node  # avoid circular imports
     message = request.form
     target = find_email(message['To'])
-    # node_id = re.search(r'[a-z0-9]*@', target).group(0)[:-1]
     node = Node.load(re.search(r'[a-z0-9]*@', target).group(0)[:-1])
 
     sender_email = find_email(message['From'])
     sender = get_user(email=sender_email)
 
-    reason = reason_for_rejection(sender, node, message)
-
-    if reason:
-        if reason not in (MailingListEventLog.BOUNCED, MailingListEventLog.AUTOREPLY):
-            send_rejection(node, sender, sender_email, target, message, reason)
-        recipients = []
-    else:
-        reason = MailingListEventLog.OK
-        recipients = get_recipients(node, sender=sender)
-        send_acception(node, sender, recipients, message)
-
     # Create a log of this mailing event
     MailingListEventLog(
-        content=message,
-        status=reason,
+        email_content=message,
         destination_node=node,
-        sending_email=sender_email,
         sending_user=sender,
-        intended_recipients=recipients
     ).save()
 
 def get_recipients(node, sender=None):
@@ -125,45 +161,3 @@ def get_unsubscribes(node):
         recipients = get_recipients(node)
         return [u for u in node.contributors if u not in recipients]
     return []
-
-def send_acception(node, sender, recipients, message):
-    mail = mails.MAILING_LIST_EMAIL_ACCEPTED
-    mail._subject = '{} [via OSF: {}]'.format(
-        message['subject'].split(' [via OSF')[0],  # Fixes reply subj, if node.title changes
-        unescape_entities(node.title)
-    )
-    from_addr = '{0} <{1}>'.format(sender.fullname, address(node._id))
-    context = {
-        'body': message['stripped-text'],
-        'cat': node.category,
-        'node_url': '{}{}'.format(settings.DOMAIN.rstrip('/'), node.url),
-        'node_title': unescape_entities(node.title),
-        'url': '{}{}settings/#configureNotificationsAnchor'.format(settings.DOMAIN.rstrip('/'), node.url)
-    }
-
-    for recipient in recipients:
-        mails.send_mail(
-            to_addr=recipient.username,
-            mail=mail,
-            from_addr=from_addr,
-            mimetype='html',
-            use_mailgun=True,
-            **context
-        )
-
-def send_rejection(node, sender, sender_email, target, message, reason):
-    user_is_admin = 'admin' in node.get_permissions(sender)\
-        if sender and node else False
-
-    mail_params = {
-        'to_addr': sender_email,
-        'mail': mails.MAILING_LIST_EMAIL_REJECTED,
-        'target_address': target,
-        'user': sender,
-        'node_type': node.project_or_component if node else '',
-        'node_url': node.absolute_url if node else '',
-        'is_admin': user_is_admin,
-        'mail_log_class': MailingListEventLog
-    }
-
-    mails.send_mail(reason=reason, **mail_params)

@@ -158,7 +158,7 @@ SHORT_DOMAIN = 'osf.io'
 
 # TODO: Override in local.py
 MAILGUN_API_KEY = None
-MAILGUN_API_SEND_ENDPOINT = 'https://api.mailgun.net/v3/{}/messages'.format(SHORT_DOMAIN)
+MAILGUN_API_ENDPOINT = 'https://api.mailgun.net/v3/{}/'.format(SHORT_DOMAIN)
 
 # TODO: Combine Python and JavaScript config
 COMMENT_MAXLENGTH = 500

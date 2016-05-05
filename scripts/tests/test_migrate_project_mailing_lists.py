@@ -13,6 +13,8 @@ from scripts.migrate_project_mailing_lists import migrate
 
 class TestMigrateMailingLists(OsfTestCase):
 
+    # TODO: mock ml_utils
+
     def tearDown(self):
         # Prevent errors
         Node.remove()

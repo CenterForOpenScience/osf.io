@@ -2,6 +2,7 @@
 """Create mailing lists for all top-level projects
 """
 import logging
+from mock import MagicMock
 import sys
 
 from modularodm import Q
@@ -10,8 +11,7 @@ from framework.transactions.context import TokuTransaction
 
 from website.app import init_app
 from website.models import Node
-from website.notifications.model import NotificationSubscription
-from website.notifications.utils import to_subscription_key
+from website.mailing_list import utils as ml_utils
 from scripts import utils as script_utils
 
 logger = logging.getLogger(__name__)
@@ -45,6 +45,7 @@ def migrate(dry_run=True):
                     owner=node,
                     event_name=EVENT
                 )
+                # TODO queue ml creation
                 logger.info('({0}/{1})Enabling mailing list for node {2}'.format(i+1, ncount, node._id))
                 node.mailing_enabled = True
 
@@ -52,6 +53,7 @@ def migrate(dry_run=True):
                     if user.is_active:
                         logger.info('Subscribing user {} on node {}'.format(user, node))
                         subscription.add_user_to_subscription(user, SUBSCRIPTION_TYPE)
+                        # TODO queue user addition
 
                 subscription.save()
                 node.save()
@@ -91,6 +93,8 @@ def main():
     dry_run = 'dry' in sys.argv
     if not dry_run:
         script_utils.add_file_logger(logger, __file__)
+    else:
+        ml_utils = MagicMock()
     with TokuTransaction():
         migrate(dry_run=dry_run)
 
