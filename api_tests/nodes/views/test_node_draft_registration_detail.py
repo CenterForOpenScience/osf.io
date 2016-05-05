@@ -292,4 +292,4 @@ class TestDraftRegistrationDelete(DraftRegistrationTestCase):
         self.draft_registration.register(auth=Auth(self.user), save=True)
         res = self.app.delete_json_api(self.url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
-        assert_equal(res.json['errors'][0]['detail'], 'This draft has already been registered and cannot be deleted.')
+        assert_equal(res.json['errors'][0]['detail'], 'This draft has already been registered and cannot be modified.')
