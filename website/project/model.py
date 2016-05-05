@@ -3820,6 +3820,8 @@ class DraftRegistration(StoredObject):
 
     approval = fields.ForeignField('draftregistrationapproval', default=None)
 
+    status_logs = fields.DictionaryField(default=dict)
+
     # Dictionary field mapping extra fields defined in the MetaSchema.schema to their
     # values. Defaults should be provided in the schema (e.g. 'paymentSent': false),
     # and these values are added to the DraftRegistration
@@ -3884,6 +3886,13 @@ class DraftRegistration(StoredObject):
         else:
             return False
 
+    @property
+    def logs(self):
+        return [
+            '{} on {}'.format(v.title(), k)
+            for k, v in sorted(self.status_logs.iteritems(), key=lambda x: x[0])
+        ]
+
     @classmethod
     def create_from_node(cls, node, user, schema, data=None):
         draft = cls(
@@ -3923,6 +3932,11 @@ class DraftRegistration(StoredObject):
         self.registration_metadata.update(metadata)
         return changes
 
+    def add_status_log(self, action):
+        self.status_logs.update({
+            datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M'): action
+        })
+
     def submit_for_review(self, initiated_by, meta, save=False):
         approval = DraftRegistrationApproval(
             initiated_by=initiated_by,
@@ -3930,6 +3944,7 @@ class DraftRegistration(StoredObject):
         )
         approval.save()
         self.approval = approval
+        self.add_status_log('submitted')
         if save:
             self.save()
 
@@ -3943,14 +3958,17 @@ class DraftRegistration(StoredObject):
             data=self.registration_metadata
         )
         self.registered_node = register
+        self.add_status_log('registered')
         if save:
             self.save()
         return register
 
     def approve(self, user):
         self.approval.approve(user)
+        self.add_status_log('approved')
         self.approval.save()
 
     def reject(self, user):
         self.approval.reject(user)
+        self.add_status_log('rejected')
         self.approval.save()

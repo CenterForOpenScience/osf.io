@@ -1,11 +1,12 @@
 from __future__ import unicode_literals
 
 import json
+import csv
 
 from django.views.generic import ListView, DetailView, FormView, UpdateView
 from django.views.defaults import permission_denied, bad_request
 from django.core.urlresolvers import reverse
-from django.http import JsonResponse, Http404
+from django.http import JsonResponse, Http404, HttpResponse
 from django.shortcuts import redirect
 from modularodm import Q
 
@@ -17,6 +18,7 @@ from admin.common_auth.logs import (
 )
 from admin.pre_reg import serializers
 from admin.pre_reg.forms import DraftRegistrationForm
+from admin.pre_reg.utils import sort_drafts, SORT_BY, VIEW_STATUS
 from framework.exceptions import PermissionsError
 from website.exceptions import NodeStateError
 from website.files.models import FileNode
@@ -27,9 +29,7 @@ from admin.base.utils import PreregAdmin
 
 class DraftListView(PreregAdmin, ListView):
     template_name = 'pre_reg/draft_list.html'
-    paginate_by = 10
-    paginate_orphans = 1
-    ordering = '-approval.initiation_date'
+    ordering = '-date'
     context_object_name = 'draft'
 
     def get_queryset(self):
@@ -41,7 +41,16 @@ class DraftListView(PreregAdmin, ListView):
             Q('registration_schema', 'eq', prereg_schema) &
             Q('approval', 'ne', None)
         )
-        return DraftRegistration.find(query).sort(self.ordering)
+        ordering = self.get_ordering()
+        if 'initiator' in ordering:
+            return DraftRegistration.find(query).sort(ordering)
+        if ordering == SORT_BY['title']:
+            return DraftRegistration.find(query).sort(
+                'registration_metadata.q1.value')
+        if ordering == SORT_BY['n_title']:
+            return DraftRegistration.find(query).sort(
+                '-registration_metadata.q1.value')
+        return sort_drafts(DraftRegistration.find(query), ordering)
 
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)
@@ -54,7 +63,42 @@ class DraftListView(PreregAdmin, ListView):
                 for d in query_set
             ],
             'page': page,
+            'p': self.get_paginate_by(query_set),
+            'SORT_BY': SORT_BY,
+            'order': self.get_ordering(),
+            'VIEW_STATUS': VIEW_STATUS,
+            'status': self.request.GET.get('status', 'all'),
         }
+
+    def get_paginate_by(self, queryset):
+        return int(self.request.GET.get('p', 10))
+
+    def get_paginate_orphans(self):
+        return int(self.get_paginate_by(None) / 11.0) + 1
+
+    def get_ordering(self):
+        return self.request.GET.get('order_by', self.ordering)
+
+
+class DraftDownloadListView(DraftListView):
+    def get(self, request, *args, **kwargs):
+        try:
+            queryset = map(serializers.serialize_draft_registration,
+                           self.get_queryset())
+        except AttributeError:
+            raise Http404('A draft was malformed.')
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename=prereg.csv;'
+        response['Cache-Control'] = 'no-cache'
+        keys = queryset[0].keys()
+        keys.remove('registration_schema')
+        writer = csv.DictWriter(response, fieldnames=keys)
+        writer.writeheader()
+        for draft in queryset:
+            draft.pop('registration_schema')
+            draft.update({'initiator': draft['initiator']['username']})
+            writer.writerow(draft)
+        return response
 
 
 class DraftDetailView(PreregAdmin, DetailView):

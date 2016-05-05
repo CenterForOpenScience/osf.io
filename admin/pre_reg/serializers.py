@@ -21,18 +21,16 @@ def serialize_user(user):
 
 # TODO: Write and use APIv2 serializer for this
 def serialize_draft_registration(draft, json_safe=True):
-    if draft.branched_from is not None:
-        url = furl(OSF_DOMAIN)
-        url.path.add(draft.branched_from.url)
-        node_url = url.url
+    node_url = get_url(draft)
+
+    embargo = get_embargo(draft, json_safe)
+
+    if draft.is_approved:
+        status = get_approval_status(draft)
+    elif draft.is_rejected:
+        status = 'Rejected'
     else:
-        node_url = None
-    registration_choice = draft.approval.meta.get('registration_choice', None)
-    if registration_choice == EMBARGO:
-        time = parser.parse(draft.approval.meta['embargo_end_date'])
-        embargo = iso8601format(time) if json_safe else time
-    else:
-        embargo = IMMEDIATE
+        status = 'Pending approval'
 
     return {
         'pk': draft._id,
@@ -53,4 +51,36 @@ def serialize_draft_registration(draft, json_safe=True):
         'title': draft.registration_metadata['q1']['value'],
         'embargo': embargo,
         'registered_node': node_url,
+        'status': status,
+        'logs': draft.logs,
     }
+
+
+def get_url(draft):
+    url = furl(OSF_DOMAIN)
+    if draft.registered_node is not None:
+        url.path.add(draft.registered_node.url)
+        return url.url
+    elif draft.branched_from is not None:
+        url.path.add(draft.branched_from.url)
+        return url.url
+    return None
+
+
+def get_embargo(draft, json_safe):
+    registration_choice = draft.approval.meta.get('registration_choice', None)
+    if registration_choice == EMBARGO:
+        time = parser.parse(draft.approval.meta['embargo_end_date'])
+        return iso8601format(time) if json_safe else time
+    return IMMEDIATE
+
+
+def get_approval_status(draft):
+    if draft.registered_node is not None:
+        if draft.registered_node.is_deleted:
+            return 'Approved but canceled'
+        if draft.registered_node.retraction is None:
+            return 'Approved and registered'
+        else:
+            return 'Approved but withdrawn'
+    return 'Approved but not registered'
