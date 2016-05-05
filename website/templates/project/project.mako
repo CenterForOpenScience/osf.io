@@ -187,7 +187,7 @@
 
                 % if (node['description']) or (not node['description'] and 'write' in user['permissions'] and not node['is_registration']):
                     <p>
-                    <span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">${node['description']}</span>
+                    <span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea"></span>
                     </p>
                 % endif
                 % if ('admin' in user['permissions'] or node['license'].get('name', 'No license') != 'No license'):
