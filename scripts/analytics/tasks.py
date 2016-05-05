@@ -42,13 +42,12 @@ def upload_analytics(local_path=None, remote_path='/'):
     if not local_path:
         local_path = website_settings.ANALYTICS_PATH
 
-    for root, dirs, files in os.walk(local_path):
-        for a_dir in dirs:
-            logger.info('create directory: {}'.format(os.path.join(root, a_dir)))
-            metadata = utils.create_object(a_dir, 'folder-update', node, user, kind='folder', path=remote_path)
-            upload_analytics(os.path.join(root, a_dir), metadata['attributes']['path'])
-
-        for a_file in files:
-            logger.info('update file: {}'.format(os.path.join(root, a_file)))
-            with open(os.path.join(root, a_file), 'rb') as fp:
-                utils.create_object(a_file, 'file-update', node, user, stream=fp, kind='file', path=remote_path)
+    for name in os.listdir(local_path):
+        if not os.path.isfile(os.path.join(local_path, name)):
+            logger.info('create directory: {}'.format(os.path.join(local_path, name)))
+            metadata = utils.create_object(name, 'folder-update', node, user, kind='folder', path=remote_path)
+            upload_analytics(os.path.join(local_path, name), metadata['attributes']['path'])
+        else:
+            logger.info('update file: {}'.format(os.path.join(local_path, name)))
+            with open(os.path.join(local_path, name), 'rb') as fp:
+                utils.create_object(name, 'file-update', node, user, stream=fp, kind='file', path=remote_path)
