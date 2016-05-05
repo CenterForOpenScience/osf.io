@@ -3,7 +3,8 @@ from datetime import timedelta, datetime
 
 from tests.base import AdminTestCase
 from tests.factories import (
-    NodeFactory, RegistrationFactory, AuthUserFactory, ProjectFactory)
+    AuthUserFactory, NodeFactory, ProjectFactory, RegistrationFactory
+)
 
 from website.project.model import Node, User
 from framework.auth import Auth
@@ -25,16 +26,16 @@ class TestMetricsGetProjects(AdminTestCase):
     def setUp(self):
         super(TestMetricsGetProjects, self).setUp()
         Node.remove()
-        self.node = NodeFactory(
-            category='project', is_public=True)  # makes 2 nodes bc of category
-        self.reg = RegistrationFactory()  # makes 2 nodes
-        self.node_2 = NodeFactory()
+        self.public_node = ProjectFactory(is_public=True)
+        self.private_node = ProjectFactory(is_public=False)
+        self.node_2 = NodeFactory()  # creates parent project + node
+        self.reg = RegistrationFactory(project=self.public_node)
 
-    def test_get_all_nodes(self):
+    def test_get_all_top_level_nodes(self):
         count = get_projects()
-        nt.assert_equal(count, 5)
+        nt.assert_equal(count, 4)
 
-    def test_get_public_nodes(self):
+    def test_get_public_top_level_nodes(self):
         count = get_projects(public=True)
         nt.assert_equal(count, 1)
 
@@ -42,8 +43,8 @@ class TestMetricsGetProjects(AdminTestCase):
         count = get_projects(registered=True)
         nt.assert_equal(count, 1)
 
-    def test_time(self):
-        time = self.node.date_created - timedelta(seconds=1)
+    def test_no_results_before_old_time(self):
+        time = self.public_node.date_created - timedelta(weeks=1)
         count = get_projects(time=time)
         nt.assert_equal(count, 0)
 
@@ -52,23 +53,22 @@ class TestMetricsGetDaysStatistics(AdminTestCase):
     def setUp(self):
         super(TestMetricsGetDaysStatistics, self).setUp()
         Node.remove()
-        NodeFactory(category='project')  # makes 2 nodes
-        NodeFactory(category='data')  # probably makes 1 data 1 project?
-        print get_projects()
+        NodeFactory(category='project')  # makes Node, plus parent
+        NodeFactory(category='data')
 
     def test_time_now(self):
         get_days_statistics(datetime.utcnow())
         nt.assert_equal(OSFWebsiteStatistics.objects.count(), 1)
-        nt.assert_equal(OSFWebsiteStatistics.objects.latest('date').projects, 3)
+        nt.assert_equal(OSFWebsiteStatistics.objects.latest('date').projects, 2)
 
     def test_delta(self):
         get_days_statistics(datetime.utcnow())
-        NodeFactory(category='project')  # makes 2 nodes
-        NodeFactory(category='project')  # makes 2 more nodes
+        ProjectFactory()
+        ProjectFactory()
         latest = OSFWebsiteStatistics.objects.latest('date')
         get_days_statistics(datetime.utcnow(), latest)
         even_later = OSFWebsiteStatistics.objects.latest('date')
-        nt.assert_equal(even_later.delta_projects, 4)
+        nt.assert_equal(even_later.delta_projects, 2)
 
 
 class TestMetricsGetOSFStatistics(AdminTestCase):
