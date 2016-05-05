@@ -311,7 +311,7 @@ var AuthorImport = function(data, $root, preview) {
     }
 
     self.preview = function() {
-        return self.value();
+        return $osf.htmlEscape(self.value());
     };
     var callback = function(data) {
         self.question.value(self.serializeContributors(data.contributors));
