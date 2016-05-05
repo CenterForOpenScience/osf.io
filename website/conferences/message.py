@@ -139,13 +139,14 @@ class ConferenceMessage(object):
         if not match:
             raise ConferenceError('Invalid recipient: '.format(self.form['recipient']))
         data = match.groupdict()
-        # NOTE: test.osf.io has DEV_MODE = False
-        if bool(settings.DEV_MODE) != bool(data['test']) and data['test'].rstrip('-') != 'test':
-            raise ConferenceError(
-                'Mismatch between `DEV_MODE` and recipient {0}'.format(
-                    self.form['recipient']
+        if bool(settings.DEV_MODE) != bool(data['test']):
+            # NOTE: test.osf.io has DEV_MODE = False
+            if not data['test'] or (data['test'] and data['test'].rstrip('-') != 'test'):
+                raise ConferenceError(
+                    'Mismatch between `DEV_MODE` and recipient {0}'.format(
+                        self.form['recipient']
+                    )
                 )
-            )
         return data
 
     @cached_property
