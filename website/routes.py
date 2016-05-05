@@ -229,44 +229,11 @@ def make_url_map(app):
             website_views.reproducibility,
             notemplate
         ),
+        Rule('/about/', 'get', website_views.redirect_about, notemplate),
 
-        Rule(
-            '/about/',
-            'get',
-            website_views.redirect_about,
-            json_renderer
-        ),
-        Rule(
-            '/howosfworks/',
-            'get',
-            website_views.redirect_howosfworks,
-            json_renderer
-        ),
-
-        Rule(
-            '/faq/',
-            'get',
-            {},
-            OsfWebRenderer('public/pages/faq.mako', trust=False)
-        ),
-        Rule(
-            '/getting-started/',
-            'get',
-            {},
-            OsfWebRenderer('public/pages/getting_started.mako', trust=False)
-        ),
-        Rule(
-            '/getting-started/email/',
-            'get',
-            website_views.redirect_meetings_analytics_link,
-            json_renderer
-        ),
-        Rule(
-            '/support/',
-            'get',
-            {},
-            OsfWebRenderer('public/pages/support.mako', trust=False)
-        ),
+        Rule('/faq/', 'get', {}, OsfWebRenderer('public/pages/faq.mako')),
+        Rule(['/getting-started/', '/getting-started/email/', '/howosfworks/'], 'get', website_views.redirect_getting_started, notemplate),
+        Rule('/support/', 'get', {}, OsfWebRenderer('public/pages/support.mako', trust=False)),
 
         Rule(
             '/explore/',

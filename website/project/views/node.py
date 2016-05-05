@@ -653,7 +653,7 @@ def _view_project(node, auth, primary=False):
 
     disapproval_link = ''
     if (node.is_pending_registration and node.has_permission(user, ADMIN)):
-        disapproval_link = node.registration_approval.stashed_urls.get(user._id, {}).get('reject', '')
+        disapproval_link = node.root.registration_approval.stashed_urls.get(user._id, {}).get('reject', '')
 
     # Before page load callback; skip if not primary call
     if primary:
@@ -691,6 +691,11 @@ def _view_project(node, auth, primary=False):
             'retracted_justification': getattr(node.retraction, 'justification', None),
             'embargo_end_date': node.embargo_end_date.strftime("%A, %b. %d, %Y") if node.embargo_end_date else False,
             'is_pending_embargo': node.is_pending_embargo,
+            'is_embargoed': node.is_embargoed,
+            'is_pending_embargo_termination': node.is_embargoed and (
+                node.embargo_termination_approval and
+                node.embargo_termination_approval.is_pending_approval
+            ),
             'registered_from_url': node.registered_from.url if node.is_registration else '',
             'registered_date': iso8601format(node.registered_date) if node.is_registration else '',
             'root_id': node.root._id if node.root else None,
@@ -754,6 +759,7 @@ def _view_project(node, auth, primary=False):
             'can_comment': node.can_comment(auth),
             'show_wiki_widget': _should_show_wiki_widget(node, user),
             'dashboard_id': bookmark_collection_id,
+            'institutions': get_affiliated_institutions(user) if user else [],
         },
         'badges': _get_badge(user),
         # TODO: Namespace with nested dicts
@@ -766,6 +772,15 @@ def _view_project(node, auth, primary=False):
     }
     return data
 
+def get_affiliated_institutions(obj):
+    ret = []
+    for institution in obj.affiliated_institutions:
+        ret.append({
+            'name': institution.name,
+            'logo_path': institution.logo_path,
+            'id': institution._id,
+        })
+    return ret
 
 def _get_badge(user):
     if user:
@@ -839,7 +854,8 @@ def _get_summary(node, auth, primary=True, link_id=None, show_path=False):
         'is_pending_retraction': node.is_pending_retraction,
         'embargo_end_date': node.embargo_end_date.strftime("%A, %b. %d, %Y") if node.embargo_end_date else False,
         'is_pending_embargo': node.is_pending_embargo,
-        'archiving': node.archiving or getattr(node.root, 'archiving', False),
+        'is_embargoed': node.is_embargoed,
+        'archiving': node.archiving,
     }
 
     if node.can_view(auth):
@@ -987,8 +1003,10 @@ def get_forks(auth, node, **kwargs):
 
 @must_be_contributor_or_public
 def get_registrations(auth, node, **kwargs):
-    registrations = [n for n in reversed(node.registrations_all) if not n.is_deleted]  # get all registrations, including archiving
-    return _render_nodes(registrations, auth)
+    # get all undeleted registrations, including archiving
+    sorted_registrations = node.registrations_all.sort('-registered_date')
+    undeleted_registrations = [n for n in sorted_registrations if not n.is_deleted]
+    return _render_nodes(undeleted_registrations, auth)
 
 
 @must_be_valid_project
