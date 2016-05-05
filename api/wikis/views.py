@@ -1,5 +1,6 @@
-from rest_framework import generics, permissions as drf_permissions
+from rest_framework import generics, renderers, permissions as drf_permissions
 from rest_framework.exceptions import NotFound
+from rest_framework.views import Response
 
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
@@ -13,6 +14,14 @@ from api.wikis.serializers import WikiSerializer, WikiDetailSerializer
 from framework.auth.oauth_scopes import CoreScopes
 from website.addons.wiki.model import NodeWikiPage
 
+
+class WikiRenderer(renderers.BaseRenderer):
+
+    media_type = 'text/markdown'
+    format = '.txt'
+
+    def render(self, data, media_type=None,renderer_context=None):
+        return data.encode(self.charset)
 
 class WikiMixin(object):
     """Mixin with convenience methods for retrieving the wiki page based on the
@@ -60,3 +69,26 @@ class WikiDetail(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
     # overrides RetrieveAPIView
     def get_object(self):
         return self.get_wiki()
+
+
+class WikiContent(JSONAPIBaseView, WikiMixin):
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ContributorOrPublic
+    )
+
+    required_read_scopes = [CoreScopes.WIKI_BASE_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    renderer_classes = (WikiRenderer, )
+    view_category = 'wikis'
+    view_name = 'wiki-content'
+
+    def get_serializer_class(self):
+        return None
+
+    def get(self, request, **kwargs):
+        wiki = self.get_wiki()
+        return Response(wiki.content)

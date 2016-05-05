@@ -1,6 +1,7 @@
 from rest_framework import serializers as ser
 
 from api.base.serializers import JSONAPISerializer, IDField, TypeField, Link, LinksField, RelationshipField
+from api.base.utils import absolute_reverse
 
 
 class WikiSerializer(JSONAPISerializer):
@@ -32,6 +33,7 @@ class WikiSerializer(JSONAPISerializer):
     # LinksField.to_representation adds link to "self"
     links = LinksField({
         'info': Link('wikis:wiki-detail', kwargs={'wiki_id': '<_id>'}),
+        'download': 'get_wiki_content'
     })
 
     class Meta:
@@ -47,6 +49,11 @@ class WikiSerializer(JSONAPISerializer):
         return {
             'version': obj.version
         }
+
+    def get_wiki_content(self, obj):
+        return absolute_reverse('wikis:wiki-content', kwargs={
+            'wiki_id': obj._id,
+        })
 
 
 class WikiDetailSerializer(WikiSerializer):
