@@ -741,9 +741,9 @@ class NodeContributorDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVi
 class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin):
     """Draft registrations of the current node.
 
-     <!--- Copied from NodeDraftRegistrationDetail -->
+     <!--- Copied partially from NodeDraftRegistrationDetail -->
 
-    Draft registrations contain the supplemental registration questions that accompany a registration.  A registration
+    Draft registrations contain the supplemental registration questions that accompany a registration. A registration
     is a frozen version of the project that can never be edited or deleted but can be withdrawn.
     Your original project remains editable but will now have the registration linked to it.
 
@@ -773,6 +773,10 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
 
     User who initiated the draft registration.  The user endpoint is available in `/initiator/links/related/href`.
 
+    ##Registration Schema
+
+    Detailed registration schema.  The schema endpoint is available in `/registration_schema/links/related/href`.
+
     ##Actions
 
     ###Create Draft Registration
@@ -793,9 +797,9 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
 
     To create a draft registration, issue a POST request to the `self` link.  Registration form must be the name of an
     active registration schema, for example, "Open-Ended Registration".  Registration metadata is not required on the creation
-    of the draft. If registration metadata is included, it  must be a dictionary with keys as question ids in the registration
-    form, and values in this format {"value": "<insert response to question here."} If question is multiple-choice, question
-    response must exactly match one of the possible choices.
+    of the draft. If registration metadata is included, it must be a dictionary with keys as question ids in the registration
+    form, and values as nested dictionaries matching the specific format in the registration schema.  See registration schema
+    endpoints for specifics. If question is multiple-choice, question response must exactly match one of the possible choices.
 
     ##Links
 
@@ -833,9 +837,10 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
 class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, DraftMixin):
     """Details about a given draft registration. *Writeable*.
 
-    Draft registrations contain the supplemental registration questions that accompany a registration.  A registration
-    is a frozen version of the project that can never be edited or deleted but can be withdrawn.
-    Your original project remains editable but will now have the registration linked to it.
+    Draft registrations contain the supplemental registration questions that accompany a registration. A registration
+    is a frozen version of the project that can never be edited or deleted but can be withdrawn.  Answer the questions
+    in the draft registration with PUT/PATCH requests until you are ready to submit.  Final submission will include sending the
+    draft registration id as part of a POST request to the Node Registrations endpoint.
 
     ###Permissions
 
@@ -852,7 +857,6 @@ class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestro
         datetime_initiated         iso8601 timestamp  timestamp that the draft was created
         datetime_updated           iso8601 timestamp  timestamp when the draft was last updated
 
-
     ##Relationships
 
     ###Branched From
@@ -862,6 +866,10 @@ class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestro
     ###Initiator
 
     User who initiated the draft registration.  The user endpoint is available in `/initiator/links/related/href`.
+
+    ##Registration Schema
+
+    Detailed registration schema.  The schema endpoint is available in `/registration_schema/links/related/href`.
 
     ##Actions
 
@@ -883,8 +891,10 @@ class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestro
 
     To update a draft registration, issue a PUT/PATCH request to the `self` link.  Registration forms cannot be updated
     after the draft registration has been created.  Registration metadata is required.  It must be a dictionary with
-    keys as question ids in the registration form, and values in this format {"value": "<insert response to question here."}
-    If question is multiple-choice, question response must exactly match one of the possible choices.
+    keys as question ids in the registration form, and values as nested dictionaries matching the specific format in the
+    registration schema. See registration schema endpoints for specifics. If question is multiple-choice, question response
+    must exactly match one of the possible choices.
+
 
     ###Delete Draft Registration
 
@@ -927,7 +937,10 @@ class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestro
 class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, DraftMixin):
     """Registrations of the current node.
 
-    Registrations are read-only snapshots of a project. This view is a list of all the registrations of the current node.
+    Registrations are read-only snapshots of a project that can never be edited or deleted but can be withdrawn. This view
+    is a list of all the registrations of the current node. To create a registration, first create a draft registration and
+    answer the required supplemental registration questions. Then, submit a POST request to this endpoint with the draft
+    registration id in the body of the request.
 
     Each resource contains the full representation of the registration, meaning additional requests to an individual
     registrations's detail view are not necessary.
@@ -959,6 +972,31 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
         registered_meta                 dictionary         registration supplementary information
         registration_supplement         string             registration template
 
+    ##Actions
+
+    ###Create Registration
+
+        Method:        POST
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                        "data": {
+                            "type": "registrations",                                         # required
+                            "attributes": {
+                                "draft_registration": {draft_registration_id},               # required, write-only
+                                "registration_choice": one of ['embargo', 'immediate'],      # required, write-only
+                                "lift_embargo": format %Y-%m-%dT%H:%M:%S'                    # required if registration_choice is 'embargo'
+                            }
+                        }
+                    }
+        Success:       201 OK + draft representation
+
+    To create a registration, issue a POST request to the `self` link.  'draft_registration' must be the id of a completed
+    draft registration created for the current node.  All required supplemental questions in the draft registration must
+    have been answered. Registration choice should be 'embargo' if you wish to add an embargo date to the registration.
+    Registrations can have embargo periods for up to four years. 'lift_embargo' should be the embargo end date.
+    When the embargo expires, the registration will be made public. If 'immediate' is selected as the "registration_choice",
+    the registration will be made public once it is approved.
 
     ##Relationships
 
@@ -969,6 +1007,10 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
     ###Registered by
 
     The registration was initiated by this user.
+
+    ##Registration Schema
+
+    Detailed registration schema.  The schema endpoint is available in `/registration_schema/links/related/href`.
 
     ##Links
 
