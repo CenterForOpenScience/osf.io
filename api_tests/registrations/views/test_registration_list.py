@@ -451,6 +451,31 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
         assert_equal(res.status_code, 404)
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
+    def test_registration_draft_must_be_draft_of_current_node(self, mock_enqueue):
+        new_project = ProjectFactory(creator=self.user)
+        draft_registration = DraftRegistrationFactory(
+            initiator=self.user,
+            registration_schema=self.schema,
+            branched_from=new_project,
+            registration_metadata = {
+                'item29': {'value': 'Yes'},
+                'item33': {'value': 'success'}
+            }
+        )
+        payload = {
+            "data": {
+                "type": "registrations",
+                "attributes": {
+                    "registration_choice": "immediate",
+                    "draft_registration": draft_registration._id
+                    }
+                }
+        }
+        res = self.app.post_json_api(self.url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'This draft registration is not created from the given node.')
+
+    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_required_questions_must_be_answered_on_draft(self, mock_enqueue):
         prereg_schema = MetaSchema.find_one(
             Q('name', 'eq', 'Prereg Challenge') &
@@ -528,6 +553,26 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
         res = self.app.post_json_api(self.url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'lift_embargo must be specified.')
+
+    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
+    def test_embargo_must_be_less_than_four_years(self, mock_enqueue):
+        today = datetime.datetime.utcnow()
+        five_years = (today + dateutil.relativedelta.relativedelta(years=5)).strftime('%Y-%m-%dT%H:%M:%S')
+        print five_years
+        payload = {
+            "data": {
+                "type": "registrations",
+                "attributes": {
+                    "draft_registration": self.draft_registration._id,
+                    "registration_choice": "embargo",
+                    "lift_embargo": five_years
+                    }
+                }
+        }
+
+        res = self.app.post_json_api(self.url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Registrations can only be embargoed for up to four years.')
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_embargo_registration(self, mock_enqueue):
