@@ -40,7 +40,7 @@ def verify_contributors(node, modm_node):
 
 
 def verify_tags(node, modm_node):
-    modm_tag_keys = sorted(set(modm_node.tags._to_primary_keys()))
+    modm_tag_keys = [x for x in sorted(set(modm_node.tags._to_primary_keys())) if MODMTag.load(x)]
     django_tag_keys = sorted(set(node.tags.filter(
         system=False).values_list('_id',
                                   flat=True)))
@@ -49,8 +49,8 @@ def verify_tags(node, modm_node):
         node.system_tags.values_list('_id',
                                      flat=True)))
 
-    assert modm_tag_keys == django_tag_keys, 'Modm tags {} don\'t match django tags {}'.format(
-        modm_tag_keys, django_tag_keys)
+    assert modm_tag_keys == django_tag_keys, 'Modm tags {} don\'t match django tags {} in node {}:{}'.format(
+        modm_tag_keys, django_tag_keys, modm_node._id, node._guid.guid)
     assert modm_system_tag_keys == django_system_tag_keys, 'Modm system tag keys {} don\'t match django system tags {}'.format(
         modm_system_tag_keys, django_system_tag_keys)
 
@@ -82,3 +82,8 @@ def main():
             garbage = gc.collect()
             print '{}:{} Collected {} whole garbages...'.format(count, total,
                                                                 garbage)
+    print '\a'
+    print '\a'
+    print '\a'
+    print '\a'
+    print '\a'
