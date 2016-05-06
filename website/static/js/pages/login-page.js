@@ -4,7 +4,8 @@
 'use strict';
 var $ = require('jquery');
 
-var SignUp = require('js/signUp');
+var SignUp = require('js/setPassword');
+var LogInForm = require('js/signIn');
 var InstitutionSignIn = require('js/institutionSignIn');
 
 var registerUrl = window.contextVars.registerUrl;
@@ -24,7 +25,8 @@ $(document).ready(function() {
     if (campaign === 'institution'){
         new InstitutionSignIn('#inst');
     } else {
-        new SignUp('#signUpScope', registerUrl, campaign);
+        new LogInForm.SignIn('#logInForm');
+        new SignUp('#signUpScope', 'signup', registerUrl, campaign);
     }
 });
 
