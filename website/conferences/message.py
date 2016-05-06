@@ -22,7 +22,7 @@ SPF_PASS_VALUES = ['Pass', 'Neutral']
 
 ANGLE_BRACKETS_REGEX = re.compile(r'<(.*?)>')
 BASE_REGEX = r'''
-        (?P<test>test-)?
+        (?P<test>test-|stage-)?
         (?P<meeting>\w*?)
         -
         (?P<category>{allowed_types})
