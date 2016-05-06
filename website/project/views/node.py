@@ -69,8 +69,7 @@ def edit_node(auth, node, **kwargs):
         node.set_description(value, auth=auth)
         new_val = node.description
     elif edited_field == 'category':
-        node.category = value
-        new_val = node.description
+        node.category = new_val = value
 
     try:
         node.save()

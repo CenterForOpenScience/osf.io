@@ -425,7 +425,7 @@ ${parent.javascript_bottom()}
             isRegistration: ${ node['is_registration'] | sjson, n },
             tags: ${ node['tags'] | sjson, n }
         },
-        // TODO: Give this page access to Node.CATEGORY_MAP. k:v ---> [{value: k , text: v}]
+        nodeCategories: ${ node_categories | sjson, n }
     });
 </script>
 

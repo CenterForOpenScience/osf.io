@@ -16,6 +16,11 @@ var iconmap = require('js/iconmap');
 var NodeActions = require('js/project.js');
 var NodesPrivacy = require('js/nodesPrivacy').NodesPrivacy;
 
+
+// List of node categories
+var NODE_CATEGORIES = window.contextVars.nodeCategories;
+
+
 /**
  * The ProjectViewModel, scoped to the project header.
  * @param {Object} data The parsed project data returned from the project's API url.
@@ -130,19 +135,20 @@ var ProjectViewModel = function(data) {
             }
 
         }));
+        
+        // Front end is passed the display category, which must be mapped to the matching dropdown box value
+        var categoryOptions = $.map(NODE_CATEGORIES, function(display, value) {
+            return {value: value, text: display}
+        });
+        var initCategory = categoryOptions.find(function(element /*, index, array*/) {
+            return element.text === self.category();
+        });
 
-        var categoryOptions = ['a', 'b', 'c', 'project', 'Project']; // TODO: Get a list of allowed categories from... somewhere...
         $('#nodeCategoryEditable').editable($.extend({}, editableOptions, {
             type: 'select',
             name: 'category',
             title: 'Select a category',
-            value: self.category(),
-            validate: function(value) {
-                // If user triggers this, something has gone very wrong
-                if (categoryOptions.indexOf(value) === -1) {
-                    return 'Select a category from the list of available options';
-                }
-            },
+            value: initCategory.value,
             source: categoryOptions,
             success: function(response, newValue) {
                 newValue = response.newValue;
