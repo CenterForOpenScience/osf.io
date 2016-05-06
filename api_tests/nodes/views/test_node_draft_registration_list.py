@@ -70,7 +70,7 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
         assert_equal(res.status_code, 200)
         data = res.json['data']
         assert_equal(len(data), 1)
-        assert_equal(data[0]['attributes']['registration_form'], 'Open-Ended Registration')
+        assert_equal(data[0]['attributes']['registration_supplement'], 'Open-Ended Registration')
         assert_equal(data[0]['id'], self.draft_registration._id)
         assert_equal(data[0]['attributes']['registration_metadata'], {})
 
@@ -105,7 +105,7 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
         assert_equal(res.status_code, 200)
         data = res.json['data']
         assert_equal(len(data), 1)
-        assert_equal(data[0]['attributes']['registration_form'], 'Open-Ended Registration')
+        assert_equal(data[0]['attributes']['registration_supplement'], 'Open-Ended Registration')
         assert_equal(data[0]['id'], self.draft_registration._id)
         assert_equal(data[0]['attributes']['registration_metadata'], {})
 
@@ -120,7 +120,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             "data": {
                 "type": "draft_registrations",
                 "attributes": {
-                    "registration_form": "Open-Ended Registration"
+                    "registration_supplement": "Open-Ended Registration"
                 }
             }
         }
@@ -130,7 +130,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             "data": {
                 "type": "nodes",
                 "attributes": {
-                    "registration_form": "Open-Ended Registration"
+                    "registration_supplement": "Open-Ended Registration"
                 }
             }
         }
@@ -144,7 +144,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         res = self.app.post_json_api(url, self.payload, auth=self.user.auth)
         assert_equal(res.status_code, 201)
         data = res.json['data']
-        assert_equal(data['attributes']['registration_form'], 'Open-Ended Registration')
+        assert_equal(data['attributes']['registration_supplement'], 'Open-Ended Registration')
         assert_equal(data['attributes']['registration_metadata'], {})
         assert_equal(data['embeds']['branched_from']['data']['id'], self.public_project._id)
         assert_equal(data['embeds']['initiator']['data']['id'], self.user._id)
@@ -167,19 +167,19 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         res = self.app.post_json_api(self.url, self.payload, auth=self.non_contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-    def test_registration_form_must_be_one_of_active_schemas(self):
+    def test_registration_supplement_must_be_one_of_active_schemas(self):
         draft_data = {
             "data": {
                 "type": "draft_registrations",
                 "attributes": {
-                    "registration_form": "Invalid schema"
+                    "registration_supplement": "Invalid schema"
                 }
             }
         }
         res = self.app.post_json_api(self.url, draft_data, auth=self.non_contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         errors = res.json['errors'][0]
-        assert_equal(errors['source']['pointer'], '/data/attributes/registration_form')
+        assert_equal(errors['source']['pointer'], '/data/attributes/registration_supplement')
         assert_equal(errors['detail'], '"Invalid schema" is not a valid choice.')
 
     def test_cannot_create_draft_from_a_registration(self):
@@ -188,7 +188,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         res = self.app.post_json_api(url, self.payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
-    def test_registration_form_must_be_supplied(self):
+    def test_registration_supplement_must_be_supplied(self):
         draft_data = {
             "data": {
                 "type": "draft_registrations",
@@ -200,7 +200,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         errors = res.json['errors'][0]
         assert_equal(res.status_code, 400)
         assert_equal(errors['detail'], 'This field is required.')
-        assert_equal(errors['source']['pointer'], '/data/attributes/registration_form')
+        assert_equal(errors['source']['pointer'], '/data/attributes/registration_supplement')
 
     def test_cannot_create_draft_from_deleted_node(self):
         self.public_project.is_deleted = True
@@ -238,7 +238,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             "data": {
                 "type": "draft_registrations",
                 "attributes": {
-                    "registration_form": "Prereg Challenge",
+                    "registration_supplement": "Prereg Challenge",
                     "registration_metadata": registration_metadata
                 }
             }
@@ -247,7 +247,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert_equal(res.status_code, 201)
         data = res.json['data']
         assert_equal(res.json['data']['attributes']['registration_metadata']['q2']['value'], 'Test response')
-        assert_equal(data['attributes']['registration_form'], 'Prereg Challenge')
+        assert_equal(data['attributes']['registration_supplement'], 'Prereg Challenge')
         assert_equal(data['embeds']['branched_from']['data']['id'], self.public_project._id)
         assert_equal(data['embeds']['initiator']['data']['id'], self.user._id)
 
@@ -261,7 +261,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert_equal(errors['detail'], 'Expected a dictionary of items but got type "unicode".')
 
     def test_registration_metadata_question_values_must_be_dictionaries(self):
-        self.payload['data']['attributes']['registration_form'] = 'OSF-Standard Pre-Data Collection Registration'
+        self.payload['data']['attributes']['registration_supplement'] = 'OSF-Standard Pre-Data Collection Registration'
         self.payload['data']['attributes']['registration_metadata'] = {}
         self.payload['data']['attributes']['registration_metadata']['datacompletion'] = 'No, data collection has not begun'
 
@@ -271,7 +271,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert_equal(errors['detail'], "u'No, data collection has not begun' is not of type 'object'")
 
     def test_registration_metadata_question_keys_must_be_value(self):
-        self.payload['data']['attributes']['registration_form'] = 'OSF-Standard Pre-Data Collection Registration'
+        self.payload['data']['attributes']['registration_supplement'] = 'OSF-Standard Pre-Data Collection Registration'
         self.payload['data']['attributes']['registration_metadata'] = {}
         self.payload['data']['attributes']['registration_metadata']['datacompletion'] = {
             "incorrect_key": "No, data collection has not begun"
@@ -283,7 +283,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert_equal(errors['detail'], "Additional properties are not allowed (u'incorrect_key' was unexpected)")
 
     def test_question_in_registration_metadata_must_be_in_schema(self):
-        self.payload['data']['attributes']['registration_form'] = 'OSF-Standard Pre-Data Collection Registration'
+        self.payload['data']['attributes']['registration_supplement'] = 'OSF-Standard Pre-Data Collection Registration'
         self.payload['data']['attributes']['registration_metadata'] = {}
         self.payload['data']['attributes']['registration_metadata']['q11'] = {
             "value": "No, data collection has not begun"
@@ -295,7 +295,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert_equal(errors['detail'], "Additional properties are not allowed (u'q11' was unexpected)")
 
     def test_multiple_choice_question_value_must_match_value_in_schema(self):
-        self.payload['data']['attributes']['registration_form'] = 'OSF-Standard Pre-Data Collection Registration'
+        self.payload['data']['attributes']['registration_supplement'] = 'OSF-Standard Pre-Data Collection Registration'
         self.payload['data']['attributes']['registration_metadata'] = {}
         self.payload['data']['attributes']['registration_metadata']['datacompletion'] = {
             "value": "Nope, data collection has not begun"

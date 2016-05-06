@@ -41,7 +41,7 @@ class DraftRegistrationSerializer(JSONAPISerializer):
 
     id = IDField(source='_id', read_only=True)
     type = TypeField()
-    registration_form = ser.ChoiceField(source='registration_schema.name', choices=schema_choices, help_text="Choices: " + schema_choices_string, required=True)
+    registration_supplement = ser.ChoiceField(source='registration_schema.name', choices=schema_choices, help_text="Choices: " + schema_choices_string, required=True)
     registration_metadata = ser.DictField(required=False)
     datetime_initiated = ser.DateTimeField(read_only=True)
     datetime_updated = ser.DateTimeField(read_only=True)
@@ -107,11 +107,11 @@ class DraftRegistrationDetailSerializer(DraftRegistrationSerializer):
     """
     Overrides DraftRegistrationSerializer to make id and registration_metadata required.
 
-    Also makes registration_form read-only.
+    Also makes registration_supplement read-only.
     """
     id = IDField(source='_id', required=True)
     registration_metadata = ser.DictField(required=True)
-    registration_form = ser.CharField(read_only=True, source='registration_schema.name')
+    registration_supplement = ser.CharField(read_only=True, source='registration_schema.name')
 
     def update(self, draft, validated_data):
         """

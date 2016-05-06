@@ -105,37 +105,37 @@ OSF_UPLOAD_EXTRA_SCHEMA = {
         'type': 'object',
         'additionalProperties': False,
         'properties': {
-                'data': {
-                    'type': 'object',
-                    'additionalProperties': False,
-                    'properties': {
-                        'kind': {'type': 'string'},
-                        'contentType': {'type': 'string'},
-                        'name': {'type': 'string'},
-                        'extra': {
-                            'type': 'object',
-                            'additionalProperties': False,
-                            'properties': {
-                                'downloads': {'type': 'integer'},
-                                'version': {'type': 'integer'},
-                                'checkout': {'type': 'string'},
-                                'hashes': {
-                                    'type': 'object',
-                                    'additionalProperties': False,
-                                    'properties': {
-                                        'sha256': {'type': 'string'},
-                                        'md5': {'type': 'string'}
-                                    }
+            'data': {
+                'type': 'object',
+                'additionalProperties': False,
+                'properties': {
+                    'kind': {'type': 'string'},
+                    'contentType': {'type': 'string'},
+                    'name': {'type': 'string'},
+                    'extra': {
+                        'type': 'object',
+                        'additionalProperties': False,
+                        'properties': {
+                            'downloads': {'type': 'integer'},
+                            'version': {'type': 'integer'},
+                            'checkout': {'type': 'string'},
+                            'hashes': {
+                                'type': 'object',
+                                'additionalProperties': False,
+                                'properties': {
+                                    'sha256': {'type': 'string'},
+                                    'md5': {'type': 'string'}
                                 }
                             }
-                        },
-                        'materialized': {'type': 'string'},
-                        'modified': {'type': 'string'},
-                        'nodeId': {'type': 'string'},
-                        'etag': {'type': 'string'},
-                        'provider': {'type': 'string'},
-                        'path': {'type': 'string'},
-                        'size': {'type': 'integer'}
+                        }
+                    },
+                    'materialized': {'type': 'string'},
+                    'modified': {'type': 'string'},
+                    'nodeId': {'type': 'string'},
+                    'etag': {'type': 'string'},
+                    'provider': {'type': 'string'},
+                    'path': {'type': 'string'},
+                    'size': {'type': 'integer'}
                 }
             },
             'sha256': {'type': 'string'},
@@ -143,8 +143,8 @@ OSF_UPLOAD_EXTRA_SCHEMA = {
             'nodeId': {'type': 'string'},
             'viewUrl': {'type': 'string'}
         }
-        }
     }
+}
 
 COMMENTS_SCHEMA = {
     "type": "array",

@@ -37,7 +37,7 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
         res = self.app.get(self.url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         data = res.json['data']
-        assert_equal(data['attributes']['registration_form'], 'OSF-Standard Pre-Data Collection Registration')
+        assert_equal(data['attributes']['registration_supplement'], 'OSF-Standard Pre-Data Collection Registration')
         assert_equal(data['id'], self.draft_registration._id)
         assert_equal(data['attributes']['registration_metadata'], {})
 
@@ -123,7 +123,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         res = self.app.put_json_api(self.url, self.payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         data = res.json['data']
-        assert_equal(data['attributes']['registration_form'], 'OSF-Standard Pre-Data Collection Registration')
+        assert_equal(data['attributes']['registration_supplement'], 'OSF-Standard Pre-Data Collection Registration')
         assert_equal(data['attributes']['registration_metadata'], self.payload['data']['attributes']['registration_metadata'])
 
     def test_draft_must_be_branched_from_node(self):
@@ -206,10 +206,10 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         assert_equal(errors['detail'], "u'Nope, data collection has not begun' is not one of [u'No, data collection has not begun', u'Yes, data collection is underway or complete']")
 
     def test_cannot_update_registration_schema(self):
-        self.payload['data']['attributes']['registration_form'] = 'Open-Ended Registration'
+        self.payload['data']['attributes']['registration_supplement'] = 'Open-Ended Registration'
         res = self.app.put_json_api(self.url, self.payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['attributes']['registration_form'], 'OSF-Standard Pre-Data Collection Registration')
+        assert_equal(res.json['data']['attributes']['registration_supplement'], 'OSF-Standard Pre-Data Collection Registration')
 
     def test_required_metaschema_questions_not_required_on_update(self):
         prereg_schema = MetaSchema.find_one(

@@ -746,8 +746,7 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
     is a frozen version of the project that can never be edited or deleted but can be withdrawn.
     Your original project remains editable but will now have the registration linked to it.
 
-    A draft registration has an associated registration form with supplemental questions about the registration.  Drafts
-    cannot be created from registrations themselves.
+    A draft registration has an associated registration form with supplemental questions about the registration.
 
     ###Permissions
 
@@ -760,7 +759,7 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
 
         name                       type               description
         ===========================================================================
-        registration_form          string             name of registration_schema, must be one of allowed values
+        registration_supplement    string             name of registration_schema, must be one of allowed values
         registration_metadata      dictionary         dictionary of question ids and responses from registration schema
         datetime_initiated         iso8601 timestamp  timestamp that the draft was created
         datetime_updated           iso8601 timestamp  timestamp when the draft was last updated
@@ -786,7 +785,7 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
                         "data": {
                             "type": "draft_registrations",  # required
                             "attributes": {
-                                "registration_form": {schema_name}, # required
+                                "registration_supplement": {schema_name}, # required
                                 "registration_metadata": {"question_id": {"value": "question response"}} # optional
                             }
                         }
@@ -852,7 +851,7 @@ class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestro
 
         name                       type               description
         ===========================================================================
-        registration_form          string             name of registration_schema
+        registration_supplement    string             name of registration_schema
         registration_metadata      dictionary         dictionary of question ids and responses from registration schema
         datetime_initiated         iso8601 timestamp  timestamp that the draft was created
         datetime_updated           iso8601 timestamp  timestamp when the draft was last updated

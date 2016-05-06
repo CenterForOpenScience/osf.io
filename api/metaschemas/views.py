@@ -16,7 +16,7 @@ class MetaSchemasList(JSONAPIBaseView, generics.ListAPIView):
     """
      <!--- Copied from MetaSchemaDetail -->
 
-    Metaschemas are forms containing all the supplemental questions that accompany a registration.
+    Metaschemas describe the supplemental questions that accompany a registration.
     Only active metaschemas are returned at this endpoint.
 
     ##Metaschema Attributes
@@ -25,9 +25,9 @@ class MetaSchemasList(JSONAPIBaseView, generics.ListAPIView):
 
         name                type               description
         ===========================================================================
-        name                string             name of registration_schema
+        name                string             name of registration schema
         schema_version      integer            latest version of the schema
-        schema              dictionary         schema pages, questions, question options
+        schema              dictionary         registration schema details
 
 
     ##Links`
@@ -58,17 +58,17 @@ class MetaSchemasList(JSONAPIBaseView, generics.ListAPIView):
 
 class MetaSchemaDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     """
-    Metaschemas contain the form details for the supplemental questions that accompany a registration.
+    Metaschemas describe the supplemental questions that accompany a registration.
 
     ##Metaschema Attributes
 
     Metaschemas have the "meta_schemas" `type`.
 
-        name                type               description
+         name                type               description
         ===========================================================================
-        name                string             name of registration_schema
+        name                string             name of registration schema
         schema_version      integer            latest version of the schema
-        schema              dictionary         schema pages, questions, question options
+        schema              dictionary         registration schema details
 
     #This request/response
 
