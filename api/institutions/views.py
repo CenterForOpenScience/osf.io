@@ -240,7 +240,7 @@ class InstitutionRegistrationList(InstitutionNodeList):
     def get_queryset(self):
         inst = self.get_institution()
         query = self.get_query_from_request()
-        nodes = list(Node.find_by_institutions(inst, query))
+        nodes = Node.find_by_institutions(inst, query)
         return [node for node in nodes if not node.is_retracted]
 
 class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIView, generics.CreateAPIView, InstitutionMixin):

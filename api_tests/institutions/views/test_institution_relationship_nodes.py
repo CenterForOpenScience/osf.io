@@ -49,7 +49,7 @@ class TestInstitutionRelationshipNodes(ApiTestCase):
         assert_in(self.node2._id, node_ids)
         assert_not_in(self.node3._id, node_ids)
 
-    def test_node_doesnt_exist(self):
+    def test_node_does_not_exist(self):
         res = self.app.post_json_api(
             self.institution_nodes_url,
             self.create_payload('notIdatAll'),
@@ -85,7 +85,7 @@ class TestInstitutionRelationshipNodes(ApiTestCase):
         node.reload()
         assert_in(self.institution, node.affiliated_institutions)
 
-    def test_user_doesnt_have_node(self):
+    def test_user_does_not_have_node(self):
         node = NodeFactory()
         res = self.app.post_json_api(
             self.institution_nodes_url,
