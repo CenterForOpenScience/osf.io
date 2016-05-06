@@ -18,6 +18,7 @@ from website import settings
 
 
 class Node(GuidMixin, BaseModel):
+    # TODO: Alphabetize properties because sanity
     CATEGORY_MAP = dict((
         ('analysis', 'Analysis'),
         ('communication', 'Communication'),
@@ -108,6 +109,16 @@ class Node(GuidMixin, BaseModel):
     # {<User.id>: [<Node._id>, <Node2._id>, ...] }
     # TODO: Can this be a reference instead of data?
     child_node_subscriptions = DatetimeAwareJSONField()
+
+    # TODO: Sort this out so it's not awful
+    institution_id = models.CharField(db_index=True, max_length=255, blank=True)
+    institution_domains = DatetimeAwareJSONField(default=None)
+    institution_auth_url = models.URLField(blank=True)
+    institution_logo_name = models.CharField(max_length=255, blank=True)
+    institution_email_domains = DatetimeAwareJSONField(default=None)
+    institution_banner_name = models.CharField(max_length=255, blank=True)
+    _primary_institution = models.ForeignKey('self', related_name='primary_institution', null=True)
+    _affiliated_institutions = models.ManyToManyField('self')
 
     # alternative_citations = models.ManyToManyField(AlternativeCitation)
 
