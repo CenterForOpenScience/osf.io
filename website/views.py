@@ -183,10 +183,6 @@ def signin_form():
 def forgot_password_form():
     return form_utils.jsonify(ForgotPasswordForm(prefix='forgot_password'))
 
-#
-# def reset_password_form():
-#     return form_utils.jsonify(ResetPasswordForm())
-
 
 # GUID ###
 
