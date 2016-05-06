@@ -95,6 +95,9 @@ def set_session(session):
 
 
 def create_session(response, data=None):
+
+    from website.util import time as util_time
+
     current_session = get_session()
     if current_session:
         current_session.data.update(data or {})
@@ -107,7 +110,8 @@ def create_session(response, data=None):
         cookie_value = itsdangerous.Signer(settings.SECRET_KEY).sign(session_id)
         set_session(session)
     if response is not None:
-        response.set_cookie(settings.COOKIE_NAME, value=cookie_value, domain=settings.OSF_COOKIE_DOMAIN)
+        expire_date = util_time.generate_expiration_time(settings.OSF_COOKIE_TIMEOUT)
+        response.set_cookie(settings.COOKIE_NAME, value=cookie_value, max_age=settings.OSF_COOKIE_TIMEOUT, expires=expire_date, domain=settings.OSF_COOKIE_DOMAIN)
         return response
 
 
@@ -167,7 +171,7 @@ def before_request():
         except itsdangerous.BadData:
             return
 
-        if not util_time.throttle_period_expired(session.date_created, settings.COOKIE_TIMEOUT):
+        if not util_time.throttle_period_expired(session.date_created, settings.OSF_SESSION_TIMEOUT):
             if session.data.get('auth_user_id') and 'api' not in request.url:
                 database['user'].update({'_id': session.data.get('auth_user_id')}, {'$set': {'date_last_login': datetime.utcnow()}}, w=0)
             set_session(session)

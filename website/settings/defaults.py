@@ -83,7 +83,10 @@ SHARE_ELASTIC_INDEX_TEMPLATE = 'share_v{}'
 # TODO: Override OSF_COOKIE_DOMAIN in local.py in production
 OSF_COOKIE_DOMAIN = None
 COOKIE_NAME = 'osf'
-COOKIE_TIMEOUT = 30 * 24 * 60 * 60  # 30 days in seconds
+# server-side verification timeout
+OSF_SESSION_TIMEOUT = 30 * 24 * 60 * 60  # 30 days in seconds
+# client-side persistent cookie flags Max-Age and Expires
+OSF_COOKIE_TIMEOUT = 30 * 24 * 60 * 60  # 30 days in seconds
 # TODO: Override SECRET_KEY in local.py in production
 SECRET_KEY = 'CHANGEME'
 
