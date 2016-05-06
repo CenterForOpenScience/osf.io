@@ -66,8 +66,6 @@
                           <div class="form-group" data-bind="css: {'has-error': password() && !password.isValid(), 'has-success': password() && password.isValid()}">
                               <label class="placeholder-replace" style="display:none">Password</label>
                               <input type="password" class="form-control" placeholder="Password (Must be 6 to 256 characters)" data-bind=", textInput: typedPassword, value: password, disable: submitted(), event: {blur: trim.bind($data, password)}">
-                          </div>
-                          <div>
                               <div class="progress create-password">
                                   <div class="progress-bar progress-bar-success" role="progressbar" data-bind="attr: passwordComplexityBar"></div>
                               </div>
