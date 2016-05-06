@@ -309,13 +309,18 @@ def dmptool_get_widget_contents(node_addon, **kwargs):
     for plan in plans:
         plan['url'] = "https://{}/plans/{}/edit".format(dmptool_host, plan['id'])
 
+    try:
+        get_plan_url = api_url_for('dmptool_get_plan')
+    except:
+        get_plan_url = None
+
     data.update({
         'dmptool_host': dmptool_host,
         'plans': plans,
         'connected': True,
         'urls': {
             'add_user_account': api_url_for('dmptool_add_user_account'),
-            # 'get_plan': api_url_for('dmptool_get_plan')
+            'get_plan': get_plan_url
         }
     })
     return {'data': data}, http.OK
