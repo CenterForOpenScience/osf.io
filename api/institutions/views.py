@@ -286,8 +286,8 @@ class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
         base_permissions.TokenHasScope,
         UserIsAffiliated
     )
-    required_read_scopes = []
-    required_write_scopes = []
+    required_read_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.NULL]
     serializer_class = InstitutionNodesRelationshipSerializer
     parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
 
