@@ -293,7 +293,7 @@ def verified_email_remove(auth=None, **kwargs):
     methods: DELETE
     """
     user = auth.user
-    confirmed_email = request.get_json('address')
+    confirmed_email = request.get_json()
     email_verifications = deepcopy(user.email_verifications)
     for token in user.email_verifications:
         if token == confirmed_email['token']:
