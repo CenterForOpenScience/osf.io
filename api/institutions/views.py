@@ -1,5 +1,6 @@
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
+from rest_framework import exceptions
 from rest_framework import status
 from rest_framework.response import Response
 
@@ -312,7 +313,7 @@ class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
         for id_ in ids:
             node = Node.load(id_)
             if not node.has_permission(user, osf_permissions.ADMIN):
-                raise drf_permissions.PermissionDenied
+                raise exceptions.PermissionDenied
             nodes.append(node)
 
         for node in nodes:

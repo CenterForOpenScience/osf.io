@@ -54,7 +54,7 @@ class NodeRelated(JSONAPIRelationshipSerializer):
     class Meta:
         type_ = 'nodes'
 
-class InstitutionNodesRelationshipSerializer(JSONAPISerializer):
+class InstitutionNodesRelationshipSerializer(ser.Serializer):
     data = ser.ListField(child=NodeRelated())
     links = LinksField({'self': 'get_self_url',
                         'html': 'get_related_url'})
@@ -76,6 +76,8 @@ class InstitutionNodesRelationshipSerializer(JSONAPISerializer):
 
         changes_flag = False
         for node in nodes:
+            if not node:
+                raise exceptions.NotFound
             if not node.has_permission(user, osf_permissions.ADMIN):
                 raise exceptions.PermissionDenied
 
