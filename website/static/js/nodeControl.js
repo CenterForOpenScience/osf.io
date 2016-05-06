@@ -46,7 +46,7 @@ var ProjectViewModel = function(data) {
     self.node = data.node;
     self.description = ko.observable(data.node.description);
     self.title = data.node.title;
-    self.category = ko.observable(data.node.category);
+    self.categoryValue = ko.observable(data.node.category_short);
     self.isRegistration = data.node.is_registration;
     self.user = data.user;
     self.nodeIsPublic = data.node.is_public;
@@ -73,16 +73,15 @@ var ProjectViewModel = function(data) {
         return !!(self.user.username && (self.nodeIsPublic || self.user.has_read_permissions));
     });
 
-
     // Add icon to title
-    self.icon = ''; // TODO Dynamically update icon
-    var category = data.node.category_short;
-    if (Object.keys(iconmap.componentIcons).indexOf(category) >=0 ){
-        self.icon = iconmap.componentIcons[category];
-    }
-    else {
-        self.icon = iconmap.projectIcons[category];
-    }
+    self.icon = ko.pureComputed(function() {
+        var category = self.categoryValue();
+        if (Object.keys(iconmap.componentIcons).indexOf(category) >=0 ){
+            return iconmap.componentIcons[category];
+        } else {
+            return iconmap.projectIcons[category];
+        }
+    });
 
     // Editable Title and Description
     if (self.userCanEdit) {
@@ -133,26 +132,20 @@ var ProjectViewModel = function(data) {
                 self.description(newValue);
                 return {newValue: newValue};
             }
-
         }));
-        
-        // Front end is passed the display category, which must be mapped to the matching dropdown box value
-        var categoryOptions = $.map(NODE_CATEGORIES, function(display, value) {
-            return {value: value, text: display}
-        });
-        var initCategory = categoryOptions.find(function(element /*, index, array*/) {
-            return element.text === self.category();
-        });
 
+        var categoryOptions = $.map(NODE_CATEGORIES, function(display, value) {
+            return {value: value, text: display};
+        });
         $('#nodeCategoryEditable').editable($.extend({}, editableOptions, {
             type: 'select',
             name: 'category',
             title: 'Select a category',
-            value: initCategory.value,
+            value: self.categoryValue(),
             source: categoryOptions,
             success: function(response, newValue) {
                 newValue = response.newValue;
-                self.category(newValue);
+                self.categoryValue(newValue);
                 return {newValue: newValue};
             }
         }));
