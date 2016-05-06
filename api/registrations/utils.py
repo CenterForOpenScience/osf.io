@@ -14,6 +14,8 @@ def create_jsonschema_from_metaschema(draft, is_reviewer=False):
 
     for page in metaschema['pages']:
         for question in page['questions']:
+            if is_required(question):
+                required.append(question['qid'])
             json_schema['properties'][question['qid']] = {
                 "type": "object",
                 "additionalProperties": False,
