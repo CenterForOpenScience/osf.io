@@ -90,6 +90,16 @@ def main(env):
                 'domains': ['osf.usc.edu'],
                 'email_domains': [],
             },
+            # {
+            #     '_id': 'uva',
+            #     'name': 'University of Virginia',
+            #     'description': None,
+            #     'banner_name': 'uva-banner.png',
+            #     'logo_name': 'uva-shield.png',
+            #     'auth_url': SHIBBOLETH_SP.format(encode_uri_component('urn:mace:incommon:virginia.edu')),
+            #     'domains': ['osf.virginia.edu'],
+            #     'email_domains': [],
+            # },
         ]
     if env == 'stage':
         INSTITUTIONS = [
@@ -169,6 +179,16 @@ def main(env):
                 'domains': ['test-osf-usc.cos.io'],
                 'email_domains': [],
             },
+            {
+                '_id': 'uva',
+                'name': 'University of Virginia [Test]',
+                'description': 'University of Virginia [Test]',
+                'banner_name': 'uva-banner.png',
+                'logo_name': 'uva-shield.png',
+                'auth_url': SHIBBOLETH_SP.format(encode_uri_component('https://shibidp-test.its.virginia.edu/idp/shibboleth')),
+                'domains': ['test-osf-virginia.cos.io'],
+                'email_domains': [],
+            },
         ]
 
     init_app(routes=False)
@@ -176,7 +196,7 @@ def main(env):
         for inst_data in INSTITUTIONS:
             new_inst, inst_created = update_or_create(inst_data)
             # update the nodes elastic docs, to have current names of institutions. This will
-            # only work properly if this file is the only thign changing institution attributes
+            # only work properly if this file is the only thing changing institution attributes
             if not inst_created:
                 nodes = Node.find_by_institution(new_inst, query=Q('is_deleted', 'ne', True))
                 for node in nodes:
