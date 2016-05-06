@@ -345,10 +345,6 @@ var CommentModel = function(data, $parent, $root) {
         return self.$root.canComment() && !self.canEdit();
     });
 
-    self.shouldShow = ko.pureComputed(function() {
-        return !self.isDeleted() || self.hasChildren() || self.canEdit();
-    });
-
     self.nodeUrl = '/' + self.$root.nodeId() + '/';
 
 };
