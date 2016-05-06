@@ -212,8 +212,7 @@
                             }"
                     >
                 </div>
-                <label class="col-sm-4 control-label">Strength</label>
-                <div class="col-sm-8">
+                <div class="col-sm-8 col-sm-offset-4">
                     <div class="progress create-password">
                         <div class="progress-bar progress-bar-success" role="progressbar" data-bind="attr: passwordComplexityBar"></div>
                     </div>
