@@ -14,7 +14,7 @@ def main():
     # init_app()
     total = MODMNodeLog.find().count()
     # total = len(modm_nodelogs)
-    count = 800000
+    count = 0
     page_size = 100000
     django_nodelogs = []
     django_nodelogs_ids = []
@@ -144,5 +144,10 @@ def main():
                     garbage = gc.collect()
                     print 'Collected {} garbages!'.format(garbage)
 
+    print '\a'
+    print '\a'
+    print '\a'
+    print '\a'
+    print '\a'
     print 'Finished migration. MODM: {}, DJANGO: {}'.format(
         total, NodeLog.objects.all().count())
