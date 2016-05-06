@@ -376,7 +376,7 @@ class TestMessage(ContextTestCase):
                 msg.route
 
     def test_route_invalid_test(self):
-        recipient = '{0}conf-talk@osf.io'.format('' if settings.DEV_MODE else 'test-')
+        recipient = '{0}conf-talk@osf.io'.format('' if settings.DEV_MODE else 'stage-')
         with self.make_context(data={'recipient': recipient}):
             self.app.app.preprocess_request()
             msg = message.ConferenceMessage()
