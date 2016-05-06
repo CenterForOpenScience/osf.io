@@ -12,7 +12,8 @@ var $osf = require('./osfHelpers');
 // the desired fields and type of password reset.
 // types:
 //    - signup: required fields for Name, email, email confirmation, password, and password strength
-//    - reset: fields for password, strength, and password confirmation
+//    - reset: fields for password, strength, and password confirmation (for when you don't know your old password)
+//    - change: change your password when you know your old one
 var ViewModel = function(passwordViewType, submitUrl, campaign) {
 
     var self = this;
@@ -55,7 +56,7 @@ var ViewModel = function(passwordViewType, submitUrl, campaign) {
         password: self.password
     };
 
-    if (passwordViewType === 'reset') {
+    if (passwordViewType === 'reset' || passwordViewType === 'change') {
         self.passwordConfirmation = ko.observable('').extend({
             required: true,
             validation: {
@@ -66,6 +67,14 @@ var ViewModel = function(passwordViewType, submitUrl, campaign) {
                 params: self.password
             }
         });
+    }
+
+    if (passwordViewType === 'change') {
+        self.oldPassword = ko.observable('').extend({
+            required: true
+        });
+
+        validatedFields.oldPassword = self.oldPassword;
     }
 
     // only include the following fields if the user is
