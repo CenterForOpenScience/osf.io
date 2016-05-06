@@ -6,20 +6,25 @@ init_app()
 
 from website.models import Node as MODMNode
 from website.models import Tag as MODMTag
+from website.models import Pointer as MODMPointer
 from modularodm import Q
 from osf_models.models import Node, User, Tag, Guid, Contributor
 import pytz
 from datetime import datetime
+import gc
+
 
 fk_node_fields = [
     'forked_from',
     'registered_from',
     'root',
     'parent_node',
-    'template_node'
+    'template_node',
+    '_primary_institution'
 ]
 m2m_node_fields = [
     'nodes',
+    '_affiliated_institutions'
 ]
 fk_user_fields = [
     'registered_user',
@@ -30,7 +35,8 @@ m2m_user_fields = [
     'permissions',
     'recently_added',
     'users_watching_node',
-    'contributors'
+    'contributors',
+    '_affiliated_institutions'
 ]
 m2m_tag_fields = [
     'tags',
@@ -44,30 +50,40 @@ node_key_blacklist = [
                          # foreign keys not yet implemented
                          'logs',
                          'primary_institution',
-                         '_primary_institution',
-                         'institution_email_domains',
-                         'institution_domains',
+                        #  '_primary_institution',
+                        #  'institution_email_domains',
+                        #  'institution_domains',
                          'registration_approval',
                          'alternative_citations',
                          'registered_schema',
                          'affiliated_institutions',
-                         '_affiliated_institutions',
-                         'institution_banner_name',
-                         'institution_id',
-                         'institution_auth_url',
-                         'institution_logo_name',
+                        #  '_affiliated_institutions',
+                        #  'institution_banner_name',
+                        #  'institution_id',
+                        #  'institution_auth_url',
+                        #  'institution_logo_name',
+                        'contributors', # done elsewhere
                          'retraction',
                          'embargo',
                          'node_license',
                      ] + m2m_node_fields + m2m_user_fields + m2m_tag_fields
-user_key_blacklist = ['__backrefs', '_version', 'affiliated_institutions', '_affiliated_institutions','watched',
-                      'external_accounts', ] + m2m_node_fields + m2m_user_fields + m2m_tag_fields
+user_key_blacklist = [
+                        '__backrefs',
+                        '_version',
+                        'affiliated_institutions',
+                        # '_affiliated_institutions',
+                        'watched',
+                        'external_accounts',
+                    ] + m2m_node_fields + m2m_user_fields + m2m_tag_fields
 
 tag_key_blacklist = ['_version', '__backrefs', ] + m2m_node_fields + m2m_user_fields + m2m_tag_fields
 
 nodes = 0
 tags = 0
 users = 0
+
+all_of_the_things = {}
+level = 0
 
 
 def process_node_fk_fields(modm_object):
@@ -91,19 +107,14 @@ def process_node_m2m_fields(modm_object):
         if value is not None:
             if isinstance(value, list):
                 for nv in value:
-                    if m2m_node_field in m2m_nodes:
+                    if nv != modm_object:
+                    # prevent recursion
                         node = get_or_create_node(nv)
                         if node is not None:
-                            m2m_nodes[m2m_node_field].append(node)
-                        else:
-                            m2m_nodes[m2m_node_field] = [node, ]
-            else:
-                if m2m_node_field in m2m_nodes:
-                    node = get_or_create_node(value)
-                    if node is not None:
-                        m2m_nodes[m2m_node_field].append(node)
-                    else:
-                        m2m_nodes[m2m_node_field] = [node, ]
+                            if m2m_node_field in m2m_nodes:
+                                m2m_nodes[m2m_node_field].append(node)
+                            else:
+                                m2m_nodes[m2m_node_field] = [node, ]
     return m2m_nodes
 
 
@@ -111,7 +122,7 @@ def process_user_fk_fields(modm_object):
     fk_users = {}
     for fk_user_field in fk_user_fields:
         modm_user = getattr(modm_object, fk_user_field, None)
-        if modm_user is not None:
+        if modm_user is not None and modm_user != modm_object:
             user = get_or_create_user(modm_user)
             if user is not None:
                 fk_users[fk_user_field] = user
@@ -124,12 +135,14 @@ def process_user_m2m_fields(modm_object):
         value = getattr(modm_object, m2m_user_field, None)
         if isinstance(value, list):
             for uv in value:
-                if m2m_user_field in m2m_users:
+                if uv != modm_object:
+                    # prevent recursion
                     user = get_or_create_user(uv)
                     if user is not None:
-                        m2m_users[m2m_user_field].append(user)
-                    else:
-                        m2m_users[m2m_user_field] = [user, ]
+                        if m2m_user_field in m2m_users:
+                            m2m_users[m2m_user_field].append(user)
+                        else:
+                            m2m_users[m2m_user_field] = [user, ]
     return m2m_users
 
 
@@ -161,30 +174,37 @@ def set_m2m_fields(object, fields):
 
 
 def get_or_create_user(modm_user):
+    if modm_user is None:
+        return None
     try:
-        user = User.objects.get(_guid__guid=modm_user._id)
-    except User.DoesNotExist:
-        user_fk_nodes = process_node_fk_fields(modm_user)
-        user_m2m_nodes = process_node_m2m_fields(modm_user)
-        user_fk_users = process_user_fk_fields(modm_user)
-        user_m2m_users = process_user_m2m_fields(modm_user)
-        user_m2m_tags = process_tag_m2m_fields(modm_user)
-        user_fields = {}
-        user_fields['_guid'] = Guid.objects.get(guid=modm_user._id)
-        user_fields.update(modm_user.to_storage())
-        user_fields.update(user_fk_nodes)
-        user_fields.update(user_fk_users)
-        user_fields = {k: v for k, v in user_fields.iteritems() if v is not None}
-        for k, v in user_fields.iteritems():
-            if isinstance(v, datetime):
-                user_fields[k] = pytz.utc.localize(v)
-        user = User.objects.create(**{key: user_fields[key] for key in user_fields if key not in user_key_blacklist})
-        global users
-        users += 1
-        set_m2m_fields(user, user_m2m_nodes)
-        set_m2m_fields(user, user_m2m_users)
-        set_m2m_fields(user, user_m2m_tags)
+        user = all_of_the_things[modm_user._id]
+        print 'Got {} from cache'.format(user)
+    except KeyError:
+        try:
+            user = User.objects.get(_guid__guid=modm_user._id)
+        except User.DoesNotExist:
+            user_fk_nodes = process_node_fk_fields(modm_user)
+            user_m2m_nodes = process_node_m2m_fields(modm_user)
+            user_fk_users = process_user_fk_fields(modm_user)
+            # user_m2m_users = process_user_m2m_fields(modm_user)
+            user_m2m_tags = process_tag_m2m_fields(modm_user)
+            user_fields = {}
+            user_fields['_guid'] = Guid.objects.get(guid=modm_user._id)
+            user_fields.update(modm_user.to_storage())
+            user_fields.update(user_fk_nodes)
+            user_fields.update(user_fk_users)
+            user_fields = {k: v for k, v in user_fields.iteritems() if v is not None}
+            for k, v in user_fields.iteritems():
+                if isinstance(v, datetime):
+                    user_fields[k] = pytz.utc.localize(v)
+            user = User.objects.create(**{key: user_fields[key] for key in user_fields if key not in user_key_blacklist})
+            global users
+            users += 1
+            set_m2m_fields(user, user_m2m_nodes)
+            # set_m2m_fields(user, user_m2m_users)
+            set_m2m_fields(user, user_m2m_tags)
 
+        all_of_the_things[modm_user._id] = user
     return user
 
 
@@ -234,72 +254,82 @@ def get_or_create_node(modm_node):
     if modm_node is None:
         return None
     try:
-        # try and get the node
-        node = Node.objects.get(_guid__guid=modm_node._id)
-    except Node.DoesNotExist:
-        # if it doesn't exist, check to see if the guid does
+        node = all_of_the_things[modm_node._id]
+        print 'Got {} from cache'.format(node)
+    except KeyError:
         try:
-            guid = Guid.objects.get(guid=modm_node._id)
-        except Guid.DoesNotExist:
-            # fail if the guid doesn't exist
-            print 'GUID {} DoesNotExist'.format(modm_node._id)
-        else:
-            fk_nodes = process_node_fk_fields(modm_node)
+            # try and get the node
+            node = Node.objects.get(_guid__guid=modm_node._id)
+        except Node.DoesNotExist:
+            # if it doesn't exist, check to see if the guid does
+            try:
+                guid = Guid.objects.get(guid=modm_node._id)
+            except Guid.DoesNotExist:
+                # fail if the guid doesn't exist
+                print 'GUID {} DoesNotExist'.format(modm_node._id)
+            else:
+                # import ipdb; ipdb.set_trace()
+                children = modm_node.get_descendants_recursive()
+                kids = map(get_or_create_node, children)
 
-            m2m_nodes = process_node_m2m_fields(modm_node)
+                fk_nodes = process_node_fk_fields(modm_node)
 
-            fk_users = process_user_fk_fields(modm_node)
+                # m2m_nodes = process_node_m2m_fields(modm_node)
 
-            m2m_users = process_user_m2m_fields(modm_node)
+                fk_users = process_user_fk_fields(modm_node)
 
-            m2m_tags = process_tag_m2m_fields(modm_node)
+                m2m_users = process_user_m2m_fields(modm_node)
 
-            node_fields = {}
-            node_fields['_guid'] = guid
-            node_fields.update(modm_node.to_storage())
-            node_fields.update(fk_nodes)
-            node_fields.update(fk_users)
-            cleaned_node = {key: node_fields[key] for key in node_fields if key not in node_key_blacklist}
-            for k, v in cleaned_node.iteritems():
-                if isinstance(v, datetime):
-                    cleaned_node[k] = pytz.utc.localize(v)
-            # this shouldn't need to be here, not sure why it has to be
-            if 'is_folder' in cleaned_node:
-                cleaned_node['is_collection'] = cleaned_node.pop('is_folder')
-            if 'is_dashboard' in cleaned_node:
-                cleaned_node['is_bookmark_collection'] = cleaned_node.pop('is_dashboard')
-            # remove empty fields, sql angry, sql smash
-            cleaned_node = {k: v for k, v in cleaned_node.iteritems() if v is not None}
+                m2m_tags = process_tag_m2m_fields(modm_node)
 
-            for fk_field in fk_node_fields + fk_user_fields:
-                if fk_field in cleaned_node.keys() and isinstance(cleaned_node[fk_field], basestring):
-                    bad = cleaned_node.pop(fk_field)
-                    print 'Removed {} {} from node {} because it no longer exists.'.format(fk_field, bad, guid.guid)
+                node_fields = {}
+                node_fields['_guid'] = guid
+                node_fields.update(modm_node.to_storage())
+                node_fields.update(fk_nodes)
+                node_fields.update(fk_users)
+                cleaned_node = {key: node_fields[key] for key in node_fields if key not in node_key_blacklist}
+                for k, v in cleaned_node.iteritems():
+                    if isinstance(v, datetime):
+                        cleaned_node[k] = pytz.utc.localize(v)
+                # this shouldn't need to be here, not sure why it has to be
+                # if 'is_folder' in cleaned_node:
+                #     cleaned_node['is_collection'] = cleaned_node.pop('is_folder')
+                # if 'is_dashboard' in cleaned_node:
+                #     cleaned_node['is_bookmark_collection'] = cleaned_node.pop('is_dashboard')
+                # remove empty fields, sql angry, sql smash
+                cleaned_node = {k: v for k, v in cleaned_node.iteritems() if v is not None}
 
-            node = Node.objects.create(**cleaned_node)
-            global nodes
-            nodes += 1
-            set_m2m_fields(node, m2m_nodes)
-            set_m2m_fields(node, m2m_users)
-            set_m2m_fields(node, m2m_tags)
-    set_contributors(node, modm_node)
+                for fk_field in fk_node_fields + fk_user_fields:
+                    if fk_field in cleaned_node.keys() and isinstance(cleaned_node[fk_field], basestring):
+                        bad = cleaned_node.pop(fk_field)
+                        print 'Removed {} {} from node {} because it no longer exists.'.format(fk_field, bad, guid.guid)
 
+                node = Node.objects.create(**cleaned_node)
+                global nodes
+                nodes += 1
+                # set_m2m_fields(node, m2m_nodes)
+                set_m2m_fields(node, m2m_users)
+                set_m2m_fields(node, m2m_tags)
+        set_contributors(node, modm_node)
+        all_of_the_things[modm_node._id] = node
     return node
 
 
 def main():
-    modm_nodes = MODMNode.find()
-
-    total = len(modm_nodes)
+    total = MODMNode.find().count()
+    page_size = 1000
     count = 0
     print 'Doing {} Nodes...'.format(total)
 
-    for modm_node in modm_nodes:
-        noooood = get_or_create_node(modm_node)
-        count += 1
-        if count % 1000 == 0:
-            print count
-            print 'Nodes: {}, Users: {}, Tags: {}'.format(nodes, users, tags)
+    while count < total:
+        for modm_node in MODMNode.find()[count:count+page_size]:
+            noooood = get_or_create_node(modm_node)
+            count += 1
+            if count % page_size == 0:
+                print 'Count: {}'.format(count)
+                print 'Nodes: {}, Users: {}, Tags: {}'.format(nodes, users, tags)
+                garbages = gc.collect()
+                print 'Took out {} trashes.'.format(garbages)
 
     print 'MODM: {}'.format(total)
     print 'PG: {}'.format(count)
