@@ -59,9 +59,7 @@ user_key_blacklist = [
     'external_accounts',
 ] + fk_user_fields + fk_node_fields + m2m_node_fields + m2m_user_fields + m2m_tag_fields
 
-tag_key_blacklist = ['_version',
-                     '__backrefs',
-                     ] + m2m_node_fields + m2m_user_fields + m2m_tag_fields
+
 
 
 def save_bare_nodes(page_size=20000):
@@ -100,6 +98,8 @@ def save_bare_nodes(page_size=20000):
                     print 'Saving nodes {} through {}...'.format(
                         count - page_size, count)
                     woot = Node.objects.bulk_create(nids)
+                    for wit in woot:
+                        modm_to_django[wit._guid.guid] = wit.pk
                     now = datetime.now()
                     print 'Done with {} nodes in {} seconds...'.format(
                         len(woot), (now - then).total_seconds())
@@ -147,6 +147,8 @@ def save_bare_users(page_size=20000):
                     print 'Saving users {} through {}...'.format(
                         count - page_size, count)
                     woot = User.objects.bulk_create(users)
+                    for wit in woot:
+                        modm_to_django[wit._guid.guid] = wit.pk
                     now = datetime.now()
                     print 'Done with {} users in {} seconds...'.format(
                         len(woot), (now - then).total_seconds())
@@ -224,20 +226,147 @@ def save_bare_system_tags(page_size=10000):
     print 'MODM System Tags: {}'.format(total)
     print 'django system tags: {}'.format(Tag.objects.filter(system=True).count())
 
+def set_node_foreign_keys_on_nodes(page_size=10000):
+    print 'Starting set_node_foreign_keys...'
+    node_count = 0
+    fk_count = 0
+    cache_hits = 0
+    cache_misses = 0
+    start = datetime.now()
+    total = MODMNode.find(allow_institution=True).count()
+
+    while node_count < total:
+        with transaction.atomic():
+            for modm_node in MODMNode.find(allow_institution=True).sort('-date_modified')[node_count:node_count+page_size]:
+                django_node = Node.objects.get(_guid__guid=modm_node._id)
+                for fk_node_field in fk_node_fields:
+                    value = getattr(modm_node, fk_node_field, None)
+                    if value is not None:
+                        if isinstance(value, basestring):
+                            # value is a guid, try the cache table for the pk
+                            if value in modm_to_django:
+                                setattr(django_node, '{}_id'.format(fk_node_field), modm_to_django[value])
+                                cache_hits += 1
+                            else:
+                                # it's not in the cache, do the query
+                                node_id = Node.objects.get(_guid__guid=value).pk
+                                setattr(django_node, '{}_id'.format(fk_node_field), node_id)
+                                # save for later
+                                modm_to_django[value] = node_id
+                                cache_misses += 1
+                        elif isinstance(value, MODMNode):
+                            # value is a node object, try the cache table for the pk
+                            if value._id in modm_to_django:
+                                setattr(django_node, '{}_id'.format(fk_node_field), modm_to_django[value._id])
+                                cache_hits += 1
+                            else:
+                                # it's not in the cache, do the query
+                                node_id =  Node.objects.get(_guid__guid=value._id).pk
+                                setattr(django_node, '{}_id'.format(fk_node_field), node_id)
+                                # save for later
+                                modm_to_django[value._id] = node_id
+                                cache_misses += 1
+                        else:
+                            # whu happened?
+                            print '\a'
+                            print '\a'
+                            print '\a'
+                            print '\a'
+                            print '\a'
+                            print '\a'
+                            import bpdb; bpdb.set_trace()
+                        fk_count += 1
+                django_node.save()
+                node_count += 1
+                if node_count % page_size == 0 or node_count == total:
+                    then = datetime.now()
+                    print 'Through {} nodes and {} foreign keys'.format(node_count, fk_count)
+                    print 'Cache: Hits {} Misses {}'.format(cache_hits, cache_misses)
+
+
+def set_user_foreign_keys_on_nodes(page_size=10000):
+    print 'Starting set_node_foreign_keys...'
+    node_count = 0
+    fk_count = 0
+    cache_hits = 0
+    cache_misses = 0
+    start = datetime.now()
+    total = MODMNode.find(allow_institution=True).count()
+
+    while node_count < total:
+        with transaction.atomic():
+            for modm_node in MODMNode.find(allow_institution=True).sort('-date_modified')[
+                             node_count:node_count + page_size]:
+                django_node = Node.objects.get(_guid__guid=modm_node._id)
+                for fk_user_field in fk_user_fields:
+                    value = getattr(modm_node, fk_user_field, None)
+                    if value is not None:
+                        if isinstance(value, basestring):
+                            # value is a guid, try the cache table for the pk
+                            if value in modm_to_django:
+                                setattr(django_node, '{}_id'.format(fk_user_field), modm_to_django[value])
+                                cache_hits += 1
+                            else:
+                                # it's not in the cache, do the query
+                                user_id = User.objects.get(_guid__guid=value).pk
+                                setattr(django_node, '{}_id'.format(fk_user_field), user_id)
+                                # save for later
+                                modm_to_django[value] = user_id
+                                cache_misses += 1
+                        elif isinstance(value, MODMUser):
+                            # value is a node object, try the cache table for the pk
+                            if value._id in modm_to_django:
+                                setattr(django_node, '{}_id'.format(fk_user_field), modm_to_django[value._id])
+                                cache_hits += 1
+                            else:
+                                # it's not in the cache, do the query
+                                user_id = User.objects.get(_guid__guid=value._id).pk
+                                setattr(django_node, '{}_id'.format(fk_user_field), user_id)
+                                # save for later
+                                modm_to_django[value._id] = user_id
+                                cache_misses += 1
+                        else:
+                            # that's odd.
+                            print '\a'
+                            print '\a'
+                            print '\a'
+                            print '\a'
+                            print '\a'
+                            print '\a'
+                            import bpdb; bpdb.set_trace()
+                        fk_count += 1
+                django_node.save()
+                node_count += 1
+                if node_count % page_size == 0 or node_count == total:
+                    then = datetime.now()
+                    print 'Through {} nodes and {} foreign keys'.format(node_count, fk_count)
+                    print 'Cache: Hits {} Misses {}'.format(cache_hits, cache_misses)
+
+modm_to_django = {}
 
 def main(dry=True):
-    modm_node_cache = {
-        # 'modm_guid': 'django_pk'
-    }
-    django_node_cache = {
-        # 'django_pk': 'modm_guid'
-    }
+    start = datetime.now()
+    # save_bare_nodes()
+    # save_bare_users()
+    # save_bare_tags()
+    # save_bare_system_tags()
+    global modm_to_django
+    if modm_to_django == {}:
+        # build a lookup table of all guids to pks
+        modm_to_django = {x['_guid__guid']: x['pk']
+                              for x in Node.objects.all().values('_guid__guid',
+                                                                 'pk')}
+        modm_to_django.update({x['_guid__guid']: x['pk']
+                               for x in User.objects.all().values('_guid__guid',
+                                                                  'pk')})
 
-    save_bare_nodes()
-    save_bare_users()
-    save_bare_tags()
-    save_bare_system_tags()
-    # set_foreign_keys()
 
+    print 'modm to django keys {}'.format(len(modm_to_django.keys()))
+    # this is fairly inefficient, looping through the nodes twice
+    # set_node_foreign_keys_on_nodes()
+    set_user_foreign_keys_on_nodes()
+    set_node_foreign_keys_on_users()
+
+    print 'Finished in {} seconds...'.format((datetime.now()-start).total_seconds())
     # if dry:
     #     raise DryMigrationException()
