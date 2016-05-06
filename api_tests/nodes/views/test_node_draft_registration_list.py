@@ -33,7 +33,7 @@ class DraftRegistrationTestCase(ApiTestCase):
         self.public_project.add_contributor(self.read_write_user, permissions=[permissions.WRITE])
         self.public_project.save()
 
-    def prereg_metadata(self, draft, is_reviewer):
+    def prereg_metadata(self, draft):
         test_metadata = {}
         json_schema = create_jsonschema_from_metaschema(draft)
 
@@ -230,7 +230,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
 
         url = '/{}nodes/{}/draft_registrations/?embed=initiator&embed=branched_from'.format(API_BASE, self.public_project._id)
 
-        registration_metadata = self.prereg_metadata(prereg_draft_registration, is_reviewer=True)
+        registration_metadata = self.prereg_metadata(prereg_draft_registration)
         del registration_metadata['q1']
         prereg_draft_registration.registration_metadata = registration_metadata
         prereg_draft_registration.save()

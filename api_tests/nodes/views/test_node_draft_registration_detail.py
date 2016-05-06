@@ -1,4 +1,4 @@
-
+import hashlib, binascii
 from nose.tools import *  # flake8: noqa
 
 from modularodm import Q
@@ -106,8 +106,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             branched_from=self.public_project
         )
 
-        self.registration_metadata = self.prereg_metadata(self.prereg_draft_registration, is_reviewer=False)
-
+        self.registration_metadata = self.prereg_metadata(self.prereg_draft_registration)
 
         self.other_project = ProjectFactory(creator=self.user)
         self.url = '/{}nodes/{}/draft_registrations/{}/'.format(API_BASE, self.public_project._id, self.draft_registration._id)
@@ -429,3 +428,187 @@ class TestDraftRegistrationDelete(DraftRegistrationTestCase):
         res = self.app.delete_json_api(self.url, auth=user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+
+
+class TestDraftPreregChallengeRegistrationMetadataValidation(DraftRegistrationTestCase):
+
+    def setUp(self):
+        super(TestDraftPreregChallengeRegistrationMetadataValidation, self).setUp()
+        ensure_schemas()
+
+        self.prereg_schema = MetaSchema.find_one(
+            Q('name', 'eq', 'Prereg Challenge') &
+            Q('schema_version', 'eq', 2)
+        )
+
+        self.prereg_draft_registration = DraftRegistrationFactory(
+            initiator=self.user,
+            registration_schema=self.prereg_schema,
+            branched_from=self.public_project
+        )
+
+        self.other_project = ProjectFactory(creator=self.user)
+        self.url = '/{}nodes/{}/draft_registrations/{}/'.format(API_BASE, self.public_project._id, self.prereg_draft_registration._id)
+
+        self.payload = {
+            "data": {
+                "id": self.prereg_draft_registration._id,
+                "type": "draft_registrations",
+                "attributes": {
+                    "registration_metadata": {}
+                }
+            }
+        }
+
+    def test_first_level_open_ended_answers(self):
+        self.payload['data']['attributes']['registration_metadata']['q1'] = {
+            "value": "This is my answer."
+        }
+        res = self.app.put_json_api(self.url, self.payload, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['attributes']['registration_metadata']['q1']['value'], "This is my answer.")
+
+    def test_first_level_open_ended_answer_must_have_correct_key(self):
+        self.payload['data']['attributes']['registration_metadata']['q1'] = {
+            "values": "This is my answer."
+        }
+        res = self.app.put_json_api(self.url, self.payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], "Additional properties are not allowed (u\'values\' was unexpected)")
+
+    def test_first_level_open_ended_answer_must_be_of_correct_type(self):
+        self.payload['data']['attributes']['registration_metadata']['q1'] = {
+            "value": 12345
+        }
+        res = self.app.put_json_api(self.url, self.payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], "12345 is not of type 'string'")
+
+    def test_first_level_open_ended_answer_not_expecting_more_nested_data(self):
+        self.payload['data']['attributes']['registration_metadata']['q1'] = {
+            "value": {
+                "question": {
+                    "value": "This is my answer."
+                }
+            }
+        }
+        res = self.app.put_json_api(self.url, self.payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], "{u'question': {u'value': u'This is my answer.'}} is not of type 'string'")
+
+    def test_second_level_answers(self):
+        self.payload['data']['attributes']['registration_metadata']['q7'] = {
+            "value": {
+                "question": {
+                    "value": "This is my answer."
+                }
+            }
+        }
+        res = self.app.put_json_api(self.url, self.payload, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['attributes']['registration_metadata']['q7']['value']['question']['value'], 'This is my answer.')
+
+    def test_second_level_open_ended_answer_must_have_correct_key(self):
+        self.payload['data']['attributes']['registration_metadata']['q7'] = {
+            "value": {
+                "questions": {
+                    "value": "This is my answer."
+                }
+            }
+        }
+        res = self.app.put_json_api(self.url, self.payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], "Additional properties are not allowed (u\'questions\' was unexpected)")
+
+    def test_third_level_open_ended_answer_must_have_correct_key(self):
+        self.payload['data']['attributes']['registration_metadata']['q7'] = {
+            "value": {
+                "question": {
+                    "values": "This is my answer."
+                }
+            }
+        }
+        res = self.app.put_json_api(self.url, self.payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], "Additional properties are not allowed (u\'values\' was unexpected)")
+
+    def test_second_level_open_ended_answer_must_have_correct_type(self):
+        self.payload['data']['attributes']['registration_metadata']['q7'] = {
+            "value": {
+                "question": "This is my answer"
+            }
+        }
+        res = self.app.put_json_api(self.url, self.payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], "u'This is my answer' is not of type 'object'")
+
+    def test_third_level_open_ended_answer_must_have_correct_type(self):
+        self.payload['data']['attributes']['registration_metadata']['q7'] = {
+            "value": {
+                "question": {
+                    "value": True
+                }
+            }
+        }
+        res = self.app.put_json_api(self.url, self.payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], "True is not of type 'string'")
+
+    def test_uploader_metadata(self):
+        sha256 = hashlib.pbkdf2_hmac('sha256', b'password', b'salt', 100000)
+        self.payload['data']['attributes']['registration_metadata']['q7'] = {
+            "value": {
+                "uploader": {
+                    "value": "Screen Shot 2016-03-30 at 7.02.05 PM.png",
+                    "extra": [{
+                        "data": {},
+                        "nodeId": self.public_project._id,
+                        "viewUrl": "/project/{}/files/osfstorage/{}".format(self.public_project._id, self.prereg_draft_registration._id),
+                        "selectedFileName": "Screen Shot 2016-03-30 at 7.02.05 PM.png",
+                        "sha256": binascii.hexlify(sha256)
+                    }]
+                }
+            }
+        }
+        res = self.app.put_json_api(self.url, self.payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['attributes']['registration_metadata']['q7']['value']['uploader']['value'], "Screen Shot 2016-03-30 at 7.02.05 PM.png")
+
+    def test_uploader_metadata_incorrect_key(self):
+        sha256 = hashlib.pbkdf2_hmac('sha256', b'password', b'salt', 100000)
+        self.payload['data']['attributes']['registration_metadata']['q7'] = {
+            "value": {
+                "uploader": {
+                    "value": "Screen Shot 2016-03-30 at 7.02.05 PM.png",
+                    "extra": [{
+                        "data": {},
+                        "nodeId": self.public_project._id,
+                        "viewUrl": "/project/{}/files/osfstorage/{}".format(self.public_project._id, self.prereg_draft_registration._id),
+                        "selectedFileNames": "Screen Shot 2016-03-30 at 7.02.05 PM.png",
+                        "sha256": binascii.hexlify(sha256)
+                    }]
+                }
+            }
+        }
+        res = self.app.put_json_api(self.url, self.payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], "Additional properties are not allowed (u\'selectedFileNames\' was unexpected)")
+
+    def test_multiple_choice_questions_incorrect_choice(self):
+        self.payload['data']['attributes']['registration_metadata']['q15'] = {
+            "value": "This is my answer."
+        }
+        res = self.app.put_json_api(self.url, self.payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], "u'This is my answer.' is not one of [u'No blinding is involved in this study.', "
+                                                      "u'For studies that involve human subjects, they will not know the treatment group to which they have been assigned.', "
+                                                      "u'Research personnel who interact directly with the study subjects (either human or non-human subjects) will not be aware of the assigned treatments.', "
+                                                      "u'Research personnel who analyze the data collected from the study are not aware of the treatment applied to any given group.']")
+
+    def test_multiple_choice_questions(self):
+        self.payload['data']['attributes']['registration_metadata']['q15'] = {
+            "value": 'No blinding is involved in this study.'
+        }
+        res = self.app.put_json_api(self.url, self.payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['attributes']['registration_metadata']['q15']['value'], 'No blinding is involved in this study.')
