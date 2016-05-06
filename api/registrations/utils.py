@@ -1,26 +1,23 @@
+from website.settings import PREREG_ADMIN_TAG
+from website.util import permissions as osf_permissions
 
-def create_jsonschema_from_metaschema(draft):
+
+def create_jsonschema_from_metaschema(draft, is_reviewer=False):
     """
-    Creates jsonschema from registration metaschema for validation
+    Creates jsonschema from registration metaschema for validation.
+
+    Reviewer schemas only allow comment fields.
     """
     metaschema = draft.registration_schema.schema
-    json_schema = {
-        "type": "object",
-        "description": metaschema['description'],
-        "title": metaschema['title'],
-        "additionalProperties": False,
-        "properties": {
-        }
-    }
+    json_schema = base_metaschema(metaschema)
     required = []
 
     for page in metaschema['pages']:
         for question in page['questions']:
-            values = extract_question_values(question)
             json_schema['properties'][question['qid']] = {
                 "type": "object",
                 "additionalProperties": False,
-                "properties": values
+                "properties": extract_question_values(question, is_reviewer)
             }
 
         if required:
@@ -29,7 +26,7 @@ def create_jsonschema_from_metaschema(draft):
     return json_schema
 
 
-def get_object_jsonschema(question):
+def get_object_jsonschema(question, is_reviewer):
     """
     Returns jsonschema for nested objects within schema
     """
@@ -43,7 +40,7 @@ def get_object_jsonschema(question):
     properties = question.get('properties')
     if properties:
         for property in properties:
-            values = extract_question_values(property)
+            values = extract_question_values(property, is_reviewer)
             object_jsonschema['properties'][property['id']] = {
                 "type": "object",
                 "additionalProperties": False,
@@ -52,27 +49,31 @@ def get_object_jsonschema(question):
     return object_jsonschema
 
 
-def extract_question_values(question):
+def extract_question_values(question, is_reviewer):
     """
-    Pulls the types of value, comments, and extra
+    Pulls structure for "value", "comments", and "extra" items
     """
-    value = {'type': 'string'}  # Default value
-    comments = COMMENTS_SCHEMA
-    extra = {'type': 'array'}
+    response = {
+        'value': {'type': 'string'},
+        'comments': COMMENTS_SCHEMA,
+        'extra': {'type': 'array'}
+    }
     if question.get('type') == 'object':
-        value = get_object_jsonschema(question)
+        response['value'] = get_object_jsonschema(question, is_reviewer)
     elif question.get('type') == 'choose':
         options = question.get('options')
         if options:
-            value = get_options_jsonschema(options)
+            response['value'] = get_options_jsonschema(options)
     elif question.get('type') == 'osf-upload':
-        extra = OSF_UPLOAD_EXTRA_SCHEMA
+        response['extra'] = OSF_UPLOAD_EXTRA_SCHEMA
 
-    return {
-        'value': value,
-        'comments': comments,
-        'extra': extra
-    }
+    if is_reviewer:
+        del response['extra']
+        if not question.get('type') == 'object':
+            del response['value']
+
+    return response
+
 
 def is_required(question):
     """
@@ -179,6 +180,19 @@ COMMENTS_SCHEMA = {
         }
     }
 }
+
+def base_metaschema(metaschema):
+    json_schema = {
+        "type": "object",
+        "description": metaschema['description'],
+        "title": metaschema['title'],
+        "additionalProperties": False,
+        "properties": {
+        }
+    }
+    return json_schema
+
+
 def is_prereg_admin(user):
     """
     Returns true if user has reviewer permissions
@@ -196,4 +210,3 @@ def is_prereg_admin_not_project_admin(request, draft):
     is_project_admin = draft.branched_from.has_permission(user, osf_permissions.ADMIN)
 
     return is_prereg_admin(user) and not is_project_admin
-

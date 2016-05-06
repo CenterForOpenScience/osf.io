@@ -10,14 +10,13 @@ from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 
 from website.project.metadata.schemas import ACTIVE_META_SCHEMAS
-
 from website.models import Node, User, Comment, Institution, MetaSchema, DraftRegistration
 from website.exceptions import NodeStateError, UserNotAffiliatedError
 from website.util import permissions as osf_permissions
 from website.project.model import NodeUpdateError
 
 from api.base.utils import get_user_auth, get_object_or_error, absolute_reverse
-from api.registrations.utils import create_jsonschema_from_metaschema
+from api.registrations.utils import create_jsonschema_from_metaschema, is_prereg_admin_not_project_admin
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
                                   TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly,
                                   HideIfRegistration)
@@ -88,7 +87,8 @@ class DraftRegistrationSerializer(JSONAPISerializer):
         Validates registration_metadata field.  Called in update and create methods because the draft is
         needed in the context.
         """
-        schema = create_jsonschema_from_metaschema(draft)
+        reviewer = is_prereg_admin_not_project_admin(self.context['request'], draft)
+        schema = create_jsonschema_from_metaschema(draft, is_reviewer=reviewer)
         if schema.get('required'):
             del schema['required']
         try:
