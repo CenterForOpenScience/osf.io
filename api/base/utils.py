@@ -127,6 +127,7 @@ def default_node_list_query():
         Q('is_registration', 'ne', True)
     )
 
+
 def default_node_permission_query(user):
     permission_query = Q('is_public', 'eq', True)
     if not user.is_anonymous():

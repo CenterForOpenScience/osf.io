@@ -376,6 +376,83 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         assert_equal(res.json['errors'][0]['detail'], "Additional properties are not allowed (u'value' was unexpected)")
 
 
+class TestDraftRegistrationPatch(DraftRegistrationTestCase):
+
+    def setUp(self):
+        super(TestDraftRegistrationPatch, self).setUp()
+        ensure_schemas()
+
+        schema = MetaSchema.find_one(
+            Q('name', 'eq', 'OSF-Standard Pre-Data Collection Registration') &
+            Q('schema_version', 'eq', 2)
+        )
+
+        self.draft_registration = DraftRegistrationFactory(
+            initiator=self.user,
+            registration_schema=schema,
+            branched_from=self.public_project
+        )
+
+        self.prereg_schema = MetaSchema.find_one(
+            Q('name', 'eq', 'Prereg Challenge') &
+            Q('schema_version', 'eq', 2)
+        )
+
+        self.prereg_draft_registration = DraftRegistrationFactory(
+            initiator=self.user,
+            registration_schema=self.prereg_schema,
+            branched_from=self.public_project
+        )
+
+        self.registration_metadata = self.prereg_metadata(self.prereg_draft_registration)
+
+        self.other_project = ProjectFactory(creator=self.user)
+        self.url = '/{}nodes/{}/draft_registrations/{}/'.format(API_BASE, self.public_project._id, self.draft_registration._id)
+
+        self.payload = {
+            "data": {
+                "id": self.draft_registration._id,
+                "type": "draft_registrations",
+                "attributes": {
+                    "registration_metadata": {
+                        "datacompletion": {
+                            "value": "No, data collection has not begun"
+                        },
+                        "looked": {
+                            "value": "No"
+                        },
+                        "comments": {
+                            "value": "This is my first registration."
+                        }
+                    }
+                }
+            }
+        }
+
+
+    def test_admin_can_update_draft(self):
+        res = self.app.patch_json_api(self.url, self.payload, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        data = res.json['data']
+        assert_equal(data['attributes']['registration_supplement'], 'OSF-Standard Pre-Data Collection Registration')
+        assert_equal(data['attributes']['registration_metadata'], self.payload['data']['attributes']['registration_metadata'])
+
+    def test_read_only_contributor_cannot_update_draft(self):
+        res = self.app.patch_json_api(self.url, self.payload, auth=self.read_only_user.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_read_write_contributor_cannot_update_draft(self):
+        res = self.app.patch_json_api(self.url, self.payload, auth=self.read_write_user.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_logged_in_non_contributor_cannot_update_draft(self):
+        res = self.app.patch_json_api(self.url, self.payload, auth=self.non_contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_unauthenticated_user_cannot_update_draft(self):
+        res = self.app.patch_json_api(self.url, self.payload, expect_errors=True)
+        assert_equal(res.status_code, 401)
+
 class TestDraftRegistrationDelete(DraftRegistrationTestCase):
     def setUp(self):
         super(TestDraftRegistrationDelete, self).setUp()
