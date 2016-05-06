@@ -5,12 +5,14 @@ from modularodm import Q
 from framework.auth.core import Auth
 from website.models import MetaSchema
 from api.base.settings.defaults import API_BASE
+from website.settings import PREREG_ADMIN_TAG
 from website.project.model import ensure_schemas
 from test_node_draft_registration_list import DraftRegistrationTestCase
 
 from tests.factories import (
     ProjectFactory,
-    DraftRegistrationFactory
+    DraftRegistrationFactory,
+    AuthUserFactory
 )
 
 
@@ -64,6 +66,17 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
         errors = res.json['errors'][0]
         assert_equal(errors['detail'], 'This draft registration is not created from the given node.')
 
+    def test_reviewer_can_see_draft_registration(self):
+        user = AuthUserFactory()
+        user.system_tags.append(PREREG_ADMIN_TAG)
+        user.save()
+        res = self.app.get(self.url, auth=user.auth)
+        assert_equal(res.status_code, 200)
+        data = res.json['data']
+        assert_equal(data['attributes']['registration_supplement'], 'OSF-Standard Pre-Data Collection Registration')
+        assert_equal(data['id'], self.draft_registration._id)
+        assert_equal(data['attributes']['registration_metadata'], {})
+
 
 class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
 
@@ -81,6 +94,21 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             registration_schema=schema,
             branched_from=self.public_project
         )
+
+        self.prereg_schema = MetaSchema.find_one(
+            Q('name', 'eq', 'Prereg Challenge') &
+            Q('schema_version', 'eq', 2)
+        )
+
+        self.prereg_draft_registration = DraftRegistrationFactory(
+            initiator=self.user,
+            registration_schema=self.prereg_schema,
+            branched_from=self.public_project
+        )
+
+        self.registration_metadata = self.prereg_metadata(self.prereg_draft_registration, is_reviewer=False)
+
+
         self.other_project = ProjectFactory(creator=self.user)
         self.url = '/{}nodes/{}/draft_registrations/{}/'.format(API_BASE, self.public_project._id, self.draft_registration._id)
 
@@ -212,27 +240,16 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         assert_equal(res.json['data']['attributes']['registration_supplement'], 'OSF-Standard Pre-Data Collection Registration')
 
     def test_required_metaschema_questions_not_required_on_update(self):
-        prereg_schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Prereg Challenge') &
-            Q('schema_version', 'eq', 2)
-        )
 
-        prereg_draft_registration = DraftRegistrationFactory(
-            initiator=self.user,
-            registration_schema=prereg_schema,
-            branched_from=self.public_project
-        )
+        url = '/{}nodes/{}/draft_registrations/{}/'.format(API_BASE, self.public_project._id, self.prereg_draft_registration._id)
 
-        url = '/{}nodes/{}/draft_registrations/{}/'.format(API_BASE, self.public_project._id, prereg_draft_registration._id)
-
-        registration_metadata = self.prereg_metadata(prereg_draft_registration)
-        del registration_metadata['q1']
-        prereg_draft_registration.registration_metadata = registration_metadata
-        prereg_draft_registration.save()
+        del self.registration_metadata['q1']
+        self.prereg_draft_registration.registration_metadata = self.registration_metadata
+        self.prereg_draft_registration.save()
 
         payload = {
             "data": {
-                "id": prereg_draft_registration._id,
+                "id": self.prereg_draft_registration._id,
                 "type": "draft_registrations",
                 "attributes": {
                     "registration_metadata": {
@@ -248,6 +265,116 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['attributes']['registration_metadata']['q2']['value'], 'New response')
         assert_not_in('q1', res.json['data']['attributes']['registration_metadata'])
+
+    def test_reviewer_can_update_draft_registration(self):
+        user = AuthUserFactory()
+        user.system_tags.append(PREREG_ADMIN_TAG)
+        user.save()
+
+        payload = {
+            "data": {
+                "id": self.prereg_draft_registration._id,
+                "type": "draft_registrations",
+                "attributes": {
+                    "registration_metadata": {
+                        'q2': {
+                            'comments': [{'value': 'This is incomplete.'}]
+                        }
+                    }
+                }
+            }
+        }
+
+        url = '/{}nodes/{}/draft_registrations/{}/'.format(API_BASE, self.public_project._id, self.prereg_draft_registration._id)
+
+
+        res = self.app.put_json_api(url, payload, auth=user.auth, expect_errors=True)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['attributes']['registration_metadata']['q2']['comments'][0]['value'], 'This is incomplete.')
+        assert_not_in('q1', res.json['data']['attributes']['registration_metadata'])
+
+    def test_reviewer_can_only_update_comment_fields_draft_registration(self):
+        user = AuthUserFactory()
+        user.system_tags.append(PREREG_ADMIN_TAG)
+        user.save()
+
+        payload = {
+            "data": {
+                "id": self.prereg_draft_registration._id,
+                "type": "draft_registrations",
+                "attributes": {
+                    "registration_metadata": {
+                        'q2': {
+                            'value': 'Test response'
+                        }
+                    }
+                }
+            }
+        }
+
+        url = '/{}nodes/{}/draft_registrations/{}/'.format(API_BASE, self.public_project._id, self.prereg_draft_registration._id)
+
+        res = self.app.put_json_api(url, payload, auth=user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], "Additional properties are not allowed (u'value' was unexpected)")
+
+    def test_reviewer_can_update_nested_comment_fields_draft_registration(self):
+        user = AuthUserFactory()
+        user.system_tags.append(PREREG_ADMIN_TAG)
+        user.save()
+
+        payload = {
+            "data": {
+                "id": self.prereg_draft_registration._id,
+                "type": "draft_registrations",
+                "attributes": {
+                    "registration_metadata": {
+                        'q7': {
+                            'value': {
+                                 'question': {
+                                    'comments': [{'value': 'Add some clarity here.'}]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        url = '/{}nodes/{}/draft_registrations/{}/'.format(API_BASE, self.public_project._id, self.prereg_draft_registration._id)
+
+        res = self.app.put_json_api(url, payload, auth=user.auth, expect_errors=True)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['attributes']['registration_metadata']['q7']['value']['question']['comments'][0]['value'], 'Add some clarity here.')
+
+    def test_reviewer_cannot_update_nested_value_fields_draft_registration(self):
+        user = AuthUserFactory()
+        user.system_tags.append(PREREG_ADMIN_TAG)
+        user.save()
+
+        payload = {
+            "data": {
+                "id": self.prereg_draft_registration._id,
+                "type": "draft_registrations",
+                "attributes": {
+                    "registration_metadata": {
+                        'q7': {
+                            'value': {
+                                 'question': {
+                                    'value': 'This is the answer'
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        url = '/{}nodes/{}/draft_registrations/{}/'.format(API_BASE, self.public_project._id, self.prereg_draft_registration._id)
+
+        res = self.app.put_json_api(url, payload, auth=user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], "Additional properties are not allowed (u'value' was unexpected)")
 
 
 class TestDraftRegistrationDelete(DraftRegistrationTestCase):
@@ -293,3 +420,12 @@ class TestDraftRegistrationDelete(DraftRegistrationTestCase):
         res = self.app.delete_json_api(self.url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_equal(res.json['errors'][0]['detail'], 'This draft has already been registered and cannot be modified.')
+
+    def test_reviewer_cannot_delete_draft_registration(self):
+        user = AuthUserFactory()
+        user.system_tags.append(PREREG_ADMIN_TAG)
+        user.save()
+
+        res = self.app.delete_json_api(self.url, auth=user.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')

@@ -5,6 +5,7 @@ from website.models import MetaSchema
 from modularodm import Q
 from framework.auth.core import Auth
 from website.util import permissions
+from website.settings import PREREG_ADMIN_TAG
 
 from api.base.settings.defaults import API_BASE
 from api.registrations.utils import create_jsonschema_from_metaschema
@@ -32,7 +33,7 @@ class DraftRegistrationTestCase(ApiTestCase):
         self.public_project.add_contributor(self.read_write_user, permissions=[permissions.WRITE])
         self.public_project.save()
 
-    def prereg_metadata(self, draft):
+    def prereg_metadata(self, draft, is_reviewer):
         test_metadata = {}
         json_schema = create_jsonschema_from_metaschema(draft)
 
@@ -229,7 +230,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
 
         url = '/{}nodes/{}/draft_registrations/?embed=initiator&embed=branched_from'.format(API_BASE, self.public_project._id)
 
-        registration_metadata = self.prereg_metadata(prereg_draft_registration)
+        registration_metadata = self.prereg_metadata(prereg_draft_registration, is_reviewer=True)
         del registration_metadata['q1']
         prereg_draft_registration.registration_metadata = registration_metadata
         prereg_draft_registration.save()
@@ -306,3 +307,11 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(errors['detail'], "u'Nope, data collection has not begun' is not one of [u'No, data collection has not begun', u'Yes, data collection is underway or complete']")
 
+    def test_reviewer_cannot_create_draft_registration(self):
+        user = AuthUserFactory()
+        user.system_tags.append(PREREG_ADMIN_TAG)
+        user.save()
+
+        assert_in(self.read_only_user._id, self.public_project.contributors)
+        res = self.app.post_json_api(self.url, self.payload, auth=user.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
