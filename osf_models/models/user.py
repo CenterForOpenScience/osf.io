@@ -232,6 +232,8 @@ class User(GuidMixin, BaseModel):
     # user language and locale data (e.g. 'en_US')
     locale = models.CharField(max_length=255, default='en_US')
 
+    _affiliated_institutions = models.ManyToManyField('Node')
+
     @property
     def url(self):
         return '/{}/'.format(self._id)
