@@ -117,6 +117,11 @@ class TrashedFileNode(StoredObject, Commentable):
             raise ValueError('No parent to restore to')
         restored.save()
 
+        # repoint guid
+        for guid in Guid.find(Q('referent', 'eq', self)):
+            guid.referent = restored
+            guid.save()
+
         if recursive:
             for child in TrashedFileNode.find(Q('parent', 'eq', self)):
                 child.restore(recursive=recursive, parent=restored)
