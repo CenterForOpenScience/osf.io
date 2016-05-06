@@ -116,10 +116,10 @@ def forgot_password_get(auth, *args, **kwargs):
         return redirect(web_url_for('dashboard'))
     return {}
 
+
 ###############################################################################
 # Log in
 ###############################################################################
-
 @collect_auth
 def auth_login(auth, **kwargs):
     """If GET request, show login page. If POST, attempt to log user in if
@@ -288,7 +288,7 @@ def confirm_email_get(token, auth=None, **kwargs):
 
 
 @collect_auth
-def verified_email_remove(auth=None, **kwargs):
+def verified_email_remove(auth=None):
     """Called at login if user cancels their merge or email add.
     methods: DELETE
     """
@@ -307,7 +307,7 @@ def verified_email_remove(auth=None, **kwargs):
 
 
 @collect_auth
-def verified_email_add(auth=None, **kwargs):
+def verified_email_add(auth=None):
     """Called at login if user confirms their merge or email add.
     methods: PUT
     """
