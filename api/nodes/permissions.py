@@ -6,6 +6,7 @@ from website.models import Node, Pointer, User, Institution, DraftRegistration
 from website.util import permissions as osf_permissions
 
 from api.base.utils import get_user_auth
+from api.registrations.utils import is_prereg_admin
 
 
 class ContributorOrPublic(permissions.BasePermission):
@@ -24,6 +25,19 @@ class IsAdmin(permissions.BasePermission):
         assert isinstance(obj, (Node, DraftRegistration)), 'obj must be a Node or a Draft Registration, got {}'.format(obj)
         auth = get_user_auth(request)
         node = Node.load(request.parser_context['kwargs']['node_id'])
+        return node.has_permission(auth.user, osf_permissions.ADMIN)
+
+
+class IsAdminOrReviewer(permissions.BasePermission):
+    """
+    Prereg admins can update draft registrations.
+    """
+    def has_object_permission(self, request, view, obj):
+        assert isinstance(obj, (Node, DraftRegistration)), 'obj must be a Node or a Draft Registration, got {}'.format(obj)
+        auth = get_user_auth(request)
+        node = Node.load(request.parser_context['kwargs']['node_id'])
+        if request.method != 'DELETE' and is_prereg_admin(auth.user):
+            return True
         return node.has_permission(auth.user, osf_permissions.ADMIN)
 
 

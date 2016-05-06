@@ -42,6 +42,7 @@ from api.nodes.permissions import (
     ContributorOrPublicForPointers,
     ContributorDetailPermissions,
     ReadOnlyIfRegistration,
+    IsAdminOrReviewer,
     ExcludeRetractions,
 )
 from api.logs.serializers import NodeLogSerializer
@@ -742,11 +743,9 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
 
      <!--- Copied from NodeDraftRegistrationDetail -->
 
-    Draft registrations are created and edited incrementally until the user is ready to submit. A registration
+    Draft registrations contain the supplemental registration questions that accompany a registration.  A registration
     is a frozen version of the project that can never be edited or deleted but can be withdrawn.
     Your original project remains editable but will now have the registration linked to it.
-
-    A draft registration has an associated registration form with supplemental questions about the registration.
 
     ###Permissions
 
@@ -834,12 +833,9 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
 class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, DraftMixin):
     """Details about a given draft registration. *Writeable*.
 
-    Draft registrations are created and edited incrementally until the user is ready to submit. A registration
+    Draft registrations contain the supplemental registration questions that accompany a registration.  A registration
     is a frozen version of the project that can never be edited or deleted but can be withdrawn.
     Your original project remains editable but will now have the registration linked to it.
-
-    A draft registration has an associated registration form with supplemental questions about the registration.  Drafts
-    cannot be created from registrations themselves.
 
     ###Permissions
 
@@ -909,7 +905,7 @@ class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestro
 
     """
     permission_classes = (
-        IsAdmin,
+        IsAdminOrReviewer,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope
     )
