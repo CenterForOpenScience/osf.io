@@ -6,7 +6,6 @@ var bootbox = require('bootbox');
 var ko = require('knockout');
 var oop = require('js/oop');
 var Raven = require('raven-js');
-var zxcvbn = require('zxcvbn');
 var ChangeMessageMixin = require('js/changeMessage');
 
 
