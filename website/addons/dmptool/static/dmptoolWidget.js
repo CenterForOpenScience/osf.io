@@ -8,6 +8,7 @@ var language = require('js/osfLanguage').Addons.dmptool;
 function ViewModel(url) {
     var self = this;
 
+    self.url = url;
     self.connected = ko.observable();
 
     // self.dmptool = ko.observable();
@@ -63,6 +64,14 @@ function ViewModel(url) {
             }, timeout);
         }
     };
+
+    self.renderPlan = function (plan) {
+
+        console.log(plan.id);
+        console.log(self.url);
+
+        $("#dmptool-output").html(plan.id);
+    }
 }
 
 // Public API

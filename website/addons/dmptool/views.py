@@ -313,5 +313,27 @@ def dmptool_get_widget_contents(node_addon, **kwargs):
         'dmptool_host': dmptool_host,
         'plans': plans,
         'connected': True,
+        'urls': {
+            'add_user_account': api_url_for('dmptool_add_user_account'),
+            # 'get_plan': api_url_for('dmptool_get_plan')
+        }
     })
     return {'data': data}, http.OK
+
+
+@must_have_addon(SHORT_NAME, 'user')
+@must_have_addon(SHORT_NAME, 'node')
+def dmptool_get_plan(node_addon, planid, **kwargs):
+    """Get plan for id"""
+
+    connection = client.connect_from_settings_or_401(node_addon)
+    try:
+        plan = connection.plans_full(id_=planid)
+    except:
+        plan = None
+
+    ret = {
+        'planid':planid,
+        'plan': plan
+    }
+    return ret, http.OK    

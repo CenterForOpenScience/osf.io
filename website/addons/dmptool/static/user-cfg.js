@@ -1,5 +1,5 @@
 var $osf = require('js/osfHelpers');
-var DmptoolViewModel = require('./dmptoolUserConfig.js').DmptoolViewModel;
+var DmptoolViewModel = require('./dmptoolUserConfig.js').dmptoolViewModel;
 
 // Endpoint for Dmptool user settings
 var url = '/api/v1/settings/dmptool/';
