@@ -36,18 +36,11 @@
                                 blur: trim.bind($data, password)
                             }"
                     >
-                    <p class="help-block" data-bind="validationMessage: password" style="display: none;"></p>
-                </div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="form-group">
-                <label class="col-sm-4 control-label">Strength</label>
-                <div class="col-sm-8">
                     <div class="progress create-password">
                         <div class="progress-bar progress-bar-success" role="progressbar" data-bind="attr: passwordComplexityBar"></div>
                     </div>
                     <p class="help-block" data-bind="text: passwordFeedback"></p>
+                    <p class="help-block" data-bind="validationMessage: password" style="display: none;"></p>
                 </div>
             </div>
         </div>
@@ -56,8 +49,8 @@
                 class="form-group"
                 data-bind="
                     css: {
-                        'has-error': password_confirmation() && !password_confirmation.isValid(),
-                        'has-success': password_confirmation() && password_confirmation.isValid()
+                        'has-error': passwordConfirmation() && !passwordConfirmation.isValid(),
+                        'has-success': passwordConfirmation() && passwordConfirmation.isValid()
                     }"
             >
                 <label for="resetPasswordConfirmation" class="col-sm-4 control-label">Verify New Password</label>
@@ -68,16 +61,16 @@
                         id="resetPasswordConfirmation"
                         placeholder="Verify Password"
                         data-bind="
-                            value: password_confirmation,
+                            value: passwordConfirmation,
                             event: {
-                                blur: trim.bind($data, password_confirmation)
+                                blur: trim.bind($data, passwordConfirmation)
                             }"
                     >
-                    <p class="help-block" data-bind="validationMessage: password_confirmation" style="display: none;"></p>
+                    <p class="help-block" data-bind="validationMessage: passwordConfirmation" style="display: none;"></p>
                 </div>
             </div>
         </div>
-            <button type="submit" class="btn btn-primary pull-right m-t-md">Reset password</button>
+        <button type="submit" class="btn btn-primary pull-right m-t-md">Reset password</button>
         </form>
     </div>
 </div>
