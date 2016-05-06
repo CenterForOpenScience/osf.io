@@ -7,7 +7,13 @@ var zxcvbn = require('zxcvbn');
 
 var $osf = require('./osfHelpers');
 
-var ViewModel = function(submitUrl, campaign) {
+
+// Accepts a few different types of arguments, depending on
+// the desired fields and type of password reset.
+// types:
+//    - signup: required fields for Name, email, email confirmation, password, and password strength
+//    - reset: fields for password, strength, and password confirmation
+var ViewModel = function(passwordViewType, submitUrl, campaign) {
 
     var self = this;
 
@@ -35,41 +41,65 @@ var ViewModel = function(submitUrl, campaign) {
         return $osf.valueProgressBar(self.passwordComplexity());
     });
 
-    self.fullName = ko.observable('').extend({
-        required: true,
-        minLength: 3
-    });
-    self.email1 = ko.observable('').extend({
-        required: true,
-        email: true
-    });
-    self.email2 = ko.observable('').extend({
-        required: true,
-        email: true,
-        validation: {
-            validator: function(val, other) {
-                return String(val).toLowerCase() === String(other).toLowerCase();
-            },
-            'message': 'Email addresses must match.',
-            params: self.email1
-        }
-    });
     self.password = ko.observable('').extend({
         required: true,
         minLength: 6,
         maxLength: 256,
         complexity: 2,
-        notEqual: self.email1
     });
+
     self.campaign = ko.observable(campaign);
 
     // Preserve object of validated fields for use in `submit`
     var validatedFields = {
-        fullName: self.fullName,
-        email1: self.email1,
-        email2: self.email2,
         password: self.password
     };
+
+    if (passwordViewType === 'reset') {
+        self.passwordConfirmation = ko.observable('').extend({
+            required: true,
+            validation: {
+                validator: function(val, other) {
+                    return String(val).toLowerCase() === String(other).toLowerCase();
+                },
+                'message': 'Passwords must match.',
+                params: self.password
+            }
+        });
+    }
+
+    // only include the following fields if the user is
+    // signing up for the first time
+    if (passwordViewType === 'signup') {
+
+        self.fullName = ko.observable('').extend({
+            required: true,
+            minLength: 3
+        });
+        self.email1 = ko.observable('').extend({
+            required: true,
+            email: true
+        });
+        self.email2 = ko.observable('').extend({
+            required: true,
+            email: true,
+            validation: {
+                validator: function(val, other) {
+                    return String(val).toLowerCase() === String(other).toLowerCase();
+                },
+                'message': 'Email addresses must match.',
+                params: self.email1
+            }
+        });
+
+        self.password.extend({notEqual: self.email1});
+
+        validatedFields.fullName = self.fullName;
+        validatedFields.email1 = self.email1;
+        validatedFields.eamil2 = self.email2;
+
+    }
+
     // Collect validated fields
     self.validatedFields = ko.validatedObservable($.extend({}, validatedFields));
 
@@ -137,8 +167,10 @@ var ViewModel = function(submitUrl, campaign) {
             });
             return false;
         }
-        // Else submit, and send Google Analytics event
-        window.ga('send', 'event', 'signupSubmit', 'click', 'new_user_submit');
+        // If it's a new signup, send Google Analytics event
+        if (passwordViewType === 'signup') {
+            window.ga('send', 'event', 'signupSubmit', 'click', 'new_user_submit');
+        }
         $osf.postJSON(
             submitUrl,
             ko.toJS(self)
@@ -153,9 +185,9 @@ var ViewModel = function(submitUrl, campaign) {
 
 };
 
-var SignUp = function(selector, submitUrl, campaign) {
-    this.viewModel = new ViewModel(submitUrl, campaign);
+var SetPassword = function(selector, passwordViewType, submitUrl, campaign) {
+    this.viewModel = new ViewModel(passwordViewType, submitUrl, campaign);
     $osf.applyBindings(this.viewModel, selector);
 };
 
-module.exports = SignUp;
+module.exports = SetPassword;
