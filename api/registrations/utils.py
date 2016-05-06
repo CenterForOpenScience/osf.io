@@ -179,3 +179,21 @@ COMMENTS_SCHEMA = {
         }
     }
 }
+def is_prereg_admin(user):
+    """
+    Returns true if user has reviewer permissions
+    """
+    if user is not None:
+        return PREREG_ADMIN_TAG in getattr(user, 'system_tags', [])
+    return False
+
+
+def is_prereg_admin_not_project_admin(request, draft):
+    """
+    Returns true if user is prereg admin, but not admin on project
+    """
+    user = request.user
+    is_project_admin = draft.branched_from.has_permission(user, osf_permissions.ADMIN)
+
+    return is_prereg_admin(user) and not is_project_admin
+
