@@ -147,11 +147,13 @@ var ProjectViewModel = function(data) {
     self.removeFromDashboard = function() {
         $('#removeDashboardFolder').tooltip('hide');
         self.inDashboard(false);
-        var deleteUrl = '/api/v1/folder/' + self.dashboard + '/pointer/' + self._id;
-        $.ajax({url: deleteUrl, type: 'DELETE'})
-            .fail(function() {
-                self.inDashboard(true);
-                osfHelpers.growl('Error', 'The project could not be removed', 'danger');
+        var deleteUrl = $osf.apiV2Url('collections/' + self.dashboard + '/relationships/linked_nodes/');
+        $osf.ajaxJSON('DELETE', deleteUrl, {
+            'data': {'data': [{'type':'linked_nodes', 'id': self._id}]},
+            'isCors': true
+        }).fail(function() {
+            self.inDashboard(true);
+            osfHelpers.growl('Error', 'The project could not be removed', 'danger');
         });
     };
 
@@ -213,7 +215,7 @@ var ProjectViewModel = function(data) {
             title: 'Create identifiers',
             message: '<p class="overflow">' +
                 'Are you sure you want to create a DOI and ARK for this ' +
-                self.nodeType + '?',
+                $osf.htmlEscape(self.nodeType) + '?',
             callback: function(confirmed) {
                 if (confirmed) {
                     self.createIdentifiers();

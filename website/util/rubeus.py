@@ -10,6 +10,7 @@ import hurry.filesize
 from framework import sentry
 from framework.auth.decorators import Auth
 
+from website import settings
 from website.util import paths
 from website.util import sanitize
 from website.settings import DISK_SAVING_MODE
@@ -266,21 +267,14 @@ def collect_addon_js(node, visited=None, filename='files.js', config_entry='file
     :return list: List of JavaScript include paths
 
     """
-    # NOTE: must coerce to list so it is JSON-serializable
-    visited = visited or []
-    visited.append(node._id)
-    js = set()
-    for addon in node.get_addons():
+    js = []
+    for addon_config in settings.ADDONS_AVAILABLE_DICT.values():
         # JS modules configured in each addon's __init__ file
-        js = js.union(addon.config.include_js.get(config_entry, []))
+        js.extend(addon_config.include_js.get(config_entry, []))
         # Webpack bundle
-        js_path = paths.resolve_addon_path(addon.config, filename)
+        js_path = paths.resolve_addon_path(addon_config, filename)
         if js_path:
-            js.add(js_path)
-    for each in node.nodes:
-        if each._id not in visited:
-            visited.append(each._id)
-            js = js.union(collect_addon_js(each, visited=visited))
+            js.append(js_path)
     return js
 
 
@@ -290,15 +284,10 @@ def collect_addon_css(node, visited=None):
     :return: List of CSS include paths
     :rtype: list
     """
-    visited = visited or []
-    visited.append(node._id)
-    css = set()
-    for addon in node.get_addons():
-        css = css.union(addon.config.include_css.get('files', []))
-    for each in node.nodes:
-        if each._id not in visited:
-            visited.append(each._id)
-            css = css.union(collect_addon_css(each, visited=visited))
+    css = []
+    for addon_config in settings.ADDONS_AVAILABLE_DICT.values():
+        # CSS modules configured in each addon's __init__ file
+        css.extend(addon_config.include_css.get('files', []))
     return css
 
 
