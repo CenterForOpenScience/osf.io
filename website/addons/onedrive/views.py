@@ -1,13 +1,11 @@
 """Views for the node settings page."""
 # -*- coding: utf-8 -*-
-import os
 import httplib as http
 
 import logging
 
 from flask import request
 from website.addons.onedrive.client import OneDriveClient
-from urllib3.exceptions import MaxRetryError
 
 from framework.exceptions import HTTPError, PermissionsError
 from framework.auth.decorators import must_be_logged_in
@@ -51,12 +49,10 @@ def onedrive_set_config(node_addon, user_addon, auth, **kwargs):
     """View for changing a node's linked onedrive folder."""
     folder = request.json.get('selected')
     serializer = OneDriveSerializer(node_settings=node_addon)
-    
-    logger.debug('folder::' +  repr(folder))
-    logger.debug('serializer::' +  repr(serializer))
 
-    uid = folder['id']
-    
+    logger.debug('folder::' + repr(folder))
+    logger.debug('serializer::' + repr(serializer))
+
     name = folder['name']
 
     node_addon.set_folder(folder, auth=auth)
@@ -64,8 +60,8 @@ def onedrive_set_config(node_addon, user_addon, auth, **kwargs):
     return {
         'result': {
             'folder': {
-                'name': name, 
-                'path': name,  
+                'name': name,
+                'path': name,
             },
             'urls': serializer.addon_serialized_urls,
         },
@@ -142,15 +138,12 @@ def onedrive_folder_list(node_addon, **kwargs):
 
     node = node_addon.owner
     folder_id = request.args.get('folderId')
-    logger.debug('oauth_provider::' +  repr(node_addon.oauth_provider))
-    logger.debug('fetch_access_token::' +  repr(node_addon))
-    logger.debug('node_addon.external_account::' +  repr(node_addon.external_account))
-    logger.debug('node_addon.external_account::oauth_key' +  repr(node_addon.external_account.oauth_key))
-#     logger.debug('node_addon.external_account::access_token' +  repr(node_addon.external_account.access_token)) #exception - no access token
-    logger.debug('node_addon.external_account::expires_at' +  repr(node_addon.external_account.refresh_token)) 
-    logger.debug('node_addon.external_account::expires_at' +  repr(node_addon.external_account.expires_at)) #
-#     raise ValueError('node_addon.external_account::oauth_key' +  repr(node_addon.external_account.oauth_key))
-    
+    logger.debug('oauth_provider::' + repr(node_addon.oauth_provider))
+    logger.debug('fetch_access_token::' + repr(node_addon))
+    logger.debug('node_addon.external_account::' + repr(node_addon.external_account))
+    logger.debug('node_addon.external_account::oauth_key' + repr(node_addon.external_account.oauth_key))
+    logger.debug('node_addon.external_account::expires_at' + repr(node_addon.external_account.refresh_token))
+    logger.debug('node_addon.external_account::expires_at' + repr(node_addon.external_account.expires_at))
 
     if folder_id is None:
         return [{
@@ -163,16 +156,16 @@ def onedrive_folder_list(node_addon, **kwargs):
                 'folders': node.api_url_for('onedrive_folder_list', folderId=0),
             }
         }]
-        
+
     if folder_id == '0':
-        folder_id = 'root'        
+        folder_id = 'root'
 
     access_token = node_addon.fetch_access_token()
-    logger.debug('access_token::' +  repr(access_token))
-    
-    oneDriveClient = OneDriveClient(access_token)#node_addon.external_account.refresh_token)
+    logger.debug('access_token::' + repr(access_token))
+
+    oneDriveClient = OneDriveClient(access_token)
     items = oneDriveClient.folders(folder_id)
-    logger.debug('folders::' +  repr(items))
+    logger.debug('folders::' + repr(items))
 
     return [
         {
@@ -180,11 +173,11 @@ def onedrive_folder_list(node_addon, **kwargs):
             'kind': 'folder',
             'id': item['id'],
             'name': item['name'],
-            'path': item['name'], #os.path.join(folder_path, item['name']),
+            'path': item['name'],
             'urls': {
                 'folders': node.api_url_for('onedrive_folder_list', folderId=item['id']),
             }
         }
         for item in items
-        
+
     ]
