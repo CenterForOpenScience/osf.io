@@ -6,7 +6,6 @@ from datetime import datetime
 from modularodm import fields
 
 from framework.auth import Auth
-from framework.exceptions import HTTPError
 
 from website.addons.base import exceptions
 from website.addons.base import AddonOAuthUserSettingsBase, AddonOAuthNodeSettingsBase
@@ -229,7 +228,6 @@ class OneDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     def fetch_access_token(self):
         return self.api.fetch_access_token()
-
 
     ##### Callback overrides #####
     def after_delete(self, node=None, user=None):
