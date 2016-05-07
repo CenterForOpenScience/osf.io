@@ -1,12 +1,7 @@
 # -*- coding: utf-8 -*-
-import time
 import logging
-from datetime import datetime
 
 from website.util import rubeus
-
-from website.addons.onedrive import settings
-
 
 logger = logging.getLogger(__name__)
 
