@@ -27,12 +27,12 @@ class OneDriveAuthClient(BaseClient):
                 'expires_in': '-30',
             }
         )
- 
+
         extra = {
             'client_id': settings.ONEDRIVE_KEY,
             'client_secret': settings.ONEDRIVE_SECRET,
         }
- 
+
         try:
             return client.refresh_token(
                 self._build_url(settings.ONEDRIVE_OAUTH_TOKEN_ENDPOINT),
@@ -41,7 +41,7 @@ class OneDriveAuthClient(BaseClient):
             )
         except InvalidGrantError:
             raise exceptions.InvalidAuthError()
-        
+
     def user_info(self, access_token):
         return self._make_request(
             'GET',
@@ -49,7 +49,7 @@ class OneDriveAuthClient(BaseClient):
             params={'access_token': access_token},
             expects=(200, ),
             throws=HTTPError(401)
-        ).json()        
+        ).json()
 
 
 class OneDriveClient(BaseClient):
@@ -77,13 +77,13 @@ class OneDriveClient(BaseClient):
 
         if folder_id != 'root':
             folder_id = "items/{}".format(folder_id)
-            
+
         logger.debug('folders::made it1')
         logger.debug('URLs:' + self._build_url(settings.ONEDRIVE_API_URL, 'drive/', folder_id, '/children/'))
         res = self._make_request(
             'GET',
             self._build_url(settings.ONEDRIVE_API_URL, 'drive/', folder_id, '/children/'),
-            params={'filter': query}, 
+            params={'filter': query},
             expects=(200, ),
             throws=HTTPError(401)
         )
