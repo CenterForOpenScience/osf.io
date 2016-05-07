@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
-import requests
 
-from flask import abort, request
 from datetime import datetime
 
 from modularodm import fields
@@ -42,7 +40,7 @@ class OneDrive(ExternalProvider):
     _auth_client = OneDriveAuthClient()
     _drive_client = OneDriveClient()
 
-    def handle_callback(self, response):        
+    def handle_callback(self, response):
         """View called when the Oauth flow is completed. Adds a new OneDriveUserSettings
         record to the user and saves the user's access token and account info.
         """
@@ -69,7 +67,7 @@ class OneDrive(ExternalProvider):
             return token
         else:
             return False
-        
+
     def fetch_access_token(self, force_refresh=False):
         self.refresh_access_token(force=force_refresh)
         return self.account.oauth_key
