@@ -10,16 +10,16 @@
                 <dl class="dl-horizontal dl-dataverse" style="white-space: normal">
 
                     <dt>Dataset</dt>
-                    <dd>{{ dataset }}</dd>
+                    <dd data-bind="text: dataset"></dd>
 
                     <dt>Global ID</dt>
-                    <dd><a data-bind="attr: {href: datasetUrl}">{{ doi }}</a></dd>
+                    <dd><a data-bind="attr: {href: datasetUrl}, text: doi"></a></dd>
 
                     <dt>Dataverse</dt>
-                    <dd><a data-bind="attr: {href: dataverseUrl}">{{ dataverse }} Dataverse</a></dd>
+                    <dd><a data-bind="attr: {href: dataverseUrl}"><span data-bind="text: dataverse"></span> Dataverse</a></dd>
 
                     <dt>Citation</dt>
-                    <dd>{{ citation }}</dd>
+                    <dd data-bind="text: citation"></dd>
 
                 </dl>
             </span>

@@ -22,8 +22,8 @@ var GrowlBox = require('js/growlBox');
  * @param {String} type One of 'success', 'info', 'warning', or 'danger'. Defaults to danger.
  *
  */
-var growl = function(title, message, type) {
-    new GrowlBox(title, message, type || 'danger');
+var growl = function(title, message, type, delay) {
+    new GrowlBox(title, message, type || 'danger', delay);
 };
 
 
@@ -252,6 +252,7 @@ var joinPrompts = function(prompts, base) {
     if (prompts.length !==0) {
         prompt += '<hr />';
         prompt += '<ul>';
+        // Assumes prompts are pre-escaped before constructing this string
         for (var i=0; i<prompts.length; i++) {
             prompt += '<li>' + prompts[i] + '</li>';
         }
@@ -473,7 +474,12 @@ var hasTimeComponent = function(dateString) {
   * A date object with two formats: local time or UTC time.
   * @param {String} date The original date as a string. Should be an standard
   *                      format such as RFC or ISO. If the date is a datetime string
-  *                      with no offset, an offset of UTC +00:00 will be assumed
+  *                      with no offset, an offset of UTC +00:00 will be assumed. However,
+  *                      if the date is just a date (no time component), the time
+  *                      component will be set to midnight local time.  Ergo, if date
+  *                      is '2016-04-08' the imputed time will be '2016-04-08 04:00 UTC'
+  *                      if run in EDT. But if date is '2016-04-08:00:00:00.000' it will
+  *                      always be '2016-04-08 00:00 UTC', regardless of the local timezone.
   */
 var LOCAL_DATEFORMAT = 'YYYY-MM-DD hh:mm A';
 var UTC_DATEFORMAT = 'YYYY-MM-DD HH:mm UTC';
@@ -572,44 +578,6 @@ function humanFileSize(bytes, si) {
 }
 
 /**
- * take treebeard tree structure of nodes and get a dictionary of parent node and all its
- * children
- */
-function getNodesOriginal(nodeTree, nodesOriginal) {
-    var i;
-    var j;
-    var adminContributors = [];
-    var registeredContributors = [];
-    var nodeId = nodeTree.node.id;
-    for (i=0; i < nodeTree.node.contributors.length; i++) {
-        if (nodeTree.node.contributors[i].is_admin) {
-            adminContributors.push(nodeTree.node.contributors[i].id);
-        }
-        if (nodeTree.node.contributors[i].is_confirmed) {
-            registeredContributors.push(nodeTree.node.contributors[i].id);
-        }
-    }
-    nodesOriginal[nodeId] = {
-        public: nodeTree.node.is_public,
-        id: nodeTree.node.id,
-        title: nodeTree.node.title,
-        contributors: nodeTree.node.contributors,
-        isAdmin: nodeTree.node.is_admin,
-        visibleContributors: nodeTree.node.visible_contributors,
-        adminContributors: adminContributors,
-        registeredContributors: registeredContributors
-    };
-
-    if (nodeTree.children) {
-        for (j in nodeTree.children) {
-            nodesOriginal = getNodesOriginal(nodeTree.children[j], nodesOriginal);
-        }
-    }
-    return nodesOriginal;
-}
-
-
-/**
 *  returns a random name from this list to use as a confirmation string
 */
 var _confirmationString = function() {
@@ -679,7 +647,7 @@ var isSafari = function(userAgent) {
   * Confirm a dangerous action by requiring the user to enter specific text
   *
   * This is an abstraction over bootbox, and passes most options through to
-  * bootbox.dailog(). The exception to this is `callback`, which is called only
+  * bootbox.dialog(). The exception to this is `callback`, which is called only
   * if the user correctly confirms the action.
   *
   * @param  {Object} options
@@ -729,7 +697,7 @@ var confirmDangerousAction = function (options) {
 
     bootboxOptions.message += [
         '<p>Type the following to continue: <strong>',
-        confirmationString,
+        htmlEscape(confirmationString),
         '</strong></p>',
         '<input id="bbConfirmText" class="form-control">'
     ].join('');
@@ -840,6 +808,54 @@ var dialog = function(title, message, actionButtonLabel, options) {
     return ret.promise();
 };
 
+// Formats contributor family names for display.  Takes in project, number of contributors, and getFamilyName function
+var contribNameFormat = function(node, number, getFamilyName) {
+    if (number === 1) {
+        return getFamilyName(0, node);
+    }
+    else if (number === 2) {
+        return getFamilyName(0, node) + ' and ' +
+            getFamilyName(1, node);
+    }
+    else if (number === 3) {
+        return getFamilyName(0, node) + ', ' +
+            getFamilyName(1, node) + ', and ' +
+            getFamilyName(2, node);
+    }
+    else {
+        return getFamilyName(0, node) + ', ' +
+            getFamilyName(1, node) + ', ' +
+            getFamilyName(2, node) + ' + ' + (number - 3);
+    }
+};
+
+// Returns single name representing contributor, First match found of family name, given name, middle names, full name.
+var findContribName = function (userAttributes) {
+    var names = [userAttributes.family_name, userAttributes.given_name, userAttributes.middle_names, userAttributes.full_name];
+    for (var n = 0; n < names.length; n++) {
+        if (names[n]) {
+            return names[n];
+        }
+    }
+};
+
+var trackClick = function(category, action, label){
+    window.ga('send', 'event', category, action, label);
+    //in order to make the href redirect work under knockout onclick binding
+    return true;
+};
+
+
+// Call a function when scrolled to the bottom of the element
+/// Useful for triggering an event at the bottom of a window, like infinite scroll
+function onScrollToBottom(element, callback) {
+    $(element).scroll(function() {
+        var $this = $(this);
+        if ($this.scrollTop() + $this.innerHeight() >= $this[0].scrollHeight) {
+            callback();
+        }
+    });
+}
 
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
@@ -862,7 +878,6 @@ module.exports = window.$.osf = {
     trackPiwik: trackPiwik,
     applyBindings: applyBindings,
     FormattableDate: FormattableDate,
-    getNodesOriginal: getNodesOriginal,
     throttle: throttle,
     debounce: debounce,
     htmlEscape: htmlEscape,
@@ -877,5 +892,9 @@ module.exports = window.$.osf = {
     indexOf: indexOf,
     currentUser: currentUser,
     any: any,
-    dialog: dialog
+    dialog: dialog,
+    contribNameFormat: contribNameFormat,
+    trackClick: trackClick,
+    findContribName: findContribName,
+    onScrollToBottom: onScrollToBottom
 };

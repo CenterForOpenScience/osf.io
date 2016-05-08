@@ -1,5 +1,5 @@
 <script type="text/html" id="commentTemplate">
-    <div class="comment-container" data-bind="if: shouldShow, attr:{id: id}">
+    <div class="comment-container" data-bind="attr:{id: id}">
 
         <div class="comment-body m-b-sm p-sm osf-box">
              <div data-bind="visible: loading">
@@ -36,10 +36,10 @@
                     <div class="comment-info">
                         <form class="form-inline">
                             <span data-bind="if: author.gravatarUrl">
-                                <img data-bind="css: {comment-gravatar: author.gravatarUrl}, attr: {src: author.gravatarUrl}"/>
+                                <img data-bind="css: {'comment-gravatar': author.gravatarUrl}, attr: {src: author.gravatarUrl}"/>
                             </span>
                             <span data-bind="if: author.id">
-                                <a class="comment-author" data-bind="text: author.fullname, attr: {href: author.url}"></a>
+                                <a class="comment-author" data-bind="text: author.fullname, attr: {href: author.urls.profile}"></a>
                             </span>
                             <span data-bind="ifnot: author.id">
                                 <span class="comment-author" data-bind="text: author.fullname"></span>
@@ -83,7 +83,7 @@
 
                     <div>
 
-                        <span class="text-danger">{{errorMessage}}</span>
+                        <span class="text-danger" data-bind="text: errorMessage"></span>
 
                         <span>&nbsp;</span>
 
@@ -142,7 +142,7 @@
                     <div class="clearfix">
                         <div class="pull-right">
                             <a class="btn btn-default btn-sm" data-bind="click: cancelReply, css: {disabled: submittingReply}"> Cancel</a>
-                            <a class="btn btn-success btn-sm" data-bind="click: submitReply, visible: replyNotEmpty, css: {disabled: submittingReply}"> {{commentButtonText}}</a>
+                            <a class="btn btn-success btn-sm" data-bind="click: submitReply, visible: replyNotEmpty, css: {disabled: submittingReply}, text: commentButtonText"></a>
                             <span data-bind="text: replyErrorMessage" class="text-danger"></span>
                         </div>
                     </div>
@@ -152,6 +152,11 @@
 
             <!-- ko if: showChildren() -->
                 <!-- ko template: {name:  'commentTemplate', foreach: comments} -->
+                <!-- /ko -->
+                <!-- ko if: urlForNext() -->
+                <div class="row">
+                    <button class="btn btn-link pull-right more-replies" type="button" data-bind="click: getMoreComments">More replies</button>
+                </div>
                 <!-- /ko -->
             <!-- /ko -->
 

@@ -1,6 +1,6 @@
 import logging
 
-from framework.tasks.handlers import enqueue_task
+from framework.celery_tasks.handlers import enqueue_task
 
 from website import settings
 from website.search import share_search
@@ -67,6 +67,11 @@ def update_user(user, index=None):
 def update_file(file_, index=None, delete=False):
     index = index or settings.ELASTIC_INDEX
     search_engine.update_file(file_, index=index, delete=delete)
+
+@requires_search
+def update_institution(institution, index=None):
+    index = index or settings.ELASTIC_INDEX
+    search_engine.update_institution(institution, index=index)
 
 @requires_search
 def delete_all():

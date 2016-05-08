@@ -17,12 +17,14 @@ from invoke import run, Collection
 from website import settings
 from admin import tasks as admin_tasks
 from utils import pip_install, bin_prefix
+from scripts.meta import gatherer
 
 logging.getLogger('invoke').setLevel(logging.CRITICAL)
 
 # gets the root path for all the scripts that rely on it
 HERE = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 WHEELHOUSE_PATH = os.environ.get('WHEELHOUSE')
+CONSTRAINTS_PATH = os.path.join(HERE, 'requirements', 'constraints.txt')
 
 try:
     __import__('rednose')
@@ -51,9 +53,12 @@ def task(*args, **kwargs):
 
 
 @task
-def server(host=None, port=5000, debug=True, live=False):
+def server(host=None, port=5000, debug=True, live=False, gitlogs=False):
     """Run the app server."""
+    if gitlogs:
+        git_logs()
     from website.app import init_app
+    os.environ['DJANGO_SETTINGS_MODULE'] = 'api.base.settings'
     app = init_app(set_backends=True, routes=True)
     settings.API_SERVER_PORT = port
 
@@ -65,12 +70,16 @@ def server(host=None, port=5000, debug=True, live=False):
     else:
         app.run(host=host, port=port, debug=debug, threaded=debug, extra_files=[settings.ASSET_HASH_PATH])
 
+@task
+def git_logs():
+    gatherer.main()
+
 
 @task
 def apiserver(port=8000, wait=True):
     """Run the API server."""
-    env = {"DJANGO_SETTINGS_MODULE": "api.base.settings"}
-    cmd = '{}={} exec  {} manage.py runserver {} --nothreading'.format(env.keys()[0], env[env.keys()[0]], sys.executable, port)
+    env = os.environ.copy()
+    cmd = 'DJANGO_SETTINGS_MODULE=api.base.settings {} manage.py runserver {} --nothreading'.format(sys.executable, port)
     if wait:
         return run(cmd, echo=True, pty=True)
     from subprocess import Popen
@@ -338,7 +347,7 @@ def sharejs(host=None, port=None, db_url=None, cors_allow_origin=None):
 @task(aliases=['celery'])
 def celery_worker(level="debug", hostname=None, beat=False):
     """Run the Celery process."""
-    cmd = 'celery worker -A framework.tasks -l {0}'.format(level)
+    cmd = 'celery worker -A framework.celery_tasks -l {0}'.format(level)
     if hostname:
         cmd = cmd + ' --hostname={}'.format(hostname)
     # beat sets up a cron like scheduler, refer to website/settings
@@ -351,7 +360,7 @@ def celery_worker(level="debug", hostname=None, beat=False):
 def celery_beat(level="debug", schedule=None):
     """Run the Celery process."""
     # beat sets up a cron like scheduler, refer to website/settings
-    cmd = 'celery beat -A framework.tasks -l {0}'.format(level)
+    cmd = 'celery beat -A framework.celery_tasks -l {0}'.format(level)
     if schedule:
         cmd = cmd + ' --schedule={}'.format(schedule)
     run(bin_prefix(cmd), pty=True)
@@ -418,28 +427,54 @@ def flake():
 
 
 @task(aliases=['req'])
-def requirements(addons=False, release=False, dev=False, metrics=False):
+def requirements(base=False, addons=False, release=False, dev=False, metrics=False, quick=False):
     """Install python dependencies.
 
     Examples:
+        inv requirements
+        inv requirements --quick
 
-        inv requirements --dev
-        inv requirements --addons
-        inv requirements --release
-        inv requirements --metrics
+    Quick requirements are, in order, addons, dev and the base requirements. You should be able to use --quick for
+    day to day development.
+
+    By default, base requirements will run. However, if any set of addons, release, dev, or metrics are chosen, base
+    will have to be mentioned explicitly in order to run. This is to remain compatible with previous usages. Release
+    requirements will prevent dev, metrics, and base from running.
     """
+    if quick:
+        base = True
+        addons = True
+        dev = True
+    if not(addons or dev or metrics):
+        base = True
     if release or addons:
         addon_requirements()
     # "release" takes precedence
     if release:
         req_file = os.path.join(HERE, 'requirements', 'release.txt')
-    elif dev:  # then dev requirements
-        req_file = os.path.join(HERE, 'requirements', 'dev.txt')
-    elif metrics:  # then dev requirements
-        req_file = os.path.join(HERE, 'requirements', 'metrics.txt')
-    else:  # then base requirements
-        req_file = os.path.join(HERE, 'requirements.txt')
-    run(pip_install(req_file), echo=True)
+        run(
+            pip_install(req_file, constraints_file=CONSTRAINTS_PATH),
+            echo=True
+        )
+    else:
+        if dev:  # then dev requirements
+            req_file = os.path.join(HERE, 'requirements', 'dev.txt')
+            run(
+                pip_install(req_file, constraints_file=CONSTRAINTS_PATH),
+                echo=True
+            )
+        if metrics:  # then dev requirements
+            req_file = os.path.join(HERE, 'requirements', 'metrics.txt')
+            run(
+                pip_install(req_file, constraints_file=CONSTRAINTS_PATH),
+                echo=True
+            )
+        if base:  # then base requirements
+            req_file = os.path.join(HERE, 'requirements.txt')
+            run(
+                pip_install(req_file, constraints_file=CONSTRAINTS_PATH),
+                echo=True
+            )
 
 
 @task
@@ -468,12 +503,8 @@ def test_admin():
     """Run the Admin test suite."""
     # test_module(module="admin_tests/")
     module = "admin_tests/"
-    verbosity = 0
     module_fmt = ' '.join(module) if isinstance(module, list) else module
-    args = " --verbosity={0} -s {1}".format(verbosity, module_fmt)
-    env = 'DJANGO_SETTINGS_MODULE="admin.base.settings" '
-    # Use pty so the process buffers "correctly"
-    run(env + bin_prefix(TEST_CMD) + args, pty=True)
+    admin_tasks.manage('test {}'.format(module_fmt))
 
 @task
 def test_varnish():
@@ -555,7 +586,7 @@ def karma(single=False, sauce=False, browsers=None):
 
 @task
 def wheelhouse(addons=False, release=False, dev=False, metrics=False):
-    """Install python dependencies.
+    """Build wheels for python dependencies.
 
     Examples:
 
@@ -589,18 +620,16 @@ def addon_requirements():
     """Install all addon requirements."""
     for directory in os.listdir(settings.ADDON_PATH):
         path = os.path.join(settings.ADDON_PATH, directory)
-        if os.path.isdir(path):
-            try:
-                requirements_file = os.path.join(path, 'requirements.txt')
-                open(requirements_file)
-                print('Installing requirements for {0}'.format(directory))
-                cmd = 'pip install --exists-action w --upgrade -r {0}'.format(requirements_file)
-                if WHEELHOUSE_PATH:
-                    cmd += ' --no-index --find-links={}'.format(WHEELHOUSE_PATH)
-                run(bin_prefix(cmd))
-            except IOError:
-                pass
-    print('Finished')
+
+        requirements_file = os.path.join(path, 'requirements.txt')
+        if os.path.isdir(path) and os.path.isfile(requirements_file):
+            print('Installing requirements for {0}'.format(directory))
+            run(
+                pip_install(requirements_file, constraints_file=CONSTRAINTS_PATH),
+                echo=True
+            )
+
+    print('Finished installing addon requirements')
 
 
 @task
@@ -708,24 +737,6 @@ def setup():
     # Build nodeCategories.json before building assets
     build_js_config_files(settings)
     assets(dev=True, watch=False)
-
-
-@task
-def analytics():
-    from website.app import init_app
-    import matplotlib
-    matplotlib.use('Agg')
-    init_app()
-    from scripts.analytics import (
-        logs, addons, comments, folders, links, watch, email_invites,
-        permissions, profile, benchmarks
-    )
-    modules = (
-        logs, addons, comments, folders, links, watch, email_invites,
-        permissions, profile, benchmarks
-    )
-    for module in modules:
-        module.main()
 
 
 @task

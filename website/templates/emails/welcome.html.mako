@@ -11,7 +11,7 @@
 
 Hello ${user.fullname},<br>
 <br>
-Thank you for verifying your OSF account, a free, open-source service maintained by the Center for Open Science. Here are a few things you can do with the OSF:<br>
+Thank you for verifying your OSF account, a free, open source service maintained by the Center for Open Science. Here are a few things you can do with the OSF:<br>
 <br>
 <h4>Store your files</h4>
 Archive your materials, data, manuscripts, or anything else associated with your research during the research process or after it is complete.<br>
@@ -35,7 +35,7 @@ GitHub, Dropbox, Google Drive, Box.com, Dataverse, figshare, Amazon S3, Mendeley
 Add your collaborators to have a shared environment for maintaining your research materials and data and never lose files again.<br>
 <br>
 <br>
-Learn more about the OSF at the <a href="https://osf.io/getting-started/">getting started page</a>, or email <a href="mailto:contact@osf.io">contact@osf.io</a> with questions for support.<br>
+Learn more about the OSF by reading the <a href="http://help.osf.io/">Guides</a>, or email <a href="mailto:contact@osf.io">contact@osf.io</a> with questions for support.<br>
 <br>
 Sincerely,<br>
 <br>

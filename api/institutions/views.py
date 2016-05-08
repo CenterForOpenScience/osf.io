@@ -1,20 +1,25 @@
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
+from rest_framework import status
+from rest_framework.response import Response
 
 from modularodm import Q
 
 from framework.auth.oauth_scopes import CoreScopes
 
-from website.models import Institution, Node, User
+from website.models import Node, User, Institution
 
 from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin
 from api.base.views import JSONAPIBaseView
+from api.base.serializers import JSONAPISerializer
 from api.base.utils import get_object_or_error
 from api.nodes.serializers import NodeSerializer
 from api.users.serializers import UserSerializer
 
+from .authentication import InstitutionAuthentication
 from .serializers import InstitutionSerializer
+
 
 class InstitutionMixin(object):
     """Mixin with convenience method get_institution
@@ -24,11 +29,12 @@ class InstitutionMixin(object):
 
     def get_institution(self):
         inst = get_object_or_error(
-            Institution,
-            self.kwargs[self.institution_lookup_url_kwarg],
-            display_name='institution'
+            Node,
+            Q('institution_id', 'eq', self.kwargs[self.institution_lookup_url_kwarg]),
+            display_name='institution',
+            allow_institution=True
         )
-        return inst
+        return Institution(inst)
 
 
 class InstitutionList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
@@ -137,28 +143,31 @@ class InstitutionNodeList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
     view_category = 'institutions'
     view_name = 'institution-nodes'
 
+    ordering = ('-date_modified', )
+
     base_node_query = (
         Q('is_deleted', 'ne', True) &
         Q('is_folder', 'ne', True) &
-        Q('is_registration', 'eq', False)
+        Q('is_registration', 'eq', False) &
+        Q('parent_node', 'eq', None)
     )
+
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
-        inst = self.get_institution()
-        inst_query = Q('primary_institution', 'eq', inst)
         base_query = self.base_node_query
         user = self.request.user
         permission_query = Q('is_public', 'eq', True)
         if not user.is_anonymous():
             permission_query = (permission_query | Q('contributors', 'eq', user._id))
 
-        query = base_query & permission_query & inst_query
+        query = base_query & permission_query
         return query
 
     # overrides RetrieveAPIView
     def get_queryset(self):
+        inst = self.get_institution()
         query = self.get_query_from_request()
-        return Node.find(query)
+        return Node.find_by_institution(inst, query)
 
 
 class InstitutionUserList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView, InstitutionMixin):
@@ -180,13 +189,31 @@ class InstitutionUserList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
         inst = self.get_institution()
-        query = Q('affiliated_institutions', 'eq', inst)
+        query = Q('_affiliated_institutions', 'eq', inst.node)
         return query
 
     # overrides RetrieveAPIView
     def get_queryset(self):
         query = self.get_query_from_request()
         return User.find(query)
+
+
+class InstitutionAuth(JSONAPIBaseView, generics.CreateAPIView):
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        base_permissions.TokenHasScope,
+    )
+
+    serializer_class = JSONAPISerializer
+
+    required_read_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.NULL]
+    authentication_classes = (InstitutionAuthentication, )
+    view_category = 'institutions'
+    view_name = 'institution-auth'
+
+    def post(self, request, *args, **kwargs):
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class InstitutionRegistrationList(InstitutionNodeList):
@@ -200,3 +227,11 @@ class InstitutionRegistrationList(InstitutionNodeList):
         Q('is_folder', 'ne', True) &
         Q('is_registration', 'eq', True)
     )
+
+    ordering = ('-date_modified', )
+
+    def get_queryset(self):
+        inst = self.get_institution()
+        query = self.get_query_from_request()
+        nodes = list(Node.find_by_institution(inst, query))
+        return [node for node in nodes if not node.is_retracted]

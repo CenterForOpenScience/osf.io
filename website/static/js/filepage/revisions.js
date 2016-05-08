@@ -1,6 +1,6 @@
 var m = require('mithril');
 var $ = require('jquery');
-var bootbox = require('bootbox');
+var bootbox = require('bootbox');  // TODO: Why is this required? Is it?  See [#OSF-6100]
 var $osf = require('js/osfHelpers');
 var waterbutler = require('js/waterbutler');
 
@@ -90,6 +90,13 @@ var FileRevisionsTable = {
             });
         };
 
+
+        var popOver = function(element, isInit) {
+            if (!isInit) {
+                $(element).popover();
+            }
+        };
+
         self.getTableHead = function() {
             return m('thead', [
                 m('tr', [
@@ -97,10 +104,15 @@ var FileRevisionsTable = {
                     model.hasDate ? m('th', 'Date') : false,
                     model.hasUser ? m('th', 'User') : false,
                     m('th[colspan=2]', 'Download'),
-                    model.hasHashes ? m('th', 'MD5') : false,
-                    model.hasHashes ? m('th', 'SHA2') : false,
+                    model.hasHashes ? m('th', [
+                        'MD5 ', m('.fa.fa-question-circle[data-content="MD5 is an algorithm used to verify data integrity."][rel="popover"]' +
+                            '[data-placement="top"][data-trigger="hover"]', {config: popOver}) ]) : false,
+                    model.hasHashes ? m('th', [
+                        'SHA2 ', m('.fa.fa-question-circle[data-content="SHA-2 is a cryptographic hash function designed by the NSA used to verify data integrity."][rel="popover"]' +
+                            '[data-placement="top"][data-trigger="hover"]', {config: popOver}) ]) : false,
                 ].filter(TRUTHY))
             ]);
+
         };
 
         self.makeTableRow = function(revision, index) {

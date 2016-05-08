@@ -143,6 +143,7 @@ FORWARD_INVITE = Mail('forward_invite', subject='Please forward to ${fullname}')
 FORWARD_INVITE_REGISTERED = Mail('forward_invite_registered', subject='Please forward to ${fullname}')
 
 FORGOT_PASSWORD = Mail('forgot_password', subject='Reset Password')
+PASSWORD_RESET = Mail('password_reset', subject='Your OSF password has been reset')
 PENDING_VERIFICATION = Mail('pending_invite', subject='Your account is almost ready!')
 PENDING_VERIFICATION_REGISTERED = Mail('pending_registered', subject='Received request to be a contributor')
 
@@ -174,11 +175,11 @@ TRANSACTIONAL = Mail(
 # Retraction related Mail objects
 PENDING_RETRACTION_ADMIN = Mail(
     'pending_retraction_admin',
-    subject='Retraction pending for one of your projects.'
+    subject='Withdrawal pending for one of your projects.'
 )
 PENDING_RETRACTION_NON_ADMIN = Mail(
     'pending_retraction_non_admin',
-    subject='Retraction pending for one of your projects.'
+    subject='Withdrawal pending for one of your projects.'
 )
 # Embargo related Mail objects
 PENDING_EMBARGO_ADMIN = Mail(
@@ -198,11 +199,19 @@ PENDING_REGISTRATION_NON_ADMIN = Mail(
     'pending_registration_non_admin',
     subject='Registration pending for one of your projects.'
 )
+PENDING_EMBARGO_TERMINATION_ADMIN = Mail(
+    'pending_embargo_termination_admin',
+    subject='Request to end an embargo early for one of your projects.'
+)
+PENDING_EMBARGO_TERMINATION_NON_ADMIN = Mail(
+    'pending_embargo_termination_non_admin',
+    subject='Request to end an embargo early for one of your projects.'
+)
+
 FILE_OPERATION_SUCCESS = Mail(
     'file_operation_success',
     subject='Your ${action} has finished',
 )
-
 FILE_OPERATION_FAILED = Mail(
     'file_operation_failed',
     subject='Your ${action} has failed',
@@ -254,6 +263,11 @@ ARCHIVE_SUCCESS = Mail(
 
 WELCOME = Mail(
     'welcome',
+    subject='Welcome to the Open Science Framework'
+)
+
+WELCOME_OSF4I = Mail(
+    'welcome_osf4i',
     subject='Welcome to the Open Science Framework'
 )
 

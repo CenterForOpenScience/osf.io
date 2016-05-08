@@ -13,9 +13,6 @@ cache:
     - node_modules
     - website/static/vendor/bower_components
 
-matrix:
-  fast_finish: true
-
 env:
   global:
     - PROJECT_DIR="$PWD"
@@ -24,7 +21,7 @@ env:
     - TOKUMX_ARCHIVE="tokumx-2.0.0-linux-x86_64-main.tar.gz"
     - ELASTICSEARCH_ARCHIVE="elasticsearch-1.5.0.tar.gz"
     - LIBJEMALLOC_DEB="libjemalloc1_3.5.1-2_amd64.deb"
-    - LIBPCRE_DEB="libpcre3_8.31-2ubuntu2.1_amd64.deb"
+    - LIBPCRE_DEB="libpcre3_8.31-2ubuntu2.3_amd64.deb"
     - VARNISH_DEB="varnish_4.1.0-1~trusty_amd64.deb"
   matrix:
     - TEST_BUILD="osf"
@@ -93,7 +90,10 @@ before_install:
     - |
       export LD_LIBRARY_PATH=/tmp/libpcre/lib/x86_64-linux-gnu:/tmp/libjemalloc/usr/lib/x86_64-linux-gnu:/tmp/varnish/usr/lib/varnish
       /tmp/varnish/usr/sbin/varnishd -n /tmp -p feature=+esi_disable_xml_check -p vmod_dir=/tmp/varnish/usr/lib/varnish/vmods -F -f $PROJECT_DIR/tests/test_files/varnish.vcl -a *:8080 > /dev/null &
-
+    - |
+      if [ "$TEST_BUILD" = "varnish" ]; then
+        export ENABLE_VARNISH=True
+      fi
 install:
     - cd $PROJECT_DIR
     - cp website/settings/local-travis.py website/settings/local.py

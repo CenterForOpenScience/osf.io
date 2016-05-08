@@ -30,9 +30,7 @@ from website import settings
 from website.addons.base.exceptions import InvalidAuthError
 from website.oauth.utils import PROVIDER_LOOKUP
 from website.security import random_string
-from website.util import web_url_for
-
-from api.base.utils import absolute_reverse
+from website.util import web_url_for, api_v2_url
 
 logger = logging.getLogger(__name__)
 
@@ -390,15 +388,15 @@ class ExternalProvider(object):
         """
         # Ensure this is an authenticated Provider that uses token refreshing
         if not (self.account and self.auto_refresh_url):
-            return
+            return False
 
         # Ensure this Provider is for a valid addon
         if not (self.client_id and self.client_secret):
-            return
+            return False
 
         # Ensure a refresh is needed
         if not (force or self._needs_refresh()):
-            return
+            return False
 
         resp_expiry_fn = resp_expiry_fn or (lambda x: datetime.datetime.utcfromtimestamp(time.time() + float(x['expires_in'])))
 
@@ -429,6 +427,7 @@ class ExternalProvider(object):
             self.account.refresh_token = token[resp_refresh_token_key]
             self.account.expires_at = resp_expiry_fn(token)
             self.account.save()
+            return True
 
     def _needs_refresh(self):
         """Determines whether or not an associated ExternalAccount needs
@@ -474,7 +473,6 @@ class ApiOAuth2Application(StoredObject):
                                     index=True)
 
     owner = fields.ForeignField('User',
-                                backref='created',
                                 index=True,
                                 required=True)
 
@@ -530,7 +528,8 @@ class ApiOAuth2Application(StoredObject):
     # Properties used by Django and DRF "Links: self" field
     @property
     def absolute_api_v2_url(self):
-        return absolute_reverse('applications:application-detail', kwargs={'client_id': self.client_id})
+        path = '/applications/{}/'.format(self.client_id)
+        return api_v2_url(path)
 
     # used by django and DRF
     def get_absolute_url(self):
@@ -548,10 +547,9 @@ class ApiOAuth2PersonalToken(StoredObject):
     # Name of the field being `token_id` is a CAS requirement.
     # This is the actual value of the token that's used to authenticate
     token_id = fields.StringField(default=functools.partial(random_string, length=70),
-                               unique=True)
+                                  unique=True)
 
     owner = fields.ForeignField('User',
-                                backref='created',
                                 index=True,
                                 required=True)
 
@@ -596,7 +594,8 @@ class ApiOAuth2PersonalToken(StoredObject):
     # Properties used by Django and DRF "Links: self" field
     @property
     def absolute_api_v2_url(self):
-        return absolute_reverse('tokens:token-detail', kwargs={'_id': self._id})
+        path = '/tokens/{}/'.format(self._id)
+        return api_v2_url(path)
 
     # used by django and DRF
     def get_absolute_url(self):

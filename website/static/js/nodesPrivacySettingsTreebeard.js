@@ -7,7 +7,6 @@ var Treebeard = require('treebeard');
 var $osf = require('js/osfHelpers');
 var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 
-
 function expandOnLoad() {
     var tb = this;  // jshint ignore: line
     for (var i = 0; i < tb.treeData.children.length; i++) {
@@ -66,6 +65,10 @@ function NodesPrivacyTreebeard(divID, data, nodesState, nodesOriginal) {
                 }
             ];
         },
+        onload : function () {
+            var tb = this;
+            expandOnLoad.call(tb);
+        },
         resolveRows: function nodesPrivacyResolveRows(item){
             var tb = this;
             var columns = [];
@@ -113,7 +116,5 @@ function NodesPrivacyTreebeard(divID, data, nodesState, nodesOriginal) {
         }
     });
     var grid = new Treebeard(tbOptions);
-    expandOnLoad.call(grid.tbController);
 }
 module.exports = NodesPrivacyTreebeard;
-

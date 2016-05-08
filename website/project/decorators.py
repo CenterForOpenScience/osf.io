@@ -86,10 +86,15 @@ def must_be_valid_project(func=None, retractions_valid=False):
 
             _inject_nodes(kwargs)
 
+            if getattr(kwargs['node'], 'is_collection', True):
+                raise HTTPError(
+                    http.NOT_FOUND
+                )
+
             if not retractions_valid and getattr(kwargs['node'].retraction, 'is_retracted', False):
                 raise HTTPError(
                     http.BAD_REQUEST,
-                    data=dict(message_long='Viewing retracted registrations is not permitted')
+                    data=dict(message_long='Viewing withdrawn registrations is not permitted')
                 )
             else:
                 return func(*args, **kwargs)

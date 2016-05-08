@@ -20,13 +20,13 @@ urlpatterns = [
     url(r'^(?P<node_id>\w+)/logs/$', views.NodeLogList.as_view(), name=views.NodeLogList.view_name),
     url(r'^(?P<node_id>\w+)/institution/$', views.NodeInstitutionDetail.as_view(), name=views.NodeInstitutionDetail.view_name),
     url(r'^(?P<node_id>\w+)/relationships/institution/$', views.NodeInstitutionRelationship.as_view(), name=views.NodeInstitutionRelationship.view_name),
+    url(r'^(?P<node_id>\w+)/node_links/$', views.NodeLinksList.as_view(), name=views.NodeLinksList.view_name),
+    url(r'^(?P<node_id>\w+)/node_links/(?P<node_link_id>\w+)/', views.NodeLinksDetail.as_view(), name=views.NodeLinksDetail.view_name),
 ]
 
 # Routes only active in local/staging environments
 if settings.DEV_MODE:
     urlpatterns.extend([
-        url(r'^(?P<node_id>\w+)/node_links/$', views.NodeLinksList.as_view(), name=views.NodeLinksList.view_name),
-        url(r'^(?P<node_id>\w+)/node_links/(?P<node_link_id>\w+)/', views.NodeLinksDetail.as_view(), name=views.NodeLinksDetail.view_name),
         url(r'^(?P<node_id>\w+)/registrations/$', views.NodeRegistrationsList.as_view(), name=views.NodeRegistrationsList.view_name),
 
         # Custom citations

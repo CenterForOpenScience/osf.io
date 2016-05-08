@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
-import os
+import datetime
 import mock
-import blinker
+import os
+import time
 import unittest
+
 from flask import Flask
 from nose.tools import *  # noqa (PEP8 asserts)
-import datetime
+import blinker
 
 from tests.base import OsfTestCase
 from tests.factories import RegistrationFactory
@@ -19,6 +21,7 @@ from website.util import paths
 from website.util.mimetype import get_mimetype
 from website.util import web_url_for, api_url_for, is_json_request, waterbutler_url_for, conjunct, api_v2_url
 from website.project import utils as project_utils
+from website.util.time import throttle_period_expired
 
 try:
     import magic  # noqa
@@ -27,6 +30,27 @@ except ImportError:
     LIBMAGIC_AVAILABLE = False
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+
+class TestTimeUtils(unittest.TestCase):
+    def test_throttle_period_expired_no_timestamp(self):
+        is_expired = throttle_period_expired(timestamp=None, throttle=30)
+        assert_true(is_expired)
+
+    def test_throttle_period_expired_using_datetime(self):
+        timestamp = datetime.datetime.utcnow()
+        is_expired = throttle_period_expired(timestamp=(timestamp + datetime.timedelta(seconds=29)),  throttle=30)
+        assert_false(is_expired)
+
+        is_expired = throttle_period_expired(timestamp=(timestamp - datetime.timedelta(seconds=31)),  throttle=30)
+        assert_true(is_expired)
+
+    def test_throttle_period_expired_using_timestamp_in_seconds(self):
+        timestamp = int(time.time())
+        is_expired = throttle_period_expired(timestamp=(timestamp + 29), throttle=30)
+        assert_false(is_expired)
+
+        is_expired = throttle_period_expired(timestamp=(timestamp - 31), throttle=30)
+        assert_true(is_expired)
 
 
 class TestUrlForHelpers(unittest.TestCase):
@@ -76,12 +100,6 @@ class TestUrlForHelpers(unittest.TestCase):
                               base_route='http://localhost:8000/',
                               base_prefix='v2/')
         assert_equal(full_url, "http://localhost:8000/v2/nodes/abcd3/contributors/")
-
-        # User is still responsible for the trailing slash. If they omit it, it doesn't appear at end of URL
-        full_url = api_v2_url('/nodes/abcd3/contributors',
-                              base_route='http://localhost:8000/',
-                              base_prefix='v2/')
-        assert_not_equal(full_url, "http://localhost:8000/v2/nodes/abcd3/contributors/")
 
     def test_api_v2_url_with_params(self):
         """Handles- and encodes- URLs with parameters (dict and kwarg) correctly"""
@@ -412,10 +430,10 @@ class TestSignalUtils(unittest.TestCase):
     def test_signal(self):
         self.signal_.connect(self.listener)
         self.signal_.send()
-        self.mock_listener.assert_called()
+        assert_true(self.mock_listener.called)
 
     def test_temporary_disconnect(self):
         self.signal_.connect(self.listener)
         with util.disconnected_from(self.signal_, self.listener):
             self.signal_.send()
-        self.mock_listener.assert_not_called()
+        assert_false(self.mock_listener.called)

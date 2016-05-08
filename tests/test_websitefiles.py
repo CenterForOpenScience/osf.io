@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
-import mock
 import datetime
+
 from nose.tools import *  # noqa
+import mock
 from modularodm import Q
+
 from website.files import utils
 from website.files import models
 from website.files import exceptions
+from website.models import Guid
 
 from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory, ProjectFactory
@@ -118,6 +121,40 @@ class TestFileNodeObj(FilesTestCase):
 
         assert_equals(found.name, 'kerp')
         assert_equals(found.materialized_path, 'crazypath')
+
+    def test_get_file_guids(self):
+        created = TestFile.get_or_create(self.node, 'Path')
+        created.name = 'kerp'
+        created.materialized_path = '/Path'
+        created.get_guid(create=True)
+        created.save()
+        file_guids = TestFile.get_file_guids(materialized_path=created.materialized_path,
+                                             provider=created.provider,
+                                             node=self.node)
+        assert_in(created.get_guid()._id, file_guids)
+
+    def test_get_file_guids_with_folder_path(self):
+        created = TestFile.get_or_create(self.node, 'folder/Path')
+        created.name = 'kerp'
+        created.materialized_path = '/folder/Path'
+        created.get_guid(create=True)
+        created.save()
+        file_guids = TestFile.get_file_guids(materialized_path='folder/',
+                                             provider=created.provider,
+                                             node=self.node)
+        assert_in(created.get_guid()._id, file_guids)
+
+    def test_get_file_guids_with_folder_path_does_not_include_deleted_files(self):
+        created = TestFile.get_or_create(self.node, 'folder/Path')
+        created.name = 'kerp'
+        created.materialized_path = '/folder/Path'
+        guid = created.get_guid(create=True)
+        created.save()
+        created.delete()
+        file_guids = TestFile.get_file_guids(materialized_path='folder/',
+                                             provider=created.provider,
+                                             node=self.node)
+        assert_not_in(guid._id, file_guids)
 
     def test_kind(self):
         assert_equals(TestFile().kind, 'file')
@@ -320,14 +357,22 @@ class TestFileNodeObj(FilesTestCase):
             materialized_path='/long/path/to/name',
         ).wrapped()
 
+        guid = Guid.generate(fn)
+
         before = fn.to_storage()
         trashed = fn.delete(user=self.user)
 
+        restored = trashed.restore()
         assert_equal(
-            trashed.restore().to_storage(),
+            restored.to_storage(),
             before
         )
+
         assert_equal(models.TrashedFileNode.load(trashed._id), None)
+
+        # Guid is repointed
+        guid.reload()
+        assert_equal(guid.referent, restored)
 
     def test_restore_folder(self):
         root = models.StoredFileNode(

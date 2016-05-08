@@ -127,15 +127,7 @@ def before_request():
         service_url = furl.furl(request.url)
         service_url.args.pop('ticket')
         # Attempt autn wih CAS, and return a proper redirect response
-        resp = cas.make_response_from_ticket(ticket=ticket, service_url=service_url.url)
-        if request.cookies.get(settings.COOKIE_NAME):
-            # TODO: Delete legacy cookie, this special case can be removed anytime after 1/1/2016.
-            # A cookie is received which could potentially be a legacy (pre multi-domain) cookie.
-            # Issuing a targeted delete of the legacy cookie ensures the user does not end up in a
-            # login loop whereby both cookies are sent to the server and one of them at random
-            # read for authentication.
-            resp.delete_cookie(settings.COOKIE_NAME, domain=None)
-        return resp
+        return cas.make_response_from_ticket(ticket=ticket, service_url=service_url.url)
 
     if request.authorization:
         # TODO: Fix circular import
@@ -181,5 +173,8 @@ def before_request():
 def after_request(response):
     if session.data.get('auth_user_id'):
         session.save()
+
+    # Disallow embeding in frames
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
 
     return response

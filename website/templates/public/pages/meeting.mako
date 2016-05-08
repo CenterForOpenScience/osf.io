@@ -7,14 +7,13 @@
 
 <%def name="stylesheets()">
     ${parent.stylesheets()}
-    <link rel="stylesheet" href="/static/vendor/bower_components/hgrid/dist/hgrid.min.css" />
 </%def>
 
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
     <script type="text/javascript">
         window.contextVars = window.contextVars || {};
-        window.contextVars.meetingData = ${data};
+        window.contextVars.meetingData = ${ data | sjson, n };
 
         $('#addLink').on('click', function(e) {
             e.preventDefault();

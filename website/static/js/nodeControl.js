@@ -10,11 +10,10 @@ var ko = require('knockout');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
 require('bootstrap-editable');
-require('knockout.punches');
-ko.punches.enableAll();
 
 var osfHelpers = require('js/osfHelpers');
 var NodeActions = require('js/project.js');
+var NodesPrivacy = require('js/nodesPrivacy').NodesPrivacy;
 var iconmap = require('js/iconmap');
 
 /**
@@ -39,6 +38,7 @@ var ProjectViewModel = function(data) {
     self.dashboard = data.user.dashboard_id;
     self.userCanEdit = data.user.can_edit;
     self.userPermissions = data.user.permissions;
+    self.node = data.node;
     self.description = data.node.description;
     self.title = data.node.title;
     self.category = data.node.category;
@@ -47,7 +47,15 @@ var ProjectViewModel = function(data) {
     self.nodeIsPublic = data.node.is_public;
     self.nodeType = data.node.node_type;
 
+    self.nodeIsPendingEmbargoTermination = ko.observable(data.node.is_pending_embargo_termination);
+    self.makePublicTooltip = ko.computed(function() {
+        if(self.nodeIsPendingEmbargoTermination()) {
+            return 'A request to make this registration public is pending';
+        }
+        return null;
+    });
 
+    // WATCH button is removed, functionality is still here in case of future implementation -- CU
     // The button text to display (e.g. "Watch" if not watching)
     self.watchButtonDisplay = ko.pureComputed(function() {
         return self.watchedCount().toString();
@@ -139,11 +147,13 @@ var ProjectViewModel = function(data) {
     self.removeFromDashboard = function() {
         $('#removeDashboardFolder').tooltip('hide');
         self.inDashboard(false);
-        var deleteUrl = '/api/v1/folder/' + self.dashboard + '/pointer/' + self._id;
-        $.ajax({url: deleteUrl, type: 'DELETE'})
-            .fail(function() {
-                self.inDashboard(true);
-                osfHelpers.growl('Error', 'The project could not be removed', 'danger');
+        var deleteUrl = $osf.apiV2Url('collections/' + self.dashboard + '/relationships/linked_nodes/');
+        $osf.ajaxJSON('DELETE', deleteUrl, {
+            'data': {'data': [{'type':'linked_nodes', 'id': self._id}]},
+            'isCors': true
+        }).fail(function() {
+            self.inDashboard(true);
+            osfHelpers.growl('Error', 'The project could not be removed', 'danger');
         });
     };
 
@@ -205,7 +215,7 @@ var ProjectViewModel = function(data) {
             title: 'Create identifiers',
             message: '<p class="overflow">' +
                 'Are you sure you want to create a DOI and ARK for this ' +
-                self.nodeType + '?',
+                $osf.htmlEscape(self.nodeType) + '?',
             callback: function(confirmed) {
                 if (confirmed) {
                     self.createIdentifiers();
@@ -236,7 +246,7 @@ var ProjectViewModel = function(data) {
                 'Please try again soon and/or contact ' +
                 '<a href="mailto: support@osf.io">support@osf.io</a>';
             osfHelpers.growl('Error', message, 'danger');
-            Raven.captureMessage('Could not create identifiers', {url: url, status: xhr.status});
+            Raven.captureMessage('Could not create identifiers', {extra: {url: url, status: xhr.status}});
         }).always(function() {
             clearTimeout(timeout);
             self.idCreationInProgress(false); // hide loading indicator
@@ -266,6 +276,21 @@ function NodeControl (selector, data, options) {
 NodeControl.prototype.init = function() {
     var self = this;
     osfHelpers.applyBindings(self.viewModel, this.selector);
+    if (self.data.user.is_admin && !self.data.node.is_retracted) {
+        new NodesPrivacy('#nodesPrivacy', self.data.node, function(nodesChanged, requestedEmbargoTermination) {
+            // TODO: The goal here is to update the UI of the project dashboard to
+            // reflect the new privacy state(s). Unfortunately, since the components
+            // view is rendered server-side we have a relatively limited capacity to
+            // update the page. Once the components list is componentized we can
+            // rerender just that section of the DOM (as well as updating the
+            // project-specific UI).
+            // For now, this method only needs to handle requests for making embargoed
+            // nodes public.
+            if (requestedEmbargoTermination) {
+                self.viewModel.nodeIsPendingEmbargoTermination(true);
+            }
+        });
+    }
 };
 
 module.exports = {

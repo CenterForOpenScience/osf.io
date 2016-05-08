@@ -2,36 +2,36 @@
 
 from __future__ import division
 
-import re
 import copy
-import math
-import logging
-import unicodedata
 import functools
+import logging
+import math
+import re
+import unicodedata
 
-import six
-
-from modularodm import Q
 from elasticsearch import (
-    Elasticsearch,
-    RequestError,
-    NotFoundError,
     ConnectionError,
+    Elasticsearch,
+    NotFoundError,
+    RequestError,
+    TransportError,
     helpers,
 )
+from modularodm import Q
+import six
 
 from framework import sentry
-from framework.tasks import app as celery_app
+from framework.celery_tasks import app as celery_app
 from framework.mongo.utils import paginated
 
 from website import settings
 from website.filters import gravatar
 from website.models import User, Node
+from website.project.licenses import serialize_node_license_record
 from website.search import exceptions
 from website.search.util import build_query
 from website.util import sanitize
 from website.views import validate_page_num
-from website.project.licenses import serialize_node_license_record
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +44,7 @@ ALIASES = {
     'user': 'Users',
     'total': 'Total',
     'file': 'Files',
+    'institution': 'Institutions',
 }
 
 # Prevent tokenizing and stop word removal.
@@ -84,6 +85,9 @@ def requires_search(func):
             except RequestError as e:
                 if 'ParseException' in e.error:
                     raise exceptions.MalformedQueryError(e.error)
+                raise exceptions.SearchException(e.error)
+            except TransportError as e:
+                # Catch and wrap generic uncaught ES error codes. TODO: Improve fix for https://openscience.atlassian.net/browse/OSF-4538
                 raise exceptions.SearchException(e.error)
 
         sentry.log_message('Elastic search action failed. Is elasticsearch running?')
@@ -232,6 +236,7 @@ def format_result(result, parent_id=None):
         'date_registered': result.get('registered_date'),
         'n_wikis': len(result['wikis']),
         'license': result.get('license'),
+        'primary_institution': result.get('primary_institution'),
     }
 
     return formatted_result
@@ -333,6 +338,7 @@ def update_node(node, index=None, bulk=False):
             'parent_id': parent_id,
             'date_created': node.date_created,
             'license': serialize_node_license_record(node.license),
+            'primary_institution': node.primary_institution.name if node.primary_institution else None,
             'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
         }
         if not node.is_retracted:
@@ -478,6 +484,20 @@ def update_file(file_, index=None, delete=False):
     )
 
 @requires_search
+def update_institution(institution, index=None):
+    index = index or INDEX
+
+    institution_doc = {
+        'id': institution._id,
+        'url': '/institutions/{}/'.format(institution._id),
+        'logo_path': institution.logo_path,
+        'category': 'institution',
+        'name': institution.name,
+    }
+
+    es.index(index=index, doc_type='institution', body=institution_doc, id=institution._id, refresh=True)
+
+@requires_search
 def delete_all():
     delete_index(INDEX)
 
@@ -493,7 +513,7 @@ def create_index(index=None):
     all of which are applied to all projects, components, and registrations.
     '''
     index = index or INDEX
-    document_types = ['project', 'component', 'registration', 'user', 'file']
+    document_types = ['project', 'component', 'registration', 'user', 'file', 'institution']
     project_like_types = ['project', 'component', 'registration']
     analyzed_fields = ['title', 'description']
 

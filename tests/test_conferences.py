@@ -11,6 +11,7 @@ import furl
 from modularodm import Q
 from modularodm.exceptions import ValidationError
 
+from framework.auth import get_or_create_user
 from framework.auth.core import Auth
 from framework.transactions import commands
 
@@ -41,7 +42,8 @@ def assert_equal_urls(first, second):
 
 
 class ConferenceFactory(ModularOdmFactory):
-    FACTORY_FOR = Conference
+    class Meta:
+        model = Conference
 
     endpoint = Sequence(lambda n: 'conference{0}'.format(n))
     name = FakerAttribute('catch_phrase')
@@ -66,7 +68,7 @@ class TestConferenceUtils(OsfTestCase):
 
     def test_get_or_create_user_exists(self):
         user = UserFactory()
-        fetched, created = utils.get_or_create_user(user.fullname, user.username, True)
+        fetched, created = get_or_create_user(user.fullname, user.username, True)
         assert_false(created)
         assert_equal(user._id, fetched._id)
         assert_false('is_spam' in fetched.system_tags)
@@ -74,7 +76,7 @@ class TestConferenceUtils(OsfTestCase):
     def test_get_or_create_user_not_exists(self):
         fullname = 'Roger Taylor'
         username = 'roger@queen.com'
-        fetched, created = utils.get_or_create_user(fullname, username, False)
+        fetched, created = get_or_create_user(fullname, username, False)
         assert_true(created)
         assert_equal(fetched.fullname, fullname)
         assert_equal(fetched.username, username)
@@ -83,7 +85,7 @@ class TestConferenceUtils(OsfTestCase):
     def test_get_or_create_user_is_spam(self):
         fullname = 'John Deacon'
         username = 'deacon@queen.com'
-        fetched, created = utils.get_or_create_user(fullname, username, True)
+        fetched, created = get_or_create_user(fullname, username, True)
         assert_true(created)
         assert_equal(fetched.fullname, fullname)
         assert_equal(fetched.username, username)
@@ -356,6 +358,16 @@ class TestMessage(ContextTestCase):
                 msg = message.ConferenceMessage()
                 assert_equal(msg.sender_name, name[1])
 
+    def test_sender_email(self):
+        emails = [
+            (u'fred@queen.com', u'fred@queen.com'),
+            (u'FRED@queen.com', u'fred@queen.com')
+        ]
+        for email in emails:
+            with self.make_context(data={'from': email[0]}):
+                msg = message.ConferenceMessage()
+                assert_equal(msg.sender_email, email[1])
+
     def test_route_invalid_pattern(self):
         with self.make_context(data={'recipient': 'spam@osf.io'}):
             self.app.app.preprocess_request()
@@ -364,7 +376,7 @@ class TestMessage(ContextTestCase):
                 msg.route
 
     def test_route_invalid_test(self):
-        recipient = '{0}conf-talk@osf.io'.format('' if settings.DEV_MODE else 'test-')
+        recipient = '{0}conf-talk@osf.io'.format('' if settings.DEV_MODE else 'stage-')
         with self.make_context(data={'recipient': recipient}):
             self.app.app.preprocess_request()
             msg = message.ConferenceMessage()

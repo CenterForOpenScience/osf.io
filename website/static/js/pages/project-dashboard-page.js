@@ -20,7 +20,6 @@ var CitationList = require('js/citationList');
 var CitationWidget = require('js/citationWidget');
 var mathrender = require('js/mathrender');
 var md = require('js/markdown').full;
-var NodesPrivacy = require('js/nodesPrivacy');
 
 var ctx = window.contextVars;
 var nodeApiUrl = ctx.node.urls.api;
@@ -40,20 +39,11 @@ $('body').on('nodeLoad', function(event, data) {
     }
     // Initialize nodeControl
     new NodeControl.NodeControl('#projectScope', data);
-    if (data.user.is_admin && !data.node.is_retracted) {
-        new NodesPrivacy.NodesPrivacy('#nodesPrivacy', data.node.is_public);
-    }
 });
 
 // Initialize comment pane w/ its viewmodel
 var $comments = $('.comments');
 if ($comments.length) {
-    var currentUser = {
-        id: ctx.currentUser.id,
-        url: ctx.currentUser.urls.profile,
-        fullname: ctx.currentUser.fullname,
-        gravatarUrl: ctx.currentUser.gravatarUrl
-    };
     var options = {
         nodeId : window.contextVars.node.id,
         nodeApiUrl: window.contextVars.node.urls.api,
@@ -63,7 +53,8 @@ if ($comments.length) {
         fileId: null,
         canComment: window.contextVars.currentUser.canComment,
         hasChildren: window.contextVars.node.hasChildren,
-        currentUser: currentUser
+        currentUser: window.contextVars.currentUser,
+        pageTitle: window.contextVars.node.title
     };
     Comment.init('#commentsLink', '.comment-pane', options);
 }
@@ -138,30 +129,35 @@ $(document).ready(function () {
         width: '100%',
         interactive: window.contextVars.currentUser.canEdit,
         maxChars: 128,
-        onAddTag: function(tag){
+        onAddTag: function(tag) {
             var url = nodeApiUrl + 'tags/';
             var data = {tag: tag};
             var request = $osf.postJSON(url, data);
             request.fail(function(xhr, textStatus, error) {
                 Raven.captureMessage('Failed to add tag', {
-                    tag: tag, url: url, textStatus: textStatus, error: error
+                    extra: {
+                        tag: tag, url: url, textStatus: textStatus, error: error
+                    }
                 });
             });
         },
-        onRemoveTag: function(tag){
+        onRemoveTag: function(tag) {
             var url = nodeApiUrl + 'tags/';
-            var data = JSON.stringify({tag: tag});
-            var request = $.ajax({
-                url: url,
-                type: 'DELETE',
-                contentType: 'application/json',
-                dataType: 'JSON',
-                data: data
-            });
+            // Don't try to delete a blank tag (would result in a server error)
+            if (!tag) {
+                return false;
+            }
+            var request = $osf.ajaxJSON('DELETE', url, {'data': {'tag': tag}});
             request.fail(function(xhr, textStatus, error) {
-                Raven.captureMessage('Failed to remove tag', {
-                    tag: tag, url: url, textStatus: textStatus, error: error
-                });
+                // Suppress "tag not found" errors, as the end result is what the user wanted (tag is gone)- eg could be because two people were working at same time
+                if (xhr.status !== 409) {
+                    $osf.growl('Error', 'Could not remove tag');
+                    Raven.captureMessage('Failed to remove tag', {
+                        extra: {
+                            tag: tag, url: url, textStatus: textStatus, error: error
+                        }
+                    });
+                }
             });
         }
     });

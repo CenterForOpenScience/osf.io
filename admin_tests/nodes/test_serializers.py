@@ -7,7 +7,6 @@ from admin.nodes.serializers import serialize_simple_user, serialize_node
 
 
 class TestNodeSerializers(AdminTestCase):
-
     def test_serialize_node(self):
         node = NodeFactory()
         info = serialize_node(node)
@@ -18,6 +17,18 @@ class TestNodeSerializers(AdminTestCase):
         assert_equal(info['id'], node._id)
         assert_equal(info['public'], node.is_public)
         assert_equal(len(info['contributors']), 1)
+        assert_false(info['deleted'])
+
+    def test_serialize_deleted(self):
+        node = NodeFactory()
+        info = serialize_node(node)
+        assert_false(info['deleted'])
+        node.is_deleted = True
+        info = serialize_node(node)
+        assert_true(info['deleted'])
+        node.is_deleted = False
+        info = serialize_node(node)
+        assert_false(info['deleted'])
 
     def test_serialize_simple_user(self):
         user = UserFactory()
