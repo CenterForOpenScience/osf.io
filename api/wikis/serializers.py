@@ -6,6 +6,11 @@ from api.base.utils import absolute_reverse
 
 class WikiSerializer(JSONAPISerializer):
 
+    filterable_fields = frozenset([
+        'name',
+        'date_modified'
+    ])
+
     id = IDField(source='_id', read_only=True)
     type = TypeField()
     name = ser.CharField(source='page_name')

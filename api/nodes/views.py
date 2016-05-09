@@ -2012,7 +2012,7 @@ class NodeInstitutionRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIVie
         return Response(serializer.data)
 
 
-class NodeWikiList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
+class NodeWikiList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMixin):
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -2029,13 +2029,17 @@ class NodeWikiList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
 
     ordering = ('-date', )  # default ordering
 
-    def get_queryset(self):
+    # overrides ODMFilterMixin
+    def get_default_odm_query(self):
         node = self.get_node()
         wiki_pages = node.wiki_pages_current
         node_wiki_pages = []
         for key in wiki_pages:
             node_wiki_pages.append(wiki_pages[key])
-        return NodeWikiPage.find(Q('_id', 'in', node_wiki_pages))
+        return Q('_id', 'in', node_wiki_pages)
+
+    def get_queryset(self):
+        return NodeWikiPage.find(self.get_query_from_request())
 
 
 class NodeWikiDetail(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
