@@ -1,44 +1,47 @@
+import datetime
+import httplib
 import os
 import uuid
-import httplib
-import datetime
 
+
+from flask import make_response
+from flask import redirect
+from flask import request
+import furl
 import jwe
 import jwt
-import furl
-from flask import request
-from flask import redirect
-from flask import make_response
-from modularodm.exceptions import NoResultsFound
+import markupsafe
+
 from modularodm import Q
+from modularodm.exceptions import NoResultsFound
 
 from framework import sentry
-from framework.auth import cas
 from framework.auth import Auth
+from framework.auth import cas
 from framework.auth import oauth_scopes
+from framework.auth.decorators import collect_auth, must_be_logged_in, must_be_signed
+from framework.exceptions import HTTPError
 from framework.routing import json_renderer
 from framework.sentry import log_exception
-from framework.exceptions import HTTPError
 from framework.transactions.context import TokuTransaction
 from framework.transactions.handlers import no_auto_transaction
-from framework.auth.decorators import must_be_logged_in, must_be_signed, collect_auth
 from website import mails
 from website import settings
-from website.files.models import FileNode, TrashedFileNode, StoredFileNode
-from website.project import decorators
+from website.addons.base import StorageAddonBase
 from website.addons.base import exceptions
 from website.addons.base import signals as file_signals
-from website.addons.base import StorageAddonBase
-from website.models import User, Node, NodeLog
-from website.project.model import DraftRegistration, MetaSchema
-from website.util import rubeus
+from website.files.models import FileNode, StoredFileNode, TrashedFileNode
+from website.models import Node, NodeLog, User
 from website.profile.utils import get_gravatar
-from website.project.decorators import must_be_valid_project, must_be_contributor_or_public
+from website.project import decorators
+from website.project.decorators import must_be_contributor_or_public, must_be_valid_project
+from website.project.model import DraftRegistration, MetaSchema
 from website.project.utils import serialize_node
-
+from website.util import rubeus
 
 # import so that associated listener is instantiated and gets emails
 from website.notifications.events.files import FileEvent  # noqa
+
 
 FILE_GONE_ERROR_MESSAGE = u'''
 <style>
@@ -489,14 +492,22 @@ def addon_deleted_file(auth, node, **kwargs):
             'files': node.web_url_for('collect_file_trees'),
         },
         'extra': {},
-        'size': 9966699,  # Prevent file from being editted, just in case
+        'size': 9966699,  # Prevent file from being edited, just in case
         'sharejs_uuid': None,
         'file_name': trashed.name,
         'file_path': trashed.path,
         'provider': trashed.provider,
         'materialized_path': trashed.materialized_path,
-        'error': FILE_GONE_ERROR_MESSAGE.format(file_name=trashed.name),
+        'error': FILE_GONE_ERROR_MESSAGE.format(file_name=markupsafe.escape(trashed.name)),
         'private': getattr(node.get_addon(trashed.provider), 'is_private', False),
+
+        'file_id': trashed._id,
+        # For the off chance that there is no GUID
+        'file_guid': getattr(trashed.get_guid(create=False), '_id', None),
+        'file_tags': [tag._id for tag in trashed.tags],
+        'file_name_ext': os.path.splitext(trashed.name)[1],
+        'file_name_title': os.path.splitext(trashed.name)[0],
+        'allow_comments': trashed.provider in settings.ADDONS_COMMENTABLE,
     })
 
     return ret, httplib.GONE
@@ -518,7 +529,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     if not isinstance(node_addon, StorageAddonBase):
         raise HTTPError(httplib.BAD_REQUEST, {
             'message_short': 'Bad Request',
-            'message_long': 'The add-on containing this file is no longer connected to the {}.'.format(node.project_or_component)
+            'message_long': 'The add-on containing this file is no longer connected to the {}.'.format(markupsafe.escape(node.project_or_component))
         })
 
     if not node_addon.has_auth:

@@ -2,10 +2,16 @@ from nose.tools import *  # flake8: noqa
 from tests.base import OsfTestCase
 from tests.factories import InstitutionFactory
 
+from website.models import Institution, Node
+
 class TestInstitution(OsfTestCase):
     def setUp(self):
         super(TestInstitution, self).setUp()
         self.institution = InstitutionFactory()
+
+    def tearDown(self):
+        super(TestInstitution, self).tearDown()
+        Node.remove()
 
     def test_institution_save_only_changes_mapped_fields_on_node(self):
         node = self.institution.node
@@ -51,3 +57,26 @@ class TestInstitution(OsfTestCase):
         inst = InstitutionFactory()
         inst.logo_name = None
         assert_is_none(inst.logo_path, None)
+
+    def test_institution_find(self):
+        insts = list(Institution.find())
+
+        assert_equal(len(insts), 1)
+        assert_equal(insts[0], self.institution)
+
+    def test_institution_find_doesnt_find_deleted(self):
+        self.institution.node.is_deleted = True
+        self.institution.node.save()
+
+        insts = list(Institution.find())
+
+        assert_equal(len(insts), 0)
+
+    def test_find_deleted(self):
+        self.institution.node.is_deleted = True
+        self.institution.node.save()
+
+        insts = list(Institution.find(deleted=True))
+
+        assert_equal(len(insts), 1)
+        assert_equal(insts[0], self.institution)

@@ -5,12 +5,12 @@
 from pymongo import ASCENDING, DESCENDING
 
 
-db['nodelog'].create_index([
-    ('__backrefs.logged.node.logs', ASCENDING),
+db['user'].create_index([
+    ('emails', ASCENDING),
 ])
 
 db['user'].create_index([
-    ('emails', ASCENDING),
+    ('external_accounts', ASCENDING),
 ])
 
 db['user'].create_index([

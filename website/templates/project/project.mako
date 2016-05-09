@@ -32,12 +32,17 @@
                     % if not user_name:
                         data-bind="tooltip: {title: 'Log-in or create an account to watch/duplicate this project', placement: 'bottom'}"
                     % endif
-                        >
+                     >
                     <div class="btn-group">
                     % if not node["is_public"]:
-                        <button class='btn btn-default disabled'>Private</button>
-                        % if 'admin' in user['permissions'] and not node['is_pending_registration'] and not node['embargo_end_date']:
-                            <a class="btn btn-default"  href="#nodesPrivacy" data-toggle="modal" >Make Public</a>
+                        <button class="btn btn-default disabled">Private</button>
+                        % if 'admin' in user['permissions'] and not (node['is_pending_registration'] or node['is_pending_embargo']) and not (node['is_embargoed'] and parent_node['exists']):
+                        <a disabled data-bind="attr: {'disabled': false}, css: {'disabled': nodeIsPendingEmbargoTermination}" class="btn btn-default"  href="#nodesPrivacy" data-toggle="modal">
+                          Make Public
+			  <!-- ko if: nodeIsPendingEmbargoTermination -->
+                          <span class="fa fa-info-circle hidden" data-bind="css: {'hidden': false}, tooltip: {title: makePublicTooltip, placement: 'bottom', disabled: true}"></span>
+                          <!-- /ko -->
+                        </a>
                         % endif
                     % else:
                         % if 'admin' in user['permissions'] and not node['is_registration']:
@@ -111,15 +116,16 @@
                 % endif
                 </div>
                 % if enable_institutions and not node['anonymous']:
-                    % if 'admin' in user['permissions'] and not node['is_registration']:
+                    % if ('admin' in user['permissions'] and not node['is_registration']) and (node['institution']['id'] or len(user['institutions']) != 0):
                         <a class="link-dashed" href="${node['url']}settings/#configureInstitutionAnchor" id="institution">Affiliated Institution:</a>
-                    % else:
-                        Affiliated institution:
+                        % if node['institution']['id']:
+                            <a href="/institutions/${node['institution']['id']}">${node['institution']['name']}</a>
+                        % else:
+                            <span> None </span>
+                        % endif
                     % endif
-                    % if node['institution']['id']:
-                        <a href="/institutions/${node['institution']['id']}">${node['institution']['name']}</a>
-                    % else:
-                        <span> None </span>
+                    % if not ('admin' in user['permissions'] and not node['is_registration']) and node['institution']['id']:
+                        Affiliated institution: <a href="/institutions/${node['institution']['id']}">${node['institution']['name']}</a>
                     % endif
                 % endif
                 % if node['is_fork']:
@@ -285,7 +291,7 @@
                             <span data-bind="text: chicago"></span>
                         <div data-bind="validationOptions: {insertMessages: false, messagesOnModified: false}, foreach: citations">
                             <!-- ko if: view() === 'view' -->
-                                <div class="f-w-xl m-t-md">{{name}}
+                                <div class="f-w-xl m-t-md"><span data-bind="text: name"></span>
                                     % if 'admin' in user['permissions'] and not node['is_registration']:
                                         <!-- ko ifnot: $parent.editing() -->
                                             <button class="btn btn-default btn-sm" data-bind="click: function() {edit($parent)}"><i class="fa fa-edit"></i> Edit</button>
