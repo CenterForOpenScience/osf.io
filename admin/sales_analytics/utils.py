@@ -135,6 +135,3 @@ user_count = get_user_count(db, ENTRY_POINTS)
 multi_product_metrics_yearly = get_multi_product_metrics()
 multi_product_metrics_monthly = get_multi_product_metrics(timedelta=timedelta(days=30))
 repeat_action_user_monthly = get_repeat_action_user_count()
-
-
-
