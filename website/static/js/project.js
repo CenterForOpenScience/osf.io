@@ -13,7 +13,8 @@ var LogFeed = require('js/logFeed.js');
 
 var ctx = window.contextVars;
 var NodeActions = {}; // Namespace for NodeActions
-require('css/style.css');
+require('loaders.css/loaders.min.css');
+
 
 // TODO: move me to the NodeControl or separate module
 NodeActions.beforeForkNode = function(url, done) {
@@ -216,18 +217,19 @@ Display recent logs for for a node on the project view page.
 */
 NodeActions.openCloseNode = function(nodeId) {
     var $logs = $('#logs-' + nodeId);
+    var $loader = $('#body-' + nodeId + '> .ball-scale');
     if (!$logs.hasClass('active')) {
         if (!$logs.hasClass('served')) {
-            $('.ball-scale').show();
+            $loader.show();
             $.getJSON(
                 $logs.attr('data-uri'),
                 {count: 3}
             ).done(function(response) {
-                $('.ball-scale').hide();
+                $loader.hide();
                 new LogFeed('#logs-' + nodeId, response.logs);
                 $logs.addClass('served');
             }).fail(function() {
-                $('.ball-scale').hide();
+                $loader.hide();
                 $osf.growl('Error:', 'Can not show recent activity right now.  Please try again later.');
                 Raven.captureMessage('Error occurred retrieving log');
             });
