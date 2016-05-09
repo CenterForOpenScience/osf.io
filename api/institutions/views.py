@@ -36,12 +36,12 @@ class InstitutionMixin(object):
 
     def get_institution(self):
         inst = get_object_or_error(
-            Node,
-            Q('institution_id', 'eq', self.kwargs[self.institution_lookup_url_kwarg]),
+            Institution,
+            self.kwargs[self.institution_lookup_url_kwarg],
             display_name='institution',
             allow_institution=True
         )
-        return Institution(inst)
+        return inst
 
 
 class InstitutionList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
