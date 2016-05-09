@@ -33,100 +33,6 @@ class NodeTagField(ser.Field):
         return data
 
 
-class DraftRegistrationSerializer(JSONAPISerializer):
-
-    schema_choices = list(ACTIVE_META_SCHEMAS)
-    schema_choices_string = ', '.join(["'{}'".format(choice) for choice in schema_choices])
-
-    id = IDField(source='_id', read_only=True)
-    type = TypeField()
-    registration_supplement = ser.ChoiceField(source='registration_schema.name', choices=schema_choices, help_text="Choices: " + schema_choices_string, required=True)
-    registration_metadata = ser.DictField(required=False)
-    datetime_initiated = ser.DateTimeField(read_only=True)
-    datetime_updated = ser.DateTimeField(read_only=True)
-
-    branched_from = RelationshipField(
-        related_view='nodes:node-detail',
-        related_view_kwargs={'node_id': '<branched_from._id>'}
-    )
-
-    initiator = RelationshipField(
-        related_view='users:user-detail',
-        related_view_kwargs={'user_id': '<initiator._id>'},
-    )
-
-    registration_schema = RelationshipField(
-        related_view='metaschemas:metaschema-detail',
-        related_view_kwargs={'metaschema_id': '<registration_schema._id>'}
-    )
-
-    links = LinksField({
-        'html': 'get_html'
-    })
-
-    def get_html(self, obj):
-        return obj.absolute_url
-
-    def create(self, validated_data):
-        node = validated_data.pop('node')
-        initiator = validated_data.pop('initiator')
-        metadata = validated_data.pop('registration_metadata', None)
-
-        schema_name = validated_data.pop('registration_schema').get('name')
-        schema = MetaSchema.find_one(Q('name', 'eq', schema_name) & Q('schema_version', 'eq', 2))
-
-        draft = DraftRegistration.create_from_node(node=node, user=initiator, schema=schema)
-        if metadata:
-            self.validate_metadata(draft, metadata)
-            draft.update_metadata(metadata)
-            draft.save()
-        return draft
-
-    def validate_metadata(self, draft, metadata):
-        """
-        Validates registration_metadata field.  Called in update and create methods because the draft is
-        needed in the context.
-        """
-        reviewer = is_prereg_admin_not_project_admin(self.context['request'], draft)
-        schema = create_jsonschema_from_metaschema(draft, is_reviewer=reviewer)
-        # Required fields are only required when creating the actual registration, not updating the draft.
-        if schema.get('required'):
-            del schema['required']
-        try:
-            jsonschema.validate(metadata, schema)
-        except jsonschema.ValidationError as e:
-            raise exceptions.ValidationError(e.message)
-        except jsonschema.SchemaError as e:
-            raise exceptions.ValidationError(e.message)
-        return
-
-    class Meta:
-        type_ = 'draft_registrations'
-
-
-class DraftRegistrationDetailSerializer(DraftRegistrationSerializer):
-    """
-    Overrides DraftRegistrationSerializer to make id and registration_metadata required.
-    registration_supplement cannot be changed after draft has been created.
-
-    Also makes registration_supplement read-only.
-    """
-    id = IDField(source='_id', required=True)
-    registration_metadata = ser.DictField(required=True)
-    registration_supplement = ser.CharField(read_only=True, source='registration_schema.name')
-
-    def update(self, draft, validated_data):
-        """
-        Update draft instance with the validated metadata.
-        """
-        metadata = validated_data.pop('registration_metadata', None)
-        if metadata:
-            self.validate_metadata(draft, metadata)
-            draft.update_metadata(metadata)
-            draft.save()
-        return draft
-
-
 class NodeSerializer(JSONAPISerializer):
     # TODO: If we have to redo this implementation in any of the other serializers, subclass ChoiceField and make it
     # handle blank choices properly. Currently DRF ChoiceFields ignore blank options, which is incorrect in this
@@ -653,3 +559,97 @@ class NodeAlternativeCitationSerializer(JSONAPISerializer):
     def get_absolute_url(self, obj):
         #  Citations don't have urls
         raise NotImplementedError
+
+
+class DraftRegistrationSerializer(JSONAPISerializer):
+
+    schema_choices = list(ACTIVE_META_SCHEMAS)
+    schema_choices_string = ', '.join(["'{}'".format(choice) for choice in schema_choices])
+
+    id = IDField(source='_id', read_only=True)
+    type = TypeField()
+    registration_supplement = ser.ChoiceField(source='registration_schema.name', choices=schema_choices, help_text="Choices: " + schema_choices_string, required=True)
+    registration_metadata = ser.DictField(required=False)
+    datetime_initiated = ser.DateTimeField(read_only=True)
+    datetime_updated = ser.DateTimeField(read_only=True)
+
+    branched_from = RelationshipField(
+        related_view='nodes:node-detail',
+        related_view_kwargs={'node_id': '<branched_from._id>'}
+    )
+
+    initiator = RelationshipField(
+        related_view='users:user-detail',
+        related_view_kwargs={'user_id': '<initiator._id>'},
+    )
+
+    registration_schema = RelationshipField(
+        related_view='metaschemas:metaschema-detail',
+        related_view_kwargs={'metaschema_id': '<registration_schema._id>'}
+    )
+
+    links = LinksField({
+        'html': 'get_absolute_url'
+    })
+
+    def get_absolute_url(self, obj):
+        return obj.absolute_url
+
+    def create(self, validated_data):
+        node = validated_data.pop('node')
+        initiator = validated_data.pop('initiator')
+        metadata = validated_data.pop('registration_metadata', None)
+
+        schema_name = validated_data.pop('registration_schema').get('name')
+        schema = MetaSchema.find_one(Q('name', 'eq', schema_name) & Q('schema_version', 'eq', 2))
+
+        draft = DraftRegistration.create_from_node(node=node, user=initiator, schema=schema)
+        if metadata:
+            self.validate_metadata(draft, metadata)
+            draft.update_metadata(metadata)
+            draft.save()
+        return draft
+
+    def validate_metadata(self, draft, metadata):
+        """
+        Validates registration_metadata field.  Called in update and create methods because the draft is
+        needed in the context.
+        """
+        reviewer = is_prereg_admin_not_project_admin(self.context['request'], draft)
+        schema = create_jsonschema_from_metaschema(draft, is_reviewer=reviewer)
+        # Required fields are only required when creating the actual registration, not updating the draft.
+        if schema.get('required'):
+            del schema['required']
+        try:
+            jsonschema.validate(metadata, schema)
+        except jsonschema.ValidationError as e:
+            raise exceptions.ValidationError(e.message)
+        except jsonschema.SchemaError as e:
+            raise exceptions.ValidationError(e.message)
+        return
+
+    class Meta:
+        type_ = 'draft_registrations'
+
+
+class DraftRegistrationDetailSerializer(DraftRegistrationSerializer):
+    """
+    Overrides DraftRegistrationSerializer to make id and registration_metadata required.
+    registration_supplement cannot be changed after draft has been created.
+
+    Also makes registration_supplement read-only.
+    """
+    id = IDField(source='_id', required=True)
+    registration_metadata = ser.DictField(required=True)
+    registration_supplement = ser.CharField(read_only=True, source='registration_schema.name')
+
+    def update(self, draft, validated_data):
+        """
+        Update draft instance with the validated metadata.
+        """
+        metadata = validated_data.pop('registration_metadata', None)
+        if metadata:
+            self.validate_metadata(draft, metadata)
+            draft.update_metadata(metadata)
+            draft.save()
+        return draft

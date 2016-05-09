@@ -11,7 +11,12 @@ class MetaSchemaSerializer(JSONAPISerializer):
     schema_version = ser.IntegerField(read_only=True)
     schema = ser.DictField(read_only=True)
 
-    links = LinksField({})
+    links = LinksField({
+        'self': 'get_absolute_url'
+    })
+
+    def get_absolute_url(self, obj):
+        return obj.absolute_api_v2_url
 
     class Meta:
         type_ = 'meta_schemas'
