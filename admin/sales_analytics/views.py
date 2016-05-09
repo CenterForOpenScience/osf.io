@@ -1,31 +1,31 @@
 from django.shortcuts import render
-from admin.sales_analytics import keen
-from admin.sales_analytics.metrics import user_count, multi_product_metrics_yearly, multi_product_metrics_monthly, repeat_action_user_monthly
+from django.views.generic import TemplateView
+
+from admin.base.settings import KEEN_CREDENTIALS
+from admin.base.utils import OSFAdmin
+from admin.sales_analytics.utils import user_count, multi_product_metrics_yearly, multi_product_metrics_monthly, repeat_action_user_monthly
 
 
-def dashboard(request):
+class DashboardView(OSFAdmin, TemplateView):
+    template_name = "sales_analytics/dashboard.html"
 
-    context = keen.KEEN_CREDENTIALS.copy()
-    context.update({
-        'user_count': user_count,
-        'multi_product_metrics_yearly': multi_product_metrics_yearly,
-        'multi_product_metrics_monthly': multi_product_metrics_monthly,
-        'repeat_action_user_monthly': repeat_action_user_monthly,
-    })
-    return render(request, 'sales_analytics/dashboard.html', context)
-
-
-def user_session(request):
-    return render(request, 'sales_analytics/user_session.html', keen.KEEN_CREDENTIALS)
+    def get_context_data(self, **kwargs):
+        kwargs.update(KEEN_CREDENTIALS.copy())
+        kwargs.update({'user_count': user_count,
+                       'multi_product_metrics_yearly': multi_product_metrics_yearly,
+                       'multi_product_metrics_monthly': multi_product_metrics_monthly,
+                       'repeat_action_user_monthly': repeat_action_user_monthly,
+                       })
+        return super(DashboardView, self).get_context_data(**kwargs)
 
 
-def products_view(request):
-    return render(request, 'sales_analytics/products_view.html', keen.KEEN_CREDENTIALS)
+# def dashboard(request):
 
-
-def products_usage(request):
-    return render(request, 'sales_analytics/products_usage.html', keen.KEEN_CREDENTIALS)
-
-
-def debug_test(request):
-    return render(request, 'sales_analytics/debug_test.html', keen.KEEN_CREDENTIALS)
+#     context = KEEN_CREDENTIALS.copy()
+#     context.update({
+#         'user_count': user_count,
+#         'multi_product_metrics_yearly': multi_product_metrics_yearly,
+#         'multi_product_metrics_monthly': multi_product_metrics_monthly,
+#         'repeat_action_user_monthly': repeat_action_user_monthly,
+#     })
+#     return render(request, 'sales_analytics/dashboard.html', context)
