@@ -16,17 +16,17 @@ var iconmap = require('js/iconmap');
 var NodeActions = require('js/project.js');
 var NodesPrivacy = require('js/nodesPrivacy').NodesPrivacy;
 
-
-// List of node categories
-var NODE_CATEGORIES = window.contextVars.nodeCategories;
-
-
 /**
  * The ProjectViewModel, scoped to the project header.
  * @param {Object} data The parsed project data returned from the project's API url.
+ * @param {Object} options A set of configuration options for viewModel (eg NodeCategories)
+ * @param {Object} options.nodeCategories The CATEGORY_MAP of allowed category/ display values for nodes
  */
-var ProjectViewModel = function(data) {
+var ProjectViewModel = function(data, options) {
     var self = this;
+    
+    self.nodeCategories = (options && options.nodeCategories) || {};
+    
     self._id = data.node.id;
     self.apiUrl = data.node.api_url;
     self.dateCreated = new $osf.FormattableDate(data.node.date_created);
@@ -134,7 +134,7 @@ var ProjectViewModel = function(data) {
             }
         }));
 
-        var categoryOptions = $.map(NODE_CATEGORIES, function(display, value) {
+        var categoryOptions = $.map(self.nodeCategories, function(display, value) {
             return {value: value, text: display};
         });
         $('#nodeCategoryEditable').editable($.extend({}, editableOptions, {
@@ -294,7 +294,7 @@ function NodeControl (selector, data, options) {
     self.selector = selector;
     self.$element = $(self.selector);
     self.data = data;
-    self.viewModel = new ProjectViewModel(self.data);
+    self.viewModel = new ProjectViewModel(self.data, options);
     self.options = $.extend({}, defaults, options);
     self.init();
 }
