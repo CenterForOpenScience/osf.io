@@ -15,7 +15,8 @@ class TestNodeWikiList(ApiTestCase):
         self.non_contributor = AuthUserFactory()
 
     def _add_project_wiki_page(self, node, user):
-        return NodeWikiFactory(node=node, user=user)
+        # API will only return current wiki pages
+        return NodeWikiFactory(node=node, user=user, is_current=True)
 
     def _set_up_public_project_with_wiki_page(self):
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
