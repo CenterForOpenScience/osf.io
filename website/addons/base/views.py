@@ -500,6 +500,14 @@ def addon_deleted_file(auth, node, **kwargs):
         'materialized_path': trashed.materialized_path,
         'error': FILE_GONE_ERROR_MESSAGE.format(file_name=markupsafe.escape(trashed.name)),
         'private': getattr(node.get_addon(trashed.provider), 'is_private', False),
+
+        'file_id': trashed._id,
+        # For the off chance that there is no GUID
+        'file_guid': getattr(trashed.get_guid(create=False), '_id', None),
+        'file_tags': [tag._id for tag in trashed.tags],
+        'file_name_ext': os.path.splitext(trashed.name)[1],
+        'file_name_title': os.path.splitext(trashed.name)[0],
+        'allow_comments': trashed.provider in settings.ADDONS_COMMENTABLE,
     })
 
     return ret, httplib.GONE
