@@ -23,6 +23,8 @@ def migrate_file_meta(question):
             question['extra'] = []
         else:
             question['extra'] = [files]
+        return True
+    return False
 
 
 def migrate_drafts(dry):
@@ -36,13 +38,15 @@ def migrate_drafts(dry):
     count = 0
     for r in draft_registrations:
         data = r.registration_metadata
+        migrated = False
         for q, ans in data.iteritems():
             if isinstance(ans.get('value'), dict):
                 for value in ans['value'].values():
-                    migrate_file_meta(value)
+                    migrated = migrate_file_meta(value)
             else:
-                migrate_file_meta(ans)
-        count += 1
+                migrated = migrate_file_meta(ans)
+        if migrated:
+            count += 1
         if not dry:
             r.save()
     logger.info('Done with {0} drafts migrated.'.format(count))

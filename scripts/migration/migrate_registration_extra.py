@@ -23,6 +23,8 @@ def migrate_file_meta(question):
             question['extra'] = []
         else:
             question['extra'] = [files]
+        return True
+    return False
 
 
 def migrate():
@@ -34,15 +36,17 @@ def migrate():
     count = 0
     for reg in registrations:
         data = reg.registered_meta[PREREG_CHALLENGE_METASCHEMA._id]
+        migrated = False
         for question in data.values():
             if isinstance(question.get('value'), dict):
                 for value in question['value'].values():
-                    migrate_file_meta(value)
+                    migrated = migrate_file_meta(value)
             else:
-                migrate_file_meta(question)
+                migrated = migrate_file_meta(question)
         reg.save()
-        count += 1
-    logger.info('Done with {0} drafts migrated.'.format(count))
+        if migrated:
+            count += 1
+    logger.info('Done with {0} preregistrations migrated.'.format(count))
 
 if __name__ == '__main__':
     dry_run = 'dry' in sys.argv
