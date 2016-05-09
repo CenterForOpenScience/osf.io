@@ -667,7 +667,3 @@ button.close {
 .comma-separated:last-of-type:after {
     content: "";
 }
-
-#render-node  .ball-scale>div {
-    background-color: #BED1E2;
-}

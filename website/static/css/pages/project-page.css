@@ -142,3 +142,7 @@
 span#nodeDescriptionEditable{
     white-space:pre-line;
 }
+
+#render-node  .ball-scale>div {
+    background-color: #BED1E2;
+}
