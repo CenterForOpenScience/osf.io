@@ -1,5 +1,7 @@
 from furl import furl
+import json
 import re
+import requests
 
 from flask import request
 
@@ -7,14 +9,17 @@ from framework.auth.core import get_user
 from framework.auth.signals import user_confirmed
 from framework.celery_tasks import app
 from framework.celery_tasks.handlers import queued_task
+from framework.exceptions import HTTPError
 
 from website import settings
 from website.notifications.utils import to_subscription_key
 
 from website.mailing_list.model import MailingListEventLog
-from website.project.signals import contributor_added
+from website.project.signals import contributor_added, contributor_removed
 
 ANGLE_BRACKETS_REGEX = re.compile(r'<(.*?)>')
+
+MAILGUN_BASE_LISTS_URL = '{}/lists'.format(settings.MAILGUN_API_URL)
 
 
 ###############################################################################
@@ -23,77 +28,253 @@ ANGLE_BRACKETS_REGEX = re.compile(r'<(.*?)>')
 
 # TODO
 
-def get_list(node):
+def get_info(node_id):
     """ Returns information about the mailing list from Mailgun
-    :param Node node: The node in question
+    :param str node_id: ID of the node in question
+    :returns dict info: mailing list info
+    """
+    resp = requests.get(
+        '{}/{}'.format(MAILGUN_BASE_LISTS_URL, address(node_id)),
+        auth=('api', settings.MAILGUN_API_KEY),
+    )
+    if resp.status_code == 200:
+        return json.loads(resp.text)
+    elif resp.status_code == 404:
+        return None
+    raise HTTPError(resp.status_code)
+
+def get_members(node_id):
+    """ Returns member list for mailing list from Mailgun
+    :param str node_id: ID of the node in question
+    :returns dict members: list of members
+    """
+    resp = requests.get(
+        '{}/{}/members'.format(MAILGUN_BASE_LISTS_URL, address(node_id)),
+        auth=('api', settings.MAILGUN_API_KEY),
+    )
+    if resp.status_code == 200:
+        return json.loads(resp.text)
+    raise HTTPError(resp.status_code)
+
+def get_list(node_id):
+    """ Returns information about the mailing list from Mailgun
+    :param str node_id: ID of the node in question
     :returns: info, members: Two dictionaries about list and members
     """
-    pass
+    info = get_info(node_id)
 
-def enable_list(node, unsubs):
+    if not info:
+        return None, None
+
+    members = get_members(node_id)
+
+    return info, members
+
+def create_list(node_id):
     """ Creates a new mailing list on Mailgun with all emails and subscriptions
-    :param Node node: The node in question
+    :param str node_id: ID of the node in question
     """
-    pass
+    from website.models import Node  # avoid circular import
+    node = Node.load(node_id)
 
-def disable_list(node):
-    """ Prevents further use of this list by users
-    :param Node node: The node in question
+    res = requests.post(
+        MAILGUN_BASE_LISTS_URL,
+        auth=('api', settings.MAILGUN_API_KEY),
+        data={
+            'address': address(node_id),
+            'name': list_title(node),
+            'access_level': 'members'
+        }
+    )
+    if res.status_code != 200:
+        raise HTTPError(res.status_code)
+
+    members_list = []
+    members_list = jsonify_users_list(node.contributors, unsubs=get_unsubscribes(node))
+
+    update_multiple_users_in_list(node_id, members_list)
+
+def delete_list(node_id):
+    """ Deletes list on MailGun
+    :param str node_id: ID of the node in question
     """
-    pass
+    res = requests.delete(
+        '{}/{}'.format(MAILGUN_BASE_LISTS_URL, address(node_id)),
+        auth=('api', settings.MAILGUN_API_KEY)
+    )
+    if res.status_code != 200 or res.status_code != 404:
+        raise HTTPError(res.status_code)
 
-def update_title(node):
+def update_title(node_id):
     """ Updates the title of a mailing list to match the list's project
-    :param Node node: The node in question
+    :param str node_id: ID of the node in question
     """
-    pass
+    from website.models import Node  # avoid circular import
+    node = Node.load(node_id)
 
-def update_single_user_in_list(node, user, enabled, old_email=None):
+    res = requests.put(
+        '{}/{}'.format(MAILGUN_BASE_LISTS_URL, address(node_id)),
+        auth=('api', settings.MAILGUN_API_KEY),
+        data={
+            'name': list_title(node)
+        }
+    )
+    if res.status_code != 200:
+        raise HTTPError(res.status_code)
+
+def update_single_user_in_list(node_id, user_id, email=None, enabled=True, old_email=None):
     """ Adds/updates single member of a mailing list on Mailgun
-    :param Node node: The id of the node in question
-    :param User user: User to update
+    Called to add, subscribe, or unsubscribe a user.
+
+    :param str node: ID of node in question
+    :param str user: ID of user to update
+    :param str email: email address to add. If None, `user.username` assumed.
     :param bool enabled: Enable or disable user?
-    :param str old_email: Previous email of this user in list
+    :param str old_email: Previous email of this user in list, included when user changes primary email.
     """
-    pass
+    from website.models import Node, User  # avoid circular import
+    node = Node.load(node_id)
+    user = User.load(user_id)
 
-def remove_user_from_list(node, user):
+    if old_email:
+        res = requests.put(
+            '{}/{}/members/{}'.format(MAILGUN_BASE_LISTS_URL, address(node_id), old_email),
+            auth=('api', settings.MAILGUN_API_KEY),
+            data={
+                'subscribed': 'no',
+                'vars': {'_id': user_id, 'primary': False}
+            }
+        )
+        if res.status_code != 200 or res.status_code != 404:
+            raise HTTPError(res.status_code)
+
+    res = requests.post(
+        '{}/{}/members'.format(MAILGUN_BASE_LISTS_URL, address(node._id)),
+        auth=('api', settings.MAILGUN_API_KEY),
+        data={
+            'address': email or user.username,
+            'subscribed': enabled and email == user.username and user not in get_unsubscribes(node),
+            'vars': {'_id': user._id, 'primary': email == user.username or bool(old_email)},
+            'upsert': True
+        }
+    )
+    if res.status_code != 200:
+        raise HTTPError(res.status_code)
+
+def remove_user_from_list(node_id, user_id):
     """ Removes single member of a mailing list on Mailgun
-    :param Node node: The id of the node in question
-    :param User user: User to remove
-    """
+    Called when a contributor is removed from a Node.
 
-def update_multiple_users_in_list(node, users):
+    :param str node_id: ID of node in question
+    :param str user_id: ID of user to remove
+    """
+    from website.models import User  # avoid circular import
+    user = User.load(user_id)
+
+    for email in user.emails:
+        res = requests.delete(
+            '{}/{}/members/{}'.format(MAILGUN_BASE_LISTS_URL, address(node_id), email),
+            auth=('api', settings.MAILGUN_API_KEY)
+        )
+        if res.status_code != 200 or res.status_code != 404:
+            raise HTTPError(res.status_code)
+
+def update_multiple_users_in_list(node_id, members):
     """ Adds/updates members of a mailing list on Mailgun
-    :param Node node: The id of the node in question
-    :param list users: List of Users to add/enable/update
-    """
-    pass
 
-def check_node_list_synchronized(node, recover=False):
-    """ Checks to see if the list is synchronized with internal representation
-    :param Node node: The node to check
-    :param bool recover: Should attempt to synchronize?
-    :return bool: is synchronized?
+    :param str node_id: The id of the node in question
+    :param list members: List of json-formatted user dicts to add/enable/update
     """
-    pass
+    res = requests.post(
+        '{}/{}/members.json'.format(MAILGUN_BASE_LISTS_URL, address(node_id)),
+        auth=('api', settings.MAILGUN_API_KEY),
+        data={
+            'upsert': True,
+            'members': json.dumps(members)
+        }
+    )
+    if res.status_code != 200:
+        raise HTTPError(res.status_code)
 
-def get_recipients_remote(node):
-    pass
+def full_update(node_id):
+    """ Matches remote list with internal representation
+    :param str node_id: The node to update the mailing list for
+    """
+    from website.models import Node  # avoid circular import
+    node = Node.load(node_id)
+
+    info, members = get_list(node_id)
+
+    if node.mailing_enabled:
+        if 'list' in info.keys():
+            info = info['list']
+            remote_subscribes = [member['address'] for member in members['items'] if member['subscribed']].sort()
+            local_subscribes = [user.username for user in get_recipients(node)].sort()
+
+            if info['name'] != list_title(node):
+                # Update title if necessary
+                update_title(node_id, node.title)
+
+            if remote_subscribes != local_subscribes:
+                # Push local changes
+                members_list = jsonify_users_list(node.contributors, unsubs=get_unsubscribes(node))
+                update_multiple_users_in_list(node_id, members_list)
+
+            # Delete any noncontribs
+            from website.models import User  # avoid circular import
+            member_ids = set([member['vars']['_id'] for member in members['items'] if member.get('vars', {}).get('_id', False)])
+            for _id in member_ids:
+                if _id not in node.contributors:
+                    user = User.load(_id)
+                    if user:
+                        remove_user_from_list(node_id, user)
+
+        else:
+            create_list(node_id)
+    else:
+        if 'list' in info.keys():
+            delete_list(node_id)
+
 
 ###############################################################################
 # Celery Queued tasks
 ###############################################################################
 
-# TODO queue above tasks
+@queued_task
+@app.task
+def celery_create_list(*args, **kwargs):
+    create_list(*args, **kwargs)
 
 @queued_task
 @app.task
-def send_message(node, message):
-    """ Sends a message from the node through the given mailing list
-    :param Node node: The id of the node in question
-    :param dict message: Contains subject and text of the email to be sent
-    """
+def celery_delete_list(*args, **kwargs):
+    delete_list(*args, **kwargs)
+
+@queued_task
+@app.task
+def celery_update_title(*args, **kwargs):
+    update_title(*args, **kwargs)
+
+@queued_task
+@app.task
+def celery_update_single_user_in_list(*args, **kwargs):
+    update_single_user_in_list(*args, **kwargs)
+
+@queued_task
+@app.task
+def celery_remove_user_from_list(*args, **kwargs):
+    remove_user_from_list(*args, **kwargs)
+
+@queued_task
+@app.task
+def celery_update_multiple_users_in_list(*args, **kwargs):
+    update_multiple_users_in_list(*args, **kwargs)
+
+@queued_task
+@app.task
+def celery_full_update(*args, **kwargs):
+    full_update(*args, **kwargs)
+
 
 ###############################################################################
 # Signalled Functions
@@ -104,21 +285,50 @@ def subscribe_contributor_to_mailing_list(node, contributor, auth=None):
     if node.mailing_enabled and contributor.is_active:
         subscription = node.get_or_create_mailing_list_subscription()
         subscription.add_user_to_subscription(contributor, 'email_transactional', save=True)
-        subscription.save()
-        # TODO queue task
+        celery_update_single_user_in_list(node._id, contributor._id)
+
+@contributor_removed.connect
+def unsubscribe_contributor_from_mailing_list(node, contributor, auth=None):
+    if node.mailing_enabled:
+        subscription = node.get_or_create_mailing_list_subscription()
+    else:
+        from website.models import NotificationSubscription  # avoid circular import
+        subscription = NotificationSubscription.load(to_subscription_key(node._id, 'mailing_list_events'))
+    if subscription:
+        subscription.remove_user_from_subscription(contributor)
+        celery_remove_user_from_list(node._id, contributor._id)
 
 @user_confirmed.connect
 def resubscribe_on_confirm(user):
     for node in user.contributed:
         subscribe_contributor_to_mailing_list(node, user)
-    pass
+
 
 ###############################################################################
 # Mailing List Helper Functions
 ###############################################################################
 
+def jsonify_users_list(users, unsubs=[]):
+    """ Serializes list of users for Mailgun
+
+    :param list users: users to serialize
+    :param list unsubs: unsubscribed users
+    """
+    members_list = []
+    for member in users:
+        for email in member.emails:
+            members_list.append({
+                'address': email,
+                'subscribed': member not in unsubs and email == member.username,
+                'vars': {'_id': member._id, 'primary': email == member.username}
+            })
+    return members_list
+
 def address(node_id):
     return '{}@{}'.format(node_id, furl(settings.DOMAIN).host)
+
+def list_title(node):
+    return '{} Mailing List'.format(node.title)
 
 def find_email(long_email):
     # allow for both "{email}" syntax and "{name} <{email}>" syntax
@@ -147,11 +357,28 @@ def log_message(**kwargs):
         sending_user=sender,
     ).save()
 
-def get_recipients(node, sender=None):
+def unsubscribe_user_hook(**kwargs):
+    """ Hook triggered by MailGun when user unsubscribes.
+    See `Unsubscribes Webhook` below https://documentation.mailgun.com/user_manual.html#tracking-unsubscribes
+    for possible kwargs
+    """
+    unsub = kwargs.get('recipient')
+    mailing_list = kwargs.get('mailing-list')
+    if not unsub and mailing_list:
+        import ipdb; ipdb.set_trace()
+        raise Exception(message=kwargs)
+    from website.models import Node, User, NotificationSubscription  # avoid circular imports
+    user = User.load(unsub)
+    node = Node.load(mailing_list.split('@')[0])
+    subscription = NotificationSubscription.load(to_subscription_key(node._id, 'mailing_list_events'))
+    subscription.add_user_to_subscription(user, 'none', save=True)
+
+
+def get_recipients(node):
     if node.mailing_enabled:
         from website.models import NotificationSubscription  # avoid circular import
         subscription = NotificationSubscription.load(to_subscription_key(node._id, 'mailing_list_events'))
-        return [u for u in subscription.email_transactional if not u == sender]
+        return [u for u in subscription.email_transactional]
     return []
 
 def get_unsubscribes(node):

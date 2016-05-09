@@ -1666,6 +1666,14 @@ def make_url_map(app):
             mailing_list_views.log_message,
             json_renderer,
         ),
+        Rule(
+            [
+                '/mailing_list/hooks/unsubscribe/',
+            ],
+            'post',
+            mailing_list_views.unsubscribe_user,
+            json_renderer,
+        ),
 
         # Invite Users
         Rule(

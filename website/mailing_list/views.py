@@ -5,8 +5,7 @@ from website.project.decorators import (
     must_not_be_registration,
 )
 from website.util.permissions import ADMIN
-
-from website.mailing_list.utils import log_message
+from website.mailing_list import utils
 
 
 ###############################################################################
@@ -23,7 +22,7 @@ def get_node_mailing_list(node, auth, **kwargs):
 @must_have_permission(ADMIN)
 @must_not_be_registration
 def enable_mailing_list(node, **kwargs):
-    # TODO: queue task
+    utils.celery_create_list(node._id)
     node.mailing_enabled = True
     node.save()
     return {'message': 'Successfully enabled mailing lists', 'success': True}
@@ -33,11 +32,12 @@ def enable_mailing_list(node, **kwargs):
 @must_have_permission(ADMIN)
 @must_not_be_registration
 def disable_mailing_list(node, **kwargs):
-    # TODO: queue task
+    utils.celery_delete_list(node._id)
     node.mailing_enabled = False
     node.save()
 
-log_message = log_message
+unsubscribe_user = utils.unsubscribe_user_hook
+log_message = utils.log_message
 
 def format_node_data_recursive(nodes, user):
     items = []

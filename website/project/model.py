@@ -855,6 +855,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
     # Project Mailing
     mailing_enabled = fields.BooleanField(default=True, index=True)
+    mailing_updated = fields.BooleanField(default=False, index=True)
 
     wiki_pages_current = fields.DictionaryField()
     wiki_pages_versions = fields.DictionaryField()
