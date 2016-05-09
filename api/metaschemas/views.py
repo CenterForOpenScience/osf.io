@@ -12,6 +12,7 @@ from api.base.utils import get_object_or_error
 from website.models import MetaSchema
 from api.metaschemas.serializers import MetaSchemaSerializer
 
+
 class MetaSchemasList(JSONAPIBaseView, generics.ListAPIView):
     """
      <!--- Copied from MetaSchemaDetail -->

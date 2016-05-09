@@ -795,10 +795,10 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
                     }
         Success:       201 OK + draft representation
 
-    To create a draft registration, issue a POST request to the `self` link.  Registration form must be the name of an
+    To create a draft registration, issue a POST request to the `self` link.  Registration supplement must be the name of an
     active registration schema, for example, "Open-Ended Registration".  Registration metadata is not required on the creation
     of the draft. If registration metadata is included, it must be a dictionary with keys as question ids in the registration
-    form, and values as nested dictionaries matching the specific format in the registration schema.  See registration schema
+    supplement, and values as nested dictionaries matching the specific format in the registration schema.  See registration schema
     endpoints for specifics. If question is multiple-choice, question response must exactly match one of the possible choices.
 
     ##Links
@@ -889,7 +889,7 @@ class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestro
                     }
         Success:       200 OK + draft representation
 
-    To update a draft registration, issue a PUT/PATCH request to the `self` link.  Registration forms cannot be updated
+    To update a draft registration, issue a PUT/PATCH request to the `self` link.  Registration supplement cannot be updated
     after the draft registration has been created.  Registration metadata is required.  It must be a dictionary with
     keys as question ids in the registration form, and values as nested dictionaries matching the specific format in the
     registration schema. See registration schema endpoints for specifics. If question is multiple-choice, question response
@@ -1033,7 +1033,7 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
     view_category = 'nodes'
     view_name = 'node-registrations'
 
-    # overrides ListAPIView
+    # overrides ListCreateAPIView
     # TODO: Filter out retractions by default
     def get_queryset(self):
         nodes = self.get_node().registrations_all

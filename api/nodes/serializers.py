@@ -89,6 +89,7 @@ class DraftRegistrationSerializer(JSONAPISerializer):
         """
         reviewer = is_prereg_admin_not_project_admin(self.context['request'], draft)
         schema = create_jsonschema_from_metaschema(draft, is_reviewer=reviewer)
+        # Required fields are only required when creating the actual registration, not updating the draft.
         if schema.get('required'):
             del schema['required']
         try:
@@ -106,6 +107,7 @@ class DraftRegistrationSerializer(JSONAPISerializer):
 class DraftRegistrationDetailSerializer(DraftRegistrationSerializer):
     """
     Overrides DraftRegistrationSerializer to make id and registration_metadata required.
+    registration_supplement cannot be changed after draft has been created.
 
     Also makes registration_supplement read-only.
     """

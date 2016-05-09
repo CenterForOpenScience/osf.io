@@ -23,6 +23,7 @@ from api.base.serializers import (IDField, RelationshipField, LinksField, HideIf
 class RegistrationSerializer(NodeSerializer):
 
     title = ser.CharField(read_only=True)
+    description = ser.CharField(read_only=True)
     category = ser.CharField(read_only=True)
 
     draft_registration = ser.CharField(write_only=True)
