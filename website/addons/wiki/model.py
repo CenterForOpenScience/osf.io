@@ -3,6 +3,7 @@
 import datetime
 import functools
 import logging
+import urllib
 
 from bleach import linkify
 from bleach.callbacks import nofollow
@@ -182,11 +183,11 @@ class NodeWikiPage(GuidStoredObject, Commentable):
 
     @property
     def deep_url(self):
-        return '{}wiki/{}/'.format(self.node.deep_url, self.page_name)
+        return '{}wiki/{}/'.format(self.node.deep_url, urllib.quote(self.page_name))
 
     @property
     def url(self):
-        return '{}wiki/{}/'.format(self.node.url, self.page_name)
+        return '{}wiki/{}/'.format(self.node.url, urllib.quote(self.page_name))
 
     @property
     def rendered_before_update(self):
