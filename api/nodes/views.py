@@ -2013,6 +2013,51 @@ class NodeInstitutionRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIVie
 
 
 class NodeWikiList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMixin):
+    """List of wiki pages on a node. *Read only*.
+
+    Paginated list of the node's current wiki page versions ordered by their `date_modified.` Each resource contains the
+    full representation of the wiki, meaning additional requests to an individual wiki's detail view are not necessary.
+
+    Note that if an anonymous view_only key is being used, the user relationship will not be exposed.
+
+    ###Permissions
+
+    Wiki pages on public nodes are given read-only access to everyone. Wiki pages on private nodes are only visible to
+    contributors and administrators on the parent node.
+
+    ##Attributes
+
+    OSF wiki entities have the "wikis" `type`.
+
+        name           type               description
+        =================================================================================
+        name           string             name of the wiki pag
+        path           string             the path of the wiki page
+        materialized   string             the path of the wiki page
+        date_modified  iso8601 timestamp  timestamp when the wiki was last updated
+        content_type   string             MIME-type
+        extra          object
+            version    integer            version number of the wiki
+
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    ##Query Params
+
+    + `filter[name]=<Str>` -- filter wiki pages by name
+
+    + `filter[date_modified][comparison_operator]=YYYY-MM-DDTH:M:S` -- filter wiki pages based on date modified.
+
+    Wiki pages can be filtered based on their `date_modified` fields. Possible comparison
+    operators include 'gt' (greater than), 'gte'(greater than or equal to), 'lt' (less than) and 'lte'
+    (less than or equal to). The date must be in the format YYYY-MM-DD and the time is optional.
+
+
+    #This Request/Response
+    """
+
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -2043,6 +2088,57 @@ class NodeWikiList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMi
 
 
 class NodeWikiDetail(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
+    """Details about a specific wiki. *Read-only*.
+
+    ###Permissions
+
+    Wiki pages on public nodes are given read-only access to everyone. Wiki pages on private nodes are only visible to
+    contributors and administrators on the parent node.
+
+    Note that if an anonymous view_only key is being used, the user relationship will not be exposed.
+
+    ##Attributes
+
+    OSF wiki entities have the "wikis" `type`.
+
+        name           type               description
+        =================================================================================
+        name           string             name of the wiki pag
+        path           string             the path of the wiki page
+        materialized   string             the path of the wiki page
+        date_modified  iso8601 timestamp  timestamp when the wiki was last updated
+        content_type   string             MIME-type
+        extra          object
+            version    integer            version number of the wiki
+
+
+    ##Relationships
+
+    ###User
+
+    The user who created the wiki.
+
+    ###Node
+
+    The project that the wiki page belongs to.
+
+    ###Comments
+
+    The comments created on the wiki page.
+
+    ##Links
+
+        self:  the canonical api endpoint of this wiki
+        info: the canonical api endpoint of this wiki
+        download: the link to retrive the contents of the wiki page
+
+    ##Query Params
+
+    *None*.
+
+    #This Request/Response
+
+    """
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,

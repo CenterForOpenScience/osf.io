@@ -52,7 +52,57 @@ class WikiMixin(object):
 
 
 class WikiDetail(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
+    """Details about a specific wiki. *Read-only*.
 
+    ###Permissions
+
+    Wiki pages on public nodes are given read-only access to everyone. Wiki pages on private nodes are only visible to
+    contributors and administrators on the parent node.
+
+    Note that if an anonymous view_only key is being used, the user relationship will not be exposed.
+
+    ##Attributes
+
+    OSF wiki entities have the "wikis" `type`.
+
+        name           type               description
+        =================================================================================
+        name           string             name of the wiki pag
+        path           string             the path of the wiki page
+        materialized   string             the path of the wiki page
+        date_modified  iso8601 timestamp  timestamp when the wiki was last updated
+        content_type   string             MIME-type
+        extra          object
+            version    integer            version number of the wiki
+
+
+    ##Relationships
+
+    ###User
+
+    The user who created the wiki.
+
+    ###Node
+
+    The project that the wiki page belongs to.
+
+    ###Comments
+
+    The comments created on the wiki page.
+
+    ##Links
+
+        self:  the canonical api endpoint of this wiki
+        info: the canonical api endpoint of this wiki
+        download: the link to retrive the contents of the wiki page
+
+    ##Query Params
+
+    *None*.
+
+    #This Request/Response
+
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -72,6 +122,8 @@ class WikiDetail(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
 
 
 class WikiContent(JSONAPIBaseView, WikiMixin):
+    """ View for rendering wiki page content."""
+
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
