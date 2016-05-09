@@ -291,15 +291,16 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
 
         comment.save()
 
-        comment.node.add_log(
-            NodeLog.COMMENT_ADDED,
-            log_dict,
-            auth=auth,
-            save=False,
-        )
+        if not comment.node.is_registration:
+            comment.node.add_log(
+                NodeLog.COMMENT_ADDED,
+                log_dict,
+                auth=auth,
+                save=False,
+            )
 
-        comment.node.save()
-        project_signals.comment_added.send(comment, auth=auth)
+            comment.node.save()
+            project_signals.comment_added.send(comment, auth=auth)
 
         return comment
 
@@ -318,13 +319,14 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
         self.date_modified = datetime.datetime.utcnow()
         if save:
             self.save()
-            self.node.add_log(
-                NodeLog.COMMENT_UPDATED,
-                log_dict,
-                auth=auth,
-                save=False,
-            )
-            self.node.save()
+            if not self.node.is_registration:
+                self.node.add_log(
+                    NodeLog.COMMENT_UPDATED,
+                    log_dict,
+                    auth=auth,
+                    save=False,
+                )
+                self.node.save()
 
     def delete(self, auth, save=False):
         if not self.node.can_comment(auth) or self.user._id != auth.user._id:
@@ -340,13 +342,14 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
         self.date_modified = datetime.datetime.utcnow()
         if save:
             self.save()
-            self.node.add_log(
-                NodeLog.COMMENT_REMOVED,
-                log_dict,
-                auth=auth,
-                save=False,
-            )
-            self.node.save()
+            if not self.node.is_registration:
+                self.node.add_log(
+                    NodeLog.COMMENT_REMOVED,
+                    log_dict,
+                    auth=auth,
+                    save=False,
+                )
+                self.node.save()
 
     def undelete(self, auth, save=False):
         if not self.node.can_comment(auth) or self.user._id != auth.user._id:
@@ -362,12 +365,13 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
         self.date_modified = datetime.datetime.utcnow()
         if save:
             self.save()
-            self.node.add_log(
-                NodeLog.COMMENT_RESTORED,
-                log_dict,
-                auth=auth,
-                save=False,
-            )
+            if not self.node.is_registration:
+                self.node.add_log(
+                    NodeLog.COMMENT_RESTORED,
+                    log_dict,
+                    auth=auth,
+                    save=False,
+                )
             self.node.save()
 
 
