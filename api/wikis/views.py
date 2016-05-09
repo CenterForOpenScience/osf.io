@@ -124,7 +124,6 @@ class WikiDetail(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
 class WikiContent(JSONAPIBaseView, WikiMixin):
     """ View for rendering wiki page content."""
 
-
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,

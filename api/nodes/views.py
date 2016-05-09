@@ -1944,7 +1944,7 @@ class NodeInstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin
         return node.primary_institution
 
 
-class NodeInstitutionRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
+class NodeInstitutionRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin):
     """ Relationship Endpoint for Node -> Institution Relationship
 
     Used to set the primary_institution of a node to an institution
@@ -2057,7 +2057,6 @@ class NodeWikiList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMi
 
     #This Request/Response
     """
-
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,

@@ -66,9 +66,3 @@ class TestGuidRedirect(ApiTestCase):
         url = '/{}guids/{}/'.format(API_BASE, 'fakeguid')
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
-
-    def test_redirect_throws_501_for_non_implemented_views(self):
-        wiki = NodeWikiFactory()
-        url = '/{}guids/{}/'.format(API_BASE, wiki._id)
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 501)

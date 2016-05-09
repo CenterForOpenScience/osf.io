@@ -62,6 +62,11 @@ class RegistrationSerializer(NodeSerializer):
         related_view_kwargs={'node_id': '<pk>'}
     ))
 
+    wikis = RelationshipField(
+        related_view='registrations:registration-wikis',
+        related_view_kwargs={'node_id': '<pk>'},
+    )
+
     forked_from = HideIfRetraction(RelationshipField(
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<forked_from_id>'}
