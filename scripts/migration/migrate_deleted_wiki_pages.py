@@ -6,7 +6,7 @@ from modularodm import Q
 from framework.transactions.context import TokuTransaction
 from nose.tools import *
 from tests.base import OsfTestCase
-from tests.factories import UserFactory
+from tests.factories import ProjectFactory, AuthUserFactory, NodeWikiFactory
 from website.app import init_app
 from website.models import User, Node, NodeLog
 from scripts import utils as script_utils
@@ -18,31 +18,24 @@ def get_targets():
 
 def migrate(targets, dry_run=True):
     # iterate over targets
-    # log things
     logs = targets
-    #print("LEN!!! ", len(logs))
     nodes = set()
     for log in logs:
-        # kdut5 = project_id
         nodes.add(log.node)
-    print nodes
     for node in nodes:
-        #print node.wiki_pages_versions
-        #print node.wiki_pages_current
-        diff = set(node.wiki_pages_current) - set(node.wiki_pages_versions)
-        print diff #empty on this branch, not on develop
-        '''
+        versions = node.wiki_pages_versions
+        current = node.wiki_pages_current
+        updated_versions = {}
+        for wiki in node.wiki_pages_versions:
+            if wiki in current:
+                updated_versions[wiki] = versions[wiki]
         if not dry_run:
-            node.wiki_pages_current = set(node.wiki_pages_current) - diff
+            node.wiki_pages_versions = updated_versions
             node.save()
-        '''
-        node.wiki_pages_current = set(node.wiki_pages_current) - diff
-        node.save()
 
-    '''
     if dry_run:
         raise RuntimeError('Dry run, transaction rolled back.')
-    '''
+
 
 def main():
     dry_run = False
@@ -57,54 +50,35 @@ def main():
 if __name__ == "__main__":
     main()
 
-'''
-class TestMigrateTwitterHandles(OsfTestCase):
+
+class TestMigrateDeletedWikiVersons(OsfTestCase):
     def setUp(self):
-        super(TestMigrateTwitterHandles, self).setUp()
-        # User 2 has no '@' signs, should be unaffected by migration
-        self.user1 = UserFactory()
-        self.user1.social['twitter'] = 'user1'
-        self.user1.save()
-        # User 2 has 1 leading '@', should be changed to 'user2' after migration
-        self.user2 = UserFactory()
-        self.user2.social['twitter'] = '@user2'
-        self.user2.save()
-        # User 3 has 2 leading '@', should be changed to 'user1' after migration
-        self.user3 = UserFactory()
-        self.user3.social['twitter'] = '@@user3'
-        self.user3.save()
-        # User 4 has many leading '@' signs, should be changed to 'user4' after migration
-        self.user4 = UserFactory()
-        self.user4.social['twitter'] = '@@@@@@@@@@@@@@@@@user4'
-        self.user4.save()
-        # User 5 has '@' signs in the middle of their handle, should be changed to 'user5' after migration
-        self.user5 = UserFactory()
-        self.user5.social['twitter'] = 'user@@@@@@@5'
-        self.user5.save()
-        # User 6 has '@' signs at the end of their handle, should be changed to 'user5' after migration
-        self.user6 = UserFactory()
-        self.user6.social['twitter'] = 'user6@@@@@@'
-        self.user6.save()
-        # User 7 has no twitter handle, should be unaffected by migration
-        self.user7 = UserFactory()
-        self.user7.social['twitter'] = ''
-        self.user7.save()
+        super(TestMigrateDeletedWikiVersions, self).setUp()
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user, is_public=True)
+        # create a wiki page
+        self.wiki = NodeWikiFactory(node=self.project_with_wikis)
+        # make edits to wiki, then delete wiki so it is a target
+
 
     def test_get_targets(self):
         # Initial targets should include: user2, user3, user4, user5, user6 (5 in total)
-        users = get_targets()
-        for user in users:
+        logs = get_targets()
+        '''
+        for log in logs:
             logging.info(user)
             logging.info(user.social['twitter'])
         logging.info(len(users))
         assert_equal(len(users), 5)
+        '''
 
     def test_migrate(self):
-        users = get_targets()
-        migrate(users, dry_run=False)
-        updated_users = get_targets()
-        # Make sure all handles containing '@' have been migrated
-        assert_equal(len(updated_users), 0)
+        logs = get_targets()
+        migrate(logs, dry_run=False)
+        updated_logs = get_targets()
+        # Make sure all nodes with deleted wikis have been migrated
+        '''
+        assert_equal(len(updated_logs), 0)
         # Make sure each user's twitter handle is as expected
         assert_equal(self.user1.social['twitter'], 'user1')
         # Reload all users
@@ -121,4 +95,4 @@ class TestMigrateTwitterHandles(OsfTestCase):
         assert_equal(self.user5.social['twitter'], 'user5')
         assert_equal(self.user6.social['twitter'], 'user6')
         assert_equal(self.user7.social['twitter'], '')
-'''
+        '''
