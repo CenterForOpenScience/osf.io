@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% load render_bundle from webpack_loader %}
+{% load node_extras %}
+
+{% load static %}
+{% block title %}
+    <title>OSF Admin | Prereg</title>
+{% endblock %}
+
+{% block content %}
+    <h2>List of Preregistration Drafts</h2>
+    {% include "util/pagination.html" with items=page status=status %}
+    <table class="table table-striped table-hover table-responsive">
+    <thead>
+        <tr>
+            <th>Status</th>
+            <th>Title</th>
+            <th>Applicant</th>
+            <th>Date initiated</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for draft in drafts %}
+    <tr>
+        <td>
+            <h4 style="margin-top: 0px">
+            {% if draft.is_pending_approval %}
+            <span class="label label-warning">Pending Approval</span>
+            {% elif draft.is_approved %}
+            <span class="label label-lg label-success">Approved</span>
+            {% elif draft.is_rejected %}
+            <span class="label label-lg label-danger">Rejected</span>
+            {% endif %}
+            </h4>
+        </td>
+        <td>
+            {{ draft.title|truncatechars:40 }}
+        </td>
+        <td>
+            {{ draft.initiator.full_name }}
+        </td>
+        <td>
+            {{ draft.submitted | date:"N dS Y g:i a"}}
+        </td>
+        <td>
+            <a href="{% url 'pre_reg:update_draft' draft.pk %}"
+               class="btn btn-success" data-toggle="modal"
+               data-target="#form{{ draft.pk }}">
+                View details
+            </a>
+            <div class="modal" id="form{{ draft.pk }}">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        {# Data from above link #}
+                    </div>
+                </div>
+            </div>
+            <a href="{% url 'pre_reg:view_draft' draft.pk %}" target="_blank"
+               class="btn btn-primary">
+                View Draft
+            </a>
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+    </table>
+{% endblock %}

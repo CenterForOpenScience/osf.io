@@ -29,7 +29,7 @@ def embargo_handler(action, registration, registered_from):
 
 def embargo_termination_handler(action, registration, registered_from):
     status.push_status_message({
-        'approve': 'Your approval of making this embargo public has been accepted.',
+        'approve': 'Your approval to make this embargo public has been accepted.',
         'reject': 'Your disapproval has been accepted and this embargo will not be made public.',
     }[action], kind='success', trust=False)
     # Allow decorated view function to return response
