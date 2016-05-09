@@ -3,7 +3,6 @@
 import datetime
 import functools
 import logging
-import urllib
 
 from bleach import linkify
 from bleach.callbacks import nofollow

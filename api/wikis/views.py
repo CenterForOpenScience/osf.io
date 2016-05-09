@@ -20,7 +20,7 @@ class WikiRenderer(renderers.BaseRenderer):
     media_type = 'text/markdown'
     format = '.txt'
 
-    def render(self, data, media_type=None,renderer_context=None):
+    def render(self, data, media_type=None, renderer_context=None):
         return data.encode(self.charset)
 
 class WikiMixin(object):
