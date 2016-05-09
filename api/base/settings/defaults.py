@@ -180,6 +180,7 @@ SWAGGER_SETTINGS = {
         'title': 'OSF APIv2 Documentation',
     },
     'doc_expansion': 'list',
+    "exclude_namespaces": ['applications', 'tokens'],
 }
 
 DEBUG_TRANSACTIONS = DEBUG
