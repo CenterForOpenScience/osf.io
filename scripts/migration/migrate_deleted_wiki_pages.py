@@ -31,9 +31,13 @@ def migrate(targets, dry_run=True):
         #print node.wiki_pages_current
         diff = set(node.wiki_pages_current) - set(node.wiki_pages_versions)
         print diff #empty on this branch, not on develop
+        '''
         if not dry_run:
             node.wiki_pages_current = set(node.wiki_pages_current) - diff
             node.save()
+        '''
+        node.wiki_pages_current = set(node.wiki_pages_current) - diff
+        node.save()
 
     '''
     if dry_run:
