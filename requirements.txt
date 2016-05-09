@@ -63,6 +63,7 @@ django-rest-swagger==0.3.6
 djangorestframework-bulk==0.2.1
 pyjwt==1.4.0
 pyjwe==1.0.0
+jsonschema==2.5.1
 
 # Admin requirements
 django-webpack-loader==0.2.3
