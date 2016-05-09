@@ -204,4 +204,17 @@ KEEN_PROJECT_ID = 'CHANGEME'
 KEEN_READ_KEY = 'CHANGEME'
 KEEN_WRITE_KEY = 'CHANGEME'
 
-ENTRY_POINTS = ['osf4m', 'prereg_challenge_campaign', 'institution_campaign']
+KEEN_CREDENTIALS = {
+    'keen_ready': False
+}
+
+if KEEN_CREDENTIALS['keen_ready']:
+    KEEN_CREDENTIALS.update({
+        'keen_project_id': KEEN_PROJECT_ID,
+        'keen_read_key': KEEN_READ_KEY,
+        'keen_write_key': KEEN_WRITE_KEY
+    })
+
+
+ENTRY_POINTS = {'osf4m': 'osf4m', 'prereg_challenge_campaign': 'prereg',
+                'institution_campaign': 'institution'}

@@ -25,20 +25,6 @@
         <a href="{% url 'sales_analytics:dashboard' %}" class="btn btn-primary">
             Analytics Dashboard
         </a>
-        <a href="{% url 'sales_analytics:products_usage' %}" class="btn btn-primary">
-            Products Usage
-        </a>
-        {% if keen_ready %}
-        <a href="{% url 'sales_analytics:user_session' %}" class="btn btn-primary">
-            User Session
-        </a>
-        <a href="{% url 'sales_analytics:products_view' %}" class="btn btn-primary">
-            Products View
-        </a>
-        <a href="{% url 'sales_analytics:debug_test' %}" class="btn btn-primary">
-            Debug and Test
-        </a>
-        {% endif %}
     {% endblock topmenu %}
 
     {% block title_analytics %}
@@ -50,4 +36,3 @@
     {% endblock content_analytics %}
 
 {% endblock content %}
-

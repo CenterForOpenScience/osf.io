@@ -46,7 +46,6 @@ var SalesAnalytics = function() {
                 var dataSet = self.extractDataSet(response);
                 var result = ss.mean(dataSet);
                 self.drawChart(chart, 'metric', 'Minutes', result/1000/60);
-                console.log('average user session length is ' + result + " ms" );
             }
         });
     };
@@ -70,7 +69,6 @@ var SalesAnalytics = function() {
             else {
                 var dataSet = self.extractDataSet(response);
                 var result = ss.mean(dataSet);
-                console.log('average mau session length is ' + result + ' ms' );
                 self.drawChart(chart, 'metric', 'Minutes', result/1000/60);
             }
         });
@@ -135,7 +133,6 @@ var SalesAnalytics = function() {
                 var dataSetMAU = self.extractDataSet(response[1]);
                 resultUser = ss.mean(dataSetUser);
                 resultMAU = ss.mean(dataSetMAU);
-                console.log('Week ' + numberOfWeeks + ' (' + weekEnd.toISOString() + '): ' + resultUser + ', ' + resultMAU);
             }
             var item = {
                 timeframe: {
@@ -217,8 +214,6 @@ var SalesAnalytics = function() {
                 width: {
                     ratio: 0.5 // this makes bar width 50% of length between ticks
                 }
-                // or
-                //width: 100 // this makes bar width 100px
             }
         });
     };
@@ -244,8 +239,6 @@ var SalesAnalytics = function() {
                 width: {
                     ratio: 0.5 // this makes bar width 50% of length between ticks
                 }
-                // or
-                //width: 100 // this makes bar width 100px
             }
         });
     };
@@ -352,10 +345,6 @@ var SalesAnalytics = function() {
         self.getMultiActionCountMonthly(multiProductMetricsMonthly);
         self.getRepeatActionCountMonthly(repeatActionUserMonthly);
         self.getTotalUserCount(userCount);
-    };
-
-    self.clean = function() {
-        console.log('clean');
     };
 
     self.extractDataSet = function(keenResult) {
