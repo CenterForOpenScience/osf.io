@@ -250,6 +250,7 @@ AddContributorViewModel = oop.extend(Paginator, {
                     return updatedUser;
                 });
                 self.results(contributors);
+                self.doneSearching(true);
             }
         );
     },

@@ -4,7 +4,9 @@
 </script>
 
 <script type="text/html" id="osf-upload-open">
-    <div id="selectedFile">File(s) selected for upload:
+  <div id="selectedFile">File(s) selected for upload:
+    <br>
+    <br>
         <div data-bind="foreach: selectedFiles">
             <span data-bind="text: data.name"></span>
             <button data-bind="click: $parent.unselectFile"
@@ -21,7 +23,9 @@
 </script>
 
 <script type="text/html" id="osf-upload-toggle">
-    <span data-bind="text: UPLOAD_LANGUAGE"></span><br/>
+  <span data-bind="text: UPLOAD_LANGUAGE"></span>
+  <br>
+  <br>
     <div id="selectedFile">File(s) selected for upload:
         <div data-bind="foreach: selectedFiles">
             <span data-bind="text: data.name"></span>
