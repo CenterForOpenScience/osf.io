@@ -335,6 +335,22 @@ class AdminTestCase(DbTestCase, DjangoTestCase, UploadTestCase, MockRequestTestC
     pass
 
 
+class NotificationTestCase(OsfTestCase):
+    """An `OsfTestCase` to use when testing specific subscription behavior.
+    Use when you'd like to manually create all Node subscriptions and subscriptions
+    for added contributors yourself, and not rely on automatically added ones.
+    """
+    @classmethod
+    def setUpClass(cls):
+        super(NotificationTestCase, cls).setUpClass()
+        cls._original_enable_notification_subscription_creation = settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION
+        settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION = False
+
+    @classmethod
+    def tearDownClass(cls):
+        settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION = cls._original_enable_notification_subscription_creation
+
+
 # From Flask-Security: https://github.com/mattupstate/flask-security/blob/develop/flask_security/utils.py
 class CaptureSignals(object):
     """Testing utility for capturing blinker signals.
