@@ -4,7 +4,7 @@
 <div class="page-header  visible-xs">
   <h2 class="text-300">Files</h2>
 </div>
-% if ('write' in user['permissions'] and not node['is_registration']:
+% if 'write' in user['permissions'] and not node['is_registration']:
     <span class="f-w-xl">Click on a storage provider or drag and drop to upload</span>
 %endif
 
