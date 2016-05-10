@@ -146,6 +146,14 @@ class TestNodeContributorList(NodeCRUDTestCase):
         assert_equal(res.json['data'][1]['embeds']['users']['errors'][0]['meta']['full_name'], self.user_two.fullname)
         assert_equal(res.json['data'][1]['embeds']['users']['errors'][0]['detail'], 'The requested user is no longer available.')
 
+    def test_total_bibliographic_contributor_count_returned_in_metadata(self):
+        non_bibliographic_user = UserFactory()
+        self.public_project.add_contributor(non_bibliographic_user, visible=False, auth=Auth(self.public_project.creator))
+        self.public_project.save()
+        res = self.app.get(self.public_url, auth=self.user_two.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['links']['meta']['total_bibliographic'], len(self.public_project.visible_contributor_ids))
+
     def test_unregistered_contributor_field_is_null_if_account_claimed(self):
         project = ProjectFactory(creator=self.user, public=True)
         url = '/{}nodes/{}/contributors/'.format(API_BASE, project._id)

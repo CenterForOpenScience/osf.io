@@ -14,6 +14,7 @@ var $ = require('jquery');
 var m = require('mithril');
 var moment = require('moment');
 var $osf = require('js/osfHelpers');
+var lodashFind = require('lodash.find');
 
 var LinkObject;
 var NodeFetcher;
@@ -45,6 +46,7 @@ function _poTitleColumn(item) {
     }
 }
 
+
 /**
  * Contributors have first person's name and then number of contributors. This function returns the proper html
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
@@ -61,6 +63,15 @@ function _poContributors(item) {
         return '';
     }
     var totalContributors = item.data.embeds.contributors.links.meta.total;
+    var isContributor = lodashFind(contributorList, ['id', window.contextVars.currentUser.id]);
+
+    if (!isContributor) {
+        // bibliographic contributors
+        contributorList = contributorList.filter(function (contrib) {
+            return contrib.attributes.bibliographic;
+        });
+        totalContributors = item.data.embeds.contributors.links.meta.total_bibliographic;
+    }
 
     return contributorList.map(function (person, index, arr) {
         var names = $osf.extractContributorNamesFromAPIData(person);
@@ -88,7 +99,7 @@ function _poContributors(item) {
             return m('span');
         }
         if (index === 2) {
-            return m('span', ' + ' + (totalContributors -2)); // We already show names of the two
+            return m('span', ' + ' + (totalContributors - 2)); // We already show names of the two
         }
         return m('span', comma + name);
     });

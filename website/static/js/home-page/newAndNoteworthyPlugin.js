@@ -92,10 +92,10 @@ var NewAndNoteworthy = {
             promise.then(function(result){
                 var contribNames = [];
                 result.data.forEach(function (contrib){
-                    if (contrib.attributes.unregistered_contributor) {
+                    if (contrib.attributes.unregistered_contributor && contrib.attributes.bibliographic) {
                         contribNames.push(contrib.attributes.unregistered_contributor);
                     }
-                    else if (contrib.embeds.users.data){
+                    else if (contrib.embeds.users.data && contrib.attributes.bibliographic){
                         contribNames.push($osf.findContribName(contrib.embeds.users.data.attributes));
                     }
                     else if (contrib.embeds.users.errors) {
@@ -104,7 +104,7 @@ var NewAndNoteworthy = {
 
                 });
                 self.someContributorsLoaded(true);
-                var numContrib = result.links.meta.total;
+                var numContrib = result.links.meta.total_bibliographic;
                 var nodeId = nodeLink.id;
                 self.contributorsMapping[nodeId] = {'names': contribNames, 'total': numContrib};
             }, function _error(result){
