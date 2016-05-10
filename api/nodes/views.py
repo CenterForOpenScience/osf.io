@@ -758,7 +758,7 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
 
         name                       type               description
         ===========================================================================
-        registration_supplement    string             name of registration_schema, must be one of allowed values
+        registration_supplement    string             id of registration_schema, must be an active schema
         registration_metadata      dictionary         dictionary of question ids and responses from registration schema
         datetime_initiated         iso8601 timestamp  timestamp that the draft was created
         datetime_updated           iso8601 timestamp  timestamp when the draft was last updated
@@ -788,18 +788,18 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
                         "data": {
                             "type": "draft_registrations",  # required
                             "attributes": {
-                                "registration_supplement": {schema_name}, # required
+                                "registration_supplement": {schema_id}, # required
                                 "registration_metadata": {"question_id": {"value": "question response"}} # optional
                             }
                         }
                     }
         Success:       201 OK + draft representation
 
-    To create a draft registration, issue a POST request to the `self` link.  Registration supplement must be the name of an
-    active registration schema, for example, "Open-Ended Registration".  Registration metadata is not required on the creation
-    of the draft. If registration metadata is included, it must be a dictionary with keys as question ids in the registration
-    supplement, and values as nested dictionaries matching the specific format in the registration schema.  See registration schema
-    endpoints for specifics. If question is multiple-choice, question response must exactly match one of the possible choices.
+    To create a draft registration, issue a POST request to the `self` link.  Registration supplement must be the id of an
+    active registration schema.  Registration metadata is not required on the creation of the draft. If registration metadata is included,
+    it must be a dictionary with keys as question ids in the registration supplement, and values as nested dictionaries
+    matching the specific format in the registration schema.  See registration schema endpoints for specifics. If question
+    is multiple-choice, question response must exactly match one of the possible choices.
 
     ##Links
 
@@ -852,7 +852,7 @@ class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestro
 
         name                       type               description
         ===========================================================================
-        registration_supplement    string             name of registration_schema
+        registration_supplement    string             id of registration_schema, must be an active schema
         registration_metadata      dictionary         dictionary of question ids and responses from registration schema
         datetime_initiated         iso8601 timestamp  timestamp that the draft was created
         datetime_updated           iso8601 timestamp  timestamp when the draft was last updated

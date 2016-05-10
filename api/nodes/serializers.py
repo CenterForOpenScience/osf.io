@@ -563,12 +563,9 @@ class NodeAlternativeCitationSerializer(JSONAPISerializer):
 
 class DraftRegistrationSerializer(JSONAPISerializer):
 
-    schema_choices = list(ACTIVE_META_SCHEMAS)
-    schema_choices_string = ', '.join(["'{}'".format(choice) for choice in schema_choices])
-
     id = IDField(source='_id', read_only=True)
     type = TypeField()
-    registration_supplement = ser.ChoiceField(source='registration_schema.name', choices=schema_choices, help_text="Choices: " + schema_choices_string, required=True)
+    registration_supplement = ser.CharField(source='registration_schema._id', required=True)
     registration_metadata = ser.DictField(required=False)
     datetime_initiated = ser.DateTimeField(read_only=True)
     datetime_updated = ser.DateTimeField(read_only=True)
@@ -600,8 +597,10 @@ class DraftRegistrationSerializer(JSONAPISerializer):
         initiator = validated_data.pop('initiator')
         metadata = validated_data.pop('registration_metadata', None)
 
-        schema_name = validated_data.pop('registration_schema').get('name')
-        schema = MetaSchema.find_one(Q('name', 'eq', schema_name) & Q('schema_version', 'eq', 2))
+        schema_id = validated_data.pop('registration_schema').get('_id')
+        schema = get_object_or_error(MetaSchema, schema_id)
+        if schema.schema_version != 2 or schema.name not in ACTIVE_META_SCHEMAS:
+            raise exceptions.ValidationError('Registration supplement must be an active schema.')
 
         draft = DraftRegistration.create_from_node(node=node, user=initiator, schema=schema)
         if metadata:
@@ -641,7 +640,7 @@ class DraftRegistrationDetailSerializer(DraftRegistrationSerializer):
     """
     id = IDField(source='_id', required=True)
     registration_metadata = ser.DictField(required=True)
-    registration_supplement = ser.CharField(read_only=True, source='registration_schema.name')
+    registration_supplement = ser.CharField(read_only=True, source='registration_schema._id')
 
     def update(self, draft, validated_data):
         """

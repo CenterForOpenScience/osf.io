@@ -9,7 +9,7 @@ from api.registrations.utils import create_jsonschema_from_metaschema
 
 
 from api.files.serializers import FileSerializer
-from api.nodes.serializers import NodeSerializer
+from api.nodes.serializers import NodeSerializer, NodeTagField
 from api.nodes.serializers import NodeLinksSerializer
 from api.nodes.serializers import NodeContributorsSerializer
 from modularodm.exceptions import ValidationValueError
@@ -27,7 +27,7 @@ class RegistrationSerializer(NodeSerializer):
     description = ser.CharField(read_only=True)
     category = ser.CharField(read_only=True)
     template_from = ser.CharField(read_only=True)
-    tags = JSONAPIListField(read_only=True)
+    tags = JSONAPIListField(child=NodeTagField(), read_only=True)
 
     draft_registration = ser.CharField(write_only=True)
     registration_choice = ser.ChoiceField(write_only=True, choices=['immediate', 'embargo'])

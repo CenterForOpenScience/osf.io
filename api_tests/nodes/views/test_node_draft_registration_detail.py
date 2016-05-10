@@ -22,14 +22,14 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
         super(TestDraftRegistrationDetail, self).setUp()
         ensure_schemas()
 
-        schema = MetaSchema.find_one(
+        self.schema = MetaSchema.find_one(
             Q('name', 'eq', 'OSF-Standard Pre-Data Collection Registration') &
             Q('schema_version', 'eq', 2)
         )
 
         self.draft_registration = DraftRegistrationFactory(
             initiator=self.user,
-            registration_schema=schema,
+            registration_schema=self.schema,
             branched_from=self.public_project
         )
         self.other_project = ProjectFactory(creator=self.user)
@@ -39,7 +39,7 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
         res = self.app.get(self.url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         data = res.json['data']
-        assert_equal(data['attributes']['registration_supplement'], 'OSF-Standard Pre-Data Collection Registration')
+        assert_equal(data['attributes']['registration_supplement'], self.schema._id)
         assert_equal(data['id'], self.draft_registration._id)
         assert_equal(data['attributes']['registration_metadata'], {})
 
@@ -73,7 +73,7 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
         res = self.app.get(self.url, auth=user.auth)
         assert_equal(res.status_code, 200)
         data = res.json['data']
-        assert_equal(data['attributes']['registration_supplement'], 'OSF-Standard Pre-Data Collection Registration')
+        assert_equal(data['attributes']['registration_supplement'], self.schema._id)
         assert_equal(data['id'], self.draft_registration._id)
         assert_equal(data['attributes']['registration_metadata'], {})
 
@@ -84,14 +84,14 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         super(TestDraftRegistrationUpdate, self).setUp()
         ensure_schemas()
 
-        schema = MetaSchema.find_one(
+        self.schema = MetaSchema.find_one(
             Q('name', 'eq', 'OSF-Standard Pre-Data Collection Registration') &
             Q('schema_version', 'eq', 2)
         )
 
         self.draft_registration = DraftRegistrationFactory(
             initiator=self.user,
-            registration_schema=schema,
+            registration_schema=self.schema,
             branched_from=self.public_project
         )
 
@@ -150,7 +150,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         res = self.app.put_json_api(self.url, self.payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         data = res.json['data']
-        assert_equal(data['attributes']['registration_supplement'], 'OSF-Standard Pre-Data Collection Registration')
+        assert_equal(data['attributes']['registration_supplement'], self.schema._id)
         assert_equal(data['attributes']['registration_metadata'], self.payload['data']['attributes']['registration_metadata'])
 
     def test_draft_must_be_branched_from_node(self):
@@ -233,10 +233,10 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         assert_equal(errors['detail'], "u'Nope, data collection has not begun' is not one of [u'No, data collection has not begun', u'Yes, data collection is underway or complete']")
 
     def test_cannot_update_registration_schema(self):
-        self.payload['data']['attributes']['registration_supplement'] = 'Open-Ended Registration'
+        self.payload['data']['attributes']['registration_supplement'] = self.prereg_schema._id
         res = self.app.put_json_api(self.url, self.payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['attributes']['registration_supplement'], 'OSF-Standard Pre-Data Collection Registration')
+        assert_equal(res.json['data']['attributes']['registration_supplement'], self.schema._id)
 
     def test_required_metaschema_questions_not_required_on_update(self):
 
@@ -382,14 +382,14 @@ class TestDraftRegistrationPatch(DraftRegistrationTestCase):
         super(TestDraftRegistrationPatch, self).setUp()
         ensure_schemas()
 
-        schema = MetaSchema.find_one(
+        self.schema = MetaSchema.find_one(
             Q('name', 'eq', 'OSF-Standard Pre-Data Collection Registration') &
             Q('schema_version', 'eq', 2)
         )
 
         self.draft_registration = DraftRegistrationFactory(
             initiator=self.user,
-            registration_schema=schema,
+            registration_schema=self.schema,
             branched_from=self.public_project
         )
 
@@ -434,7 +434,7 @@ class TestDraftRegistrationPatch(DraftRegistrationTestCase):
         res = self.app.patch_json_api(self.url, self.payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         data = res.json['data']
-        assert_equal(data['attributes']['registration_supplement'], 'OSF-Standard Pre-Data Collection Registration')
+        assert_equal(data['attributes']['registration_supplement'], self.schema._id)
         assert_equal(data['attributes']['registration_metadata'], self.payload['data']['attributes']['registration_metadata'])
 
     def test_read_only_contributor_cannot_update_draft(self):
