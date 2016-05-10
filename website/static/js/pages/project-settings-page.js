@@ -183,7 +183,7 @@ $(document).ready(function() {
             var uncheckedText = $.map(unchecked, function(el){
                 return ['<li>', $(el).closest('label').text().trim(), '</li>'].join('');
             }).join('');
-            uncheckedText = ['<ul>', $osf.htmlEscape(uncheckedText), '</ul>'].join('');
+            uncheckedText = ['<ul>', uncheckedText, '</ul>'].join('');
             bootbox.confirm({
                 title: 'Are you sure you want to remove the add-ons you have deselected? ',
                 message: uncheckedText,
