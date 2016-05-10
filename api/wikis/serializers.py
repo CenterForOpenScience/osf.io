@@ -1,3 +1,4 @@
+import sys
 from rest_framework import serializers as ser
 
 from api.base.serializers import JSONAPISerializer, IDField, TypeField, Link, LinksField, RelationshipField
@@ -14,11 +15,13 @@ class WikiSerializer(JSONAPISerializer):
     id = IDField(source='_id', read_only=True)
     type = TypeField()
     name = ser.CharField(source='page_name')
+    kind = ser.SerializerMethodField()
+    size = ser.SerializerMethodField()
     path = ser.SerializerMethodField()
-    materialized = ser.SerializerMethodField(method_name='get_path')
+    materialized_path = ser.SerializerMethodField(method_name='get_path')
     date_modified = ser.DateTimeField(source='date')
     content_type = ser.SerializerMethodField()
-    extra = ser.SerializerMethodField(read_only=True, help_text='Additional metadata about this wiki')
+    extra = ser.SerializerMethodField(help_text='Additional metadata about this wiki')
 
     user = RelationshipField(
         related_view='users:user-detail',
@@ -49,6 +52,12 @@ class WikiSerializer(JSONAPISerializer):
 
     def get_path(self, obj):
         return '/{}'.format(obj)
+
+    def get_kind(self, obj):
+        return 'file'
+
+    def get_size(self, obj):
+        return sys.getsizeof(obj.content)
 
     def get_content_type(self, obj):
         return 'text/markdown'

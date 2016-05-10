@@ -64,15 +64,15 @@ class WikiDetail(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
 
     OSF wiki entities have the "wikis" `type`.
 
-        name           type               description
+        name                type               description
         =================================================================================
-        name           string             name of the wiki pag
-        path           string             the path of the wiki page
-        materialized   string             the path of the wiki page
-        date_modified  iso8601 timestamp  timestamp when the wiki was last updated
-        content_type   string             MIME-type
-        extra          object
-            version    integer            version number of the wiki
+        name                string             name of the wiki pag
+        path                string             the path of the wiki page
+        materialized_path   string             the path of the wiki page
+        date_modified       iso8601 timestamp  timestamp when the wiki was last updated
+        content_type        string             MIME-type
+        extra               object
+            version         integer            version number of the wiki
 
 
     ##Relationships
