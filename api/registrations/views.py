@@ -23,8 +23,7 @@ from api.nodes.views import (
 from api.registrations.serializers import RegistrationNodeLinksSerializer, RegistrationFileSerializer
 
 from api.nodes.permissions import (
-    ContributorOrPublic,
-    ReadOnlyIfRegistration,
+    AdminOrPublic
 )
 from api.base.utils import get_object_or_error
 
@@ -161,7 +160,7 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
         return nodes
 
 
-class RegistrationDetail(JSONAPIBaseView, generics.RetrieveAPIView, RegistrationMixin, WaterButlerMixin):
+class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, RegistrationMixin, WaterButlerMixin):
     """Node Registrations.
 
     Registrations are read-only snapshots of a project. This view shows details about the given registration.
@@ -223,8 +222,7 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveAPIView, Registration
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        ContributorOrPublic,
-        ReadOnlyIfRegistration,
+        AdminOrPublic,
         base_permissions.TokenHasScope,
     )
 

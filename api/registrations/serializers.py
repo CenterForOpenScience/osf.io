@@ -14,9 +14,10 @@ from api.nodes.serializers import NodeLinksSerializer
 from api.nodes.serializers import NodeContributorsSerializer
 from modularodm.exceptions import ValidationValueError
 from website.exceptions import NodeStateError
+from website.project.model import NodeUpdateError
 
 
-from api.base.serializers import (IDField, RelationshipField, LinksField, HideIfRetraction,
+from api.base.serializers import (IDField, RelationshipField, LinksField, HideIfRetraction, JSONAPIListField,
                                   FileCommentRelationshipField, NodeFileHyperLinkField, HideIfRegistration)
 
 
@@ -25,6 +26,8 @@ class RegistrationSerializer(NodeSerializer):
     title = ser.CharField(read_only=True)
     description = ser.CharField(read_only=True)
     category = ser.CharField(read_only=True)
+    template_from = ser.CharField(read_only=True)
+    tags = JSONAPIListField(read_only=True)
 
     draft_registration = ser.CharField(write_only=True)
     registration_choice = ser.ChoiceField(write_only=True, choices=['immediate', 'embargo'])
@@ -190,8 +193,16 @@ class RegistrationSerializer(NodeSerializer):
             return schema.name
         return None
 
-    def update(self, *args, **kwargs):
-        raise exceptions.APIException('Registrations cannot be modified.')
+    def update(self, registration, validated_data):
+        is_public = validated_data.get('is_public', False)
+        if is_public:
+            try:
+                registration.update(validated_data)
+            except NodeUpdateError as err:
+                raise exceptions.ValidationError(err.reason)
+        else:
+            raise exceptions.ValidationError('Registrations can only be turned from private to public.')
+        return registration
 
     class Meta:
         type_ = 'registrations'
@@ -201,6 +212,13 @@ class RegistrationDetailSerializer(RegistrationSerializer):
     """
     Overrides NodeSerializer to make id required.
     """
+
+    def __init__(self, *args, **kwargs):
+        remove_fields = ['draft_registration', 'registration_choice', 'lift_embargo']
+        for field in remove_fields:
+            self.fields.pop(field)
+        super(RegistrationDetailSerializer, self).__init__(*args, **kwargs)
+
     id = IDField(source='_id', required=True)
 
 
