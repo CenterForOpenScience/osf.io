@@ -2,6 +2,7 @@
 Update existing "embargo_approved_no_user" logs to link to registered project instead
 of the registration.
 """
+from copy import deepcopy
 import logging
 import sys
 
@@ -31,13 +32,13 @@ def fix_embargo_approved_logs(targets):
         node_id = log.params['node']
         node = Node.load(node_id)
         if node.is_registration:
-            log_params = log.params
+            original_params = deepcopy(log.params)
             log.params['node'] = node.registered_from_id
             log.params['registration'] = node._id
-            logger.info('Updating params of log {} from {} to {}'.format(log._id, log_params, log.params))
+            logger.info('Updating params of log {} from {} to {}'.format(log._id, original_params, log.params))
             log.save()
             count += 1
-    logger.info('{} logs migrated').format(count)
+    logger.info('{} logs migrated'.format(count))
 
 
 if __name__ == '__main__':
