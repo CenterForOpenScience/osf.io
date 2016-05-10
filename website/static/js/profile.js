@@ -854,10 +854,10 @@ ListViewModel.prototype.removeContent = function(content) {
                 );
             }
         },
-        buttons:{
-            confirm:{
-                label:'Remove',
-                className:'btn-danger'
+        buttons: {
+            confirm: {
+                label: 'Remove',
+                className: 'btn-danger'
             }
         }
     });

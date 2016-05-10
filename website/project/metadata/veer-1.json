@@ -2,438 +2,441 @@
     "name": "Pre-Registration in Social Psychology (van 't Veer & Giner-Sorolla, 2016): Pre-Registration",
     "version": 2,
     "description": "This template is intended for use when conducting a pre-registration. You will be asked to fill out the elements for a pre-registration as described in: van 't Veer & Giner-Sorolla (2016). This template is not a valid submission for the Pre-registration Prize.",
+    "config": {
+        "hasFiles": true
+    },
     "pages": [{
-            "id": "page1-essential",
-            "title": "A. Hypotheses - Essential elements",
-            "description": "For any required question that does not apply to your study put 'N/A' in the space for the relevant field. See van 't Veer & Giner-Sorolla (2016) or https://osf.io/56g8e/ for additional information.",
-            "questions": [{
-                "qid": "description-hypothesis",
-                "title": "Description of essential elements",
+        "id": "page1-essential",
+        "title": "A. Hypotheses - Essential elements",
+        "description": "For any required question that does not apply to your study put 'N/A' in the space for the relevant field. See van 't Veer & Giner-Sorolla (2016) or https://osf.io/56g8e/ for additional information.",
+        "questions": [{
+            "qid": "description-hypothesis",
+            "title": "Description of essential elements",
+            "type": "object",
+            "properties": [{
+                "id": "question1a",
+                "type": "string",
+                "format": "textarea-xl",
+                "required": true,
+                "description": "Describe the (numbered) hypotheses in terms of directional relationships between your (manipulated or measured) variables."
+            }, {
+                "id": "question2a",
+                "type": "string",
+                "format": "textarea",
+                "required": true,
+                "description": "For interaction effects, describe the expected shape of the interactions."
+            }, {
+                "id": "question3a",
+                "type": "string",
+                "format": "textarea",
+                "required": true,
+                "description": "If you are manipulating a variable, make predictions for successful check variables or explain why no manipulation check is included."
+            }]
+        }]
+    }, {
+        "id": "page1-recommended",
+        "title": "Recommended elements",
+        "description": "For any required question that does not apply to your study put 'N/A' in the space for the relevant field. See van 't Veer & Giner-Sorolla (2016) or https://osf.io/56g8e/ for additional information.",
+        "questions": [{
+            "qid": "recommended-hypothesis",
+            "title": "Recommended elements",
+            "type": "object",
+            "properties": [{
+                "id": "question4a",
+                "type": "osf-upload",
+                "format": "osf-upload-open",
+                "description": "A figure or table may be helpful to describe complex interactions; this facilitates correct specification of the ordering of all group means."
+            }, {
+                "id": "question5a",
+                "type": "string",
+                "format": "textarea-lg",
+                "description": "For original research, add rationales or theoretical frameworks for why a certain hypothesis is tested."
+            }, {
+                "id": "question6a",
+                "type": "string",
+                "format": "textarea",
+                "description": "If multiple predictions can be made for the same IV-DV combination, describe what outcome would be predicted by which theory."
+            }]
+        }]
+    }, {
+        "id": "page2-essential",
+        "title": "B. Methods - Essential elements",
+        "description": "For any required question that does not apply to your study put 'N/A' in the space for the relevant field. See van 't Veer & Giner-Sorolla (2016) or https://osf.io/56g8e/ for additional information.",
+        "questions": [{
+            "qid": "description-methods",
+            "type": "object",
+            "title": "Description of essential elements",
+            "properties": [{
+                "id": "design",
                 "type": "object",
+                "description": "Design",
                 "properties": [{
-                    "id": "question1a",
+                    "id": "question2a",
+                    "format": "textarea-lg",
+                    "required": true,
+                    "description": "List, based on your hypotheses from section A:\n\nIndependent variables with all their levels\n    a. whether they are within- or between-participant\n    b. the relationship between them (e.g., orthogonal, nested)."
+                }, {
+                    "id": "question2b",
                     "type": "string",
                     "format": "textarea-xl",
                     "required": true,
-                    "description": "Describe the (numbered) hypotheses in terms of directional relationships between your (manipulated or measured) variables."
+                    "description": "List dependent variables, or variables in a correlational design"
                 }, {
-                    "id": "question2a",
+                    "id": "question3b",
                     "type": "string",
                     "format": "textarea",
                     "required": true,
-                    "description": "For interaction effects, describe the expected shape of the interactions."
-                }, {
-                    "id": "question3a",
-                    "type": "string",
-                    "format": "textarea",
-                    "required": true,
-                    "description": "If you are manipulating a variable, make predictions for successful check variables or explain why no manipulation check is included."
+                    "description": "Third variables acting as covariates or moderators."
                 }]
-            }]
-        }, {
-            "id": "page1-recommended",
-            "title": "Recommended elements",
-            "description": "For any required question that does not apply to your study put 'N/A' in the space for the relevant field. See van 't Veer & Giner-Sorolla (2016) or https://osf.io/56g8e/ for additional information.",
-            "questions": [{
-                "qid": "recommended-hypothesis",
-                "title": "Recommended elements",
+            }, {
+                "id": "planned-sample",
                 "type": "object",
+                "description": "Planned Sample",
                 "properties": [{
-                    "id": "question4a",
+                    "id": "question4b",
+                    "type": "string",
+                    "format": "textarea",
+                    "required": true,
+                    "description": "If applicable, describe pre-selection rules."
+                }, {
+                    "id": "question5b",
+                    "type": "string",
+                    "format": "textarea",
+                    "required": true,
+                    "description": "Indicate where, from whom and how the data will be collected."
+                }, {
+                    "id": "question6b",
+                    "type": "string",
+                    "description": "Justify planned sample size",
+                    "format": "textarea",
+                    "required": true
+                }, {
+                    "id": "question6b-upload",
+                    "description": "If applicable, you can upload a file related to your power analysis here (e.g., a protocol of power analyses from G*Power, a script, a screenshot, etc.).",
                     "type": "osf-upload",
-                    "format": "osf-upload-open",
-                    "description": "A figure or table may be helpful to describe complex interactions; this facilitates correct specification of the ordering of all group means."
+                    "format": "osf-upload-toggle",
+                    "required": false
                 }, {
-                    "id": "question5a",
-                    "type": "string",
-                    "format": "textarea-lg",
-                    "description": "For original research, add rationales or theoretical frameworks for why a certain hypothesis is tested."
-                }, {
-                    "id": "question6a",
+                    "id": "question7b",
                     "type": "string",
                     "format": "textarea",
-                    "description": "If multiple predictions can be made for the same IV-DV combination, describe what outcome would be predicted by which theory."
-                }]
-            }]
-        }, {
-            "id": "page2-essential",
-            "title": "B. Methods - Essential elements",
-            "description": "For any required question that does not apply to your study put 'N/A' in the space for the relevant field. See van 't Veer & Giner-Sorolla (2016) or https://osf.io/56g8e/ for additional information.",
-            "questions": [{
-                "qid": "description-methods",
-                "type": "object",
-                "title": "Description of essential elements",
-                "properties": [{
-                    "id": "design",
-                    "type": "object",
-                    "description": "Design",
-                    "properties": [{
-                        "id": "question2a",
-                        "format": "textarea-lg",
-                        "required": true,
-                        "description": "List, based on your hypotheses from section A:\n\n    a) whether they are within- or between-participants\n    b) the relationship between them (e.g., orthogonal, nested)."
-                    }, {
-                        "id": "question2b",
-                        "type": "string",
-                        "format": "textarea-xl",
-                        "required": true,
-                        "description": "Dependent variables."
-                    }, {
-                        "id": "question3b",
-                        "type": "string",
-                        "format": "textarea",
-                        "required": true,
-                        "description": "Third variables acting as covariates or moderators."
-                    }]
-                }, {
-                    "id": "planned-sample",
-                    "type": "object",
-                    "description": "Planned Sample",
-                    "properties": [{
-                        "id": "question4b",
-                        "type": "string",
-                        "format": "textarea",
-                        "required": true,
-                        "description": "If applicable, describe pre-selection rules."
-                    }, {
-                        "id": "question5b",
-                        "type": "string",
-                        "format": "textarea",
-                        "required": true,
-                        "description": "Indicate where, from whom and how the data will be collected."
-                    }, {
-                        "id": "question6b",
-                        "type": "string",
-                        "description": "Justify planned sample size",
-                        "format": "textarea",
-                        "required": true
-                    }, {
-                        "id": "question6b-upload",
-                        "description": "If applicable, you can upload a file related to your power analysis here (e.g., a protocol of power analyses from G*Power, a script, a screenshot, etc.).",
-                        "type": "osf-upload",
-                        "format": "osf-upload-toggle",
-                        "required": false
-                    }, {
-                        "id": "question7b",
-                        "type": "string",
-                        "format": "textarea",
-                        "required": true,
-                        "description": "Describe data collection termination rule."
-                    }]
-                }, {
-                    "id": "exclusion-criteria",
-                    "type": "object",
-                    "description": "Exclusion Criteria",
-                    "properties": [{
-                        "id": "question8b",
-                        "type": "string",
-                        "format": "textarea",
-                        "required": true,
-                        "description": "Describe anticipated specific data exclusion criteria. For example:\n\n    a) missing, erroneous, or overly consistent responses;\n    b) failing check-tests or suspicion probes;\n    c) demographic exclusions;\n    d) data-based outlier criteria;\n    e) method-based outlier criteria (e.g. too short or long response times)."
-                    }]
-                }, {
-                    "id": "procedure",
-                    "type": "object",
-                    "description": "Procedure",
-                    "properties": [{
-                        "id": "question10b",
-                        "type": "string",
-                        "format": "textarea-xl",
-                        "required": true,
-                        "description": "Describe all manipulations, measures, materials and procedures including the order of presentation and the method of randomization and blinding (e.g., single or double blind), as in a published Methods section."
-                    }]
-                }]
-            }]
-        }, {
-            "id": "page2-recommended",
-            "title": "Recommended elements",
-            "description": "For any required question that does not apply to your study put 'N/A' in the space for the relevant field. See van 't Veer & Giner-Sorolla (2016) or https://osf.io/56g8e/ for additional information.",
-            "questions": [{
-                "qid": "recommended-methods",
-                "type": "object",
-                "title": "Recommended elements",
-                "properties": [{
-                    "description": "Procedure",
-                    "type": "object",
-                    "properties": [{
-                        "id": "question9b",
-                        "type": "string",
-                        "format": "textarea",
-                        "description": "Set fail-safe levels of exclusion at which the whole study needs to be stopped, altered, and restarted."
-                    }, {
-                        "id": "question9b-file",
-                        "type": "osf-upload",
-                        "format": "osf-upload-toggle",
-                        "description": "If applicable, you can upload any files related to your methods and procedure here (e.g., a paper describing a scale you are using, experimenter instructions, etc.)"
-                    }]
-                }]
-            }]
-        }, {
-            "id": "page3-essential",
-            "title": "C. Analysis plan - Essential elements",
-            "description": "For any required question that does not apply to your study put 'N/A' in the space for the relevant field. See van 't Veer & Giner-Sorolla (2016) or https://osf.io/56g8e/ for additional information.",
-            "questions": [{
-                "qid": "confirmatory-analyses-first",
-                "type": "object",
-                "title": "Confirmatory Analyses",
-                "properties": [{
-                    "id": "first",
-                    "type": "object",
-                    "description": "Describe the analyses that will test the first main prediction from the hypotheses section. Include:",
-                    "properties": [{
-                        "id": "question1c",
-                        "description": "the relevant variables and how they are calculated;",
-                        "type": "string",
-                        "format": "textarea-lg",
-                        "required": true
-                    }, {
-                        "id": "question2c",
-                        "description": "the statistical technique;",
-                        "type": "string",
-                        "format": "textarea",
-                        "required": true
-                    }, {
-                        "id": "question3c",
-                        "description": "each variable’s role in the technique (e.g., IV, DV, moderator, mediator, covariate);",
-                        "type": "string",
-                        "format": "textarea",
-                        "required": true
-                    }, {
-                        "id": "question4c",
-                        "description": "rationale for each covariate used, if any;",
-                        "type": "string",
-                        "format": "textarea",
-                        "required": true
-                    }, {
-                        "id": "question5c",
-                        "description": "if using techniques other than null hypothesis testing (for example, Bayesian statistics), describe your criteria and inputs toward making an evidential conclusion, including prior values or distributions.",
-                        "type": "string",
-                        "format": "textarea",
-                        "required": true
-                    }]
+                    "required": true,
+                    "description": "Describe data collection termination rule."
                 }]
             }, {
-                "qid": "confirmatory-analyses-second",
+                "id": "exclusion-criteria",
                 "type": "object",
-                "title": "Second Analysis",
+                "description": "Exclusion Criteria",
                 "properties": [{
-                    "id": "second",
-                    "type": "object",
-                    "description": "Describe the analyses that will test the second main prediction from the hypotheses section. Include:",
-                    "properties": [{
-                        "id": "question1c",
-                        "description": "the relevant variables and how they are calculated;",
-                        "type": "string",
-                        "format": "textarea-lg"
-                    }, {
-                        "id": "question2c",
-                        "description": "the statistical technique;",
-                        "type": "string",
-                        "format": "textarea"
-                    }, {
-                        "id": "question3c",
-                        "description": "each variable’s role in the technique (e.g., IV, DV, moderator, mediator, covariate);",
-                        "type": "string",
-                        "format": "textarea"
-                    }, {
-                        "id": "question4c",
-                        "description": "rationale for each covariate used, if any;",
-                        "type": "string",
-                        "format": "textarea"
-                    }, {
-                        "id": "question5c",
-                        "description": "if using techniques other than null hypothesis testing (for example, Bayesian statistics), describe your criteria and inputs toward making an evidential conclusion, including prior values or distributions.",
-                        "type": "string",
-                        "format": "textarea"
-                    }]
+                    "id": "question8b",
+                    "type": "string",
+                    "format": "textarea",
+                    "required": true,
+                    "description": "Describe anticipated specific data exclusion criteria. For example:\n\n    a) missing, erroneous, or overly consistent responses;\n    b) failing check-tests or suspicion probes;\n    c) demographic exclusions;\n    d) data-based outlier criteria;\n    e) method-based outlier criteria (e.g. too short or long response times)."
                 }]
             }, {
-                "qid": "confirmatory-analyses-third",
+                "id": "procedure",
                 "type": "object",
-                "title": "Third Analysis",
+                "description": "Procedure",
                 "properties": [{
-                    "id": "third",
-                    "type": "object",
-                    "description": "Describe the analyses that will test the third main prediction from the hypotheses section. Include:",
-                    "properties": [{
-                        "id": "question1c",
-                        "description": "the relevant variables and how they are calculated;",
-                        "type": "string",
-                        "format": "textarea-lg"
-                    }, {
-                        "id": "question2c",
-                        "description": "the statistical technique;",
-                        "type": "string",
-                        "format": "textarea"
-                    }, {
-                        "id": "question3c",
-                        "description": "each variable’s role in the technique (e.g., IV, DV, moderator, mediator, covariate);",
-                        "type": "string",
-                        "format": "textarea"
-                    }, {
-                        "id": "question4c",
-                        "description": "rationale for each covariate used, if any;",
-                        "type": "string",
-                        "format": "textarea"
-                    }, {
-                        "id": "question5c",
-                        "description": "if using techniques other than null hypothesis testing (for example, Bayesian statistics), describe your criteria and inputs toward making an evidential conclusion, including prior values or distributions.",
-                        "type": "string",
-                        "format": "textarea"
-                    }]
+                    "id": "question10b",
+                    "type": "string",
+                    "format": "textarea-xl",
+                    "required": true,
+                    "description": "Describe all manipulations, measures, materials and procedures including the order of presentation and the method of randomization and blinding (e.g., single or double blind), as in a published Methods section."
                 }]
-            }, {
-                "qid": "confirmatory-analyses-fourth",
-                "type": "object",
-                "title": "Fourth Analysis",
-                "properties": [{
-                    "id": "fourth",
-                    "type": "object",
-                    "description": "Describe the analyses that will test the fourth main prediction from the hypotheses section. Include:",
-                    "properties": [{
-                        "id": "question1c",
-                        "description": "the relevant variables and how they are calculated;",
-                        "type": "string",
-                        "format": "textarea-lg"
-                    }, {
-                        "id": "question2c",
-                        "description": "the statistical technique;",
-                        "type": "string",
-                        "format": "textarea"
-                    }, {
-                        "id": "question3c",
-                        "description": "each variable’s role in the technique (e.g., IV, DV, moderator, mediator, covariate);",
-                        "type": "string",
-                        "format": "textarea"
-                    }, {
-                        "id": "question4c",
-                        "description": "rationale for each covariate used, if any;",
-                        "type": "string",
-                        "format": "textarea"
-                    }, {
-                        "id": "question5c",
-                        "description": "if using techniques other than null hypothesis testing (for example, Bayesian statistics), describe your criteria and inputs toward making an evidential conclusion, including prior values or distributions.",
-                        "type": "string",
-                        "format": "textarea"
-                    }]
-                }]
-            }, {
-                "qid": "confirmatory-analyses-further",
-                "type": "object",
-                "title": "Further Analyses",
-                "properties": [{
-                    "id": "further",
-                    "type": "object",
-                    "description": "Describe the analyses that will test any further (main) predictions from the hypotheses section. Include:",
-                    "properties": [{
-                        "id": "question1c",
-                        "description": "the relevant variables and how they are calculated;",
-                        "type": "string",
-                        "format": "textarea-lg"
-                    }, {
-                        "id": "question2c",
-                        "description": "the statistical technique;",
-                        "type": "string",
-                        "format": "textarea"
-                    }, {
-                        "id": "question3c",
-                        "description": "each variable’s role in the technique (e.g., IV, DV, moderator, mediator, covariate);",
-                        "type": "string",
-                        "format": "textarea"
-                    }, {
-                        "id": "question4c",
-                        "description": "rationale for each covariate used, if any;",
-                        "type": "string",
-                        "format": "textarea"
-                    }, {
-                        "id": "question5c",
-                        "description": "if using techniques other than null hypothesis testing (for example, Bayesian statistics), describe your criteria and inputs toward making an evidential conclusion, including prior values or distributions.",
-                        "type": "string",
-                        "format": "textarea"
-                    }]
-                }]
-            }]
-        }, {
-            "id": "page3-recommended",
-            "title": "Recommended elements",
-            "description": "For any required question that does not apply to your study put 'N/A' in the space for the relevant field. See van 't Veer & Giner-Sorolla (2016) or https://osf.io/56g8e/ for additional information.",
-            "questions": [{
-                "qid": "recommended-analysis",
-                "type": "object",
-                "title": "Recommended Elements",
-                "required": false,
-                "properties": [{
-                    "id": "specify",
-                    "description": "Specify contingencies and assumptions, such as:",
-                    "type": "object",
-                    "required": false,
-                    "properties": [{
-                        "id": "question6c",
-                        "description": "Method of correction for multiple tests.",
-                        "type": "string",
-                        "format": "textarea"
-                    }, {
-                        "id": "question7c",
-                        "description": "The method of missing data handling (e.g., pairwise or listwise deletion, imputation, interpolation).",
-                        "type": "string",
-                        "format": "textarea"
-                    }, {
-                        "id": "question8c",
-                        "description": "Reliability criteria for item inclusion in scale.",
-                        "type": "string",
-                        "format": "textarea"
-                    }, {
-                        "id": "question9c",
-                        "description": "Anticipated data transformations.",
-                        "type": "string",
-                        "format": "textarea"
-                    }, {
-                        "id": "question10c",
-                        "description": "Assumptions of analyses, and plans for alternative/corrected analyses if each assumption is violated.",
-                        "type": "string",
-                        "format": "textarea"
-                    }, {
-                        "id": "question11c",
-                        "description": "Optionally, upload any files here that are related to your analyses (e.g., syntaxes, scripts, etc.).",
-                        "type": "osf-upload",
-                        "format": "osf-upload-toggle"
-                    }]
-                }]
-            }]
-        }, {
-            "id": "page4",
-            "title": "Final questions",
-            "description": "For any required question that does not apply to your study put 'N/A' in the space for the relevant field. See van 't Veer & Giner-Sorolla (2016) or https://osf.io/56g8e/ for additional information.",
-            "questions": [{
-                "qid": "datacompletion",
-                "title": "Has data collection begun for this project?",
-                "nav": "Data Completion",
-                "type": "choose",
-                "format": "singleselect",
-                "options": ["No, data collection has not begun", "Yes, data collection is underway or complete"],
-                "description": "Please choose",
-		"required": true
-            }, {
-                "qid": "looked",
-                "title": "Have you looked at the data?",
-                "nav": "Looked at Data",
-                "type": "choose",
-                "format": "singleselect",
-                "options": ["Yes", "No"],
-                "description": "Please choose",
-		"required": true
-            }, {
-                "qid": "dataCollectionDates",
-                "title": "The (estimated) start and end dates for this project are",
-                "nav": "Data collection period",
-                "type": "string",
-                "format": "textarea"
-            }, {
-                "qid": "additionalComments",
-                "title": "Any additional comments before I pre-register this project",
-                "nav": "Additional comments",
-                "type": "string",
-                "format": "textarea"
             }]
         }]
+    }, {
+        "id": "page2-recommended",
+        "title": "Recommended elements",
+        "description": "For any required question that does not apply to your study put 'N/A' in the space for the relevant field. See van 't Veer & Giner-Sorolla (2016) or https://osf.io/56g8e/ for additional information.",
+        "questions": [{
+            "qid": "recommended-methods",
+            "type": "object",
+            "title": "Recommended elements",
+            "properties": [{
+                "description": "Procedure",
+                "type": "object",
+                "properties": [{
+                    "id": "question9b",
+                    "type": "string",
+                    "format": "textarea",
+                    "description": "Set fail-safe levels of exclusion at which the whole study needs to be stopped, altered, and restarted. You may pre-determine what proportion of excluded participants will cause the study to be stopped and restarted."
+                }, {
+                    "id": "question9b-file",
+                    "type": "osf-upload",
+                    "format": "osf-upload-toggle",
+                    "description": "If applicable, you can upload any files related to your methods and procedure here (e.g., a paper describing a scale you are using, experimenter instructions, etc.)"
+                }]
+            }]
+        }]
+    }, {
+        "id": "page3-essential",
+        "title": "C. Analysis plan - Essential elements",
+        "description": "For any required question that does not apply to your study put 'N/A' in the space for the relevant field. See van 't Veer & Giner-Sorolla (2016) or https://osf.io/56g8e/ for additional information.",
+        "questions": [{
+            "qid": "confirmatory-analyses-first",
+            "type": "object",
+            "title": "Confirmatory Analyses",
+            "properties": [{
+                "id": "first",
+                "type": "object",
+                "description": "Describe the analyses that will test the first main prediction from the hypotheses section. Include:",
+                "properties": [{
+                    "id": "question1c",
+                    "description": "the relevant variables and how they are calculated;",
+                    "type": "string",
+                    "format": "textarea-lg",
+                    "required": true
+                }, {
+                    "id": "question2c",
+                    "description": "the statistical technique;",
+                    "type": "string",
+                    "format": "textarea",
+                    "required": true
+                }, {
+                    "id": "question3c",
+                    "description": "each variable’s role in the technique (e.g., IV, DV, moderator, mediator, covariate);",
+                    "type": "string",
+                    "format": "textarea",
+                    "required": true
+                }, {
+                    "id": "question4c",
+                    "description": "rationale for each covariate used, if any;",
+                    "type": "string",
+                    "format": "textarea",
+                    "required": true
+                }, {
+                    "id": "question5c",
+                    "description": "if using techniques other than null hypothesis testing (for example, Bayesian statistics), describe your criteria and inputs toward making an evidential conclusion, including prior values or distributions.",
+                    "type": "string",
+                    "format": "textarea",
+                    "required": true
+                }]
+            }]
+        }, {
+            "qid": "confirmatory-analyses-second",
+            "type": "object",
+            "title": "Second Prediction",
+            "properties": [{
+                "id": "second",
+                "type": "object",
+                "description": "Describe the analyses that will test the second main prediction from the hypotheses section. Include:",
+                "properties": [{
+                    "id": "question1c",
+                    "description": "the relevant variables and how they are calculated;",
+                    "type": "string",
+                    "format": "textarea-lg"
+                }, {
+                    "id": "question2c",
+                    "description": "the statistical technique;",
+                    "type": "string",
+                    "format": "textarea"
+                }, {
+                    "id": "question3c",
+                    "description": "each variable’s role in the technique (e.g., IV, DV, moderator, mediator, covariate);",
+                    "type": "string",
+                    "format": "textarea"
+                }, {
+                    "id": "question4c",
+                    "description": "rationale for each covariate used, if any;",
+                    "type": "string",
+                    "format": "textarea"
+                }, {
+                    "id": "question5c",
+                    "description": "if using techniques other than null hypothesis testing (for example, Bayesian statistics), describe your criteria and inputs toward making an evidential conclusion, including prior values or distributions.",
+                    "type": "string",
+                    "format": "textarea"
+                }]
+            }]
+        }, {
+            "qid": "confirmatory-analyses-third",
+            "type": "object",
+            "title": "Third Prediction",
+            "properties": [{
+                "id": "third",
+                "type": "object",
+                "description": "Describe the analyses that will test the third main prediction from the hypotheses section. Include:",
+                "properties": [{
+                    "id": "question1c",
+                    "description": "the relevant variables and how they are calculated;",
+                    "type": "string",
+                    "format": "textarea-lg"
+                }, {
+                    "id": "question2c",
+                    "description": "the statistical technique;",
+                    "type": "string",
+                    "format": "textarea"
+                }, {
+                    "id": "question3c",
+                    "description": "each variable’s role in the technique (e.g., IV, DV, moderator, mediator, covariate);",
+                    "type": "string",
+                    "format": "textarea"
+                }, {
+                    "id": "question4c",
+                    "description": "rationale for each covariate used, if any;",
+                    "type": "string",
+                    "format": "textarea"
+                }, {
+                    "id": "question5c",
+                    "description": "if using techniques other than null hypothesis testing (for example, Bayesian statistics), describe your criteria and inputs toward making an evidential conclusion, including prior values or distributions.",
+                    "type": "string",
+                    "format": "textarea"
+                }]
+            }]
+        }, {
+            "qid": "confirmatory-analyses-fourth",
+            "type": "object",
+            "title": "Fourth Prediction",
+            "properties": [{
+                "id": "fourth",
+                "type": "object",
+                "description": "Describe the analyses that will test the fourth main prediction from the hypotheses section. Include:",
+                "properties": [{
+                    "id": "question1c",
+                    "description": "the relevant variables and how they are calculated;",
+                    "type": "string",
+                    "format": "textarea-lg"
+                }, {
+                    "id": "question2c",
+                    "description": "the statistical technique;",
+                    "type": "string",
+                    "format": "textarea"
+                }, {
+                    "id": "question3c",
+                    "description": "each variable’s role in the technique (e.g., IV, DV, moderator, mediator, covariate);",
+                    "type": "string",
+                    "format": "textarea"
+                }, {
+                    "id": "question4c",
+                    "description": "rationale for each covariate used, if any;",
+                    "type": "string",
+                    "format": "textarea"
+                }, {
+                    "id": "question5c",
+                    "description": "if using techniques other than null hypothesis testing (for example, Bayesian statistics), describe your criteria and inputs toward making an evidential conclusion, including prior values or distributions.",
+                    "type": "string",
+                    "format": "textarea"
+                }]
+            }]
+        }, {
+            "qid": "confirmatory-analyses-further",
+            "type": "object",
+            "title": "Further Predictions",
+            "properties": [{
+                "id": "further",
+                "type": "object",
+                "description": "Describe the analyses that will test any further (main) predictions from the hypotheses section. Include:",
+                "properties": [{
+                    "id": "question1c",
+                    "description": "the relevant variables and how they are calculated;",
+                    "type": "string",
+                    "format": "textarea-lg"
+                }, {
+                    "id": "question2c",
+                    "description": "the statistical technique;",
+                    "type": "string",
+                    "format": "textarea"
+                }, {
+                    "id": "question3c",
+                    "description": "each variable’s role in the technique (e.g., IV, DV, moderator, mediator, covariate);",
+                    "type": "string",
+                    "format": "textarea"
+                }, {
+                    "id": "question4c",
+                    "description": "rationale for each covariate used, if any;",
+                    "type": "string",
+                    "format": "textarea"
+                }, {
+                    "id": "question5c",
+                    "description": "if using techniques other than null hypothesis testing (for example, Bayesian statistics), describe your criteria and inputs toward making an evidential conclusion, including prior values or distributions.",
+                    "type": "string",
+                    "format": "textarea"
+                }]
+            }]
+        }]
+    }, {
+        "id": "page3-recommended",
+        "title": "Recommended elements",
+        "description": "For any required question that does not apply to your study put 'N/A' in the space for the relevant field. See van 't Veer & Giner-Sorolla (2016) or https://osf.io/56g8e/ for additional information.",
+        "questions": [{
+            "qid": "recommended-analysis",
+            "type": "object",
+            "title": "Recommended Elements",
+            "required": false,
+            "properties": [{
+                "id": "specify",
+                "description": "Specify contingencies and assumptions, such as:",
+                "type": "object",
+                "required": false,
+                "properties": [{
+                    "id": "question6c",
+                    "description": "Method of correction for multiple tests.",
+                    "type": "string",
+                    "format": "textarea"
+                }, {
+                    "id": "question7c",
+                    "description": "The method of missing data handling (e.g., pairwise or listwise deletion, imputation, interpolation).",
+                    "type": "string",
+                    "format": "textarea"
+                }, {
+                    "id": "question8c",
+                    "description": "Reliability criteria for item inclusion in scale.",
+                    "type": "string",
+                    "format": "textarea"
+                }, {
+                    "id": "question9c",
+                    "description": "Anticipated data transformations.",
+                    "type": "string",
+                    "format": "textarea"
+                }, {
+                    "id": "question10c",
+                    "description": "Assumptions of analyses, and plans for alternative/corrected analyses if each assumption is violated.",
+                    "type": "string",
+                    "format": "textarea"
+                }, {
+                    "id": "question11c",
+                    "description": "Optionally, upload any files here that are related to your analyses (e.g., syntaxes, scripts, etc.).",
+                    "type": "osf-upload",
+                    "format": "osf-upload-toggle"
+                }]
+            }]
+        }]
+    }, {
+        "id": "page4",
+        "title": "Final questions",
+        "description": "For any required question that does not apply to your study put 'N/A' in the space for the relevant field. See van 't Veer & Giner-Sorolla (2016) or https://osf.io/56g8e/ for additional information.",
+        "questions": [{
+            "qid": "datacompletion",
+            "title": "Has data collection begun for this project?",
+            "nav": "Data Completion",
+            "type": "choose",
+            "format": "singleselect",
+            "options": ["No, data collection has not begun", "Yes, data collection is underway or complete"],
+            "description": "Please choose",
+            "required": true
+        }, {
+            "qid": "looked",
+            "title": "If data collection has begun, have you looked at the data?",
+            "nav": "Looked at Data",
+            "type": "choose",
+            "format": "singleselect",
+            "options": ["Yes", "No"],
+            "description": "Please choose",
+            "required": true
+        }, {
+            "qid": "dataCollectionDates",
+            "title": "The (estimated) start and end dates for this project are",
+            "nav": "Data collection period",
+            "type": "string",
+            "format": "textarea"
+        }, {
+            "qid": "additionalComments",
+            "title": "Any additional comments before I pre-register this project",
+            "nav": "Additional comments",
+            "type": "string",
+            "format": "textarea"
+        }]
+    }]
 }

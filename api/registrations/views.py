@@ -18,7 +18,7 @@ from api.nodes.views import (
     NodeChildrenList, NodeCommentsList, NodeProvidersList, NodeLinksList,
     NodeContributorDetail, NodeFilesList, NodeLinksDetail, NodeFileDetail,
     NodeAlternativeCitationsList, NodeAlternativeCitationDetail, NodeLogList,
-    NodeInstitutionDetail, WaterButlerMixin)
+    NodeInstitutionDetail, WaterButlerMixin, NodeForksList)
 
 from api.registrations.serializers import RegistrationNodeLinksSerializer, RegistrationFileSerializer
 
@@ -275,6 +275,9 @@ class RegistrationChildrenList(NodeChildrenList, RegistrationMixin):
         query = base_query & permission_query
         return query
 
+class RegistrationForksList(NodeForksList, RegistrationMixin):
+    view_category = 'registrations'
+    view_name = 'registration-forks'
 
 class RegistrationCommentsList(NodeCommentsList, RegistrationMixin):
     view_category = 'registrations'

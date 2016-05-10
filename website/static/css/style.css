@@ -684,3 +684,7 @@ button.close {
 #copy-button {
     margin-top: 10px;
 }
+
+.more-replies {
+    margin-right: 15px;
+}

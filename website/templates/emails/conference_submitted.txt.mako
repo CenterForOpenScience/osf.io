@@ -21,9 +21,9 @@ Get more from the OSF by enhancing your project with the following:
 * Collaborators/contributors to the submission
 * Charts, graphs, and data that didn't make it onto the submission
 * Links to related publications or reference lists
-* Connecting other accounts, like Dropbox, Google Drive, GitHub, figshare and Mendeley via add-on integration. Learn more and read the full list of available add-ons: http://osf.io/getting-started/email#addons
+* Connecting other accounts, like Dropbox, Google Drive, GitHub, figshare and Mendeley via add-on integration. Learn more and read the full list of available add-ons: http://help.osf.io/m/addons
 
-To learn more about the OSF, visit: http://osf.io/getting-started/email
+To learn more about the OSF, visit: http://help.osf.io/
 
 
 Sincerely yours,
