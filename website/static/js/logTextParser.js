@@ -8,6 +8,7 @@ var logActions = require('json!js/_allLogTexts.json');
 var $ = require('jquery');  // jQuery
 var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
+var lodashGet = require('lodash.get');
 
 var ravenMessagesCache = []; // Cache messages to avoid sending multiple times in one page view
 var nodeCategories = require('json!built/nodeCategories.json');
@@ -311,7 +312,7 @@ var LogPieces = {
 
             var templateFromParams = logObject.attributes.params.template_node;
                 if (paramIsReturned(templateFromParams, logObject && templateFromParams.title)){
-                     return m('span', templateFromParams.title);
+                    return m('span', templateFromParams.title);
                 }
             return m('span','a project' );
         }
@@ -329,9 +330,7 @@ var LogPieces = {
             var nodeObject = logObject.embeds.original_node;
 
             if (paramIsReturned(nodeObject, logObject && nodeObject.data)){
-                 if (nodeObject.data.links && nodeObject.data.attributes) {
-                     url = nodeObject.data.links.html;
-                 }
+                url = lodashGet(nodeObject, 'data.links.html', null);
             }
             return returnTextParams('title_new', 'a title', logObject, url);
         }
