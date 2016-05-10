@@ -10,8 +10,10 @@ from modularodm import Q
 from framework.transactions.context import TokuTransaction
 
 from website.app import init_app
+from website.mailing_list.utils import create_list
 from website.models import Node
-from website.mailing_list import utils as ml_utils
+from website.notifications.model import NotificationSubscription
+from website.notifications.utils import to_subscription_key
 from scripts import utils as script_utils
 
 logger = logging.getLogger(__name__)
@@ -45,7 +47,6 @@ def migrate(dry_run=True):
                     owner=node,
                     event_name=EVENT
                 )
-                # TODO queue ml creation
                 logger.info('({0}/{1})Enabling mailing list for node {2}'.format(i+1, ncount, node._id))
                 node.mailing_enabled = True
 
@@ -53,13 +54,15 @@ def migrate(dry_run=True):
                     if user.is_active:
                         logger.info('Subscribing user {} on node {}'.format(user, node))
                         subscription.add_user_to_subscription(user, SUBSCRIPTION_TYPE)
-                        # TODO queue user addition
+                        # users added on `create_list`
 
                 subscription.save()
                 node.save()
                 successful_enables.append(node._id)
             except Exception as e:
                 unknown_failures[node._id] = e
+            else:
+                create_list(node._id)
         if i % 100 == 0:
             for key in ('node', 'user', 'fileversion', 'storedfilenode'):
                 Node._cache.data.get(key, {}).clear()
@@ -94,7 +97,7 @@ def main():
     if not dry_run:
         script_utils.add_file_logger(logger, __file__)
     else:
-        ml_utils = MagicMock()
+        create_list = MagicMock()
     with TokuTransaction():
         migrate(dry_run=dry_run)
 
