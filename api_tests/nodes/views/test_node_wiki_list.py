@@ -3,20 +3,11 @@ from nose.tools import *  # flake8: noqa
 
 from api.base.settings.defaults import API_BASE
 
-from tests.base import ApiTestCase
+from tests.base import ApiWikiTestCase, ApiTestCase
 from tests.factories import AuthUserFactory, ProjectFactory, NodeWikiFactory, RegistrationFactory
 
 
-class TestNodeWikiList(ApiTestCase):
-
-    def setUp(self):
-        super(TestNodeWikiList, self).setUp()
-        self.user = AuthUserFactory()
-        self.non_contributor = AuthUserFactory()
-
-    def _add_project_wiki_page(self, node, user):
-        # API will only return current wiki pages
-        return NodeWikiFactory(node=node, user=user, is_current=True)
+class TestNodeWikiList(ApiWikiTestCase):
 
     def _set_up_public_project_with_wiki_page(self):
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
