@@ -89,7 +89,6 @@ def create_list(node_id):
     """
     from website.models import Node  # avoid circular import
     node = Node.load(node_id)
-
     res = requests.post(
         MAILGUN_BASE_LISTS_URL,
         auth=('api', settings.MAILGUN_API_KEY),
@@ -116,7 +115,7 @@ def delete_list(node_id):
         '{}/{}'.format(MAILGUN_BASE_LISTS_URL, address(node_id)),
         auth=('api', settings.MAILGUN_API_KEY)
     )
-    if res.status_code != 200 or res.status_code != 404:
+    if res.status_code not in [200, 404]:
         raise HTTPError(res.status_code)
 
 @require_mailgun
@@ -151,6 +150,7 @@ def update_single_user_in_list(node_id, user_id, email=None, enabled=True, old_e
     from website.models import Node, User  # avoid circular import
     node = Node.load(node_id)
     user = User.load(user_id)
+    email = email or user.username
 
     if old_email:
         res = requests.put(
@@ -158,19 +158,19 @@ def update_single_user_in_list(node_id, user_id, email=None, enabled=True, old_e
             auth=('api', settings.MAILGUN_API_KEY),
             data={
                 'subscribed': 'no',
-                'vars': {'_id': user_id, 'primary': False}
+                'vars': json.dumps({'_id': user_id, 'primary': False})
             }
         )
-        if res.status_code != 200 or res.status_code != 404:
+        if res.status_code not in [200, 404]:
             raise HTTPError(res.status_code)
 
     res = requests.post(
         '{}/{}/members'.format(MAILGUN_BASE_LISTS_URL, address(node._id)),
         auth=('api', settings.MAILGUN_API_KEY),
         data={
-            'address': email or user.username,
+            'address': email,
             'subscribed': enabled and email == user.username and user not in get_unsubscribes(node),
-            'vars': {'_id': user._id, 'primary': email == user.username or bool(old_email)},
+            'vars': json.dumps({'_id': user._id, 'primary': email == user.username or bool(old_email)}),
             'upsert': True
         }
     )
@@ -193,7 +193,7 @@ def remove_user_from_list(node_id, user_id):
             '{}/{}/members/{}'.format(MAILGUN_BASE_LISTS_URL, address(node_id), email),
             auth=('api', settings.MAILGUN_API_KEY)
         )
-        if res.status_code != 200 or res.status_code != 404:
+        if res.status_code not in [200, 404]:
             raise HTTPError(res.status_code)
 
 @require_mailgun
@@ -320,9 +320,10 @@ def unsubscribe_contributor_from_mailing_list(node, contributor, auth=None):
         subscription = NotificationSubscription.load(to_subscription_key(node._id, 'mailing_list_events'))
     if subscription:
         subscription.remove_user_from_subscription(contributor)
-        celery_remove_user_from_list(node._id, contributor._id)
         node.mailing_updated = True
         node.save()
+    celery_remove_user_from_list(node._id, contributor._id)
+
 
 @user_confirmed.connect
 def resubscribe_on_confirm(user):
@@ -389,16 +390,16 @@ def log_message(**kwargs):
         sending_user=sender,
     ).save()
 
-def unsubscribe_user_hook(**kwargs):
+def unsubscribe_user_hook(*args, **kwargs):
     """ Hook triggered by MailGun when user unsubscribes.
     See `Unsubscribes Webhook` below https://documentation.mailgun.com/user_manual.html#tracking-unsubscribes
     for possible kwargs
     """
-    unsub = kwargs.get('recipient')
-    mailing_list = kwargs.get('mailing-list')
+    message = request.form
+    unsub = message.get('recipient')
+    mailing_list = message.get('mailing-list')
     if not unsub or not mailing_list:
-        import ipdb; ipdb.set_trace()
-        raise Exception(message=kwargs)
+        raise Exception()
     from website.models import User, NotificationSubscription  # avoid circular imports
     user = User.find_one('username', 'eq', unsub)
     node_id = mailing_list.split('@')[0]
