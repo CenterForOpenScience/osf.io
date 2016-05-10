@@ -1186,7 +1186,7 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, ODMF
         IsPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        ExcludeRetractions
+        ExcludeWithdrawals
     )
 
     required_read_scopes = [CoreScopes.NODE_FORKS_READ]
