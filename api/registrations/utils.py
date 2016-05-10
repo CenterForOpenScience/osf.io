@@ -2,7 +2,7 @@ from website.settings import PREREG_ADMIN_TAG
 from website.util import permissions as osf_permissions
 
 
-def create_jsonschema_from_metaschema(draft, is_reviewer=False):
+def create_jsonschema_from_metaschema(draft, required_fields=False, is_reviewer=False):
     """
     Creates jsonschema from registration metaschema for validation.
 
@@ -14,21 +14,24 @@ def create_jsonschema_from_metaschema(draft, is_reviewer=False):
 
     for page in metaschema['pages']:
         for question in page['questions']:
-            if is_required(question):
+            if is_required(question) and required_fields:
                 required.append(question['qid'])
             json_schema['properties'][question['qid']] = {
                 "type": "object",
                 "additionalProperties": False,
-                "properties": extract_question_values(question, is_reviewer)
+                "properties": extract_question_values(question, required_fields, is_reviewer)
             }
+            if required_fields:
+                json_schema['properties'][question['qid']]['required'] = ['value']
 
-        if required:
+
+        if required and required_fields:
             json_schema['required'] = required
 
     return json_schema
 
 
-def get_object_jsonschema(question, is_reviewer):
+def get_object_jsonschema(question, required_fields, is_reviewer):
     """
     Returns jsonschema for nested objects within schema
     """
@@ -39,29 +42,40 @@ def get_object_jsonschema(question, is_reviewer):
 
         }
     }
+    required = []
     properties = question.get('properties')
     if properties:
         for property in properties:
-            values = extract_question_values(property, is_reviewer)
+            if property.get('required', False) and required_fields:
+                required.append(property['id'])
+            values = extract_question_values(property, required_fields, is_reviewer)
             object_jsonschema['properties'][property['id']] = {
                 "type": "object",
                 "additionalProperties": False,
                 "properties": values
             }
+            if required_fields:
+                object_jsonschema['properties'][property['id']]['required'] = ['value']
+    if required_fields and is_required(question):
+        object_jsonschema['required'] = required
+
     return object_jsonschema
 
 
-def extract_question_values(question, is_reviewer):
+def extract_question_values(question, required_fields, is_reviewer):
     """
     Pulls structure for "value", "comments", and "extra" items
     """
+    required = False
+    if required_fields:
+        required = is_required(question)
     response = {
         'value': {'type': 'string'},
         'comments': COMMENTS_SCHEMA,
         'extra': {'type': 'array'}
     }
     if question.get('type') == 'object':
-        response['value'] = get_object_jsonschema(question, is_reviewer)
+        response['value'] = get_object_jsonschema(question, required_fields, is_reviewer)
     elif question.get('type') == 'choose':
         options = question.get('options')
         if options:

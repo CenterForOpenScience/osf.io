@@ -476,7 +476,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
         assert_equal(res.json['errors'][0]['detail'], 'This draft registration is not created from the given node.')
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
-    def test_required_questions_must_be_answered_on_draft(self, mock_enqueue):
+    def test_required_top_level_questions_must_be_answered_on_draft(self, mock_enqueue):
         prereg_schema = MetaSchema.find_one(
             Q('name', 'eq', 'Prereg Challenge') &
             Q('schema_version', 'eq', 2)
@@ -506,6 +506,103 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
         res = self.app.post_json_api(self.url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], "u'q1' is a required property")
+
+    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
+    def test_required_top_level_questions_must_be_answered_on_draft(self, mock_enqueue):
+        prereg_schema = MetaSchema.find_one(
+            Q('name', 'eq', 'Prereg Challenge') &
+            Q('schema_version', 'eq', 2)
+        )
+
+        prereg_draft_registration = DraftRegistrationFactory(
+            initiator=self.user,
+            registration_schema=prereg_schema,
+            branched_from=self.public_project
+        )
+
+        registration_metadata = self.prereg_metadata(prereg_draft_registration)
+        del registration_metadata['q1']
+        prereg_draft_registration.registration_metadata = registration_metadata
+        prereg_draft_registration.save()
+
+        payload = {
+            "data": {
+                "type": "registrations",
+                "attributes": {
+                    "registration_choice": "immediate",
+                    "draft_registration": prereg_draft_registration._id,
+                    }
+                }
+        }
+
+        res = self.app.post_json_api(self.url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], "u'q1' is a required property")
+
+    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
+    def test_required_second_level_questions_must_be_answered_on_draft(self, mock_enqueue):
+        prereg_schema = MetaSchema.find_one(
+            Q('name', 'eq', 'Prereg Challenge') &
+            Q('schema_version', 'eq', 2)
+        )
+
+        prereg_draft_registration = DraftRegistrationFactory(
+            initiator=self.user,
+            registration_schema=prereg_schema,
+            branched_from=self.public_project
+        )
+
+        registration_metadata = self.prereg_metadata(prereg_draft_registration)
+        registration_metadata['q11'] = {'value': {}}
+        prereg_draft_registration.registration_metadata = registration_metadata
+        prereg_draft_registration.save()
+
+        payload = {
+            "data": {
+                "type": "registrations",
+                "attributes": {
+                    "registration_choice": "immediate",
+                    "draft_registration": prereg_draft_registration._id,
+                    }
+                }
+        }
+
+        res = self.app.post_json_api(self.url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], "u'question' is a required property")
+
+    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
+    def test_required_third_level_questions_must_be_answered_on_draft(self, mock_enqueue):
+        prereg_schema = MetaSchema.find_one(
+            Q('name', 'eq', 'Prereg Challenge') &
+            Q('schema_version', 'eq', 2)
+        )
+
+        prereg_draft_registration = DraftRegistrationFactory(
+            initiator=self.user,
+            registration_schema=prereg_schema,
+            branched_from=self.public_project
+        )
+
+        registration_metadata = self.prereg_metadata(prereg_draft_registration)
+        registration_metadata['q11'] = {'value': {"question": {}}}
+
+        prereg_draft_registration.registration_metadata = registration_metadata
+        prereg_draft_registration.save()
+
+        payload = {
+            "data": {
+                "type": "registrations",
+                "attributes": {
+                    "registration_choice": "immediate",
+                    "draft_registration": prereg_draft_registration._id,
+                    }
+                }
+        }
+
+        res = self.app.post_json_api(self.url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], "'value' is a required property")
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_multiple_choice_in_registration_schema_must_match_one_of_choices(self, mock_enqueue):

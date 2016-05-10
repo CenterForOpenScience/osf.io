@@ -160,7 +160,7 @@ class RegistrationSerializer(NodeSerializer):
 
     def all_required_questions_answered(self, draft):
         metadata = draft.registration_metadata
-        schema = create_jsonschema_from_metaschema(draft)
+        schema = create_jsonschema_from_metaschema(draft, required_fields=True)
         try:
             jsonschema.validate(metadata, schema)
         except jsonschema.ValidationError as e:

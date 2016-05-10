@@ -615,10 +615,8 @@ class DraftRegistrationSerializer(JSONAPISerializer):
         needed in the context.
         """
         reviewer = is_prereg_admin_not_project_admin(self.context['request'], draft)
-        schema = create_jsonschema_from_metaschema(draft, is_reviewer=reviewer)
         # Required fields are only required when creating the actual registration, not updating the draft.
-        if schema.get('required'):
-            del schema['required']
+        schema = create_jsonschema_from_metaschema(draft, required_fields=False, is_reviewer=reviewer)
         try:
             jsonschema.validate(metadata, schema)
         except jsonschema.ValidationError as e:
