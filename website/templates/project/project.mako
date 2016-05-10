@@ -239,19 +239,21 @@
                    <a href="${node['url']}files/"> <i class="fa fa-external-link"></i> </a>
                 </div>
             </div>
-            <div class="row">
-                <div class="col-sm-12 m-t-sm m-l-md">
-                    <span id="file-upload-instructions" class="f-w-xl">Click on storage provider or drag and drop to upload</span>
-                </div>
-            </div>
-            <div class="panel-body">
-                <div id="treeGrid">
-                    <div class="spinner-loading-wrapper">
-                        <div class="logo-spin logo-lg"></div>
-                         <p class="m-t-sm fg-load-message"> Loading files...  </p>
+            % if not node['is_registration'] and not node['anonymous']:
+                <div class="row">
+                    <div class="col-sm-12 m-t-sm m-l-md">
+                        <span class="f-w-xl">Click on a storage provider or drag and drop to upload</span>
                     </div>
                 </div>
-            </div>
+                <div class="panel-body">
+                    <div id="treeGrid">
+                        <div class="spinner-loading-wrapper">
+                            <div class="logo-spin logo-lg"></div>
+                             <p class="m-t-sm fg-load-message"> Loading files...  </p>
+                        </div>
+                    </div>
+                </div>
+            %endif
         </div>
 
         % if addons:
