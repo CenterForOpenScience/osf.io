@@ -13,6 +13,7 @@ def get_varnish_servers():
     #  TODO: this should get the varnish servers from HAProxy or a setting
     return settings.VARNISH_SERVERS
 
+
 def get_bannable_urls(instance):
     bannable_urls = []
     parsed_absolute_url = {}
@@ -54,6 +55,7 @@ def get_bannable_urls(instance):
                 bannable_urls.append(url_string)
 
     return bannable_urls, parsed_absolute_url.hostname
+
 
 def ban_url(instance):
     # TODO: Refactor; Pull url generation into postcommit_task handling so we only ban urls once per request

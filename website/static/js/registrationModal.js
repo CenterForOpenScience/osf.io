@@ -55,7 +55,7 @@ var RegistrationViewModel = function(confirm, prompts, validator) {
             var endEmbargoDateTimestamp = self.embargoEndDate().getTime();
             return endEmbargoDateTimestamp > TWO_DAYS_FROM_TODAY_TIMESTAMP;
         },
-        message: 'Embargo end date must be at least two days in the future.'
+        message: 'Embargo end date must be at least three days in the future.'
     }, {
 	validator: function() {
             var endEmbargoDateTimestamp = self.embargoEndDate().getTime();
