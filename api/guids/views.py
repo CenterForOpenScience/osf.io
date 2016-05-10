@@ -3,7 +3,7 @@ from rest_framework.exceptions import NotFound
 from rest_framework import permissions as drf_permissions
 
 from framework.guid.model import Guid
-from framework.auth.oauth_scopes import CoreScopes, ComposedScopes
+from framework.auth.oauth_scopes import CoreScopes
 from api.base.exceptions import EndpointNotImplementedError
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
@@ -26,7 +26,7 @@ class GuidRedirect(JSONAPIBaseView):
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [ComposedScopes.FULL_READ]
+    required_read_scopes = [CoreScopes.GUIDS_READ]
     required_write_scopes = [CoreScopes.NULL]
 
     view_category = 'guids'
