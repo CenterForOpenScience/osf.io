@@ -200,9 +200,9 @@ CKEDITOR_CONFIGS = {
 }
 
 # Keen.io settings in local.py
-KEEN_PROJECT_ID = 'CHANGEME'
-KEEN_READ_KEY = 'CHANGEME'
-KEEN_WRITE_KEY = 'CHANGEME'
+KEEN_PROJECT_ID = osf_settings.KEEN_PROJECT_ID
+KEEN_READ_KEY = osf_settings.KEEN_READ_KEY
+KEEN_WRITE_KEY = osf_settings.KEEN_WRITE_KEY
 
 KEEN_CREDENTIALS = {
     'keen_ready': False
