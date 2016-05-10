@@ -39,6 +39,7 @@
     "livedb-mongo": "~0.4.1",
     "loaders.css": "^0.1.2",
     "lodash.get": "^4.2.1",
+    "lodash.find": "^4.3.0",
     "markdown-it": "~4.1.0",
     "markdown-it-ins-del": "^0.1.1",
     "markdown-it-sanitizer": "~0.3.0",
