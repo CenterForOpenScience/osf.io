@@ -829,7 +829,7 @@ class User(GuidStoredObject, AddonModelMixin):
         token = self.get_confirmation_token(email, force=force)
         return "{0}confirm/{1}/{2}/".format(base, self._primary_key, token)
 
-    def _get_unconfirmed_email_for_token(self, token):
+    def get_unconfirmed_email_for_token(self, token):
         """Return email if valid.
         :rtype: bool
         :raises: ExpiredTokenError if trying to access a token that is expired.
@@ -853,18 +853,17 @@ class User(GuidStoredObject, AddonModelMixin):
         email_verifications = deepcopy(self.email_verifications)
         for token in self.email_verifications:
             try:
-                self.verify_token(token)
+                self.get_unconfirmed_email_for_token(token)
             except (KeyError, ExpiredTokenError):
                 email_verifications.pop(token)
         self.email_verifications = email_verifications
-        self.save()
 
-    def verified_email_get(self):
+    def unconfirmed_email_get(self):
         """Called at login to see if there are emails to add or users to merge.  Delete expired tokens.
         methods: GET
         """
         self.clean_email_verifications()
-        verified_emails = []
+        unconfirmed_emails = []
         email_verifications = deepcopy(self.email_verifications)
         for token in email_verifications:
             if self.email_verifications[token]['confirmed']:
@@ -873,27 +872,11 @@ class User(GuidStoredObject, AddonModelMixin):
                 except NoResultsFound:
                     user_merge = False
 
-                verified_emails.append({'address': self.email_verifications[token]['email'],
+                unconfirmed_emails.append({'address': self.email_verifications[token]['email'],
                                         'token': token,
                                         'confirmed': self.email_verifications[token]['confirmed'],
                                         'user_merge': user_merge.email if user_merge else False})
-        return verified_emails
-
-    def verify_token(self, token):
-        """Return whether or not a confirmation token is valid for this user.
-        :rtype: bool
-        """
-        try:
-            verification = self.email_verifications[token]
-        except KeyError:
-            raise KeyError('No confirmation token for email "{0}"'.format(self.email_verifications[token]))
-        # Check token for existance and date
-        if (
-            'expiration' in verification and
-            verification['expiration'] < dt.datetime.utcnow()
-        ):
-            raise ExpiredTokenError('Token for email "{0}" is expired'.format(self.email_verifications[token]))
-        return True
+        return unconfirmed_emails
 
     def verify_claim_token(self, token, project_id):
         """Return whether or not a claim token is valid for this user for
@@ -907,7 +890,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def confirm_email(self, token, merge=False):
         """Confirm the email address associated with the token"""
-        email = self._get_unconfirmed_email_for_token(token)
+        email = self.get_unconfirmed_email_for_token(token)
 
         # If this email is confirmed on another account, abort
         try:

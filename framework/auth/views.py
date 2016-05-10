@@ -195,7 +195,7 @@ def auth_email_logout(token, user):
     """
     redirect_url = web_url_for('auth_login') + '?existing_user={}'.format(urllib.quote_plus(user.email))
     try:
-        user.verify_token(token)
+        user.get_unconfirmed_email_for_token(token)
     except KeyError:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': "Bad token",
@@ -288,7 +288,7 @@ def confirm_email_get(token, auth=None, **kwargs):
 
 
 @collect_auth
-def verified_email_remove(auth=None):
+def unconfirmed_email_remove(auth=None):
     """Called at login if user cancels their merge or email add.
     methods: DELETE
     """
@@ -307,7 +307,7 @@ def verified_email_remove(auth=None):
 
 
 @collect_auth
-def verified_email_add(auth=None):
+def unconfirmed_email_add(auth=None):
     """Called at login if user confirms their merge or email add.
     methods: PUT
     """

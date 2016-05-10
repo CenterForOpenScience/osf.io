@@ -3370,7 +3370,7 @@ class TestAuthViews(OsfTestCase):
         self.user.reload()
         assert_not_equal(token, self.user.get_confirmation_token(email))
         with assert_raises(InvalidTokenError):
-            self.user._get_unconfirmed_email_for_token(token)
+            self.user.get_unconfirmed_email_for_token(token)
 
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_click_confirmation_email(self, send_mail):
@@ -3388,7 +3388,7 @@ class TestAuthViews(OsfTestCase):
         assert_in(login_url, res.body)
 
     def test_get_email_to_add_no_email(self):
-        email_verifications = self.user.verified_email_get()
+        email_verifications = self.user.unconfirmed_email_get()
         assert_equal(email_verifications, [])
 
     def test_get_unconfirmed_email(self):
@@ -3396,7 +3396,7 @@ class TestAuthViews(OsfTestCase):
         self.user.add_unconfirmed_email(email)
         self.user.save()
         self.user.reload()
-        email_verifications = self.user.verified_email_get()
+        email_verifications = self.user.unconfirmed_email_get()
         assert_equal(email_verifications, [])
 
     def test_get_email_to_add(self):
@@ -3409,7 +3409,7 @@ class TestAuthViews(OsfTestCase):
         self.app.get(url)
         self.user.reload()
         assert_equal(self.user.email_verifications[token]['confirmed'], True)
-        email_verifications = self.user.verified_email_get()
+        email_verifications = self.user.unconfirmed_email_get()
         assert_equal(email_verifications[0]['address'], 'test@example.com')
 
     def test_add_email(self):
@@ -3421,8 +3421,8 @@ class TestAuthViews(OsfTestCase):
         url = '/confirm/{}/{}/?logout=1'.format(self.user._id, token)
         self.app.get(url)
         self.user.reload()
-        email_verifications = self.user.verified_email_get()
-        put_email_url = api_url_for('verified_email_add')
+        email_verifications = self.user.unconfirmed_email_get()
+        put_email_url = api_url_for('unconfirmed_email_add')
         res = self.app.put_json(put_email_url, email_verifications[0], auth=self.user.auth)
         self.user.reload()
         assert_equal(res.json_body['status'], 'success')
@@ -3436,9 +3436,18 @@ class TestAuthViews(OsfTestCase):
         self.user.email_verifications[token]['expiration'] = dt.datetime.utcnow() - dt.timedelta(days=100)
         self.user.save()
         self.user.reload()
-        email_verifications = self.user.verified_email_get()
+        email_verifications = self.user.unconfirmed_email_get()
         assert_equal(email_verifications, [])
         assert_equal(self.user.email_verifications, {})
+
+    def test_add_invalid_email(self):
+        # Do not return expired token and removes it from user.email_verifications
+        email = u'\u0000\u0008\u000b\u000c\u000e\u001f\ufffe\uffffHello@yourmom.com'
+        # illegal_str = u'\u0000\u0008\u000b\u000c\u000e\u001f\ufffe\uffffHello'
+        # illegal_str += unichr(0xd800) + unichr(0xdbff) + ' World'
+        # email = 'test@example.com'
+        with assert_raises(ValidationError):
+            self.user.add_unconfirmed_email(email)
 
     def test_add_email_merge(self):
         email = "copy@cat.com"
@@ -3446,7 +3455,6 @@ class TestAuthViews(OsfTestCase):
             username=email,
             emails=[email]
         )
-        dupe.set_password("copycat")
         dupe.save()
         token = self.user.add_unconfirmed_email(email)
         self.user.save()
@@ -3455,8 +3463,8 @@ class TestAuthViews(OsfTestCase):
         url = '/confirm/{}/{}/?logout=1'.format(self.user._id, token)
         self.app.get(url)
         self.user.reload()
-        email_verifications = self.user.verified_email_get()
-        put_email_url = api_url_for('verified_email_add')
+        email_verifications = self.user.unconfirmed_email_get()
+        put_email_url = api_url_for('unconfirmed_email_add')
         res = self.app.put_json(put_email_url, email_verifications[0], auth=self.user.auth)
         self.user.reload()
         assert_equal(res.json_body['status'], 'success')

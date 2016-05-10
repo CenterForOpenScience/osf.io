@@ -66,7 +66,7 @@ def get_globals():
         'user_timezone': user.timezone if user and user.timezone else '',
         'user_url': user.url if user else '',
         'user_gravatar': profile_views.current_user_gravatar(size=25)['gravatar_url'] if user else '',
-        'user_email_verifications': user.verified_email_get() if user else [],
+        'user_email_verifications': user.unconfirmed_email_get() if user else [],
         'user_api_url': user.api_url if user else '',
         'display_name': get_display_name(user.fullname) if user else '',
         'use_cdn': settings.USE_CDN_FOR_CLIENT_LIBS,
@@ -341,8 +341,8 @@ def make_url_map(app):
     ], prefix='/api/v1')
 
     process_rules(app, [
-        Rule('/confirmed_emails/', 'put', auth_views.verified_email_add, json_renderer),
-        Rule('/confirmed_emails/', 'delete', auth_views.verified_email_remove, json_renderer)
+        Rule('/confirmed_emails/', 'put', auth_views.unconfirmed_email_add, json_renderer),
+        Rule('/confirmed_emails/', 'delete', auth_views.unconfirmed_email_remove, json_renderer)
 
     ], prefix='/api/v1')
 
