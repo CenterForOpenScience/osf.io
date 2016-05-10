@@ -2755,7 +2755,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         self.save()
 
         #send signal to remove this user from project subscriptions
-        project_signals.contributor_removed.send(contributor, node=self)
+        project_signals.contributor_removed.send(self, user=contributor)
 
         return True
 

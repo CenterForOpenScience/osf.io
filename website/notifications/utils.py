@@ -57,14 +57,14 @@ def from_subscription_key(key):
 
 
 @signals.contributor_removed.connect
-def remove_contributor_from_subscriptions(contributor, node):
+def remove_contributor_from_subscriptions(node, user):
     """ Remove contributor from node subscriptions unless the user is an
         admin on any of node's parent projects.
     """
-    if contributor._id not in node.admin_contributor_ids:
-        node_subscriptions = get_all_node_subscriptions(contributor, node)
+    if user._id not in node.admin_contributor_ids:
+        node_subscriptions = get_all_node_subscriptions(user, node)
         for subscription in node_subscriptions:
-            subscription.remove_user_from_subscription(contributor)
+            subscription.remove_user_from_subscription(user)
 
 
 @signals.node_deleted.connect
