@@ -425,7 +425,7 @@ def set_node_many_to_many_on_nodes(page_size=5000):
     m2m_count = 0
     start = datetime.now()
     total = MODMNode.find(build_query(m2m_node_fields, MODMNode), allow_institution=True).count()
-
+    print '{} Nodes'.format(total)
     while node_count < total:
         with transaction.atomic():
             for modm_node in MODMNode.find(build_query(m2m_node_fields, MODMNode), allow_institution=True).sort('-date_modified')[node_count:page_size+node_count]:
@@ -456,7 +456,6 @@ def set_node_many_to_many_on_nodes(page_size=5000):
                     m2m_count += len(django_pks)
                 node_count += 1
                 if node_count % page_size == 0 or node_count == total:
-                    then = datetime.now()
                     print 'Through {} nodes and {} m2m'.format(node_count, m2m_count)
     print 'Done with {} in {} seconds...'.format(sys._getframe().f_code.co_name, (datetime.now() - start).total_seconds())
 
