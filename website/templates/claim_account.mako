@@ -24,6 +24,7 @@
                         class="form-control"
                         id="setPassword"
                         placeholder="Password"
+                        name="password"
                         data-bind="
                             textInput: typedPassword,
                             value: password,
@@ -52,6 +53,7 @@
                         class="form-control"
                         id="setPasswordConfirmation"
                         placeholder="Verify Password"
+                        name="password2"
                         data-bind="
                             value: password_confirmation,
                             event: {
