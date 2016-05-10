@@ -102,7 +102,7 @@
                       <i style="margin-right: 5px;" class="fa fa-pencil"></i>Preview
                     </a>
                     <button class="btn btn-danger"
-                            data-bind="click: $root.deleteDraft">
+                            data-bind="click: $root.deleteDraft.bind($root)">
                       <i style="margin-right: 5px;" class="fa fa-times"></i>Delete
                     </button>
                   </div>
@@ -113,8 +113,7 @@
                     </span>
                     -->
                     <span data-bind="ifnot: requiresApproval">
-                     <a class="btn btn-success" data-bind="attr: {href: urls.register_page},
-                                                           css: {'disabled': !isApproved}">Register</a>
+                     <a class="btn btn-success" data-bind="attr: {href: urls.register_page}">Register</a>
                     </span>
                   </div>
                 </div>

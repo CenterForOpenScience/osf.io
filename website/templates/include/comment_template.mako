@@ -1,5 +1,5 @@
 <script type="text/html" id="commentTemplate">
-    <div class="comment-container" data-bind="if: shouldShow, attr:{id: id}">
+    <div class="comment-container" data-bind="attr:{id: id}">
 
         <div class="comment-body m-b-sm p-sm osf-box">
              <div data-bind="visible: loading">
@@ -152,6 +152,11 @@
 
             <!-- ko if: showChildren() -->
                 <!-- ko template: {name:  'commentTemplate', foreach: comments} -->
+                <!-- /ko -->
+                <!-- ko if: urlForNext() -->
+                <div class="row">
+                    <button class="btn btn-link pull-right more-replies" type="button" data-bind="click: getMoreComments">More replies</button>
+                </div>
                 <!-- /ko -->
             <!-- /ko -->
 

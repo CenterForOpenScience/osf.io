@@ -139,15 +139,20 @@ var _dataverseItemButtons = {
                         },
                         icon: 'fa fa-upload',
                         className: 'text-success'
-                    }, 'Upload'),
-                    m.component(Fangorn.Components.button, {
-                        onclick: function (event) {
-                            dataversePublish.call(tb, event, item);
-                        },
-                        icon: 'fa fa-globe',
-                        className: 'text-primary'
-                    }, 'Publish')
+                    }, 'Upload')
                 );
+                // Only allow the Publish button to appear if this is truly an unpublished dataset, vs. a draft version of a published dataset.
+                if(!item.data.dataverseIsPublished) {
+                    buttons.push(
+                        m.component(Fangorn.Components.button, {
+                            onclick: function (event) {
+                                dataversePublish.call(tb, event, item);
+                            },
+                            icon: 'fa fa-globe',
+                            className: 'text-primary'
+                        }, 'Publish')
+                    );
+                }
             } else if (item.kind === 'folder' && !item.data.addonFullname) {
                 buttons.push(
                     m.component(Fangorn.Components.button, {

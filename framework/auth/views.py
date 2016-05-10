@@ -3,6 +3,7 @@ import datetime
 import httplib as http
 
 from flask import request
+import markupsafe
 
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
@@ -26,10 +27,10 @@ from website import settings
 from website import mails
 from website import language
 from website import security
+from website.util.time import throttle_period_expired
 from website.models import User
 from website.util import web_url_for
 from website.util.sanitize import strip_html
-from website.settings import FORGOT_PASSWORD_MINIMUM_TIME
 
 
 @collect_auth
@@ -79,13 +80,9 @@ def forgot_password_post():
                           'should have, please contact OSF Support. ').format(email)
         user_obj = get_user(email=email)
         if user_obj:
-            #TODO: Remove this rate limiting and replace it with something that doesn't write to the User model
-            now = datetime.datetime.utcnow()
-            last_attempt = user_obj.forgot_password_last_post or now - datetime.timedelta(seconds=FORGOT_PASSWORD_MINIMUM_TIME)
-            user_obj.forgot_password_last_post = now
-            time_since_last_attempt = now - last_attempt
-            if time_since_last_attempt.seconds >= FORGOT_PASSWORD_MINIMUM_TIME:
+            if throttle_period_expired(user_obj.email_last_sent, settings.SEND_EMAIL_THROTTLE):
                 user_obj.verification_key = security.random_string(20)
+                user_obj.email_last_sent = datetime.datetime.utcnow()
                 user_obj.save()
                 reset_link = "http://{0}{1}".format(
                     request.host,
@@ -101,7 +98,6 @@ def forgot_password_post():
                 )
                 status.push_status_message(status_message, kind='success', trust=False)
             else:
-                user_obj.save()
                 status.push_status_message('You have recently requested to change your password. Please wait a little '
                                            'while before trying again.',
                                            kind='error',
@@ -143,14 +139,14 @@ def auth_login(auth, **kwargs):
 
     if next_url:
         # Only allow redirects which are relative root or full domain, disallows external redirects.
-        if not (next_url[0] == '/' or next_url.startsWith(settings.DOMAIN)):
+        if not (next_url[0] == '/' or next_url.startswith(settings.DOMAIN)):
             raise HTTPError(http.InvalidURL)
 
     if auth.logged_in:
         if not request.args.get('logout'):
             if next_url:
                 return redirect(next_url)
-            return redirect(web_url_for('dashboard'))
+            return redirect('/')
         # redirect user to CAS for logout, return here w/o authentication
         return auth_logout(redirect_url=request.url)
     if kwargs.get('first', False):
@@ -338,7 +334,7 @@ def register_user(**kwargs):
             http.BAD_REQUEST,
             data=dict(
                 message_long=language.ALREADY_REGISTERED.format(
-                    email=request.json['email1']
+                    email=markupsafe.escape(request.json['email1'])
                 )
             )
         )
