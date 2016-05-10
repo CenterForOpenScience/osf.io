@@ -26,14 +26,18 @@ def get_targets():
 
 
 def fix_embargo_approved_logs(targets):
+    count = 0
     for log in targets:
         node_id = log.params['node']
         node = Node.load(node_id)
         if node.is_registration:
+            log_params = log.params
             log.params['node'] = node.registered_from_id
             log.params['registration'] = node._id
+            logger.info('Updating params of log {} from {} to {}'.format(log._id, log_params, log.params))
             log.save()
-            logging.debug('Updated node param of log {}'.format(log._id))
+            count += 1
+    logger.info('{} logs migrated').format(count)
 
 
 if __name__ == '__main__':
