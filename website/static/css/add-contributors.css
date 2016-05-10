@@ -1,0 +1,4 @@
+/* Override some treebeard styles */
+#addContributors #tb-tbody {
+    max-height: 300px;
+}
