@@ -120,9 +120,6 @@ NO_LOGIN_OSF4M_WAIT_TIME = timedelta(weeks=6)
 NEW_PUBLIC_PROJECT_WAIT_TIME = timedelta(hours=24)
 WELCOME_OSF4M_WAIT_TIME_GRACE = timedelta(days=12)
 
-# TODO: Override in local.py
-MAILGUN_API_KEY = None
-
 # TODO: Override in local.py in production
 UPLOADS_PATH = os.path.join(BASE_PATH, 'uploads')
 MFR_CACHE_PATH = os.path.join(BASE_PATH, 'mfrcache')
@@ -156,6 +153,12 @@ SESSION_HISTORY_IGNORE_RULES = [
 CANONICAL_DOMAIN = 'openscienceframework.org'
 COOKIE_DOMAIN = '.openscienceframework.org'  # Beaker
 SHORT_DOMAIN = 'osf.io'
+
+# Mailgun
+
+# TODO: Override in local.py
+MAILGUN_API_KEY = None
+MAILGUN_API_SEND_ENDPOINT = 'https://api.mailgun.net/v3/{}/messages'.format(SHORT_DOMAIN)
 
 # TODO: Combine Python and JavaScript config
 COMMENT_MAXLENGTH = 500

@@ -40,6 +40,7 @@ from website import settings
 from website.views import _render_nodes, find_bookmark_collection, validate_page_num
 from website.profile import utils
 from website.project.licenses import serialize_node_license_record
+from website.mailing_list.utils import get_unsubscribes, address
 from website.util.sanitize import strip_html
 from website.util import rapply
 
@@ -728,6 +729,9 @@ def _view_project(node, auth, primary=False):
             },
             'alternative_citations': [citation.to_json() for citation in node.alternative_citations],
             'has_draft_registrations': node.has_active_draft_registrations,
+            'mailing_list_enabled': node.mailing_enabled,
+            'mailing_list_unsubs': [u.fullname for u in get_unsubscribes(node)] if node.is_contributor(user) else [],
+            'mailing_list_address': address(node._id),
             'contributors': [contributor._id for contributor in node.contributors]
         },
         'parent_node': {

@@ -19,6 +19,7 @@ from modularodm import fields
 from modularodm.validators import MaxLengthValidator
 from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationValueError
+from modularodm.exceptions import KeyExistsException
 
 from framework import status
 from framework.mongo import ObjectId
@@ -853,6 +854,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     # TODO: Add validator
     comment_level = fields.StringField(default='public')
 
+    # Project Mailing
+    mailing_enabled = fields.BooleanField(default=True, index=True)
+
     wiki_pages_current = fields.DictionaryField()
     wiki_pages_versions = fields.DictionaryField()
     # Dictionary field mapping node wiki page to sharejs private uuid.
@@ -1511,6 +1515,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if self.is_bookmark_collection and self.title != 'Bookmarks':
             self.title = 'Bookmarks'
 
+        # Set mailing attribute before save
+        if self.is_registration or self.is_collection:
+            self.mailing_enabled = False
+
         is_original = not self.is_registration and not self.is_fork
         if 'suppress_log' in kwargs.keys():
             suppress_log = kwargs['suppress_log']
@@ -1574,8 +1582,30 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if settings.PIWIK_HOST and update_piwik:
             piwik_tasks.update_node(self._id, saved_fields)
 
+        # Ensure Mailing list subscription is set up
+        if first_save:
+            self.get_or_create_mailing_list_subscription()
+
         # Return expected value for StoredObject::save
         return saved_fields
+
+    def get_or_create_mailing_list_subscription(self):
+        if self.mailing_enabled:
+            #imported here to avoid circularity
+            from website.models import NotificationSubscription
+            from website.notifications.utils import to_subscription_key
+            try:
+                subscription = NotificationSubscription(
+                    _id=to_subscription_key(self._id, 'mailing_list_events'),
+                    owner=self,
+                    event_name='mailing_list_events'
+                )
+                subscription.add_user_to_subscription(self.creator, 'email_transactional', save=True)
+                subscription.save()
+            except KeyExistsException:
+                subscription = NotificationSubscription.load(to_subscription_key(self._id, 'mailing_list_events'))
+            finally:
+                return subscription
 
     ######################################
     # Methods that return a new instance #
@@ -1622,10 +1652,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         # set attributes which may NOT be overridden by `changes`
         new.creator = auth.user
         new.template_node = self
-        new.add_contributor(contributor=auth.user, permissions=CREATOR_PERMISSIONS, log=False, save=False)
         new.is_fork = False
         new.is_registration = False
         new.piwik_site_id = None
+        new.mailing_enabled = not new.is_collection
         new.node_license = self.license.copy() if self.license else None
 
         # If that title hasn't been changed, apply the default prefix (once)
@@ -1642,6 +1672,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         )
 
         new.save(suppress_log=True)
+        new.add_contributor(contributor=auth.user, permissions=CREATOR_PERMISSIONS, log=False, save=False)
 
         # Log the creation
         new.add_log(
@@ -2151,6 +2182,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         forked.forked_from = original
         forked.creator = user
         forked.piwik_site_id = None
+        forked.mailing_enabled = not forked.is_collection
         forked.node_license = original.license.copy() if original.license else None
         forked.wiki_private_uuids = {}
 
@@ -2160,6 +2192,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         # Clear permissions before adding users
         forked.permissions = {}
         forked.visible_contributor_ids = []
+
+        # Save before creating mailing list due to NotificationSubscription's
+        # ForeignFields -- foreign object must exist to be linked.
+        forked.save(suppress_log=True)
 
         for citation in self.alternative_citations:
             forked.add_citation(
@@ -2251,6 +2287,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         registered.creator = self.creator
         registered.tags = self.tags
         registered.piwik_site_id = None
+        registered.mailing_enabled = False
         registered.primary_institution = self.primary_institution
         registered._affiliated_institutions = self._affiliated_institutions
         registered.alternative_citations = self.alternative_citations

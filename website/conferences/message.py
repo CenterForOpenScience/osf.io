@@ -12,6 +12,7 @@ from framework.flask import request
 
 from website import settings
 from website.conferences.exceptions import ConferenceError
+from website.mailing_list.utils import find_email, ANGLE_BRACKETS_REGEX
 
 
 logger = logging.getLogger(__name__)
@@ -20,7 +21,6 @@ SSCORE_MAX_VALUE = 5
 DKIM_PASS_VALUES = ['Pass']
 SPF_PASS_VALUES = ['Pass', 'Neutral']
 
-ANGLE_BRACKETS_REGEX = re.compile(r'<(.*?)>')
 BASE_REGEX = r'''
         (?P<test>test-|stage-)?
         (?P<meeting>\w*?)
@@ -120,13 +120,9 @@ class ConferenceMessage(object):
 
     @cached_property
     def sender_email(self):
-        match = ANGLE_BRACKETS_REGEX.search(self.sender)
-        if match:
-            # sender format: "some name" <email@domain.tld>
-            return match.groups()[0].lower().strip()
-        elif '@' in self.sender:
-            # sender format: email@domain.tld
-            return self.sender.lower().strip()
+        email = find_email(self.sender)
+        if email:
+            return email
         raise ConferenceError('Could not extract sender email')
 
     @cached_property

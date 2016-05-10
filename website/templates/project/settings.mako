@@ -381,8 +381,31 @@
                     <div class="panel-heading clearfix">
                         <h3 class="panel-title">Email Notifications</h3>
                     </div>
+                    % if node['mailing_list_enabled'] or user['is_admin']:  ## Begin Project Mailing Lists Settings
+                        <br/>
+                        <div style="padding-left: 15px">
+                            <a data-toggle="modal" data-target="#mailingListContributorsModal"><i class="fa fa-envelope"></i></a>
+                            Project Mailing List Info
+                        </div>
+                    % endif
+                    % if user['is_admin']:
+                        <div class="help-block" style="padding-left: 15px">
+                            <p class="text-muted">This notification setting applies to ALL project contributors.</p>
+                        </div>
+                        <form id="mailingListTreeSettings" class="osf-treebeard-minimal">
+                            <div id="mailingListGrid">
+                                <div class="spinner-loading-wrapper">
+                                    <div class="logo-spin logo-lg"></div>
+                                    <p class="m-t-sm fg-load-message"> Loading mailing list settings...  </p>
+                                </div>
+                            </div>
+                            <div class="help-block" style="padding-left: 15px">
+                                <p id="configureMailingListMessage"></p>
+                            </div>
+                        </form>
+                    % endif  ## End PML Settings ## Begin Individual Email Notifications
                     <div class="help-block" style="padding-left: 15px">
-                        <p class="text-info">These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>
+                        <p class="text-muted">These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>
                     </div>
                     <form id="notificationSettings" class="osf-treebeard-minimal">
                         <div id="grid">

@@ -1,5 +1,6 @@
 import smtplib
 import logging
+import requests
 from email.mime.text import MIMEText
 
 from framework.celery_tasks import app
@@ -11,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 @app.task
 def send_email(from_addr, to_addr, subject, message, mimetype='html', ttls=True, login=True,
-                username=None, password=None, categories=None):
+                username=None, password=None, categories=None, use_mailgun=False):
     """Send email to specified destination.
     Email is sent from the email specified in FROM_EMAIL settings in the
     settings module.
@@ -32,7 +33,16 @@ def send_email(from_addr, to_addr, subject, message, mimetype='html', ttls=True,
     """
     if not settings.USE_EMAIL:
         return
-    if settings.SENDGRID_API_KEY:
+    if use_mailgun and settings.MAILGUN_API_KEY:
+        return _send_with_mailgun(
+            from_addr=from_addr,
+            to_addr=to_addr,
+            subject=subject,
+            message=message,
+            mimetype=mimetype,
+            categories=categories
+        )
+    elif settings.SENDGRID_API_KEY:
         return _send_with_sendgrid(
             from_addr=from_addr,
             to_addr=to_addr,
@@ -97,3 +107,22 @@ def _send_with_sendgrid(from_addr, to_addr, subject, message, mimetype='html', c
 
     status, msg = client.send(mail)
     return status < 400
+
+def _send_with_mailgun(from_addr, to_addr, subject, message, mimetype='html', categories=None):
+    data = {'from': from_addr,
+            'to': to_addr,
+            'subject': subject,
+            'o:tracking': False}  # Don't rewrite links
+
+    if mimetype == 'html':
+        data.update({'html': message})
+    else:
+        data.update({'text': message})
+
+    if categories:
+        data.update({'o:tag': categories})
+
+    return requests.post(
+        settings.MAILGUN_API_SEND_ENDPOINT,
+        auth=("api", settings.MAILGUN_API_KEY),
+        data=data)

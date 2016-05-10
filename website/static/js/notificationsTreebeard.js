@@ -4,41 +4,9 @@ var $ = require('jquery');
 var m = require('mithril');
 var Treebeard = require('treebeard');
 var $osf = require('js/osfHelpers');
+var $tb = require('js/treebeardHelpers');
 var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 
-function expandOnLoad() {
-    var tb = this;  // jshint ignore: line
-    for (var i = 0; i < tb.treeData.children.length; i++) {
-        var parent = tb.treeData.children[i];
-        tb.updateFolder(null, parent);
-        expandChildren(tb, parent.children);
-    }
-}
-
-function expandChildren(tb, children) {
-    var openParent = false;
-    for (var i = 0; i < children.length; i++) {
-        var child = children[i];
-        var parent = children[i].parent();
-        if (child.data.kind === 'event' && child.data.event.notificationType !== 'adopt_parent') {
-            openParent = true;
-        }
-        if (child.children.length > 0) {
-            expandChildren(tb, child.children);
-        }
-    }
-    if (openParent) {
-        openAncestors(tb, children[0]);
-    }
-}
-
-function openAncestors (tb, item) {
-    var parent = item.parent();
-    if(parent && parent.id > 0) {
-        tb.updateFolder(null, parent);
-        openAncestors(tb, parent);
-    }
-}
 
 function subscribe(item, notification_type) {
     var id = item.parent().data.node.id;
@@ -86,9 +54,10 @@ function ProjectNotifications(data) {
         naturalScrollLimit : 0,
         onload : function () {
             var tb = this;
-            expandOnLoad.call(tb);
+            $tb.expandOnLoad.call(tb);
         },
         resolveRows: function notificationResolveRows(item){
+            var options = [];
             var columns = [];
             var iconcss = '';
             // check if should not get icon
@@ -144,6 +113,13 @@ function ProjectNotifications(data) {
                 });
             }
             else if (item.parent().data.kind === 'folder' || item.parent().data.kind === 'heading' && item.data.kind === 'event') {
+                options = [
+                    m('option', {value: 'none', selected : item.data.event.notificationType === 'none' ? 'selected': ''}, 'Never'),
+                    m('option', {value: 'email_transactional', selected : item.data.event.notificationType === 'email_transactional' ? 'selected': ''}, 'Instantly'),
+                ];
+                if (item.data.event.title !== 'mailing_list_events') {
+                    options.push(m('option', {value: 'email_digest', selected : item.data.event.notificationType === 'email_digest' ? 'selected': ''}, 'Daily'));
+                }
                 columns.push(
                 {
                     data : 'project',  // Data field name
@@ -165,16 +141,21 @@ function ProjectNotifications(data) {
                                 onchange: function(ev) {
                                     subscribe(item, ev.target.value);
                                 }},
-                                [
-                                    m('option', {value: 'none', selected : item.data.event.notificationType === 'none' ? 'selected': ''}, 'Never'),
-                                    m('option', {value: 'email_transactional', selected : item.data.event.notificationType === 'email_transactional' ? 'selected': ''}, 'Instantly'),
-                                    m('option', {value: 'email_digest', selected : item.data.event.notificationType === 'email_digest' ? 'selected': ''}, 'Daily')
-                            ])
+                                options)
                         ]);
                     }
                 });
             }
             else {
+                options = [
+                    m('option', {value: 'none', selected : item.data.event.notificationType === 'none' ? 'selected': ''}, 'Never'),
+                    m('option', {value: 'email_transactional', selected : item.data.event.notificationType === 'email_transactional' ? 'selected': ''}, 'Instantly'),
+                ];
+                if (item.data.event.title !== 'mailing_list_events') {
+                    options.push(m('option', {value: 'email_digest', selected : item.data.event.notificationType === 'email_digest' ? 'selected': ''}, 'Daily'));
+                    options.push(m('option', {value: 'adopt_parent', selected: item.data.event.notificationType === 'adopt_parent' ? 'selected' : ''},
+                                                 'Adopt setting from parent project ' + displayParentNotificationType(item)));
+                }
                 columns.push(
                 {
                     data : 'project',  // Data field name
@@ -197,14 +178,7 @@ function ProjectNotifications(data) {
                                 onchange: function(ev) {
                                     subscribe(item, ev.target.value);
                                 }},
-                                [
-                                    m('option', {value: 'adopt_parent',
-                                                 selected: item.data.event.notificationType === 'adopt_parent' ? 'selected' : ''},
-                                                 'Adopt setting from parent project ' + displayParentNotificationType(item)),
-                                    m('option', {value: 'none', selected : item.data.event.notificationType === 'none' ? 'selected': ''}, 'Never'),
-                                    m('option', {value: 'email_transactional',  selected : item.data.event.notificationType === 'email_transactional' ? 'selected': ''}, 'Instantly'),
-                                    m('option', {value: 'email_digest', selected : item.data.event.notificationType === 'email_digest' ? 'selected': ''}, 'Daily')
-                            ])
+                                options)
                         ]);
                     }
                 });
@@ -214,6 +188,7 @@ function ProjectNotifications(data) {
         }
     });
     var grid = new Treebeard(tbOptions);
+    $tb.expandOnLoad.call(grid);
 }
 
 module.exports = ProjectNotifications;
