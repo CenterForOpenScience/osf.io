@@ -10,8 +10,7 @@ $(function() {
     $osf.applyBindings(viewModel, '#connectedEmails');
     viewModel.init();
 
-    new changePassword('#changePassword', 'change'),
-    '#changePassword'
+    new changePassword('#changePassword', 'change');
 
     $osf.applyBindings(
         new accountSettings.DeactivateAccountViewModel(),
