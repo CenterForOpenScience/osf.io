@@ -3,11 +3,11 @@ import collections
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
-from framework.auth import signals
 from website.models import Node, User
 from website.notifications import constants
 from website.notifications import model
 from website.notifications.model import NotificationSubscription
+from website.project import signals
 
 
 class NotificationsDict(dict):
