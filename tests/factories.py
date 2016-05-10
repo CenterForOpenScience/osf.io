@@ -318,7 +318,7 @@ class ForkFactory(ModularOdmFactory):
 
         project = kwargs.pop('project', None)
         user = kwargs.pop('user', project.creator)
-        title = kwargs.pop('title', 'Fork of ')
+        title = kwargs.pop('title', None)
 
         fork = project.fork_node(auth=Auth(user), title=title)
         fork.save()

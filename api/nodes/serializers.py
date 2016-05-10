@@ -295,7 +295,7 @@ class NodeForksSerializer(NodeSerializer):
 
     def create(self, validated_data):
         node = validated_data.pop('node')
-        fork_title = validated_data.pop('title', 'Fork of ')
+        fork_title = validated_data.pop('title', None)
         request = self.context['request']
         auth = get_user_auth(request)
         fork = node.fork_node(auth, title=fork_title)

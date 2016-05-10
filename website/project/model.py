@@ -2112,13 +2112,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
         return True
 
-    def fork_node(self, auth, title='Fork of '):
+    def fork_node(self, auth, title=None):
         """Recursively fork a node.
 
         :param Auth auth: Consolidated authorization
         :param str title: Optional text to prepend to forked title
         :return: Forked node
         """
+        PREFIX = 'Fork of '
         user = auth.user
 
         # Non-contributors can't fork private nodes
@@ -2149,8 +2150,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 if forked_node is not None:
                     forked.nodes.append(forked_node)
 
-        if title == 'Fork of ' or title == '':
-            forked.title = title + forked.title
+        if title is None:
+            forked.title = PREFIX + original.title
+        elif title == '':
+            forked.title = original.title
         else:
             forked.title = title
 
