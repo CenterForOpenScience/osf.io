@@ -28,6 +28,7 @@
                         type="password"
                         class="form-control"
                         id="resetPassword"
+                        name="password"
                         placeholder="Password"
                         data-bind="
                             textInput: typedPassword,
@@ -59,6 +60,7 @@
                         type="password"
                         class="form-control"
                         id="resetPasswordConfirmation"
+                        name="password2"
                         placeholder="Verify Password"
                         data-bind="
                             value: passwordConfirmation,
