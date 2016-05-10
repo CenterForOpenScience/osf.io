@@ -14,6 +14,7 @@ var $ = require('jquery');
 var m = require('mithril');
 var moment = require('moment');
 var $osf = require('js/osfHelpers');
+var lodashFind = require('lodash.find');
 
 
 var LinkObject;
@@ -62,7 +63,8 @@ function _poContributors(item) {
         return '';
     }
     var totalContributors = item.data.embeds.contributors.links.meta.total;
-    var isContributor = $osf.userIsContributor(window.contextVars.currentUser.id, contributorList);
+    var isContributor = lodashFind(contributorList, ['id', window.contextVars.currentUser.id]);
+
     if (!isContributor) {
         // bibliographic contributors
         contributorList = contributorList.filter(function (contrib) {

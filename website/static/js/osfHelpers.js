@@ -839,17 +839,6 @@ var findContribName = function (userAttributes) {
     }
 };
 
-// Check if a user is in the list of project contributors returned by the v2 API.
-function userIsContributor(userId, contributors) {
-    var isContributor = false;
-    for (var i = 0; i < contributors.length; i++) {
-        if (contributors[i].id === userId) {
-            isContributor = true;
-        }
-    }
-    return isContributor;
-}
-
 var trackClick = function(category, action, label){
     window.ga('send', 'event', category, action, label);
     //in order to make the href redirect work under knockout onclick binding
@@ -907,6 +896,5 @@ module.exports = window.$.osf = {
     contribNameFormat: contribNameFormat,
     trackClick: trackClick,
     findContribName: findContribName,
-    onScrollToBottom: onScrollToBottom,
-    userIsContributor: userIsContributor
+    onScrollToBottom: onScrollToBottom
 };
