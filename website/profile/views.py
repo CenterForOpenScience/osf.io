@@ -42,7 +42,7 @@ logger = logging.getLogger(__name__)
 
 def get_public_projects(uid=None, user=None):
     user = user or User.load(uid)
-    # TODO: Should this be limited for users with many projects / components?
+    # In future redesign, should be limited for users with many projects / components
     nodes = Node.find_for_user(
         user,
         subquery=(
@@ -56,7 +56,7 @@ def get_public_projects(uid=None, user=None):
 def get_public_components(uid=None, user=None):
     user = user or User.load(uid)
     # TODO: This should use User.visible_contributor_to?
-    # TODO: Should this be limited for users with many projects / components?
+    # In future redesign, should be limited for users with many projects / components
     nodes = list(
         Node.find_for_user(
             user,

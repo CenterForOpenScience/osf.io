@@ -6,11 +6,11 @@ from website.project.model import Node
 
 # Alias the project serializer
 from website.project.views.node import _view_project
-serialize_node = _view_project  # TODO: Seriously?
+serialize_node = _view_project  # Not recommended practice
 
 CONTENT_NODE_QUERY = (
     # Can encompass accessible projects, registrations, or forks
-    Q('is_bookmark_collection', 'ne', True) &
+    # Note: is_bookmark collection(s) are implicitly assumed to also be collections; that flag intentionally omitted
     Q('is_collection', 'ne', True) &
     Q('is_deleted', 'eq', False)
 )

@@ -43,7 +43,7 @@ class TestMetricsGetProjects(AdminTestCase):
         count = get_projects(registered=True)
         nt.assert_equal(count, 1)
 
-    def test_no_results_before_old_time(self):
+    def test_date_created_filter_returns_no_results(self):
         time = self.public_node.date_created - timedelta(weeks=1)
         count = get_projects(time=time)
         nt.assert_equal(count, 0)
