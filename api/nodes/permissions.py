@@ -19,6 +19,14 @@ class ContributorOrPublic(permissions.BasePermission):
             return obj.can_edit(auth)
 
 
+class IsPublic(permissions.BasePermission):
+
+    def has_object_permission(self, request, view, obj):
+        assert isinstance(obj, (Node)), 'obj must be a Node got {}'.format(obj)
+        auth = get_user_auth(request)
+        return obj.is_public or obj.can_view(auth)
+
+
 class AdminOrPublic(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):

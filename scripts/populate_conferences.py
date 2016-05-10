@@ -731,6 +731,16 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
+    'CNS2016': {
+        'name': 'The Cognitive Neuroscience Society (CNS) 2016',
+        'info_url': 'http://www.cogneurosociety.org/annual-meeting/',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
 }
 
 

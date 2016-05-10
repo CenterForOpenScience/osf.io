@@ -4,8 +4,6 @@
 */
 
 var ko = require('knockout');
-require('knockout.punches');
-ko.punches.enableAll();
 var $ = require('jquery');
 var Raven = require('raven-js');
 var bootbox = require('bootbox');
@@ -137,7 +135,7 @@ function ViewModel(url) {
             title: 'Disconnect Dataverse Account?',
             message: '<p class="overflow">' +
                 'Are you sure you want to disconnect the Dataverse account on <strong>' +
-                account.name + '</strong>? This will revoke access to Dataverse for all projects associated with this account.' +
+                $osf.htmlEscape(account.name) + '</strong>? This will revoke access to Dataverse for all projects associated with this account.' +
                 '</p>',
             callback: function (confirm) {
                 if (confirm) {

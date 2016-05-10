@@ -24,7 +24,7 @@
                     <span class="label label-danger"><strong>Withdrawn</strong></span> |
                   % elif summary['is_pending_retraction']:
                     <span class="label label-info"><strong>Pending withdrawal</strong></span> |
-                  % elif summary['embargo_end_date']:
+                  % elif summary['is_embargoed']:
                     <span class="label label-info"><strong>Embargoed</strong></span> |
                   % elif summary['is_pending_embargo']:
                     <span class="label label-info"><strong>Pending embargo</strong></span> |
@@ -33,7 +33,7 @@
                     <span class="label label-primary"><strong>Archiving</strong></span> |
                   % endif
                 </span>
-            <span data-bind="getIcon: '${summary['category']}'"></span>
+            <span data-bind="getIcon: ${ summary['category'] | sjson, n }"></span>
             % if not summary['archiving']:
                 <a href="${summary['url']}">${summary['title']}</a>
             % else:

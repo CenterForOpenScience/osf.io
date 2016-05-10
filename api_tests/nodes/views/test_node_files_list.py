@@ -76,6 +76,8 @@ def prepare_mock_wb_response(
         content_type='application/json'
     )
 
+
+
 class TestNodeFilesList(ApiTestCase):
 
     def setUp(self):
@@ -94,6 +96,21 @@ class TestNodeFilesList(ApiTestCase):
         super(TestNodeFilesList, self).tearDown()
         httpretty.disable()
         httpretty.reset()
+
+    def add_github(self):
+        user_auth = Auth(self.user)
+        self.project.add_addon('github', auth=user_auth)
+        addon = self.project.get_addon('github')
+        addon.repo = 'something'
+        addon.user = 'someone'
+        oauth_settings = GitHubAccountFactory()
+        oauth_settings.save()
+        self.user.add_addon('github')
+        self.user.external_accounts.append(oauth_settings)
+        self.user.save()
+        addon.user_settings = self.user.get_addon('github')
+        addon.save()
+        self.project.save()
 
     def _prepare_mock_wb_response(self, node=None, **kwargs):
         prepare_mock_wb_response(node=node or self.project, **kwargs)
@@ -172,6 +189,7 @@ class TestNodeFilesList(ApiTestCase):
 
     def test_returns_node_files_list(self):
         self._prepare_mock_wb_response(provider='github', files=[{'name': 'NewFile'}])
+        self.add_github()
         url = '/{}nodes/{}/files/github/'.format(API_BASE, self.project._id)
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.json['data'][0]['attributes']['name'], 'NewFile')
@@ -179,6 +197,7 @@ class TestNodeFilesList(ApiTestCase):
 
     def test_returns_node_file(self):
         self._prepare_mock_wb_response(provider='github', files=[{'name': 'NewFile'}], folder=False, path='/file')
+        self.add_github()
         url = '/{}nodes/{}/files/github/file'.format(API_BASE, self.project._id)
         res = self.app.get(url, auth=self.user.auth, headers={
             'COOKIE': 'foo=bar;'  # Webtests doesnt support cookies?
@@ -206,6 +225,7 @@ class TestNodeFilesList(ApiTestCase):
 
     def test_waterbutler_server_error_returns_503(self):
         self._prepare_mock_wb_response(status_code=500)
+        self.add_github()
         url = '/{}nodes/{}/files/github/'.format(API_BASE, self.project._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True, headers={
             'COOKIE': 'foo=bar;'  # Webtests doesnt support cookies?
@@ -214,6 +234,7 @@ class TestNodeFilesList(ApiTestCase):
 
     def test_waterbutler_invalid_data_returns_503(self):
         wb_url = waterbutler_api_url_for(self.project._id, provider='github', path='/', meta=True)
+        self.add_github()
         httpretty.register_uri(
             httpretty.GET,
             wb_url,
@@ -226,6 +247,7 @@ class TestNodeFilesList(ApiTestCase):
 
     def test_handles_unauthenticated_waterbutler_request(self):
         self._prepare_mock_wb_response(status_code=401)
+        self.add_github()
         url = '/{}nodes/{}/files/github/'.format(API_BASE, self.project._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
@@ -239,6 +261,14 @@ class TestNodeFilesList(ApiTestCase):
         assert_equal(res.status_code, 404)
         assert_in('detail', res.json['errors'][0])
 
+    def test_handles_request_to_provider_not_configured_on_project(self):
+        provider = 'box'
+        url = '/{}nodes/{}/files/{}/'.format(API_BASE, self.project._id, provider)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_false(self.project.get_addon(provider))
+        assert_equal(res.status_code, 404)
+        assert_equal(res.json['errors'][0]['detail'], 'The {} provider is not configured for this project.'.format(provider))
+
     def test_handles_bad_waterbutler_request(self):
         wb_url = waterbutler_api_url_for(self.project._id, provider='github', path='/', meta=True)
         httpretty.register_uri(
@@ -247,6 +277,7 @@ class TestNodeFilesList(ApiTestCase):
             body=json.dumps({}),
             status=418
         )
+        self.add_github()
         url = '/{}nodes/{}/files/github/'.format(API_BASE, self.project._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 503)
@@ -280,8 +311,24 @@ class TestNodeFilesListFiltering(ApiTestCase):
         httpretty.disable()
         httpretty.reset()
 
+    def add_github(self):
+        user_auth = Auth(self.user)
+        self.project.add_addon('github', auth=user_auth)
+        addon = self.project.get_addon('github')
+        addon.repo = 'something'
+        addon.user = 'someone'
+        oauth_settings = GitHubAccountFactory()
+        oauth_settings.save()
+        self.user.add_addon('github')
+        self.user.external_accounts.append(oauth_settings)
+        self.user.save()
+        addon.user_settings = self.user.get_addon('github')
+        addon.save()
+        self.project.save()
+
     def test_node_files_are_filterable_by_name(self):
         url = '/{}nodes/{}/files/github/?filter[name]=xyz'.format(API_BASE, self.project._id)
+        self.add_github()
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 1)  # filters out 'abc'
@@ -289,6 +336,7 @@ class TestNodeFilesListFiltering(ApiTestCase):
 
     def test_node_files_filter_by_name_case_insensitive(self):
         url = '/{}nodes/{}/files/github/?filter[name]=XYZ'.format(API_BASE, self.project._id)
+        self.add_github()
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 1)  # filters out 'abc', but finds 'xyz'
@@ -296,6 +344,7 @@ class TestNodeFilesListFiltering(ApiTestCase):
 
     def test_node_files_are_filterable_by_path(self):
         url = '/{}nodes/{}/files/github/?filter[path]=abc'.format(API_BASE, self.project._id)
+        self.add_github()
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 1)  # filters out 'xyz'
@@ -303,6 +352,7 @@ class TestNodeFilesListFiltering(ApiTestCase):
 
     def test_node_files_are_filterable_by_kind(self):
         url = '/{}nodes/{}/files/github/?filter[kind]=folder'.format(API_BASE, self.project._id)
+        self.add_github()
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 1)  # filters out 'xyz'
@@ -310,6 +360,7 @@ class TestNodeFilesListFiltering(ApiTestCase):
 
     def test_node_files_external_provider_can_filter_by_last_touched(self):
         yesterday_stamp = datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        self.add_github()
         url = '/{}nodes/{}/files/github/?filter[last_touched][gt]={}'.format(API_BASE,
                                                                              self.project._id,
                                                                              yesterday_stamp.isoformat())
@@ -340,6 +391,21 @@ class TestNodeFilesListPagination(ApiTestCase):
         super(TestNodeFilesListPagination, self).tearDown()
         httpretty.disable()
         httpretty.reset()
+
+    def add_github(self):
+        user_auth = Auth(self.user)
+        self.project.add_addon('github', auth=user_auth)
+        addon = self.project.get_addon('github')
+        addon.repo = 'something'
+        addon.user = 'someone'
+        oauth_settings = GitHubAccountFactory()
+        oauth_settings.save()
+        self.user.add_addon('github')
+        self.user.external_accounts.append(oauth_settings)
+        self.user.save()
+        addon.user_settings = self.user.get_addon('github')
+        addon.save()
+        self.project.save()
 
     def check_file_order(self, resp):
         previous_file_name = 0
@@ -379,6 +445,7 @@ class TestNodeFilesListPagination(ApiTestCase):
                 {'name': '24', 'path': '/24', 'materialized': '/24', 'kind': 'file'},
             ]
         )
+        self.add_github()
         url = '/{}nodes/{}/files/github/?page[size]=100'.format(API_BASE, self.project._id)
         res = self.app.get(url, auth=self.user.auth)
         self.check_file_order(res)
