@@ -245,6 +245,15 @@
                         <span class="f-w-xl">Click on a storage provider or drag and drop to upload</span>
                     </div>
                 </div>
+               <div class="panel-body panel-body-with-instructions">
+                    <div id="treeGrid">
+                        <div class="spinner-loading-wrapper">
+                            <div class="logo-spin logo-lg"></div>
+                             <p class="m-t-sm fg-load-message"> Loading files...  </p>
+                        </div>
+                    </div>
+                </div>
+            %else:
                 <div class="panel-body">
                     <div id="treeGrid">
                         <div class="spinner-loading-wrapper">
@@ -254,6 +263,8 @@
                     </div>
                 </div>
             %endif
+
+
         </div>
 
         % if addons:

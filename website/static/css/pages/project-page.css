@@ -143,6 +143,6 @@ span#nodeDescriptionEditable{
     white-space:pre-line;
 }
 
-.panel-body {
+.panel-body-with-instructions {
     padding-top: 0px;
 }
