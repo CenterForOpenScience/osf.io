@@ -113,8 +113,7 @@
                     </span>
                     -->
                     <span data-bind="ifnot: requiresApproval">
-                     <a class="btn btn-success" data-bind="attr: {href: urls.register_page},
-                                                           css: {'disabled': !isApproved}">Register</a>
+                     <a class="btn btn-success" data-bind="attr: {href: urls.register_page}">Register</a>
                     </span>
                   </div>
                 </div>

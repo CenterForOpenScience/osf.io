@@ -11,7 +11,7 @@ from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.parsers import JSONAPIOnetoOneRelationshipParser, JSONAPIOnetoOneRelationshipParserForRegularJSON
-from api.base.pagination import CommentPagination
+from api.base.pagination import CommentPagination, NodeContributorPagination
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
 from api.files.serializers import FileSerializer
 from api.comments.serializers import CommentSerializer, CommentCreateSerializer
@@ -21,6 +21,7 @@ from api.users.views import UserMixin
 from api.nodes.serializers import (
     NodeSerializer,
     NodeLinksSerializer,
+    NodeForksSerializer,
     NodeDetailSerializer,
     NodeProviderSerializer,
     DraftRegistrationSerializer,
@@ -37,6 +38,7 @@ from api.registrations.serializers import RegistrationSerializer
 from api.institutions.serializers import InstitutionSerializer
 from api.nodes.permissions import (
     IsAdmin,
+    IsPublic,
     AdminOrPublic,
     ContributorOrPublic,
     ContributorOrPublicForPointers,
@@ -562,6 +564,7 @@ class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bu
     required_write_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
     model_class = User
 
+    pagination_class = NodeContributorPagination
     serializer_class = NodeContributorsSerializer
     view_category = 'nodes'
     view_name = 'node-contributors'
@@ -1337,6 +1340,109 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixi
         except ValueError as err:  # pointer doesn't belong to node
             raise NotFound(err.message)
         node.save()
+
+
+class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
+    """Forks of the current node. *Writeable*.
+
+    Paginated list of the current node's forks ordered by their `forked_date`. Forks are copies of projects that you can
+    change without affecting the original project.  When creating a fork, your fork will will only contain public components or those
+    for which you are a contributor.  Private components that you do not have access to will not be forked.
+
+    ##Node Fork Attributes
+
+    <!--- Copied Attributes from NodeDetail with exception of forked_date-->
+
+    OSF Node Fork entities have the "nodes" `type`.
+
+        name                        type               description
+        =================================================================================
+        title                       string             title of project or component
+        description                 string             description of the node
+        category                    string             node category, must be one of the allowed values
+        date_created                iso8601 timestamp  timestamp that the node was created
+        date_modified               iso8601 timestamp  timestamp when the node was last updated
+        tags                        array of strings   list of tags that describe the node
+        registration                boolean            has this project been registered? (always False)
+        collection                  boolean            is this node a collection (always False)
+        fork                        boolean            is this node a fork of another node? (always True)
+        public                      boolean            has this node been made publicly-visible?
+        forked_date                 iso8601 timestamp  timestamp when the node was forked
+        current_user_permissions    array of strings   List of strings representing the permissions for the current user on this node
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    ##Actions
+
+    ###Create Node Fork
+
+        Method:        POST
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON): {
+                         "data": {
+                           "type": "nodes", # required
+                           "attributes": {
+                             "title": {title} # optional
+                           }
+                         }
+                    }
+        Success: 201 CREATED + node representation
+
+    To create a fork of the current node, issue a POST request to this endpoint.  The `title` field is optional, with the
+    default title being 'Fork of ' + the current node's title. If the fork's creation is successful the API will return a
+    201 response with the representation of the forked node in the body. For the new fork's canonical URL, see the `/links/self`
+    field of the response.
+
+    ##Query Params
+
+    + `page=<Int>` -- page number of results to view, default 1
+
+    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
+
+    <!--- Copied Query Params from NodeList -->
+
+    Nodes may be filtered by their `title`, `category`, `description`, `public`, `registration`, `tags`, `date_created`,
+    `date_modified`, `root`, `parent`, and `contributors`. Most are string fields and will be filtered using simple
+    substring matching.  Others are booleans, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.
+    Note that quoting `true` or `false` in the query will cause the match to fail regardless. `tags` is an array of simple strings.
+
+    #This Request/Response
+    """
+    permission_classes = (
+        IsPublic,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ExcludeRetractions
+    )
+
+    required_read_scopes = [CoreScopes.NODE_FORKS_READ]
+    required_write_scopes = [CoreScopes.NODE_FORKS_WRITE]
+
+    serializer_class = NodeForksSerializer
+    view_category = 'nodes'
+    view_name = 'node-forks'
+
+    # overrides ListCreateAPIView
+    def get_queryset(self):
+        all_forks = self.get_node().forks
+        auth = get_user_auth(self.request)
+        return sorted([node for node in all_forks if node.can_view(auth)], key=lambda n: n.forked_date, reverse=True)
+
+    # overrides ListCreateAPIView
+    def perform_create(self, serializer):
+        serializer.save(node=self.get_node())
+
+    # overrides ListCreateAPIView
+    def get_parser_context(self, http_request):
+        """
+        Tells parser that attributes are not required in request
+        """
+        res = super(NodeForksList, self).get_parser_context(http_request)
+        res['attributes_required'] = False
+        return res
 
 
 class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, ListFilterMixin, NodeMixin):

@@ -308,6 +308,23 @@ class RetractedRegistrationFactory(AbstractNodeFactory):
 
         return retraction
 
+
+class ForkFactory(ModularOdmFactory):
+    class Meta:
+        model = Node
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+
+        project = kwargs.pop('project', None)
+        user = kwargs.pop('user', project.creator)
+        title = kwargs.pop('title', 'Fork of ')
+
+        fork = project.fork_node(auth=Auth(user), title=title)
+        fork.save()
+        return fork
+
+
 class PointerFactory(ModularOdmFactory):
     class Meta:
         model = Pointer
