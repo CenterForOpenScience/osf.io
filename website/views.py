@@ -101,12 +101,18 @@ def find_bookmark_collection(user):
 
 @must_be_logged_in
 def dashboard(auth):
+    return redirect('/')
+
+
+@must_be_logged_in
+def my_projects(auth):
     user = auth.user
-    dashboard_folder = find_bookmark_collection(user)
-    dashboard_id = dashboard_folder._id
+    my_projects_folder = find_bookmark_collection(user)
+    my_projects_id = my_projects_folder._id
     return {'addons_enabled': user.get_addon_names(),
-            'dashboard_id': dashboard_id,
+            'dashboard_id': my_projects_id,
             }
+
 
 def validate_page_num(page, pages):
     if page < 0 or (pages and page >= pages):
