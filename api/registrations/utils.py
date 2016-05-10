@@ -24,7 +24,6 @@ def create_jsonschema_from_metaschema(draft, required_fields=False, is_reviewer=
             if required_fields:
                 json_schema['properties'][question['qid']]['required'] = ['value']
 
-
         if required and required_fields:
             json_schema['required'] = required
 
@@ -66,9 +65,6 @@ def extract_question_values(question, required_fields, is_reviewer):
     """
     Pulls structure for "value", "comments", and "extra" items
     """
-    required = False
-    if required_fields:
-        required = is_required(question)
     response = {
         'value': {'type': 'string'},
         'comments': COMMENTS_SCHEMA,
