@@ -29,6 +29,9 @@ class CoreScopes(object):
     NODE_CHILDREN_READ = 'nodes.children_read'
     NODE_CHILDREN_WRITE = 'nodes.children_write'
 
+    NODE_FORKS_READ = 'nodes.forks_read'
+    NODE_FORKS_WRITE = 'nodes.forks_write'
+
     NODE_CONTRIBUTORS_READ = 'nodes.contributors_read'
     NODE_CONTRIBUTORS_WRITE = 'nodes.contributors_write'
 

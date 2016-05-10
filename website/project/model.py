@@ -2140,7 +2140,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 if forked_node is not None:
                     forked.nodes.append(forked_node)
 
-        forked.title = title + forked.title
+        if title == 'Fork of ' or title == '':
+            forked.title = title + forked.title
+        else:
+            forked.title = title
+
         forked.is_fork = True
         forked.is_registration = False
         forked.forked_date = when
