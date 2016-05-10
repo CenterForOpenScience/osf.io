@@ -3428,6 +3428,21 @@ class TestAuthViews(OsfTestCase):
         assert_equal(res.json_body['status'], 'success')
         assert_equal(self.user.emails[1], 'test@example.com')
 
+    def test_remove_email(self):
+        email = 'test@example.com'
+        token = self.user.add_unconfirmed_email(email)
+        self.user.save()
+        self.user.reload()
+        url = '/confirm/{}/{}/?logout=1'.format(self.user._id, token)
+        self.app.get(url)
+        self.user.reload()
+        email_verifications = self.user.unconfirmed_email_get()
+        remove_email_url = api_url_for('unconfirmed_email_remove')
+        remove_res = self.app.delete_json(remove_email_url, email_verifications[0], auth=self.user.auth)
+        self.user.reload()
+        assert_equal(remove_res.json_body['status'], 'success')
+        assert_equal(self.user.unconfirmed_email_get(), [])
+
     def test_add_expired_email(self):
         # Do not return expired token and removes it from user.email_verifications
         email = 'test@example.com'

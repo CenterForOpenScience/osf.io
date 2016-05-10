@@ -153,7 +153,6 @@ function confirmEmails(emailsToAdd) {
                                 'danger'
                             );
                         });
-                        confirmEmails(emailsToAdd.slice(1));
                     }
                 },
                 cancel: {

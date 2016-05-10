@@ -154,7 +154,8 @@ def auth_login(auth, **kwargs):
 
     status_message = request.args.get('status', '')
     if status_message == 'expired':
-        status.push_status_message('The private link you used is expired.  Please <a href="/settings/account/resend email.')
+        status.push_status_message('The private link you used is expired.  Please <a href="/settings/account/"> +'
+                                   'resend email.</a>', trust=True)
 
     if next_url and must_login_warning:
         status.push_status_message(language.MUST_LOGIN)
@@ -195,16 +196,16 @@ def auth_email_logout(token, user):
     """
     redirect_url = web_url_for('auth_login') + '?existing_user={}'.format(urllib.quote_plus(user.email))
     try:
-        user.get_unconfirmed_email_for_token(token)
+        unconfirmed_email = user.get_unconfirmed_email_for_token(token)
     except KeyError:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': "Bad token",
-            'message_long': "There was a key error with the token"
+            'message_long': "The provided token is invalid."
         })
     except ExpiredTokenError:
         status.push_status_message('The private link you used is expired.')
     try:
-        user_merge = User.find_one(Q('emails', 'eq', user.email_verifications[token]['email'].lower()))
+        user_merge = User.find_one(Q('emails', 'eq', unconfirmed_email))
     except NoResultsFound:
         user_merge = False
     if user_merge:
@@ -293,16 +294,22 @@ def unconfirmed_email_remove(auth=None):
     methods: DELETE
     """
     user = auth.user
-    confirmed_email = request.get_json()
+    if user is None:
+        raise HTTPError(http.NOT_FOUND)
+    json_body = request.get_json()
+    try:
+        given_token = json_body['token']
+    except KeyError:
+        raise HTTPError(http.NOT_FOUND)
     email_verifications = deepcopy(user.email_verifications)
     for token in user.email_verifications:
-        if token == confirmed_email['token']:
+        if token == given_token:
             email_verifications.pop(token)
     user.email_verifications = email_verifications
     user.save()
     return {
         'status': 'success',
-        'removed_email': confirmed_email
+        'removed_email': json_body
     }, 200
 
 
@@ -312,11 +319,13 @@ def unconfirmed_email_add(auth=None):
     methods: PUT
     """
     user = auth.user
-    token = request.json.get('token')
-
     if user is None:
         raise HTTPError(http.NOT_FOUND)
-
+    json_body = request.get_json()
+    try:
+        token = json_body['token']
+    except KeyError:
+        raise HTTPError(http.NOT_FOUND)
     try:
         user.confirm_email(token, merge=True)
     except exceptions.EmailConfirmTokenError as e:
@@ -335,12 +344,10 @@ def unconfirmed_email_add(auth=None):
     user.verification_key = security.random_string(20)
     user.save()
 
-    return redirect(cas.get_login_url(
-        request.url,
-        auto=True,
-        username=user.username,
-        verification_key=user.verification_key
-    ))
+    return {
+        'status': 'success',
+        'removed_email': json_body
+    }, 200
 
 
 def send_confirm_email(user, email):
