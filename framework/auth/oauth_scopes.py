@@ -130,7 +130,6 @@ class ComposedScopes(object):
     # Admin permissions- includes functionality not intended for third-party use
     ADMIN_LEVEL = FULL_WRITE + APPLICATIONS_WRITE + TOKENS_WRITE + COMMENT_REPORTS_WRITE
 
-
 # List of all publicly documented scopes, mapped to composed scopes defined above.
 #   Return as sets to enable fast comparisons of provided scopes vs those required by a given node
 # These are the ***only*** scopes that will be recognized from CAS
