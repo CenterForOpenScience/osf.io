@@ -65,13 +65,9 @@ function _poContributors(item) {
     var isContributor = $osf.userIsContributor(window.contextVars.currentUser.id, contributorList);
     if (!isContributor) {
         // bibliographic contributors
-        var visibleContributors = [];
-        for (var i=0; i < contributorList.length; i++) {
-            if (contributorList[i].attributes.bibliographic) {
-                visibleContributors.push(contributorList[i]);
-            }
-        }
-        contributorList = visibleContributors;
+        contributorList = contributorList.filter(function (contrib) {
+            return contrib.attributes.bibliographic;
+        });
         totalContributors = item.data.embeds.contributors.links.meta.total_bibliographic;
     }
 
