@@ -33,9 +33,8 @@ class WikiMixin(object):
 
     def get_wiki(self, check_permissions=True):
         pk = self.kwargs[self.wiki_lookup_url_kwarg]
-        try:
-            wiki = NodeWikiPage.find_one(Q('_id', 'eq', pk))
-        except NoResultsFound:
+        wiki = NodeWikiPage.load(pk)
+        if not wiki:
             raise NotFound
 
         if wiki.is_deleted:

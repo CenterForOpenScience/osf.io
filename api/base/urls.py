@@ -25,7 +25,7 @@ urlpatterns = [
                 url(r'^institutions/', include('api.institutions.urls', namespace='institutions')),
                 url(r'^collections/', include('api.collections.urls', namespace='collections')),
                 url(r'^guids/', include('api.guids.urls', namespace='guids')),
-                url(r'^wikis/', include('api.wikis.urls', namespace='wikis'))
+                url(r'^wikis/', include('api.wikis.urls', namespace='wikis')),
             ],
         )
         ),
