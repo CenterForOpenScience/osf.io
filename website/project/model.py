@@ -1583,7 +1583,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             piwik_tasks.update_node(self._id, saved_fields)
 
         # Ensure Mailing list subscription is set up
-        if first_save and self.mailing_enabled:
+        if first_save:
             self.get_or_create_mailing_list_subscription()
 
         # Return expected value for StoredObject::save
@@ -1591,7 +1591,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
     def get_or_create_mailing_list_subscription(self):
         if self.mailing_enabled:
-            #imported here to avoid circularity
+            # Avoid circular import
             from website.models import NotificationSubscription
             from website.notifications.utils import to_subscription_key
             try:
@@ -1600,11 +1600,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                     owner=self,
                     event_name='mailing_list_events'
                 )
-                subscription.add_user_to_subscription(self.creator, 'email_transactional', save=True)
                 subscription.save()
-                # TODO queue ml creation
             except KeyExistsException:
                 subscription = NotificationSubscription.load(to_subscription_key(self._id, 'mailing_list_events'))
+            else:
+                subscription.add_user_to_subscription(self.creator, 'email_transactional', save=True)
+                # Avoid circular import
+                from website.mailing_list.utils import celery_create_list
+                celery_create_list(self._id)
             finally:
                 return subscription
 
@@ -2003,6 +2006,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             auth=auth,
             save=False,
         )
+        from website.mailing_list.utils import celery_update_title
+        celery_update_title(self._id)
+        self.mailing_updated = True
         if save:
             self.save()
         return None
