@@ -109,6 +109,11 @@ class RegistrationSerializer(NodeSerializer):
         related_view_kwargs={'node_id': '<pk>'}
     ))
 
+    logs = HideIfWithdrawal(RelationshipField(
+        related_view='registrations:registration-logs',
+        related_view_kwargs={'node_id': '<pk>'},
+    ))
+
     node_links = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-pointers',
         related_view_kwargs={'node_id': '<pk>'},
@@ -119,16 +124,6 @@ class RegistrationSerializer(NodeSerializer):
         related_view='registrations:registration-detail',
         related_view_kwargs={'node_id': '<parent_node._id>'},
         filter_key='parent_node'
-    ))
-
-    logs = HideIfWithdrawal(RelationshipField(
-        related_view='registrations:registration-logs',
-        related_view_kwargs={'node_id': '<pk>'},
-    ))
-
-    root = HideIfWithdrawal(RelationshipField(
-        related_view='registrations:registration-detail',
-        related_view_kwargs={'node_id': '<root._id>'}
     ))
 
     primary_institution = HideIfWithdrawal(RelationshipField(
@@ -144,6 +139,11 @@ class RegistrationSerializer(NodeSerializer):
     registrations = HideIfRegistration(RelationshipField(
         related_view='nodes:node-registrations',
         related_view_kwargs={'node_id': '<pk>'}
+    ))
+
+    root = HideIfWithdrawal(RelationshipField(
+        related_view='registrations:registration-detail',
+        related_view_kwargs={'node_id': '<root._id>'}
     ))
 
     links = LinksField({'self': 'get_registration_url', 'html': 'get_absolute_html_url'})
