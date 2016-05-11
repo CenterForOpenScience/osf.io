@@ -52,6 +52,7 @@ class JSONAPIParser(JSONParser):
 
         relationships = resource_object.get('relationships')
         is_relationship = parser_context.get('is_relationship')
+        attributes_required = parser_context.get('attributes_required', True)
         request_method = parser_context['request'].method
 
         # Request must include "relationships" or "attributes"
@@ -59,7 +60,7 @@ class JSONAPIParser(JSONParser):
             if not relationships:
                 raise JSONAPIException(source={'pointer': '/data/relationships'}, detail=NO_RELATIONSHIPS_ERROR)
         else:
-            if "attributes" not in resource_object and request_method != 'DELETE':
+            if "attributes" not in resource_object and attributes_required and request_method != 'DELETE':
                 raise JSONAPIException(source={'pointer': '/data/attributes'}, detail=NO_ATTRIBUTES_ERROR)
 
         object_id = resource_object.get('id')
