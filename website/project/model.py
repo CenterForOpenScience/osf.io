@@ -2612,7 +2612,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
     @property
     def project_or_component(self):
-        return 'project' if self.category == 'project' else 'component'
+        # The distinction is drawn based on whether something has a parent node, rather than by category
+        return 'project' if not self.parent_node else 'component'
 
     def is_contributor(self, user):
         return (
