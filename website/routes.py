@@ -43,7 +43,6 @@ from website.conferences import views as conference_views
 from website.institutions import views as institution_views
 from website.notifications import views as notification_views
 
-
 def get_globals():
     """Context variables that are available for every template rendered by
     OSFWebRenderer.

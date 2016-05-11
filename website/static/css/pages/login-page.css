@@ -44,3 +44,6 @@
     border-radius: 4px;
     margin-top: 75px;
 }
+.existing-user-signin-button {
+    margin-right: 0px !important;
+}
