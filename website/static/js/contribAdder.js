@@ -3,6 +3,8 @@
  */
 'use strict';
 
+require('css/add-contributors.css');
+
 var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');  // TODO: Why is this required? Is it? See [#OSF-6100]
