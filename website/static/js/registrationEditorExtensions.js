@@ -33,6 +33,7 @@ var limitContents = function(item) {
 };
 
 var filePicker;
+var filesWidgetCleanUp = [];
 var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindingContext) {
     viewModel.showUploader(true);
     viewModel.toggleUploader = function() {
@@ -50,7 +51,10 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
             // their bound settings) are persisting and being reused. This call
             // explicity removes the old controller.
             // see: http://lhorie.github.io/mithril/mithril.component.html#unloading-components
-            m.mount(document.getElementById(filePicker.fangornOpts.divID), null);
+            $.each(filesWidgetCleanUp, function( index, value ) {
+                m.mount(document.getElementById(value), null);
+            });
+            filesWidgetCleanUp = [];
 
             filePicker.destroy();
             filePicker = null;
@@ -152,6 +156,7 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
     fw.init().then(function() {
         viewModel.showUploader(false);
     });
+    filesWidgetCleanUp.push(filePicker.fangornOpts.divID);
 };
 
 ko.bindingHandlers.osfUploader = {
@@ -188,7 +193,16 @@ var Uploader = function(question) {
     self.addFile = function(file) {
         if(self.selectedFiles().length >= 5 && self.fileWarn()) {
             self.fileWarn(false);
-            bootbox.alert('Too many files. Cannot attach more than 5 files to a question.');
+            bootbox.alert({
+                title: 'Too many files',
+                message: 'You cannot attach more than 5 files to a question.',
+                buttons: {
+                    ok: {
+                        label: 'Close',
+                        className: 'btn-default'
+                    }
+                }
+            }).css({ 'top': '35%' });
             return false;
         } else if(self.selectedFiles().length >= 5 && !self.fileWarn()) {
             return false;
@@ -210,7 +224,7 @@ var Uploader = function(question) {
     self.fileAlreadySelected = function(file) {
         var selected = false;
         $.each(question.extra(), function(idx, alreadyFile) {
-            if(alreadyFile.sha256 === file.data.extra.hashes.sha256){
+            if(alreadyFile.selectedFileName === file.data.name && alreadyFile.sha256 === file.data.extra.hashes.sha256){
                 selected = true;
                 return;
             }
@@ -246,7 +260,7 @@ var Uploader = function(question) {
             var files = question.extra();
             var elem = '';
             $.each(files, function(_, file) {
-                elem += '<a target="_blank" href="' + file.viewUrl + '">' + $osf.htmlEscape(file.selectedFileName) + ' </a>';
+                elem += '<a target="_blank" href="' + file.viewUrl + '">' + $osf.htmlEscape(file.selectedFileName) + ' </a>' + '</br>';
             });
             return $(elem);
         }
