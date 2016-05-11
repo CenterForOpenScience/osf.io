@@ -5,6 +5,7 @@ var ko = require('knockout');
 var pikaday = require('pikaday');
 require('knockout.validation');
 var zxcvbn = require('zxcvbn');
+var makeClient = require('js/clipboard');
 
 require('css/koHelpers.css');
 
@@ -279,6 +280,15 @@ ko.bindingHandlers.tooltip = {
     init: tooltip,
     update: tooltip
 };
+
+var clipboard = function(el, valueAccessor) {
+    makeClient(el);
+    $(el).attr('data-clipboard-text', ko.unwrap(valueAccessor()));
+};
+ko.bindingHandlers.clipboard = {
+    init: clipboard
+};
+
 // Attach view model logic to global keypress events
 ko.bindingHandlers.onKeyPress = {
     init: function(el, valueAccessor) {

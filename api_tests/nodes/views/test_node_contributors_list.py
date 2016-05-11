@@ -10,10 +10,7 @@ from tests.base import ApiTestCase
 from tests.factories import (
     ProjectFactory,
     AuthUserFactory,
-    UserFactory,
-    RegistrationFactory,
-    RetractedRegistrationFactory
-
+    UserFactory
 )
 
 from tests.utils import assert_logs
@@ -106,13 +103,6 @@ class TestNodeContributorList(NodeCRUDTestCase):
         assert_equal(res.status_code, 403)
         assert 'detail' in res.json['errors'][0]
 
-    def test_can_not_access_retracted_contributors(self):
-        registration = RegistrationFactory(creator=self.user, project=self.public_project)
-        url = '/{}nodes/{}/contributors/'.format(API_BASE, registration._id)
-        retraction = RetractedRegistrationFactory(registration=registration, user=registration.creator)
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
-
     def test_filtering_on_obsolete_fields(self):
         # regression test for changes in filter fields
         url_fullname = '{}?filter[fullname]=foo'.format(self.public_url)
@@ -144,6 +134,14 @@ class TestNodeContributorList(NodeCRUDTestCase):
         assert_equal(res.json['data'][1]['id'], self.user_two._id)
         assert_equal(res.json['data'][1]['embeds']['users']['errors'][0]['meta']['full_name'], self.user_two.fullname)
         assert_equal(res.json['data'][1]['embeds']['users']['errors'][0]['detail'], 'The requested user is no longer available.')
+
+    def test_total_bibliographic_contributor_count_returned_in_metadata(self):
+        non_bibliographic_user = UserFactory()
+        self.public_project.add_contributor(non_bibliographic_user, visible=False, auth=Auth(self.public_project.creator))
+        self.public_project.save()
+        res = self.app.get(self.public_url, auth=self.user_two.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['links']['meta']['total_bibliographic'], len(self.public_project.visible_contributor_ids))
 
 
 class TestNodeContributorFiltering(ApiTestCase):

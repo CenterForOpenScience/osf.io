@@ -33,6 +33,7 @@ var limitContents = function(item) {
 };
 
 var filePicker;
+var filesWidgetCleanUp = [];
 var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindingContext) {
     viewModel.showUploader(true);
     viewModel.toggleUploader = function() {
@@ -50,7 +51,10 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
             // their bound settings) are persisting and being reused. This call
             // explicity removes the old controller.
             // see: http://lhorie.github.io/mithril/mithril.component.html#unloading-components
-            m.mount(document.getElementById(filePicker.fangornOpts.divID), null);
+            $.each(filesWidgetCleanUp, function( index, value ) {
+                m.mount(document.getElementById(value), null);
+            });
+            filesWidgetCleanUp = [];
 
             filePicker.destroy();
             filePicker = null;
@@ -152,6 +156,7 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
     fw.init().then(function() {
         viewModel.showUploader(false);
     });
+    filesWidgetCleanUp.push(filePicker.fangornOpts.divID);
 };
 
 ko.bindingHandlers.osfUploader = {
