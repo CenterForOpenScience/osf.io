@@ -110,7 +110,6 @@ class DraftMixin(object):
         return draft
 
 
-
 class WaterButlerMixin(object):
 
     path_lookup_url_kwarg = 'path'
