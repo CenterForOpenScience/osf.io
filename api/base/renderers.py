@@ -1,5 +1,5 @@
 import re
-from rest_framework.renderers import JSONRenderer, BrowsableAPIRenderer
+from rest_framework.renderers import JSONRenderer, BrowsableAPIRenderer, StaticHTMLRenderer
 
 
 class JSONRendererWithESISupport(JSONRenderer):
@@ -31,3 +31,14 @@ class BrowsableAPIRendererNoForms(BrowsableAPIRenderer):
         for form in unwanted_forms:
             del context[form]
         return context
+
+
+class PlainTextRenderer(StaticHTMLRenderer):
+    """
+    Renders plain text.
+
+    Inherits from StaticHTMLRenderer for error handling.
+    """
+
+    media_type = 'text/markdown'
+    format = '.txt'

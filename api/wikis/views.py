@@ -1,27 +1,17 @@
-from rest_framework import generics, renderers, permissions as drf_permissions
+from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import NotFound
 from rest_framework.views import Response
-
-from modularodm import Q
-from modularodm.exceptions import NoResultsFound
 
 from api.base import permissions as base_permissions
 from api.base.exceptions import Gone
 from api.base.views import JSONAPIBaseView
+from api.base.renderers import PlainTextRenderer
 
 from api.wikis.permissions import ContributorOrPublic
 from api.wikis.serializers import WikiSerializer, WikiDetailSerializer
 from framework.auth.oauth_scopes import CoreScopes
 from website.addons.wiki.model import NodeWikiPage
 
-
-class WikiRenderer(renderers.BaseRenderer):
-
-    media_type = 'text/markdown'
-    format = '.txt'
-
-    def render(self, data, media_type=None, renderer_context=None):
-        return data.encode(self.charset)
 
 class WikiMixin(object):
     """Mixin with convenience methods for retrieving the wiki page based on the
@@ -120,7 +110,7 @@ class WikiDetail(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
         return self.get_wiki()
 
 
-class WikiContent(JSONAPIBaseView, WikiMixin):
+class WikiContent(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
     """ View for rendering wiki page content."""
 
     permission_classes = (
@@ -132,7 +122,7 @@ class WikiContent(JSONAPIBaseView, WikiMixin):
     required_read_scopes = [CoreScopes.WIKI_BASE_READ]
     required_write_scopes = [CoreScopes.NULL]
 
-    renderer_classes = (WikiRenderer, )
+    renderer_classes = (PlainTextRenderer, )
     view_category = 'wikis'
     view_name = 'wiki-content'
 
