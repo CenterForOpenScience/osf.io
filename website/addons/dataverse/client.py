@@ -63,14 +63,12 @@ def publish_dataset(dataset):
     if dataset.get_state() == 'RELEASED':
         raise HTTPError(http.CONFLICT, data=dict(
             message_short='Dataset conflict',
-            message_long='This version of the dataset has already been '
-                         'published.'
+            message_long='This version of the dataset has already been published.'
         ))
     if not dataset.dataverse.is_published:
         raise HTTPError(http.METHOD_NOT_ALLOWED, data=dict(
             message_short='Method not allowed',
-            message_long='A dataset cannot be published until its parent '
-                         'Dataverse is published.'
+            message_long='A dataset cannot be published until its parent Dataverse is published.'
         ))
 
     try:
@@ -93,8 +91,7 @@ def get_dataset(dataverse, doi):
         if dataset and dataset.get_state() == 'DEACCESSIONED':
             raise HTTPError(http.GONE, data=dict(
                 message_short='Dataset deaccessioned',
-                message_long='This dataset has been deaccessioned and can no '
-                             'longer be linked to the OSF.'
+                message_long='This dataset has been deaccessioned and can no longer be linked to the OSF.'
             ))
         return dataset
     except UnicodeDecodeError:

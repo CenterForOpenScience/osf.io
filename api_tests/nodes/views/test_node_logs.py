@@ -1,8 +1,9 @@
-from nose.tools import *  # flake8: noqa
-
 import urlparse
-from framework.auth.core import Auth
 
+from nose.tools import *  # flake8: noqa
+from dateutil.parser import parse as parse_date
+
+from framework.auth.core import Auth
 from website.models import NodeLog
 from api.base.settings.defaults import API_BASE
 
@@ -10,8 +11,6 @@ from tests.base import ApiTestCase, assert_datetime_equal
 from tests.factories import (
     ProjectFactory,
     AuthUserFactory,
-    RegistrationFactory,
-    RetractedRegistrationFactory
 )
 import datetime
 
@@ -75,7 +74,7 @@ class TestNodeLogList(ApiTestCase):
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), len(self.public_project.logs))
-        assert_datetime_equal(datetime.datetime.strptime(res.json['data'][API_FIRST]['attributes']['date'], "%Y-%m-%dT%H:%M:%S.%f"),
+        assert_datetime_equal(parse_date(res.json['data'][API_FIRST]['attributes']['date']),
                               self.public_project.logs[OSF_FIRST].date)
         assert_equal(res.json['data'][API_FIRST]['attributes']['action'], self.public_project.logs[OSF_FIRST].action)
 
@@ -123,14 +122,6 @@ class TestNodeLogList(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), len(self.public_project.logs))
         assert_equal(res.json['data'][API_LATEST]['attributes']['action'], 'pointer_created')
-
-    def test_cannot_access_retracted_node_logs(self):
-        self.public_project = ProjectFactory(is_public=True, creator=self.user)
-        registration = RegistrationFactory(creator=self.user, project=self.public_project)
-        url = '/{}nodes/{}/logs/'.format(API_BASE, registration._id)
-        retraction = RetractedRegistrationFactory(registration=registration, user=self.user)
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
 
 
 class TestNodeLogFiltering(TestNodeLogList):

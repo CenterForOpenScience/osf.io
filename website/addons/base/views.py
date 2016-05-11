@@ -1,42 +1,43 @@
+import datetime
+import httplib
 import os
 import uuid
-import httplib
-import datetime
 import markupsafe
 
+
+from flask import make_response
+from flask import redirect
+from flask import request
+import furl
 import jwe
 import jwt
-import furl
-from flask import request
-from flask import redirect
-from flask import make_response
-from modularodm.exceptions import NoResultsFound
+
 from modularodm import Q
+from modularodm.exceptions import NoResultsFound
 
 from framework import sentry
-from framework.auth import cas
 from framework.auth import Auth
+from framework.auth import cas
 from framework.auth import oauth_scopes
+from framework.auth.decorators import collect_auth, must_be_logged_in, must_be_signed
+from framework.exceptions import HTTPError
 from framework.routing import json_renderer
 from framework.sentry import log_exception
-from framework.exceptions import HTTPError
 from framework.transactions.context import TokuTransaction
 from framework.transactions.handlers import no_auto_transaction
-from framework.auth.decorators import must_be_logged_in, must_be_signed, collect_auth
 from website import mails
 from website import settings
-from website.files.models import FileNode, TrashedFileNode, StoredFileNode
-from website.project import decorators
+from website.addons.base import StorageAddonBase
 from website.addons.base import exceptions
 from website.addons.base import signals as file_signals
-from website.addons.base import StorageAddonBase
-from website.models import User, Node, NodeLog
-from website.project.model import DraftRegistration, MetaSchema
-from website.util import rubeus
+from website.files.models import FileNode, StoredFileNode, TrashedFileNode
+from website.models import Node, NodeLog, User
 from website.profile.utils import get_gravatar
-from website.project.decorators import must_be_valid_project, must_be_contributor_or_public
+from website.project import decorators
+from website.project.decorators import must_be_contributor_or_public, must_be_valid_project
+from website.project.model import DraftRegistration, MetaSchema
 from website.project.utils import serialize_node
-
+from website.util import rubeus
 
 # import so that associated listener is instantiated and gets emails
 from website.notifications.events.files import FileEvent  # noqa
@@ -539,7 +540,7 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
             'files': node.web_url_for('collect_file_trees'),
         },
         'extra': {},
-        'size': 9966699,  # Prevent file from being editted, just in case
+        'size': 9966699,  # Prevent file from being edited, just in case
         'sharejs_uuid': None,
         'file_name': file_name,
         'file_path': file_path,
@@ -551,6 +552,8 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
         'materialized_path': file_node.materialized_path or file_path,
         'error': retError,
         'private': getattr(node.get_addon(file_node.provider), 'is_private', False),
+        'file_tags': [tag._id for tag in file_node.tags],
+        'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE,
     })
 
     return ret, httplib.GONE

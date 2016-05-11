@@ -11,7 +11,7 @@
     <script src="/static/vendor/bower_components/raven-js/dist/raven.min.js"></script>
     <script src="/static/vendor/bower_components/raven-js/plugins/jquery.js"></script>
     <script>
-        Raven.config('${ sentry_dsn_js }', {}).install();
+        Raven.config(${ sentry_dsn_js | sjson, n }, {}).install();
     </script>
     % else:
     <script>
@@ -45,7 +45,7 @@
 
     <script type="text/javascript">
         window.contextVars = window.contextVars || {};
-        window.contextVars.meetingData = ${data};
+        window.contextVars.meetingData = ${ data | sjson, n };
 
         $('#addLink').on('click', function(e) {
             e.preventDefault();

@@ -57,8 +57,8 @@ class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView, LogMixin):
     ---
     * 'contributor_added': A Contributor is added to a Node
     * 'contributor_removed': A Contributor is removed from a Node
-    * 'contributors_reordered': A Contributor's position is a Node's biliography is changed
-    * 'permissions_update': A Contributor's permissions on a Node are changed
+    * 'contributors_reordered': A Contributor's position in a Node's bibliography is changed
+    * 'permissions_updated': A Contributor's permissions on a Node are changed
     * 'made_contributor_visible': A Contributor is made bibliographically visible on a Node
     * 'made_contributor_invisible': A Contributor is made bibliographically invisible on a Node
     ---
@@ -73,6 +73,8 @@ class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView, LogMixin):
     * 'addon_file_moved': A File in a Node's linked add-on is moved
     * 'addon_file_copied': A File in a Node's linked add-on is copied
     * 'addon_file_renamed': A File in a Node's linked add-on is renamed
+    * 'node_authorized': An addon is authorized for a project
+    * 'node_deauthorized': An addon is deauthorized for a project
     * 'folder_created': A Folder is created in a Node's linked add-on
     * 'file_added': A File is added to a Node's linked add-on
     * 'file_updated': A File is updated on a Node's linked add-on
@@ -87,9 +89,9 @@ class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView, LogMixin):
     * 'embargo_approved': A proposed Embargo of a Node is approved
     * 'embargo_cancelled': A proposed Embargo of a Node is cancelled
     * 'embargo_completed': A proposed Embargo of a Node is completed
-    * 'retraction_initiated': A Retraction of a Registration is proposed
-    * 'retraction_approved': A Retraction of a Registration is approved
-    * 'retraction_cancelled': A Retraction of a Registration is cancelled
+    * 'retraction_initiated': A Withdrawal of a Registration is proposed
+    * 'retraction_approved': A Withdrawal of a Registration is approved
+    * 'retraction_cancelled': A Withdrawal of a Registration is cancelled
     * 'registration_initiated': A Registration of a Node is proposed
     * 'registration_approved': A proposed Registration is approved
     * 'registration_cancelled': A proposed Registration is cancelled
