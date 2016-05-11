@@ -4,6 +4,8 @@ Metrics scripts
 from datetime import datetime, timedelta
 from modularodm import Q
 from website.project.model import User, Node
+from website.project.utils import CONTENT_NODE_QUERY
+
 
 from .models import OSFWebsiteStatistics
 
@@ -68,9 +70,8 @@ def get_days_statistics(time, latest=None):
 
 def get_projects(time=None, public=False, registered=False):
     query = (
-        Q('category', 'eq', 'project') &
-        Q('is_deleted', 'eq', False) &
-        Q('is_folder', 'ne', True)
+        Q('parent_node', 'eq', None) &
+        CONTENT_NODE_QUERY
     )
     if time:
         query = query & Q('date_created', 'lt', time)
