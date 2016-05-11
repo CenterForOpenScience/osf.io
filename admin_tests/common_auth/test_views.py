@@ -35,7 +35,7 @@ class TestRegisterUser(AdminTestCase):
         with nt.assert_raises(Http404):
             view.form_valid(form)
 
-    @mock.patch('admin.common_auth.views.PasswordResetForm.save')
+    @mock.patch('admin.common_auth.views.Recover.form_valid')
     @mock.patch('admin.common_auth.views.messages.success')
     def test_add_user(self, mock_save, mock_message):
         count = MyUser.objects.count()
