@@ -7,6 +7,7 @@ import logging
 
 from modularodm import Q
 from website.app import init_app
+from website.files.models import FileNode, TrashedFileNode
 from scripts import utils as scripts_utils
 from website.models import DraftRegistration
 from website.prereg.utils import get_prereg_schema
@@ -16,16 +17,42 @@ from framework.transactions.context import TokuTransaction
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+def migrate_file_representation(bad_file):
+    logger.info('Migrating file representation of File: {0}'.format(bad_file))
+    view_url = bad_file['viewUrl'].rstrip('/')
+    fid = view_url.split('/')[-1]
+    fnode = FileNode.load(fid)
+    if fnode is None:
+        fnode = TrashedFileNode.load(fid)
+    assert fnode is not None, 'Could not load FileNode or TrashedFileNode with id {}'.format(fid)
+    data = {
+        'data': {
+            'kind': 'file',
+            'name': bad_file['selectedFileName'],
+            'path': fnode.path,
+            'extra': {},
+            'sha256': fnode.versions[-1].metadata['sha256']
+        }
+    }
+    bad_file.update(data)
+
+
 def migrate_file_meta(question):
     files = question.get('extra')
+    migrated = False
+    if files and isinstance(files, list):
+        for f in files:
+            if 'viewUrl' in f:
+                if not f.get('data', None):
+                    migrate_file_representation(f)
+                    migrated = True
     if isinstance(files, dict):
         if len(files) == 0:
             question['extra'] = []
         else:
             question['extra'] = [files]
-        return True
-    return False
-
+        migrated = True
+    return migrated
 
 def migrate_drafts(dry):
 
@@ -47,6 +74,7 @@ def migrate_drafts(dry):
                 migrated = migrate_file_meta(ans)
         if migrated:
             count += 1
+            logger.info('Migrated draft with id: {0}'.format(r._id))
         if not dry:
             r.save()
     logger.info('Done with {0} drafts migrated.'.format(count))
