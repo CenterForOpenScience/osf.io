@@ -11,7 +11,7 @@ var bootbox = require('bootbox');
 var moment = require('moment');
 var History = require('exports?History!history');
 
-require('js/koHelpers');
+var koHelpers = require('js/koHelpers');
 
 var $osf = require('js/osfHelpers');
 var osfLanguage = require('js/osfLanguage');
@@ -182,7 +182,7 @@ var Question = function(questionSchema, data) {
     self.properties = questionSchema.properties || [];
     self.match = questionSchema.match || '';
 
-    self.extra = ko.observable(self.data.extra || {});
+    self.extra = koHelpers.mapJStoKO(self.data.extra || {});
     self.showExample = ko.observable(false);
 
     self.comments = ko.observableArray(
