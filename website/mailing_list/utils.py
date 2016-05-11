@@ -312,17 +312,17 @@ def subscribe_contributor_to_mailing_list(node, contributor, auth=None):
         node.save()
 
 @contributor_removed.connect
-def unsubscribe_contributor_from_mailing_list(node, contributor, auth=None):
+def unsubscribe_contributor_from_mailing_list(node, user, auth=None):
     if node.mailing_enabled:
         subscription = node.get_or_create_mailing_list_subscription()
     else:
         from website.models import NotificationSubscription  # avoid circular import
         subscription = NotificationSubscription.load(to_subscription_key(node._id, 'mailing_list_events'))
     if subscription:
-        subscription.remove_user_from_subscription(contributor)
+        subscription.remove_user_from_subscription(user)
         node.mailing_updated = True
         node.save()
-    celery_remove_user_from_list(node._id, contributor._id)
+    celery_remove_user_from_list(node._id, user._id)
 
 
 @user_confirmed.connect
