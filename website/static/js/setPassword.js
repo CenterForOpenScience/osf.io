@@ -168,6 +168,10 @@ var ViewModel = function(passwordViewType, submitUrl, campaign) {
     };
 
     self.submit = function() {
+        if (self.submitted()) {
+            self.changeMessage(self.flashMessage, self.flashMessageClass, 'You have already submitted. You cannot sign up more than once.', 'text-danger p-xs');
+            return false;
+        }
         // Show errors if invalid
         if (!self.isValid()) {
             // Ensure validation errors are displayed
