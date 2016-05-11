@@ -160,7 +160,7 @@ class RegistrationSerializer(NodeSerializer):
         registration_choice = validated_data.pop('registration_choice', 'immediate')
         embargo_lifted = validated_data.pop('lift_embargo', None)
 
-        self.all_required_questions_answered(draft)
+        self.check_required_questions_answered(draft)
 
         registration = draft.register(auth, save=True)
 
@@ -181,7 +181,7 @@ class RegistrationSerializer(NodeSerializer):
         registration.save()
         return registration
 
-    def all_required_questions_answered(self, draft):
+    def check_required_questions_answered(self, draft):
         metadata = draft.registration_metadata
         schema = create_jsonschema_from_metaschema(draft, required_fields=True)
         try:
