@@ -282,8 +282,8 @@ def project_manage_contributors(auth, node, **kwargs):
     except ValueError as error:
         raise HTTPError(http.BAD_REQUEST, data={'message_long': error.message})
 
-    # If user has removed herself from project, alert; redirect to user
-    # dashboard if node is private, else node dashboard
+    # If user has removed herself from project, alert; redirect to
+    # user's my projects page if node is private, else node dashboard
     if not node.is_contributor(auth.user):
         status.push_status_message(
             'You have removed yourself as a contributor from this project',
@@ -292,7 +292,7 @@ def project_manage_contributors(auth, node, **kwargs):
         )
         if node.is_public:
             return {'redirectUrl': node.url}
-        return {'redirectUrl': web_url_for('dashboard')}
+        return {'redirectUrl': web_url_for('my_projects')}
     # Else if user has revoked her admin permissions, alert and stay on
     # current page
     if not node.has_permission(auth.user, ADMIN):
@@ -344,8 +344,8 @@ def project_remove_contributor(auth, **kwargs):
             raise HTTPError(http.BAD_REQUEST, data={
                 'message_long': 'Could not remove contributor.'})
 
-        # On parent node, if user has removed herself from project, alert; redirect to user
-        # dashboard if node is private, else node dashboard
+        # On parent node, if user has removed herself from project, alert; redirect to
+        # user's my projects page if node is private, else node dashboard
         if not node.is_contributor(auth.user) and node_id == parent_id:
             status.push_status_message(
                 'You have removed yourself as a contributor from this project',
@@ -356,7 +356,7 @@ def project_remove_contributor(auth, **kwargs):
                 redirect_url = {'redirectUrl': node.url}
             # Else stay on current page
             else:
-                redirect_url = {'redirectUrl': web_url_for('dashboard')}
+                redirect_url = {'redirectUrl': web_url_for('my_projects')}
     return redirect_url
 
 
