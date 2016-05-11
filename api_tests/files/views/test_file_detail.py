@@ -7,7 +7,7 @@ from api.base.settings.defaults import API_BASE
 from api_tests import utils as api_utils
 from framework.auth.core import Auth
 
-from tests.base import ApiTestCase
+from tests.base import ApiTestCase, capture_signals
 from tests.factories import (
     ProjectFactory,
     UserFactory,
@@ -15,6 +15,7 @@ from tests.factories import (
     CommentFactory
 )
 from website.addons.osfstorage import settings as osfstorage_settings
+from website.project.signals import contributor_removed
 from website.project.model import NodeLog
 
 
@@ -267,6 +268,20 @@ class TestFileView(ApiTestCase):
         self.file.reload()
         assert_equal(res.status_code, 200)
         assert_equal(self.file.checkout, None)
+
+    def test_removed_contrib_files_checked_in(self):
+        user = AuthUserFactory()
+        self.node.add_contributor(user, permissions=['read', 'write'])
+        self.node.save()
+        assert_true(self.node.can_edit(user=user))
+        self.file.checkout = user
+        self.file.save()
+        assert_true(self.file.is_checked_out)
+        with capture_signals() as mock_signals:
+            self.node.remove_contributor(user, auth=Auth(user))
+        assert_equal(mock_signals.signals_sent(), set([contributor_removed]))
+        self.file.reload()
+        assert_false(self.file.is_checked_out)
 
     def test_must_be_osfstorage(self):
         self.file.provider = 'github'

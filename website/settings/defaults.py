@@ -327,7 +327,6 @@ CELERY_IMPORTS = (
     'scripts.osfstorage.usage_audit',
     'scripts.osfstorage.files_audit',
     'scripts.analytics.tasks',
-    'scripts.analytics.upload'
 )
 
 # celery.schedule will not be installed when running invoke requirements the first time.
@@ -426,11 +425,6 @@ else:
         # 'analytics': {
         #     'task': 'scripts.analytics.tasks',
         #     'schedule': crontab(minute=0, hour=2),  # Daily 2:00 a.m.
-        #     'kwargs': {}
-        # },
-        # 'analytics-upload': {
-        #     'task': 'scripts.analytics.upload',
-        #     'schedule': crontab(minute=0, hour=6),  # Daily 6:00 a.m.
         #     'kwargs': {}
         # },
     }
