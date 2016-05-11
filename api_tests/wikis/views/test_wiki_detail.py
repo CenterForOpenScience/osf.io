@@ -137,6 +137,14 @@ class TestWikiDetailMixin(object):
         assert_equal(res.status_code, 200)
         assert_in(expected_url, url)
 
+    def test_wiki_has_download_link(self):
+        self._set_up_public_project_with_wiki_page()
+        res = self.app.get(self.public_url)
+        url = res.json['data']['links']['download']
+        expected_url = '/{}wikis/{}/content/'.format(API_BASE, self.public_wiki._id)
+        assert_equal(res.status_code, 200)
+        assert_in(expected_url, url)
+
 
 class TestWikiDetailView(ApiWikiTestCase, TestWikiDetailMixin):
 
