@@ -31,7 +31,7 @@ from tests.base import (
     capture_signals
 )
 from tests.factories import (
-    UserFactory, ProjectFactory, AuthUserFactory, CommentFactory, NodeFactory
+    UserFactory, ProjectFactory, AuthUserFactory, CommentFactory, NodeFactory, RegistrationFactory
 )
 
 
@@ -117,6 +117,24 @@ class TestCommentModel(OsfTestCase):
         assert_equal(len(comment.node.logs), 2)
         assert_equal(comment.node.logs[-1].action, NodeLog.COMMENT_ADDED)
 
+    def test_create_not_log_on_registration(self):
+        node = RegistrationFactory(creator=self.comment.user)
+        comment = Comment.create(
+            auth=self.auth,
+            user=self.comment.user,
+            node=node,
+            target=self.comment.target,
+            root_target=self.comment.root_target,
+            page='node',
+            is_public=True,
+            content='This is a comment.'
+        )
+        assert_equal(comment.user, self.comment.user)
+        assert_equal(comment.node, node)
+        assert_equal(comment.target, self.comment.target)
+        assert_equal(len(comment.node.logs), 1)
+        assert_not_equal(comment.node.logs[-1].action, NodeLog.COMMENT_ADDED)
+
     def test_create_comment_content_cannot_exceed_max_length(self):
         with assert_raises(ValidationValueError):
             comment = Comment.create(
@@ -188,11 +206,51 @@ class TestCommentModel(OsfTestCase):
         assert_equal(len(self.comment.node.logs), 2)
         assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_UPDATED)
 
+    def test_edit_not_log_on_registration(self):
+        node = RegistrationFactory(creator=self.comment.user)
+        comment = Comment.create(
+            auth=self.auth,
+            user=self.comment.user,
+            node=node,
+            target=self.comment.target,
+            root_target=self.comment.root_target,
+            page='node',
+            is_public=True,
+            content='This is a comment.'
+        )
+        comment.edit(
+            auth=self.auth,
+            content='edited',
+            save=True
+        )
+        assert_equal(comment.content, 'edited')
+        assert_true(comment.modified)
+        assert_equal(len(comment.node.logs), 1)
+        assert_not_equal(comment.node.logs[-1].action, NodeLog.COMMENT_UPDATED)
+
+
     def test_delete(self):
         self.comment.delete(auth=self.auth, save=True)
         assert_equal(self.comment.is_deleted, True)
         assert_equal(len(self.comment.node.logs), 2)
         assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_REMOVED)
+
+    def test_delete_not_log_on_registration(self):
+        node = RegistrationFactory(creator=self.comment.user)
+        comment = Comment.create(
+            auth=self.auth,
+            user=self.comment.user,
+            node=node,
+            target=self.comment.target,
+            root_target=self.comment.root_target,
+            page='node',
+            is_public=True,
+            content='This is a comment.'
+        )
+        comment.delete(auth=self.auth, save=True)
+        assert_equal(comment.is_deleted, True)
+        assert_equal(len(comment.node.logs), 1)
+        assert_not_equal(comment.node.logs[-1].action, NodeLog.COMMENT_REMOVED)
 
     def test_undelete(self):
         self.comment.delete(auth=self.auth, save=True)
@@ -200,6 +258,26 @@ class TestCommentModel(OsfTestCase):
         assert_equal(self.comment.is_deleted, False)
         assert_equal(len(self.comment.node.logs), 3)
         assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_RESTORED)
+
+    def test_undelete_not_log_on_registration(self):
+        node = RegistrationFactory(creator=self.comment.user)
+        comment = Comment.create(
+            auth=self.auth,
+            user=self.comment.user,
+            node=node,
+            target=self.comment.target,
+            root_target=self.comment.root_target,
+            page='node',
+            is_public=True,
+            content='This is a comment.'
+        )
+        comment.delete(auth=self.auth, save=True)
+        comment.undelete(auth=self.auth, save=True)
+        assert_equal(self.comment.is_deleted, False)
+        assert_equal(len(self.comment.node.logs), 1)
+        assert_not_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_RESTORED)
+
+
 
     def test_read_permission_contributor_can_comment(self):
         project = ProjectFactory()
