@@ -10,7 +10,6 @@
                 class="form"
                 method="POST"
                 action="/resetpassword/${verification_key}/"
-                data-bind="submit: submit"
             >
 
         <div class="row">
