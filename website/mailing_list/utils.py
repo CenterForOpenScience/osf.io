@@ -6,7 +6,7 @@ import requests
 from flask import request
 
 from framework.auth.core import get_user
-from framework.auth.signals import user_confirmed, node_deleted
+from framework.auth.signals import user_confirmed
 from framework.celery_tasks import app
 from framework.celery_tasks.handlers import queued_task
 from framework.exceptions import HTTPError
@@ -15,7 +15,7 @@ from website import settings
 from website.notifications.utils import to_subscription_key
 
 from website.mailing_list.model import MailingListEventLog
-from website.project.signals import contributor_added, contributor_removed
+from website.project.signals import contributor_added, contributor_removed, node_deleted
 
 ANGLE_BRACKETS_REGEX = re.compile(r'<(.*?)>')
 

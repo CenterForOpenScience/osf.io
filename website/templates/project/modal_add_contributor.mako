@@ -192,14 +192,13 @@
                     <div>
                         Adding contributor(s)
                         <span data-bind="text:addingSummary()"></span>
-                        to component
-                        <span data-bind="text:title"></span>.
+                        to <span data-bind="text:title"></span>.
                     </div>
 
                     <hr />
 
                     <div style="margin-bottom:10px;">
-                        Select any other components to which you would like to apply these settings.
+                        You can also add the contributor(s) to any components on which you are an admin.
                     </div>
 
                     <div>

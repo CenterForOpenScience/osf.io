@@ -11,7 +11,6 @@ from nose.tools import *  # noqa PEP8 asserts
 
 from framework.auth import Auth
 from framework.auth.core import User
-from framework.auth.signals import contributor_removed, node_deleted
 from framework.guid.model import Guid
 
 from website.notifications.tasks import get_users_emails, send_users_email, group_by_node, remove_notifications
@@ -21,6 +20,7 @@ from website.notifications.model import NotificationSubscription
 from website.notifications import emails
 from website.notifications import utils
 from website.project.model import Node, Comment
+from website.project.signals import contributor_removed, node_deleted
 from website import mails
 from website.util import api_url_for
 from website.util import web_url_for

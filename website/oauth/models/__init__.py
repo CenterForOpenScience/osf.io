@@ -388,15 +388,15 @@ class ExternalProvider(object):
         """
         # Ensure this is an authenticated Provider that uses token refreshing
         if not (self.account and self.auto_refresh_url):
-            return
+            return False
 
         # Ensure this Provider is for a valid addon
         if not (self.client_id and self.client_secret):
-            return
+            return False
 
         # Ensure a refresh is needed
         if not (force or self._needs_refresh()):
-            return
+            return False
 
         resp_expiry_fn = resp_expiry_fn or (lambda x: datetime.datetime.utcfromtimestamp(time.time() + float(x['expires_in'])))
 
@@ -427,6 +427,7 @@ class ExternalProvider(object):
             self.account.refresh_token = token[resp_refresh_token_key]
             self.account.expires_at = resp_expiry_fn(token)
             self.account.save()
+            return True
 
     def _needs_refresh(self):
         """Determines whether or not an associated ExternalAccount needs
