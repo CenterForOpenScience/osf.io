@@ -476,7 +476,6 @@ class NodeInstitutionsRelationshipSerializer(ser.Serializer):
         type_ = 'institutions'
 
     def get_institutions_to_add_remove(self, institutions, new_institutions):
-        # TODO: figure out how new_institutions is formatted
         diff = relationship_diff(
             current_items={inst._id: inst for inst in institutions},
             new_items={inst['_id']: inst for inst in new_institutions}
