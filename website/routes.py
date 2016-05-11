@@ -475,13 +475,6 @@ def make_url_map(app):
             endpoint_suffix='__first', view_kwargs={'first': True}
         ),
         Rule(
-            '/login/reset/',
-            'get',
-            auth_views.auth_login,
-            OsfWebRenderer('public/login.mako', trust=False),
-            endpoint_suffix='__reset', view_kwargs={'reset': True}
-        ),
-        Rule(
             '/logout/',
             'get',
             auth_views.auth_logout,
