@@ -78,8 +78,6 @@ def reset_password(auth, **kwargs):
         raise HTTPError(400, data=error_data)
 
     if request.method == 'POST':  # TODO - do we need more than KO password validation?
-        # new random verification key, allows CAS to authenticate the user w/o password one time only.
-        user_obj.verification_key = security.random_string(20)
         user_obj.set_password(request.values['password'])
         user_obj.save()
         status.push_status_message('Password reset', kind='success', trust=False)
@@ -89,9 +87,6 @@ def reset_password(auth, **kwargs):
             username=user_obj.username,
             verification_key=user_obj.verification_key
         ))
-    else:
-        forms.push_errors_to_status(form.errors)
-        # Don't go anywhere
 
     return {
         'verification_key': verification_key
@@ -223,6 +218,9 @@ def auth_login(auth, **kwargs):
             return redirect('dashboard')
         # redirect user to CAS for logout, return here w/o authentication
         return auth_logout(redirect_url=request.url)
+
+    if kwargs.get('reset', False):
+        status.push_status_message('Your password has successfully been reset. You may now log in', kind='success', trust=False)
 
     status_message = request.args.get('status', '')
     if status_message == 'expired':
