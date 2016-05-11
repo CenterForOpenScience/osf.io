@@ -17,14 +17,3 @@ class DashboardView(OSFAdmin, TemplateView):
                        })
         return super(DashboardView, self).get_context_data(**kwargs)
 
-
-# def dashboard(request):
-
-#     context = KEEN_CREDENTIALS.copy()
-#     context.update({
-#         'user_count': user_count,
-#         'multi_product_metrics_yearly': multi_product_metrics_yearly,
-#         'multi_product_metrics_monthly': multi_product_metrics_monthly,
-#         'repeat_action_user_monthly': repeat_action_user_monthly,
-#     })
-#     return render(request, 'sales_analytics/dashboard.html', context)
