@@ -391,6 +391,11 @@ else:
             'schedule': crontab(minute=0, hour=2, day_of_week=6),  # Saturday 2:00 a.m.
             'kwargs': {'dry_run': True}
         },
+        'update-project-mailing-lists': {
+            'task': 'scripts.update_project_mailing_lists',
+            'schedule': crontab(minute=0, hour=3, day_of_week=0),  # Sunday 3:00 a.m.
+            'kwargs': {'dry_run': False},
+        },
         # 'usage_audit': {
         #     'task': 'scripts.osfstorage.usage_audit',
         #     'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m

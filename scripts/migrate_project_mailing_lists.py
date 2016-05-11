@@ -2,7 +2,6 @@
 """Create mailing lists for all top-level projects
 """
 import logging
-from mock import MagicMock
 import sys
 
 from modularodm import Q
@@ -97,7 +96,9 @@ def main():
     if not dry_run:
         script_utils.add_file_logger(logger, __file__)
     else:
-        create_list = MagicMock()
+        def create_list(*args, **kwargs):
+            # Override actual method to prevent outgoing calls
+            return
     with TokuTransaction():
         migrate(dry_run=dry_run)
 
