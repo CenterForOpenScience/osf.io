@@ -15,7 +15,7 @@ from admin.metrics.utils import (
     get_previous_midnight,
     get_days_statistics,
     DAY_LEEWAY,
-    get_all_user_count,
+    get_active_user_count,
     get_unregistered_users,
 )
 from admin.metrics.models import OSFWebsiteStatistics
@@ -175,8 +175,8 @@ class TestUserGet(AdminTestCase):
 
     def test_get_all_user_count(self):
         time_now = datetime.utcnow()
-        count = get_all_user_count(time_now)
-        nt.assert_equal(count, 4)
+        count = get_active_user_count(time_now)
+        nt.assert_equal(count, 2)
 
     def test_get_unregistered_users(self):
         count = get_unregistered_users()

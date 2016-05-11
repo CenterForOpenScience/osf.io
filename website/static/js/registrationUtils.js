@@ -182,7 +182,7 @@ var Question = function(questionSchema, data) {
     self.properties = questionSchema.properties || [];
     self.match = questionSchema.match || '';
 
-    self.extra = koHelpers.mapJStoKO(self.data.extra || {});
+    self.extra = ko.observable(self.data.extra || {});
     self.showExample = ko.observable(false);
 
     self.comments = ko.observableArray(
