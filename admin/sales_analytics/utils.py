@@ -11,9 +11,9 @@ def get_entry_point(system_tags, entry_points=ENTRY_POINTS):
     In case of multiple entry_points existing in the system_tags, return only the first one.
     """
     entry_points = entry_points.keys()
-    for i in system_tags:
-        if i in entry_points:
-            return i
+    for tag in system_tags:
+        if tag in entry_points:
+            return tag
     else:
         return 'osf'
 
@@ -129,9 +129,3 @@ def get_repeat_action_user_count(db=db, timedelta=timedelta(days=30)):
                     repeat_action_user_age.append(age)
                     break
     return {'repeat_action_count': repeat_action_count, 'repeat_action_age': repeat_action_user_age}
-
-
-user_count = get_user_count(db, ENTRY_POINTS)
-multi_product_metrics_yearly = get_multi_product_metrics()
-multi_product_metrics_monthly = get_multi_product_metrics(timedelta=timedelta(days=30))
-repeat_action_user_monthly = get_repeat_action_user_count()
