@@ -526,13 +526,6 @@ def make_url_map(app):
 
         # osf logout and cas logout
         Rule(
-            '/login/reset/',
-            'get',
-            auth_views.auth_login,
-            OsfWebRenderer('public/login.mako', trust=False),
-            endpoint_suffix='__reset', view_kwargs={'reset': True}
-        ),
-        Rule(
             '/logout/',
             'get',
             auth_views.auth_logout,
