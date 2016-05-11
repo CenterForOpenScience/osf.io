@@ -245,11 +245,11 @@ def full_update(node_id):
             # Delete any noncontribs
             from website.models import User  # avoid circular import
             member_ids = set([member['vars']['_id'] for member in members['items'] if member.get('vars', {}).get('_id', False)])
-            for _id in member_ids:
-                if _id not in node.contributors:
-                    user = User.load(_id)
+            for u_id in member_ids:
+                if u_id not in node.contributors:
+                    user = User.load(u_id)
                     if user:
-                        remove_user_from_list(node_id, user)
+                        remove_user_from_list(node_id, u_id)
 
         else:
             create_list(node_id)
