@@ -246,15 +246,9 @@
                     </div>
                 </div>
                <div class="panel-body panel-body-with-instructions">
-                    <div id="treeGrid">
-                        <div class="spinner-loading-wrapper">
-                            <div class="logo-spin logo-lg"></div>
-                             <p class="m-t-sm fg-load-message"> Loading files...  </p>
-                        </div>
-                    </div>
-                </div>
             %else:
-                <div class="panel-body">
+               <div class="panel-body">
+            %endif
                     <div id="treeGrid">
                         <div class="spinner-loading-wrapper">
                             <div class="logo-spin logo-lg"></div>
@@ -262,7 +256,6 @@
                         </div>
                     </div>
                 </div>
-            %endif
 
 
         </div>
