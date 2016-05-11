@@ -4,7 +4,7 @@ from admin.base.settings import ENTRY_POINTS
 from admin.base.settings import KEEN_CREDENTIALS
 from admin.base.utils import OSFAdmin
 from admin.sales_analytics.utils import get_user_count, get_multi_product_metrics, get_repeat_action_user_count
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 
 class DashboardView(OSFAdmin, TemplateView):

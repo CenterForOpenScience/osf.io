@@ -129,5 +129,3 @@ def get_repeat_action_user_count(db=db, timedelta=timedelta(days=30)):
                     repeat_action_user_age.append(age)
                     break
     return {'repeat_action_count': repeat_action_count, 'repeat_action_age': repeat_action_user_age}
-
-

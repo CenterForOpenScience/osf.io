@@ -262,14 +262,14 @@ var SalesAnalytics = function() {
         // Number of users that use a product different from their entry points.
         var chart = self.drawMetric('db-chart-cross-product-yearly',
                                     multiProductMetricsYearly.cross_product_count,
-                                    '#aee99b',
+                                    '#6ab975',
                                     'Users');
       };
 
     self.getCrossProductCountMonthly = function(multiProductMetricsMonthly) {
         var chart = self.drawMetric('db-chart-cross-product-monthly',
                                     multiProductMetricsMonthly.cross_product_count,
-                                    '#aee99b',
+                                    '#6ab975',
                                     'Users');
     };
 
@@ -277,21 +277,21 @@ var SalesAnalytics = function() {
         // Number of users that have more than one type of action.
         var chart = self.drawMetric('db-chart-multi-action-yearly',
                                     multiProductMetricsYearly.multi_action_count,
-                                    '#00d1c1',
+                                    '#4C72B7',
                                     'Users');
     };
 
     self.getMultiActionCountMonthly = function(multiProductMetricsMonthly) {
         var chart = self.drawMetric('db-chart-multi-action-monthly',
                                     multiProductMetricsMonthly.multi_action_count,
-                                    '#00d1c1',
+                                    '#4C72B7',
                                     'Users');
     };
 
     self.getRepeatActionCountMonthly = function(repeatActionUserMonthly) {
         var chart = self.drawMetric('db-chart-repeat-action-monthly',
                                     repeatActionUserMonthly.repeat_action_count,
-                                    '#FFD37F',
+                                    '#b75c4c',
                                     'Users');
     };
 
