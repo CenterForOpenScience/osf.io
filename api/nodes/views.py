@@ -1189,7 +1189,7 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, ODMF
         ExcludeWithdrawals
     )
 
-    required_read_scopes = [CoreScopes.NODE_FORKS_READ]
+    required_read_scopes = [CoreScopes.NODE_FORKS_READ, CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.NODE_FORKS_WRITE]
 
     serializer_class = NodeForksSerializer
