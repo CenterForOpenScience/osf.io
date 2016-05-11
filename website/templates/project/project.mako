@@ -239,7 +239,7 @@
                    <a href="${node['url']}files/"> <i class="fa fa-external-link"></i> </a>
                 </div>
             </div>
-            % if not node['is_registration'] and not node['anonymous']:
+            % if not node['is_registration'] and not node['anonymous'] and 'write' in user['permissions']:
                 <div class="row">
                     <div class="col-sm-12 m-t-sm m-l-md">
                         <span class="f-w-xl">Click on a storage provider or drag and drop to upload</span>
