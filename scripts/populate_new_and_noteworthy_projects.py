@@ -133,6 +133,11 @@ def main(dry_run=True):
 
 @celery_app.task(name='scripts.populate_new_and_noteworthy_projects')
 def run_main(dry_run=True):
-    script_utils.add_file_logger(logger, __file__)
+    if not dry_run:
+        script_utils.add_file_logger(logger, __file__)
     with TokuTransaction():
         main(dry_run=dry_run)
+
+if __name__ == "__main__":
+    dry_run = '--dry' in sys.argv
+    run_main(dry_run=dry_run)
