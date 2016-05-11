@@ -117,8 +117,6 @@
                 <div class="row m-l-xs">
                     <a href="/forgotpassword/">Forgot password?</a>
                 </div>
-            </form>
-            </div>
             %else:
             <div class="form-group">
                 <div class="col-sm-offset-3 col-sm-9">
