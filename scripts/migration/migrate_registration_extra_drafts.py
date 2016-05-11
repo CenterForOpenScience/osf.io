@@ -7,7 +7,7 @@ import logging
 
 from modularodm import Q
 from website.app import init_app
-from website.files.models import FileNode
+from website.files.models import FileNode, TrashedFileNode
 from scripts import utils as scripts_utils
 from website.models import DraftRegistration
 from website.prereg.utils import get_prereg_schema
@@ -18,20 +18,23 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 def migrate_file_representation(bad_file):
-    view_url = bad_file.get('viewUrl', '')
-    fid = view_url.split('/')[-2]
-    f = FileNode.load(fid)
+    logger.info('Migrating file representation of File: {0}'.format(bad_file))
+    view_url = bad_file['viewUrl'].rstrip('/')
+    fid = view_url.split('/')[-1]
+    fnode = FileNode.load(fid)
+    if fnode is None:
+        fnode = TrashedFileNode.load(fid)
+    assert fnode is not None, 'Could not load FileNode or TrashedFileNode with id {}'.format(fid)
     data = {
         'data': {
             'kind': 'file',
             'name': bad_file['selectedFileName'],
-            'path': f.path,
+            'path': fnode.path,
             'extra': {},
-            'sha256': f.get_version().metadata['sha256']
+            'sha256': fnode.versions[-1].metadata['sha256']
         }
     }
     bad_file.update(data)
-    logger.info('Migrated file representation of File: {0}'.format(fid))
 
 
 def migrate_file_meta(question):
@@ -39,9 +42,10 @@ def migrate_file_meta(question):
     migrated = False
     if files and isinstance(files, list):
         for f in files:
-            if not f.get('data', None):
-                migrate_file_representation(f)
-                migrated = True
+            if 'viewUrl' in f:
+                if not f.get('data', None):
+                    migrate_file_representation(f)
+                    migrated = True
     if isinstance(files, dict):
         if len(files) == 0:
             question['extra'] = []
