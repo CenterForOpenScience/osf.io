@@ -11,7 +11,7 @@ var bootbox = require('bootbox');
 var moment = require('moment');
 var History = require('exports?History!history');
 
-var koHelpers = require('js/koHelpers');
+require('js/koHelpers');
 
 var $osf = require('js/osfHelpers');
 var osfLanguage = require('js/osfLanguage');

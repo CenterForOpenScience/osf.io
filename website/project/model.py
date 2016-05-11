@@ -3782,6 +3782,30 @@ class AlternativeCitation(StoredObject):
             "text": self.text
         }
 
+
+class DraftRegistrationLog(StoredObject):
+    """ Simple log to show status changes for DraftRegistrations
+
+    field - _id - primary key
+    field - date - date of the action took place
+    field - action - simple action to track what happened
+    """
+    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+    date = fields.DateTimeField(default=datetime.datetime.utcnow, index=True)
+    action = fields.StringField(index=True)
+
+    @classmethod
+    def add_log(cls, action):
+        log = cls(
+            action=action,
+        )
+        log.save()
+        return log
+
+    def __repr__(self):
+        return 'DraftRegistrationLog: {}'.format(self._id)
+
+
 class DraftRegistration(StoredObject):
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
@@ -3815,7 +3839,7 @@ class DraftRegistration(StoredObject):
 
     approval = fields.ForeignField('draftregistrationapproval', default=None)
 
-    status_logs = fields.DictionaryField(default=dict)
+    status_logs = fields.ForeignField('draftregistrationlog', list=True)
 
     # Dictionary field mapping extra fields defined in the MetaSchema.schema to their
     # values. Defaults should be provided in the schema (e.g. 'paymentSent': false),
@@ -3881,13 +3905,6 @@ class DraftRegistration(StoredObject):
         else:
             return False
 
-    @property
-    def logs(self):
-        return [
-            '{} on {}'.format(v.title(), k)
-            for k, v in sorted(self.status_logs.iteritems(), key=lambda x: x[0])
-        ]
-
     @classmethod
     def create_from_node(cls, node, user, schema, data=None):
         draft = cls(
@@ -3927,11 +3944,6 @@ class DraftRegistration(StoredObject):
         self.registration_metadata.update(metadata)
         return changes
 
-    def add_status_log(self, action):
-        self.status_logs.update({
-            datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M'): action
-        })
-
     def submit_for_review(self, initiated_by, meta, save=False):
         approval = DraftRegistrationApproval(
             initiated_by=initiated_by,
@@ -3939,7 +3951,7 @@ class DraftRegistration(StoredObject):
         )
         approval.save()
         self.approval = approval
-        self.add_status_log('submitted')
+        self.status_logs.append(DraftRegistrationLog.add_log('submitted'))
         if save:
             self.save()
 
@@ -3953,17 +3965,17 @@ class DraftRegistration(StoredObject):
             data=self.registration_metadata
         )
         self.registered_node = register
-        self.add_status_log('registered')
+        self.status_logs.append(DraftRegistrationLog.add_log('registered'))
         if save:
             self.save()
         return register
 
     def approve(self, user):
         self.approval.approve(user)
-        self.add_status_log('approved')
+        self.status_logs.append(DraftRegistrationLog.add_log('approved'))
         self.approval.save()
 
     def reject(self, user):
         self.approval.reject(user)
-        self.add_status_log('rejected')
+        self.status_logs.append(DraftRegistrationLog.add_log('rejected'))
         self.approval.save()
