@@ -16,4 +16,3 @@ class DashboardView(OSFAdmin, TemplateView):
                        'repeat_action_user_monthly': repeat_action_user_monthly,
                        })
         return super(DashboardView, self).get_context_data(**kwargs)
-
