@@ -3,13 +3,13 @@ from __future__ import absolute_import, unicode_literals
 from django.core.urlresolvers import reverse
 from django.views.generic.edit import FormView
 from django.contrib import messages
-from django.contrib.auth.forms import PasswordResetForm
+from password_reset.forms import PasswordRecoveryForm
+from password_reset.views import Recover
 from django.contrib.auth import login, REDIRECT_FIELD_NAME, authenticate, logout
-from django.shortcuts import redirect, resolve_url
+from django.shortcuts import redirect
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect
-from django.conf import settings
 from django.http import Http404
 
 from website.project.model import User
@@ -47,8 +47,8 @@ class LoginView(FormView):
 
     def get_success_url(self):
         redirect_to = self.request.GET.get(self.redirect_field_name, '')
-        if not redirect_to:
-            redirect_to = resolve_url(settings.LOGIN_REDIRECT_URL)
+        if not redirect_to or redirect_to == '/':
+            redirect_to = reverse('home')
         return redirect_to
 
 
@@ -79,13 +79,13 @@ class RegisterUser(SuperUser, FormView):
         for group in form.cleaned_data.get('group_perms'):
             new_user.groups.add(group)
         new_user.save()
-        reset_form = PasswordResetForm({'email': new_user.email})
+        reset_form = PasswordRecoveryForm(
+            data={'username_or_email': new_user.email}
+        )
         if reset_form.is_valid():
-            reset_form.save(
-                subject_template_name='emails/account_creation_subject.txt',
-                email_template_name='emails/password_reset_email.html',
-                request=self.request,
-            )
+            send = Recover()
+            send.request = self.request
+            send.form_valid(reset_form)
         messages.success(self.request, 'Registration successful!')
         return super(RegisterUser, self).form_valid(form)
 

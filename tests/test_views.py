@@ -675,6 +675,19 @@ class TestProjectViews(OsfTestCase):
         assert_equal("tag_removed", self.project.logs[-1].action)
         assert_equal("foo'ta#@%#%^&g?", self.project.logs[-1].params['tag'])
 
+    # Regression test for #OSF-5257
+    def test_removal_empty_tag_throws_error(self):
+        url = self.project.api_url_for('project_remove_tag')
+        res= self.app.delete_json(url, {'tag': ''}, auth=self.auth, expect_errors=True)
+        assert_equal(res.status_code, http.BAD_REQUEST)
+
+    # Regression test for #OSF-5257
+    def test_removal_unknown_tag_throws_error(self):
+        self.project.add_tag('narf', auth=self.consolidate_auth1, save=True)
+        url = self.project.api_url_for('project_remove_tag')
+        res= self.app.delete_json(url, {'tag': 'troz'}, auth=self.auth, expect_errors=True)
+        assert_equal(res.status_code, http.CONFLICT)
+
     # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/1478
     @mock.patch('website.archiver.tasks.archive')
     def test_registered_projects_contributions(self, mock_archive):

@@ -12,6 +12,7 @@ from framework.auth import Auth
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_signed
 
+from website.exceptions import InvalidTagError, TagNotFoundError
 from website.models import User
 from website.project.decorators import (
     must_not_be_registration, must_have_addon, must_have_permission
@@ -257,6 +258,11 @@ def osfstorage_add_tag(file_node, **kwargs):
 @decorators.autoload_filenode(must_be='file')
 def osfstorage_remove_tag(file_node, **kwargs):
     data = request.get_json()
-    if file_node.remove_tag(data['tag'], kwargs['auth']):
+    try:
+        file_node.remove_tag(data['tag'], kwargs['auth'])
+    except TagNotFoundError:
+        return {'status': 'failure'}, httplib.CONFLICT
+    except InvalidTagError:
+        return {'status': 'failure'}, httplib.BAD_REQUEST
+    else:
         return {'status': 'success'}, httplib.OK
-    return {'status': 'failure'}, httplib.BAD_REQUEST

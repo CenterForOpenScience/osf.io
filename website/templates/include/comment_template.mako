@@ -1,5 +1,5 @@
 <script type="text/html" id="commentTemplate">
-    <div class="comment-container" data-bind="if: shouldShow, attr:{id: id}">
+    <div class="comment-container" data-bind="attr:{id: id}">
 
         <div class="comment-body m-b-sm p-sm osf-box">
              <div data-bind="visible: loading">

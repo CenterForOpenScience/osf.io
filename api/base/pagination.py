@@ -152,3 +152,17 @@ class CommentPagination(JSONAPIPagination):
                         unread = Comment.find_n_unread(user=user, node=node, page=page, root_id=target_id)
                     response_dict['links']['meta']['unread'] = unread
         return Response(response_dict)
+
+
+class NodeContributorPagination(JSONAPIPagination):
+
+    def get_paginated_response(self, data):
+        """ Add number of bibliographic contributors to links.meta"""
+        response = super(NodeContributorPagination, self).get_paginated_response(data)
+        response_dict = response.data
+        kwargs = self.request.parser_context['kwargs'].copy()
+        node_id = kwargs.get('node_id', None)
+        node = Node.load(node_id)
+        total_bibliographic = len(node.visible_contributor_ids)
+        response_dict['links']['meta']['total_bibliographic'] = total_bibliographic
+        return Response(response_dict)
