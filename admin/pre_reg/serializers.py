@@ -52,7 +52,7 @@ def serialize_draft_registration(draft, json_safe=True):
         'embargo': embargo,
         'registered_node': node_url,
         'status': status,
-        'logs': map(serialize_draft_logs(draft.status_logs)),
+        'logs': map(serialize_draft_logs, draft.status_logs),
     }
 
 
