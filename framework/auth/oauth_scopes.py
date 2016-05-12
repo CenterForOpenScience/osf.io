@@ -106,7 +106,7 @@ class ComposedScopes(object):
 
     # Organizer Collections collection
     # Using Organizer Collections and the node links they collect. Reads Node Metadata.
-    ORGANIZER_READ = (CoreScopes.ORGANIZER_COLLECTIONS_BASE_READ, NODE_METADATA_READ)
+    ORGANIZER_READ = (CoreScopes.ORGANIZER_COLLECTIONS_BASE_READ,) + NODE_METADATA_READ
     ORGANIZER_WRITE = ORGANIZER_READ + (CoreScopes.ORGANIZER_COLLECTIONS_BASE_WRITE, CoreScopes.NODE_LINKS_WRITE)
 
     # Privileges relating to editing content uploaded under that node # TODO: Add wiki etc when implemented
