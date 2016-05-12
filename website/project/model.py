@@ -3829,6 +3829,10 @@ class DraftRegistration(StoredObject):
     # values. Defaults should be provided in the schema (e.g. 'paymentSent': false),
     # and these values are added to the DraftRegistration
     _metaschema_flags = fields.DictionaryField(default=None)
+
+    def __repr__(self):
+        return '<DraftRegistration(branched_from={self.branched_from!r}) with id {self._id!r}>'.format(self=self)
+
     # lazily set flags
     @property
     def flags(self):
