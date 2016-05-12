@@ -53,6 +53,7 @@
                                     <span data-bind="ifnot: log.userURL">
                                         <span class="overflow" data-bind="text: log.userFullName"></span>
                                     </span>
+                                    <span data-bind="if: log.isActive">Whee</span>
                                 </span>
                                 <!-- Log actions are the same as their template name -->
                                     <span data-bind="template: {name: log.action, data: log}"></span>
