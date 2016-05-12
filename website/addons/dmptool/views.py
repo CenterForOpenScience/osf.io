@@ -293,6 +293,7 @@ def dmptool_widget(node_addon, **kwargs):
 @must_have_addon(SHORT_NAME, 'node')
 def dmptool_get_widget_contents(node_addon, **kwargs):
 
+    node = node_addon.owner
     data = {
         'connected': False,
     }
@@ -308,19 +309,16 @@ def dmptool_get_widget_contents(node_addon, **kwargs):
     # https://dmptool.org/plans/21222/edit 
     for plan in plans:
         plan['url'] = "https://{}/plans/{}/edit".format(dmptool_host, plan['id'])
+        plan['get_plan_url'] = node.api_url_for('dmptool_get_plan',
+                planid = plan['id'])
 
-    try:
-        get_plan_url = api_url_for('dmptool_get_plan')
-    except:
-        get_plan_url = None
 
     data.update({
         'dmptool_host': dmptool_host,
         'plans': plans,
         'connected': True,
         'urls': {
-            'add_user_account': api_url_for('dmptool_add_user_account'),
-            'get_plan': get_plan_url
+            'add_user_account': api_url_for('dmptool_add_user_account')
         }
     })
     return {'data': data}, http.OK
@@ -334,11 +332,14 @@ def dmptool_get_plan(node_addon, planid, **kwargs):
     connection = client.connect_from_settings_or_401(node_addon)
     try:
         plan = connection.plans_full(id_=planid)
+        html_ = "HTML to come"
     except:
         plan = None
+        html_ = None
 
     ret = {
         'planid':planid,
-        'plan': plan
+        'plan': plan,
+        'html': html_
     }
     return ret, http.OK    

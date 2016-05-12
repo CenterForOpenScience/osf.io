@@ -5,6 +5,8 @@ var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 var language = require('js/osfLanguage').Addons.dmptool;
 
+
+
 function ViewModel(url) {
     var self = this;
 
@@ -21,6 +23,12 @@ function ViewModel(url) {
     self.loaded = ko.observable(false);
 
     self.plans = ko.observableArray();
+
+    // current plan
+    self.plan_id = ko.observable();
+    self.plan_name = ko.observable();
+    self.plan_created = ko.observable();
+    self.plan_requirements = ko.observableArray();
 
     // Flashed messages
     self.message = ko.observable('');
@@ -67,10 +75,45 @@ function ViewModel(url) {
 
     self.renderPlan = function (plan) {
 
-        console.log(plan.id);
-        console.log(self.url);
+        self.plan_id(plan.id);
 
-        $("#dmptool-output").html(plan.id);
+        // console.log(plan.id);
+        // console.log(self.url);
+        // console.log(plan.get_plan_url);
+
+        $.ajax({
+            url: plan.get_plan_url, type: 'GET', dataType: 'json',
+            success: function(response) {
+                //console.log(response.plan);
+                //self.plan(response.plan);
+                plan = response.plan;
+                self.plan_name(plan.name);
+                self.plan_created(plan.created);
+
+                // loop through requirements
+                self.plan_requirements.removeAll();
+                console.log(plan.template.requirements.length);
+                for (var i = 0, len = plan.template.requirements.length; i < len; i++) {
+                    console.log(plan.template.requirements[i]);
+                    var requirement = plan.template.requirements[i].requirement;
+                    console.log(requirement);
+                    self.plan_requirements.push(
+                       {
+                        'text_brief': requirement.text_brief,
+                        'response': requirement.response
+                       }
+                    )
+                }
+                console.log(self.plan_requirements());
+
+            },
+            error: function(xhr) {
+                $("#dmptool-output").html("error");
+            }
+
+        });
+
+        
     }
 }
 

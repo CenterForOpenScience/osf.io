@@ -6,6 +6,7 @@
         <span data-bind="if: loaded">
 
             <span data-bind="if: connected">
+                <%doc><pre data-bind="text: ko.toJSON($data, null, 2)"></pre></%doc>
 
                 <table>
                     <thead><tr>
@@ -24,18 +25,29 @@
                     </tbody>
                 </table>
 
+                <div><span>current plan.id</span>: <span data-bind="text: plan_id"></span></div>
+                <div><span>current plan.created</span>: <span data-bind="text: plan_created"></span></div>
+                <div><span>current requirements.length</span>: <span data-bind="text: plan_requirements().length"></span></div>
+
             </span>
 
         </span>
 
         <div id="dmptool-output">
+          <div><span>current plan name</span>: <span data-bind="text: plan_name"></span></div>
+
+          <div data-bind="foreach: plan_requirements">
+            <dl>
+              <strong data-bind="text: text_brief"></strong>
+              <div data-bind="text: response"></div>
+            </dl>
+          </div>
+
         </div>
 
         <div class="help-block">
             <p data-bind="html: message, attr: {class: messageClass}"></p>
         </div>
-
-
 
     </div>
 % endif
