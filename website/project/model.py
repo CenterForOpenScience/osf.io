@@ -3305,7 +3305,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         page = self.get_wiki_page(key)
 
         del self.wiki_pages_current[key]
-        del self.wiki_pages_versions[key]
+        if key != 'home':
+            del self.wiki_pages_versions[key]
 
         self.add_log(
             action=NodeLog.WIKI_DELETED,
