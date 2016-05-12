@@ -34,7 +34,7 @@
                     <span class="label label-primary"><strong>Archiving</strong></span> |
                   % endif
                 </span>
-            <span data-bind="getIcon: ${ summary['category'] | sjson, n }"></span>
+            <span data-bind='getIcon: ${ summary["category"] | sjson, n }'></span>
             % if not summary['archiving']:
                 <a href="${summary['url']}">${summary['title']}</a>
             % else:
