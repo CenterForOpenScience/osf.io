@@ -1,5 +1,4 @@
 <%inherit file="project/project_base.mako"/>
-<%include file="project/manage_institution.mako"/>
 <%def name="title()">${node['title']} Settings</%def>
 
 ##<!-- Show API key settings -->
@@ -321,7 +320,7 @@
                             <!-- /ko -->
                         </div>
                         <!-- ko if: affiliatedInstitutions().length > 0 -->
-                        <span>Affiliated Institutions: </span>
+                        <label>Affiliated Institutions: </label>
                         <!-- /ko -->
                         <table class="table">
                             <tbody>
@@ -339,7 +338,7 @@
                         </table>
                             </br>
                         <!-- ko if: availableInstitutions().length > 0 -->
-                        <span>Available Institutions: </span>
+                        <label>Available Institutions: </label>
                         <!-- /ko -->
                         <table class="table">
                             <tbody>
