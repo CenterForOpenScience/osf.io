@@ -21,102 +21,57 @@ var ViewModel = function(data) {
     self.selectedInstitution = ko.observable();
     self.affiliatedInstitutions = ko.observable(window.contextVars.node.institutions);
 
+    //Has child nodes
     self.hasChildren = ko.observable(false);
+
+    //user chooses to delete all nodes
+    self.modifyChildren = ko.observable(false);
     self.title = 'Add Institution';
     self.nodesOriginal = {};
     self.isAddInstitution = ko.observable(false);
-    //state of current nodes
-    //nodesState is passed to nodesSelectTreebeard which can update it and key off needed action.
-    // self.nodesState.subscribe(function (newValue) {
-    //     //The subscribe causes treebeard changes to change which nodes will be affected
-    //     var childrenToChange = [];
-    //     for (var key in newValue) {
-    //         newValue[key].changed = newValue[key].checked !== self.nodesOriginal[key].checked;
-    //         if (newValue[key].changed && key !== self.nodeId) {
-    //             childrenToChange.push(key);
-    //         }
-    //     }
-    //     self.childrenToChange(childrenToChange);
-    //     m.redraw(true);
-    // });
-
-    self.setDialog = ko.computed( function() {
-        return true;
-    });
 
 
-    // self.instModalButtons = ko.computed(function() {
-    //     var buttons = {
-    //         confirm: {
-    //             label: 'Add email',
-    //             className: 'btn-success',
-    //             callback: function () {
-    //                 $osf.putJSON(
-    //                     confirmedEmailURL,
-    //                     email
-    //                 ).done(function () {
-    //                     $osf.growl('Success', confirmMessage, 'success', 3000);
-    //                     confirmEmails(emailsToAdd.slice(1));
-    //                 }).fail(function (xhr, textStatus, error) {
-    //                     Raven.captureMessage('Could not add email', {
-    //                         url: confirmedEmailURL,
-    //                         textStatus: textStatus,
-    //                         error: error
-    //                     });
-    //                     $osf.growl('Error',
-    //                         confirmFailMessage,
-    //                         'danger'
-    //                     );
-    //                 });
-    //             }
-    //         }
-    //     };
+    self.modifyChildrenDialog = function(item) {
 
-            // cancel: {
-            //     label: 'Do not add email',
-            //     className: 'btn-default',
-            //     callback: function () {
-            //         $.ajax({
-            //             type: 'delete',
-            //             url: confirmedEmailURL,
-            //             contentType: 'application/json',
-            //             dataType: 'json',
-            //             data: JSON.stringify(email)
-            //         }).done(function () {
-            //             $osf.growl('Warning', nopeMessage, 'warning', 8000);
-            //             confirmEmails(emailsToAdd.slice(1));
-            //         }).fail(function (xhr, textStatus, error) {
-            //             Raven.captureMessage('Could not remove email', {
-            //                 url: confirmedEmailURL,
-            //                 textStatus: textStatus,
-            //                 error: error
-            //             });
-            //             $osf.growl('Error',
-            //                 cancelFailMessage,
-            //                 'danger'
-            //             );
-            //         });
-            //     }
-            // }
-    //     if (self.haschildren()) {
-    //
-    //     }
-    // });
+        var message = self.isAddInstitution() ?
+                'Add '+ item.name + ' to ' + window.contextVars.node.title + ' or to ' +
+                item.name + ' and all its components?<br><br>' :
+                'Remove '+ item.name  + ' from ' + window.contextVars.node.title + ' or to ' +
+                item.name + ' and all its components?<br><br>' ;
 
-
-    var manageInstModal = function () {
-        // bootbox.dialog({
-        //     title: self.title,
-        //     message: requestMessage,
-        //     onEscape: function () {
-        //
-        //     },
-        //     backdrop: true,
-        //     closeButton: true,
-        //     buttons: self.buttons()
-        // });
+        bootbox.dialog({
+            title: self.isAddInstitution() ? 'Add ' + item.name: 'Remove ' + item.name,
+            message: message,
+            onEscape: function () {
+            },
+            backdrop: true,
+            closeButton: true,
+            buttons: {
+                cancel: {
+                    label: 'Cancel',
+                    className: 'btn-default',
+                    callback: function () {
+                    }
+                },
+                modifyOne: {
+                    label: self.isAddInstitution() ? 'Add one' : 'Remove one',
+                    className: 'btn-primary',
+                    callback: function () {
+                        self.modifyChildren(false);
+                        self._modifyInst(item);
+                    }
+                },
+                modifyAll: {
+                    label: self.isAddInstitution() ? 'Add all' : 'Remove all',
+                    className: 'btn-success',
+                    callback: function () {
+                        self.modifyChildren(true);
+                        self._modifyInst(item);
+                    }
+                }
+            }
+        });
     };
-
 
     self.pageTitle = ko.computed(function () {
         return self.isAddInstitution() ? 'Add institution' : 'Remove institution';
@@ -140,149 +95,67 @@ var ViewModel = function(data) {
     self.submitInst = function (item) {
         self.isAddInstitution(true);
         if (self.hasChildren()) {
-
+            self.modifyChildrenDialog(item);
         }
         else {
             return self._modifyInst(item);
         }
 
-        var url = data.apiV2Prefix + 'nodes/' + data.node.id + '/relationships/institutions/';
-        var inst = self.selectedInstitution();
-
-        // return $osf.ajaxJSON(
-        //     'POST',
-        //     url,
-        //     {
-        //         'isCors': true,
-        //         'data': {
-        //              'data': [{'type': 'institutions', 'id': item.id}]
-        //         },
-        //         fields: {xhrFields: {withCredentials: true}}
-        //     }
-        // ).done(function (response) {
-        //     var indexes = self.availableInstitutions().map(function(each){return each.id;});
-        //     var index = indexes.indexOf(self.selectedInstitution());
-        //     var added = self.availableInstitutions().splice(index, 1)[0];
-        //     self.availableInstitutions(self.availableInstitutions());
-        //     self.affiliatedInstitutions().push(added);
-        //     self.affiliatedInstitutions(self.affiliatedInstitutions());
-        //     self.showAdd(false);
-        // }).fail(function (xhr, status, error) {
-        //     $osf.growl('Unable to add institution to this node. Please try again. If the problem persists, email <a href="mailto:support@osf.io.">support@osf.io</a>');
-        //     Raven.captureMessage('Unable to add institution to this node', {
-        //         extra: {
-        //             url: url,
-        //             status: status,
-        //             error: error
-        //         }
-        //     });
-        // });
     };
     self.clearInst = function(item) {
         self.isAddInstitution(false);
         bootbox.confirm({
-            title: 'Are you sure you want to remove institutional affiliation from your project?',
-            message: 'You are about to remove affiliation with ' + item.name + ' from this project. ' + item.name + ' branding will not longer appear on this project, and the project will not be discoverable on the ' + item.name + ' landing page.',
-            callback: function (confirmed) {
-                if (confirmed) {
-                    self._modifyInst(item);
-                }
-            },
-            buttons:{
-                confirm:{
-                    label:'Remove affiliation'
-                }
-            }
-        });
-    };
-
-    self._submitInst = function(item) {
-        var url = data.apiV2Prefix + 'nodes/' + data.node.id + '/relationships/institutions/';
-
-        return $osf.ajaxJSON(
-            'POST',
-            url,
-            {
-                'isCors': true,
-                'data': {
-                     'data': [{'type': 'institutions', 'id': item.id}]
+                title: 'Are you sure you want to remove institutional affiliation from your project?',
+                message: 'You are about to remove affiliation with ' + item.name + ' from this project. ' + item.name + ' branding will not longer appear on this project, and the project will not be discoverable on the ' + item.name + ' landing page.',
+                callback: function (confirmed) {
+                    if (confirmed) {
+                        if (self.hasChildren()) {
+                            self.modifyChildrenDialog(item);
+                        }
+                        else {
+                            self._modifyInst(item);
+                        }
+                    }
                 },
-                fields: {xhrFields: {withCredentials: true}}
-            }
-        ).done(function (response) {
-            var indexes = self.availableInstitutions().map(function(each){return each.id;});
-            var index = indexes.indexOf(self.selectedInstitution());
-            var added = self.availableInstitutions().splice(index, 1)[0];
-            self.availableInstitutions(self.availableInstitutions());
-            self.affiliatedInstitutions().push(added);
-            self.affiliatedInstitutions(self.affiliatedInstitutions());
-            self.showAdd(false);
-        }).fail(function (xhr, status, error) {
-            $osf.growl('Unable to add institution to this node. Please try again. If the problem persists, email <a href="mailto:support@osf.io.">support@osf.io</a>');
-            Raven.captureMessage('Unable to add institution to this node', {
-                extra: {
-                    url: url,
-                    status: status,
-                    error: error
+                buttons:{
+                    confirm:{
+                        label:'Remove affiliation'
+                    }
                 }
             });
-        });
-    };
-
-    self._clearInst = function(item) {
-        var url = data.apiV2Prefix + 'nodes/' + data.node.id + '/relationships/institutions/';
-        return $osf.ajaxJSON(
-            'DELETE',
-            url,
-            {
-                isCors: true,
-                data: {
-                     'data': [{'type': 'institutions', 'id': item.id}]
-                },
-                fields: {xhrFields: {withCredentials: true}}
-            }
-        ).done(function (response) {
-            var indexes = self.affiliatedInstitutions().map(function(each){return each.id;});
-            var removed = self.affiliatedInstitutions().splice(indexes.indexOf(item.id), 1)[0];
-            if ($.inArray(removed.id, self.userInstitutionsIds) >= 0){
-                self.availableInstitutions().push(removed);
-                self.availableInstitutions(self.availableInstitutions());
-            }
-            self.affiliatedInstitutions(self.affiliatedInstitutions());
-        }).fail(function (xhr, status, error) {
-            $osf.growl('Unable to remove institution from this node. Please try again. If the problem persists, email <a href="mailto:support@osf.io.">support@osf.io</a>');
-            Raven.captureMessage('Unable to remove institution from this node!', {
-                extra: {
-                    url: url,
-                    status: status,
-                    error: error
-                }
-            });
-        });
     };
 
     self._modifyInst = function(item) {
-        var url = data.apiV2Prefix + 'nodes/' + data.node.id + '/relationships/institutions/';
+        var url = data.apiV2Prefix + 'institutions/' + item.id + '/relationships/nodes/';
         var ajaxJSONType = self.isAddInstitution() ? 'POST': 'DELETE';
+        var nodesToModify = [];
+        if (self.modifyChildren()) {
+            for (var node in self.nodesOriginal) {
+                nodesToModify.push({'type': 'nodes', 'id': self.nodesOriginal[node].id});
+            }
+        }
+        else {
+                nodesToModify.push({'type': 'nodes', 'id': self.nodeParent});
+        }
         return $osf.ajaxJSON(
             ajaxJSONType,
             url,
             {
                 isCors: true,
                 data: {
-                     'data': [{'type': 'institutions', 'id': item.id}]
+                     'data': nodesToModify
                 },
                 fields: {xhrFields: {withCredentials: true}}
             }
-        ).done(function (response) {
+        ).done(function () {
             var indexes = self.affiliatedInstitutions().map(function(each){return each.id;});
             if (self.isAddInstitution()) {
-            var index = indexes.indexOf(self.selectedInstitution());
-            var added = self.availableInstitutions().splice(index, 1)[0];
-            self.availableInstitutions(self.availableInstitutions());
-            self.affiliatedInstitutions().push(added);
-            self.affiliatedInstitutions(self.affiliatedInstitutions());
-            self.showAdd(false);
+                var index = indexes.indexOf(self.selectedInstitution());
+                var added = self.availableInstitutions().splice(index, 1)[0];
+                self.availableInstitutions(self.availableInstitutions());
+                self.affiliatedInstitutions().push(added);
+                self.affiliatedInstitutions(self.affiliatedInstitutions());
+                self.showAdd(false);
             }
             else {
                 var removed = self.affiliatedInstitutions().splice(indexes.indexOf(item.id), 1)[0];
@@ -319,7 +192,7 @@ ViewModel.prototype.fetchNodeTree = function(treebeardUrl) {
         }).done(function (response) {
             self.nodesOriginal = projectSettingsTreebeardBase.getNodesOriginal(response[0], self.nodesOriginal);
             self.nodeParent = response[0].node.id;
-            self.hasChildren(self.nodesOriginal.length > 1);
+            self.hasChildren(Object.keys(self.nodesOriginal).length > 1);
         }).fail(function (xhr, status, error) {
             $osf.growl('Error', 'Unable to retrieve project settings');
             Raven.captureMessage('Could not GET project settings.', {
