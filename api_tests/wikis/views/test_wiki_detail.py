@@ -8,7 +8,7 @@ from tests.factories import (ProjectFactory, RegistrationFactory,
                              NodeWikiFactory, PrivateLinkFactory)
 
 
-class TestWikiDetailMixin(object):
+class WikiDetailMixin(object):
     def _set_up_public_project_with_wiki_page(self):
         raise NotImplementedError
 
@@ -146,7 +146,7 @@ class TestWikiDetailMixin(object):
         assert_in(expected_url, url)
 
 
-class TestWikiDetailView(ApiWikiTestCase, TestWikiDetailMixin):
+class TestWikiDetailView(ApiWikiTestCase, WikiDetailMixin):
 
     def _set_up_public_project_with_wiki_page(self):
         self.public_project = ProjectFactory(is_public=True, creator=self.user)

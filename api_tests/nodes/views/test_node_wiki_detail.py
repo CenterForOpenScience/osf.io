@@ -1,12 +1,12 @@
 from nose.tools import *  # flake8: noqa
 
 from api.base.settings.defaults import API_BASE
-from api_tests.wikis.views.test_wiki_detail import TestWikiDetailMixin
+from api_tests.wikis.views.test_wiki_detail import WikiDetailMixin
 from tests.base import ApiWikiTestCase
 from tests.factories import ProjectFactory, RegistrationFactory, NodeWikiFactory
 
 
-class TestNodeWikiDetailView(ApiWikiTestCase, TestWikiDetailMixin):
+class TestNodeWikiDetailView(ApiWikiTestCase, WikiDetailMixin):
 
     def _set_up_public_project_with_wiki_page(self):
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
