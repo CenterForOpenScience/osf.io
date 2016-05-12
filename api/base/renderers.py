@@ -41,4 +41,4 @@ class PlainTextRenderer(StaticHTMLRenderer):
     """
 
     media_type = 'text/markdown'
-    format = '.txt'
+    format = 'txt'
