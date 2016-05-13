@@ -71,7 +71,7 @@ class TestMeetingFormView(AdminTestCase):
         res = view.get_initial()
         nt.assert_is_instance(res, dict)
         nt.assert_in('endpoint', res)
-        nt.assert_in('field_submission2_plural', res)
+        nt.assert_in('submission2_plural', res)
 
     def test_form_valid(self):
         view = setup_form_view(self.view, self.request, self.form,
@@ -97,7 +97,7 @@ class TestMeetingCreateFormView(AdminTestCase):
     def test_get_initial(self):
         self.view.get_initial()
         nt.assert_equal(self.view.initial['edit'], False)
-        nt.assert_equal(self.view.initial['field_submission1'],
+        nt.assert_equal(self.view.initial['submission1'],
                         DEFAULT_FIELD_NAMES['submission1'])
 
     def test_form_valid(self):

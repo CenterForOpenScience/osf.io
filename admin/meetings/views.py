@@ -1,4 +1,5 @@
 from __future__ import unicode_literals
+from copy import deepcopy
 
 from django.views.generic import ListView, FormView
 from django.core.urlresolvers import reverse
@@ -83,9 +84,7 @@ class MeetingCreateFormView(OSFAdmin, FormView):
     form_class = MeetingForm
 
     def get_initial(self):
-        default_field_names = DEFAULT_FIELD_NAMES
-        self.initial.update({'field_{}'.format(k): default_field_names[k]
-                             for k in default_field_names.keys()})
+        self.initial.update(DEFAULT_FIELD_NAMES)
         self.initial.setdefault('edit', False)
         return super(MeetingCreateFormView, self).get_initial()
 
@@ -111,13 +110,13 @@ class MeetingCreateFormView(OSFAdmin, FormView):
 
 
 def get_custom_fields(data):
-    """Return two dicts, one with 'field' stripped
-     and the other that didn't have 'field' in the first place.
-    """
-    fields = {'_'.join(k.split('_')[1:]): data[k]
-              for k in data.keys() if 'field' in k}
-    non_fields = {k: data[k] for k in data.keys() if 'field' not in k}
-    return fields, non_fields
+    """Return two dicts, one of field_names and the other regular fields."""
+    data_copy = deepcopy(data)
+    field_names = {}
+    for key, value in data.iteritems():
+        if key in DEFAULT_FIELD_NAMES:
+            field_names[key] = data_copy.pop(key)
+    return field_names, data_copy
 
 
 def get_admin_users(admins):

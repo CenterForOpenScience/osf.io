@@ -70,32 +70,32 @@ class MeetingForm(forms.Form):
         required=False,
         initial=True,
     )
-    field_submission1 = forms.CharField(
+    submission1 = forms.CharField(
         label='Name for Submission 1 (poster)'
     )
-    field_submission2 = forms.CharField(
+    submission2 = forms.CharField(
         label='Name for Submission 2 (talk)'
     )
-    field_submission1_plural = forms.CharField(
+    submission1_plural = forms.CharField(
         label='Plural for submission 1'
     )
-    field_submission2_plural = forms.CharField(
+    submission2_plural = forms.CharField(
         label='Plural for submission 2'
     )
-    field_meeting_title_type = forms.CharField(
+    meeting_title_type = forms.CharField(
         label='Title for the type of meeting'
     )
-    field_add_submission = forms.CharField(
+    add_submission = forms.CharField(
         label='Add submission'
     )
-    field_mail_subject = forms.CharField(
+    mail_subject = forms.CharField(
         label='Mail subject'
     )
-    field_mail_message_body = forms.CharField(
+    mail_message_body = forms.CharField(
         label='Message body for mail',
         widget=forms.TextInput(attrs={'size': '60'}),
     )
-    field_mail_attachment = forms.CharField(
+    mail_attachment = forms.CharField(
         label='Mail attachment message',
         widget=forms.TextInput(attrs={'size': '60'}),
     )
