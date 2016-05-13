@@ -1,8 +1,9 @@
 'use strict';
 
-var keen = require('keen-js');
-var Statistics = require('js/statistics');
+//For keen.ready function
+var keenAnalysis = require('keen-analysis');
+var ProjectUsageStatistics = require('js/statistics');
 
-keen.ready(function(){
-    new Statistics();
+keenAnalysis.ready(function(){
+    new ProjectUsageStatistics();
 });
