@@ -8,6 +8,7 @@ var URI = require('URIjs');
 var bootbox = require('bootbox');
 var iconmap = require('js/iconmap');
 var lodashGet = require('lodash.get');
+var KeenTracker = require('js/keen');
 
 
 // TODO: For some reason, this require is necessary for custom ko validators to work
@@ -857,6 +858,17 @@ var extractContributorNamesFromAPIData = function(contributor){
 var trackClick = function(category, action, label){
     window.ga('send', 'event', category, action, label);
     //in order to make the href redirect work under knockout onclick binding
+
+    var keenData = {
+        'category': category,
+        'action': action,
+        'label': label,
+        'user': window.contextVars.currentUser.id
+    };
+
+    //keenTracker from base-page.js
+    KeenTracker.getKeenInstance().trackCustomEvent('Front End Events', keenData);
+
     return true;
 };
 

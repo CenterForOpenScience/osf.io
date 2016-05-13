@@ -215,7 +215,12 @@ $(function() {
 
         //Don't track PhantomJS visits with KeenIO
         if(!(/PhantomJS/.test(navigator.userAgent))){
-            new KeenTracker(window.contextVars.keenProjectId, window.contextVars.keenWriteKey, params);
+            var keenTracker = KeenTracker.getKeenInstance();
+            keenTracker.setKeenClient({
+                'keenProjectId':window.contextVars.keenProjectId,
+                'keenWriteKey': window.contextVars.keenWriteKey
+            });
+            keenTracker.trackPageView({'node': window.contextVars.node, 'currentUser': window.contextVars.currentUser});
         }
     }
 

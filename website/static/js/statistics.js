@@ -1,6 +1,8 @@
 'use strict';
 
-var keen = require('keen-js');
+var keenAnalysis = require('keen-analysis');
+var keenDataviz = require('keen-dataviz');
+require('keen-dataviz/dist/keen-dataviz.min.css');
 var ko = require('knockout');
 var ctx = window.contextVars;
 var $osf = require('js/osfHelpers');
@@ -8,48 +10,59 @@ var $osf = require('js/osfHelpers');
 var KeenViz = function(){
     var self = this;
 
-    self.keenClient = new keen({
+    self.keenClient = new keenAnalysis({
         projectId: ctx.keenProjectId,
         readKey : ctx.keenReadKey
     });
 
     self.visitsByDay = function() {
-        var visitsQuery = new keen.Query('count_unique', {
-            event_collection: 'pageviews',
-            timeframe: 'this_7_days',
-            interval: 'daily',
-            target_property: 'sessionId'
-        });
-
-        var visitsViz = new keen.Dataviz();
-        var params = {
-            keenDataviz: visitsViz,
-            selector: 'visits',
-            keenQuery: visitsQuery
+        var visitsQuery = {
+            'type':'count_unique',
+            'params' : {
+                event_collection: 'pageviews',
+                timeframe: 'this_7_days',
+                interval: 'daily',
+                target_property: 'sessionId'
+            }
         };
-        self.chart(params);
 
+        var visitsViz = new keenDataviz()
+                .el('#visits')
+                .chartType('line')
+                .chartOptions({
+                    tooltip: {
+                        format: {
+                            name: function(){return 'Visits';}
+                        }
+                    }
+                });
+
+        self.buildChart(visitsViz, visitsQuery);
     };
 
     self.topReferrers = function() {
         self.referrers = ko.observableArray([]);
         self.loadRefs = ko.observable(true);
 
-        var topReferrersQuery = new keen.Query('count_unique', {
-            event_collection: 'pageviews',
-            timeframe: 'this_7_days',
-            target_property: 'user.id',
-            group_by: 'parsedReferrerUrl.domain'
-        });
+        var topReferrersQuery = {
+            'queryType': 'count_unique',
+            'queryParams': {
+                event_collection: 'pageviews',
+                timeframe: 'this_7_days',
+                target_property: 'user.id',
+                group_by: 'parsedReferrerUrl.domain'
+            }
+        };
 
-        var req = self.keenClient.run(topReferrersQuery, function(err, res){
-            if (err){
-                new keen.Dataviz().el(document.getElementById('topReferrers')).error(err.message);
-            } else {
+        var req = self.keenClient
+            .query(topReferrersQuery.queryType, topReferrersQuery.queryParams)
+            .then(function(res) {
                 self.parseTopReferrers(res.result);
                 self.loadRefs(false);
-            }
-        });
+            })
+            .catch(function(err){
+                new keenDataviz.el('#topReferrers').message(err.message);
+            });
 
         $osf.applyBindings(self, '#topReferrers');
     };
@@ -68,36 +81,39 @@ var KeenViz = function(){
     };
 
     self.visitsServerTime = function() {
-        var serverTimeVisitsQuery = new keen.Query('count_unique', {
-            event_collection: 'pageviews',
-            timeframe: 'this_1_days',
-            interval: 'hourly',
-            target_property: 'sessionId'
-        });
-
-        var serverVisitsViz = new keen.Dataviz();
-        serverVisitsViz.chartType('columnchart');
-        var params = {
-            keenDataviz: serverVisitsViz,
-            selector: 'serverTimeVisits',
-            keenQuery: serverTimeVisitsQuery
+        var serverTimeVisitsQuery = {
+            'type': 'count_unique',
+            'params': {
+                event_collection: 'pageviews',
+                timeframe: 'this_7_days',
+                interval: 'hourly',
+                target_property: 'sessionId'
+            }
         };
-        self.chart(params);
+
+        var serverVisitsViz = new keenDataviz()
+                .el('#serverTimeVisits')
+                .chartType('bar')
+                .chartOptions({
+                    tooltip:{
+                        format:{
+                            name: function(){return 'Visits';}
+                        }
+                    }
+                });
+        self.buildChart(serverVisitsViz, serverTimeVisitsQuery);
 
     };
 
-    self.chart = function(params){
-
-        params.keenDataviz.el(document.getElementById(params.selector));
-
-        var req = self.keenClient.run(params.keenQuery, function(err, res){
-            if (err){
-                params.keenDataviz.error(err.message);
-            }
-            else {
-                params.keenDataviz.parseRequest(this).render();
-            }
-        });
+    self.buildChart = function(dataviz, query){
+        self.keenClient
+            .query(query.type, query.params)
+            .then(function(res) {
+                dataviz.title(' ').data(res).render();
+            })
+            .catch(function(err) {
+                dataviz.message(err.message);
+            });
     };
 
     self.init = function () {
@@ -109,13 +125,10 @@ var KeenViz = function(){
 
 };
 
-function Statistics() {
+function ProjectUsageStatistics() {
     var self = this;
     self.KeenViz = new KeenViz();
     self.KeenViz.init();
-    setInterval(function() {
-        self.KeenViz.init();
-    }, 1000*60*15);
 }
 
-module.exports = Statistics;
+module.exports = ProjectUsageStatistics;

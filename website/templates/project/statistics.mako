@@ -18,14 +18,15 @@
     </div>
 
     <div class="row m-lg">
-      <div class="col-sm-12">
-        <div class="panel panel-default">
-            <div class="panel-heading clearfix">
-                <h3 class="panel-title">Visits</h3>
-            </div>
-            <div id="visits" class="panel-body">
-                <div class="text-center">
-                    <div class="logo-spin logo-lg"></div>
+        <div class="col-sm-12">
+            <div class="panel panel-default">
+                <div class="panel-heading clearfix">
+                    <h3 class="panel-title">Visits Over Time</h3>
+                </div>
+                <div id="visits" class="panel-body">
+                    <div class="text-center">
+                        <div class="logo-spin logo-lg"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -89,4 +90,3 @@
     </%def>
 
 %endif
-
