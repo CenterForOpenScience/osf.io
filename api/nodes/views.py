@@ -17,9 +17,7 @@ from api.files.serializers import FileSerializer
 from api.comments.serializers import CommentSerializer, CommentCreateSerializer
 from api.comments.permissions import CanCommentOrPublic
 from api.users.views import UserMixin
-from api.wikis import permissions as wiki_permissions
 from api.wikis.serializers import WikiSerializer
-from api.wikis.views import WikiMixin
 
 from api.nodes.serializers import (
     NodeSerializer,
@@ -2234,77 +2232,3 @@ class NodeWikiList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMi
 
     def get_queryset(self):
         return NodeWikiPage.find(self.get_query_from_request())
-
-
-class NodeWikiDetail(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
-    """Details about a specific wiki. *Read-only*.
-
-    ###Permissions
-
-    Wiki pages on public nodes are given read-only access to everyone. Wiki pages on private nodes are only visible to
-    contributors and administrators on the parent node.
-
-    Note that if an anonymous view_only key is being used, the user relationship will not be exposed.
-
-    ##Attributes
-
-    OSF wiki entities have the "wikis" `type`.
-
-        name                type               description
-        =================================================================================
-        name                string             name of the wiki pag
-        path                string             the path of the wiki page
-        materialized_path   string             the path of the wiki page
-        date_modified       iso8601 timestamp  timestamp when the wiki was last updated
-        content_type        string             MIME-type
-        extra               object
-            version         integer            version number of the wiki
-
-
-    ##Relationships
-
-    ###User
-
-    The user who created the wiki.
-
-    ###Node
-
-    The project that the wiki page belongs to.
-
-    ###Comments
-
-    The comments created on the wiki page.
-
-    ##Links
-
-        self:  the canonical api endpoint of this wiki
-        info: the canonical api endpoint of this wiki
-        download: the link to retrive the contents of the wiki page
-
-    ##Query Params
-
-    *None*.
-
-    #This Request/Response
-
-    """
-
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope,
-        wiki_permissions.ContributorOrPublic
-    )
-
-    required_read_scopes = [CoreScopes.WIKI_BASE_READ]
-    required_write_scopes = [CoreScopes.NULL]
-    serializer_class = WikiSerializer
-
-    view_category = 'nodes'
-    view_name = 'node-wiki-detail'
-
-    def get_object(self):
-        node_id = self.kwargs['node_id']
-        wiki = self.get_wiki()
-        if wiki.node._id != node_id:
-            raise NotFound
-        return wiki

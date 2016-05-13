@@ -8,18 +8,33 @@ from tests.factories import (ProjectFactory, RegistrationFactory,
                              NodeWikiFactory, PrivateLinkFactory)
 
 
-class WikiDetailMixin(object):
+class TestWikiDetailView(ApiWikiTestCase):
+
     def _set_up_public_project_with_wiki_page(self):
-        raise NotImplementedError
+        self.public_project = ProjectFactory(is_public=True, creator=self.user)
+        self.public_wiki = self._add_project_wiki_page(self.public_project, self.user)
+        self.public_url = '/{}wikis/{}/'.format(API_BASE, self.public_wiki._id)
 
     def _set_up_private_project_with_wiki_page(self):
-        raise NotImplementedError
+        self.private_project = ProjectFactory(creator=self.user)
+        self.private_wiki = self._add_project_wiki_page(self.private_project, self.user)
+        self.private_url = '/{}wikis/{}/'.format(API_BASE, self.private_wiki._id)
 
     def _set_up_public_registration_with_wiki_page(self):
-        raise NotImplementedError
+        self._set_up_public_project_with_wiki_page()
+        self.public_registration = RegistrationFactory(project=self.public_project, user=self.user, is_public=True)
+        self.public_registration_wiki_id = self.public_registration.wiki_pages_versions['home'][0]
+        self.public_registration.wiki_pages_current = {'home': self.public_registration_wiki_id}
+        self.public_registration.save()
+        self.public_registration_url = '/{}wikis/{}/'.format(API_BASE, self.public_registration_wiki_id)
 
     def _set_up_private_registration_with_wiki_page(self):
-        raise NotImplementedError
+        self._set_up_private_project_with_wiki_page()
+        self.private_registration = RegistrationFactory(project=self.private_project, user=self.user)
+        self.private_registration_wiki_id = self.private_registration.wiki_pages_versions['home'][0]
+        self.private_registration.wiki_pages_current = {'home': self.private_registration_wiki_id}
+        self.private_registration.save()
+        self.private_registration_url = '/{}wikis/{}/'.format(API_BASE, self.private_registration_wiki_id)
 
     def test_public_node_logged_out_user_can_view_wiki(self):
         self._set_up_public_project_with_wiki_page()
@@ -144,35 +159,6 @@ class WikiDetailMixin(object):
         expected_url = '/{}wikis/{}/content/'.format(API_BASE, self.public_wiki._id)
         assert_equal(res.status_code, 200)
         assert_in(expected_url, url)
-
-
-class TestWikiDetailView(ApiWikiTestCase, WikiDetailMixin):
-
-    def _set_up_public_project_with_wiki_page(self):
-        self.public_project = ProjectFactory(is_public=True, creator=self.user)
-        self.public_wiki = self._add_project_wiki_page(self.public_project, self.user)
-        self.public_url = '/{}wikis/{}/'.format(API_BASE, self.public_wiki._id)
-
-    def _set_up_private_project_with_wiki_page(self):
-        self.private_project = ProjectFactory(creator=self.user)
-        self.private_wiki = self._add_project_wiki_page(self.private_project, self.user)
-        self.private_url = '/{}wikis/{}/'.format(API_BASE, self.private_wiki._id)
-
-    def _set_up_public_registration_with_wiki_page(self):
-        self._set_up_public_project_with_wiki_page()
-        self.public_registration = RegistrationFactory(project=self.public_project, user=self.user, is_public=True)
-        self.public_registration_wiki_id = self.public_registration.wiki_pages_versions['home'][0]
-        self.public_registration.wiki_pages_current = {'home': self.public_registration_wiki_id}
-        self.public_registration.save()
-        self.public_registration_url = '/{}wikis/{}/'.format(API_BASE, self.public_registration_wiki_id)
-
-    def _set_up_private_registration_with_wiki_page(self):
-        self._set_up_private_project_with_wiki_page()
-        self.private_registration = RegistrationFactory(project=self.private_project, user=self.user)
-        self.private_registration_wiki_id = self.private_registration.wiki_pages_versions['home'][0]
-        self.private_registration.wiki_pages_current = {'home': self.private_registration_wiki_id}
-        self.private_registration.save()
-        self.private_registration_url = '/{}wikis/{}/'.format(API_BASE, self.private_registration_wiki_id)
 
     def test_wiki_invalid_id_not_found(self):
         url = '/{}wikis/{}/'.format(API_BASE, 'abcde')
