@@ -29,7 +29,6 @@ from framework.auth import get_user, User, Auth
 from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject, Guid
 from framework.auth.utils import privacy_info_handle
-from framework.analytics import tasks as piwik_tasks
 from framework.mongo.utils import to_mongo_key, unique_on
 from framework.analytics import (
     get_basic_counters, increment_user_activity_counters
@@ -68,6 +67,8 @@ from website.project.sanctions import (
     RegistrationApproval,
     Retraction,
 )
+
+from keen import scoped_keys
 
 logger = logging.getLogger(__name__)
 
@@ -877,7 +878,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     # The node (if any) used as a template for this node's creation
     template_node = fields.ForeignField('node', index=True)
 
-    piwik_site_id = fields.StringField()
+    keenio_read_key = fields.StringField()
 
     # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
     # {<User.id>: [<Node._id>, <Node2._id>, ...] }
@@ -1410,6 +1411,25 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if save:
             self.save()
 
+    def create_keenio_readkey(self):
+        api_readkey = scoped_keys.encrypt(settings.KEEN_MASTER_KEY, options={
+            "filters": [{
+                "property_name": "node.id",
+                "operator": "eq",
+                "property_value": str(self._id)
+            }],
+            "allowed_operations": ["read"]
+        })
+        self.keenio_read_key = api_readkey
+        self.save()
+        return self.keenio_read_key
+
+    def get_or_create_keenio_readkey(self):
+        if self.is_public:
+            return self.keenio_read_key if self.keenio_read_key else self.create_keenio_readkey()
+        else:
+            return None
+
     def update(self, fields, auth=None, save=True):
         """Update the node with the given fields.
 
@@ -1494,7 +1514,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         return updated
 
     def save(self, *args, **kwargs):
-        update_piwik = kwargs.pop('update_piwik', True)
         self.adjust_permissions()
 
         first_save = not self._is_loaded
@@ -1569,10 +1588,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             if children:
                 Node.bulk_update_search(children)
 
-        # This method checks what has changed.
-        if settings.PIWIK_HOST and update_piwik:
-            piwik_tasks.update_node(self._id, saved_fields)
-
         # Return expected value for StoredObject::save
         return saved_fields
 
@@ -1624,7 +1639,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         new.add_contributor(contributor=auth.user, permissions=CREATOR_PERMISSIONS, log=False, save=False)
         new.is_fork = False
         new.is_registration = False
-        new.piwik_site_id = None
         new.node_license = self.license.copy() if self.license else None
 
         # If that title hasn't been changed, apply the default prefix (once)
@@ -2149,7 +2163,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         forked.forked_date = when
         forked.forked_from = original
         forked.creator = user
-        forked.piwik_site_id = None
         forked.node_license = original.license.copy() if original.license else None
         forked.wiki_private_uuids = {}
 
@@ -2249,7 +2262,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         registered.forked_from = self.forked_from
         registered.creator = self.creator
         registered.tags = self.tags
-        registered.piwik_site_id = None
         registered.primary_institution = self.primary_institution
         registered._affiliated_institutions = self._affiliated_institutions
         registered.alternative_citations = self.alternative_citations
@@ -3097,11 +3109,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                     self.request_embargo_termination(auth=auth)
                     return False
             self.is_public = True
+            self.keenio_read_key = self.create_keenio_readkey()
         elif permissions == 'private' and self.is_public:
             if self.is_registration and not self.is_pending_embargo:
                 raise NodeStateError("Public registrations must be withdrawn, not made private.")
             else:
                 self.is_public = False
+                self.keenio_read_key = ''
         else:
             return False
 

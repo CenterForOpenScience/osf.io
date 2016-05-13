@@ -64,7 +64,6 @@ from tests.factories import (
     AuthUserFactory, BookmarkCollectionFactory, CollectionFactory,
     NodeLicenseRecordFactory, InstitutionFactory, CommentFactory
 )
-from tests.test_features import requires_piwik
 from tests.utils import mock_archive
 
 GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory
@@ -3173,10 +3172,12 @@ class TestProject(OsfTestCase):
         self.project.save()
         assert_true(self.project.is_public)
         assert_equal(self.project.logs[-1].action, 'made_public')
+        assert_not_equal(self.project.keenio_read_key, '')
         self.project.set_privacy('private', auth=self.auth)
         self.project.save()
         assert_false(self.project.is_public)
         assert_equal(self.project.logs[-1].action, NodeLog.MADE_PRIVATE)
+        assert_equals(self.project.keenio_read_key, '')
 
     @mock.patch('website.mails.queue_mail')
     def test_set_privacy_sends_mail_default(self, mock_queue):
@@ -3627,14 +3628,6 @@ class TestTemplateNode(OsfTestCase):
                     old_node.title,
                     new_node.title,
                 )
-
-    @requires_piwik
-    def test_template_piwik_site_id_not_copied(self):
-        new = self.project.use_as_template(
-            auth=self.auth
-        )
-        assert_not_equal(new.piwik_site_id, self.project.piwik_site_id)
-        assert_true(new.piwik_site_id is not None)
 
     def test_template_wiki_pages_not_copied(self):
         self.project.update_node_wiki(

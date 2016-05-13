@@ -313,9 +313,6 @@ class TestUserMerging(base.OsfTestCase):
             'shared_lt': True,
         }
 
-        self.user.piwik_token = 'abc'
-        other_user.piwik_token = 'def'
-
         self.user.security_messages = {
             'user': today,
             'shared': today,
@@ -353,7 +350,6 @@ class TestUserMerging(base.OsfTestCase):
             'merged_by',
             'middle_names',
             'password',
-            'piwik_token',
             'recently_added',
             'schools',
             'social',

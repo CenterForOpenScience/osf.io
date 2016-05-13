@@ -19,7 +19,6 @@ from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
                              NodeFactory, NodeWikiFactory, RegistrationFactory,
                              UnregUserFactory, UnconfirmedUserFactory,
                              PrivateLinkFactory)
-from tests.test_features import requires_piwik
 from website import settings, language
 from website.security import random_string
 from website.project.metadata.schemas import OSF_META_SCHEMAS
@@ -585,62 +584,6 @@ class TestShortUrls(OsfTestCase):
         )
 
 
-@requires_piwik
-class TestPiwik(OsfTestCase):
-
-    def setUp(self):
-        super(TestPiwik, self).setUp()
-        self.users = [
-            AuthUserFactory()
-            for _ in range(3)
-        ]
-        self.consolidate_auth = Auth(user=self.users[0])
-        self.project = ProjectFactory(creator=self.users[0], is_public=True)
-        self.project.add_contributor(contributor=self.users[1])
-        self.project.save()
-
-    def test_contains_iframe_and_src(self):
-        res = self.app.get(
-            '/{0}/statistics/'.format(self.project._primary_key),
-            auth=self.users[0].auth
-        ).maybe_follow()
-        assert_in('iframe', res)
-        assert_in('src', res)
-        assert_in(settings.PIWIK_HOST, res)
-
-    def test_anonymous_no_token(self):
-        res = self.app.get(
-            '/{0}/statistics/'.format(self.project._primary_key),
-            auth=self.users[2].auth
-        ).maybe_follow()
-        assert_in('token_auth=anonymous', res)
-
-    def test_contributor_token(self):
-        res = self.app.get(
-            '/{0}/statistics/'.format(self.project._primary_key),
-            auth=self.users[1].auth
-        ).maybe_follow()
-        assert_in(self.users[1].piwik_token, res)
-
-    def test_no_user_token(self):
-        res = self.app.get(
-            '/{0}/statistics/'.format(self.project._primary_key)
-        ).maybe_follow()
-        assert_in('token_auth=anonymous', res)
-
-    def test_private_alert(self):
-        self.project.set_privacy('private', auth=self.consolidate_auth)
-        self.project.save()
-        res = self.app.get(
-            '/{0}/statistics/'.format(self.project._primary_key),
-            auth=self.users[0].auth
-        ).maybe_follow().normal_body
-        assert_in(
-            'Usage statistics are collected only for public resources.',
-            res
-        )
-
-
 class TestClaiming(OsfTestCase):
 
     def setUp(self):
@@ -866,7 +809,35 @@ class TestExplorePublicActivity(OsfTestCase):
         self.registration = RegistrationFactory(project=self.project)
         self.private_project = ProjectFactory(title="Test private project")
 
-    def test_newest_public_project_and_registrations_show_in_explore_activity(self):
+    @mock.patch('website.discovery.views.KeenClient')
+    def test_newest_public_project_and_registrations_show_in_explore_activity(self, mock_client):
+
+        mock_client.count.return_value = {
+            'result': [
+                {
+                    'result': 5,
+                    'node.id': self.project._id
+                },
+                {
+                    'result': 5,
+                    'node.id': self.registration._id
+                }
+            ]
+        }
+
+        mock_client.count_unique.return_value = {
+            'result': [
+                {
+                    'result': 2,
+                    'node.id': self.project._id
+                },
+                {
+                    'result': 2,
+                    'node.id': self.registration._id
+                }
+            ]
+        }
+
         url = self.project.web_url_for('activity')
         res = self.app.get(url)
 

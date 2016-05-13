@@ -382,9 +382,6 @@ class User(GuidStoredObject, AddonModelMixin):
     #     'twitter': <twitter id>,
     # }
 
-    # hashed password used to authenticate to Piwik
-    piwik_token = fields.StringField()
-
     # date the user last sent a request
     date_last_login = fields.DateTimeField()
 
@@ -1104,14 +1101,11 @@ class User(GuidStoredObject, AddonModelMixin):
     def save(self, *args, **kwargs):
         # TODO: Update mailchimp subscription on username change
         # Avoid circular import
-        from framework.analytics import tasks as piwik_tasks
         self.username = self.username.lower().strip() if self.username else None
         ret = super(User, self).save(*args, **kwargs)
         if self.SEARCH_UPDATE_FIELDS.intersection(ret) and self.is_confirmed:
             self.update_search()
             self.update_search_nodes_contributors()
-        if settings.PIWIK_HOST and not self.piwik_token:
-            piwik_tasks.update_user(self._id)
         return ret
 
     def update_search(self):

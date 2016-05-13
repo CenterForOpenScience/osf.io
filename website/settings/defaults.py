@@ -217,15 +217,10 @@ SYSTEM_ADDED_ADDONS = {
     'node': [],
 }
 
-# Piwik
-
-# TODO: Override in local.py in production
-PIWIK_HOST = None
-PIWIK_ADMIN_TOKEN = None
-PIWIK_SITE_ID = None
-
 KEEN_PROJECT_ID = None
+KEEN_MASTER_KEY = None
 KEEN_WRITE_KEY = None
+KEEN_READ_KEY = None
 
 SENTRY_DSN = None
 SENTRY_DSN_JS = None
@@ -308,7 +303,6 @@ CELERY_IMPORTS = (
     'framework.celery_tasks',
     'framework.celery_tasks.signals',
     'framework.email.tasks',
-    'framework.analytics.tasks',
     'website.mailchimp_utils',
     'website.notifications.tasks',
     'website.archiver.tasks',
