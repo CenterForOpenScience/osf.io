@@ -18,7 +18,7 @@ from admin.common_auth.logs import (
 )
 from admin.pre_reg import serializers
 from admin.pre_reg.forms import DraftRegistrationForm
-from admin.pre_reg.utils import sort_drafts, SORT_BY, VIEW_STATUS
+from admin.pre_reg.utils import sort_drafts, SORT_BY
 from framework.exceptions import PermissionsError
 from website.exceptions import NodeStateError
 from website.files.models import FileNode
@@ -66,7 +66,6 @@ class DraftListView(PreregAdmin, ListView):
             'p': self.get_paginate_by(query_set),
             'SORT_BY': SORT_BY,
             'order': self.get_ordering(),
-            'VIEW_STATUS': VIEW_STATUS,
             'status': self.request.GET.get('status', 'all'),
         }
 

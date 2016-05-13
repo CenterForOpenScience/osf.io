@@ -10,13 +10,6 @@ SORT_BY = {
     'n_state': '-state',
 }
 
-VIEW_STATUS = {
-    'all': 'all',
-    'pending': 'pending',
-    'approved': 'approved',
-    'rejected': 'rejected',
-}
-
 
 def sort_drafts(query_set, order_by):
     if order_by == SORT_BY['date']:
