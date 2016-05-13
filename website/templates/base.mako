@@ -182,6 +182,7 @@
                 registerUrl: ${ api_url_for('register_user') | sjson, n },
                 currentUser: {
                     id: ${ user_id | sjson, n },
+                    hash_id: ${ hash_user_id | sjson, n},
                     locale: ${ user_locale | sjson, n },
                     timezone: ${ user_timezone | sjson, n }
                 },

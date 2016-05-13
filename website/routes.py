@@ -43,6 +43,8 @@ from website.conferences import views as conference_views
 from website.institutions import views as institution_views
 from website.notifications import views as notification_views
 
+from hashlib import sha256
+
 def get_globals():
     """Context variables that are available for every template rendered by
     OSFWebRenderer.
@@ -61,6 +63,7 @@ def get_globals():
         'user_name': user.username if user else '',
         'user_full_name': user.fullname if user else '',
         'user_id': user._primary_key if user else '',
+        'hash_user_id': sha256(user._primary_key + settings.ANALYTICS_SALT).hexdigest() if user else '',
         'user_locale': user.locale if user and user.locale else '',
         'user_timezone': user.timezone if user and user.timezone else '',
         'user_url': user.url if user else '',
