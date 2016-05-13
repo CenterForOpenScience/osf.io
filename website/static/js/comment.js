@@ -274,10 +274,17 @@ var CommentModel = function(data, $parent, $root) {
     self.canEdit = ko.observable(data.attributes.can_edit);
     self.hasChildren = ko.observable(data.attributes.has_children);
     self.hasReport = ko.observable(data.attributes.has_report);
-    self.isDeletedAbuse = ko.observable(self.isDeleted() && self.isAbuse());
-    self.isDeletedNotAbuse = ko.observable(self.isDeleted() && !self.isAbuse());
-    self.isAbuseNotDeleted = ko.observable(!self.isDeleted() && self.isAbuse());
     self.isHam = ko.observable(data.attributes.is_ham);
+
+    self.isDeletedAbuse = ko.pureComputed(function() {
+        return self.isDeleted() && self.isAbuse();
+    });
+    self.isDeletedNotAbuse = ko.pureComputed(function() {
+        return self.isDeleted() && !self.isAbuse();
+    });
+    self.isAbuseNotDeleted = ko.pureComputed(function() {
+        return !self.isDeleted() && self.isAbuse();
+    });
 
     if (window.contextVars.node.anonymous) {
         self.author = {
