@@ -50,6 +50,16 @@ FILE_GONE_ERROR_MESSAGE = u'''
 This link to the file "{file_name}" is no longer valid.
 </div>'''
 
+FILE_SUSPENDED_ERROR_MESSAGE = u'''
+<style>
+.file-download{{display: none;}}
+.file-share{{display: none;}}
+.file-delete{{display: none;}}
+</style>
+<div class="alert alert-info" role="alert">
+Access to this file has been suspended.
+</div>'''
+
 WATERBUTLER_JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
 
 
@@ -480,6 +490,9 @@ def addon_deleted_file(auth, node, **kwargs):
 
     ret = serialize_node(node, auth, primary=True)
     ret.update(rubeus.collect_addon_assets(node))
+
+    error_template = FILE_SUSPENDED_ERROR_MESSAGE if trashed.suspended else FILE_GONE_ERROR_MESSAGE
+    error = error_template.format(file_name=trashed.name)
     ret.update({
         'urls': {
             'render': None,
@@ -495,7 +508,7 @@ def addon_deleted_file(auth, node, **kwargs):
         'file_path': trashed.path,
         'provider': trashed.provider,
         'materialized_path': trashed.materialized_path,
-        'error': FILE_GONE_ERROR_MESSAGE.format(file_name=trashed.name),
+        'error': error,
         'private': getattr(node.get_addon(trashed.provider), 'is_private', False),
 
         'file_id': trashed._id,
