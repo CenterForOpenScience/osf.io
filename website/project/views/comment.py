@@ -145,11 +145,11 @@ def is_reply(target):
 
 def _update_comments_timestamp(auth, node, page=Comment.OVERVIEW, root_id=None):
     if node.is_contributor(auth.user):
-        enqueue_postcommit_task((ban_url, (node, )))
+        enqueue_postcommit_task(ban_url, [node, ], {})
         if root_id is not None:
             guid_obj = Guid.load(root_id)
             if guid_obj is not None:
-                enqueue_postcommit_task((ban_url, (guid_obj.referent, )))
+                enqueue_postcommit_task(ban_url, [guid_obj.referent, ], {})
 
         # update node timestamp
         if page == Comment.OVERVIEW:

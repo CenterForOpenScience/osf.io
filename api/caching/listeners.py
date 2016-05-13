@@ -5,4 +5,4 @@ from modularodm import signals
 @signals.save.connect
 def ban_object_from_cache(sender, instance, fields_changed, cached_data):
     if hasattr(instance, 'absolute_api_v2_url'):
-        enqueue_postcommit_task((ban_url, (instance,)))
+        enqueue_postcommit_task(ban_url, [instance, ], {})
