@@ -25,13 +25,6 @@ def serialize_draft_registration(draft, json_safe=True):
 
     embargo = get_embargo(draft, json_safe)
 
-    if draft.is_approved:
-        status = get_approval_status(draft)
-    elif draft.is_rejected:
-        status = 'Rejected'
-    else:
-        status = 'Pending approval'
-
     return {
         'pk': draft._id,
         'initiator': serialize_user(draft.initiator),
@@ -51,7 +44,7 @@ def serialize_draft_registration(draft, json_safe=True):
         'title': draft.registration_metadata['q1']['value'],
         'embargo': embargo,
         'registered_node': node_url,
-        'status': status,
+        'status': get_approval_status(draft),
         'logs': map(serialize_draft_logs, draft.status_logs),
     }
 
@@ -80,11 +73,16 @@ def get_embargo(draft, json_safe):
 
 
 def get_approval_status(draft):
-    if draft.registered_node is not None:
-        if draft.registered_node.is_deleted:
-            return 'Approved but canceled'
-        if draft.registered_node.retraction is None:
-            return 'Approved and registered'
-        else:
-            return 'Approved but withdrawn'
-    return 'Approved but not registered'
+    if draft.is_approved:
+        if draft.registered_node is not None:
+            if draft.registered_node.is_deleted:
+                return 'Approved but canceled'
+            if draft.registered_node.retraction is None:
+                return 'Approved and registered'
+            else:
+                return 'Approved but withdrawn'
+        return 'Approved but not registered'
+    elif draft.is_rejected:
+        return 'Rejected'
+    else:
+        return 'Pending approval'
