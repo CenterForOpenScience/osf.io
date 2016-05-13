@@ -556,12 +556,6 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     if version is None:
         if file_node.get_guid():
-            # If this file has been successfully view before but no longer exists
-
-            # Move file to trashed file node
-            if not TrashedFileNode.load(file_node._id):
-                file_node.delete()
-
             # Show a nice error message
             return addon_deleted_file(file_node=file_node, **kwargs)
 
