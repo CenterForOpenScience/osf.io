@@ -108,6 +108,7 @@ class TrashedFileNode(StoredObject, Commentable):
         data = self.to_storage()
         data.pop('deleted_on')
         data.pop('deleted_by')
+        data.pop('suspended')
         if parent:
             data['parent'] = parent._id
         elif data['parent']:
