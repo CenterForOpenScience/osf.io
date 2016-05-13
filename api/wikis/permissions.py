@@ -14,3 +14,12 @@ class ContributorOrPublic(permissions.BasePermission):
             return obj.node.is_public or obj.node.can_view(auth)
         else:
             return obj.node.can_edit(auth)
+
+
+class ExcludeWithdrawals(permissions.BasePermission):
+
+    def has_object_permission(self, request, view, obj):
+        node = obj.node
+        if node and node.is_retracted:
+            return False
+        return True

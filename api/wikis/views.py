@@ -6,9 +6,9 @@ from api.base import permissions as base_permissions
 from api.base.exceptions import Gone
 from api.base.views import JSONAPIBaseView
 from api.base.renderers import PlainTextRenderer
-
-from api.wikis.permissions import ContributorOrPublic
+from api.wikis.permissions import ContributorOrPublic, ExcludeWithdrawals
 from api.wikis.serializers import WikiSerializer, WikiDetailSerializer
+
 from framework.auth.oauth_scopes import CoreScopes
 from website.addons.wiki.model import NodeWikiPage
 
@@ -95,7 +95,8 @@ class WikiDetail(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        ContributorOrPublic
+        ContributorOrPublic,
+        ExcludeWithdrawals
     )
 
     required_read_scopes = [CoreScopes.WIKI_BASE_READ]
@@ -116,7 +117,8 @@ class WikiContent(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        ContributorOrPublic
+        ContributorOrPublic,
+        ExcludeWithdrawals
     )
 
     required_read_scopes = [CoreScopes.WIKI_BASE_READ]

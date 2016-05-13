@@ -86,6 +86,17 @@ class TestNodeWikiList(ApiWikiTestCase):
         wiki_ids = [wiki['id'] for wiki in res.json['data']]
         assert_in(self.registration_wiki_id, wiki_ids)
 
+    def test_wikis_not_returned_for_withdrawn_registration(self):
+        self._set_up_registration_with_wiki_page()
+        self.registration.is_public = True
+        withdrawal = self.registration.retract_registration(user=self.user, save=True)
+        token = withdrawal.approval_state.values()[0]['approval_token']
+        withdrawal.approve_retraction(self.user, token)
+        withdrawal.save()
+        res = self.app.get(self.registration_url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+
 
 class TestFilterNodeWikiList(ApiTestCase):
 

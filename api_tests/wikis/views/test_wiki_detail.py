@@ -110,6 +110,16 @@ class TestWikiDetailView(ApiWikiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['id'], self.public_registration_wiki_id)
 
+    def test_user_cannot_view_withdrawn_registration_wikis(self):
+        self._set_up_public_registration_with_wiki_page()
+        withdrawal = self.public_registration.retract_registration(user=self.user, save=True)
+        token = withdrawal.approval_state.values()[0]['approval_token']
+        withdrawal.approve_retraction(self.user, token)
+        withdrawal.save()
+        res = self.app.get(self.public_registration_url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+
     def test_private_registration_logged_out_user_cannot_view_wiki(self):
         self._set_up_private_registration_with_wiki_page()
         res = self.app.get(self.private_registration_url, expect_errors=True)

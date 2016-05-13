@@ -3,7 +3,7 @@ from nose.tools import *  # flake8: noqa
 from api.base.settings.defaults import API_BASE
 
 from tests.base import ApiWikiTestCase
-from tests.factories import ProjectFactory
+from tests.factories import ProjectFactory, RegistrationFactory
 
 
 class TestWikiContentView(ApiWikiTestCase):
@@ -17,6 +17,14 @@ class TestWikiContentView(ApiWikiTestCase):
         self.private_project = ProjectFactory(creator=self.user)
         self.private_wiki = self._add_project_wiki_page(self.private_project, self.user)
         self.private_url = '/{}wikis/{}/content/'.format(API_BASE, self.private_wiki._id)
+
+    def _set_up_public_registration_with_wiki_page(self):
+        self._set_up_public_project_with_wiki_page()
+        self.public_registration = RegistrationFactory(project=self.public_project, user=self.user, is_public=True)
+        self.public_registration_wiki_id = self.public_registration.wiki_pages_versions['home'][0]
+        self.public_registration.wiki_pages_current = {'home': self.public_registration_wiki_id}
+        self.public_registration.save()
+        self.public_registration_url = '/{}wikis/{}/content/'.format(API_BASE, self.public_registration_wiki_id)
 
     def test_logged_out_user_can_get_public_wiki_content(self):
         self._set_up_public_project_with_wiki_page()
@@ -55,3 +63,12 @@ class TestWikiContentView(ApiWikiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'text/markdown')
         assert_equal(res.body, self.private_wiki.content)
+
+    def test_user_cannot_get_withdrawn_registration_wiki_content(self):
+        self._set_up_public_registration_with_wiki_page()
+        withdrawal = self.public_registration.retract_registration(user=self.user, save=True)
+        token = withdrawal.approval_state.values()[0]['approval_token']
+        withdrawal.approve_retraction(self.user, token)
+        withdrawal.save()
+        res = self.app.get(self.public_registration_url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)

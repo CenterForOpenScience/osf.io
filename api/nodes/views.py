@@ -2212,7 +2212,8 @@ class NodeWikiList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMi
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        ContributorOrPublic
+        ContributorOrPublic,
+        ExcludeWithdrawals
     )
 
     required_read_scopes = [CoreScopes.WIKI_BASE_READ]
