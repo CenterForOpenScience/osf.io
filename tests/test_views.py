@@ -894,6 +894,15 @@ class TestProjectViews(OsfTestCase):
         assert_in('url', res.json)
         assert_equal(res.json['url'], '/dashboard/')
 
+    def test_suspended_project(self):
+        node = NodeFactory(parent=self.project, creator=self.user1)
+        node.remove_node(Auth(self.user1))
+        node.suspended = True
+        node.save()
+        url = node.api_url
+        res = self.app.get(url, auth=Auth(self.user1), expect_errors=True)
+        assert_equal(res.status_code, 451)
+
     def test_private_link_edit_name(self):
         link = PrivateLinkFactory()
         link.nodes.append(self.project)
