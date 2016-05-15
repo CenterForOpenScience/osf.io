@@ -541,7 +541,7 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
         deleted_on=markupsafe.escape(deleted_on),
         provider=markupsafe.escape(provider_full)
     )
-    if deleted_by_guid:
+    if deleted_by:
         format_params['deleted_by_guid'] = markupsafe.escape(deleted_by_guid)
     retError = ERROR_MESSAGES[error_type].format(**format_params)
     try:
