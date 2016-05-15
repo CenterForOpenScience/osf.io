@@ -665,7 +665,7 @@ class TestAddonFileViews(OsfTestCase):
         assert_equals(resp.status_code, 302)
         location = furl.furl(resp.location)
         # Note: version is added but us but all other url params are added as well
-        assert_urls_equal(location.url, file_node.generate_waterbutler_url(action='download', direct=None, revision=1, version=1))
+        assert_urls_equal(location.url, file_node.generate_waterbutler_url(action='download', direct=None, revision=1, version=None))
 
     @mock.patch('website.addons.base.views.addon_view_file')
     def test_action_view_calls_view_file(self, mock_view_file):
@@ -788,7 +788,7 @@ class TestAddonFileViews(OsfTestCase):
         resp = self.app.head('/{}/?revision=1&foo=bar'.format(guid._id), auth=self.user.auth)
         location = furl.furl(resp.location)
         # Note: version is added but us but all other url params are added as well
-        assert_urls_equal(location.url, file_node.generate_waterbutler_url(direct=None, revision=1, version=1, foo='bar'))
+        assert_urls_equal(location.url, file_node.generate_waterbutler_url(direct=None, revision=1, version=None, foo='bar'))
 
     def test_nonexistent_addons_raise(self):
         path = 'cloudfiles'
