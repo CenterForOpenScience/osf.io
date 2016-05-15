@@ -44,6 +44,10 @@ class HTTPError(FrameworkError):
                 'not have occurred and the issue persists, please report it to '
                 '<a href="mailto:support@osf.io">support@osf.io</a>.'),
         },
+        451: {
+            'message_short': 'Unavailable For Legal Reasons',
+            'message_long': ('The requested resource has been suspended.'),
+        },
     }
 
     def __init__(self, code, message=None, redirect_url=None, data=None):

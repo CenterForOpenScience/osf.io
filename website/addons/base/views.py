@@ -83,8 +83,16 @@ The provider ({provider}) may currently be unavailable or "{file_name}" may have
 <p>
 You may wish to verify this through {provider}'s website.
 </p>
-</div>'''}
-
+</div>''',
+'FILE_SUSPENDED': u'''
+<style>
+.file-download{{display: none;}}
+.file-share{{display: none;}}
+.file-delete{{display: none;}}
+</style>
+<div class="alert alert-info" role="alert">
+Access to this file has been suspended.
+'''}
 
 WATERBUTLER_JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
 
@@ -511,9 +519,14 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
     deleted_by, deleted_on = None, None
     if isinstance(file_node, TrashedFileNode):
         deleted_by = file_node.deleted_by
-        deleted_by_guid = file_node.deleted_by._id
+        deleted_by_guid = file_node.deleted_by._id if deleted_by else None
         deleted_on = file_node.deleted_on.strftime("%c") + ' UTC'
-        error_type = 'BLAME_PROVIDER' if file_node.deleted_by is None else 'FILE_GONE'
+        if file_node.suspended:
+            error_type = 'FILE_SUSPENDED'
+        elif file_node.deleted_by is None:
+            error_type = 'BLAME_PROVIDER'
+        else:
+            error_type = 'FILE_GONE'
     else:
         error_type = 'DONT_KNOW'
     file_path = kwargs.get('path', file_node.path)
@@ -522,11 +535,15 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
     provider_full = settings.ADDONS_AVAILABLE_DICT[file_node.provider].full_name
     ret = serialize_node(node, auth, primary=True)
     ret.update(rubeus.collect_addon_assets(node))
-    retError = ERROR_MESSAGES[error_type].format(file_name=markupsafe.escape(file_name),
-                                                 deleted_by=markupsafe.escape(deleted_by),
-                                                 deleted_by_guid=markupsafe.escape(deleted_by_guid),
-                                                 deleted_on=markupsafe.escape(deleted_on),
-                                                 provider=markupsafe.escape(provider_full))
+    format_params = dict(
+        file_name=markupsafe.escape(file_name),
+        deleted_by=markupsafe.escape(deleted_by),
+        deleted_on=markupsafe.escape(deleted_on),
+        provider=markupsafe.escape(provider_full)
+    )
+    if deleted_by_guid:
+        format_params['deleted_by_guid'] = markupsafe.escape(deleted_by_guid)
+    retError = ERROR_MESSAGES[error_type].format(**format_params)
     try:
         file_guid = file_node.get_guid()._id
     except AttributeError:
@@ -608,15 +625,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     )
 
     if version is None:
-        if file_node.get_guid():
-            # Trash file if not already found in trash.
-            file_node = TrashedFileNode.load(file_node._id) or file_node.delete()
-            return addon_deleted_file(file_node=file_node,
-                                      **kwargs)
-
-        return addon_deleted_file(file_node=file_node,
-                                  path=path,
-                                  **kwargs)
+        return addon_deleted_file(file_node=file_node, path=path, **kwargs)
 
     # TODO clean up these urls and unify what is used as a version identifier
     if request.method == 'HEAD':
