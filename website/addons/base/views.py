@@ -491,7 +491,7 @@ def addon_deleted_file(auth, node, **kwargs):
     ret = serialize_node(node, auth, primary=True)
     ret.update(rubeus.collect_addon_assets(node))
 
-    error_template = FILE_SUSPENDED_ERROR_MESSAGE if trashed.suspended else FILE_GONE_ERROR_MESSAGE
+    error_template = FILE_SUSPENDED_ERROR_MESSAGE if getattr(trashed, 'suspended', False) else FILE_GONE_ERROR_MESSAGE
     error = error_template.format(file_name=trashed.name)
     ret.update({
         'urls': {

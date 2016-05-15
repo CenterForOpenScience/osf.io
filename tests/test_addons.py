@@ -533,9 +533,15 @@ def assert_urls_equal(url1, url2):
 class TestFileNode(models.FileNode):
     provider = 'test_addons'
 
-    def touch(self, bearer, revision=None, **kwargs):
-        if revision:
-            return self.versions[0]
+    def touch(self, bearer, version=None, revision=None, **kwargs):
+        if version:
+            if self.versions:
+                try:
+                    return self.versions[int(version) - 1]
+                except (IndexError, ValueError):
+                    return None
+            else:
+                return None
         return models.FileVersion()
 
 
@@ -588,12 +594,13 @@ class TestAddonFileViews(OsfTestCase):
     def get_test_file(self):
         version = models.FileVersion(identifier='1')
         version.save()
+        versions = [version]
         ret = TestFile(
             name='Test',
             node=self.project,
             path='/test/Test',
             materialized_path='/test/Test',
-            versions=[version]
+            versions=versions
         )
         ret.save()
         return ret
@@ -712,6 +719,27 @@ class TestAddonFileViews(OsfTestCase):
         )
 
         assert_true(file_node.get_guid())
+
+    def test_view_file_does_not_delete_file_when_requesting_invalid_version(self):
+        with mock.patch('website.addons.github.model.GitHubNodeSettings.is_private',
+                        new_callable=mock.PropertyMock) as mock_is_private:
+            mock_is_private.return_value = False
+
+            file_node = self.get_test_file()
+            assert_is(file_node.get_guid(), None)
+
+            url = self.project.web_url_for(
+                'addon_view_or_download_file',
+                path=file_node.path.strip('/'),
+                provider='github',
+            )
+            # First view generated GUID
+            self.app.get(url, auth=self.user.auth)
+
+            self.app.get(url + '?version=invalid', auth=self.user.auth, expect_errors=True)
+
+            assert_is_not_none(StoredFileNode.load(file_node._id))
+            assert_is_none(TrashedFileNode.load(file_node._id))
 
     def test_unauthorized_addons_raise(self):
         path = 'cloudfiles'
