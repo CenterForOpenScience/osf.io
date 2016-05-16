@@ -8,6 +8,16 @@ var zxcvbn = require('zxcvbn');
 var $osf = require('./osfHelpers');
 
 
+ko.validation.rules.complexity = {
+    validator: function (val, minimumComplexity) {
+        return zxcvbn(val).score >= minimumComplexity;
+    },
+    message: 'Please enter a more complex password.'
+};
+
+ko.validation.registerExtenders();
+
+
 // Accepts a few different types of arguments, depending on
 // the desired fields and type of password reset.
 // types:

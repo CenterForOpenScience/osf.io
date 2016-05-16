@@ -196,13 +196,6 @@ ko.validation.rules.mustEqual = {
     message: 'The field does not match the required input.'
 };
 
-ko.validation.rules.complexity = {
-    validator: function (val, minimumComplexity) {
-        return zxcvbn(val).score >= minimumComplexity;
-    },
-    message: 'Please enter a more complex password.'
-};
-
 // Add custom effects
 
 // fadeVisible : http://knockoutjs.com/examples/animatedTransitions.html
