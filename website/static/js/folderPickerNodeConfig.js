@@ -511,18 +511,13 @@ var FolderPickerViewModel = oop.defclass({
                 }
             ];
             },
-            xhrconfig : function(xhr) {
-                xhr.withCredentials = true;
-            },
+            xhrconfig: $osf.setXHRAuthorization,
             lazyLoadPreprocess: function(data) {
                 // Also handle data from API -- squash `attributes` to what TB expects
-                if (data.data) {
-                    for (var i = 0; i < data.data.length; i++) {
-                        $.each(data.data[i].attributes, function(key, value) {
-                            data.data[i][key] = value;
-                        }); // jshint ignore: line
-                    }
-                }
+                // TODO: DRY this up when PR #5240 goes in
+                var saved_attributes = data.attributes;
+                delete data.attributes;
+                $.extend(true, data, saved_attributes);
                 return data;
             },
         }, self.treebeardOptions);
