@@ -38,5 +38,31 @@
     "addons_based_on_ids": [
         "osfstorage",
         "box"
-    ]
+    ],
+    "addons_description": {
+        "box": "Marketing copy for why this is an awesome addon.",
+        "dataverse": "Marketing copy for why this is an awesome addon.",
+        "dropbox": "Marketing copy for why this is an awesome addon.",
+        "figshare": "Marketing copy for why this is an awesome addon.",
+        "forward": "Marketing copy for why this is an awesome addon.",
+        "github": "Marketing copy for why this is an awesome addon.",
+        "mendeley": "Marketing copy for why this is an awesome addon.",
+        "zotero": "Marketing copy for why this is an awesome addon.",
+        "osfstorage": "Marketing copy for why this is an awesome addon.",
+        "s3": "Marketing copy for why this is an awesome addon.",
+        "twofactor": "Marketing copy for why this is an awesome addon.",
+        "wiki": "Marketing copy for why this is an awesome addon.",
+        "googledrive": "Marketing copy for why this is an awesome addon."
+    },
+    "addons_url": {
+        "box": "http://www.box.com",
+        "dataverse": "https://dataverse.harvard.edu/",
+        "dropbox": "http://www.dropbox.com",
+        "figshare": "http://www.figshare.com",
+        "github": "http://www.github.com",
+        "mendeley": "http://www.mendeley.com",
+        "zotero": "http://www.zotero.org",
+        "s3": "https://aws.amazon.com/s3/",
+        "googledrive": "https://drive.google.com"
+    }
 }

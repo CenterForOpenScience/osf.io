@@ -8,6 +8,7 @@ from framework.auth.oauth_scopes import CoreScopes
 
 from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
+from api.base.exceptions import InvalidModelValueError
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.parsers import JSONAPIOnetoOneRelationshipParser, JSONAPIOnetoOneRelationshipParserForRegularJSON
@@ -1407,8 +1408,8 @@ class NodeAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, Node
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [CoreScopes.NODE_ADDON_READ]
-    required_write_scopes = [CoreScopes.NODE_ADDON_WRITE]
+    required_read_scopes = [CoreScopes.ADDONS_READ]
+    required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = NodeAddonSettingsSerializer
     view_category = 'nodes'
@@ -1418,19 +1419,15 @@ class NodeAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, Node
         qs = []
         for addon in ADDONS_OAUTH:
             obj = self.get_addon_settings(provider=addon, fail_if_absent=False)
-            qs.append(
-                {
-                    '_id': addon,
-                    'enabled': bool(obj),
-                    'settings': obj
-                })
+            if obj:
+                qs.append(obj)
         qs.sort()
         return qs
 
     get_queryset = get_default_queryset
 
 
-class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin, AddonSettingsMixin):
+class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, generics.CreateAPIView, NodeMixin, AddonSettingsMixin):
     """
     Detail of individual addon connected to this node *Writeable*.
 
@@ -1475,7 +1472,6 @@ class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin
                            "id":   {provider},                      # required
                            "attributes": {
                              "external_account_id": {account_id},   # optional
-                             "enabled":             {boolean},      # optional
                              "folder_id":           {folder_id},    # optional
                              "folder_path":         {folder_path},  # optional - Google Drive specific
                            }
@@ -1505,7 +1501,7 @@ class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [CoreScopes.NODE_ADDON_READ]
+    required_read_scopes = [CoreScopes.ADDONS_READ]
     required_write_scopes = [CoreScopes.NODE_ADDON_WRITE]
 
     serializer_class = NodeAddonSettingsSerializer
@@ -1513,12 +1509,29 @@ class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin
     view_name = 'node-addon-detail'
 
     def get_object(self):
-        obj = self.get_addon_settings(fail_if_absent=False)
-        return {
-            '_id': self.kwargs['provider'],
-            'enabled': bool(obj),
-            'settings': obj
-        }
+        return self.get_addon_settings()
+
+    def perform_create(self, serializer):
+        addon = self.kwargs['provider']
+        if addon not in ADDONS_OAUTH:
+            raise NotFound('Requested addon unavailable')
+
+        node = self.get_node()
+        if node.has_addon(addon):
+            raise InvalidModelValueError(
+                detail='Add-on {} already enabled for node {}'.format(addon, node._id)
+            )
+
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        addon = instance.config.short_name
+        node = self.get_node()
+        if not node.has_addon(instance.config.short_name):
+            raise NotFound('Node {} does not have add-on {}'.format(node._id, addon))
+
+        node.delete_addon(addon, auth=get_user_auth(self.request))
+
 
 class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, AddonSettingsMixin):
     """List of folders that this node can connect to *Read-only*.
@@ -1558,7 +1571,7 @@ class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Addo
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [CoreScopes.NODE_ADDON_READ]
+    required_read_scopes = [CoreScopes.ADDONS_READ]
     required_write_scopes = [CoreScopes.NODE_ADDON_WRITE]
 
     serializer_class = NodeAddonFolderSerializer

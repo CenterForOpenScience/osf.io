@@ -57,17 +57,12 @@ class NodeAddonListMixin(object):
             auth=self.user.auth,
             expect_errors=wrong_type)
         addon_data = self.get_response_for_addon(res)
-        if not wrong_type:
-            assert_equal(addon_data['external_account_id'], None)
-            assert_false(addon_data['node_has_auth'])
-        if wrong_type:
-            assert_equal(addon_data, None)        
+        assert_equal(addon_data, None)
 
     def test_settings_list_raises_error_if_PUT(self):
         res = self.app.put_json_api(self.setting_list_url, {
             'id': self.short_name,
-            'type': 'node-addons',
-            'enabled': False
+            'type': 'node-addons'
             }, auth=self.user.auth,
             expect_errors=True)
         assert_equal(res.status_code, 405)
@@ -75,8 +70,7 @@ class NodeAddonListMixin(object):
     def test_settings_list_raises_error_if_PATCH(self):
         res = self.app.patch_json_api(self.setting_list_url, {
             'id': self.short_name,
-            'type': 'node-addons',
-            'enabled': False
+            'type': 'node-addons'
             }, auth=self.user.auth,
             expect_errors=True)
         assert_equal(res.status_code, 405)
@@ -133,7 +127,6 @@ class NodeAddonDetailMixin(object):
             assert_equal(res.status_code, 404)
 
     def test_settings_detail_GET_disabled(self):
-        wrong_type = self.should_expect_errors()
         try:
             self.node.delete_addon(self.short_name, auth=self.auth)
         except ValueError:
@@ -142,27 +135,22 @@ class NodeAddonDetailMixin(object):
         res = self.app.get(
             self.setting_detail_url,
             auth=self.user.auth,
-            expect_errors=wrong_type)
-        if not wrong_type:
-            addon_data = res.json['data']['attributes']
-            assert_equal(addon_data['external_account_id'], None)
-            assert_false(addon_data['node_has_auth'])
-        if wrong_type:
-            assert_equal(res.status_code, 404)
+            expect_errors=True)
+        assert_equal(res.status_code, 404)
 
     def test_settings_detail_PUT_all_sets_settings(self):
         wrong_type = self.should_expect_errors(success_types=['CONFIGURABLE'])
         try:
-            self.node.delete_addon(self.short_name, auth=self.auth)
-        except ValueError:
-            # If addon was mandatory -- OSFStorage
+            self.node_settings.deauthorize(auth=self.auth)
+            self.node_settings.save()
+        except (ValueError, AttributeError):
+            # If addon was mandatory or non-configurable -- OSFStorage, Wiki
             pass
         data = {'data': { 
                 'id': self.short_name,
                 'type': 'node_addons',
                 'attributes': {
                     'external_account_id': self.account_id,
-                    'enabled': True,
                     }
                 }
             }
@@ -187,8 +175,7 @@ class NodeAddonDetailMixin(object):
                 'type': 'node_addons',
                 'attributes': {
                     'external_account_id': None,
-                    'folder_id': None,
-                    'enabled': True
+                    'folder_id': None
                     }
                 }
             }, auth=self.user.auth,
@@ -209,8 +196,7 @@ class NodeAddonDetailMixin(object):
                 'type': 'node_addons',
                 'attributes': {
                     'external_account_id': None,
-                    'folder_id': None,
-                    'enabled': False
+                    'folder_id': None
                     }
                 }
             }, auth=self.user.auth,
@@ -223,42 +209,32 @@ class NodeAddonDetailMixin(object):
         if wrong_type:
             assert_in(res.status_code, [404, 405])
 
-    def test_settings_detail_PATCH_enabled_false_disables(self):
-        wrong_type = self.should_expect_errors(success_types=['CONFIGURABLE'])
-        res = self.app.patch_json_api(self.setting_detail_url, 
-            {'data': { 
-                'id': self.short_name,
-                'type': 'node_addons',
-                'attributes': {
-                    'enabled': False
-                    }
-                }
-            }, auth=self.user.auth,
+    def test_settings_detail_DELETE_disables(self):
+        wrong_type = self.should_expect_errors()
+        res = self.app.delete(self.setting_detail_url, 
+            auth=self.user.auth,
             expect_errors=wrong_type)
         if not wrong_type:
-            addon_data = res.json['data']['attributes']
-            assert_equal(addon_data['external_account_id'], None)
-            assert_equal(addon_data['folder_id'], None)
-            assert_false(addon_data['node_has_auth'])
+            assert_equal(res.status_code, 204)
         if wrong_type:
             assert_in(res.status_code, [404, 405])
 
-    def test_settings_detail_PATCH_enabled_true_enables(self):
-        wrong_type = self.should_expect_errors(success_types=['CONFIGURABLE'])
+    def test_settings_detail_POST_enables(self):
+        wrong_type = self.should_expect_errors()
         try:
             self.node.delete_addon(self.short_name, auth=self.auth)
         except ValueError:
             # If addon was mandatory -- OSFStorage
             pass
-        res = self.app.patch_json_api(self.setting_detail_url, 
+        res = self.app.post_json_api(self.setting_detail_url, 
             {'data': { 
                 'id': self.short_name,
                 'type': 'node_addons',
                 'attributes': {
-                    'enabled': True
                     }
                 }
-            }, auth=self.user.auth,
+            },
+            auth=self.user.auth,
             expect_errors=wrong_type)
         if not wrong_type:
             addon_data = res.json['data']['attributes']
@@ -271,9 +247,10 @@ class NodeAddonDetailMixin(object):
     def test_settings_detail_PATCH_to_enable_and_add_external_account_id(self):
         wrong_type = self.should_expect_errors(success_types=['CONFIGURABLE'])
         try:
-            self.node.delete_addon(self.short_name, auth=self.auth)
-        except ValueError:
-            # If addon was mandatory -- OSFStorage
+            self.node_settings.deauthorize(auth=self.auth)
+            self.node_settings.save()
+        except (ValueError, AttributeError):
+            # If addon was mandatory or non-configurable -- OSFStorage, Wiki
             pass
         res = self.app.patch_json_api(self.setting_detail_url, 
             {'data': { 
@@ -316,9 +293,10 @@ class NodeAddonDetailMixin(object):
     def test_settings_detail_PATCH_to_add_folder_without_auth_conflict(self):
         wrong_type = self.should_expect_errors(success_types=['CONFIGURABLE'])
         try:
-            self.node.delete_addon(self.short_name, auth=self.auth)
-        except ValueError:
-            # If addon was mandatory -- OSFStorage
+            self.node_settings.deauthorize(self.auth)
+            self.node_settings.save()
+        except (ValueError, AttributeError):
+            # If addon was mandatory or non-configurable -- OSFStorage, Wiki
             pass
         res = self.app.patch_json_api(self.setting_detail_url, 
             {'data': { 
@@ -352,35 +330,47 @@ class NodeAddonDetailMixin(object):
             expect_errors=True)
         assert_equal(res.status_code, 403)
 
-    def test_settings_detail_raises_error_if_DELETE(self):
+    def test_settings_detail_DELETE_success(self):
+        wrong_type = self.should_expect_errors()
         res = self.app.delete(self.setting_detail_url, 
-            {'data': { 
-                'id': self.short_name,
-                'type': 'node_addons',
-                'attributes': {
-                    'external_account_id': self.account_id,
-                    'folder_id': '1234567890',
-                    'enabled': True
-                    }
-                }
-            }, auth=self.user.auth,
+            auth=self.user.auth,
             expect_errors=True)
-        assert_equal(res.status_code, 405)
+        if not wrong_type:
+            assert_equal(res.status_code, 204)
+        else:
+            assert_equal(res.status_code, 404)
 
-    def test_settings_detail_raises_error_if_POST(self):
+    def test_settings_detail_raises_error_if_DELETE_not_enabled(self):
+        wrong_type = self.should_expect_errors()
+        try:
+            self.node.delete_addon(self.short_name, auth=self.auth)
+        except ValueError:
+            # If addon was mandatory -- OSFStorage
+            pass
+        res = self.app.delete(self.setting_detail_url, 
+            auth=self.user.auth,
+            expect_errors=True)
+        # if not wrong_type:
+        assert_equal(res.status_code, 404)
+        # else:
+            # assert_equal(res.status_code, 405)
+
+    def test_settings_detail_raises_error_if_POST_already_configured(self):
+        wrong_type = self.should_expect_errors()
         res = self.app.post_json_api(self.setting_detail_url, 
             {'data': { 
                 'id': self.short_name,
                 'type': 'node_addons',
                 'attributes': {
-                    'external_account_id': None,
-                    'folder_id':  None,
-                    'enabled': False
                     }
                 }
             }, auth=self.user.auth,
             expect_errors=True)
-        assert_equal(res.status_code, 405)
+        if not wrong_type:
+            assert_equal(res.status_code, 400)
+            assert_in('already enabled', res.body)
+        else:
+            assert_equal(res.status_code, 404)
 
     def test_settings_detail_raises_error_if_noncontrib_not_public_GET(self):
         noncontrib = AuthUserFactory()
@@ -399,7 +389,6 @@ class NodeAddonDetailMixin(object):
                 'attributes': {
                     'external_account_id': None,
                     'folder_id': None,
-                    'enabled': False
                     }
                 }
             }, auth=noncontrib.auth,
@@ -413,7 +402,7 @@ class NodeAddonDetailMixin(object):
                 'id': self.short_name,
                 'type': 'node_addons',
                 'attributes': {
-                    'enabled': False
+                    'external_account_id': None
                     }
                 }
             }, auth=noncontrib.auth,
@@ -446,7 +435,7 @@ class NodeAddonDetailMixin(object):
                 'id': self.short_name,
                 'type': 'node_addons',
                 'attributes': {
-                    'enabled': False
+                    'external_account_id': None
                     }
                 }
             }, auth=noncontrib.auth,

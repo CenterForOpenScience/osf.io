@@ -33,3 +33,13 @@ class NodeAddonFolderSerializer(JSONAPISerializer):
             'nodes:node-addon-folders',
             kwargs=self.context['request'].parser_context['kwargs'],
         )
+
+class AddonSerializer(JSONAPISerializer):
+    class Meta:
+        type_ = 'addon'
+
+    id = ser.CharField(source='short_name', read_only=True)
+    name = ser.CharField(source='full_name', read_only=True)
+    description = ser.CharField(read_only=True)
+    url = ser.CharField(read_only=True)
+    categories = ser.ListField(read_only=True)
