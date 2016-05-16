@@ -5,6 +5,22 @@
   <h2 class="text-300">Analytics</h2>
 </div>
 
+<div id="hiddenFlag"></div>
+<script src="/static/js/ads.js"></script>
+<script>
+  if( window.canRunAds === undefined ){
+    var banner = document.createElement('div');
+    banner.className += 'm-b-md p-md osf-box-lt box-round';
+    var node = document.createTextNode("The use of adblocking software may prevent site analytics from loading properly. For more information go");
+    banner.appendChild(node);
+    var link = document.createElement('a');
+    link.href = "https://openscience.atlassian.net/browse/NCP-821";
+    link.innerHTML = " here";
+    banner.appendChild(link);
+    document.getElementById('hiddenFlag').appendChild(banner);
+  }
+</script>
+
 <%
     if user['is_contributor']:
         token = user.get('piwik_token', 'anonymous')
