@@ -21,6 +21,7 @@
   }
 </script>
 
+
 <%
     if user['is_contributor']:
         token = user.get('piwik_token', 'anonymous')
