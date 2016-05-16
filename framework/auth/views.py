@@ -49,7 +49,7 @@ def reset_password(auth, **kwargs):
         }
         raise HTTPError(400, data=error_data)
 
-    if request.method == 'POST':  # TODO - do we need more than KO password validation?
+    if request.method == 'POST':
         # new random verification key, allows CAS to authenticate the user w/o password one time only.
         user_obj.verification_key = security.random_string(20)
         user_obj.set_password(request.values['password'])
