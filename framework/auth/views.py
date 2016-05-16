@@ -52,16 +52,16 @@ def reset_password(auth, **kwargs):
     if request.method == 'POST':
         # new random verification key, allows CAS to authenticate the user w/o password one time only.
         user_obj.verification_key = security.random_string(20)
-        user_obj.set_password(request.values['password'])
+        try:
+            user_obj.set_password(request.json['password'])
+        except HTTPError as e:
+            raise e
         user_obj.save()
         status.push_status_message('Password reset', kind='success', trust=False)
-        # Redirect to CAS and authenticate the user with a verification key.
-        return redirect(cas.get_login_url(
-            web_url_for('user_account', _absolute=True),
-            auto=True,
-            username=user_obj.username,
-            verification_key=user_obj.verification_key
-        ))
+
+        # redirect to login page with success message
+        # return redirect('/login/')
+        # return redirect('/login/')
 
     return {
         'verification_key': verification_key,

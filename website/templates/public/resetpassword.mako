@@ -11,8 +11,12 @@
                 class="form"
                 method="POST"
                 action="/resetpassword/${verification_key}/"
+                data-bind="submit: submit"
             >
 
+            <div class="help-block" >
+                <p data-bind="html: flashMessage, attr: {class: flashMessageClass}"></p>
+            </div>
         <div class="row">
             <div
                 class="form-group"
