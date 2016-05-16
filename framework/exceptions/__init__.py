@@ -45,8 +45,8 @@ class HTTPError(FrameworkError):
                 '<a href="mailto:support@osf.io">support@osf.io</a>.'),
         },
         451: {
-            'message_short': 'Unavailable For Legal Reasons',
-            'message_long': ('The requested resource has been suspended.'),
+            'message_short': 'Content removed',
+            'message_long': ('This content has been removed'),
         },
     }
 

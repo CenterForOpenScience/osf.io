@@ -57,7 +57,7 @@ FILE_SUSPENDED_ERROR_MESSAGE = u'''
 .file-delete{{display: none;}}
 </style>
 <div class="alert alert-info" role="alert">
-Access to this file has been suspended.
+This content has been removed.
 </div>'''
 
 WATERBUTLER_JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
