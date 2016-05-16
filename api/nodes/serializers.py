@@ -63,6 +63,7 @@ class NodeSerializer(JSONAPISerializer):
         'registration',
         'tags',
         'public',
+        'license',
         'links',
         'children',
         'comments',
