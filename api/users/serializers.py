@@ -139,13 +139,16 @@ class UserAddonSettingsSerializer(JSONAPISerializer):
         )
 
     def account_links(self, obj):
-        return {
-            account._id: {
-                'account': absolute_reverse('users:user-external_account-detail', kwargs={'user_id': obj.owner._id, 'provider': obj.config.short_name, 'account_id': account._id}),
-                'nodes_connected': [n.absolute_api_v2_url for n in obj.get_attached_nodes(account)]
+        # TODO: remove this after refactoring Figshare
+        if hasattr(obj, 'external_accounts'):
+            return {
+                account._id: {
+                    'account': absolute_reverse('users:user-external_account-detail', kwargs={'user_id': obj.owner._id, 'provider': obj.config.short_name, 'account_id': account._id}),
+                    'nodes_connected': [n.absolute_api_v2_url for n in obj.get_attached_nodes(account)]
+                }
+                for account in obj.external_accounts
             }
-            for account in obj.external_accounts
-        }
+        return {}
 
 class UserDetailSerializer(UserSerializer):
     """
