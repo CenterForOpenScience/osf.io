@@ -3,6 +3,7 @@ import datetime as dt
 import itertools
 import logging
 import re
+import httplib
 import urlparse
 
 import bson
@@ -18,6 +19,7 @@ import framework
 from framework.addons import AddonModelMixin
 from framework import analytics
 from framework.auth import signals, utils
+from framework.exceptions import HTTPError
 from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError, InvalidTokenError,
                                        MergeConfirmedRequiredError, MergeConflictError)
 from framework.bcrypt import generate_password_hash, check_password_hash
@@ -658,6 +660,8 @@ class User(GuidStoredObject, AddonModelMixin):
         """
         had_existing_password = bool(self.password)
         self.password = generate_password_hash(raw_password)
+        if self.username == raw_password:
+            raise HTTPError(httplib.CONFLICT)
         if had_existing_password and notify:
             mails.send_mail(
                 to_addr=self.username,
