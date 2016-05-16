@@ -5,7 +5,7 @@ from rest_framework import exceptions
 from api.base.utils import absolute_reverse
 from api.files.serializers import FileSerializer
 from api.nodes.serializers import NodeSerializer
-from api.nodes.serializers import NodeLinksSerializer
+from api.nodes.serializers import NodeLinksSerializer, NodeLicenseSerializer
 from api.nodes.serializers import NodeContributorsSerializer, NodeTagField
 from api.base.serializers import (IDField, RelationshipField, LinksField, HideIfWithdrawal,
                                   FileCommentRelationshipField, NodeFileHyperLinkField, HideIfRegistration, JSONAPIListField)
@@ -20,6 +20,7 @@ class RegistrationSerializer(NodeSerializer):
     date_modified = HideIfWithdrawal(ser.DateTimeField(read_only=True))
     fork = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_fork'))
     collection = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_collection'))
+    node_license = HideIfWithdrawal(NodeLicenseSerializer())
     tags = HideIfWithdrawal(JSONAPIListField(child=NodeTagField(), required=False))
     public = HideIfWithdrawal(ser.BooleanField(source='is_public', required=False,
                                                help_text='Nodes that are made public will give read-only access '
@@ -89,6 +90,11 @@ class RegistrationSerializer(NodeSerializer):
     forked_from = HideIfWithdrawal(RelationshipField(
         related_view=lambda n: 'registrations:registration-detail' if getattr(n, 'is_registration', False) else 'nodes:node-detail',
         related_view_kwargs={'node_id': '<forked_from_id>'}
+    ))
+
+    license = HideIfWithdrawal(RelationshipField(
+        related_view='licenses:license-detail',
+        related_view_kwargs={'license_id': '<node_license.node_license._id>'},
     ))
 
     forks = HideIfWithdrawal(RelationshipField(

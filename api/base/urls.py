@@ -24,7 +24,8 @@ urlpatterns = [
                 url(r'^docs/', include('rest_framework_swagger.urls')),
                 url(r'^institutions/', include('api.institutions.urls', namespace='institutions')),
                 url(r'^collections/', include('api.collections.urls', namespace='collections')),
-                url(r'^guids/', include('api.guids.urls', namespace='guids'))
+                url(r'^guids/', include('api.guids.urls', namespace='guids')),
+                url(r'^licenses/', include('api.licenses.urls', namespace='licenses')),
             ],
         )
         ),

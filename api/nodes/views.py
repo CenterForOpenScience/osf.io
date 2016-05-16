@@ -144,6 +144,9 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         fork                            boolean            is this node a fork of another node?
         public                          boolean            has this node been made publicly-visible?
         collection                      boolean            is this a collection? (always false - may be deprecated in future versions)
+        node_license                    object             details of the license applied to the node
+            year                        string             date range of the license
+            copyright_holders           array of strings   holders of the applied license
 
     ##Links
 
@@ -335,6 +338,9 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
         fork                            boolean             is this node a fork of another node?
         public                          boolean             has this node been made publicly-visible?
         collection                      boolean             is this a collection? (always false - may be deprecated in future versions)
+        node_license                    object             details of the license applied to the node
+            year                        string             date range of the license
+            copyright_holders           array of strings   holders of the applied license
 
     ##Relationships
 
