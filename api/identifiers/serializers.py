@@ -6,28 +6,19 @@ from api.base.utils import absolute_reverse
 class IdentifierSerializer(JSONAPISerializer):
 
     category = ser.CharField(read_only=True)
-    identifier = ser.CharField(read_only=True)
 
     identifier = LinksField({
-        'self': 'get_absolute_url'
+        'self': 'get_identifiers'
     })
 
-    node = RelationshipField(
-        related_view='nodes:node-detail',
-        related_view_kwargs={'node_id': '<pk>'},
-        always_embed=True
-
+    referent = RelationshipField(
+        related_view='registrations:registration-detail',
+        related_view_kwargs={'node_id': '<referent._id>'},
     )
 
     class Meta:
         type_ = 'identifiers'
 
-    def get_absolute_url(self, obj):
-        node_id = self.context['request'].parser_context['kwargs']['node_id']
-        return absolute_reverse(
-            'nodes:node-identifier-detail',
-            kwargs={
-                'node_id': node_id,
-                'user_id': obj._id
-            }
-        )
+
+    def get_identifiers(self, obj):
+        return obj.value

@@ -32,6 +32,8 @@ from api.nodes.serializers import (
 )
 from api.nodes.utils import get_file_object
 
+from api.identifiers.serializers import IdentifierSerializer
+
 from api.registrations.serializers import RegistrationSerializer
 from api.institutions.serializers import InstitutionSerializer
 from api.nodes.permissions import (
@@ -1111,6 +1113,55 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixi
         except ValueError as err:  # pointer doesn't belong to node
             raise NotFound(err.message)
         node.save()
+
+
+class NodeIdentifierList(JSONAPIBaseView, generics.ListCreateAPIView):
+    """Identifiers for the current node. Read Only for the time being
+    """
+    permission_classes = (
+        IsPublic,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ExcludeWithdrawals
+    )
+
+    serializer_class = IdentifierSerializer
+
+    view_category = 'nodes'
+    view_name = 'node-identifier-list'
+    node_lookup_url_kwarg = 'node_id'
+
+    def get_node(self, check_object_permissions=True):
+        node = get_object_or_error(
+            Node,
+            self.kwargs[self.node_lookup_url_kwarg],
+            display_name='node'
+        )
+        # Nodes that are folders/collections are treated as a separate resource, so if the client
+        # requests a collection through a node endpoint, we return a 404
+        if node.is_collection:
+            raise NotFound
+        # May raise a permission denied
+        if check_object_permissions:
+            self.check_object_permissions(self.request, node)
+        return node
+
+    # overrides ListCreateAPIView
+    def get_queryset(self):
+        dois = self.get_node().get_identifier('doi')
+        arks = self.get_node().get_identifier('ark')
+        return [arks]
+
+
+class NodeIdentifierDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixin):
+
+    seralizer_class = IdentifierSerializer
+
+    view_category = 'identifiers'
+    view_name = 'node-identifier-detail'
+
+    def get_object(self, category):
+        return self.get_node().get_identifier(category)
 
 
 class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
