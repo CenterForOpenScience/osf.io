@@ -157,6 +157,7 @@ var ViewModel = function(passwordViewType, submitUrl, campaign) {
     });
 
     self.submitSuccess = function(response) {
+        debugger;
         self.changeMessage(
             self.flashMessage,
             self.flashMessageClass,
@@ -167,14 +168,26 @@ var ViewModel = function(passwordViewType, submitUrl, campaign) {
     };
 
     self.submitError = function(xhr) {
-        self.changeMessage(
-            self.flashMessage,
-            self.flashMessageClass,
-            xhr.responseJSON.message_long,
-            'text-danger p-xs',
-            5000,
-            self.flashTimeout
-        );
+        debugger;
+        if (xhr.status === 409) {
+            self.changeMessage(
+                self.flashMessage,
+                self.flashMessageClass,
+                'You cannot choose your username as your password. Please enter another password.',
+                'text-danger p-xs',
+                5000,
+                self.flashTimeout
+            );
+        } else {
+            self.changeMessage(
+                self.flashMessage,
+                self.flashMessageClass,
+                xhr.responseJSON.message_long,
+                'text-danger p-xs',
+                5000,
+                self.flashTimeout
+            );
+        }
     };
 
     self.submit = function() {
@@ -197,11 +210,14 @@ var ViewModel = function(passwordViewType, submitUrl, campaign) {
         $osf.postJSON(
             submitUrl,
             ko.toJS(self)
-        ).done(
-            self.submitSuccess
-        ).fail(
-            self.submitError
-        );
+        ).then(function(){
+            debugger;
+        });
+        // ).done(
+        //     self.submitSuccess
+        // ).fail(
+        //     self.submitError
+        // );
     };
 
     self.errors = ko.validation.group(self);
