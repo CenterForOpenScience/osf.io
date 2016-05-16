@@ -3657,12 +3657,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             return True
         return False
 
-    def institution_url(self):
-        return self.absolute_api_v2_url + 'institution/'
-
-    def institution_relationship_url(self):
-        return self.absolute_api_v2_url + 'relationships/institution/'
-
     def institutions_url(self):
         return self.absolute_api_v2_url + 'institutions/'
 

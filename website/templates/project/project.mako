@@ -133,8 +133,14 @@
                         % endif
                     % endif
                     % if not ('admin' in user['permissions'] and not node['is_registration']) and node['institutions'] != []:
-                        Affiliated institutions: <a href="/institutions/${node['institutions'][0]['id']}">${node['institutions'][0]['name']}</a>
-
+                        Affiliated institutions:
+                        % for inst in node['institutions']:
+                            % if inst != node['institutions'][-1]:
+                                <span><a href="/institutions/${inst['id']}">${inst['name']}</a>, </span>
+                            % else:
+                                <a href="/institutions/${inst['id']}">${inst['name']}</a>
+                            % endif
+                        % endfor
                     % endif
                 % endif
                 % if node['is_fork']:

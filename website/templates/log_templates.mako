@@ -417,11 +417,11 @@ from
 </script>
 
 <script type="text/html" id="affiliated_institution_added">
-added affiliation to <a class="log-node-title-link overflow" data-bind="attr: {href: '/institutions/' + params.institution.id}, text: params.institution.name"></a>
- to <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+added <a class="log-node-title-link overflow" data-bind="attr: {href: '/institutions/' + params.institution.id}, text: params.institution.name"></a>
+ affiliation to <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>.
 </script>
 
 <script type="text/html" id="affiliated_institution_removed">
-removed affiliation to <a class="log-node-title-link overflow" data-bind="attr: {href: '/institutions/' + params.institution.id}, text: params.institution.name"></a>
- in <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>.
+removed <a class="log-node-title-link overflow" data-bind="attr: {href: '/institutions/' + params.institution.id}, text: params.institution.name"></a>
+ affiliation from <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>.
 </script>

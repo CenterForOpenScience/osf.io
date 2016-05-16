@@ -332,7 +332,7 @@ def update_node(node, index=None, bulk=False):
             'parent_id': parent_id,
             'date_created': node.date_created,
             'license': serialize_node_license_record(node.license),
-            'affiliated_institutions': [inst.name for inst in node.affiliated_institutions] if node.affiliated_institutions else [],
+            'affiliated_institutions': [inst.name for inst in node.affiliated_institutions],
             'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
         }
         if not node.is_retracted:
