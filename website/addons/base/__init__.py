@@ -45,6 +45,14 @@ USER_SETTINGS_TEMPLATE_DEFAULT = os.path.join(
 lookup = TemplateLookup(
     directories=[
         settings.TEMPLATES_PATH
+    ],
+    default_filters=[
+        'unicode',  # default filter; must set explicitly when overriding
+        'temp_ampersand_fixer',  # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe. See [#OSF-4432]
+        'h',
+    ],
+    imports=[
+        'from website.util.sanitize import temp_ampersand_fixer',  # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe. See [#OSF-4432]
     ]
 )
 
@@ -125,7 +133,17 @@ class AddonConfig(object):
         )
         if template_dirs:
             self.template_lookup = TemplateLookup(
-                directories=template_dirs
+                directories=template_dirs,
+                default_filters=[
+                    'unicode',  # default filter; must set explicitly when overriding
+                    'temp_ampersand_fixer',
+                    # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe. See [#OSF-4432]
+                    'h',
+                ],
+                imports=[
+                    'from website.util.sanitize import temp_ampersand_fixer',
+                    # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe. See [#OSF-4432]
+                ]
             )
         else:
             self.template_lookup = None
@@ -391,7 +409,7 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
             else:
                 addon_settings.deauthorize(auth=auth)
 
-        if User.find(Q('external_accounts', 'contains', external_account._id)).count() == 1:
+        if User.find(Q('external_accounts', 'eq', external_account._id)).count() == 1:
             # Only this user is using the account, so revoke remote access as well.
             self.revoke_remote_oauth_access(external_account)
 

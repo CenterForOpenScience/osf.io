@@ -69,6 +69,7 @@ class TrashedFileNode(StoredObject, Commentable):
     deleted_by = fields.AbstractForeignField('User')
     deleted_on = fields.DateTimeField(auto_now_add=True)
     tags = fields.ForeignField('Tag', list=True)
+    suspended = fields.BooleanField(default=False)
 
     @property
     def deep_url(self):
@@ -107,6 +108,7 @@ class TrashedFileNode(StoredObject, Commentable):
         data = self.to_storage()
         data.pop('deleted_on')
         data.pop('deleted_by')
+        data.pop('suspended')
         if parent:
             data['parent'] = parent._id
         elif data['parent']:
@@ -117,6 +119,11 @@ class TrashedFileNode(StoredObject, Commentable):
             raise ValueError('No parent to restore to')
         restored.save()
 
+        # repoint guid
+        for guid in Guid.find(Q('referent', 'eq', self)):
+            guid.referent = restored
+            guid.save()
+
         if recursive:
             for child in TrashedFileNode.find(Q('parent', 'eq', self)):
                 child.restore(recursive=recursive, parent=restored)
@@ -124,6 +131,17 @@ class TrashedFileNode(StoredObject, Commentable):
         TrashedFileNode.remove_one(self)
         return restored
 
+    def get_guid(self):
+        """Attempt to find a Guid that points to this object.
+
+        :rtype: Guid or None
+        """
+        try:
+            # Note sometimes multiple GUIDs can exist for
+            # a single object. Just go with the first one
+            return Guid.find(Q('referent', 'eq', self))[0]
+        except IndexError:
+            return None
 
 @unique_on(['node', 'name', 'parent', 'is_file', 'provider', 'path'])
 class StoredFileNode(StoredObject, Commentable):
@@ -238,7 +256,9 @@ class StoredFileNode(StoredObject, Commentable):
     def get_guid(self, create=False):
         """Attempt to find a Guid that points to this object.
         One will be created if requested.
-        :rtype: Guid
+
+        :param Boolean create: Should we generate a GUID if there isn't one?  Default: False
+        :rtype: Guid or None
         """
         try:
             # Note sometimes multiple GUIDs can exist for
@@ -632,7 +652,6 @@ class File(FileNode):
         if resp.status_code != 200:
             logger.warning('Unable to find {} got status code {}'.format(self, resp.status_code))
             return None
-
         return self.update(revision, resp.json()['data']['attributes'])
         # TODO Switch back to head requests
         # return self.update(revision, json.loads(resp.headers['x-waterbutler-metadata']))

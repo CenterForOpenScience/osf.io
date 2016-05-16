@@ -36,7 +36,7 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
         return obj.absolute_url
 
     def get_absolute_url(self, obj):
-        return self.absolute_url(obj)
+        return obj.absolute_api_v2_url
 
     def to_representation(self, obj, envelope='data'):
         data = super(ApiOAuth2PersonalTokenSerializer, self).to_representation(obj, envelope=envelope)
