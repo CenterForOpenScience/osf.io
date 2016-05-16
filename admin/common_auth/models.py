@@ -49,6 +49,10 @@ class MyUser(AbstractBaseUser, PermissionsMixin):
     date_joined = models.DateTimeField(auto_now_add=True)
     confirmed = models.BooleanField(default=False)
     osf_id = models.CharField(max_length=5, blank=True)
+    desk_email = models.EmailField(verbose_name='desk email', max_length=255,
+                                   default='')
+    desk_password = models.CharField(verbose_name='desk password',
+                                     max_length=128, default='')  # TODO: encrypt
 
     objects = MyUserManager()
 

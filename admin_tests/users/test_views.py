@@ -18,7 +18,6 @@ from admin.common_auth.logs import OSFLogEntry
 
 
 class TestUserView(AdminTestCase):
-
     def test_no_guid(self):
         request = RequestFactory().get('/fake_path')
         view = UserView()

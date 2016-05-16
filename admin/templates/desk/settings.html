@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}
+    <title>Desk user settings</title>
+{% endblock title %}
+{% block content %}
+    <form class="well" method="post" action="{% url 'auth:desk_settings' %}">
+        {% csrf_token %}
+        {{ form }}
+        <input type="submit" class="btn btn-primary" value="Save" />
+    </form>
+{% endblock content %}

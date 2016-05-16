@@ -1,0 +1,32 @@
+<div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal">x</button>
+    <h3>OSF user's desk.com cases:</h3>
+</div>
+<div class="modal-body">
+    <table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Subject</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for case in cases %}
+        <tr>
+            <td>{{ case.type }}</td>
+            <td>{{ case.status }}</td>
+            <td>{{ case.subject | truncatechars:40 }}</td>
+        </tr>
+    {% empty %}
+        <tr>
+            <td>No cases</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+    </table>
+</div>
+<div class="modal-footer">
+    <a href="" class="btn btn-primary disabled">Create new case</a>
+    <button type="button" class="btn" data-dismiss="modal" >Close</button>
+</div>

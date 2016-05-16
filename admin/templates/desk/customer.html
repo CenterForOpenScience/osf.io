@@ -1,0 +1,54 @@
+<div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal">x</button>
+    <h3>User's desk.com info</h3>
+</div>
+<div class="modal-body">
+<table class="table table-striped">
+<thead>
+    <tr>
+        <th>Field</th>
+        <th>Value</th>
+    </tr>
+</thead>
+<tbody>
+    <tr>
+        <td>Name</td>
+        <td>{{ customer.name }}</td>
+    </tr>
+    <tr>
+        <td>Company</td>
+        <td>{{ customer.company }}</td>
+    </tr>
+    <tr>
+        <td>Background</td>
+        <td>{{ customer.background }}</td>
+    </tr>
+        <td>Desk id</td>
+        <td>{{ customer.id }}</td>
+    <tr>
+        <td>Email</td>
+        <td>
+            <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Email</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for email in customer.emails %}
+                <tr>
+                    <td>{{ email.type }}</td>
+                    <td>{{ email.value }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+            </table>
+        </td>
+    </tr>
+</tbody>
+</table>
+<div class="modal-footer">
+    <button type="button" class="btn" data-dismiss="modal" >Close</button>
+</div>
+</div>

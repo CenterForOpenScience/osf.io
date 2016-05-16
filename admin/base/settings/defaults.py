@@ -67,6 +67,7 @@ INSTALLED_APPS = (
     'admin.metrics',
     'admin.nodes',
     'admin.users',
+    'admin.desk',
 
     # 3rd party
     'raven.contrib.django.raven_compat',
@@ -74,6 +75,7 @@ INSTALLED_APPS = (
     'django_nose',
     'ckeditor',
     'password_reset',
+    'allaccess',
 )
 
 # Custom user model (extends AbstractBaseUser)
@@ -197,3 +199,8 @@ CKEDITOR_CONFIGS = {
         ]
     },
 }
+
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',
+    'allaccess.backends.AuthorizedServiceBackend',
+)

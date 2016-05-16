@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.admin.widgets import FilteredSelectMultiple
 from django.contrib.auth.models import Group
+
 from .models import MyUser
 
 
@@ -31,3 +32,9 @@ class UserRegistrationForm(UserCreationForm):
         self.fields['first_name'].required = True
         self.fields['last_name'].required = True
         self.fields['osf_id'].required = True
+
+
+class DeskUserForm(forms.ModelForm):
+    class Meta:
+        model = MyUser
+        fields = ['desk_email', 'desk_password']
