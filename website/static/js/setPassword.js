@@ -32,7 +32,7 @@ var ViewModel = function(passwordViewType, submitUrl, campaign) {
 
     self.passwordInfo = ko.computed(function() {
         if (self.typedPassword()) {
-            return zxcvbn(self.typedPassword());
+            return zxcvbn(self.typedPassword().slice(0, 100));
         }
     });
 
