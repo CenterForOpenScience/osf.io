@@ -4,7 +4,6 @@ var $ = require('jquery');
 var ko = require('knockout');
 var pikaday = require('pikaday');
 require('knockout.validation');
-var zxcvbn = require('zxcvbn');
 var makeClient = require('js/clipboard');
 
 require('css/koHelpers.css');
@@ -194,13 +193,6 @@ ko.validation.rules.mustEqual = {
         return val === otherVal;
     },
     message: 'The field does not match the required input.'
-};
-
-ko.validation.rules.complexity = {
-    validator: function (val, minimumComplexity) {
-        return zxcvbn(val).score >= minimumComplexity;
-    },
-    message: 'Please enter a more complex password.'
 };
 
 // Add custom effects
