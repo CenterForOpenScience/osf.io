@@ -3,10 +3,11 @@ from django.views.generic import ListView, DetailView
 
 from website.project.model import User
 
-from .utils import DeskClient, DeskError
+from admin.base.utils import OSFAdmin
+from admin.desk.utils import DeskClient, DeskError
 
 
-class DeskCaseList(ListView):
+class DeskCaseList(OSFAdmin, ListView):
     template_name = 'desk/cases.html'
     ordering = 'updated_at'
     context_object_name = 'cases'
@@ -28,7 +29,7 @@ class DeskCaseList(ListView):
         return queryset
 
 
-class DeskCustomer(DetailView):
+class DeskCustomer(OSFAdmin, DetailView):
     template_name = 'desk/customer.html'
     context_object_name = 'customer'
 

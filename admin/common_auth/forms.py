@@ -35,6 +35,7 @@ class UserRegistrationForm(UserCreationForm):
 
 
 class DeskUserForm(forms.ModelForm):
+    desk_password = forms.CharField(widget=forms.PasswordInput)
     class Meta:
         model = MyUser
         fields = ['desk_email', 'desk_password']

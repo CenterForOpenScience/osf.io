@@ -15,7 +15,7 @@ from django.http import Http404
 from website.project.model import User
 from website.settings import PREREG_ADMIN_TAG
 
-from admin.base.utils import SuperUser
+from admin.base.utils import SuperUser, OSFAdmin
 from admin.common_auth.forms import LoginForm, UserRegistrationForm, DeskUserForm
 from admin.common_auth.models import MyUser
 
@@ -93,7 +93,7 @@ class RegisterUser(SuperUser, FormView):
         return reverse('auth:register')
 
 
-class DeskUserFormView(UpdateView):
+class DeskUserFormView(OSFAdmin, UpdateView):
     form_class = DeskUserForm
     template_name = 'desk/settings.html'
     success_url = reverse_lazy('home')
