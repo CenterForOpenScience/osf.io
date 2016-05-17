@@ -4,7 +4,9 @@ import datetime
 import httplib as http
 from requests.exceptions import SSLError
 
-from flask import request
+from flask import request, send_file
+import StringIO
+
 from modularodm import Q
 from modularodm.storage.base import KeyExistsException
 
@@ -329,9 +331,14 @@ def dmptool_get_widget_contents(node_addon, **kwargs):
 def dmptool_get_plan(node_addon, planid, **kwargs):
     """Get plan for id"""
 
+    node = node_addon.owner
     connection = client.connect_from_settings_or_401(node_addon)
     try:
         plan = connection.plans_full(id_=planid)
+        plan['pdf_url'] = node.api_url_for('dmptool_download_plan',
+            planid = plan['id'], fmt='pdf')
+        plan['docx_url'] = node.api_url_for('dmptool_download_plan',
+            planid = plan['id'], fmt='docx')
         html_ = "HTML to come"
     except:
         plan = None
@@ -342,4 +349,19 @@ def dmptool_get_plan(node_addon, planid, **kwargs):
         'plan': plan,
         'html': html_
     }
-    return ret, http.OK    
+    return ret, http.OK   
+
+@must_have_addon(SHORT_NAME, 'user')
+@must_have_addon(SHORT_NAME, 'node')
+def dmptool_download_plan(node_addon, planid, fmt, **kwargs):
+    # http://flask.pocoo.org/snippets/32/
+
+    connection = client.connect_from_settings_or_401(node_addon)
+
+    strIO = StringIO.StringIO()
+    strIO.write(connection.plans_full(planid, fmt))
+    strIO.seek(0)
+    return send_file(strIO,
+                     attachment_filename="{}.{}".format(planid, fmt),
+                     as_attachment=True)
+

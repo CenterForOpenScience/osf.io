@@ -113,6 +113,15 @@ api_routes = {
             views.dmptool_get_plan,
             json_renderer,
         ),
+        Rule(
+            [
+                '/project/<pid>/dmptool/download-plan/<planid>/<fmt>',
+                '/project/<pid>/node/<nid>/dmptool/download-plan/<planid>/<fmt>',
+            ],
+            'get',
+            views.dmptool_download_plan,
+            json_renderer,
+        ),
     ],
     'prefix': '/api/v1'
 }

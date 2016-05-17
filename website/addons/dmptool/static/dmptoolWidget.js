@@ -29,6 +29,8 @@ function ViewModel(url) {
     self.plan_name = ko.observable();
     self.plan_created = ko.observable();
     self.plan_requirements = ko.observableArray();
+    self.plan_pdf = ko.observable();
+    self.plan_docx = ko.observable();
 
     // Flashed messages
     self.message = ko.observable('');
@@ -40,12 +42,6 @@ function ViewModel(url) {
             success: function(response) {
                 var data = response.data;
                 self.connected(data.connected);
-                // self.dmptool(data.dmptool);
-                // self.dmptoolUrl(data.dmptoolUrl);
-                // self.dataset(data.dataset);
-                // self.doi(data.doi);
-                // self.datasetUrl(data.datasetUrl);
-                // self.citation(data.citation);
 
                 self.plans(data.plans);
 
@@ -75,6 +71,7 @@ function ViewModel(url) {
 
     self.renderPlan = function (plan) {
 
+        console.log('renderPlan');
         self.plan_id(plan.id);
 
         // console.log(plan.id);
@@ -87,16 +84,19 @@ function ViewModel(url) {
                 //console.log(response.plan);
                 //self.plan(response.plan);
                 plan = response.plan;
+                console.log(plan);
                 self.plan_name(plan.name);
                 self.plan_created(plan.created);
+                self.plan_pdf(plan.pdf_url);
+                self.plan_docx(plan.docx_url);
 
                 // loop through requirements
                 self.plan_requirements.removeAll();
                 console.log(plan.template.requirements.length);
                 for (var i = 0, len = plan.template.requirements.length; i < len; i++) {
-                    console.log(plan.template.requirements[i]);
+                    //console.log(plan.template.requirements[i]);
                     var requirement = plan.template.requirements[i].requirement;
-                    console.log(requirement);
+                    //console.log(requirement);
                     self.plan_requirements.push(
                        {
                         'text_brief': requirement.text_brief,
@@ -104,7 +104,7 @@ function ViewModel(url) {
                        }
                     )
                 }
-                console.log(self.plan_requirements());
+                //console.log(self.plan_requirements());
 
             },
             error: function(xhr) {

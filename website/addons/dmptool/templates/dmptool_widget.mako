@@ -25,16 +25,17 @@
                     </tbody>
                 </table>
 
-                <div><span>current plan.id</span>: <span data-bind="text: plan_id"></span></div>
-                <div><span>current plan.created</span>: <span data-bind="text: plan_created"></span></div>
-                <div><span>current requirements.length</span>: <span data-bind="text: plan_requirements().length"></span></div>
-
             </span>
 
         </span>
 
         <div id="dmptool-output">
-          <div><span>current plan name</span>: <span data-bind="text: plan_name"></span></div>
+          <div><strong><span data-bind="text: plan_name"></span></strong></div>
+
+          <div>
+            <span data-bind="if: plan_pdf"><a data-bind="attr: {href: plan_pdf}">PDF</a></span>
+            <span data-bind="if: plan_docx"><a data-bind="attr: {href: plan_docx}">DOCX</a></span>
+          </div>
 
           <div data-bind="foreach: plan_requirements">
             <dl>
