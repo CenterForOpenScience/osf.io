@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import datetime
+import furl
 import httplib as http
 
 from flask import request
@@ -82,8 +83,8 @@ def forgot_password_post():
                 user_obj.verification_key = security.random_string(20)
                 user_obj.email_last_sent = datetime.datetime.utcnow()
                 user_obj.save()
-                reset_link = "http://{0}{1}".format(
-                    request.host,
+                reset_link = furl.urljoin(
+                    settings.DOMAIN,
                     web_url_for(
                         'reset_password',
                         verification_key=user_obj.verification_key
