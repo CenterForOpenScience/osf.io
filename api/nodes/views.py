@@ -1640,6 +1640,8 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMix
     * 'pointer_created': A Pointer is created
     * 'pointer_forked': A Pointer is forked
     * 'pointer_removed': A Pointer is removed
+    * 'node_removed': A component is deleted
+    * 'node_forked': A Node is forked
     ===
     * 'made_public': A Node is made public
     * 'made_private': A Node is made private
@@ -1690,8 +1692,6 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMix
     * 'registration_cancelled': A proposed Registration is cancelled
     ===
     * 'node_created': A Node is created (_deprecated_)
-    * 'node_forked': A Node is forked (_deprecated_)
-    * 'node_removed': A Node is deleted (_deprecated_)
 
    ##Log Attributes
 
