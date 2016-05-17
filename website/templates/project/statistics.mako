@@ -11,12 +11,13 @@
   if( window.canRunAds === undefined ){
     var banner = document.createElement('div');
     banner.className += 'm-b-md p-md osf-box-lt box-round';
-    var node = document.createTextNode("The use of adblocking software may prevent site analytics from loading properly. For more information go");
+    var node = document.createTextNode("The use of adblocking software may prevent site analytics from loading properly.");// For more information go");
     banner.appendChild(node);
-    var link = document.createElement('a');
-    link.href = "https://openscience.atlassian.net/browse/NCP-821";
-    link.innerHTML = " here";
-    banner.appendChild(link);
+    /* Link doesn't exist yet. Commentted out until a webpage is made */
+    //var link = document.createElement('a');
+    //link.href = "https://openscience.atlassian.net/browse/NCP-821";
+    //link.innerHTML = " here";
+    //banner.appendChild(link);
     document.getElementById('hiddenFlag').appendChild(banner);
   }
 </script>
