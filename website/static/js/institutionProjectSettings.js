@@ -15,11 +15,15 @@ var ViewModel = function(data) {
     self.showAdd = ko.observable(false);
     self.institutionHref = ko.observable('');
     self.userInstitutions = window.contextVars.currentUser.institutions;
-    self.userInstitutionsIds = self.userInstitutions.map(function (item) {
+    var userInstitutionsIds = self.userInstitutions.map(function (item) {
         return item.id;
     });
+    self.userInstitutionsIds = ko.observable(userInstitutionsIds);
     self.selectedInstitution = ko.observable();
     self.affiliatedInstitutions = ko.observable(window.contextVars.node.institutions);
+    self.affiliatedInstitutionsIds = self.affiliatedInstitutions().map(function (item) {
+        return item.id;
+    });
 
     //Has child nodes
     self.hasChildren = ko.observable(false);
@@ -27,18 +31,25 @@ var ViewModel = function(data) {
     //user chooses to delete all nodes
     self.modifyChildren = ko.observable(false);
     self.title = 'Add Institution';
-    self.nodesOriginal = {};
+    self.nodesOriginal = ko.observable();
     self.isAddInstitution = ko.observable(false);
+    self.needsWarning = ko.observable(false);
 
 
-    self.modifyChildrenDialog = function(item) {
+    self.modifyChildrenDialog = function (item) {
+        var message;
+        if (self.isAddInstitution()) {
+            message = 'Add ' + item.name + ' to ' + window.contextVars.node.title + ' or to ' +
+                item.name + ' and all its components?<br><br>';
+        }
+        else
+            message = 'Remove ' + item.name + ' from ' + window.contextVars.node.title + ' or to ' +
+                item.name + ' and all its components?<br><br>';
 
-        var message = self.isAddInstitution() ?
-                'Add '+ item.name + ' to ' + window.contextVars.node.title + ' or to ' +
-                item.name + ' and all its components?<br><br>' :
-                'Remove '+ item.name  + ' from ' + window.contextVars.node.title + ' or to ' +
-                item.name + ' and all its components?<br><br>' ;
-
+        if (self.needsWarning()) {
+            message += '<div class="text-danger f-w-xl">Warning, you are not affialiated with <b>' + item.name +
+                    '</b>.  If you remove it from your project, you cannot add it back.<div>';
+        }
         bootbox.dialog({
             title: self.isAddInstitution() ? 'Add ' + item.name: 'Remove ' + item.name,
             message: message,
@@ -94,6 +105,7 @@ var ViewModel = function(data) {
 
     self.submitInst = function (item) {
         self.isAddInstitution(true);
+        self.needsWarning(false);
         if (self.hasChildren()) {
             self.modifyChildrenDialog(item);
         }
@@ -103,26 +115,14 @@ var ViewModel = function(data) {
 
     };
     self.clearInst = function(item) {
+        self.needsWarning((self.userInstitutionsIds().indexOf(item.id) === -1));
         self.isAddInstitution(false);
-        bootbox.confirm({
-                title: 'Are you sure you want to remove institutional affiliation from your project?',
-                message: 'You are about to remove affiliation with ' + item.name + ' from this project. ' + item.name + ' branding will not longer appear on this project, and the project will not be discoverable on the ' + item.name + ' landing page.',
-                callback: function (confirmed) {
-                    if (confirmed) {
-                        if (self.hasChildren()) {
-                            self.modifyChildrenDialog(item);
-                        }
-                        else {
-                            self._modifyInst(item);
-                        }
-                    }
-                },
-                buttons:{
-                    confirm:{
-                        label:'Remove affiliation'
-                    }
-                }
-            });
+        if (self.hasChildren()) {
+            self.modifyChildrenDialog(item);
+        }
+        else {
+            return self._modifyInst(item);
+        }
     };
 
     self._modifyInst = function(item) {
@@ -130,8 +130,8 @@ var ViewModel = function(data) {
         var ajaxJSONType = self.isAddInstitution() ? 'POST': 'DELETE';
         var nodesToModify = [];
         if (self.modifyChildren()) {
-            for (var node in self.nodesOriginal) {
-                nodesToModify.push({'type': 'nodes', 'id': self.nodesOriginal[node].id});
+            for (var node in self.nodesOriginal()) {
+                nodesToModify.push({'type': 'nodes', 'id': self.nodesOriginal()[node].id});
             }
         }
         else {
@@ -159,7 +159,7 @@ var ViewModel = function(data) {
             }
             else {
                 var removed = self.affiliatedInstitutions().splice(indexes.indexOf(item.id), 1)[0];
-                if ($.inArray(removed.id, self.userInstitutionsIds) >= 0){
+                if ($.inArray(removed.id, self.userInstitutionsIds()) >= 0){
                     self.availableInstitutions().push(removed);
                 }
                 self.affiliatedInstitutions(self.affiliatedInstitutions());
@@ -167,8 +167,8 @@ var ViewModel = function(data) {
             self.availableInstitutions(self.availableInstitutions());
 
         }).fail(function (xhr, status, error) {
-            $osf.growl('Unable to remove institution from this node. Please try again. If the problem persists, email <a href="mailto:support@osf.io.">support@osf.io</a>');
-            Raven.captureMessage('Unable to remove institution from this node!', {
+            $osf.growl('Unable to modify the institution on this node. Please try again. If the problem persists, email <a href="mailto:support@osf.io.">support@osf.io</a>');
+            Raven.captureMessage('Unable to modufy this institution!', {
                 extra: {
                     url: url,
                     status: status,
@@ -184,15 +184,17 @@ var ViewModel = function(data) {
  * get node tree for treebeard from API V1
  */
 ViewModel.prototype.fetchNodeTree = function(treebeardUrl) {
+        var nodesOriginal = {};
         var self = this;
         return $.ajax({
             url: treebeardUrl,
             type: 'GET',
             dataType: 'json'
         }).done(function (response) {
-            self.nodesOriginal = projectSettingsTreebeardBase.getNodesOriginal(response[0], self.nodesOriginal);
+            nodesOriginal = projectSettingsTreebeardBase.getNodesOriginal(response[0], nodesOriginal);
             self.nodeParent = response[0].node.id;
             self.hasChildren(Object.keys(self.nodesOriginal).length > 1);
+            self.nodesOriginal(nodesOriginal);
         }).fail(function (xhr, status, error) {
             $osf.growl('Error', 'Unable to retrieve project settings');
             Raven.captureMessage('Could not GET project settings.', {
