@@ -12,9 +12,6 @@
     <a href="{% url 'metrics:download' %}" class="btn btn-primary">
         Download
     </a>
-    <a href="{% url 'metrics:analytics' %}" class="btn btn-primary">
-        Sales Analytics
-    </a>
     <h3>OSF Statistics</h3>
 
     {% include "util/pagination.html" with items=page_obj %}
@@ -28,7 +25,7 @@
             <th>Registered projects</th>
         </tr>
     </thead>
-    <tbody id="good">
+    <tbody>
     {% for item in metrics %}
         <tr>
             <td>{{ item.date }}</td>
