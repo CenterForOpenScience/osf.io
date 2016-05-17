@@ -15,7 +15,7 @@ from framework.auth import cas, campaigns
 from framework import forms, status
 from framework.flask import redirect  # VOL-aware redirect
 from framework.auth import exceptions
-from framework.auth.exceptions import ExpiredTokenError
+from framework.auth.exceptions import ExpiredTokenError, InvalidTokenError
 from framework.exceptions import HTTPError
 from framework.auth import (logout, get_user, DuplicateEmailError)
 from framework.auth.decorators import collect_auth, must_be_logged_in
@@ -129,7 +129,6 @@ def auth_login(auth, **kwargs):
     campaign = request.args.get('campaign')
     next_url = request.args.get('next')
     must_login_warning = True
-
     if campaign:
         next_url = campaigns.campaign_url_for(campaign)
 
@@ -141,8 +140,10 @@ def auth_login(auth, **kwargs):
         # Only allow redirects which are relative root or full domain, disallows external redirects.
         if not (next_url[0] == '/' or next_url.startsWith(settings.DOMAIN)):
             raise HTTPError(http.InvalidURL)
-
     if auth.logged_in:
+        # remove expired email verifications
+        auth.user.clean_email_verifications(auth.user)
+        auth.user.save()
         if not request.args.get('logout'):
             if next_url:
                 return redirect(next_url)
@@ -154,7 +155,7 @@ def auth_login(auth, **kwargs):
 
     status_message = request.args.get('status', '')
     if status_message == 'expired':
-        status.push_status_message('The private link you used is expired.  Please <a href="/settings/account/"> +'
+        status.push_status_message('The private link you used is expired.  Please <a href="/settings/account/">'
                                    'resend email.</a>', trust=True)
 
     if next_url and must_login_warning:
@@ -197,13 +198,14 @@ def auth_email_logout(token, user):
     redirect_url = web_url_for('auth_login') + '?existing_user={}'.format(urllib.quote_plus(user.email))
     try:
         unconfirmed_email = user.get_unconfirmed_email_for_token(token)
-    except KeyError:
+    except InvalidTokenError:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': "Bad token",
             'message_long': "The provided token is invalid."
         })
     except ExpiredTokenError:
         status.push_status_message('The private link you used is expired.')
+        return
     try:
         user_merge = User.find_one(Q('emails', 'eq', unconfirmed_email))
     except NoResultsFound:
@@ -289,18 +291,20 @@ def confirm_email_get(token, auth=None, **kwargs):
 
 
 @collect_auth
+@must_be_logged_in
 def unconfirmed_email_remove(auth=None):
     """Called at login if user cancels their merge or email add.
     methods: DELETE
     """
     user = auth.user
-    if user is None:
-        raise HTTPError(http.NOT_FOUND)
     json_body = request.get_json()
     try:
         given_token = json_body['token']
     except KeyError:
-        raise HTTPError(http.NOT_FOUND)
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': 'Invalid token',
+            'message_long': 'The token provided is invalid'
+        })
     email_verifications = deepcopy(user.email_verifications)
     for token in user.email_verifications:
         if token == given_token:
@@ -309,23 +313,25 @@ def unconfirmed_email_remove(auth=None):
     user.save()
     return {
         'status': 'success',
-        'removed_email': json_body
+        'removed_email': json_body['address']
     }, 200
 
 
 @collect_auth
+@must_be_logged_in
 def unconfirmed_email_add(auth=None):
     """Called at login if user confirms their merge or email add.
     methods: PUT
     """
     user = auth.user
-    if user is None:
-        raise HTTPError(http.NOT_FOUND)
     json_body = request.get_json()
     try:
         token = json_body['token']
     except KeyError:
-        raise HTTPError(http.NOT_FOUND)
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': 'Invalid token',
+            'message_long': 'The token provided is invalid'
+        })
     try:
         user.confirm_email(token, merge=True)
     except exceptions.EmailConfirmTokenError as e:
@@ -340,13 +346,9 @@ def unconfirmed_email_add(auth=None):
             'status': 'success',
         }, 200
 
-    # Redirect to CAS and authenticate the user with a verification key.
-    user.verification_key = security.random_string(20)
-    user.save()
-
     return {
         'status': 'success',
-        'removed_email': json_body
+        'removed_email': json_body['address']
     }, 200
 
 

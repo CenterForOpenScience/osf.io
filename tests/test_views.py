@@ -3388,7 +3388,7 @@ class TestAuthViews(OsfTestCase):
         assert_in(login_url, res.body)
 
     def test_get_email_to_add_no_email(self):
-        email_verifications = self.user.unconfirmed_email_get()
+        email_verifications = self.user.unconfirmed_emails
         assert_equal(email_verifications, [])
 
     def test_get_unconfirmed_email(self):
@@ -3396,7 +3396,7 @@ class TestAuthViews(OsfTestCase):
         self.user.add_unconfirmed_email(email)
         self.user.save()
         self.user.reload()
-        email_verifications = self.user.unconfirmed_email_get()
+        email_verifications = self.user.unconfirmed_emails
         assert_equal(email_verifications, [])
 
     def test_get_email_to_add(self):
@@ -3409,7 +3409,7 @@ class TestAuthViews(OsfTestCase):
         self.app.get(url)
         self.user.reload()
         assert_equal(self.user.email_verifications[token]['confirmed'], True)
-        email_verifications = self.user.unconfirmed_email_get()
+        email_verifications = self.user.unconfirmed_emails
         assert_equal(email_verifications[0]['address'], 'test@example.com')
 
     def test_add_email(self):
@@ -3421,7 +3421,7 @@ class TestAuthViews(OsfTestCase):
         url = '/confirm/{}/{}/?logout=1'.format(self.user._id, token)
         self.app.get(url)
         self.user.reload()
-        email_verifications = self.user.unconfirmed_email_get()
+        email_verifications = self.user.unconfirmed_emails
         put_email_url = api_url_for('unconfirmed_email_add')
         res = self.app.put_json(put_email_url, email_verifications[0], auth=self.user.auth)
         self.user.reload()
@@ -3436,12 +3436,12 @@ class TestAuthViews(OsfTestCase):
         url = '/confirm/{}/{}/?logout=1'.format(self.user._id, token)
         self.app.get(url)
         self.user.reload()
-        email_verifications = self.user.unconfirmed_email_get()
+        email_verifications = self.user.unconfirmed_emails
         remove_email_url = api_url_for('unconfirmed_email_remove')
         remove_res = self.app.delete_json(remove_email_url, email_verifications[0], auth=self.user.auth)
         self.user.reload()
         assert_equal(remove_res.json_body['status'], 'success')
-        assert_equal(self.user.unconfirmed_email_get(), [])
+        assert_equal(self.user.unconfirmed_emails, [])
 
     def test_add_expired_email(self):
         # Do not return expired token and removes it from user.email_verifications
@@ -3451,8 +3451,10 @@ class TestAuthViews(OsfTestCase):
         self.user.email_verifications[token]['expiration'] = dt.datetime.utcnow() - dt.timedelta(days=100)
         self.user.save()
         self.user.reload()
-        email_verifications = self.user.unconfirmed_email_get()
-        assert_equal(email_verifications, [])
+        assert_equal(self.user.email_verifications[token]['email'], email)
+        self.user.clean_email_verifications()
+        unconfirmed_emails = self.user.unconfirmed_emails
+        assert_equal(unconfirmed_emails, [])
         assert_equal(self.user.email_verifications, {})
 
     def test_add_invalid_email(self):
@@ -3478,7 +3480,7 @@ class TestAuthViews(OsfTestCase):
         url = '/confirm/{}/{}/?logout=1'.format(self.user._id, token)
         self.app.get(url)
         self.user.reload()
-        email_verifications = self.user.unconfirmed_email_get()
+        email_verifications = self.user.unconfirmed_emails
         put_email_url = api_url_for('unconfirmed_email_add')
         res = self.app.put_json(put_email_url, email_verifications[0], auth=self.user.auth)
         self.user.reload()

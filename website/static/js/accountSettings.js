@@ -223,7 +223,7 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
                                 buttons: {
                                     ok: {
                                         label: 'Close',
-                                        className: 'btn-primary'
+                                        className: 'btn-default'
                                     }
                                 }
                             });

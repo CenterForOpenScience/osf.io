@@ -858,26 +858,6 @@ class User(GuidStoredObject, AddonModelMixin):
                 email_verifications.pop(token)
         self.email_verifications = email_verifications
 
-    def unconfirmed_email_get(self):
-        """Called at login to see if there are emails to add or users to merge.  Delete expired tokens.
-        methods: GET
-        """
-        self.clean_email_verifications()
-        unconfirmed_emails = []
-        email_verifications = deepcopy(self.email_verifications)
-        for token in email_verifications:
-            if self.email_verifications[token]['confirmed']:
-                try:
-                    user_merge = User.find_one(Q('emails', 'eq', self.email_verifications[token]['email'].lower()))
-                except NoResultsFound:
-                    user_merge = False
-
-                unconfirmed_emails.append({'address': self.email_verifications[token]['email'],
-                                        'token': token,
-                                        'confirmed': self.email_verifications[token]['confirmed'],
-                                        'user_merge': user_merge.email if user_merge else False})
-        return unconfirmed_emails
-
     def verify_claim_token(self, token, project_id):
         """Return whether or not a claim token is valid for this user for
         a given node which they were added as a unregistered contributor for.
@@ -1033,6 +1013,26 @@ class User(GuidStoredObject, AddonModelMixin):
     @property
     def deep_url(self):
         return '/profile/{}/'.format(self._primary_key)
+
+    @property
+    def unconfirmed_emails(self):
+        """Called at login to see if there are emails to add or users to merge.  Delete expired tokens.
+        methods: GET
+        """
+        unconfirmed_emails = []
+        email_verifications = deepcopy(self.email_verifications)
+        for token in email_verifications:
+            if self.email_verifications[token]['confirmed']:
+                try:
+                    user_merge = User.find_one(Q('emails', 'eq', self.email_verifications[token]['email'].lower()))
+                except NoResultsFound:
+                    user_merge = False
+
+                unconfirmed_emails.append({'address': self.email_verifications[token]['email'],
+                                        'token': token,
+                                        'confirmed': self.email_verifications[token]['confirmed'],
+                                        'user_merge': user_merge.email if user_merge else False})
+        return unconfirmed_emails
 
     def profile_image_url(self, size=None):
         """A generalized method for getting a user's profile picture urls.

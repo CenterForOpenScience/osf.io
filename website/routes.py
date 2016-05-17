@@ -65,7 +65,7 @@ def get_globals():
         'user_timezone': user.timezone if user and user.timezone else '',
         'user_url': user.url if user else '',
         'user_gravatar': profile_views.current_user_gravatar(size=25)['gravatar_url'] if user else '',
-        'user_email_verifications': user.unconfirmed_email_get() if user else [],
+        'user_email_verifications': user.unconfirmed_emails if user else [],
         'user_api_url': user.api_url if user else '',
         'display_name': get_display_name(user.fullname) if user else '',
         'use_cdn': settings.USE_CDN_FOR_CLIENT_LIBS,
