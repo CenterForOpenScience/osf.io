@@ -14,10 +14,11 @@ print 'Cached {} MODM to django mappings...'.format(len(modm_to_django.keys()))
 
 def main():
     start = datetime.now()
+    split = start
     total = MODMNodeLog.find().count()
 
     count = 0
-    page_size = 20000
+    page_size = 15000
     blank_users = 0
     blank_nodes = 0
 
@@ -43,10 +44,9 @@ def main():
                 user_pk = None
 
             try:
-                node_pk = modm_to_django[modm_nodelog.params.get(
-                    'node', modm_nodelog.params.get('project'))]
+                node_pk = modm_to_django[getattr(modm_nodelog, 'node', None)._id]
             except (KeyError, AttributeError) as ex:
-                blank_node += 1
+                blank_nodes += 1
                 node_pk = None
 
             for wct in modm_nodelog.was_connected_to:
@@ -70,10 +70,12 @@ def main():
                 modm_nodelog._id] = was_connected_to
 
             count += 1
-            if count % (page_size / 50) == 0:
+            if count % 1000 == 0:
                 print 'Through {} in {}'.format(count, (
-                    datetime.now() - start).total_seconds())
+                    datetime.now() - split).total_seconds())
+                split = datetime.now()
             if count % page_size == 0:
+                print '{} blank users; {} blank nodes'.format(blank_users, blank_nodes)
                 print 'Starting to migrate {} through {} which is {}'.format(
                     count - page_size, count, len(django_nodelogs))
                 splat = datetime.now()
