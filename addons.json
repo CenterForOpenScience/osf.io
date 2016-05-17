@@ -40,19 +40,19 @@
         "box"
     ],
     "addons_description": {
-        "box": "Marketing copy for why this is an awesome addon.",
-        "dataverse": "Marketing copy for why this is an awesome addon.",
-        "dropbox": "Marketing copy for why this is an awesome addon.",
-        "figshare": "Marketing copy for why this is an awesome addon.",
-        "forward": "Marketing copy for why this is an awesome addon.",
-        "github": "Marketing copy for why this is an awesome addon.",
-        "mendeley": "Marketing copy for why this is an awesome addon.",
-        "zotero": "Marketing copy for why this is an awesome addon.",
-        "osfstorage": "Marketing copy for why this is an awesome addon.",
-        "s3": "Marketing copy for why this is an awesome addon.",
-        "twofactor": "Marketing copy for why this is an awesome addon.",
-        "wiki": "Marketing copy for why this is an awesome addon.",
-        "googledrive": "Marketing copy for why this is an awesome addon."
+        "box": "Box is a file storage add-on. Connect your Box account to an OSF project to interact with files hosted on Box via the OSF.",
+        "dataverse": "Dataverse is an open source software application to share, cite, and archive data. Connect your Dataverse account to share your Dataverse datasets via the OSF.",
+        "dropbox": "Dropbox is a file storage add-on. Connect your Dropbox account to an OSF project to interact with files hosted on Dropbox via the OSF.",
+        "figshare": "Figshare is an online digital repository. Connect your figshare account to share your figshare files along with other materials in your OSF project.",
+        "forward": "The External Link add-on allows you to provide a link to a website outside of the OSF.",
+        "github": "GitHub is a web-based Git repository hosting service. Connect your GitHub repo to your OSF project to share your code alongside other materials in your OSF project.",
+        "mendeley": "Mendeley is a reference management tool. Connecting Mendeley folders to OSF projects allows you and others to view, copy, and download citations that are relevant to your project from the Project Overview page.",
+        "zotero": "Zotero is a reference management tool. Connecting Zotero folders to OSF projects allows you and others to view, copy, and download citations that are relevant to your project from the Project Overview page.",
+        "osfstorage": "OSF Storage is the default storage provider for OSF projects.",
+        "s3": "Amazon S3 is a file storage add-on. Connect your S3 account to an OSF project to interact with files hosted on S3 via the OSF.",
+        "twofactor": "Two-factor authentication is a security add-on. By using two-factor authentication, you'll protect your OSF account with both your password and your mobile phone.",
+        "wiki": "The wiki is a versatile communication tool. Wikis can be used to explain the main points of your project and can contain information like lab notes or contact information.",
+        "googledrive": "Google Drive is a file storage add-on. Connect your Google Drive account to an OSF project to interact with files hosted on Google Drive via the OSF."
     },
     "addons_url": {
         "box": "http://www.box.com",
