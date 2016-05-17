@@ -5,6 +5,9 @@ from django.db import models
 
 
 class UserCount(models.Model):
+    """
+    User count for each product
+    """
     class Meta:
         unique_together = (('date', 'tag'),)
 
@@ -67,9 +70,12 @@ class UserCount(models.Model):
 
 
 class DBMetrics(models.Model):
+    """
+    Metrics derived from MongoDB
+    """
     class Meta:
         unique_together = (('date', 'name'),)
-    date = models.DateField(auto_now_add=True)
+    date = models.DateField(default=datetime.now().date())
     name = models.TextField()
     data = models.TextField()
 
@@ -83,11 +89,23 @@ class DBMetrics(models.Model):
                 record[result.name] = result.data
             return record
         except cls.DoesNotExist:
-            return None
+            return
 
     @classmethod
-    def save_record(cls, result_dict):
+    def get_metric_history(cls, name, start=datetime.now().date() - timedelta(days=30), end=datetime.now().date()):
+        results = cls.objects.filter(name=name, date__gte=start, date__lte=end)
+        x = ['x', ]
+        data = [name, ]
+
+        for result in results:
+            x.append(result.date.strftime('%Y-%m-%d'))
+            data.append(result.data)
+        return [x, data]
+
+    @classmethod
+    def save_record(cls, result_dict, date=datetime.now().date()):
         for key, value in result_dict.items():
-            metric = cls(name=key,
+            metric = cls(date=date,
+                         name=key,
                          data=value)
             metric.save()
