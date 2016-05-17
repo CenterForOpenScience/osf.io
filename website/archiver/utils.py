@@ -221,14 +221,22 @@ def find_registration_files(values, node):
         ret.append(find_registration_file(values['extra'][i], node) + (i,))
     return ret
 
-def find_question(schema, qid):
+def get_title_for_question(schema, path):
+    path = path.split('.')
+    root = path.pop(0)
+    item = None
     for page in schema['pages']:
         questions = {
             q['qid']: q
             for q in page['questions']
         }
-        if qid in questions:
-            return questions[qid]
+        if root in questions:
+            item = questions[root]
+    title = item.get('title')
+    while len(path):
+        item = item.get('path')
+        title = item.get('title', title)
+    return title
 
 def find_selected_files(schema, metadata):
     targets = []
@@ -274,7 +282,7 @@ def migrate_file_metadata(dst, schema):
             if not registration_file:
                 missing_files.append({
                     'file_name': selected['extra'][index]['selectedFileName'],
-                    'question_title': find_question(schema.schema, path[0])['title']
+                    'question_title': get_title_for_question(schema.schema, path)
                 })
                 continue
             target = deep_get(metadata, path)
