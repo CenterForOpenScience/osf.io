@@ -234,7 +234,7 @@ def get_title_for_question(schema, path):
             item = questions[root]
     title = item.get('title')
     while len(path):
-        item = item.get('path')
+        item = item.get(path.pop(0), {})
         title = item.get('title', title)
     return title
 
