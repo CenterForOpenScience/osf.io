@@ -10,7 +10,7 @@
 <script>
   if( window.canRunAds === undefined ){
     var banner = document.createElement('div');
-    banner.className += 'm-b-md p-md osf-box-lt box-round';
+    banner.className += 'm-b-md p-md osf-box-lt box-round text-center';
     var node = document.createTextNode("The use of adblocking software may prevent site analytics from loading properly.");// For more information go");
     banner.appendChild(node);
     /* Link doesn't exist yet. Commentted out until a webpage is made */
