@@ -300,6 +300,8 @@ JWT_ALGORITHM = 'HS256'
 
 ##### CELERY #####
 
+CELERY_ROUTES = ('framework.celery_tasks.routers.CeleryRouter', )
+
 # Default RabbitMQ broker
 BROKER_URL = 'amqp://'
 
