@@ -86,6 +86,7 @@ class Node(GuidMixin, BaseModel):
 
     creator = models.ForeignKey(User, db_index=True, related_name='created', on_delete=models.SET_NULL, null=True)
     contributors = models.ManyToManyField(User, through=Contributor, related_name='contributed_to')
+    # TODO why is this here if it's empty
     users_watching_node = models.ManyToManyField(User, related_name='watching')
 
     # logs = Logs have a reverse relation to nodes
