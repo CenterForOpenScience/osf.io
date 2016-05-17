@@ -87,4 +87,3 @@ class LicenseList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     def get_queryset(self):
         queryset = NodeLicense.find(self.get_query_from_request())
         return queryset
-
