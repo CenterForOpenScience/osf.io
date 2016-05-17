@@ -2,7 +2,7 @@ import datetime
 
 from website import settings
 from website.project import Node
-from website.project.utils import recent_public_registrations
+from website.project.utils import CONTENT_NODE_QUERY, recent_public_registrations
 
 from modularodm.query.querydialect import DefaultQueryDialect as Q
 
@@ -52,10 +52,12 @@ def activity():
 
     # Projects
 
+    # Only show top-level projects (any category) in new and noteworthy lists
+    # This means that public children of private nodes will be excluded
     recent_query = (
-        Q('category', 'eq', 'project') &
+        Q('parent_node', 'eq', None) &
         Q('is_public', 'eq', True) &
-        Q('is_deleted', 'eq', False)
+        CONTENT_NODE_QUERY
     )
 
     recent_public_projects = Node.find(

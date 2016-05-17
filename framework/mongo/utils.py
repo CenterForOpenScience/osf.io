@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 import functools
-import re
 import httplib as http
+import re
 
+import markupsafe
 import pymongo
 from modularodm import Q
 from modularodm.query import QueryBase
@@ -80,30 +81,35 @@ def get_or_http_error(Model, pk_or_query, allow_deleted=False, display_name=None
     """
 
     display_name = display_name or ''
+    # FIXME: Not everything that uses this decorator needs to be markupsafe, but OsfWebRenderer error.mako does...
+    safe_name = markupsafe.escape(display_name)
 
     if isinstance(pk_or_query, QueryBase):
         try:
             instance = Model.find_one(pk_or_query)
         except NoResultsFound:
             raise HTTPError(http.NOT_FOUND, data=dict(
-                message_long="No {name} record matching that query could be found".format(name=display_name)
+                message_long="No {name} record matching that query could be found".format(name=safe_name)
             ))
         except MultipleResultsFound:
             raise HTTPError(http.BAD_REQUEST, data=dict(
-                message_long="The query must match exactly one {name} record".format(name=display_name)
+                message_long="The query must match exactly one {name} record".format(name=safe_name)
             ))
     else:
         instance = Model.load(pk_or_query)
         if not instance:
             raise HTTPError(http.NOT_FOUND, data=dict(
-                message_long="No {name} record with that primary key could be found".format(name=display_name)
+                message_long="No {name} record with that primary key could be found".format(name=safe_name)
             ))
+    if getattr(instance, 'is_deleted', False) and getattr(instance, 'suspended', False):
+        raise HTTPError(451, data=dict(  # 451 - Unavailable For Legal Reasons
+            message_long="This {name} record has been suspended".format(name=display_name)
+        ))
     if not allow_deleted and getattr(instance, 'is_deleted', False):
         raise HTTPError(http.GONE, data=dict(
-            message_long="This {name} record has been deleted".format(name=display_name)
+            message_long="This {name} record has been deleted".format(name=safe_name)
         ))
-    else:
-        return instance
+    return instance
 
 
 def autoload(Model, extract_key, inject_key, func):

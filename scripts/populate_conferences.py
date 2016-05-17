@@ -721,6 +721,26 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
+    'Reid2016': {
+        'name': 'L. Starling Reid Undergraduate Psychology Conference 2016',
+        'info_url': 'http://cacsprd.web.virginia.edu/Psych/Conference',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
+    'CNS2016': {
+        'name': 'The Cognitive Neuroscience Society (CNS) 2016',
+        'info_url': 'http://www.cogneurosociety.org/annual-meeting/',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
 }
 
 

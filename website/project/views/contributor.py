@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import httplib as http
-import time
 
 from flask import request
 from modularodm.exceptions import ValidationError, ValidationValueError
@@ -20,6 +19,7 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions import session
 from framework.transactions.handlers import no_auto_transaction
 
+from website.util.time import get_timestamp, throttle_period_expired
 from website import mails
 from website import language
 from website import security
@@ -360,14 +360,6 @@ def project_remove_contributor(auth, **kwargs):
     return redirect_url
 
 
-def get_timestamp():
-    return int(time.time())
-
-
-def throttle_period_expired(timestamp, throttle):
-    return timestamp is None or (get_timestamp() - timestamp) > throttle
-
-
 def send_claim_registered_email(claimer, unreg_user, node, throttle=24 * 3600):
     unclaimed_record = unreg_user.get_unclaimed_record(node._primary_key)
     # roll the valid token for each email, thus user cannot change email and approve a different email address
@@ -558,10 +550,12 @@ def claim_user_registered(auth, node, **kwargs):
                 node.save()
                 status.push_status_message(
                     'You are now a contributor to this project.',
-                    kind='success')
+                    kind='success',
+                    trust=False
+                )
                 return redirect(node.url)
             else:
-                status.push_status_message(language.LOGIN_FAILED, kind='warning', trust=True)
+                status.push_status_message(language.LOGIN_FAILED, kind='warning', trust=False)
         else:
             forms.push_errors_to_status(form.errors)
     if is_json_request():
@@ -634,8 +628,7 @@ def claim_user_form(auth, **kwargs):
             user.verification_key = security.random_string(20)
             user.save()
             # Authenticate user and redirect to project page
-            node = Node.load(pid)
-            status.push_status_message(language.CLAIMED_CONTRIBUTOR.format(node=node),
+            status.push_status_message(language.CLAIMED_CONTRIBUTOR,
                                        kind='success',
                                        trust=True)
             # Redirect to CAS and authenticate the user with a verification key.

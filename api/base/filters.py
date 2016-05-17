@@ -24,20 +24,22 @@ from api.base.serializers import RelationshipField, TargetField
 def sort_multiple(fields):
     fields = list(fields)
     def sort_fn(a, b):
-        while fields:
-            field = fields.pop(0)
+        sort_direction = 1
+        for field in fields:
+            if field[0] == '-':
+                sort_direction = -1
+                field = field[1:]
             a_field = getattr(a, field)
             b_field = getattr(b, field)
             if a_field > b_field:
-                return 1
+                return 1 * sort_direction
             elif a_field < b_field:
-                return -1
+                return -1 * sort_direction
         return 0
     return sort_fn
 
 class ODMOrderingFilter(OrderingFilter):
     """Adaptation of rest_framework.filters.OrderingFilter to work with modular-odm."""
-
     # override
     def filter_queryset(self, request, queryset, view):
         ordering = self.get_ordering(request, queryset, view)

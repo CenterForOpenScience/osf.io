@@ -1,7 +1,7 @@
 var $ = require('jquery');
 var ko = require('knockout');
 var m = require('mithril');
-var bootbox = require('bootbox');
+var bootbox = require('bootbox');  // TODO: Why is this required? Is it? See [#OSF-6100]
 
 var FilesWidget = require('js/filesWidget');
 var Fangorn = require('js/fangorn');
@@ -33,6 +33,7 @@ var limitContents = function(item) {
 };
 
 var filePicker;
+var filesWidgetCleanUp = [];
 var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindingContext) {
     viewModel.showUploader(true);
     viewModel.toggleUploader = function() {
@@ -50,7 +51,10 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
             // their bound settings) are persisting and being reused. This call
             // explicity removes the old controller.
             // see: http://lhorie.github.io/mithril/mithril.component.html#unloading-components
-            m.mount(document.getElementById(filePicker.fangornOpts.divID), null);
+            $.each(filesWidgetCleanUp, function( index, value ) {
+                m.mount(document.getElementById(value), null);
+            });
+            filesWidgetCleanUp = [];
 
             filePicker.destroy();
             filePicker = null;
@@ -152,6 +156,7 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
     fw.init().then(function() {
         viewModel.showUploader(false);
     });
+    filesWidgetCleanUp.push(filePicker.fangornOpts.divID);
 };
 
 ko.bindingHandlers.osfUploader = {
@@ -165,6 +170,9 @@ var Uploader = function(question) {
     var self = this;
 
     question.showUploader = ko.observable(false);
+    self.toggleUploader = function() {
+        question.showUploader(!question.showUploader());
+    };
     question.uid = 'uploader_' + uploaderCount;
     uploaderCount++;
     self.selectedFiles = ko.observableArray(question.extra() || []);
@@ -176,8 +184,29 @@ var Uploader = function(question) {
         });
         question.value(question.formattedFileList());
     });
+    self.fileWarn = ko.observable(true);
+
+    self.UPLOAD_LANGUAGE = 'You may attach up to 5 files to this question. You may attach files that you already have ' +
+        'in this OSF project, or upload a new file from your computer. Uploaded files will automatically be added to this project ' +
+        'so that they can be registered.';
 
     self.addFile = function(file) {
+        if(self.selectedFiles().length >= 5 && self.fileWarn()) {
+            self.fileWarn(false);
+            bootbox.alert({
+                title: 'Too many files',
+                message: 'You cannot attach more than 5 files to a question.',
+                buttons: {
+                    ok: {
+                        label: 'Close',
+                        className: 'btn-default'
+                    }
+                }
+            }).css({ 'top': '35%' });
+            return false;
+        } else if(self.selectedFiles().length >= 5 && !self.fileWarn()) {
+            return false;
+        }
         if(self.fileAlreadySelected(file))
             return false;
 
@@ -195,7 +224,7 @@ var Uploader = function(question) {
     self.fileAlreadySelected = function(file) {
         var selected = false;
         $.each(question.extra(), function(idx, alreadyFile) {
-            if(alreadyFile.sha256 === file.data.extra.hashes.sha256){
+            if(alreadyFile.selectedFileName === file.data.name && alreadyFile.sha256 === file.data.extra.hashes.sha256){
                 selected = true;
                 return;
             }
@@ -231,7 +260,7 @@ var Uploader = function(question) {
             var files = question.extra();
             var elem = '';
             $.each(files, function(_, file) {
-                elem += '<a target="_blank" href="' + file.viewUrl + '">' + $osf.htmlEscape(file.selectedFileName) + ' </a>';
+                elem += '<a target="_blank" href="' + file.viewUrl + '">' + $osf.htmlEscape(file.selectedFileName) + ' </a>' + '</br>';
             });
             return $(elem);
         }

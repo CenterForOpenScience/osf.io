@@ -76,6 +76,9 @@ var _dataverseItemButtons = {
                     item.data.dataverseIsPublished = true;
                     item.data.hasPublishedFiles = item.children.length > 0;
                     item.data.version = item.data.hasPublishedFiles ? 'latest-published' : 'latest';
+                    for (var i = 0; i < item.children.length; i++) { // Brute force the child files to be set as "latest-published" without page reload
+                        item.children[i].data.extra.datasetVersion = item.data.version;
+                    }
                 }).fail(function (xhr, status, error) {
                     var statusCode = xhr.responseJSON.code;
                     var message;
@@ -136,15 +139,20 @@ var _dataverseItemButtons = {
                         },
                         icon: 'fa fa-upload',
                         className: 'text-success'
-                    }, 'Upload'),
-                    m.component(Fangorn.Components.button, {
-                        onclick: function (event) {
-                            dataversePublish.call(tb, event, item);
-                        },
-                        icon: 'fa fa-globe',
-                        className: 'text-primary'
-                    }, 'Publish')
+                    }, 'Upload')
                 );
+                // Only allow the Publish button to appear if this is truly an unpublished dataset, vs. a draft version of a published dataset.
+                if(!item.data.dataverseIsPublished) {
+                    buttons.push(
+                        m.component(Fangorn.Components.button, {
+                            onclick: function (event) {
+                                dataversePublish.call(tb, event, item);
+                            },
+                            icon: 'fa fa-globe',
+                            className: 'text-primary'
+                        }, 'Publish')
+                    );
+                }
             } else if (item.kind === 'folder' && !item.data.addonFullname) {
                 buttons.push(
                     m.component(Fangorn.Components.button, {

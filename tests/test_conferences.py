@@ -358,6 +358,16 @@ class TestMessage(ContextTestCase):
                 msg = message.ConferenceMessage()
                 assert_equal(msg.sender_name, name[1])
 
+    def test_sender_email(self):
+        emails = [
+            (u'fred@queen.com', u'fred@queen.com'),
+            (u'FRED@queen.com', u'fred@queen.com')
+        ]
+        for email in emails:
+            with self.make_context(data={'from': email[0]}):
+                msg = message.ConferenceMessage()
+                assert_equal(msg.sender_email, email[1])
+
     def test_route_invalid_pattern(self):
         with self.make_context(data={'recipient': 'spam@osf.io'}):
             self.app.app.preprocess_request()
@@ -366,7 +376,7 @@ class TestMessage(ContextTestCase):
                 msg.route
 
     def test_route_invalid_test(self):
-        recipient = '{0}conf-talk@osf.io'.format('' if settings.DEV_MODE else 'test-')
+        recipient = '{0}conf-talk@osf.io'.format('' if settings.DEV_MODE else 'stage-')
         with self.make_context(data={'recipient': recipient}):
             self.app.app.preprocess_request()
             msg = message.ConferenceMessage()

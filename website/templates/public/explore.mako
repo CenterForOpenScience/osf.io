@@ -13,7 +13,7 @@
   <div class="col-md-12">
     <h1>Collaborator Network for Public Projects</h1>
     <p>Dark circles in the graph below represent users who are contributors on <strong>10</strong> or more public projects or components. Light circles represent projects or components that have <strong>7</strong> or more contributors. Connections between circles represent co-contributorship.  Circle size is related to the number of projects/components contributed to (dark) or number of contributors (light).</p>
-    <div style="font: 10px sans-serif;margin: 0px auto 22px;clear: both;width">
+    <div style="font: 10px sans-serif;margin: 0px auto 22px;clear: both;">
       <div id='chart'></div>
     </div>
   </div>

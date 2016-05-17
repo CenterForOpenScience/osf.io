@@ -26,3 +26,7 @@ class TestWelcomeToApi(ApiTestCase):
         assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['meta']['current_user']['data']['attributes']['given_name'], self.user.given_name)
 
+    def test_returns_302_redirect_for_base_url(self):
+        res = self.app.get('/')
+        assert_equal(res.status_code, 302)
+        assert_equal(res.location, '/v2/')

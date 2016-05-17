@@ -291,7 +291,7 @@ class User(GuidStoredObject, AddonModelMixin):
     # verification key used for resetting password
     verification_key = fields.StringField()
 
-    forgot_password_last_post = fields.DateTimeField()
+    email_last_sent = fields.DateTimeField()
 
     # confirmed emails
     #   emails should be stripped of whitespace and lower-cased before appending
@@ -1315,7 +1315,8 @@ class User(GuidStoredObject, AddonModelMixin):
 
         # Disconnect signal to prevent emails being sent about being a new contributor when merging users
         # be sure to reconnect it at the end of this code block. Import done here to prevent circular import error.
-        from website.project.signals import contributor_added
+        from website.addons.osfstorage.listeners import checkin_files_by_user
+        from website.project.signals import contributor_added, contributor_removed
         from website.project.views.contributor import notify_added_contributor
         from website.util import disconnected_from
 
@@ -1346,16 +1347,18 @@ class User(GuidStoredObject, AddonModelMixin):
                         log=False,
                     )
 
-                try:
-                    node.remove_contributor(
-                        contributor=user,
-                        auth=Auth(user=self),
-                        log=False,
-                    )
-                except ValueError:
-                    logger.error('Contributor {0} not in list on node {1}'.format(
-                        user._id, node._id
-                    ))
+                with disconnected_from(signal=contributor_removed, listener=checkin_files_by_user):
+                    try:
+                        node.remove_contributor(
+                            contributor=user,
+                            auth=Auth(user=self),
+                            log=False,
+                        )
+                    except ValueError:
+                        logger.error('Contributor {0} not in list on node {1}'.format(
+                            user._id, node._id
+                        ))
+
                 node.save()
 
         # - projects where the user was the creator
