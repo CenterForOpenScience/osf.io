@@ -1,7 +1,7 @@
 require('bootstrap');
-require('jquery');
 require('c3/c3.css');
 
+var $ = require('jquery');
 var c3 = require('c3/c3.js');
 var keen = require('keen-js');
 var ss = require('simple-statistics');
@@ -350,10 +350,16 @@ var SalesAnalytics = function() {
 
     self.run = function() {
         console.log('run');
-        self.getOSFProductUsage();
-        self.getAverageUserSessionLength();
-        self.getAverageMAUSessionLength();
-        self.getAverageUserSessionHistory(true, 12, null, null, null);
+        if (keenProjectId) {
+            $(document).ready(function(){
+                $('.hidden').removeClass('hidden');
+            });
+            self.getOSFProductUsage();
+            self.getAverageUserSessionLength();
+            self.getAverageMAUSessionLength();
+            self.getAverageUserSessionHistory(true, 12, null, null, null);
+        }
+
         self.getUserCount(userCount);
         self.getUserPercentage(userCount);
         self.getMultiProductCountYearly(multiProductMetricsYearly);

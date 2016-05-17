@@ -3,7 +3,7 @@
 
 {% block top_includes %}
     <script>
-        if ('{{ keen_ready }}' == 'True') {
+        if ('{{ keen_ready }}' === 'True') {
             var keenProjectId = '{{ keen_project_id }}';
             var keenReadKey = '{{ keen_read_key }}';
         }
