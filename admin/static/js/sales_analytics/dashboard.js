@@ -303,6 +303,24 @@ var SalesAnalytics = function() {
                                     'Users');
     };
 
+    self.getUserCountHistory = function(countHistoryMonthly, tag, id) {
+        var chart = c3.generate({
+            bindto: id,
+            data: {
+                x: 'x',
+                columns: countHistoryMonthly[tag]
+            },
+            axis: {
+                x: {
+                    type: 'timeseries',
+                    tick: {
+                        format: '%Y-%m-%d'
+                    }
+                }
+            }
+        });
+    };
+
     self.prepareChart = function(elementId) {
         var chart = new keen.Dataviz();
         return chart.el(document.getElementById(elementId)).prepare();
@@ -346,6 +364,10 @@ var SalesAnalytics = function() {
         self.getMultiActionCountMonthly(multiProductMetricsMonthly);
         self.getRepeatActionCountMonthly(repeatActionUserMonthly);
         self.getTotalUserCount(userCount);
+        self.getUserCountHistory(countHistoryMonthly, 'osf', '#db-chart-osf-count-history');
+        self.getUserCountHistory(countHistoryMonthly, 'osf4m', '#db-chart-osf4m-count-history');
+        self.getUserCountHistory(countHistoryMonthly, 'prereg', '#db-chart-prereg-count-history');
+        self.getUserCountHistory(countHistoryMonthly, 'institution', '#db-chart-institution-count-history');
     };
 
     self.extractDataSet = function(keenResult) {

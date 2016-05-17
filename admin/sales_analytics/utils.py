@@ -1,11 +1,16 @@
 # -*- coding: utf-8 -*-
 from admin.base.settings import ENTRY_POINTS
-from datetime import datetime, timedelta
+from admin.metrics.utils import get_list_of_dates
+from datetime import datetime, time, timedelta
 from framework.mongo import database as db
 
 from .models import UserCount
 
 import json
+import logging
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s %(levelname)s %(threadName)-10s %(message)s',)
+logger = logging.getLogger(__name__)
 
 
 # Helper functions
@@ -29,18 +34,13 @@ def get_sorted_index(l, reverse=True):
     return sorted(range(len(l)), key=lambda k: l[k], reverse=reverse)
 
 
-# Admin DB metrics functions
-def _get_user_count_from_admin(date):
-    return UserCount.get_user_count(date)
-
-
 # Metrics functions
 def get_user_count(db=db, entry_points=ENTRY_POINTS, date=datetime.now().date()):
     """
     Get the number of users created from each entry point: osf, osf4m, prereg, and institution.
     """
     # Try getting results from admin db first
-    results = _get_user_count_from_admin(date=date)
+    results = UserCount.get_user_count(date=date)
     if results:
         return results
     else:
@@ -50,7 +50,7 @@ def get_user_count(db=db, entry_points=ENTRY_POINTS, date=datetime.now().date())
         tags.append('osf')
         total = db.user.find({}).count()
         for entry_point in entry_points.keys():
-            count = db.user.find({'system_tags': entry_point}).count()
+            count = db.user.find({'system_tags': entry_point, 'date_registered': {'$lte': datetime.combine(date, time.min)}}).count()
             percent = round(float(count) / float(total), 2)
             count_list.append(count)
             percent_list.append(percent)
@@ -63,8 +63,18 @@ def get_user_count(db=db, entry_points=ENTRY_POINTS, date=datetime.now().date())
         percent_list = [percent_list[i] for i in sorted_index]
         tags = [tags[i] for i in sorted_index]
         results = {'tags': tags, 'count': count_list, 'percent': percent_list, 'total': total}
-        UserCount.save_record(results)
+        UserCount.save_record(results, date=date)
     return results
+
+
+def get_user_count_history(db=db, entry_points=ENTRY_POINTS, start=datetime.now().date() - timedelta(days=30), end=datetime.now().date()):
+    results = {tag: data for tag, data in UserCount.get_count_history()}
+    if not len(results['osf']) < len(get_list_of_dates(start, end)) * 4 + 1:
+        return results
+    else:
+        for date in get_list_of_dates(start, end):
+            get_user_count(date=date)
+        return {tag: data for tag, data in UserCount.get_count_history()}
 
 
 def get_multi_product_metrics(db=db, timedelta=timedelta(days=365)):
@@ -144,37 +154,3 @@ def get_repeat_action_user_count(db=db, timedelta=timedelta(days=30)):
                     repeat_action_user_age.append(age)
                     break
     return {'repeat_action_count': repeat_action_count, 'repeat_action_age': repeat_action_user_age}
-
-
-def save_metric(name, data):
-    """
-    Save metrics to sqlite db.
-    """
-    record = DBMetrics.objects.create(name=name, data=json.dump(data))
-    record.save()
-
-
-def get_metric(name, date):
-    """
-    Get metric given a date and a name.
-    """
-    metric = DBMetrics.objects.get(name=name, date=date)
-    return json.load(metric.data)
-
-
-def get_metrics(name, start, end):
-    """
-    Get metrics given a name, a start date and an end date.
-    """
-    metrics = DBMetrics.objects.filter(name=name, date__gte=start, date__lte=end)
-    for metric in metrics:
-        json.load(metric)
-    return metrics
-
-
-def get_count_history(db=db, start, end):
-    for date in date_range:
-        db.user.find({'date_registered', date})
-
-
-

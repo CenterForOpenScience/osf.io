@@ -7,7 +7,8 @@
       var userCount = {{ user_count | jsonify | safe }};
       var multiProductMetricsYearly = {{ multi_product_metrics_yearly | jsonify | safe }};
       var multiProductMetricsMonthly = {{ multi_product_metrics_monthly | jsonify | safe }};
-      var repeatActionUserMonthly = {{repeat_action_user_monthly | jsonify | safe}};
+      var repeatActionUserMonthly = {{ repeat_action_user_monthly | jsonify | safe }};
+      var countHistoryMonthly = {{ count_history_monthly | jsonify | safe }}
     </script>
 {% endblock top_analytics %}
 
@@ -72,6 +73,40 @@
               </div>
               <div class="chart-notes">
                 User count/percentage for each peroduct (osf, osf4m, prereg, institution)
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-xs-12">
+            <div class="chart-wrapper">
+              <div class="chart-title">
+                User Count History (Month)
+              </div>
+              <div class="chart-stage">
+                <div class="row">
+                  <div class="col-xs-2">
+                    <div class="tabbable tabs-left">
+                      <ul class="nav nav-tabs">
+                        <li class="active"><a href="#db-chart-osf-count-history" data-toggle="tab">OSF</a></li>
+                        <li><a href="#db-chart-osf4m-count-history" data-toggle="tab">OSF4M</a></li>
+                        <li><a href="#db-chart-prereg-count-history" data-toggle="tab">Prereg</a></li>
+                        <li><a href="#db-chart-institution-count-history" data-toggle="tab">Institution</a></li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div class="col-xs-10">
+                    <div class="tab-content">
+                     <div class="tab-pane active" id="db-chart-osf-count-history"></div>
+                     <div class="tab-pane" id="db-chart-osf4m-count-history"></div>
+                     <div class="tab-pane" id="db-chart-prereg-count-history"></div>
+                     <div class="tab-pane" id="db-chart-institution-count-history"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="chart-notes">
+                User count history for each peroduct (osf, osf4m, prereg, institution)
               </div>
             </div>
           </div>
