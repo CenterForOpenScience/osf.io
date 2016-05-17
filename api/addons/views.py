@@ -5,7 +5,7 @@ from rest_framework import generics, permissions as drf_permissions
 from framework.auth.oauth_scopes import CoreScopes
 
 from api.addons.serializers import AddonSerializer
-from api.base.permissions import TokenHasScope, IsAuthenticatedOrReadOnly
+from api.base.permissions import TokenHasScope
 from api.base.settings import ADDONS_OAUTH
 from api.base.views import JSONAPIBaseView
 
@@ -62,7 +62,7 @@ class AddonList(JSONAPIBaseView, generics.ListAPIView):
     """
     permission_classes = (
         drf_permissions.AllowAny,
-        IsAuthenticatedOrReadOnly,
+        drf_permissions.IsAuthenticatedOrReadOnly,
         TokenHasScope, )
 
     required_read_scopes = [CoreScopes.ADDONS_READ]
