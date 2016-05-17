@@ -80,6 +80,7 @@ class UserDeleteView(OSFAdmin, DeleteView):
     def get_object(self, queryset=None):
         return User.load(self.kwargs.get('guid'))
 
+
 class User2FactorDeleteView(UserDeleteView):
     """ Allow authorised admin user to remove 2 factor authentication.
 

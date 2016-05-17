@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.views.generic import ListView, DetailView
+from django.views.generic import ListView, DetailView, FormView
 
 from website.project.model import User
 
@@ -8,7 +8,7 @@ from admin.desk.utils import DeskClient, DeskError
 
 
 class DeskCaseList(OSFAdmin, ListView):
-    template_name = 'desk/cases.html'
+    template_name = 'desk/cases_modal.html'
     ordering = 'updated_at'
     context_object_name = 'cases'
     paginate_by = 100
@@ -27,6 +27,15 @@ class DeskCaseList(OSFAdmin, ListView):
         }
         queryset = desk.cases(params)
         return queryset
+
+    def get_template_names(self):
+        if self.kwargs.get('modal'):
+            return self.template_name
+        return 'desk/cases.html'
+    
+
+class DeskCaseFormView(OSFAdmin, FormView):
+    pass
 
 
 class DeskCustomer(OSFAdmin, DetailView):
@@ -52,3 +61,7 @@ class DeskCustomer(OSFAdmin, DetailView):
         if customer == {}:
             raise DeskError(email)
         return customer
+
+
+class DeskCustomerFormView(OSFAdmin, FormView):
+    pass

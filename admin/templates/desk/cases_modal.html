@@ -1,11 +1,7 @@
-{% extends 'base.html' %}
-{% load static %}
-{% block title %}
-    <title>Customer cases</title>
-{% endblock title %}
-
-{% block content %}
-    <a href="" class="btn btn-primary disabled">Back to user</a>
+<div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal">x</button>
+</div>
+<div class="modal-body">
     <a href="" class="btn btn-primary disabled">Create a new case</a>
     <h3>OSF user's desk.com cases:</h3>
     <table class="table table-striped">
@@ -14,7 +10,6 @@
             <th>Type</th>
             <th>Status</th>
             <th>Subject</th>
-            <th>Link</th>
         </tr>
     </thead>
     <tbody>
@@ -23,7 +18,6 @@
             <td>{{ case.type }}</td>
             <td>{{ case.status }}</td>
             <td>{{ case.subject | truncatechars:40 }}</td>
-            <td>{{ case }}</td>
         </tr>
     {% empty %}
         <tr>
@@ -32,4 +26,7 @@
     {% endfor %}
     </tbody>
     </table>
-{% endblock content %}
+</div>
+<div class="modal-footer">
+    <button type="button" class="btn" data-dismiss="modal" >Close</button>
+</div>
