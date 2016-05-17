@@ -92,7 +92,7 @@ You may wish to verify this through {provider}'s website.
 </style>
 <div class="alert alert-info" role="alert">
 This content has been removed.
-</div>'''
+</div>'''}
 
 WATERBUTLER_JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
 
