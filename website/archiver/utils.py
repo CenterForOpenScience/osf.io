@@ -227,8 +227,8 @@ def find_question(schema, qid):
             q['qid']: q
             for q in page['questions']
         }
-    if qid in questions:
-        return questions[qid]
+        if qid in questions:
+            return questions[qid]
 
 def find_selected_files(schema, metadata):
     targets = []
