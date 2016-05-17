@@ -3,8 +3,11 @@
 // autocompletion. This is only here for the toolbar
 
 // needs Markdown.Converter.js at the moment
+'use strict';
+
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
+var bootbox = require('bootbox');
 var Range = ace.require('ace/range').Range;
 
 (function () {
@@ -59,7 +62,7 @@ var Range = ace.require('ace/range').Range;
         undo: "Undo -",
         redo: "Redo -",
 
-        help: "Markdown Editing Help"
+        help: "Wiki Syntax Help"
     };
 
     var keyStrokes = {
@@ -110,6 +113,10 @@ var Range = ace.require('ace/range').Range;
         redo: {
             win: 'Ctrl-Y|Ctrl-Shift-Z',
             mac: 'Command-Y|Command-Shift-Z',
+        },
+        help: {
+          win: 'Ctrl-U',
+          mac: 'Command-U',
         },
     };
 
@@ -1704,8 +1711,14 @@ var Range = ace.require('ace/range').Range;
 
             buttons.redo = makeButton("wmd-redo-button", getStringAndKey("redo"), "-220px", null);
             buttons.redo.execute = function (manager) { inputBox.session.getUndoManager().redo(); };
+
             makeSpacer(4);
             makeCheckBox("wmd-autocom-toggle", "autocom", "-240px", "Autocomplete");
+
+            makeSpacer(4);
+            buttons.help = makeButton("wmd-help-button", getStringAndKey("help"), "-240px", bindCommand("helpPopUp"));
+
+            //helpOptions = true;
 
             if (helpOptions) {
                 var helpButton = document.createElement("li");
@@ -2439,6 +2452,16 @@ var Range = ace.require('ace/range').Range;
         chunk.startTag = "----------\n";
         chunk.selection = "";
         chunk.skipLines(2, 1, true);
+    }
+
+    commandProto.helpPopUp = function (chunk, postProcessing){
+      bootbox.dialog({
+          title: 'Wiki Syntax Help',
+          message:
+              '<p>Wiki uses the Markdown snytax. This gives you many options, but can be very simple as well. ' +
+              'To see more information and examples go to our <a href="http://help.osf.io/m/collaborating/l/524109-using-the-wiki">guides</a>' +
+              '</p>'
+      });
     }
 
 
