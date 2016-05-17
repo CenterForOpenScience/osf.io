@@ -1,4 +1,5 @@
 import gc
+from collections import deque
 from datetime import datetime
 
 import pytz
@@ -24,9 +25,9 @@ def main():
 
     while count < total:
         print 'Migrating {} through {}'.format(count, count + page_size)
-        was_connected_to = []
-        django_nodelogs = []
-        nodelog_guids = []
+        was_connected_to = deque()
+        django_nodelogs = deque()
+        nodelog_guids = deque()
         django_nodelogs_was_connected_to = {}
         for modm_nodelog in MODMNodeLog.find().sort('-date')[count:count +
                                                              page_size]:
@@ -44,7 +45,8 @@ def main():
                 user_pk = None
 
             try:
-                node_pk = modm_to_django[getattr(modm_nodelog, 'node', None)._id]
+                node_pk = modm_to_django[getattr(modm_nodelog, 'node',
+                                                 None)._id]
             except (KeyError, AttributeError) as ex:
                 blank_nodes += 1
                 node_pk = None
@@ -75,7 +77,8 @@ def main():
                     datetime.now() - split).total_seconds())
                 split = datetime.now()
             if count % page_size == 0:
-                print '{} blank users; {} blank nodes'.format(blank_users, blank_nodes)
+                print '{} blank users; {} blank nodes'.format(blank_users,
+                                                              blank_nodes)
                 print 'Starting to migrate {} through {} which is {}'.format(
                     count - page_size, count, len(django_nodelogs))
                 splat = datetime.now()
