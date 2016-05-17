@@ -5,7 +5,6 @@ from modularodm import Q
 import gc
 from framework.guid.model import Guid as MODMGuid
 
-from website.app import init_app
 from osf_models.models import Node, User, Tag, Guid, Contributor
 
 
@@ -59,29 +58,31 @@ def main():
     nodes = Node.objects.all()
     total = len(nodes)
     count = 0
+    page_size = 1000
 
-    for node in nodes:
-        modm_node = MODMNode.load(node._guid.guid)
-        verify_contributors(node, modm_node)
-        verify_tags(node, modm_node)
-        count += 1
+    while count < total:
+        for node in nodes[count:count+page_size]:
+            modm_node = MODMNode.load(node._guid.guid)
+            verify_contributors(node, modm_node)
+            verify_tags(node, modm_node)
+            count += 1
 
-        if count % (total * .001) == 0:
-            floatal = float(total)
-            flount = float(count)
-            print 'Verified nodes {}%'.format((
-                (floatal - flount) / floatal - 1.0) * -100.0)
+            if count % (total * .001) == 0:
+                floatal = float(total)
+                flount = float(count)
+                print 'Verified nodes {}%'.format((
+                    (floatal - flount) / floatal - 1.0) * -100.0)
 
-        # clear out
-        modm_node = None
-        node = None
-        floatal = None
-        flount = None
+            # clear out
+            modm_node = None
+            node = None
+            floatal = None
+            flount = None
 
-        if count % 1000 == 0:
-            garbage = gc.collect()
-            print '{}:{} Collected {} whole garbages...'.format(count, total,
-                                                                garbage)
+            if count % page_size == 0:
+                garbage = gc.collect()
+                print '{}:{} Collected {} whole garbages...'.format(count, total,
+                                                                    garbage)
     print '\a'
     print '\a'
     print '\a'

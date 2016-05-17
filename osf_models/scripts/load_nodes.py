@@ -1,6 +1,6 @@
-from website.app import init_app
-
-init_app()
+# from website.app import init_app
+#
+# init_app()
 
 # MIGRATE NODES
 

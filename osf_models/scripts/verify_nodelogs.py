@@ -3,7 +3,7 @@ import gc
 from framework.auth import User as MODMUser
 from modularodm import Q
 from osf_models.models import Node, NodeLog, User
-from website.app import init_app
+
 from website.models import Node as MODMNode
 from website.models import NodeLog as MODMNodeLog
 

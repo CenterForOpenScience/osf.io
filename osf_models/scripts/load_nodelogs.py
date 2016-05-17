@@ -3,7 +3,7 @@ import gc
 import pytz
 from django.db import transaction
 from osf_models.models import Node, NodeLog, User
-from website.app import init_app
+
 from website.models import Node as MODMNode
 from website.models import NodeLog as MODMNodeLog
 
@@ -11,7 +11,6 @@ from .load_nodes import get_or_create_node, get_or_create_user
 
 
 def main():
-    # init_app()
     total = MODMNodeLog.find().count()
     # total = len(modm_nodelogs)
     count = 0
@@ -19,15 +18,6 @@ def main():
     django_nodelogs = []
     django_nodelogs_ids = []
     django_nodelogs_was_connected_to = {}
-
-    # build a lookup table of all node_guids to node_pks
-    nodes_lookup_table = {x['_guid__guid']: x['pk']
-                          for x in Node.objects.all().values('_guid__guid',
-                                                             'pk')}
-    # build a lookup table of all user_guids to user_pks
-    users_lookup_table = {x['_guid__guid']: x['pk']
-                          for x in User.objects.all().values('_guid__guid',
-                                                             'pk')}
 
     print 'Migrating {} logs...'.format(total)
     while count < total:
@@ -44,16 +34,17 @@ def main():
                 else:
                     if modm_nodelog.user is not None:
                         # try to get the pk out of the lookup table
-                        user_pk = users_lookup_table.get(modm_nodelog.user._id,
+                        user_pk = modm_to_django.get(modm_nodelog.user._id,
                                                          None)
 
                         # it wasn't there
                         if user_pk is None:
                             # create a new user
+                            print 'Creating User {}'.format(modm_nodelog.user._id)
                             user = get_or_create_user(modm_nodelog.user)
                             user_pk = user.pk
                             # put the user in the lookup table for next time
-                            users_lookup_table[modm_nodelog.user._id] = user_pk
+                            modm_to_django[modm_nodelog.user._id] = user_pk
                     else:
                         # log doesn't have user
                         user_pk = None
@@ -65,12 +56,13 @@ def main():
                     if node_id is not None:
                         if isinstance(node_id, basestring):
                             # it's a guid, look it up in the table
-                            node_pk = nodes_lookup_table.get(node_id, None)
+                            node_pk = modm_to_django.get(node_id, None)
                         elif isinstance(node_id, MODMNode):
                             # it's an instance, look it up in the table
-                            node_pk = nodes_lookup_table.get(node_id._id, None)
+                            node_pk = modm_to_django.get(node_id._id, None)
 
                         if node_pk is None:
+                            print 'Creating Node {}'.format(node_id)
                             # it wasn't in the table
                             if isinstance(node_id, basestring):
                                 # it's a guid, get an instance and create a PG version
@@ -82,19 +74,19 @@ def main():
                                     continue
                                 node_pk = get_or_create_node(modm_node).pk
                                 # put it in the table for later
-                                nodes_lookup_table[modm_node._id] = node_pk
+                                modm_to_django[modm_node._id] = node_pk
                             elif isinstance(node_id, MODMNode):
                                 # it's an instance, create a PG version
                                 node_pk = get_or_create_node(node_id).pk
                                 # put it in the table for later
-                                nodes_lookup_table[node_id._id] = node_pk
+                                modm_to_django[node_id._id] = node_pk
                     if node_pk is not None:
                         was_connected_to = []
                         for wct in modm_nodelog.was_connected_to:
-                            wct_pk = nodes_lookup_table.get(wct._id, None)
+                            wct_pk = modm_to_django.get(wct._id, None)
                             if wct_pk is None:
                                 wct_pk = get_or_create_node(wct).pk
-                                nodes_lookup_table[wct._id] = wct_pk
+                                modm_to_django[wct._id] = wct_pk
                             was_connected_to.append(wct_pk)
                         if modm_nodelog.date is None:
                             nodelog_date = None
