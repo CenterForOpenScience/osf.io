@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import json
 import datetime
 import furl
 import httplib as http
