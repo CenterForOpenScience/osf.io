@@ -77,22 +77,6 @@ def reset_password(auth, **kwargs):
         }
         raise HTTPError(400, data=error_data)
 
-    if request.method == 'POST':
-        # new random verification key, allows CAS to authenticate the user w/o password one time only.
-        user_obj.verification_key = security.random_string(20)
-        try:
-            user_obj.set_password(request.json['password'])
-        except HTTPError as e:
-            raise e
-        user_obj.save()
-        status.push_status_message('Password reset', kind='success', trust=False)
-        # redirect to CAS and authenticate the user with the one-time verification key.
-        return redirect(cas.get_login_url(
-            web_url_for('user_account', _absolute=True),
-            username=user_obj.username,
-            verification_key=user_obj.verification_key
-        ))
-
     return {
         'verification_key': verification_key
     }
@@ -110,6 +94,26 @@ def forgot_password_get(auth, **kwargs):
         return redirect(web_url_for('dashboard'))
 
     return {}
+
+
+def reset_password_post(verification_key):
+    user_obj = get_user(verification_key=verification_key)
+    if not user_obj:
+        error_data = {
+            'message_short': 'Invalid url.',
+            'message_long': 'The verification key in the URL is invalid or has expired.'
+        }
+        raise HTTPError(400, data=error_data)
+
+    user_obj.verification_key = security.random_string(20)
+    try:
+        user_obj.set_password(request.json['password'])
+    except HTTPError as e:
+        return e
+    user_obj.save()
+    status.push_status_message('Password reset, you may now login.', kind='success', trust=False)
+
+    return {'message': 'You may now log in.'}
 
 
 @collect_auth
