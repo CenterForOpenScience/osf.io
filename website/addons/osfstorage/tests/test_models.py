@@ -220,6 +220,7 @@ class TestOsfstorageFileNode(StorageTestCase):
         child_storage['materialized_path'] = child.materialized_path
         trashed_storage.pop('deleted_by')
         trashed_storage.pop('deleted_on')
+        trashed_storage.pop('suspended')
         assert_equal(child_storage.pop('path'), '')
         assert_equal(trashed_storage.pop('path'), '/' + child._id)
         assert_equal(trashed_storage, child_storage)

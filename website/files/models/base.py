@@ -69,6 +69,7 @@ class TrashedFileNode(StoredObject, Commentable):
     deleted_by = fields.AbstractForeignField('User')
     deleted_on = fields.DateTimeField(auto_now_add=True)
     tags = fields.ForeignField('Tag', list=True)
+    suspended = fields.BooleanField(default=False)
 
     @property
     def deep_url(self):
@@ -107,6 +108,7 @@ class TrashedFileNode(StoredObject, Commentable):
         data = self.to_storage()
         data.pop('deleted_on')
         data.pop('deleted_by')
+        data.pop('suspended')
         if parent:
             data['parent'] = parent._id
         elif data['parent']:

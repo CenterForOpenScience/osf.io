@@ -135,6 +135,7 @@ BaseComment.prototype.fetch = function() {
         if (self.id() !== undefined) {
             query += '&filter[target]=' + self.id();
         }
+        query += '&page[size]=30';
         var url = osfHelpers.apiV2Url(self.$root.nodeType + '/' + window.contextVars.node.id + '/comments/', {query: query});
         self.fetchNext(url, [], setUnread);
     }
