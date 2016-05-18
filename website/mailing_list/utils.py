@@ -51,7 +51,7 @@ def get_info(node_id):
         return json.loads(resp.text)
     elif resp.status_code == 404:
         return None
-    raise HTTPError(resp.status_code)
+    raise HTTPError(resp.status_code, data={'message_long': resp.message or resp.json or ''})
 
 @require_mailgun
 def get_members(node_id):
@@ -65,7 +65,7 @@ def get_members(node_id):
     )
     if resp.status_code == 200:
         return json.loads(resp.text)
-    raise HTTPError(resp.status_code)
+    raise HTTPError(resp.status_code, data={'message_long': resp.message or resp.json or ''})
 
 @require_mailgun
 def get_list(node_id):
@@ -89,7 +89,7 @@ def create_list(node_id):
     """
     from website.models import Node  # avoid circular import
     node = Node.load(node_id)
-    res = requests.post(
+    resp = requests.post(
         MAILGUN_BASE_LISTS_URL,
         auth=('api', settings.MAILGUN_API_KEY),
         data={
@@ -98,8 +98,8 @@ def create_list(node_id):
             'access_level': 'members'
         }
     )
-    if res.status_code != 200:
-        raise HTTPError(res.status_code)
+    if resp.status_code != 200:
+        raise HTTPError(resp.status_code, data={'message_long': resp.message or resp.json or ''})
 
     members_list = []
     members_list = jsonify_users_list(node.contributors, unsubs=get_unsubscribes(node))
@@ -111,12 +111,12 @@ def delete_list(node_id):
     """ Deletes list on MailGun
     :param str node_id: ID of the node in question
     """
-    res = requests.delete(
+    resp = requests.delete(
         '{}/{}'.format(MAILGUN_BASE_LISTS_URL, address(node_id)),
         auth=('api', settings.MAILGUN_API_KEY)
     )
-    if res.status_code not in [200, 404]:
-        raise HTTPError(res.status_code)
+    if resp.status_code not in [200, 404]:
+        raise HTTPError(resp.status_code, data={'message_long': resp.message or resp.json or ''})
 
 @require_mailgun
 def update_title(node_id):
@@ -126,15 +126,15 @@ def update_title(node_id):
     from website.models import Node  # avoid circular import
     node = Node.load(node_id)
 
-    res = requests.put(
+    resp = requests.put(
         '{}/{}'.format(MAILGUN_BASE_LISTS_URL, address(node_id)),
         auth=('api', settings.MAILGUN_API_KEY),
         data={
             'name': list_title(node)
         }
     )
-    if res.status_code != 200:
-        raise HTTPError(res.status_code)
+    if resp.status_code != 200:
+        raise HTTPError(resp.status_code, data={'message_long': resp.message or resp.json or ''})
 
 @require_mailgun
 def update_single_user_in_list(node_id, user_id, email=None, enabled=True, old_email=None):
@@ -153,7 +153,7 @@ def update_single_user_in_list(node_id, user_id, email=None, enabled=True, old_e
     email = email or user.username
 
     if old_email:
-        res = requests.put(
+        resp = requests.put(
             '{}/{}/members/{}'.format(MAILGUN_BASE_LISTS_URL, address(node_id), old_email),
             auth=('api', settings.MAILGUN_API_KEY),
             data={
@@ -161,10 +161,10 @@ def update_single_user_in_list(node_id, user_id, email=None, enabled=True, old_e
                 'vars': json.dumps({'_id': user_id, 'primary': False})
             }
         )
-        if res.status_code not in [200, 404]:
-            raise HTTPError(res.status_code)
+        if resp.status_code not in [200, 404]:
+            raise HTTPError(resp.status_code, data={'message_long': resp.message or resp.json or ''})
 
-    res = requests.post(
+    resp = requests.post(
         '{}/{}/members'.format(MAILGUN_BASE_LISTS_URL, address(node._id)),
         auth=('api', settings.MAILGUN_API_KEY),
         data={
@@ -174,8 +174,8 @@ def update_single_user_in_list(node_id, user_id, email=None, enabled=True, old_e
             'upsert': True
         }
     )
-    if res.status_code != 200:
-        raise HTTPError(res.status_code)
+    if resp.status_code != 200:
+        raise HTTPError(resp.status_code, data={'message_long': resp.message or resp.json or ''})
 
 @require_mailgun
 def remove_user_from_list(node_id, user_id):
@@ -189,12 +189,12 @@ def remove_user_from_list(node_id, user_id):
     user = User.load(user_id)
 
     for email in user.emails:
-        res = requests.delete(
+        resp = requests.delete(
             '{}/{}/members/{}'.format(MAILGUN_BASE_LISTS_URL, address(node_id), email),
             auth=('api', settings.MAILGUN_API_KEY)
         )
-        if res.status_code not in [200, 404]:
-            raise HTTPError(res.status_code)
+        if resp.status_code not in [200, 404]:
+            raise HTTPError(resp.status_code, data={'message_long': resp.message or resp.json or ''})
 
 @require_mailgun
 def update_multiple_users_in_list(node_id, members):
@@ -204,7 +204,7 @@ def update_multiple_users_in_list(node_id, members):
     :param list members: List of json-formatted user dicts to add/enable/update
     """
     # TODO: Maybe assert proper `members` formatting?
-    res = requests.post(
+    resp = requests.post(
         '{}/{}/members.json'.format(MAILGUN_BASE_LISTS_URL, address(node_id)),
         auth=('api', settings.MAILGUN_API_KEY),
         data={
@@ -212,8 +212,8 @@ def update_multiple_users_in_list(node_id, members):
             'members': json.dumps(members)
         }
     )
-    if res.status_code != 200:
-        raise HTTPError(res.status_code)
+    if resp.status_code != 200:
+        raise HTTPError(resp.status_code, data={'message_long': resp.message or resp.json or ''})
 
 @require_mailgun
 def full_update(node_id):
