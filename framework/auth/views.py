@@ -113,7 +113,7 @@ def forgot_password_get(auth, *args, **kwargs):
     """Return forgot password page upon.
     """
     if auth.logged_in:
-        return redirect(web_url_for('my_projects'))
+        return redirect(web_url_for('dashboard'))
     return {}
 
 ###############################################################################
