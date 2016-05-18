@@ -9,7 +9,7 @@ from modularodm import Q
 from framework.transactions.context import TokuTransaction
 
 from website.app import init_app
-from website.mailing_list.utils import create_list
+from website.mailing_list.utils import create_list as real_create_list
 from website.models import Node
 from website.notifications.model import NotificationSubscription
 from website.notifications.utils import to_subscription_key
@@ -20,10 +20,19 @@ logger = logging.getLogger(__name__)
 EVENT = 'mailing_list_events'
 SUBSCRIPTION_TYPE = 'email_transactional'
 
+def fake(*args, **kwargs):
+    # Override actual method to prevent outgoing calls
+    return
+
 def get_targets():
     return Node.find()
 
 def migrate(dry_run=True):
+    if dry_run:
+        create_list = fake
+    else:
+        create_list = real_create_list
+
     successful_enables = []
     successful_disables = []
     unknown_failures = {}
@@ -95,10 +104,6 @@ def main():
     dry_run = 'dry' in sys.argv
     if not dry_run:
         script_utils.add_file_logger(logger, __file__)
-    else:
-        def create_list(*args, **kwargs):
-            # Override actual method to prevent outgoing calls
-            return
     with TokuTransaction():
         migrate(dry_run=dry_run)
 
