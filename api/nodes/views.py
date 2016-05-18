@@ -1116,7 +1116,7 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixi
         node.save()
 
 
-class NodeIdentifierList(JSONAPIBaseView, generics.ListCreateAPIView):
+class NodeIdentifierList(JSONAPIBaseView, generics.ListAPIView):
     """Identifiers for the current node. Read Only for the time being
     """
     permission_classes = (
@@ -1152,15 +1152,23 @@ class NodeIdentifierList(JSONAPIBaseView, generics.ListCreateAPIView):
         return Identifier.find(Q('referent', 'eq', self.get_node()))
 
 
-class NodeIdentifierDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixin):
+class NodeIdentifierDetail(JSONAPIBaseView, generics.RetrieveAPIView):
+    """Identifiers detail for the requested identfier. Read only
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+    )
 
-    seralizer_class = IdentifierSerializer
+    required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]
+    required_write_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
 
+    serializer_class = IdentifierSerializer
     view_category = 'identifiers'
     view_name = 'node-identifier-detail'
 
-    def get_object(self, category):
-        return self.get_node().get_identifier(category)
+    def get_object(self):
+        identifier = self.kwargs['node_identifier']
+        return Identifier.find_one(Q('value', 'eq', identifier))
 
 
 class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
