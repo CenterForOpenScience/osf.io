@@ -1656,6 +1656,34 @@ var Range = ace.require('ace/range').Range;
                 buttonRow.appendChild(button);
                 return button;
             };
+            var makeHelpButton = function(id,title,XShift){
+              var button = document.createElement("li");
+              //Based off the search button classes
+              //<button type=button class="btn osf-search-btn" data-toggle="modal" data-target="#search-help-modal"><i class="fa fa-question fa-lg"></i></button>
+              //$(".dropdown-toggle").attr("data-toggle", "dropdown");
+              button.className = "wmd-button";
+              // change those attributes
+              button.setAttribute('data-toggle','modal');
+              button.setAttribute('data-target','#wiki-help-modal');
+
+              togg = button.getAttribute('data-toggle');
+              targ = button.getAttribute('data-target');
+              console.log(togg);
+              console.log(targ);
+              //button.data.target = "#wiki-help-modal"
+              button.style.left = xPosition + "px";
+              xPosition += 25;
+              var buttonImage = document.createElement("span");
+              button.id = id + postfix;
+              button.appendChild(buttonImage);
+              button.title = title;
+              button.XShift = XShift;
+              //if (textOp)
+              //    button.textOp = textOp;
+              setupButton(button, true);
+              buttonRow.appendChild(button);
+              return button;
+            }
             var makeCheckBox = function (div_id, cb_id, XShift, text) {
                 var li = document.createElement("li");
                 li.id = div_id;
@@ -1716,7 +1744,7 @@ var Range = ace.require('ace/range').Range;
             makeCheckBox("wmd-autocom-toggle", "autocom", "-240px", "Autocomplete");
 
             makeSpacer(4);
-            buttons.help = makeButton("wmd-help-button", getStringAndKey("help"), "-240px", bindCommand("helpPopUp"));
+            buttons.help = makeHelpButton("wmd-help-button", getStringAndKey("help"), "-240px");
 
             //helpOptions = true;
 
@@ -2466,3 +2494,10 @@ var Range = ace.require('ace/range').Range;
 
 
 })();
+//<button type=button class="btn osf-search-btn" data-toggle="modal" data-target="#search-help-modal"><i class="fa fa-question fa-lg"></i></button>
+//$(".dropdown-toggle").attr("data-toggle", "dropdown");
+$(function(){
+  console.log($("wmd-help-button"));
+  $("wmd-help-button").attr("data-toggle","modal");
+  $("wmd-help-button").attr("data-target","#wiki-help-modal");
+});
