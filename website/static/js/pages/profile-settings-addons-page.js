@@ -114,9 +114,6 @@ for (var i=0; i < addonEnabledSettings.length; i++) {
    }
 }
 
-$(document).ready(function(){
-    $('.addon-auth-table').osfToggleHeight({height: 140});
-});
 
 /* Before closing the page, Check whether the newly checked addon are updated or not */
 $(window).on('beforeunload',function() {
