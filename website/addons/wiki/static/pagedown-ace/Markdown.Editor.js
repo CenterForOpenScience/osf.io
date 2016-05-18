@@ -1663,11 +1663,6 @@ var Range = ace.require('ace/range').Range;
               // change those attributes
               button.setAttribute('data-toggle','modal');
               button.setAttribute('data-target','#wiki-help-modal');
-
-              togg = button.getAttribute('data-toggle');
-              targ = button.getAttribute('data-target');
-              console.log(togg);
-              console.log(targ);
               button.style.left = xPosition + "px";
               xPosition += 25;
               var buttonImage = document.createElement("span");
