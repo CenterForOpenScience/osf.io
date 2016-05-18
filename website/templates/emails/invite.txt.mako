@@ -4,7 +4,9 @@ You have been added by ${referrer.fullname} as a contributor to the project "${n
 
 ${claim_url}
 
-Once you have set a password, you will be able to make contributions to ${node.title} and create your own projects.
+Once you have set a password, you will be able to make contributions to "${node.title}" and create your own projects.
+
+To visit "${node.title}" click the following link: https://osf.io${node.url}
 
 If you are not ${fullname} or you are erroneously being associated with ${node.title} then email contact@osf.io with the subject line "Claiming Error" to report the problem.
 

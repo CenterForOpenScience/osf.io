@@ -80,7 +80,7 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
 
         from website import mails
 
-        mails.send_email('foo@bar.com', mails.TEST, name="Foo")
+        mails.send_mail('foo@bar.com', mails.TEST, name="Foo")
 
     :param str to_addr: The recipient's email address
     :param Mail mail: The mail object
