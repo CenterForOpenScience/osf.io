@@ -363,12 +363,12 @@ else:
     #  Setting up a scheduler, essentially replaces an independent cron job
     CELERYBEAT_SCHEDULE = {
         '5-minute-emails': {
-            'task': 'notify.send_users_email',
+            'task': 'website.notifications.tasks.send_users_email',
             'schedule': crontab(minute='*/5'),
             'args': ('email_transactional',),
         },
         'daily-emails': {
-            'task': 'notify.send_users_email',
+            'task': 'website.notifications.tasks.send_users_email',
             'schedule': crontab(minute=0, hour=0),
             'args': ('email_digest',),
         },
@@ -432,22 +432,22 @@ else:
     #         'kwargs': {'dry_run': False},
     #     },
     #     'files_audit_0': {
-    #         'task': 'scripts.osfstorage.files_audit_0',
+    #         'task': 'scripts.osfstorage.files_audit.0',
     #         'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
     #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
     #     },
     #     'files_audit_1': {
-    #         'task': 'scripts.osfstorage.files_audit_1',
+    #         'task': 'scripts.osfstorage.files_audit.1',
     #         'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
     #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
     #     },
     #     'files_audit_2': {
-    #         'task': 'scripts.osfstorage.files_audit_2',
+    #         'task': 'scripts.osfstorage.files_audit.2',
     #         'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
     #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
     #     },
     #     'files_audit_3': {
-    #         'task': 'scripts.osfstorage.files_audit_3',
+    #         'task': 'scripts.osfstorage.files_audit.3',
     #         'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
     #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
     #     },
