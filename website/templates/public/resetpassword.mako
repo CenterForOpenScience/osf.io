@@ -76,7 +76,7 @@
                 </div>
             </div>
         </div>
-        <button type="submit" class="btn btn-primary pull-right m-t-md">Reset password</button>
+        <button type="submit" class="btn btn-primary pull-right m-t-md" data-bind="css: {disabled: !password.isValid()}">Reset password</button>
         </form>
     </div>
 </div>
@@ -85,6 +85,11 @@
 </%def>
 
 <%def name="javascript_bottom()">
+    <script type="text/javascript">
+        window.contextVars = $.extend(true, {}, window.contextVars, {
+            verification_key: ${verification_key | sjson, n}
+        });
+    </script>
     ${parent.javascript_bottom()}
     <script src=${"/static/public/js/resetpassword-page.js" | webpack_asset}></script>
 </%def>
