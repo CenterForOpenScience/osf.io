@@ -1,10 +1,8 @@
-﻿// OSF Note: This file has been changed for UI reasons, to prevent
+// OSF Note: This file has been changed for UI reasons, to prevent
 // automatic rendering, and to add a checkbox for toggling snippet
 // autocompletion. This is only here for the toolbar
 
 // needs Markdown.Converter.js at the moment
-'use strict';
-
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 var Range = ace.require('ace/range').Range;
@@ -61,7 +59,7 @@ var Range = ace.require('ace/range').Range;
         undo: "Undo -",
         redo: "Redo -",
 
-        help: "Wiki Syntax Help"
+        help: "Markdown Editing Help"
     };
 
     var keyStrokes = {
@@ -112,10 +110,6 @@ var Range = ace.require('ace/range').Range;
         redo: {
             win: 'Ctrl-Y|Ctrl-Shift-Z',
             mac: 'Command-Y|Command-Shift-Z',
-        },
-        help: {
-          win: 'Ctrl-U',
-          mac: 'Command-U',
         },
     };
 
@@ -1655,26 +1649,6 @@ var Range = ace.require('ace/range').Range;
                 buttonRow.appendChild(button);
                 return button;
             };
-            var makeHelpButton = function(id,title,XShift){
-              var button = document.createElement("li");
-              //Based off the search button classes
-              button.className = "wmd-button";
-              // change those attributes
-              button.setAttribute('data-toggle','modal');
-              button.setAttribute('data-target','#wiki-help-modal');
-              button.style.left = xPosition + "px";
-              xPosition += 25;
-              var buttonImage = document.createElement("span");
-              button.id = id + postfix;
-              button.appendChild(buttonImage);
-              button.title = title;
-              button.XShift = XShift;
-              //if (textOp)
-              //    button.textOp = textOp;
-              setupButton(button, true);
-              buttonRow.appendChild(button);
-              return button;
-            }
             var makeCheckBox = function (div_id, cb_id, XShift, text) {
                 var li = document.createElement("li");
                 li.id = div_id;
@@ -1730,14 +1704,8 @@ var Range = ace.require('ace/range').Range;
 
             buttons.redo = makeButton("wmd-redo-button", getStringAndKey("redo"), "-220px", null);
             buttons.redo.execute = function (manager) { inputBox.session.getUndoManager().redo(); };
-
             makeSpacer(4);
             makeCheckBox("wmd-autocom-toggle", "autocom", "-240px", "Autocomplete");
-
-            makeSpacer(4);
-            buttons.help = makeHelpButton("wmd-help-button", getStringAndKey("help"), "-240px");
-
-            //helpOptions = true;
 
             if (helpOptions) {
                 var helpButton = document.createElement("li");
@@ -2473,9 +2441,5 @@ var Range = ace.require('ace/range').Range;
         chunk.skipLines(2, 1, true);
     }
 
+
 })();
-$(function(){
-  console.log($("wmd-help-button"));
-  $("wmd-help-button").attr("data-toggle","modal");
-  $("wmd-help-button").attr("data-target","#wiki-help-modal");
-});
