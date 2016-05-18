@@ -142,8 +142,9 @@ def auth_login(auth, **kwargs):
             raise HTTPError(http.InvalidURL)
     if auth.logged_in:
         # remove expired email verifications
-        auth.user.clean_email_verifications(auth.user)
-        auth.user.save()
+        if not campaign:
+            auth.user.clean_email_verifications(auth.user)
+            auth.user.save()
         if not request.args.get('logout'):
             if next_url:
                 return redirect(next_url)
