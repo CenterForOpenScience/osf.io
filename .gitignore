@@ -43,6 +43,7 @@ env/
 mathenv
 cover/
 .konchrc
+*.ipynb*
 
 # Assets
 ########
