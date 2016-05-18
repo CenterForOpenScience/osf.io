@@ -75,7 +75,6 @@ INSTALLED_APPS = (
     'webpack_loader',
     'django_nose',
     'password_reset',
-    'allaccess',
 )
 
 # Custom user model (extends AbstractBaseUser)
