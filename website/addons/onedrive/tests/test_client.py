@@ -12,10 +12,10 @@ from website.addons.onedrive.tests.factories import (
     OneDriveNodeSettingsFactory,
     OneDriveUserSettingsFactory
 )
-from website.addons.onedrive.client import (
-    get_client, get_node_addon_client, get_node_client,
-    get_client_from_user_settings
-)
+#  from website.addons.onedrive.client import (
+#      get_client, get_node_addon_client, get_node_client,
+#      get_client_from_user_settings
+#  )
 
 
 class TestCore(OsfTestCase):
