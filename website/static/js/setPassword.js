@@ -24,7 +24,7 @@ ko.validation.registerExtenders();
 //    - signup: required fields for Name, email, email confirmation, password, and password strength
 //    - reset: fields for password, strength, and password confirmation (for when you don't know your old password)
 //    - change: change your password when you know your old one
-var ViewModel = function(passwordViewType, submitUrl, campaign) {
+var ViewModel = function(passwordViewType, submitUrl, campaign, redirectUrl) {
 
     var self = this;
 
@@ -157,18 +157,19 @@ var ViewModel = function(passwordViewType, submitUrl, campaign) {
     });
 
     self.submitSuccess = function(response) {
-        debugger;
         self.changeMessage(
             self.flashMessage,
             self.flashMessageClass,
             response.message,
             'text-info p-xs'
         );
+        if (redirectUrl) {
+            window.location = redirectUrl;
+        }
         self.submitted(true);
     };
 
     self.submitError = function(xhr) {
-        debugger;
         if (xhr.status === 409) {
             self.changeMessage(
                 self.flashMessage,
@@ -210,22 +211,19 @@ var ViewModel = function(passwordViewType, submitUrl, campaign) {
         $osf.postJSON(
             submitUrl,
             ko.toJS(self)
-        ).then(function(){
-            debugger;
-        });
-        // ).done(
-        //     self.submitSuccess
-        // ).fail(
-        //     self.submitError
-        // );
+        ).done(
+            self.submitSuccess
+        ).fail(
+            self.submitError
+        );
     };
 
     self.errors = ko.validation.group(self);
 
 };
 
-var SetPassword = function(selector, passwordViewType, submitUrl, campaign) {
-    this.viewModel = new ViewModel(passwordViewType, submitUrl, campaign);
+var SetPassword = function(selector, passwordViewType, submitUrl, campaign, redirectUrl) {
+    this.viewModel = new ViewModel(passwordViewType, submitUrl, campaign, redirectUrl);
     $osf.applyBindings(this.viewModel, selector);
 };
 
