@@ -350,6 +350,7 @@ var SalesAnalytics = function() {
 
     self.run = function() {
         console.log('run');
+        // Hide keen stuff unless keen_ready is set to True in the settings.
         if (keenProjectId) {
             $(document).ready(function(){
                 $('.hidden').removeClass('hidden');

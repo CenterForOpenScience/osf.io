@@ -1,9 +1,7 @@
 from django.views.generic import TemplateView
 
-from admin.base.settings import ENTRY_POINTS
 from admin.base.settings import KEEN_CREDENTIALS
 from admin.base.utils import OSFAdmin
-from admin.sales_analytics.models import UserCount
 from admin.sales_analytics.utils import get_user_count, get_multi_product_metrics, get_repeat_action_user_count, get_user_count_history
 from datetime import timedelta
 
@@ -13,7 +11,7 @@ class DashboardView(OSFAdmin, TemplateView):
 
     def get_context_data(self, **kwargs):
         user_count = get_user_count()
-        multi_product_metrics_yearly = get_multi_product_metrics()
+        multi_product_metrics_yearly = get_multi_product_metrics(timedelta=timedelta(days=365))
         multi_product_metrics_monthly = get_multi_product_metrics(timedelta=timedelta(days=30))
         repeat_action_user_monthly = get_repeat_action_user_count()
 

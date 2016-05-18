@@ -4,9 +4,8 @@ from admin.metrics.utils import get_list_of_dates
 from datetime import datetime, time, timedelta
 from framework.mongo import database as db
 
-from .models import UserCount
+from .models import UserCount, DBMetrics
 
-import json
 import logging
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(levelname)s %(threadName)-10s %(message)s',)
@@ -48,7 +47,7 @@ def get_user_count(db=db, entry_points=ENTRY_POINTS, date=datetime.now().date())
         percent_list = []
         tags = entry_points.values()
         tags.append('osf')
-        total = db.user.find({}).count()
+        total = db.user.find({'date_registered': {'$lte': datetime.combine(date, time.min)}}).count()
         for entry_point in entry_points.keys():
             count = db.user.find({'system_tags': entry_point, 'date_registered': {'$lte': datetime.combine(date, time.min)}}).count()
             percent = round(float(count) / float(total), 2)
@@ -77,13 +76,38 @@ def get_user_count_history(db=db, entry_points=ENTRY_POINTS, start=datetime.now(
         return {tag: data for tag, data in UserCount.get_count_history()}
 
 
-def get_multi_product_metrics(db=db, timedelta=timedelta(days=365)):
+def get_multi_product_metrics(date=datetime.now().date(), timedelta=timedelta(days=30)):
     """
     Get the number of users using 2+ products within a period of time
     """
-    start_date = datetime.now() - timedelta
+    multi_product_metrics = ['multi_product_count', 'cross_product_count', 'multi_action_count']
+    timespan = timedelta.days
+    results = DBMetrics.get_record(date=date, names=multi_product_metrics, timespan=timespan)
+    if results:
+        return results
+    else:
+        return save_multi_product_metrics(start=datetime.now().date() - timedelta, end=datetime.now().date())
+
+
+def get_repeat_action_user_count(date=datetime.now().date(), timedelta=timedelta(days=30)):
+    """
+    Get the number of users that have repetitive actions (with a 3 second difference)
+    during the last month.
+    """
+    repeat_action_metrics = ['repeat_action_count', 'repeat_action_age']
+    timespan = timedelta.days
+    results = DBMetrics.get_record(date=date, names=repeat_action_metrics, timespan=timespan)
+    if results:
+        return results
+    else:
+        return save_repeat_action_metrics(start=datetime.now().date() - timedelta, end=datetime.now().date())
+
+
+def save_multi_product_metrics(db=db, start=datetime.now().date() - timedelta(days=30), end=datetime.now().date()):
+    timespan = (end - start).days
     pipeline = [
-        {'$match': {'date': {'$gt': start_date}}},
+        {'$match': {'date': {'$gte': datetime.combine(start, time.min),
+                             '$lt': datetime.combine(end, time.min)}}},
         {'$group': {'_id': '$user', 'node_id': {'$addToSet': '$params.node'},
                     'action': {'$addToSet': '$action'}}}
     ]
@@ -113,21 +137,19 @@ def get_multi_product_metrics(db=db, timedelta=timedelta(days=365)):
             # Action type
             if len(set(user_node['action'])) > 1:
                 multi_action_count += 1
+    record = {'multi_product_count': multi_product_count,
+              'cross_product_count': cross_product_count,
+              'multi_action_count': multi_action_count,
+              }
+    DBMetrics.save_record(record, timespan=timespan, date=end)
+    return record
 
-    return {'multi_product_count': multi_product_count,
-            'cross_product_count': cross_product_count,
-            'multi_action_count': multi_action_count,
-            }
 
-
-def get_repeat_action_user_count(db=db, timedelta=timedelta(days=30)):
-    """
-    Get the number of users that have repetitive actions (with a 3 second difference)
-    during the last month.
-    """
-    start_date = datetime.now() - timedelta
+def save_repeat_action_metrics(db=db, start=datetime.now().date() - timedelta(days=30), end=datetime.now().date()):
+    timespan = (end - start).days
     pipeline = [
-        {'$match': {'date': {'$gt': start_date}}},
+        {'$match': {'date': {'$gte': datetime.combine(start, time.min),
+                             '$lt': datetime.combine(end, time.min)}}},
         {'$group': {'_id': '$user', 'nodelog_id': {'$addToSet': '$_id'}}},
     ]
 
@@ -153,4 +175,7 @@ def get_repeat_action_user_count(db=db, timedelta=timedelta(days=30)):
                     age = (date - date_registered).days
                     repeat_action_user_age.append(age)
                     break
-    return {'repeat_action_count': repeat_action_count, 'repeat_action_age': repeat_action_user_age}
+    record = {'repeat_action_count': repeat_action_count,
+              'repeat_action_age': int(sum(repeat_action_user_age) / len(repeat_action_user_age))}
+    DBMetrics.save_record(record, timespan=timespan, date=end)
+    return record

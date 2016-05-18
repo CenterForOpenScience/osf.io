@@ -1,5 +1,4 @@
 from admin.base.settings import ENTRY_POINTS
-from admin.metrics.utils import get_list_of_dates
 from datetime import datetime, timedelta
 from django.db import models
 
@@ -56,7 +55,7 @@ class UserCount(models.Model):
 
     @classmethod
     def save_record(cls, result_dict, date=datetime.now().date()):
-        total = result_dict.pop('total', None)
+        result_dict.pop('total', None)
         for i in range(len(result_dict['tags'])):
             uc = cls(date=date,
                      tag=result_dict['tags'][i],
@@ -74,16 +73,17 @@ class DBMetrics(models.Model):
     Metrics derived from MongoDB
     """
     class Meta:
-        unique_together = (('date', 'name'),)
+        unique_together = (('date', 'name', 'timespan'),)
     date = models.DateField(default=datetime.now().date())
     name = models.TextField()
-    data = models.TextField()
+    timespan = models.IntegerField(default=0)
+    data = models.IntegerField()
 
     @classmethod
-    def get_record(cls, date, names):
+    def get_record(cls, date, names, timespan):
         try:
             results = cls.objects.filter(date=date,
-                                         name__in=names)
+                                         name__in=names, timespan=timespan)
             record = {}
             for result in results:
                 record[result.name] = result.data
@@ -92,20 +92,22 @@ class DBMetrics(models.Model):
             return
 
     @classmethod
-    def get_metric_history(cls, name, start=datetime.now().date() - timedelta(days=30), end=datetime.now().date()):
-        results = cls.objects.filter(name=name, date__gte=start, date__lte=end)
-        x = ['x', ]
-        data = [name, ]
-
-        for result in results:
-            x.append(result.date.strftime('%Y-%m-%d'))
-            data.append(result.data)
-        return [x, data]
+    def get_aggregate_metric(cls, name, timespan=0, start=datetime.now().date() - timedelta(days=30), end=datetime.now().date()):
+        results = cls.objects.filter(name=name, timespan=timespan, date__gte=start, date__lte=end)
+        return {name: sum([result.data for result in results])}
 
     @classmethod
-    def save_record(cls, result_dict, date=datetime.now().date()):
+    def get_aggregate_metrics(cls, names, timespan=0, timedelta=timedelta(days=30)):
+        results = {}
+        for name in names:
+            results.update(cls.get_aggregate_metric(name, timespan=timespan, start=datetime.now().date() - timedelta))
+        return results
+
+    @classmethod
+    def save_record(cls, result_dict, timespan, date=datetime.now().date()):
         for key, value in result_dict.items():
             metric = cls(date=date,
                          name=key,
+                         timespan=timespan,
                          data=value)
             metric.save()
