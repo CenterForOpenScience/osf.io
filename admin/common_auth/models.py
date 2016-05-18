@@ -22,8 +22,7 @@ class MyUserManager(BaseUserManager):
         return user
 
     def create_superuser(self, email, password):
-        user = self.create_user(email,
-            password=password, )
+        user = self.create_user(email, password=password, )
         user.is_superuser = True
         user.is_admin = True
         user.is_staff = True
@@ -67,12 +66,6 @@ class MyUser(AbstractBaseUser, PermissionsMixin):
 
     class Meta:
         ordering = ['email']
-
-    # Todo: implement this if needed
-    # @property
-    # def is_staff(self):
-    #     "Is the user a member of staff?"
-    #     return self.is_admin
 
     @property
     def osf_user(self):

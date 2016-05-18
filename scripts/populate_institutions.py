@@ -80,6 +80,16 @@ def main(env):
                 'domains': ['osf.ucr.edu'],
                 'email_domains': [],
             },
+            # {
+            #     '_id': 'ugent',
+            #     'name': 'Universiteit Gent [Test]',
+            #     'description': None,
+            #     'banner_name': 'ugent-banner.png',
+            #     'logo_name': 'ugent-shield.png',
+            #     'auth_url': SHIBBOLETH_SP.format(encode_uri_component('https://identity.ugent.be/simplesaml/saml2/idp/metadata.php')),
+            #     'domains': ['osf.ugent.be'],
+            #     'email_domains': [],
+            # },
             {
                 '_id': 'usc',
                 'name': 'University of Southern California',
@@ -167,6 +177,16 @@ def main(env):
                 'logo_name': 'ucr-shield.png',
                 'auth_url': SHIBBOLETH_SP.format(encode_uri_component('urn:mace:incommon:ucr.edu')),
                 'domains': ['test-osf-ucr.cos.io'],
+                'email_domains': [],
+            },
+            {
+                '_id': 'ugent',
+                'name': 'Universiteit Gent [Test]',
+                'description': 'Universiteit Gent [Test]',
+                'banner_name': 'ugent-banner.png',
+                'logo_name': 'ugent-shield.png',
+                'auth_url': SHIBBOLETH_SP.format(encode_uri_component('https://identity.ugent.be/simplesaml/saml2/idp/metadata.php')),
+                'domains': ['test-osf-ugent.cos.io'],
                 'email_domains': [],
             },
             {
