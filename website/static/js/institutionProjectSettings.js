@@ -7,7 +7,6 @@ var bootbox = require('bootbox');
 
 var $osf = require('js/osfHelpers');
 var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
-var NodeSelectTreebeard = require('js/nodeSelectTreebeard');
 
 var ViewModel = function(data) {
     var self = this;
@@ -178,7 +177,6 @@ var ViewModel = function(data) {
         });
     };
 };
-
 
 /**
  * get node tree for treebeard from API V1
