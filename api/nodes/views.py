@@ -50,6 +50,7 @@ from api.logs.serializers import NodeLogSerializer
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
 from website.models import Node, Pointer, Comment, NodeLog, Institution
+from website.identifiers.model import Identifier
 from website.files.models import FileNode
 from framework.auth.core import User
 from api.base.utils import default_node_list_query, default_node_permission_query
@@ -1148,9 +1149,7 @@ class NodeIdentifierList(JSONAPIBaseView, generics.ListCreateAPIView):
 
     # overrides ListCreateAPIView
     def get_queryset(self):
-        dois = self.get_node().get_identifier('doi')
-        arks = self.get_node().get_identifier('ark')
-        return [arks]
+        return Identifier.find(Q('referent', 'eq', self.get_node()))
 
 
 class NodeIdentifierDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixin):
