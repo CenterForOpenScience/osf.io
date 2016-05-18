@@ -23,7 +23,7 @@ def migrate(targets, dry_run=True):
         versions = node.wiki_pages_versions
         current = node.wiki_pages_current
         updated_versions = {}
-        for wiki in node.wiki_pages_versions:
+        for wiki in versions:
             if wiki in current:
                 updated_versions[wiki] = versions[wiki]
         if not dry_run:
