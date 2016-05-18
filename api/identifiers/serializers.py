@@ -1,6 +1,5 @@
 from rest_framework import serializers as ser
 from api.base.serializers import JSONAPISerializer, LinksField, RelationshipField
-from api.base.utils import absolute_reverse
 
 
 class IdentifierSerializer(JSONAPISerializer):
@@ -18,7 +17,6 @@ class IdentifierSerializer(JSONAPISerializer):
 
     class Meta:
         type_ = 'identifiers'
-
 
     def get_identifiers(self, obj):
         return obj.value
