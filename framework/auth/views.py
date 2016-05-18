@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import datetime
 import httplib as http
-from copy import deepcopy
 
 from flask import request
 
@@ -226,7 +225,7 @@ def auth_email_logout(token, user):
 @collect_auth
 def confirm_email_get(token, auth=None, **kwargs):
     """View for email confirmation links.
-    Authenticates and redirects to user settings page if confirmation is
+    Authenticates and redirects to user login page if confirmation is
     successful, otherwise shows an "Expired Link" error.
 
     methods: GET
