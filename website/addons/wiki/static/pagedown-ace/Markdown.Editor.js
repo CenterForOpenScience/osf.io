@@ -7,7 +7,6 @@
 
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
-var bootbox = require('bootbox');
 var Range = ace.require('ace/range').Range;
 
 (function () {
@@ -2473,17 +2472,6 @@ var Range = ace.require('ace/range').Range;
         chunk.selection = "";
         chunk.skipLines(2, 1, true);
     }
-
-    commandProto.helpPopUp = function (chunk, postProcessing){
-      bootbox.dialog({
-          title: 'Wiki Syntax Help',
-          message:
-              '<p>Wiki uses the Markdown snytax. This gives you many options, but can be very simple as well. ' +
-              'To see more information and examples go to our <a href="http://help.osf.io/m/collaborating/l/524109-using-the-wiki">guides</a>' +
-              '</p>'
-      });
-    }
-
 
 })();
 $(function(){
