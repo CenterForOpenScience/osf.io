@@ -20,3 +20,6 @@ class IdentifierSerializer(JSONAPISerializer):
 
     def get_identifiers(self, obj):
         return obj.value
+
+    def get_absolute_url(self, obj):
+        return obj.absolute_api_v2_url
