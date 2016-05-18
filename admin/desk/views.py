@@ -32,11 +32,7 @@ class DeskCaseList(OSFAdmin, ListView):
         kwargs.setdefault('user_id', self.kwargs.get('user_id'))
         kwargs.setdefault('desk_case', 'https://{}.desk.com/web/agent/case/'.format(DeskClient.SITE_NAME))
         kwargs.setdefault('desk_customer', 'https://{}.desk.com/web/agent/customer/'.format(DeskClient.SITE_NAME))
-        kwargs = super(DeskCaseList, self).get_context_data(**kwargs)
-        customer_link = kwargs.get('cases', [])[0].get('_links', {}).get('customer', {}).get('href')
-        customer_id = customer_link.split('/')[-1] if customer_link is not None else None
-        kwargs.setdefault('customer_id', customer_id)
-        return kwargs
+        return super(DeskCaseList, self).get_context_data(**kwargs)
 
 
 class DeskCustomer(OSFAdmin, DetailView):

@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from website.project.model import Comment
 
 from admin.common_auth.logs import OSFLogEntry
-from admin.spam.forms import ConfirmForm, EmailForm
+from admin.spam.forms import ConfirmForm
 from tests.base import AdminTestCase
 from tests.factories import CommentFactory, AuthUserFactory, ProjectFactory
 from admin_tests.utilities import setup_view, setup_form_view
