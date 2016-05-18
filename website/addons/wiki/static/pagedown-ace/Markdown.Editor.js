@@ -1657,9 +1657,7 @@ var Range = ace.require('ace/range').Range;
             };
             var makeHelpButton = function(id,title,XShift){
               var button = document.createElement("li");
-              //Based off the search button classes
               button.className = "wmd-button";
-              // change those attributes
               button.setAttribute('data-toggle','modal');
               button.setAttribute('data-target','#wiki-help-modal');
               button.style.left = xPosition + "px";
@@ -1669,8 +1667,6 @@ var Range = ace.require('ace/range').Range;
               button.appendChild(buttonImage);
               button.title = title;
               button.XShift = XShift;
-              //if (textOp)
-              //    button.textOp = textOp;
               setupButton(button, true);
               buttonRow.appendChild(button);
               return button;
@@ -1736,8 +1732,6 @@ var Range = ace.require('ace/range').Range;
 
             makeSpacer(4);
             buttons.help = makeHelpButton("wmd-help-button", getStringAndKey("help"), "-240px");
-
-            //helpOptions = true;
 
             if (helpOptions) {
                 var helpButton = document.createElement("li");
