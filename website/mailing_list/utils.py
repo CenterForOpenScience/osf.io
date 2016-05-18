@@ -103,6 +103,7 @@ def create_list(node_id):
 
     members_list = []
     members_list = jsonify_users_list(node.contributors, unsubs=get_unsubscribes(node))
+    members_list.append({'address': 'mailing_list_robot@osf.io', 'subscribed': True})  # Routing robot
 
     update_multiple_users_in_list(node_id, members_list)
 
@@ -203,7 +204,6 @@ def update_multiple_users_in_list(node_id, members):
     :param str node_id: The id of the node in question
     :param list members: List of json-formatted user dicts to add/enable/update
     """
-    # TODO: Maybe assert proper `members` formatting?
     resp = requests.post(
         '{}/{}/members.json'.format(MAILGUN_BASE_LISTS_URL, address(node_id)),
         auth=('api', settings.MAILGUN_API_KEY),

@@ -20,8 +20,6 @@ from website.mailing_list.model import MailingListEventLog
 from website.util import api_url_for
 
 
-# TODO: prevent or mock queued tasks
-
 class TestNodeCreationMailingConfig(OsfTestCase):
 
     def test_top_level_project_enables_mailing_list(self):
