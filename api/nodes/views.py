@@ -1154,6 +1154,8 @@ class NodeIdentifierList(JSONAPIBaseView, generics.ListAPIView):
 
 class NodeIdentifierDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     """Identifiers detail for the requested identfier. Read only
+
+    Detail for any identifier attached to a node, including a link back to the node.
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
