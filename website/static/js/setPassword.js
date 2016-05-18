@@ -90,7 +90,6 @@ var ViewModel = function(passwordViewType, submitUrl, campaign, redirectUrl) {
     // only include the following fields if the user is
     // signing up for the first time
     if (passwordViewType === 'signup') {
-
         self.fullName = ko.observable('').extend({
             required: true,
             minLength: 3
@@ -111,11 +110,16 @@ var ViewModel = function(passwordViewType, submitUrl, campaign, redirectUrl) {
             }
         });
 
-        self.password.extend({notEqual: self.email1});
+        self.password.extend({
+            notEqual: {
+                params: self.email1,
+                message: "Your password cannot be the same as your username."
+            }
+        });
 
         validatedFields.fullName = self.fullName;
         validatedFields.email1 = self.email1;
-        validatedFields.eamil2 = self.email2;
+        validatedFields.email2 = self.email2;
 
     }
 
@@ -174,7 +178,7 @@ var ViewModel = function(passwordViewType, submitUrl, campaign, redirectUrl) {
             self.changeMessage(
                 self.flashMessage,
                 self.flashMessageClass,
-                'You cannot choose your username as your password. Please enter another password.',
+                'Your username cannot be the same as your password.',
                 'text-danger p-xs',
                 5000,
                 self.flashTimeout
