@@ -74,7 +74,6 @@ INSTALLED_APPS = (
     'raven.contrib.django.raven_compat',
     'webpack_loader',
     'django_nose',
-    'ckeditor',
     'password_reset',
     'allaccess',
 )
