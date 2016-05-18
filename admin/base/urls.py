@@ -24,6 +24,7 @@ urlpatterns = [
                                       namespace='metrics')),
             url(r'^desk/', include('admin.desk.urls',
                                    namespace='desk')),
+            url(r'^sales_analytics/', include('admin.sales_analytics.urls', namespace='sales_analytics')),
         ]),
     ),
 ]

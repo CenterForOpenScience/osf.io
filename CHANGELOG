@@ -2,6 +2,12 @@
 Changelog
 *********
 
+0.72.0 (2016-05-17)
+===================
+
+- Make all pages sanitize on display rather than on storage.
+- Remove usage of knockout-punches and remove strip_ko Mako filter.
+
 0.71.0 (2016-05-11)
 ===================
 

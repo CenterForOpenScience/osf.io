@@ -15,7 +15,7 @@
 
     <div class="addon-auth-table" id="${addon_short_name}-header">
         <!-- ko foreach: accounts -->
-        <a data-bind="click: $root.askDisconnect" class="text-danger pull-right default-authorized-by">Disconnect Account</a>
+        <a data-bind="click: $root.askDisconnect.bind($root)" class="text-danger pull-right default-authorized-by">Disconnect Account</a>
         <div class="m-h-lg addon-auth-table" id="${addon_short_name}-header">
             <table class="table table-hover">
                 <thead>
@@ -31,7 +31,7 @@
                             <!-- ko if: !title --><em>Private project</em><!-- /ko -->
                         </td>
                         <td>
-                            <a data-bind="click: $parent.deauthorizeNode">
+                            <a data-bind="click: $parent.deauthorizeNode.bind($parent)">
                                 <i class="fa fa-times text-danger pull-right" title="Deauthorize Project"></i>
                             </a>
                         </td>
