@@ -1659,8 +1659,6 @@ var Range = ace.require('ace/range').Range;
             var makeHelpButton = function(id,title,XShift){
               var button = document.createElement("li");
               //Based off the search button classes
-              //<button type=button class="btn osf-search-btn" data-toggle="modal" data-target="#search-help-modal"><i class="fa fa-question fa-lg"></i></button>
-              //$(".dropdown-toggle").attr("data-toggle", "dropdown");
               button.className = "wmd-button";
               // change those attributes
               button.setAttribute('data-toggle','modal');
@@ -1670,7 +1668,6 @@ var Range = ace.require('ace/range').Range;
               targ = button.getAttribute('data-target');
               console.log(togg);
               console.log(targ);
-              //button.data.target = "#wiki-help-modal"
               button.style.left = xPosition + "px";
               xPosition += 25;
               var buttonImage = document.createElement("span");
@@ -2494,8 +2491,6 @@ var Range = ace.require('ace/range').Range;
 
 
 })();
-//<button type=button class="btn osf-search-btn" data-toggle="modal" data-target="#search-help-modal"><i class="fa fa-question fa-lg"></i></button>
-//$(".dropdown-toggle").attr("data-toggle", "dropdown");
 $(function(){
   console.log($("wmd-help-button"));
   $("wmd-help-button").attr("data-toggle","modal");
