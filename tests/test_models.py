@@ -4176,6 +4176,11 @@ class TestRegisterNode(OsfTestCase):
         assert_equal(registration_wiki_version.node, registration)
         assert_not_equal(registration_wiki_version._id, wiki._id)
 
+    def test_legacy_private_registrations_can_be_made_public(self):
+        self.registration.is_public = False
+        self.registration.set_privacy(Node.PUBLIC, auth=Auth(self.registration.creator))
+        assert_true(self.registration.is_public)
+
 
 class TestNodeLog(OsfTestCase):
 

@@ -136,6 +136,9 @@ $(document).ready(function () {
                 buttonState
             ]);
             if (typeof editor !== 'undefined') { ace.edit(editor).resize(); } // jshint ignore: line
+        },
+        complete : function() {
+            if (typeof editor !== 'undefined') { ace.edit(editor).resize(); } // jshint ignore: line
         }
     });
 

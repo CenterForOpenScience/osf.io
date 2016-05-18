@@ -10,6 +10,8 @@ from tests.factories import (
 )
 from tests import utils
 
+from website.files import models
+from tests.test_addons import TestFile
 from website.models import MetaSchema
 from website.project.model import ensure_schemas
 from website.prereg.utils import get_prereg_schema
@@ -23,6 +25,7 @@ class TestMigrateRegistrationExtra(OsfTestCase):
         self.node = ProjectFactory(creator=self.user)
         ensure_schemas()
         self.prereg_schema = get_prereg_schema()
+        self.file = self._get_test_file()
         self.data = {
             'uploader': {
                 'extra': {
@@ -38,6 +41,19 @@ class TestMigrateRegistrationExtra(OsfTestCase):
             },
             'other': {
                 'value': 'foo'
+            },
+            'bad': {
+                'value': 'foobarbaz',
+                'extra': [
+                    {
+                        'viewUrl': '/project/{}/files/osfstorage/5723787136b74e1a953d9612/'.format(
+                            self.node._id
+                        ),
+                        'hasSelectedFile': True,
+                        'selectedFileName': 'file.txt'
+                    }
+                ]
+
             },
             'nested': {
                 'value': {
@@ -65,6 +81,21 @@ class TestMigrateRegistrationExtra(OsfTestCase):
                 }
             }
         }
+
+    def _get_test_file(self):
+        version = models.FileVersion(identifier='1', provider='osfstorage', metadata={'sha256': '2413fb3709b05939f04cf2e92f7d0897fc2596f9ad0b8a9ea855c7bfebaae892'})
+        version.save()
+        ret = models.FileNode(
+            _id='5723787136b74e1a953d9612',
+            name='file.txt',
+            node=self.node,
+            provider='osfstorage',
+            path='/test/file.txt',
+            materialized_path='/test/file.txt',
+            versions=[version]
+        )
+        ret.save()
+        return ret
 
     def test_migrate_registration_extra(self):
         with utils.mock_archive(
@@ -111,4 +142,16 @@ class TestMigrateRegistrationExtra(OsfTestCase):
             assert_equal(
                 self.data['other'],
                 data['other']
+            )
+            assert_true(
+                data['bad']['extra'][0].get('data', False)
+            )
+            assert_true(
+                isinstance(data['bad']['extra'][0]['data'], dict)
+            )
+            assert_equal(
+                data['bad']['extra'][0]['data']['name'], 'file.txt'
+            )
+            assert_equal(
+                data['bad']['extra'][0]['data']['sha256'], '2413fb3709b05939f04cf2e92f7d0897fc2596f9ad0b8a9ea855c7bfebaae892'
             )

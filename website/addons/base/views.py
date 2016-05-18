@@ -53,6 +53,16 @@ FILE_GONE_ERROR_MESSAGE = u'''
 This link to the file "{file_name}" is no longer valid.
 </div>'''
 
+FILE_SUSPENDED_ERROR_MESSAGE = u'''
+<style>
+.file-download{{display: none;}}
+.file-share{{display: none;}}
+.file-delete{{display: none;}}
+</style>
+<div class="alert alert-info" role="alert">
+This content has been removed.
+</div>'''
+
 WATERBUTLER_JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
 
 
@@ -483,6 +493,9 @@ def addon_deleted_file(auth, node, **kwargs):
 
     ret = serialize_node(node, auth, primary=True)
     ret.update(rubeus.collect_addon_assets(node))
+
+    error_template = FILE_SUSPENDED_ERROR_MESSAGE if getattr(trashed, 'suspended', False) else FILE_GONE_ERROR_MESSAGE
+    error = error_template.format(file_name=markupsafe.escape(trashed.name))
     ret.update({
         'urls': {
             'render': None,
@@ -498,8 +511,16 @@ def addon_deleted_file(auth, node, **kwargs):
         'file_path': trashed.path,
         'provider': trashed.provider,
         'materialized_path': trashed.materialized_path,
-        'error': FILE_GONE_ERROR_MESSAGE.format(file_name=markupsafe.escape(trashed.name)),
+        'error': error,
         'private': getattr(node.get_addon(trashed.provider), 'is_private', False),
+
+        'file_id': trashed._id,
+        # For the off chance that there is no GUID
+        'file_guid': getattr(trashed.get_guid(create=False), '_id', None),
+        'file_tags': [tag._id for tag in trashed.tags],
+        'file_name_ext': os.path.splitext(trashed.name)[1],
+        'file_name_title': os.path.splitext(trashed.name)[0],
+        'allow_comments': trashed.provider in settings.ADDONS_COMMENTABLE,
     })
 
     return ret, httplib.GONE
@@ -551,12 +572,6 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     if version is None:
         if file_node.get_guid():
-            # If this file has been successfully view before but no longer exists
-
-            # Move file to trashed file node
-            if not TrashedFileNode.load(file_node._id):
-                file_node.delete()
-
             # Show a nice error message
             return addon_deleted_file(file_node=file_node, **kwargs)
 

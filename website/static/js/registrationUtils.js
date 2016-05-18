@@ -182,11 +182,11 @@ var Question = function(questionSchema, data) {
     self.properties = questionSchema.properties || [];
     self.match = questionSchema.match || '';
 
-    try {
-	self.extra =  ko.observableArray(self.data.extra || []);
-    } catch(e) {
-	self.extra = ko.observableArray([]);
+    var extra = self.data.extra;
+    if (self.data.extra && !$.isArray(self.data.extra)) {
+        extra = [self.data.extra];
     }
+    self.extra = ko.observableArray(extra || []);
 
     self.formattedFileList = ko.pureComputed(function() {
         return self.extra().map(function(elem) {
@@ -1233,7 +1233,7 @@ var RegistrationManager = function(node, draftsSelector, urls, createButton) {
 
     self.urls = urls;
 
-    self.schemas = ko.observableArray();
+    self.schemas = ko.observableArray([]);
     self.selectedSchema = ko.computed({
         read: function() {
             return self.schemas().filter(function(s) {
@@ -1262,7 +1262,7 @@ var RegistrationManager = function(node, draftsSelector, urls, createButton) {
 
     // TODO: convert existing registration UI to frontend impl.
     // self.registrations = ko.observable([]);
-    self.drafts = ko.observableArray();
+    self.drafts = ko.observableArray([]);
     self.hasDrafts = ko.pureComputed(function() {
         return self.drafts().length > 0;
     });
