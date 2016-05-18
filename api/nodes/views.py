@@ -1669,7 +1669,7 @@ class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, ge
                 detail='Add-on {} already enabled for node {}'.format(addon, node._id)
             )
 
-        serializer.save()
+        return super(NodeAddonDetail, self).perform_create(serializer)
 
     def perform_destroy(self, instance):
         addon = instance.config.short_name
@@ -1718,8 +1718,8 @@ class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Addo
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [CoreScopes.ADDONS_READ]
-    required_write_scopes = [CoreScopes.NODE_ADDON_WRITE]
+    required_read_scopes = [CoreScopes.ADDONS_READ, CoreScopes.NODE_FILE_READ]
+    required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = NodeAddonFolderSerializer
     view_category = 'nodes'

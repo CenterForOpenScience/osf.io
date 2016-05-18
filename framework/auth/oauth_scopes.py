@@ -87,9 +87,6 @@ class ComposedScopes(object):
     USERS_READ = (CoreScopes.USERS_READ,)
     USERS_WRITE = USERS_READ + (CoreScopes.USERS_WRITE,)
 
-    USERS_FULL_READ = USERS_READ + (CoreScopes.ADDONS_READ,)
-    USERS_FULL_WRITE = USERS_FULL_READ + (CoreScopes.USERS_ADDON_WRITE,)
-
     # Applications collection
     APPLICATIONS_READ = (CoreScopes.APPLICATIONS_READ,)
     APPLICATIONS_WRITE = APPLICATIONS_READ + (CoreScopes.APPLICATIONS_WRITE,)
