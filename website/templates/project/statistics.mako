@@ -5,20 +5,13 @@
   <h2 class="text-300">Analytics</h2>
 </div>
 
-<div id="hiddenFlag"></div>
+<div id="hiddenFlag" class="ad_block_display">
+  <div class="m-b-md p-md osf-box-lt box-round text-center">The use of adblocking software may prevent site analytics from loading properly.</div>
+</div>
 <script src="/static/js/ads.js"></script>
 <script>
   if( window.canRunAds === undefined ){
-    var banner = document.createElement('div');
-    banner.className += 'm-b-md p-md osf-box-lt box-round text-center';
-    var node = document.createTextNode("The use of adblocking software may prevent site analytics from loading properly.");// For more information go");
-    banner.appendChild(node);
-    /* Link doesn't exist yet. Commentted out until a webpage is made */
-    //var link = document.createElement('a');
-    //link.href = "https://openscience.atlassian.net/browse/NCP-821";
-    //link.innerHTML = " here";
-    //banner.appendChild(link);
-    document.getElementById('hiddenFlag').appendChild(banner);
+    document.getElementById('hiddenFlag').style.display = "block";
   }
 </script>
 
