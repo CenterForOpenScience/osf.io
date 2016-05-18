@@ -51,7 +51,7 @@ def get_info(node_id):
         return json.loads(resp.text)
     elif resp.status_code == 404:
         return None
-    raise HTTPError(resp.status_code, data={'message_long': resp.message or resp.json or ''})
+    raise HTTPError(resp.status_code, data={'message_long': resp.json() or ''})
 
 @require_mailgun
 def get_members(node_id):
@@ -65,7 +65,7 @@ def get_members(node_id):
     )
     if resp.status_code == 200:
         return json.loads(resp.text)
-    raise HTTPError(resp.status_code, data={'message_long': resp.message or resp.json or ''})
+    raise HTTPError(resp.status_code, data={'message_long': resp.json() or ''})
 
 @require_mailgun
 def get_list(node_id):
@@ -99,7 +99,7 @@ def create_list(node_id):
         }
     )
     if resp.status_code != 200:
-        raise HTTPError(resp.status_code, data={'message_long': resp.message or resp.json or ''})
+        raise HTTPError(resp.status_code, data={'message_long': resp.json() or ''})
 
     members_list = []
     members_list = jsonify_users_list(node.contributors, unsubs=get_unsubscribes(node))
@@ -117,7 +117,7 @@ def delete_list(node_id):
         auth=('api', settings.MAILGUN_API_KEY)
     )
     if resp.status_code not in [200, 404]:
-        raise HTTPError(resp.status_code, data={'message_long': resp.message or resp.json or ''})
+        raise HTTPError(resp.status_code, data={'message_long': resp.json() or ''})
 
 @require_mailgun
 def update_title(node_id):
@@ -135,7 +135,7 @@ def update_title(node_id):
         }
     )
     if resp.status_code != 200:
-        raise HTTPError(resp.status_code, data={'message_long': resp.message or resp.json or ''})
+        raise HTTPError(resp.status_code, data={'message_long': resp.json() or ''})
 
 @require_mailgun
 def update_single_user_in_list(node_id, user_id, email=None, enabled=True, old_email=None):
@@ -163,7 +163,7 @@ def update_single_user_in_list(node_id, user_id, email=None, enabled=True, old_e
             }
         )
         if resp.status_code not in [200, 404]:
-            raise HTTPError(resp.status_code, data={'message_long': resp.message or resp.json or ''})
+            raise HTTPError(resp.status_code, data={'message_long': resp.json() or ''})
 
     resp = requests.post(
         '{}/{}/members'.format(MAILGUN_BASE_LISTS_URL, address(node._id)),
@@ -176,7 +176,7 @@ def update_single_user_in_list(node_id, user_id, email=None, enabled=True, old_e
         }
     )
     if resp.status_code != 200:
-        raise HTTPError(resp.status_code, data={'message_long': resp.message or resp.json or ''})
+        raise HTTPError(resp.status_code, data={'message_long': resp.json() or ''})
 
 @require_mailgun
 def remove_user_from_list(node_id, user_id):
@@ -195,7 +195,7 @@ def remove_user_from_list(node_id, user_id):
             auth=('api', settings.MAILGUN_API_KEY)
         )
         if resp.status_code not in [200, 404]:
-            raise HTTPError(resp.status_code, data={'message_long': resp.message or resp.json or ''})
+            raise HTTPError(resp.status_code, data={'message_long': resp.json() or ''})
 
 @require_mailgun
 def update_multiple_users_in_list(node_id, members):
@@ -213,7 +213,7 @@ def update_multiple_users_in_list(node_id, members):
         }
     )
     if resp.status_code != 200:
-        raise HTTPError(resp.status_code, data={'message_long': resp.message or resp.json or ''})
+        raise HTTPError(resp.status_code, data={'message_long': resp.json() or ''})
 
 @require_mailgun
 def full_update(node_id):
