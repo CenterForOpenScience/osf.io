@@ -2,6 +2,14 @@
 Changelog
 *********
 
+0.71.0 (2016-05-11)
+===================
+
+- Admin: create new user form.
+- Admin: refactor registration.
+- Admin: refactor and bugfixes for prereg module.
+- Admin: refactor and bugfixes for spam module.
+
 0.70.0 (2016-05-09)
 ===================
 
