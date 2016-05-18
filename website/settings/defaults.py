@@ -298,6 +298,26 @@ JWT_ALGORITHM = 'HS256'
 
 ##### CELERY #####
 
+DEFAULT_QUEUE = 'celery'
+LOW_QUEUE = 'low'
+MED_QUEUE = 'med'
+HIGH_QUEUE = 'high'
+
+from kombu import Queue, Exchange
+CELERY_QUEUES = (
+    Queue(LOW_QUEUE, Exchange(LOW_QUEUE), routing_key=LOW_QUEUE,
+          consumer_arguments={'x-priority': -1}),
+    Queue(DEFAULT_QUEUE, Exchange(DEFAULT_QUEUE), routing_key=DEFAULT_QUEUE,
+          consumer_arguments={'x-priority': 0}),
+    Queue(MED_QUEUE, Exchange(MED_QUEUE), routing_key=MED_QUEUE,
+          consumer_arguments={'x-priority': 1}),
+    Queue(HIGH_QUEUE, Exchange(HIGH_QUEUE), routing_key=HIGH_QUEUE,
+          consumer_arguments={'x-priority': 10}),
+)
+
+CELERY_DEFAULT_EXCHANGE_TYPE = 'direct'
+CELERY_ROUTES = ('framework.celery_tasks.routers.CeleryRouter', )
+
 # Default RabbitMQ broker
 BROKER_URL = 'amqp://'
 
