@@ -3,13 +3,17 @@
 </div>
 <div class="modal-body">
     <a href="" class="btn btn-primary disabled">Create a new case</a>
-    <h3>OSF user's desk.com cases:</h3>
+    <a href="{% url 'desk:user_cases' user_id %}" class="btn btn-primary">
+        Go to full list
+    </a>
+    <h3>OSF user "{{ user_id }}" desk.com cases:</h3>
     <table class="table table-striped">
     <thead>
         <tr>
             <th>Type</th>
             <th>Status</th>
             <th>Subject</th>
+            <th>Link</th>
         </tr>
     </thead>
     <tbody>
@@ -18,6 +22,9 @@
             <td>{{ case.type }}</td>
             <td>{{ case.status }}</td>
             <td>{{ case.subject | truncatechars:40 }}</td>
+            <td>
+                <a href="{{ desk_link }}{{ case.id }}" target="_blank">Link</a>
+            </td>
         </tr>
     {% empty %}
         <tr>

@@ -29,10 +29,15 @@ class DeskCaseList(OSFAdmin, ListView):
         return queryset
 
     def get_template_names(self):
-        if self.kwargs.get('modal'):
+        if self.request.GET.get('modal') is not None:
             return self.template_name
         return 'desk/cases.html'
-    
+
+    def get_context_data(self, **kwargs):
+        kwargs.setdefault('user_id', self.kwargs.get('user_id'))
+        kwargs.setdefault('desk_link', 'https://{}.desk.com/web/agent/case/'.format(DeskClient.SITE_NAME))
+        return super(DeskCaseList, self).get_context_data(**kwargs)
+
 
 class DeskCaseFormView(OSFAdmin, FormView):
     pass

@@ -5,7 +5,7 @@
 {% endblock title %}
 
 {% block content %}
-    <a href="" class="btn btn-primary disabled">Back to user</a>
+    <a href="{% url 'users:user' user_id %}" class="btn btn-primary">Back to user</a>
     <a href="" class="btn btn-primary disabled">Create a new case</a>
     <h3>OSF user's desk.com cases:</h3>
     <table class="table table-striped">
@@ -22,8 +22,10 @@
         <tr>
             <td>{{ case.type }}</td>
             <td>{{ case.status }}</td>
-            <td>{{ case.subject | truncatechars:40 }}</td>
-            <td>{{ case }}</td>
+            <td>{{ case.subject | truncatechars:60 }}</td>
+            <td>
+                <a href="{{ desk_link }}{{ case.id }}" target="_blank">Link</a>
+            </td>
         </tr>
     {% empty %}
         <tr>
