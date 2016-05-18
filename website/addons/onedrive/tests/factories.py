@@ -1,26 +1,41 @@
 # -*- coding: utf-8 -*-
 """Factory boy factories for the OneDrive addon."""
+import datetime
 
-from framework.auth import Auth
+from dateutil.relativedelta import relativedelta
 
-from factory import SubFactory, Sequence, post_generation
-from tests.factories import ModularOdmFactory, UserFactory, ProjectFactory
+from factory import SubFactory, Sequence
+from tests.factories import (
+    ModularOdmFactory,
+    UserFactory,
+    ProjectFactory,
+    ExternalAccountFactory)
 
 from website.addons.onedrive.model import (
-    OneDriveUserSettings, OneDriveNodeSettings
+    OneDriveUserSettings,
+    OneDriveNodeSettings,
 )
 
 
+class OneDriveAccountFactory(ExternalAccountFactory):
+    provider = 'onedrive'
+    provider_id = Sequence(lambda n: 'id-{0}'.format(n))
+    oauth_key = Sequence(lambda n: 'key-{0}'.format(n))
+    oauth_secret = Sequence(lambda n: 'secret-{0}'.format(n))
+    expires_at = datetime.datetime.now() + relativedelta(days=1)
+
 class OneDriveUserSettingsFactory(ModularOdmFactory):
-    FACTORY_FOR = OneDriveUserSettings
+    class Meta:
+        model = OneDriveUserSettings
 
     owner = SubFactory(UserFactory)
-    access_token = Sequence(lambda n: 'abcdef{0}'.format(n))
 
 
 class OneDriveNodeSettingsFactory(ModularOdmFactory):
-    FACTORY_FOR = OneDriveNodeSettings
+    class Meta:
+        model = OneDriveNodeSettings
 
     owner = SubFactory(ProjectFactory)
     user_settings = SubFactory(OneDriveUserSettingsFactory)
-    folder = 'Camera Uploads'
+    folder_id = '1234567890'
+    folder_path = 'Drive/Camera Uploads'
