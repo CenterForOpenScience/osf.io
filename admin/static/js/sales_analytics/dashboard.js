@@ -1,7 +1,8 @@
 require('bootstrap');
 require('jquery');
+require('c3/c3.css');
 
-var c3 = require('c3');
+var c3 = require('c3/c3.js');
 var keen = require('keen-js');
 var ss = require('simple-statistics');
 
