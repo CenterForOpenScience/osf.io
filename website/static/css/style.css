@@ -692,3 +692,7 @@ button.close {
 div.ball-scale-blue>div {
     background-color: #BED1E2;
 }
+
+.ad_block_display{
+  display:none;
+}
