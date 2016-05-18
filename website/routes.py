@@ -436,7 +436,7 @@ def make_url_map(app):
 
         Rule(
             '/resetpassword/<verification_key>/',
-            ['get', 'post'],
+            'get',
             auth_views.reset_password,
             OsfWebRenderer('public/resetpassword.mako', render_mako_string, trust=False)
         ),

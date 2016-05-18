@@ -893,12 +893,9 @@ class TestForgotAndResetPasswordViews(OsfTestCase):
         res = self.app.get(self.url)
         assert_equal(res.status_code, 200)
 
-    def test_can_reset_password_if_form_success(self):
-        res = self.app.get(self.url)
-        form = res.forms['resetPasswordForm']
-        form['password'] = 'newpassword'
-        form['password2'] = 'newpassword'
-        res = form.submit()
+    def test_can_post_reset_password(self):
+        post_url = api_url_for('reset_password_post', verification_key=self.key)
+        self.app.post_json(post_url, {'password': 'newpassword'})
 
         # password was updated
         self.user.reload()
