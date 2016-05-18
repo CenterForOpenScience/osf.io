@@ -1,7 +1,6 @@
 from django.conf.urls import url
 
 from api.registrations import views
-from api.nodes import views as node_views
 from website import settings
 
 
