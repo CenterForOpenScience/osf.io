@@ -960,6 +960,10 @@ class TestResetPassword(OsfTestCase):
         form['password2'] = 'newpassword'
         res = form.submit()
 
+    def test_can_post_reset_password(self):
+        post_url = api_url_for('reset_password_post', verification_key=self.key)
+        self.app.post_json(post_url, {'password': 'newpassword'})
+
         # check request URL is /resetpassword with verification_key(OSF)
         request_url_path = res.request.path
         assert_in('resetpassword', request_url_path)
