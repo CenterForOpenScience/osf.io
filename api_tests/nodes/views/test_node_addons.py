@@ -139,7 +139,7 @@ class NodeAddonDetailMixin(object):
         assert_equal(res.status_code, 404)
 
     def test_settings_detail_PUT_all_sets_settings(self):
-        wrong_type = self.should_expect_errors(success_types=['CONFIGURABLE'])
+        wrong_type = self.should_expect_errors(success_types=('CONFIGURABLE', ))
         try:
             self.node_settings.deauthorize(auth=self.auth)
             self.node_settings.save()
@@ -168,7 +168,7 @@ class NodeAddonDetailMixin(object):
 
 
     def test_settings_detail_PUT_none_and_enabled_clears_settings(self):
-        wrong_type = self.should_expect_errors(success_types=['CONFIGURABLE'])
+        wrong_type = self.should_expect_errors(success_types=('CONFIGURABLE', ))
         res = self.app.put_json_api(self.setting_detail_url, 
             {'data': { 
                 'id': self.short_name,
@@ -189,7 +189,7 @@ class NodeAddonDetailMixin(object):
             assert_in(res.status_code, [404, 405])
 
     def test_settings_detail_PUT_none_and_disabled_deauthorizes(self):
-        wrong_type = self.should_expect_errors(success_types=['CONFIGURABLE'])
+        wrong_type = self.should_expect_errors(success_types=('CONFIGURABLE', ))
         res = self.app.put_json_api(self.setting_detail_url, 
             {'data': { 
                 'id': self.short_name,
@@ -245,7 +245,7 @@ class NodeAddonDetailMixin(object):
             assert_in(res.status_code, [404, 405])
 
     def test_settings_detail_PATCH_to_enable_and_add_external_account_id(self):
-        wrong_type = self.should_expect_errors(success_types=['CONFIGURABLE'])
+        wrong_type = self.should_expect_errors(success_types=('CONFIGURABLE', ))
         try:
             self.node_settings.deauthorize(auth=self.auth)
             self.node_settings.save()
@@ -271,7 +271,7 @@ class NodeAddonDetailMixin(object):
             assert_in(res.status_code, [404, 405])
 
     def test_settings_detail_PATCH_to_remove_external_account_id(self):
-        wrong_type = self.should_expect_errors(success_types=['CONFIGURABLE'])
+        wrong_type = self.should_expect_errors(success_types=('CONFIGURABLE', ))
         res = self.app.patch_json_api(self.setting_detail_url, 
             {'data': { 
                 'id': self.short_name,
@@ -291,7 +291,7 @@ class NodeAddonDetailMixin(object):
             assert_in(res.status_code, [404, 405])
 
     def test_settings_detail_PATCH_to_add_folder_without_auth_conflict(self):
-        wrong_type = self.should_expect_errors(success_types=['CONFIGURABLE'])
+        wrong_type = self.should_expect_errors(success_types=('CONFIGURABLE', ))
         try:
             self.node_settings.deauthorize(self.auth)
             self.node_settings.save()
@@ -520,7 +520,7 @@ class NodeAddonTestSuiteMixin(NodeAddonListMixin, NodeAddonDetailMixin, NodeAddo
         self.set_setting_detail_url()
         self.set_folder_url()
 
-    def should_expect_errors(self, success_types=['CONFIGURABLE', 'OAUTH']):
+    def should_expect_errors(self, success_types=('CONFIGURABLE', 'OAUTH')):
         return self.addon_type not in success_types
 
     @property

@@ -338,7 +338,7 @@ class UserAddonTestSuiteMixin(UserAddonListMixin, UserAddonDetailMixin, UserAddo
         self.set_account_list_url()
         self.set_account_detail_url()
 
-    def should_expect_errors(self, success_types=['OAUTH']):
+    def should_expect_errors(self, success_types=('OAUTH', )):
         return self.addon_type not in success_types
 
 class UserOAuthAddonTestSuiteMixin(UserAddonTestSuiteMixin):

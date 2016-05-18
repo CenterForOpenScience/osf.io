@@ -370,8 +370,7 @@ class ApiAddonTestCase(ApiTestCase):
             AddonOAuthNodeSettingsBase, AddonNodeSettingsBase,
             AddonOAuthUserSettingsBase, AddonUserSettingsBase
         )
-        # TODO(mfraezz:) handle type-specific setUp for each type individually
-        assert self.addon_type in ('CONFIGURABLE', 'OAUTH', 'MANAGEABLE', 'UNMANAGEABLE', 'INVALID')  
+        assert self.addon_type in ('CONFIGURABLE', 'OAUTH', 'UNMANAGEABLE', 'INVALID')  
         self.account = None
         self.node_settings = None
         self.user_settings = None
@@ -395,11 +394,6 @@ class ApiAddonTestCase(ApiTestCase):
         if self.addon_type in ('OAUTH', 'CONFIGURABLE'):
             assert isinstance(self.node_settings, AddonOAuthNodeSettingsBase)
             assert isinstance(self.user_settings, AddonOAuthUserSettingsBase)
-        elif self.addon_type == 'MANAGEABLE':
-            assert not isinstance(self.node_settings, AddonOAuthNodeSettingsBase)
-            assert not isinstance(self.user_settings, AddonOAuthUserSettingsBase)
-            assert isinstance(self.node_settings, AddonNodeSettingsBase)
-            assert isinstance(self.user_settings, AddonUserSettingsBase)
 
         self.account_id = self.account._id if self.account else None
         self.set_urls()
