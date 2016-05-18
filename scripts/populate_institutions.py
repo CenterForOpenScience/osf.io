@@ -80,6 +80,16 @@ def main(env):
                 'domains': ['osf.ucr.edu'],
                 'email_domains': [],
             },
+            # {
+            #     '_id': 'ugent',
+            #     'name': 'Universiteit Gent [Test]',
+            #     'description': None,
+            #     'banner_name': 'ugent-banner.png',
+            #     'logo_name': 'ugent-shield.png',
+            #     'auth_url': SHIBBOLETH_SP.format(encode_uri_component('https://identity.ugent.be/simplesaml/saml2/idp/metadata.php')),
+            #     'domains': ['osf.ugent.be'],
+            #     'email_domains': [],
+            # },
             {
                 '_id': 'usc',
                 'name': 'University of Southern California',
@@ -93,7 +103,7 @@ def main(env):
             # {
             #     '_id': 'uva',
             #     'name': 'University of Virginia',
-            #     'description': None,
+            #     'description': 'Projects must abide by the University <a href="http://www.virginia.edu/informationpolicy/security.html">Security and Data Protection Policies</a>',
             #     'banner_name': 'uva-banner.png',
             #     'logo_name': 'uva-shield.png',
             #     'auth_url': SHIBBOLETH_SP.format(encode_uri_component('urn:mace:incommon:virginia.edu')),
@@ -142,7 +152,7 @@ def main(env):
             {
                 '_id': 'cos',
                 'name': 'Center For Open Science [Test]',
-                'description': 'Center for Open Science [Test]',
+                'description': 'COS is a non-profit technology company providing free and open services to increase inclusivity and transparency of research. Find out more at <a href="https://cos.io">cos.io</a>.',
                 'banner_name': 'cos-banner.png',
                 'logo_name': 'cos-shield.png',
                 'auth_url': None,
@@ -162,7 +172,7 @@ def main(env):
             {
                 '_id': 'ucr',
                 'name': 'University of California Riverside [Test]',
-                'description': 'University of California Riverside [Test]',
+                'description': 'Policy prohibits storing PII or HIPAA data on this site, please see C&amp;C\'s <a href="http://cnc.ucr.edu/security/researchers.html">security site</a> for more information.',
                 'banner_name': 'ucr-banner.png',
                 'logo_name': 'ucr-shield.png',
                 'auth_url': SHIBBOLETH_SP.format(encode_uri_component('urn:mace:incommon:ucr.edu')),
@@ -170,9 +180,19 @@ def main(env):
                 'email_domains': [],
             },
             {
+                '_id': 'ugent',
+                'name': 'Universiteit Gent [Test]',
+                'description': 'Universiteit Gent [Test]',
+                'banner_name': 'ugent-banner.png',
+                'logo_name': 'ugent-shield.png',
+                'auth_url': SHIBBOLETH_SP.format(encode_uri_component('https://identity.ugent.be/simplesaml/saml2/idp/metadata.php')),
+                'domains': ['test-osf-ugent.cos.io'],
+                'email_domains': [],
+            },
+            {
                 '_id': 'usc',
                 'name': 'University of Southern California [Test]',
-                'description': 'University of Southern California [Test]',
+                'description': 'Projects must abide by <a href="http://policy.usc.edu/info-security/">USC\'s Information Security Policy</a>. Data stored for human subject research repositories must abide by <a href="http://policy.usc.edu/biorepositories/">USC\'s Biorepository Policy</a>. The OSF may not be used for storage of Personal Health Information that is subject to <a href="http://policy.usc.edu/hipaa/">HIPPA regulations</a>.',
                 'banner_name': 'usc-banner.png',
                 'logo_name': 'usc-shield.png',
                 'auth_url': SHIBBOLETH_SP.format(encode_uri_component('urn:mace:incommon:usc.edu')),
@@ -182,7 +202,7 @@ def main(env):
             {
                 '_id': 'uva',
                 'name': 'University of Virginia [Test]',
-                'description': 'University of Virginia [Test]',
+                'description': 'Projects must abide by the University <a href="http://www.virginia.edu/informationpolicy/security.html">Security and Data Protection Policies</a>',
                 'banner_name': 'uva-banner.png',
                 'logo_name': 'uva-shield.png',
                 'auth_url': SHIBBOLETH_SP.format(encode_uri_component('https://shibidp-test.its.virginia.edu/idp/shibboleth')),

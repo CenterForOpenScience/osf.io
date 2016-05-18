@@ -226,6 +226,7 @@ PIWIK_SITE_ID = None
 
 KEEN_PROJECT_ID = None
 KEEN_WRITE_KEY = None
+KEEN_READ_KEY = None
 
 SENTRY_DSN = None
 SENTRY_DSN_JS = None
@@ -389,7 +390,7 @@ else:
         'new-and-noteworthy': {
             'task': 'scripts.populate_new_and_noteworthy_projects',
             'schedule': crontab(minute=0, hour=2, day_of_week=6),  # Saturday 2:00 a.m.
-            'kwargs': {'dry_run': True}
+            'kwargs': {'dry_run': False}
         },
     }
 

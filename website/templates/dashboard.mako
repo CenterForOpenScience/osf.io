@@ -10,7 +10,7 @@
 
 
   <div id="dashboard" class="dashboard clearfix" >
-    <div class="ball-scale text-center m-v-xl"><div></div></div>
+    <div class="ball-scale ball-scale-blue text-center m-v-xl"><div></div></div>
   </div>
 
 </%def>

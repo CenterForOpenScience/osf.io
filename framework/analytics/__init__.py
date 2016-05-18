@@ -5,6 +5,7 @@ import functools
 from datetime import datetime
 
 from framework.mongo import database
+from framework.postcommit_tasks.handlers import run_postcommit
 from framework.sessions import session
 
 from flask import request
@@ -12,7 +13,7 @@ from flask import request
 
 collection = database['pagecounters']
 
-
+@run_postcommit(once_per_request=False)
 def increment_user_activity_counters(user_id, action, date, db=None):
     db = db or database  # default to local proxy
     collection = database['useractivitycounters']
@@ -71,7 +72,7 @@ def build_page(rex, kwargs):
     except KeyError:
         return None
 
-
+@run_postcommit(once_per_request=False)
 def update_counter(page, db=None):
     """Update counters for page.
 

@@ -205,9 +205,9 @@ def get_file_map(node, file_map):
 def find_registration_file(value, node):
     from website.models import Node
 
-    orig_sha256 = value['extra']['sha256']
-    orig_name = value['extra']['selectedFileName']
-    orig_node = value['extra']['nodeId']
+    orig_sha256 = value['sha256']
+    orig_name = value['selectedFileName']
+    orig_node = value['nodeId']
     file_map = get_file_map(node)
     for sha256, value, node_id in file_map:
         registered_from_id = Node.load(node_id).registered_from._id
@@ -215,14 +215,28 @@ def find_registration_file(value, node):
             return value, node_id
     return None, None
 
-def find_question(schema, qid):
+def find_registration_files(values, node):
+    ret = []
+    for i in range(len(values.get('extra', []))):
+        ret.append(find_registration_file(values['extra'][i], node) + (i,))
+    return ret
+
+def get_title_for_question(schema, path):
+    path = path.split('.')
+    root = path.pop(0)
+    item = None
     for page in schema['pages']:
         questions = {
             q['qid']: q
             for q in page['questions']
         }
-    if qid in questions:
-        return questions[qid]
+        if root in questions:
+            item = questions[root]
+    title = item.get('title')
+    while len(path):
+        item = item.get(path.pop(0), {})
+        title = item.get('title', title)
+    return title
 
 def find_selected_files(schema, metadata):
     targets = []
@@ -249,46 +263,35 @@ def find_selected_files(schema, metadata):
 
 VIEW_FILE_URL_TEMPLATE = '/project/{node_id}/files/osfstorage/{path}/'
 
-class SettableDict(dict):
-    def set(self, path, value):
-        parts = path.split('.')
-        next_item = self
-        key = None
-        while len(parts):
-            item = next_item
-            key = parts.pop(0)
-            next_item = item.get(key, {})
-            item[key] = next_item
-        item[key] = value
+def deep_get(obj, path):
+    parts = path.split('.')
+    item = obj
+    key = None
+    while len(parts):
+        key = parts.pop(0)
+        item[key] = item.get(key, {})
+        item = item[key]
+    return item
 
 def migrate_file_metadata(dst, schema):
     metadata = dst.registered_meta[schema._id]
     missing_files = []
-    updated_metadata = SettableDict()
     selected_files = find_selected_files(schema, metadata)
     for path, selected in selected_files.items():
-        registration_file, node_id = find_registration_file(
-            selected,
-            dst
-        )
-        if not registration_file:
-            missing_files.append({
-                'file_name': selected['extra']['selectedFileName'],
-                'question_title': find_question(schema.schema, path[0])['title']
-            })
-            continue
-        root = path.split('.')[0]
-        updated_metadata[root] = metadata[root]
-        updated_metadata.set(
-            '{}.extra.viewUrl'.format(path),
-            VIEW_FILE_URL_TEMPLATE.format(node_id=node_id, path=registration_file['path'].lstrip('/'))
-        )
+        for registration_file, node_id, index in find_registration_files(selected, dst):
+            if not registration_file:
+                missing_files.append({
+                    'file_name': selected['extra'][index]['selectedFileName'],
+                    'question_title': get_title_for_question(schema.schema, path)
+                })
+                continue
+            target = deep_get(metadata, path)
+            target['extra'][index]['viewUrl'] = VIEW_FILE_URL_TEMPLATE.format(node_id=node_id, path=registration_file['path'].lstrip('/'))
     if missing_files:
         from website.archiver.tasks import ArchivedFileNotFound
         raise ArchivedFileNotFound(
             registration=dst,
             missing_files=missing_files
         )
-    metadata.update(updated_metadata)
     dst.registered_meta[schema._id] = metadata
     dst.save()
