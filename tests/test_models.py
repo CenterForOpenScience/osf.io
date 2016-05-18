@@ -1172,7 +1172,6 @@ class TestNodeWikiPage(OsfTestCase):
         wiki = NodeWikiFactory()
         assert_equal(wiki.page_name, 'home')
         assert_equal(wiki.version, 1)
-        assert_true(hasattr(wiki, 'is_current'))
         assert_equal(wiki.content, 'Some content')
         assert_true(wiki.user)
         assert_true(wiki.node)
@@ -3933,7 +3932,7 @@ class TestForkNode(OsfTestCase):
     def test_forking_clones_project_wiki_pages(self):
         project = ProjectFactory(creator=self.user, is_public=True)
         wiki = NodeWikiFactory(node=project)
-        current_wiki = NodeWikiFactory(node=project, version=2, is_current=True)
+        current_wiki = NodeWikiFactory(node=project, version=2)
         fork = project.fork_node(self.auth)
         assert_equal(fork.wiki_private_uuids, {})
 
@@ -4164,7 +4163,7 @@ class TestRegisterNode(OsfTestCase):
     def test_registration_clones_project_wiki_pages(self):
         project = ProjectFactory(creator=self.user, is_public=True)
         wiki = NodeWikiFactory(node=project)
-        current_wiki = NodeWikiFactory(node=project, version=2, is_current=True)
+        current_wiki = NodeWikiFactory(node=project, version=2)
         registration = project.register_node(get_default_metaschema(), Auth(self.user), '', None)
         assert_equal(self.registration.wiki_private_uuids, {})
 
