@@ -164,7 +164,7 @@ var ViewModel = function(passwordViewType, submitUrl, campaign, redirectUrl) {
             'text-info p-xs'
         );
         if (redirectUrl) {
-            window.location = redirectUrl;
+            setTimeout(function(){ window.location = redirectUrl; }, 3000);
         }
         self.submitted(true);
     };
