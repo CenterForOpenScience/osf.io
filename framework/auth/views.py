@@ -308,11 +308,7 @@ def unconfirmed_email_remove(auth=None):
             'message_short': 'Invalid token',
             'message_long': 'The token provided is invalid'
         })
-    email_verifications = deepcopy(user.email_verifications)
-    for token in user.email_verifications:
-        if token == given_token:
-            email_verifications.pop(token)
-    user.email_verifications = email_verifications
+    user.clean_email_verifications(given_token=given_token)
     user.save()
     return {
         'status': 'success',

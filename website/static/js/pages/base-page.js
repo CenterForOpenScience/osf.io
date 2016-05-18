@@ -114,7 +114,7 @@ function confirmEmails(emailsToAdd) {
             title = 'Add email';
             requestMessage = 'Would you like to add \<b>' + email.address + '\</b> to your account?';
             confirmMessage = '\<b>' + email.address + '\</b> has been added into your account.';
-            nopeMessage = 'You have chosen not to add \<b>' + email.address + '\</b> to your account.' +
+            nopeMessage = 'You have chosen not to add \<b>' + email.address + '\</b> to your account. ' +
                 'If you change your mind, visit the \<a href="/settings/account/">user settings page</a>.';
         }
 

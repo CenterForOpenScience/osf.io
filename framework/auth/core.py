@@ -849,12 +849,16 @@ class User(GuidStoredObject, AddonModelMixin):
 
         return verification['email']
 
-    def clean_email_verifications(self):
+    def clean_email_verifications(self, **kwargs):
+        given_token = kwargs.get('given_token')
         email_verifications = deepcopy(self.email_verifications)
         for token in self.email_verifications:
             try:
                 self.get_unconfirmed_email_for_token(token)
             except (KeyError, ExpiredTokenError):
+                email_verifications.pop(token)
+                break
+            if token == given_token:
                 email_verifications.pop(token)
         self.email_verifications = email_verifications
 
