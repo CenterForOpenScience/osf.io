@@ -113,7 +113,7 @@ var ViewModel = function(passwordViewType, submitUrl, campaign, redirectUrl) {
         self.password.extend({
             notEqual: {
                 params: self.email1,
-                message: "Your password cannot be the same as your username."
+                message: 'Your password cannot be the same as your username.'
             }
         });
 
