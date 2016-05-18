@@ -135,7 +135,7 @@ function ViewModel(url) {
             title: 'Disconnect Dataverse Account?',
             message: '<p class="overflow">' +
                 'Are you sure you want to disconnect the Dataverse account on <strong>' +
-                $osf.htmlEscape(account.name) + '</strong>? This will revoke access to Dataverse for all projects associated with this account.' +
+                osfHelpers.htmlEscape(account.name) + '</strong>? This will revoke access to Dataverse for all projects associated with this account.' +
                 '</p>',
             callback: function (confirm) {
                 if (confirm) {
