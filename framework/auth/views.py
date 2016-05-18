@@ -73,7 +73,7 @@ def reset_password_post(verification_key):
     user_obj.save()
     status.push_status_message('Password reset, you may now login.', kind='success', trust=False)
 
-    return {'message': 'You may now log in.'}
+    return {'message': 'Password reset successful! You will now be redirected to the login page.'}
 
 
 def forgot_password_post():
