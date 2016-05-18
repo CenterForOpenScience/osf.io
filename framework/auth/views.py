@@ -142,9 +142,8 @@ def auth_login(auth, **kwargs):
             raise HTTPError(http.InvalidURL)
     if auth.logged_in:
         # remove expired email verifications
-        if not campaign:
-            auth.user.clean_email_verifications(auth.user)
-            auth.user.save()
+        auth.user.clean_email_verifications()
+        auth.user.save()
         if not request.args.get('logout'):
             if next_url:
                 return redirect(next_url)
@@ -201,12 +200,15 @@ def auth_email_logout(token, user):
         unconfirmed_email = user.get_unconfirmed_email_for_token(token)
     except InvalidTokenError:
         raise HTTPError(http.BAD_REQUEST, data={
-            'message_short': "Bad token",
-            'message_long': "The provided token is invalid."
+            'message_short': 'Bad token',
+            'message_long': 'The provided token is invalid.'
         })
     except ExpiredTokenError:
         status.push_status_message('The private link you used is expired.')
-        return
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': 'Expired link',
+            'message_long': 'The private link you used is expired.'
+        })
     try:
         user_merge = User.find_one(Q('emails', 'eq', unconfirmed_email))
     except NoResultsFound:
