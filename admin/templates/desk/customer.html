@@ -24,7 +24,12 @@
         <td>{{ customer.background }}</td>
     </tr>
         <td>Desk id</td>
-        <td>{{ customer.id }}</td>
+        <td>
+            {{ customer.id }}
+            <a href="{{ desk_link }}{{ customer.id }}" target="_blank" class="btn btn-primary">
+                Go to Desk
+            </a>
+        </td>
     <tr>
         <td>Email</td>
         <td>

@@ -1,20 +1,18 @@
-{% extends 'base.html' %}
-{% load static %}
-{% block title %}
-    <title>Customer cases</title>
-{% endblock title %}
-
-{% block content %}
-    <a href="{% url 'users:user' user_id %}" class="btn btn-primary">Back to user</a>
-    <a href="" class="btn btn-primary disabled">Create a new case</a>
-    <h3>OSF user's desk.com cases:</h3>
+<div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal">x</button>
+</div>
+<div class="modal-body">
+    <a href="{{ desk_customer }}{{ customer_id }}" class="btn btn-primary" target="_blank">
+        Go to Desk
+    </a>
+    <h3>OSF user "{{ user_id }}" up to 50 most recent desk.com cases:</h3>
     <table class="table table-striped">
     <thead>
         <tr>
             <th>Type</th>
             <th>Status</th>
             <th>Subject</th>
-            <th>Link</th>
+            <th>Links to Desk</th>
         </tr>
     </thead>
     <tbody>
@@ -22,9 +20,9 @@
         <tr>
             <td>{{ case.type }}</td>
             <td>{{ case.status }}</td>
-            <td>{{ case.subject | truncatechars:60 }}</td>
+            <td>{{ case.subject | truncatechars:40 }}</td>
             <td>
-                <a href="{{ desk_link }}{{ case.id }}" target="_blank">Link</a>
+                <a href="{{ desk_case }}{{ case.id }}" target="_blank">Link</a>
             </td>
         </tr>
     {% empty %}
@@ -34,4 +32,7 @@
     {% endfor %}
     </tbody>
     </table>
-{% endblock content %}
+</div>
+<div class="modal-footer">
+    <button type="button" class="btn" data-dismiss="modal" >Close</button>
+</div>

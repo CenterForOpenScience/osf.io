@@ -1,23 +1,19 @@
 from __future__ import unicode_literals
 
-from django.shortcuts import render
-from django.core.mail import send_mail
-from django.views.generic import FormView, ListView
+from django.views.generic import FormView, ListView, DetailView
 from django.http import Http404
 
 from modularodm import Q
 from website.project.model import Comment
-from website.settings import SUPPORT_EMAIL
 
 from admin.base.utils import OSFAdmin
 from admin.common_auth.logs import (
     update_admin_log,
     CONFIRM_HAM,
     CONFIRM_SPAM,
-    USER_EMAILED,
 )
 from admin.spam.serializers import serialize_comment
-from admin.spam.forms import EmailForm, ConfirmForm
+from admin.spam.forms import ConfirmForm
 from admin.spam.templatetags.spam_extras import reverse_spam_detail
 
 STATUS = dict(
@@ -28,70 +24,16 @@ STATUS = dict(
 )
 
 
-class EmailFormView(OSFAdmin, FormView):
-    """ Allow authorized admin user to Email spammers, use judiciously
+class EmailView(OSFAdmin, DetailView):
+    template_name = 'spam/email.html'
+    context_object_name = 'spam'
 
-    Gets user data and supplies email template. Logs mail sent to user.
-    """
-    form_class = EmailForm
-    template_name = "spam/email.html"
-
-    def get_context_data(self, **kwargs):
+    def get_object(self, queryset=None):
         spam_id = self.kwargs.get('spam_id')
         try:
-            kwargs.setdefault('comment',
-                              serialize_comment(Comment.load(spam_id)))
+            return serialize_comment(Comment.load(spam_id))
         except AttributeError:
             raise Http404('Spam with id {} not found.'.format(spam_id))
-        kwargs.setdefault('page_number', self.request.GET.get('page', '1'))
-        kwargs.setdefault('status', self.request.GET.get('status', '1'))
-        return super(EmailFormView, self).get_context_data(**kwargs)
-
-    def get_initial(self):
-        spam_id = self.kwargs.get('spam_id')
-        try:
-            spam = serialize_comment(Comment.load(spam_id))
-        except AttributeError:
-            raise Http404('Spam with id {} not found.'.format(spam_id))
-        self.initial = {
-            'author': spam['author'].fullname,
-            'email': [(r, r) for r in spam['author'].emails],
-            'subject': 'Reports of spam',
-            'message': render(
-                None,
-                'spam/email_template.html',
-                {'item': spam}
-            ).content,
-        }
-        return super(EmailFormView, self).get_initial()
-
-    def form_valid(self, form):
-        message = form.cleaned_data.get('message')
-        email = form.cleaned_data.get('email')
-        send_mail(
-            subject=form.cleaned_data.get('subject').strip(),
-            message=message,
-            from_email=SUPPORT_EMAIL,
-            recipient_list=[email]
-        )
-        update_admin_log(
-            user_id=self.request.user.id,
-            object_id=self.kwargs.get('spam_id'),
-            object_repr='Comment',
-            message='User with email {} sent this message: {}'.format(
-                email, message
-            ),
-            action_flag=USER_EMAILED
-        )
-        return super(EmailFormView, self).form_valid(form)
-
-    @property
-    def success_url(self):
-        return reverse_spam_detail(
-            self.kwargs.get('spam_id'),
-            page=self.request.GET.get('page', '1'),
-            status=self.request.GET.get('status', '1')
-        )
 
 
 class SpamList(OSFAdmin, ListView):

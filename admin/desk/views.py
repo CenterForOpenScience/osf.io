@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.views.generic import ListView, DetailView, FormView
+from django.views.generic import ListView, DetailView
 
 from website.project.model import User
 
@@ -8,7 +8,7 @@ from admin.desk.utils import DeskClient, DeskError
 
 
 class DeskCaseList(OSFAdmin, ListView):
-    template_name = 'desk/cases_modal.html'
+    template_name = 'desk/cases.html'
     ordering = 'updated_at'
     context_object_name = 'cases'
     paginate_by = 100
@@ -28,19 +28,15 @@ class DeskCaseList(OSFAdmin, ListView):
         queryset = desk.cases(params)
         return queryset
 
-    def get_template_names(self):
-        if self.request.GET.get('modal') is not None:
-            return self.template_name
-        return 'desk/cases.html'
-
     def get_context_data(self, **kwargs):
         kwargs.setdefault('user_id', self.kwargs.get('user_id'))
-        kwargs.setdefault('desk_link', 'https://{}.desk.com/web/agent/case/'.format(DeskClient.SITE_NAME))
-        return super(DeskCaseList, self).get_context_data(**kwargs)
-
-
-class DeskCaseFormView(OSFAdmin, FormView):
-    pass
+        kwargs.setdefault('desk_case', 'https://{}.desk.com/web/agent/case/'.format(DeskClient.SITE_NAME))
+        kwargs.setdefault('desk_customer', 'https://{}.desk.com/web/agent/customer/'.format(DeskClient.SITE_NAME))
+        kwargs = super(DeskCaseList, self).get_context_data(**kwargs)
+        customer_link = kwargs.get('cases', [])[0].get('_links', {}).get('customer', {}).get('href')
+        customer_id = customer_link.split('/')[-1] if customer_link is not None else None
+        kwargs.setdefault('customer_id', customer_id)
+        return kwargs
 
 
 class DeskCustomer(OSFAdmin, DetailView):
@@ -52,7 +48,10 @@ class DeskCustomer(OSFAdmin, DetailView):
             return super(DeskCustomer, self).get(request, *args, **kwargs)
         except (AttributeError, DeskError) as e:
             return render(request, 'desk/user_not_found.html',
-                          context={'email': e.status})
+                          context={
+                              'email': e.status,
+                              'desk_inbox': 'https://openscience.desk.com/web/agent/filters/inbox'
+                          })
 
     def get_object(self, queryset=None):
         customer_id = self.kwargs.get('user_id', None)
@@ -67,6 +66,7 @@ class DeskCustomer(OSFAdmin, DetailView):
             raise DeskError(email)
         return customer
 
-
-class DeskCustomerFormView(OSFAdmin, FormView):
-    pass
+    def get_context_data(self, **kwargs):
+        kwargs.setdefault('user_id', self.kwargs.get('user_id'))
+        kwargs.setdefault('desk_link', 'https://{}.desk.com/web/agent/customer/'.format(DeskClient.SITE_NAME))
+        return super(DeskCustomer, self).get_context_data(**kwargs)

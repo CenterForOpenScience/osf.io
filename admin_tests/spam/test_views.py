@@ -17,7 +17,7 @@ from admin.spam.views import (
     SpamList,
     UserSpamList,
     SpamDetail,
-    EmailFormView,
+    EmailView,
 )
 
 
@@ -159,46 +159,19 @@ class TestSpamDetail(AdminTestCase):
             view.get_context_data()
 
 
-class TestEmailFormView(AdminTestCase):
+class TestEmailView(AdminTestCase):
     def setUp(self):
-        super(TestEmailFormView, self).setUp()
+        super(TestEmailView, self).setUp()
         self.comment = CommentFactory()
         self.comment.report_abuse(user=AuthUserFactory(), save=True,
                                   category='spam')
         self.request = RequestFactory().post('/fake_path')
         self.request.user = UserFactory()
-        self.view = EmailFormView()
-        self.form = EmailForm(data={
-            'author': 'Nemo',
-            'message': 'A message for spammers.',
-            'subject': 'stop spamming',
-            'email': ('email@email.org', 'email@email.org')
-        })
-        self.view = setup_form_view(self.view, self.request, self.form,
-                                    spam_id=self.comment._id)
 
-    def test_get_context_data(self):
-        res = self.view.get_context_data()
-        nt.assert_equal(res['status'], '1')
-        nt.assert_equal(res['page_number'], '1')
-        nt.assert_is_instance(res['comment'], dict)
-
-    def test_get_context_data_bad_id(self):
-        view = setup_view(EmailFormView(), self.request, spam_id='a1')
+    def test_get_object_bad_id(self):
+        view = setup_view(EmailView(), self.request, spam_id='a1')
         with nt.assert_raises(Http404):
-            view.get_context_data()
-
-    def test_get_initial(self):
-        self.view.get_initial()
-        res = self.view.initial
-        nt.assert_is_instance(res, dict)
-        nt.assert_is_instance(res['email'], list)
-        nt.assert_is_instance(res['email'][0], tuple)
-
-    def test_get_initial_bad_id(self):
-        view = setup_view(EmailFormView(), self.request, spam_id='a1')
-        with nt.assert_raises(Http404):
-            view.get_initial()
+            view.get_object()
 
 
 class TestUserSpamListView(AdminTestCase):
