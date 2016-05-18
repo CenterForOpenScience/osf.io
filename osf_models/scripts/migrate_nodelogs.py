@@ -25,11 +25,14 @@ def main():
 
     while count < total:
         print 'Migrating {} through {}'.format(count, count + page_size)
-        was_connected_to = deque()
+
         django_nodelogs = deque()
+        django_nodelogs_was_connected_to = dict()
+        m2m_count = 0
         nodelog_guids = deque()
-        django_nodelogs_was_connected_to = {}
-        for modm_nodelog in MODMNodeLog.find().sort('-date')[count:count +
+        was_connected_to = deque()
+
+        for modm_nodelog in MODMNodeLog.find().sort('date')[count:count +
                                                              page_size]:
             if modm_nodelog._id in nodelog_guids:
                 print 'Nodelog with guid of {} and data of {} exists in batch'.format(
@@ -94,7 +97,7 @@ def main():
 
                 print 'Starting m2m values'
                 splot = datetime.now()
-                m2m_count = 0
+
                 with transaction.atomic():
                     for nl in NodeLog.objects.filter(guid__in=nodelog_guids):
                         nl.was_connected_to.add(
@@ -104,7 +107,6 @@ def main():
                 print 'Finished {} m2m values in {}'.format(m2m_count, (
                     datetime.now() - splot).total_seconds())
 
-                django_nodelogs = django_nodelogs_was_connected_to = m2m_count = nodelog_guids = None
                 garbage = gc.collect()
                 print 'Collected {} whole garbages!'.format(garbage)
 
