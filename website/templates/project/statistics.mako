@@ -13,6 +13,7 @@
   if( window.canRunAds === undefined ){
     document.getElementById('hiddenFlag').style.display = "block";
   }
+  $.('ad_block_display').style.display = "block";
 </script>
 
 <%
