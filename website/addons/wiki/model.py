@@ -178,7 +178,10 @@ class NodeWikiPage(GuidStoredObject, Commentable):
     @property
     def is_current(self):
         key = to_mongo_key(self.page_name)
-        return self.node.wiki_pages_current[key] == self._id
+        if key in self.node.wiki_pages_current:
+            return self.node.wiki_pages_current[key] == self._id
+        else:
+            return False
 
     @property
     def deep_url(self):
