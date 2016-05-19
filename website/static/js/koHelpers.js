@@ -4,6 +4,7 @@ var $ = require('jquery');
 var ko = require('knockout');
 var pikaday = require('pikaday');
 require('knockout.validation');
+var makeClient = require('js/clipboard');
 
 require('css/koHelpers.css');
 
@@ -211,6 +212,46 @@ ko.bindingHandlers.fadeVisible = {
     }
 };
 
+var fitHelper = function(value, length, replacement, trimWhere) {
+    if (length && ('' + value).length > length) {
+        replacement = '' + (replacement || '...');
+        length = length - replacement.length;
+        value = '' + value;
+        switch (trimWhere) {
+            case 'left':
+                return replacement + value.slice(-length);
+            case 'middle':
+                var leftLen = Math.ceil(length / 2);
+                return value.substr(0, leftLen) + replacement + value.slice(leftLen-length);
+            default:
+                return value.substr(0, length) + replacement;
+        }
+    } else {
+        return value;
+    }
+};
+/**
+    Trim the text to a specified width. Adapted from knockout.punches "fit" filter
+    Behavior can be modified by the presence of additional related bindings on the same element:
+    @param value {Object} A hash of options describing the text to truncate, and how
+    @param value.text {String} The string to truncate
+    @param value.length {Integer}  Specifies the maximum length of the truncated string (default no limit)
+    @param [value.replacement='...'] {String} Specifies the sequence to use in place of trimmed characters
+    @param [value.trimWhere='right'] {String} Trim extra characters from the left, middle, or right side
+*/
+ko.bindingHandlers.fitText = {
+    update: function(element, valueAccessor, allBindings) {
+        var value = ko.unwrap(valueAccessor());
+        var trimValue = fitHelper(
+            value.text,
+            value.length,
+            value.replacement,
+            value.trimWhere
+        );
+        $(element).text(trimValue);
+    }
+};
+
 var tooltip = function(el, valueAccessor) {
     var params = ko.toJS(valueAccessor());
     if(params.title) {
@@ -232,6 +273,15 @@ ko.bindingHandlers.tooltip = {
     init: tooltip,
     update: tooltip
 };
+
+var clipboard = function(el, valueAccessor) {
+    makeClient(el);
+    $(el).attr('data-clipboard-text', ko.unwrap(valueAccessor()));
+};
+ko.bindingHandlers.clipboard = {
+    init: clipboard
+};
+
 // Attach view model logic to global keypress events
 ko.bindingHandlers.onKeyPress = {
     init: function(el, valueAccessor) {
@@ -446,6 +496,7 @@ ko.virtualElements.allowedBindings.stopBinding = true;
 module.exports = {
     makeExtender: makeExtender,
     addExtender: addExtender,
+    _fitHelper: fitHelper,
     makeRegexValidator: makeRegexValidator,
     sanitizedObservable: sanitizedObservable,
     mapJStoKO: mapJStoKO

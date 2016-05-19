@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
-import mock
 import datetime
+
 from nose.tools import *  # noqa
+import mock
 from modularodm import Q
+
 from website.files import utils
 from website.files import models
 from website.files import exceptions
+from website.models import Guid
 
 from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory, ProjectFactory
@@ -354,14 +357,22 @@ class TestFileNodeObj(FilesTestCase):
             materialized_path='/long/path/to/name',
         ).wrapped()
 
+        guid = Guid.generate(fn)
+
         before = fn.to_storage()
         trashed = fn.delete(user=self.user)
 
+        restored = trashed.restore()
         assert_equal(
-            trashed.restore().to_storage(),
+            restored.to_storage(),
             before
         )
+
         assert_equal(models.TrashedFileNode.load(trashed._id), None)
+
+        # Guid is repointed
+        guid.reload()
+        assert_equal(guid.referent, restored)
 
     def test_restore_folder(self):
         root = models.StoredFileNode(

@@ -550,10 +550,12 @@ def claim_user_registered(auth, node, **kwargs):
                 node.save()
                 status.push_status_message(
                     'You are now a contributor to this project.',
-                    kind='success')
+                    kind='success',
+                    trust=False
+                )
                 return redirect(node.url)
             else:
-                status.push_status_message(language.LOGIN_FAILED, kind='warning', trust=True)
+                status.push_status_message(language.LOGIN_FAILED, kind='warning', trust=False)
         else:
             forms.push_errors_to_status(form.errors)
     if is_json_request():
@@ -626,8 +628,7 @@ def claim_user_form(auth, **kwargs):
             user.verification_key = security.random_string(20)
             user.save()
             # Authenticate user and redirect to project page
-            node = Node.load(pid)
-            status.push_status_message(language.CLAIMED_CONTRIBUTOR.format(node=node),
+            status.push_status_message(language.CLAIMED_CONTRIBUTOR,
                                        kind='success',
                                        trust=True)
             # Redirect to CAS and authenticate the user with a verification key.
