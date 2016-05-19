@@ -97,7 +97,7 @@ AddContributorViewModel = oop.extend(Paginator, {
         self.childrenToChange = ko.observableArray();
 
         self.emailSearch = ko.pureComputed(function () {
-            if(String(self.query()).indexOf("@") >= 0) {
+            if(String(self.query()).indexOf('@') >= 0) {
                 return true;
             } else {
                 return false;
