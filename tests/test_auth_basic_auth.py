@@ -31,10 +31,6 @@ class TestAuthBasicAuthentication(OsfTestCase):
         self.reachable_url = self.reachable_project.web_url_for('view_project')
         self.unreachable_url = self.unreachable_project.web_url_for('view_project')
 
-        # Test dashboard and myprojects redirection
-        self.dashboard_url = web_url_for('dashboard')
-        self.myprojects_url = web_url_for('my_projects')
-
     def test_missing_credential_fails(self):
         res = self.app.get(self.unreachable_url, auth=None, expect_errors=True)
         assert_equal(res.status_code, 302)
