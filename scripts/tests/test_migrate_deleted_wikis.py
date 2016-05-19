@@ -48,11 +48,18 @@ class TestMigrateDeletedWikis(OsfTestCase):
         logs = get_targets()
         migrate(logs, dry_run=False)
         self.project.reload()
+
+    def test_migration_does_not_affect_home(self):
+        logs = get_targets()
+        migrate(logs, dry_run=False)
+        self.project.reload()
         # Assert that 'home' has same versions as before
         self.versions = self.project.wiki_pages_versions
         assert_equal(len(self.versions['home']), 1)
-        # need to assert that versions no longer contains 'second'
-        assert_equal(len(self.versions), 1)
+
+    def test_deleted_wiki_versions_not_restored(self):
+        self.project.delete_node_wiki('second', self.auth)
+        TestMigrateDeletedWikis.times_wiki_deleted += 1
         # create another wiki with name 'second'
         self.project.update_node_wiki('second', 'Hola mundo 3', self.auth)
         # Make sure old versions not restored
