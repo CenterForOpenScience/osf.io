@@ -431,26 +431,45 @@ function doItemOp(operation, to, from, rename, conflict) {
     }
     orderFolder.call(tb, from.parent());
 
+    var jsonData;
+    if (operation === OPERATIONS.RENAME) {
+        jsonData = {
+            action: 'rename',
+            rename: rename
+        };
+    } else if (operation === OPERATIONS.COPY) {
+        jsonData = {
+            action: 'copy',
+            path: to.data.path || '/',
+            conflict: conflict,
+            resource: to.data.resource,
+            provider: to.data.provider
+        };
+    } else if (operation === OPERATIONS.MOVE) {
+        jsonData = {
+            action: 'move',
+            path: to.data.path || '/',
+            conflict: conflict,
+            resource: to.data.resource,
+            provider: to.data.provider
+        };
+    }
+
     $.ajax({
         type: 'POST',
         beforeSend: $osf.setXHRAuthorization,
-        url: operation === OPERATIONS.COPY ? waterbutler.copyUrl() : waterbutler.moveUrl(),
+        url: waterbutler.buildTreeBeardFileOp(from),
         headers: {
             'Content-Type': 'Application/json'
         },
-        data: JSON.stringify({
-            'rename': rename,
-            'conflict': conflict,
-            'source': waterbutler.toJsonBlob(from),
-            'destination': waterbutler.toJsonBlob(to),
-        })
+        data: JSON.stringify(jsonData)
     }).done(function(resp, _, xhr) {
         if (to.data.provider === from.provider) {
             tb.pendingFileOps.pop();
         }
         if (xhr.status === 202) {
             var mithrilContent = m('div', [
-                m('h3.break-word', operation.action + ' "' + from.data.materialized + '" to "' + (to.data.materialized || '/') + '" is taking a bit longer than expected.'),
+                m('h3.break-word', operation.action + ' "' + (from.data.materialized || '/') + '" to "' + (to.data.materialized || '/') + '" is taking a bit longer than expected.'),
                 m('p', 'We\'ll send you an email when it has finished.'),
                 m('p', 'In the mean time you can leave this page; your ' + operation.status + ' will still be completed.')
             ]);
@@ -460,7 +479,7 @@ function doItemOp(operation, to, from, rename, conflict) {
             tb.modal.update(mithrilContent, mithrilButtons);
             return;
         }
-        from.data = resp;
+        from.data = tb.options.lazyLoadPreprocess.call(this, resp).data;
         from.data.status = undefined;
         from.notify.update('Successfully ' + operation.passed + '.', 'success', null, 1000);
 
@@ -515,12 +534,7 @@ function doItemOp(operation, to, from, rename, conflict) {
         Raven.captureMessage('Failed to move or copy file', {
             extra: {
                 xhr: xhr,
-                requestData: {
-                    rename: rename,
-                    conflict: conflict,
-                    source: waterbutler.toJsonBlob(from),
-                    destination: waterbutler.toJsonBlob(to),
-                }
+                requestData: jsonData
             }
         });
 
@@ -537,8 +551,22 @@ function doItemOp(operation, to, from, rename, conflict) {
  * @private
  */
 function _fangornResolveUploadUrl(item, file) {
+    // WB v1 update synatx is file path and kind=file
+    // WB v1 upload synatx is parent path and kind=file, name=filename
+    // If upload target file name already exists don't pass file.name
     var configOption = resolveconfigOption.call(this, item, 'uploadUrl', [item, file]); // jshint ignore:line
-    return configOption || waterbutler.buildTreeBeardUpload(item, file);
+    if (configOption) {
+        return configOption;
+    }
+    var updateUrl;
+    $.each(item.children, function( index, value ) {
+        if (file.name === value.data.name) {
+            updateUrl = waterbutler.buildTreeBeardUpload(value);
+            return false;
+        }
+    });
+    
+    return updateUrl || waterbutler.buildTreeBeardUpload(item, {name: file.name});
 }
 
 /**
@@ -736,7 +764,7 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
     // Dataverse : Object, actionTaken : file_uploaded
     revisedItem = resolveconfigOption.call(treebeard, item.parent(), 'uploadSuccess', [file, item, response]);
     if (!revisedItem && response) {
-        item.data = response;
+        item.data = treebeard.options.lazyLoadPreprocess.call(this, response).data;
         inheritFromParent(item, item.parent());
     }
     if (item.data.tmpID) {
@@ -804,7 +832,6 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
             child.removeSelf();
         }
     }
-    console.log(file);
     treebeard.options.uploadInProgress = false;
     if (msgText !== 'Upload canceled.') {
         addFileStatus(treebeard, file, false, msgText, '');
@@ -874,18 +901,20 @@ function _createFolder(event, dismissCallback, helpText) {
     }
 
     var extra = {};
-    var path = (parent.data.path || '/') + val + '/';
+    var path = parent.data.path || '/';
+    var options = {name: val, kind: 'folder'};
 
     if (parent.data.provider === 'github') {
         extra.branch = parent.data.branch;
     }
 
     m.request({
-        method: 'POST',
+        method: 'PUT',
         background: true,
         config: $osf.setXHRAuthorization,
-        url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId)
+        url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId, options)
     }).then(function(item) {
+        item = tb.options.lazyLoadPreprocess.call(this, item).data;
         inheritFromParent({data: item}, parent, ['branch']);
         item = tb.createItem(item, parent.id);
         orderFolder.call(tb, parent);
@@ -2235,6 +2264,7 @@ tbOptions = {
     uploads : true,         // Turns dropzone on/off.
     columnTitles : _fangornColumnTitles,
     resolveRows : _fangornResolveRows,
+    lazyLoadPreprocess: waterbutler.wbLazyLoadPreprocess,
     hoverClassMultiselect : 'fangorn-selected',
     multiselect : true,
     placement : 'files',

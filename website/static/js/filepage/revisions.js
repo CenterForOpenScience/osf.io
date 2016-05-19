@@ -44,6 +44,7 @@ var FileRevisionsTable = {
                 url: self.file.urls.revisions,
                 beforeSend: $osf.setXHRAuthorization
             }).done(function(response) {
+                response = waterbutler.wbLazyLoadPreprocess.call(this, response);
                 m.startComputation();
                 var urlParmas = $osf.urlParams();
                 model.revisions = response.data.map(function(rev, index) {
@@ -80,6 +81,7 @@ var FileRevisionsTable = {
                         url: self.file.urls.metadata,
                         beforeSend: $osf.setXHRAuthorization
                     }).done(function(resp) {
+                        resp = waterbutler.wbLazyLoadPreprocess.call(this, resp);
                         self.canEdit(self.canEdit() && resp.data.extra.canDelete);
                         m.redraw();
                     }).fail(function(xhr) {
