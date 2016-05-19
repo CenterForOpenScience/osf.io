@@ -1,34 +1,8 @@
 # -*- coding: utf-8 -*-
-from website.settings import DEFAULT_QUEUE, LOW_QUEUE, MED_QUEUE, HIGH_QUEUE
-
-LOW_PRI_MODULES = {
-    'framework.analytics.tasks',
-    'framework.celery_tasks',
-    'scripts.osfstorage.usage_audit',
-    'scripts.osfstorage.glacier_inventory',
-    'scripts.analytics.tasks',
-    'scripts.osfstorage.files_audit',
-    'scripts.osfstorage.glacier_audit',
-    'scripts.populate_new_and_noteworthy_projects',
-    'website.search.elastic_search',
-}
-
-MED_PRI_MODULES = {
-    'framework.email.tasks',
-    'scripts.send_queued_mails',
-    'scripts.triggered_mails',
-    'website.mailchimp_utils',
-    'website.notifications.tasks',
-}
-
-HIGH_PRI_MODULES = {
-    'scripts.approve_embargo_terminations',
-    'scripts.approve_registrations',
-    'scripts.embargo_registrations',
-    'scripts.refresh_box_tokens',
-    'scripts.retract_registrations',
-    'website.archiver.tasks',
-}
+from website.settings import (
+    DEFAULT_QUEUE, LOW_QUEUE, MED_QUEUE, HIGH_QUEUE,
+    LOW_PRI_MODULES, MED_PRI_MODULES, HIGH_PRI_MODULES
+)
 
 def match_by_module(task_path):
     task_parts = task_path.split('.')
