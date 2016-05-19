@@ -372,13 +372,14 @@ a {
 }
 
 /* OSF-panel */
+
+/* 
+formatting for the osf-panel in the Wiki.
+*/
 .osf-panel {
     border: 1px solid #ddd;
-    height: 764px;
-    overflow: auto;
     display: block;
     position: relative;
-    overflow-x: hidden;
 }
 
 @media (max-width: 991px) {
