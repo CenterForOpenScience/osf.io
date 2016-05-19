@@ -167,7 +167,7 @@ class TestCASTicketAuthentication(OsfTestCase):
         service_url = 'http://accounts.osf.io/?ticket=' + ticket
         resp = cas.make_response_from_ticket(ticket, service_url)
         assert_equal(resp.status_code, 302)
-        mock_service_validate.assert_called_once()
+        assert_equal(mock_service_validate.call_count, 1)
         first_call_args = mock_service_validate.call_args[0]
         assert_equal(first_call_args[0], ticket)
         assert_equal(first_call_args[1], 'http://accounts.osf.io/')

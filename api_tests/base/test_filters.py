@@ -3,6 +3,8 @@ import datetime
 import re
 from dateutil import parser
 
+import json
+
 from nose.tools import *  # flake8: noqa
 
 from rest_framework import serializers as ser
@@ -10,6 +12,10 @@ from rest_framework import serializers as ser
 from tests.base import ApiTestCase
 
 from api.base.filters import FilterMixin
+
+from api.base.filters import ODMOrderingFilter
+
+import api.base.filters as filters 
 
 from api.base.exceptions import (
     InvalidFilterError,
@@ -33,6 +39,7 @@ class FakeSerializer(ser.Serializer):
 class FakeView(FilterMixin):
 
     serializer_class = FakeSerializer
+
 
 class TestFilterMixin(ApiTestCase):
 
@@ -222,3 +229,58 @@ class TestFilterMixin(ApiTestCase):
         field = FakeSerializer._declared_fields['float_field']
         value = self.view.convert_value(value, field)
         assert_equal(value, 42.0)
+
+
+
+class TestODMOrderingFilter(ApiTestCase):
+    class query:
+        title = ' '
+        def __init__(self, title):
+            self.title = title
+        def __str__(self):
+            return self.title
+
+    class query_with_num:
+        title = ' '
+        number = 0
+        def __init__(self, title, number):
+            self.title = title
+            self.number = number
+        def __str__(self):
+            return self.title
+
+
+    def test_filter_queryset_forward(self):
+        query_to_be_sorted = [self.query(x) for x in 'NewProj Zip Proj Activity'.split()]
+        sorted_query = sorted(query_to_be_sorted, cmp=filters.sort_multiple(['title']))
+        sorted_output = [str(i) for i in sorted_query]
+        assert_equal(sorted_output, ['Activity', 'NewProj', 'Proj', 'Zip'])
+
+
+    def test_filter_queryset_forward_duplicate(self):
+        query_to_be_sorted = [self.query(x) for x in 'NewProj Activity Zip Activity'.split()]
+        sorted_query = sorted(query_to_be_sorted, cmp=filters.sort_multiple(['title']))
+        sorted_output = [str(i) for i in sorted_query]
+        assert_equal(sorted_output, ['Activity', 'Activity', 'NewProj', 'Zip'])
+
+
+    def test_filter_queryset_reverse(self):
+        query_to_be_sorted = [self.query(x) for x in 'NewProj Zip Proj Activity'.split()]
+        sorted_query = sorted(query_to_be_sorted, cmp=filters.sort_multiple(['-title']))
+        sorted_output = [str(i) for i in sorted_query]
+        assert_equal(sorted_output, ['Zip', 'Proj', 'NewProj', 'Activity'])
+    
+    def test_filter_queryset_reverse_duplicate(self):
+        query_to_be_sorted = [self.query(x) for x in 'NewProj Activity Zip Activity'.split()]
+        sorted_query = sorted(query_to_be_sorted, cmp=filters.sort_multiple(['-title']))
+        sorted_output = [str(i) for i in sorted_query]
+        assert_equal(sorted_output, ['Zip', 'NewProj', 'Activity', 'Activity'])
+
+    def test_filter_queryset_handles_multiple_fields(self):
+        objs = [self.query_with_num(title='NewProj', number=10),
+                self.query_with_num(title='Zip', number=20),
+                self.query_with_num(title='Activity', number=30),
+                self.query_with_num(title='Activity', number=40)]
+        actual = [x.number for x in sorted(objs, cmp=filters.sort_multiple(['title', '-number']))]
+        assert_equal(actual, [40, 30, 10, 20])
+

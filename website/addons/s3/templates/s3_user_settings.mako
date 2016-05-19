@@ -6,8 +6,8 @@
     <%include file="s3_credentials_modal.mako"/>
 
     <h4 class="addon-title">
-        <img class="addon-icon" src=${addon_icon_url}></img>
-        {{ properName }}
+        <img class="addon-icon" src=${addon_icon_url}>
+        <span data-bind="text: properName"></span>
         <small>
             <a href="#s3InputCredentials" data-toggle="modal" class="pull-right text-primary">Connect Account</a>
         </small>
@@ -15,7 +15,7 @@
 
     <div class="addon-auth-table" id="${addon_short_name}-header">
         <!-- ko foreach: accounts -->
-        <a data-bind="click: $root.askDisconnect" class="text-danger pull-right default-authorized-by">Disconnect Account</a>
+        <a data-bind="click: $root.askDisconnect.bind($root)" class="text-danger pull-right default-authorized-by">Disconnect Account</a>
 
         <div class="m-h-lg">
             <table class="table table-hover">
@@ -28,11 +28,11 @@
                 <tbody data-bind="foreach: connectedNodes()">
                     <tr>
                         <td class="authorized-nodes">
-                            <!-- ko if: title --><a data-bind="attr.href: urls.view, text: title"></a><!-- /ko -->
+                            <!-- ko if: title --><a data-bind="attr: {href: urls.view}, text: title"></a><!-- /ko -->
                             <!-- ko if: !title --><em>Private project</em><!-- /ko -->
                         </td>
                         <td>
-                            <a data-bind="click: $parent.deauthorizeNode">
+                            <a data-bind="click: $parent.deauthorizeNode.bind($parent)">
                                 <i class="fa fa-times text-danger pull-right" title="disconnect Project"></i>
                             </a>
                         </td>

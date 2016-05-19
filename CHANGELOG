@@ -2,6 +2,49 @@
 Changelog
 *********
 
+0.72.0 (2016-05-17)
+===================
+
+- Make all pages escape user values on the frontend.
+- Remove usage of knockout-punches and remove strip_ko Mako filter.
+
+0.71.0 (2016-05-11)
+===================
+
+- Admin: create new user form.
+- Admin: refactor registration.
+- Admin: refactor and bugfixes for prereg module.
+- Admin: refactor and bugfixes for spam module.
+
+0.70.0 (2016-05-09)
+===================
+
+- Allow multiple files to be attached to pre-registrations.
+- Add "Pre-Registration in Social Psychology (van 't Veer & Giner-Sorolla, 2016)".
+
+Migrations
+----------
+
+- python -m scripts.migration.migrate_registration_extra_drafts
+- python -m scripts.migration.migrate_registration_extra
+
+0.69.0 (2016-05-03)
+===================
+
+- Add links to new Guides page at http://help.osf.io.
+
+0.68.0 (2016-04-28)
+===================
+
+- Wiki commenting.
+- End embargoes early.
+- UI fixes.
+
+Migrations
+----------
+
+See https://openscience.atlassian.net/browse/OSF-6081
+
 0.67.0 (2016-04-21)
 ===================
 

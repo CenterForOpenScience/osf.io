@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 
+import itertools
 import os
 import urlparse
-import itertools
 
 from github3 import GitHubError
+import markupsafe
 from modularodm import fields
 
 from framework.auth import Auth
@@ -301,11 +302,11 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             message = (
                 'Warning: This OSF {category} is {node_perm}, but the GitHub '
                 'repo {user} / {repo} is {repo_perm}.'.format(
-                    category=node.project_or_component,
-                    node_perm=node_permissions,
-                    repo_perm=repo_permissions,
-                    user=self.user,
-                    repo=self.repo,
+                    category=markupsafe.escape(node.project_or_component),
+                    node_perm=markupsafe.escape(node_permissions),
+                    repo_perm=markupsafe.escape(repo_permissions),
+                    user=markupsafe.escape(self.user),
+                    repo=markupsafe.escape(self.repo),
                 )
             )
             if repo_permissions == 'private':
@@ -362,9 +363,9 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                 u'Because the GitHub add-on for {category} "{title}" was authenticated '
                 u'by {user}, authentication information has been deleted.'
             ).format(
-                category=node.category_display,
-                title=node.title,
-                user=removed.fullname
+                category=markupsafe.escape(node.category_display),
+                title=markupsafe.escape(node.title),
+                user=markupsafe.escape(removed.fullname)
             )
 
             if not auth or auth.user != removed:
@@ -393,7 +394,7 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             message = (
                 'GitHub authorization copied to forked {cat}.'
             ).format(
-                cat=fork.project_or_component,
+                cat=markupsafe.escape(fork.project_or_component),
             )
         else:
             message = (
@@ -401,7 +402,7 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                 'authorize this fork on the <u><a href={url}>Settings</a></u> '
                 'page.'
             ).format(
-                cat=fork.project_or_component,
+                cat=markupsafe.escape(fork.project_or_component),
                 url=fork.url + 'settings/'
             )
 

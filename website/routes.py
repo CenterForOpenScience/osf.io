@@ -27,6 +27,7 @@ from website import util
 from website import prereg
 from website import settings
 from website import language
+from website.util import metrics
 from website.util import paths
 from website.util import sanitize
 from website.models import Institution
@@ -66,6 +67,7 @@ def get_globals():
         'user_url': user.url if user else '',
         'user_gravatar': profile_views.current_user_gravatar(size=25)['gravatar_url'] if user else '',
         'user_api_url': user.api_url if user else '',
+        'user_entry_point': metrics.get_entry_point(user) if user else '',
         'display_name': get_display_name(user.fullname) if user else '',
         'use_cdn': settings.USE_CDN_FOR_CLIENT_LIBS,
         'piwik_host': settings.PIWIK_HOST,
@@ -86,7 +88,6 @@ def get_globals():
         'api_v2_url': util.api_v2_url,  # URL function for templates
         'api_v2_base': util.api_v2_url(''),  # Base url used by JS api helper
         'sanitize': sanitize,
-        'js_str': lambda x: x.replace("'", r"\'").replace('"', r'\"'),
         'sjson': lambda s: sanitize.safe_json(s),
         'webpack_asset': paths.webpack_asset,
         'waterbutler_url': settings.WATERBUTLER_URL,
@@ -119,7 +120,7 @@ class OsfWebRenderer(WebRenderer):
         super(OsfWebRenderer, self).__init__(*args, **kwargs)
 
 #: Use if a view only redirects or raises error
-notemplate = OsfWebRenderer('', renderer=render_mako_string)
+notemplate = OsfWebRenderer('', renderer=render_mako_string, trust=False)
 
 
 # Static files (robots.txt, etc.)
@@ -151,7 +152,7 @@ def goodbye():
     # Redirect to dashboard if logged in
     if _get_current_user():
         return redirect(util.web_url_for('index'))
-    status.push_status_message(language.LOGOUT, 'success')
+    status.push_status_message(language.LOGOUT, kind='success', trust=False)
     return {}
 
 def make_url_map(app):
@@ -162,10 +163,18 @@ def make_url_map(app):
 
     # Set default views to 404, using URL-appropriate renderers
     process_rules(app, [
-        Rule('/<path:_>', ['get', 'post'], HTTPError(http.NOT_FOUND),
-             OsfWebRenderer('', render_mako_string)),
-        Rule('/api/v1/<path:_>', ['get', 'post'],
-             HTTPError(http.NOT_FOUND), json_renderer),
+        Rule(
+            '/<path:_>',
+            ['get', 'post'],
+            HTTPError(http.NOT_FOUND),
+            OsfWebRenderer('', render_mako_string, trust=False)
+        ),
+        Rule(
+            '/api/v1/<path:_>',
+            ['get', 'post'],
+            HTTPError(http.NOT_FOUND),
+            json_renderer
+        ),
     ])
 
     ### GUID ###
@@ -203,35 +212,58 @@ def make_url_map(app):
 
     process_rules(app, [
 
-        Rule('/dashboard/', 'get', website_views.redirect_to_home, OsfWebRenderer('home.mako')),
-        Rule('/myprojects/', 'get', website_views.dashboard, OsfWebRenderer('dashboard.mako')),
+        Rule(
+            '/dashboard/',
+            'get',
+            website_views.redirect_to_home,
+            OsfWebRenderer('home.mako', trust=False)
+        ),
+        Rule(
+            '/myprojects/',
+            'get',
+            website_views.dashboard,
+            OsfWebRenderer('dashboard.mako', trust=False)
+        ),
 
-        Rule('/reproducibility/', 'get',
-             website_views.reproducibility, OsfWebRenderer('', render_mako_string)),
+        Rule(
+            '/reproducibility/',
+            'get',
+            website_views.reproducibility,
+            notemplate
+        ),
+        Rule('/about/', 'get', website_views.redirect_about, notemplate),
+        Rule('/faq/', 'get', {}, OsfWebRenderer('public/pages/faq.mako', trust=False)),
+        Rule(['/getting-started/', '/getting-started/email/', '/howosfworks/'], 'get', website_views.redirect_getting_started, notemplate),
+        Rule('/support/', 'get', {}, OsfWebRenderer('public/pages/support.mako', trust=False)),
 
-        Rule('/about/', 'get', website_views.redirect_about, json_renderer,),
-        Rule('/howosfworks/', 'get', website_views.redirect_howosfworks, json_renderer,),
-
-        Rule('/faq/', 'get', {}, OsfWebRenderer('public/pages/faq.mako')),
-        Rule('/getting-started/', 'get', {}, OsfWebRenderer('public/pages/getting_started.mako')),
-        Rule('/getting-started/email/', 'get', website_views.redirect_meetings_analytics_link, json_renderer),
-        Rule('/support/', 'get', {}, OsfWebRenderer('public/pages/support.mako')),
-
-        Rule('/explore/', 'get', {}, OsfWebRenderer('public/explore.mako')),
-        Rule(['/messages/', '/help/'], 'get', {}, OsfWebRenderer('public/comingsoon.mako')),
+        Rule(
+            '/explore/',
+            'get',
+            {},
+            OsfWebRenderer('public/explore.mako', trust=False)
+        ),
+        Rule(
+            [
+                '/messages/',
+                '/help/'
+            ],
+            'get',
+            {},
+            OsfWebRenderer('public/comingsoon.mako', trust=False)
+        ),
 
         Rule(
             '/view/<meeting>/',
             'get',
             conference_views.conference_results,
-            OsfWebRenderer('public/pages/meeting.mako'),
+            OsfWebRenderer('public/pages/meeting.mako', trust=False),
         ),
 
         Rule(
             '/view/<meeting>/plain/',
             'get',
             conference_views.conference_results,
-            OsfWebRenderer('public/pages/meeting_plain.mako'),
+            OsfWebRenderer('public/pages/meeting_plain.mako', trust=False),
             endpoint_suffix='__plain',
         ),
 
@@ -246,7 +278,7 @@ def make_url_map(app):
             '/meetings/',
             'get',
             conference_views.conference_view,
-            OsfWebRenderer('public/pages/meeting_landing.mako'),
+            OsfWebRenderer('public/pages/meeting_landing.mako', trust=False),
         ),
 
         Rule(
@@ -263,7 +295,12 @@ def make_url_map(app):
             json_renderer,
         ),
 
-        Rule('/news/', 'get', {}, OsfWebRenderer('public/pages/news.mako')),
+        Rule(
+            '/news/',
+            'get',
+            {},
+            OsfWebRenderer('public/pages/news.mako', trust=False)
+        ),
 
         Rule(
             '/prereg/',
@@ -324,7 +361,7 @@ def make_url_map(app):
             '/oauth/callback/<service_name>/',
             'get',
             oauth_views.oauth_callback,
-            OsfWebRenderer('util/oauth_complete.mako'),
+            OsfWebRenderer('util/oauth_complete.mako', trust=False),
         ),
     ])
     process_rules(app, [
@@ -394,14 +431,14 @@ def make_url_map(app):
             'get',
             auth_views.confirm_email_get,
             # View will either redirect or display error message
-            OsfWebRenderer('error.mako', render_mako_string)
+            notemplate
         ),
 
         Rule(
             '/resetpassword/<verification_key>/',
             ['get', 'post'],
             auth_views.reset_password,
-            OsfWebRenderer('public/resetpassword.mako', render_mako_string)
+            OsfWebRenderer('public/resetpassword.mako', render_mako_string, trust=False)
         ),
 
         # Resend confirmation URL linked to in CAS login page
@@ -409,38 +446,80 @@ def make_url_map(app):
             '/resend/',
             ['get', 'post'],
             auth_views.resend_confirmation,
-            OsfWebRenderer('resend.mako', render_mako_string)
+            OsfWebRenderer('resend.mako', render_mako_string, trust=False)
         ),
 
         # TODO: Remove `auth_register_post`
-        Rule('/register/', 'post', auth_views.auth_register_post,
-             OsfWebRenderer('public/login.mako')),
+        Rule(
+            '/register/',
+            'post',
+            auth_views.auth_register_post,
+            OsfWebRenderer('public/login.mako', trust=False)
+        ),
         Rule('/api/v1/register/', 'post', auth_views.register_user, json_renderer),
 
-        Rule(['/login/', '/account/'], 'get',
-             auth_views.auth_login, OsfWebRenderer('public/login.mako')),
-        Rule('/login/first/', 'get', auth_views.auth_login,
-             OsfWebRenderer('public/login.mako'),
-             endpoint_suffix='__first', view_kwargs={'first': True}),
-        Rule('/logout/', 'get', auth_views.auth_logout, notemplate),
-        Rule('/forgotpassword/', 'get', auth_views.forgot_password_get,
-             OsfWebRenderer('public/forgot_password.mako')),
-        Rule('/forgotpassword/', 'post', auth_views.forgot_password_post,
-             OsfWebRenderer('public/login.mako')),
+        Rule(
+            [
+                '/login/',
+                '/account/'
+            ],
+            'get',
+            auth_views.auth_login,
+            OsfWebRenderer('public/login.mako', trust=False)
+        ),
+        Rule(
+            '/login/first/',
+            'get',
+            auth_views.auth_login,
+            OsfWebRenderer('public/login.mako', trust=False),
+            endpoint_suffix='__first', view_kwargs={'first': True}
+        ),
+        Rule(
+            '/logout/',
+            'get',
+            auth_views.auth_logout,
+            notemplate
+        ),
+        Rule(
+            '/forgotpassword/',
+            'get',
+            auth_views.forgot_password_get,
+            OsfWebRenderer('public/forgot_password.mako', trust=False)
+        ),
+        Rule(
+            '/forgotpassword/',
+            'post',
+            auth_views.forgot_password_post,
+            OsfWebRenderer('public/login.mako', trust=False)
+        ),
 
-        Rule([
-            '/midas/', '/summit/', '/accountbeta/', '/decline/'
-        ], 'get', auth_views.auth_registerbeta, OsfWebRenderer('', render_mako_string)),
+        Rule(
+            [
+                '/midas/',
+                '/summit/',
+                '/accountbeta/',
+                '/decline/'
+            ],
+            'get',
+            auth_views.auth_registerbeta,
+            notemplate
+        ),
 
-        Rule('/login/connected_tools/',
-             'get',
-             landing_page_views.connected_tools,
-             OsfWebRenderer('public/login_landing.mako')),
+        # FIXME or REDIRECTME: This redirects to settings when logged in, but gives an error (no template) when logged out
+        Rule(
+            '/login/connected_tools/',
+            'get',
+            landing_page_views.connected_tools,
+            OsfWebRenderer('public/login_landing.mako', trust=False)
+        ),
 
-        Rule('/login/enriched_profile/',
-             'get',
-             landing_page_views.enriched_profile,
-             OsfWebRenderer('public/login_landing.mako')),
+        # FIXME or REDIRECTME: mod-meta error when logged out: signin form not rendering for login_landing sidebar
+        Rule(
+            '/login/enriched_profile/',
+            'get',
+            landing_page_views.enriched_profile,
+            OsfWebRenderer('public/login_landing.mako', trust=False)
+        ),
 
     ])
 
@@ -462,16 +541,16 @@ def make_url_map(app):
             OsfWebRenderer('profile.mako', trust=False)
         ),
         Rule(
-            ["/user/merge/"],
+            ['/user/merge/'],
             'get',
             auth_views.merge_user_get,
-            OsfWebRenderer("merge_accounts.mako", trust=False)
+            OsfWebRenderer('merge_accounts.mako', trust=False)
         ),
         Rule(
-            ["/user/merge/"],
+            ['/user/merge/'],
             'post',
             auth_views.merge_user_post,
-            OsfWebRenderer("merge_accounts.mako", trust=False)
+            OsfWebRenderer('merge_accounts.mako', trust=False)
         ),
         # Route for claiming and setting email and password.
         # Verification token must be querystring argument
@@ -708,12 +787,42 @@ def make_url_map(app):
 
     process_rules(app, [
 
-        Rule('/search/', 'get', {}, OsfWebRenderer('search.mako')),
-        Rule('/share/', 'get', {}, OsfWebRenderer('share_search.mako')),
-        Rule('/share/registration/', 'get', {'register': settings.SHARE_REGISTRATION_URL}, OsfWebRenderer('share_registration.mako')),
-        Rule('/share/help/', 'get', {'help': settings.SHARE_API_DOCS_URL}, OsfWebRenderer('share_api_docs.mako')),
-        Rule('/share_dashboard/', 'get', {}, OsfWebRenderer('share_dashboard.mako')),
-        Rule('/share/atom/', 'get', search_views.search_share_atom, xml_renderer),
+        Rule(
+            '/search/',
+            'get',
+            {},
+            OsfWebRenderer('search.mako', trust=False)
+        ),
+        Rule(
+            '/share/',
+            'get',
+            {},
+            OsfWebRenderer('share_search.mako', trust=False)
+        ),
+        Rule(
+            '/share/registration/',
+            'get',
+            {'register': settings.SHARE_REGISTRATION_URL},
+            OsfWebRenderer('share_registration.mako', trust=False)
+        ),
+        Rule(
+            '/share/help/',
+            'get',
+            {'help': settings.SHARE_API_DOCS_URL},
+            OsfWebRenderer('share_api_docs.mako', trust=False)
+        ),
+        Rule(  # FIXME: Dead route; possible that template never existed; confirm deletion candidate with ErinB
+            '/share_dashboard/',
+            'get',
+            {},
+            OsfWebRenderer('share_dashboard.mako', trust=False)
+        ),
+        Rule(
+            '/share/atom/',
+            'get',
+            search_views.search_share_atom,
+            xml_renderer
+        ),
         Rule('/api/v1/user/search/', 'get', search_views.search_contributor, json_renderer),
 
         Rule(
@@ -749,8 +858,8 @@ def make_url_map(app):
 
     process_rules(app, [
         # '/' route loads home.mako if logged in, otherwise loads landing.mako
-        Rule('/', 'get', website_views.index, OsfWebRenderer('index.mako')),
-        Rule('/goodbye/', 'get', goodbye, OsfWebRenderer('landing.mako')),
+        Rule('/', 'get', website_views.index, OsfWebRenderer('index.mako', trust=False)),
+        Rule('/goodbye/', 'get', goodbye, OsfWebRenderer('landing.mako', trust=False)),
 
         Rule(
             [
@@ -771,7 +880,7 @@ def make_url_map(app):
         ),
 
         # # TODO: Add API endpoint for tags
-        # Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, OsfWebRenderer('tags.mako')),
+        # Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, OsfWebRenderer('tags.mako', trust=False)),
         Rule('/project/new/<pid>/beforeTemplate/', 'get',
              project_views.node.project_before_template, json_renderer),
 
@@ -796,14 +905,14 @@ def make_url_map(app):
         ),
 
         # Permissions
-        Rule(
+        Rule(  # TODO: Where, if anywhere, is this route used?
             [
                 '/project/<pid>/permissions/<permissions>/',
                 '/project/<pid>/node/<nid>/permissions/<permissions>/',
             ],
             'post',
             project_views.node.project_set_privacy,
-            OsfWebRenderer('project/project.mako')  # TODO: Should this be notemplate? (post request)
+            OsfWebRenderer('project/project.mako', trust=False)
         ),
 
         ### Logs ###
@@ -883,7 +992,6 @@ def make_url_map(app):
             notemplate,
         ),
 
-        # TODO: Can't create a registration locally, so can't test this one..?
         Rule(
             [
                 '/project/<pid>/withdraw/',

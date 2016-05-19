@@ -1,7 +1,7 @@
 'use strict';
 
 var $ = require('jquery');
-var bootbox = require('bootbox');
+var bootbox = require('bootbox');  // TODO: Why is this required? Is it? See [#OSF-6100]
 var Raven = require('raven-js');
 var ko = require('knockout');
 var $osf = require('js/osfHelpers');
@@ -28,9 +28,7 @@ var ProjectSettings = oop.extend(
             self.categoryOptions = params.categoryOptions;
             self.categoryPlaceholder = params.category;
             self.selectedCategory = ko.observable(params.category);
-
-            self.disabled = params.disabled || false;
-
+            
             if (!params.updateUrl) {
                 throw new Error(language.instantiationErrorMessage);
             }

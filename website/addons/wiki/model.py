@@ -3,6 +3,7 @@
 import datetime
 import functools
 import logging
+import urllib
 
 from bleach import linkify
 from bleach.callbacks import nofollow
@@ -12,6 +13,7 @@ import markdown
 from markdown.extensions import codehilite, fenced_code, wikilinks
 from modularodm import fields
 
+from framework.mongo.utils import to_mongo_key
 from framework.forms.utils import sanitize
 from framework.guid.model import GuidStoredObject
 from framework.mongo import utils as mongo_utils
@@ -21,6 +23,7 @@ from website.addons.base import AddonNodeSettingsBase
 from website.addons.wiki import utils as wiki_utils
 from website.addons.wiki.settings import WIKI_CHANGE_DATE
 from website.project.commentable import Commentable
+from website.project.model import Node
 from website.project.signals import write_permissions_revoked
 
 from website.exceptions import NodeStateError
@@ -78,8 +81,14 @@ class AddonWikiNodeSettings(AddonNodeSettingsBase):
 
         self.save()
 
+    def after_fork(self, node, fork, user, save=True):
+        """Copy wiki settings and wiki pages to forks."""
+        NodeWikiPage.clone_wiki_versions(node, fork, user, save)
+        return super(AddonWikiNodeSettings, self).after_fork(node, fork, user, save)
+
     def after_register(self, node, registration, user, save=True):
-        """Copy wiki settings to registrations."""
+        """Copy wiki settings and wiki pages to registrations."""
+        NodeWikiPage.clone_wiki_versions(node, registration, user, save)
         clone = self.clone()
         clone.owner = registration
         if save:
@@ -161,11 +170,18 @@ class NodeWikiPage(GuidStoredObject, Commentable):
     page_name = fields.StringField(validate=validate_page_name)
     version = fields.IntegerField()
     date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
-    is_current = fields.BooleanField()
     content = fields.StringField(default='')
 
     user = fields.ForeignField('user')
     node = fields.ForeignField('node')
+
+    @property
+    def is_current(self):
+        key = to_mongo_key(self.page_name)
+        if key in self.node.wiki_pages_current:
+            return self.node.wiki_pages_current[key] == self._id
+        else:
+            return False
 
     @property
     def deep_url(self):
@@ -204,7 +220,7 @@ class NodeWikiPage(GuidStoredObject, Commentable):
 
     # used by django and DRF - use v1 url since there are no v2 wiki routes
     def get_absolute_url(self):
-        return '{}wiki/{}/'.format(self.node.absolute_url, self.page_name)
+        return '{}wiki/{}/'.format(self.node.absolute_url, urllib.quote(self.page_name))
 
     def html(self, node):
         """The cleaned HTML of the page"""
@@ -257,3 +273,41 @@ class NodeWikiPage(GuidStoredObject, Commentable):
 
     def to_json(self):
         return {}
+
+    def clone_wiki(self, node_id):
+        """Clone a node wiki page.
+        :param node: The Node of the cloned wiki page
+        :return: The cloned wiki page
+        """
+        node = Node.load(node_id)
+        if not node:
+            raise ValueError('Invalid node')
+        clone = self.clone()
+        clone.node = node
+        clone.user = self.user
+        clone.save()
+        return clone
+
+    @classmethod
+    def clone_wiki_versions(cls, node, copy, user, save=True):
+        """Clone wiki pages for a forked or registered project.
+        :param node: The Node that was forked/registered
+        :param copy: The fork/registration
+        :param user: The user who forked or registered the node
+        :param save: Whether to save the fork/registration
+        :return: copy
+        """
+        copy.wiki_pages_versions = {}
+        copy.wiki_pages_current = {}
+
+        for key in node.wiki_pages_versions:
+            copy.wiki_pages_versions[key] = []
+            for wiki_id in node.wiki_pages_versions[key]:
+                node_wiki = NodeWikiPage.load(wiki_id)
+                cloned_wiki = node_wiki.clone_wiki(copy._id)
+                copy.wiki_pages_versions[key].append(cloned_wiki._id)
+                if node_wiki.is_current:
+                    copy.wiki_pages_current[key] = cloned_wiki._id
+        if save:
+            copy.save()
+        return copy

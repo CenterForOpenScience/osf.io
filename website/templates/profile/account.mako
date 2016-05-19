@@ -28,7 +28,7 @@
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td>{{ profile().primaryEmail().address }}</td>
+                                    <td><span data-bind="text: profile().primaryEmail().address"></span></td>
                                     <td></td>
                                 </tr>
                             </tbody>
@@ -42,9 +42,9 @@
                             </thead>
                             <tbody data-bind="foreach: profile().alternateEmails()">
                                 <tr>
-                                    <td style="word-break: break-all;">{{ $data.address }}</td>
-                                    <td style="width:150px;"><a data-bind="click: $parent.makeEmailPrimary">make&nbsp;primary</a></td>
-                                    <td style="width:50px;"><a data-bind="click: $parent.removeEmail"><i class="fa fa-times text-danger"></i></a></td>
+                                    <td style="word-break: break-all;"><span data-bind="text: $data.address"></span></td>
+                                    <td style="width:150px;"><a data-bind="click: $parent.makeEmailPrimary.bind($parent)">make&nbsp;primary</a></td>
+                                    <td style="width:50px;"><a data-bind="click: $parent.removeEmail.bind($parent)"><i class="fa fa-times text-danger"></i></a></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -57,9 +57,9 @@
                             <tbody>
                                 <!-- ko foreach: profile().unconfirmedEmails() -->
                                 <tr>
-                                    <td style="word-break: break-all;">{{ $data.address }}</td>
-                                    <td style="width:150px;"><a data-bind="click: $parent.resendConfirmation">resend&nbsp;confirmation</a></td>
-                                    <td style="width:50px;" ><a data-bind="click: $parent.removeEmail"><i class="fa fa-times text-danger"></i></a></td>
+                                    <td style="word-break: break-all;"><span data-bind="text: $data.address"></span></td>
+                                    <td style="width:150px;"><a data-bind="click: $parent.resendConfirmation.bind($parent)">resend&nbsp;confirmation</a></td>
+                                    <td style="width:50px;" ><a data-bind="click: $parent.removeEmail.bind($parent)"><i class="fa fa-times text-danger"></i></a></td>
                                 </tr>
                                 <!-- /ko -->
                                 <tr>
