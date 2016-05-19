@@ -2,11 +2,16 @@ from nose.tools import *
 
 from scripts.migration.migrate_deleted_wikis import get_targets, migrate
 
-
 from tests.base import OsfTestCase
 from tests.factories import ProjectFactory, UserFactory, Auth
 
+
 class TestMigrateDeletedWikis(OsfTestCase):
+
+    # Whenever wiki is deleted, increment this variable to account for
+    # fact that NodeLog.WIKI_DELETED is added to each time
+    times_wiki_deleted = 0
+
     def setUp(self):
         super(TestMigrateDeletedWikis, self).setUp()
         self.user = UserFactory()
@@ -22,10 +27,16 @@ class TestMigrateDeletedWikis(OsfTestCase):
     def test_get_targets(self):
         # delete second wiki to add something to targets
         self.project.delete_node_wiki('second', self.auth)
+        TestMigrateDeletedWikis.times_wiki_deleted += 1
         # Initial targets should include: user2, user3, user4, user5, user6 (5 in total)
         logs = get_targets()
-        # assert len is equal to 1 log (deleting 'second' wiki on project)
-        assert_equal(len(logs), 1)
+        # assert len is equal to number of time a wiki is deleted in entire test script
+        assert_equal(len(logs), TestMigrateDeletedWikis.times_wiki_deleted)
+
+    def test_delete_wiki_node(self):
+        self.project.delete_node_wiki('second', self.auth)
+        TestMigrateDeletedWikis.times_wiki_deleted += 1
+        assert_true('second' not in self.versions)
 
     def test_migrate(self):
         # Assert 'home' has 1 version
@@ -33,6 +44,7 @@ class TestMigrateDeletedWikis(OsfTestCase):
         assert_equal(len(self.versions['home']), 1)
         assert_equal(len(self.versions['second']), 2)
         self.project.delete_node_wiki('second', self.auth)
+        TestMigrateDeletedWikis.times_wiki_deleted += 1
         logs = get_targets()
         migrate(logs, dry_run=False)
         self.project.reload()
