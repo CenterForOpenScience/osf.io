@@ -17,7 +17,6 @@ function _uploadUrl(item, file) {
     return waterbutler.buildTreeBeardUpload(item, file, {branch: item.data.branch});
 }
 
-// TODO: Refactor, repeating from core function too much
 function _removeEvent (event, items) {
     var tb = this;
     function cancelDelete() {
@@ -25,8 +24,9 @@ function _removeEvent (event, items) {
     }
 
     function runDelete (item) {
-        tb.select('.tb-modal-footer .text-danger').html('<i> Deleting...</i>').css('color', 'grey');;
         // delete from server, if successful delete from view
+        tb.select('.modal-footer .btn-danger').html('<i> Deleting...</i>').removeClass('btn-danger').addClass('btn-default disabled');
+
         $.ajax({
             url: waterbutler.buildTreeBeardDelete(item, {branch: item.data.branch, sha: item.data.extra.fileSha}),
             type : 'DELETE',
