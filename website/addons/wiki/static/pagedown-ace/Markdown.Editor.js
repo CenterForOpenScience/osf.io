@@ -3,7 +3,6 @@
 // autocompletion. This is only here for the toolbar
 
 // needs Markdown.Converter.js at the moment
-'use strict';
 
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
