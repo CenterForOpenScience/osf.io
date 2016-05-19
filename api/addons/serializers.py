@@ -11,7 +11,7 @@ class NodeAddonFolderSerializer(JSONAPISerializer):
     name = ser.CharField(read_only=True)
     folder_id = ser.CharField(source='id', read_only=True)
     path = ser.CharField(read_only=True)
-    provider = ser.CharField(read_only=True)
+    provider = ser.CharField(source='addon', read_only=True)
 
     links = LinksField({
         'children': 'get_absolute_url',

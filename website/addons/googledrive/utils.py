@@ -28,7 +28,6 @@ def to_hgrid(item, node, path):
         'kind': 'folder',
         'name': safe_name,
         'addon': 'googledrive',
-        'provider': 'googledrive',  # TODO: remove duplication -- APIv2
         'urls': build_googledrive_urls(item, node, path=path)
     }
     return serialized

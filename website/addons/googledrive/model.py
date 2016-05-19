@@ -117,6 +117,7 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             about = client.about()
 
             return [{
+                'addon': self.config.short_name,
                 'path': '/',
                 'kind': 'folder',
                 'id': about['rootFolderId'],
