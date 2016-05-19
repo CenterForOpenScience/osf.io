@@ -530,13 +530,13 @@ class NodeInstitutionsRelationshipSerializer(ser.Serializer):
         user = self.context['request'].user
 
         add, remove = self.get_institutions_to_add_remove(
-            institutions=node.affiliated_institutions,
+            institutions=instance['data'],
             new_institutions=validated_data['data']
         )
 
         for inst in add:
             if inst not in user.affiliated_institutions:
-                raise exceptions.PermissionDenied
+                raise exceptions.PermissionDenied(detail='User needs to be affiliated with {}'.format(inst.name))
 
         for inst in remove:
             node.remove_affiliated_institution(inst, user)
@@ -552,7 +552,7 @@ class NodeInstitutionsRelationshipSerializer(ser.Serializer):
         node = instance['self']
 
         add, remove = self.get_institutions_to_add_remove(
-            institutions=node.affiliated_institutions,
+            institutions=instance['data'],
             new_institutions=validated_data['data']
         )
         if not len(add):
@@ -560,7 +560,7 @@ class NodeInstitutionsRelationshipSerializer(ser.Serializer):
 
         for inst in add:
             if inst not in user.affiliated_institutions:
-                raise exceptions.PermissionDenied
+                raise exceptions.PermissionDenied(detail='User needs to be affiliated with {}'.format(inst.name))
 
         for inst in add:
             node.add_affiliated_institution(inst, user)

@@ -71,7 +71,7 @@ var institutionLogos = {
                 m('img.img-circle', {
                     height: self.side, width: self.side,
                     style: {margin: '3px'},
-                    dataToggle: 'tooltip', dataPlacement: 'top', title: institution.name,
+                    title: institution.name,
                     src: institution.logo_path
                 })
             );

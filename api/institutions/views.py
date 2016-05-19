@@ -312,7 +312,7 @@ class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
         for id_ in ids:
             node = Node.load(id_)
             if not node.has_permission(user, osf_permissions.ADMIN):
-                raise exceptions.PermissionDenied
+                raise exceptions.PermissionDenied(detail='Admin permission on node {} required'.format(id_))
             nodes.append(node)
 
         for node in nodes:
