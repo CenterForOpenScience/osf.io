@@ -267,7 +267,7 @@ class UserAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, User
     )
 
     required_read_scopes = [CoreScopes.ADDONS_READ]
-    required_write_scopes = [CoreScopes.USERS_ADDON_WRITE]
+    required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = UserAddonSettingsSerializer
     view_category = 'users'
@@ -313,7 +313,7 @@ class UserAddonDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixin, Addo
     )
 
     required_read_scopes = [CoreScopes.ADDONS_READ]
-    required_write_scopes = [CoreScopes.USERS_ADDON_WRITE]
+    required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = UserAddonSettingsSerializer
     view_category = 'users'
@@ -356,7 +356,7 @@ class UserAddonAccountList(JSONAPIBaseView, generics.ListAPIView, UserMixin, Add
     )
 
     required_read_scopes = [CoreScopes.ADDONS_READ]
-    required_write_scopes = [CoreScopes.USERS_ADDON_WRITE]
+    required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = AddonAccountSerializer
     view_category = 'users'
