@@ -45,7 +45,7 @@ class TestMigrateDeletedWikis(OsfTestCase):
         self.project.reload()
         # Ensure that wiki pages that were targeted are not in versions
         for log in logs:
-            node = log.node.update_node_wiki()
+            node = log.node
             assert_true(node.title not in self.project.wiki_pages_versions)
 
     def test_migration_does_not_affect_home(self):
