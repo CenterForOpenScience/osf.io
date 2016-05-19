@@ -163,6 +163,37 @@ describe('addContributors', () => {
                    });
                });
            });
+
+           describe('emailSearch', () => {
+               it('should return true with an email address entered', () => {
+                   vm.query(
+                       'a1234@gmail.com'
+                   );
+                   assert.isTrue(vm.emailSearch());
+               });
+               it('should return false with a name entered', () => {
+                   vm.query(
+                       faker.name.findName()
+                   );
+                   assert.isFalse(vm.emailSearch());
+               });
+           });
+
+           describe('nameSearch', () => {
+               it('should return true with a name entered', () => {
+                   var name = faker.name.findName();
+                   vm.query(
+                       name
+                   );
+                   assert.isTrue(!vm.emailSearch());
+               });
+               it('should return false with an email entered', () => {
+                   vm.query(
+                       'a1234@gmail.com'
+                   );
+                   assert.isFalse(vm.foundResults());
+               });
+           });
        });
    });
 });
