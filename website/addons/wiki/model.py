@@ -13,6 +13,7 @@ import markdown
 from markdown.extensions import codehilite, fenced_code, wikilinks
 from modularodm import fields
 
+from framework.mongo.utils import to_mongo_key
 from framework.forms.utils import sanitize
 from framework.guid.model import GuidStoredObject
 from framework.mongo import utils as mongo_utils
@@ -169,11 +170,15 @@ class NodeWikiPage(GuidStoredObject, Commentable):
     page_name = fields.StringField(validate=validate_page_name)
     version = fields.IntegerField()
     date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
-    is_current = fields.BooleanField()
     content = fields.StringField(default='')
 
     user = fields.ForeignField('user')
     node = fields.ForeignField('node')
+
+    @property
+    def is_current(self):
+        key = to_mongo_key(self.page_name)
+        return self.node.wiki_pages_current[key] == self._id
 
     @property
     def deep_url(self):
