@@ -26,10 +26,10 @@ $(document).ready(function(){
                         ])
                     ]
                 )),
-                m('', userInstitutions ? m('.container',
+                m('', userInstitutions.length ? m('.container',
                     [
                         m('.row', [
-                            m(columnSizeClass, m('h3', 'User Institutions'))
+                            m(columnSizeClass, m('h3', 'Your Institutions'))
                         ]),
                         m('.row', [
                             m(columnSizeClass, m.component(UsersInstitutions, {institutions: userInstitutions}))
