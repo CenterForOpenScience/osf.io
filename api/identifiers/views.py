@@ -21,8 +21,30 @@ from website.identifiers.model import Identifier
 
 
 class IdentifierList(JSONAPIBaseView, generics.ListAPIView):
-    """Identifiers for the current node. Read Only for the time being
+    """List of identifiers for a specified node. *Read-only*.
+
+   ##Identifier Attributes
+
+    OSF License entities have the "licenses" `type`.
+        name           type                   description
+        ----------------------------------------------------------------------------
+        category       string                 e.g. 'ark', 'doi'
+        referent       link                   object to which the identifier points
+        value          string                 the identifier value itself
+
+    ##Links
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    ##Actions
+    *None*.
+
+    ##Query Params
+     *None*.
+
+    #This Request/Response
+
     """
+
     permission_classes = (
         IsPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
