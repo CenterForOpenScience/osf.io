@@ -279,7 +279,7 @@ on
 <a data-bind="attr: {href: params.file.url}, text: params.file.name"></a>
 in
 <!-- /ko -->
-<!-- ko: params.wiki -->
+<!-- ko if: params.wiki -->
 wiki page
 <a data-bind="attr: {href: params.wiki.url}, text: params.wiki.name"></a>
 in
