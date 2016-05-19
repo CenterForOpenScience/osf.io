@@ -70,12 +70,10 @@ def redirect(location, code=302, strip_view_only=False):
     flask.redirect to ensure the correct behavior of view-only
     links.
     """
-    if strip_view_only:
-        return flask_redirect(location, code=code)
-
     view_only = request.args.get('view_only', '')
-    if view_only:
+    if view_only and not strip_view_only:
         url = furl.furl(location)
         url.args['view_only'] = view_only
         location = url.url
     return flask_redirect(location, code=code)
+
