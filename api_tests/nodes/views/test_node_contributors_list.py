@@ -1139,7 +1139,7 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
         assert_items_equal([data[0]['attributes']['permission'], data[1]['attributes']['permission'], data[2]['attributes']['permission']],
                            ['admin', 'read', 'read'])
 
-    def test_bulk_update_contributors_must_be_one_bibliographic_contributor(self):
+    def test_bulk_update_contributors_must_have_at_least_one_bibliographic_contributor(self):
         res = self.app.put_json_api(self.public_url, {'data': [self.payload_two,
                                                                {'id': self.user._id, 'type': 'contributors',
                                                                 'attributes': {'permission': 'admin', 'bibliographic': False}},
@@ -1151,7 +1151,7 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'Must have at least one visible contributor')
 
-    def test_bulk_update_contributors_must_be_at_least_one_admin(self):
+    def test_bulk_update_contributors_must_have_at_least_one_admin(self):
         res = self.app.put_json_api(self.public_url, {'data': [self.payload_two,
                                                                {'id': self.user._id, 'type': 'contributors',
                                                                 'attributes': {'permission': 'read'}}]},
