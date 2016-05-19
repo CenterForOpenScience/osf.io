@@ -10,6 +10,7 @@ var m = require('mithril');
 var URI = require('URIjs');
 var Raven = require('raven-js');
 var Treebeard = require('treebeard');
+var Dropzone = require('dropzone');
 
 var $osf = require('js/osfHelpers');
 var waterbutler = require('js/waterbutler');
@@ -88,31 +89,79 @@ function findByTempID(parent, tmpID) {
     return item;
 }
 
-function cancelUploads (row) {
+/**
+ * Cancel pending upload(s)
+ * @this Treebeard.controller
+ * @param {Object|null} row Treebeard row containing the file to cancel. If omitted, cancel all pending uploads.
+ */
+function cancelUploads(row) {
     var tb = this;
-    var uploading = tb.dropzone.getUploadingFiles();
-    var rejected = tb.dropzone.getRejectedFiles();
-    var queued = tb.dropzone.getQueuedFiles();
-    var filesArr = uploading.concat(queued, rejected);
-
-    for (var i = 0; i < filesArr.length; i++) {
-        var j = filesArr[i];
-        if(!row) {
-            var parent = j.treebeardParent || tb.dropzoneItemCache;
-            var item = findByTempID(parent, j.tmpID);
-            tb.dropzone.removeFile(j);
-            tb.deleteNode(parent.id,item.id);
-        } else {
-            tb.deleteNode(row.parentID,row.id);
-            if(row.data.tmpID === j.tmpID){
-                tb.dropzone.removeFile(j);
+    var cancelableStatuses = [Dropzone.UPLOADING, Dropzone.QUEUED];
+    var cancelable = function(file) {
+        return cancelableStatuses.indexOf(file.status) > -1 || !file.accepted;
+    };
+    // Select files that are uploading, queued, or rejected (!accepted)
+    var filesArr = tb.dropzone.files.filter(cancelable);
+    // Remove all queued files
+    if (row === undefined) {
+        // Append cancelable syncFiles to filesArr
+        for (var provider in SYNC_UPLOAD_ADDONS) {
+            var cacheFiles = tb.dropzone.syncFileCache[provider];
+            if (cacheFiles !== undefined) {
+                filesArr = filesArr.concat(cacheFiles.filter(cancelable));
             }
         }
+        filesArr.forEach(function(file, index) {
+            // Ignore completed files
+            if (file.upload.progress === 100) return;
+            var parent = file.treebeardParent || tb.dropzoneItemCache;
+            var item = findByTempID(parent, file.tmpID);
+            tb.deleteNode(parent.id, item.id);
+            // Check if provider should be handled synchronously
+            if (SYNC_UPLOAD_ADDONS.indexOf(row.data.provider) !== -1) {
+                var inProvider = tb.dropzone.syncFileCache[parent.data.provider].some(function(providerFile) {
+                    return providerFile.tmpID === file.tmpID;
+                });
+                if (inProvider) {
+                    // Remove file from sync queue
+                    tb.dropzone.syncFileCache[parent.data.provider].splice(index, 1);
+                } else {
+                    // Cancel currently uploading file
+                    tb.dropzone.removeFile(file);
+                }
+            } else {
+                // Cancel currently uploading file
+                tb.dropzone.removeFile(file);
+            }
+        });
+        tb.isUploading(false);
+        return;
     }
-    tb.isUploading(false);
+    var handled = false;
+    // Search for and remove specified file from queue
+    if (SYNC_UPLOAD_ADDONS.indexOf(row.data.provider) !== -1) {
+        // Provider is handled in sync
+        handled = tb.dropzone.syncFileCache[row.data.provider].some(function(file, index) {
+            if (file.tmpID === row.data.tmpID) {
+                tb.deleteNode(row.parentID, row.id);
+                return tb.dropzone.syncFileCache[row.data.provider].splice(index, 1);
+            }
+        });
+    }
+    if (!handled) {
+        // File is currently being uploaded/managed by dropzone
+        filesArr.some(function(file) {
+            if (file.tmpID === row.data.tmpID) {
+                tb.deleteNode(row.parentID, row.id);
+                tb.dropzone.removeFile(file);
+                return true;
+            }
+        });
+    }
+    tb.isUploading(filesArr.length > 1);
 }
 
-var uploadRowTemplate = function(item){
+var uploadRowTemplate = function(item) {
     var tb = this;
     var padding;
     if (tb.filterOn) {
@@ -148,7 +197,6 @@ var uploadRowTemplate = function(item){
                                 reapplyTooltips();
                             },
                             'onclick' : function (e) {
-                                console.log(item.data.progress);
                                 e.stopImmediatePropagation();
                                 cancelUploads.call(tb, item);
                             }},
@@ -804,7 +852,7 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
             child.removeSelf();
         }
     }
-    console.log(file);
+    console.error(file);
     treebeard.options.uploadInProgress = false;
     if (msgText !== 'Upload canceled.') {
         addFileStatus(treebeard, file, false, msgText, '');
@@ -1912,15 +1960,14 @@ function openParentFolders (item) {
     var tb = this;
     // does it have a parent? If so change open
     var parent = item.parent();
-    if(parent ){
-        if(!parent.open) {
+    if (parent) {
+        if (!parent.open) {
             var index = tb.returnIndex(parent.id);
             parent.load = true;
             tb.toggleFolder(index);
         }
         openParentFolders.call(tb, parent);
     }
-    return;
 }
 
 /**
