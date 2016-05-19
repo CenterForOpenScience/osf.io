@@ -226,6 +226,7 @@ PIWIK_SITE_ID = None
 
 KEEN_PROJECT_ID = None
 KEEN_WRITE_KEY = None
+KEEN_READ_KEY = None
 
 SENTRY_DSN = None
 SENTRY_DSN_JS = None
@@ -303,7 +304,7 @@ BROKER_URL = 'amqp://'
 # Default RabbitMQ backend
 CELERY_RESULT_BACKEND = 'amqp://'
 
-#  Modules to import when celery launches
+# Modules to import when celery launches
 CELERY_IMPORTS = (
     'framework.celery_tasks',
     'framework.celery_tasks.signals',
@@ -313,21 +314,25 @@ CELERY_IMPORTS = (
     'website.notifications.tasks',
     'website.archiver.tasks',
     'website.search.search',
-    'api.caching.tasks',
     'scripts.populate_new_and_noteworthy_projects',
     'scripts.refresh_box_tokens',
     'scripts.retract_registrations',
     'scripts.embargo_registrations',
     'scripts.approve_registrations',
     'scripts.approve_embargo_terminations',
-    'scripts.osfstorage.glacier_inventory',
-    'scripts.osfstorage.glacier_audit',
     'scripts.triggered_mails',
     'scripts.send_queued_mails',
-    'scripts.osfstorage.usage_audit',
-    'scripts.osfstorage.files_audit',
-    'scripts.analytics.tasks',
 )
+
+# Modules that need metrics and release requirements
+# CELERY_IMPORTS += (
+#     'scripts.osfstorage.glacier_inventory',
+#     'scripts.osfstorage.glacier_audit',
+#     'scripts.osfstorage.usage_audit',
+#     'scripts.osfstorage.files_audit',
+#     'scripts.analytics.tasks',
+#     'scripts.analytics.upload',
+# )
 
 # celery.schedule will not be installed when running invoke requirements the first time.
 try:
@@ -385,49 +390,58 @@ else:
         'new-and-noteworthy': {
             'task': 'scripts.populate_new_and_noteworthy_projects',
             'schedule': crontab(minute=0, hour=2, day_of_week=6),  # Saturday 2:00 a.m.
-            'kwargs': {'dry_run': True}
+            'kwargs': {'dry_run': False}
         },
-        # 'usage_audit': {
-        #     'task': 'scripts.osfstorage.usage_audit',
-        #     'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
-        #     'kwargs': {'send_mail': True},
-        # },
-        # 'glacier_inventory': {
-        #     'task': 'scripts.osfstorage.glacier_inventory',
-        #     'schedule': crontab(minute=0, hour= 0, day_of_week=0),  # Sunday 12:00 a.m.
-        #     'args': (),
-        # },
-        # 'glacier_audit': {
-        #     'task': 'scripts.osfstorage.glacier_audit',
-        #     'schedule': crontab(minute=0, hour=6, day_of_week=0),  # Sunday 6:00 a.m.
-        #     'kwargs': {'dry_run': False},
-        # },
-        # 'files_audit_0': {
-        #     'task': 'scripts.osfstorage.files_audit_0',
-        #     'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
-        #     'kwargs': {'num_of_workers': 4, 'dry_run': False},
-        # },
-        # 'files_audit_1': {
-        #     'task': 'scripts.osfstorage.files_audit_1',
-        #     'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
-        #     'kwargs': {'num_of_workers': 4, 'dry_run': False},
-        # },
-        # 'files_audit_2': {
-        #     'task': 'scripts.osfstorage.files_audit_2',
-        #     'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
-        #     'kwargs': {'num_of_workers': 4, 'dry_run': False},
-        # },
-        # 'files_audit_3': {
-        #     'task': 'scripts.osfstorage.files_audit_3',
-        #     'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
-        #     'kwargs': {'num_of_workers': 4, 'dry_run': False},
-        # },
-        # 'analytics': {
-        #     'task': 'scripts.analytics.tasks',
-        #     'schedule': crontab(minute=0, hour=2),  # Daily 2:00 a.m.
-        #     'kwargs': {}
-        # },
     }
+
+    # Tasks that need metrics and release requirements
+    # CELERYBEAT_SCHEDULE.update({
+    #     'usage_audit': {
+    #         'task': 'scripts.osfstorage.usage_audit',
+    #         'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+    #         'kwargs': {'send_mail': True},
+    #     },
+    #     'glacier_inventory': {
+    #         'task': 'scripts.osfstorage.glacier_inventory',
+    #         'schedule': crontab(minute=0, hour= 0, day_of_week=0),  # Sunday 12:00 a.m.
+    #         'args': (),
+    #     },
+    #     'glacier_audit': {
+    #         'task': 'scripts.osfstorage.glacier_audit',
+    #         'schedule': crontab(minute=0, hour=6, day_of_week=0),  # Sunday 6:00 a.m.
+    #         'kwargs': {'dry_run': False},
+    #     },
+    #     'files_audit_0': {
+    #         'task': 'scripts.osfstorage.files_audit_0',
+    #         'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
+    #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
+    #     },
+    #     'files_audit_1': {
+    #         'task': 'scripts.osfstorage.files_audit_1',
+    #         'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
+    #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
+    #     },
+    #     'files_audit_2': {
+    #         'task': 'scripts.osfstorage.files_audit_2',
+    #         'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
+    #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
+    #     },
+    #     'files_audit_3': {
+    #         'task': 'scripts.osfstorage.files_audit_3',
+    #         'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
+    #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
+    #     },
+    #     'analytics': {
+    #         'task': 'scripts.analytics.tasks',
+    #         'schedule': crontab(minute=0, hour=2),  # Daily 2:00 a.m.
+    #         'kwargs': {}
+    #     },
+    #     'analytics-upload': {
+    #         'task': 'scripts.analytics.upload',
+    #         'schedule': crontab(minute=0, hour=6),  # Daily 6:00 a.m.
+    #         'kwargs': {}
+    #     },
+    # })
 
 
 WATERBUTLER_JWE_SALT = 'yusaltydough'

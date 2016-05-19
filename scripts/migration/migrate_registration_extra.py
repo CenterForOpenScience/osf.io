@@ -24,7 +24,9 @@ def migrate_file_representation(bad_file):
     fnode = FileNode.load(fid)
     if fnode is None:
         fnode = TrashedFileNode.load(fid)
-    assert fnode is not None, 'Could not load FileNode or TrashedFileNode with id {}'.format(fid)
+    if fnode is None:
+        logger.error('Could not load FileNode or TrashedFileNode with id {}. Skipping...'.format(fid))
+        return
     data = {
         'data': {
             'kind': 'file',
@@ -65,6 +67,7 @@ def migrate():
     for reg in registrations:
         data = reg.registered_meta[PREREG_CHALLENGE_METASCHEMA._id]
         migrated = False
+        logger.debug('Reading preregistration with id: {0}'.format(reg._id))
         for question in data.values():
             if isinstance(question.get('value'), dict):
                 for value in question['value'].values():
@@ -78,7 +81,7 @@ def migrate():
     logger.info('Done with {0} preregistrations migrated.'.format(count))
 
 if __name__ == '__main__':
-    dry_run = 'dry' in sys.argv
+    dry_run = '--dry' in sys.argv
     if not dry_run:
         scripts_utils.add_file_logger(logger, __file__)
     with TokuTransaction():

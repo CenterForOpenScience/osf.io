@@ -9,7 +9,7 @@
     <div class="cp-bar"></div>
 
 
-    <div class="comments cp-sidebar">
+    <div class="comments cp-sidebar" id="comments_window">
         <div class="cp-sidebar-content">
             <button type="button" class="close text-smaller" data-bind="click: togglePane">
                 <i class="fa fa-times"></i>
@@ -31,18 +31,27 @@
                         <div class="clearfix">
                             <div class="pull-right">
                                 <a class="btn btn-default btn-sm" data-bind="click: cancelReply, css: {disabled: submittingReply}">Cancel</a>
-                                <a class="btn btn-success btn-sm" data-bind="click: submitReply, css: {disabled: submittingReply}">{{commentButtonText}}</a>
+                                <a class="btn btn-success btn-sm" data-bind="click: submitReply, css: {disabled: submittingReply}, text: commentButtonText"></a>
                                 <span data-bind="text: replyErrorMessage" class="text-danger"></span>
                             </div>
                         </div>
                     </div>
-                    <div class="text-danger">{{errorMessage}}</div>
+                    <div class="text-danger" data-bind="text: errorMessage"></div>
                 </form>
             </div>
             <div data-bind="template: {name: 'commentTemplate', foreach: comments}"></div>
             <!-- ko if: loadingComments -->
-            <div style="text-align: center;">
-                <div class="logo-spin logo-lg"></div>
+            ## Placeholder blank comment template with default gravitar to replace spinner
+            <div class="comment-container">
+                <div class="comment-body osf-box">
+                    <div class="comment-info">
+                        <img src="https://secure.gravatar.com/avatar/placeholder?d=identicon&s=20" alt="default">
+                        <span class="comment-author">Loading...</span>
+                    </div>
+                    <div class="comment-content">
+                        <span class="component-overflow"></span>
+                    </div>
+                </div>
             </div>
             <!-- /ko -->
         </div>

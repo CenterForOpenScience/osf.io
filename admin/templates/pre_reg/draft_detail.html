@@ -80,7 +80,7 @@
               <div data-bind="if: currentPage">
                 <div data-bind="foreach: {data: currentPage().questions, as: 'question'}">
                   <div class="row">
-                    <strong data-bind="attr.id: question.id, text: question.title"></strong>:
+                    <strong data-bind="attr: {id: question.id}, text: question.title"></strong>:
                     <div class="well">
                       <p>
                         <span data-bind="previewQuestion: $root.context(question, $root, true)"></span>

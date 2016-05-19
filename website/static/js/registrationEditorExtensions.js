@@ -1,7 +1,7 @@
 var $ = require('jquery');
 var ko = require('knockout');
 var m = require('mithril');
-var bootbox = require('bootbox');
+var bootbox = require('bootbox');  // TODO: Why is this required? Is it? See [#OSF-6100]
 
 var FilesWidget = require('js/filesWidget');
 var Fangorn = require('js/fangorn');
@@ -170,6 +170,9 @@ var Uploader = function(question) {
     var self = this;
 
     question.showUploader = ko.observable(false);
+    self.toggleUploader = function() {
+        question.showUploader(!question.showUploader());
+    };
     question.uid = 'uploader_' + uploaderCount;
     uploaderCount++;
     self.selectedFiles = ko.observableArray(question.extra() || []);
@@ -313,7 +316,7 @@ var AuthorImport = function(data, $root, preview) {
     }
 
     self.preview = function() {
-        return self.value();
+        return $osf.htmlEscape(self.value());
     };
     var callback = function(data) {
         self.question.value(self.serializeContributors(data.contributors));

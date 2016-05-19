@@ -1,3 +1,4 @@
+<div id="render-node">
 % if summary['can_view']:
 
     <li
@@ -33,7 +34,7 @@
                     <span class="label label-primary"><strong>Archiving</strong></span> |
                   % endif
                 </span>
-            <span data-bind="getIcon: '${summary['category']}'"></span>
+            <span data-bind='getIcon: ${ summary["category"] | sjson, n }'></span>
             % if not summary['archiving']:
                 <a href="${summary['url']}">${summary['title']}</a>
             % else:
@@ -100,6 +101,7 @@
             % else:
                 Recent activity
                 <!-- ko stopBinding: true -->
+                        <div class="ball-scale ball-scale-blue text-center m-sm"><div ></div></div>
                     <div id="logs-${summary['id']}" class="log-container" data-uri="${summary['api_url']}log/">
                         <dl class="dl-horizontal activity-log" data-bind="foreach: {data: logs, as: 'log'}">
                             <dt><span class="date log-date" data-bind="text: log.date.local, tooltip: {title: log.date.utc}"></span></dt>
@@ -154,3 +156,4 @@
     </li>
 
 % endif
+</div>

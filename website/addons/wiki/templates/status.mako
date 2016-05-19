@@ -1,7 +1,3 @@
-<%page expression_filter="h"/>
-
-
-
 <h3 class="wiki-title wiki-title-xs" id="wikiName">
     % if wiki_name == 'home':
         <i class="fa fa-home"></i>

@@ -512,7 +512,6 @@ class TestArchiverTasks(ArchiverTestCase):
             selected_files,
             node_index
         )
-
         schema = generate_schema_from_data(data)
         with test_utils.mock_archive(node, schema=schema, data=data, autocomplete=True, autoapprove=True) as registration:
             with mock.patch.object(StorageAddonBase, '_get_file_tree', mock.Mock(return_value=file_trees[node._id])):

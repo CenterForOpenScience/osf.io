@@ -24,7 +24,9 @@ def migrate_file_representation(bad_file):
     fnode = FileNode.load(fid)
     if fnode is None:
         fnode = TrashedFileNode.load(fid)
-    assert fnode is not None, 'Could not load FileNode or TrashedFileNode with id {}'.format(fid)
+    if fnode is None:
+        logger.error('Could not load FileNode or TrashedFileNode with id {}. Skipping...'.format(fid))
+        return
     data = {
         'data': {
             'kind': 'file',
@@ -55,15 +57,17 @@ def migrate_file_meta(question):
     return migrated
 
 def migrate_drafts(dry):
-
     PREREG_CHALLENGE_METASCHEMA = get_prereg_schema()
     draft_registrations = DraftRegistration.find(
-        Q('registration_schema', 'eq', PREREG_CHALLENGE_METASCHEMA) &
-        Q('approval', 'eq', None) &
-        Q('registered_node', 'eq', None)
+        Q('registration_schema', 'eq', PREREG_CHALLENGE_METASCHEMA)
     )
     count = 0
     for r in draft_registrations:
+        # NOTE: We don't query Q('approval', 'eq', None) just in case
+        # approval is set but the fk doesn't exist in the database
+        if r.approval or r.registered_node:
+            continue
+        logger.debug('Reading draft with id: {0}'.format(r._id))
         data = r.registration_metadata
         migrated = False
         for q, ans in data.iteritems():
@@ -82,13 +86,13 @@ def migrate_drafts(dry):
 
 def main(dry=True):
     init_app(set_backends=True, routes=False)
-    scripts_utils.add_file_logger(logger, __file__)
+    if not dry:
+        scripts_utils.add_file_logger(logger, __file__)
     migrate_drafts(dry)
 
 
-
 if __name__ == '__main__':
-    dry_run = 'dry' in sys.argv
+    dry_run = '--dry' in sys.argv
     with TokuTransaction():
         main(dry=dry_run)
         if dry_run:

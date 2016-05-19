@@ -1,6 +1,7 @@
 import httplib as http
-from flask import redirect, request
 
+from flask import redirect, request
+import markupsafe
 from modularodm import Q
 
 from framework.auth.decorators import must_be_logged_in
@@ -10,6 +11,7 @@ from framework import status
 from website.tokens.exceptions import UnsupportedSanctionHandlerKind, TokenError
 
 def registration_approval_handler(action, registration, registered_from):
+    # TODO: Unnecessary and duplicated dictionary.
     status.push_status_message({
         'approve': 'Your registration approval has been accepted.',
         'reject': 'Your disapproval has been accepted and the registration has been cancelled.',
@@ -67,13 +69,15 @@ def sanction_handler(kind, action, payload, encoded_token, auth, **kwargs):
     err_message = None
     if not sanction:
         err_code = http.BAD_REQUEST
-        err_message = 'There is no {0} associated with this token.'.format(Model.DISPLAY_NAME)
+        err_message = 'There is no {0} associated with this token.'.format(
+            markupsafe.escape(Model.DISPLAY_NAME))
     elif sanction.is_approved:
         # Simply strip query params and redirect if already approved
         return redirect(request.base_url)
     elif sanction.is_rejected:
         err_code = http.GONE if kind in ['registration', 'embargo'] else http.BAD_REQUEST
-        err_message = "This registration {0} has been rejected.".format(sanction.DISPLAY_NAME)
+        err_message = "This registration {0} has been rejected.".format(
+            markupsafe.escape(sanction.DISPLAY_NAME))
     if err_code:
         raise HTTPError(err_code, data=dict(
             message_long=err_message
