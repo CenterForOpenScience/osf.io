@@ -15,6 +15,7 @@ utils.onSearch = function(fb) {
 var COLORBREWER_COLORS = [[166, 206, 227], [31, 120, 180], [178, 223, 138], [51, 160, 44], [251, 154, 153], [227, 26, 28], [253, 191, 111], [255, 127, 0], [202, 178, 214], [106, 61, 154], [255, 255, 153], [177, 89, 40]];
 var tags = ['div', 'i', 'b', 'sup', 'p', 'span', 'sub', 'bold', 'strong', 'italic', 'a', 'small'];
 
+
 /* Removes certain HTML tags from the source */
 utils.scrubHTML = function(text) {
     tags.forEach(function(tag) {
@@ -48,7 +49,7 @@ utils.errorState = function(vm){
  * @param {Object} vm The current state of the vm
  * @param {Object} data New search results
  */
-utils.updateVM = function(vm, data) {
+utils.updateVM = function(vm, data, callback) {
     if (data === null) {
         return;
     }
@@ -60,9 +61,7 @@ utils.updateVM = function(vm, data) {
     });
     vm.results.push.apply(vm.results, data.results);
     m.redraw();
-    $.map(callbacks, function(cb) {
-        cb();
-    });
+    callbacks.map(function(cb) { cb(); });
 };
 
 /* Handles searching via the search API */

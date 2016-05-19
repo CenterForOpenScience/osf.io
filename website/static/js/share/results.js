@@ -6,6 +6,9 @@ var m = require('mithril');
 var $osf = require('js/osfHelpers');
 var utils = require('./utils');
 require('truncate');
+var mathrender = require('js/mathrender');
+
+
 
 var LoadingIcon = {
     view: function(ctrl) {
@@ -17,7 +20,7 @@ var Results = {
     view: function(ctrl, params) {
         var vm = params.vm;
         var resultViews = $.map(vm.results || [], function(result, i) {
-            return m.component(Result, {result: result, vm: vm,});
+            return m.component(Result, {result: result, vm: vm});
         });
 
 
@@ -37,20 +40,35 @@ var Results = {
         };
 
         return m('', [
-            m('.row', m('.col-md-12', maybeResults(resultViews, vm.resultsLoading()))),
-            m('.row', m('.col-md-12', m('div', {style: {display: 'block', margin: 'auto', 'text-align': 'center'}},
+            
+            m('.row.hasMath', m('.col-md-12', [
+                maybeResults(resultViews, vm.resultsLoading()),
+                m('iframe.res_loaded_handler', {
+                    style: {display: 'none'},
+                    onload: function() {
+                        Array.prototype.map.call(
+                            document.querySelectorAll('.hasMath'), 
+                            mathrender.typeset
+                        );
+                    }
+                })
+            ])),
+
+            // This won't work for ie8 or earlier - these browser fires an onreadystatechange but no onload...
+            m('.row', m('.col-md-12', m('div', {style: {display: 'block', margin: 'auto', 'text-align': 'center'}}, 
                 len > 0 && len < vm.count ?
                 m('a.btn.btn-md.btn-default', {
                     onclick: function(){
                         utils.loadMore(vm)
                             .then(function(data) {
-                                utils.updateVM(vm, data);
+                                utils.updateVM(vm, data)
+
                             });
-                    }
+		                }
                 }, 'More') : [])
             ))
         ]);
-
+    
     }
 };
 
