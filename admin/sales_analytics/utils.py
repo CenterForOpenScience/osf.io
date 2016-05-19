@@ -6,11 +6,6 @@ from framework.mongo import database as db
 
 from .models import UserCount, DBMetrics
 
-import logging
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s %(levelname)s %(threadName)-10s %(message)s',)
-logger = logging.getLogger(__name__)
-
 
 # Helper functions
 def get_entry_point(system_tags, entry_points=ENTRY_POINTS):
@@ -47,9 +42,14 @@ def get_user_count(db=db, entry_points=ENTRY_POINTS, date=datetime.now().date())
         percent_list = []
         tags = entry_points.values()
         tags.append('osf')
-        total = db.user.find({'date_registered': {'$lte': datetime.combine(date, time.min)}}).count()
+        total = db.user.find({'date_disabled': None,
+                              'date_registered': {'$lte': datetime.combine(date, time.min)}
+                              }).count()
         for entry_point in entry_points.keys():
-            count = db.user.find({'system_tags': entry_point, 'date_registered': {'$lte': datetime.combine(date, time.min)}}).count()
+            count = db.user.find({'date_disabled': None,
+                                  'system_tags': entry_point,
+                                  'date_registered': {'$lte': datetime.combine(date, time.min)}
+                                  }).count()
             percent = round(float(count) / float(total), 2)
             count_list.append(count)
             percent_list.append(percent)
@@ -66,7 +66,9 @@ def get_user_count(db=db, entry_points=ENTRY_POINTS, date=datetime.now().date())
     return results
 
 
-def get_user_count_history(db=db, entry_points=ENTRY_POINTS, start=datetime.now().date() - timedelta(days=30), end=datetime.now().date()):
+def get_user_count_history(db=db, entry_points=ENTRY_POINTS,
+                           start=datetime.now().date() - timedelta(days=30),
+                           end=datetime.now().date()):
     results = {tag: data for tag, data in UserCount.get_count_history()}
     if not len(results['osf']) < len(get_list_of_dates(start, end)) * 4 + 1:
         return results
