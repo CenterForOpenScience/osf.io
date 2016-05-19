@@ -9,6 +9,11 @@
   <div class="m-b-md p-md osf-box-lt box-round text-center">The use of adblocking software may prevent site analytics from loading properly.</div>
 </div>
 <script src="/static/js/ads.js"></script>
+<script>
+if( window.canRunAds === undefined ){
+  $('.ad_block_display').css({'display':'block'});
+}
+</script>
 
 <%
     if user['is_contributor']:

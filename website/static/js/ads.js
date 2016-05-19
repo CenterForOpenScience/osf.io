@@ -3,4 +3,4 @@
  * imported and block it. In this case the variable won't exist, which means we will
  * enter the if.
 */
-$('.ad_block_display').css({'display':'none'});
+var canRunAds = true;
