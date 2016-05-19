@@ -10,9 +10,6 @@
 </div>
 <script src="/static/js/ads.js"></script>
 <script>
-  if( window.canRunAds === undefined ){
-    document.getElementById('hiddenFlag').style.display = "block";
-  }
   $.('ad_block_display').style.display = "block";
 </script>
 
