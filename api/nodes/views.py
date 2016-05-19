@@ -32,8 +32,6 @@ from api.nodes.serializers import (
 )
 from api.nodes.utils import get_file_object
 
-from api.identifiers.serializers import IdentifierSerializer
-
 from api.registrations.serializers import RegistrationSerializer
 from api.institutions.serializers import InstitutionSerializer
 from api.nodes.permissions import (
@@ -50,7 +48,6 @@ from api.logs.serializers import NodeLogSerializer
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
 from website.models import Node, Pointer, Comment, NodeLog, Institution
-from website.identifiers.model import Identifier
 from website.files.models import FileNode
 from framework.auth.core import User
 from api.base.utils import default_node_list_query, default_node_permission_query
@@ -1114,63 +1111,6 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixi
         except ValueError as err:  # pointer doesn't belong to node
             raise NotFound(err.message)
         node.save()
-
-
-class NodeIdentifierList(JSONAPIBaseView, generics.ListAPIView):
-    """Identifiers for the current node. Read Only for the time being
-    """
-    permission_classes = (
-        IsPublic,
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope,
-        ExcludeWithdrawals
-    )
-
-    serializer_class = IdentifierSerializer
-
-    view_category = 'nodes'
-    view_name = 'node-identifier-list'
-    node_lookup_url_kwarg = 'node_id'
-
-    def get_node(self, check_object_permissions=True):
-        node = get_object_or_error(
-            Node,
-            self.kwargs[self.node_lookup_url_kwarg],
-            display_name='node'
-        )
-        # Nodes that are folders/collections are treated as a separate resource, so if the client
-        # requests a collection through a node endpoint, we return a 404
-        if node.is_collection:
-            raise NotFound
-        # May raise a permission denied
-        if check_object_permissions:
-            self.check_object_permissions(self.request, node)
-        return node
-
-    # overrides ListCreateAPIView
-    def get_queryset(self):
-        return Identifier.find(Q('referent', 'eq', self.get_node()))
-
-
-class NodeIdentifierDetail(JSONAPIBaseView, generics.RetrieveAPIView):
-    """Identifiers detail for the requested identifier. Read only
-
-    Detail for any identifier attached to a node, including a link back to the node.
-    """
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-    )
-
-    required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]
-    required_write_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
-
-    serializer_class = IdentifierSerializer
-    view_category = 'identifiers'
-    view_name = 'node-identifier-detail'
-
-    def get_object(self):
-        identifier = self.kwargs['node_identifier']
-        return Identifier.find_one(Q('value', 'eq', identifier))
 
 
 class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):

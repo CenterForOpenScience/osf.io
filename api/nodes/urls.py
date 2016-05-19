@@ -1,6 +1,7 @@
 from django.conf.urls import url
 
 from api.nodes import views
+from api.identifiers import views as identifier_views
 from website import settings
 
 urlpatterns = [
@@ -23,8 +24,7 @@ urlpatterns = [
     url(r'^(?P<node_id>\w+)/relationships/institution/$', views.NodeInstitutionRelationship.as_view(), name=views.NodeInstitutionRelationship.view_name),
     url(r'^(?P<node_id>\w+)/node_links/$', views.NodeLinksList.as_view(), name=views.NodeLinksList.view_name),
     url(r'^(?P<node_id>\w+)/node_links/(?P<node_link_id>\w+)/', views.NodeLinksDetail.as_view(), name=views.NodeLinksDetail.view_name),
-    url(r'^(?P<node_id>\w+)/identifiers/$', views.NodeIdentifierList.as_view(), name=views.NodeIdentifierList.view_name),
-    url(r'^(?P<node_id>\w+)/identifiers/(?P<node_identifier>\w+)/$', views.NodeIdentifierDetail.as_view(), name=views.NodeIdentifierDetail.view_name),
+    url(r'^(?P<node_id>\w+)/identifiers/$', identifier_views.IdentifierList.as_view(), name=identifier_views.IdentifierList.view_name),
 ]
 
 # Routes only active in local/staging environments
