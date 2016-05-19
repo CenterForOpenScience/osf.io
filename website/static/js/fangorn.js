@@ -91,10 +91,13 @@ function findByTempID(parent, tmpID) {
 function cancelUploads (row) {
     var tb = this;
     var uploading = tb.dropzone.getUploadingFiles();
-    var filesArr = uploading.concat(tb.dropzone.getQueuedFiles());
+    var rejected = tb.dropzone.getRejectedFiles();
+    var queued = tb.dropzone.getQueuedFiles();
+    var filesArr = uploading.concat(queued, rejected);
+
     for (var i = 0; i < filesArr.length; i++) {
         var j = filesArr[i];
-        if(!row){
+        if(!row) {
             var parent = j.treebeardParent || tb.dropzoneItemCache;
             var item = findByTempID(parent, j.tmpID);
             tb.dropzone.removeFile(j);
@@ -120,36 +123,41 @@ var uploadRowTemplate = function(item){
     var columns = [{
         data : '',  // Data field name
         css : '',
-        custom : function(){ return m('row.text-muted', [
-            m('.col-xs-7', {style: 'overflow: hidden;text-overflow: ellipsis;'}, [
-                m('span', { style : 'padding-left:' + padding + 'px;'}, tb.options.resolveIcon.call(tb, item)),
-                m('span',{ style : 'margin-left: 9px;'}, item.data.name)
-            ]),
-            m('.col-xs-3',
-                m('.progress', [
-                    m('.progress-bar.progress-bar-info.progress-bar-striped.active', {
-                        role : 'progressbar',
-                        'aria-valuenow' : item.data.progress,
-                        'aria-valuemin' : '0',
-                        'aria-valuemax': '100',
-                        'style':'width: ' + item.data.progress + '%' }, m('span.sr-only', item.data.progress + '% Complete'))
-                ])
-            ),
-            m('.col-xs-2', [
-                m('span', m('.fangorn-toolbar-icon.m-l-sm', {
-                        style : 'padding: 0px 6px 2px 2px;font-size: 16px;display: inline;',
-                        config : function() {
-                            reapplyTooltips();
-                        },
-                        'onclick' : function (e) {
-                            e.stopImmediatePropagation();
-                            cancelUploads.call(tb, item);
-                        }},
-                     m('span.text-muted','×')
-                )),
-            ]),
-
-        ]); }
+        custom : function(){
+            var uploadColumns = [
+                m('.col-xs-7', {style: 'overflow: hidden;text-overflow: ellipsis;'}, [
+                    m('span', { style : 'padding-left:' + padding + 'px;'}, tb.options.resolveIcon.call(tb, item)),
+                    m('span',{ style : 'margin-left: 9px;'}, item.data.name)
+                ]),
+                m('.col-xs-3',
+                    m('.progress', [
+                        m('.progress-bar.progress-bar-info.progress-bar-striped.active', {
+                            role : 'progressbar',
+                            'aria-valuenow' : item.data.progress,
+                            'aria-valuemin' : '0',
+                            'aria-valuemax': '100',
+                            'style':'width: ' + item.data.progress + '%' }, m('span.sr-only', item.data.progress + '% Complete'))
+                    ])
+                )
+            ];
+            if (item.data.progress < 100) {
+                uploadColumns.push(m('.col-xs-2', [
+                    m('span', m('.fangorn-toolbar-icon.m-l-sm', {
+                            style : 'padding: 0px 6px 2px 2px;font-size: 16px;display: inline;',
+                            config : function() {
+                                reapplyTooltips();
+                            },
+                            'onclick' : function (e) {
+                                console.log(item.data.progress);
+                                e.stopImmediatePropagation();
+                                cancelUploads.call(tb, item);
+                            }},
+                         m('span.text-muted','×')
+                    ))
+                ]));
+            }
+            return m('row.text-muted', uploadColumns);
+        }
     }];
     if(tb.options.placement === 'files'){
         columns.push({
@@ -328,7 +336,7 @@ function _fangornResolveToggle(item) {
     var toggleMinus = m('i.fa.fa-minus', ' '),
         togglePlus = m('i.fa.fa-plus', ' '),
     // padding added so that this overlaps the toggle-icon div and prevent cursor change into pointer for checkout icons.
-        checkedByUser = m('i.fa.fa-sign-out[style="color: #337ab7; font-size: 120%; cursor: default; padding-top: 10px; padding-bottom: 10px; padding-right: 4px;"]', ''),
+        checkedByUser = m('i.fa.fa-sign-out.text-muted[style="font-size: 120%; cursor: default; padding-top: 10px; padding-bottom: 10px; padding-right: 4px;"]', ''),
         checkedByOther = m('i.fa.fa-sign-out[style="color: #d9534f; font-size: 120%; cursor: default; padding-top: 10px; padding-bottom: 10px; padding-right: 4px;"]', '');
     // check if folder has children whether it's lazyloaded or not.
     if (item.kind === 'folder' && item.depth > 1) {
@@ -341,7 +349,7 @@ function _fangornResolveToggle(item) {
         return togglePlus;
     }
     if (item.data.provider === 'osfstorage' && item.kind === 'file') {
-        if (item.data.extra.checkout) {
+        if (item.data.extra && item.data.extra.checkout) {
             if (item.data.extra.checkout === window.contextVars.currentUser.id){
                 return checkedByUser;
             }
@@ -498,19 +506,21 @@ function doItemOp(operation, to, from, rename, conflict) {
             message = textStatus;
         } else {
             message = 'Please refresh the page or ' +
-                'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
+                'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
                 'problem persists.';
         }
 
         $osf.growl(operation.verb + ' failed.', message);
 
         Raven.captureMessage('Failed to move or copy file', {
-            xhr: xhr,
-            requestData: {
-                rename: rename,
-                conflict: conflict,
-                source: waterbutler.toJsonBlob(from),
-                destination: waterbutler.toJsonBlob(to),
+            extra: {
+                xhr: xhr,
+                requestData: {
+                    rename: rename,
+                    conflict: conflict,
+                    source: waterbutler.toJsonBlob(from),
+                    destination: waterbutler.toJsonBlob(to),
+                }
             }
         });
 
@@ -742,9 +752,14 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
             }
         });
     }
+    var url = item.data.nodeUrl + 'files/' + item.data.provider + item.data.path;
+    addFileStatus(treebeard, file, true, '', url);
     treebeard.redraw();
 }
 
+function _fangornDropzoneRemovedFile(treebeard, file, message, xhr) {
+    addFileStatus(treebeard, file, false, 'Upload Canceled.', '');
+}
 /**
  * runs when Dropzone's error hook runs. Notifies user with error.
  * @param {Object} treebeard The treebeard instance currently being run, check Treebeard API
@@ -763,8 +778,17 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
         msgText = 'Cannot upload directories, applications, or packages.';
     } else if (xhr && xhr.status === 507) {
         msgText = 'Cannot upload file due to insufficient storage.';
+    } else if (xhr && xhr.status === 0) {
+        msgText = 'Unable to reach the provider, please try again later. If the ' +
+            'problem persists, please contact support@osf.io.';
     } else {
-        msgText = message || DEFAULT_ERROR_MESSAGE;
+        //Osfstorage and most providers store message in {Object}message.{string}message,
+        //but some, like Dataverse, have it in {string} message.
+        if (message){
+            msgText = message.message ? message.message : (typeof message === 'string' ? message : DEFAULT_ERROR_MESSAGE);
+        } else {
+            msgText = DEFAULT_ERROR_MESSAGE;
+        }
     }
     var parent = file.treebeardParent || treebeardParent.dropzoneItemCache; // jshint ignore:line
     // Parent may be undefined, e.g. in Chrome, where file is an entry object
@@ -780,14 +804,11 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
             child.removeSelf();
         }
     }
-    if (msgText !== 'Upload canceled.') {
-        $osf.growl(
-            'Error',
-            'Unable to reach the provider, please try again later. If the ' +
-            'problem persists, please contact <a href="mailto:support@osf.io">support@osf.io</a>.'
-            );
-    }
+    console.log(file);
     treebeard.options.uploadInProgress = false;
+    if (msgText !== 'Upload canceled.') {
+        addFileStatus(treebeard, file, false, msgText, '');
+    }
 }
 
 /**
@@ -1157,16 +1178,28 @@ function gotoFileEvent (item) {
  */
 function _fangornTitleColumn(item, col) {
     var tb = this;
+    if (typeof tb.options.links === 'undefined') {
+        tb.options.links = true;
+    }
     if (item.data.isAddonRoot && item.connected === false) { // as opposed to undefined, avoids unnecessary setting of this value
         return _connectCheckTemplate.call(this, item);
     }
     if (item.kind === 'file' && item.data.permissions.view) {
-        return m('span.fg-file-links',{
-            onclick: function(event) {
-                event.stopImmediatePropagation();
-                gotoFileEvent.call(tb, item);
-            }
-        }, item.data.name);
+        var attrs = {};
+        if (tb.options.links) {
+            attrs =  {
+                className: 'fg-file-links',
+                onclick: function(event) {
+                    event.stopImmediatePropagation();
+                    gotoFileEvent.call(tb, item);
+                }
+            };
+        }
+        return m(
+            'span',
+            attrs,
+            item.data.name
+        );
     }
     if ((item.data.nodeType === 'project' || item.data.nodeType ==='component') && item.data.permissions.view) {
         return m('a.fg-file-links',{ href: '/' + item.data.nodeID.toString() + '/'},
@@ -1317,6 +1350,7 @@ function _loadTopLevelChildren() {
  * @this Treebeard.controller
  * @private
  */
+var NO_AUTO_EXPAND_PROJECTS = ['ezcuj', 'ecmz4'];
 function expandStateLoad(item) {
     var tb = this,
         i;
@@ -1325,7 +1359,7 @@ function expandStateLoad(item) {
         // but do NOT lazy-load children in order to save hundreds of requests.
         // TODO: We might want to do this for every project, but that's TBD.
         // /sloria
-        if (window.contextVars && window.contextVars.node && window.contextVars.node.id === 'ezcuj') {
+        if (window.contextVars && window.contextVars.node && NO_AUTO_EXPAND_PROJECTS.indexOf(window.contextVars.node.id) > -1) {
             tb.updateFolder(null, item.children[0]);
         } else {
             for (i = 0; i < item.children.length; i++) {
@@ -1418,7 +1452,7 @@ function _renameEvent () {
 
 var toolbarModes = {
     'DEFAULT' : 'bar',
-    'SEARCH' : 'search',
+    'FILTER' : 'filter',
     'ADDFOLDER' : 'addFolder',
     'RENAME' : 'rename',
     'ADDPROJECT' : 'addProject'
@@ -1632,7 +1666,7 @@ var FGItemButtons = {
 
 var dismissToolbar = function(){
     var tb = this;
-    if (tb.toolbarMode() === toolbarModes.SEARCH){
+    if (tb.toolbarMode() === toolbarModes.FILTER){
         tb.resetFilter();
     }
     tb.toolbarMode(toolbarModes.DEFAULT);
@@ -1665,11 +1699,11 @@ var FGToolbar = {
                 onclick: ctrl.dismissToolbar,
                 icon : 'fa fa-times'
             }, '');
-        templates[toolbarModes.SEARCH] =  [
-            m('.col-xs-10', [
+        templates[toolbarModes.FILTER] =  [
+            m('.col-xs-9', [
                 ctrl.tb.options.filterTemplate.call(ctrl.tb)
                 ]),
-                m('.col-xs-2.tb-buttons-col',
+                m('.col-xs-3.tb-buttons-col',
                     m('.fangorn-toolbar.pull-right', [dismissIcon])
                 )
             ];
@@ -1756,42 +1790,12 @@ var FGToolbar = {
         if(items.length > 1 && ctrl.tb.multiselected()[0].data.provider !== 'github' && ctrl.tb.options.placement !== 'fileview' && !(ctrl.tb.multiselected()[0].data.provider === 'dataverse' && ctrl.tb.multiselected()[0].parent().data.version === 'latest-published') ) {
             // Special cased to not show 'delete multiple' for github or published dataverses
             var showDelete = false;
-            var showCheckout = true;
-            var showCheckin = true;
             var each, i, len;
             // Only show delete button if user has edit permissions on at least one selected file
             for (i = 0, len = items.length; i < len; i++) {
                 each = items[i];
                 if (each.data.permissions.edit && !each.data.isAddonRoot && !each.data.nodeType) {
                     showDelete = true;
-                    break;
-                }
-            }
-            for (i = 0, len = items.length; i < len; i++) {
-                each = items[i];
-                if (!(each.data.permissions.edit && each.data.provider === 'osfstorage' && each.kind === 'file' && (!each.data.extra.checkout || each.data.extra.checkout === window.contextVars.currentUser.id))) {
-                    showCheckout = false;
-                    break;
-                }
-            }
-            //Additional check to not show the button if all the files are already checkedout by user
-            if (showCheckout){
-                var allChecked = true;
-                for (i = 0, len = items.length; i < len; i++) {
-                    each = items[i];
-                    if (!each.data.extra.checkout) {
-                        allChecked = false;
-                        break;
-                    }
-                }
-                if (allChecked) {
-                    showCheckout = false;
-                }
-            }
-            for (i = 0, len = items.length; i < len; i++) {
-                each = items[i];
-                if (!(each.data.permissions.edit && each.data.provider === 'osfstorage' && each.kind === 'file' && each.data.extra.checkout === window.contextVars.currentUser.id)) {
-                    showCheckin = false;
                     break;
                 }
             }
@@ -1807,44 +1811,15 @@ var FGToolbar = {
                     }, 'Delete Multiple')
                 );
             }
-            if (showCheckout){
-                generalButtons.push(
-                    m.component(FGButton, {
-                        onclick: function() {
-                            items.forEach(function(each) {
-                                doCheckout(each, window.contextVars.currentUser.id, false);
-                            });
-                            window.location.reload();
-                        },
-                        icon: 'fa fa-sign-out',
-                        className: 'text-warning'
-                    }, 'Check out Multiple')
-                );
-            }
-            if (showCheckin){
-                generalButtons.push(
-                    m.component(FGButton, {
-                        onclick: function() {
-                            for (var i = 0, len = items.length; i < len; i++) {
-                                var each = items[i];
-                                doCheckout(each, null, false);
-                            }
-                            window.location.reload();
-                        },
-                        icon: 'fa fa-sign-in',
-                        className: 'text-warning'
-                    }, 'Check in Multiple')
-                );
-            }
         }
         generalButtons.push(
             m.component(FGButton, {
                 onclick: function(event){
-                    ctrl.mode(toolbarModes.SEARCH);
+                    ctrl.mode(toolbarModes.FILTER);
                 },
                 icon: 'fa fa-search',
                 className : 'text-primary'
-            }, 'Search'));
+            }, 'Filter'));
             if (ctrl.tb.options.placement !== 'fileview') {
                 generalButtons.push(m.component(FGButton, {
                     onclick: function(event){
@@ -1959,7 +1934,7 @@ function openParentFolders (item) {
     var tb = this;
     var scrollToItem = false;
     filterRowsNotInParent.call(tb, tb.multiselected());
-    if (tb.toolbarMode() === 'search') {
+    if (tb.toolbarMode() === 'filter') {
         dismissToolbar.call(tb);
         scrollToItem = true;
         // recursively open parents of the selected item but do not lazyload;
@@ -2043,6 +2018,67 @@ function _fangornOver(event, ui) {
         $('.tb-row[data-id="' + folder.id + '"]').addClass('tb-h-success');
     } else {
         $('.tb-row[data-id="' + folder.id + '"]').addClass('fangorn-hover');
+    }
+}
+
+/**
+ * Log the success or failure of a file action (upload, etc.) in treebeard
+ * @param {Object} treebeard The treebeard instance currently being run, check Treebeard API
+ * @param {Object} file File object that dropzone passes
+ * @param success Boolean on whether upload actually happened
+ * @param message String failure reason message, '' if success === true
+ * @param link String with url to file, '' if success === false
+ * @private
+ */
+function addFileStatus(treebeard, file, success, message, link){
+    treebeard.uploadStates.push(
+        {'name': file.name, 'success': success, 'link': link, 'message': message}
+    );
+}
+
+/**
+ * Triggers file status modal or growlboxes after upload queue is empty
+ * @param {Object} treebeard The treebeard instance currently being run, check Treebeard API
+ * @private
+ */
+var UPLOAD_MODAL_MIN_FILE_QUANTITY = 4;
+function _fangornQueueComplete(treebeard) {
+    var fileStatuses = treebeard.uploadStates;
+    treebeard.uploadStates = [];
+    var total = fileStatuses.length;
+    var failed = 0;
+    if (total >= UPLOAD_MODAL_MIN_FILE_QUANTITY) {
+        treebeard.modal.update(m('', [
+            m('', [
+                fileStatuses.map(function(status){
+                    if (!status.success){ failed++; }
+                    return m('',
+                        [
+                            m('.row', [
+                                m((status.success ? 'a[href="' + status.link + '"]' : '') + '.col-sm-10', status.name),
+                                m('.col-sm-1', m(status.success ? '.fa.fa-check[style="color: green"]' : '.fa.fa-times[style="color: red"]')),
+                                m('.col-sm-1', m(!status.success ? '.fa.fa-info[data-toggle="tooltip"][data-placement="top"][title="'+ status.message +'"]' : ''))
+                            ]),
+                            m('hr')
+                        ]
+                    );
+                })
+            ])
+        ]), m('', [
+            m('a.btn.btn-primary', {onclick: function() {treebeard.modal.dismiss();}}, 'Done'), //jshint ignore:line
+        ]), m('', [m('h3.break-word.modal-title', 'Upload Status'), m('p', total - failed + '/' + total + ' files succeeded.')]));
+        $('[data-toggle="tooltip"]').tooltip();
+    } else {
+        fileStatuses.map(function(status) {
+           if (!status.success) {
+                if (status.message !== 'Upload canceled.') {
+                    $osf.growl(
+                        'Error',
+                        status.message
+                    );
+                }
+           }
+        });
     }
 }
 
@@ -2236,6 +2272,7 @@ tbOptions = {
     onload : function () {
         var tb = this;
         _loadTopLevelChildren.call(tb);
+        tb.uploadStates = [];
         tb.pendingFileOps = [];
         tb.select('#tb-tbody').on('click', function(event){
             if(event.target !== this) {
@@ -2284,6 +2321,7 @@ tbOptions = {
                     displaySize = Math.round(file.size / 10000) / 100;
                     msgText = 'One of the files is too large (' + displaySize + ' MB). Max file size is ' + item.data.accept.maxSize + ' MB.';
                     item.notify.update(msgText, 'warning', undefined, 3000);
+                    addFileStatus(treebeard, file, false, 'File is too large. Max file size is ' + item.data.accept.maxSize + ' MB.', '');
                     return false;
                 }
             }
@@ -2295,7 +2333,7 @@ tbOptions = {
         reapplyTooltips();
     },
     onmultiselect : _fangornMultiselect,
-    filterPlaceholder : 'Search',
+    filterPlaceholder : 'Filter',
     onmouseoverrow : _fangornMouseOverRow,
     sortDepth : 2,
     dropzone : {                                           // All dropzone options.
@@ -2323,10 +2361,12 @@ tbOptions = {
         sending : _fangornSending,
         complete : _fangornComplete,
         success : _fangornDropzoneSuccess,
+        removedfile: _fangornDropzoneRemovedFile,
         error : _fangornDropzoneError,
         dragover : _fangornDragOver,
         addedfile : _fangornAddedFile,
-        drop : _fangornDropzoneDrop
+        drop : _fangornDropzoneDrop,
+        queuecomplete: _fangornQueueComplete
     },
     resolveRefreshIcon : function() {
         return m('i.fa.fa-refresh.fa-spin');
@@ -2350,7 +2390,7 @@ tbOptions = {
         var item = tb.find(row.id);
         _fangornMultiselect.call(tb,null,item);
     },
-    hScroll : 400,
+    hScroll : null,
     naturalScrollLimit : 0
 };
 
@@ -2378,7 +2418,7 @@ Fangorn.prototype = {
     _initGrid: function () {
         this.grid = new Treebeard(this.options);
         return this.grid;
-    },
+    }
 };
 
 Fangorn.Components = {

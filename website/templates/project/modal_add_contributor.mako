@@ -2,16 +2,14 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <a href="#" class='close' data-bind="click: clear" data-dismiss="modal">&times;</a>
                 <h3 class="modal-title" data-bind="text:pageTitle"></h3>
             </div>
 
             <div class="modal-body">
 
                 <!-- Whom to add -->
-
                 <div data-bind="if: page() == 'whom'">
-
                     <!-- Find contributors -->
                     <form class='form' data-bind="submit: startSearch">
                         <div class="row">
@@ -26,18 +24,18 @@
                                 </div>
                             </div>
                         </div>
+                    <hr />
                         <div class="row search-contributor-links">
                             <div class="col-md-12">
                                 <div>
                                     <!-- ko if:parentId -->
-                                        <a data-bind="click:importFromParent, html:'Import contributors from <i>' + parentTitle + '</i>'"></a>
+                                        <a class="f-w-lg" data-bind="click:importFromParent, text:'Import contributors from ' + parentTitle"></a>
                                     <!-- /ko -->
                                 </div>
                             </div>
                         </div>
                     </form>
 
-                    <hr />
 
                     <!-- Choose which to add -->
                     <div class="row">
@@ -50,7 +48,7 @@
                             <!-- ko if: notification -->
                             <div data-bind="html: notification().message, css: 'alert alert-' + notification().level"></div>
                             <!-- /ko -->
-
+                            <!-- ko if: doneSearching -->
                             <table class="table-condensed">
                                 <thead data-bind="visible: foundResults">
                                 </thead>
@@ -60,14 +58,14 @@
                                             <a
                                                     class="btn btn-success contrib-button btn-mini"
                                                     data-bind="visible: !contributor.added,
-                                                               click:$root.add,
+                                                               click:$root.add.bind($root),
                                                                tooltip: {title: 'Add contributor'}"
-                                                ><i class="fa fa-fw fa-plus"></i></a>
+                                                ><i class="fa fa-plus"></i></a>
                                             <div data-bind="visible: contributor.added,
                                                             tooltip: {title: 'Already added'}"
                                                 ><div
                                                     class="btn btn-default contrib-button btn-mini disabled"
-                                                    ><i class="fa fa-fw fa-check"></i></div></div>
+                                                    ><i class="fa fa-check"></i></div></div>
                                         </td>
                                         <td>
                                             <!-- height and width are explicitly specified for faster rendering -->
@@ -109,20 +107,24 @@
 
                                 </tbody>
                             </table>
+                            <!-- /ko -->
                             <!-- Link to add non-registered contributor -->
                             <div class='help-block'>
                                 <div data-bind='if: foundResults'>
                                     <ul class="pagination pagination-sm" data-bind="foreach: paginators">
-                                        <li data-bind="css: style"><a href="#" data-bind="click: handler, html: text"></a></li>
+                                        <li data-bind="css: style"><a href="#" data-bind="click: handler, text: text"></a></li>
                                     </ul>
                                     <p>
-                                        <a href="#"data-bind="click:gotoInvite">Add <strong><em>{{query}}</em></strong> as an unregistered contributor</a>.
+                                        <a href="#" data-bind="click:gotoInvite">Add <strong><em data-bind="text: query"></em></strong> as an unregistered contributor</a>.
                                     </p>
                                 </div>
-                                <div data-bind="if: noResults">
-                                    No results found. Try a more specific search or  <a href="#"
-                                    data-bind="click:gotoInvite">add <strong><em>{{query}}</em></strong> as an unregistered contributor</a>.
+                                <div data-bind="if: showLoading">
+                                    <p class="text-muted">Searching contributors...</p>
                                 </div>
+                                    <div data-bind="if: noResults">
+                                        No results found. Try a more specific search or
+                                        <a href="#" data-bind="click:gotoInvite">add <strong><em data-bind="text: query"></em></strong> as an unregistered contributor</a>.
+                                    </div>
                             </div>
                         </div><!-- ./col-md -->
 
@@ -137,8 +139,8 @@
                                 <thead data-bind="visible: selection().length">
                                     <th width="10%"></th>
                                     <th width="15%"></th>
-                                    <th width="45%">Name</th>
-                                    <th width="30%">
+                                    <th>Name</th>
+                                    <th>
                                         Permissions
                                         <i class="fa fa-question-circle permission-info"
                                                 data-toggle="popover"
@@ -153,7 +155,7 @@
                                         <td class="p-r-sm" class="osf-icon-td">
                                             <a
                                                     class="btn btn-default contrib-button btn-mini"
-                                                    data-bind="click:$root.remove, tooltip: {title: 'Remove contributor'}"
+                                                    data-bind="click:$root.remove.bind($root), tooltip: {title: 'Remove contributor'}"
                                                 ><i class="fa fa-minus"></i></a>
                                         </td>
                                         <td>
@@ -185,43 +187,38 @@
 
                 </div>
                 <!-- Component selection page -->
-                <div data-bind="if:page()=='which'">
+                <div data-bind="visible:page()=='which'">
 
                     <div>
                         Adding contributor(s)
                         <span data-bind="text:addingSummary()"></span>
-                        to component
-                        <span data-bind="text:title"></span>.
+                        to <span data-bind="text:title"></span>.
                     </div>
 
                     <hr />
 
                     <div style="margin-bottom:10px;">
-                        Select any other components to which you would like to apply these settings.
+                        You can also add the contributor(s) to any components on which you are an admin.
                     </div>
 
-                    <div class="row">
-
-                        <div class="col-md-6">
-                            <input type="checkbox" checked disabled />
-                            <span data-bind="text:title"></span> (current component)
-                            <div data-bind="foreach:nodes">
-                                <div data-bind="style:{marginLeft: margin}">
-                                    <input type="checkbox" data-bind="checked:$parent.nodesToChange, value:id" />
-                                    <span data-bind="text:title"></span>
-                                </div>
+                    <div>
+                        Select:&nbsp;
+                        <a class="text-bigger" data-bind="click:selectAllNodes">Select all</a>
+                        &nbsp;|&nbsp;
+                        <a class="text-bigger" data-bind="click:selectNoNodes">Select none</a>
+                    </div>
+                    <div class="tb-row-titles">
+                        <div style="width: 100%" data-tb-th-col="0" class="tb-th">
+                            <span class="m-r-sm"></span>
+                        </div>
+                    </div>
+                    <div class="osf-treebeard">
+                        <div id="addContributorsTreebeard">
+                            <div class="spinner-loading-wrapper">
+                                <div class="logo-spin logo-md"></div>
+                                <p class="m-t-sm fg-load-message"> Loading projects and components...  </p>
                             </div>
                         </div>
-
-                        <div class="col-md-6">
-                            <div>
-                                <a data-bind="click:selectNodes, css:{disabled:cantSelectNodes()}">Select all</a>
-                            </div>
-                            <div>
-                                <a data-bind="click:deselectNodes, css:{disabled:cantDeselectNodes()}">De-select all</a>
-                            </div>
-                        </div>
-
                     </div>
 
                 </div><!-- end component selection page -->
@@ -260,8 +257,8 @@
                 </span>
 
                 <span data-bind="if:selection().length && page() == 'whom'">
-                    <a class="btn btn-success" data-bind="visible:nodes().length==0, click:submit">Add</a>
-                    <a class="btn btn-primary" data-bind="visible:nodes().length, click:selectWhich">Next</a>
+                    <a class="btn btn-success" data-bind="visible:!hasChildren(), click:submit">Add</a>
+                    <a class="btn btn-primary" data-bind="visible: hasChildren(), click:selectWhich">Next</a>
                 </span>
 
                 <span data-bind="if: page() == 'which'">

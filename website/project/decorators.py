@@ -5,6 +5,9 @@ import httplib as http
 from furl import furl
 from flask import request
 
+from modularodm import Q
+from modularodm.exceptions import ModularOdmException
+
 from framework import status
 from framework.auth import Auth, cas
 from framework.flask import redirect  # VOL-aware redirect
@@ -13,6 +16,7 @@ from framework.auth.decorators import collect_auth
 from framework.mongo.utils import get_or_http_error
 
 from website.models import Node
+from website import settings
 
 _load_node_or_fail = lambda pk: get_or_http_error(Node, pk)
 
@@ -82,10 +86,15 @@ def must_be_valid_project(func=None, retractions_valid=False):
 
             _inject_nodes(kwargs)
 
+            if getattr(kwargs['node'], 'is_collection', True):
+                raise HTTPError(
+                    http.NOT_FOUND
+                )
+
             if not retractions_valid and getattr(kwargs['node'].retraction, 'is_retracted', False):
                 raise HTTPError(
                     http.BAD_REQUEST,
-                    data=dict(message_long='Viewing retracted registrations is not permitted')
+                    data=dict(message_long='Viewing withdrawn registrations is not permitted')
                 )
             else:
                 return func(*args, **kwargs)
@@ -126,7 +135,7 @@ def must_not_be_registration(func):
         _inject_nodes(kwargs)
         node = kwargs['node']
 
-        if not node.archiving and node.is_registration:
+        if node.is_registration and not node.archiving:
             raise HTTPError(
                 http.BAD_REQUEST,
                 data={
@@ -187,12 +196,13 @@ def check_key_expired(key, node, url):
 
     return url
 
-def _must_be_contributor_factory(include_public):
+def _must_be_contributor_factory(include_public, include_view_only_anon=True):
     """Decorator factory for authorization wrappers. Decorators verify whether
     the current user is a contributor on the current project, or optionally
     whether the current project is public.
 
     :param bool include_public: Check whether current project is public
+    :param bool include_view_only_anon: Checks view_only anonymized links
     :return: Authorization decorator
 
     """
@@ -210,8 +220,19 @@ def _must_be_contributor_factory(include_public):
             #if not login user check if the key is valid or the other privilege
 
             kwargs['auth'].private_key = key
+            link_anon = None
+            if not include_view_only_anon:
+                from website.models import PrivateLink
+                try:
+                    link_anon = PrivateLink.find_one(Q('key', 'eq', key)).anonymous
+                except ModularOdmException:
+                    pass
+
             if not node.is_public or not include_public:
-                if key not in node.private_link_keys_active:
+                if not include_view_only_anon and link_anon:
+                    if not check_can_access(node=node, user=user):
+                        raise HTTPError(http.UNAUTHORIZED)
+                elif key not in node.private_link_keys_active:
                     if not check_can_access(node=node, user=user, key=key):
                         redirect_url = check_key_expired(key=key, node=node, url=request.url)
                         if request.headers.get('Content-Type') == 'application/json':
@@ -228,6 +249,7 @@ def _must_be_contributor_factory(include_public):
 # Create authorization decorators
 must_be_contributor = _must_be_contributor_factory(False)
 must_be_contributor_or_public = _must_be_contributor_factory(True)
+must_be_contributor_or_public_but_not_anonymized = _must_be_contributor_factory(include_public=True, include_view_only_anon=False)
 
 
 def must_have_addon(addon_name, model):
@@ -364,3 +386,18 @@ def must_have_write_permission_or_public_wiki(func):
 
     # Return decorated function
     return wrapped
+
+def http_error_if_disk_saving_mode(func):
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        _inject_nodes(kwargs)
+        node = kwargs['node']
+
+        if settings.DISK_SAVING_MODE:
+            raise HTTPError(
+                http.METHOD_NOT_ALLOWED,
+                redirect_url=node.url
+            )
+        return func(*args, **kwargs)
+    return wrapper

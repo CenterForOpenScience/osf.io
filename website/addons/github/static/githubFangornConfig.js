@@ -173,6 +173,15 @@ var _githubItemButtons = {
                             className: 'text-success'
                         }, 'Create Folder')
                     );
+                    if(!item.data.isAddonRoot){
+                        buttons.push(m.component(Fangorn.Components.button, {
+                            onclick: function (event) {
+                                _removeEvent.call(tb, event, [item]);
+                            },
+                            icon: 'fa fa-trash',
+                            className: 'text-danger'
+                        }, 'Delete Folder'));
+                    }
                 }
                 if (item.data.addonFullname) {
                     buttons.push(

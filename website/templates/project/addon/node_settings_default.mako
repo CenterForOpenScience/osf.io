@@ -1,14 +1,12 @@
 <div id="${addon_short_name}Scope" class="scripted">
     <h4 class="addon-title">
-        <img class="addon-icon" src=${addon_icon_url}></img>
+        <img class="addon-icon" src=${addon_icon_url}>
         ${addon_full_name}
         <small class="authorized-by">
             <span data-bind="if: nodeHasAuth">
-                authorized by <a data-bind="attr.href: urls().owner">
-                    {{ownerName}}
-                </a>
+                authorized by <a data-bind="attr: {href: urls().owner}, text: ownerName"></a>
                 % if not is_registration:
-                    <a data-bind="click: deauthorize"
+                    <a data-bind="click: deauthorize, visible: validCredentials"
                         class="text-danger pull-right addon-auth">Disconnect Account</a>
                 % endif
             </span>
@@ -41,9 +39,9 @@
             <div class="col-md-12">
                 <p class="break-word">
                     <strong>Current Folder:</strong>
-                    <a href="{{ urls().files }}" data-bind="if: folderName">
-                        {{ folderName }}
-                    </a>
+                    <span data-bind="if: folderName">
+                        <a data-bind="attr: {href: urls().files}, text: folderName"></a>
+                    </span>
                     <span class="text-muted" data-bind="ifnot: folderName">
                         None
                     </span>
@@ -65,7 +63,7 @@
                         <form data-bind="submit: submitSettings">
                             <div class="break-word">
                                 <div data-bind="if: selected" class="alert alert-info ${addon_short_name}-confirm-dlg">
-                                    Connect <b>&ldquo;{{ selectedFolderName }}&rdquo;</b>?
+                                    Connect <b>&ldquo;<span data-bind="text: selectedFolderName"></span>&rdquo;</b>?
                                 </div>
                             </div>
                             <div class="pull-right">
@@ -84,6 +82,6 @@
     </div>
     <!-- Flashed Messages -->
     <div class="help-block">
-        <p data-bind="html: message, attr.class: messageClass"></p>
+        <p data-bind="html: message, attr: {class: messageClass}"></p>
     </div>
 </div>

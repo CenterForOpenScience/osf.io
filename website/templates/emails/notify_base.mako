@@ -1,3 +1,6 @@
+<%!
+    from website import settings
+%>
 <!doctype html>
 <html class="no-js" lang="">
 <head>
@@ -38,16 +41,17 @@
                 ${self.content()}
               </tbody>
             </table>
-              
+            % if context.get('can_change_preferences', True):
             <table width="600" border="0" cellpadding="25" cellspacing="0" align="center" style="margin: 30px auto 0 auto;background: white;box-shadow: 0 0 2px #ccc;">
                 <tbody>
                     <tr>
                         <td style="border-collapse: collapse;">
-                            <p class="small text-center" style="text-align: center;font-size: 12px;">To change your email notification preferences, visit your project or <a href="http://osf.io/settings/notifications/">user settings</a>.</p>
+                            <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">To change your email notification preferences, visit your project or <a href="${settings.DOMAIN + "settings/notifications/"}">user settings</a>. </p>
                         </td>
                     </tr>
                 </tbody>
             </table>
+            % endif
           </td>
         </tr>
         <tr>
@@ -56,7 +60,7 @@
                     <tbody>
                         <tr>
                             <td style="border-collapse: collapse;">
-                                <p class="small text-center" style="text-align: center;font-size: 12px;">Copyright &copy; 2015 Center For Open Science, All rights reserved.
+                                <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">Copyright &copy; 2016 Center For Open Science, All rights reserved.
                                 ${self.footer()}
                                 </p>
                             </td>

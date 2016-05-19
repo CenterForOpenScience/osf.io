@@ -3,24 +3,25 @@ import datetime
 import re
 from dateutil import parser
 
+import json
+
 from nose.tools import *  # flake8: noqa
-import mock
 
 from rest_framework import serializers as ser
 
 from tests.base import ApiTestCase
-from tests import factories
 
-from api.base.settings.defaults import API_BASE
 from api.base.filters import FilterMixin
+
+from api.base.filters import ODMOrderingFilter
+
+import api.base.filters as filters 
 
 from api.base.exceptions import (
     InvalidFilterError,
     InvalidFilterOperator,
     InvalidFilterComparisonType,
     InvalidFilterMatchType,
-    InvalidFilterValue,
-    InvalidFilterFieldError
 )
 
 class FakeSerializer(ser.Serializer):
@@ -38,6 +39,7 @@ class FakeSerializer(ser.Serializer):
 class FakeView(FilterMixin):
 
     serializer_class = FakeSerializer
+
 
 class TestFilterMixin(ApiTestCase):
 
@@ -178,7 +180,7 @@ class TestFilterMixin(ApiTestCase):
             self.view.parse_query_params(query_params)
         except InvalidFilterOperator as err:
             ops = re.search(r'one of (?P<ops>.+)\.$', err.detail).groupdict()['ops']
-            assert_equal(ops, "gt, gte, lt, lte, eq")
+            assert_equal(ops, "gt, gte, lt, lte, eq, ne")
 
         query_params = {
             'filter[string_field][bar]': 'foo'
@@ -187,7 +189,7 @@ class TestFilterMixin(ApiTestCase):
             self.view.parse_query_params(query_params)
         except InvalidFilterOperator as err:
             ops = re.search(r'one of (?P<ops>.+)\.$', err.detail).groupdict()['ops']
-            assert_equal(ops, "contains, icontains, eq")
+            assert_equal(ops, "contains, icontains, eq, ne")
 
 
     def test_parse_query_params_supports_multiple_filters(self):
@@ -227,3 +229,58 @@ class TestFilterMixin(ApiTestCase):
         field = FakeSerializer._declared_fields['float_field']
         value = self.view.convert_value(value, field)
         assert_equal(value, 42.0)
+
+
+
+class TestODMOrderingFilter(ApiTestCase):
+    class query:
+        title = ' '
+        def __init__(self, title):
+            self.title = title
+        def __str__(self):
+            return self.title
+
+    class query_with_num:
+        title = ' '
+        number = 0
+        def __init__(self, title, number):
+            self.title = title
+            self.number = number
+        def __str__(self):
+            return self.title
+
+
+    def test_filter_queryset_forward(self):
+        query_to_be_sorted = [self.query(x) for x in 'NewProj Zip Proj Activity'.split()]
+        sorted_query = sorted(query_to_be_sorted, cmp=filters.sort_multiple(['title']))
+        sorted_output = [str(i) for i in sorted_query]
+        assert_equal(sorted_output, ['Activity', 'NewProj', 'Proj', 'Zip'])
+
+
+    def test_filter_queryset_forward_duplicate(self):
+        query_to_be_sorted = [self.query(x) for x in 'NewProj Activity Zip Activity'.split()]
+        sorted_query = sorted(query_to_be_sorted, cmp=filters.sort_multiple(['title']))
+        sorted_output = [str(i) for i in sorted_query]
+        assert_equal(sorted_output, ['Activity', 'Activity', 'NewProj', 'Zip'])
+
+
+    def test_filter_queryset_reverse(self):
+        query_to_be_sorted = [self.query(x) for x in 'NewProj Zip Proj Activity'.split()]
+        sorted_query = sorted(query_to_be_sorted, cmp=filters.sort_multiple(['-title']))
+        sorted_output = [str(i) for i in sorted_query]
+        assert_equal(sorted_output, ['Zip', 'Proj', 'NewProj', 'Activity'])
+    
+    def test_filter_queryset_reverse_duplicate(self):
+        query_to_be_sorted = [self.query(x) for x in 'NewProj Activity Zip Activity'.split()]
+        sorted_query = sorted(query_to_be_sorted, cmp=filters.sort_multiple(['-title']))
+        sorted_output = [str(i) for i in sorted_query]
+        assert_equal(sorted_output, ['Zip', 'NewProj', 'Activity', 'Activity'])
+
+    def test_filter_queryset_handles_multiple_fields(self):
+        objs = [self.query_with_num(title='NewProj', number=10),
+                self.query_with_num(title='Zip', number=20),
+                self.query_with_num(title='Activity', number=30),
+                self.query_with_num(title='Activity', number=40)]
+        actual = [x.number for x in sorted(objs, cmp=filters.sort_multiple(['title', '-number']))]
+        assert_equal(actual, [40, 30, 10, 20])
+

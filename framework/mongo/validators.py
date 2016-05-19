@@ -6,7 +6,7 @@ from modularodm.exceptions import ValidationError, ValidationValueError
 
 
 def string_required(value):
-    if value is None or value == '':
+    if value is None or value.strip() == '':
         raise ValidationValueError('Value must not be empty.')
     return True
 

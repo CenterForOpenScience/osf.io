@@ -6,6 +6,8 @@ from website.util import api_url_for, web_url_for
 
 class DataverseSerializer(OAuthAddonSerializer):
 
+    addon_short_name = 'dataverse'
+
     REQUIRED_URLS = []
 
     # Include host information with more informative labels / formatting
@@ -18,17 +20,6 @@ class DataverseSerializer(OAuthAddonSerializer):
         })
 
         return ret
-
-    @property
-    def user_is_owner(self):
-        if self.user_settings is None:
-            return False
-
-        user_accounts = self.user_settings.external_accounts
-        return bool(
-            self.node_settings.has_auth and
-            self.node_settings.external_account in user_accounts
-        )
 
     @property
     def credentials_owner(self):
@@ -60,12 +51,12 @@ class DataverseSerializer(OAuthAddonSerializer):
         return {
             'create': api_url_for('dataverse_add_user_account'),
             'set': node.api_url_for('dataverse_set_config'),
-            'importAuth': node.api_url_for('dataverse_add_user_auth'),
-            'deauthorize': node.api_url_for('dataverse_remove_user_auth'),
+            'importAuth': node.api_url_for('dataverse_import_auth'),
+            'deauthorize': node.api_url_for('dataverse_deauthorize_node'),
             'getDatasets': node.api_url_for('dataverse_get_datasets'),
             'datasetPrefix': 'http://dx.doi.org/',
             'dataversePrefix': 'http://{0}/dataverse/'.format(host),
-            'accounts': api_url_for('dataverse_get_user_accounts'),
+            'accounts': api_url_for('dataverse_account_list'),
         }
 
     @property
@@ -98,3 +89,10 @@ class DataverseSerializer(OAuthAddonSerializer):
             })
 
         return result
+
+    def serialize_settings(self, node_settings, user):
+        if not self.node_settings:
+            self.node_settings = node_settings
+        if not self.user_settings:
+            self.user_settings = user.get_addon(self.addon_short_name)
+        return self.serialized_node_settings

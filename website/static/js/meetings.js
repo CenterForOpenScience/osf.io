@@ -45,6 +45,7 @@ function Meetings(data) {
                 {
                     data : 'name',  // Data field name
                     sortInclude : true,
+                    filter : true,
                     custom : function() { return m('a', { href : item.data.url, target : '_blank' }, item.data.name ); }
 
                 },
@@ -78,7 +79,14 @@ function Meetings(data) {
                             return item.data.end_date;
                         }
                         return item.data.start_date + ' - ' + item.data.end_date;
-                    }
+                    },
+                    filter : false
+                },
+                {
+                    data: 'active', // Data field name
+                    sortInclude: true,
+                    filter : false,
+                    custom: function() { return item.data.active ? 'Yes' : 'No'; }
                 }
             ];
         },
@@ -87,7 +95,7 @@ function Meetings(data) {
             down : 'i.fa.fa-chevron-down'
         },
         hScroll: 'auto',
-        showFilter : false,     // Gives the option to filter by showing the filter box.
+        showFilter : true,     // Gives the option to filter by showing the filter box.
         allowMove : false,       // Turn moving on or off.
         hoverClass : 'fangorn-hover',
     };

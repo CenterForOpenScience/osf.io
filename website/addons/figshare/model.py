@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import markupsafe
 from modularodm import fields
 
 from framework.auth.decorators import Auth
@@ -65,17 +66,19 @@ class AddonFigShareNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
         api = Figshare.from_settings(self.user_settings)
         items = []
         if self.figshare_type in ('article', 'fileset'):
-            items = api.article(self, self.figshare_id)['items']
+            article = api.article(self, self.figshare_id)
+            items = article['items'] if article else []
         else:
-            items = api.project(self, self.figshare_id)['articles']
+            project = api.project(self, self.figshare_id)
+            items = project['articles'] if project else []
         private = any(
             [item for item in items if item['status'] != 'Public']
         )
 
         if private:
             return 'The figshare {figshare_type} <strong>{figshare_title}</strong> contains private content that we cannot copy to the registration. If this content is made public on figshare we should then be able to copy those files. You can view those files <a href="{url}" target="_blank">here.</a>'.format(
-                figshare_type=self.figshare_type,
-                figshare_title=self.figshare_title,
+                figshare_type=markupsafe.escape(self.figshare_type),
+                figshare_title=markupsafe.escape(self.figshare_title),
                 url=self.owner.web_url_for('collect_file_trees'))
 
     @property
@@ -275,7 +278,8 @@ class AddonFigShareNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
             )
             if article_permissions == 'private' and node_permissions == 'public':
                 message += messages.BEFORE_PAGE_LOAD_PUBLIC_NODE_PRIVATE_FS
-            return [message]
+            # No HTML snippets, so escape message all at once
+            return [markupsafe.escape(message)]
 
     def before_remove_contributor(self, node, removed):
         """
@@ -309,9 +313,9 @@ class AddonFigShareNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
                 u'Because the FigShare add-on for {category} "{title}" was authenticated '
                 u'by {user}, authentication information has been deleted.'
             ).format(
-                category=node.category_display,
-                title=node.title,
-                user=removed.fullname
+                category=markupsafe.escape(node.category_display),
+                title=markupsafe.escape(node.title),
+                user=markupsafe.escape(removed.fullname)
             )
 
             if not auth or auth.user != removed:
@@ -340,11 +344,11 @@ class AddonFigShareNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
         if self.user_settings and self.user_settings.owner == user:
             clone.user_settings = self.user_settings
             message = messages.AFTER_FORK_OWNER.format(
-                category=fork.project_or_component,
+                category=markupsafe.escape(fork.project_or_component),
             )
         else:
             message = messages.AFTER_FORK_NOT_OWNER.format(
-                category=fork.project_or_component,
+                category=markupsafe.escape(fork.project_or_component),
                 url=fork.url + 'settings/'
             )
             return AddonFigShareNodeSettings(), message

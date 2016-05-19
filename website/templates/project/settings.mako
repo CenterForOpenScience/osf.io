@@ -25,7 +25,7 @@
                 <ul class="nav nav-stacked nav-pills">
 
                     % if not node['is_registration']:
-                        <li><a href="#configureNodeAnchor">Configure ${node['node_type'].capitalize()}</a></li>
+                        <li><a href="#configureNodeAnchor">${node['node_type'].capitalize()}</a></li>
 
                         <li><a href="#selectAddonsAnchor">Select Add-ons</a></li>
 
@@ -33,22 +33,24 @@
                             <li><a href="#configureAddonsAnchor">Configure Add-ons</a></li>
                         % endif
 
-                        % if include_wiki_settings:
-                            <li><a href="#configureWikiAnchor">Configure Wiki</a></li>
-                        % endif
+                        <li><a href="#configureWikiAnchor">Wiki</a></li>
 
                         % if 'admin' in user['permissions']:
-                            <li><a href="#configureCommentingAnchor">Configure Commenting</a></li>
+                            <li><a href="#configureCommentingAnchor">Commenting</a></li>
                         % endif
 
-                        <li><a href="#configureNotificationsAnchor">Configure Email Notifications</a></li>
+                        % if enable_institutions:
+                            <li><a href="#configureInstitutionAnchor">Project Affiliation / Branding</a></li>
+                        % endif
+
+                        <li><a href="#configureNotificationsAnchor">Email Notifications</a></li>
 
                     % endif
 
                     % if node['is_registration']:
 
                         % if (node['is_public'] or node['embargo_end_date']) and 'admin' in user['permissions']:
-                            <li><a href="#retractRegistrationAnchor">Retract Public Registration</a></li>
+                            <li><a href="#withdrawRegistrationAnchor">Withdraw Public Registration</a></li>
                         % endif
 
                     % endif
@@ -69,20 +71,13 @@
                 <div class="panel panel-default">
                     <span id="configureNodeAnchor" class="anchor"></span>
                     <div class="panel-heading clearfix">
-                        <h3 id="configureNode" class="panel-title">Configure ${node['node_type'].capitalize()}</h3>
+                        <h3 id="configureNode" class="panel-title">${node['node_type'].capitalize()}</h3>
                     </div>
 
                     <div id="projectSettings" class="panel-body">
                         <div class="form-group">
                             <label>Category:</label>
-                            <select data-bind="attr.disabled: disabled,
-                                                         options: categoryOptions,
-                                                         optionsValue: 'value',
-                                                         optionsText: 'label',
-                                                         value: selectedCategory"></select>
-                            <span data-bind="if: disabled" class="help-block">
-                              A top-level project's category cannot be changed
-                            </span>
+                            <select data-bind="options: categoryOptions, optionsValue: 'value', optionsText: 'label', value: selectedCategory"></select>
                         </div>
                         <div class="form-group">
                             <label for="title">Title:</label>
@@ -94,7 +89,7 @@
                             <label for="description">Description:</label>
                             <textarea placeholder="Optional" data-bind="value: description,
                                              valueUpdate: 'afterkeydown'",
-                            class="form-control resize-vertical"></textarea>
+                            class="form-control resize-vertical" style="max-width: 100%"></textarea>
                         </div>
                            <button data-bind="click: cancelAll"
                             class="btn btn-default">Cancel</button>
@@ -105,16 +100,14 @@
                         </div>
                     % if 'admin' in user['permissions']:
                         <hr />
-                        <div class="panel-body">
                             <div class="help-block">
                                 A project cannot be deleted if it has any components within it.
                                 To delete a parent project, you must first delete all child components
                                 by visiting their settings pages.
                             </div>
                             <button id="deleteNode" class="btn btn-danger btn-delete-node">Delete ${node['node_type']}</button>
-                        </div>
                     % endif
-
+                    </div>
                 </div>
 
             % endif
@@ -167,9 +160,6 @@
 
                             <br />
 
-                            <button id="settings-submit" class="btn btn-success">
-                                Apply
-                            </button>
                             <div class="addon-settings-message text-success" style="padding-top: 10px;"></div>
 
                         </form>
@@ -205,35 +195,66 @@
 
         % endif  ## End Select Addons
 
-        % if include_wiki_settings:  ## Begin Configure Wiki
-
+        % if 'write' in user['permissions']:  ## Begin Wiki Config
             % if not node['is_registration']:
-
                 <div class="panel panel-default">
                     <span id="configureWikiAnchor" class="anchor"></span>
-
                     <div class="panel-heading clearfix">
-                        <h3 class="panel-title">Configure Wiki</h3>
+                        <h3 class="panel-title">Wiki</h3>
                     </div>
-                    <div class="help-block" style="padding-left: 15px">
-                        <p class="text-info">These settings control who can edit your wiki. To make a wiki editable by all OSF users, make your project/component public.</p>
-                    </div>
-                    <form id="wikiSettings" class="osf-treebeard-minimal">
-                        <div id="wgrid">
-                            <div class="spinner-loading-wrapper">
-                                <div class="logo-spin logo-lg"></div>
-                                <p class="m-t-sm fg-load-message"> Loading wiki settings...  </p>
+
+                <div class="panel-body">
+                    %if wiki:
+                        <form id="selectWikiForm">
+                            <div>
+                                <label>
+                                    <input
+                                            type="checkbox"
+                                            name="${wiki.short_name}"
+                                            class="wiki-select"
+                                            data-bind="checked: enabled"
+                                    />
+                                    Enable the wiki in <b>${node['title']}</b>.
+                                </label>
+
+                                <div data-bind="visible: enabled()" class="text-success" style="padding-left: 15px">
+                                    <p data-bind="text: wikiMessage"></p>
+                                </div>
+                                <div data-bind="visible: !enabled()" class="text-danger" style="padding-left: 15px">
+                                    <p data-bind="text: wikiMessage"></p>
+                                </div>
                             </div>
-                        </div>
-                        <div class="help-block" style="padding-left: 15px">
-                            <p id="configureWikiMessage"></p>
-                        </div>
-                    </form>
+                        </form>
+                    %endif
+
+                        % if include_wiki_settings:
+                            <h3>Configure</h3>
+                            <div style="padding-left: 15px">
+                                %if  node['is_public']:
+                                    <p class="text">Control who can edit the wiki of <b>${node['title']}</b></p>
+                                %else:
+                                    <p class="text">Control who can edit your wiki. To allow all OSF users to edit the wiki, <b>${node['title']}</b> must be public.</p>
+                                %endif
+                            </div>
+
+                            <form id="wikiSettings" class="osf-treebeard-minimal">
+                                <div id="wgrid">
+                                    <div class="spinner-loading-wrapper">
+                                        <div class="logo-spin logo-lg"></div>
+                                        <p class="m-t-sm fg-load-message"> Loading wiki settings...  </p>
+                                    </div>
+                                </div>
+                                <div class="help-block" style="padding-left: 15px">
+                                    <p id="configureWikiMessage"></p>
+                                </div>
+                            </form>
+                        % else:
+                            <p class="text">To allow all OSF users to edit the wiki, <b>${node['title']}</b> must be public and the wiki enabled.</p>
+                        %endif
+                    </div>
                 </div>
-
             %endif
-
-        % endif ## End Configure Wiki
+        %endif ## End Wiki Config
 
         % if 'admin' in user['permissions']:  ## Begin Configure Commenting
 
@@ -242,7 +263,7 @@
                 <div class="panel panel-default">
                     <span id="configureCommentingAnchor" class="anchor"></span>
                     <div class="panel-heading clearfix">
-                        <h3 class="panel-title">Configure Commenting</h3>
+                        <h3 class="panel-title">Commenting</h3>
                     </div>
 
                     <div class="panel-body">
@@ -273,11 +294,81 @@
                     </div>
 
                 </div>
+                %endif
+            % endif  ## End Configure Commenting
 
-            % endif
+        % if not node['is_registration']:
+                % if enable_institutions:
+                    <div class="panel panel-default scripted" id="institutionSettings">
+                    <span id="configureInstitutionAnchor" class="anchor"></span>
+                    <div class="panel-heading clearfix">
+                        <h3 class="panel-title">Project Affiliation / Branding</h3>
+                    </div>
+                    <div class="panel-body">
+                        % if not node['institution']['name']:
+                            %if 'admin' in user['permissions']:
+                                <div data-bind="visible: !loading()">
+                                    <div data-bind="visible: error()">
+                                        <div class="help-block">
+                                            Could not load up available institutions. Please wait a few minutes and try again, or contact <a href="mailto:support@osf.io">support@osf.io</a> if the problem persists.
+                                        </div>
+                                    </div>
+                                    <div data-bind="visible: !error()">
+                                        <div data-bind="visible: availableInstitutions().length">
+                                            <div class="help-block">
+                                                Projects affiliated with institutions will show some institutional branding (such as logos) and if public, will be discoverable on OSF institutional landing pages.
 
-        % endif  ## End Configure Commenting
-
+                                                You are authorized to affiliate your projects with the following institutions:
+                                            </div>
+                                            <div class="radio">
+                                                <div data-bind="foreach: {data: availableInstitutions, as: 'item'}">
+                                                    <div>
+                                                    <label>
+                                                        <input type="radio" data-bind="value: item.id, checked: $parent.selectedInstitution" name="primaryInst">
+                                                        <p data-bind="text: item.attributes.name"></p>
+                                                    </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <button data-bind="click: submitInst, css: {disabled: selectedInstitution() == null}" class="btn btn-success">Affiliate</button>
+                                        </div>
+                                        <div data-bind="visible: !availableInstitutions().length">
+                                            <div class="help-block">
+                                                Projects can be affiliated with institutions that have created OSF for Institution accounts. This allows:
+                                                <ul>
+                                                    <li>institutional logos to be displayed on public projects</li>
+                                                    <li>public projects to be discoverable on specific institutional landing pages</li>
+                                                    <li>single sign-on to the OSF with institutional credentials</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            % else :
+                                <div class="help-block">
+                                    Projects can be affiliated with institutions that have created OSF for Institution accounts. This allows:
+                                    <ul>
+                                        <li>institutional logos to be displayed on public projects</li>
+                                        <li>public projects to be discoverable on specific institutional landing pages</li>
+                                        <li>single sign-on to the OSF with institutional credentials</li>
+                                    </ul>
+                                </div>
+                            % endif
+                        % endif
+                        % if node['institution']['name']:
+                            <div class="help-block">Your project is currently affiliated with: </div>
+                            <p data-bind="text: primaryInstitution"></p>
+                            <div class="help-block">
+                                Projects affiliated with institutions will show some institutional branding (such as logos), and if public, will be discoverable on OSF institutional landing pages.
+                            </div>
+                            %if 'admin' in user['permissions']:
+                                <button data-bind="click: clearInst" class="btn btn-danger">Remove affiliation</button>
+                            %endif
+                        % endif
+                    </div>
+                </div>
+                % endif
+        % endif
         % if user['has_read_permissions']:  ## Begin Configure Email Notifications
 
             % if not node['is_registration']:
@@ -285,7 +376,7 @@
                 <div class="panel panel-default">
                     <span id="configureNotificationsAnchor" class="anchor"></span>
                     <div class="panel-heading clearfix">
-                        <h3 class="panel-title">Configure Email Notifications</h3>
+                        <h3 class="panel-title">Email Notifications</h3>
                     </div>
                     <div class="help-block" style="padding-left: 15px">
                         <p class="text-info">These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>
@@ -311,13 +402,13 @@
 
             % if node['is_registration']:
 
-                % if node['is_public'] or node['embargo_end_date']:
+                % if node['is_public'] or node['is_embargoed']:
 
                     <div class="panel panel-default">
-                        <span id="retractRegistrationAnchor" class="anchor"></span>
+                        <span id="withdrawRegistrationAnchor" class="anchor"></span>
 
                         <div class="panel-heading clearfix">
-                            <h3 class="panel-title">Retract Registration</h3>
+                            <h3 class="panel-title">Withdraw Registration</h3>
                         </div>
 
                         <div class="panel-body">
@@ -325,27 +416,26 @@
                             % if parent_node['exists']:
 
                                 <div class="help-block">
-                                  Retracting children components of a registration is not allowed. Should you wish to
-                                  retract this component, please retract its parent registration <a href="${web_url_for('node_setting', pid=node['root_id'])}">here</a>.
+                                  Withdrawing children components of a registration is not allowed. Should you wish to
+                                  withdraw this component, please withdraw its parent registration <a href="${web_url_for('node_setting', pid=node['root_id'])}">here</a>.
                                 </div>
 
                             % else:
 
                                 <div class="help-block">
-                                    Retracting a registration will remove its content from the OSF, but leave basic metadata
-                                    behind. The title of a retracted registration and its contributor list will remain, as will
-                                    justification or explanation of the retraction, should you wish to provide it. Retracted
-                                    registrations will be marked with a <strong>retracted</strong> tag.
+                                    Withdrawing a registration will remove its content from the OSF, but leave basic metadata
+                                    behind. The title of a withdrawn registration and its contributor list will remain, as will
+                                    justification or explanation of the withdrawal, should you wish to provide it. Withdrawn
+                                    registrations will be marked with a <strong>withdrawn</strong> tag.
                                 </div>
 
                                 %if not node['is_pending_retraction']:
-                                    <a class="btn btn-danger" href="${web_url_for('node_registration_retraction_get', pid=node['id'])}">Retract Registration</a>
+                                    <a class="btn btn-danger" href="${web_url_for('node_registration_retraction_get', pid=node['id'])}">Withdraw Registration</a>
                                 % else:
-                                    <p><strong>This registration is already pending a retraction.</strong></p>
+                                    <p><strong>This registration is already pending withdrawal.</strong></p>
                                 %endif
 
                             % endif
-
 
                         </div>
                     </div>
@@ -373,13 +463,11 @@
     <script id="capabilities-${name}" type="text/html">${ capabilities | n }</script>
 % endfor
 
-
 <%def name="stylesheets()">
     ${parent.stylesheets()}
 
     <link rel="stylesheet" href="/static/css/pages/project-page.css">
 </%def>
-
 
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
@@ -389,6 +477,8 @@
       window.contextVars.node.description = ${node['description'] | sjson, n };
       window.contextVars.node.nodeType = ${ node['node_type'] | sjson, n };
       window.contextVars.nodeCategories = ${ categories | sjson, n };
+      window.contextVars.wiki = window.contextVars.wiki || {};
+      window.contextVars.wiki.isEnabled = ${wiki.short_name in addons_enabled | sjson, n };
     </script>
 
     <script type="text/javascript" src=${"/static/public/js/project-settings-page.js" | webpack_asset}></script>
@@ -396,5 +486,6 @@
     % for js_asset in addon_js:
     <script src="${js_asset | webpack_asset}"></script>
     % endfor
+
 
 </%def>

@@ -12,12 +12,13 @@ from framework.auth import Auth
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_signed
 
+from website.exceptions import InvalidTagError, TagNotFoundError
 from website.models import User
 from website.project.decorators import (
     must_not_be_registration, must_have_addon, must_have_permission
 )
 from website.util import rubeus
-from website.project.model import has_anonymous_link, Tag
+from website.project.model import has_anonymous_link
 
 from website.files import models
 from website.files import exceptions
@@ -122,7 +123,7 @@ def osfstorage_get_metadata(file_node, **kwargs):
         # TODO This should change to version as its internal it can be changed anytime
         version = int(request.args.get('revision'))
     except (ValueError, TypeError):  # If its not a number
-        version = -1
+        version = None
     return file_node.serialize(version=version, include_full=True)
 
 
@@ -227,7 +228,7 @@ def osfstorage_download(file_node, payload, node_addon, **kwargs):
         try:
             version_id = int(request.args['version'])
         except ValueError:
-            raise make_error(httplib.BAD_REQUEST, 'Version must be an integer if not specified')
+            raise make_error(httplib.BAD_REQUEST, message_short='Version must be an integer if not specified')
 
     version = file_node.get_version(version_id, required=True)
 
@@ -244,19 +245,12 @@ def osfstorage_download(file_node, payload, node_addon, **kwargs):
         },
     }
 
+
 @must_have_permission('write')
 @decorators.autoload_filenode(must_be='file')
 def osfstorage_add_tag(file_node, **kwargs):
     data = request.get_json()
-    print data
-    tag = data['tag']
-    if tag not in file_node.tags and not file_node.node.is_registration:
-        new_tag = Tag.load(tag)
-        if not new_tag:
-            new_tag = Tag(_id=tag)
-        new_tag.save()
-        file_node.tags.append(new_tag)
-        file_node.save()
+    if file_node.add_tag(data['tag'], kwargs['auth']):
         return {'status': 'success'}, httplib.OK
     return {'status': 'failure'}, httplib.BAD_REQUEST
 
@@ -264,10 +258,11 @@ def osfstorage_add_tag(file_node, **kwargs):
 @decorators.autoload_filenode(must_be='file')
 def osfstorage_remove_tag(file_node, **kwargs):
     data = request.get_json()
-    tag = data['tag']
-    tag = Tag.load(tag)
-    if tag and tag in file_node.tags and not file_node.node.is_registration:
-        file_node.tags.remove(tag)
-        file_node.save()
+    try:
+        file_node.remove_tag(data['tag'], kwargs['auth'])
+    except TagNotFoundError:
+        return {'status': 'failure'}, httplib.CONFLICT
+    except InvalidTagError:
+        return {'status': 'failure'}, httplib.BAD_REQUEST
+    else:
         return {'status': 'success'}, httplib.OK
-    return {'status': 'failure'}, httplib.BAD_REQUEST

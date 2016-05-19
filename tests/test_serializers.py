@@ -8,7 +8,7 @@ from tests.factories import (
     RegistrationFactory,
     NodeFactory,
     NodeLogFactory,
-    FolderFactory,
+    CollectionFactory,
 )
 from tests.base import OsfTestCase
 
@@ -31,7 +31,6 @@ class TestNodeSerializers(OsfTestCase):
         node = ProjectFactory(is_public=False)
         result = _get_summary(
             node, auth=Auth(user),
-            rescale_ratio=None,
             primary=True,
             link_id=None
         )
@@ -45,7 +44,7 @@ class TestNodeSerializers(OsfTestCase):
     # https://github.com/CenterForOpenScience/openscienceframework.org/issues/668
     def test_get_summary_for_registration_uses_correct_date_format(self):
         reg = RegistrationFactory()
-        res = _get_summary(reg, auth=Auth(reg.creator), rescale_ratio=None)
+        res = _get_summary(reg, auth=Auth(reg.creator))
         assert_equal(res['summary']['registered_date'],
                 reg.registered_date.strftime('%Y-%m-%d %H:%M UTC'))
 
@@ -55,7 +54,7 @@ class TestNodeSerializers(OsfTestCase):
         # non-contributor cannot see private registration of public project
         node = ProjectFactory(is_public=True)
         reg = RegistrationFactory(project=node, user=node.creator)
-        res = _get_summary(reg, auth=Auth(user), rescale_ratio=None)
+        res = _get_summary(reg, auth=Auth(user))
 
         # serialized result should have is_registration
         assert_true(res['summary']['is_registration'])
@@ -121,7 +120,6 @@ class TestNodeSerializers(OsfTestCase):
 
         res = _get_summary(
             fork, auth=Auth(user),
-            rescale_ratio=None,
             primary=True,
             link_id=None
         )
@@ -140,7 +138,6 @@ class TestNodeSerializers(OsfTestCase):
 
         res = _get_summary(
             fork, auth=Auth(user),
-            rescale_ratio=None,
             primary=True,
             link_id=None
         )
@@ -161,29 +158,56 @@ class TestNodeSerializers(OsfTestCase):
 
 class TestViewProject(OsfTestCase):
 
+    def setUp(self):
+        super(TestViewProject, self).setUp()
+        self.user = UserFactory()
+        self.node = ProjectFactory(creator=self.user)
+
     # related to https://github.com/CenterForOpenScience/openscienceframework.org/issues/1109
     def test_view_project_pointer_count_excludes_folders(self):
-        user = UserFactory()
         pointer_project = ProjectFactory(is_public=True)  # project that points to another project
-        pointed_project = ProjectFactory(creator=user)  # project that other project points to
+        pointed_project = self.node  # project that other project points to
         pointer_project.add_pointer(pointed_project, Auth(pointer_project.creator), save=True)
 
-        # Project is in a dashboard folder
-        folder = FolderFactory(creator=pointed_project.creator)
+        # Project is in a organizer collection
+        folder = CollectionFactory(creator=pointed_project.creator)
         folder.add_pointer(pointed_project, Auth(pointed_project.creator), save=True)
 
         result = _view_project(pointed_project, Auth(pointed_project.creator))
         # pointer_project is included in count, but not folder
         assert_equal(result['node']['points'], 1)
 
+    def test_view_project_pending_registration_for_admin_contributor_does_contain_cancel_link(self):
+        pending_reg = RegistrationFactory(project=self.node, archive=True)
+        assert_true(pending_reg.is_pending_registration)
+        result = _view_project(pending_reg, Auth(self.user))
+
+        assert_not_equal(result['node']['disapproval_link'], '')
+        assert_in('/?token=', result['node']['disapproval_link'])
+        pending_reg.remove()
+
+    def test_view_project_pending_registration_for_write_contributor_does_not_contain_cancel_link(self):
+        write_user = UserFactory()
+        self.node.add_contributor(write_user, permissions=permissions.WRITE,
+                                  auth=Auth(self.user), save=True)
+        pending_reg = RegistrationFactory(project=self.node, archive=True)
+        assert_true(pending_reg.is_pending_registration)
+        result = _view_project(pending_reg, Auth(write_user))
+
+        assert_equal(result['node']['disapproval_link'], '')
+        pending_reg.remove()
+
 
 class TestNodeLogSerializers(OsfTestCase):
 
     def test_serialize_log(self):
         node = NodeFactory(category='hypothesis')
-        log = NodeLogFactory(params={'node': node._primary_key})
-        node.logs.append(log)
         node.save()
+        log = NodeLogFactory(
+                params={'node': node._id},
+                node=node,
+                original_node=node
+            )
         d = serialize_log(log)
         assert_equal(d['action'], log.action)
         assert_equal(d['node']['node_type'], 'component')
@@ -209,6 +233,7 @@ class TestNodeLogSerializers(OsfTestCase):
         assert_equal(d['api_url'], node.api_url)
         assert_equal(d['is_public'], node.is_public)
         assert_equal(d['is_registration'], node.is_registration)
+
 
 class TestAddContributorJson(OsfTestCase):
 

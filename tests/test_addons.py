@@ -5,12 +5,13 @@ import mock
 import datetime
 import unittest
 from nose.tools import *  # noqa
+import httplib as http
 
 import jwe
 import jwt
 import furl
 import itsdangerous
-from modularodm import storage
+from modularodm import storage, Q
 
 from framework.auth import cas
 from framework.auth import signing
@@ -18,18 +19,20 @@ from framework.auth.core import Auth
 from framework.exceptions import HTTPError
 from framework.sessions.model import Session
 from framework.mongo import set_up_storage
+from tests import factories
 
 from website import settings
 from website.files import models
-from website.files.models.base import PROVIDER_MAP
+from website.files.models.base import PROVIDER_MAP, StoredFileNode, TrashedFileNode
+from website.project.model import MetaSchema, ensure_schemas
 from website.util import api_url_for, rubeus
 from website.project import new_private_link
 from website.project.views.node import _view_project as serialize_node
 from website.addons.base import AddonConfig, AddonNodeSettingsBase, views
-from website.addons.github.model import AddonGitHubOauthSettings
 from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory, ProjectFactory
 from website.addons.github.exceptions import ApiError
+from website.addons.github.tests.factories import GitHubAccountFactory
 
 
 class TestAddonConfig(unittest.TestCase):
@@ -90,16 +93,16 @@ class TestAddonAuth(OsfTestCase):
     def configure_addon(self):
         self.user.add_addon('github')
         self.user_addon = self.user.get_addon('github')
-        self.oauth_settings = AddonGitHubOauthSettings(github_user_id='john')
+        self.oauth_settings = GitHubAccountFactory(display_name='john')
         self.oauth_settings.save()
-        self.user_addon.oauth_settings = self.oauth_settings
-        self.user_addon.oauth_access_token = 'secret'
-        self.user_addon.save()
+        self.user.external_accounts.append(self.oauth_settings)
+        self.user.save()
         self.node.add_addon('github', self.auth_obj)
         self.node_addon = self.node.get_addon('github')
         self.node_addon.user = 'john'
         self.node_addon.repo = 'youre-my-best-friend'
         self.node_addon.user_settings = self.user_addon
+        self.node_addon.external_account = self.oauth_settings
         self.node_addon.save()
 
     def build_url(self, **kwargs):
@@ -175,16 +178,16 @@ class TestAddonLogs(OsfTestCase):
     def configure_addon(self):
         self.user.add_addon('github')
         self.user_addon = self.user.get_addon('github')
-        self.oauth_settings = AddonGitHubOauthSettings(github_user_id='john')
+        self.oauth_settings = GitHubAccountFactory(display_name='john')
         self.oauth_settings.save()
-        self.user_addon.oauth_settings = self.oauth_settings
-        self.user_addon.oauth_access_token = 'secret'
-        self.user_addon.save()
+        self.user.external_accounts.append(self.oauth_settings)
+        self.user.save()        
         self.node.add_addon('github', self.auth_obj)
         self.node_addon = self.node.get_addon('github')
         self.node_addon.user = 'john'
         self.node_addon.repo = 'youre-my-best-friend'
         self.node_addon.user_settings = self.user_addon
+        self.node_addon.external_account = self.oauth_settings
         self.node_addon.save()
 
     def build_payload(self, metadata, **kwargs):
@@ -373,6 +376,63 @@ class TestCheckAuth(OsfTestCase):
         res = views.check_access(component, Auth(user=self.user), 'copyfrom', None)
         assert_true(res)
 
+class TestCheckPreregAuth(OsfTestCase):
+
+    def setUp(self):
+        super(TestCheckPreregAuth, self).setUp()
+
+        ensure_schemas()
+        self.prereg_challenge_admin_user = AuthUserFactory()
+        self.prereg_challenge_admin_user.system_tags.append(settings.PREREG_ADMIN_TAG)
+        self.prereg_challenge_admin_user.save()
+        prereg_schema = MetaSchema.find_one(
+                Q('name', 'eq', 'Prereg Challenge') &
+                Q('schema_version', 'eq', 2)
+        )
+
+        self.user = AuthUserFactory()
+        self.node = factories.ProjectFactory(creator=self.user)
+
+        self.parent = factories.ProjectFactory()
+        self.child = factories.NodeFactory(parent=self.parent)
+
+        self.draft_registration = factories.DraftRegistrationFactory(
+            initiator=self.user,
+            registration_schema=prereg_schema,
+            branched_from=self.parent
+        )
+
+    def test_has_permission_download_prereg_challenge_admin(self):
+        res = views.check_access(self.draft_registration.branched_from,
+            Auth(user=self.prereg_challenge_admin_user), 'download', None)
+        assert_true(res)
+
+    def test_has_permission_download_on_component_prereg_challenge_admin(self):
+        try:
+            res = views.check_access(self.draft_registration.branched_from.nodes[0],
+                                     Auth(user=self.prereg_challenge_admin_user), 'download', None)
+        except Exception:
+            self.fail()
+        assert_true(res)
+
+    def test_has_permission_download_not_prereg_challenge_admin(self):
+        new_user = AuthUserFactory()
+        with assert_raises(HTTPError) as exc_info:
+            views.check_access(self.draft_registration.branched_from,
+                 Auth(user=new_user), 'download', None)
+            assert_equal(exc_info.exception.code, http.FORBIDDEN)
+
+    def test_has_permission_download_prereg_challenge_admin_not_draft(self):
+        with assert_raises(HTTPError) as exc_info:
+            views.check_access(self.node,
+                 Auth(user=self.prereg_challenge_admin_user), 'download', None)
+            assert_equal(exc_info.exception.code, http.FORBIDDEN)
+
+    def test_has_permission_write_prereg_challenge_admin(self):
+        with assert_raises(HTTPError) as exc_info:
+            views.check_access(self.draft_registration.branched_from,
+                Auth(user=self.prereg_challenge_admin_user), 'write', None)
+            assert_equal(exc_info.exception.code, http.FORBIDDEN)
 
 class TestCheckOAuth(OsfTestCase):
 
@@ -473,9 +533,15 @@ def assert_urls_equal(url1, url2):
 class TestFileNode(models.FileNode):
     provider = 'test_addons'
 
-    def touch(self, bearer, revision=None, **kwargs):
-        if revision:
-            return self.versions[0]
+    def touch(self, bearer, version=None, revision=None, **kwargs):
+        if version:
+            if self.versions:
+                try:
+                    return self.versions[int(version) - 1]
+                except (IndexError, ValueError):
+                    return None
+            else:
+                return None
         return models.FileVersion()
 
 
@@ -487,7 +553,7 @@ class TestFolder(TestFileNode, models.Folder):
     pass
 
 
-@mock.patch('website.addons.github.model.GitHub.repo', mock.Mock(side_effect=ApiError))
+@mock.patch('website.addons.github.model.GitHubClient.repo', mock.Mock(side_effect=ApiError))
 class TestAddonFileViews(OsfTestCase):
 
     @classmethod
@@ -506,17 +572,14 @@ class TestAddonFileViews(OsfTestCase):
 
         self.user_addon = self.user.get_addon('github')
         self.node_addon = self.project.get_addon('github')
-        self.oauth = AddonGitHubOauthSettings(
-            github_user_id='denbarell',
-            oauth_access_token='Truthy'
-        )
-
+        self.oauth = GitHubAccountFactory()
         self.oauth.save()
 
-        self.user_addon.oauth_settings = self.oauth
-        self.user_addon.save()
+        self.user.external_accounts.append(self.oauth)
+        self.user.save()
 
         self.node_addon.user_settings = self.user_addon
+        self.node_addon.external_account = self.oauth
         self.node_addon.repo = 'Truth'
         self.node_addon.user = 'E'
         self.node_addon.save()
@@ -526,16 +589,18 @@ class TestAddonFileViews(OsfTestCase):
         super(TestAddonFileViews, cls).tearDownClass()
         PROVIDER_MAP['github'] = [models.GithubFolder, models.GithubFile, models.GithubFileNode]
         del PROVIDER_MAP['test_addons']
+        TrashedFileNode.remove()
 
     def get_test_file(self):
         version = models.FileVersion(identifier='1')
         version.save()
+        versions = [version]
         ret = TestFile(
             name='Test',
             node=self.project,
             path='/test/Test',
             materialized_path='/test/Test',
-            versions=[version]
+            versions=versions
         )
         ret.save()
         return ret
@@ -560,6 +625,7 @@ class TestAddonFileViews(OsfTestCase):
             'extra': '',
             'file_name': '',
             'materialized_path': '',
+            'file_id': '',
         })
         ret.update(rubeus.collect_addon_assets(self.project))
         return ret
@@ -599,7 +665,7 @@ class TestAddonFileViews(OsfTestCase):
         assert_equals(resp.status_code, 302)
         location = furl.furl(resp.location)
         # Note: version is added but us but all other url params are added as well
-        assert_urls_equal(location.url, file_node.generate_waterbutler_url(action='download', direct=None, revision=1, version=1))
+        assert_urls_equal(location.url, file_node.generate_waterbutler_url(action='download', direct=None, revision=1, version=None))
 
     @mock.patch('website.addons.base.views.addon_view_file')
     def test_action_view_calls_view_file(self, mock_view_file):
@@ -654,6 +720,27 @@ class TestAddonFileViews(OsfTestCase):
 
         assert_true(file_node.get_guid())
 
+    def test_view_file_does_not_delete_file_when_requesting_invalid_version(self):
+        with mock.patch('website.addons.github.model.GitHubNodeSettings.is_private',
+                        new_callable=mock.PropertyMock) as mock_is_private:
+            mock_is_private.return_value = False
+
+            file_node = self.get_test_file()
+            assert_is(file_node.get_guid(), None)
+
+            url = self.project.web_url_for(
+                'addon_view_or_download_file',
+                path=file_node.path.strip('/'),
+                provider='github',
+            )
+            # First view generated GUID
+            self.app.get(url, auth=self.user.auth)
+
+            self.app.get(url + '?version=invalid', auth=self.user.auth, expect_errors=True)
+
+            assert_is_not_none(StoredFileNode.load(file_node._id))
+            assert_is_none(TrashedFileNode.load(file_node._id))
+
     def test_unauthorized_addons_raise(self):
         path = 'cloudfiles'
         self.node_addon.user_settings = None
@@ -701,7 +788,7 @@ class TestAddonFileViews(OsfTestCase):
         resp = self.app.head('/{}/?revision=1&foo=bar'.format(guid._id), auth=self.user.auth)
         location = furl.furl(resp.location)
         # Note: version is added but us but all other url params are added as well
-        assert_urls_equal(location.url, file_node.generate_waterbutler_url(direct=None, revision=1, version=1, foo='bar'))
+        assert_urls_equal(location.url, file_node.generate_waterbutler_url(direct=None, revision=1, version=None, foo='bar'))
 
     def test_nonexistent_addons_raise(self):
         path = 'cloudfiles'
@@ -738,6 +825,42 @@ class TestAddonFileViews(OsfTestCase):
         )
 
         assert_equals(resp.status_code, 401)
+
+    def test_delete_action_creates_trashed_file_node(self):
+        file_node = self.get_test_file()
+        payload = {
+            'provider': file_node.provider,
+            'metadata': {
+                'path': '/test/Test',
+                'materialized': '/test/Test'
+            }
+        }
+        views.addon_delete_file_node(self=None, node=self.project, user=self.user, event_type='file_removed', payload=payload)
+        assert_false(StoredFileNode.load(file_node._id))
+        assert_true(TrashedFileNode.load(file_node._id))
+
+    def test_delete_action_for_folder_deletes_subfolders_and_creates_trashed_file_nodes(self):
+        file_node = self.get_test_file()
+        subfolder = TestFolder(
+            name='folder',
+            node=self.project,
+            path='/test/folder/',
+            materialized_path='/test/folder/',
+            versions=[]
+        )
+        subfolder.save()
+        payload = {
+            'provider': file_node.provider,
+            'metadata': {
+                'path': '/test/',
+                'materialized': '/test/'
+            }
+        }
+        views.addon_delete_file_node(self=None, node=self.project, user=self.user, event_type='file_removed', payload=payload)
+        assert_false(StoredFileNode.load(file_node._id))
+        assert_true(TrashedFileNode.load(file_node._id))
+        assert_false(StoredFileNode.load(subfolder._id))
+
 
 class TestLegacyViews(OsfTestCase):
 

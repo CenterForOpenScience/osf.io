@@ -11,7 +11,7 @@ from tests.base import ApiTestCase
 from tests.factories import (
     ProjectFactory,
     RegistrationFactory,
-    AuthUserFactory
+    AuthUserFactory,
 )
 from tests.utils import assert_logs
 
@@ -30,30 +30,28 @@ class TestNodeLinkDetail(ApiTestCase):
 
         self.user_two = AuthUserFactory()
 
-        self.public_project = ProjectFactory(is_public=True)
+        self.public_project = ProjectFactory(creator=self.user, is_public=True)
         self.public_pointer_project = ProjectFactory(is_public=True)
         self.public_pointer = self.public_project.add_pointer(self.public_pointer_project,
                                                               auth=Auth(self.user),
                                                               save=True)
         self.public_url = '/{}nodes/{}/node_links/{}/'.format(API_BASE, self.public_project._id, self.public_pointer._id)
 
-    def test_returns_public_node_pointer_detail_logged_out(self):
+    def test_returns_embedded_public_node_pointer_detail_logged_out(self):
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
         res_json = res.json['data']
-        expected_path = node_url_for(self.public_pointer_project._id)
-        actual_path = urlparse(res_json['relationships']['target_node']['links']['related']['href']).path
-        assert_equal(expected_path, actual_path)
+        embedded = res_json['embeds']['target_node']['data']['id']
+        assert_equal(embedded, self.public_pointer_project._id)
 
     def test_returns_public_node_pointer_detail_logged_in(self):
         res = self.app.get(self.public_url, auth=self.user.auth)
         res_json = res.json['data']
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
-        expected_path = node_url_for(self.public_pointer_project._id)
-        actual_path = urlparse(res_json['relationships']['target_node']['links']['related']['href']).path
-        assert_equal(expected_path, actual_path)
+        embedded = res_json['embeds']['target_node']['data']['id']
+        assert_equal(embedded, self.public_pointer_project._id)
 
     def test_returns_private_node_pointer_detail_logged_out(self):
         res = self.app.get(self.private_url, expect_errors=True)
@@ -65,9 +63,8 @@ class TestNodeLinkDetail(ApiTestCase):
         res_json = res.json['data']
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
-        expected_path = node_url_for(self.pointer_project._id)
-        actual_path = urlparse(res_json['relationships']['target_node']['links']['related']['href']).path
-        assert_equal(expected_path, actual_path)
+        embedded = res_json['embeds']['target_node']['data']['id']
+        assert_equal(embedded, self.pointer_project._id)
 
     def test_returns_private_node_pointer_detail_logged_in_non_contributor(self):
         res = self.app.get(self.private_url, auth=self.user_two.auth, expect_errors=True)
@@ -114,7 +111,7 @@ class TestDeleteNodeLink(ApiTestCase):
     def test_cannot_delete_if_registration(self):
         registration = RegistrationFactory(project=self.public_project)
 
-        url = '/{}nodes/{}/node_links/'.format(
+        url = '/{}registrations/{}/node_links/'.format(
             API_BASE,
             registration._id,
         )

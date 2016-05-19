@@ -112,11 +112,11 @@ class TestNodeLicenses(OsfTestCase):
         with assert_raises(NoResultsFound):
             NodeLicense.find_one(
                 Q('id', 'eq', 'LGPL3')
-            )            
+            )
         ensure_licenses()
         found = NodeLicense.find_one(
             Q('id', 'eq', 'LGPL3')
-        )            
+        )
         assert_is_not_none(found)
 
     def test_ensure_licenses_updates_existing(self):
@@ -145,7 +145,7 @@ class TestNodeLicenses(OsfTestCase):
         )
         NEW_YEAR = '2014'
         COPYLEFT_HOLDERS = ['Richard Stallman']
-        self.node.set_node_license('GPL3', NEW_YEAR, COPYLEFT_HOLDERS, auth=Auth(self.user))
+        self.node.set_node_license('GPL3', NEW_YEAR, COPYLEFT_HOLDERS, auth=Auth(self.user), save=True)
         assert_equal(self.node.node_license.id, GPL3.id)
         assert_equal(self.node.node_license.name, GPL3.name)
         assert_equal(self.node.node_license.copyright_holders, COPYLEFT_HOLDERS)

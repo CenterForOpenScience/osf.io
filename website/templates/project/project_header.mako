@@ -29,10 +29,17 @@
                         % endif
 
                     % endif
-                        <li><a href="${node['url']}"  class="project-title"> ${ node['title'] }  </a></li>
-
+                        <li>
+                            <a href="${node['url']}"  class="project-title"> 
+                                ${ node['title'] }
+                            </a>
+                        </li>
                     % if not node['is_retracted']:
-                        <li id="projectNavFiles"><a href="${node['url']}files/">Files</a></li>
+                        <li id="projectNavFiles">
+                            <a href="${node['url']}files/">
+                                Files
+                            </a>
+                        </li>
                         <!-- Add-on tabs -->
                         % for addon in addons_enabled:
 
@@ -53,11 +60,14 @@
                             <li><a href="${node['url']}analytics/">Analytics</a></li>
                         % endif
 
-                        % if not node['is_registration']:
+                        % if not node['is_registration'] and not node['anonymous']:
                             <li><a href="${node['url']}registrations/">Registrations</a></li>
                         % endif
 
-                        <li><a href="${node['url']}forks/">Forks</a></li>
+                        % if not node['anonymous']:
+                            <li><a href="${node['url']}forks/">Forks</a></li>
+                        %endif
+                        
                         % if user['is_contributor']:
                             <li><a href="${node['url']}contributors/">Contributors</a></li>
                         % endif
@@ -65,7 +75,16 @@
                         % if user['has_read_permissions'] and not node['is_registration'] or (node['is_registration'] and 'admin' in user['permissions']):
                             <li><a href="${node['url']}settings/">Settings</a></li>
                         % endif
-
+                    % endif
+                    % if user['can_comment'] or node['has_comments']:
+                        <li id="commentsLink">
+                            <a href="" class="visible-xs cp-handle" data-bind="click:removeCount" data-toggle="collapse" data-target="#projectSubnav .navbar-collapse">
+                                Comments
+                                <span data-bind="if: unreadComments() !== 0">
+                                    <span data-bind="text: displayCount" class="badge"></span>
+                                </span>
+                           </a>
+                       </li>
                     % endif
 
                     </ul>
@@ -74,47 +93,57 @@
         </nav>
     </header>
 
-
     <style type="text/css">
-    .watermarked {
-        padding-top: 55px;
-    }
+        .watermarked {
+            padding-top: 55px;
+        }
     </style>
-
 
     % if node['is_registration']:  ## Begin registration undismissable labels
 
         % if not node['is_retracted']:
-           % if not node['is_pending_registration']:
-              <div class="alert alert-info">This ${node['node_type']} is a registration of <a class="link-solid" href="${node['registered_from_url']}">this ${node['node_type']}</a>; the content of the ${node['node_type']} has been frozen and cannot be edited.</div>
+            % if not node['is_pending_registration']:
+                <div class="alert alert-info">This ${node['node_type']} is a registration of <a class="link-solid" href="${node['registered_from_url']}">this ${node['node_type']}</a>; the content of the ${node['node_type']} has been frozen and cannot be edited.</div>
 
-           % else:
-              <div class="alert alert-info">This is a pending registration of <a class="link-solid" href="${node['registered_from_url']}">this ${node['node_type']}</a>, awaiting approval from project administrators. This registration will be final when all project administrators approve the registration or 48 hours pass, whichever comes first.</div>
-           % endif
+            % else:
+                <div class="alert alert-info">
+                    <div>This is a pending registration of <a class="link-solid" href="${node['registered_from_url']}">this ${node['node_type']}</a>, awaiting approval from project administrators. This registration will be final when all project administrators approve the registration or 48 hours pass, whichever comes first.</div>
 
-           <style type="text/css">
-              .watermarked {
-                  background-image:url('/static/img/read-only.png');
-                  background-repeat:repeat;
-              }
-           </style>
+                    % if 'admin' in user['permissions']: 
+                        <div>
+                            <br>
+                            <button type="button" id="registrationCancelButton" class="btn btn-danger" data-toggle="modal" data-target="#registrationCancel">
+                                Cancel Registration
+                            </button>
+                        </div>
+                        <%include file="modal_confirm_cancel_registration.mako"/>
+                    % endif
+                </div>
+            % endif
+
+            <style type="text/css">
+                .watermarked {
+                    background-image:url('/static/img/read-only.png');
+                    background-repeat:repeat;
+                }
+            </style>
 
         % endif
 
         % if node['is_pending_retraction']:
-            <div class="alert alert-info">This ${node['node_type']} is currently pending entering into a retracted state.</div>
+            <div class="alert alert-info">This ${node['node_type']} is currently pending entering into a withdrawn state.</div>
         % endif
 
-        % if  node['is_retracted']:
-            <div class="alert alert-danger">This ${node['node_type']} is a retracted registration of <a class="link-solid" href="${node['registered_from_url']}">this ${node['node_type']}</a>; the content of the ${node['node_type']} has been taken down for the reason(s) stated below.</div>
+        % if node['is_retracted']:
+            <div class="alert alert-danger">This ${node['node_type']} is a withdrawn registration of <a class="link-solid" href="${node['registered_from_url']}">this ${node['node_type']}</a>; the content of the ${node['node_type']} has been taken down for the reason(s) stated below.</div>
         % endif
 
-        % if  node['is_pending_embargo']:
+        % if node['is_pending_embargo']:
             <div class="alert alert-info">This ${node['node_type']} is currently pending registration, awaiting approval from project administrators. This registration will be final and enter the embargo period when all project administrators approve the registration or 48 hours pass, whichever comes first. The embargo will keep the registration private until the embargo period ends.</div>
         % endif
 
-        % if  node['embargo_end_date']:
-            <div class="alert alert-danger">This ${node['node_type']} is currently embargoed. It will remain private until its embargo date, ${ node['embargo_end_date'] }, passes or an admin manually makes it public.</div>
+        % if node['is_embargoed']:
+            <div class="alert alert-danger">This ${node['node_type']} is currently embargoed. It will remain private until its embargo date, ${ node['embargo_end_date'] }.</div>
         % endif
 
     % endif  ## End registration undismissable labels

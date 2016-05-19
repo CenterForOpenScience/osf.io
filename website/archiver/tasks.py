@@ -1,11 +1,13 @@
 import requests
 import json
+import httplib as http
 
 import celery
 from celery.utils.log import get_task_logger
+from modularodm import Q
 
-from framework.tasks import app as celery_app
-from framework.tasks.utils import logged
+from framework.celery_tasks import app as celery_app
+from framework.celery_tasks.utils import logged
 from framework.exceptions import HTTPError
 
 from website.archiver import (
@@ -13,6 +15,7 @@ from website.archiver import (
     ARCHIVER_FAILURE,
     ARCHIVER_SIZE_EXCEEDED,
     ARCHIVER_NETWORK_ERROR,
+    ARCHIVER_FILE_NOT_FOUND,
     ARCHIVER_UNCAUGHT_ERROR,
     NO_ARCHIVE_LIMIT,
     AggregateStatResult,
@@ -22,6 +25,7 @@ from website.archiver.model import ArchiveJob
 from website.archiver import signals as archiver_signals
 
 from website.project import signals as project_signals
+from website.project.model import Node, DraftRegistration
 from website import settings
 from website.app import init_addons, do_set_backends
 
@@ -51,6 +55,17 @@ class ArchiverStateError(Exception):
         self.info = info
 
 
+class ArchivedFileNotFound(Exception):
+
+    def __init__(self, registration, missing_files, *args, **kwargs):
+        super(ArchivedFileNotFound, self).__init__(*args, **kwargs)
+
+        self.draft_registration = DraftRegistration.find_one(
+            Q('registered_node', 'eq', registration)
+        )
+        self.missing_files = missing_files
+
+
 class ArchiverTask(celery.Task):
     abstract = True
     max_retries = 0
@@ -74,10 +89,20 @@ class ArchiverTask(celery.Task):
             errors = exc.result
         elif isinstance(exc, HTTPError):
             dst.archive_status = ARCHIVER_NETWORK_ERROR
-            errors = dst.archive_job.target_info()
+            errors = [
+                each for each in
+                dst.archive_job.target_info()
+                if each is not None
+            ]
+        elif isinstance(exc, ArchivedFileNotFound):
+            dst.archive_status = ARCHIVER_FILE_NOT_FOUND
+            errors = {
+                'missing_files': exc.missing_files,
+                'draft': exc.draft_registration
+            }
         else:
             dst.archive_status = ARCHIVER_UNCAUGHT_ERROR
-            errors = [einfo]
+            errors = [einfo] if einfo else []
         dst.save()
         archiver_signals.archive_fail.send(dst, errors=errors)
 
@@ -135,7 +160,9 @@ def make_copy_request(job_pk, url, data):
     src, dst, user = job.info()
     provider = data['source']['provider']
     logger.info("Sending copy request for addon: {0} on node: {1}".format(provider, dst._id))
-    requests.post(url, data=json.dumps(data))
+    res = requests.post(url, data=json.dumps(data))
+    if res.status_code not in (http.OK, http.CREATED, http.ACCEPTED):
+        raise HTTPError(res.status_code)
 
 
 def make_waterbutler_payload(src, dst, addon_short_name, rename, cookie, revision=None):
@@ -266,3 +293,38 @@ def archive(job_pk):
             )
         ]
     )
+
+@celery_app.task(base=ArchiverTask, name="archiver.archive_success")
+@logged('archive_success')
+def archive_success(dst_pk, job_pk):
+    """Archiver's final callback. For the time being the use case for this task
+    is to rewrite references to files selected in a registration schema (the Prereg
+    Challenge being the first to expose this feature). The created references point
+    to files on the registered_from Node (needed for previewing schema data), and
+    must be re-associated with the corresponding files in the newly created registration.
+
+    :param str dst_pk: primary key of registration Node
+
+    note:: At first glance this task makes redundant calls to utils.get_file_map (which
+    returns a generator yielding  (<sha256>, <file_metadata>) pairs) on the dst Node. Two
+    notes about utils.get_file_map: 1) this function memoizes previous results to reduce
+    overhead and 2) this function returns a generator that lazily fetches the file metadata
+    of child Nodes (it is possible for a selected file to belong to a child Node) using a
+    non-recursive DFS. Combined this allows for a relatively effient implementation with
+    seemingly redundant calls.
+    """
+    create_app_context()
+    dst = Node.load(dst_pk)
+    # The filePicker extension addded with the Prereg Challenge registration schema
+    # allows users to select files in OSFStorage as their response to some schema
+    # questions. These files are references to files on the unregistered Node, and
+    # consequently we must migrate those file paths after archiver has run. Using
+    # sha256 hashes is a convenient way to identify files post-archival.
+    for schema in dst.registered_schema:
+        if schema.has_files:
+            utils.migrate_file_metadata(dst, schema)
+    job = ArchiveJob.load(job_pk)
+    if not job.sent:
+        job.sent = True
+        job.save()
+        dst.sanction.ask(dst.get_active_contributors_recursive(unique_users=True))

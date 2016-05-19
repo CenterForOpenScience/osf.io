@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from rest_framework.exceptions import NotFound
@@ -17,6 +16,29 @@ from api.base.exceptions import Gone
 TRUTHY = set(('t', 'T', 'true', 'True', 'TRUE', '1', 1, True))
 FALSY = set(('f', 'F', 'false', 'False', 'FALSE', '0', 0, 0.0, False))
 
+UPDATE_METHODS = ['PUT', 'PATCH']
+
+def decompose_field(field):
+    from api.base.serializers import (
+        HideIfWithdrawal, HideIfRegistration,
+        HideIfDisabled, AllowMissing
+    )
+    WRAPPER_FIELDS = (HideIfWithdrawal, HideIfRegistration, HideIfDisabled, AllowMissing)
+
+    while isinstance(field, WRAPPER_FIELDS):
+        try:
+            field = getattr(field, 'field')
+        except AttributeError:
+            break
+    return field
+
+def is_bulk_request(request):
+    """
+    Returns True if bulk request.  Can be called as early as the parser.
+    """
+    content_type = request.content_type
+    return 'ext=bulk' in content_type
+
 def is_truthy(value):
     return value in TRUTHY
 
@@ -28,10 +50,11 @@ def get_user_auth(request):
     authenticated user attached to it.
     """
     user = request.user
+    private_key = request.query_params.get('view_only', None)
     if user.is_anonymous():
-        auth = Auth(None)
+        auth = Auth(None, private_key=private_key)
     else:
-        auth = Auth(user)
+        auth = Auth(user, private_key=private_key)
     return auth
 
 
@@ -43,38 +66,32 @@ def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
     return url
 
 
-def get_object_or_error(model_cls, query_or_pk, display_name=None):
-    display_name = display_name or None
-
+def get_object_or_error(model_cls, query_or_pk, display_name=None, **kwargs):
     if isinstance(query_or_pk, basestring):
-        query = Q('_id', 'eq', query_or_pk)
+        obj = model_cls.load(query_or_pk)
+        if obj is None:
+            raise NotFound
     else:
-        query = query_or_pk
+        try:
+            obj = model_cls.find_one(query_or_pk, **kwargs)
+        except NoResultsFound:
+            raise NotFound
 
-    try:
-        obj = model_cls.find_one(query)
-        if getattr(obj, 'is_deleted', False) is True:
-            if display_name is None:
-                raise Gone
-            else:
-                raise Gone(detail='The requested {name} is no longer available.'.format(name=display_name))
-        # For objects that have been disabled (is_active is False), return a 410.
-        # The User model is an exception because we still want to allow
-        # users who are unconfirmed or unregistered, but not users who have been
-        # disabled.
-        if model_cls is User:
-            if obj.is_disabled:
-                raise Gone(detail='The requested user is no longer available.')
+    # For objects that have been disabled (is_active is False), return a 410.
+    # The User model is an exception because we still want to allow
+    # users who are unconfirmed or unregistered, but not users who have been
+    # disabled.
+    if model_cls is User and obj.is_disabled:
+        raise Gone(detail='The requested user is no longer available.',
+                   meta={'full_name': obj.fullname, 'family_name': obj.family_name, 'given_name': obj.given_name,
+                         'middle_names': obj.middle_names, 'profile_image': obj.profile_image_url()})
+    elif model_cls is not User and not getattr(obj, 'is_active', True) or getattr(obj, 'is_deleted', False):
+        if display_name is None:
+            raise Gone
         else:
-            if not getattr(obj, 'is_active', True) or getattr(obj, 'is_deleted', False):
-                if display_name is None:
-                    raise Gone
-                else:
-                    raise Gone(detail='The requested {name} is no longer available.'.format(name=display_name))
-        return obj
+            raise Gone(detail='The requested {name} is no longer available.'.format(name=display_name))
+    return obj
 
-    except NoResultsFound:
-        raise NotFound
 
 def waterbutler_url_for(request_type, provider, path, node_id, token, obj_args=None, **query):
     """Reverse URL lookup for WaterButler routes
@@ -103,10 +120,20 @@ def waterbutler_url_for(request_type, provider, path, node_id, token, obj_args=N
     url.args.update(query)
     return url.url
 
-def add_dev_only_items(items, dev_only_items):
-    """Add some items to a dictionary if in ``DEV_MODE``.
-    """
-    items = items.copy()
-    if website_settings.DEV_MODE:
-        items.update(dev_only_items)
-    return items
+def default_node_list_query():
+    return (
+        Q('is_deleted', 'ne', True) &
+        Q('is_collection', 'ne', True) &
+        Q('is_registration', 'ne', True)
+    )
+
+
+def default_node_permission_query(user):
+    permission_query = Q('is_public', 'eq', True)
+    if not user.is_anonymous():
+        permission_query = (permission_query | Q('contributors', 'eq', user._id))
+
+    return permission_query
+
+def extend_querystring_params(url, params):
+    return furl.furl(url).add(args=params).url

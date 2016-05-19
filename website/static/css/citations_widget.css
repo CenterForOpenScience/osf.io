@@ -27,3 +27,11 @@ Override treebeard styles
 .citation-widget > ul > li:last-child {
     margin-bottom:0px;
 }
+
+.csl-left-margin {
+    display: inline;
+}
+
+.csl-right-inline {
+    display: inline;
+}

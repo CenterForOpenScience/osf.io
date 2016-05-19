@@ -70,11 +70,16 @@
         currentUser: {
             ## TODO: Abstract me
             username: ${ user['username'] | sjson, n },
-            id: ${ user_id | sjson, n },
-            urls: {api: userApiUrl},
+            urls: {
+                api: userApiUrl,
+                profile: ${user_url | sjson, n}
+            },
             isContributor: ${ user.get('is_contributor', False) | sjson, n },
             fullname: ${ user['fullname'] | sjson, n },
-            isAdmin: ${ user.get('is_admin', False) | sjson, n}
+            isAdmin: ${ user.get('is_admin', False) | sjson, n},
+            canComment: ${ user['can_comment'] | sjson, n},
+            canEdit: ${ user['can_edit'] | sjson, n},
+            gravatarUrl: ${user_gravatar | sjson, n}
         },
         node: {
             ## TODO: Abstract me
@@ -87,14 +92,19 @@
                 update: ${ node['update_url'] | sjson, n }
             },
             isPublic: ${ node.get('is_public', False) | sjson, n },
+            isRegistration: ${ node.get('is_registration', False) | sjson, n },
             isRetracted: ${ node.get('is_retracted', False) | sjson, n },
             piwikSiteID: ${ node.get('piwik_site_id', None) | sjson, n },
             piwikHost: ${ piwik_host | sjson, n },
             anonymous: ${ node['anonymous'] | sjson, n },
-            category: ${ node['category_short'] | sjson, n },
+            category: ${node['category_short'] | sjson, n },
             parentTitle: ${ parent_title | sjson, n },
-            parentRegisterUrl: ${ parent_registration_url | sjson, n },
-            parentExists: ${'true' if parent_exists else 'false'}
+            parentRegisterUrl: ${parent_registration_url | sjson, n },
+            parentExists: ${ parent_exists | sjson, n},
+            registrationMetaSchemas: ${ node['registered_schemas'] | sjson, n },
+            registrationMetaData: ${ node['registered_meta'] | sjson, n },
+            institution: ${ node['institution']['name'] | sjson, n },
+            contributors: ${ node['contributors'] | sjson, n }
         }
     });
 
@@ -110,6 +120,6 @@
     src="/static/vendor/bower_components/MathJax/unpacked/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
 </script>
 
-## NOTE: window.contextVars must be set before loading this script
+
 <script src=${"/static/public/js/project-base-page.js" | webpack_asset}> </script>
 </%def>

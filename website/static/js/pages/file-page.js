@@ -3,6 +3,7 @@ var m = require('mithril');
 var $osf = require('js/osfHelpers');
 var FileViewPage = require('js/filepage');
 var waterbutler = require('js/waterbutler');
+var Raven = require('raven-js');
 
 require('jquery-tagsinput');
 
@@ -22,18 +23,33 @@ $(function() {
             request.fail(function (xhr, textStatus, error) {
                 $osf.growl('Error', 'Could not add tag.');
                 Raven.captureMessage('Failed to add tag', {
-                    tag: tag, url: url, textStatus: textStatus, error: error
+                    extra: { tag: tag, url: url, textStatus: textStatus, error: error }
                 });
             });
         },
         onRemoveTag: function (tag) {
+            // Don't try to delete a blank tag (would result in a server error)
+            if (!tag) {
+                return false;
+            }
             var request = $osf.ajaxJSON('DELETE', tagUrl, {'data': {'tag': tag}});
             request.fail(function (xhr, textStatus, error) {
-                $osf.growl('Error', 'Could not remove tag.');
-                Raven.captureMessage('Failed to remove tag', {
-                    tag: tag, url: url, textStatus: textStatus, error: error
-                });
+                // Suppress "tag not found" errors, as the end result is what the user wanted (tag is gone)- eg could be because two people were working at same time
+                if (xhr.status !== 409) {
+                    $osf.growl('Error', 'Could not remove tag.');
+                    Raven.captureMessage('Failed to remove tag', {
+                        extra: {tag: tag, url: tagUrl, textStatus: textStatus, error: error}
+                    });
+                }
             });
         }
     });
+    $('#fileTags_tag').attr('maxlength', '128');
+    if (!window.contextVars.currentUser.canEdit || window.contextVars.node.isRegistration) {
+        $('a[title="Removing tag"]').remove();
+        $('span.tag span').each(function(idx, elm) {
+            $(elm).text($(elm).text().replace(/\s*$/, ''));
+        });
+    }
+
 });

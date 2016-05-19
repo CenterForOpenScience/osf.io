@@ -1,13 +1,145 @@
+import weakref
 from django.http import JsonResponse
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework import generics
+# from rest_framework.serializers
+from rest_framework.mixins import ListModelMixin
 
 from api.users.serializers import UserSerializer
-from .utils import absolute_reverse
+
+from website import settings
+from django.conf import settings as django_settings
+from .utils import absolute_reverse, is_truthy
+
+from .requests import EmbeddedRequest
+
+
+CACHE = weakref.WeakKeyDictionary()
+
+
+class JSONAPIBaseView(generics.GenericAPIView):
+
+    def __init__(self, **kwargs):
+        assert getattr(self, 'view_name', None), 'Must specify view_name on view.'
+        assert getattr(self, 'view_category', None), 'Must specify view_category on view.'
+        self.view_fqn = ':'.join([self.view_category, self.view_name])
+        super(JSONAPIBaseView, self).__init__(**kwargs)
+
+    def _get_embed_partial(self, field_name, field):
+        """Create a partial function to fetch the values of an embedded field. A basic
+        example is to include a Node's children in a single response.
+
+        :param str field_name: Name of field of the view's serializer_class to load
+        results for
+        :return function object -> dict:
+        """
+        if getattr(field, 'field', None):
+            field = field.field
+        def partial(item):
+            # resolve must be implemented on the field
+            v, view_args, view_kwargs = field.resolve(item, field_name)
+            if not v:
+                return None
+            if isinstance(self.request._request, EmbeddedRequest):
+                request = self.request._request
+            else:
+                request = EmbeddedRequest(self.request)
+
+            view_kwargs.update({
+                'request': request,
+                'is_embedded': True
+            })
+
+            # Setup a view ourselves to avoid all the junk DRF throws in
+            # v is a function that hides everything v.cls is the actual view class
+            view = v.cls()
+            view.args = view_args
+            view.kwargs = view_kwargs
+            view.request = request
+            view.request.parser_context['kwargs'] = view_kwargs
+            view.format_kwarg = view.get_format_suffix(**view_kwargs)
+
+            _cache_key = (v.cls, field_name, view.get_serializer_class(), item)
+            if _cache_key in CACHE.setdefault(self.request._request, {}):
+                # We already have the result for this embed, return it
+                return CACHE[self.request._request][_cache_key]
+
+            # Cache serializers. to_representation of a serializer should NOT augment it's fields so resetting the context
+            # should be sufficient for reuse
+            if not view.get_serializer_class() in CACHE.setdefault(self.request._request, {}):
+                CACHE[self.request._request][view.get_serializer_class()] = view.get_serializer_class()(many=isinstance(view, ListModelMixin))
+            ser = CACHE[self.request._request][view.get_serializer_class()]
+
+            try:
+                ser._context = view.get_serializer_context()
+
+                if not isinstance(view, ListModelMixin):
+                    ret = ser.to_representation(view.get_object())
+                else:
+                    queryset = view.filter_queryset(view.get_queryset())
+                    page = view.paginate_queryset(queryset)
+
+                    ret = ser.to_representation(page or queryset)
+
+                    if page is not None:
+                        request.parser_context['view'] = view
+                        request.parser_context['kwargs'].pop('request')
+                        view.paginator.request = request
+                        ret = view.paginator.get_paginated_response(ret).data
+            except Exception as e:
+                ret = view.handle_exception(e).data
+
+            # Allow request to be gc'd
+            ser._context = None
+
+            # Cache our final result
+            CACHE[self.request._request][_cache_key] = ret
+
+            return ret
+
+        return partial
+
+    def get_serializer_context(self):
+        """Inject request into the serializer context. Additionally, inject partial functions
+        (request, object -> embed items) if the query string contains embeds.  Allows
+         multiple levels of nesting.
+        """
+        context = super(JSONAPIBaseView, self).get_serializer_context()
+        if self.kwargs.get('is_embedded'):
+            embeds = []
+        else:
+            embeds = self.request.query_params.getlist('embed')
+
+        fields_check = self.serializer_class._declared_fields.copy()
+
+        for field in fields_check:
+            if getattr(fields_check[field], 'field', None):
+                fields_check[field] = fields_check[field].field
+
+        for field in fields_check:
+            if getattr(fields_check[field], 'always_embed', False) and field not in embeds:
+                embeds.append(unicode(field))
+            if getattr(fields_check[field], 'never_embed', False) and field in embeds:
+                embeds.remove(field)
+        embeds_partials = {}
+        for embed in embeds:
+            embed_field = fields_check.get(embed)
+            embeds_partials[embed] = self._get_embed_partial(embed, embed_field)
+
+        context.update({
+            'enable_esi': (
+                is_truthy(self.request.query_params.get('esi', django_settings.ENABLE_ESI)) and
+                self.request.accepted_renderer.media_type in django_settings.ESI_MEDIA_TYPES
+            ),
+            'embed': embeds_partials,
+            'envelope': self.request.query_params.get('envelope', 'data'),
+        })
+        return context
 
 @api_view(('GET',))
 def root(request, format=None):
-    """Welcome to the V2 Open Science Framework API. With this API you can access users, projects, components, and files
+    """Welcome to the V2 Open Science Framework API. With this API you can access users, projects, components, logs, and files
     from the [Open Science Framework](https://osf.io/). The Open Science Framework (OSF) is a free, open-source service
     maintained by the [Center for Open Science](http://cos.io/).
 
@@ -67,6 +199,42 @@ def root(request, format=None):
     Boolean fields should be queried with `true` or `false`.
 
         /nodes/?filter[registered]=true
+
+    You can request multiple resources by filtering on id and placing comma-separated values in your query parameter.
+
+        /nodes/?filter[id]=aegu6,me23a
+
+    You can filter with case-sensitivity or case-insensitivity by using `contains` and `icontains`, respectively.
+
+        /nodes/?filter[tags][icontains]=help
+
+    ###Embedding
+
+    All related resources that appear in the `relationships` attribute are embeddable, meaning that
+    by adding a query parameter like:
+
+        /nodes/?embed=contributors
+
+    it is possible to fetch a Node and its contributors in a single request. The embedded results will have the following
+    structure:
+
+        {relationship_name}: {full_embedded_response}
+
+    Where `full_embedded_response` means the full API response resulting from a GET request to the `href` link of the
+    corresponding related resource. This means if there are no errors in processing the embedded request the response will have
+    the format:
+
+        data: {response}
+
+    And if there are errors processing the embedded request the response will have the format:
+
+        errors: {errors}
+
+    Multiple embeds can be achieved with multiple query parameters separated by "&".
+
+        /nodes/?embed=contributors&embed=comments
+
+    Some endpoints are automatically embedded.
 
     ###Pagination
 
@@ -138,7 +306,7 @@ def root(request, format=None):
 
     ###Entities
 
-    An entity is a single resource that has been retreived from the API, usually from an endpoint with the entity's id
+    An entity is a single resource that has been retrieved from the API, usually from an endpoint with the entity's id
     as the final path part.  A successful response from an entity request will be a JSON object with a top level `data`
     key pointing to a sub-object with the following members:
 
@@ -174,6 +342,10 @@ def root(request, format=None):
 
     If there are no related entities, `href` will be null.
 
+    + `embeds`
+
+    Please see `Embedding` documentation under `Requests`.
+
     + `links`
 
     Links are urls to alternative representations of the entity or actions that may be performed on the entity.  Most
@@ -204,18 +376,44 @@ def root(request, format=None):
     When a request fails for whatever reason, the OSF API will return an appropriate HTTP error code and include a
     descriptive error in the body of the response.  The response body will be an object with a key, `errors`, pointing
     to an array of error objects.  Generally, these error objects will consist of a `detail` key with a detailed error
-    message, but may include additional information in accordance with the [JSON-API error
-    spec](http://jsonapi.org/format/1.0/#error-objects).
+    message and a `source` object that may contain a field `pointer` that is a [JSON
+    Pointer](https://tools.ietf.org/html/rfc6901) to the error-causing attribute. The `error` objects may include
+    additional information in accordance with the [JSON-API error spec](http://jsonapi.org/format/1.0/#error-objects).
+
+    ####Example: Error response from an incorrect create node request
+
+        {
+          "errors": [
+            {
+              "source": {
+                "pointer": "/data/attributes/category"
+              },
+              "detail": "This field is required."
+            },
+            {
+              "source": {
+                "pointer": "/data/type"
+              },
+              "detail": "This field may not be null."
+            },
+            {
+              "source": {
+                "pointer": "/data/attributes/title"
+              },
+              "detail": "This field is required."
+            }
+          ]
+        }
 
     ##OSF Enum Fields
 
     Some entities in the OSF API have fields that only take a restricted set of values.  Those fields are listed here
-    for reference.  Fuller descriptions are available on the relevent entity pages.
+    for reference.  Fuller descriptions are available on the relevant entity pages.
 
     ###OSF Node Categories
 
         value                 description
-        ------------------------------------------
+        ==========================================
         project               Project
         hypothesis            Hypothesis
         methods and measures  Methods and Measures
@@ -229,7 +427,7 @@ def root(request, format=None):
     ###OSF Node Permission keys
 
         value        description
-        ------------------------------------------
+        ==========================================
         read         Read-only access
         write        Write access (make changes, cannot delete)
         admin        Admin access (full write, create, delete, contributor add)
@@ -239,7 +437,7 @@ def root(request, format=None):
     Valid storage providers are:
 
         value        description
-        ------------------------------------------
+        ==========================================
         box          Box.com
         cloudfiles   Rackspace Cloud Files
         dataverse    Dataverse
@@ -257,7 +455,7 @@ def root(request, format=None):
     else:
         current_user = None
 
-    return Response({
+    return_val = {
         'meta': {
             'message': 'Welcome to the OSF API.',
             'version': request.version,
@@ -267,7 +465,13 @@ def root(request, format=None):
             'nodes': absolute_reverse('nodes:node-list'),
             'users': absolute_reverse('users:user-list'),
         }
-    })
+    }
+    if settings.DEV_MODE:
+        return_val["links"]["collections"] = absolute_reverse('collections:collection-list')
+        return_val["links"]["registrations"] = absolute_reverse('registrations:registration-list')
+
+    return Response(return_val)
+
 
 def error_404(request, format=None, *args, **kwargs):
     return JsonResponse(

@@ -9,7 +9,7 @@ from api.base.settings.defaults import API_BASE
 from tests.base import ApiTestCase
 from tests.factories import (
     ProjectFactory,
-    AuthUserFactory
+    AuthUserFactory,
 )
 from tests.utils import assert_logs, assert_not_logs
 

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import json
 import httplib
 import logging
 from datetime import datetime
@@ -8,6 +7,7 @@ from datetime import datetime
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
 
+from framework.auth import get_or_create_user
 from framework.exceptions import HTTPError
 from framework.flask import redirect
 from framework.transactions.context import TokuTransaction
@@ -74,7 +74,7 @@ def add_poster_by_email(conference, message):
     created = []
 
     with TokuTransaction():
-        user, user_created = utils.get_or_create_user(
+        user, user_created = get_or_create_user(
             message.sender_display,
             message.sender_email,
             message.is_spam,
@@ -100,6 +100,10 @@ def add_poster_by_email(conference, message):
 
         utils.provision_node(conference, message, node, user)
         utils.record_message(message, created)
+    # Prevent circular import error
+    from framework.auth import signals as auth_signals
+    if user_created:
+        auth_signals.user_confirmed.send(user)
 
     utils.upload_attachments(user, node, message.attachments)
 
@@ -168,7 +172,7 @@ def _render_conference_node(node, idx, conf):
         'category': conf.field_names['submission1'] if conf.field_names['submission1'] in node.system_tags else conf.field_names['submission2'],
         'download': download_count,
         'downloadUrl': download_url,
-        'dateCreated': str(node.date_created),
+        'dateCreated': node.date_created.isoformat(),
         'confName': conf.name,
         'confUrl': web_url_for('conference_results', meeting=conf.endpoint),
         'tags': ' '.join(tags)
@@ -211,33 +215,49 @@ def conference_results(meeting):
     data = conference_data(meeting)
 
     return {
-        'data': json.dumps(data),
+        'data': data,
         'label': meeting,
         'meeting': conf.to_storage(),
         # Needed in order to use base.mako namespace
         'settings': settings,
     }
 
+def conference_submissions(**kwargs):
+    """Return data for all OSF4M submissions.
 
-def conference_view(**kwargs):
-    meetings = []
+    The total number of submissions for each meeting is calculated and cached
+    in the Conference.num_submissions field.
+    """
     submissions = []
+    #  TODO: Revisit this loop, there has to be a way to optimize it
     for conf in Conference.find():
         # For efficiency, we filter by tag first, then node
         # instead of doing a single Node query
         projects = set()
-        for tag in Tag.find(Q('_id', 'iexact', conf.endpoint)):
-            for node in tag.node__tagged:
-                if not node:
-                    continue
-                if not node.is_public or node.is_deleted:
-                    continue
-                projects.add(node)
+
+        tags = Tag.find(Q('lower', 'eq', conf.endpoint.lower())).get_keys()
+        nodes = Node.find(
+            Q('tags', 'in', tags) &
+            Q('is_public', 'eq', True) &
+            Q('is_deleted', 'ne', True)
+        )
+        projects.update(list(nodes))
 
         for idx, node in enumerate(projects):
             submissions.append(_render_conference_node(node, idx, conf))
         num_submissions = len(projects)
+        # Cache the number of submissions
+        conf.num_submissions = num_submissions
+        conf.save()
         if num_submissions < settings.CONFERENCE_MIN_COUNT:
+            continue
+    submissions.sort(key=lambda submission: submission['dateCreated'], reverse=True)
+    return {'submissions': submissions}
+
+def conference_view(**kwargs):
+    meetings = []
+    for conf in Conference.find():
+        if conf.num_submissions < settings.CONFERENCE_MIN_COUNT:
             continue
         meetings.append({
             'name': conf.name,
@@ -245,10 +265,8 @@ def conference_view(**kwargs):
             'end_date': conf.end_date.strftime("%b %d, %Y") if conf.end_date else None,
             'start_date': conf.start_date.strftime("%b %d, %Y") if conf.start_date else None,
             'url': web_url_for('conference_results', meeting=conf.endpoint),
-            'count': num_submissions,
+            'count': conf.num_submissions,
         })
 
-    submissions.sort(key=lambda submission: submission['dateCreated'], reverse=True)
     meetings.sort(key=lambda meeting: meeting['count'], reverse=True)
-
-    return {'meetings': meetings, 'submissions': submissions}
+    return {'meetings': meetings}

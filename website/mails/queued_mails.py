@@ -26,6 +26,15 @@ class QueuedMail(StoredObject):
     data = fields.DictionaryField()
     sent_at = fields.DateTimeField(index=True)
 
+    def __repr__(self):
+        if self.sent_at is not None:
+            return '<QueuedMail {} of type {} sent to {} at {}>'.format(
+                self._id, self.email_type, self.to_addr, self.sent_at
+            )
+        return '<QueuedMail {} of type {} to be sent to {} on {}>'.format(
+            self._id, self.email_type, self.to_addr, self.send_at
+        )
+
     def send_mail(self):
         """
         Grabs the data from this email, checks for user subscription to help mails,
@@ -38,7 +47,8 @@ class QueuedMail(StoredObject):
         presend = mail_struct['presend'](self)
         mail = Mail(
             mail_struct['template'],
-            subject=mail_struct['subject']
+            subject=mail_struct['subject'],
+            categories=mail_struct.get('categories', None)
         )
         self.data['osf_url'] = settings.DOMAIN
         if presend and self.user.is_active and self.user.osf_mailing_lists.get(settings.OSF_HELP_LIST):
@@ -95,32 +105,37 @@ def queue_mail(to_addr, mail, send_at, user, **context):
 #EMAIL_TYPE = {
 #    'template': the mako template used for email_type,
 #    'subject': subject used for the actual email,
-#    'presend': function undes presends that can modify mail.data and decides whether the email should be sent,
-#               by returning a boolean.
+#    'categories': categories to attach to the email using Sendgrid's SMTPAPI.
+#    'presend': predicate function that determines whether an email should be sent. May also
+#               modify mail.data.
 #}
 
 NO_ADDON = {
     'template': 'no_addon',
     'subject': 'Link an add-on to your OSF project',
-    'presend': presends.no_addon
+    'presend': presends.no_addon,
+    'categories': ['engagement', 'engagement-no-addon']
 }
 
 NO_LOGIN = {
     'template': 'no_login',
     'subject': 'What you\'re missing on the OSF',
-    'presend': presends.no_login
+    'presend': presends.no_login,
+    'categories': ['engagement', 'engagement-no-login']
 }
 
 NEW_PUBLIC_PROJECT = {
     'template': 'new_public_project',
     'subject': 'Now, public. Next, impact.',
-    'presend': presends.new_public_project
+    'presend': presends.new_public_project,
+    'categories': ['engagement', 'engagement-new-public-project']
 }
 
 WELCOME_OSF4M = {
     'template': 'welcome_osf4m',
     'subject': 'The benefits of sharing your presentation',
-    'presend': presends.welcome_osf4m
+    'presend': presends.welcome_osf4m,
+    'categories': ['engagement', 'engagement-welcome-osf4m']
 }
 
 NO_ADDON_TYPE = 'no_addon'

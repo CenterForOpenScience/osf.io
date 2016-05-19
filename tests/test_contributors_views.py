@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 
+import time
+import datetime
 from nose.tools import *  # noqa; PEP8 asserts
 
 from tests.factories import ProjectFactory, NodeFactory, AuthUserFactory
-from tests.base import OsfTestCase, fake
+from tests.base import OsfTestCase
 
 from framework.auth.decorators import Auth
 
@@ -20,6 +22,19 @@ class TestContributorUtils(OsfTestCase):
         serialized = utils.serialize_user(self.project.creator, self.project)
         assert_true(serialized['visible'])
         assert_equal(serialized['permission'], 'admin')
+
+    def test_serialize_user_full_does_not_include_emails_by_default(self):
+        serialized = utils.serialize_user(self.project.creator, self.project, full=True)
+        assert_not_in('emails', serialized)
+
+    def test_serialize_user_full_includes_email_if_is_profile(self):
+        serialized = utils.serialize_user(
+            self.project.creator,
+            self.project,
+            full=True,
+            is_profile=True
+        )
+        assert_in('emails', serialized)
 
     def test_serialize_user_admin(self):
         serialized = utils.serialize_user(self.project.creator, self.project, admin=True)

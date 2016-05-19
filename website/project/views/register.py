@@ -1,19 +1,15 @@
 # -*- coding: utf-8 -*-
-import json
 import httplib as http
-from dateutil.parser import parse as parse_date
 import itertools
 
 from flask import request
 from modularodm import Q
-from modularodm.exceptions import NoResultsFound, ValidationValueError
+from modularodm.exceptions import NoResultsFound
 
+from framework import status
 from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 
-from framework.status import push_status_message
-from framework.mongo.utils import to_mongo
-from framework.forms.utils import process_payload, unprocess_payload
 from framework.auth.decorators import must_be_signed
 
 from website.archiver import ARCHIVER_SUCCESS, ARCHIVER_FAILURE
@@ -27,38 +23,40 @@ from website.project.decorators import (
 )
 from website.identifiers.model import Identifier
 from website.identifiers.metadata import datacite_metadata_for_node
-from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.project.utils import serialize_node
 from website.util.permissions import ADMIN
 from website.models import MetaSchema, NodeLog
 from website import language
 from website.project import signals as project_signals
+from website.project.metadata.schemas import _id_to_name
 from website import util
-
+from website.project.metadata.utils import serialize_meta_schema
 from website.archiver.decorators import fail_archive_on_error
 
 from website.identifiers.client import EzidClient
 
 from .node import _view_project
-from .. import clean_template_name
 
+@must_be_valid_project
+@must_be_contributor_or_public
+def node_register_page(auth, node, **kwargs):
+    """Display the registration metadata for a registration.
+
+    :return: serialized Node
+    """
+
+    if node.is_registration:
+        return serialize_node(node, auth)
+    else:
+        status.push_status_message(
+            'You have been redirected to the project\'s registrations page. From here you can initiate a new Draft Registration to complete the registration process',
+            trust=False)
+        return redirect(node.web_url_for('node_registrations', view='draft'))
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
-@must_not_be_registration
-def node_register_page(auth, node, **kwargs):
-
-    ret = {
-        'options': [
-            {
-                'template_name': metaschema['name'],
-                'template_name_clean': clean_template_name(metaschema['name'])
-            }
-            for metaschema in OSF_META_SCHEMAS
-        ]
-    }
-    ret.update(_view_project(node, auth, primary=True))
-    return ret
+def node_registration_retraction_redirect(auth, node, **kwargs):
+    return redirect(node.web_url_for('node_registration_retraction_get', _guid=True))
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
@@ -72,12 +70,12 @@ def node_registration_retraction_get(auth, node, **kwargs):
     if not node.is_registration:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': 'Invalid Request',
-            'message_long': 'Retractions of non-registrations is not permitted.'
+            'message_long': 'Withdrawal of non-registrations is not permitted.'
         })
     if node.is_pending_retraction:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': 'Invalid Request',
-            'message_long': 'This registration is already pending a retraction.'
+            'message_long': 'This registration is already pending withdrawal.'
         })
 
     return serialize_node(node, auth, primary=True)
@@ -93,25 +91,25 @@ def node_registration_retraction_post(auth, node, **kwargs):
     if node.is_pending_retraction:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': 'Invalid Request',
-            'message_long': 'This registration is already pending retraction'
+            'message_long': 'This registration is already pending withdrawal'
         })
     if not node.is_registration:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': 'Invalid Request',
-            'message_long': 'Retractions of non-registrations is not permitted.'
+            'message_long': 'Withdrawal of non-registrations is not permitted.'
         })
 
     if node.root is not node:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': 'Invalid Request',
-            'message_long': 'Retraction of non-parent registrations is not permitted.'
+            'message_long': 'Withdrawal of non-parent registrations is not permitted.'
         })
 
     data = request.get_json()
     try:
         node.retract_registration(auth.user, data.get('justification', None))
         node.save()
-        node.retraction.ask(node.active_contributors())
+        node.retraction.ask(node.get_active_contributors_recursive(unique_users=True))
     except NodeStateError as err:
         raise HTTPError(http.FORBIDDEN, data=dict(message_long=err.message))
 
@@ -119,73 +117,45 @@ def node_registration_retraction_post(auth, node, **kwargs):
 
 @must_be_valid_project
 @must_be_contributor_or_public
-def node_register_template_page(auth, node, **kwargs):
-
-    template_name = kwargs['template'].replace(' ', '_')
-    # Error to raise if template can't be found
-    not_found_error = HTTPError(
-        http.NOT_FOUND,
-        data=dict(
-            message_short='Template not found.',
-            message_long='The registration template you entered '
-                         'in the URL is not valid.'
-        )
-    )
-
-    if node.is_registration and node.registered_meta:
-        registered = True
-        payload = node.registered_meta.get(to_mongo(template_name))
-        payload = json.loads(payload)
-        payload = unprocess_payload(payload)
-
-        if node.registered_schema:
-            meta_schema = node.registered_schema
-        else:
+def node_register_template_page(auth, node, metaschema_id, **kwargs):
+    if node.is_registration and bool(node.registered_schema):
+        try:
+            meta_schema = MetaSchema.find_one(
+                Q('_id', 'eq', metaschema_id)
+            )
+        except NoResultsFound:
+            # backwards compatability for old urls, lookup by name
             try:
-                meta_schema = MetaSchema.find_one(
-                    Q('name', 'eq', template_name) &
-                    Q('schema_version', 'eq', 1)
-                )
-            except NoResultsFound:
-                raise not_found_error
+                meta_schema = MetaSchema.find(
+                    Q('name', 'eq', _id_to_name(metaschema_id))
+                ).sort('-schema_version')[0]
+            except IndexError:
+                raise HTTPError(http.NOT_FOUND, data={
+                    'message_short': 'Invalid schema name',
+                    'message_long': 'No registration schema with that name could be found.'
+                })
+        if meta_schema not in node.registered_schema:
+            raise HTTPError(http.BAD_REQUEST, data={
+                'message_short': 'Invalid schema',
+                'message_long': 'This registration has no registration supplment with that name.'
+            })
+
+        ret = _view_project(node, auth, primary=True)
+        ret['node']['registered_schema'] = serialize_meta_schema(meta_schema)
+        return ret
     else:
-        # Anyone with view access can see this page if the current node is
-        # registered, but only admins can view the registration page if not
-        # TODO: Test me @jmcarp
-        if not node.has_permission(auth.user, ADMIN):
-            raise HTTPError(http.FORBIDDEN)
-        registered = False
-        payload = None
-        metaschema_query = MetaSchema.find(
-            Q('name', 'eq', template_name)
-        ).sort('-schema_version')
-        if metaschema_query:
-            meta_schema = metaschema_query[0]
-        else:
-            raise not_found_error
-    schema = meta_schema.schema
-
-    # TODO: Notify if some components will not be registered
-
-    ret = {
-        'template_name': template_name,
-        'schema': json.dumps(schema),
-        'metadata_version': meta_schema.metadata_version,
-        'schema_version': meta_schema.schema_version,
-        'registered': registered,
-        'payload': payload,
-        'children_ids': node.nodes._to_primary_keys(),
-    }
-    ret.update(_view_project(node, auth, primary=True))
-    return ret
-
+        status.push_status_message(
+            'You have been redirected to the project\'s registrations page. From here you can initiate a new Draft Registration to complete the registration process',
+            trust=False
+        )
+        return redirect(node.web_url_for('node_registrations', view=kwargs.get('template')))
 
 @must_be_valid_project  # returns project
 @must_have_permission(ADMIN)
 @must_not_be_registration
 def project_before_register(auth, node, **kwargs):
     """Returns prompt informing user that addons, if any, won't be registered."""
-
+    # TODO: Avoid generating HTML code in Python; all HTML should be in display layer
     messages = {
         'full': {
             'addons': set(),
@@ -236,57 +206,6 @@ def project_before_register(auth, node, **kwargs):
         'prompts': prompts,
         'errors': error_messages
     }
-
-
-@must_be_valid_project
-@must_have_permission(ADMIN)
-@must_not_be_registration
-def node_register_template_page_post(auth, node, **kwargs):
-    data = request.json
-
-    if settings.DISK_SAVING_MODE:
-        raise HTTPError(
-            http.METHOD_NOT_ALLOWED,
-            redirect_url=node.url
-        )
-
-    # Sanitize payload data
-    clean_data = process_payload(data)
-
-    template = kwargs['template']
-    # TODO: Using json.dumps because node_to_use.registered_meta's values are
-    # expected to be strings (not dicts). Eventually migrate all these to be
-    # dicts, as this is unnecessary
-    schema = MetaSchema.find(
-        Q('name', 'eq', template)
-    ).sort('-schema_version')[0]
-
-    # Create the registration
-    register = node.register_node(
-        schema, auth, template, json.dumps(clean_data),
-    )
-    try:
-        if data.get('registrationChoice', 'immediate') == 'embargo':
-            # Initiate embargo
-            embargo_end_date = parse_date(data['embargoEndDate'], ignoretz=True)
-            register.embargo_registration(auth.user, embargo_end_date)
-        else:
-            register.require_approval(auth.user)
-        register.save()
-    except ValidationValueError as err:
-        raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
-
-    push_status_message(language.AFTER_REGISTER_ARCHIVING,
-                        kind='info',
-                        trust=False)
-
-    return {
-        'status': 'initiated',
-        'urls': {
-            'registrations': node.web_url_for('node_registrations')
-        }
-    }, http.CREATED
-
 
 def _build_ezid_metadata(node):
     """Build metadata for submission to EZID using the DataCite profile. See

@@ -9,14 +9,17 @@ var History = require('exports?History!history');
 var siteLicenses = require('js/licenses');
 var licenses = siteLicenses.list;
 var DEFAULT_LICENSE = siteLicenses.DEFAULT_LICENSE;
-var OTHER_LICENSE = siteLicenses.OTHER_LICENSE;
+var OTHER_LICENSE = siteLicenses.OTHER_LICENSE;  // TODO: Why is this required? Is it? See [#OSF-6100]
 
 var $osf = require('js/osfHelpers');
-// Enable knockout punches
-ko.punches.enableAll();
+
 
 // Disable IE Caching of JSON
 $.ajaxSetup({ cache: false });
+
+var eqInsensitive = function(str1, str2) {
+    return str1.toUpperCase() === str2.toUpperCase();
+};
 
 var Category = function(name, count, display){
     var self = this;
@@ -44,7 +47,7 @@ var License = function(name, id, count) {
     this.name = name;
     this.id = id;
     this.count = ko.observable(count);
-    
+
     this.active = ko.observable(false);
 };
 License.prototype.toggleActive = function() {
@@ -99,6 +102,7 @@ var ViewModel = function(params) {
         $.map(licenses, function(license) {
             var l = new License(license.name, license.id, 0);
             l.active.subscribe(function() {
+                self.currentPage(1);
                 self.search();
             });
             return l;
@@ -128,7 +132,7 @@ var ViewModel = function(params) {
         });
     });
     self.selectedLicenses = ko.pureComputed(function() {
-        return self.licenses().filter(function(license) {
+        return (self.licenses() || []).filter(function(license) {
             return license.active();
         });
     });
@@ -163,7 +167,7 @@ var ViewModel = function(params) {
     });
 
     self.totalPages = ko.pureComputed(function() {
-        var resultsCount = Math.max(self.resultsPerPage(),1); // No Divide by Zero
+        var resultsCount = Math.max(self.resultsPerPage(), 1); // No Divide by Zero
         var countOfPages = Math.ceil(self.totalResults() / resultsCount);
         return countOfPages;
     });
@@ -219,13 +223,13 @@ var ViewModel = function(params) {
                         return l.id;
                     })
                 }
-            };     
+            };
             if (selectedLicenses.filter(function(l) {
-                return l.id === DEFAULT_LICENSE.id;
+                return eqInsensitive(l.id, DEFAULT_LICENSE.id);
             }).length) {
                 filters = {
                     or: [
-                        filters, 
+                        filters,
                         {
                             missing: {field: 'license'}
                         }
@@ -285,7 +289,7 @@ var ViewModel = function(params) {
     };
 
     self._makeTagString = function(tagName) {
-        return 'tags:("' + tagName.replace(/"/g, '\\\"') + '")';        
+        return 'tags:("' + tagName.replace(/"/g, '\\\"') + '")';
     };
     self.addTag = function(tagName) {
         var tagString = self._makeTagString(tagName);
@@ -295,20 +299,21 @@ var ViewModel = function(params) {
                 query += ' AND ';
             }
             query += tagString;
-            self.query(query); 
-            self.onUpdateTags();                      
-        }     
+            self.query(query);
+            self.onUpdateTags();
+        }
     };
     self.removeTag = function(tagName, _, e) {
-        e.stopPropagation();            
+        e.stopPropagation();
         var query = self.query();
         var tagRegExp = /(?:AND)?\s*tags\:\([\'\"](.+?)[\'\"]\)/g;
-        var matches = query.match(tagRegExp);
         var dirty = false;
-        while (matches.length) {
-            var match = matches.pop();
-            if ((match.match(tagName) || []).length) {
-                query = query.replace(match, '');   
+        var match;
+        while ((match = tagRegExp.exec(query))) {
+            var block = match.shift();
+            var tag = match.shift().trim();
+            if (tag === tagName) {
+                query = query.replace(block, '').trim();
                 dirty = true;
             }
         }
@@ -340,7 +345,7 @@ var ViewModel = function(params) {
 
         var jsonData = {
             query: self.fullQuery(self.filters()),
-            from: self.currentIndex(), 
+            from: self.currentIndex(),
             size: self.resultsPerPage()
         };
         var url = self.queryUrl + self.category().url();
@@ -353,14 +358,14 @@ var ViewModel = function(params) {
             self.results.removeAll();
             self.categories.removeAll();
             self.shareCategory('');
-            
+
             // Deep copy license list
             var licenseCounts = self.licenses().slice();
             var noneLicense;
             for(var i = 0; i < licenseCounts.length; i++) {
                 var l = licenseCounts[i];
                 l.count(0);
-                if (l.id === DEFAULT_LICENSE.id) {
+                if (eqInsensitive(l.id, DEFAULT_LICENSE.id)) {
                     noneLicense = l;
                 }
             }
@@ -369,11 +374,11 @@ var ViewModel = function(params) {
             if ((data.aggs || {}).licenses)  {
                 $.each(data.aggs.licenses, function(key, value) {
                     licenseCounts.filter(function(l) {
-                        return l.id === key;
+                        return eqInsensitive(l.id, key);
                     })[0].count(value);
                     nullLicenseCount -= value;
                 });
-            }            
+            }
             noneLicense.count(noneLicense.count() + nullLicenseCount);
             self.licenses(licenseCounts);
 
@@ -406,8 +411,18 @@ var ViewModel = function(params) {
             self.categories(self.categories().sort(self.sortCategories));
 
             // If our category is named attempt to load its total else set it to the total total
+            var selectedLicenses = self.selectedLicenses();
             if (self.category().name !== undefined) {
-                self.totalResults(data.counts[self.category().name] || 0);
+                if (selectedLicenses.length) {
+                    var total = 0;
+                    $.each(selectedLicenses, function(i, license) {
+                        total += license.count();
+                    });
+                    self.totalResults(total);
+                }
+                else {
+                    self.totalResults(data.counts[self.category().name] || 0);
+                }
             } else {
                 self.totalResults(self.self.categories()[0].count);
             }
@@ -446,7 +461,7 @@ var ViewModel = function(params) {
 
     self.paginate = function(val) {
         window.scrollTo(0, 0);
-        self.currentPage(self.currentPage()+val);
+        self.currentPage(self.currentPage() + val);
         self.search();
     };
 

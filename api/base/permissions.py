@@ -6,6 +6,10 @@ from rest_framework import exceptions, permissions
 from framework.auth import oauth_scopes
 from framework.auth.cas import CasResponse
 
+from website.models import ApiOAuth2Application, ApiOAuth2PersonalToken
+from website.util.sanitize import is_iterable_but_not_string
+
+
 # Implementation built on django-oauth-toolkit, but  with more granular control over read+write permissions
 #   https://github.com/evonove/django-oauth-toolkit/blob/d45431ea0bf64fd31e16f429db1e902dbf30e3a8/oauth2_provider/ext/rest_framework/permissions.py#L15
 class TokenHasScope(permissions.BasePermission):
@@ -50,6 +54,12 @@ class TokenHasScope(permissions.BasePermission):
             except AttributeError:
                 raise ImproperlyConfigured('TokenHasScope requires the view to define the '
                                            'required_read_scopes attribute')
+            assert is_iterable_but_not_string(view.required_read_scopes), \
+                'The required_read_scopes must be an iterable of CoreScopes'
+            if view.required_read_scopes and isinstance(view.required_read_scopes[0], tuple):
+                raise ImproperlyConfigured('TokenHasScope requires the view to define the '
+                                           'required_read_scopes attribute using CoreScopes rather than ComposedScopes')
+
             return read_scopes
         else:
             # A write operation implicitly also requires access to read scopes
@@ -58,8 +68,22 @@ class TokenHasScope(permissions.BasePermission):
             except AttributeError:
                 raise ImproperlyConfigured('TokenHasScope requires the view to define the '
                                            'required_write_scopes attribute')
-
+            assert is_iterable_but_not_string(view.required_read_scopes), \
+                'The required_write_scopes must be an iterable of CoreScopes'
+            if view.required_write_scopes and isinstance(view.required_write_scopes[0], tuple):
+                raise ImproperlyConfigured('TokenHasScope requires the view to define the '
+                                           'required_write_scopes attribute using CoreScopes rather than ComposedScopes')
             return write_scopes
+
+
+class OwnerOnly(permissions.BasePermission):
+    """User must be logged in and be the owner of the instance"""
+
+    # TODO: Write tests for basic, session, and oauth-based authentication
+    def has_object_permission(self, request, view, obj):
+        """Not applied to all members of a queryset"""
+        assert isinstance(obj, (ApiOAuth2Application, ApiOAuth2PersonalToken)), "obj must be an ApiOAuth2Application or ApiOAuth2PersonalToken, got {}".format(obj)
+        return (obj.owner._id == request.user._id)
 
 
 def PermissionWithGetter(Base, getter):

@@ -1,14 +1,16 @@
+import datetime
 import json
 
-from nose.tools import *  # flake8: noqa
 import httpretty
+from nose.tools import *  # flake8: noqa
 
 from framework.auth.core import Auth
 
-from website.addons.github import model
+from website.addons.github.tests.factories import GitHubAccountFactory
 from website.models import Node
 from website.util import waterbutler_api_url_for
 from api.base.settings.defaults import API_BASE
+from api_tests import utils as api_utils
 from tests.base import ApiTestCase
 from tests.factories import (
     ProjectFactory,
@@ -74,6 +76,8 @@ def prepare_mock_wb_response(
         content_type='application/json'
     )
 
+
+
 class TestNodeFilesList(ApiTestCase):
 
     def setUp(self):
@@ -92,6 +96,21 @@ class TestNodeFilesList(ApiTestCase):
         super(TestNodeFilesList, self).tearDown()
         httpretty.disable()
         httpretty.reset()
+
+    def add_github(self):
+        user_auth = Auth(self.user)
+        self.project.add_addon('github', auth=user_auth)
+        addon = self.project.get_addon('github')
+        addon.repo = 'something'
+        addon.user = 'someone'
+        oauth_settings = GitHubAccountFactory()
+        oauth_settings.save()
+        self.user.add_addon('github')
+        self.user.external_accounts.append(oauth_settings)
+        self.user.save()
+        addon.user_settings = self.user.get_addon('github')
+        addon.save()
+        self.project.save()
 
     def _prepare_mock_wb_response(self, node=None, **kwargs):
         prepare_mock_wb_response(node=node or self.project, **kwargs)
@@ -153,11 +172,12 @@ class TestNodeFilesList(ApiTestCase):
         addon = self.project.get_addon('github')
         addon.repo = 'something'
         addon.user = 'someone'
-        oauth_settings = model.AddonGitHubOauthSettings(github_user_id='plstowork', oauth_access_token='foo')
+        oauth_settings = GitHubAccountFactory()
         oauth_settings.save()
-        user_settings = model.AddonGitHubUserSettings(oauth_settings=oauth_settings)
-        user_settings.save()
-        addon.user_settings = user_settings
+        self.user.add_addon('github')
+        self.user.external_accounts.append(oauth_settings)
+        self.user.save()
+        addon.user_settings = self.user.get_addon('github')
         addon.save()
         self.project.save()
         res = self.app.get(self.private_url, auth=self.user.auth)
@@ -169,6 +189,7 @@ class TestNodeFilesList(ApiTestCase):
 
     def test_returns_node_files_list(self):
         self._prepare_mock_wb_response(provider='github', files=[{'name': 'NewFile'}])
+        self.add_github()
         url = '/{}nodes/{}/files/github/'.format(API_BASE, self.project._id)
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.json['data'][0]['attributes']['name'], 'NewFile')
@@ -176,6 +197,7 @@ class TestNodeFilesList(ApiTestCase):
 
     def test_returns_node_file(self):
         self._prepare_mock_wb_response(provider='github', files=[{'name': 'NewFile'}], folder=False, path='/file')
+        self.add_github()
         url = '/{}nodes/{}/files/github/file'.format(API_BASE, self.project._id)
         res = self.app.get(url, auth=self.user.auth, headers={
             'COOKIE': 'foo=bar;'  # Webtests doesnt support cookies?
@@ -203,6 +225,7 @@ class TestNodeFilesList(ApiTestCase):
 
     def test_waterbutler_server_error_returns_503(self):
         self._prepare_mock_wb_response(status_code=500)
+        self.add_github()
         url = '/{}nodes/{}/files/github/'.format(API_BASE, self.project._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True, headers={
             'COOKIE': 'foo=bar;'  # Webtests doesnt support cookies?
@@ -211,6 +234,7 @@ class TestNodeFilesList(ApiTestCase):
 
     def test_waterbutler_invalid_data_returns_503(self):
         wb_url = waterbutler_api_url_for(self.project._id, provider='github', path='/', meta=True)
+        self.add_github()
         httpretty.register_uri(
             httpretty.GET,
             wb_url,
@@ -223,6 +247,7 @@ class TestNodeFilesList(ApiTestCase):
 
     def test_handles_unauthenticated_waterbutler_request(self):
         self._prepare_mock_wb_response(status_code=401)
+        self.add_github()
         url = '/{}nodes/{}/files/github/'.format(API_BASE, self.project._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
@@ -236,6 +261,14 @@ class TestNodeFilesList(ApiTestCase):
         assert_equal(res.status_code, 404)
         assert_in('detail', res.json['errors'][0])
 
+    def test_handles_request_to_provider_not_configured_on_project(self):
+        provider = 'box'
+        url = '/{}nodes/{}/files/{}/'.format(API_BASE, self.project._id, provider)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_false(self.project.get_addon(provider))
+        assert_equal(res.status_code, 404)
+        assert_equal(res.json['errors'][0]['detail'], 'The {} provider is not configured for this project.'.format(provider))
+
     def test_handles_bad_waterbutler_request(self):
         wb_url = waterbutler_api_url_for(self.project._id, provider='github', path='/', meta=True)
         httpretty.register_uri(
@@ -244,6 +277,7 @@ class TestNodeFilesList(ApiTestCase):
             body=json.dumps({}),
             status=418
         )
+        self.add_github()
         url = '/{}nodes/{}/files/github/'.format(API_BASE, self.project._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 503)
@@ -277,23 +311,143 @@ class TestNodeFilesListFiltering(ApiTestCase):
         httpretty.disable()
         httpretty.reset()
 
+    def add_github(self):
+        user_auth = Auth(self.user)
+        self.project.add_addon('github', auth=user_auth)
+        addon = self.project.get_addon('github')
+        addon.repo = 'something'
+        addon.user = 'someone'
+        oauth_settings = GitHubAccountFactory()
+        oauth_settings.save()
+        self.user.add_addon('github')
+        self.user.external_accounts.append(oauth_settings)
+        self.user.save()
+        addon.user_settings = self.user.get_addon('github')
+        addon.save()
+        self.project.save()
+
     def test_node_files_are_filterable_by_name(self):
         url = '/{}nodes/{}/files/github/?filter[name]=xyz'.format(API_BASE, self.project._id)
+        self.add_github()
         res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 1)  # filters out 'abc'
+        assert_equal(res.json['data'][0]['attributes']['name'], 'xyz')
+
+    def test_node_files_filter_by_name_case_insensitive(self):
+        url = '/{}nodes/{}/files/github/?filter[name]=XYZ'.format(API_BASE, self.project._id)
+        self.add_github()
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']), 1)  # filters out 'abc', but finds 'xyz'
         assert_equal(res.json['data'][0]['attributes']['name'], 'xyz')
 
     def test_node_files_are_filterable_by_path(self):
         url = '/{}nodes/{}/files/github/?filter[path]=abc'.format(API_BASE, self.project._id)
+        self.add_github()
         res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 1)  # filters out 'xyz'
         assert_equal(res.json['data'][0]['attributes']['name'], 'abc')
 
     def test_node_files_are_filterable_by_kind(self):
         url = '/{}nodes/{}/files/github/?filter[kind]=folder'.format(API_BASE, self.project._id)
+        self.add_github()
         res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 1)  # filters out 'xyz'
         assert_equal(res.json['data'][0]['attributes']['name'], 'abc')
 
+    def test_node_files_external_provider_can_filter_by_last_touched(self):
+        yesterday_stamp = datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        self.add_github()
+        url = '/{}nodes/{}/files/github/?filter[last_touched][gt]={}'.format(API_BASE,
+                                                                             self.project._id,
+                                                                             yesterday_stamp.isoformat())
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']), 2)
+
+    def test_node_files_osfstorage_cannot_filter_by_last_touched(self):
+        yesterday_stamp = datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        self.file = api_utils.create_test_file(self.project, self.user)
+
+        url = '/{}nodes/{}/files/osfstorage/?filter[last_touched][gt]={}'.format(API_BASE,
+                                                                                 self.project._id,
+                                                                                 yesterday_stamp.isoformat())
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(len(res.json['errors']), 1)
+
+
+class TestNodeFilesListPagination(ApiTestCase):
+    def setUp(self):
+        super(TestNodeFilesListPagination, self).setUp()
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user)
+        httpretty.enable()
+
+    def tearDown(self):
+        super(TestNodeFilesListPagination, self).tearDown()
+        httpretty.disable()
+        httpretty.reset()
+
+    def add_github(self):
+        user_auth = Auth(self.user)
+        self.project.add_addon('github', auth=user_auth)
+        addon = self.project.get_addon('github')
+        addon.repo = 'something'
+        addon.user = 'someone'
+        oauth_settings = GitHubAccountFactory()
+        oauth_settings.save()
+        self.user.add_addon('github')
+        self.user.external_accounts.append(oauth_settings)
+        self.user.save()
+        addon.user_settings = self.user.get_addon('github')
+        addon.save()
+        self.project.save()
+
+    def check_file_order(self, resp):
+        previous_file_name = 0
+        for file in resp.json['data']:
+            int_file_name = int(file['attributes']['name'])
+            assert(int_file_name > previous_file_name, 'Files were not in order')
+            previous_file_name = int_file_name
+
+    def test_node_files_are_sorted_correctly(self):
+        prepare_mock_wb_response(
+            node=self.project,
+            provider='github',
+            files=[
+                {'name': '01', 'path': '/01/', 'materialized': '/01/', 'kind': 'folder'},
+                {'name': '02', 'path': '/02', 'materialized': '/02', 'kind': 'file'},
+                {'name': '03', 'path': '/03/', 'materialized': '/03/', 'kind': 'folder'},
+                {'name': '04', 'path': '/04', 'materialized': '/04', 'kind': 'file'},
+                {'name': '05', 'path': '/05/', 'materialized': '/05/', 'kind': 'folder'},
+                {'name': '06', 'path': '/06', 'materialized': '/06', 'kind': 'file'},
+                {'name': '07', 'path': '/07/', 'materialized': '/07/', 'kind': 'folder'},
+                {'name': '08', 'path': '/08', 'materialized': '/08', 'kind': 'file'},
+                {'name': '09', 'path': '/09/', 'materialized': '/09/', 'kind': 'folder'},
+                {'name': '10', 'path': '/10', 'materialized': '/10', 'kind': 'file'},
+                {'name': '11', 'path': '/11/', 'materialized': '/11/', 'kind': 'folder'},
+                {'name': '12', 'path': '/12', 'materialized': '/12', 'kind': 'file'},
+                {'name': '13', 'path': '/13/', 'materialized': '/13/', 'kind': 'folder'},
+                {'name': '14', 'path': '/14', 'materialized': '/14', 'kind': 'file'},
+                {'name': '15', 'path': '/15/', 'materialized': '/15/', 'kind': 'folder'},
+                {'name': '16', 'path': '/16', 'materialized': '/16', 'kind': 'file'},
+                {'name': '17', 'path': '/17/', 'materialized': '/17/', 'kind': 'folder'},
+                {'name': '18', 'path': '/18', 'materialized': '/18', 'kind': 'file'},
+                {'name': '19', 'path': '/19/', 'materialized': '/19/', 'kind': 'folder'},
+                {'name': '20', 'path': '/20', 'materialized': '/20', 'kind': 'file'},
+                {'name': '21', 'path': '/21/', 'materialized': '/21/', 'kind': 'folder'},
+                {'name': '22', 'path': '/22', 'materialized': '/22', 'kind': 'file'},
+                {'name': '23', 'path': '/23/', 'materialized': '/23/', 'kind': 'folder'},
+                {'name': '24', 'path': '/24', 'materialized': '/24', 'kind': 'file'},
+            ]
+        )
+        self.add_github()
+        url = '/{}nodes/{}/files/github/?page[size]=100'.format(API_BASE, self.project._id)
+        res = self.app.get(url, auth=self.user.auth)
+        self.check_file_order(res)
 
 

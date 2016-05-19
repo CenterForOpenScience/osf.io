@@ -2,19 +2,16 @@
 var $ = require('jquery');
 
 var pointers = require('js/pointers');
-var AccountClaimer = require('js/accountClaimer.js');
+var AccountClaimer = require('js/accountClaimer');
 var $osf = require('js/osfHelpers');
 
 // NodeActions is needed for rendering recent logs in nodelists (e.g. regsitrations and forks
 // pages
 require('js/project');
-
-require('js/registerNode');
-
 require('js/licensePicker');
 
 var node = window.contextVars.node;
-
+var OFFSET = 49;
 
 new pointers.PointerDisplay('#showLinks');
 
@@ -30,34 +27,32 @@ if (node.isPublic && node.piwikSiteID) {
 $(window).unload(function(){
     return 'Unload';
 });
+
 $(document).ready(function() {
-    $.getJSON(node.urls.api, function(data) {    
+    $.getJSON(node.urls.api, function(data) {
         $('body').trigger('nodeLoad', data);
     });
+});
 
-    var self = this;
-    var THRESHOLD_SCROLL_POSITION  = 50;
-    var SMALL_SCREEN_SIZE = 767;
-    var NON_NAV_TOP_MARGIN = 50;
-    var NAV_MAX_TOP_MARGIN = 95;
-    self.adjustPanelPosition = function() {
-        var bodyWidth = $(document.body).width();
-        var scrollTopPosition = $(window).scrollTop();
-        if (bodyWidth <= SMALL_SCREEN_SIZE) {
-            if (scrollTopPosition >= THRESHOLD_SCROLL_POSITION) {
-                $('.cp-handle').css('margin-top', NON_NAV_TOP_MARGIN);
-            }
-            else {
-                $('.cp-handle').css('margin-top', NAV_MAX_TOP_MARGIN - scrollTopPosition);
-            }
-        } else {
-            $('.cp-handle').css('margin-top', NAV_MAX_TOP_MARGIN);
-        }
-    };
-    var ADJUST_PANEL_DEBOUNCE = 10;
-    var RESIZE_DEBOUNCE  = 50;
+$(window).scroll(function() {
+    var scrollTop = $(this).scrollTop();
+    scrollTop = (scrollTop <= OFFSET ? scrollTop : OFFSET);
+    if ($('.comment-handle-icon').is(':hidden')) {
+        $('.comment-pane').css({
+            'transform': 'translate3d(0, ' + (-scrollTop) + 'px, 0)',
+            '-webkit-transform': 'translate3d(0, ' + (-scrollTop) + 'px, 0)',
+            '-moz-transform': 'translate3d(0, ' + (-scrollTop) + 'px, 0)'
+        });
+    }
+});
 
-    self.adjustPanelPosition(); /* Init when refreshing the page*/
-    $(window).scroll($osf.debounce(self.adjustPanelPosition, ADJUST_PANEL_DEBOUNCE));
-    $(window).resize($osf.debounce(self.adjustPanelPosition, RESIZE_DEBOUNCE));
+$(window).resize(function() {
+    var scrollTop = $(this).scrollTop();
+    scrollTop = $('.comment-handle-icon').is(':hidden') ? scrollTop : 0;
+    scrollTop = (scrollTop <= OFFSET ? scrollTop : OFFSET);
+    $('.comment-pane').css({
+        'transform': 'translate3d(0, ' + (-scrollTop) + 'px, 0)',
+        '-webkit-transform': 'translate3d(0, ' + (-scrollTop) + 'px, 0)',
+        '-moz-transform': 'translate3d(0, ' + (-scrollTop) + 'px, 0)'
+    });
 });

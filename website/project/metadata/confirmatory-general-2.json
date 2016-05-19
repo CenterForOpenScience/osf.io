@@ -1,0 +1,26 @@
+{
+    "name": "Confirmatory - General",
+    "version": 2,
+    "pages": [{
+        "id": "page1",
+        "title": "General",
+        "questions": [{
+            "qid": "looked",
+            "title": "Have you looked at the data?",
+            "type": "choose",
+            "format": "singleselect",
+            "options": ["Yes", "No"]
+        }, {
+            "qid": "datacompletion",
+            "title": "Is data collection for this project underway or complete?",
+            "type": "choose",
+            "format": "singleselect",
+            "options": ["Yes", "No"]
+        }, {
+            "qid": "comments",
+            "title": "Comments",
+            "type": "string",
+            "format": "textarea"
+        }]
+    }]
+}

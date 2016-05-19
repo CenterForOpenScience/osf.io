@@ -4,10 +4,10 @@
 
 # Testing
 nose
-factory-boy==2.2.1
+factory-boy==2.6.1
 webtest-plus==0.3.3
 mock==1.0.1
-fake-factory
+fake-factory==0.5.3
 schema==0.3.1
 # Fork of HTTPretty with pymongo fix
 git+https://github.com/jmcarp/HTTPretty@matcher-priority
@@ -17,9 +17,6 @@ flake8==2.4.0
 
 # Livereload
 livereload==2.3.2
-
-# Scripts
-progressbar==2.3
 
 # Avoid eating cpu with live reloading
 watchdog==0.8.3

@@ -27,6 +27,7 @@ AUTHENTICATION_BACKENDS = (
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = osf_settings.DEBUG_MODE
+DEBUG_PROPAGATE_EXCEPTIONS = True
 
 ALLOWED_HOSTS = [
     '.osf.io'
@@ -49,18 +50,25 @@ INSTALLED_APPS = (
 
 # TODO: Are there more granular ways to configure reporting specifically related to the API?
 RAVEN_CONFIG = {
-    'dsn': osf_settings.SENTRY_DSN
+    'tags': {'App': 'api'},
+    'dsn': osf_settings.SENTRY_DSN,
+    'release': osf_settings.VERSION,
 }
+
+BULK_SETTINGS = {
+    'DEFAULT_BULK_LIMIT': 100
+}
+
+MAX_PAGE_SIZE = 100
 
 REST_FRAMEWORK = {
     'PAGE_SIZE': 10,
-
     # Order is important here because of a bug in rest_framework_swagger. For now,
     # rest_framework.renderers.JSONRenderer needs to be first, at least until
     # https://github.com/marcgibbons/django-rest-swagger/issues/271 is resolved.
     'DEFAULT_RENDERER_CLASSES': (
         'api.base.renderers.JSONAPIRenderer',
-        'rest_framework.renderers.JSONRenderer',
+        'api.base.renderers.JSONRendererWithESISupport',
         'api.base.renderers.BrowsableAPIRendererNoForms',
     ),
     'DEFAULT_PARSER_CLASSES': (
@@ -91,6 +99,8 @@ CORS_ORIGIN_WHITELIST = (urlparse(osf_settings.DOMAIN).netloc,
                          osf_settings.DOMAIN,
                          )
 CORS_ALLOW_CREDENTIALS = True
+# Set dynamically on app init
+INSTITUTION_ORIGINS_WHITELIST = ()
 
 MIDDLEWARE_CLASSES = (
     # TokuMX transaction support
@@ -98,10 +108,17 @@ MIDDLEWARE_CLASSES = (
     # even in the event of a redirect. CommonMiddleware may cause other middlewares'
     # process_request to be skipped, e.g. when a trailing slash is omitted
     'api.base.middleware.DjangoGlobalMiddleware',
-    'api.base.middleware.TokuTransactionsMiddleware',
+    'api.base.middleware.MongoConnectionMiddleware',
+    'api.base.middleware.CeleryTaskMiddleware',
+    'api.base.middleware.TokuTransactionMiddleware',
+    'api.base.middleware.PostcommitTaskMiddleware',
+
+    # A profiling middleware. ONLY FOR DEV USE
+    # Uncomment and add "prof" to url params to recieve a profile for that url
+    # 'api.base.middleware.ProfileMiddleware',
 
     # 'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
+    'api.base.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     # 'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -155,47 +172,23 @@ SWAGGER_SETTINGS = {
         'api_path': '/',
         'description':
         """
-        <p>Welcome to the V2 Open Science Framework API. With this API you can programatically access users,
-        projects, components, and files from the <a href="https://osf.io/">Open Science Framework</a>. The Open Science
-        Framework (OSF) is a free, open-source service maintained by the <a href="https://cos.io/">Center for Open Science</a>. </p>
-        <p> The OSF stores, documents, and archives study designs, materials, data, manuscripts, or anything else associated
-        with your research during the research process. Every project and file on the OSF has a permanent unique
-        identifier, and every registration (a permanent, time-stamped version of your projects and files) can be assigned
-        a DOI/ARK. You can use the OSF to measure your impact by monitoring the traffic to projects and files you make
-        public. With the OSF you have full control of what parts of your research are public and what remains private.</p>
-        <p>Beta notice: This API is currently a beta service.  You are encouraged to use the API and will receive support
-        when doing so, however, while the API remains in beta status, it may change without notice as a result of
-        product updates. The temporary beta status of the API will remain in place while it matures. In a future
-        release, the beta status will be removed, at which point we will provide details on how long we will support
-        the API V2 and under what circumstances it might change.</p>
-         <h2>General API Usage</h2>
-        <p> Each endpoint will have its own documentation, but there are some general principles.</p>
-        <h3>Filtering</h3>
-        <p> Collections can be filtered by adding a query parameter in the form:</p>
-        <pre>filter[&lt;fieldname&gt;]=&lt;matching information&gt;</pre>
-        <p>For example, if you were trying to find <a href="http://en.wikipedia.org/wiki/Lise_Meitner">Lise Meitner</a>:</p>
-        <pre>/users?filter[full_name]=meitn</pre>
-        <p>You can filter on multiple fields, or the same field in different ways, by &-ing the query parameters together.</p>
-        <pre>/users?filter[full_name]=lise&filter[family_name]=mei</pre>
-        <h3>Links</h3>
-        <p> Responses will generally have associated links which are helpers to keep you from having to construct URLs in
-        your code or by hand. If you know the route to a high-level resource, you can go to that route. For example:</p>
-        <pre>/nodes/&lt;node_id&gt;</pre>
-        <p> is a good route to create rather than going to /nodes/ and navigating by id filtering. However, if you are
-        creating something that crawls the structure of a node going to the child node or gathering children,
-        contributors, and similar related resources, then take the link from the object you\'re crawling rather than
-        constructing the link yourself.
-        In general, links include:</p>
-        <ol>
-        <li>1. "Related" links, which will give you detailed information on individual items or a collection of related resources;</li>
-        <li>2. "Self" links, which are used for general REST operations (POST, DELETE, and so on);</li>
-        <li>3. Pagination links such as "next", "prev", "first", and "last". Pagination links are great for navigating long lists of
-        information.</li></ol>
-        <p> Some routes may have extra rules for links, especially if those links work with external services. Collections
-        may have counts with them to indicate how many items are in that collection.</p>""",
-        'title': 'OSF API Documentation',
+        Welcome to the fine documentation for the Open Science Framework's API!  Please click
+        on the <strong>GET /v2/</strong> link below to get started.
+
+        For the most recent docs, please check out our <a href="/v2/">Browsable API</a>.
+        """,
+        'title': 'OSF APIv2 Documentation',
     },
     'doc_expansion': 'list',
+    "exclude_namespaces": ['applications', 'tokens'],
 }
 
 DEBUG_TRANSACTIONS = DEBUG
+
+JWT_SECRET = 'osf_api_cas_login_jwt_secret_32b'
+JWE_SECRET = 'osf_api_cas_login_jwe_secret_32b'
+
+ENABLE_VARNISH = osf_settings.ENABLE_VARNISH
+ENABLE_ESI = osf_settings.ENABLE_ESI
+VARNISH_SERVERS = osf_settings.VARNISH_SERVERS
+ESI_MEDIA_TYPES = osf_settings.ESI_MEDIA_TYPES

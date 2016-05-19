@@ -1,159 +1,123 @@
 # -*- coding: utf-8 -*-
-import collections
-import httplib as http
-import pytz
 
-from flask import request
-from modularodm import Q
-
-from framework.exceptions import HTTPError
-from framework.auth.decorators import must_be_logged_in
-from framework.auth.utils import privacy_info_handle
-from framework.forms.utils import sanitize
-
-from website import settings
-from website.notifications.emails import notify
-from website.filters import gravatar
-from website.models import Guid, Comment
-from website.project.decorators import must_be_contributor_or_public
 from datetime import datetime
-from website.project.model import has_anonymous_link
+
+import markdown
+import pytz
+from flask import request
+
+from api.caching.tasks import ban_url
+from framework.guid.model import Guid
+from framework.postcommit_tasks.handlers import enqueue_postcommit_task
+from modularodm import Q
+from website import settings
+from website.addons.base.signals import file_updated
+from website.files.models import FileNode, TrashedFileNode
+from website.models import Comment
+from website.notifications.constants import PROVIDERS
+from website.notifications.emails import notify
+from website.project.decorators import must_be_contributor_or_public
+from website.project.model import Node
+from website.project.signals import comment_added
 
 
-def resolve_target(node, guid):
+@file_updated.connect
+def update_file_guid_referent(self, node, event_type, payload, user=None):
+    if event_type == 'addon_file_moved' or event_type == 'addon_file_renamed':
+        source = payload['source']
+        destination = payload['destination']
+        source_node = Node.load(source['node']['_id'])
+        destination_node = node
+        file_guids = FileNode.resolve_class(source['provider'], FileNode.ANY).get_file_guids(
+            materialized_path=source['materialized'] if source['provider'] != 'osfstorage' else source['path'],
+            provider=source['provider'],
+            node=source_node)
 
-    if not guid:
-        return node
-    target = Guid.load(guid)
-    if target is None:
-        raise HTTPError(http.BAD_REQUEST)
-    return target.referent
+        if event_type == 'addon_file_renamed' and source['provider'] in settings.ADDONS_BASED_ON_IDS:
+            return
+        if event_type == 'addon_file_moved' and (source['provider'] == destination['provider'] and
+                                                 source['provider'] in settings.ADDONS_BASED_ON_IDS) and source_node == destination_node:
+            return
 
+        for guid in file_guids:
+            obj = Guid.load(guid)
+            if source_node != destination_node and Comment.find(Q('root_target', 'eq', guid)).count() != 0:
+                update_comment_node(guid, source_node, destination_node)
 
-def collect_discussion(target, users=None):
-
-    users = users or collections.defaultdict(list)
-    for comment in getattr(target, 'commented', []):
-        if not comment.is_deleted:
-            users[comment.user].append(comment)
-        collect_discussion(comment, users=users)
-    return users
-
-
-@must_be_contributor_or_public
-def comment_discussion(auth, node, **kwargs):
-
-    users = collect_discussion(node)
-    anonymous = has_anonymous_link(node, auth)
-    # Sort users by comment frequency
-    # TODO: Allow sorting by recency, combination of frequency and recency
-    sorted_users = sorted(
-        users.keys(),
-        key=lambda item: len(users[item]),
-        reverse=True,
-    )
-
-    return {
-        'discussion': [
-            {
-                'id': privacy_info_handle(user._id, anonymous),
-                'url': privacy_info_handle(user.url, anonymous),
-                'fullname': privacy_info_handle(user.fullname, anonymous, name=True),
-                'isContributor': node.is_contributor(user),
-                'gravatarUrl': privacy_info_handle(
-                    gravatar(
-                        user, use_ssl=True, size=settings.PROFILE_IMAGE_SMALL
-                    ),
-                    anonymous
-                ),
-
-            }
-            for user in sorted_users
-        ]
-    }
+            if source['provider'] != destination['provider'] or source['provider'] != 'osfstorage':
+                old_file = FileNode.load(obj.referent._id)
+                obj.referent = create_new_file(obj, source, destination, destination_node)
+                obj.save()
+                if old_file and not TrashedFileNode.load(old_file._id):
+                    old_file.delete()
 
 
-def serialize_comment(comment, auth, anonymous=False):
-    return {
-        'id': comment._id,
-        'author': {
-            'id': privacy_info_handle(comment.user._id, anonymous),
-            'url': privacy_info_handle(comment.user.url, anonymous),
-            'name': privacy_info_handle(
-                comment.user.fullname, anonymous, name=True
-            ),
-            'gravatarUrl': privacy_info_handle(
-                gravatar(
-                    comment.user, use_ssl=True,
-                    size=settings.PROFILE_IMAGE_SMALL
-                ),
-                anonymous
-            ),
-        },
-        'dateCreated': comment.date_created.isoformat(),
-        'dateModified': comment.date_modified.isoformat(),
-        'content': comment.content,
-        'hasChildren': bool(getattr(comment, 'commented', [])),
-        'canEdit': comment.user == auth.user,
-        'modified': comment.modified,
-        'isDeleted': comment.is_deleted,
-        'isAbuse': auth.user and auth.user._id in comment.reports,
-    }
+def create_new_file(obj, source, destination, destination_node):
+    # TODO: Remove when materialized paths are fixed in the payload returned from waterbutler
+    if not source['materialized'].startswith('/'):
+        source['materialized'] = '/' + source['materialized']
+    if not destination['materialized'].startswith('/'):
+        destination['materialized'] = '/' + destination['materialized']
+
+    if not source['path'].endswith('/'):
+        data = dict(destination)
+        new_file = FileNode.resolve_class(destination['provider'], FileNode.FILE).get_or_create(destination_node, destination['path'])
+        if destination['provider'] != 'osfstorage':
+            new_file.update(revision=None, data=data)
+    else:
+        new_file = find_and_create_file_from_metadata(destination.get('children', []), source, destination, destination_node, obj)
+        if not new_file:
+            if source['provider'] == 'box':
+                new_path = obj.referent.path
+            else:
+                new_path = obj.referent.materialized_path.replace(source['materialized'], destination['materialized'])
+            new_file = FileNode.resolve_class(destination['provider'], FileNode.FILE).get_or_create(destination_node, new_path)
+            new_file.name = new_path.split('/')[-1]
+            new_file.materialized_path = new_path
+            new_file.save()
+    return new_file
 
 
-def serialize_comments(record, auth, anonymous=False):
+def find_and_create_file_from_metadata(children, source, destination, destination_node, obj):
+    """ Given a Guid obj, recursively search for the metadata of its referent (a file obj)
+    in the waterbutler response. If found, create a new addon FileNode with that metadata
+    and return the new file.
+    """
+    for item in children:
+        # TODO: Remove when materialized paths are fixed in the payload returned from waterbutler
+        if not item['materialized'].startswith('/'):
+            item['materialized'] = '/' + item['materialized']
 
-    return [
-        serialize_comment(comment, auth, anonymous)
-        for comment in getattr(record, 'commented', [])
-    ]
+        if item['kind'] == 'folder':
+            return find_and_create_file_from_metadata(item.get('children', []), source, destination, destination_node, obj)
+        elif item['kind'] == 'file' and item['materialized'].replace(destination['materialized'], source['materialized']) == obj.referent.materialized_path:
+            data = dict(item)
+            new_file = FileNode.resolve_class(destination['provider'], FileNode.FILE).get_or_create(destination_node, item['path'])
+            if destination['provider'] != 'osfstorage':
+                new_file.update(revision=None, data=data)
+            return new_file
 
 
-def get_comment(cid, auth, owner=False):
-    comment = Comment.load(cid)
-    if comment is None:
-        raise HTTPError(http.NOT_FOUND)
-    if owner:
-        if auth.user != comment.user:
-            raise HTTPError(http.FORBIDDEN)
-    return comment
+def update_comment_node(root_target_id, source_node, destination_node):
+    Comment.update(Q('root_target', 'eq', root_target_id), data={'node': destination_node})
+    source_node.save()
+    destination_node.save()
 
 
-@must_be_logged_in
-@must_be_contributor_or_public
-def add_comment(auth, node, **kwargs):
-
-    if not node.comment_level:
-        raise HTTPError(http.BAD_REQUEST)
-
-    if not node.can_comment(auth):
-        raise HTTPError(http.FORBIDDEN)
-
-    guid = request.json.get('target')
-    target = resolve_target(node, guid)
-
-    content = request.json.get('content').strip()
-    content = sanitize(content)
-    if not content:
-        raise HTTPError(http.BAD_REQUEST)
-    if len(content) > settings.COMMENT_MAXLENGTH:
-        raise HTTPError(http.BAD_REQUEST)
-
-    comment = Comment.create(
-        auth=auth,
-        node=node,
-        target=target,
-        user=auth.user,
-        content=content,
-    )
-    comment.save()
+@comment_added.connect
+def send_comment_added_notification(comment, auth):
+    node = comment.node
+    target = comment.target
 
     context = dict(
         gravatar_url=auth.user.profile_image_url(),
-        content=content,
-        target_user=target.user if is_reply(target) else None,
-        parent_comment=target.content if is_reply(target) else "",
-        url=node.absolute_url
+        content=markdown.markdown(comment.content, ['del_ins', 'markdown.extensions.tables', 'markdown.extensions.fenced_code']),
+        page_type=comment.get_comment_page_type(),
+        page_title=comment.get_comment_page_title(),
+        provider=PROVIDERS[comment.root_target.referent.provider] if comment.page == Comment.FILES else '',
+        target_user=target.referent.user if is_reply(target) else None,
+        parent_comment=target.referent.content if is_reply(target) else "",
+        url=comment.get_comment_page_url()
     )
     time_now = datetime.utcnow().replace(tzinfo=pytz.utc)
     sent_subscribers = notify(
@@ -165,7 +129,7 @@ def add_comment(auth, node, **kwargs):
     )
 
     if is_reply(target):
-        if target.user and target.user not in sent_subscribers:
+        if target.referent.user and target.referent.user not in sent_subscribers:
             notify(
                 event='comment_replies',
                 user=auth.user,
@@ -174,134 +138,31 @@ def add_comment(auth, node, **kwargs):
                 **context
             )
 
-    return {
-        'comment': serialize_comment(comment, auth)
-    }, http.CREATED
-
 
 def is_reply(target):
-    return isinstance(target, Comment)
+    return isinstance(target.referent, Comment)
 
 
-@must_be_contributor_or_public
-def list_comments(auth, node, **kwargs):
-    anonymous = has_anonymous_link(node, auth)
-    guid = request.args.get('target')
-    target = resolve_target(node, guid)
-    serialized_comments = serialize_comments(target, auth, anonymous)
-    n_unread = 0
-
+def _update_comments_timestamp(auth, node, page=Comment.OVERVIEW, root_id=None):
     if node.is_contributor(auth.user):
-        if auth.user.comments_viewed_timestamp is None:
-            auth.user.comments_viewed_timestamp = {}
-            auth.user.save()
-        n_unread = n_unread_comments(target, auth.user)
-    return {
-        'comments': serialized_comments,
-        'nUnread': n_unread
-    }
+        enqueue_postcommit_task((ban_url, (node, )))
+        if root_id is not None:
+            guid_obj = Guid.load(root_id)
+            if guid_obj is not None:
+                enqueue_postcommit_task((ban_url, (guid_obj.referent, )))
 
-
-def n_unread_comments(node, user):
-    """Return the number of unread comments on a node for a user."""
-    default_timestamp = datetime(1970, 1, 1, 12, 0, 0)
-    view_timestamp = user.comments_viewed_timestamp.get(node._id, default_timestamp)
-    return Comment.find(Q('node', 'eq', node) &
-                        Q('user', 'ne', user) &
-                        Q('date_created', 'gt', view_timestamp) &
-                        Q('date_modified', 'gt', view_timestamp)).count()
-
-
-@must_be_logged_in
-@must_be_contributor_or_public
-def edit_comment(auth, **kwargs):
-
-    cid = kwargs.get('cid')
-    comment = get_comment(cid, auth, owner=True)
-
-    content = request.json.get('content').strip()
-    content = sanitize(content)
-    if not content:
-        raise HTTPError(http.BAD_REQUEST)
-    if len(content) > settings.COMMENT_MAXLENGTH:
-        raise HTTPError(http.BAD_REQUEST)
-
-    comment.edit(
-        content=content,
-        auth=auth,
-        save=True
-    )
-
-    return serialize_comment(comment, auth)
-
-
-@must_be_logged_in
-@must_be_contributor_or_public
-def delete_comment(auth, **kwargs):
-
-    cid = kwargs.get('cid')
-    comment = get_comment(cid, auth, owner=True)
-    comment.delete(auth=auth, save=True)
-
-    return {}
-
-
-@must_be_logged_in
-@must_be_contributor_or_public
-def undelete_comment(auth, **kwargs):
-
-    cid = kwargs.get('cid')
-    comment = get_comment(cid, auth, owner=True)
-    comment.undelete(auth=auth, save=True)
-
-    return {}
-
-
-@must_be_logged_in
-@must_be_contributor_or_public
-def update_comments_timestamp(auth, node, **kwargs):
-    if node.is_contributor(auth.user):
-        auth.user.comments_viewed_timestamp[node._id] = datetime.utcnow()
+        # update node timestamp
+        if page == Comment.OVERVIEW:
+            root_id = node._id
+        auth.user.comments_viewed_timestamp[root_id] = datetime.utcnow()
         auth.user.save()
-        list_comments(**kwargs)
-        return {node._id: auth.user.comments_viewed_timestamp[node._id].isoformat()}
+        return {root_id: auth.user.comments_viewed_timestamp[root_id].isoformat()}
     else:
         return {}
 
-
-@must_be_logged_in
 @must_be_contributor_or_public
-def report_abuse(auth, **kwargs):
-
-    user = auth.user
-
-    cid = kwargs.get('cid')
-    comment = get_comment(cid, auth)
-
-    category = request.json.get('category')
-    text = request.json.get('text', '')
-    if not category:
-        raise HTTPError(http.BAD_REQUEST)
-
-    try:
-        comment.report_abuse(user, save=True, category=category, text=text)
-    except ValueError:
-        raise HTTPError(http.BAD_REQUEST)
-
-    return {}
-
-
-@must_be_logged_in
-@must_be_contributor_or_public
-def unreport_abuse(auth, **kwargs):
-    user = auth.user
-
-    cid = kwargs.get('cid')
-    comment = get_comment(cid, auth)
-
-    try:
-        comment.unreport_abuse(user, save=True)
-    except ValueError:
-        raise HTTPError(http.BAD_REQUEST)
-
-    return {}
+def update_comments_timestamp(auth, node, **kwargs):
+    timestamp_info = request.get_json()
+    page = timestamp_info.get('page')
+    root_id = timestamp_info.get('rootId')
+    return _update_comments_timestamp(auth, node, page, root_id)

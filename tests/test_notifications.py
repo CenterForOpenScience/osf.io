@@ -11,15 +11,16 @@ from nose.tools import *  # noqa PEP8 asserts
 
 from framework.auth import Auth
 from framework.auth.core import User
-from framework.auth.signals import contributor_removed
-from framework.auth.signals import node_deleted
+from framework.guid.model import Guid
+
 from website.notifications.tasks import get_users_emails, send_users_email, group_by_node, remove_notifications
 from website.notifications import constants
 from website.notifications.model import NotificationDigest
 from website.notifications.model import NotificationSubscription
 from website.notifications import emails
 from website.notifications import utils
-from website.project.model import Node
+from website.project.model import Node, Comment
+from website.project.signals import contributor_removed, node_deleted
 from website import mails
 from website.util import api_url_for
 from website.util import web_url_for
@@ -227,12 +228,14 @@ class TestRemoveContributor(OsfTestCase):
         assert_in(self.contributor, self.subscription.email_transactional)
         self.project.remove_contributor(self.contributor, auth=Auth(self.project.creator))
         assert_not_in(self.contributor, self.project.contributors)
+        self.subscription.reload()
         assert_not_in(self.contributor, self.subscription.email_transactional)
 
     def test_removed_non_parent_admin_contributor_is_removed_from_subscriptions(self):
         assert_in(self.node.creator, self.node_subscription.email_transactional)
         self.node.remove_contributor(self.node.creator, auth=Auth(self.node.creator))
         assert_not_in(self.node.creator, self.node.contributors)
+        self.node_subscription.reload()
         assert_not_in(self.node.creator, self.node_subscription.email_transactional)
 
     def test_removed_contributor_admin_on_parent_not_removed_from_node_subscription(self):
@@ -251,29 +254,29 @@ class TestRemoveContributor(OsfTestCase):
 
 
 class TestRemoveNodeSignal(OsfTestCase):
-        def test_node_subscriptions_and_backrefs_removed_when_node_is_deleted(self):
-            project = factories.ProjectFactory()
-            subscription = factories.NotificationSubscriptionFactory(
-                _id=project._id + '_comments',
-                owner=project
-            )
-            subscription.save()
-            subscription.email_transactional.append(project.creator)
-            subscription.save()
+    def test_node_subscriptions_and_backrefs_removed_when_node_is_deleted(self):
+        project = factories.ProjectFactory()
+        subscription = factories.NotificationSubscriptionFactory(
+            _id=project._id + '_comments',
+            owner=project
+        )
+        subscription.save()
+        subscription.email_transactional.append(project.creator)
+        subscription.save()
 
-            s = getattr(project.creator, 'email_transactional', [])
-            assert_equal(len(s), 1)
+        s = NotificationSubscription.find(Q('email_transactional', 'eq', project.creator._id))
+        assert_equal(s.count(), 1)
 
-            with capture_signals() as mock_signals:
-                project.remove_node(auth=Auth(project.creator))
-            assert_true(project.is_deleted)
-            assert_equal(mock_signals.signals_sent(), set([node_deleted]))
+        with capture_signals() as mock_signals:
+            project.remove_node(auth=Auth(project.creator))
+        assert_true(project.is_deleted)
+        assert_equal(mock_signals.signals_sent(), set([node_deleted]))
 
-            s = getattr(project.creator, 'email_transactional', [])
-            assert_equal(len(s), 0)
+        s = NotificationSubscription.find(Q('email_transactional', 'eq', project.creator._id))
+        assert_equal(s.count(), 0)
 
-            with assert_raises(NoResultsFound):
-                NotificationSubscription.find_one(Q('owner', 'eq', project))
+        with assert_raises(NoResultsFound):
+            NotificationSubscription.find_one(Q('owner', 'eq', project))
 
 
 def list_or_dict(data):
@@ -989,6 +992,12 @@ class TestSendEmails(OsfTestCase):
             event_name='comments'
         )
         self.node_subscription.save()
+        self.user_subscription = factories.NotificationSubscriptionFactory(
+            _id=self.user._id + '_' + 'comment_replies',
+            owner=self.user,
+            event_name='comment_replies',
+            email_transactional=[self.user._id]
+        )
 
     @mock.patch('website.notifications.emails.store_emails')
     def test_notify_no_subscription(self, mock_store):
@@ -1040,6 +1049,13 @@ class TestSendEmails(OsfTestCase):
                                       self.user, self.node, time_now, target_user=self.project.creator)
 
     @mock.patch('website.notifications.emails.store_emails')
+    def test_notify_sends_comment_reply_when_target_user_is_subscribed_via_user_settings(self, mock_store):
+        time_now = datetime.datetime.utcnow()
+        emails.notify('comment_replies', user=self.project.creator, node=self.node, timestamp=time_now, target_user=self.user)
+        mock_store.assert_called_with([self.user._id], 'email_transactional', 'comment_replies',
+                                      self.project.creator, self.node, time_now, target_user=self.user)
+
+    @mock.patch('website.notifications.emails.store_emails')
     def test_notify_sends_comment_event_if_comment_reply_is_not_direct_reply(self, mock_store):
         user = factories.UserFactory()
         time_now = datetime.datetime.utcnow()
@@ -1089,21 +1105,19 @@ class TestSendEmails(OsfTestCase):
         # user is not subscribed to project comment notifications
         project = factories.ProjectFactory()
 
-        # reply to user
+        # user comments on project
         target = factories.CommentFactory(node=project, user=user)
         content = 'hammer to fall'
 
-        # auth=project.creator.auth
-        url = project.api_url + 'comment/'
-        self.app.post_json(
-            url,
-            {
-                'content': content,
-                'isPublic': 'public',
-                'target': target._id
-
-            },
-            auth=project.creator.auth
+        # reply to user (note: notify is called from Comment.create)
+        reply = Comment.create(
+            auth=Auth(project.creator),
+            user=project.creator,
+            node=project,
+            content=content,
+            target=Guid.load(target._id),
+            root_target=Guid.load(project._id),
+            is_public=True,
         )
         assert_true(mock_notify.called)
         assert_equal(mock_notify.call_count, 2)

@@ -4,11 +4,9 @@ class OSFError(Exception):
     """Base class for exceptions raised by the Osf application"""
     pass
 
-
 class NodeError(OSFError):
     """Raised when an action cannot be performed on a Node model"""
     pass
-
 
 class NodeStateError(NodeError):
     """Raised when the Node's state is not suitable for the requested action
@@ -34,3 +32,18 @@ class InvalidSanctionApprovalToken(TokenError):
     """
     message_short = "Invalid Token"
     message_long = "This approval link is invalid. Are you logged into the correct account?"
+
+class InvalidTagError(OSFError):
+    """Raised when attempting to perform an invalid operation on a tag"""
+    pass
+
+class TagNotFoundError(OSFError):
+    """Raised when attempting to perform an operation on an absent tag"""
+    pass
+
+class UserNotAffiliatedError(OSFError):
+    """Raised if a user attempts to add an institution that is not currently
+    one of its affiliations.
+    """
+    message_short = "User not affiliated"
+    message_long = "This user is not affiliated with this institution."

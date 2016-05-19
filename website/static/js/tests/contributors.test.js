@@ -16,13 +16,11 @@ sinon.assert.expose(assert, {prefix: ''});
 var API_BASE = '/api/v1/project/12345';
 var URLs = {
     contributors: [API_BASE, 'get_contributors', ''].join('/'),
-    editableChildren: [API_BASE, 'get_editable_children', ''].join('/'),
     fetchUsers: '/api/v1/user/search'
 };
 
 describe('addContributors', () => {
    describe('viewModel', () => {
-
        var getContributorsResult = {
            contributors: [
                {
@@ -89,14 +87,12 @@ describe('addContributors', () => {
 
        describe('ViewModel', () => {
            var vm;
-           var hardReset = () => {
+           beforeEach(() => {
+               sinon.stub(ko, 'applyBindings');
                var addContribs = new addContributors('nothing', 'Fake title', '12345', 'parent', 'Parent title');
                vm = addContribs.viewModel;
-           };
-           before(() => {
-               hardReset();
+               ko.applyBindings.restore();
            });
-
            describe('getContributors', () => {
                var shouldBe = ['a1234', 'b1234', 'c1234'];
 
@@ -104,33 +100,6 @@ describe('addContributors', () => {
                    vm.getContributors()
                        .always(() => {
                            assert.equal(vm.contributors(), shouldBe);
-                       });
-               });
-           });
-
-           describe('getEditableChildren', () => {
-               var shouldBe = [
-                   {
-                       id: '23456',
-                       indent: 0,
-                       margin: '25px'
-                   },
-                   {
-                       id: '23457',
-                       indent: 1,
-                       margin: '50px'
-                   },
-                   {
-                       id: '23458',
-                       indent: 2,
-                       margin: '75px'
-                   }
-               ];
-
-               it('should be a list of indented nodes (25px offset)', () => {
-                   vm.getEditableChildren()
-                       .always(() => {
-                           assert.equal(vm.nodes(), shouldBe);
                        });
                });
            });
@@ -164,6 +133,11 @@ describe('addContributors', () => {
                    });
 
                    it('should return true with one result addable', (done) => {
+                       vm.results([
+                           {
+                               id: 'c1234'
+                           }
+                       ]);
                        vm.selection([
                            {
                                id: 'b1234'
@@ -192,5 +166,3 @@ describe('addContributors', () => {
        });
    });
 });
-
-

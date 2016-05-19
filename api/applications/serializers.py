@@ -1,12 +1,45 @@
 from django.core.validators import URLValidator
 from rest_framework import serializers as ser
 
+from modularodm import Q
+
 from website.models import ApiOAuth2Application
 
 from api.base.serializers import JSONAPISerializer, LinksField, IDField, TypeField
+from api.base.utils import absolute_reverse
 
 
-class ApiOAuth2ApplicationSerializer(JSONAPISerializer):
+class ApiOAuthApplicationBaseSerializer(JSONAPISerializer):
+    """Base serializer class for OAuth2 applications """
+    id = IDField(source='client_id', read_only=True, help_text='The client ID for this application (automatically generated)')
+
+    type = TypeField()
+
+    client_id = ser.CharField(help_text='The client ID for this application (automatically generated)',
+                              read_only=True)
+
+    client_secret = ser.CharField(help_text='The client secret for this application (automatically generated)',
+                                  read_only=True)  # TODO: May change this later
+
+    links = LinksField({
+        'html': 'absolute_url',
+        'reset': 'reset_url'
+    })
+
+    def absolute_url(self, obj):
+        return obj.absolute_url
+
+    def get_absolute_url(self, obj):
+        return obj.get_absolute_url()
+
+    def reset_url(self, obj):
+        return absolute_reverse('applications:application-reset', kwargs={'client_id': obj.client_id})
+
+    class Meta:
+        type_ = 'applications'
+
+
+class ApiOAuth2ApplicationSerializer(ApiOAuthApplicationBaseSerializer):
     """Serialize data about a registered OAuth2 application"""
 
     id = IDField(source='client_id', read_only=True, help_text='The client ID for this application (automatically generated)')
@@ -29,28 +62,12 @@ class ApiOAuth2ApplicationSerializer(JSONAPISerializer):
                                  validators=[URLValidator()],
                                  label="Callback URL")
 
-    client_id = ser.CharField(help_text='The client ID for this application (automatically generated)',
-                              read_only=True)
-
-    client_secret = ser.CharField(help_text='The client secret for this application (automatically generated)',
-                                  read_only=True)  # TODO: May change this later
-
     owner = ser.CharField(help_text='The id of the user who owns this application',
                           read_only=True,  # Don't let user register an application in someone else's name
                           source='owner._id')
 
     date_created = ser.DateTimeField(help_text='The date this application was generated (automatically filled in)',
                                      read_only=True)
-
-    class Meta:
-        type_ = 'applications'
-
-    links = LinksField({
-        'html': 'absolute_url'
-    })
-
-    def absolute_url(self, obj):
-        return obj.absolute_url
 
     def create(self, validated_data):
         instance = ApiOAuth2Application(**validated_data)
@@ -71,3 +88,13 @@ class ApiOAuth2ApplicationDetailSerializer(ApiOAuth2ApplicationSerializer):
     """
 
     id = IDField(source='client_id', required=True, help_text='The client ID for this application (automatically generated)')
+
+
+class ApiOAuth2ApplicationResetSerializer(ApiOAuth2ApplicationDetailSerializer):
+
+    def absolute_url(self, obj):
+        obj = ApiOAuth2Application.find_one(Q('client_id', 'eq', obj['client_id']))
+        return obj.absolute_url
+
+    def reset_url(self, obj):
+        return absolute_reverse('applications:application-reset', kwargs={'client_id': obj['client_id']})

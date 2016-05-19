@@ -3,11 +3,11 @@ import collections
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
-from framework.auth import signals
 from website.models import Node, User
 from website.notifications import constants
 from website.notifications import model
 from website.notifications.model import NotificationSubscription
+from website.project import signals
 
 
 class NotificationsDict(dict):
@@ -45,7 +45,7 @@ def find_subscription_type(subscription):
 
 def to_subscription_key(uid, event):
     """Build the Subscription primary key for the given guid and event"""
-    return str(uid + '_' + event)
+    return u'{}_{}'.format(uid, event)
 
 
 def from_subscription_key(key):
@@ -57,14 +57,14 @@ def from_subscription_key(key):
 
 
 @signals.contributor_removed.connect
-def remove_contributor_from_subscriptions(contributor, node):
+def remove_contributor_from_subscriptions(node, user):
     """ Remove contributor from node subscriptions unless the user is an
         admin on any of node's parent projects.
     """
-    if contributor._id not in node.admin_contributor_ids:
-        node_subscriptions = get_all_node_subscriptions(contributor, node)
+    if user._id not in node.admin_contributor_ids:
+        node_subscriptions = get_all_node_subscriptions(user, node)
         for subscription in node_subscriptions:
-            subscription.remove_user_from_subscription(contributor)
+            subscription.remove_user_from_subscription(user)
 
 
 @signals.node_deleted.connect
@@ -189,7 +189,8 @@ def check_project_subscriptions_are_all_none(user, node):
 def get_all_user_subscriptions(user):
     """ Get all Subscription objects that the user is subscribed to"""
     for notification_type in constants.NOTIFICATION_TYPES:
-        for subscription in getattr(user, notification_type, []):
+        query = NotificationSubscription.find(Q(notification_type, 'eq', user._id))
+        for subscription in query:
             yield subscription
 
 

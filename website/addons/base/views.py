@@ -1,53 +1,98 @@
+import datetime
+import httplib
 import os
 import uuid
-import httplib
-import datetime
+import markupsafe
 
+
+from flask import make_response
+from flask import redirect
+from flask import request
+import furl
 import jwe
 import jwt
-import furl
-from flask import request
-from flask import redirect
-from flask import make_response
+
+from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
 from framework import sentry
-from framework.auth import cas
 from framework.auth import Auth
+from framework.auth import cas
 from framework.auth import oauth_scopes
+from framework.auth.decorators import collect_auth, must_be_logged_in, must_be_signed
+from framework.exceptions import HTTPError
 from framework.routing import json_renderer
 from framework.sentry import log_exception
-from framework.exceptions import HTTPError
 from framework.transactions.context import TokuTransaction
 from framework.transactions.handlers import no_auto_transaction
-from framework.auth.decorators import must_be_logged_in, must_be_signed, collect_auth
 from website import mails
 from website import settings
-from website.files.models import FileNode
-from website.files.models import TrashedFileNode
-from website.project import decorators
+from website.addons.base import StorageAddonBase
 from website.addons.base import exceptions
 from website.addons.base import signals as file_signals
-from website.addons.base import StorageAddonBase
-from website.models import User, Node, NodeLog
-from website.util import rubeus
+from website.files.models import FileNode, StoredFileNode, TrashedFileNode
+from website.models import Node, NodeLog, User
 from website.profile.utils import get_gravatar
-from website.project.decorators import must_be_valid_project, must_be_contributor_or_public
+from website.project import decorators
+from website.project.decorators import must_be_contributor_or_public, must_be_valid_project
+from website.project.model import DraftRegistration, MetaSchema
 from website.project.utils import serialize_node
-
+from website.util import rubeus
 
 # import so that associated listener is instantiated and gets emails
 from website.notifications.events.files import FileEvent  # noqa
 
-FILE_GONE_ERROR_MESSAGE = u'''
+ERROR_MESSAGES = {'FILE_GONE': u'''
 <style>
 .file-download{{display: none;}}
 .file-share{{display: none;}}
 .file-delete{{display: none;}}
 </style>
 <div class="alert alert-info" role="alert">
-This link to the file "{file_name}" is no longer valid.
-</div>'''
+<p>
+The file "{file_name}" stored on {provider} was deleted via the OSF.
+</p>
+<p>
+
+It was deleted by <a href="/{deleted_by_guid}">{deleted_by}</a> on {deleted_on}.
+
+</p>
+</div>''',
+                  'DONT_KNOW': u'''
+<style>
+.file-download{{display: none;}}
+.file-share{{display: none;}}
+.file-delete{{display: none;}}
+</style>
+<div class="alert alert-info" role="alert">
+<p>
+File not found at {provider}.
+</p>
+</div>''',
+                  'BLAME_PROVIDER': u'''
+<style>
+.file-download{{display: none;}}
+.file-share{{display: none;}}
+.file-delete{{display: none;}}
+</style>
+<div class="alert alert-info" role="alert">
+<p>
+This {provider} link to the file "{file_name}" is currently unresponsive.
+The provider ({provider}) may currently be unavailable or "{file_name}" may have been removed from {provider} through another interface.
+</p>
+<p>
+You may wish to verify this through {provider}'s website.
+</p>
+</div>''',
+'FILE_SUSPENDED': u'''
+<style>
+.file-download{{display: none;}}
+.file-share{{display: none;}}
+.file-delete{{display: none;}}
+</style>
+<div class="alert alert-info" role="alert">
+This content has been removed.
+</div>'''}
 
 WATERBUTLER_JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
 
@@ -139,6 +184,26 @@ def check_access(node, auth, action, cas_resp):
             if parent.can_edit(auth):
                 return True
             parent = parent.parent_node
+
+    # Users with the PREREG_ADMIN_TAG should be allowed to download files
+    # from prereg challenge draft registrations.
+    try:
+        prereg_schema = MetaSchema.find_one(
+            Q('name', 'eq', 'Prereg Challenge') &
+            Q('schema_version', 'eq', 2)
+        )
+        allowed_nodes = [node] + node.parents
+        prereg_draft_registration = DraftRegistration.find(
+            Q('branched_from', 'in', [n._id for n in allowed_nodes]) &
+            Q('registration_schema', 'eq', prereg_schema)
+        )
+        if action == 'download' and \
+                    auth.user is not None and \
+                    prereg_draft_registration.count() > 0 and \
+                    settings.PREREG_ADMIN_TAG in auth.user.system_tags:
+            return True
+    except NoResultsFound:
+        pass
 
     raise HTTPError(httplib.FORBIDDEN if auth.user else httplib.UNAUTHORIZED)
 
@@ -331,8 +396,8 @@ def create_waterbutler_log(payload, **kwargs):
                     action=payload['action'],
                     source_node=source_node,
                     destination_node=destination_node,
-                    source_path=payload['source']['path'],
-                    destination_path=payload['source']['path'],
+                    source_path=payload['source']['materialized'],
+                    destination_path=payload['source']['materialized'],
                     source_addon=payload['source']['addon'],
                     destination_addon=payload['destination']['addon'],
                 )
@@ -360,6 +425,42 @@ def create_waterbutler_log(payload, **kwargs):
         file_signals.file_updated.send(node=node, user=user, event_type=action, payload=payload)
 
     return {'status': 'success'}
+
+
+@file_signals.file_updated.connect
+def addon_delete_file_node(self, node, user, event_type, payload):
+    """ Get addon StoredFileNode(s), move it into the TrashedFileNode collection
+    and remove it from StoredFileNode.
+
+    Required so that the guids of deleted addon files are not re-pointed when an
+    addon file or folder is moved or renamed.
+    """
+    if event_type == 'file_removed' and payload.get('provider', None) != 'osfstorage':
+        provider = payload['provider']
+        path = payload['metadata']['path']
+        materialized_path = payload['metadata']['materialized']
+        if path.endswith('/'):
+            folder_children = FileNode.resolve_class(provider, FileNode.ANY).find(
+                Q('provider', 'eq', provider) &
+                Q('node', 'eq', node) &
+                Q('materialized_path', 'startswith', materialized_path)
+            )
+            for item in folder_children:
+                if item.kind == 'file' and not TrashedFileNode.load(item._id):
+                    item.delete(user=user)
+                elif item.kind == 'folder':
+                    StoredFileNode.remove_one(item.stored_object)
+        else:
+            try:
+                file_node = FileNode.resolve_class(provider, FileNode.FILE).find_one(
+                    Q('node', 'eq', node) &
+                    Q('materialized_path', 'eq', materialized_path)
+                )
+            except NoResultsFound:
+                file_node = None
+
+            if file_node and not TrashedFileNode.load(file_node._id):
+                file_node.delete(user=user)
 
 
 @must_be_valid_project
@@ -409,20 +510,44 @@ def addon_view_or_download_file_legacy(**kwargs):
 
 @must_be_valid_project
 @must_be_contributor_or_public
-def addon_deleted_file(auth, node, **kwargs):
+def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
     """Shows a nice error message to users when they try to view
     a deleted file
     """
     # Allow file_node to be passed in so other views can delegate to this one
-    trashed = kwargs.get('file_node') or TrashedFileNode.load(kwargs.get('trashed_id'))
-    if not trashed:
-        raise HTTPError(httplib.NOT_FOUND, {
-            'message_short': 'Not Found',
-            'message_long': 'This file does not exist'
-        })
-
+    file_node = kwargs.get('file_node') or TrashedFileNode.load(kwargs.get('trashed_id'))
+    deleted_by, deleted_on = None, None
+    if isinstance(file_node, TrashedFileNode):
+        deleted_by = file_node.deleted_by
+        deleted_by_guid = file_node.deleted_by._id if deleted_by else None
+        deleted_on = file_node.deleted_on.strftime("%c") + ' UTC'
+        if file_node.suspended:
+            error_type = 'FILE_SUSPENDED'
+        elif file_node.deleted_by is None:
+            error_type = 'BLAME_PROVIDER'
+        else:
+            error_type = 'FILE_GONE'
+    else:
+        error_type = 'DONT_KNOW'
+    file_path = kwargs.get('path', file_node.path)
+    file_name = file_node.name or os.path.basename(file_path)
+    file_name_title, file_name_ext = os.path.splitext(file_name)
+    provider_full = settings.ADDONS_AVAILABLE_DICT[file_node.provider].full_name
     ret = serialize_node(node, auth, primary=True)
     ret.update(rubeus.collect_addon_assets(node))
+    format_params = dict(
+        file_name=markupsafe.escape(file_name),
+        deleted_by=markupsafe.escape(deleted_by),
+        deleted_on=markupsafe.escape(deleted_on),
+        provider=markupsafe.escape(provider_full)
+    )
+    if deleted_by:
+        format_params['deleted_by_guid'] = markupsafe.escape(deleted_by_guid)
+    retError = ERROR_MESSAGES[error_type].format(**format_params)
+    try:
+        file_guid = file_node.get_guid()._id
+    except AttributeError:
+        file_guid = None
     ret.update({
         'urls': {
             'render': None,
@@ -432,14 +557,20 @@ def addon_deleted_file(auth, node, **kwargs):
             'files': node.web_url_for('collect_file_trees'),
         },
         'extra': {},
-        'size': 9966699,  # Prevent file from being editted, just in case
+        'size': 9966699,  # Prevent file from being edited, just in case
         'sharejs_uuid': None,
-        'file_name': trashed.name,
-        'file_path': trashed.path,
-        'provider': trashed.provider,
-        'materialized_path': trashed.materialized_path,
-        'error': FILE_GONE_ERROR_MESSAGE.format(file_name=trashed.name),
-        'private': getattr(node.get_addon(trashed.provider), 'is_private', False),
+        'file_name': file_name,
+        'file_path': file_path,
+        'file_name_title': file_name_title,
+        'file_name_ext': file_name_ext,
+        'file_guid': file_guid,
+        'file_id': file_node._id,
+        'provider': file_node.provider,
+        'materialized_path': file_node.materialized_path or file_path,
+        'error': retError,
+        'private': getattr(node.get_addon(file_node.provider), 'is_private', False),
+        'file_tags': [tag._id for tag in file_node.tags],
+        'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE,
     })
 
     return ret, httplib.GONE
@@ -455,25 +586,29 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     node_addon = node.get_addon(provider)
 
+    provider_safe = markupsafe.escape(provider)
+    path_safe = markupsafe.escape(path)
+    project_safe = markupsafe.escape(node.project_or_component)
+
     if not path:
         raise HTTPError(httplib.BAD_REQUEST)
 
     if not isinstance(node_addon, StorageAddonBase):
-        raise HTTPError(httplib.BAD_REQUEST, {
+        raise HTTPError(httplib.BAD_REQUEST, data={
             'message_short': 'Bad Request',
-            'message_long': 'The add-on containing this file is no longer connected to the {}.'.format(node.project_or_component)
+            'message_long': 'The {} add-on containing {} is no longer connected to {}.'.format(provider_safe, path_safe, project_safe)
         })
 
     if not node_addon.has_auth:
-        raise HTTPError(httplib.UNAUTHORIZED, {
+        raise HTTPError(httplib.UNAUTHORIZED, data={
             'message_short': 'Unauthorized',
-            'message_long': 'The add-on containing this file is no longer authorized.'
+            'message_long': 'The {} add-on containing {} is no longer authorized.'.format(provider_safe, path_safe)
         })
 
     if not node_addon.complete:
-        raise HTTPError(httplib.BAD_REQUEST, {
+        raise HTTPError(httplib.BAD_REQUEST, data={
             'message_short': 'Bad Request',
-            'message_long': 'The add-on containing this file is no longer configured.'
+            'message_long': 'The {} add-on containing {} is no longer configured.'.format(provider_safe, path_safe)
         })
 
     file_node = FileNode.resolve_class(provider, FileNode.FILE).get_or_create(node, path)
@@ -490,15 +625,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     )
 
     if version is None:
-        if file_node.get_guid():
-            # If this file has been successfully view before but no longer exists
-            # Show a nice error message
-            return addon_deleted_file(file_node=file_node, **kwargs)
-
-        raise HTTPError(httplib.NOT_FOUND, {
-            'message_short': 'Not Found',
-            'message_long': 'This file does not exist'
-        })
+        return addon_deleted_file(file_node=file_node, path=path, **kwargs)
 
     # TODO clean up these urls and unify what is used as a version identifier
     if request.method == 'HEAD':
@@ -558,6 +685,8 @@ def addon_view_file(auth, node, file_node, version):
         },
         'error': error,
         'file_name': file_node.name,
+        'file_name_title': os.path.splitext(file_node.name)[0],
+        'file_name_ext': os.path.splitext(file_node.name)[1],
         'file_path': file_node.path,
         'sharejs_uuid': sharejs_uuid,
         'provider': file_node.provider,
@@ -566,6 +695,9 @@ def addon_view_file(auth, node, file_node, version):
         'size': version.size if version.size is not None else 9966699,
         'private': getattr(node.get_addon(file_node.provider), 'is_private', False),
         'file_tags': [tag._id for tag in file_node.tags],
+        'file_guid': file_node.get_guid()._id,
+        'file_id': file_node._id,
+        'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE
     })
 
     ret.update(rubeus.collect_addon_assets(node))

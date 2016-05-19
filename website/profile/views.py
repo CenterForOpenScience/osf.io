@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 
+import datetime
 import logging
 import httplib
 import httplib as http  # TODO: Inconsistent usage of aliased import
 from dateutil.parser import parse as parse_date
 
 from flask import request
+import markupsafe
 from modularodm.exceptions import ValidationError, NoResultsFound, MultipleResultsFound
 from modularodm import Q
 
@@ -23,8 +25,12 @@ from framework.status import push_status_message
 from website import mails
 from website import mailchimp_utils
 from website import settings
-from website.models import ApiOAuth2Application, User
+from website.project.model import Node
+from website.project.utils import PROJECT_QUERY, TOP_LEVEL_PROJECT_QUERY
+from website.models import ApiOAuth2Application, ApiOAuth2PersonalToken, User
+from website.oauth.utils import get_available_scopes
 from website.profile import utils as profile_utils
+from website.util.time import throttle_period_expired
 from website.util import api_v2_url, web_url_for, paths
 from website.util.sanitize import escape_html
 from website.util.sanitize import strip_html
@@ -36,29 +42,31 @@ logger = logging.getLogger(__name__)
 
 def get_public_projects(uid=None, user=None):
     user = user or User.load(uid)
-    return _render_nodes(
-        list(user.node__contributed.find(
-            (
-                Q('category', 'eq', 'project') &
-                Q('is_public', 'eq', True) &
-                Q('is_registration', 'eq', False) &
-                Q('is_deleted', 'eq', False)
-            )
-        ))
+    # In future redesign, should be limited for users with many projects / components
+    nodes = Node.find_for_user(
+        user,
+        subquery=(
+            TOP_LEVEL_PROJECT_QUERY &
+            Q('is_public', 'eq', True)
+        )
     )
+    return _render_nodes(list(nodes))
 
 
 def get_public_components(uid=None, user=None):
     user = user or User.load(uid)
     # TODO: This should use User.visible_contributor_to?
-    nodes = list(user.node__contributed.find(
-        (
-            Q('category', 'ne', 'project') &
-            Q('is_public', 'eq', True) &
-            Q('is_registration', 'eq', False) &
-            Q('is_deleted', 'eq', False)
+    # In future redesign, should be limited for users with many projects / components
+    nodes = list(
+        Node.find_for_user(
+            user,
+            subquery=(
+                PROJECT_QUERY &
+                Q('parent_node', 'ne', None) &
+                Q('is_public', 'eq', True)
+            )
         )
-    ))
+    )
     return _render_nodes(nodes, show_path=True)
 
 
@@ -95,6 +103,9 @@ def resend_confirmation(auth):
     data = request.get_json()
 
     validate_user(data, user)
+    if not throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
+        raise HTTPError(httplib.BAD_REQUEST,
+                        data={'message_long': 'Too many requests. Please wait a while before sending another confirmation email.'})
 
     try:
         primary = data['email']['primary']
@@ -111,10 +122,11 @@ def resend_confirmation(auth):
     # TODO: This setting is now named incorrectly.
     if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
         send_confirm_email(user, email=address)
+        user.email_last_sent = datetime.datetime.utcnow()
 
     user.save()
 
-    return _profile_view(user)
+    return _profile_view(user, is_profile=True)
 
 @must_be_logged_in
 def update_user(auth):
@@ -136,17 +148,21 @@ def update_user(auth):
 
         emails_list = [x['address'].strip().lower() for x in data['emails']]
 
-        if user.username not in emails_list:
+        if user.username.strip().lower() not in emails_list:
             raise HTTPError(httplib.FORBIDDEN)
 
+        available_emails = [
+            each.strip().lower() for each in
+            user.emails + user.unconfirmed_emails
+        ]
         # removals
         removed_emails = [
-            each
-            for each in user.emails + user.unconfirmed_emails
+            each.strip().lower()
+            for each in available_emails
             if each not in emails_list
         ]
 
-        if user.username in removed_emails:
+        if user.username.strip().lower() in removed_emails:
             raise HTTPError(httplib.FORBIDDEN)
 
         for address in removed_emails:
@@ -161,8 +177,7 @@ def update_user(auth):
         added_emails = [
             each['address'].strip().lower()
             for each in data['emails']
-            if each['address'].strip().lower() not in user.emails
-            and each['address'].strip().lower() not in user.unconfirmed_emails
+            if each['address'].strip().lower() not in available_emails
         ]
 
         for address in added_emails:
@@ -194,7 +209,7 @@ def update_user(auth):
 
         if primary_email:
             primary_email_address = primary_email['address'].strip().lower()
-            if primary_email_address not in user.emails:
+            if primary_email_address not in [each.strip().lower() for each in user.emails]:
                 raise HTTPError(httplib.FORBIDDEN)
             username = primary_email_address
 
@@ -208,7 +223,7 @@ def update_user(auth):
             # Remove old primary email from subscribed mailing lists
             for list_name, subscription in user.mailchimp_mailing_lists.iteritems():
                 if subscription:
-                    mailchimp_utils.unsubscribe_mailchimp(list_name, user._id, username=user.username)
+                    mailchimp_utils.unsubscribe_mailchimp_async(list_name, user._id, username=user.username)
             user.username = username
 
     ###################
@@ -233,7 +248,7 @@ def update_user(auth):
         if subscription:
             mailchimp_utils.subscribe_mailchimp(list_name, user._id)
 
-    return _profile_view(user)
+    return _profile_view(user, is_profile=True)
 
 
 def _profile_view(profile, is_profile=False):
@@ -253,7 +268,7 @@ def _profile_view(profile, is_profile=False):
         badges = []
 
     if profile:
-        profile_user_data = profile_utils.serialize_user(profile, full=True)
+        profile_user_data = profile_utils.serialize_user(profile, full=True, is_profile=is_profile)
         return {
             'profile': profile_user_data,
             'assertions': badge_assertions,
@@ -269,9 +284,10 @@ def _profile_view(profile, is_profile=False):
 
 
 def _get_user_created_badges(user):
+    from website.addons.badges.model import Badge
     addon = user.get_addon('badges')
     if addon:
-        return [badge for badge in addon.badge__creator if not badge.is_system_badge]
+        return [badge for badge in Badge.find(Q('creator', 'eq', addon._id)) if not badge.is_system_badge]
     return []
 
 
@@ -342,9 +358,10 @@ def user_account_password(auth, **kwargs):
         user.change_password(old_password, new_password, confirm_password)
         user.save()
     except ChangePasswordError as error:
-        push_status_message('<br />'.join(error.messages) + '.', kind='warning')
+        for m in error.messages:
+            push_status_message(m, kind='warning', trust=False)
     else:
-        push_status_message('Password updated successfully.', kind='success')
+        push_status_message('Password updated successfully.', kind='success', trust=False)
 
     return redirect(web_url_for('user_account'))
 
@@ -408,6 +425,43 @@ def oauth_application_detail(auth, **kwargs):
     return {"app_list_url": '',
             "app_detail_url": app_detail_url}
 
+@must_be_logged_in
+def personal_access_token_list(auth, **kwargs):
+    """Return token creation page with list of known tokens. API is responsible for tying list to current user."""
+    token_list_url = api_v2_url("tokens/")
+    return {
+        "token_list_url": token_list_url
+    }
+
+@must_be_logged_in
+def personal_access_token_register(auth, **kwargs):
+    """Register a personal access token: blank form view"""
+    token_list_url = api_v2_url("tokens/")  # POST request to this url
+    return {"token_list_url": token_list_url,
+            "token_detail_url": '',
+            "scope_options": get_available_scopes()}
+
+@must_be_logged_in
+def personal_access_token_detail(auth, **kwargs):
+    """Show detail for a single personal access token"""
+    _id = kwargs.get('_id')
+
+    # The ID must be an active and existing record, and the logged-in user must have permission to view it.
+    try:
+        record = ApiOAuth2PersonalToken.find_one(Q('_id', 'eq', _id))
+    except NoResultsFound:
+        raise HTTPError(http.NOT_FOUND)
+    if record.owner != auth.user:
+        raise HTTPError(http.FORBIDDEN)
+    if record.is_active is False:
+        raise HTTPError(http.GONE)
+
+    token_detail_url = api_v2_url("tokens/{}/".format(_id))  # Send request to this URL
+    return {"token_list_url": '',
+            "token_detail_url": token_detail_url,
+            "scope_options": get_available_scopes()}
+
+
 def collect_user_config_js(addon_configs):
     """Collect webpack bundles for each of the addons' user-cfg.js modules. Return
     the URLs for each of the JS modules to be included on the user addons config page.
@@ -461,7 +515,7 @@ def user_choose_mailing_lists(auth, **kwargs):
 
 
 @user_merged.connect
-def update_mailchimp_subscription(user, list_name, subscription):
+def update_mailchimp_subscription(user, list_name, subscription, send_goodbye=True):
     """ Update mailing list subscription in mailchimp.
 
     :param obj user: current user
@@ -472,7 +526,7 @@ def update_mailchimp_subscription(user, list_name, subscription):
         mailchimp_utils.subscribe_mailchimp(list_name, user._id)
     else:
         try:
-            mailchimp_utils.unsubscribe_mailchimp(list_name, user._id, username=user.username)
+            mailchimp_utils.unsubscribe_mailchimp_async(list_name, user._id, username=user.username, send_goodbye=send_goodbye)
         except mailchimp_utils.mailchimp.ListNotSubscribedError:
             raise HTTPError(http.BAD_REQUEST,
                 data=dict(message_short="ListNotSubscribedError",
@@ -729,21 +783,39 @@ def unserialize_schools(auth, **kwargs):
 
 @must_be_logged_in
 def request_export(auth):
+    user = auth.user
+    if not throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
+        raise HTTPError(httplib.BAD_REQUEST,
+                        data={'message_long': 'Too many requests. Please wait a while before sending another account export request.',
+                              'error_type': 'throttle_error'})
+
     mails.send_mail(
         to_addr=settings.SUPPORT_EMAIL,
         mail=mails.REQUEST_EXPORT,
         user=auth.user,
     )
+    user.email_last_sent = datetime.datetime.utcnow()
+    user.save()
     return {'message': 'Sent account export request'}
 
 
 @must_be_logged_in
 def request_deactivation(auth):
+    user = auth.user
+    if not throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
+        raise HTTPError(http.BAD_REQUEST,
+                        data={
+                            'message_long': 'Too many requests. Please wait a while before sending another account deactivation request.',
+                            'error_type': 'throttle_error'
+                        })
+
     mails.send_mail(
         to_addr=settings.SUPPORT_EMAIL,
         mail=mails.REQUEST_DEACTIVATION,
         user=auth.user,
     )
+    user.email_last_sent = datetime.datetime.utcnow()
+    user.save()
     return {'message': 'Sent account deactivation request'}
 
 
@@ -765,9 +837,9 @@ def redirect_to_twitter(twitter_handle):
         users = User.find(Q('social.twitter', 'iexact', twitter_handle))
         message_long = 'There are multiple OSF accounts associated with the ' \
                        'Twitter handle: <strong>{0}</strong>. <br /> Please ' \
-                       'select from the accounts below. <br /><ul>'.format(twitter_handle)
+                       'select from the accounts below. <br /><ul>'.format(markupsafe.escape(twitter_handle))
         for user in users:
-            message_long += '<li><a href="{0}">{1}</a></li>'.format(user.url, user.fullname)
+            message_long += '<li><a href="{0}">{1}</a></li>'.format(user.url, markupsafe.escape(user.fullname))
         message_long += '</ul>'
         raise HTTPError(http.MULTIPLE_CHOICES, data={
             'message_short': 'Multiple Users Found',

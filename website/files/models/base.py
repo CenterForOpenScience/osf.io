@@ -20,6 +20,7 @@ from framework.analytics import get_basic_counters
 from website import util
 from website.files import utils
 from website.files import exceptions
+from website.project.commentable import Commentable
 
 
 __all__ = (
@@ -36,8 +37,18 @@ PROVIDER_MAP = {}
 logger = logging.getLogger(__name__)
 
 
-class TrashedFileNode(StoredObject):
+class TrashedFileNode(StoredObject, Commentable):
     """The graveyard for all deleted FileNodes"""
+
+    __indices__ = [{
+        'unique': False,
+        'key_or_list': [
+            ('node', pymongo.ASCENDING),
+            ('is_file', pymongo.ASCENDING),
+            ('provider', pymongo.ASCENDING),
+        ]
+    }]
+
     _id = fields.StringField(primary=True)
 
     last_touched = fields.DateTimeField()
@@ -58,6 +69,7 @@ class TrashedFileNode(StoredObject):
     deleted_by = fields.AbstractForeignField('User')
     deleted_on = fields.DateTimeField(auto_now_add=True)
     tags = fields.ForeignField('Tag', list=True)
+    suspended = fields.BooleanField(default=False)
 
     @property
     def deep_url(self):
@@ -66,7 +78,29 @@ class TrashedFileNode(StoredObject):
         """
         return self.node.web_url_for('addon_deleted_file', trashed_id=self._id)
 
-    def restore(self):
+    # For Comment API compatibility
+    @property
+    def target_type(self):
+        """The object "type" used in the OSF v2 API."""
+        return 'files'
+
+    @property
+    def root_target_page(self):
+        """The comment page type associated with TrashedFileNodes."""
+        return 'files'
+
+    @property
+    def is_deleted(self):
+        return True
+
+    def belongs_to_node(self, node_id):
+        """Check whether the file is attached to the specified node."""
+        return self.node._id == node_id
+
+    def get_extra_log_params(self, comment):
+        return {'file': {'name': self.name, 'url': comment.get_comment_page_url()}}
+
+    def restore(self, recursive=True, parent=None):
         """Recreate a StoredFileNode from the data in this object
         Will re-point all guids and finally remove itself
         :raises KeyExistsException:
@@ -74,14 +108,43 @@ class TrashedFileNode(StoredObject):
         data = self.to_storage()
         data.pop('deleted_on')
         data.pop('deleted_by')
+        data.pop('suspended')
+        if parent:
+            data['parent'] = parent._id
+        elif data['parent']:
+            # parent is an AbstractForeignField, so it gets stored as tuple
+            data['parent'] = data['parent'][0]
         restored = FileNode.resolve_class(self.provider, int(self.is_file))(**data)
+        if not restored.parent:
+            raise ValueError('No parent to restore to')
         restored.save()
+
+        # repoint guid
+        for guid in Guid.find(Q('referent', 'eq', self)):
+            guid.referent = restored
+            guid.save()
+
+        if recursive:
+            for child in TrashedFileNode.find(Q('parent', 'eq', self)):
+                child.restore(recursive=recursive, parent=restored)
+
         TrashedFileNode.remove_one(self)
         return restored
 
+    def get_guid(self):
+        """Attempt to find a Guid that points to this object.
+
+        :rtype: Guid or None
+        """
+        try:
+            # Note sometimes multiple GUIDs can exist for
+            # a single object. Just go with the first one
+            return Guid.find(Q('referent', 'eq', self))[0]
+        except IndexError:
+            return None
 
 @unique_on(['node', 'name', 'parent', 'is_file', 'provider', 'path'])
-class StoredFileNode(StoredObject):
+class StoredFileNode(StoredObject, Commentable):
     """The storage backend for FileNode objects.
     This class should generally not be used or created manually as FileNode
     contains all the helpers required.
@@ -94,7 +157,19 @@ class StoredFileNode(StoredObject):
             ('path', pymongo.ASCENDING),
             ('node', pymongo.ASCENDING),
             ('is_file', pymongo.ASCENDING),
-            ('provider', pymongo.ASCENDING)
+            ('provider', pymongo.ASCENDING),
+        ]
+    }, {
+        'unique': False,
+        'key_or_list': [
+            ('node', pymongo.ASCENDING),
+            ('is_file', pymongo.ASCENDING),
+            ('provider', pymongo.ASCENDING),
+        ]
+    }, {
+        'unique': False,
+        'key_or_list': [
+            ('parent', pymongo.ASCENDING),
         ]
     }]
 
@@ -141,6 +216,38 @@ class StoredFileNode(StoredObject):
     def deep_url(self):
         return self.wrapped().deep_url
 
+    @property
+    def absolute_api_v2_url(self):
+        path = '/files/{}/'.format(self._id)
+        return util.api_v2_url(path)
+
+    # For Comment API compatibility
+    @property
+    def target_type(self):
+        """The object "type" used in the OSF v2 API."""
+        return 'files'
+
+    @property
+    def root_target_page(self):
+        """The comment page type associated with StoredFileNodes."""
+        return 'files'
+
+    @property
+    def is_deleted(self):
+        if self.provider == 'osfstorage':
+            return False
+
+    def belongs_to_node(self, node_id):
+        """Check whether the file is attached to the specified node."""
+        return self.node._id == node_id
+
+    def get_extra_log_params(self, comment):
+        return {'file': {'name': self.name, 'url': comment.get_comment_page_url()}}
+
+    # used by django and DRF
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url
+
     def wrapped(self):
         """Wrap self in a FileNode subclass
         """
@@ -149,7 +256,9 @@ class StoredFileNode(StoredObject):
     def get_guid(self, create=False):
         """Attempt to find a Guid that points to this object.
         One will be created if requested.
-        :rtype: Guid
+
+        :param Boolean create: Should we generate a GUID if there isn't one?  Default: False
+        :rtype: Guid or None
         """
         try:
             # Note sometimes multiple GUIDs can exist for
@@ -216,6 +325,30 @@ class FileNode(object):
             return cls.find_one(Q('node', 'eq', node) & Q('path', 'eq', path))
         except NoResultsFound:
             return cls.create(node=node, path=path)
+
+    @classmethod
+    def get_file_guids(cls, materialized_path, provider, node, guids=None):
+        guids = guids or []
+        materialized_path = '/' + materialized_path.lstrip('/')
+        if materialized_path.endswith('/'):
+            folder_children = cls.find(Q('provider', 'eq', provider) &
+                                       Q('node', 'eq', node) &
+                                       Q('materialized_path', 'startswith', materialized_path))
+            for item in folder_children:
+                if item.kind == 'file':
+                    guid = item.get_guid()
+                    if guid:
+                        guids.append(guid._id)
+        else:
+            try:
+                file_obj = cls.find_one(Q('node', 'eq', node) & Q('materialized_path', 'eq', materialized_path))
+            except NoResultsFound:
+                return guids
+            guid = file_obj.get_guid()
+            if guid:
+                guids.append(guid._id)
+
+        return guids
 
     @classmethod
     def resolve_class(cls, provider, _type=2):
@@ -371,6 +504,7 @@ class FileNode(object):
         """
         trashed = self._create_trashed(user=user, parent=parent)
         self._repoint_guids(trashed)
+        self.node.save()
         StoredFileNode.remove_one(self.stored_object)
         return trashed
 
@@ -380,8 +514,7 @@ class FileNode(object):
     def move_under(self, destination_parent, name=None):
         self.name = name or self.name
         self.parent = destination_parent.stored_object
-        self._update_node(save=True)
-        # Trust _update_node to save us
+        self._update_node(save=True)  # Trust _update_node to save us
 
         return self
 
@@ -511,6 +644,7 @@ class File(FileNode):
         headers = {}
         if auth_header:
             headers['Authorization'] = auth_header
+
         resp = requests.get(
             self.generate_waterbutler_url(revision=revision, meta=True, **kwargs),
             headers=headers,
@@ -518,7 +652,6 @@ class File(FileNode):
         if resp.status_code != 200:
             logger.warning('Unable to find {} got status code {}'.format(self, resp.status_code))
             return None
-
         return self.update(revision, resp.json()['data']['attributes'])
         # TODO Switch back to head requests
         # return self.update(revision, json.loads(resp.headers['x-waterbutler-metadata']))
@@ -536,11 +669,12 @@ class File(FileNode):
         version.update_metadata(data, save=False)
 
         # Transform here so it can be sortted on later
-        data['modified'] = parse_date(
-            data['modified'] or '',  # None breaks things to pass a string
-            ignoretz=True,
-            default=datetime.datetime.utcnow()  # Just incase nothing can be parsed
-        )
+        if data['modified'] is not None and data['modified'] != '':
+            data['modified'] = parse_date(
+                data['modified'],
+                ignoretz=True,
+                default=datetime.datetime.utcnow()  # Just incase nothing can be parsed
+            )
 
         # if revision is none then version is the latest version
         # Dont save the latest information
@@ -701,7 +835,7 @@ class FileVersion(StoredObject):
         # If its are not in this callback it'll be in the next
         self.size = self.metadata.get('size', self.size)
         self.content_type = self.metadata.get('contentType', self.content_type)
-        if self.metadata.get('modified') is not None:
+        if self.metadata.get('modified'):
             # TODO handle the timezone here the user that updates the file may see an
             # Incorrect version
             self.date_modified = parse_date(self.metadata['modified'], ignoretz=True)

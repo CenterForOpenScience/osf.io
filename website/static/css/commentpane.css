@@ -1,42 +1,88 @@
-#commentPane {
+.comment-pane {
     position: fixed;
-    z-index: 98; /* Note: Must be lower than Bootstrap modals, BlockUI */
+    z-index: 999; /* Note: Must be lower than Bootstrap modals, BlockUI */
     width: 0;
-    top: 0;
+    top: 47px!important;
     right: 0;
     height: 100%;
-    padding-bottom: 51px; /* Note: Must be the same as .cp-handle:margin-top */
-    margin-right: 5px;
 }
 
-.cp-handle {
+@media (max-width: 767px) {
+    .comment-pane {
+        top: 99px!important;
+    }
+}
+
+.comment-info {
+  padding-bottom: 10px;
+}
+
+.comment-container {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.comment-body {
+    padding: 5px;
+    background-color: white;
+}
+
+.comment-author {
+    color: #999999;
+}
+
+.comment-date {
+    color: #999999;
+}
+.edit-comment {
+    background-color: #F3F3F3;
+}
+
+.comment-body i {
+    padding-right: 5px;
+}
+
+.cp-handle-div {
     /* Handle starts under Bootstrap header */
-    /* Note: Must be the same as #commentPane:padding-bottom */
-    margin-top: 95px;
-    width: 50px;
-    height: 50px;
-    background-color:#3C87C8;
+    width: 100px;
+    height: 48px;
     margin-left: -50px;
     text-align: center;
     border-bottom-left-radius: 15px;
-    padding-top: 10px;
+    padding-top: 10px;    
+}
+
+.comment-handle-icon {
+    padding-top: 2px;
+    color: #428bca;
+    cursor: pointer;
+    position: relative;
 }
 
 .cp-bar {
-    width: 5px; /* Note: Should be the same as .cp-sidebar:margin-left */
+    width: 1px;  /* Note: Should be the same as .cp-sidebar:margin-left */
+    top: 88px;
     height: 100%;
-    background-color: #3C87C8;
+    background-color: transparent;
     position: absolute;
-    margin-top: -50px;
     cursor: ew-resize;
 }
 
 .cp-sidebar {
-    height: 100%;
-    margin-top: -50px;
-    margin-left: 5px; /* Note: Should be the same as .cp-bar:width */
+    height: 95%;
+    margin-left: 1px;  /* Note: Should be the same as .cp-bar:width */
+    background-color: whitesmoke;
     padding: 10px;
     overflow-y: auto;
+    box-shadow: -1px 0 3px lightgrey;
+}
+
+/*
+* Note: Separate class needed because padding does not get applied to overflow elements in firefox:
+* http://stackoverflow.com/questions/13471910/css-applying-padding-to-box-with-scroll-bottom-padding-doesnt-work
+*/
+.cp-sidebar-content {
+    padding-bottom: 70px!important;
 }
 
 .unselectable {
@@ -49,8 +95,30 @@
 }
 
 .unread-comments-count {
-    font-size: medium;
+    font-size: small;
+    background-color: #428bca;
     color: #FFF;
     position: absolute;
-    margin-left: 40px;
+    margin-left: 30px;
+    margin-top: 4px;
+    z-index:1000;
+}
+
+.comment-actions a:hover {
+    text-decoration: none !important;
+}
+
+.comment-actions i {
+    cursor: pointer;
+}
+
+.comment-content img{
+  vertical-align: middle;
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.comment-gravatar {
+    height: 20px;
 }

@@ -7,11 +7,12 @@ from tests.base import ApiTestCase
 from tests.factories import (
     ProjectFactory,
     RegistrationFactory,
-    AuthUserFactory
+    AuthUserFactory,
 )
 
 
 node_url_for = lambda n_id: '/{}nodes/{}/'.format(API_BASE, n_id)
+
 
 class TestNodeRegistrationList(ApiTestCase):
     def setUp(self):
@@ -19,12 +20,12 @@ class TestNodeRegistrationList(ApiTestCase):
         self.user = AuthUserFactory()
 
         self.project = ProjectFactory(is_public=False, creator=self.user)
-        self.registration_project = RegistrationFactory(creator=self.user, project=self.project)
+        self.registration_project = RegistrationFactory(creator=self.user, project=self.project, is_public=True)
         self.project.save()
         self.private_url = '/{}nodes/{}/registrations/'.format(API_BASE, self.project._id)
 
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
-        self.public_registration_project = RegistrationFactory(creator=self.user, project=self.public_project)
+        self.public_registration_project = RegistrationFactory(creator=self.user, project=self.public_project, is_public=True)
         self.public_project.save()
         self.public_url = '/{}nodes/{}/registrations/'.format(API_BASE, self.public_project._id)
 
@@ -61,9 +62,3 @@ class TestNodeRegistrationList(ApiTestCase):
         assert_equal(urlparse(url).path, '/{}nodes/{}/'.format(API_BASE, self.project._id))
         assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data'][0]['type'], 'registrations')
-
-    def test_return_private_registrations_logged_in_non_contributor(self):
-        res = self.app.get(self.private_url, auth=self.user_two.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-        assert 'detail' in res.json['errors'][0]
-

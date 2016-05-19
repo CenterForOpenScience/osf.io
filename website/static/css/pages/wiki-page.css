@@ -1,5 +1,13 @@
+.drag-drop-cursor {
+    position: absolute;
+    border-left: 2px solid #696969;
+}
+
 .panel-heading.no-background {
     background: transparent;
+}
+.wiki-panel-header {
+    height: 50px;
 }
 .markdown-it-view {
     padding: 10px;
@@ -127,7 +135,7 @@
     -webkit-flex: 3 0 auto;
     -ms-flex: 3 0 auto;
     flex: 3 0 auto;
-    height: 500px; /* this will get overwritten by flex box */
+    height: 400px; /* this will get overwritten by flex box */
 }
 
 /* Make wiki images responsive */
@@ -184,8 +192,7 @@
 }
 
 /* Markdown editing */
-.wmd-panel
-{
+.wmd-panel {
     width: 100%;
     display: -webkit-box;
     display: -ms-flexbox;
@@ -219,7 +226,6 @@
     background-color: Silver;
 }
 #wmd-button-bar {
-    width: 100%;
     margin: auto;
     -webkit-box-flex: 0 0 auto;
     -webkit-flex: 0 0 auto;
@@ -277,6 +283,12 @@
 .wmd-prompt-dialog {
     border: 1px solid #999999;
     background-color: #F5F5F5;
+}
+#wmd-autocom-toggle {
+    margin-left:5px;
+    list-style: none;
+    display: inline-block;
+
 }
 .wiki-single-heading {
     border: 1px solid #ddd;

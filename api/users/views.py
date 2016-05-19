@@ -1,3 +1,4 @@
+
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 from rest_framework.exceptions import NotAuthenticated
@@ -5,22 +6,27 @@ from django.contrib.auth.models import AnonymousUser
 
 from modularodm import Q
 
-from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
 
 from website.models import User, Node
 
 from api.base import permissions as base_permissions
 from api.base.utils import get_object_or_error
+from api.base.exceptions import Conflict
+from api.base.views import JSONAPIBaseView
 from api.base.filters import ODMFilterMixin
+from api.base.parsers import JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON
 from api.nodes.serializers import NodeSerializer
+from api.institutions.serializers import InstitutionSerializer
+from api.registrations.serializers import RegistrationSerializer
+from api.base.utils import default_node_list_query, default_node_permission_query
 
-from .serializers import UserSerializer, UserDetailSerializer
-from .permissions import ReadOnlyOrCurrentUser
+from .serializers import UserSerializer, UserDetailSerializer, UserInstitutionsRelationshipSerializer
+from .permissions import ReadOnlyOrCurrentUser, ReadOnlyOrCurrentUserRelationship
 
 
 class UserMixin(object):
-    """Mixin with convenience methods for retrieving the current node based on the
+    """Mixin with convenience methods for retrieving the current user based on the
     current URL. By default, fetches the user based on the user_id kwarg.
     """
 
@@ -44,11 +50,14 @@ class UserMixin(object):
         return obj
 
 
-class UserList(generics.ListAPIView, ODMFilterMixin):
+class UserList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     """List of users registered on the OSF. *Read-only*.
 
     Paginated list of users ordered by the date they registered.  Each resource contains the full representation of the
     user, meaning additional requests to an individual user's detail view are not necessary.
+
+    Note that if an anonymous view_only key is being used, user information will not be serialized, and the id will be
+    an empty string. Relationships to a user object will not show in this case, either.
 
     The subroute [`/me/`](me/) is a special endpoint that always points to the currently logged-in user.
 
@@ -59,7 +68,7 @@ class UserList(generics.ListAPIView, ODMFilterMixin):
     OSF User entities have the "users" `type`.
 
         name               type               description
-        ----------------------------------------------------------------------------------------
+        ========================================================================================
         full_name          string             full name of the user; used for display
         given_name         string             given name of the user; for bibliographic citations
         middle_names       string             middle name of user; for bibliographic citations
@@ -83,6 +92,9 @@ class UserList(generics.ListAPIView, ODMFilterMixin):
 
     Users may be filtered by their `id`, `full_name`, `given_name`, `middle_names`, or `family_name`.
 
+    + `profile_image_size=<Int>` -- Modifies `/links/profile_image_url` of the user entities so that it points to
+    the user's profile image scaled to the given size in pixels.  If left blank, the size depends on the image provider.
+
     #This Request/Response
 
     """
@@ -97,6 +109,8 @@ class UserList(generics.ListAPIView, ODMFilterMixin):
     serializer_class = UserSerializer
 
     ordering = ('-date_registered')
+    view_category = 'users'
+    view_name = 'user-list'
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
@@ -113,19 +127,22 @@ class UserList(generics.ListAPIView, ODMFilterMixin):
         return User.find(query)
 
 
-class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
+class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
     """Details about a specific user. *Writeable*.
 
     The User Detail endpoint retrieves information about the user whose id is the final part of the path.  If `me`
     is given as the id, the record of the currently logged-in user will be returned.  The returned information includes
     the user's bibliographic information and the date the user registered.
 
+    Note that if an anonymous view_only key is being used, user information will not be serialized, and the id will be
+    an empty string. Relationships to a user object will not show in this case, either.
+
     ##Attributes
 
     OSF User entities have the "users" `type`.
 
         name               type               description
-        ----------------------------------------------------------------------------------------
+        ========================================================================================
         full_name          string             full name of the user; used for display
         given_name         string             given name of the user; for bibliographic citations
         middle_names       string             middle name of user; for bibliographic citations
@@ -142,15 +159,16 @@ class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
 
     ##Links
 
-        self:  the canonical api endpoint of this user
-        html:  this user's page on the OSF website
+        self:               the canonical api endpoint of this user
+        html:               this user's page on the OSF website
+        profile_image_url:  a url to the user's profile image
 
     ##Actions
 
     ###Update
 
         Method:        PUT / PATCH
-        URL:           links.self
+        URL:           /links/self
         Query Params:  <none>
         Body (JSON):   {
                          "data": {
@@ -168,7 +186,7 @@ class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
         Success:       200 OK + node representation
 
     To update your user profile, issue a PUT request to either the canonical URL of your user resource (as given in
-    `links.self`) or to `/users/me/`.  Only the `full_name` attribute is required.  Unlike at signup, the given, middle,
+    `/links/self`) or to `/users/me/`.  Only the `full_name` attribute is required.  Unlike at signup, the given, middle,
     and family names will not be inferred from the `full_name`.  Currently, only `full_name`, `given_name`,
     `middle_names`, `family_name`, and `suffix` are updateable.
 
@@ -180,7 +198,8 @@ class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
 
     ##Query Params
 
-    *None*.
+    + `profile_image_size=<Int>` -- Modifies `/links/profile_image_url` so that it points the image scaled to the given
+    size in pixels.  If left blank, the size depends on the image provider.
 
     #This Request/Response
 
@@ -193,6 +212,8 @@ class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
 
     required_read_scopes = [CoreScopes.USERS_READ]
     required_write_scopes = [CoreScopes.USERS_WRITE]
+    view_category = 'users'
+    view_name = 'user-detail'
 
     serializer_class = UserDetailSerializer
 
@@ -203,16 +224,19 @@ class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
     # overrides RetrieveUpdateAPIView
     def get_serializer_context(self):
         # Serializer needs the request in order to make an update to privacy
-        return {'request': self.request}
+        context = JSONAPIBaseView.get_serializer_context(self)
+        context['request'] = self.request
+        return context
 
 
-class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
+class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin):
     """List of nodes that the user contributes to. *Read-only*.
 
-    Paginated list of nodes that the user contributes to.  Each resource contains the full representation of the node,
-    meaning additional requests to an individual node's detail view are not necessary. If the user id in the path is the
-    same as the logged-in user, all nodes will be visible.  Otherwise, you will only be able to see the other user's
-    publicly-visible nodes.  The special user id `me` can be used to represent the currently logged-in user.
+    Paginated list of nodes that the user contributes to ordered by `date_modified`.  User registrations are not available
+    at this endpoint. Each resource contains the full representation of the node, meaning additional requests to an individual
+    node's detail view are not necessary. If the user id in the path is the same as the logged-in user, all nodes will be
+    visible.  Otherwise, you will only be able to see the other user's publicly-visible nodes.  The special user id `me`
+    can be used to represent the currently logged-in user.
 
     ##Node Attributes
 
@@ -220,18 +244,19 @@ class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
 
     OSF Node entities have the "nodes" `type`.
 
-        name           type               description
-        ---------------------------------------------------------------------------------
-        title          string             title of project or component
-        description    string             description of the node
-        category       string             node category, must be one of the allowed values
-        date_created   iso8601 timestamp  timestamp that the node was created
-        date_modified  iso8601 timestamp  timestamp when the node was last updated
-        tags           array of strings   list of tags that describe the node
-        registration   boolean            has this project been registered?
-        collection     boolean            is this node a collection of other nodes?
-        dashboard      boolean            is this node visible on the user dashboard?
-        public         boolean            has this node been made publicly-visible?
+        name                            type               description
+        =================================================================================
+        title                           string             title of project or component
+        description                     string             description of the node
+        category                        string             node category, must be one of the allowed values
+        date_created                    iso8601 timestamp  timestamp that the node was created
+        date_modified                   iso8601 timestamp  timestamp when the node was last updated
+        tags                            array of strings   list of tags that describe the node
+        current_user_permissions        array of strings   list of strings representing the permissions for the current user on this node
+        registration                    boolean            is this a registration? (always false - may be deprecated in future versions)
+        fork                            boolean            is this node a fork of another node?
+        public                          boolean            has this node been made publicly-visible?
+        collection                      boolean            is this a collection? (always false - may be deprecated in future versions)
 
     ##Links
 
@@ -249,10 +274,11 @@ class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
 
     <!--- Copied Query Params from NodeList -->
 
-    Nodes may be filtered by their `title`, `category`, `description`, `public`, `registration`, or `tags`.  `title`,
-    `description`, and `category` are string fields and will be filtered using simple substring matching.  `public` and
-    `registration` are booleans, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note
-    that quoting `true` or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
+    Nodes may be filtered by their `id`, `title`, `category`, `description`, `public`, `tags`, `date_created`, `date_modified`,
+    `root`, `parent`, and `contributors`.  Most are string fields and will be filtered using simple substring matching.  `public`
+    is a boolean, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note that quoting `true`
+    or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
+
 
     #This Request/Response
 
@@ -266,24 +292,188 @@ class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
     required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.NODE_BASE_WRITE]
 
     serializer_class = NodeSerializer
+    view_category = 'users'
+    view_name = 'user-nodes'
+
+    ordering = ('-date_modified',)
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
         user = self.get_user()
-        return (
-            Q('contributors', 'eq', user) &
-            Q('is_folder', 'ne', True) &
-            Q('is_deleted', 'ne', True)
-        )
+        query = Q('contributors', 'eq', user) & default_node_list_query()
+        if user != self.request.user:
+            query &= default_node_permission_query(self.request.user)
+        return query
 
     # overrides ListAPIView
     def get_queryset(self):
+        return Node.find(self.get_query_from_request())
+
+
+class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.INSTITUTION_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = InstitutionSerializer
+    view_category = 'users'
+    view_name = 'user-institutions'
+
+    def get_default_odm_query(self):
+        return None
+
+    def get_queryset(self):
+        user = self.get_user()
+        return user.affiliated_institutions
+
+
+class UserRegistrations(UserNodes):
+    """List of registrations that the user contributes to. *Read-only*.
+
+    Paginated list of registrations that the user contributes to.  Each resource contains the full representation of the
+    registration, meaning additional requests to an individual registration's detail view are not necessary. If the user
+    id in the path is the same as the logged-in user, all nodes will be visible.  Otherwise, you will only be able to
+    see the other user's publicly-visible nodes.  The special user id `me` can be used to represent the currently
+    logged-in user.
+
+    A withdrawn registration will display a limited subset of information, namely, title, description,
+    date_created, registration, withdrawn, date_registered, withdrawal_justification, and registration supplement. All
+    other fields will be displayed as null. Additionally, the only relationships permitted to be accessed for a withdrawn
+    registration are the contributors - other relationships will return a 403.
+
+    ##Registration Attributes
+
+    <!--- Copied Attributes from RegistrationList -->
+
+    Registrations have the "registrations" `type`.
+
+        name                            type               description
+        =======================================================================================================
+        title                           string             title of the registered project or component
+        description                     string             description of the registered node
+        category                        string             bode category, must be one of the allowed values
+        date_created                    iso8601 timestamp  timestamp that the node was created
+        date_modified                   iso8601 timestamp  timestamp when the node was last updated
+        tags                            array of strings   list of tags that describe the registered node
+        current_user_permissions        array of strings   list of strings representing the permissions for the current user on this node
+        fork                            boolean            is this project a fork?
+        registration                    boolean            has this project been registered? (always true - may be deprecated in future versions)
+        collection                      boolean            is this registered node a collection? (always false - may be deprecated in future versions)
+        public                          boolean            has this registration been made publicly-visible?
+        withdrawn                       boolean            has this registration been withdrawn?
+        date_registered                 iso8601 timestamp  timestamp that the registration was created
+        embargo_end_date                iso8601 timestamp  when the embargo on this registration will be lifted (if applicable)
+        withdrawal_justification        string             reasons for withdrawing the registration
+        pending_withdrawal              boolean            is this registration pending withdrawal?
+        pending_withdrawal_approval     boolean            is this registration pending approval?
+        pending_embargo_approval        boolean            is the associated Embargo awaiting approval by project admins?
+        registered_meta                 dictionary         registration supplementary information
+        registration_supplement         string             registration template
+
+
+    ##Relationships
+
+    ###Registered from
+
+    The registration is branched from this node.
+
+    ###Registered by
+
+    The registration was initiated by this user.
+
+    ###Other Relationships
+
+    See documentation on registered_from detail view.  A registration has many of the same properties as a node.
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    ##Actions
+
+    *None*.
+
+    ##Query Params
+
+    + `page=<Int>` -- page number of results to view, default 1
+
+    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
+
+    <!--- Copied Query Params from NodeList -->
+
+     Registrations may be filtered by their `id`, `title`, `category`, `description`, `public`, `tags`, `date_created`, `date_modified`,
+    `root`, `parent`, and `contributors`.  Most are string fields and will be filtered using simple substring matching.  `public`
+    is a boolean, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note that quoting `true`
+    or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
+
+    #This Request/Response
+
+    """
+    required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.NODE_REGISTRATIONS_READ]
+    required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.NODE_REGISTRATIONS_WRITE]
+
+    serializer_class = RegistrationSerializer
+    view_category = 'users'
+    view_name = 'user-registrations'
+
+    # overrides ODMFilterMixin
+    def get_default_odm_query(self):
+        user = self.get_user()
         current_user = self.request.user
-        if current_user.is_anonymous():
-            auth = Auth(None)
-        else:
-            auth = Auth(current_user)
-        query = self.get_query_from_request()
-        raw_nodes = Node.find(self.get_default_odm_query() & query)
-        nodes = [each for each in raw_nodes if each.is_public or each.can_view(auth)]
-        return nodes
+
+        query = (
+            Q('is_collection', 'ne', True) &
+            Q('is_deleted', 'ne', True) &
+            Q('is_registration', 'eq', True) &
+            Q('contributors', 'eq', user._id)
+        )
+        permission_query = Q('is_public', 'eq', True)
+        if not current_user.is_anonymous():
+            permission_query = (permission_query | Q('contributors', 'eq', current_user._id))
+        query = query & permission_query
+        return query
+
+
+class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIView, UserMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ReadOnlyOrCurrentUserRelationship
+    )
+
+    required_read_scopes = [CoreScopes.USERS_READ]
+    required_write_scopes = [CoreScopes.USERS_WRITE]
+
+    serializer_class = UserInstitutionsRelationshipSerializer
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+
+    view_category = 'users'
+    view_name = 'user-institutions-relationship'
+
+    def get_object(self):
+        user = self.get_user(check_permissions=False)
+        obj = {
+            'data': user.affiliated_institutions,
+            'self': user
+        }
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+    def perform_destroy(self, instance):
+        data = self.request.data['data']
+        user = self.request.user
+        current_institutions = {inst._id for inst in user.affiliated_institutions}
+
+        # DELETEs normally dont get type checked
+        # not the best way to do it, should be enforced everywhere, maybe write a test for it
+        for val in data:
+            if val['type'] != self.serializer_class.Meta.type_:
+                raise Conflict()
+        for val in data:
+            if val['id'] in current_institutions:
+                user.remove_institution(val['id'])
+        user.save()

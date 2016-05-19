@@ -6,12 +6,15 @@
 var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
+var ko = require('knockout');
 
 var $osf = require('js/osfHelpers');
 var LogFeed = require('js/logFeed.js');
 
 var ctx = window.contextVars;
 var NodeActions = {}; // Namespace for NodeActions
+require('loaders.css/loaders.min.css');
+
 
 // TODO: move me to the NodeControl or separate module
 NodeActions.beforeForkNode = function(url, done) {
@@ -214,14 +217,21 @@ Display recent logs for for a node on the project view page.
 */
 NodeActions.openCloseNode = function(nodeId) {
     var $logs = $('#logs-' + nodeId);
+    var $loader = $('#body-' + nodeId + '> .ball-scale');
     if (!$logs.hasClass('active')) {
         if (!$logs.hasClass('served')) {
+            $loader.show();
             $.getJSON(
                 $logs.attr('data-uri'),
                 {count: 3}
             ).done(function(response) {
+                $loader.hide();
                 new LogFeed('#logs-' + nodeId, response.logs);
                 $logs.addClass('served');
+            }).fail(function() {
+                $loader.hide();
+                $osf.growl('Error:', 'Can not show recent activity right now.  Please try again later.');
+                Raven.captureMessage('Error occurred retrieving log');
             });
         }
         $logs.addClass('active');
@@ -235,9 +245,16 @@ NodeActions.openCloseNode = function(nodeId) {
 // TODO: remove this
 $(document).ready(function() {
     var permissionInfoHtml = '<dl>' +
-        '<dt>Read</dt><dd>View project content and comment</dd>' +
-        '<dt>Read + Write</dt><dd>Read privileges plus add and configure components; add and edit content</dd>' +
-        '<dt>Administrator</dt><dd>Read and write privileges; manage contributors; delete and register project; public-private settings</dd>' +
+        '<dt>Read</dt>' +
+            '<dd><ul><li>View project content and comment</li></ul></dd>' +
+        '<dt>Read + Write</dt>' +
+            '<dd><ul><li>Read privileges</li> ' +
+                '<li>Add and configure components</li> ' +
+                '<li>Add and edit content</li></ul></dd>' +
+        '<dt>Administrator</dt><dd><ul>' +
+            '<li>Read and write privileges</li>' +
+            '<li>Manage contributor</li>' +
+            '<li>Delete and register project</li><li>Public-private settings</li></ul></dd>' +
         '</dl>';
 
     $('.permission-info').attr(
@@ -293,7 +310,7 @@ $(document).ready(function() {
     });
 
     $('body').on('click', '.tagsinput .tag > span', function(e) {
-        window.location = '/search/?q=(tags:' + $(e.target).text().toString().trim()+ ')';
+        window.location = '/search/?q=(tags:"' + $(e.target).text().toString().trim()+ '")';
     });
 
 
@@ -308,7 +325,7 @@ $(document).ready(function() {
     // Adds active class to current menu item
     $(function () {
         var path = window.location.pathname;
-        $('.project-nav a').each(function () {
+        $('.project-nav a:not(#commentsLink)').each(function () {
             var href = $(this).attr('href');
             if (path === href ||
                (path.indexOf('files') > -1 && href.indexOf('files') > -1) ||
@@ -316,6 +333,12 @@ $(document).ready(function() {
                 $(this).closest('li').addClass('active');
             }
         });
+
+        // Remove Comments link from project nav bar for pages not bound to the comment view model
+        var commentsLinkElm = document.getElementById('commentsLink');
+        if (!ko.dataFor(commentsLinkElm)) {
+             commentsLinkElm.remove();
+        }
     });
 });
 

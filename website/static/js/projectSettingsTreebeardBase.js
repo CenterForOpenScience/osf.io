@@ -5,9 +5,7 @@
 
 'use strict';
 
-var $ = require('jquery');
 var m = require('mithril');
-var Treebeard = require('treebeard');
 var Fangorn = require('js/fangorn');
 
 
@@ -23,6 +21,47 @@ function resolveToggle(item) {
     }
     item.open = true;
     return '';
+}
+
+/**
+ * take treebeard tree structure of nodes and get a dictionary of parent node and all its
+ * children
+ */
+function getNodesOriginal(nodeTree, nodesOriginal) {
+    var i;
+    var j;
+    var adminContributors = [];
+    var registeredContributors = [];
+    var nodeId = nodeTree.node.id;
+    for (i=0; i < nodeTree.node.contributors.length; i++) {
+        if (nodeTree.node.contributors[i].is_admin) {
+            adminContributors.push(nodeTree.node.contributors[i].id);
+        }
+        if (nodeTree.node.contributors[i].is_confirmed) {
+            registeredContributors.push(nodeTree.node.contributors[i].id);
+        }
+    }
+    nodesOriginal[nodeId] = {
+        isPublic: nodeTree.node.is_public,
+        id: nodeTree.node.id,
+        title: nodeTree.node.title,
+        contributors: nodeTree.node.contributors,
+        isAdmin: nodeTree.node.is_admin,
+        visibleContributors: nodeTree.node.visible_contributors,
+        adminContributors: adminContributors,
+        registeredContributors: registeredContributors,
+        canWrite: nodeTree.node.can_write,
+        changed: false,
+        checked: false,
+        enabled: true
+    };
+
+    if (nodeTree.children) {
+        for (j in nodeTree.children) {
+            nodesOriginal = getNodesOriginal(nodeTree.children[j], nodesOriginal);
+        }
+    }
+    return nodesOriginal;
 }
 
 module.exports = {
@@ -65,5 +104,6 @@ module.exports = {
         resolveRefreshIcon : function() {
           return m('i.fa.fa-refresh.fa-spin');
         }
-    }
+    },
+    getNodesOriginal: getNodesOriginal
 };

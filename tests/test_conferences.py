@@ -11,7 +11,9 @@ import furl
 from modularodm import Q
 from modularodm.exceptions import ValidationError
 
+from framework.auth import get_or_create_user
 from framework.auth.core import Auth
+from framework.transactions import commands
 
 from website import settings
 from website.models import User, Node
@@ -40,7 +42,8 @@ def assert_equal_urls(first, second):
 
 
 class ConferenceFactory(ModularOdmFactory):
-    FACTORY_FOR = Conference
+    class Meta:
+        model = Conference
 
     endpoint = Sequence(lambda n: 'conference{0}'.format(n))
     name = FakerAttribute('catch_phrase')
@@ -65,7 +68,7 @@ class TestConferenceUtils(OsfTestCase):
 
     def test_get_or_create_user_exists(self):
         user = UserFactory()
-        fetched, created = utils.get_or_create_user(user.fullname, user.username, True)
+        fetched, created = get_or_create_user(user.fullname, user.username, True)
         assert_false(created)
         assert_equal(user._id, fetched._id)
         assert_false('is_spam' in fetched.system_tags)
@@ -73,7 +76,7 @@ class TestConferenceUtils(OsfTestCase):
     def test_get_or_create_user_not_exists(self):
         fullname = 'Roger Taylor'
         username = 'roger@queen.com'
-        fetched, created = utils.get_or_create_user(fullname, username, False)
+        fetched, created = get_or_create_user(fullname, username, False)
         assert_true(created)
         assert_equal(fetched.fullname, fullname)
         assert_equal(fetched.username, username)
@@ -82,7 +85,7 @@ class TestConferenceUtils(OsfTestCase):
     def test_get_or_create_user_is_spam(self):
         fullname = 'John Deacon'
         username = 'deacon@queen.com'
-        fetched, created = utils.get_or_create_user(fullname, username, True)
+        fetched, created = get_or_create_user(fullname, username, True)
         assert_true(created)
         assert_equal(fetched.fullname, fullname)
         assert_equal(fetched.username, username)
@@ -124,6 +127,13 @@ class ContextTestCase(OsfTestCase):
     def tearDownClass(cls):
         super(ContextTestCase, cls).tearDownClass()
         settings.MAILGUN_API_KEY = cls._MAILGUN_API_KEY
+
+    def tearDown(self):
+        try:
+            commands.commit()
+        except Exception:
+            pass
+        super(ContextTestCase, self).tearDown()
 
     def make_context(self, method='POST', **kwargs):
         data = {
@@ -243,6 +253,8 @@ class TestProvisionNode(ContextTestCase):
 
 class TestMessage(ContextTestCase):
 
+    PUSH_CONTEXT = False
+
     def test_verify_signature_valid(self):
         with self.make_context():
             msg = message.ConferenceMessage()
@@ -337,6 +349,7 @@ class TestMessage(ContextTestCase):
         names = [
             (' Fred', 'Fred'),
             (u'Me‰¨ü', u'Me‰¨ü'),
+            (u'fred@queen.com', u'fred@queen.com'),
             (u'Fred <fred@queen.com>', u'Fred'),
             (u'"Fred" <fred@queen.com>', u'Fred'),
         ]
@@ -344,6 +357,16 @@ class TestMessage(ContextTestCase):
             with self.make_context(data={'from': name[0]}):
                 msg = message.ConferenceMessage()
                 assert_equal(msg.sender_name, name[1])
+
+    def test_sender_email(self):
+        emails = [
+            (u'fred@queen.com', u'fred@queen.com'),
+            (u'FRED@queen.com', u'fred@queen.com')
+        ]
+        for email in emails:
+            with self.make_context(data={'from': email[0]}):
+                msg = message.ConferenceMessage()
+                assert_equal(msg.sender_email, email[1])
 
     def test_route_invalid_pattern(self):
         with self.make_context(data={'recipient': 'spam@osf.io'}):
@@ -353,7 +376,7 @@ class TestMessage(ContextTestCase):
                 msg.route
 
     def test_route_invalid_test(self):
-        recipient = '{0}conf-talk@osf.io'.format('' if settings.DEV_MODE else 'test-')
+        recipient = '{0}conf-talk@osf.io'.format('' if settings.DEV_MODE else 'stage-')
         with self.make_context(data={'recipient': recipient}):
             self.app.app.preprocess_request()
             msg = message.ConferenceMessage()
@@ -418,6 +441,24 @@ class TestConferenceEmailViews(OsfTestCase):
         assert_equal(res.status_code, 302)
         res = res.follow()
         assert_equal(res.request.path, '/meetings/')
+
+    def test_conference_submissions(self):
+        Node.remove()
+        conference1 = ConferenceFactory()
+        conference2 = ConferenceFactory()
+        # Create conference nodes
+        create_fake_conference_nodes(
+            3,
+            conference1.endpoint,
+        )
+        create_fake_conference_nodes(
+            2,
+            conference2.endpoint,
+        )
+
+        url = api_url_for('conference_submissions')
+        res = self.app.get(url)
+        assert_equal(len(res.json['submissions']), 5)
 
     def test_conference_plain_returns_200(self):
         conference = ConferenceFactory()
@@ -589,3 +630,52 @@ class TestConferenceIntegration(ContextTestCase):
             call_kwargs['presentations_url'],
             web_url_for('conference_view', _absolute=True),
         )
+
+    @mock.patch('website.conferences.views.send_mail')
+    @mock.patch('website.conferences.utils.upload_attachments')
+    def test_integration_wo_full_name(self, mock_upload, mock_send_mail):
+        username = 'no_full_name@test.com'
+        title = 'no full name only email'
+        conference = ConferenceFactory()
+        body = 'dragon on my back'
+        content = 'dragon attack'
+        recipient = '{0}{1}-poster@osf.io'.format(
+            'test-' if settings.DEV_MODE else '',
+            conference.endpoint,
+        )
+        self.app.post(
+            api_url_for('meeting_hook'),
+            {
+                'X-Mailgun-Sscore': 0,
+                'timestamp': '123',
+                'token': 'secret',
+                'signature': hmac.new(
+                    key=settings.MAILGUN_API_KEY,
+                    msg='{}{}'.format('123', 'secret'),
+                    digestmod=hashlib.sha256,
+                ).hexdigest(),
+                'attachment-count': '1',
+                'X-Mailgun-Sscore': 0,
+                'from': username,
+                'recipient': recipient,
+                'subject': title,
+                'stripped-text': body,
+            },
+            upload_files=[
+                ('attachment-1', 'attachment-1', content),
+            ],
+        )
+        assert_true(mock_upload.called)
+        users = User.find(Q('username', 'eq', username))
+        assert_equal(users.count(), 1)
+        nodes = Node.find(Q('title', 'eq', title))
+        assert_equal(nodes.count(), 1)
+        node = nodes[0]
+        assert_equal(node.get_wiki_page('home').content, body)
+        assert_true(mock_send_mail.called)
+        call_args, call_kwargs = mock_send_mail.call_args
+        assert_absolute(call_kwargs['conf_view_url'])
+        assert_absolute(call_kwargs['set_password_url'])
+        assert_absolute(call_kwargs['profile_url'])
+        assert_absolute(call_kwargs['file_url'])
+        assert_absolute(call_kwargs['node_url'])

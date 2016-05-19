@@ -42,6 +42,34 @@ class TestNodeWikiPageModel(OsfTestCase):
         with assert_raises(ValidationValueError):
             page.save()
 
+    def test_is_current_with_single_version(self):
+        node = NodeFactory()
+        page = NodeWikiPage(page_name='foo', node=node)
+        page.save()
+        node.wiki_pages_current['foo'] = page._id
+        node.wiki_pages_versions['foo'] = [page._id]
+        node.save()
+        assert_true(page.is_current)
+
+    def test_is_current_with_multiple_versions(self):
+        node = NodeFactory()
+        ver1 = NodeWikiPage(page_name='foo', node=node)
+        ver2 = NodeWikiPage(page_name='foo', node=node)
+        ver1.save()
+        ver2.save()
+        node.wiki_pages_current['foo'] = ver2._id
+        node.wiki_pages_versions['foo'] = [ver1._id, ver2._id]
+        node.save()
+        assert_false(ver1.is_current)
+        assert_true(ver2.is_current)
+
+    def test_is_current_deleted_page(self):
+        node = NodeFactory()
+        ver = NodeWikiPage(page_name='foo', node=node)
+        ver.save()
+        # Simulate a deleted page by not adding ver to
+        # node.wiki_pages_current and node.wiki_pages_versions
+        assert_false(ver.is_current)
 
 class TestWikiViews(OsfTestCase):
 
@@ -424,6 +452,15 @@ class TestWikiViews(OsfTestCase):
         assert_in('...', res.json['wiki_content'])
         assert_true(res.json['more'])
 
+    def test_wiki_widget_with_multiple_short_pages_has_more(self):
+        project = ProjectFactory(is_public=True, creator=self.user)
+        short_content = 'a' * 150
+        project.update_node_wiki('home', short_content, Auth(self.user))
+        project.update_node_wiki('andanotherone', short_content, Auth(self.user))
+        url = project.api_url_for('wiki_widget', wid='home')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_true(res.json['more'])
+
     @mock.patch('website.addons.wiki.model.NodeWikiPage.rendered_before_update', new_callable=mock.PropertyMock)
     def test_wiki_widget_use_python_render(self, mock_rendered_before_update):
         # New pages use js renderer
@@ -695,7 +732,7 @@ class TestWikiLinks(OsfTestCase):
             node=project,
         )
         assert_in(
-            project.web_url_for('project_wiki_view', wname='wiki2'),
+            '/{}/wiki/wiki2/'.format(project._id),
             wiki.html(project),
         )
 
@@ -802,8 +839,8 @@ class TestWikiUuid(OsfTestCase):
         assert_equal(fork_res.status_code, 200)
         fork.reload()
 
-        # uuids are stored the same internally
-        assert_equal(
+        # uuids are not copied over to forks
+        assert_not_equal(
             self.project.wiki_private_uuids.get(self.wkey),
             fork.wiki_private_uuids.get(self.wkey)
         )
@@ -822,12 +859,12 @@ class TestWikiUuid(OsfTestCase):
         original_uuid = generate_private_uuid(self.project, self.wname)
         self.project.update_node_wiki(self.wname, 'Hello world', Auth(self.user))
         fork = self.project.fork_node(Auth(self.user))
-        assert_equal(original_uuid, fork.wiki_private_uuids.get(self.wkey))
+        assert_equal(fork.wiki_private_uuids.get(self.wkey), None)
 
         migrate_uuid(self.project, self.wname)
 
         assert_not_equal(original_uuid, self.project.wiki_private_uuids.get(self.wkey))
-        assert_equal(original_uuid, fork.wiki_private_uuids.get(self.wkey))
+        assert_equal(fork.wiki_private_uuids.get(self.wkey), None)
 
     @mock.patch('website.addons.wiki.utils.broadcast_to_sharejs')
     def test_uuid_persists_after_delete(self, mock_sharejs):

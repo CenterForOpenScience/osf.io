@@ -62,6 +62,7 @@ api/static/vendor
 
 # Local settings files
 local.py
+local.json
 
 website/uploads/
 website/mfrcache/
@@ -94,7 +95,34 @@ website/static/img/badges
 # Scripts
 scripts/guid_blacklist.txt
 scripts/hide_extra_registration_logs.json
+scripts/osfstorage/usage_whitelist.json
 
 # Celery dbs
-celerybeat-schedule.db
+celerybeat-schedule*
 celery_beat.py.db
+
+# Diff (used during merge resolution)
+*.orig
+
+# GUIDS
+scripts/guid_blacklist.txt
+
+# Generated json
+website/static/js/_allLogTexts.json
+
+# Admin Specific
+#################
+admin/static/public/
+# web_loader stat file
+admin/webpack-stats.json
+# bower
+admin/static/vendor/
+admin/db.sqlite3
+admin/db.sqlite3-journal
+
+# Celery Beat
+celerybeat-schedule
+celerybeat.pid
+
+# Analytics Output
+website/analytics/

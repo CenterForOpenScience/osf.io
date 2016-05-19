@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from modularodm import Q
+
 from framework.mongo import StoredObject
 from website import settings
 
@@ -9,6 +11,10 @@ class AddonModelMixin(StoredObject):
     _meta = {
         'abstract': True,
     }
+
+    @property
+    def addons(self):
+        return self.get_addons()
 
     def get_addons(self):
         addons = []
@@ -33,11 +39,6 @@ class AddonModelMixin(StoredObject):
             for addon in self.get_addons()
         ]
 
-    def _backref_key(self, addon_config):
-        return '{0}__addons'.format(
-            addon_config.settings_models[self._name]._name,
-        )
-
     def get_addon(self, addon_name, deleted=False):
         """Get addon for node.
 
@@ -49,11 +50,8 @@ class AddonModelMixin(StoredObject):
         if not addon_config or not addon_config.settings_models.get(self._name):
             return False
 
-        backref_key = self._backref_key(addon_config)
-        addons = [
-            addon for addon in getattr(self, backref_key)
-            if addon is not None
-        ]
+        addon_class = addon_config.settings_models[self._name]
+        addons = list(addon_class.find(Q('owner', 'eq', self)))
         if addons:
             if deleted or not addons[0].deleted:
                 assert len(addons) == 1, 'Violation of one-to-one mapping with addon model'
@@ -125,6 +123,8 @@ class AddonModelMixin(StoredObject):
         if addon:
             if self._name in addon.config.added_mandatory and not _force:
                 raise ValueError('Cannot delete mandatory add-on.')
+            if hasattr(addon, 'external_account'):
+                addon.deauthorize(auth=auth)
             addon.delete(save=True)
             return True
         return False

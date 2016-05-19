@@ -1,19 +1,15 @@
 # -*- coding: utf-8 -*-
 
-import uuid
-
 import requests
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
 
-from framework.auth import Auth, signals
-from framework.auth.core import get_user
+from framework.auth import Auth
 
 from website import util
-from website import security
 from website import settings
 from website.project import new_node
-from website.models import User, Node, MailRecord
+from website.models import Node, MailRecord
 
 
 def record_message(message, created):
@@ -22,28 +18,6 @@ def record_message(message, created):
         records=created,
     )
     record.save()
-
-
-def get_or_create_user(fullname, address, is_spam):
-    """Get or create user by email address.
-
-    :param str fullname: User full name
-    :param str address: User email address
-    :param bool is_spam: User flagged as potential spam
-    :return: Tuple of (user, created)
-    """
-    user = get_user(email=address)
-    if user:
-        return user, False
-    else:
-        password = str(uuid.uuid4())
-        user = User.create_confirmed(address, password, fullname)
-        user.verification_key = security.random_string(20)
-        if is_spam:
-            user.system_tags.append('is_spam')
-        user.save()
-        signals.user_confirmed.send(user)
-        return user, True
 
 
 def get_or_create_node(title, user):

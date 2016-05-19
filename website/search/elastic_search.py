@@ -2,35 +2,36 @@
 
 from __future__ import division
 
-import re
 import copy
-import math
-import logging
-import unicodedata
 import functools
+import logging
+import math
+import re
+import unicodedata
 
-import six
-
-from modularodm import Q
 from elasticsearch import (
-    Elasticsearch,
-    RequestError,
-    NotFoundError,
     ConnectionError,
+    Elasticsearch,
+    NotFoundError,
+    RequestError,
+    TransportError,
     helpers,
 )
+from modularodm import Q
+import six
 
 from framework import sentry
-from framework.tasks import app as celery_app
+from framework.celery_tasks import app as celery_app
+from framework.mongo.utils import paginated
 
 from website import settings
 from website.filters import gravatar
 from website.models import User, Node
+from website.project.licenses import serialize_node_license_record
 from website.search import exceptions
 from website.search.util import build_query
 from website.util import sanitize
 from website.views import validate_page_num
-from website.project.licenses import serialize_node_license_record
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +44,7 @@ ALIASES = {
     'user': 'Users',
     'total': 'Total',
     'file': 'Files',
+    'institution': 'Institutions',
 }
 
 # Prevent tokenizing and stop word removal.
@@ -83,6 +85,9 @@ def requires_search(func):
             except RequestError as e:
                 if 'ParseException' in e.error:
                     raise exceptions.MalformedQueryError(e.error)
+                raise exceptions.SearchException(e.error)
+            except TransportError as e:
+                # Catch and wrap generic uncaught ES error codes. TODO: Improve fix for https://openscience.atlassian.net/browse/OSF-4538
                 raise exceptions.SearchException(e.error)
 
         sentry.log_message('Elastic search action failed. Is elasticsearch running?')
@@ -198,11 +203,14 @@ def format_results(results):
     for result in results:
         if result.get('category') == 'user':
             result['url'] = '/profile/' + result['id']
+        elif result.get('category') == 'file':
+            parent_info = load_parent(result.get('parent_id'))
+            result['parent_url'] = parent_info.get('url') if parent_info else None
+            result['parent_title'] = parent_info.get('title') if parent_info else None
         elif result.get('category') in {'project', 'component', 'registration'}:
             result = format_result(result, result.get('parent_id'))
         ret.append(result)
     return ret
-
 
 def format_result(result, parent_id=None):
     parent_info = load_parent(parent_id)
@@ -228,6 +236,7 @@ def format_result(result, parent_id=None):
         'date_registered': result.get('registered_date'),
         'n_wikis': len(result['wikis']),
         'license': result.get('license'),
+        'primary_institution': result.get('primary_institution'),
     }
 
     return formatted_result
@@ -251,12 +260,14 @@ def load_parent(parent_id):
     return parent_info
 
 
-COMPONENT_CATEGORIES = set([k for k in Node.CATEGORY_MAP.keys() if not k == 'project'])
+COMPONENT_CATEGORIES = set(Node.CATEGORY_MAP.keys())
 
 def get_doctype_from_node(node):
-
     if node.is_registration:
         return 'registration'
+    elif node.parent_node is None:
+        # ElasticSearch categorizes top-level projects differently than children
+        return 'project'
     elif node.category in COMPONENT_CATEGORIES:
         return 'component'
     else:
@@ -277,21 +288,12 @@ def update_node(node, index=None, bulk=False):
 
     category = get_doctype_from_node(node)
 
-    if category == 'project':
-        elastic_document_id = node._id
-        parent_id = None
-    else:
-        try:
-            elastic_document_id = node._id
-            parent_id = node.parent_id
-        except IndexError:
-            # Skip orphaned components
-            return
+    elastic_document_id = node._id
+    parent_id = node.parent_id
 
-    #TODO @hmoco, make this a celery task that takes care of updating files
-    from website.files.models.base import FileNode
-    for file_ in FileNode.find(Q('node', 'eq', node) & Q('provider', 'eq', 'osfstorage') & Q('is_file', 'eq', True)):
-        update_file(file_)
+    from website.files.models.osfstorage import OsfStorageFile
+    for file_ in paginated(OsfStorageFile, Q('node', 'eq', node)):
+        update_file(file_, index=index)
 
     if node.is_deleted or not node.is_public or node.archiving:
         delete_doc(elastic_document_id, node)
@@ -330,6 +332,7 @@ def update_node(node, index=None, bulk=False):
             'parent_id': parent_id,
             'date_created': node.date_created,
             'license': serialize_node_license_record(node.license),
+            'primary_institution': node.primary_institution.name if node.primary_institution else None,
             'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
         }
         if not node.is_retracted:
@@ -355,6 +358,7 @@ def bulk_update_nodes(serialize, nodes, index=None):
     index = index or INDEX
     actions = []
     for node in nodes:
+        logger.info('Updating node {}'.format(node._id))
         serialized = serialize(node)
         if serialized:
             actions.append({
@@ -453,7 +457,6 @@ def update_file(file_, index=None, delete=False):
     )
     node_url = '/{node_id}/'.format(node_id=file_.node._id)
 
-    parent_url = '/{}/'.format(file_.node.parent_node._id) if file_.node.parent_node else None,
     file_doc = {
         'id': file_._id,
         'deep_url': file_deep_url,
@@ -462,8 +465,7 @@ def update_file(file_, index=None, delete=False):
         'category': 'file',
         'node_url': node_url,
         'node_title': file_.node.title,
-        'parent_url': parent_url,
-        'parent_title': file_.node.parent_node.title if file_.node.parent_node else None,
+        'parent_id': file_.node.parent_node._id if file_.node.parent_node else None,
         'is_registration': file_.node.is_registration,
     }
 
@@ -474,6 +476,20 @@ def update_file(file_, index=None, delete=False):
         id=file_._id,
         refresh=True
     )
+
+@requires_search
+def update_institution(institution, index=None):
+    index = index or INDEX
+
+    institution_doc = {
+        'id': institution._id,
+        'url': '/institutions/{}/'.format(institution._id),
+        'logo_path': institution.logo_path,
+        'category': 'institution',
+        'name': institution.name,
+    }
+
+    es.index(index=index, doc_type='institution', body=institution_doc, id=institution._id, refresh=True)
 
 @requires_search
 def delete_all():
@@ -491,7 +507,7 @@ def create_index(index=None):
     all of which are applied to all projects, components, and registrations.
     '''
     index = index or INDEX
-    document_types = ['project', 'component', 'registration', 'user']
+    document_types = ['project', 'component', 'registration', 'user', 'file', 'institution']
     project_like_types = ['project', 'component', 'registration']
     analyzed_fields = ['title', 'description']
 

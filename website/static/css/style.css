@@ -7,12 +7,34 @@ body {
     padding-top: 50px; /* body padding for fixed top nav */
     position: relative; /* for bootstrap affix */
     -webkit-font-smoothing: antialiased;
+    font-family: 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 
 a {
     cursor: pointer;
 }
 
+/*Meta Info
+----------------------------------------------------*/
+
+#metaInfo {
+    text-shadow: 0 1px 0 #fff;
+    border-top: 1px solid #e5e5e5;
+    border-bottom: 1px solid #e5e5e5;
+    width: 100%;
+    color: #555;
+    position: relative;
+    padding-top:20px;
+    padding-bottom:20px;
+    z-index:10;
+    background-color:white;
+    border-top:2px solid black;
+}
+
+#metaInfo th, #metaInfo td{
+    padding-left: 15px;
+    text-align: left;
+}
 
 /* Footer
 -------------------------------------------------- */
@@ -87,6 +109,8 @@ a {
     margin-top: -60px;
     padding-top: 60px;
     display: block;
+    z-index: -1;
+    position: relative;
 }
 
 .scripted {display: none;}
@@ -145,6 +169,24 @@ a {
 #projectSubnav .navbar-collapse {
     padding-left: 0;
     padding-right: 0;
+}
+
+/* Multiple device support for project nav-bar */
+@media (max-width: 767px) {
+    .project-nav {
+        overflow: hidden;
+    }
+
+    /* Allow project nav to move the content on small screen */
+    #projectBanner .osf-project-navbar {
+        position: relative;
+        top: 0;
+        margin-top: -55px;
+    }
+    #projectBanner {
+        margin-right: -15px;
+        margin-left: -15px;
+    }
 }
 
 /* Allow search-bar and nav-bar to support mutiple size of screen */
@@ -308,55 +350,6 @@ a {
     word-wrap: break-word;
     max-width: 90%;
     display: inline-block;
-}
-
-/* Comments Panel */
-.comment-actions i {
-    cursor: pointer;
-}
-
-.comment-info {
-  padding-bottom: 10px;
-}
-
-.comment-container {
-    margin-top: 10px;
-    margin-bottom: 10px;
-}
-
-.comment-body {
-    padding: 5px;
-    background-color: white;
-}
-
-.comment-author {
-    color: #999999;
-}
-
-.comment-date {
-    color: #999999;
-}
-.edit-comment {
-    background-color: #F3F3F3;
-}
-
-.comment-body i {
-    padding-right: 5px;
-}
-
-.comment-handle-icon {
-    color: white;
-    vertical-align: middle;
-    line-height: 50px;
-    cursor: pointer;
-    position: relative;
-}
-
-.unread-comments-count {
-    font-size: medium;
-    color: white;
-    position: absolute;
-    margin-left: 40px;
 }
 
 /*  Add-on styles */
@@ -617,4 +610,85 @@ button.close {
 .tb-modal-shade {
     /*  Override z-index here to avoid clashing with navigation elements */
     z-index: 98 !important;
+}
+
+
+/* Cards
+-------------------------------------------------- */
+
+.toggle-icon {
+    color: #337ab7;
+    margin-right: 10px;
+}
+
+.header-content {
+    max-width: 75%;
+    display: inline-block
+}
+
+/* Navigation -- general style should be in style guide
+-------------------------------------------------- */
+#navbarScope a.nav-user-dropdown {
+    padding-top: 12px;
+    padding-bottom: 11px;
+}
+
+/* Anonymous-mode notification bar
+-------------------------------------------------- */
+#anonymous-mode {
+    position: fixed;
+    bottom: 30px;
+    left: 0;
+    z-index: 8;
+    width: 100%;
+    text-align: center;
+    background-color: #f0ad4e;
+    padding: .5em;
+}
+
+/* Override insane add tag font
+-------------------------------------------------- */
+.tagsinput input {
+    font-family : 'Open Sans', Helvetica, sans-serif;
+}
+
+/* Bootstrap Accesibility Override */
+.btn-success-high-contrast {
+    background-color: #52A452;
+    border-color: #54AC54;
+}
+
+
+/* Trying out to move to osf-style */
+.comma-separated:after {
+    content: ", ";
+}
+
+.comma-separated:last-of-type:after {
+    content: "";
+}
+
+.action-buttons {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.token-warning {
+    margin-bottom: 5px;
+    margin-top: 15px;
+    padding-left: 10px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+#copy-button {
+    margin-top: 10px;
+}
+
+.more-replies {
+    margin-right: 15px;
+}
+
+div.ball-scale-blue>div {
+    background-color: #BED1E2;
 }

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import uuid
 from datetime import datetime
 
 from framework.sessions import session, create_session, Session
@@ -58,12 +59,15 @@ def logout():
     return True
 
 
-def register_unconfirmed(username, password, fullname):
+def register_unconfirmed(username, password, fullname, campaign=None):
     user = get_user(email=username)
     if not user:
-        user = User.create_unconfirmed(username=username,
+        user = User.create_unconfirmed(
+            username=username,
             password=password,
-            fullname=fullname)
+            fullname=fullname,
+            campaign=campaign,
+        )
         user.save()
         signals.unconfirmed_user_created.send(user)
 
@@ -76,3 +80,24 @@ def register_unconfirmed(username, password, fullname):
     else:
         raise DuplicateEmailError('User {0!r} already exists'.format(username))
     return user
+
+
+def get_or_create_user(fullname, address, is_spam=False):
+    """Get or create user by email address.
+
+    :param str fullname: User full name
+    :param str address: User email address
+    :param bool is_spam: User flagged as potential spam
+    :return: Tuple of (user, created)
+    """
+    user = get_user(email=address)
+    if user:
+        return user, False
+    else:
+        from website import security  # Avoid circular imports
+        password = str(uuid.uuid4())
+        user = User.create_confirmed(address, password, fullname)
+        user.verification_key = security.random_string(20)
+        if is_spam:
+            user.system_tags.append('is_spam')
+        return user, True

@@ -4,8 +4,12 @@ import os
 
 from modularodm import Q
 
+from framework.auth import Auth
+from framework.guid.model import Guid
+from website.exceptions import InvalidTagError, NodeStateError, TagNotFoundError
 from website.files import exceptions
-from website.files.models.base import File, Folder, FileNode, FileVersion
+from website.files.models.base import File, Folder, FileNode, FileVersion, TrashedFileNode
+from website.util import permissions
 
 
 __all__ = ('OsfStorageFile', 'OsfStorageFolder', 'OsfStorageFileNode')
@@ -32,6 +36,26 @@ class OsfStorageFileNode(FileNode):
 
         # Dont raise anything a 404 will be raised later
         return cls.create(node=node, path=path)
+
+    @classmethod
+    def get_file_guids(cls, materialized_path, provider, node=None, guids=None):
+        guids = guids or []
+        path = materialized_path.strip('/')
+        file_obj = cls.load(path)
+        if not file_obj:
+            file_obj = TrashedFileNode.load(path)
+
+        if not file_obj.is_file:
+            for item in file_obj.children:
+                cls.get_file_guids(item.path, provider, node=node, guids=guids)
+        else:
+            try:
+                guid = Guid.find(Q('referent', 'eq', file_obj))[0]
+            except IndexError:
+                guid = None
+            if guid:
+                guids.append(guid._id)
+        return guids
 
     @property
     def kind(self):
@@ -80,6 +104,44 @@ class OsfStorageFileNode(FileNode):
         if self.is_checked_out:
             raise exceptions.FileNodeCheckedOutError()
         return super(OsfStorageFileNode, self).move_under(destination_parent, name)
+
+    def check_in_or_out(self, user, checkout, save=False):
+        """
+        Updates self.checkout with the requesting user or None,
+        iff user has permission to check out file or folder.
+        Adds log to self.node.
+
+
+        :param user:        User making the request
+        :param checkout:    Either the same user or None, depending on in/out-checking
+        :param save:        Whether or not to save the user
+        """
+        from website.project.model import NodeLog  # Avoid circular import
+
+        if (self.is_checked_out and self.checkout != user and permissions.ADMIN not in self.node.permissions.get(user._id, []))\
+           or permissions.WRITE not in self.node.get_permissions(user):
+            raise exceptions.FileNodeCheckedOutError()
+
+        action = NodeLog.CHECKED_OUT if checkout else NodeLog.CHECKED_IN
+        self.checkout = checkout
+
+        self.node.add_log(
+            action=action,
+            params={
+                'kind': self.kind,
+                'project': self.node.parent_id,
+                'node': self.node._id,
+                'urls': {
+                    # web_url_for unavailable -- called from within the API, so no flask app
+                    'download': "/project/{}/files/{}/{}/?action=download".format(self.node._id, self.provider, self._id),
+                    'view': "/project/{}/files/{}/{}".format(self.node._id, self.provider, self._id)},
+                'path': self.materialized_path
+            },
+            auth=Auth(user),
+        )
+
+        if save:
+            self.save()
 
     def save(self):
         self.path = ''
@@ -142,6 +204,56 @@ class OsfStorageFile(OsfStorageFileNode, File):
             if required:
                 raise exceptions.VersionNotFoundError(version)
             return None
+
+    def add_tag_log(self, action, tag, auth):
+        node = self.node
+        node.add_log(
+            action=action,
+            params={
+                'parent_node': node.parent_id,
+                'node': node._id,
+                'urls': {
+                    'download': '/project/{}/files/osfstorage/{}/?action=download'.format(node._id, self._id),
+                    'view': '/project/{}/files/osfstorage/{}/'.format(node._id, self._id)},
+                'path': self.materialized_path,
+                'tag': tag,
+            },
+            auth=auth,
+        )
+
+    def add_tag(self, tag, auth, save=True, log=True):
+        from website.models import Tag, NodeLog  # Prevent import error
+        if tag not in self.tags and not self.node.is_registration:
+            new_tag = Tag.load(tag)
+            if not new_tag:
+                new_tag = Tag(_id=tag)
+            new_tag.save()
+            self.tags.append(new_tag)
+            if log:
+                self.add_tag_log(NodeLog.FILE_TAG_ADDED, tag, auth)
+            if save:
+                self.save()
+            return True
+        return False
+
+    def remove_tag(self, tag, auth, save=True, log=True):
+        from website.models import Tag, NodeLog  # Prevent import error
+        if self.node.is_registration:
+            # Can't perform edits on a registration
+            raise NodeStateError
+
+        tag = Tag.load(tag)
+        if not tag:
+            raise InvalidTagError
+        elif tag not in self.tags:
+            raise TagNotFoundError
+        else:
+            self.tags.remove(tag)
+            if log:
+                self.add_tag_log(NodeLog.FILE_TAG_REMOVED, tag._id, auth)
+            if save:
+                self.save()
+            return True
 
     def delete(self, user=None, parent=None):
         from website.search import search

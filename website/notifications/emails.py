@@ -26,6 +26,8 @@ def notify(event, user, node, timestamp, **context):
     target_user = context.get('target_user', None)
     if target_user:
         target_user_id = target_user._id
+        if event_type in constants.USER_SUBSCRIPTIONS_AVAILABLE:
+            subscriptions = get_user_subscriptions(target_user, event_type)
     for notification_type in subscriptions:
         if notification_type != 'none' and subscriptions[notification_type]:
             if user in subscriptions[notification_type]:
@@ -122,6 +124,11 @@ def check_node(node, event):
                 if node.has_permission(user, 'read'):
                     node_subscriptions[notification_type].append(user._id)
     return node_subscriptions
+
+
+def get_user_subscriptions(user, event):
+    user_subscription = NotificationSubscription.load(utils.to_subscription_key(user._id, event))
+    return {key: getattr(user_subscription, key, []) for key in constants.NOTIFICATION_TYPES}
 
 
 def get_node_lineage(node):

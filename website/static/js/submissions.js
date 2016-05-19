@@ -52,6 +52,7 @@ function Submissions(data) {
                 {
                     data : 'title',  // Data field name
                     sortInclude : true,
+                    filter : true,
                     custom : function() {
                         return m('a', { href : item.data.nodeUrl, target : '_blank' }, item.data.title ); }
 
@@ -59,14 +60,17 @@ function Submissions(data) {
                 {
                     data: 'author',  // Data field name
                     sortInclude: true,
-                    custom: function() { return m('a', {href: item.data.authorUrl}, item.data.author); }
+                    custom: function() { return m('a', {href: item.data.authorUrl, target : '_blank'}, item.data.author); },
+                    filter : true
                 },
-
                 {
                     data: 'dateCreated', // Data field name
                     sortInclude: true,
+                    filter : false,
                     custom: function() {
                         var dateCreated = new osfHelpers.FormattableDate(item.data.dateCreated);
+                        // Assign dateCreated with the format of date usable in all browsers
+                        item.data.dateCreated = dateCreated.date;
                         return m('', dateCreated.local);
                     }
                 },
@@ -89,7 +93,8 @@ function Submissions(data) {
                 {
                     data: 'confName',
                     sortInclude: true,
-                    custom: function() { return m('a', {href: item.data.confUrl}, item.data.confName); }
+                    filter : true,
+                    custom: function() { return m('a', {href: item.data.confUrl, target : '_blank'}, item.data.confName); }
                 }
             ];
         },
@@ -98,7 +103,7 @@ function Submissions(data) {
             down : 'i.fa.fa-chevron-down'
         },
         hScroll: 'auto',
-        showFilter : false,     // Gives the option to filter by showing the filter box.
+        showFilter : true,     // Gives the option to filter by showing the filter box.
         allowMove : false,       // Turn moving on or off.
         hoverClass : 'fangorn-hover',
     };

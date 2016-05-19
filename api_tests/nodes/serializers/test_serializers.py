@@ -4,7 +4,7 @@ from urlparse import urlparse
 from nose.tools import *  # flake8: noqa
 from dateutil.parser import parse as parse_date
 
-from tests.base import DbTestCase, ApiTestCase, assert_datetime_equal
+from tests.base import DbTestCase, assert_datetime_equal
 from tests.utils import make_drf_request
 from tests.factories import UserFactory, NodeFactory, RegistrationFactory, ProjectFactory
 
@@ -38,7 +38,7 @@ class TestNodeSerializer(DbTestCase):
         assert_equal(attributes['category'], node.category)
         assert_equal(attributes['registration'], node.is_registration)
         assert_equal(attributes['fork'], node.is_fork)
-        assert_equal(attributes['collection'], node.is_fork)
+        assert_equal(attributes['collection'], node.is_collection)
 
         # Relationships
         relationships = data['relationships']
@@ -46,16 +46,15 @@ class TestNodeSerializer(DbTestCase):
         assert_in('contributors', relationships)
         assert_in('files', relationships)
         assert_in('parent', relationships)
+        assert_in('primary_institution', relationships)
         parent_link = relationships['parent']['links']['related']['href']
         assert_equal(
             urlparse(parent_link).path,
             '/{}nodes/{}/'.format(API_BASE, parent._id)
         )
         assert_in('registrations', relationships)
-        assert_in('forked_from', relationships)
-        forked_from = relationships['forked_from']['links']['related']['href']
-        # None because node is not a fork
-        assert_is_none(forked_from)
+        # Not a fork, so forked_from is removed entirely
+        assert_not_in('forked_from', relationships)
 
     def test_fork_serialization(self):
         node = NodeFactory(creator=self.user)
@@ -81,6 +80,10 @@ class TestNodeRegistrationSerializer(DbTestCase):
         data = result['data']
         assert_equal(data['id'], reg._id)
         assert_equal(data['type'], 'registrations')
+        should_not_relate_to_registrations = [
+            'registered_from',
+            'registered_by',
+        ]
 
         # Attributes
         attributes = data['attributes']
@@ -88,10 +91,13 @@ class TestNodeRegistrationSerializer(DbTestCase):
             parse_date(attributes['date_registered']),
             reg.registered_date
         )
-        assert_equal(attributes['retracted'], reg.is_retracted)
+        assert_equal(attributes['withdrawn'], reg.is_retracted)
 
         # Relationships
         relationships = data['relationships']
+        relationship_urls = {}
+        for relationship in relationships:
+            relationship_urls[relationship]=relationships[relationship]['links']['related']['href']
         assert_in('registered_by', relationships)
         registered_by = relationships['registered_by']['links']['related']['href']
         assert_equal(
@@ -104,3 +110,9 @@ class TestNodeRegistrationSerializer(DbTestCase):
             urlparse(registered_from).path,
             '/{}nodes/{}/'.format(API_BASE, reg.registered_from._id)
         )
+        for relationship in relationship_urls:
+            if relationship in should_not_relate_to_registrations:
+                assert_not_in('/{}registrations/'.format(API_BASE), relationship_urls[relationship])
+            else:
+                assert_in('/{}registrations/'.format(API_BASE), relationship_urls[relationship],
+                          'For key {}'.format(relationship))

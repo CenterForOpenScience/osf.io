@@ -64,6 +64,8 @@ class GenWrapper(object):
                 pass  # Avoids error message about the underlying object
         return object.__getattribute__(self, name)
 
+    def limit(self, *args, **kwargs):
+        return self.__class__(self.mqs.limit(*args, **kwargs))
 
 def validate_location(value):
     if value is None:

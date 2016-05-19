@@ -630,6 +630,24 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
+    'TESS': {
+        'name': 'Time-sharing Experiments for the Social Sciences',
+        'info_url': 'http://www.tessexperiments.org',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': False,
+        'talk': True,
+        'field_names': {
+            'submission1': 'poster',
+            'submission2': 'study',
+            'submission1_plural': 'posters',
+            'submission2_plural': 'studies',
+            'meeting_title_type': 'Studies',
+            'add_submission': 'studies',
+        }
+    },
 }
 
 def clear_up_conf():
@@ -639,6 +657,7 @@ def clear_up_conf():
         conf.remove()
         conf.save()
 
+# NOTE: admins field is ignored
 def populate_conferences():
     clear_up_conf()
     date_format = '%b %d %Y'
@@ -648,17 +667,27 @@ def populate_conferences():
             attrs['end_date'] = datetime.strptime(attrs['end_date'], date_format)
         if attrs['start_date']:
             attrs['start_date'] = datetime.strptime(attrs['start_date'], date_format)
+        custom_fields = attrs.pop('field_names', {})
         conf = Conference(
             endpoint=meeting, **attrs
         )
+        conf.field_names.update(custom_fields)
         try:
             conf.save()
         except ModularOdmException:
-            print('{0} Conference already exists. Updating existing record...'.format(meeting))
             conf = Conference.find_one(Q('endpoint', 'eq', meeting))
             for key, value in attrs.items():
-                setattr(conf, key, value)
-            conf.save()
+                if isinstance(value, dict):
+                    current = getattr(conf, key)
+                    current.update(value)
+                    setattr(conf, key, current)
+                else:
+                    setattr(conf, key, value)
+            changed_fields = conf.save()
+            if changed_fields:
+                print('Updated {}: {}'.format(meeting, changed_fields))
+        else:
+            print('Added new Conference: {}'.format(meeting))
 
 
 if __name__ == '__main__':

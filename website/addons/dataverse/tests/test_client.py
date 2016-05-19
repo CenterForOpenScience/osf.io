@@ -10,7 +10,7 @@ from website.addons.dataverse.tests.utils import DataverseAddonTestCase
 from website.addons.dataverse.tests.utils import create_external_account
 from website.addons.dataverse.client import (
     _connect, get_files, publish_dataset, get_datasets, get_dataset,
-    get_dataverses, get_dataverse, connect_from_settings, connect_or_401,
+    get_dataverses, get_dataverse, connect_from_settings, connect_or_error,
     connect_from_settings_or_401,
 )
 from website.addons.dataverse.model import AddonDataverseNodeSettings
@@ -52,18 +52,18 @@ class TestClient(DataverseAddonTestCase):
         mock_connection.assert_called_once_with(self.host, self.token)
 
     @mock.patch('website.addons.dataverse.client.Connection')
-    def test_connect_or_401(self, mock_connection):
+    def test_connect_or_error(self, mock_connection):
         mock_connection.return_value = mock.create_autospec(Connection)
-        c = connect_or_401(self.host, self.token)
+        c = connect_or_error(self.host, self.token)
 
         mock_connection.assert_called_once_with(self.host, self.token)
         assert_true(c)
 
     @mock.patch('website.addons.dataverse.client.Connection')
-    def test_connect_or_401_forbidden(self, mock_connection):
+    def test_connect_or_error_returns_401_when_client_raises_unauthorized_error(self, mock_connection):
         mock_connection.side_effect = UnauthorizedError()
         with assert_raises(HTTPError) as cm:
-            connect_or_401(self.host, self.token)
+            connect_or_error(self.host, self.token)
 
         mock_connection.assert_called_once_with(self.host, self.token)
         assert_equal(cm.exception.code, 401)
