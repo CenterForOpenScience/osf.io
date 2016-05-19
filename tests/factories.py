@@ -31,7 +31,32 @@ from framework.sessions.model import Session
 from tests.base import fake
 from tests.base import get_default_metaschema
 from website.addons import base as addons_base
+<<<<<<< 556e3f2d044d3b891915d84535c41de9f62b4954
 from website.addons.wiki.model import NodeWikiPage
+=======
+from website.files.models import StoredFileNode
+from website.oauth.models import (
+    ApiOAuth2Application,
+    ApiOAuth2PersonalToken,
+    ExternalAccount,
+    ExternalProvider
+)
+from website.project.model import (
+    Comment, DraftRegistration, MetaSchema, Node, NodeLog, Pointer,
+    PrivateLink, Tag, WatchConfig, AlternativeCitation,
+    ensure_schemas, Institution
+)
+from website.project.sanctions import (
+    Embargo,
+    EmbargoTerminationApproval,
+    RegistrationApproval,
+    Retraction,
+    Sanction,
+)
+from website.notifications.model import NotificationSubscription, NotificationDigest
+from website.archiver.model import ArchiveTarget, ArchiveJob
+from website.identifiers.model import Identifier
+>>>>>>> Move IdentifierFactory to base test factories
 from website.archiver import ARCHIVER_SUCCESS
 from website.archiver.model import ArchiveTarget, ArchiveJob
 from website.identifiers.model import Identifier
