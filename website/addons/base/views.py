@@ -511,11 +511,11 @@ def addon_view_or_download_file_legacy(**kwargs):
 @must_be_valid_project
 @must_be_contributor_or_public
 def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
-    """Shows a nice error message to users when they try to view
-    a deleted file
+    """Shows a nice error message to users when they try to view a deleted file
     """
     # Allow file_node to be passed in so other views can delegate to this one
     file_node = kwargs.get('file_node') or TrashedFileNode.load(kwargs.get('trashed_id'))
+
     deleted_by, deleted_on = None, None
     if isinstance(file_node, TrashedFileNode):
         deleted_by = file_node.deleted_by
@@ -529,12 +529,16 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
             error_type = 'FILE_GONE'
     else:
         error_type = 'DONT_KNOW'
+
     file_path = kwargs.get('path', file_node.path)
     file_name = file_node.name or os.path.basename(file_path)
     file_name_title, file_name_ext = os.path.splitext(file_name)
     provider_full = settings.ADDONS_AVAILABLE_DICT[file_node.provider].full_name
-    ret = serialize_node(node, auth, primary=True)
-    ret.update(rubeus.collect_addon_assets(node))
+    try:
+        file_guid = file_node.get_guid()._id
+    except AttributeError:
+        file_guid = None
+
     format_params = dict(
         file_name=markupsafe.escape(file_name),
         deleted_by=markupsafe.escape(deleted_by),
@@ -543,12 +547,11 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
     )
     if deleted_by:
         format_params['deleted_by_guid'] = markupsafe.escape(deleted_by_guid)
-    retError = ERROR_MESSAGES[error_type].format(**format_params)
-    try:
-        file_guid = file_node.get_guid()._id
-    except AttributeError:
-        file_guid = None
+
+    ret = serialize_node(node, auth, primary=True)
+    ret.update(rubeus.collect_addon_assets(node))
     ret.update({
+        'error': ERROR_MESSAGES[error_type].format(**format_params),
         'urls': {
             'render': None,
             'sharejs': None,
@@ -567,7 +570,6 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
         'file_id': file_node._id,
         'provider': file_node.provider,
         'materialized_path': file_node.materialized_path or file_path,
-        'error': retError,
         'private': getattr(node.get_addon(file_node.provider), 'is_private', False),
         'file_tags': [tag._id for tag in file_node.tags],
         'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE,
