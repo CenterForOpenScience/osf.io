@@ -15,11 +15,8 @@ def get_targets():
 
 def migrate(targets, dry_run=True):
     # iterate over targets
-    logs = targets
-    nodes = set()
-    for log in logs:
-        nodes.add(log.node)
-    for node in nodes:
+    for log in targets:
+        node = log.node
         versions = node.wiki_pages_versions
         current = node.wiki_pages_current
         updated_versions = {}
