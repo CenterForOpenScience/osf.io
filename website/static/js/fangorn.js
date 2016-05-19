@@ -150,7 +150,7 @@ function cancelUploads(row) {
     }
     if (!handled) {
         // File is currently being uploaded/managed by dropzone
-        filesArr.some(function(file) {
+        handled = filesArr.some(function(file) {
             if (file.tmpID === row.data.tmpID) {
                 tb.deleteNode(row.parentID, row.id);
                 tb.dropzone.removeFile(file);
@@ -158,7 +158,7 @@ function cancelUploads(row) {
             }
         });
     }
-    tb.isUploading(filesArr.length > 1);
+    tb.isUploading(handled && filesArr.length > 1);
 }
 
 var uploadRowTemplate = function(item) {
@@ -748,7 +748,9 @@ function _fangornComplete(treebeard, file) {
 
     if (file.isSync) {
         if (this.syncFileCache[item.data.provider].length > 0) {
-            this.processFile(this.syncFileCache[item.data.provider].pop());
+            var nextFile = this.syncFileCache[item.data.provider].pop();
+            this.files.push(nextFile);
+            this.processFile(nextFile);
         }
     }
 }
