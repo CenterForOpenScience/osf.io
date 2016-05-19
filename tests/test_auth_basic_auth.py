@@ -85,28 +85,3 @@ class TestAuthBasicAuthentication(OsfTestCase):
 
         res = self.app.get(self.reachable_url, auth=self.user1.auth, headers={'X-OSF-OTP': _valid_code(self.TOTP_SECRET)})
         assert_equal(res.status_code, 200)
-
-    def test_dashboard_with_valid_cookie(self):
-        cookie = self.user1.get_or_create_cookie()
-        self.app.set_cookie(settings.COOKIE_NAME, str(cookie))
-        res = self.app.get(self.dashboard_url)
-        assert_equal(res.status_code, 302)
-        assert_not_in('login', res.location)
-
-    def test_dashboard_without_cookie(self):
-        res = self.app.get(self.dashboard_url)
-        assert_equal(res.status_code, 302)
-        assert_in('login?service=', res.location)
-        assert_in('dashboard/', res.location.split('?')[1])
-
-    def test_myprojects_with_valid_cookie(self):
-        cookie = self.user1.get_or_create_cookie()
-        self.app.set_cookie(settings.COOKIE_NAME, str(cookie))
-        res = self.app.get(self.myprojects_url)
-        assert_equal(res.status_code, 200)
-
-    def test_myprojects_without_cookie(self):
-        res = self.app.get(self.myprojects_url)
-        assert_equal(res.status_code, 302)
-        assert_in('login?service=', res.location)
-        assert_in('myprojects/', res.location.split('?')[1])
