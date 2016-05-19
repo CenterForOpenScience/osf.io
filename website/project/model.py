@@ -3841,10 +3841,13 @@ class DraftRegistration(StoredObject):
         if meta_schema:
             schema = meta_schema.schema
             flags = schema.get('flags', {})
+            dirty = False
             for flag, value in flags.iteritems():
                 if flag not in self._metaschema_flags:
                     self._metaschema_flags[flag] = value
-            self.save()
+                    dirty = True
+            if dirty:
+                self.save()
         return self._metaschema_flags
 
     @flags.setter
