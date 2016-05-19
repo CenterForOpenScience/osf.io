@@ -49,7 +49,7 @@ utils.errorState = function(vm){
  * @param {Object} vm The current state of the vm
  * @param {Object} data New search results
  */
-utils.updateVM = function(vm, data, callback) {
+utils.updateVM = function(vm, data) {
     if (data === null) {
         return;
     }

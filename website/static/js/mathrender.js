@@ -38,11 +38,11 @@ function typeset(el) {
     // Make sure we're doing this in a browser...
     // This isn't _really_ a good enough guard against this getting 
     // run on the server, but hopefully we don't define window...
-    if (typeof window === "undefined") return;
+    if (typeof window === 'undefined') return;
         
     // Add an element by its id to MAthJax Queue to typeset.
     // As soon as MathJax has a queue, it'll start typesetting.
-    window.MathJax.Hub.Queue(["Typeset", MathJax.Hub, el]);
+    window.MathJax.Hub.Queue(['Typeset', MathJax.Hub, el]);
 
 }
 

@@ -35,7 +35,7 @@ var Results = {
             } else if (!loading && results.length === 0) {
                 return m('p', {class: 'text-muted'}, 'No results for this query');
             } else {
-                return m('',  [m.component(LoadingIcon), 'loading...']);
+                return m('', [m.component(LoadingIcon), 'loading...']);
             }
         };
 
@@ -43,7 +43,7 @@ var Results = {
             
             m('.row.hasMath', m('.col-md-12', {
                 config: function(el, ini, ctx) {
-                    mathrender.typeset(el) // We can start mathjax here and trigger it once to rendoer for all results...
+                    mathrender.typeset(el); // We can start mathjax here and trigger it once to rendoer for all results...
                 }
             },
                 maybeResults(resultViews, vm.resultsLoading())
@@ -55,7 +55,7 @@ var Results = {
                     onclick: function(){
                         utils.loadMore(vm)
                             .then(function(data) {
-                                utils.updateVM(vm, data)
+                                utils.updateVM(vm, data);
 
                             });
 		                }
