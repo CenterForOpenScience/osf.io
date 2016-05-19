@@ -54,6 +54,18 @@ The file "{file_name}" stored on {provider} was deleted via the OSF.
 It was deleted by <a href="/{deleted_by_guid}">{deleted_by}</a> on {deleted_on}.
 </p>
 </div>''',
+                  'FILE_GONE_ACTOR_UNKNOWN': u'''
+<style>
+#toggleBar{{display: none;}}
+</style>
+<div class="alert alert-info" role="alert">
+<p>
+The file "{file_name}" stored on {provider} was deleted via the OSF.
+</p>
+<p>
+It was deleted on {deleted_on}.
+</p>
+</div>''',
                   'DONT_KNOW': u'''
 <style>
 #toggleBar{{display: none;}}
@@ -514,7 +526,10 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
         if file_node.suspended:
             error_type = 'FILE_SUSPENDED'
         elif file_node.deleted_by is None:
-            error_type = 'BLAME_PROVIDER'
+            if file_node.provider == 'osfstorage':
+                error_type = 'FILE_GONE_ACTOR_UNKNOWN'
+            else:
+                error_type = 'BLAME_PROVIDER'
         else:
             error_type = 'FILE_GONE'
     else:
