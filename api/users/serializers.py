@@ -139,7 +139,7 @@ class UserAddonSettingsSerializer(JSONAPISerializer):
         )
 
     def account_links(self, obj):
-        # TODO: remove this after refactoring Figshare
+        # TODO: [OSF-4933] remove this after refactoring Figshare
         if hasattr(obj, 'external_accounts'):
             return {
                 account._id: {

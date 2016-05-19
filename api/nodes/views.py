@@ -1726,7 +1726,7 @@ class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Addo
     view_name = 'node-addon-folders'
 
     def get_queryset(self):
-        # TODO: refactor this/NS models to be generalizable
+        # TODO: [OSF-6120] refactor this/NS models to be generalizable
         node_addon = self.get_addon_settings()
 
         path = self.request.query_params.get('path', '')

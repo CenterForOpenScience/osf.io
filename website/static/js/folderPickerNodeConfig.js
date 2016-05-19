@@ -513,7 +513,7 @@ var FolderPickerViewModel = oop.defclass({
             xhrconfig: $osf.setXHRAuthorization,
             lazyLoadPreprocess: function(data) {
                 // Also handle data from API -- squash `attributes` to what TB expects
-                // TODO: DRY this up when PR #5240 goes in
+                // TODO: [OSF-6384] DRY this up when PR #5240 goes in
                 var saved_attributes = data.attributes;
                 delete data.attributes;
                 $.extend(true, data, saved_attributes);
