@@ -296,11 +296,25 @@ var SalesAnalytics = function() {
                                     'Users');
     };
 
+    self.getRepeatActionAgeMonthly = function(repeatActionUserMonthly) {
+        var chart = self.drawMetric('db-chart-repeat-action-age-monthly',
+                                    repeatActionUserMonthly.repeat_action_age,
+                                    '#b75c4c',
+                                    'Days');
+    };
+
     self.getTotalUserCount = function(userCount) {
         var chart = self.drawMetric('db-chart-total-user',
                                     userCount.total,
                                     '#005c66',
                                     'Users');
+    };
+
+    self.getAddedUserCount = function(userAdded) {
+        var chart = self.drawMetric('db-chart-user-added',
+                                    userAdded,
+                                    '#005c66',
+                                    'Users Added Yesterday');
     };
 
     self.getUserCountHistory = function(countHistoryMonthly, tag, id) {
@@ -370,7 +384,9 @@ var SalesAnalytics = function() {
         self.getMultiActionCountYearly(multiProductMetricsYearly);
         self.getMultiActionCountMonthly(multiProductMetricsMonthly);
         self.getRepeatActionCountMonthly(repeatActionUserMonthly);
+        self.getRepeatActionAgeMonthly(repeatActionUserMonthly);
         self.getTotalUserCount(userCount);
+        self.getAddedUserCount(userAdded);
         self.getUserCountHistory(countHistoryMonthly, 'osf', '#db-chart-osf-count-history');
         self.getUserCountHistory(countHistoryMonthly, 'osf4m', '#db-chart-osf4m-count-history');
         self.getUserCountHistory(countHistoryMonthly, 'prereg', '#db-chart-prereg-count-history');

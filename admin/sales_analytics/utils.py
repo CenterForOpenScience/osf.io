@@ -178,6 +178,6 @@ def save_repeat_action_metrics(db=db, start=datetime.now().date() - timedelta(da
                     repeat_action_user_age.append(age)
                     break
     record = {'repeat_action_count': repeat_action_count,
-              'repeat_action_age': int(sum(repeat_action_user_age) / len(repeat_action_user_age))}
+              'repeat_action_age': int(sum(repeat_action_user_age) / len(repeat_action_user_age)) if repeat_action_user_age else 0}
     DBMetrics.save_record(record, timespan=timespan, date=end)
     return record

@@ -5,6 +5,7 @@
 {% block top_analytics %}
     <script>
       var userCount = {{ user_count | jsonify | safe }};
+      var userAdded = {{ user_added | jsonify | safe }};
       var multiProductMetricsYearly = {{ multi_product_metrics_yearly | jsonify | safe }};
       var multiProductMetricsMonthly = {{ multi_product_metrics_monthly | jsonify | safe }};
       var repeatActionUserMonthly = {{ repeat_action_user_monthly | jsonify | safe }};
@@ -128,13 +129,13 @@
             </div>
             <div class="chart-wrapper">
               <div class="chart-title">
-                Repetitive actions User Count (Month)
+                Users Added Yesterday
               </div>
               <div class="chart-stage">
-                <div id='db-chart-repeat-action-monthly'></div>
+                <div id='db-chart-user-added'></div>
               </div>
               <div class="chart-notes">
-                Number of Users that repeat an action
+                Number of users added yesterday
               </div>
             </div>
           </div>
@@ -234,7 +235,7 @@
           </div>
 
 
-          <div class="col-sm-12 col-md-6", style="display: none;">
+          <div class="col-sm-12 col-md-6 hidden">
             <div class="chart-wrapper">
               <div class="chart-title">
                 Average User Session Length of Previous 7 days
@@ -252,7 +253,30 @@
               </div>
             </div>
           </div>
-
+          <div class="col-sm-12 col-md-6">
+            <div class="chart-wrapper">
+              <div class="chart-title">
+                Repetitive actions User Count (Month)
+              </div>
+              <div class="chart-stage">
+                <div id='db-chart-repeat-action-monthly'></div>
+              </div>
+              <div class="chart-notes">
+                Number of Users that repeat an action
+              </div>
+            </div>
+            <div class="chart-wrapper">
+              <div class="chart-title">
+                Repetitive actions User Age (Month)
+              </div>
+              <div class="chart-stage">
+                <div id='db-chart-repeat-action-age-monthly'></div>
+              </div>
+              <div class="chart-notes">
+                Average age of users that repeat an action
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
