@@ -16,22 +16,23 @@ class TestMigrateDeletedWikis(OsfTestCase):
         self.project.update_node_wiki('home', 'Hello world', self.auth)
         self.project.update_node_wiki('second', 'Hola mundo', self.auth)
         self.project.update_node_wiki('second', 'Hola mundo 2', self.auth)
-        # Delete the second wiki to populate targets
-        self.project.delete_node_wiki('second', self.auth)
         self.versions = self.project.wiki_pages_versions
         self.current = self.project.wiki_pages_current
 
     def test_get_targets(self):
+        # delete second wiki to add something to targets
+        self.project.delete_node_wiki('second', self.auth)
         # Initial targets should include: user2, user3, user4, user5, user6 (5 in total)
         logs = get_targets()
         # assert len is equal to 1 log (deleting 'second' wiki on project)
         assert_equal(len(logs), 1)
 
     def test_migrate(self):
-        # Assert 'home' has 2 versions
+        # Assert 'home' has 1 version
         # Assert 'second' has 2 versions
         assert_equal(len(self.versions['home']), 1)
         assert_equal(len(self.versions['second']), 2)
+        self.project.delete_node_wiki('second', self.auth)
         logs = get_targets()
         migrate(logs, dry_run=False)
         self.project.reload()
