@@ -44,25 +44,19 @@ from website.notifications.events.files import FileEvent  # noqa
 
 ERROR_MESSAGES = {'FILE_GONE': u'''
 <style>
-.file-download{{display: none;}}
-.file-share{{display: none;}}
-.file-delete{{display: none;}}
+#toggleBar{{display: none;}}
 </style>
 <div class="alert alert-info" role="alert">
 <p>
 The file "{file_name}" stored on {provider} was deleted via the OSF.
 </p>
 <p>
-
 It was deleted by <a href="/{deleted_by_guid}">{deleted_by}</a> on {deleted_on}.
-
 </p>
 </div>''',
                   'DONT_KNOW': u'''
 <style>
-.file-download{{display: none;}}
-.file-share{{display: none;}}
-.file-delete{{display: none;}}
+#toggleBar{{display: none;}}
 </style>
 <div class="alert alert-info" role="alert">
 <p>
@@ -71,9 +65,7 @@ File not found at {provider}.
 </div>''',
                   'BLAME_PROVIDER': u'''
 <style>
-.file-download{{display: none;}}
-.file-share{{display: none;}}
-.file-delete{{display: none;}}
+#toggleBar{{display: none;}}
 </style>
 <div class="alert alert-info" role="alert">
 <p>
@@ -84,11 +76,9 @@ The provider ({provider}) may currently be unavailable or "{file_name}" may have
 You may wish to verify this through {provider}'s website.
 </p>
 </div>''',
-'FILE_SUSPENDED': u'''
+                  'FILE_SUSPENDED': u'''
 <style>
-.file-download{{display: none;}}
-.file-share{{display: none;}}
-.file-delete{{display: none;}}
+#toggleBar{{display: none;}}
 </style>
 <div class="alert alert-info" role="alert">
 This content has been removed.
