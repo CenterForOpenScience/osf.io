@@ -36,18 +36,17 @@ class TestMigrateDeletedWikis(OsfTestCase):
     def test_delete_wiki_node(self):
         self.project.delete_node_wiki('second', self.auth)
         TestMigrateDeletedWikis.times_wiki_deleted += 1
+        self.versions = self.project.wiki_pages_versions
         assert_true('second' not in self.versions)
 
     def test_migrate(self):
-        # Assert 'home' has 1 version
-        # Assert 'second' has 2 versions
-        assert_equal(len(self.versions['home']), 1)
-        assert_equal(len(self.versions['second']), 2)
-        self.project.delete_node_wiki('second', self.auth)
-        TestMigrateDeletedWikis.times_wiki_deleted += 1
         logs = get_targets()
         migrate(logs, dry_run=False)
         self.project.reload()
+        # Ensure that wiki pages that were targeted are not in versions
+        for log in logs:
+            node = log.node.update_node_wiki()
+            assert_true(node.title not in self.project.wiki_pages_versions)
 
     def test_migration_does_not_affect_home(self):
         logs = get_targets()
