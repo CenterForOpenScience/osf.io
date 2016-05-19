@@ -1,7 +1,12 @@
 <%inherit file="base.mako"/>
 <%def name="title()">SHARE</%def>
 <%def name="content()">
-    <script type="text/javascript" src="/static/vendor/bower_components/MathJax/unpacked/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script> 
+    <script type="text/javascript" src="/static/vendor/bower_components/MathJax/unpacked/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type='text/javascript'>
+        window.MathJax.Hub.Config({
+            tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+        });
+    </script> 
     <div id="shareSearch"></div>
 </%def>
 

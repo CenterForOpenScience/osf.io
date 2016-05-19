@@ -35,26 +35,35 @@ var Results = {
             } else if (!loading && results.length === 0) {
                 return m('p', {class: 'text-muted'}, 'No results for this query');
             } else {
-                return m('', [m.component(LoadingIcon), 'loading...']);
+                return m('',  [m.component(LoadingIcon), 'loading...']);
             }
         };
 
         return m('', [
             
-            m('.row.hasMath', m('.col-md-12', [
-                maybeResults(resultViews, vm.resultsLoading()),
-                m('iframe.res_loaded_handler', {
-                    style: {display: 'none'},
-                    onload: function() {
-                        Array.prototype.map.call(
-                            document.querySelectorAll('.hasMath'), 
-                            mathrender.typeset
-                        );
-                    }
-                })
-            ])),
+            m('.row.hasMath', m('.col-md-12', {
+                config: function(el, ini, ctx) {
+                    //console.log(el.textContent);
+                    //Array.prototype.map.call(document.querySelectorAll('.hasMath'), console.log.bind(console));
+                    //mathrender.typeset(el)
+                    //Array.prototype.map.call(document.querySelectorAll('.hasMath'), mathrender.typeset);
+                }
+            }, [
+                    maybeResults(resultViews, vm.resultsLoading())
+                    //, m('iframe.res_loaded_handler', {
+                    //    style: {
+                    //        display: 'none'
+                    //    },
+                    //    onload: function() {
+                    //        Array.prototype.map.call(
+                    //            document.querySelectorAll('.hasMath'), 
+                    //            mathrender.typeset
+                    //        );
+                    //    }
+                    //})
+                ]
+            )),
 
-            // This won't work for ie8 or earlier - these browser fires an onreadystatechange but no onload...
             m('.row', m('.col-md-12', m('div', {style: {display: 'block', margin: 'auto', 'text-align': 'center'}}, 
                 len > 0 && len < vm.count ?
                 m('a.btn.btn-md.btn-default', {
@@ -125,12 +134,25 @@ var Description = {
         };
         if ((result.description || '').length > 350) {
             return m('', [
-                m('p.readable.pointer', {onclick: showOnClick},
+                m('p.readable.pointer', {
+                    onclick: showOnClick,
+                    config: function(el, ini, ctx) {
+                    //    console.log(el);
+                        //setTimeout(function() {
+                            mathrender.typeset(el)
+                        //}, 500);
+                    }
+                },
                     ctrl.showAll() ? result.description : $.truncate(result.description, {length: 350})
                 ),
                 m('a.sr-only', {href: '#', onclick: showOnClick}, ctrl.showAll() ? 'See less' : 'See more')]);
         } else {
-            return m('p.readable', result.description);
+            return m('p.readable', {
+                config: function(el, ini, ctx) {
+                    mathrender.typeset(el)
+                }
+            },
+            result.description);
         }
     }
 };
