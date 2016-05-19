@@ -63,6 +63,14 @@ class TestNodeWikiPageModel(OsfTestCase):
         assert_false(ver1.is_current)
         assert_true(ver2.is_current)
 
+    def test_is_current_deleted_page(self):
+        node = NodeFactory()
+        ver = NodeWikiPage(page_name='foo', node=node)
+        ver.save()
+        # Simulate a deleted page by not adding ver to
+        # node.wiki_pages_current and node.wiki_pages_versions
+        assert_false(ver.is_current)
+
 class TestWikiViews(OsfTestCase):
 
     def setUp(self):
