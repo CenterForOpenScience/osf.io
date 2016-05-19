@@ -42,6 +42,26 @@ class TestNodeWikiPageModel(OsfTestCase):
         with assert_raises(ValidationValueError):
             page.save()
 
+    def test_is_current_with_single_version(self):
+        node = NodeFactory()
+        page = NodeWikiPage(page_name='foo', node=node)
+        page.save()
+        node.wiki_pages_current['foo'] = page._id
+        node.wiki_pages_versions['foo'] = [page._id]
+        node.save()
+        assert_true(page.is_current)
+
+    def test_is_current_with_multiple_versions(self):
+        node = NodeFactory()
+        ver1 = NodeWikiPage(page_name='foo', node=node)
+        ver2 = NodeWikiPage(page_name='foo', node=node)
+        ver1.save()
+        ver2.save()
+        node.wiki_pages_current['foo'] = ver2._id
+        node.wiki_pages_versions['foo'] = [ver1._id, ver2._id]
+        node.save()
+        assert_false(ver1.is_current)
+        assert_true(ver2.is_current)
 
 class TestWikiViews(OsfTestCase):
 
