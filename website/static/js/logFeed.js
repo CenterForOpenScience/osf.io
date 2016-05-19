@@ -182,7 +182,6 @@ var createLogs = function(logData){
             nodeDescription: item.params.description_new,
             nodePath: item.node.path,
             user: item.user,
-            isActive: item.user.is_active,
             registrationCancelled: item.node.is_registration && item.node.registered_from_id == null
         });
     });

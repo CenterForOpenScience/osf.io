@@ -289,7 +289,7 @@ var CommentModel = function(data, $parent, $root) {
             'fullname': 'A User',
             'gravatarUrl': ''
         };
-    } else if ('embeds' in data && 'user' in data.embeds) {
+    } else if ('embeds' in data && 'user' in data.embeds && 'data' in data.embeds.user) {
         var userData = data.embeds.user.data;
         self.author = {
             'id': userData.id,
@@ -298,7 +298,12 @@ var CommentModel = function(data, $parent, $root) {
             'gravatarUrl': userData.links.profile_image
         };
     } else {
-        self.author = self.$root.author;
+        self.author = {
+            'id': null,
+            'urls': {'profile': ''},
+            'fullname': 'Deactivated user',
+            'gravatarUrl': ''
+        };
     }
 
     self.contentDisplay = ko.observable(markdown.full.render(self.content()));
