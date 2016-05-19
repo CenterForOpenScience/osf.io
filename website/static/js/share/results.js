@@ -43,25 +43,10 @@ var Results = {
             
             m('.row.hasMath', m('.col-md-12', {
                 config: function(el, ini, ctx) {
-                    //console.log(el.textContent);
-                    //Array.prototype.map.call(document.querySelectorAll('.hasMath'), console.log.bind(console));
-                    //mathrender.typeset(el)
-                    //Array.prototype.map.call(document.querySelectorAll('.hasMath'), mathrender.typeset);
+                    mathrender.typeset(el) // We can start mathjax here and trigger it once to rendoer for all results...
                 }
-            }, [
-                    maybeResults(resultViews, vm.resultsLoading())
-                    //, m('iframe.res_loaded_handler', {
-                    //    style: {
-                    //        display: 'none'
-                    //    },
-                    //    onload: function() {
-                    //        Array.prototype.map.call(
-                    //            document.querySelectorAll('.hasMath'), 
-                    //            mathrender.typeset
-                    //        );
-                    //    }
-                    //})
-                ]
+            },
+                maybeResults(resultViews, vm.resultsLoading())
             )),
 
             m('.row', m('.col-md-12', m('div', {style: {display: 'block', margin: 'auto', 'text-align': 'center'}}, 
@@ -114,7 +99,13 @@ var TitleBar = {
     view: function(ctrl, params) {
         var result = params.result;
         return m('span', {}, [
-            m('a[href=' + result.uris.canonicalUri + ']', ((result.title || 'No title provided'))),
+            m('a[href=' + result.uris.canonicalUri + ']', {
+                    config: function(el, ini, ctx) {
+                        //mathrender.typeset(el)
+                    }
+                },
+                ((result.title || 'No title provided'))
+            ),
             m('br'),
             m.component(Description, params)
         ]);
@@ -137,10 +128,7 @@ var Description = {
                 m('p.readable.pointer', {
                     onclick: showOnClick,
                     config: function(el, ini, ctx) {
-                    //    console.log(el);
-                        //setTimeout(function() {
-                            mathrender.typeset(el)
-                        //}, 500);
+                        //mathrender.typeset(el)
                     }
                 },
                     ctrl.showAll() ? result.description : $.truncate(result.description, {length: 350})
@@ -149,7 +137,7 @@ var Description = {
         } else {
             return m('p.readable', {
                 config: function(el, ini, ctx) {
-                    mathrender.typeset(el)
+                    //mathrender.typeset(el)
                 }
             },
             result.description);
