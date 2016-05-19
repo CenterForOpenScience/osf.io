@@ -106,11 +106,11 @@ describe('Paginator', () => {
             });
             paginator.addNewPaginators();
             assert.equal(paginator.paginators().length, numberOfPages + 2);
-            assert.equal(paginator.paginators()[0].text, '&lt;');
+            assert.equal(paginator.paginators()[0].text, '<');
             assert.equal(paginator.paginators()[1].text, 1);
             assert.equal(
                 paginator.paginators()[paginator.paginators().length - 1].text,
-                '&gt;'
+                '>'
             );
             assert.equal(
                 paginator.paginators()[paginator.paginators().length - 2].text,
@@ -127,8 +127,8 @@ describe('Paginator', () => {
             });
             paginator.addNewPaginators();
             assert.equal(paginator.paginators().length, maxPaginatorNumber);
-            assert.equal(paginator.paginators()[0].text, '&lt;');
-            assert.equal(paginator.paginators()[maxPaginatorNumber - 1].text, '&gt;');
+            assert.equal(paginator.paginators()[0].text, '<');
+            assert.equal(paginator.paginators()[maxPaginatorNumber - 1].text, '>');
             assert.equal(paginator.paginators()[maxPaginatorNumber - 2].text, numberOfPages);
             assert.equal(paginator.paginators()[maxPaginatorNumber - 3].text, '...');
         });
@@ -143,10 +143,10 @@ describe('Paginator', () => {
             });
             paginator.addNewPaginators();
             assert.equal(paginator.paginators().length, maxPaginatorNumber);
-            assert.equal(paginator.paginators()[0].text, '&lt;');
+            assert.equal(paginator.paginators()[0].text, '<');
             assert.equal(paginator.paginators()[1].text, 1);
             assert.equal(paginator.paginators()[2].text, '...');
-            assert.equal(paginator.paginators()[maxPaginatorNumber - 1].text, '&gt;');
+            assert.equal(paginator.paginators()[maxPaginatorNumber - 1].text, '>');
             assert.equal(paginator.paginators()[maxPaginatorNumber - 2].text, numberOfPages);
 
         });
@@ -161,10 +161,10 @@ describe('Paginator', () => {
             });
             paginator.addNewPaginators();
             assert.equal(paginator.paginators().length, maxPaginatorNumber);
-            assert.equal(paginator.paginators()[0].text, '&lt;');
+            assert.equal(paginator.paginators()[0].text, '<');
             assert.equal(paginator.paginators()[1].text, 1);
             assert.equal(paginator.paginators()[2].text, '...');
-            assert.equal(paginator.paginators()[maxPaginatorNumber - 1].text, '&gt;');
+            assert.equal(paginator.paginators()[maxPaginatorNumber - 1].text, '>');
             assert.equal(paginator.paginators()[maxPaginatorNumber - 2].text, numberOfPages);
             assert.equal(paginator.paginators()[maxPaginatorNumber - 3].text, '...');
 

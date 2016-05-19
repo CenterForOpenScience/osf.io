@@ -34,8 +34,7 @@
 	                </div>
                 </span>
                 <p data-bind="if: !logs().length && !loading()" class="help-block">
-                    No logs to show. Click the watch icon (<i class="fa fa-eye"></i>) on a
-                    project's page to get activity updates here.
+                    No logs to show.
                 </p>
                 <span data-bind="if: !loading()">
                     <dl class="dl-horizontal activity-log" data-bind="foreach: {data: logs, as: 'log'}"  >
@@ -74,7 +73,7 @@
                 </span>
                 <div class='help-block absolute-bottom'>
                     <ul class="pagination pagination-sm" data-bind="foreach: paginators">
-                        <li data-bind="css: style"><a href="#" data-bind="click: handler, html: text"></a></li>
+                        <li data-bind="css: style"><a href="#" data-bind="click: handler, text: text"></a></li>
                     </ul>
                 </div>
 
