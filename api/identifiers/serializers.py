@@ -1,5 +1,5 @@
 from rest_framework import serializers as ser
-from api.base.serializers import JSONAPISerializer, LinksField, RelationshipField, IDField
+from api.base.serializers import JSONAPISerializer, RelationshipField, IDField
 
 
 class IdentifierSerializer(JSONAPISerializer):
