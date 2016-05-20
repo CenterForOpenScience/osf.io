@@ -647,6 +647,7 @@ MEETING_DATA = {
         'end_date': None,
         'info_url': 'http://www.psichi.org/?ResearchAdvisory#.VmBpeOMrI1g',
         'logo_url': 'http://s11.postimg.org/4g2451vcz/Psi_Chi_Logo.png',
+        'active': True,
         'admins': [
             'research.director@psichi.org',
         ],
@@ -851,6 +852,9 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'start_date': 'Nov 7 2016',
+        'end_date': 'Nov 9 2016',
+        'locztion': 'Milwaukee, Wisconsin',
     },
     'ESCAN2016': {
         'name': 'European Society for Cognitive and Affective Neuroscience (ESCAN) 2016',
@@ -884,24 +888,29 @@ MEETING_DATA = {
     },
 }
 
-def populate_conferences():
+
+def populate_conferences(dev=False):
+    if dev:
+        Conference.remove()
     for meeting, attrs in MEETING_DATA.iteritems():
         meeting = meeting.strip()
         admin_emails = attrs.pop('admins', [])
         admin_objs = []
-        for email in admin_emails:
-            try:
-                user = User.find_one(Q('username', 'iexact', email))
-                admin_objs.append(user)
-            except ModularOdmException:
-                raise RuntimeError('Username {0!r} is not registered.'.format(email))
+        if not dev:
+            for email in admin_emails:
+                try:
+                    user = User.find_one(Q('username', 'iexact', email))
+                    admin_objs.append(user)
+                except ModularOdmException:
+                    raise RuntimeError('Username {0!r} is not registered.'.format(email))
 
         # Convert string into datetime object
         date_format = '%b %d %Y'
-        if attrs['end_date']:
-            attrs['end_date'] = datetime.strptime(attrs['end_date'], date_format)
-        if attrs['start_date']:
-            attrs['start_date'] = datetime.strptime(attrs['start_date'], date_format)
+        try:
+            attrs['end_date'] = datetime.strftime(attrs.get('end_date'), date_format)
+            attrs['start_date'] = datetime.strftime(attrs.get('start_date'), date_format)
+        except TypeError:
+            print '** Meeting {} does not have a start or end date. **'.format(meeting)
         custom_fields = attrs.pop('field_names', {})
 
         conf = Conference(

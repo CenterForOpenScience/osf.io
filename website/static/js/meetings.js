@@ -13,7 +13,7 @@ function Meetings(data) {
         paginateToggle : false, // Show the buttons that allow users to switch between scroll and paginate.
         uploads : false,         // Turns dropzone on/off.
         columnTitles : function() {
-             return [
+            return [
                 {
                     title: 'Name',
                     width: '45%',
@@ -21,16 +21,16 @@ function Meetings(data) {
                     sort : true
                 },
                 {
-                     title: 'Submissions',
-                     width : '15%',
-                     sortType : 'number',
-                     sort : true
+                    title: 'Submissions',
+                    width : '15%',
+                    sortType : 'number',
+                    sort : true
                 },
                 {
-                     title: 'Location',
-                     width : '20%',
-                     sortType : 'text',
-                     sort : true
+                    title: 'Location',
+                    width : '20%',
+                    sortType : 'text',
+                    sort : true
                 },
                 {
                     title: 'Date',
@@ -81,12 +81,6 @@ function Meetings(data) {
                         return item.data.start_date + ' - ' + item.data.end_date;
                     },
                     filter : false
-                },
-                {
-                    data: 'active', // Data field name
-                    sortInclude: true,
-                    filter : false,
-                    custom: function() { return item.data.active ? 'Yes' : 'No'; }
                 }
             ];
         },
