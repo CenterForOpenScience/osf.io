@@ -46,6 +46,6 @@ function typeset(el) {
 }
 
 module.exports = {
-    typeset: typeset
+    typeset: typeset,
     mathjaxify: mathjaxify
 };
