@@ -52,14 +52,14 @@ var RegistrationViewModel = function(confirm, prompts, validator) {
 
     var validation = [{
         validator: function() {
-            var endEmbargoDateTimestamp = self.embargoEndDate().getTime();
+            var endEmbargoDateTimestamp = self.embargoEndDate().getTime() + (self.embargoEndDate().getTimezoneOffset() * 60000);
             return endEmbargoDateTimestamp > TWO_DAYS_FROM_TODAY_TIMESTAMP;
         },
         message: 'Embargo end date must be at least three days in the future.'
     }, {
 	validator: function() {
             var endEmbargoDateTimestamp = self.embargoEndDate().getTime();
-	    return endEmbargoDateTimestamp < FOUR_YEARS_FROM_TODAY_TIMESTAMP;
+	        return endEmbargoDateTimestamp < FOUR_YEARS_FROM_TODAY_TIMESTAMP;
 	},
 	message: 'Embargo end date must be less than four years in the future.'
     }];
