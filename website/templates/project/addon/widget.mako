@@ -1,5 +1,5 @@
-<div class="panel panel-default" name="${short_name}">
-
+% if complete or 'write' in user['permissions']:
+    <div class="panel panel-default" name="${short_name}" id="div">
             <div class="panel-heading clearfix">
                 <h3 class="panel-title">${full_name}</h3>
                 <div class="pull-right">
@@ -9,6 +9,9 @@
 
                 </div>
             </div>
+    % else:
+        <div>
+    % endif
 
     % if complete:
 
@@ -16,7 +19,7 @@
             ${self.body()}
         </div>
 
-    % else:
+    % elif not complete and 'admin' in user['permissions']:
 
         <div mod-meta='{
                 "tpl": "project/addon/config_error.mako",
