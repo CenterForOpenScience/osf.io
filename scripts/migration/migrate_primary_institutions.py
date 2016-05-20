@@ -40,7 +40,7 @@ def migrate(dry_run=True):
         raise RuntimeError('Dry run, transaction rolled back.')
 
 def main():
-    dry_run = 'dry' in sys.argv
+    dry_run = '--dry' in sys.argv
     if dry_run:
         logger.warn('DRY RUN mode')
     else:
