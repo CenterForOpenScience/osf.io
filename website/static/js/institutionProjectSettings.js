@@ -210,4 +210,8 @@ var InstitutionProjectSettings = function(selector, data)  {
 
 };
 
-module.exports = InstitutionProjectSettings;
+module.exports = {
+    InstitutionProjectSettings: InstitutionProjectSettings,
+    ViewModel: ViewModel
+};
+
