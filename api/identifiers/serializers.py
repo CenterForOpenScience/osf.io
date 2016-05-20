@@ -6,6 +6,8 @@ class IdentifierSerializer(JSONAPISerializer):
 
     category = ser.CharField(read_only=True)
 
+    filterable_fields = frozenset(['category'])
+
     identifier = LinksField({
         'self': 'get_identifiers'
     })
