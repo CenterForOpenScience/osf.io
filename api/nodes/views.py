@@ -576,7 +576,6 @@ class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bu
             contributor.permission = node.get_permissions(contributor)[-1]
             contributor.node_id = node._id
             contributors.append(contributor)
-
         return contributors
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDeleteJSONAPIView
