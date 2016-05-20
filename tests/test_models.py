@@ -30,7 +30,7 @@ from framework.celery_tasks import handlers
 from framework.bcrypt import check_password_hash
 from website import filters, language, settings, mailchimp_utils
 from website.addons.wiki.model import NodeWikiPage
-from website.exceptions import NodeStateError
+from website.exceptions import NodeStateError, TagNotFoundError
 from website.profile.utils import serialize_user
 from website.project.signals import contributor_added
 from website.project.model import (
@@ -4531,11 +4531,8 @@ class TestTags(OsfTestCase):
         )
 
     def test_remove_tag_not_present(self):
-        self.project.remove_tag('scientific', auth=self.auth)
-        assert_equal(
-            self.project.logs[-1].action,
-            NodeLog.PROJECT_CREATED
-        )
+        with assert_raises(TagNotFoundError):
+            self.project.remove_tag('scientific', auth=self.auth)
 
 
 class TestContributorVisibility(OsfTestCase):

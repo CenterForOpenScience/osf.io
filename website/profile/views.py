@@ -26,6 +26,7 @@ from website import mails
 from website import mailchimp_utils
 from website import settings
 from website.project.model import Node
+from website.project.utils import PROJECT_QUERY, TOP_LEVEL_PROJECT_QUERY
 from website.models import ApiOAuth2Application, ApiOAuth2PersonalToken, User
 from website.oauth.utils import get_available_scopes
 from website.profile import utils as profile_utils
@@ -41,14 +42,12 @@ logger = logging.getLogger(__name__)
 
 def get_public_projects(uid=None, user=None):
     user = user or User.load(uid)
-
+    # In future redesign, should be limited for users with many projects / components
     nodes = Node.find_for_user(
         user,
         subquery=(
-            Q('category', 'eq', 'project') &
-            Q('is_public', 'eq', True) &
-            Q('is_registration', 'eq', False) &
-            Q('is_deleted', 'eq', False)
+            TOP_LEVEL_PROJECT_QUERY &
+            Q('is_public', 'eq', True)
         )
     )
     return _render_nodes(list(nodes))
@@ -57,15 +56,14 @@ def get_public_projects(uid=None, user=None):
 def get_public_components(uid=None, user=None):
     user = user or User.load(uid)
     # TODO: This should use User.visible_contributor_to?
-
+    # In future redesign, should be limited for users with many projects / components
     nodes = list(
         Node.find_for_user(
             user,
-            (
-                Q('category', 'ne', 'project') &
-                Q('is_public', 'eq', True) &
-                Q('is_registration', 'eq', False) &
-                Q('is_deleted', 'eq', False)
+            subquery=(
+                PROJECT_QUERY &
+                Q('parent_node', 'ne', None) &
+                Q('is_public', 'eq', True)
             )
         )
     )
