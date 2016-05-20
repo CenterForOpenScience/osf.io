@@ -1597,6 +1597,8 @@ def make_url_map(app):
             json_renderer,
         ),
 
+        # Mailing List Routes
+        # TODO: [OSF-6400] Update to APIv2
         Rule(
             [
                 '/project/<pid>/mailing_list/',
