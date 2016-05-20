@@ -23,3 +23,54 @@
     </form>
 {% endblock %}
 
+{% block scripts %}
+    
+
+
+<script>
+(function() {
+
+    var opts;
+    var SwaggerRequest__unpatched = SwaggerRequest;
+
+    SwaggerRequest = function(type, url, params, opts, successCallback, errorCallback, operation, execution) {
+        console.log(operation);
+        console.log(execution);    
+     
+        var successCallback__unpatched = successCallback;
+        successCallback = function(response, opts_parent) {
+        
+            var ret = successCallback__unpatched(response, opts_parent);
+            Array.prototype.filter.call(opts_parent.el.querySelectorAll('.response_body .hljs-string'), function(el) {
+                return (
+                    el.innerHTML.slice(1, 8) == "http://" ||
+                    el.innerHTML.slice(1, 9) == "https://"
+                ); 
+            }).map(function(el) {
+                var url = el.innerHTML.slice(1, -1);
+                var anchor = document.createElement("a");
+                anchor.textContent = url;
+                anchor.href = url;
+                var pn = anchor.pathname
+                console.log(pn.split('/'))
+                console.log(anchor);
+                el.innerHTML = "\"<a href=\""+url+"?format=json\">"+url+"</a>"+"\"";
+            })
+            return ret;
+        
+        }
+        
+        SwaggerRequest__unpatched.bind(this)(type, url, params, opts, successCallback, errorCallback, operation, execution);
+    
+    }
+    
+})();
+
+
+
+
+
+</script>
+{% endblock %}
+
+
