@@ -181,13 +181,13 @@
                 registerUrl: ${ api_url_for('register_user') | sjson, n },
                 currentUser: {
                     id: ${ user_id | sjson, n },
-                    hash_id: ${ hash_user_id | sjson, n},
                     locale: ${ user_locale | sjson, n },
                     timezone: ${ user_timezone | sjson, n },
                     entryPoint: ${ user_entry_point | sjson, n },
                     institutions: ${ user_institutions | sjson, n},
                     emailsToAdd: ${ user_email_verifications | sjson, n },
                     anon: {
+                        id: ${ anon_user_id | sjson, n},
                         continent: ${ anon_user_continent | sjson, n},
                         country: ${ anon_user_country | sjson, n},
                         latitude: ${ anon_user_latitude | sjson, n},

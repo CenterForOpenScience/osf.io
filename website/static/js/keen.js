@@ -43,7 +43,7 @@ var KeenTracker = (function() {
             self.trackPageView = function (params) {
                 self.createOrUpdateKeenSession();
                 var returning = Boolean(Cookie.get('keenUserId'));
-                var pageView = {
+                var privatePageView = {
                     'pageUrl': document.URL,
                     'keenUserId': this.getOrCreateKeenId(),
                     'sessionId': Cookie.get('keenSessionId'),
@@ -95,30 +95,82 @@ var KeenTracker = (function() {
                         ]
                     }
                 };
+
+                var publicPageView = {
+                    'pageUrl': document.URL,
+                    'keenUserId': this.getOrCreateKeenId(),
+                    'sessionId': $.cookie('keenSessionId'),
+                    'pageTitle': document.title,
+                    'userAgent': '${keen.user_agent}',
+                    'referrer': {
+                        'url': document.referrer
+                    },
+                    'ipAddress': '${keen.ip}',
+                    'returning': returning,
+                    'keen': {
+                        'addons': [
+                            {
+                                'name': 'keen:ua_parser',
+                                'input': {
+                                    'ua_string': 'userAgent'
+                                },
+                                'output': 'parsedUserAgent'
+                            },
+                            {
+                                'name': 'keen:referrer_parser',
+                                'input': {
+                                    'referrer_url': 'referrer.url',
+                                    'page_url': 'pageUrl'
+                                },
+                                'output': 'referrer.info'
+                            },
+                            {
+                                'name': 'keen:url_parser',
+                                'input': {
+                                    'url': 'pageUrl'
+                                },
+                                'output': 'parsedPageUrl'
+                            },
+                            {
+                                'name': 'keen:url_parser',
+                                'input': {
+                                    'url': 'referrer.url'
+                                },
+                                'output': 'parsedReferrerUrl'
+                            }
+                        ]
+                    }
+                };
+
                 if (params.node) {
-                    pageView.node = {
-                        'id': params.node.id,
-                        'title': params.node.title,
-                        'type': params.node.category,
-                        'tags': params.node.tags
+                    privatePageView.node = {
+                        id: params.node.id,
+                        title: params.node.title,
+                        type: params.node.category,
+                        tags: params.node.tags
+                    };
+                    publicPageView.node = {
+                        id: params.node.id
                     };
                 }
                 if (params.currentUser) {
-                    pageView.user = {
+                    privatePageView.user = {
                         id: params.currentUser.id,
                         locale: params.currentUser.locale,
                         timezone: params.currentUser.timezone,
                         entryPoint: params.currentUser.entryPoint
                     };
+                    publicPageView.user = {
+                        id: params.currentUser.anon.id,
+                        continent: params.currentUser.anon.continent,
+                        country: params.currentUser.anon.country,
+                        latitude: params.currentUser.anon.latitude,
+                        longitude: params.currentUser.anon.longitude
+                    };
                 }
 
-                self._keenClient.recordEvent('pageviews', pageView, function (err) {
-                    if (err) {
-                        Raven.captureMessage('Error sending Keen data: <' + err + '>', {
-                            extra: {payload: pageView}
-                        });
-                    }
-                });
+                self.trackCustomEvent('private-pageviews', privatePageView);
+                self.trackCustomEvent('public-pageviews', publicPageView);
             };
 
             self.trackCustomEvent = function (collection, eventData) {
