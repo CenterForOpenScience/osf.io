@@ -152,7 +152,7 @@ def main(env):
                 'auth_url': None,
                 'domains': [],
                 'email_domains': ['yahoo.com'],
-           },
+            },
         ]
     if env == 'stage2':
         INSTITUTIONS = [

@@ -17,6 +17,7 @@ import mock
 import datetime
 import functools
 from factory import base, Sequence, SubFactory, post_generation, LazyAttribute
+from random import randint
 
 from mock import patch, Mock
 from modularodm import Q
