@@ -398,7 +398,7 @@ class UserAddonAccountDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixi
     )
 
     required_read_scopes = [CoreScopes.ADDONS_READ]
-    required_write_scopes = [CoreScopes.USERS_ADDON_WRITE]
+    required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = AddonAccountSerializer
     view_category = 'users'
