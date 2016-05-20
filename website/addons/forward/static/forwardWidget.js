@@ -43,10 +43,10 @@ var ViewModel = function(url) {
         self.redirecting(true);
         $.blockUI({message: $('#forwardModal')});
         self.timeLeft(self.redirectSecs());
-        self.interval = setInterval(
-            self.tryRedirect,
-            1000
-        );
+//        self.interval = setInterval(
+//            self.tryRedirect,
+//            1000
+//        );
     };
 
     self.cancelRedirect = function() {
