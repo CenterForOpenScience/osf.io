@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
+from flask import request
+
 from website.project.decorators import (
     must_be_valid_project,
     must_have_permission,
     must_not_be_registration,
 )
-from website.util.permissions import ADMIN
+from website.util.permissions import ADMIN, READ
 from website.mailing_list import utils
 
 
@@ -33,19 +35,25 @@ def enable_mailing_list(node, **kwargs):
 @must_not_be_registration
 def disable_mailing_list(node, **kwargs):
     utils.celery_delete_list(node._id)
+    node.mailing_updated = True
     node.mailing_enabled = False
     node.save()
 
-unsubscribe_user = utils.unsubscribe_user_hook
-log_message = utils.log_message
+def flask_unsubscribe_user(*args, **kwargs):
+    message = request.form
+    utils.unsubscribe_user_hook(message)
+
+def flask_log_message(*args, **kwargs):
+    message = request.form
+    utils.log_message(message)
 
 def format_node_data_recursive(nodes, user):
     items = []
 
     for node in nodes:
 
-        can_read = node.has_permission(user, 'read')
-        can_read_children = node.has_permission_on_children(user, 'read')
+        can_read = node.has_permission(user, READ)
+        can_read_children = node.has_permission_on_children(user, READ)
 
         if not can_read and not can_read_children:
             continue

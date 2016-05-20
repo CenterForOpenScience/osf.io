@@ -1632,7 +1632,7 @@ def make_url_map(app):
                 '/mailing_list/messages/',
             ],
             'post',
-            mailing_list_views.log_message,
+            mailing_list_views.flask_log_message,
             json_renderer,
         ),
         Rule(
@@ -1640,7 +1640,7 @@ def make_url_map(app):
                 '/mailing_list/hooks/unsubscribe/',
             ],
             'post',
-            mailing_list_views.unsubscribe_user,
+            mailing_list_views.flask_unsubscribe_user,
             json_renderer,
         ),
 

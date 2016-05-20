@@ -1,5 +1,6 @@
 from furl import furl
 import json
+from math import floor
 import re
 import requests
 
@@ -14,6 +15,7 @@ from framework.exceptions import HTTPError
 from website import settings
 from website.notifications.utils import to_subscription_key
 
+from website.mailing_list.exceptions import UnsubscribeHookException
 from website.mailing_list.model import MailingListEventLog
 from website.project.signals import contributor_added, contributor_removed, node_deleted
 
@@ -103,7 +105,7 @@ def create_list(node_id):
 
     members_list = []
     members_list = jsonify_users_list(node.contributors, unsubs=get_unsubscribes(node))
-    members_list.append({'address': 'mailing_list_robot@osf.io', 'subscribed': True})  # Routing robot
+    members_list[-1].append({'address': 'mailing_list_robot@osf.io', 'subscribed': True})  # Routing robot
 
     update_multiple_users_in_list(node_id, members_list)
 
@@ -202,25 +204,26 @@ def update_multiple_users_in_list(node_id, members):
     """ Adds/updates members of a mailing list on Mailgun
 
     :param str node_id: The id of the node in question
-    :param list members: List of json-formatted user dicts to add/enable/update
+    :param list members: Paginated list of json-formatted user dicts to add/enable/update
     """
-    resp = requests.post(
-        '{}/{}/members.json'.format(MAILGUN_BASE_LISTS_URL, address(node_id)),
-        auth=('api', settings.MAILGUN_API_KEY),
-        data={
-            'upsert': True,
-            'members': json.dumps(members)
-        }
-    )
-    if resp.status_code != 200:
-        raise HTTPError(resp.status_code, data={'message_long': resp.json() or ''})
+    for page in members:
+        resp = requests.post(
+            '{}/{}/members.json'.format(MAILGUN_BASE_LISTS_URL, address(node_id)),
+            auth=('api', settings.MAILGUN_API_KEY),
+            data={
+                'upsert': True,
+                'members': json.dumps(page)
+            }
+        )
+        if resp.status_code != 200:
+            raise HTTPError(resp.status_code, data={'message_long': resp.json() or ''})
 
 @require_mailgun
 def full_update(node_id):
     """ Matches remote list with internal representation
     :param str node_id: The node to update the mailing list for
     """
-    from website.models import Node  # avoid circular import
+    from website.models import Node, User  # avoid circular import
     node = Node.load(node_id)
 
     info, members = get_list(node_id)
@@ -243,7 +246,6 @@ def full_update(node_id):
                 update_multiple_users_in_list(node_id, members_list)
 
             # Delete any noncontribs
-            from website.models import User  # avoid circular import
             member_ids = set([member['vars']['_id'] for member in members['items'] if member.get('vars', {}).get('_id', False)])
             for u_id in member_ids:
                 if u_id not in node.contributors:
@@ -341,20 +343,26 @@ def remove_list_for_deleted_node(node):
 # Mailing List Helper Functions
 ###############################################################################
 
-def jsonify_users_list(users, unsubs=[]):
-    """ Serializes list of users for Mailgun
+def jsonify_users_list(users, unsubs=()):
+    """ Serializes and paginates list of users for Mailgun
 
     :param list users: users to serialize
     :param list unsubs: unsubscribed users
     """
-    members_list = []
+    members_list = [[]]
+    page = 0
     for member in users:
         for email in member.emails:
-            members_list.append({
+            # Mailgun allows 1000 user upserts per request
+            if floor(len(members_list[page]) / 999):
+                page += 1
+                members_list[page] = []
+            members_list[page].append({
                 'address': email,
                 'subscribed': member not in unsubs and email == member.username,
                 'vars': {'_id': member._id, 'primary': email == member.username}
             })
+
     return members_list
 
 def address(node_id):
@@ -373,12 +381,15 @@ def find_email(long_email):
         return long_email.lower().strip()
     return None
 
-def log_message(**kwargs):
+def log_message(message, **kwargs):
     """ Acquires and logs messages sent through Mailgun"""
     from website.models import Node  # avoid circular imports
-    message = request.form
     target = find_email(message['To'])
-    node = Node.load(re.search(r'[a-z0-9]*@', target).group(0)[:-1])
+
+    if target:
+        node = Node.load(re.search(r'[a-z0-9]*@', target).group(0)[:-1])
+    else:
+        node = None
 
     sender_email = find_email(message['From'])
     sender = get_user(email=sender_email)
@@ -390,16 +401,15 @@ def log_message(**kwargs):
         sending_user=sender,
     ).save()
 
-def unsubscribe_user_hook(*args, **kwargs):
+def unsubscribe_user_hook(message, **kwargs):
     """ Hook triggered by MailGun when user unsubscribes.
     See `Unsubscribes Webhook` below https://documentation.mailgun.com/user_manual.html#tracking-unsubscribes
     for possible kwargs
     """
-    message = request.form
     unsub = message.get('recipient')
     mailing_list = message.get('mailing-list')
     if not unsub or not mailing_list:
-        raise Exception()
+        raise UnsubscribeHookException()
     from website.models import User, NotificationSubscription  # avoid circular imports
     user = User.find_one('username', 'eq', unsub)
     node_id = mailing_list.split('@')[0]
@@ -407,10 +417,11 @@ def unsubscribe_user_hook(*args, **kwargs):
     subscription.add_user_to_subscription(user, 'none', save=True)
 
 def get_recipients(node):
+    # Subscription options for mailing lists are 'transactional' and 'none'
     if node.mailing_enabled:
         from website.models import NotificationSubscription  # avoid circular import
         subscription = NotificationSubscription.load(to_subscription_key(node._id, 'mailing_list_events'))
-        return [u for u in subscription.email_transactional]
+        return subscription.email_transactional
     return []
 
 def get_unsubscribes(node):
