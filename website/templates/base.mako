@@ -186,7 +186,13 @@
                     timezone: ${ user_timezone | sjson, n },
                     entryPoint: ${ user_entry_point | sjson, n },
                     institutions: ${ user_institutions | sjson, n},
-                    emailsToAdd: ${ user_email_verifications | sjson, n }
+                    emailsToAdd: ${ user_email_verifications | sjson, n },
+                    anon: {
+                        continent: ${ anon_user_continent | sjson, n},
+                        country: ${ anon_user_country | sjson, n},
+                        latitude: ${ anon_user_latitude | sjson, n},
+                        longitude: ${ anon_user_longitude | sjson, n},
+                    },
                 },
                 allInstitutions: ${ all_institutions | sjson, n},
                 popular: ${ popular_links_node | sjson, n },

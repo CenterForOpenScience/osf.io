@@ -83,3 +83,4 @@ sendgrid-django==2.0.0
 
 # Analytics requirements
 keen==0.3.21
+python-geoip-geolite2==2015.0303

@@ -6,6 +6,8 @@ from hashlib import sha256
 from flask import request
 from flask import send_from_directory
 
+from geoip import geolite2
+
 from framework import status
 from framework import sentry
 from framework.auth import cas
@@ -55,6 +57,7 @@ def get_globals():
     user = _get_current_user()
     user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path} for inst in user.affiliated_institutions] if user else []
     all_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path} for inst in Institution.find().sort('name')]
+    location = geolite2.lookup(request.remote_addr)
     if request.host_url != settings.DOMAIN:
         try:
             inst_id = (Institution.find_one(Q('domains', 'eq', request.host.lower())))._id
@@ -68,7 +71,6 @@ def get_globals():
         'user_name': user.username if user else '',
         'user_full_name': user.fullname if user else '',
         'user_id': user._primary_key if user else '',
-        'hash_user_id': sha256(user._primary_key + settings.ANALYTICS_SALT).hexdigest() if user else '',
         'user_locale': user.locale if user and user.locale else '',
         'user_timezone': user.timezone if user and user.timezone else '',
         'user_url': user.url if user else '',
@@ -79,6 +81,11 @@ def get_globals():
         'user_institutions': user_institutions if user else None,
         'all_institutions': all_institutions,
         'display_name': get_display_name(user.fullname) if user else '',
+        'anon_user_id': sha256(user._primary_key + settings.ANALYTICS_SALT).hexdigest() if user else '',
+        'anon_user_continent': getattr(location, 'continent', None),
+        'anon_user_country': getattr(location, 'country', None),
+        'anon_user_latitude': getattr(location, 'location', (None, None))[0],
+        'anon_user_longitude': getattr(location, 'location', (None, None))[1],
         'use_cdn': settings.USE_CDN_FOR_CLIENT_LIBS,
         'sentry_dsn_js': settings.SENTRY_DSN_JS if sentry.enabled else None,
         'dev_mode': settings.DEV_MODE,
