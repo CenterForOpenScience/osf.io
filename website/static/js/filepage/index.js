@@ -344,6 +344,9 @@ var FileViewPage = {
             if (self.file.size < 1048576 && fileType) { //May return false
                 var editor = EDITORS[fileType.split('/')[0]];
                 if (editor) {
+                    // next line is a temporary fix. "docId" should not be
+                    // getting passed to this point.
+                    self.editorMeta.docId = null;
                     self.editor = new Panel('Edit', self.editHeader, editor, [self.file.urls.content, self.file.urls.sharejs, self.editorMeta, self.shareJSObservables], false);
                 }
             }
