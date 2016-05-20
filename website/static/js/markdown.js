@@ -31,6 +31,7 @@ var markdown = new MarkdownIt('commonmark', {
     highlight: highlighter
 })
     .use(require('markdown-it-video'))
+    .use(require('markdown-it-prezi'))
     .use(require('markdown-it-toc'))
     .use(require('markdown-it-sanitizer'))
     .use(insDel)
