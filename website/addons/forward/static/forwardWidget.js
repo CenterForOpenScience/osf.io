@@ -21,38 +21,21 @@ var ViewModel = function(url) {
         }
     });
     self.redirectBool = ko.observable();
-//    self.redirectSecs = ko.observable();
 
-//    self.interval = null;
     self.redirecting = ko.observable();
-//    self.timeLeft = ko.observable();
 
     self.doRedirect = function() {
         window.location.href = self.url();
     };
 
-//    self.tryRedirect = function() {
-//        if (self.timeLeft() > 0) {
-//            self.timeLeft(self.timeLeft() - 1);
-//        } else {
-//            self.doRedirect();
-//        }
-//    };
-
     self.queueRedirect = function() {
         self.redirecting(true);
         $.blockUI({message: $('#forwardModal')});
-//        self.timeLeft(self.redirectSecs());
-//        self.interval = setInterval(
-//            self.tryRedirect,
-//            1000
-//        );
     };
 
     self.cancelRedirect = function() {
         self.redirecting(false);
         $.unblockUI();
-//        clearInterval(self.interval);
     };
 
     self.execute = function() {
