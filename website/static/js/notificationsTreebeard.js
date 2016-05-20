@@ -57,7 +57,10 @@ function ProjectNotifications(data) {
             $tb.expandOnLoad.call(tb);
         },
         resolveRows: function notificationResolveRows(item){
-            var options = [];
+            var options = [
+                m('option', {value: 'none', selected : item.data.event.notificationType === 'none' ? 'selected': ''}, 'Never'),
+                m('option', {value: 'email_transactional', selected : item.data.event.notificationType === 'email_transactional' ? 'selected': ''}, 'Instantly'),
+            ];
             var columns = [];
             var iconcss = '';
             // check if should not get icon
@@ -113,10 +116,6 @@ function ProjectNotifications(data) {
                 });
             }
             else if (item.parent().data.kind === 'folder' || item.parent().data.kind === 'heading' && item.data.kind === 'event') {
-                options = [
-                    m('option', {value: 'none', selected : item.data.event.notificationType === 'none' ? 'selected': ''}, 'Never'),
-                    m('option', {value: 'email_transactional', selected : item.data.event.notificationType === 'email_transactional' ? 'selected': ''}, 'Instantly'),
-                ];
                 if (item.data.event.title !== 'mailing_list_events') {
                     options.push(m('option', {value: 'email_digest', selected : item.data.event.notificationType === 'email_digest' ? 'selected': ''}, 'Daily'));
                 }
@@ -147,10 +146,6 @@ function ProjectNotifications(data) {
                 });
             }
             else {
-                options = [
-                    m('option', {value: 'none', selected : item.data.event.notificationType === 'none' ? 'selected': ''}, 'Never'),
-                    m('option', {value: 'email_transactional', selected : item.data.event.notificationType === 'email_transactional' ? 'selected': ''}, 'Instantly'),
-                ];
                 if (item.data.event.title !== 'mailing_list_events') {
                     options.push(m('option', {value: 'email_digest', selected : item.data.event.notificationType === 'email_digest' ? 'selected': ''}, 'Daily'));
                     options.push(m('option', {value: 'adopt_parent', selected: item.data.event.notificationType === 'adopt_parent' ? 'selected' : ''},
