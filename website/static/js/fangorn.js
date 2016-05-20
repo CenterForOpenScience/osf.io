@@ -97,42 +97,33 @@ function findByTempID(parent, tmpID) {
 function cancelUploads(row) {
     var tb = this;
     var cancelableStatuses = [Dropzone.UPLOADING, Dropzone.QUEUED];
-    var cancelable = function(file) {
-        return cancelableStatuses.indexOf(file.status) > -1 || !file.accepted;
-    };
     // Select files that are uploading, queued, or rejected (!accepted)
-    var filesArr = tb.dropzone.files.filter(cancelable);
+    var filesArr = tb.dropzone.files.filter(function(file) {
+        return cancelableStatuses.indexOf(file.status) > -1 || !file.accepted;
+    });
     // Remove all queued files
     if (row === undefined) {
-        // Append cancelable syncFiles to filesArr
-        for (var provider in SYNC_UPLOAD_ADDONS) {
-            var cacheFiles = tb.dropzone.syncFileCache[provider];
-            if (cacheFiles !== undefined) {
-                filesArr = filesArr.concat(cacheFiles.filter(cancelable));
-            }
-        }
-        filesArr.forEach(function(file, index) {
-            // Ignore completed files
-            if (file.upload.progress === 100) return;
+        var removeFromUI = function(file) {
             var parent = file.treebeardParent || tb.dropzoneItemCache;
             var item = findByTempID(parent, file.tmpID);
             tb.deleteNode(parent.id, item.id);
-            // Check if provider should be handled synchronously
-            if (SYNC_UPLOAD_ADDONS.indexOf(row.data.provider) !== -1) {
-                var inProvider = tb.dropzone.syncFileCache[parent.data.provider].some(function(providerFile) {
-                    return providerFile.tmpID === file.tmpID;
-                });
-                if (inProvider) {
-                    // Remove file from sync queue
-                    tb.dropzone.syncFileCache[parent.data.provider].splice(index, 1);
-                } else {
-                    // Cancel currently uploading file
-                    tb.dropzone.removeFile(file);
-                }
-            } else {
-                // Cancel currently uploading file
-                tb.dropzone.removeFile(file);
+        };
+        // Clear all synchronous uploads
+        SYNC_UPLOAD_ADDONS.forEach(function(provider) {
+            if (tb.dropzone.syncFileCache[provider] !== undefined) {
+                // Remove cached provider files from UI
+                tb.dropzone.syncFileCache[provider].forEach(removeFromUI);
+                // Clear provider cache
+                tb.dropzone.syncFileCache[provider].length = 0;
             }
+        });
+        // Clear all ongoing uploads
+        filesArr.forEach(function(file, index) {
+            // Ignore completed files
+            if (file.upload.progress === 100) return;
+            removeFromUI(file);
+            // Cancel currently uploading file
+            tb.dropzone.removeFile(file);
         });
         tb.isUploading(false);
         return;
