@@ -19,7 +19,6 @@ from modularodm import fields
 from modularodm.validators import MaxLengthValidator
 from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationValueError
-from modularodm.exceptions import KeyExistsException
 
 from framework import status
 from framework.mongo import ObjectId

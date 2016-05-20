@@ -4,8 +4,6 @@ from math import floor
 import re
 import requests
 
-from flask import request
-
 from framework.auth.core import get_user
 from framework.auth.signals import user_confirmed
 from framework.celery_tasks import app
