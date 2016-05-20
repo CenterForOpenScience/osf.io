@@ -13,6 +13,7 @@ from website.app import init_app
 from website.conferences.model import Conference
 from datetime import datetime
 
+
 def main():
     init_app(set_backends=True, routes=False)
     populate_conferences()
@@ -892,6 +893,7 @@ MEETING_DATA = {
 def populate_conferences(dev=False):
     if dev:
         Conference.remove()
+    date_format = '%b %d %Y'
     for meeting, attrs in MEETING_DATA.iteritems():
         meeting = meeting.strip()
         admin_emails = attrs.pop('admins', [])
@@ -905,10 +907,9 @@ def populate_conferences(dev=False):
                     raise RuntimeError('Username {0!r} is not registered.'.format(email))
 
         # Convert string into datetime object
-        date_format = '%b %d %Y'
         try:
-            attrs['end_date'] = datetime.strftime(attrs.get('end_date'), date_format)
-            attrs['start_date'] = datetime.strftime(attrs.get('start_date'), date_format)
+            attrs['end_date'] = datetime.strptime(attrs.get('end_date'), date_format)
+            attrs['start_date'] = datetime.strptime(attrs.get('start_date'), date_format)
         except TypeError:
             print '** Meeting {} does not have a start or end date. **'.format(meeting)
         custom_fields = attrs.pop('field_names', {})
