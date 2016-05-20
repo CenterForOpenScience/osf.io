@@ -1,4 +1,5 @@
 <%inherit file="project/project_base.mako"/>
+<%include file="modal_mailing_list_contributors.mako"/>
 <%def name="title()">${node['title']} Settings</%def>
 
 ##<!-- Show API key settings -->

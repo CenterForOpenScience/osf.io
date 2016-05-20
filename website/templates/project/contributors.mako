@@ -4,6 +4,7 @@
 <%include file="project/modal_generate_private_link.mako"/>
 <%include file="project/modal_add_contributor.mako"/>
 <%include file="project/modal_remove_contributor.mako"/>
+<%include file="modal_mailing_list_contributors.mako"/>
 
 <div class="page-header  visible-xs">
   <h2 class="text-300">Contributors</h2>

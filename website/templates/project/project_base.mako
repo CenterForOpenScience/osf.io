@@ -32,7 +32,6 @@
 ##  % endif
 % endif
 
-<%include file="modal_mailing_list_contributors.mako"/>
 </%def>
 
 <%def name="javascript_bottom()">
