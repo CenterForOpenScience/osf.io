@@ -7,8 +7,7 @@ def serialize_settings(node_addon):
     return {
         'url': node_addon.url,
         'label': node_addon.label,
-        'redirectBool': node_addon.redirect_bool,
-        'redirectSecs': node_addon.redirect_secs,
+        'redirectBool': node_addon.redirect_bool
     }
 
 

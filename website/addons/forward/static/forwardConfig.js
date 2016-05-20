@@ -39,8 +39,6 @@ var ViewModel = function(url, nodeId) {
     );
     self.label = koHelpers.sanitizedObservable();
     self.redirectBool = ko.observable(DEFAULT_FORWARD_BOOL);
-    self.redirectSecs = 10; //TODO: for some reason the code requires this, but I can't figure out why.
-
 
     // Flashed messages
     self.message = ko.observable('');

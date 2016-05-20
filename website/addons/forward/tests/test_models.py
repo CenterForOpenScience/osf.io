@@ -38,18 +38,6 @@ class TestSettingsValidation(OsfTestCase):
         except ValidationError:
             assert 0
 
-    def test_validate_redirect_secs_bad(self):
-        self.settings.redirect_secs = -2
-        with assert_raises(ValidationError):
-            self.settings.save()
-
-    def test_validate_redirect_secs_good(self):
-        self.settings.redirect_secs = 20
-        try:
-            self.settings.save()
-        except ValidationError:
-            assert 0
-
     def test_label_sanitary(self):
         self.settings.label = 'safe'
         try:

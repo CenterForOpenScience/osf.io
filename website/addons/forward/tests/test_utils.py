@@ -19,8 +19,7 @@ class TestUtils(OsfTestCase):
             {
                 'url': node_settings.url,
                 'label': node_settings.label,
-                'redirectBool': node_settings.redirect_bool,
-                'redirectSecs': node_settings.redirect_secs,
+                'redirectBool': node_settings.redirect_bool
             }
         )
 

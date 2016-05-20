@@ -16,7 +16,6 @@ class TestForwardLogs(ForwardAddonTestCase):
             dict(
                 url='http://how.to.bas/ic',
                 redirectBool=True,
-                redirectSecs=15,
             ),
         )
         self.project.reload()
@@ -32,7 +31,6 @@ class TestForwardLogs(ForwardAddonTestCase):
             dict(
                 url=self.node_settings.url,
                 redirectBool=True,
-                redirectSecs=15,
             ),
         )
         self.project.reload()
