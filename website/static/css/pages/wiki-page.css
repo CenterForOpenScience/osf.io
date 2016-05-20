@@ -13,6 +13,9 @@
     padding: 10px;
     height: auto;
 }
+#wikiViewRender {
+    display: none;
+}
 .wiki-compare-view {
     white-space: pre-wrap;
     padding: 10px;

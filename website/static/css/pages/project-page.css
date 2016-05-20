@@ -142,3 +142,7 @@
 span#nodeDescriptionEditable{
     white-space:pre-line;
 }
+
+#markdownRender {
+    display: none;
+}
