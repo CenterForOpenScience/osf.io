@@ -70,6 +70,7 @@ function Comment(data) {
     self.created = data.created ? new Date(data.created) : new Date();
     self.lastModified = data.lastModified ? new Date(data.lastModified) : new Date();
 
+    self.isDeleted = ko.observable(data.isDeleted || false);
     self.isDeleted.subscribe(function(isDeleted) {
         if (isDeleted) {
             self.value('');
