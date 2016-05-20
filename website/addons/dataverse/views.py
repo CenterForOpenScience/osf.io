@@ -250,7 +250,7 @@ def _dataverse_root_folder(node_addon, auth, **kwargs):
     urls = {
         'publish': node.api_url_for('dataverse_publish_dataset'),
     }
-    
+
     # Get the dataverse host
     dataverse_host = node_addon.external_account.oauth_key
 
