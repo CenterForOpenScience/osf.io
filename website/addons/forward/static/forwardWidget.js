@@ -25,7 +25,7 @@ var ViewModel = function(url) {
 
 //    self.interval = null;
     self.redirecting = ko.observable();
-    self.timeLeft = ko.observable();
+//    self.timeLeft = ko.observable();
 
     self.doRedirect = function() {
         window.location.href = self.url();
@@ -70,7 +70,7 @@ var ViewModel = function(url) {
                 self.url(response.url);
         self.label(response.label);
                 self.redirectBool(response.redirectBool);
-                self.redirectSecs(response.redirectSecs);
+//                self.redirectSecs(response.redirectSecs);
                 self.execute();
             }
         });

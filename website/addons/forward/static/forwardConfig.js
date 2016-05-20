@@ -7,8 +7,8 @@ var koHelpers = require('js/koHelpers');
 var $osf = require('js/osfHelpers');
 
 var MESSAGE_TIMEOUT = 5000;
-var MIN_FORWARD_TIME = 5;
-var MAX_FORWARD_TIME = 60;
+//var MIN_FORWARD_TIME = 5;
+//var MAX_FORWARD_TIME = 60;
 
 var DEFAULT_FORWARD_BOOL = true;
 var DEFAULT_FORWARD_TIME = 15;
@@ -42,11 +42,13 @@ var ViewModel = function(url, nodeId) {
     );
     self.label = koHelpers.sanitizedObservable();
     self.redirectBool = ko.observable(DEFAULT_FORWARD_BOOL);
-    self.redirectSecs = ko.observable(DEFAULT_FORWARD_TIME).extend({
-        required: true,
-        min: MIN_FORWARD_TIME,
-        max: MAX_FORWARD_TIME
-    });
+//    self.redirectSecs = ko.observable(DEFAULT_FORWARD_TIME);
+    self.redirectSecs = 10; //TODO: for some reason the code requires this, but I can't figure out why.
+//    .extend({
+//        required: true,
+//        min: MIN_FORWARD_TIME,
+//        max: MAX_FORWARD_TIME
+//    });
 
     // Flashed messages
     self.message = ko.observable('');
@@ -54,8 +56,8 @@ var ViewModel = function(url, nodeId) {
 
     self.validators = ko.validatedObservable({
         url: self.url,
-        redirectBool: self.redirectBool,
-        redirectSecs: self.redirectSecs
+        redirectBool: self.redirectBool
+//        redirectSecs: self.redirectSecs
     });
 
     self.getBoolLabel = function(item) {
@@ -69,7 +71,7 @@ var ViewModel = function(url, nodeId) {
         self.url(data.url);
     self.label(data.label);
         self.redirectBool(data.redirectBool);
-        self.redirectSecs(data.redirectSecs);
+//        self.redirectSecs(data.redirectSecs);
     };
 
     self.fetchFromServer = function() {
