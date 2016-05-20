@@ -3770,6 +3770,7 @@ class PrivateLink(StoredObject):
             "anonymous": self.anonymous
         }
 
+
 class AlternativeCitation(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
     name = fields.StringField(required=True, validate=MaxLengthValidator(256))
@@ -3794,16 +3795,14 @@ class DraftRegistrationLog(StoredObject):
     date = fields.DateTimeField(default=datetime.datetime.utcnow, index=True)
     action = fields.StringField(index=True)
 
-    @classmethod
-    def add_log(cls, action):
-        log = cls(
-            action=action,
-        )
-        log.save()
-        return log
+    SUBMITTED = 'submitted'
+    REGISTERED = 'registered'
+    APPROVED = 'approved'
+    REJECTED = 'rejected'
 
     def __repr__(self):
-        return 'DraftRegistrationLog: {}'.format(self._id)
+        return ('<DraftRegistrationLog({self.action!r}, date={self.date!r}) '
+                'with id {self._id!r}>').format(self=self)
 
 
 class DraftRegistration(StoredObject):
@@ -3951,7 +3950,7 @@ class DraftRegistration(StoredObject):
         )
         approval.save()
         self.approval = approval
-        self.status_logs.append(DraftRegistrationLog.add_log('submitted'))
+        self.add_status_log(DraftRegistrationLog.SUBMITTED)
         if save:
             self.save()
 
@@ -3965,17 +3964,22 @@ class DraftRegistration(StoredObject):
             data=self.registration_metadata
         )
         self.registered_node = register
-        self.status_logs.append(DraftRegistrationLog.add_log('registered'))
+        self.add_status_log(DraftRegistrationLog.REGISTERED)
         if save:
             self.save()
         return register
 
     def approve(self, user):
         self.approval.approve(user)
-        self.status_logs.append(DraftRegistrationLog.add_log('approved'))
+        self.add_status_log(DraftRegistrationLog.APPROVED)
         self.approval.save()
 
     def reject(self, user):
         self.approval.reject(user)
-        self.status_logs.append(DraftRegistrationLog.add_log('rejected'))
+        self.add_status_log(DraftRegistrationLog.REJECTED)
         self.approval.save()
+
+    def add_status_log(self, action):
+        log = DraftRegistrationLog(action=action)
+        log.save()
+        self.status_logs.append(log)

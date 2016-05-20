@@ -22,7 +22,8 @@ from admin.pre_reg.utils import sort_drafts, SORT_BY
 from framework.exceptions import PermissionsError
 from website.exceptions import NodeStateError
 from website.files.models import FileNode
-from website.project.model import DraftRegistration, MetaSchema
+from website.project.model import DraftRegistration
+from website.prereg.utils import get_prereg_schema
 
 from admin.base.utils import PreregAdmin
 
@@ -33,12 +34,8 @@ class DraftListView(PreregAdmin, ListView):
     context_object_name = 'draft'
 
     def get_queryset(self):
-        prereg_schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Prereg Challenge') &
-            Q('schema_version', 'eq', 2)
-        )
         query = (
-            Q('registration_schema', 'eq', prereg_schema) &
+            Q('registration_schema', 'eq', get_prereg_schema()) &
             Q('approval', 'ne', None)
         )
         ordering = self.get_ordering()
