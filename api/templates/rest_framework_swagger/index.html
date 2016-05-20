@@ -23,3 +23,91 @@
     </form>
 {% endblock %}
 
+{% block swagger_patches %}
+    
+
+
+<script>
+
+// Here we modify the SwaggerRequest constructor in 
+// such a way as to decorate the response callback that gets passed to it
+// when it is used to make a request to the api.
+// The decoration has access to the dom element which the response updates, 
+// and to the response data.
+(function() {
+
+    // We take a reference the SwaggerRequest constructor
+    var SwaggerRequest__unpatched = SwaggerRequest;
+
+    // And create a new wrapper around it assigned to the original name.
+    SwaggerRequest = function(type, url, params, opts, successCallback, errorCallback, operation, execution) {
+        
+        // We take a reference to the callback that is passed to the constructor 
+        var successCallback__unpatched = successCallback;
+        
+        // And put a wrapper around it.
+        successCallback = function(response, opts_parent) {
+        
+            // We need our code to fire after the original callback has finished.
+            // It's synchronous, so we can just take the return value here.
+            var ret = successCallback__unpatched(response, opts_parent);
+
+            // The dom has been updated with the response from 
+            // swagger's api request now, so we can monkey around with 
+            // the links in the response. All links exist in strings, and
+            // conveniently, hljs has put them all in .hljs-string classed
+            // span tags! 
+            Array.prototype.filter.call(opts_parent.el.querySelectorAll('.response_body .hljs-string'), function(el) {
+               
+                // It's a pretty fair assumption that if a string starts with 
+                // one of these it's probably a link. 
+                return (
+                    el.innerHTML.slice(1, 8) == "http://" ||
+                    el.innerHTML.slice(1, 9) == "https://"
+                ); 
+            
+            // Now we have an array of all the links (or the span tags that
+            // contain them, anyway) that were 
+            // in the response; we can do something cool with them.
+            }).map(function(el) {
+                
+                // It's JSON, so strings have quotes around them.
+                var url = el.innerHTML.slice(1, -1);
+                
+                // We're gonna want an anchor anyway, but anchors have cool
+                // url 'parsing' properties, so we're gonna use them.
+                var ret;
+                var anchor = document.createElement('a');
+                anchor.href = window.location;
+                var this_host = anchor.host;
+                anchor.href = url; 
+                anchor.textContent = url;
+                var pn = anchor.pathname
+                var pn_root = pn.split('/')
+                console.log(anchor);
+                el.innerHTML = "\"<a href=\""+url+"\">"+url+"</a>"+"\"";
+                console.log(anchor.host)
+                console.log(this_host)
+                console.log(pn_root[1])
+                if (
+                    anchor.host === this_host &&
+                    pn_root[1] == "v2"
+                ) {
+                    // This is a link to the raw JSON
+                    el.innerHTML += " <span class='hljs-comment'>/* <a href=\""+url+"?format=json\">raw_json</a> */</span>";
+                }
+                
+            
+            })
+            return ret;
+        
+        }
+        
+        SwaggerRequest__unpatched.bind(this)(type, url, params, opts, successCallback, errorCallback, operation, execution);
+    
+    }
+    
+})();
+</script>
+{% endblock %}
+
