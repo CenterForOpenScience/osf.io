@@ -1594,22 +1594,18 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             # Avoid circular import
             from website.models import NotificationSubscription
             from website.notifications.utils import to_subscription_key
-            try:
+            subscription = NotificationSubscription.load(to_subscription_key(self._id, 'mailing_list_events'))
+            if not subscription:
                 subscription = NotificationSubscription(
                     _id=to_subscription_key(self._id, 'mailing_list_events'),
                     owner=self,
                     event_name='mailing_list_events'
                 )
-                subscription.save()
-            except KeyExistsException:
-                subscription = NotificationSubscription.load(to_subscription_key(self._id, 'mailing_list_events'))
-            else:
                 subscription.add_user_to_subscription(self.creator, 'email_transactional', save=True)
                 # Avoid circular import
                 from website.mailing_list.utils import celery_create_list
                 celery_create_list(self._id)
-            finally:
-                return subscription
+            return subscription
 
     ######################################
     # Methods that return a new instance #
