@@ -35,8 +35,7 @@ from website.util.sanitize import strip_html
 
 @collect_auth
 def reset_password(auth, **kwargs):
-    """ If get request, show reset password page. If POST, attempt to reset password if
-    request form passed
+    """ Show reset password page.
     """
     if auth.logged_in:
         return auth_logout(redirect_url=request.url)
@@ -56,6 +55,8 @@ def reset_password(auth, **kwargs):
 
 
 def reset_password_post(verification_key):
+    """ attempt to reset password if request form passed
+    """
     user_obj = get_user(verification_key=verification_key)
     if not user_obj:
         error_data = {
