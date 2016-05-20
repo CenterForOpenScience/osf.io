@@ -35,16 +35,6 @@
                 <label><input type="radio" name="forward"  data-bind="checked: redirectBool, checkedValue: false"/> &nbsp;No &nbsp;&nbsp; </label>
             </div>
 
-            <div class="form-group">
-                <label for="forwardSecs">Forward Delay</label>
-                <input
-                        id="forwardSecs"
-                        class="form-control"
-                        data-bind="value: redirectSecs, enable: redirectBool"
-                        type="number"
-                    />
-            </div>
-
             <div class="row">
                 <div class="col-md-10 overflow">
                     <p data-bind="html: message, attr: {class: messageClass}"></p>
