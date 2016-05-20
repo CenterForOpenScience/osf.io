@@ -61,7 +61,7 @@ class TestNodeRelationshipInstitutions(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data'], [])
 
-    def test_institution_doesnt_exist(self):
+    def test_institution_does_not_exist(self):
         res = self.app.put_json_api(
             self.node_institutions_url,
             self.create_payload('not_an_id'),

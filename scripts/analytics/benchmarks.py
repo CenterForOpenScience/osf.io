@@ -10,12 +10,14 @@ from modularodm import Q
 from dateutil.relativedelta import relativedelta
 
 from framework.analytics import get_basic_counters
+from framework.mongo.utils import paginated
 
 from website import settings
 from website.app import init_app
 from website.files.models import OsfStorageFile
-from website.files.models import TrashedFileNode
+from website.files.models import StoredFileNode, TrashedFileNode
 from website.models import User, Node, PrivateLink, NodeLog
+from website.project.utils import CONTENT_NODE_QUERY
 from website.addons.dropbox.model import DropboxUserSettings
 
 from scripts.analytics import profile, tabulate_emails, tabulate_logs
@@ -70,17 +72,12 @@ def get_folders():
 def count_user_nodes(users=None):
     users = users or get_active_users()
     return [
-        len(
-            Node.find_for_user(
-                user,
-                (
-                    Q('is_deleted', 'eq', False) &
-                    Q('is_collection', 'ne', True)
-                )
-            )
-        )
+        Node.find_for_user(
+            user,
+            subquery=CONTENT_NODE_QUERY
+        ).count()
         for user in users
-    ]
+        ]
 
 
 def count_user_logs(user, query=None):
@@ -108,11 +105,12 @@ def count_at_least(counts, at_least):
 
 def count_file_downloads():
     downloads_unique, downloads_total = 0, 0
-    for record in OsfStorageFile.find():
+    for record in paginated(OsfStorageFile):
         page = ':'.join(['download', record.node._id, record._id])
         unique, total = get_basic_counters(page)
         downloads_unique += unique or 0
         downloads_total += total or 0
+        clear_modm_cache()
     return downloads_unique, downloads_total
 
 
@@ -150,49 +148,45 @@ def get_log_counts(users):
 
 
 def get_projects():
+    # This count includes projects, forks, and registrations
     projects = Node.find(
-        Q('category', 'eq', 'project') &
-        Q('is_deleted', 'eq', False) &
-        Q('is_collection', 'ne', True)
+        Q('parent_node', 'eq', None) &
+        CONTENT_NODE_QUERY
     )
     return projects
 
 def get_projects_forked():
-    projects_forked = list(Node.find(
-        Q('category', 'eq', 'project') &
-        Q('is_deleted', 'eq', False) &
-        Q('is_collection', 'ne', True) &
-        Q('is_fork', 'eq', True)
-    ))
+    projects_forked = Node.find(
+        Q('parent_node', 'eq', None) &
+        Q('is_fork', 'eq', True) &
+        CONTENT_NODE_QUERY
+    )
     return projects_forked
 
 def get_projects_registered():
     projects_registered = Node.find(
-        Q('category', 'eq', 'project') &
-        Q('is_deleted', 'eq', False) &
-        Q('is_collection', 'ne', True) &
-        Q('is_registration', 'eq', True)
+        Q('parent_node', 'eq', None) &
+        Q('is_registration', 'eq', True) &
+        CONTENT_NODE_QUERY
     )
     return projects_registered
 
 def get_projects_public():
     projects_public = Node.find(
-        Q('category', 'eq', 'project') &
-        Q('is_deleted', 'eq', False) &
-        Q('is_collection', 'ne', True) &
-        Q('is_public', 'eq', True)
+        Q('parent_node', 'eq', None) &
+        Q('is_public', 'eq', True) &
+        CONTENT_NODE_QUERY
     )
     return projects_public
 
 
-def get_number_downloads_unique_and_total():
+def get_number_downloads_unique_and_total(projects=None):
     number_downloads_unique = 0
     number_downloads_total = 0
 
-    projects = get_projects()
+    projects = projects or get_projects()
 
     for project in projects:
-
         for filenode in OsfStorageFile.find(Q('node', 'eq', project)):
             for idx, version in enumerate(filenode.versions):
                 page = ':'.join(['download', project._id, filenode._id, str(idx)])
@@ -207,7 +201,18 @@ def get_number_downloads_unique_and_total():
                 number_downloads_total += total or 0
                 number_downloads_unique += unique or 0
 
+        clear_modm_cache()
+
     return number_downloads_unique, number_downloads_total
+
+
+def clear_modm_cache():
+    StoredFileNode._cache.data.clear()
+    StoredFileNode._object_cache.data.clear()
+    TrashedFileNode._cache.data.clear()
+    TrashedFileNode._object_cache.data.clear()
+    Node._cache.data.clear()
+    Node._object_cache.data.clear()
 
 
 def main():
@@ -217,15 +222,15 @@ def main():
     projects_forked = get_projects_forked()
     projects_registered = get_projects_registered()
 
-    number_projects = len(projects)
+    number_projects = projects.count()
 
     projects_public = get_projects_public()
     number_projects_public = projects_public.count()
-    number_projects_forked = len(projects_forked)
+    number_projects_forked = projects_forked.count()
 
-    number_projects_registered = len(projects_registered)
+    number_projects_registered = projects_registered.count()
 
-    number_downloads_unique, number_downloads_total = get_number_downloads_unique_and_total()
+    number_downloads_unique, number_downloads_total = get_number_downloads_unique_and_total(projects=projects)
 
     active_users = get_active_users()
     active_users_invited = get_active_users(Q('is_invited', 'eq', True))

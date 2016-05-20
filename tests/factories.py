@@ -17,6 +17,7 @@ import mock
 import datetime
 import functools
 from factory import base, Sequence, SubFactory, post_generation, LazyAttribute
+from random import randint
 
 from mock import patch, Mock
 from modularodm import Q
@@ -291,7 +292,7 @@ class RegistrationFactory(AbstractNodeFactory):
         return reg
 
 
-class RetractedRegistrationFactory(AbstractNodeFactory):
+class WithdrawnRegistrationFactory(AbstractNodeFactory):
 
     @classmethod
     def _create(cls, *args, **kwargs):
@@ -301,12 +302,29 @@ class RetractedRegistrationFactory(AbstractNodeFactory):
         user = kwargs.pop('user', registration.creator)
 
         registration.retract_registration(user)
-        retraction = registration.retraction
-        token = retraction.approval_state.values()[0]['approval_token']
-        retraction.approve_retraction(user, token)
-        retraction.save()
+        withdrawal = registration.retraction
+        token = withdrawal.approval_state.values()[0]['approval_token']
+        withdrawal.approve_retraction(user, token)
+        withdrawal.save()
 
-        return retraction
+        return withdrawal
+
+
+class ForkFactory(ModularOdmFactory):
+    class Meta:
+        model = Node
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+
+        project = kwargs.pop('project', None)
+        user = kwargs.pop('user', project.creator)
+        title = kwargs.pop('title', 'Fork of ')
+
+        fork = project.fork_node(auth=Auth(user), title=title)
+        fork.save()
+        return fork
+
 
 class PointerFactory(ModularOdmFactory):
     class Meta:
@@ -571,27 +589,38 @@ class CommentFactory(ModularOdmFactory):
 
 class InstitutionFactory(ProjectFactory):
 
+    default_institution_attributes = {
+        '_id': fake.md5,
+        'name': fake.company,
+        'logo_name': fake.file_name,
+        'auth_url': fake.url,
+        'domains': lambda: [fake.url()],
+        'email_domains': lambda: [fake.domain_name()],
+    }
+
     def _build(cls, target_class, *args, **kwargs):
-        from random import randint
-        '''Build an object without saving it.'''
-        inst = ProjectFactory._build(target_class, *args, **kwargs)
-        inst.institution_id = str(randint(1, 20000))
-        inst.institution_name = str(randint(10, 20000))
-        inst.institution_logo_name = 'logo.img'
-        inst.institution_auth_url = 'http://thisIsUrl.biz'
+        inst = ProjectFactory._build(target_class)
+        for inst_attr, node_attr in Institution.attribute_map.items():
+            default = cls.default_institution_attributes.get(inst_attr)
+            if callable(default):
+                default = default()
+            setattr(inst, node_attr, kwargs.pop(inst_attr, default))
+        for key, val in kwargs.items():
+            setattr(inst, key, val)
         return Institution(inst)
 
     @classmethod
     def _create(cls, target_class, *args, **kwargs):
-        from random import randint
-        inst = ProjectFactory._create(target_class, *args, **kwargs)
-        inst.institution_id = str(randint(1, 20000))
-        inst.institution_name = str(randint(10, 20000))
-        inst.institution_logo_name = 'logo.img'
-        inst.institution_auth_url = 'http://thisIsUrl.biz'
+        inst = ProjectFactory._build(target_class)
+        for inst_attr, node_attr in Institution.attribute_map.items():
+            default = cls.default_institution_attributes.get(inst_attr)
+            if callable(default):
+                default = default()
+            setattr(inst, node_attr, kwargs.pop(inst_attr, default))
+        for key, val in kwargs.items():
+            setattr(inst, key, val)
         inst.save()
         return Institution(inst)
-
 
 class NotificationSubscriptionFactory(ModularOdmFactory):
     class Meta:

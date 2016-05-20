@@ -38,7 +38,7 @@
                     <div class="btn-group">
                     % if not node["is_public"]:
                         <button class="btn btn-default disabled">Private</button>
-                        % if 'admin' in user['permissions'] and not node['is_pending_registration'] and not node['is_pending_embargo'] and (not node['is_registration'] or (node['is_embargoed'] and not parent_node['exists'])):
+                        % if 'admin' in user['permissions'] and not (node['is_pending_registration'] or node['is_pending_embargo']) and not (node['is_embargoed'] and parent_node['exists']):
                         <a disabled data-bind="attr: {'disabled': false}, css: {'disabled': nodeIsPendingEmbargoTermination}" class="btn btn-default"  href="#nodesPrivacy" data-toggle="modal">
                           Make Public
 			  <!-- ko if: nodeIsPendingEmbargoTermination -->
@@ -133,8 +133,14 @@
                         % endif
                     % endif
                     % if not ('admin' in user['permissions'] and not node['is_registration']) and node['institutions'] != []:
-                        Affiliated institutions: <a href="/institutions/${node['institutions'][0]['id']}">${node['institutions'][0]['name']}</a>
-
+                        Affiliated institutions:
+                        % for inst in node['institutions']:
+                            % if inst != node['institutions'][-1]:
+                                <span><a href="/institutions/${inst['id']}">${inst['name']}</a>, </span>
+                            % else:
+                                <a href="/institutions/${inst['id']}">${inst['name']}</a>
+                            % endif
+                        % endfor
                     % endif
                 % endif
                 % if node['is_fork']:
@@ -189,14 +195,13 @@
                   <!-- /ko -->
                 </span>
                 <p>
-                Category: <span class="node-category">${node['category']}</span>
-                &nbsp;
-                <span data-bind="css: icon"></span>
+                    Category: <span id="nodeCategoryEditable"></span>
+                    <span data-bind="css: icon"></span>
                 </p>
 
                 % if (node['description']) or (not node['description'] and 'write' in user['permissions'] and not node['is_registration']):
                     <p>
-                    <span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">${node['description']}</span>
+                    <span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea"></span>
                     </p>
                 % endif
                 % if ('admin' in user['permissions'] or node['license'].get('name', 'No license') != 'No license'):
@@ -435,7 +440,8 @@ ${parent.javascript_bottom()}
             isRegistration: ${ node['is_registration'] | sjson, n },
             tags: ${ node['tags'] | sjson, n },
             institutions: ${node['institutions'] | sjson, n},
-        }
+        },
+        nodeCategories: ${ node_categories | sjson, n }
     });
 </script>
 

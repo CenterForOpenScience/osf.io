@@ -260,12 +260,14 @@ def load_parent(parent_id):
     return parent_info
 
 
-COMPONENT_CATEGORIES = set([k for k in Node.CATEGORY_MAP.keys() if not k == 'project'])
+COMPONENT_CATEGORIES = set(Node.CATEGORY_MAP.keys())
 
 def get_doctype_from_node(node):
-
     if node.is_registration:
         return 'registration'
+    elif node.parent_node is None:
+        # ElasticSearch categorizes top-level projects differently than children
+        return 'project'
     elif node.category in COMPONENT_CATEGORIES:
         return 'component'
     else:
@@ -286,16 +288,8 @@ def update_node(node, index=None, bulk=False):
 
     category = get_doctype_from_node(node)
 
-    if category == 'project':
-        elastic_document_id = node._id
-        parent_id = None
-    else:
-        try:
-            elastic_document_id = node._id
-            parent_id = node.parent_id
-        except IndexError:
-            # Skip orphaned components
-            return
+    elastic_document_id = node._id
+    parent_id = node.parent_id
 
     from website.files.models.osfstorage import OsfStorageFile
     for file_ in paginated(OsfStorageFile, Q('node', 'eq', node)):
@@ -338,7 +332,7 @@ def update_node(node, index=None, bulk=False):
             'parent_id': parent_id,
             'date_created': node.date_created,
             'license': serialize_node_license_record(node.license),
-            'affiliated_institutions': [inst.name for inst in node.affiliated_institutions] if node.affiliated_institutions else [],
+            'affiliated_institutions': [inst.name for inst in node.affiliated_institutions],
             'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
         }
         if not node.is_retracted:

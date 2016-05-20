@@ -10,7 +10,6 @@ from website.util import permissions
 from website.util.sanitize import strip_html
 
 from api.base.settings.defaults import API_BASE
-from api_tests import utils as test_utils
 
 from tests.base import ApiTestCase, fake
 from tests.factories import (
@@ -20,7 +19,6 @@ from tests.factories import (
     AuthUserFactory,
     CollectionFactory,
     CommentFactory,
-    RetractedRegistrationFactory
 )
 
 from tests.utils import assert_logs, assert_not_logs
@@ -174,7 +172,7 @@ class TestNodeDetail(ApiTestCase):
         )
         assert_equal(res.status_code, 404)
 
-    def test_can_not_return_registrations_at_node_detail_endpoint(self):
+    def test_cannot_return_registrations_at_node_detail_endpoint(self):
         registration = RegistrationFactory(project=self.public_project, creator=self.user)
         res = self.app.get('/{}nodes/{}/'.format(API_BASE, registration._id), auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
@@ -184,12 +182,6 @@ class TestNodeDetail(ApiTestCase):
         res = self.app.get('/{}nodes/{}/'.format(API_BASE, folder._id), auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
-    def test_cannot_return_a_retraction_at_node_detail_endpoint(self):
-        registration = RegistrationFactory(creator=self.user, project=self.public_project)
-        url = '/{}nodes/{}/'.format(API_BASE, registration._id)
-        retraction = RetractedRegistrationFactory(registration=registration, user=registration.creator)
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
 
 class NodeCRUDTestCase(ApiTestCase):
 
@@ -438,27 +430,6 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert_equal(res.status_code, 404)
         assert_equal(registration.title, original_title)
         assert_equal(registration.description, original_description)
-
-    def test_cannot_update_a_retraction(self):
-        registration = RegistrationFactory(creator=self.user, project=self.public_project)
-        url = '/{}nodes/{}/'.format(API_BASE, registration._id)
-        retraction = RetractedRegistrationFactory(registration=registration, user=registration.creator)
-        res = self.app.put_json_api(url, {
-            'data': {
-                'id': registration._id,
-                'type': 'nodes',
-                'attributes': {
-                    'title': fake.catch_phrase(),
-                    'description': fake.bs(),
-                    'category': 'hypothesis',
-                    'public': True
-                }
-            }
-        }, auth=self.user.auth, expect_errors=True)
-        registration.reload()
-        assert_equal(res.status_code, 404)
-        assert_equal(registration.title, registration.title)
-        assert_equal(registration.description, registration.description)
 
     def test_update_private_project_logged_out(self):
         res = self.app.put_json_api(self.private_url, {
@@ -845,16 +816,6 @@ class TestNodeDelete(NodeCRUDTestCase):
         )
         # Bookmark collections are collections, so a 404 is returned
         assert_equal(res.status_code, 404)
-
-    def test_cannot_delete_a_retraction(self):
-        registration = RegistrationFactory(creator=self.user, project=self.public_project)
-        url = '/{}nodes/{}/'.format(API_BASE, registration._id)
-        retraction = RetractedRegistrationFactory(registration=registration, user=registration.creator)
-        res = self.app.delete_json_api(url, auth=self.user.auth, expect_errors=True)
-        registration.reload()
-        assert_equal(res.status_code, 404)
-        assert_equal(registration.title, registration.title)
-        assert_equal(registration.description, registration.description)
 
 
 class TestReturnDeletedNode(ApiTestCase):

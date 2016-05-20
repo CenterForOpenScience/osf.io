@@ -37,7 +37,7 @@ GitHub, Dropbox, Google Drive, Box.com, Dataverse, figshare, Amazon S3, Mendeley
 Add your collaborators to have a shared environment for maintaining your research materials and data and never lose files again.<br>
 <br>
 <br>
-Learn more about the OSF at the <a href="https://osf.io/getting-started/">getting started page</a>, or email <a href="mailto:contact@osf.io">contact@osf.io</a> with questions for support.<br>
+Learn more about the OSF at our <a href="http://help.osf.io">Guides page</a>, or email <a href="mailto:contact@osf.io">contact@osf.io</a> with questions for support.<br>
 <br>
 Sincerely,<br>
 <br>

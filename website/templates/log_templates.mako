@@ -11,7 +11,7 @@ approved embargoed registration of
 </script>
 
 <script type="text/html" id="embargo_approved_no_user">
-Embargo for
+Embargo of registration of
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a> approved
 </script>
 
@@ -20,13 +20,8 @@ cancelled embargoed registration of
 <span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
 </script>
 
-<script type="text/html" id="embargo_completed">
-completed embargo of
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
-</script>
-
 <script type="text/html" id="embargo_completed_no_user">
-Embargo for
+Embargo of registration of
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a> completed
 </script>
 
@@ -284,7 +279,7 @@ on
 <a data-bind="attr: {href: params.file.url}, text: params.file.name"></a>
 in
 <!-- /ko -->
-<!-- ko: params.wiki -->
+<!-- ko if: params.wiki -->
 wiki page
 <a data-bind="attr: {href: params.wiki.url}, text: params.wiki.name"></a>
 in
@@ -422,11 +417,11 @@ from
 </script>
 
 <script type="text/html" id="affiliated_institution_added">
-added affiliation to <a class="log-node-title-link overflow" data-bind="attr: {href: '/institutions/' + params.institution.id}, text: params.institution.name"></a>
- to <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+added <a class="log-node-title-link overflow" data-bind="attr: {href: '/institutions/' + params.institution.id}, text: params.institution.name"></a>
+ affiliation to <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>.
 </script>
 
 <script type="text/html" id="affiliated_institution_removed">
-removed affiliation to <a class="log-node-title-link overflow" data-bind="attr: {href: '/institutions/' + params.institution.id}, text: params.institution.name"></a>
- in <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>.
+removed <a class="log-node-title-link overflow" data-bind="attr: {href: '/institutions/' + params.institution.id}, text: params.institution.name"></a>
+ affiliation from <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>.
 </script>

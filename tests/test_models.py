@@ -7,6 +7,7 @@ from nose.tools import *  # noqa (PEP8 asserts)
 import pytz
 import datetime
 import urlparse
+import urllib
 import itsdangerous
 import random
 import string
@@ -29,7 +30,7 @@ from framework.celery_tasks import handlers
 from framework.bcrypt import check_password_hash
 from website import filters, language, settings, mailchimp_utils
 from website.addons.wiki.model import NodeWikiPage
-from website.exceptions import NodeStateError
+from website.exceptions import NodeStateError, TagNotFoundError
 from website.profile.utils import serialize_user
 from website.project.signals import contributor_added
 from website.project.model import (
@@ -1171,7 +1172,6 @@ class TestNodeWikiPage(OsfTestCase):
         wiki = NodeWikiFactory()
         assert_equal(wiki.page_name, 'home')
         assert_equal(wiki.version, 1)
-        assert_true(hasattr(wiki, 'is_current'))
         assert_equal(wiki.content, 'Some content')
         assert_true(wiki.user)
         assert_true(wiki.node)
@@ -1179,6 +1179,18 @@ class TestNodeWikiPage(OsfTestCase):
     def test_url(self):
         assert_equal(self.wiki.url, '{project_url}wiki/home/'
                                     .format(project_url=self.project.url))
+
+    def test_absolute_url_for_wiki_page_name_with_spaces(self):
+        wiki = NodeWikiFactory(user=self.user, node=self.project, page_name='Test Wiki')
+        url = '{}wiki/{}/'.format(self.project.absolute_url, urllib.quote(wiki.page_name))
+        assert_equal(wiki.get_absolute_url(), url)
+
+    def test_absolute_url_for_wiki_page_name_with_special_characters(self):
+        wiki = NodeWikiFactory(user=self.user, node=self.project)
+        wiki.page_name = 'Wiki!@#$%^&*()+'
+        wiki.save()
+        url = '{}wiki/{}/'.format(self.project.absolute_url, urllib.quote(wiki.page_name))
+        assert_equal(wiki.get_absolute_url(), url)
 
 
 class TestUpdateNodeWiki(OsfTestCase):
@@ -3920,7 +3932,7 @@ class TestForkNode(OsfTestCase):
     def test_forking_clones_project_wiki_pages(self):
         project = ProjectFactory(creator=self.user, is_public=True)
         wiki = NodeWikiFactory(node=project)
-        current_wiki = NodeWikiFactory(node=project, version=2, is_current=True)
+        current_wiki = NodeWikiFactory(node=project, version=2)
         fork = project.fork_node(self.auth)
         assert_equal(fork.wiki_private_uuids, {})
 
@@ -4150,7 +4162,7 @@ class TestRegisterNode(OsfTestCase):
     def test_registration_clones_project_wiki_pages(self):
         project = ProjectFactory(creator=self.user, is_public=True)
         wiki = NodeWikiFactory(node=project)
-        current_wiki = NodeWikiFactory(node=project, version=2, is_current=True)
+        current_wiki = NodeWikiFactory(node=project, version=2)
         registration = project.register_node(get_default_metaschema(), Auth(self.user), '', None)
         assert_equal(self.registration.wiki_private_uuids, {})
 
@@ -4161,6 +4173,11 @@ class TestRegisterNode(OsfTestCase):
         registration_wiki_version = NodeWikiPage.load(registration.wiki_pages_versions[wiki.page_name][0])
         assert_equal(registration_wiki_version.node, registration)
         assert_not_equal(registration_wiki_version._id, wiki._id)
+
+    def test_legacy_private_registrations_can_be_made_public(self):
+        self.registration.is_public = False
+        self.registration.set_privacy(Node.PUBLIC, auth=Auth(self.registration.creator))
+        assert_true(self.registration.is_public)
 
 
 class TestNodeLog(OsfTestCase):
@@ -4513,11 +4530,8 @@ class TestTags(OsfTestCase):
         )
 
     def test_remove_tag_not_present(self):
-        self.project.remove_tag('scientific', auth=self.auth)
-        assert_equal(
-            self.project.logs[-1].action,
-            NodeLog.PROJECT_CREATED
-        )
+        with assert_raises(TagNotFoundError):
+            self.project.remove_tag('scientific', auth=self.auth)
 
 
 class TestContributorVisibility(OsfTestCase):

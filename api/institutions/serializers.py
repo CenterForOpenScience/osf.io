@@ -72,16 +72,14 @@ class InstitutionNodesRelationshipSerializer(ser.Serializer):
         inst = self.context['view'].get_object()['self']
         user = self.context['request'].user
         node_dicts = validated_data['data']
-        nodes = [Node.load(node_dict['_id']) for node_dict in node_dicts]
 
         changes_flag = False
-        for node in nodes:
+        for node_dict in node_dicts:
+            node = Node.load(node_dict['_id'])
             if not node:
-                raise exceptions.NotFound
+                raise exceptions.NotFound(detail='Node with id "{}" was not found'.format(node_dict['_id']))
             if not node.has_permission(user, osf_permissions.ADMIN):
-                raise exceptions.PermissionDenied
-
-        for node in nodes:
+                raise exceptions.PermissionDenied(detail='Admin permission on node {} required'.format(node_dict['_id']))
             if inst not in node.affiliated_institutions:
                 node.add_affiliated_institution(inst, user, save=True)
                 changes_flag = True

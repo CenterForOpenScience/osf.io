@@ -77,10 +77,7 @@
                     <div id="projectSettings" class="panel-body">
                         <div class="form-group">
                             <label>Category:</label>
-                            <select data-bind="attr: {disabled: disabled}, options: categoryOptions, optionsValue: 'value', optionsText: 'label', value: selectedCategory"></select>
-                            <span data-bind="if: disabled" class="help-block">
-                              A top-level project's category cannot be changed
-                            </span>
+                            <select data-bind="options: categoryOptions, optionsValue: 'value', optionsText: 'label', value: selectedCategory"></select>
                         </div>
                         <div class="form-group">
                             <label for="title">Title:</label>
