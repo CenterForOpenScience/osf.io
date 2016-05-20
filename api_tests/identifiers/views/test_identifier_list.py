@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-from nose.tools import *  # flake8: noqa
 import urlparse
+from modularodm import Q
+from nose.tools import *  # flake8: noqa
 
 from api.base.settings.defaults import API_BASE
 from website.identifiers.model import Identifier
@@ -59,3 +60,15 @@ class TestIdentifierList(ApiTestCase):
         categories_in_response = [identifier['attributes']['identifier']['self'] for identifier in self.data]
 
         assert_items_equal(categories_in_response, categories)
+
+    def test_identifier_filter_by_category(self):
+        IdentifierFactory(referent=self.registration, category='nopeid')
+        assert_equal(len(self.all_identifiers), 2)
+
+        filter_url = self.url + '?filter[category]=carpid'
+        new_res = self.app.get(filter_url)
+
+        carpid_total = len(Identifier.find(Q('category', 'eq', 'carpid')))
+
+        total = new_res.json['links']['meta']['total']
+        assert_equal(total, carpid_total)

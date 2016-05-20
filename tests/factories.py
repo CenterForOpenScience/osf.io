@@ -777,8 +777,13 @@ class IdentifierFactory(ModularOdmFactory):
         model = Identifier
 
     referent = SubFactory(RegistrationFactory)
-    category = 'carpid'
-    value = 'carp:/24601'
+    value = Sequence(lambda n: 'carp:/2460{}'.format(n))
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        kwargs['category'] = kwargs.get('category', 'carpid')
+
+        return super(IdentifierFactory, cls)._create(*args, **kwargs)
 
 
 def render_generations_from_parent(parent, creator, num_generations):
