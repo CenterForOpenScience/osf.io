@@ -400,7 +400,6 @@ var FileViewPage = {
                 ], '.')
             ]);
         }
-
         var editButton = function() {
             if (ctrl.editor) {
                 return m('button.btn' + (ctrl.editor.selected ? '.btn-primary' : '.btn-default'), {

@@ -585,14 +585,19 @@ function _fangornUploadProgress(treebeard, file, progress) {
  * @private
  */
 function _fangornSending(treebeard, file, xhr, formData) {
+    debugger;
     treebeard.options.uploadInProgress = true;
     var parent = file.treebeardParent || treebeard.dropzoneItemCache;
+    console.log(parent);
+    debugger;
     xhr = $osf.setXHRAuthorization(xhr);
     var _send = xhr.send;
     xhr.send = function() {
         _send.call(xhr, file);
     };
     var configOption = resolveconfigOption.call(treebeard, parent, 'uploadSending', [file, xhr, formData]);
+    console.log(configOption);
+    debugger;
     return configOption || null;
 }
 
