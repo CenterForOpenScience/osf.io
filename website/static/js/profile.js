@@ -218,7 +218,7 @@ var BaseViewModel = function(urls, modes, preventUnsaved) {
     self.editAllowed = $.inArray('edit', self.modes) >= 0;
     self.editable = ko.observable(self.editAllowed);
     self.mode = ko.observable(self.editable() ? 'edit' : 'view');
-
+    self.saving = ko.observable(false);
     self.original = ko.observable();
     self.tracked = [];  // Define for each view model that inherits
 
@@ -268,6 +268,7 @@ BaseViewModel.prototype.changeMessage = function(text, css, timeout) {
 };
 
 BaseViewModel.prototype.handleSuccess = function() {
+    this.saving(false);
     if ($.inArray('view', this.modes) >= 0) {
         this.mode('view');
     } else {
@@ -280,6 +281,7 @@ BaseViewModel.prototype.handleSuccess = function() {
 };
 
 BaseViewModel.prototype.handleError = function(response) {
+    this.saving(false);
     var defaultMsg = 'Could not update settings';
     var msg = response.message_long || defaultMsg;
     this.changeMessage(
@@ -343,6 +345,7 @@ BaseViewModel.prototype.cancel = function(data, event) {
 };
 
 BaseViewModel.prototype.submit = function() {
+    this.saving(true);
     if (this.hasValidProperty() && this.isValid()) {
         $osf.putJSON(
             this.urls.crud,
@@ -356,6 +359,7 @@ BaseViewModel.prototype.submit = function() {
         );
     } else {
         this.showMessages(true);
+        this.saving(false);
     }
 };
 
@@ -703,6 +707,7 @@ SocialViewModel.prototype.unserialize = function(data) {
 };
 
 SocialViewModel.prototype.submit = function() {
+    this.saving(true);
     if (!this.hasValidWebsites()) {
         this.changeMessage(
             'Please update your website',
@@ -723,6 +728,8 @@ SocialViewModel.prototype.submit = function() {
         );
     } else {
         this.showMessages(true);
+        this.saving(false);
+
     }
 };
 
