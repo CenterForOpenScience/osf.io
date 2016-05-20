@@ -140,7 +140,7 @@ def main(env):
                 'banner_name': 'google-banner.png',
                 'logo_name': 'google-shield.png',
                 'auth_url': None,
-                'domains': None,
+                'domains': [],
                 'email_domains': ['gmail.com'],
             },
             {
@@ -150,7 +150,7 @@ def main(env):
                 'banner_name': 'yahoo-banner.png',
                 'logo_name': 'yahoo-shield.png',
                 'auth_url': None,
-                'domains': None,
+                'domains': [],
                 'email_domains': ['yahoo.com'],
            },
         ]
