@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-
+""" Cron script that attempts to ensure synchronicity between
+    remote mailing lists on MailGun and their local representations.
+"""
 import logging
 
 from modularodm import Q
