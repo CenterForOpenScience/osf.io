@@ -2,7 +2,7 @@
 
 <div id="forwardScope" class="scripted">
 
-    <div id="forwardModal" style="display: none; padding: 15px;">
+    <div id="forwardModal" class="p-lg" style="display: none;">
 
         <div>
             This project contains a forward to
