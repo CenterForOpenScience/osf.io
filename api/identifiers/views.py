@@ -22,22 +22,29 @@ from website.identifiers.model import Identifier
 class IdentifierList(JSONAPIBaseView, generics.ListAPIView, RegistrationMixin, ODMFilterMixin):
     """List of identifiers for a specified node. *Read-only*.
 
+
    ##Identifier Attributes
 
     OSF License entities have the "licenses" `type`.
+
         name           type                   description
         ----------------------------------------------------------------------------
         category       string                 e.g. 'ark', 'doi'
         referent       link                   object to which the identifier points
         value          string                 the identifier value itself
 
+
     ##Links
+
     See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
 
+
     ##Actions
+
     *None*.
 
     ##Query Params
+
      Identifiers may be filtered by their category.
 
     #This Request/Response
