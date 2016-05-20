@@ -9,7 +9,7 @@
             <a data-bind="attr: {href: url}, text: url"></a>.
         </div>
 
-        <div class="spaced-buttons" data-bind="visible: redirecting">
+        <div class="spaced-buttons m-t-md" data-bind="visible: redirecting">
             <a class="btn btn-default" data-bind="click: cancelRedirect">Cancel</a>
             <a class="btn btn-primary" data-bind="click: doRedirect">Redirect</a>
         </div>

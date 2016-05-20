@@ -53,7 +53,6 @@ var ViewModel = function(url) {
                 self.url(response.url);
         self.label(response.label);
                 self.redirectBool(response.redirectBool);
-//                self.redirectSecs(response.redirectSecs);
                 self.execute();
             }
         });
