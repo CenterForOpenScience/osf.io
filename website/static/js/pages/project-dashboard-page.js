@@ -207,7 +207,7 @@ $(document).ready(function () {
                 var truncatedText = $.truncate(renderedText, {length: 400});
                 markdownElement.html(truncatedText);
                 mathrender.mathjaxify(markdownElement);
-                $("#markdownRender").css("display", "inherit");
+                $('#markdownRender').css('display', 'inherit');
             });
         }
     }
