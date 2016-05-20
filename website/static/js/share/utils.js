@@ -60,9 +60,7 @@ utils.updateVM = function(vm, data) {
     });
     vm.results.push.apply(vm.results, data.results);
     m.redraw();
-    $.map(callbacks, function(cb) {
-        cb();
-    });
+    callbacks.map(function(cb) { cb(); });
 };
 
 /* Handles searching via the search API */
