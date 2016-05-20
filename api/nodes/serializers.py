@@ -246,8 +246,7 @@ class NodeSerializer(JSONAPISerializer):
         auth = get_user_auth(self.context['request'])
         old_tags = set([tag._id for tag in node.tags])
         if 'tags' in validated_data:
-            current_tags = set(validated_data.get('tags'))
-            del validated_data['tags']
+            current_tags = set(validated_data.pop('tags', []))
         elif self.partial:
             current_tags = set(old_tags)
         else:
