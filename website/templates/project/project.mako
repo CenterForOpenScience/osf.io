@@ -1,6 +1,6 @@
 <%inherit file="project/project_base.mako"/>
 <%include file="project/nodes_privacy.mako"/>
-<%include file="modal_mailing_list_contributors.mako"/>
+<%include file="project/modal_mailing_list_contributors.mako"/>
 
 <%
     is_project = node['node_type'] == 'project'
