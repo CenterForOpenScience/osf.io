@@ -29,6 +29,18 @@
 
 <script>
 
+
+(function() {
+
+    var buildFromSpec__unpatched = SwaggerApi.prototype.buildFromSpec;
+    SwaggerApi.prototype.buildFromSpec = function(response) {
+        console.log(response);
+        return buildFromSpec__unpatched.bind(this)(response);
+    }
+
+})();
+
+
 // Here we modify the SwaggerRequest constructor in 
 // such a way as to decorate the response callback that gets passed to it
 // when it is used to make a request to the api.
@@ -41,7 +53,7 @@
 
     // And create a new wrapper around it assigned to the original name.
     SwaggerRequest = function(type, url, params, opts, successCallback, errorCallback, operation, execution) {
-        
+        console.log(operation); 
         // We take a reference to the callback that is passed to the constructor 
         var successCallback__unpatched = successCallback;
         
