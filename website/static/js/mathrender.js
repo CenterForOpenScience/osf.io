@@ -26,8 +26,7 @@ function mathjaxify(selector) {
 // This can now be mapped over a nodelist or the like.
 function typeset(el) {
 
-    // If our element is not an element node, it can't have an id,
-    // and so MathJax cannot process it. Let's return from the funciton early.                  
+    // Ignore nodes that aren't elements.
     if (el.nodeType !== 1) return false;
     
     // MathJax has issues getting loaded by webpack? Right now, it's getting 
