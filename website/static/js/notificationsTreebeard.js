@@ -57,10 +57,13 @@ function ProjectNotifications(data) {
             $tb.expandOnLoad.call(tb);
         },
         resolveRows: function notificationResolveRows(item){
-            var options = [
-                m('option', {value: 'none', selected : item.data.event.notificationType === 'none' ? 'selected': ''}, 'Never'),
-                m('option', {value: 'email_transactional', selected : item.data.event.notificationType === 'email_transactional' ? 'selected': ''}, 'Instantly'),
-            ];
+            var options = [];
+            if (item.data.event !== undefined) {
+                options = [
+                    m('option', {value: 'none', selected : item.data.event.notificationType === 'none' ? 'selected': ''}, 'Never'),
+                    m('option', {value: 'email_transactional', selected : item.data.event.notificationType === 'email_transactional' ? 'selected': ''}, 'Instantly'),
+                ];
+            }
             var columns = [];
             var iconcss = '';
             // check if should not get icon
