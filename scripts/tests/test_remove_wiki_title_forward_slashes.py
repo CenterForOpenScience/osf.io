@@ -12,7 +12,7 @@ class TestRemoveWikiTitleForwardSlashes(OsfTestCase):
 
     def test_forward_slash_is_removed_from_wiki_title(self):
         project = ProjectFactory()
-        wiki = NodeWikiFactory(node=project, is_current=True)
+        wiki = NodeWikiFactory(node=project)
 
         invalid_name = 'invalid/name'
         db.nodewikipage.update({'_id': wiki._id}, {'$set': {'page_name': invalid_name}})
@@ -29,7 +29,7 @@ class TestRemoveWikiTitleForwardSlashes(OsfTestCase):
 
     def test_valid_wiki_title(self):
         project = ProjectFactory()
-        wiki = NodeWikiFactory(node=project, is_current=True)
+        wiki = NodeWikiFactory(node=project)
         page_name = wiki.page_name
         main()
         wiki.reload()
