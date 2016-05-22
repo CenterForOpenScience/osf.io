@@ -8,7 +8,6 @@
         <form class="form col-md-8 col-md-offset-2 m-t-xl"
                 id="resetPasswordForm"
                 name="resetPasswordForm"
-                class="form"
                 method="POST"
                 action="/resetpassword/${verification_key}/"
                 data-bind="submit: submit"
