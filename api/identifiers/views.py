@@ -80,6 +80,7 @@ class IdentifierDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope
     )
 
     required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]
