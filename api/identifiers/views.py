@@ -58,6 +58,9 @@ class IdentifierList(JSONAPIBaseView, generics.ListAPIView, RegistrationMixin, O
         ExcludeWithdrawals
     )
 
+    required_read_scopes = [CoreScopes.IDENTIFIERS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
     serializer_class = IdentifierSerializer
 
     view_category = 'identifiers'
@@ -83,8 +86,8 @@ class IdentifierDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         base_permissions.TokenHasScope
     )
 
-    required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]
-    required_write_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
+    required_read_scopes = [CoreScopes.IDENTIFIERS_READ]
+    required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = IdentifierSerializer
     view_category = 'identifiers'

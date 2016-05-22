@@ -69,6 +69,8 @@ class CoreScopes(object):
 
     GUIDS_READ = 'guids.base_read'
 
+    IDENTIFIERS_READ = 'identifiers.data_read'
+
 
 class ComposedScopes(object):
     """
@@ -91,6 +93,9 @@ class ComposedScopes(object):
 
     # Guid redirect view
     GUIDS_READ = (CoreScopes.GUIDS_READ, )
+
+    # Identifier views
+    IDENTIFIERS_READ = (CoreScopes.IDENTIFIERS_READ, )
 
     # Comment reports collection
     COMMENT_REPORTS_READ = (CoreScopes.COMMENT_REPORTS_READ,)
