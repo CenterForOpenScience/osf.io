@@ -9,7 +9,11 @@
     <p>Hello ${ firstname }! Please set a password to claim your account.</p>
     <p>E-mail: <strong>${ email }</strong></p>
 
-        <form method="POST" id='setPasswordForm' role='form'>
+        <form class="form"
+              id='setPasswordForm'
+              name="setPasswordForm"
+              method="POST"
+        >
             <div
                 class="form-group"
                 data-bind="
@@ -43,8 +47,8 @@
                 class="form-group"
                 data-bind="
                     css: {
-                        'has-error': password_confirmation() && !password_confirmation.isValid(),
-                        'has-success': password_confirmation() && password_confirmation.isValid()
+                        'has-error': passwordConfirmation() && !passwordConfirmation.isValid(),
+                        'has-success': passwordConfirmation() && passwordConfirmation.isValid()
                     }"
             >
                 <div>
@@ -55,12 +59,12 @@
                         placeholder="Verify Password"
                         name="password2"
                         data-bind="
-                            value: password_confirmation,
+                            value: passwordConfirmation,
                             event: {
-                                blur: trim.bind($data, password_confirmation)
+                                blur: trim.bind($data, passwordConfirmation)
                             }"
                     >
-                    <p class="help-block" data-bind="validationMessage: password_confirmation" style="display: none;"></p>
+                    <p class="help-block" data-bind="validationMessage: passwordConfirmation" style="display: none;"></p>
                 </div>
             </div>
             <div class='help-block'>
@@ -72,11 +76,14 @@
             %if next_url:
                 <input type='hidden' name='next_url' value='${next_url}'>
             %endif
-            <button type='submit' class="btn btn-success pull-right">Save</button>
+            <button type='submit' class="btn btn-success pull-right" data-bind="css: {disabled: !password.isValid()}">Save</button>
         </form>
     </div>
 </div>
 
 </%def>
 
-<script src=${"/static/public/js/claimaccount-page.js" | webpack_asset}></script>
+<%def name="javascript_bottom()">
+    ${parent.javascript_bottom()}
+    <script src=${"/static/public/js/claimaccount-page.js" | webpack_asset}></script>
+</%def>
