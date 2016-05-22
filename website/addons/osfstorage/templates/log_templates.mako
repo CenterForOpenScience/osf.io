@@ -17,7 +17,7 @@ updated file
 </script>
 
 <script type="text/html" id="osf_storage_file_removed">
-  removed <span data-bind="text: pathType(params.path)"></span> <span class="overflow" data-bind="stripSlash(params.path)"></span>
+  removed <span data-bind="text: pathType(params.path)"></span> <span class="overflow" data-bind="text: stripSlash(params.path)"></span>
   from OSF Storage in
   <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
