@@ -41,6 +41,7 @@ from website.project import views as project_views
 from website.addons.base import views as addon_views
 from website.discovery import views as discovery_views
 from website.conferences import views as conference_views
+from website.preprints import views as preprint_views
 from website.institutions import views as institution_views
 from website.notifications import views as notification_views
 
@@ -232,8 +233,7 @@ def make_url_map(app):
             notemplate
         ),
         Rule('/about/', 'get', website_views.redirect_about, notemplate),
-
-        Rule('/faq/', 'get', {}, OsfWebRenderer('public/pages/faq.mako')),
+        Rule('/faq/', 'get', {}, OsfWebRenderer('public/pages/faq.mako', trust=False)),
         Rule(['/getting-started/', '/getting-started/email/', '/howosfworks/'], 'get', website_views.redirect_getting_started, notemplate),
         Rule('/support/', 'get', {}, OsfWebRenderer('public/pages/support.mako', trust=False)),
 
@@ -308,6 +308,13 @@ def make_url_map(app):
             'get',
             prereg.prereg_landing_page,
             OsfWebRenderer('prereg_landing_page.mako', trust=False)
+        ),
+
+        Rule(
+            '/preprints/',
+            'get',
+            preprint_views.preprint_landing_page,
+            OsfWebRenderer('public/pages/preprint_landing.mako', trust=False),
         ),
 
         Rule(

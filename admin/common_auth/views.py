@@ -3,7 +3,8 @@ from __future__ import absolute_import, unicode_literals
 from django.core.urlresolvers import reverse
 from django.views.generic.edit import FormView
 from django.contrib import messages
-from django.contrib.auth.forms import PasswordResetForm
+from password_reset.forms import PasswordRecoveryForm
+from password_reset.views import Recover
 from django.contrib.auth import login, REDIRECT_FIELD_NAME, authenticate, logout
 from django.shortcuts import redirect
 from django.utils.decorators import method_decorator
@@ -65,6 +66,7 @@ class RegisterUser(SuperUser, FormView):
         osf_user = User.load(osf_id)
         try:
             osf_user.system_tags.append(PREREG_ADMIN_TAG)
+            osf_user.save()
         except AttributeError:
             raise Http404(('OSF user with id "{}" not found.'
                            ' Please double check.').format(osf_id))
@@ -78,13 +80,13 @@ class RegisterUser(SuperUser, FormView):
         for group in form.cleaned_data.get('group_perms'):
             new_user.groups.add(group)
         new_user.save()
-        reset_form = PasswordResetForm({'email': new_user.email})
+        reset_form = PasswordRecoveryForm(
+            data={'username_or_email': new_user.email}
+        )
         if reset_form.is_valid():
-            reset_form.save(
-                subject_template_name='emails/account_creation_subject.txt',
-                email_template_name='emails/password_reset_email.html',
-                request=self.request,
-            )
+            send = Recover()
+            send.request = self.request
+            send.form_valid(reset_form)
         messages.success(self.request, 'Registration successful!')
         return super(RegisterUser, self).form_valid(form)
 

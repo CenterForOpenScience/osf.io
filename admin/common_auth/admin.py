@@ -3,7 +3,6 @@ from __future__ import absolute_import
 from django.contrib import admin
 from django.contrib.admin.models import DELETION
 from django.contrib.auth.admin import UserAdmin
-from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.models import Permission
 from django.core.urlresolvers import reverse
 from django.utils.html import escape
@@ -32,20 +31,8 @@ class CustomUserAdmin(UserAdmin):
     search_fields = ('email', 'first_name', 'last_name',)
     ordering = ('last_name', 'first_name',)
     actions = ['send_email_invitation']
+    readonly_fields = ('date_joined',)
 
-    # TODO - include alternative messages for warning/failure
-    def send_email_invitation(self, request, queryset):
-        for user in queryset:
-            reset_form = PasswordResetForm({'email': user.email}, request.POST)
-            assert reset_form.is_valid()
-            reset_form.save(
-                subject_template_name='emails/account_creation_subject.txt',
-                email_template_name='emails/password_reset_email.html',
-                request=request
-            )
-
-        self.message_user(request, 'Email invitation successfully sent')
-    send_email_invitation.short_description = 'Send email invitation to selected users'
 
 admin.site.register(MyUser, CustomUserAdmin)
 admin.site.register(Permission, PermissionAdmin)
