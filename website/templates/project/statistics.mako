@@ -11,7 +11,7 @@
 <script src="/static/js/ads.js"></script>
 <script>
 if( window.canRunAds === undefined ){
-  $('.ad_block_display').css({'display':'block'});
+  $('.ad-block-display').css({'display':'block'});
 }
 </script>
 
