@@ -358,6 +358,16 @@ class TestNodeFilesListFiltering(ApiTestCase):
         assert_equal(len(res.json['data']), 1)  # filters out 'xyz'
         assert_equal(res.json['data'][0]['attributes']['name'], 'abc')
 
+    def test_node_files_are_filterable_by_size(self):
+        self.file = api_utils.create_test_file_for_size_filter(self.project, self.user)
+
+        url = '/{}nodes/{}/files/osfstorage/?filter[size]=123'.format(API_BASE, self.project._id,)
+        res = self.app.get(url, auth=self.user.auth)
+        print(res)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data'][0]['attributes']['name'], 'test_file')
+        assert_equal(res.json['data'][0]['attributes']['size'], 123)
+
     def test_node_files_external_provider_can_filter_by_last_touched(self):
         yesterday_stamp = datetime.datetime.utcnow() - datetime.timedelta(days=1)
         self.add_github()
