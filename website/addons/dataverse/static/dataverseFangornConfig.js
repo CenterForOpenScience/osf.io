@@ -74,6 +74,7 @@ var _dataverseItemButtons = {
                     ];
                     tb.modal.update(modalContent, modalActions, m('h3.break-word.modal-title', 'Successfully published'));
                     item.data.dataverseIsPublished = true;
+                    item.data.datasetDraftModified = false;
                     item.data.hasPublishedFiles = item.children.length > 0;
                     item.data.version = item.data.hasPublishedFiles ? 'latest-published' : 'latest';
                     for (var i = 0; i < item.children.length; i++) { // Brute force the child files to be set as "latest-published" without page reload

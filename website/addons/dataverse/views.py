@@ -256,7 +256,7 @@ def _dataverse_root_folder(node_addon, auth, **kwargs):
     try:
         dataset.get_metadata('latest-published')
         dataset_is_published = True
-        dataset_draft_modified = dataset.get_status() == 'DRAFT'
+        dataset_draft_modified = dataset.get_state() == 'DRAFT'
     except dataverse.exceptions.VersionJsonNotFoundError:
         dataset_is_published = False
         dataset_draft_modified = True

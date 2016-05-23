@@ -754,6 +754,11 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
     }
     var url = item.data.nodeUrl + 'files/' + item.data.provider + item.data.path;
     addFileStatus(treebeard, file, true, '', url);
+
+    if (item.data.provider === "dataverse") {
+        item.parent().data.datasetDraftModified = true;
+    }
+    
     treebeard.redraw();
 }
 
@@ -929,6 +934,10 @@ function _removeEvent (event, items, col) {
             tb.deleteNode(item.parentID, item.id);
             tb.modal.dismiss();
             tb.clearMultiselect();
+
+            if (item.data.provider === "dataverse") {
+                item.parent().data.datasetDraftModified = true;
+            }
         })
         .fail(function(data){
             tb.modal.dismiss();
