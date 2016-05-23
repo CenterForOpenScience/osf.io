@@ -1139,6 +1139,25 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
         assert_items_equal([data[0]['attributes']['permission'], data[1]['attributes']['permission'], data[2]['attributes']['permission']],
                            ['admin', 'read', 'read'])
 
+    def test_bulk_update_contributors_must_have_at_least_one_bibliographic_contributor(self):
+        res = self.app.put_json_api(self.public_url, {'data': [self.payload_two,
+                                                               {'id': self.user._id, 'type': 'contributors',
+                                                                'attributes': {'permission': 'admin', 'bibliographic': False}},
+                                                               {'id': self.user_two._id, 'type': 'contributors',
+                                                                'attributes': {'bibliographic': False}}
+                                                               ]},
+                                    auth=self.user.auth, expect_errors=True, bulk=True)
+
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Must have at least one visible contributor')
+
+    def test_bulk_update_contributors_must_have_at_least_one_admin(self):
+        res = self.app.put_json_api(self.public_url, {'data': [self.payload_two,
+                                                               {'id': self.user._id, 'type': 'contributors',
+                                                                'attributes': {'permission': 'read'}}]},
+                                    auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], '{} is the only admin.'.format(self.user.fullname))
 
 class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
 

@@ -72,6 +72,7 @@
                 >Discard changes</button>
 
             <button
+                    data-bind="disable: saving(), text: saving() ? 'Saving' : 'Save'"
                     type="submit"
                     class="btn btn-success"
                 >Save</button>
