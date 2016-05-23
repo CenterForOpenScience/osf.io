@@ -111,7 +111,7 @@
                             <!-- Link to add non-registered contributor -->
                             <div class='help-block'>
                                 <div data-bind="if: emailSearch">
-                                    <strong>Warning:</strong> Please search by username not email address.
+                                    <strong>Warning:</strong> Please search by name, not email address.
                                 </div>
                                 <div data-bind='if: foundResults'>
                                     <ul class="pagination pagination-sm" data-bind="foreach: paginators">
