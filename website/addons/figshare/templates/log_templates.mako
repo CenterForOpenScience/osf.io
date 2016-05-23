@@ -6,9 +6,9 @@ figshare <span data-bind="text: params.figshare.title"></span> in
 </script>
 
 <script type="text/html" id="figshare_file_removed">
-removed file <span class="overflow">{{ params.path }}</span> from
+removed file <span class="overflow" data-bind="text: params.path"></span> from
 figshare in
-<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
 <script type="text/html" id="figshare_content_linked">
@@ -24,18 +24,18 @@ unlinked figshare project /<span data-bind="text: params.figshare.title"></span>
 <script type="text/html" id="figshare_node_authorized">
 authorized the figshare addon for
 <a class="log-node-title-link overflow"
-    data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+    data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
 <script type="text/html" id="figshare_node_deauthorized">
 deauthorized the figshare addon for
 <a class="log-node-title-link overflow"
-    data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+    data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
 <script type="text/html" id="figshare_node_deauthorized_no_user">
 figshare addon for
 <a class="log-node-title-link overflow"
-    data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+    data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
     deauthorized
 </script>

@@ -3,6 +3,7 @@
 import datetime
 import functools
 import logging
+import urllib
 
 from bleach import linkify
 from bleach.callbacks import nofollow
@@ -12,6 +13,7 @@ import markdown
 from markdown.extensions import codehilite, fenced_code, wikilinks
 from modularodm import fields
 
+from framework.mongo.utils import to_mongo_key
 from framework.forms.utils import sanitize
 from framework.guid.model import GuidStoredObject
 from framework.mongo import utils as mongo_utils
@@ -168,11 +170,18 @@ class NodeWikiPage(GuidStoredObject, Commentable):
     page_name = fields.StringField(validate=validate_page_name)
     version = fields.IntegerField()
     date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
-    is_current = fields.BooleanField()
     content = fields.StringField(default='')
 
     user = fields.ForeignField('user')
     node = fields.ForeignField('node')
+
+    @property
+    def is_current(self):
+        key = to_mongo_key(self.page_name)
+        if key in self.node.wiki_pages_current:
+            return self.node.wiki_pages_current[key] == self._id
+        else:
+            return False
 
     @property
     def deep_url(self):
@@ -211,7 +220,7 @@ class NodeWikiPage(GuidStoredObject, Commentable):
 
     # used by django and DRF - use v1 url since there are no v2 wiki routes
     def get_absolute_url(self):
-        return '{}wiki/{}/'.format(self.node.absolute_url, self.page_name)
+        return '{}wiki/{}/'.format(self.node.absolute_url, urllib.quote(self.page_name))
 
     def html(self, node):
         """The cleaned HTML of the page"""

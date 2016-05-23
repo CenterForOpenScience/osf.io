@@ -17,7 +17,7 @@
             !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');
         </script>
         <br>
-        If you would like to learn more about how to take advantage of any of these features, visit our <a href="${osf_url}getting-started/#start">Getting Started page</a> or <a href="mailto:support@osf.io">drop us a line</a>.
+        If you would like to learn more about how to take advantage of any of these features, visit our <a href="http://help.osf.io" target="_blank" rel="noreferrer">Guides</a> or <a href="mailto:support@osf.io">drop us a line</a>.
         <br><br>
         Best wishes,
         <br>
@@ -26,5 +26,5 @@
 </%def>
 <%def name="footer()">
     <br>
-    The <a href="${osf_url}">Open Science Framework</a> is provided as a free, open source service from the <a href="http://cos.io/">Center for Open Science</a>.
+    The <a href="${osf_url}">Open Science Framework</a> is provided as a free, open source service from the <a href="https://cos.io/">Center for Open Science</a>.
 </%def>

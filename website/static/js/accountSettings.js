@@ -8,9 +8,6 @@ var oop = require('js/oop');
 var Raven = require('raven-js');
 var ChangeMessageMixin = require('js/changeMessage');
 
-require('knockout.punches');
-ko.punches.enableAll();
-
 
 var UserEmail = oop.defclass({
     constructor: function(params) {
@@ -214,12 +211,12 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
                     }
                 }
                 if (emailAdded === true) {
-                    var addrText = $osf.htmlEscape(email.address());
+                    var safeAddr = $osf.htmlEscape(email.address());
                     bootbox.alert({
                                 title: 'Confirmation email sent',
-                                message: '<b>' + addrText + '</b>' + ' was added to your account.' +
-                                ' You will receive a confirmation email at ' + '<b>' + addrText + '</b>.' +
-                                ' Please check your email to confirm this action.',
+                                message: '<em>' + safeAddr + '</em>' + ' was added to your account.' +
+                                ' You will receive a confirmation email at ' + '<em>' + safeAddr + '</em>.' +
+                                ' Please log out of this account and check your email to confirm this action.',
                                 buttons: {
                                     ok: {
                                         label: 'Close',
@@ -241,17 +238,17 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
     resendConfirmation: function(email){
         var self = this;
         self.changeMessage('', 'text-info');
-        var addrText = $osf.htmlEscape(email.address());
+        var safeAddr = $osf.htmlEscape(email.address());
         bootbox.confirm({
             title: 'Resend Email Confirmation?',
-            message: 'Are you sure that you want to resend email confirmation to ' + '<em>' + addrText + '</em>?',
+            message: 'Are you sure that you want to resend email confirmation to ' + '<em>' + safeAddr + '</em>?',
             callback: function (confirmed) {
                 if (confirmed) {
                     self.client.update(self.profile(), email).done(function () {
                         $osf.growl(
-                            'Email confirmation resent to <em>' + addrText + '</em>',
-                            'You will receive a new confirmation email at <em>' + addrText  + '</em>.' +
-                            ' Please check your email to confirm this action.',
+                            'Email confirmation resent to <em>' + safeAddr + '</em>',
+                            'You will receive a new confirmation email at <em>' + safeAddr  + '</em>.' +
+                            ' Please log out of this account and check your email to confirm this action.',
                             'success');
                     });
                 }

@@ -12,10 +12,10 @@
     <div class="row">
       <div class="col-lg-12 large-12" style="padding-left: 30px">
          <div data-bind="foreach: {data: draft.pages, as: 'page'}">
-           <h3 data-bind="attr.id: page.id, text: page.title"></h3>
+           <h3 data-bind="attr: {id: page.id}, text: page.title"></h3>
              <div data-bind="foreach: {data: page.questions, as: 'question'}">
                <p>
-                 <strong data-bind="attr.id: question.id, text: question.title"></strong>:
+                 <strong data-bind="attr: {id: question.id}, text: question.title"></strong>:
                  <span data-bind="previewQuestion: $root.editor.context(question, $root.editor)"></span>
                </p>
              </div>
@@ -29,7 +29,7 @@
           <button id="register-submit" type="button" class="btn btn-success pull-right"
                   style="margin-left: 5px;"
                   data-bind="visible: draft.requiresApproval,
-                             click: draft.submitForReview,
+                             click: draft.submitForReview.bind(draft),
                              enable: editor.canSubmit">
             Submit for review
           </button>
@@ -39,7 +39,7 @@
         </span>
 
         <span data-bind="if: draft.metaSchema.name === 'Prereg Challenge'">
-          <button id="register-submit" type="button" class="btn btn-primary pull-right" data-toggle="tooltip" data-placement="top" title="Not eligible for the Pre-Registration Challenge" data-bind="click: draft.registerWithoutReview">Register without review</button>
+          <button id="register-submit" type="button" class="btn btn-primary pull-right" data-toggle="tooltip" data-placement="top" title="Not eligible for the Pre-Registration Challenge" data-bind="click: draft.registerWithoutReview.bind(draft)">Register without review</button>
         </span>
 
         <button id="register-submit" type="button" class="btn btn-success pull-right"

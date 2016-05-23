@@ -1,4 +1,4 @@
-<div id="nodesPrivacy" class="modal fade" div style="display: none;">
+<div id="nodesPrivacy" class="modal fade">
     <div class="modal-dialog modal-md">
         <div style="display: none;" data-bind="visible: true">
             <div class="modal-content">

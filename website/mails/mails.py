@@ -197,7 +197,7 @@ PENDING_REGISTRATION_ADMIN = Mail(
 )
 PENDING_REGISTRATION_NON_ADMIN = Mail(
     'pending_registration_non_admin',
-    subject='Request to end an embargo early for one of your projects.'
+    subject='Registration pending for one of your projects.'
 )
 PENDING_EMBARGO_TERMINATION_ADMIN = Mail(
     'pending_embargo_termination_admin',
@@ -205,7 +205,7 @@ PENDING_EMBARGO_TERMINATION_ADMIN = Mail(
 )
 PENDING_EMBARGO_TERMINATION_NON_ADMIN = Mail(
     'pending_embargo_termination_non_admin',
-    subject='Registration pending for one of your projects.'
+    subject='Request to end an embargo early for one of your projects.'
 )
 
 FILE_OPERATION_SUCCESS = Mail(

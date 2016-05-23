@@ -10,6 +10,10 @@ db['user'].create_index([
 ])
 
 db['user'].create_index([
+    ('external_accounts', ASCENDING),
+])
+
+db['user'].create_index([
     ('emails', ASCENDING),
     ('username', ASCENDING),
 ])

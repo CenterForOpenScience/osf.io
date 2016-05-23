@@ -109,7 +109,7 @@
                 <div>
                     <a data-bind="click: trackClick.bind($data, 'Create Account')" class="btn btn-primary" href="${web_url_for('index')}#signUp">Create an Account</a>
 
-                    <a data-bind="click: trackClick.bind($data, 'Learn More')" class="btn btn-primary" href="/getting-started/">Learn More</a>
+                    <a data-bind="click: trackClick.bind($data, 'Learn More')" class="btn btn-primary" href="http://help.osf.io" target="_blank" rel="noreferrer">Learn More</a>
                     <a data-bind="click: dismiss">Hide this message</a>
                 </div>
             </div>
@@ -183,16 +183,18 @@
                 isOnRootDomain: ${domain | sjson, n } === window.location.origin + '/',
                 cookieName: ${ cookie_name | sjson, n },
                 apiV2Prefix: ${ api_v2_base | sjson, n },
-                registerUrl: ${ api_url_for('register_user') | sjson, n},
+                registerUrl: ${ api_url_for('register_user') | sjson, n },
                 currentUser: {
                     id: ${ user_id | sjson, n },
                     locale: ${ user_locale | sjson, n },
                     timezone: ${ user_timezone | sjson, n },
-                    emailsToAdd: ${ user_email_verifications | sjson, n}
+                    entryPoint: ${ user_entry_point | sjson, n },
+                    emailsToAdd: ${ user_email_verifications | sjson, n }
                 },
-                popular: ${ popular_links_node | sjson, n},
-                newAndNoteworthy: ${ noteworthy_links_node | sjson, n},
-                confirmedEmailURL: ${ api_url_for('unconfirmed_email_add') | sjson, n}
+                popular: ${ popular_links_node | sjson, n },
+                newAndNoteworthy: ${ noteworthy_links_node | sjson, n },
+                confirmedEmailURL: ${ api_url_for('unconfirmed_email_add') | sjson, n }
+
             });
         </script>
 

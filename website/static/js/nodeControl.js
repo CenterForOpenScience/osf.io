@@ -5,45 +5,47 @@
 'use strict';
 
 var $ = require('jquery');
-var $osf = require('js/osfHelpers');
-var ko = require('knockout');
 var bootbox = require('bootbox');
-var Raven = require('raven-js');
 require('bootstrap-editable');
-require('knockout.punches');
-ko.punches.enableAll();
+var ko = require('knockout');
+var Raven = require('raven-js');
 
-var osfHelpers = require('js/osfHelpers');
+var $osf = require('js/osfHelpers');
+
+var iconmap = require('js/iconmap');
 var NodeActions = require('js/project.js');
 var NodesPrivacy = require('js/nodesPrivacy').NodesPrivacy;
-var iconmap = require('js/iconmap');
 
 /**
  * The ProjectViewModel, scoped to the project header.
  * @param {Object} data The parsed project data returned from the project's API url.
+ * @param {Object} options A set of configuration options for viewModel
+ * @param {Object} options.categories The CATEGORY_MAP of allowed category/ display values for nodes
  */
-var ProjectViewModel = function(data) {
+var ProjectViewModel = function(data, options) {
     var self = this;
+    self.categories = (options && options.categories) || {};
+    
     self._id = data.node.id;
     self.apiUrl = data.node.api_url;
-    self.dateCreated = new osfHelpers.FormattableDate(data.node.date_created);
-    self.dateModified = new osfHelpers.FormattableDate(data.node.date_modified);
-    self.dateForked = new osfHelpers.FormattableDate(data.node.forked_date);
+    self.dateCreated = new $osf.FormattableDate(data.node.date_created);
+    self.dateModified = new $osf.FormattableDate(data.node.date_modified);
+    self.dateForked = new $osf.FormattableDate(data.node.forked_date);
     self.parent = data.parent_node;
     self.doi = ko.observable(data.node.identifiers.doi);
     self.ark = ko.observable(data.node.identifiers.ark);
     self.idCreationInProgress = ko.observable(false);
     self.watchedCount = ko.observable(data.node.watched_count);
     self.userIsWatching = ko.observable(data.user.is_watching);
-    self.dateRegistered = new osfHelpers.FormattableDate(data.node.registered_date);
+    self.dateRegistered = new $osf.FormattableDate(data.node.registered_date);
     self.inDashboard = ko.observable(data.node.in_dashboard);
     self.dashboard = data.user.dashboard_id;
     self.userCanEdit = data.user.can_edit;
     self.userPermissions = data.user.permissions;
     self.node = data.node;
-    self.description = data.node.description;
+    self.description = ko.observable(data.node.description);
     self.title = data.node.title;
-    self.category = data.node.category;
+    self.categoryValue = ko.observable(data.node.category_short);
     self.isRegistration = data.node.is_registration;
     self.user = data.user;
     self.nodeIsPublic = data.node.is_public;
@@ -70,16 +72,15 @@ var ProjectViewModel = function(data) {
         return !!(self.user.username && (self.nodeIsPublic || self.user.has_read_permissions));
     });
 
-
     // Add icon to title
-    self.icon = '';
-    var category = data.node.category_short;
-    if (Object.keys(iconmap.componentIcons).indexOf(category) >=0 ){
-        self.icon = iconmap.componentIcons[category];
-    }
-    else {
-        self.icon = iconmap.projectIcons[category];
-    }
+    self.icon = ko.pureComputed(function() {
+        var category = self.categoryValue();
+        if (Object.keys(iconmap.componentIcons).indexOf(category) >=0 ){
+            return iconmap.componentIcons[category];
+        } else {
+            return iconmap.projectIcons[category];
+        }
+    });
 
     // Editable Title and Description
     if (self.userCanEdit) {
@@ -99,7 +100,7 @@ var ProjectViewModel = function(data) {
             success: function () {
                 document.location.reload(true);
             },
-            error: osfHelpers.handleEditableError,
+            error: $osf.handleEditableError,
             placement: 'bottom'
         };
 
@@ -123,7 +124,29 @@ var ProjectViewModel = function(data) {
             name: 'description',
             title: 'Edit Description',
             emptytext: 'No description',
-            emptyclass: 'text-muted'
+            emptyclass: 'text-muted',
+            value: self.description(),
+            success: function(response, newValue) {
+                newValue = response.newValue; // Update display to reflect changes, eg by sanitizer
+                self.description(newValue);
+                return {newValue: newValue};
+            }
+        }));
+
+        var categoryOptions = $.map(self.categories, function(display, value) {
+            return {value: value, text: display};
+        });
+        $('#nodeCategoryEditable').editable($.extend({}, editableOptions, {
+            type: 'select',
+            name: 'category',
+            title: 'Select a category',
+            value: self.categoryValue(),
+            source: categoryOptions,
+            success: function(response, newValue) {
+                newValue = response.newValue;
+                self.categoryValue(newValue);
+                return {newValue: newValue};
+            }
         }));
     }
 
@@ -137,10 +160,10 @@ var ProjectViewModel = function(data) {
             'toNodeID': self.dashboard,
             'pointerID': self._id
         };
-        osfHelpers.postJSON('/api/v1/pointer/', jsonData)
+        $osf.postJSON('/api/v1/pointer/', jsonData)
             .fail(function(data) {
                 self.inDashboard(false);
-                osfHelpers.handleJSONError(data);
+                $osf.handleJSONError(data);
         });
     };
     /**
@@ -149,11 +172,13 @@ var ProjectViewModel = function(data) {
     self.removeFromDashboard = function() {
         $('#removeDashboardFolder').tooltip('hide');
         self.inDashboard(false);
-        var deleteUrl = '/api/v1/folder/' + self.dashboard + '/pointer/' + self._id;
-        $.ajax({url: deleteUrl, type: 'DELETE'})
-            .fail(function() {
-                self.inDashboard(true);
-                osfHelpers.growl('Error', 'The project could not be removed', 'danger');
+        var deleteUrl = $osf.apiV2Url('collections/' + self.dashboard + '/relationships/linked_nodes/');
+        $osf.ajaxJSON('DELETE', deleteUrl, {
+            'data': {'data': [{'type':'linked_nodes', 'id': self._id}]},
+            'isCors': true
+        }).fail(function() {
+            self.inDashboard(true);
+            $osf.growl('Error', 'The project could not be removed', 'danger');
         });
     };
 
@@ -172,7 +197,7 @@ var ProjectViewModel = function(data) {
                 self.watchedCount(self.watchedCount() + 1);
             }
             watchUpdateInProgress = true;
-            osfHelpers.postJSON(
+            $osf.postJSON(
                 self.apiUrl + 'togglewatch/',
                 {}
             ).done(function (data) {
@@ -181,7 +206,7 @@ var ProjectViewModel = function(data) {
                 self.userIsWatching(data.watched);
                 self.watchedCount(data.watchCount);
             }).fail(
-                osfHelpers.handleJSONError
+                $osf.handleJSONError
             );
         }
     };
@@ -215,7 +240,7 @@ var ProjectViewModel = function(data) {
             title: 'Create identifiers',
             message: '<p class="overflow">' +
                 'Are you sure you want to create a DOI and ARK for this ' +
-                self.nodeType + '?',
+                $osf.htmlEscape(self.nodeType) + '?',
             callback: function(confirmed) {
                 if (confirmed) {
                     self.createIdentifiers();
@@ -245,7 +270,7 @@ var ProjectViewModel = function(data) {
                 'The DOI/ARK acquisition service may be down right now. ' +
                 'Please try again soon and/or contact ' +
                 '<a href="mailto: support@osf.io">support@osf.io</a>';
-            osfHelpers.growl('Error', message, 'danger');
+            $osf.growl('Error', message, 'danger');
             Raven.captureMessage('Could not create identifiers', {extra: {url: url, status: xhr.status}});
         }).always(function() {
             clearTimeout(timeout);
@@ -268,14 +293,14 @@ function NodeControl (selector, data, options) {
     self.selector = selector;
     self.$element = $(self.selector);
     self.data = data;
-    self.viewModel = new ProjectViewModel(self.data);
+    self.viewModel = new ProjectViewModel(self.data, options);
     self.options = $.extend({}, defaults, options);
     self.init();
 }
 
 NodeControl.prototype.init = function() {
     var self = this;
-    osfHelpers.applyBindings(self.viewModel, this.selector);
+    $osf.applyBindings(self.viewModel, this.selector);
     if (self.data.user.is_admin && !self.data.node.is_retracted) {
         new NodesPrivacy('#nodesPrivacy', self.data.node, function(nodesChanged, requestedEmbargoTermination) {
             // TODO: The goal here is to update the UI of the project dashboard to

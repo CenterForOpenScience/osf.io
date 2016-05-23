@@ -36,7 +36,7 @@
                     <div class="btn-group">
                     % if not node["is_public"]:
                         <button class="btn btn-default disabled">Private</button>
-                        % if 'admin' in user['permissions'] and not node['is_pending_registration'] and not node['is_pending_embargo'] and (not node['is_registration'] or (node['is_embargoed'] and not parent_node['exists'])):
+                        % if 'admin' in user['permissions'] and not (node['is_pending_registration'] or node['is_pending_embargo']) and not (node['is_embargoed'] and parent_node['exists']):
                         <a disabled data-bind="attr: {'disabled': false}, css: {'disabled': nodeIsPendingEmbargoTermination}" class="btn btn-default"  href="#nodesPrivacy" data-toggle="modal">
                           Make Public
 			  <!-- ko if: nodeIsPendingEmbargoTermination -->
@@ -180,14 +180,14 @@
                   <!-- /ko -->
                 </span>
                 <p>
-                Category: <span class="node-category">${node['category']}</span>
-                &nbsp;
-                <span data-bind="css: icon"></span>
+                    Category: <span id="nodeCategoryEditable">${node['category']}</span>
+                    <span data-bind="css: icon"></span>
                 </p>
 
                 % if (node['description']) or (not node['description'] and 'write' in user['permissions'] and not node['is_registration']):
                     <p>
-                    <span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">${node['description']}</span>
+                    <span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">
+                        ${node['description']}</span>
                     </p>
                 % endif
                 % if ('admin' in user['permissions'] or node['license'].get('name', 'No license') != 'No license'):
@@ -291,7 +291,7 @@
                             <span data-bind="text: chicago"></span>
                         <div data-bind="validationOptions: {insertMessages: false, messagesOnModified: false}, foreach: citations">
                             <!-- ko if: view() === 'view' -->
-                                <div class="f-w-xl m-t-md">{{name}}
+                                <div class="f-w-xl m-t-md"><span data-bind="text: name"></span>
                                     % if 'admin' in user['permissions'] and not node['is_registration']:
                                         <!-- ko ifnot: $parent.editing() -->
                                             <button class="btn btn-default btn-sm" data-bind="click: function() {edit($parent)}"><i class="fa fa-edit"></i> Edit</button>
@@ -425,7 +425,8 @@ ${parent.javascript_bottom()}
             hasChildren: ${ node['has_children'] | sjson, n },
             isRegistration: ${ node['is_registration'] | sjson, n },
             tags: ${ node['tags'] | sjson, n }
-        }
+        },
+        nodeCategories: ${ node_categories | sjson, n }
     });
 </script>
 
