@@ -237,7 +237,7 @@
                                    placeholder="Email" data-bind='value: inviteEmail' autofocus/>
                         </div>
                         <div class="form-group">
-                            <label data-bind="tooltip: {title: 'A view-only link can give unregistered users a preview of private components on the site'}" for="inviteUserLink">Send a view-only or public link</label>
+                            <label for="inviteUserLink">Send a view-only or public link <span data-bind=" tooltip: {title: 'This will allow you to send the invited contributor a view-only link to preview the project.'}" class="glyphicon glyphicon-question-sign"></span></label>
                             <table class="table">
                                 <th width="3%;">
 
