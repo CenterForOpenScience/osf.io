@@ -640,12 +640,20 @@ var LogPieces = {
         }
     },
 
-    comment_file: {
+    comment_location: {
         view: function(ctrl,logObject){
             var file = logObject.attributes.params.file;
-            if (file){ // skip param.isReturned as not having a file is expected at times
+            var wiki = logObject.attributes.params.wiki;
+            // skip param.isReturned as not having a file or wiki is expected at times
+            // Comment left on file
+            if (file){
                 return m('span', ['on ', m('a', {href: file.url}, file.name)]);
             }
+            // Comment left on wiki
+            if (wiki) {
+                return m('span', ['on wiki page ', m('a', {href: wiki.url}, wiki.name)]);
+            }
+            // Comment left on project
             return m('span', '');
         }
     }
