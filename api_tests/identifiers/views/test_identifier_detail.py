@@ -18,7 +18,7 @@ class TestIdentifierDetail(ApiTestCase):
 
         self.registration = RegistrationFactory(creator=self.user, is_public=True)
         self.identifier = IdentifierFactory(referent=self.registration)
-        self.url = '/{}identifiers/{}/'.format(API_BASE, self.identifier.value)
+        self.url = '/{}identifiers/{}/'.format(API_BASE, self.identifier._id)
 
         self.res = self.app.get(self.url)
         self.data = self.res.json['data']
@@ -39,4 +39,4 @@ class TestIdentifierDetail(ApiTestCase):
         assert_equal(self.data['attributes']['category'], self.identifier.category)
 
     def test_identifier_detail_returns_correct_value(self):
-        assert_equal(self.data['attributes']['identifier']['self'], self.identifier.value)
+        assert_equal(self.data['attributes']['value'], self.identifier.value)
