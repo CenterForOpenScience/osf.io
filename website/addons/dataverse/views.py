@@ -256,8 +256,10 @@ def _dataverse_root_folder(node_addon, auth, **kwargs):
     # versions of the dataset
     try:
         dataset.get_metadata('latest-published')
+        dataset_is_published = True
         dataset_draft_modified = dataset.get_state() == 'DRAFT'
     except VersionJsonNotFoundError:
+        dataset_is_published = False
         dataset_draft_modified = True
 
     return [rubeus.build_addon_root(
@@ -270,6 +272,7 @@ def _dataverse_root_folder(node_addon, auth, **kwargs):
         dataverse=dataverse.title,
         hasPublishedFiles=bool(published_files),
         dataverseIsPublished=dataverse.is_published,
+        datasetIsPublished=dataset_is_published,
         datasetDraftModified=dataset_draft_modified,
         version=version,
     )]

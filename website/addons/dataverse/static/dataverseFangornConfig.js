@@ -74,6 +74,7 @@ var _dataverseItemButtons = {
                     ];
                     tb.modal.update(modalContent, modalActions, m('h3.break-word.modal-title', 'Successfully published'));
                     item.data.dataverseIsPublished = true;
+                    item.data.datasetIsPublished = true;
                     item.data.datasetDraftModified = false;
                     item.data.hasPublishedFiles = item.children.length > 0;
                     item.data.version = item.data.hasPublishedFiles ? 'latest-published' : 'latest';
@@ -117,7 +118,7 @@ var _dataverseItemButtons = {
             var options = [
                 m('option', {selected: item.data.version === 'latest', value: 'latest'}, 'Draft')
             ];
-            if (item.data.dataverseIsPublished) {
+            if (item.data.datasetIsPublished) {
                 options.push(m('option', {selected: item.data.version === 'latest-published', value: 'latest-published'}, 'Published'));
             }
             buttons.push(
