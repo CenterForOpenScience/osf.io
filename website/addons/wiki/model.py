@@ -13,6 +13,7 @@ import markdown
 from markdown.extensions import codehilite, fenced_code, wikilinks
 from modularodm import fields
 
+from framework.mongo.utils import to_mongo_key
 from framework.forms.utils import sanitize
 from framework.guid.model import GuidStoredObject
 from framework.mongo import utils as mongo_utils
@@ -24,6 +25,7 @@ from website.addons.wiki.settings import WIKI_CHANGE_DATE
 from website.project.commentable import Commentable
 from website.project.model import Node
 from website.project.signals import write_permissions_revoked
+from website.util import api_v2_url
 
 from website.exceptions import NodeStateError
 
@@ -169,19 +171,31 @@ class NodeWikiPage(GuidStoredObject, Commentable):
     page_name = fields.StringField(validate=validate_page_name)
     version = fields.IntegerField()
     date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
-    is_current = fields.BooleanField()
     content = fields.StringField(default='')
 
     user = fields.ForeignField('user')
     node = fields.ForeignField('node')
 
+    # For Django compatibility
+    @property
+    def pk(self):
+        return self._id
+
+    @property
+    def is_current(self):
+        key = to_mongo_key(self.page_name)
+        if key in self.node.wiki_pages_current:
+            return self.node.wiki_pages_current[key] == self._id
+        else:
+            return False
+
     @property
     def deep_url(self):
-        return '{}wiki/{}/'.format(self.node.deep_url, self.page_name)
+        return '{}wiki/{}/'.format(self.node.deep_url, urllib.quote(self.page_name))
 
     @property
     def url(self):
-        return '{}wiki/{}/'.format(self.node.url, self.page_name)
+        return '{}wiki/{}/'.format(self.node.url, urllib.quote(self.page_name))
 
     @property
     def rendered_before_update(self):
@@ -203,6 +217,11 @@ class NodeWikiPage(GuidStoredObject, Commentable):
         key = mongo_utils.to_mongo_key(self.page_name)
         return key not in self.node.wiki_pages_current
 
+    @property
+    def absolute_api_v2_url(self):
+        path = '/wikis/{}/'.format(self._id)
+        return api_v2_url(path)
+
     def belongs_to_node(self, node_id):
         """Check whether the wiki is attached to the specified node."""
         return self.node._id == node_id
@@ -210,9 +229,9 @@ class NodeWikiPage(GuidStoredObject, Commentable):
     def get_extra_log_params(self, comment):
         return {'wiki': {'name': self.page_name, 'url': comment.get_comment_page_url()}}
 
-    # used by django and DRF - use v1 url since there are no v2 wiki routes
+    # used by django and DRF
     def get_absolute_url(self):
-        return '{}wiki/{}/'.format(self.node.absolute_url, urllib.quote(self.page_name))
+        return self.absolute_api_v2_url
 
     def html(self, node):
         """The cleaned HTML of the page"""
