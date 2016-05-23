@@ -56,14 +56,19 @@ class TestIdentifierList(ApiTestCase):
         assert_items_equal(categories_in_response, categories)
 
     def test_identifier_list_returns_correct_values(self):
-        categories = [identifier.value for identifier in self.all_identifiers]
-        categories_in_response = [identifier['attributes']['identifier']['self'] for identifier in self.data]
+        values = [identifier.value for identifier in self.all_identifiers]
+        values_in_response = [identifier['attributes']['value'] for identifier in self.data]
 
-        assert_items_equal(categories_in_response, categories)
+        assert_items_equal(values_in_response, values)
 
     def test_identifier_filter_by_category(self):
         IdentifierFactory(referent=self.registration, category='nopeid')
-        assert_equal(len(self.all_identifiers), 2)
+        identifiers_for_registration = Identifier.find(Q('referent', 'eq', self.registration))
+        assert_equal(len(identifiers_for_registration), 2)
+        assert_items_equal(
+            [identifier.category for identifier in identifiers_for_registration],
+            ['carpid', 'nopeid']
+        )
 
         filter_url = self.url + '?filter[category]=carpid'
         new_res = self.app.get(filter_url)
