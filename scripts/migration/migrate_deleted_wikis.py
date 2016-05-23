@@ -23,12 +23,11 @@ def migrate(targets, dry_run=True):
         for wiki in versions:
             if wiki in current:
                 updated_versions[wiki] = versions[wiki]
-        if not dry_run:
+        with TokuTransaction():
             node.wiki_pages_versions = updated_versions
             node.save()
-
-    if dry_run:
-        raise RuntimeError('Dry run, transaction rolled back.')
+            if dry_run:
+                raise RuntimeError('Dry run, transaction rolled back.')
 
 
 def main():
