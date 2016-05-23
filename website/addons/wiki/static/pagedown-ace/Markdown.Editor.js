@@ -2463,7 +2463,3 @@ var Range = ace.require('ace/range').Range;
     }
 
 })();
-$(function(){
-  $("wmd-help-button").attr("data-toggle","modal");
-  $("wmd-help-button").attr("data-target","#wiki-help-modal");
-});
