@@ -16,20 +16,20 @@
                             <div class="col-md-6">
                                 <div class="input-group m-b-sm">
                                     <input class='form-control'
-                                            data-bind="value:query"
-                                            placeholder='Search by name' autofocus/>
+                                           data-bind="value:query"
+                                           placeholder='Search by name' autofocus/>
                                     <span class="input-group-btn">
                                         <input type="submit" value="Search" class="btn btn-default">
                                     </span>
                                 </div>
                             </div>
                         </div>
-                    <hr />
+                        <hr />
                         <div class="row search-contributor-links">
                             <div class="col-md-12">
                                 <div>
                                     <!-- ko if:parentId -->
-                                        <a class="f-w-lg" data-bind="click:importFromParent, text:'Import contributors from ' + parentTitle"></a>
+                                    <a class="f-w-lg" data-bind="click:importFromParent, text:'Import contributors from ' + parentTitle"></a>
                                     <!-- /ko -->
                                 </div>
                             </div>
@@ -53,42 +53,42 @@
                                 <thead data-bind="visible: foundResults">
                                 </thead>
                                 <tbody data-bind="foreach:{data:results, as: 'contributor', afterRender:addTips}">
-                                    <tr data-bind="if:!($root.selected($data))">
-                                        <td class="p-r-sm osf-icon-td" >
-                                            <a
-                                                    class="btn btn-success contrib-button btn-mini"
-                                                    data-bind="visible: !contributor.added,
+                                <tr data-bind="if:!($root.selected($data))">
+                                    <td class="p-r-sm osf-icon-td" >
+                                        <a
+                                                class="btn btn-success contrib-button btn-mini"
+                                                data-bind="visible: !contributor.added,
                                                                click:$root.add.bind($root),
                                                                tooltip: {title: 'Add contributor'}"
                                                 ><i class="fa fa-plus"></i></a>
-                                            <div data-bind="visible: contributor.added,
+                                        <div data-bind="visible: contributor.added,
                                                             tooltip: {title: 'Already added'}"
                                                 ><div
-                                                    class="btn btn-default contrib-button btn-mini disabled"
-                                                    ><i class="fa fa-check"></i></div></div>
-                                        </td>
-                                        <td>
-                                            <!-- height and width are explicitly specified for faster rendering -->
-                                            <img data-bind="attr: {src: contributor.gravatar_url}" height=35 width=35 />
-                                        </td>
-                                        <td width="75%">
-                                            <a data-bind = "attr: {href: contributor.profile_url}" target="_blank">
-                                                <span data-bind= "text:contributor.fullname"></span>
-                                            </a><br>
+                                                class="btn btn-default contrib-button btn-mini disabled"
+                                                ><i class="fa fa-check"></i></div></div>
+                                    </td>
+                                    <td>
+                                        <!-- height and width are explicitly specified for faster rendering -->
+                                        <img data-bind="attr: {src: contributor.gravatar_url}" height=35 width=35 />
+                                    </td>
+                                    <td width="75%">
+                                        <a data-bind = "attr: {href: contributor.profile_url}" target="_blank">
+                                            <span data-bind= "text:contributor.fullname"></span>
+                                        </a><br>
 
 
                                                 <span data-bind="if: contributor.employment">
                                                     <span
-                                                        class = 'small'
-                                                        data-bind="text: contributor.employment">
+                                                            class = 'small'
+                                                            data-bind="text: contributor.employment">
                                                     </span><br>
                                                 </span>
 
 
                                                 <span data-bind="if: contributor.education">
                                                     <span
-                                                        class = 'small'
-                                                        data-bind= "text: contributor.education">
+                                                            class = 'small'
+                                                            data-bind= "text: contributor.education">
                                                     </span><br>
                                                 </span>
 
@@ -100,9 +100,9 @@
                                                     class='text-muted'
                                                     data-bind="visible: !contributor.registered">(unregistered)</span>
 
-                                        </td>
+                                    </td>
 
-                                    </tr>
+                                </tr>
 
 
                                 </tbody>
@@ -121,10 +121,10 @@
                                 <div data-bind="if: showLoading">
                                     <p class="text-muted">Searching contributors...</p>
                                 </div>
-                                    <div data-bind="if: noResults">
-                                        No results found. Try a more specific search or
-                                        <a href="#" data-bind="click:gotoInvite">add <strong><em data-bind="text: query"></em></strong> as an unregistered contributor</a>.
-                                    </div>
+                                <div data-bind="if: noResults">
+                                    No results found. Try a more specific search or
+                                    <a href="#" data-bind="click:gotoInvite">add <strong><em data-bind="text: query"></em></strong> as an unregistered contributor</a>.
+                                </div>
                             </div>
                         </div><!-- ./col-md -->
 
@@ -137,48 +137,48 @@
                             <!-- TODO: Duplication here: Put this in a KO template -->
                             <table class="table-condensed">
                                 <thead data-bind="visible: selection().length">
-                                    <th width="10%"></th>
-                                    <th width="15%"></th>
-                                    <th>Name</th>
-                                    <th>
-                                        Permissions
-                                        <i class="fa fa-question-circle permission-info"
-                                                data-toggle="popover"
-                                                data-title="Permission Information"
-                                                data-container="#addContributors"
-                                                data-html="true"
+                                <th width="10%"></th>
+                                <th width="15%"></th>
+                                <th>Name</th>
+                                <th>
+                                    Permissions
+                                    <i class="fa fa-question-circle permission-info"
+                                       data-toggle="popover"
+                                       data-title="Permission Information"
+                                       data-container="#addContributors"
+                                       data-html="true"
                                             ></i>
-                                    </th>
+                                </th>
                                 </thead>
                                 <tbody data-bind="foreach:{data:selection, as: 'contributor', afterRender:makeAfterRender()}">
-                                    <tr>
-                                        <td class="p-r-sm" class="osf-icon-td">
-                                            <a
-                                                    class="btn btn-default contrib-button btn-mini"
-                                                    data-bind="click:$root.remove.bind($root), tooltip: {title: 'Remove contributor'}"
+                                <tr>
+                                    <td class="p-r-sm" class="osf-icon-td">
+                                        <a
+                                                class="btn btn-default contrib-button btn-mini"
+                                                data-bind="click:$root.remove.bind($root), tooltip: {title: 'Remove contributor'}"
                                                 ><i class="fa fa-minus"></i></a>
-                                        </td>
-                                        <td>
-                                            <!-- height and width are explicitly specified for faster rendering -->
-                                            <img data-bind="attr: {src: contributor.gravatar_url || '/static/img/unreg_gravatar.png'}" height=35 width=35 />
-                                        </td>
+                                    </td>
+                                    <td>
+                                        <!-- height and width are explicitly specified for faster rendering -->
+                                        <img data-bind="attr: {src: contributor.gravatar_url || '/static/img/unreg_gravatar.png'}" height=35 width=35 />
+                                    </td>
 
-                                        <td>
-                                            <span   data-bind="text: contributor.fullname"></span>
+                                    <td>
+                                        <span   data-bind="text: contributor.fullname"></span>
 
                                             <span
                                                     class='text-muted'
                                                     data-bind="visible: !contributor.registered">(unregistered)</span>
-                                        </td>
+                                    </td>
 
-                                        <td>
-                                            <select class="form-control input-sm" data-bind="
+                                    <td>
+                                        <select class="form-control input-sm" data-bind="
                                                 options: $root.permissionList,
                                                 value: permission,
                                                 optionsText: 'text'">
-                                            </select>
-                                        </td>
-                                    </tr>
+                                        </select>
+                                    </td>
+                                </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -229,16 +229,69 @@
                         <div class="form-group">
                             <label for="inviteUserName">Full Name</label>
                             <input type="text" class='form-control' id="inviteName"
-                                placeholder="Full name" data-bind='value: inviteName, valueUpdate: "input"'/>
+                                   placeholder="Full name" data-bind='value: inviteName, valueUpdate: "input"'/>
                         </div>
                         <div class="form-group">
                             <label for="inviteUserEmail">Email</label>
                             <input type="email" class='form-control' id="inviteUserEmail"
-                                    placeholder="Email" data-bind='value: inviteEmail' autofocus/>
+                                   placeholder="Email" data-bind='value: inviteEmail' autofocus/>
                         </div>
-                         <div class="help-block">
-                            <p>We will notify the user that they have been added to your project.</p>
-                            <p class='text-danger' data-bind='text: inviteError'></p>
+                        <div class="form-group">
+                            <label data-bind="tooltip: {title: 'A view-only link can give unregistered users a preview of private components on the site'}" for="inviteUserLink">Send a view-only or public link</label>
+                            <table class="table">
+                                <th width="3%;">
+
+                                </th>
+                                <th>
+                                    Name
+                                </th>
+                                <th>
+                                    Visible Components
+                                </th>
+                                <tbody>
+                                <tr>
+                                    <td>
+                                        <input checked class="radio" type="radio" name="inviteLinkRadioGroup" data-bind="value: inviteLinks().absolute_url" />
+                                    </td>
+                                    <td>
+                                        <span><i>Public Link</i></span>
+                                    </td>
+                                    <td>
+                                        <span><i>Only Public Components</i></span>
+                                    </td>
+                                </tr>
+                                </tbody>
+                                <tbody data-bind="foreach: inviteLinks().private_links">
+                                <tr>
+                                    <td>
+                                        <input class="radio" type="radio" name="inviteLinkRadioGroup" data-bind="value: url" />
+                                    </td>
+                                    <td>
+                                        <span data-bind="text: name"></span>
+                                    </td>
+                                    <td>
+                                        <span data-bind="text: components"></span>
+                                    </td>
+                                </tr>
+                                </tbody>
+                                <tbody>
+                                    <tr>
+                                        <td>
+                                            
+                                        </td>
+                                        <td>
+                                            <a href="#addPrivateLink" data-toggle="modal" class="btn btn-success btn-sm m-l-md">
+                                                <i class="fa fa-plus"></i> Add View-Only Link
+                                            </a>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <div class="help-block">
+                                <p>We will notify the user that they have been added to your project.</p>
+                                <p class='text-danger' data-bind='text: inviteError'></p>
+                            </div>
                         </div>
                     </form>
                 </div><!-- end invite user page -->
@@ -252,8 +305,8 @@
                 <span data-bind="if: page() === 'invite'">
                     <button class="btn btn-primary" data-bind='click:selectWhom'>Back</button>
                     <button class='btn btn-success'
-                         data-bind='click: postInvite'
-                                    type="submit">Add</button>
+                            data-bind='click: postInvite'
+                            type="submit">Add</button>
                 </span>
 
                 <span data-bind="if:selection().length && page() == 'whom'">
