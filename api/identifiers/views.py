@@ -25,7 +25,7 @@ class IdentifierList(JSONAPIBaseView, generics.ListAPIView, RegistrationMixin, O
 
    ##Identifier Attributes
 
-    OSF License entities have the "licenses" `type`.
+    OSF Identifier entities have the "identifiers" `type`.
 
         name           type                   description
         ----------------------------------------------------------------------------
