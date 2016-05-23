@@ -70,11 +70,11 @@
                             % endif
                         % endif
 
-                        % if not node['is_registration'] and not node['anonymous']:
+                        % if not node['is_registration'] and not private_link:
                             <li><a href="${node['url']}registrations/">Registrations</a></li>
                         % endif
 
-                        % if not node['anonymous']:
+                        % if not private_link:
                             <li><a href="${node['url']}forks/">Forks</a></li>
                         %endif
                         
