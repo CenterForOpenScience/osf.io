@@ -112,7 +112,7 @@
                     % if 'admin' in user['permissions']: 
                         <div>
                             <br>
-                            <button type="button" id="registrationCancelButton" class="btn btn-danger" data-toggle="modal" data-target="#registrationCancel">
+                            <button type="button" id="registrationCancelButton" class="btn btn-danger" data-toggle="modal" data-target="#registrationCancel" text-case="sentence">
                                 Cancel Registration
                             </button>
                         </div>
@@ -144,7 +144,7 @@
                 % if 'admin' in user['permissions']:
                         <div>
                             <br>
-                            <button type="button" id="registrationCancelButton" class="btn btn-danger" data-toggle="modal" data-target="#registrationCancel">
+                            <button type="button" id="registrationCancelButton" class="btn btn-danger" data-toggle="modal" data-target="#registrationCancel" text-case="sentence">
                                 Cancel Registration
                             </button>
                         </div>
