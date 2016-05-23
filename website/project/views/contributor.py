@@ -191,8 +191,11 @@ def deserialize_contributors(node, user_dicts, auth, validate=False):
                 given_name=fullname,
                 email=email)
             contributor.save()
+
+            contributor.inviteLink = contrib_dict['inviteLink']
             unreg_contributor_added.send(node, contributor=contributor,
                 auth=auth)
+            del contributor.inviteLink
 
         contribs.append({
             'user': contributor,
