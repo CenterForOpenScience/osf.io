@@ -16,6 +16,7 @@ from website.addons.dataverse import client
 from website.addons.dataverse.model import DataverseProvider
 from website.addons.dataverse.settings import DEFAULT_HOSTS
 from website.addons.dataverse.serializer import DataverseSerializer
+from dataverse.exceptions import VersionJsonNotFoundError
 from website.oauth.models import ExternalAccount
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
@@ -255,10 +256,8 @@ def _dataverse_root_folder(node_addon, auth, **kwargs):
     # versions of the dataset
     try:
         dataset.get_metadata('latest-published')
-        dataset_is_published = True
         dataset_draft_modified = dataset.get_state() == 'DRAFT'
-    except dataverse.exceptions.VersionJsonNotFoundError:
-        dataset_is_published = False
+    except VersionJsonNotFoundError:
         dataset_draft_modified = True
 
     return [rubeus.build_addon_root(
