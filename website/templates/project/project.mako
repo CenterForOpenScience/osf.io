@@ -20,10 +20,12 @@
                         </h2>
                     % endif
                 % endif
-                <h2 class="node-title">
-                    % if node['institution']['name'] and enable_institutions and not node['anonymous']:
-                        <a href="/institutions/${node['institution']['id']}"><img class="img-circle" height="75" width="75" id="instLogo" src="${node['institution']['logo_path']}"></a>
-                    % endif
+
+                % if node['institutions'] != [] and enable_institutions and not node['anonymous']:
+                    <div id="instLogo"></div>
+                % endif
+
+                <h2 class="node-title" style="float: left;">
                     <span id="nodeTitleEditable" class="overflow">${node['title']}</span>
                 </h2>
             </div>
@@ -116,16 +118,29 @@
                 % endif
                 </div>
                 % if enable_institutions and not node['anonymous']:
-                    % if ('admin' in user['permissions'] and not node['is_registration']) and (node['institution']['id'] or len(user['institutions']) != 0):
-                        <a class="link-dashed" href="${node['url']}settings/#configureInstitutionAnchor" id="institution">Affiliated Institution:</a>
-                        % if node['institution']['id']:
-                            <a href="/institutions/${node['institution']['id']}">${node['institution']['name']}</a>
+                    % if ('admin' in user['permissions'] and not node['is_registration']) and (len(node['institutions']) != 0 or len(user['institutions']) != 0):
+                        <a class="link-dashed" href="${node['url']}settings/#configureInstitutionAnchor" id="institution">Affiliated Institutions:</a>
+                        % if node['institutions'] != []:
+                            % for inst in node['institutions']:
+                                % if inst != node['institutions'][-1]:
+                                    <span><a href="/institutions/${inst['id']}">${inst['name']}</a>, </span>
+                                % else:
+                                    <a href="/institutions/${inst['id']}">${inst['name']}</a>
+                                % endif
+                            % endfor
                         % else:
                             <span> None </span>
                         % endif
                     % endif
-                    % if not ('admin' in user['permissions'] and not node['is_registration']) and node['institution']['id']:
-                        Affiliated institution: <a href="/institutions/${node['institution']['id']}">${node['institution']['name']}</a>
+                    % if not ('admin' in user['permissions'] and not node['is_registration']) and node['institutions'] != []:
+                        Affiliated institutions:
+                        % for inst in node['institutions']:
+                            % if inst != node['institutions'][-1]:
+                                <span><a href="/institutions/${inst['id']}">${inst['name']}</a>, </span>
+                            % else:
+                                <a href="/institutions/${inst['id']}">${inst['name']}</a>
+                            % endif
+                        % endfor
                     % endif
                 % endif
                 % if node['is_fork']:
@@ -418,12 +433,13 @@ ${parent.javascript_bottom()}
     window.contextVars = $.extend(true, {}, window.contextVars, {
         currentUser: {
             canComment: ${ user['can_comment'] | sjson, n },
-            canEdit: ${ user['can_edit'] | sjson, n }
+            canEdit: ${ user['can_edit'] | sjson, n },
         },
         node: {
             hasChildren: ${ node['has_children'] | sjson, n },
             isRegistration: ${ node['is_registration'] | sjson, n },
-            tags: ${ node['tags'] | sjson, n }
+            tags: ${ node['tags'] | sjson, n },
+            institutions: ${node['institutions'] | sjson, n},
         },
         nodeCategories: ${ node_categories | sjson, n }
     });

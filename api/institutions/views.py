@@ -1,5 +1,6 @@
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
+from rest_framework import exceptions
 from rest_framework import status
 from rest_framework.response import Response
 
@@ -8,18 +9,24 @@ from modularodm import Q
 from framework.auth.oauth_scopes import CoreScopes
 
 from website.models import Node, User, Institution
+from website.util import permissions as osf_permissions
 
 from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.serializers import JSONAPISerializer
-from api.base.utils import get_object_or_error
+from api.base.utils import get_object_or_error, get_user_auth
+from api.base.parsers import (
+    JSONAPIRelationshipParser,
+    JSONAPIRelationshipParserForRegularJSON,
+)
+from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.nodes.serializers import NodeSerializer
 from api.users.serializers import UserSerializer
 
-from .authentication import InstitutionAuthentication
-from .serializers import InstitutionSerializer
-
+from api.institutions.authentication import InstitutionAuthentication
+from api.institutions.serializers import InstitutionSerializer, InstitutionNodesRelationshipSerializer
+from api.institutions.permissions import UserIsAffiliated
 
 class InstitutionMixin(object):
     """Mixin with convenience method get_institution
@@ -29,12 +36,11 @@ class InstitutionMixin(object):
 
     def get_institution(self):
         inst = get_object_or_error(
-            Node,
-            Q('institution_id', 'eq', self.kwargs[self.institution_lookup_url_kwarg]),
-            display_name='institution',
-            allow_institution=True
+            Institution,
+            self.kwargs[self.institution_lookup_url_kwarg],
+            display_name='institution'
         )
-        return Institution(inst)
+        return inst
 
 
 class InstitutionList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
@@ -167,7 +173,7 @@ class InstitutionNodeList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
     def get_queryset(self):
         inst = self.get_institution()
         query = self.get_query_from_request()
-        return Node.find_by_institution(inst, query)
+        return Node.find_by_institutions(inst, query)
 
 
 class InstitutionUserList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView, InstitutionMixin):
@@ -233,5 +239,89 @@ class InstitutionRegistrationList(InstitutionNodeList):
     def get_queryset(self):
         inst = self.get_institution()
         query = self.get_query_from_request()
-        nodes = list(Node.find_by_institution(inst, query))
+        nodes = Node.find_by_institutions(inst, query)
         return [node for node in nodes if not node.is_retracted]
+
+class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIView, generics.CreateAPIView, InstitutionMixin):
+    """ Relationship Endpoint for Institution -> Nodes Relationship
+
+    Used to set, remove, update and retrieve the affiliated_institution of nodes with this institution
+
+    ##Actions
+
+    ###Create
+
+        Method:        POST
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": [{
+                           "type": "nodes",   # required
+                           "id": <node_id>   # required
+                         }]
+                       }
+        Success:       201
+
+    This requires admin permissions on the nodes requested and for the user making the request to
+    have the institution affiliated in their account.
+
+    ###Destroy
+
+        Method:        DELETE
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": [{
+                           "type": "nodes",   # required
+                           "id": <node_id>   # required
+                         }]
+                       }
+        Success:       204
+
+    This requires admin permissions in the nodes requested.
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        UserIsAffiliated
+    )
+    required_read_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.NULL]
+    serializer_class = InstitutionNodesRelationshipSerializer
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+
+    view_category = 'institutions'
+    view_name = 'institution-relationships-nodes'
+
+    def get_object(self):
+        inst = self.get_institution()
+        auth = get_user_auth(self.request)
+        nodes = [node for node in Node.find_by_institutions(inst, Q('is_registration', 'eq', False) & Q('is_deleted', 'ne', True)) if node.is_public or node.can_view(auth)]
+        ret = {
+            'data': nodes,
+            'self': inst
+        }
+        self.check_object_permissions(self.request, ret)
+        return ret
+
+    def perform_destroy(self, instance):
+        data = self.request.data['data']
+        user = self.request.user
+        ids = [datum['id'] for datum in data]
+        nodes = []
+        for id_ in ids:
+            node = Node.load(id_)
+            if not node.has_permission(user, osf_permissions.ADMIN):
+                raise exceptions.PermissionDenied(detail='Admin permission on node {} required'.format(id_))
+            nodes.append(node)
+
+        for node in nodes:
+            node.remove_affiliated_institution(inst=instance['self'], user=user)
+            node.save()
+
+    def create(self, *args, **kwargs):
+        try:
+            ret = super(InstitutionNodesRelationship, self).create(*args, **kwargs)
+        except RelationshipPostMakesNoChanges:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return ret

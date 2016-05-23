@@ -150,6 +150,14 @@ class Institution(object):
         return absolute_reverse('institutions:institution-detail', kwargs={'institution_id': self._id})
 
     @property
+    def nodes_url(self):
+        return self.absolute_api_v2_url + 'nodes/'
+
+    @property
+    def nodes_relationship_url(self):
+        return self.absolute_api_v2_url + 'relationships/nodes/'
+
+    @property
     def logo_path(self):
         if self.logo_name:
             return '/static/img/institutions/{}'.format(self.logo_name)
