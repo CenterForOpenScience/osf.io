@@ -757,7 +757,6 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
 
     if (item.data.provider === "dataverse") {
         item.parent().data.datasetDraftModified = true;
-        
     }
 
     treebeard.redraw();
