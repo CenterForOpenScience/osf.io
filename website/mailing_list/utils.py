@@ -401,7 +401,7 @@ def log_message(message, **kwargs):
         sending_user=sender,
     ).save()
 
-def unsubscribe_user_hook(unsub, mailing_list):
+def unsubscribe_user_hook(unsub=None, mailing_list=None):
     """ Hook triggered by MailGun when user unsubscribes.
     See `Unsubscribes Webhook` below https://documentation.mailgun.com/user_manual.html#tracking-unsubscribes
     for possible kwargs
