@@ -53,6 +53,7 @@
     "embargo_cancelled":    "${user} cancelled embargoed registration of ${node}",
     "embargo_completed":    "${user} completed embargo of ${node}",
     "embargo_completed_no_user": "Embargo for ${node} completed",
+    "embargo_terminated": "Embargo for ${node} ended",
     "retraction_initiated":     "${user} initiated withdrawal of registration of ${node}",
     "retraction_initiated_no_user": "A withdrawal of registration of ${node} is proposed",
     "retraction_approved":  "${user} approved withdrawal of registration of ${node}",
