@@ -21,6 +21,7 @@
                         'has-error': password() && !password.isValid(),
                         'has-success': password() && password.isValid()
                     }"
+                style="margin-bottom: 5px"
             >
                 <div>
                     <input
@@ -36,13 +37,13 @@
                                 blur: trim.bind($data, password)
                             }"
                     >
-                    <p class="help-block" data-bind="validationMessage: password" style="display: none;"></p>
                 </div>
             </div>
             <div class="progress create-password">
                 <div class="progress-bar" role="progressbar" data-bind="attr: passwordComplexityBar"></div>
             </div>
             <p class="help-block" data-bind="text: passwordFeedback"></p>
+            <p class="help-block" data-bind="validationMessage: password" style="display: none;"></p>
             <div
                 class="form-group"
                 data-bind="
