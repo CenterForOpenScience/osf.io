@@ -105,7 +105,7 @@ def create_list(node_id):
 
     members_list = []
     members_list = jsonify_users_list(node.contributors, unsubs=get_unsubscribes(node))
-    members_list[-1].append({'address': 'mailing_list_robot@osf.io', 'subscribed': True})  # Routing robot
+    members_list[-1].append({'address': address('mailing_list_robot'), 'subscribed': True})  # Routing robot
 
     update_multiple_users_in_list(node_id, members_list)
 
