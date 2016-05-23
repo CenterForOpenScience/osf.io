@@ -156,6 +156,10 @@
         <div class="alert alert-info">This ${node['node_type']} is being viewed through a private, view-only link. Anyone with the link can view this project. Keep the link safe.</div>
     % endif
 
+    % if user['invitation'] and not user['is_contributor']:
+        <div class="alert alert-info">You have been added by ${user['invitation']["reffererName"]} as a contributor to ${user['invitation']["projectName"]}. Click <a class="link-solid" href="${user['invitation']['claimUrl']}">here</a>  to claim your account.</div>
+    % endif
+
     % if disk_saving_mode:
         <div class="alert alert-info"><strong>NOTICE: </strong>Forks, registrations, and uploads will be temporarily disabled while the OSF undergoes a hardware upgrade. These features will return shortly. Thank you for your patience.</div>
     % endif
