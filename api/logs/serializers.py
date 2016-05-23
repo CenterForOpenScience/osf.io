@@ -65,6 +65,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     updated_fields = ser.DictField(read_only=True)
     urls = ser.DictField(read_only=True)
     version = ser.CharField(read_only=True)
+    wiki = ser.DictField(read_only=True)
 
     def get_params_node(self, obj):
         node_id = obj.get('node', None)
