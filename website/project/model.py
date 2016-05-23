@@ -3790,10 +3790,12 @@ class DraftRegistrationLog(StoredObject):
     field - _id - primary key
     field - date - date of the action took place
     field - action - simple action to track what happened
+    field - user - user who did the action
     """
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
     date = fields.DateTimeField(default=datetime.datetime.utcnow, index=True)
     action = fields.StringField(index=True)
+    user = fields.ForeignField('user')
 
     SUBMITTED = 'submitted'
     REGISTERED = 'registered'
@@ -3801,7 +3803,8 @@ class DraftRegistrationLog(StoredObject):
     REJECTED = 'rejected'
 
     def __repr__(self):
-        return ('<DraftRegistrationLog({self.action!r}, date={self.date!r}) '
+        return ('<DraftRegistrationLog({self.action!r}, date={self.date!r}), '
+                'user={self.user!r} '
                 'with id {self._id!r}>').format(self=self)
 
 
@@ -3950,7 +3953,7 @@ class DraftRegistration(StoredObject):
         )
         approval.save()
         self.approval = approval
-        self.add_status_log(DraftRegistrationLog.SUBMITTED)
+        self.add_status_log(initiated_by, DraftRegistrationLog.SUBMITTED)
         if save:
             self.save()
 
@@ -3964,22 +3967,22 @@ class DraftRegistration(StoredObject):
             data=self.registration_metadata
         )
         self.registered_node = register
-        self.add_status_log(DraftRegistrationLog.REGISTERED)
+        self.add_status_log(auth.user, DraftRegistrationLog.REGISTERED)
         if save:
             self.save()
         return register
 
     def approve(self, user):
         self.approval.approve(user)
-        self.add_status_log(DraftRegistrationLog.APPROVED)
+        self.add_status_log(user, DraftRegistrationLog.APPROVED)
         self.approval.save()
 
     def reject(self, user):
         self.approval.reject(user)
-        self.add_status_log(DraftRegistrationLog.REJECTED)
+        self.add_status_log(user, DraftRegistrationLog.REJECTED)
         self.approval.save()
 
-    def add_status_log(self, action):
-        log = DraftRegistrationLog(action=action)
+    def add_status_log(self, user, action):
+        log = DraftRegistrationLog(action=action, user=user)
         log.save()
         self.status_logs.append(log)
