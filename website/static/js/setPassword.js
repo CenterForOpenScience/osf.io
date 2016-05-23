@@ -113,9 +113,17 @@ var ViewModel = function(passwordViewType, submitUrl, campaign, redirectUrl) {
         });
 
         self.password.extend({
-            notEqual: {
-                params: self.email1,
-                message: 'Your password cannot be the same as your username.'
+            validation: {
+                validator: function(val, other) {
+                    if (String(val).toLowerCase() === String(other).toLowerCase()) {
+                        self.typedPassword(' ');
+                        return false;
+                    } else {
+                        return true;
+                    }
+                },
+                'message': 'Your password cannot be the same as your username.',
+                params: self.email1
             }
         });
 
