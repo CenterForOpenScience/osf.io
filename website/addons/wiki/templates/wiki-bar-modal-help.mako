@@ -3,11 +3,11 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true"></span>&times;</button>
-                    <h3 class="modal-title">Wiki Syntax Help</h3>
+                    <h3 class="modal-title">Wiki syntax help</h3>
                 </div>
                 <div class="modal-body">
                   <p>
-                    Wiki uses the Markdown syntax. This gives you many options, but can be very simple as well. To see more information and examples go to our <a href="http://help.osf.io/m/collaborating/l/524109-using-the-wiki">guides</a>
+                    Wiki uses the Markdown syntax. This gives you many options but can be very simple as well. To see more information and examples go to markdown <a href="https://daringfireball.net/projects/markdown/">guides.</a>
                   </p>
                 </div>
                 <div class="modal-footer">
