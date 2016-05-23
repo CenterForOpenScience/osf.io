@@ -44,12 +44,14 @@ var ViewModel = function(passwordViewType, submitUrl, campaign, redirectUrl) {
 
     self.passwordComplexity = ko.pureComputed(function() {
         if (self.typedPassword()) {
-            return self.passwordInfo().score;
+            return self.passwordInfo().score + 1;
+        } else {
+            return 0;
         }
     });
 
     self.passwordComplexityBar = ko.computed(function() {
-        return $osf.valueProgressBar(self.passwordComplexity());
+        return $osf.valueProgressBar[self.passwordComplexity()];
     });
 
     self.password = ko.observable('').extend({
