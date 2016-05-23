@@ -91,8 +91,7 @@ class IdentifierDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
     serializer_class = IdentifierSerializer
     view_category = 'identifiers'
-    view_name = 'node-identifier-detail'
+    view_name = 'identifier-detail'
 
     def get_object(self):
-        identifier = self.kwargs['node_identifier']
-        return Identifier.find_one(Q('value', 'eq', identifier))
+        return Identifier.load(self.kwargs['identifier_id'])
