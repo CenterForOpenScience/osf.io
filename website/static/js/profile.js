@@ -729,7 +729,6 @@ SocialViewModel.prototype.submit = function() {
         );
     } else {
         this.showMessages(true);
-
     }
 };
 
