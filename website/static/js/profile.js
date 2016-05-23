@@ -920,7 +920,7 @@ var JobViewModel = function() {
         trimmed: true,
         required: {
             onlyIf: function() {
-               return !!self.department() || !!self.title();
+               return !!self.department() || !!self.title() || !!self.startYear() || !!self.endYear();
             },
             message: 'Institution/Employer required'
         }
@@ -974,7 +974,7 @@ var SchoolViewModel = function() {
         trimmed: true,
         required: {
             onlyIf: function() {
-                return !!self.department() || !!self.degree();
+                return !!self.department() || !!self.degree() || !!self.startYear() || !!self.endYear();
             },
             message: 'Institution required'
         }
