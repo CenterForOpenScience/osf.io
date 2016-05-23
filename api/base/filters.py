@@ -368,7 +368,7 @@ class ListFilterMixin(FilterMixin):
         if isinstance(field, ser.SerializerMethodField):
             return_val = [
                 item for item in default_queryset
-                if self.FILTERS[params['op']](self.get_serializer_method(field_name)(item), params['value'])
+                if self.FILTERS[params['op']](self.get_serializer_method(field_name)(item), int(params['value']))
             ]
         elif isinstance(field, ser.CharField):
             return_val = [
