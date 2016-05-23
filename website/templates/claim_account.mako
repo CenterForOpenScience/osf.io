@@ -40,7 +40,7 @@
                 </div>
             </div>
             <div class="progress create-password">
-                <div class="progress-bar progress-bar-success" role="progressbar" data-bind="attr: passwordComplexityBar"></div>
+                <div class="progress-bar" role="progressbar" data-bind="attr: passwordComplexityBar"></div>
             </div>
             <p class="help-block" data-bind="text: passwordFeedback"></p>
             <div
