@@ -111,11 +111,7 @@ var Range = ace.require('ace/range').Range;
         redo: {
             win: 'Ctrl-Y|Ctrl-Shift-Z',
             mac: 'Command-Y|Command-Shift-Z',
-        },
-        help: {
-          win: 'Ctrl-U',
-          mac: 'Command-U',
-        },
+        }
     };
 
 
