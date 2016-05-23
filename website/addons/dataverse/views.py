@@ -252,6 +252,7 @@ def _dataverse_root_folder(node_addon, auth, **kwargs):
     }
 
     # Get the dataverse host
+    # (stored in oauth_key because dataverse doesn't use that)
     dataverse_host = node_addon.external_account.oauth_key
 
     return [rubeus.build_addon_root(
