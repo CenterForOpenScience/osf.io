@@ -30,14 +30,17 @@ class IdentifierList(JSONAPIBaseView, generics.ListAPIView, RegistrationMixin, O
         name           type                   description
         ----------------------------------------------------------------------------
         category       string                 e.g. 'ark', 'doi'
-        referent       link                   object to which the identifier points
         value          string                 the identifier value itself
-
 
     ##Links
 
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+        self: this identifier's detail page
 
+    ##Relationships
+
+    ###Referent
+
+    The identifier is refers to this node.
 
     ##Actions
 
@@ -77,9 +80,31 @@ class IdentifierList(JSONAPIBaseView, generics.ListAPIView, RegistrationMixin, O
 
 
 class IdentifierDetail(JSONAPIBaseView, generics.RetrieveAPIView):
-    """Identifiers detail for the requested identifier. Read only
+    """List of identifiers for a specified node. *Read-only*.
 
-    Detail for any identifier attached to a node, including a link back to the node.
+
+   ##Identifier Attributes
+
+    OSF Identifier entities have the "identifiers" `type`.
+
+        name           type                   description
+        ----------------------------------------------------------------------------
+        category       string                 e.g. 'ark', 'doi'
+        value          string                 the identifier value itself
+
+    ##Links
+
+        self: this identifier's detail page
+
+    ##Relationships
+
+    ###Referent
+
+    The identifier is refers to this node.
+
+
+    #This Request/Response
+
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
