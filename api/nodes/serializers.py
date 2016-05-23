@@ -127,8 +127,13 @@ class NodeSerializer(JSONAPISerializer):
     )
 
     forked_from = RelationshipField(
-        related_view='nodes:node-detail',
+        related_view=lambda n: 'registrations:registration-detail' if getattr(n, 'is_registration', False) else 'nodes:node-detail',
         related_view_kwargs={'node_id': '<forked_from_id>'}
+    )
+
+    forks = RelationshipField(
+        related_view='nodes:node-forks',
+        related_view_kwargs={'node_id': '<pk>'}
     )
 
     node_links = RelationshipField(
@@ -275,6 +280,30 @@ class NodeDetailSerializer(NodeSerializer):
     id = IDField(source='_id', required=True)
 
 
+class NodeForksSerializer(NodeSerializer):
+
+    category_choices = Node.CATEGORY_MAP.items()
+    category_choices_string = ', '.join(["'{}'".format(choice[0]) for choice in category_choices])
+
+    title = ser.CharField(required=False)
+    category = ser.ChoiceField(read_only=True, choices=category_choices, help_text="Choices: " + category_choices_string)
+    forked_date = ser.DateTimeField(read_only=True)
+
+    def create(self, validated_data):
+        node = validated_data.pop('node')
+        fork_title = validated_data.pop('title', 'Fork of ')
+        request = self.context['request']
+        auth = get_user_auth(request)
+        fork = node.fork_node(auth, title=fork_title)
+
+        try:
+            fork.save()
+        except ValidationValueError as e:
+            raise InvalidModelValueError(detail=e.message)
+
+        return fork
+
+
 class NodeContributorsSerializer(JSONAPISerializer):
     """ Separate from UserSerializer due to necessity to override almost every field as read only
     """
@@ -356,6 +385,8 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
         try:
             node.update_contributor(contributor, permission, visible, auth, save=True)
         except NodeStateError as e:
+            raise exceptions.ValidationError(detail=e.message)
+        except ValueError as e:
             raise exceptions.ValidationError(detail=e.message)
         contributor.permission = osf_permissions.reduce_permissions(node.get_permissions(contributor))
         contributor.bibliographic = node.get_visible(contributor)

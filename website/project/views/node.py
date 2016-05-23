@@ -43,6 +43,7 @@ from website.project.licenses import serialize_node_license_record
 from website.util.sanitize import strip_html
 from website.util import rapply
 
+
 r_strip_html = lambda collection: rapply(collection, strip_html)
 logger = logging.getLogger(__name__)
 
@@ -54,6 +55,7 @@ def edit_node(auth, node, **kwargs):
     edited_field = post_data.get('name')
     value = post_data.get('value', '')
 
+    new_val = None
     if edited_field == 'title':
         try:
             node.set_title(value, auth=auth)
@@ -62,10 +64,24 @@ def edit_node(auth, node, **kwargs):
                 http.BAD_REQUEST,
                 data=dict(message_long=e.message)
             )
+        new_val = node.title
     elif edited_field == 'description':
         node.set_description(value, auth=auth)
-    node.save()
-    return {'status': 'success'}
+        new_val = node.description
+    elif edited_field == 'category':
+        node.category = new_val = value
+
+    try:
+        node.save()
+    except ValidationValueError as e:
+        raise HTTPError(
+            http.BAD_REQUEST,
+            data=dict(message_long=e.message)
+        )
+    return {
+        'status': 'success',
+        'newValue': new_val  # Used by x-editable  widget to reflect changes made by sanitizer
+    }
 
 
 ##############################################################################
@@ -536,7 +552,7 @@ def togglewatch_post(auth, node, **kwargs):
 @must_have_permission(WRITE)
 def update_node(auth, node, **kwargs):
     # in node.update() method there is a key list node.WRITABLE_WHITELIST only allow user to modify
-    # category, title, and discription which can be edited by write permission contributor
+    # category, title, and description which can be edited by write permission contributor
     data = r_strip_html(request.get_json())
     try:
         updated_field_names = node.update(data, auth=auth)
@@ -1003,8 +1019,10 @@ def get_forks(auth, node, **kwargs):
 
 @must_be_contributor_or_public
 def get_registrations(auth, node, **kwargs):
-    registrations = [n for n in reversed(node.registrations_all) if not n.is_deleted]  # get all registrations, including archiving
-    return _render_nodes(registrations, auth)
+    # get all undeleted registrations, including archiving
+    sorted_registrations = node.registrations_all.sort('-registered_date')
+    undeleted_registrations = [n for n in sorted_registrations if not n.is_deleted]
+    return _render_nodes(undeleted_registrations, auth)
 
 
 @must_be_valid_project

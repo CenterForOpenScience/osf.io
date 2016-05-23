@@ -29,7 +29,7 @@
                             <div class="col-md-12">
                                 <div>
                                     <!-- ko if:parentId -->
-                                        <a class="f-w-lg" data-bind="click:importFromParent, html:'Import contributors from <i>' + parentTitle + '</i>'"></a>
+                                        <a class="f-w-lg" data-bind="click:importFromParent, text:'Import contributors from ' + parentTitle"></a>
                                     <!-- /ko -->
                                 </div>
                             </div>
@@ -192,14 +192,13 @@
                     <div>
                         Adding contributor(s)
                         <span data-bind="text:addingSummary()"></span>
-                        to component
-                        <span data-bind="text:title"></span>.
+                        to <span data-bind="text:title"></span>.
                     </div>
 
                     <hr />
 
                     <div style="margin-bottom:10px;">
-                        Select any other components to which you would like to apply these settings.
+                        You can also add the contributor(s) to any components on which you are an admin.
                     </div>
 
                     <div>

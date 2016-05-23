@@ -280,7 +280,7 @@ def generate_metadata(file_trees, selected_files, node_index):
     uploader_types = {
         ('q_' + selected_file['name']): {
             'value': fake.word(),
-            'extra': {
+            'extra': [{
                 'sha256': sha256,
                 'viewUrl': '/project/{0}/files/osfstorage{1}'.format(
                     node_index[sha256],
@@ -288,7 +288,7 @@ def generate_metadata(file_trees, selected_files, node_index):
                 ),
                 'selectedFileName': selected_file['name'],
                 'nodeId': node_index[sha256]
-            }
+            }]
         }
         for sha256, selected_file in selected_files.items()
     }
@@ -298,7 +298,7 @@ def generate_metadata(file_trees, selected_files, node_index):
             'value': {
                 name_factory(): {
                     'value': fake.word(),
-                    'extra': {
+                    'extra': [{
                         'sha256': sha256,
                         'viewUrl': '/project/{0}/files/osfstorage{1}'.format(
                             node_index[sha256],
@@ -306,7 +306,7 @@ def generate_metadata(file_trees, selected_files, node_index):
                         ),
                         'selectedFileName': selected_file['name'],
                         'nodeId': node_index[sha256]
-                    }
+                    }]
                 },
                 name_factory(): {
                     'value': fake.word()
@@ -520,13 +520,13 @@ class TestArchiverTasks(ArchiverTestCase):
                 for key, question in registration.registered_meta[schema._id].items():
                     target = None
                     if isinstance(question.get('value'), dict):
-                        target = [v for v in question['value'].values() if 'extra' in v and 'sha256' in v['extra']][0]
-                    elif 'extra' in question and 'hashes' in question['extra']:
+                        target = [v for v in question['value'].values() if 'extra' in v and 'sha256' in v['extra'][0]][0]
+                    elif 'extra' in question and 'hashes' in question['extra'][0]:
                         target = question
                     if target:
-                        assert_in(registration._id, target['extra']['viewUrl'])
-                        assert_not_in(node._id, target['extra']['viewUrl'])
-                        del selected_files[target['extra']['sha256']]
+                        assert_in(registration._id, target['extra'][0]['viewUrl'])
+                        assert_not_in(node._id, target['extra'][0]['viewUrl'])
+                        del selected_files[target['extra'][0]['sha256']]
                     else:
                         # check non-file questions are unmodified
                         assert_equal(data[key]['value'], question['value'])
@@ -536,13 +536,25 @@ class TestArchiverTasks(ArchiverTestCase):
         node = factories.NodeFactory(creator=self.user)
         file_trees, selected_files, node_index = generate_file_tree([node])
         data = {
+            ('q_' + selected_file['name']): {
+                'value': fake.word(),
+                'extra': [{
+                    'selectedFileName': selected_file['name'],
+                    'nodeId': node._id,
+                    'sha256': sha256,
+                    'viewUrl': '/project/{0}/files/osfstorage{1}'.format(node._id, selected_file['path'])
+                }]
+            }
+            for sha256, selected_file in selected_files.items()
+        }
+        object_types = {
             ('q_' + selected_file['name'] + '_obj'): {
                 'value': {
                     name_factory(): {
                         'value': {
                             name_factory(): {
                                 'value': fake.word(),                                
-                                'extra': {
+                                'extra': [{
                                     'sha256': sha256,
                                     'viewUrl': '/project/{0}/files/osfstorage{1}'.format(
                                         node_index[sha256],
@@ -550,7 +562,7 @@ class TestArchiverTasks(ArchiverTestCase):
                                     ),
                                     'selectedFileName': selected_file['name'],
                                     'nodeId': node_index[sha256]
-                                }
+                                }]
                             },
                             name_factory(): {
                                 'value': fake.word()
@@ -572,20 +584,13 @@ class TestArchiverTasks(ArchiverTestCase):
                 for key, question in registration.registered_meta[schema._id].items():
                     target = None
                     if isinstance(question['value'], dict):
-                        target = [
-                            t
-                            for t in [
-                                    v['value'].values()
-                                    for v in question['value'].values()
-                                    if 'value' in v and isinstance(v['value'], dict)
-                            ][0] if 'extra' in t
-                        ][0]
-                    elif 'extra' in question and 'hashes' in question['extra']:
+                        target = [v for v in question['value'].values() if 'extra' in v and 'sha256' in v['extra'][0]][0]
+                    elif 'extra' in question and 'sha256' in question['extra'][0]:
                         target = question
                     if target:
-                        assert_in(registration._id, target['extra']['viewUrl'])
-                        assert_not_in(node._id, target['extra']['viewUrl'])
-                        del selected_files[target['extra']['sha256']]
+                        assert_in(registration._id, target['extra'][0]['viewUrl'])
+                        assert_not_in(node._id, target['extra'][0]['viewUrl'])
+                        del selected_files[target['extra'][0]['sha256']]
                     else:
                         # check non-file questions are unmodified
                         assert_equal(data[key]['value'], question['value'])
@@ -629,21 +634,21 @@ class TestArchiverTasks(ArchiverTestCase):
             for key, question in registration.registered_meta[schema._id].items():
                 target = None
                 if isinstance(question['value'], dict):
-                    target = [v for v in question['value'].values() if 'extra' in v and 'sha256' in v['extra']][0]
+                    target = [v for v in question['value'].values() if 'extra' in v and 'sha256' in v['extra'][0]]
                 elif 'extra' in question and 'sha256' in question['extra']:
                     target = question
 
                 if target:
                     node_id = re.search(
                         r'^/project/(?P<node_id>\w{5}).+$',
-                        target['extra']['viewUrl']
+                        target[0]['extra'][0]['viewUrl']
                     ).groupdict()['node_id']
                     assert_in(
                         node_id,
                         [r._id for r in registration.node_and_primary_descendants()]
                     )
-                    if target['extra']['sha256'] in selected_files:
-                        del selected_files[target['extra']['sha256']]
+                    if target[0]['extra'][0]['sha256'] in selected_files:
+                        del selected_files[target[0]['extra'][0]['sha256']]
                 else:
                     # check non-file questions are unmodified
                     assert_equal(data[key]['value'], question['value'])
@@ -663,7 +668,7 @@ class TestArchiverTasks(ArchiverTestCase):
         data = {
             ('q_' + fake_file['name']): {
                 'value': fake.word(),
-                'extra': {
+                'extra': [{
                     'sha256': fake_file['extra']['hashes']['sha256'],
                     'viewUrl': '/project/{0}/files/osfstorage{1}'.format(
                         node._id,
@@ -671,7 +676,7 @@ class TestArchiverTasks(ArchiverTestCase):
                     ),
                     'selectedFileName': fake_file['name'],
                     'nodeId': node._id
-                }
+                }]
             }
         }
         schema = generate_schema_from_data(data)
@@ -681,7 +686,7 @@ class TestArchiverTasks(ArchiverTestCase):
                 job = factories.ArchiveJobFactory()
                 archive_success(registration._id, job._id)
                 for key, question in registration.registered_meta[schema._id].items():
-                    assert_equal(question['extra']['selectedFileName'], fake_file['name'])
+                    assert_equal(question['extra'][0]['selectedFileName'], fake_file['name'])
 
     def test_archive_success_same_file_in_component(self):
         file_tree = file_tree_factory(3, 3, 3)
@@ -696,7 +701,7 @@ class TestArchiverTasks(ArchiverTestCase):
         data = {
             ('q_' + selected['name']): {
                 'value': fake.word(),
-                'extra': {
+                'extra': [{
                     'sha256': selected['extra']['hashes']['sha256'],
                     'viewUrl': '/project/{0}/files/osfstorage{1}'.format(
                         child._id,
@@ -704,7 +709,7 @@ class TestArchiverTasks(ArchiverTestCase):
                     ),
                     'selectedFileName': selected['name'],
                     'nodeId': child._id
-                }
+                }]
             }
         }
         schema = generate_schema_from_data(data)
@@ -715,7 +720,7 @@ class TestArchiverTasks(ArchiverTestCase):
                 archive_success(registration._id, job._id)
                 child_reg = registration.nodes[0]
                 for key, question in registration.registered_meta[schema._id].items():
-                    assert_in(child_reg._id, question['extra']['viewUrl'])
+                    assert_in(child_reg._id, question['extra'][0]['viewUrl'])
 
 
 class TestArchiverUtils(ArchiverTestCase):

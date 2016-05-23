@@ -27,6 +27,7 @@ from website import util
 from website import prereg
 from website import settings
 from website import language
+from website.util import metrics
 from website.util import paths
 from website.util import sanitize
 from website.models import Institution
@@ -40,6 +41,7 @@ from website.project import views as project_views
 from website.addons.base import views as addon_views
 from website.discovery import views as discovery_views
 from website.conferences import views as conference_views
+from website.preprints import views as preprint_views
 from website.institutions import views as institution_views
 from website.notifications import views as notification_views
 
@@ -66,6 +68,7 @@ def get_globals():
         'user_url': user.url if user else '',
         'user_gravatar': profile_views.current_user_gravatar(size=25)['gravatar_url'] if user else '',
         'user_api_url': user.api_url if user else '',
+        'user_entry_point': metrics.get_entry_point(user) if user else '',
         'display_name': get_display_name(user.fullname) if user else '',
         'use_cdn': settings.USE_CDN_FOR_CLIENT_LIBS,
         'piwik_host': settings.PIWIK_HOST,
@@ -228,44 +231,10 @@ def make_url_map(app):
             website_views.reproducibility,
             notemplate
         ),
-
-        Rule(
-            '/about/',
-            'get',
-            website_views.redirect_about,
-            json_renderer
-        ),
-        Rule(
-            '/howosfworks/',
-            'get',
-            website_views.redirect_howosfworks,
-            json_renderer
-        ),
-
-        Rule(
-            '/faq/',
-            'get',
-            {},
-            OsfWebRenderer('public/pages/faq.mako', trust=False)
-        ),
-        Rule(
-            '/getting-started/',
-            'get',
-            {},
-            OsfWebRenderer('public/pages/getting_started.mako', trust=False)
-        ),
-        Rule(
-            '/getting-started/email/',
-            'get',
-            website_views.redirect_meetings_analytics_link,
-            json_renderer
-        ),
-        Rule(
-            '/support/',
-            'get',
-            {},
-            OsfWebRenderer('public/pages/support.mako', trust=False)
-        ),
+        Rule('/about/', 'get', website_views.redirect_about, notemplate),
+        Rule('/faq/', 'get', {}, OsfWebRenderer('public/pages/faq.mako', trust=False)),
+        Rule(['/getting-started/', '/getting-started/email/', '/howosfworks/'], 'get', website_views.redirect_getting_started, notemplate),
+        Rule('/support/', 'get', {}, OsfWebRenderer('public/pages/support.mako', trust=False)),
 
         Rule(
             '/explore/',
@@ -338,6 +307,20 @@ def make_url_map(app):
             'get',
             prereg.prereg_landing_page,
             OsfWebRenderer('prereg_landing_page.mako', trust=False)
+        ),
+
+        Rule(
+            '/preprints/',
+            'get',
+            preprint_views.preprint_landing_page,
+            OsfWebRenderer('public/pages/preprint_landing.mako', trust=False),
+        ),
+
+        Rule(
+            '/preprint/',
+            'get',
+            preprint_views.preprint_redirect,
+            notemplate,
         ),
 
         Rule(

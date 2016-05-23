@@ -117,7 +117,7 @@
                 <div>
                     <a data-bind="click: trackClick.bind($data, 'Create Account')" class="btn btn-primary" href="${web_url_for('index')}#signUp">Create an Account</a>
 
-                    <a data-bind="click: trackClick.bind($data, 'Learn More')" class="btn btn-primary" href="/getting-started/">Learn More</a>
+                    <a data-bind="click: trackClick.bind($data, 'Learn More')" class="btn btn-primary" href="http://help.osf.io" target="_blank" rel="noreferrer">Learn More</a>
                     <a data-bind="click: dismiss">Hide this message</a>
                 </div>
             </div>
@@ -195,7 +195,8 @@
                 currentUser: {
                     id: ${ user_id | sjson, n },
                     locale: ${ user_locale | sjson, n },
-                    timezone: ${ user_timezone | sjson, n }
+                    timezone: ${ user_timezone | sjson, n },
+                    entryPoint: ${ user_entry_point | sjson, n }
                 },
                 popular: ${ popular_links_node | sjson, n },
                 newAndNoteworthy: ${ noteworthy_links_node | sjson, n }

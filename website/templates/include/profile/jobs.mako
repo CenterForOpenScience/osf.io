@@ -146,8 +146,8 @@
                                 <span data-bind="attr: {class: expanded() ? 'fa toggle-icon fa-angle-down' : 'fa toggle-icon fa-angle-up'}"></span>
                             </div>
                             <div data-bind="attr: {id: 'jobCard' + $index(), 'aria-labelledby': 'jobHeading' + $index()}" class="panel-collapse collapse">
-                                <div class="panel-body">
-                                    <span data-bind="if: department().length"><h5>Department:</h5> <span data-bind="text: department"></span></span>
+                                <div class="panel-body card-body">
+                                    <span data-bind="if: department().length"><h5>Department / Institute:</h5> <span data-bind="text: department"></span></span>
                                     <span data-bind="if: title().length"><h5>Title:</h5> <span data-bind="text: title"></span></span>
                                     <span data-bind="if: startYear()"><h5>Dates:</h5>
                                         <span data-bind="text: startMonth"></span> <span data-bind="text: startYear"></span> - <span data-bind="text: endView"></span>

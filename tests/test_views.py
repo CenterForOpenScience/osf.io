@@ -712,6 +712,19 @@ class TestProjectViews(OsfTestCase):
         assert_equal("tag_removed", self.project.logs[-1].action)
         assert_equal("foo'ta#@%#%^&g?", self.project.logs[-1].params['tag'])
 
+    # Regression test for #OSF-5257
+    def test_removal_empty_tag_throws_error(self):
+        url = self.project.api_url_for('project_remove_tag')
+        res= self.app.delete_json(url, {'tag': ''}, auth=self.auth, expect_errors=True)
+        assert_equal(res.status_code, http.BAD_REQUEST)
+
+    # Regression test for #OSF-5257
+    def test_removal_unknown_tag_throws_error(self):
+        self.project.add_tag('narf', auth=self.consolidate_auth1, save=True)
+        url = self.project.api_url_for('project_remove_tag')
+        res= self.app.delete_json(url, {'tag': 'troz'}, auth=self.auth, expect_errors=True)
+        assert_equal(res.status_code, http.CONFLICT)
+
     # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/1478
     @mock.patch('website.archiver.tasks.archive')
     def test_registered_projects_contributions(self, mock_archive):
@@ -931,6 +944,15 @@ class TestProjectViews(OsfTestCase):
         assert_in('url', res.json)
         assert_equal(res.json['url'], '/dashboard/')
 
+    def test_suspended_project(self):
+        node = NodeFactory(parent=self.project, creator=self.user1)
+        node.remove_node(Auth(self.user1))
+        node.suspended = True
+        node.save()
+        url = node.api_url
+        res = self.app.get(url, auth=Auth(self.user1), expect_errors=True)
+        assert_equal(res.status_code, 451)
+
     def test_private_link_edit_name(self):
         link = PrivateLinkFactory()
         link.nodes.append(self.project)
@@ -1048,6 +1070,28 @@ class TestProjectViews(OsfTestCase):
         assert_equal(res.status_code, 200)
         self.project.reload()
         assert_equal(self.project.title, 'newtitle')
+
+    # Regression test
+    def test_get_registrations_sorted_by_registered_date_descending(self):
+        # register a project several times, with various registered_dates
+        registrations = []
+        for days_ago in (21, 3, 2, 8, 13, 5, 1):
+            registration = RegistrationFactory(project=self.project)
+            reg_date = registration.registered_date - dt.timedelta(days_ago)
+            registration.registered_date = reg_date
+            registration.save()
+            registrations.append(registration)
+
+        registrations.sort(key=lambda r: r.registered_date, reverse=True)
+        expected = [ r._id for r in registrations ]
+
+        registrations_url = self.project.api_url_for('get_registrations')
+        res = self.app.get(registrations_url, auth=self.auth)
+        data = res.json
+        actual = [ n['id'] for n in data['nodes'] ]
+
+        assert_equal(actual, expected)
+
 
 
 class TestEditableChildrenViews(OsfTestCase):
@@ -4334,7 +4378,8 @@ class TestStaticFileViews(OsfTestCase):
 
     def test_getting_started_page(self):
         res = self.app.get('/getting-started/')
-        assert_equal(res.status_code, 200)
+        assert_equal(res.status_code, 302)
+        assert_equal(res.location, 'http://help.osf.io/')
 
 
 class TestUserConfirmSignal(OsfTestCase):

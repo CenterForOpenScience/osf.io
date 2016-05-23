@@ -394,7 +394,7 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             message = (
                 'GitHub authorization copied to forked {cat}.'
             ).format(
-                cat=fork.project_or_component,
+                cat=markupsafe.escape(fork.project_or_component),
             )
         else:
             message = (
@@ -402,7 +402,7 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                 'authorize this fork on the <u><a href={url}>Settings</a></u> '
                 'page.'
             ).format(
-                cat=fork.project_or_component,
+                cat=markupsafe.escape(fork.project_or_component),
                 url=fork.url + 'settings/'
             )
 
