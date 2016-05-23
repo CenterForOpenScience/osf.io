@@ -180,14 +180,14 @@
                   <!-- /ko -->
                 </span>
                 <p>
-                Category: <span class="node-category">${node['category']}</span>
-                &nbsp;
-                <span data-bind="css: icon"></span>
+                    Category: <span id="nodeCategoryEditable">${node['category']}</span>
+                    <span data-bind="css: icon"></span>
                 </p>
 
                 % if (node['description']) or (not node['description'] and 'write' in user['permissions'] and not node['is_registration']):
                     <p>
-                    <span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">${node['description']}</span>
+                    <span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">
+                        ${node['description']}</span>
                     </p>
                 % endif
                 % if ('admin' in user['permissions'] or node['license'].get('name', 'No license') != 'No license'):
@@ -425,7 +425,8 @@ ${parent.javascript_bottom()}
             hasChildren: ${ node['has_children'] | sjson, n },
             isRegistration: ${ node['is_registration'] | sjson, n },
             tags: ${ node['tags'] | sjson, n }
-        }
+        },
+        nodeCategories: ${ node_categories | sjson, n }
     });
 </script>
 

@@ -130,6 +130,11 @@ class NodeSerializer(JSONAPISerializer):
         related_view_kwargs={'node_id': '<pk>'}
     )
 
+    wikis = RelationshipField(
+        related_view='nodes:node-wikis',
+        related_view_kwargs={'node_id': '<pk>'}
+    )
+
     forked_from = RelationshipField(
         related_view=lambda n: 'registrations:registration-detail' if getattr(n, 'is_registration', False) else 'nodes:node-detail',
         related_view_kwargs={'node_id': '<forked_from_id>'}
@@ -389,6 +394,8 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
         try:
             node.update_contributor(contributor, permission, visible, auth, save=True)
         except NodeStateError as e:
+            raise exceptions.ValidationError(detail=e.message)
+        except ValueError as e:
             raise exceptions.ValidationError(detail=e.message)
         contributor.permission = osf_permissions.reduce_permissions(node.get_permissions(contributor))
         contributor.bibliographic = node.get_visible(contributor)

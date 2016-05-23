@@ -69,7 +69,6 @@ $(document).ready(function() {
             value: keys[i]
         });
     }
-    var disableCategory = !window.contextVars.node.parentExists;
     // need check because node category doesn't exist for registrations
     if ($('#projectSettings').length) {
         var projectSettingsVM = new ProjectSettings.ProjectSettings( {
@@ -79,7 +78,6 @@ $(document).ready(function() {
             categoryOptions: categoryOptions,
             node_id: ctx.node.id,
             updateUrl:  $osf.apiV2Url('nodes/' + ctx.node.id + '/'),
-            disabled: disableCategory
         });
         ko.applyBindings(projectSettingsVM, $('#projectSettings')[0]);
     }
@@ -183,7 +181,7 @@ $(document).ready(function() {
             var uncheckedText = $.map(unchecked, function(el){
                 return ['<li>', $(el).closest('label').text().trim(), '</li>'].join('');
             }).join('');
-            uncheckedText = ['<ul>', $osf.htmlEscape(uncheckedText), '</ul>'].join('');
+            uncheckedText = ['<ul>', uncheckedText, '</ul>'].join('');
             bootbox.confirm({
                 title: 'Are you sure you want to remove the add-ons you have deselected? ',
                 message: uncheckedText,

@@ -23,6 +23,7 @@ var md = require('js/markdown').full;
 
 var ctx = window.contextVars;
 var nodeApiUrl = ctx.node.urls.api;
+var nodeCategories = ctx.nodeCategories || {};
 
 // Listen for the nodeLoad event (prevents multiple requests for data)
 $('body').on('nodeLoad', function(event, data) {
@@ -38,7 +39,7 @@ $('body').on('nodeLoad', function(event, data) {
         new CitationWidget('#citationStyleInput', '#citationText');
     }
     // Initialize nodeControl
-    new NodeControl.NodeControl('#projectScope', data);
+    new NodeControl.NodeControl('#projectScope', data, {categories: nodeCategories});
 });
 
 // Initialize comment pane w/ its viewmodel
