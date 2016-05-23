@@ -2,6 +2,25 @@
 Changelog
 *********
 
+0.73.0 (2016-05-19)
+===================
+
+- Allow category to be set from project dashboard page.
+- Improve algorithm for computing "New and Noteworthy" nodes.
+- Improve error messaging for file rendering.
+- Improve UI for personal access tokens page.
+- Responsiveness fixes for file grid.
+- Many UI fixes.
+- APIv2: Add forks endpoints.
+- APIv2: Fix sorting for /users/<user_id>/nodes/
+- APIv2: Add institutions to FULL_READ scope.
+
+0.72.0 (2016-05-17)
+===================
+
+- Make all pages escape user values on the frontend.
+- Remove usage of knockout-punches and remove strip_ko Mako filter.
+
 0.71.0 (2016-05-11)
 ===================
 

@@ -18,7 +18,7 @@ from api.nodes.views import (
     NodeChildrenList, NodeCommentsList, NodeProvidersList, NodeLinksList,
     NodeContributorDetail, NodeFilesList, NodeLinksDetail, NodeFileDetail,
     NodeAlternativeCitationsList, NodeAlternativeCitationDetail, NodeLogList,
-    NodeInstitutionDetail, WaterButlerMixin, NodeForksList)
+    NodeInstitutionDetail, WaterButlerMixin, NodeForksList, NodeWikiList)
 
 from api.registrations.serializers import RegistrationNodeLinksSerializer, RegistrationFileSerializer
 
@@ -342,3 +342,8 @@ class RegistrationAlternativeCitationDetail(NodeAlternativeCitationDetail, Regis
 class RegistrationInstitutionDetail(NodeInstitutionDetail, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-institution-detail'
+
+
+class RegistrationWikiList(NodeWikiList, RegistrationMixin):
+    view_category = 'registrations'
+    view_name = 'registration-wikis'
