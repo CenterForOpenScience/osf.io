@@ -1209,6 +1209,46 @@ function _fangornTitleColumn(item, col) {
 }
 
 /**
+ * Defines the contents of the title column (does not include the toggle and folder sections
+ * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
+ * @param {Object} col Options for this particulat column
+ * @this Treebeard.controller
+ * @returns {Array} Returns an array of mithril template objects using m()
+ * @private
+ */
+function _fangornVersionColumn(item) {
+    var tb = this;
+//    if (typeof tb.options.links === 'undefined') {
+//        tb.options.links = true;
+//    }
+//    if (item.data.isAddonRoot && item.connected === false) { // as opposed to undefined, avoids unnecessary setting of this value
+//        return _connectCheckTemplate.call(this, item);
+//    }
+    if (item.kind === 'file' && item.data.permissions.view) {
+        var attrs = {};
+        if (tb.options.links) {
+            attrs =  {
+                className: 'link-solid text-bigger',
+                onclick: function(event) {
+                    event.stopImmediatePropagation();
+                    gotoFileEvent.call(tb, item);
+                }
+            };
+        }
+        return m(
+            'span',
+            attrs,
+            String(item.data.extra.version)
+        );
+    }
+    if ((item.data.nodeType === 'project' || item.data.nodeType ==='component') && item.data.permissions.view) {
+        return m('a.link-solid.text-bigger',{ href: '/' + item.data.nodeID.toString() + '/'},
+                String(item.data.extra.version));
+    }
+    return m('span', String(item.data.extra.version));
+}
+
+/**
  * Returns a reusable template for column titles when there is no connection
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
  * @this Treebeard.controller
@@ -1280,6 +1320,13 @@ function _fangornResolveRows(item) {
     });
 
     if (item.data.kind === 'file') {
+      default_columns.push(
+      {
+        data: 'version',
+        filter: true,
+        sortInclude : false,
+        custom: _fangornVersionColumn
+      });
         default_columns.push(
         {
             data : 'size',  // Data field name
@@ -1317,10 +1364,15 @@ function _fangornColumnTitles () {
     columns.push(
     {
         title: 'Name',
-        width : '80%',
+        width : '70%',
         sort : true,
         sortType : 'text'
     }, {
+      title: 'Version',
+      width : '10%',
+      sort : true,
+      sortType : 'text'
+    },{
         title : 'Size',
         width : '10%',
         sort : false
@@ -2439,7 +2491,8 @@ Fangorn.ButtonEvents = {
 };
 
 Fangorn.DefaultColumns = {
-    _fangornTitleColumn: _fangornTitleColumn
+    _fangornTitleColumn: _fangornTitleColumn,
+    _fangornVersionColumn: _fangornVersionColumn
 };
 
 Fangorn.Utils = {
