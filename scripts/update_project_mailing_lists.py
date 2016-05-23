@@ -16,20 +16,20 @@ from website.project.model import Node
 logger = logging.getLogger(__name__)
 
 def main(dry_run=True):
+    init_app(routes=False)
+    updated_nodes = Node.find(Q('mailing_updated', 'eq', True))
+    for node in updated_nodes:
+        update_node(node, dry_run)
+
+    if dry_run:
+        raise RuntimeError('Dry run, transaction rolled back.')
+
+def update_node(node, dry_run=True):
     if dry_run:
         def full_update(*args, **kwargs):
             # Override actual method to prevent outgoing calls
             return
 
-    init_app(routes=False)
-    updated_nodes = Node.find(Q('mailing_updated', 'eq', True))
-    for node in updated_nodes:
-        update_node(node)
-
-    if dry_run:
-        raise RuntimeError('Dry run, transaction rolled back.')
-
-def update_node(node):
     # reload the node to ensure that it is current
     node.reload()
 
