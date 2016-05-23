@@ -381,17 +381,15 @@ def find_email(long_email):
         return long_email.lower().strip()
     return None
 
-def log_message(message, **kwargs):
+def log_message(target, sender_email, message):
     """ Acquires and logs messages sent through Mailgun"""
     from website.models import Node  # avoid circular imports
-    target = find_email(message['To'])
 
     if target:
         node = Node.load(re.search(r'[a-z0-9]*@', target).group(0)[:-1])
     else:
         node = None
 
-    sender_email = find_email(message['From'])
     sender = get_user(email=sender_email)
 
     # Create a log of this mailing event

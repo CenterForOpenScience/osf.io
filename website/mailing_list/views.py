@@ -41,13 +41,15 @@ def disable_mailing_list(node, **kwargs):
 
 def flask_unsubscribe_user(*args, **kwargs):
     message = request.form
-    unsub = message.get('recipient') or None
-    mailing_list = message.get('mailing-list') or None
+    unsub = message.get('recipient', None)
+    mailing_list = message.get('mailing-list', None)
     utils.unsubscribe_user_hook(unsub, mailing_list)
 
 def flask_log_message(*args, **kwargs):
     message = request.form
-    utils.log_message(message)
+    target = message.get('To', None)
+    sender_email = message.get('From', None)
+    utils.log_message(target, sender_email, message)
 
 def format_node_data_recursive(nodes, user):
     items = []
