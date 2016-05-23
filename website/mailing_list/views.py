@@ -41,7 +41,9 @@ def disable_mailing_list(node, **kwargs):
 
 def flask_unsubscribe_user(*args, **kwargs):
     message = request.form
-    utils.unsubscribe_user_hook(message)
+    unsub = message.get('recipient') or None
+    mailing_list = message.get('mailing-list') or None
+    utils.unsubscribe_user_hook(unsub, mailing_list)
 
 def flask_log_message(*args, **kwargs):
     message = request.form

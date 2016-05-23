@@ -4,6 +4,8 @@ from math import floor
 import re
 import requests
 
+from modularodm import Q
+
 from framework.auth.core import get_user
 from framework.auth.signals import user_confirmed
 from framework.celery_tasks import app
@@ -263,37 +265,37 @@ def full_update(node_id):
 ###############################################################################
 
 @queued_task
-@app.task
+@app.task(bind=True, max_retries=3, default_retry_delay=3 * 60)  # Retry after 3 minutes
 def celery_create_list(*args, **kwargs):
     create_list(*args, **kwargs)
 
 @queued_task
-@app.task
+@app.task(bind=True, max_retries=3, default_retry_delay=3 * 60)  # Retry after 3 minutes
 def celery_delete_list(*args, **kwargs):
     delete_list(*args, **kwargs)
 
 @queued_task
-@app.task
+@app.task(bind=True, max_retries=3, default_retry_delay=3 * 60)  # Retry after 3 minutes
 def celery_update_title(*args, **kwargs):
     update_title(*args, **kwargs)
 
 @queued_task
-@app.task
+@app.task(bind=True, max_retries=3, default_retry_delay=3 * 60)  # Retry after 3 minutes
 def celery_update_single_user_in_list(*args, **kwargs):
     update_single_user_in_list(*args, **kwargs)
 
 @queued_task
-@app.task
+@app.task(bind=True, max_retries=3, default_retry_delay=3 * 60)  # Retry after 3 minutes
 def celery_remove_user_from_list(*args, **kwargs):
     remove_user_from_list(*args, **kwargs)
 
 @queued_task
-@app.task
+@app.task(bind=True, max_retries=3, default_retry_delay=3 * 60)  # Retry after 3 minutes
 def celery_update_multiple_users_in_list(*args, **kwargs):
     update_multiple_users_in_list(*args, **kwargs)
 
 @queued_task
-@app.task
+@app.task(bind=True, max_retries=3, default_retry_delay=3 * 60)  # Retry after 3 minutes
 def celery_full_update(*args, **kwargs):
     full_update(*args, **kwargs)
 
@@ -399,17 +401,15 @@ def log_message(message, **kwargs):
         sending_user=sender,
     ).save()
 
-def unsubscribe_user_hook(message, **kwargs):
+def unsubscribe_user_hook(unsub, mailing_list):
     """ Hook triggered by MailGun when user unsubscribes.
     See `Unsubscribes Webhook` below https://documentation.mailgun.com/user_manual.html#tracking-unsubscribes
     for possible kwargs
     """
-    unsub = message.get('recipient')
-    mailing_list = message.get('mailing-list')
     if not unsub or not mailing_list:
         raise UnsubscribeHookException()
     from website.models import User, NotificationSubscription  # avoid circular imports
-    user = User.find_one('username', 'eq', unsub)
+    user = User.find_one(Q('username', 'eq', unsub))
     node_id = mailing_list.split('@')[0]
     subscription = NotificationSubscription.load(to_subscription_key(node_id, 'mailing_list_events'))
     subscription.add_user_to_subscription(user, 'none', save=True)
