@@ -935,7 +935,7 @@ function _removeEvent (event, items, col) {
             tb.modal.dismiss();
             tb.clearMultiselect();
 
-            if (item.data.provider === "dataverse") {
+            if (item.data.provider === 'dataverse') {
                 item.parent().data.datasetDraftModified = true;
             }
         })
