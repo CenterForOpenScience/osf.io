@@ -401,12 +401,12 @@ def send_claim_registered_email(claimer, unreg_user, node, throttle=24 * 3600):
     )
 
 
-def send_claim_email(email, user, node, notify=True, throttle=24 * 3600):
+def send_claim_email(email, invitedUser, node, notify=True, throttle=24 * 3600):
     """Send an email for claiming a user account. Either sends to the given email
     or the referrer's email, depending on the email address provided.
 
     :param str email: The address given in the claim user form
-    :param User user: The User record to claim.
+    :param User invitedUser: The User record to claim.
     :param Node node: The node where the user claimed their account.
     :param bool notify: If True and an email is sent to the referrer, an email
         will also be sent to the invited user about their pending verification.
@@ -414,19 +414,36 @@ def send_claim_email(email, user, node, notify=True, throttle=24 * 3600):
         emailed during which the referrer will not be emailed again.
 
     """
-    claimer_email = email.lower().strip()
+    invited_email = email.lower().strip()
 
-    unclaimed_record = user.get_unclaimed_record(node._primary_key)
+    unclaimed_record = invitedUser.get_unclaimed_record(node._primary_key)
     referrer = User.load(unclaimed_record['referrer_id'])
-    claim_url = user.get_claim_url(node._primary_key, external=True)
+    claim_url = invitedUser.get_claim_url(node._primary_key, external=True)
+
+    inviteArgs = "reffererName={0}&projectName={1}&claimUrl={2}".format(referrer.fullname,node.title,claim_url)
+
+    if '/?' not in invitedUser.inviteLink:
+        invitedUser.inviteLink +="?"
+    else:
+        invitedUser.inviteLink +="&"
+    invitedUser.inviteLink += inviteArgs
+
     # If given email is the same provided by user, just send to that email
-    if unclaimed_record.get('email') == claimer_email:
-        mail_tpl = mails.INVITE
-        to_addr = claimer_email
-        unclaimed_record['claimer_email'] = claimer_email
-        user.save()
-    else:  # Otherwise have the referrer forward the email to the user
+    if unclaimed_record.get('email') == invited_email:
+        mails.send_mail(
+            mail=mails.INVITE,
+            to_addr=invited_email,
+            referrer=referrer,
+            invitedUser=invitedUser,
+            node=node,
+            claim_url=claim_url
+        )
+        invitedUser.save()
+
+    else:
+        # Otherwise have the referrer forward the email to the user
         # roll the valid token for each email, thus user cannot change email and approve a different email address
+
         timestamp = unclaimed_record.get('last_sent')
         if not throttle_period_expired(timestamp, throttle):
             raise HTTPError(400, data=dict(
@@ -434,32 +451,27 @@ def send_claim_email(email, user, node, notify=True, throttle=24 * 3600):
             ))
         unclaimed_record['last_sent'] = get_timestamp()
         unclaimed_record['token'] = generate_confirm_token()
-        unclaimed_record['claimer_email'] = claimer_email
-        user.save()
-        claim_url = user.get_claim_url(node._primary_key, external=True)
+        invitedUser.save()
+
         if notify:
-            pending_mail = mails.PENDING_VERIFICATION
             mails.send_mail(
-                claimer_email,
-                pending_mail,
-                user=user,
+                mail=mails.PENDING_INVITE_VERIFICATION,
+                to_addr=invited_email,
                 referrer=referrer,
-                fullname=unclaimed_record['name'],
+                invitedUser=invitedUser,
                 node=node
             )
-        mail_tpl = mails.FORWARD_INVITE
-        to_addr = referrer.username
-    mails.send_mail(
-        to_addr,
-        mail_tpl,
-        user=user,
-        referrer=referrer,
-        node=node,
-        claim_url=claim_url,
-        email=claimer_email,
-        fullname=unclaimed_record['name']
-    )
-    return to_addr
+
+        mails.send_mail(
+            mail=mails.FORWARD_INVITE,
+            to_addr=referrer.email,
+            referrer=referrer,
+            invitedUser=invitedUser,
+            node=node,
+            claim_url=claim_url
+        )
+
+    return invited_email
 
 
 @contributor_added.connect
