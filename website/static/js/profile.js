@@ -268,7 +268,6 @@ BaseViewModel.prototype.changeMessage = function(text, css, timeout) {
 };
 
 BaseViewModel.prototype.handleSuccess = function() {
-    this.saving(false);
     if ($.inArray('view', this.modes) >= 0) {
         this.mode('view');
     } else {
@@ -281,7 +280,6 @@ BaseViewModel.prototype.handleSuccess = function() {
 };
 
 BaseViewModel.prototype.handleError = function(response) {
-    this.saving(false);
     var defaultMsg = 'Could not update settings';
     var msg = response.message_long || defaultMsg;
     this.changeMessage(
@@ -345,8 +343,8 @@ BaseViewModel.prototype.cancel = function(data, event) {
 };
 
 BaseViewModel.prototype.submit = function() {
-    this.saving(true);
     if (this.hasValidProperty() && this.isValid()) {
+        this.saving(true);
         $osf.putJSON(
             this.urls.crud,
             this.serialize()
@@ -356,10 +354,11 @@ BaseViewModel.prototype.submit = function() {
             this.setOriginal.bind(this)
         ).fail(
             this.handleError.bind(this)
+        ).always(
+            this.saving(false)
         );
     } else {
         this.showMessages(true);
-        this.saving(false);
     }
 };
 
@@ -707,7 +706,6 @@ SocialViewModel.prototype.unserialize = function(data) {
 };
 
 SocialViewModel.prototype.submit = function() {
-    this.saving(true);
     if (!this.hasValidWebsites()) {
         this.changeMessage(
             'Please update your website',
@@ -716,6 +714,7 @@ SocialViewModel.prototype.submit = function() {
         );
     }
     else if (this.hasValidProperty() && this.isValid()) {
+        this.saving(true);
         $osf.putJSON(
             this.urls.crud,
             this.serialize()
@@ -725,10 +724,11 @@ SocialViewModel.prototype.submit = function() {
             this.setOriginal.bind(this)
         ).fail(
             this.handleError.bind(this)
+        ).always(
+            this.saving(false)
         );
     } else {
         this.showMessages(true);
-        this.saving(false);
 
     }
 };
