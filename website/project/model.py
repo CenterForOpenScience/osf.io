@@ -26,7 +26,6 @@ from framework.mongo import StoredObject
 from framework.mongo import validators
 from framework.addons import AddonModelMixin
 from framework.auth import get_user, User, Auth
-from framework.auth import signals as auth_signals
 from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject, Guid
 from framework.auth.utils import privacy_info_handle
@@ -817,6 +816,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
     is_deleted = fields.BooleanField(default=False, index=True)
     deleted_date = fields.DateTimeField(index=True)
+    suspended = fields.BooleanField(default=False)
 
     is_registration = fields.BooleanField(default=False, index=True)
     registered_date = fields.DateTimeField(index=True)
@@ -2099,7 +2099,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         self.deleted_date = date
         self.save()
 
-        auth_signals.node_deleted.send(self)
+        project_signals.node_deleted.send(self)
 
         return True
 
@@ -2613,7 +2613,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
     @property
     def project_or_component(self):
-        return 'project' if self.category == 'project' else 'component'
+        # The distinction is drawn based on whether something has a parent node, rather than by category
+        return 'project' if not self.parent_node else 'component'
 
     def is_contributor(self, user):
         return (
@@ -2767,7 +2768,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         self.save()
 
         #send signal to remove this user from project subscriptions
-        auth_signals.contributor_removed.send(contributor, node=self)
+        project_signals.contributor_removed.send(self, user=contributor)
 
         return True
 
@@ -2781,8 +2782,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 contributor=contrib, auth=auth, log=False,
             )
             results.append(outcome)
-            if outcome:
-                project_signals.contributor_removed.send(self, user=contrib)
             removed.append(contrib._id)
         if log:
             self.add_log(
@@ -2799,10 +2798,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if save:
             self.save()
 
-        if False in results:
-            return False
-
-        return True
+        return all(results)
 
     def update_contributor(self, user, permission, visible, auth, save=False):
         """ TODO: this method should be updated as a replacement for the main loop of
@@ -3192,7 +3188,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 version = 1
         else:
             current = NodeWikiPage.load(self.wiki_pages_current[key])
-            current.is_current = False
             version = current.version + 1
             current.save()
             if Comment.find(Q('root_target', 'eq', current._id)).count() > 0:
@@ -3202,7 +3197,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             page_name=name,
             version=version,
             user=auth.user,
-            is_current=True,
             node=self,
             content=content
         )
@@ -3834,6 +3828,10 @@ class DraftRegistration(StoredObject):
     # values. Defaults should be provided in the schema (e.g. 'paymentSent': false),
     # and these values are added to the DraftRegistration
     _metaschema_flags = fields.DictionaryField(default=None)
+
+    def __repr__(self):
+        return '<DraftRegistration(branched_from={self.branched_from!r}) with id {self._id!r}>'.format(self=self)
+
     # lazily set flags
     @property
     def flags(self):

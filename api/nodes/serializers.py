@@ -391,6 +391,8 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
             node.update_contributor(contributor, permission, visible, auth, save=True)
         except NodeStateError as e:
             raise exceptions.ValidationError(detail=e.message)
+        except ValueError as e:
+            raise exceptions.ValidationError(detail=e.message)
         contributor.permission = osf_permissions.reduce_permissions(node.get_permissions(contributor))
         contributor.bibliographic = node.get_visible(contributor)
         contributor.node_id = node._id

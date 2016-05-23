@@ -173,7 +173,7 @@ $(document).ready(function () {
 });
 
 var $comments = $('.comments');
-if ($comments.length && window.contextVars.wiki.wikiID !== 'None') {
+if ($comments.length && window.contextVars.wiki.wikiID !== null) {
     var options = {
         nodeId: window.contextVars.node.id,
         nodeApiUrl: window.contextVars.node.urls.api,

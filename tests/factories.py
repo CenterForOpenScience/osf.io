@@ -291,7 +291,7 @@ class RegistrationFactory(AbstractNodeFactory):
         return reg
 
 
-class RetractedRegistrationFactory(AbstractNodeFactory):
+class WithdrawnRegistrationFactory(AbstractNodeFactory):
 
     @classmethod
     def _create(cls, *args, **kwargs):
@@ -301,12 +301,12 @@ class RetractedRegistrationFactory(AbstractNodeFactory):
         user = kwargs.pop('user', registration.creator)
 
         registration.retract_registration(user)
-        retraction = registration.retraction
-        token = retraction.approval_state.values()[0]['approval_token']
-        retraction.approve_retraction(user, token)
-        retraction.save()
+        withdrawal = registration.retraction
+        token = withdrawal.approval_state.values()[0]['approval_token']
+        withdrawal.approve_retraction(user, token)
+        withdrawal.save()
 
-        return retraction
+        return withdrawal
 
 
 class ForkFactory(ModularOdmFactory):
