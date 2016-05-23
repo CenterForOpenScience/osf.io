@@ -141,8 +141,8 @@ var _dataverseItemButtons = {
                         className: 'text-success'
                     }, 'Upload')
                 );
-                // Only allow the Publish button to appear if this is truly an unpublished dataset, vs. a draft version of a published dataset.
-                if(!item.data.dataverseIsPublished) {
+                // Only allow the Publish button to appear if the draft dataset is modified
+                if(item.data.datasetDraftModified) {
                     buttons.push(
                         m.component(Fangorn.Components.button, {
                             onclick: function (event) {
