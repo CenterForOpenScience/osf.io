@@ -55,7 +55,7 @@
                                     </span>
                                     </span>
                                     <span data-bind="ifnot: log.user.registered">
-                                        Deactivated User
+                                        A deactivated user
                                     </span>
                                 </span>
                                 <!-- Log actions are the same as their template name -->

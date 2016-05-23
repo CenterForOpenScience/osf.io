@@ -297,13 +297,21 @@ var CommentModel = function(data, $parent, $root) {
             'fullname': userData.attributes.full_name,
             'gravatarUrl': userData.links.profile_image
         };
+    } else if ('embeds' in data && 'user' in data.embeds && 'errors' in data.embeds.user) {
+        var errors = data.embeds.user.errors;
+        for (var e in data.embeds.user.errors) {
+            if ('meta' in errors[e] && 'full_name' in errors[e].meta) {
+                self.author = {
+                    'id': null,
+                    'urls': {'profile': ''},
+                    'fullname': errors[e].meta.full_name,
+                    'gravatarUrl': ''
+                };
+                break;
+            }
+        }
     } else {
-        self.author = {
-            'id': null,
-            'urls': {'profile': ''},
-            'fullname': 'Deactivated user',
-            'gravatarUrl': ''
-        };
+        self.author = self.$root.author;
     }
 
     self.contentDisplay = ko.observable(markdown.full.render(self.content()));
