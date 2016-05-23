@@ -3,6 +3,7 @@ var pikaday = require('pikaday');
 require('pikaday-css');
 var bootbox = require('bootbox');
 var $ = require('jquery');
+var moment = require('moment');
 var $osf = require('js/osfHelpers');
 var language = require('js/osfLanguage').registrations;
 
@@ -52,15 +53,14 @@ var RegistrationViewModel = function(confirm, prompts, validator) {
 
     var validation = [{
         validator: function() {
-            var timeZoneOffset = self.embargoEndDate().getTimezoneOffset() * (60 * 1000);
-            var endEmbargoDateTimestamp = self.embargoEndDate().getTime() + timeZoneOffset;
-            return endEmbargoDateTimestamp > TWO_DAYS_FROM_TODAY_TIMESTAMP;
+            var endEmbargoMoment = moment(self.embargoEndDate()).subtract(moment().utcOffset(), 'm');
+            return endEmbargoMoment.valueOf() > TWO_DAYS_FROM_TODAY_TIMESTAMP;
         },
         message: 'Embargo end date must be at least three days in the future.'
     }, {
 	validator: function() {
-            var endEmbargoDateTimestamp = self.embargoEndDate().getTime();
-	        return endEmbargoDateTimestamp < FOUR_YEARS_FROM_TODAY_TIMESTAMP;
+            var endEmbargoMoment = moment(self.embargoEndDate()).subtract(moment().utcOffset(), 'm');
+        return endEmbargoMoment < FOUR_YEARS_FROM_TODAY_TIMESTAMP;
 	},
 	message: 'Embargo end date must be less than four years in the future.'
     }];
