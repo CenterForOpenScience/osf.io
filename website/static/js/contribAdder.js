@@ -231,15 +231,15 @@ AddContributorViewModel = oop.extend(Paginator, {
             dataType: 'json'
         }).done(function (response) {
 
-            response.node.private_links = response.node.private_links.map(function (pirvateLink) {
-                pirvateLink.date_created = new $osf.FormattableDate(pirvateLink.date_created);
-                pirvateLink.url = response.node.absolute_url + "?view_only=" +  pirvateLink.key;
+            response.node.private_links = response.node.private_links.map(function (privateLink) {
+                privateLink.date_created = new $osf.FormattableDate(privateLink.date_created);
+                privateLink.url = response.node.absolute_url + "?view_only=" +  privateLink.key;
 
-                pirvateLink.components = pirvateLink.nodes.map(function(component){
+                privateLink.components = privateLink.nodes.map(function(component){
                     return component.title;
                 }).join(", ");
 
-                return pirvateLink;
+                return privateLink;
             });
 
             self.inviteLinks(response.node);

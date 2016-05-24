@@ -157,7 +157,7 @@
     % endif
 
     % if user['invitation'] and not user['is_contributor']:
-        <div class="alert alert-info">You have been added by ${user['invitation']["reffererName"]} as a contributor to ${user['invitation']["projectName"]}. Click <a class="link-solid" href="${user['invitation']['claimUrl']}">here</a>  to claim your account.</div>
+        <div class="alert alert-info">You have been added by ${user['invitation']["referrerName"]} as a contributor to ${user['invitation']["projectName"]}. Click <a class="link-solid" href="${user['invitation']['claimUrl']}">here</a>  to claim your account.</div>
     % endif
 
     % if disk_saving_mode:

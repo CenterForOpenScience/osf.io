@@ -424,7 +424,7 @@ def send_claim_email(email, invitedUser, node, notify=True, throttle=24 * 3600):
     referrer = User.load(unclaimed_record['referrer_id'])
     claim_url = invitedUser.get_claim_url(node._primary_key, external=True)
 
-    inviteArgs = "reffererName={0}&projectName={1}&claimUrl={2}".format(referrer.fullname,node.title,claim_url)
+    inviteArgs = "referrerName={0}&projectName={1}&claimUrl={2}".format(referrer.fullname,node.title,claim_url)
 
     if hasattr(invitedUser,"inviteLink"): # in for tests
         if '/?' not in invitedUser.inviteLink:
