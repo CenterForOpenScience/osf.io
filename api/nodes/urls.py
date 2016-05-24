@@ -1,7 +1,6 @@
 from django.conf.urls import url
 
 from api.nodes import views
-from api.identifiers import views as identifier_views
 from website import settings
 
 urlpatterns = [
