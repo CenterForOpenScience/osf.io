@@ -233,11 +233,11 @@ AddContributorViewModel = oop.extend(Paginator, {
 
             response.node.private_links = response.node.private_links.map(function (privateLink) {
                 privateLink.date_created = new $osf.FormattableDate(privateLink.date_created);
-                privateLink.url = response.node.absolute_url + "?view_only=" +  privateLink.key;
+                privateLink.url = response.node.absolute_url + '?view_only=' +  privateLink.key;
 
                 privateLink.components = privateLink.nodes.map(function(component){
                     return component.title;
-                }).join(", ");
+                }).join(', ');
 
                 return privateLink;
             });
@@ -464,7 +464,7 @@ AddContributorViewModel = oop.extend(Paginator, {
     },
     onInviteSuccess: function (result) {
         var self = this;
-        result.contributor.inviteLink = $("input:radio[name ='inviteLinkRadioGroup']:checked").val();
+        result.contributor.inviteLink = $('input:radio[name ="inviteLinkRadioGroup"]:checked').val();
         self.query('');
         self.results([]);
         self.page('whom');
