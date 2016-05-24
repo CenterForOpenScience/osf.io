@@ -8,8 +8,6 @@ var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
 var language = require('js/osfLanguage').projectSettings;
-var bootbox require('bootbox');
-
 
 /*
  * Dear sloria,
@@ -139,34 +137,4 @@ describe('ProjectSettings', () => {
             assert.called(resetMessageSpy);
         });
     });
-
-    describe('InstitutionSettings ViewModel', () => {
-        var viewModel = InstitutionSettingsViewModel();
-        var modifyStub;
-        var modifyInstStub;
-        var bootboxStub;
-
-        before(() => {
-            modifyInstStub = sinon.stub(viewModel, '_modifyInst');
-            bootboxStub = sinon.stub(bootbox, 'dialog');
-        });
-        after(() => {
-            viewModel.modifyChildrenDialog.restore();
-        });
-
-        it('shows a dialog if the Node has children', () => {
-            modifyStub = sinon.stub(viewModel, 'modifyChildrenDialog');
-            viewModel.hasChildren(true);
-            viewModel.submitInst({});
-            assert(modifyStub.called);
-            viewModel._modifyInst.restore();
-        });
-        it('modifyChildrenDialog shows an add message if adding an institution', () => {
-            viewModel.isAddInstitution(true);
-            viewModel.modifyChildrenDialog();
-            var opts = bootboxStub.args[0];
-            assert(opts.title === expectedTitle);
-        });
-    });
-
 });

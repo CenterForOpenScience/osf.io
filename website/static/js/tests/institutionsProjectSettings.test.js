@@ -10,8 +10,7 @@ var expectedTitle = 'Sample Project';
 
     window.contextVars = $.extend(true, {}, window.contextVars, {
         node: {
-            title: {
-                api: expectedTitle
+            title: expectedTitle
             },
             institutions: [{
                 id: 'cos',
