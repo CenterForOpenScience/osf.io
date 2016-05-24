@@ -188,7 +188,7 @@ def deserialize_contributors(node, user_dicts, auth, validate=False):
         if (not contributor.is_registered
                 and node._primary_key not in contributor.unclaimed_records):
 
-            contributor.inviteLink = contrib_dict.get('inviteLink', "http://osf.io") # Here to avoid failing tests.
+            contributor.inviteLink = contrib_dict.get('inviteLink', "http://osf.io")  # Here to avoid failing tests.
 
             contributor.add_unclaimed_record(node=node, referrer=auth.user,
                 given_name=fullname,
@@ -424,13 +424,13 @@ def send_claim_email(email, invitedUser, node, notify=True, throttle=24 * 3600):
     referrer = User.load(unclaimed_record['referrer_id'])
     claim_url = invitedUser.get_claim_url(node._primary_key, external=True)
 
-    inviteArgs = "referrerName={0}&projectName={1}&claimUrl={2}".format(referrer.fullname,node.title,claim_url)
+    inviteArgs = "referrerName={0}&projectName={1}&claimUrl={2}".format(referrer.fullname, node.title, claim_url)
 
-    if hasattr(invitedUser,"inviteLink"): # in for tests
+    if hasattr(invitedUser, "inviteLink"):  # in for tests
         if '/?' not in invitedUser.inviteLink:
-            invitedUser.inviteLink +="?"
+            invitedUser.inviteLink += "?"
         else:
-            invitedUser.inviteLink +="&"
+            invitedUser.inviteLink += "&"
         invitedUser.inviteLink += inviteArgs
     else:
         invitedUser.inviteLink = "http://osf.io"
