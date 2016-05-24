@@ -318,6 +318,13 @@ def make_url_map(app):
         ),
 
         Rule(
+            '/preprint/',
+            'get',
+            preprint_views.preprint_redirect,
+            notemplate,
+        ),
+
+        Rule(
             '/api/v1/prereg/draft_registrations/',
             'get',
             prereg.prereg_draft_registrations,
