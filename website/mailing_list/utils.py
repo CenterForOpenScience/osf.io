@@ -1,6 +1,5 @@
 from furl import furl
 import json
-from math import floor
 import re
 import requests
 
@@ -103,9 +102,7 @@ def create_list(node_id):
     if resp.status_code != 200:
         raise HTTPError(resp.status_code, data={'message_long': resp.json() or ''})
 
-    members_list = []
-    members_list = jsonify_users_list(node.contributors, unsubs=get_unsubscribes(node))
-    members_list[-1].append({'address': address('mailing_list_robot'), 'subscribed': True})  # Routing robot
+    members_list = jsonify_users_list(node.contributors, unsubs=get_unsubscribes(node), initial=True)
 
     update_multiple_users_in_list(node_id, members_list)
 
@@ -343,13 +340,17 @@ def remove_list_for_deleted_node(node):
 # Mailing List Helper Functions
 ###############################################################################
 
-def jsonify_users_list(users, unsubs=()):
+def jsonify_users_list(users, unsubs=(), initial=False):
     """ Serializes and paginates list of users for Mailgun
 
     :param list users: users to serialize
     :param list unsubs: unsubscribed users
+    :param bool initial: whether or not to insert mailing_list_robot
     """
     members_list = []
+    if initial:
+        members_list.append({'address': address('mailing_list_robot'), 'subscribed': True})  # Routing robot
+
     for member in users:
         for email in member.emails:
             members_list.append({
