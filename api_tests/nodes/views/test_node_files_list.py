@@ -10,12 +10,13 @@ from website.addons.github.tests.factories import GitHubAccountFactory
 from website.models import Node
 from website.util import waterbutler_api_url_for
 from api.base.settings.defaults import API_BASE
-from api_tests import utils as api_utils
 from tests.base import ApiTestCase
 from tests.factories import (
     ProjectFactory,
     AuthUserFactory
 )
+from website.addons.osfstorage import settings as osfstorage_settings
+
 
 def prepare_mock_wb_response(
         node=None,
@@ -311,6 +312,48 @@ class TestNodeFilesListFiltering(ApiTestCase):
         httpretty.disable()
         httpretty.reset()
 
+    def _create_test_file(self, node, user):
+        osfstorage = node.get_addon('osfstorage')
+        root_node = osfstorage.get_root()
+        test_file = root_node.append_file('test_file')
+        test_file.get_guid(create=True)
+        test_file.create_version(user, {
+            'object': '06d80e',
+            'service': 'cloud',
+            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+        }, {
+                                     'size': 1337,
+                                     'contentType': 'img/png'
+                                 }).save()
+        return test_file
+
+    def _create_test_file_for_size_filter(self, node, user):
+        osfstorage = node.get_addon('osfstorage')
+        root_node = osfstorage.get_root()
+        test_file = root_node.append_file('test_file')
+        test_file.get_guid(create=True)
+        test_file.create_version(user, {
+            'object': '06d80e',
+            'service': 'cloud',
+            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+        }, {
+                                     'size': 123,
+                                     'contentType': 'img/png'
+                                 }).save()
+
+        test_file_2 = root_node.append_file('test_file_2')
+        test_file_2.get_guid(create=True)
+        test_file_2.create_version(user, {
+            'object': '06d80e',
+            'service': 'cloud',
+            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+        }, {
+                                       'size': 456,
+                                       'contentType': 'img/png'
+                                   }).save()
+
+        return test_file, test_file_2
+
     def add_github(self):
         user_auth = Auth(self.user)
         self.project.add_addon('github', auth=user_auth)
@@ -359,14 +402,12 @@ class TestNodeFilesListFiltering(ApiTestCase):
         assert_equal(res.json['data'][0]['attributes']['name'], 'abc')
 
     def test_node_files_are_filterable_by_size(self):
-        self.file = api_utils.create_test_file_for_size_filter(self.project, self.user)
-
+        files = self._create_test_file_for_size_filter(self.project, self.user)
         url = '/{}nodes/{}/files/osfstorage/?filter[size]=123'.format(API_BASE, self.project._id,)
         res = self.app.get(url, auth=self.user.auth)
-        print(res)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data'][0]['attributes']['name'], 'test_file')
-        assert_equal(res.json['data'][0]['attributes']['size'], 123)
+        assert_equal(res.json['data'][0]['attributes']['name'], files[0].name)
+        assert_equal(res.json['data'][0]['attributes']['size'], files[0].get_version().size)
 
     def test_node_files_external_provider_can_filter_by_last_touched(self):
         yesterday_stamp = datetime.datetime.utcnow() - datetime.timedelta(days=1)
@@ -380,7 +421,7 @@ class TestNodeFilesListFiltering(ApiTestCase):
 
     def test_node_files_osfstorage_cannot_filter_by_last_touched(self):
         yesterday_stamp = datetime.datetime.utcnow() - datetime.timedelta(days=1)
-        self.file = api_utils.create_test_file(self.project, self.user)
+        self.file = self._create_test_file(self.project, self.user)
 
         url = '/{}nodes/{}/files/osfstorage/?filter[last_touched][gt]={}'.format(API_BASE,
                                                                                  self.project._id,
