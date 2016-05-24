@@ -52,20 +52,19 @@ class UserDeleteView(OSFAdmin, DeleteView):
                 flag = USER_RESTORED
                 message = 'User account {} reenabled'.format(user.pk)
             user.save()
-            if flag:
-                update_admin_log(
-                    user_id=self.request.user.id,
-                    object_id=user.pk,
-                    object_repr='User',
-                    message=message,
-                    action_flag=flag
-                )
         except AttributeError:
             raise Http404(
                 '{} with id "{}" not found.'.format(
                     self.context_object_name.title(),
                     self.kwargs.get('guid')
                 ))
+        update_admin_log(
+            user_id=self.request.user.id,
+            object_id=user.pk,
+            object_repr='User',
+            message=message,
+            action_flag=flag
+        )
         return redirect(reverse_user(self.kwargs.get('guid')))
 
     def get_context_data(self, **kwargs):
@@ -144,9 +143,10 @@ class ResetPasswordView(OSFAdmin, FormView):
         user = get_user(email)
         if user is None or user.pk != self.kwargs.get('guid'):
             raise Http404(
-                '{} with id "{}" not found.'.format(
+                '{} with id "{}" and email "{}" not found.'.format(
                     self.context_object_name.title(),
-                    self.kwargs.get('guid')
+                    self.kwargs.get('guid'),
+                    email,
                 ))
         reset_abs_url = furl(DOMAIN)
         user.verification_key = random_string(20)
