@@ -668,8 +668,8 @@ def _view_project(node, auth, primary=False):
     redirect_url = node.url + '?view_only=None'
 
     invitation = {}
-    if request.args.get('reffererName', False):
-        invitation["reffererName"] = request.args.get('reffererName', False)
+    if request.args.get('refererName', False):
+        invitation["refererName"] = request.args.get('refererName', False)
         invitation["projectName"] = request.args.get('projectName', False)
         invitation["claimUrl"] = request.args.get('claimUrl', False)
 
