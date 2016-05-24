@@ -30,7 +30,6 @@ class IdentifierSerializer(JSONAPISerializer):
         return obj._id
 
     def get_detail_url(self, obj):
-        import ipdb; ipdb.set_trace()
         return '{}/identifiers/{}'.format(obj.absolute_api_v2_url, obj._id)
 
     def self_url(self, obj):
