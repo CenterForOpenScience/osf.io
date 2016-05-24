@@ -40,7 +40,7 @@ class FigshareFile(FigshareFileNode, File):
             <div class="alert alert-info" role="alert">
             The file "{name}" is still a draft on figshare. <br>
             To view it  on the OSF
-            <a href="https://figshare.zendesk.com/hc/en-us/articles/203712033-How-do-I-publish-my-data-/">publish</a>
+            <a href="https://support.figshare.com/support/solutions ">publish</a>
             it on figshare.
             </div>
             '''.format(name=markupsafe.escape(self.name)))
