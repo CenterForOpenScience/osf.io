@@ -17,7 +17,7 @@
                         </div>
                         <div id="remove-page-radio-buttons" class="col-md-8" align="left">
                             <div class="radio">
-                                <label><input type="radio" id="radioBoxGroup" data-bind="checked:deleteAll, checkedValue: false" checked>
+                                <label><input type="radio" name="radioBoxGroup" data-bind="checked:deleteAll, checkedValue: false" checked>
                                     Remove <b data-bind="text:removeSelf() ? 'yourself' : contributorToRemove()['fullname']"></b> from
                                     <span class="f-w-lg" data-bind="text: title"></span>.
                                 </label>

@@ -971,7 +971,6 @@ def node_child_tree(user, node_ids):
         children = []
         # List project/node if user has at least 'read' permissions (contributor or admin viewer) or if
         # user is contributor on a component of the project/node
-        can_write = node.has_permission(user, 'admin')
         children.extend(node_child_tree(
             user,
             [
