@@ -667,6 +667,12 @@ def _view_project(node, auth, primary=False):
     widgets, configs, js, css = _render_addon(node)
     redirect_url = node.url + '?view_only=None'
 
+    invitation = {}
+    if request.args.get('refererName', False):
+        invitation["refererName"] = request.args.get('refererName', False)
+        invitation["projectName"] = request.args.get('projectName', False)
+        invitation["claimUrl"] = request.args.get('claimUrl', False)
+
     disapproval_link = ''
     if (node.is_pending_registration and node.has_permission(user, ADMIN)):
         disapproval_link = node.root.registration_approval.stashed_urls.get(user._id, {}).get('reject', '')
@@ -776,6 +782,7 @@ def _view_project(node, auth, primary=False):
             'show_wiki_widget': _should_show_wiki_widget(node, user),
             'dashboard_id': bookmark_collection_id,
             'institutions': get_affiliated_institutions(user) if user else [],
+            'invitation': invitation
         },
         'badges': _get_badge(user),
         # TODO: Namespace with nested dicts
