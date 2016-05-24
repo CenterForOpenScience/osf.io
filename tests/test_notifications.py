@@ -546,7 +546,7 @@ class TestNotificationUtils(OsfTestCase):
         node = factories.NodeFactory(parent=private_project)
         node.add_contributor(user)
 
-        utils.remove_contributor_from_subscriptions(user, node)
+        utils.remove_contributor_from_subscriptions(node, user)
 
         configured_project_ids = utils.get_configured_projects(user)
         assert_not_in(private_project._id, configured_project_ids)
@@ -775,7 +775,7 @@ class TestNotificationUtils(OsfTestCase):
         self.node.save()
 
         # set up how it was in original test - remove existing subscriptions
-        utils.remove_contributor_from_subscriptions(user, self.node)
+        utils.remove_contributor_from_subscriptions(self.node, user)
 
         node_subscriptions = [x for x in utils.get_all_node_subscriptions(user, self.node)]
         data = utils.serialize_event(user=user, event_description='comments',
