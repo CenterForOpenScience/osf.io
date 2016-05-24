@@ -8,20 +8,18 @@ var bootbox = require('bootbox');
 
 var expectedTitle = 'Sample Project';
 
-    window.contextVars = $.extend(true, {}, window.contextVars, {
-        node: {
-            title: expectedTitle
-            },
-            institutions: [{
-                id: 'cos',
-                logo_path: '/static/img/institutions/cos-shield.png',
-                name: 'Center For Open Science'
-            }, {
-                id: 'uoa',
-                logo_path: '/static/img/institutions/cos-shield.png',
-                name: 'University of Awesome'
-            }]
-        },
+window.contextVars = $.extend(true, {}, window.contextVars, {
+    node: {
+        title: expectedTitle,
+        institutions: [{
+            id: 'cos',
+            logo_path: '/static/img/institutions/cos-shield.png',
+            name: 'Center For Open Science'
+        }, {
+            id: 'uoa',
+            logo_path: '/static/img/institutions/cos-shield.png',
+            name: 'University of Awesome'
+        }],
         currentUser: {
             fullname: 'John Cena',
             institutions: [{
@@ -29,12 +27,13 @@ var expectedTitle = 'Sample Project';
                 logo_path: '/static/img/institutions/cos-shield.png',
                 name: 'Center For Open Science'
             },
-            {
-                id: 'bff',
-                logo_path: '/static/img/institutions/cos-shield.png',
-                name: 'Best Friend University'
-            }]
+                {
+                    id: 'bff',
+                    logo_path: '/static/img/institutions/cos-shield.png',
+                    name: 'Best Friend University'
+                }]
         }
+    }
 });
 
 describe('InstitutionSettings', () => {
@@ -56,7 +55,6 @@ describe('InstitutionSettings', () => {
         assert.equal(viewModel.userInstitutionsIds().length, 2);
         assert.equal(viewModel.userInstitutionsIds()[0], ['cos']);
         assert.equal(viewModel.userInstitutionsIds()[1], ['bff']);
-        done();
     });
 
     it('node variables set', (done) => {
@@ -66,7 +64,6 @@ describe('InstitutionSettings', () => {
         assert.equal(viewModel.affiliatedInstitutionsIds[1], ['uoa']);
         assert.equal(viewModel.availableInstitutions().length, 1);
         assert.equal(viewModel.availableInstitutions()[0], window.contextVars.currentUser.institutions[1]);
-        done();
     });
 
     it('computed variables set', (done) => {
@@ -74,7 +71,6 @@ describe('InstitutionSettings', () => {
         assert.equal(viewModel.affiliatedInstitutionsIds.length, 2);
         assert.equal(viewModel.affiliatedInstitutionsIds[0], ['cos']);
         assert.equal(viewModel.affiliatedInstitutionsIds[1], ['uoa']);
-        done();
     });
 
     it('shows a dialog if the Node has children', (done) => {
@@ -83,7 +79,6 @@ describe('InstitutionSettings', () => {
         viewModel.submitInst({});
         assert(modifyStub.called);
         modifyStub.restore();
-        done();
     });
 
     it('does not show dialog if the Node has no children', (done) => {
@@ -92,7 +87,6 @@ describe('InstitutionSettings', () => {
         viewModel.submitInst({});
         assert.isFalse(modifyStub.called);
         modifyStub.restore();
-        done();
     });
 
 

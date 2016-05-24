@@ -90,9 +90,9 @@ var ViewModel = function(data) {
                     }
                 }
             }
-        ).on("shown.bs.modal", function(e) {
-            if($("input:radio[name=radioBoxGroup]").length) {
-                $("input:radio[name=radioBoxGroup]").click(function() {
+        ).on('shown.bs.modal', function(e) {
+            if($('input:radio[name=radioBoxGroup]').length) {
+                $('input:radio[name=radioBoxGroup]').click(function() {
                     self.modifyChildren($(this).val());
 
                 });
