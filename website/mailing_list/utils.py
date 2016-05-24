@@ -349,21 +349,17 @@ def jsonify_users_list(users, unsubs=()):
     :param list users: users to serialize
     :param list unsubs: unsubscribed users
     """
-    members_list = [[]]
-    page = 0
+    members_list = []
     for member in users:
         for email in member.emails:
-            # Mailgun allows 1000 user upserts per request
-            if floor(len(members_list[page]) / 999):
-                page += 1
-                members_list.append([])
-            members_list[page].append({
+            members_list.append({
                 'address': email,
                 'subscribed': member not in unsubs and email == member.username,
                 'vars': {'_id': member._id, 'primary': email == member.username}
             })
 
-    return members_list
+    # Mailgun allows 1000 user upserts per request
+    return [members_list[i:i + 999] for i in range(0, len(members_list), 999)]
 
 def address(node_id):
     return '{}@{}'.format(node_id, furl(settings.DOMAIN).host)
