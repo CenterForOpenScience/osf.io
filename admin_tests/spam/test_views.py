@@ -1,3 +1,5 @@
+import mock
+
 from django.db import transaction
 from django.test import RequestFactory
 from django.http import Http404

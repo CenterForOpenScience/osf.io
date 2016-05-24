@@ -17,6 +17,7 @@ from api.files.serializers import FileSerializer
 from api.comments.serializers import CommentSerializer, CommentCreateSerializer
 from api.comments.permissions import CanCommentOrPublic
 from api.users.views import UserMixin
+from api.wikis.serializers import WikiSerializer
 
 from api.nodes.serializers import (
     NodeSerializer,
@@ -45,6 +46,7 @@ from api.nodes.permissions import (
 )
 from api.logs.serializers import NodeLogSerializer
 
+from website.addons.wiki.model import NodeWikiPage
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
 from website.models import Node, Pointer, Comment, NodeLog, Institution
@@ -144,6 +146,9 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         fork                            boolean            is this node a fork of another node?
         public                          boolean            has this node been made publicly-visible?
         collection                      boolean            is this a collection? (always false - may be deprecated in future versions)
+        node_license                    object             details of the license applied to the node
+            year                        string             date range of the license
+            copyright_holders           array of strings   holders of the applied license
 
     ##Links
 
@@ -335,6 +340,9 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
         fork                            boolean             is this node a fork of another node?
         public                          boolean             has this node been made publicly-visible?
         collection                      boolean             is this a collection? (always false - may be deprecated in future versions)
+        node_license                    object             details of the license applied to the node
+            year                        string             date range of the license
+            copyright_holders           array of strings   holders of the applied license
 
     ##Relationships
 
@@ -2159,3 +2167,75 @@ class NodeInstitutionRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIVie
         if not inst:
             return Response(status=HTTP_204_NO_CONTENT)
         return Response(serializer.data)
+
+
+class NodeWikiList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMixin):
+    """List of wiki pages on a node. *Read only*.
+
+    Paginated list of the node's current wiki page versions ordered by their `date_modified.` Each resource contains the
+    full representation of the wiki, meaning additional requests to an individual wiki's detail view are not necessary.
+
+    Note that if an anonymous view_only key is being used, the user relationship will not be exposed.
+
+    ###Permissions
+
+    Wiki pages on public nodes are given read-only access to everyone. Wiki pages on private nodes are only visible to
+    contributors and administrators on the parent node.
+
+    ##Attributes
+
+    OSF wiki entities have the "wikis" `type`.
+
+        name                type               description
+        =================================================================================
+        name                string             name of the wiki pag
+        path                string             the path of the wiki page
+        materialized_path   string             the path of the wiki page
+        date_modified       iso8601 timestamp  timestamp when the wiki was last updated
+        content_type        string             MIME-type
+        extra               object
+            version         integer            version number of the wiki
+
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    ##Query Params
+
+    + `filter[name]=<Str>` -- filter wiki pages by name
+
+    + `filter[date_modified][comparison_operator]=YYYY-MM-DDTH:M:S` -- filter wiki pages based on date modified.
+
+    Wiki pages can be filtered based on their `date_modified` fields. Possible comparison
+    operators include 'gt' (greater than), 'gte'(greater than or equal to), 'lt' (less than) and 'lte'
+    (less than or equal to). The date must be in the format YYYY-MM-DD and the time is optional.
+
+
+    #This Request/Response
+    """
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ContributorOrPublic,
+        ExcludeWithdrawals
+    )
+
+    required_read_scopes = [CoreScopes.WIKI_BASE_READ]
+    required_write_scopes = [CoreScopes.NULL]
+    serializer_class = WikiSerializer
+
+    view_category = 'nodes'
+    view_name = 'node-wikis'
+
+    ordering = ('-date', )  # default ordering
+
+    # overrides ODMFilterMixin
+    def get_default_odm_query(self):
+        node = self.get_node()
+        node_wiki_pages = node.wiki_pages_current.values() if node.wiki_pages_current else []
+        return Q('_id', 'in', node_wiki_pages)
+
+    def get_queryset(self):
+        return NodeWikiPage.find(self.get_query_from_request())
