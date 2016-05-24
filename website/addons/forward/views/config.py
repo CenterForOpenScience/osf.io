@@ -30,14 +30,12 @@ def forward_config_put(auth, node_addon, **kwargs):
     changed.
 
     :param-json str url: Forward URL
-    :param-json bool redirectBool: Auto-redirect
     :raises: HTTPError(400) if values missing or invalid
 
     """
     try:
         node_addon.url = request.json['url']
         node_addon.label = request.json.get('label')
-        node_addon.redirect_bool = request.json['redirectBool']
     except (KeyError, TypeError, ValueError):
         raise HTTPError(http.BAD_REQUEST)
 

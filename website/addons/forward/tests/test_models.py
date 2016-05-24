@@ -26,17 +26,6 @@ class TestSettingsValidation(OsfTestCase):
         except ValidationError:
             assert 0
 
-    def test_validate_redirect_bool_bad(self):
-        self.settings.redirect_bool = 'notabool'
-        with assert_raises(ValidationError):
-            self.settings.save()
-
-    def test_validate_redirect_bool_good(self):
-        self.settings.redirect_bool = False
-        try:
-            self.settings.save()
-        except ValidationError:
-            assert 0
 
     def test_label_sanitary(self):
         self.settings.label = 'safe'

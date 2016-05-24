@@ -17,12 +17,6 @@ var ViewModel = function(url, nodeId) {
 
     var self = this;
 
-    self.boolOptions = [true, false];
-    self.boolLabels = {
-        true: 'Yes',
-        false: 'No'
-    };
-
     // Forward configuration
     self.url = ko.observable().extend({
         ensureHttp: true,
@@ -38,7 +32,6 @@ var ViewModel = function(url, nodeId) {
         )
     );
     self.label = koHelpers.sanitizedObservable();
-    self.redirectBool = ko.observable(DEFAULT_FORWARD_BOOL);
 
     // Flashed messages
     self.message = ko.observable('');
@@ -46,20 +39,15 @@ var ViewModel = function(url, nodeId) {
 
     self.validators = ko.validatedObservable({
         url: self.url,
-        redirectBool: self.redirectBool
     });
 
-    self.getBoolLabel = function(item) {
-        return self.boolLabels[item];
-    };
 
     /**
      * Update the view model from data returned from the server.
      */
     self.updateFromData = function(data) {
         self.url(data.url);
-    self.label(data.label);
-        self.redirectBool(data.redirectBool);
+        self.label(data.label);
     };
 
     self.fetchFromServer = function() {

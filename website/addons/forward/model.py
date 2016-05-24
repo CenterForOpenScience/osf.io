@@ -17,7 +17,6 @@ class ForwardNodeSettings(AddonNodeSettingsBase):
 
     url = fields.StringField(validate=URLValidator())
     label = fields.StringField(validate=sanitized)
-    redirect_bool = fields.BooleanField(default=True, validate=True)
 
     @property
     def link_text(self):
@@ -29,7 +28,6 @@ class ForwardNodeSettings(AddonNodeSettingsBase):
     def reset(self):
         self.url = None
         self.label = None
-        self.redirect_bool = True
 
 
 @ForwardNodeSettings.subscribe('before_save')

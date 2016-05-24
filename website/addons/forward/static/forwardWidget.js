@@ -20,7 +20,6 @@ var ViewModel = function(url) {
             return self.url();
         }
     });
-    self.redirectBool = ko.observable();
 
     self.redirecting = ko.observable();
 
@@ -39,9 +38,7 @@ var ViewModel = function(url) {
     };
 
     self.execute = function() {
-        if (self.redirectBool()) {
-            self.queueRedirect();
-        }
+        self.queueRedirect();
     };
 
     self.init = function() {
@@ -52,7 +49,6 @@ var ViewModel = function(url) {
             success: function(response) {
                 self.url(response.url);
         self.label(response.label);
-                self.redirectBool(response.redirectBool);
                 self.execute();
             }
         });
