@@ -39,7 +39,7 @@ initiated an embargoed registration of
 <script type="text/html" id="embargo_terminated_no_user">
 Embargo for
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
-ended.
+ended
 </script>
 
 ## Retraction related logs
@@ -279,7 +279,7 @@ on
 <a data-bind="attr: {href: params.file.url}, text: params.file.name"></a>
 in
 <!-- /ko -->
-<!-- ko: params.wiki -->
+<!-- ko if: params.wiki -->
 wiki page
 <a data-bind="attr: {href: params.wiki.url}, text: params.wiki.name"></a>
 in

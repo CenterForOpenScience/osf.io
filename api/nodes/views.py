@@ -17,6 +17,7 @@ from api.files.serializers import FileSerializer
 from api.comments.serializers import CommentSerializer, CommentCreateSerializer
 from api.comments.permissions import CanCommentOrPublic
 from api.users.views import UserMixin
+from api.wikis.serializers import WikiSerializer
 
 from api.nodes.serializers import (
     NodeSerializer,
@@ -41,10 +42,11 @@ from api.nodes.permissions import (
     ContributorOrPublicForPointers,
     ContributorDetailPermissions,
     ReadOnlyIfRegistration,
-    ExcludeRetractions,
+    ExcludeWithdrawals,
 )
 from api.logs.serializers import NodeLogSerializer
 
+from website.addons.wiki.model import NodeWikiPage
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
 from website.models import Node, Pointer, Comment, NodeLog, Institution
@@ -75,6 +77,7 @@ class NodeMixin(object):
         if check_object_permissions:
             self.check_object_permissions(self.request, node)
         return node
+
 
 class WaterButlerMixin(object):
 
@@ -108,12 +111,13 @@ class WaterButlerMixin(object):
                 self.check_object_permissions(self.request, obj)
         return obj
 
+
 class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ODMFilterMixin, WaterButlerMixin):
     """Nodes that represent projects and components. *Writeable*.
 
     Paginated list of nodes ordered by their `date_modified`.  Each resource contains the full representation of the
-    node, meaning additional requests to an individual node's detail view are not necessary.  For a registration,
-    however, navigate to the individual registration's detail view for registration-specific information.
+    node, meaning additional requests to an individual node's detail view are not necessary.  Registrations and withdrawn
+    registrations cannot be accessed through this endpoint (see registration endpoints instead).
 
     <!--- Copied Spiel from NodeDetail -->
 
@@ -121,8 +125,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     is that a project is the top-level node, and components are children of the project. There is also a [category
     field](/v2/#osf-node-categories) that includes 'project' as an option. The categorization essentially determines
     which icon is displayed by the node in the front-end UI and helps with search organization. Top-level nodes may have
-    a category other than project, and children nodes may have a category of project.  Registrations can be accessed
-    from this endpoint, but retracted registrations are excluded.
+    a category other than project, and children nodes may have a category of project.
 
     ##Node Attributes
 
@@ -130,17 +133,22 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
 
     OSF Node entities have the "nodes" `type`.
 
-        name           type               description
+        name                            type               description
         =================================================================================
-        title          string             title of project or component
-        description    string             description of the node
-        category       string             node category, must be one of the allowed values
-        date_created   iso8601 timestamp  timestamp that the node was created
-        date_modified  iso8601 timestamp  timestamp when the node was last updated
-        tags           array of strings   list of tags that describe the node
-        registration   boolean            is this a registration?
-        fork           boolean            is this node a fork of another node?
-        public         boolean            has this node been made publicly-visible?
+        title                           string             title of project or component
+        description                     string             description of the node
+        category                        string             node category, must be one of the allowed values
+        date_created                    iso8601 timestamp  timestamp that the node was created
+        date_modified                   iso8601 timestamp  timestamp when the node was last updated
+        tags                            array of strings   list of tags that describe the node
+        current_user_permissions        array of strings   list of strings representing the permissions for the current user on this node
+        registration                    boolean            is this a registration? (always false - may be deprecated in future versions)
+        fork                            boolean            is this node a fork of another node?
+        public                          boolean            has this node been made publicly-visible?
+        collection                      boolean            is this a collection? (always false - may be deprecated in future versions)
+        node_license                    object             details of the license applied to the node
+            year                        string             date range of the license
+            copyright_holders           array of strings   holders of the applied license
 
     ##Links
 
@@ -180,10 +188,12 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
 
     + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
 
-    + `view_only=<Str>` -- Allow users with limited access keys to access this node. Note that some keys are anonymous, so using the view_only key will cause user-related information to no longer serialize. This includes blank ids for users and contributors and missing serializer fields and relationships.
+    + `view_only=<Str>` -- Allow users with limited access keys to access this node. Note that some keys are anonymous,
+    so using the view_only key will cause user-related information to no longer serialize. This includes blank ids for
+    users and contributors and missing serializer fields and relationships.
 
     Nodes may be filtered by their `id`, `title`, `category`, `description`, `public`, `tags`, `date_created`, `date_modified`,
-    `root`, and `parent`.  Most are string fields and will be filtered using simple substring matching.  `public`
+    `root`, `parent`, and `contributors`.  Most are string fields and will be filtered using simple substring matching.  `public`
     is a boolean, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note that quoting `true`
     or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
 
@@ -299,12 +309,13 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
 class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin, WaterButlerMixin):
     """Details about a given node (project or component). *Writeable*.
 
+    A registration or withdrawn registration cannot be accessed through this endpoint. See Registration Detail endpoint.
+
     On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
     is that a project is the top-level node, and components are children of the project. There is also a [category
     field](/v2/#osf-node-categories) that includes 'project' as an option. The categorization essentially determines
     which icon is displayed by the node in the front-end UI and helps with search organization. Top-level nodes may have
-    a category other than project, and children nodes may have a category of project. Registrations can be accessed through
-    this endpoint, though registration-specific fields must be retrieved through a registration's detail view.
+    a category other than project, and children nodes may have a category of project.
 
     ###Permissions
 
@@ -316,23 +327,32 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
 
     OSF Node entities have the "nodes" `type`.
 
-        name           type               description
+        name                            type                description
         =================================================================================
-        title          string             title of project or component
-        description    string             description of the node
-        category       string             node category, must be one of the allowed values
-        date_created   iso8601 timestamp  timestamp that the node was created
-        date_modified  iso8601 timestamp  timestamp when the node was last updated
-        tags           array of strings   list of tags that describe the node
-        registration   boolean            has this project been registered?
-        fork           boolean            is this node a fork of another node?
-        public         boolean            has this node been made publicly-visible?
+        title                           string              title of project or component
+        description                     string              description of the node
+        category                        string              node category, must be one of the allowed values
+        date_created                    iso8601 timestamp   timestamp that the node was created
+        date_modified                   iso8601 timestamp   timestamp when the node was last updated
+        tags                            array of strings    list of tags that describe the node
+        current_user_permissions        array of strings    list of strings representing the permissions for the current user on this node
+        registration                    boolean             is this a registration? (always false - may be deprecated in future versions)
+        fork                            boolean             is this node a fork of another node?
+        public                          boolean             has this node been made publicly-visible?
+        collection                      boolean             is this a collection? (always false - may be deprecated in future versions)
+        node_license                    object             details of the license applied to the node
+            year                        string             date range of the license
+            copyright_holders           array of strings   holders of the applied license
 
     ##Relationships
 
     ###Children
 
     List of nodes that are children of this node.  New child nodes may be added through this endpoint.
+
+    ###Comments
+
+    List of comments on this node.  New comments can be left on the node through this endpoint.
 
     ###Contributors
 
@@ -344,19 +364,37 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
     List of top-level folders (actually cloud-storage providers) associated with this node. This is the starting point
     for accessing the actual files stored within this node.
 
-    ###Parent
-
-    If this node is a child node of another node, the parent's canonical endpoint will be available in the
-    `/parent/links/related/href` key.  Otherwise, it will be null.
-
     ###Forked From
 
     If this node was forked from another node, the canonical endpoint of the node that was forked from will be
     available in the `/forked_from/links/related/href` key.  Otherwise, it will be null.
 
+    ###Logs
+
+    List of read-only log actions pertaining to the node.
+
+    ###Node Links
+
+    List of links (pointers) to other nodes on the OSF.  Node links can be added through this endpoint.
+
+    ###Parent
+
+    If this node is a child node of another node, the parent's canonical endpoint will be available in the
+    `/parent/links/related/href` key.  Otherwise, it will be null.
+
+    ###Primary Institution
+
+    Primary institution associated with node. If no primary institution, `/primary_institution/links/related/href`
+    returns Not Found.
+
     ###Registrations
 
     List of registrations of the current node.
+
+    ###Root
+
+    Returns the top-level node associated with the current node.  If the current node is the top-level node, the root is
+    the current node.
 
     ##Links
 
@@ -412,7 +450,7 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
         ContributorOrPublic,
         ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
-        ExcludeRetractions,
+        ExcludeWithdrawals,
     )
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
@@ -711,10 +749,19 @@ class NodeContributorDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVi
 class NodeRegistrationsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     """Registrations of the current node.
 
-    Registrations are read-only snapshots of a project. This view is a list of all the registrations of the current node.
+    Registrations are read-only snapshots of a project. This view is a list of all the registrations and withdrawn
+    registrations of the current node.
 
-    Each resource contains the full representation of the registration, meaning additional requests to an individual
-    registrations's detail view are not necessary.
+    <!--- Copied from RegistrationList -->
+
+    A withdrawn registration will display a limited subset of information, namely, title, description,
+    date_created, registration, withdrawn, date_registered, withdrawal_justification, and registration supplement. All
+    other fields will be displayed as null. Additionally, the only relationships permitted to be accessed for a withdrawn
+    registration are the contributors - other relationships will return a 403. Each resource contains the full representation
+    of the registration, meaning additional requests to an individual registrations's detail view are not necessary.
+
+
+    <!--- Copied Attributes from RegistrationList -->
 
     ##Registration Attributes
 
@@ -722,24 +769,24 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
 
         name                            type               description
         =======================================================================================================
-        title                           string             Title of the registered project or component
-        description                     string             Description of the registered node
-        category                        string             Node category, must be one of the allowed values
-        date_created                    iso8601 timestamp  Timestamp that the node was created
-        date_modified                   iso8601 timestamp  Timestamp when the node was last updated
-        tags                            array of strings   List of tags that describe the registered node
-        current_user_permissions        array of strings   List of strings representing the permissions for the current user on this node
-        fork                            boolean            Is this project a fork?
-        registration                    boolean            Has this project been registered?
-        dashboard                       boolean            Is this registered node visible on the user dashboard?
-        public                          boolean            Has this registration been made publicly-visible?
-        retracted                       boolean            Has this registration been retracted?
-        date_registered                 iso8601 timestamp  Timestamp that the registration was created
-        embargo_end_date                iso8601 timestamp  When the embargo on this registration will be lifted (if applicable)
-        retraction_justification        string             Reasons for retracting the registration
-        pending_retraction              boolean            Is this registration pending retraction?
-        pending_registration_approval   boolean            Is this registration pending approval?
-        pending_embargo_approval        boolean            Is the associated Embargo awaiting approval by project admins?
+        title                           string             title of the registered project or component
+        description                     string             description of the registered node
+        category                        string             bode category, must be one of the allowed values
+        date_created                    iso8601 timestamp  timestamp that the node was created
+        date_modified                   iso8601 timestamp  timestamp when the node was last updated
+        tags                            array of strings   list of tags that describe the registered node
+        current_user_permissions        array of strings   list of strings representing the permissions for the current user on this node
+        fork                            boolean            is this project a fork?
+        registration                    boolean            is this node a registration? (always true - may be deprecated in future versions)
+        collection                      boolean            is this registered node a collection? (always false - may be deprecated in future versions)
+        public                          boolean            has this registration been made publicly-visible?
+        withdrawn                       boolean            has this registration been withdrawn?
+        date_registered                 iso8601 timestamp  timestamp that the registration was created
+        embargo_end_date                iso8601 timestamp  when the embargo on this registration will be lifted (if applicable)
+        withdrawal_justification        string             reasons for withdrawing the registration
+        pending_withdrawal              boolean            is this registration pending withdrawal?
+        pending_withdrawal_approval     boolean            is this registration pending approval?
+        pending_embargo_approval        boolean            is the associated Embargo awaiting approval by project admins?
         registered_meta                 dictionary         registration supplementary information
         registration_supplement         string             registration template
 
@@ -765,7 +812,7 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
         ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        ExcludeRetractions
+        ExcludeWithdrawals
     )
 
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
@@ -776,7 +823,7 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     view_name = 'node-registrations'
 
     # overrides ListAPIView
-    # TODO: Filter out retractions by default
+    # TODO: Filter out withdrawals by default
     def get_queryset(self):
         nodes = self.get_node().registrations_all
         auth = get_user_auth(self.request)
@@ -797,17 +844,19 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
 
     OSF Node entities have the "nodes" `type`.
 
-        name           type               description
+        name                            type                description
         =================================================================================
-        title          string             title of project or component
-        description    string             description of the node
-        category       string             node category, must be one of the allowed values
-        date_created   iso8601 timestamp  timestamp that the node was created
-        date_modified  iso8601 timestamp  timestamp when the node was last updated
-        tags           array of strings   list of tags that describe the node
-        registration   boolean            has this project been registered?
-        fork           boolean            is this node a fork of another node?
-        public         boolean            has this node been made publicly-visible?
+        title                           string              title of project or component
+        description                     string              description of the node
+        category                        string              node category, must be one of the allowed values
+        date_created                    iso8601 timestamp   timestamp that the node was created
+        date_modified                   iso8601 timestamp   timestamp when the node was last updated
+        tags                            array of strings    list of tags that describe the node
+        current_user_permissions        array of strings    list of strings representing the permissions for the current user on this node
+        registration                    boolean             is this a registration? (always false - may be deprecated in future versions)
+        fork                            boolean             is this node a fork of another node?
+        public                          boolean             has this node been made publicly-visible?
+        collection                      boolean             is this a collection? (always false - may be deprecated in future versions)
 
     ##Links
 
@@ -848,10 +897,10 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
 
     <!--- Copied Query Params from NodeList -->
 
-    Nodes may be filtered by their `title`, `category`, `description`, `public`, `registration`, or `tags`.  `title`,
-    `description`, and `category` are string fields and will be filtered using simple substring matching.  `public` and
-    `registration` are booleans, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note
-    that quoting `true` or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
+    Nodes may be filtered by their `id`, `title`, `category`, `description`, `public`, `tags`, `date_created`, `date_modified`,
+    `root`, `parent`, and `contributors`.  Most are string fields and will be filtered using simple substring matching.  `public`
+    is a boolean, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note that quoting `true`
+    or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
 
     #This Request/Response
 
@@ -861,7 +910,7 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
         drf_permissions.IsAuthenticatedOrReadOnly,
         ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
-        ExcludeRetractions
+        ExcludeWithdrawals
     )
 
     required_read_scopes = [CoreScopes.NODE_CHILDREN_READ]
@@ -956,7 +1005,7 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
         ContributorOrPublic,
         ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
-        ExcludeRetractions,
+        ExcludeWithdrawals,
     )
 
     required_read_scopes = [CoreScopes.NODE_LINKS_READ]
@@ -1038,7 +1087,7 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixi
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ReadOnlyIfRegistration,
-        ExcludeRetractions
+        ExcludeWithdrawals
     )
 
     required_read_scopes = [CoreScopes.NODE_LINKS_READ]
@@ -1145,10 +1194,10 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, ODMF
         IsPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        ExcludeRetractions
+        ExcludeWithdrawals
     )
 
-    required_read_scopes = [CoreScopes.NODE_FORKS_READ]
+    required_read_scopes = [CoreScopes.NODE_FORKS_READ, CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.NODE_FORKS_WRITE]
 
     serializer_class = NodeForksSerializer
@@ -1414,7 +1463,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
         base_permissions.PermissionWithGetter(ContributorOrPublic, 'node'),
         base_permissions.PermissionWithGetter(ReadOnlyIfRegistration, 'node'),
         base_permissions.TokenHasScope,
-        ExcludeRetractions
+        ExcludeWithdrawals
     )
 
     ordering = ('materialized_path',)  # default ordering
@@ -1451,7 +1500,7 @@ class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin
         base_permissions.PermissionWithGetter(ContributorOrPublic, 'node'),
         base_permissions.PermissionWithGetter(ReadOnlyIfRegistration, 'node'),
         base_permissions.TokenHasScope,
-        ExcludeRetractions
+        ExcludeWithdrawals
     )
 
     serializer_class = FileSerializer
@@ -1601,7 +1650,7 @@ class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
-        ExcludeRetractions,
+        ExcludeWithdrawals,
         base_permissions.TokenHasScope,
     )
 
@@ -1628,7 +1677,7 @@ class NodeProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
-        ExcludeRetractions,
+        ExcludeWithdrawals,
         base_permissions.TokenHasScope,
     )
 
@@ -1641,6 +1690,7 @@ class NodeProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
 
     def get_object(self):
         return NodeProvider(self.kwargs['provider'], Node.load(self.kwargs['node_id']))
+
 
 class NodeAlternativeCitationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin):
     """List of alternative citations for a project.
@@ -1678,6 +1728,7 @@ class NodeAlternativeCitationsList(JSONAPIBaseView, generics.ListCreateAPIView, 
 
     def get_queryset(self):
         return self.get_node().alternative_citations
+
 
 class NodeAlternativeCitationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     """Details about an alternative citations for a project.
@@ -1728,10 +1779,11 @@ class NodeAlternativeCitationDetail(JSONAPIBaseView, generics.RetrieveUpdateDest
     def perform_destroy(self, instance):
         self.get_node().remove_citation(get_user_auth(self.request), instance, save=True)
 
+
 class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMixin):
     """List of Logs associated with a given Node. *Read-only*.
 
-    <!--- Copied Description from LogList -->
+    <!--- Copied Description from NodeLogDetail -->
 
     Paginated list of Logs ordered by their `date`. This includes the Logs of the specified Node as well as the logs of that Node's children that the current user has access to.
 
@@ -1758,7 +1810,7 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMix
     ===
     * 'contributor_added': A Contributor is added to a Node
     * 'contributor_removed': A Contributor is removed from a Node
-    * 'contributors_reordered': A Contributor's position is a Node's bibliography is changed
+    * 'contributors_reordered': A Contributor's position in a Node's bibliography is changed
     * 'permissions_updated': A Contributor's permissions on a Node are changed
     * 'made_contributor_visible': A Contributor is made bibliographically visible on a Node
     * 'made_contributor_invisible': A Contributor is made bibliographically invisible on a Node
@@ -1790,9 +1842,9 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMix
     * 'embargo_approved': A proposed Embargo of a Node is approved
     * 'embargo_cancelled': A proposed Embargo of a Node is cancelled
     * 'embargo_completed': A proposed Embargo of a Node is completed
-    * 'retraction_initiated': A Retraction of a Registration is proposed
-    * 'retraction_approved': A Retraction of a Registration is approved
-    * 'retraction_cancelled': A Retraction of a Registration is cancelled
+    * 'retraction_initiated': A Withdrawal of a Registration is proposed
+    * 'retraction_approved': A Withdrawal of a Registration is approved
+    * 'retraction_cancelled': A Withdrawal of a Registration is cancelled
     * 'registration_initiated': A Registration of a Node is proposed
     * 'registration_approved': A proposed Registration is approved
     * 'registration_cancelled': A proposed Registration is cancelled
@@ -1853,7 +1905,7 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMix
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
         base_permissions.TokenHasScope,
-        ExcludeRetractions
+        ExcludeWithdrawals
     )
 
     def get_default_odm_query(self):
@@ -1958,7 +2010,7 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
         drf_permissions.IsAuthenticatedOrReadOnly,
         CanCommentOrPublic,
         base_permissions.TokenHasScope,
-        ExcludeRetractions
+        ExcludeWithdrawals
     )
 
     required_read_scopes = [CoreScopes.NODE_COMMENTS_READ]
@@ -2006,6 +2058,7 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
         serializer.validated_data['user'] = self.request.user
         serializer.validated_data['node'] = node
         serializer.save()
+
 
 class NodeInstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
     """ Detail of the one primary_institution a node has, if any. Returns NotFound
@@ -2114,3 +2167,75 @@ class NodeInstitutionRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIVie
         if not inst:
             return Response(status=HTTP_204_NO_CONTENT)
         return Response(serializer.data)
+
+
+class NodeWikiList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMixin):
+    """List of wiki pages on a node. *Read only*.
+
+    Paginated list of the node's current wiki page versions ordered by their `date_modified.` Each resource contains the
+    full representation of the wiki, meaning additional requests to an individual wiki's detail view are not necessary.
+
+    Note that if an anonymous view_only key is being used, the user relationship will not be exposed.
+
+    ###Permissions
+
+    Wiki pages on public nodes are given read-only access to everyone. Wiki pages on private nodes are only visible to
+    contributors and administrators on the parent node.
+
+    ##Attributes
+
+    OSF wiki entities have the "wikis" `type`.
+
+        name                type               description
+        =================================================================================
+        name                string             name of the wiki pag
+        path                string             the path of the wiki page
+        materialized_path   string             the path of the wiki page
+        date_modified       iso8601 timestamp  timestamp when the wiki was last updated
+        content_type        string             MIME-type
+        extra               object
+            version         integer            version number of the wiki
+
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    ##Query Params
+
+    + `filter[name]=<Str>` -- filter wiki pages by name
+
+    + `filter[date_modified][comparison_operator]=YYYY-MM-DDTH:M:S` -- filter wiki pages based on date modified.
+
+    Wiki pages can be filtered based on their `date_modified` fields. Possible comparison
+    operators include 'gt' (greater than), 'gte'(greater than or equal to), 'lt' (less than) and 'lte'
+    (less than or equal to). The date must be in the format YYYY-MM-DD and the time is optional.
+
+
+    #This Request/Response
+    """
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ContributorOrPublic,
+        ExcludeWithdrawals
+    )
+
+    required_read_scopes = [CoreScopes.WIKI_BASE_READ]
+    required_write_scopes = [CoreScopes.NULL]
+    serializer_class = WikiSerializer
+
+    view_category = 'nodes'
+    view_name = 'node-wikis'
+
+    ordering = ('-date', )  # default ordering
+
+    # overrides ODMFilterMixin
+    def get_default_odm_query(self):
+        node = self.get_node()
+        node_wiki_pages = node.wiki_pages_current.values() if node.wiki_pages_current else []
+        return Q('_id', 'in', node_wiki_pages)
+
+    def get_queryset(self):
+        return NodeWikiPage.find(self.get_query_from_request())

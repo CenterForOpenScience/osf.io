@@ -50,6 +50,8 @@ class CoreScopes(object):
     NODE_COMMENTS_READ = 'comments.data_read'
     NODE_COMMENTS_WRITE = 'comments.data_write'
 
+    LICENSE_READ = 'license.data_read'
+
     COMMENT_REPORTS_READ = 'comments.reports_read'
     COMMENT_REPORTS_WRITE = 'comments.reports_write'
 
@@ -68,6 +70,8 @@ class CoreScopes(object):
     ORGANIZER_COLLECTIONS_BASE_WRITE = 'collections.base_write'
 
     GUIDS_READ = 'guids.base_read'
+
+    WIKI_BASE_READ = 'wikis.base_read'
 
 
 class ComposedScopes(object):
@@ -99,14 +103,15 @@ class ComposedScopes(object):
     # Nodes collection.
     # Base node data includes node metadata, links, and children.
     NODE_METADATA_READ = (CoreScopes.NODE_BASE_READ, CoreScopes.NODE_CHILDREN_READ, CoreScopes.NODE_LINKS_READ,
-                          CoreScopes.NODE_CITATIONS_READ, CoreScopes.NODE_COMMENTS_READ)
+                          CoreScopes.NODE_CITATIONS_READ, CoreScopes.NODE_COMMENTS_READ, CoreScopes.NODE_LOG_READ,
+                          CoreScopes.NODE_FORKS_READ, CoreScopes.WIKI_BASE_READ, CoreScopes.LICENSE_READ)
     NODE_METADATA_WRITE = NODE_METADATA_READ + \
                     (CoreScopes.NODE_BASE_WRITE, CoreScopes.NODE_CHILDREN_WRITE, CoreScopes.NODE_LINKS_WRITE,
-                     CoreScopes.NODE_CITATIONS_WRITE, CoreScopes.NODE_COMMENTS_WRITE)
+                     CoreScopes.NODE_CITATIONS_WRITE, CoreScopes.NODE_COMMENTS_WRITE, CoreScopes.NODE_FORKS_WRITE)
 
     # Organizer Collections collection
     # Using Organizer Collections and the node links they collect. Reads Node Metadata.
-    ORGANIZER_READ = (CoreScopes.ORGANIZER_COLLECTIONS_BASE_READ, NODE_METADATA_READ)
+    ORGANIZER_READ = (CoreScopes.ORGANIZER_COLLECTIONS_BASE_READ,) + NODE_METADATA_READ
     ORGANIZER_WRITE = ORGANIZER_READ + (CoreScopes.ORGANIZER_COLLECTIONS_BASE_WRITE, CoreScopes.NODE_LINKS_WRITE)
 
     # Privileges relating to editing content uploaded under that node # TODO: Add wiki etc when implemented
@@ -127,10 +132,8 @@ class ComposedScopes(object):
     FULL_READ = NODE_ALL_READ + USERS_READ + ORGANIZER_READ + GUIDS_READ + (CoreScopes.INSTITUTION_READ, )
     FULL_WRITE = NODE_ALL_WRITE + USERS_WRITE + ORGANIZER_WRITE + GUIDS_READ
 
-
     # Admin permissions- includes functionality not intended for third-party use
     ADMIN_LEVEL = FULL_WRITE + APPLICATIONS_WRITE + TOKENS_WRITE + COMMENT_REPORTS_WRITE
-
 
 # List of all publicly documented scopes, mapped to composed scopes defined above.
 #   Return as sets to enable fast comparisons of provided scopes vs those required by a given node

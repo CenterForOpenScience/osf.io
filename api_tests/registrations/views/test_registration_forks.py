@@ -13,7 +13,7 @@ from tests.factories import (
     ProjectFactory,
     RegistrationFactory,
     AuthUserFactory,
-    RetractedRegistrationFactory,
+    WithdrawnRegistrationFactory,
     ForkFactory
 )
 
@@ -282,7 +282,7 @@ class TestRegistrationForkCreate(ApiTestCase):
         assert_equal(res.json['data']['embeds']['node_links']['links']['meta']['total'], 2)
 
     def test_cannot_fork_retractions(self):
-        retraction = RetractedRegistrationFactory(registration=self.private_registration, user=self.user)
+        retraction = WithdrawnRegistrationFactory(registration=self.private_registration, user=self.user)
         url = '/{}registrations/{}/forks/'.format(API_BASE, self.private_registration._id) + '?embed=forked_from'
 
         res = self.app.post_json_api(url, self.fork_data, auth=self.user.auth, expect_errors=True)

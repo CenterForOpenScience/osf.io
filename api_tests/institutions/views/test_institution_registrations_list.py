@@ -1,7 +1,7 @@
 from nose.tools import *
 
 from tests.base import ApiTestCase
-from tests.factories import InstitutionFactory, AuthUserFactory, RegistrationFactory, RetractedRegistrationFactory
+from tests.factories import InstitutionFactory, AuthUserFactory, RegistrationFactory, WithdrawnRegistrationFactory
 
 from framework.auth import Auth
 from api.base.settings.defaults import API_BASE
@@ -58,7 +58,7 @@ class TestInstitutionRegistrationList(ApiTestCase):
     def test_doesnt_return_retractions_without_auth(self):
         self.registration2.is_public = True
         self.registration2.save()
-        retraction = RetractedRegistrationFactory(registration=self.registration2, user=self.user1)
+        retraction = WithdrawnRegistrationFactory(registration=self.registration2, user=self.user1)
         assert_true(self.registration2.is_retracted)
 
         res = self.app.get(self.institution_node_url)
@@ -69,7 +69,7 @@ class TestInstitutionRegistrationList(ApiTestCase):
         assert_not_in(self.registration2._id, ids)
 
     def test_doesnt_return_retractions_with_auth(self):
-        retraction = RetractedRegistrationFactory(registration=self.registration2, user=self.user1)
+        retraction = WithdrawnRegistrationFactory(registration=self.registration2, user=self.user1)
 
         assert_true(self.registration2.is_retracted)
 

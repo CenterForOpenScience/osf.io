@@ -19,10 +19,13 @@ urlpatterns = [
             url(r'^password/', include('password_reset.urls')),
             url(r'^nodes/', include('admin.nodes.urls', namespace='nodes')),
             url(r'^users/', include('admin.users.urls', namespace='users')),
+            url(r'^meetings/', include('admin.meetings.urls',
+                                       namespace='meetings')),
             url(r'^project/', include('admin.pre_reg.urls', namespace='pre_reg')),
             url(r'^metrics/', include('admin.metrics.urls',
                                       namespace='metrics')),
-        ]),
+            url(r'^sales_analytics/', include('admin.sales_analytics.urls', namespace='sales_analytics')),
+        ])
     ),
 ]
 

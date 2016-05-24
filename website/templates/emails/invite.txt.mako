@@ -18,5 +18,5 @@ Open Science Framework Robot
 
 
 
-Want more information? Visit http://osf.io/ to learn about the Open Science Framework, or http://cos.io/ for information about its supporting organization, the Center for Open Science. Questions? Email contact@osf.io
+Want more information? Visit https://osf.io/ to learn about the Open Science Framework, or https://cos.io/ for information about its supporting organization, the Center for Open Science. Questions? Email contact@osf.io
 

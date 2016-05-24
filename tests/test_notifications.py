@@ -11,8 +11,6 @@ from nose.tools import *  # noqa PEP8 asserts
 
 from framework.auth import Auth
 from framework.auth.core import User
-from framework.auth.signals import contributor_removed
-from framework.auth.signals import node_deleted
 from framework.guid.model import Guid
 
 from website.notifications.tasks import get_users_emails, send_users_email, group_by_node, remove_notifications
@@ -23,6 +21,7 @@ from website.notifications import emails
 from website.notifications import utils
 from website.project.model import Node, Comment
 from website import mails, settings
+from website.project.signals import contributor_removed, node_deleted
 from website.util import api_url_for
 from website.util import web_url_for
 
@@ -32,6 +31,7 @@ from tests.base import OsfTestCase, NotificationTestCase
 
 
 class TestNotificationsModels(OsfTestCase):
+
     def setUp(self):
         super(TestNotificationsModels, self).setUp()
         # Create project with component

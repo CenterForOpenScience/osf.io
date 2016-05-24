@@ -180,14 +180,14 @@
                   <!-- /ko -->
                 </span>
                 <p>
-                Category: <span class="node-category">${node['category']}</span>
-                &nbsp;
-                <span data-bind="css: icon"></span>
+                    Category: <span id="nodeCategoryEditable">${node['category']}</span>
+                    <span data-bind="css: icon"></span>
                 </p>
 
                 % if (node['description']) or (not node['description'] and 'write' in user['permissions'] and not node['is_registration']):
                     <p>
-                    <span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">${node['description']}</span>
+                    <span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">
+                        ${node['description']}</span>
                     </p>
                 % endif
                 % if ('admin' in user['permissions'] or node['license'].get('name', 'No license') != 'No license'):
@@ -239,14 +239,25 @@
                    <a href="${node['url']}files/"> <i class="fa fa-external-link"></i> </a>
                 </div>
             </div>
-            <div class="panel-body">
-                <div id="treeGrid">
-                    <div class="spinner-loading-wrapper">
-                        <div class="logo-spin logo-lg"></div>
-                         <p class="m-t-sm fg-load-message"> Loading files...  </p>
+            % if not node['is_registration'] and not node['anonymous'] and 'write' in user['permissions']:
+                <div class="row">
+                    <div class="col-sm-12 m-t-sm m-l-md">
+                        <span class="f-w-xl">Click on a storage provider or drag and drop to upload</span>
                     </div>
                 </div>
-            </div>
+               <div class="panel-body panel-body-with-instructions">
+            %else:
+               <div class="panel-body">
+            %endif
+                    <div id="treeGrid">
+                        <div class="spinner-loading-wrapper">
+                            <div class="logo-spin logo-lg"></div>
+                             <p class="m-t-sm fg-load-message"> Loading files...  </p>
+                        </div>
+                    </div>
+                </div><!-- end .panel-body -->
+
+
         </div>
 
         % if addons:
@@ -425,7 +436,8 @@ ${parent.javascript_bottom()}
             hasChildren: ${ node['has_children'] | sjson, n },
             isRegistration: ${ node['is_registration'] | sjson, n },
             tags: ${ node['tags'] | sjson, n }
-        }
+        },
+        nodeCategories: ${ node_categories | sjson, n }
     });
 </script>
 

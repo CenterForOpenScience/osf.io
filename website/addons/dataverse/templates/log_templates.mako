@@ -22,7 +22,7 @@ linked Dataverse dataset
 <!-- Legacy version -->
 <script type="text/html" id="dataverse_study_linked">
 linked Dataverse dataset
-<span class="overflow" data-bind="params.study"></span> to
+<span class="overflow" data-bind="text: params.study"></span> to
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
