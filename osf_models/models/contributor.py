@@ -1,8 +1,5 @@
 from django.db import models
 
-# from osf_models.models.user import User
-# from osf_models.models.node import Node
-
 
 class Contributor(models.Model):
     read = models.BooleanField(default=False)
