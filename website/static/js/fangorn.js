@@ -1168,6 +1168,18 @@ function gotoFileEvent (item) {
         window.open(fileurl, '_self');
     }
 }
+
+function gotoVersionEvent (item) {
+    var tb = this;
+    var redir = new URI(item.data.nodeUrl);
+    redir.segment('files').segment(item.data.provider).segmentCoded(item.data.path.substring(1));
+    var fileurl  = redir.toString() + '/?show=revision';
+    if(COMMAND_KEYS.indexOf(tb.pressedKey) !== -1) {
+        window.open(fileurl, '_blank');
+    } else {
+        window.open(fileurl, '_self');
+    }
+}
 /**
  * Defines the contents of the title column (does not include the toggle and folder sections
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
@@ -1228,10 +1240,10 @@ function _fangornVersionColumn(item) {
         var attrs = {};
         if (tb.options.links) {
             attrs =  {
-                className: 'link-solid text-bigger',
+            className: 'link-solid f-w-lg text-primary',
                 onclick: function(event) {
                     event.stopImmediatePropagation();
-                    gotoFileEvent.call(tb, item);
+                    gotoVersionEvent.call(tb, item);
                 }
             };
         }
@@ -1242,7 +1254,7 @@ function _fangornVersionColumn(item) {
         );
     }
     if ((item.data.nodeType === 'project' || item.data.nodeType ==='component') && item.data.permissions.view) {
-        return m('a.link-solid.text-bigger',{ href: '/' + item.data.nodeID.toString() + '/'},
+        return m('a.link-solid.bg-color-select',{ href: '/' + item.data.nodeID.toString() + '/' + '?view=revisions'},
                 String(item.data.extra.version));
     }
     return m('span', String(item.data.extra.version));
@@ -2487,7 +2499,8 @@ Fangorn.ButtonEvents = {
     _uploadEvent: _uploadEvent,
     _removeEvent: _removeEvent,
     createFolder: _createFolder,
-    _gotoFileEvent : gotoFileEvent
+    _gotoFileEvent : gotoFileEvent,
+    _gotoVersionEvent : gotoVersionEvent
 };
 
 Fangorn.DefaultColumns = {
