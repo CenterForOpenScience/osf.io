@@ -1176,6 +1176,7 @@ function gotoFileEvent (item) {
     } else {
         window.open(fileurl, '_self');
     }
+}
 
 /**
  * Defines the contents of the title column (does not include the toggle and folder sections
