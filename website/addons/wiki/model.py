@@ -170,7 +170,7 @@ class NodeWikiPage(GuidStoredObject, Commentable):
 
     page_name = fields.StringField(validate=validate_page_name)
     version = fields.IntegerField()
-    date = fields.DateTimeField(default=datetime.datetime.utcnow)
+    date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
     content = fields.StringField(default='')
 
     user = fields.ForeignField('user')
