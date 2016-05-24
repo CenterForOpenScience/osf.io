@@ -334,26 +334,28 @@
 
                             </tbody>
                         </table>
-                        <div data-bind="visible: hasThingsToAdd">
-                            <a data-bind="click: toggle">Add institution</a>
-                            <div data-bind="visible: showAdd()">
-                                <div class="help-block">
-                                    You are authorized to affiliate your projects with the following institutions:
-                                </div>
-                                <div class="radio">
-                                    <div data-bind="foreach: {data: availableInstitutions, as: 'item'}">
-                                        <div>
-                                        <label>
-                                            <input type="radio" data-bind="value: item.id, checked: $parent.selectedInstitution">
-                                            <p data-bind="text: item.name"></p>
-                                        </label>
+                        % if 'admin' in user['permissions']:
+                            <div data-bind="visible: hasThingsToAdd">
+                                <a data-bind="click: toggle">Add institution</a>
+                                <div data-bind="visible: showAdd()">
+                                    <div class="help-block">
+                                        You are authorized to affiliate your projects with the following institutions:
+                                    </div>
+                                    <div class="radio">
+                                        <div data-bind="foreach: {data: availableInstitutions, as: 'item'}">
+                                            <div>
+                                            <label>
+                                                <input type="radio" data-bind="value: item.id, checked: $parent.selectedInstitution">
+                                                <p data-bind="text: item.name"></p>
+                                            </label>
 
+                                            </div>
                                         </div>
                                     </div>
+                                    <button data-bind="click: submitInst, css: {disabled: selectedInstitution() == null}" class="btn btn-success">Affiliate</button>
                                 </div>
-                                <button data-bind="click: submitInst, css: {disabled: selectedInstitution() == null}" class="btn btn-success">Affiliate</button>
-                            </div>
-                       </div>
+                           </div>
+                        % endif
                     </div>
                 </div>
                 % endif
