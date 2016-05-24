@@ -34,55 +34,66 @@ var ViewModel = function(data) {
     self.isAddInstitution = ko.observable(false);
     self.needsWarning = ko.observable(false);
 
-
     self.modifyChildrenDialog = function (item) {
         var message;
+        var addToOneMessage;
+        var addToAllMessage;
+        addToOneMessage = 'Add <b>' + item.name + '</b> to <b>' +  window.contextVars.node.title + '</b>.',
+        addToAllMessage = 'Add <b>' + item.name + '</b> to <b>' +  window.contextVars.node.title + '</b> and every component in it.';
         if (self.isAddInstitution()) {
-            message = 'Add ' + item.name + ' to ' + window.contextVars.node.title + ' or to ' +
-                item.name + ' and all its components?<br><br>';
+            message = 'Add <b>' + item.name + '</b> to <b>' + window.contextVars.node.title + '</b> or to <b>' +
+                window.contextVars.node.title + '</b> and all its components?<br><br>';
         }
         else
-            message = 'Remove ' + item.name + ' from ' + window.contextVars.node.title + ' or to ' +
-                item.name + ' and all its components?<br><br>';
+            message = 'Remove ' + item.name + ' from <b>' + window.contextVars.node.title + '</b> or to <b>' +
+                window.contextVars.node.title + '</b> and all its components?<br><br>';
 
         if (self.needsWarning()) {
             message += '<div class="text-danger f-w-xl">Warning, you are not affialiated with <b>' + item.name +
                     '</b>.  If you remove it from your project, you cannot add it back.<div>';
         }
+
         bootbox.dialog({
-            title: self.isAddInstitution() ? 'Add ' + item.name: 'Remove ' + item.name,
-            message: message,
-            onEscape: function () {
-            },
-            backdrop: true,
-            closeButton: true,
-            buttons: {
-                cancel: {
-                    label: 'Cancel',
-                    className: 'btn-default',
-                    callback: function () {
-                    }
+                title: self.pageTitle(),
+                onEscape: function () {
                 },
-                modifyOne: {
-                    label: self.isAddInstitution() ? 'Add one' : 'Remove one',
-                    className: 'btn-primary',
-                    callback: function () {
-                        self.modifyChildren(false);
-                        self._modifyInst(item);
-                    }
-                },
-                modifyAll: {
-                    label: self.isAddInstitution() ? 'Add all' : 'Remove all',
-                    className: 'btn-success',
-                    callback: function () {
-                        self.modifyChildren(true);
-                        self._modifyInst(item);
+                backdrop: true,
+                closeButton: true,
+                message: '<div class="row">  ' +
+                    '<div class="col-md-12"> ' +
+                    '<span>' + message + '</span> ' +
+                    '<div class="radio" > <label for="selectOne"> ' +
+                    '<input type="radio" id="selectOne" type="radio" name="radioBoxGroup"' +
+                    ' value="false" checked="checked"> ' + addToOneMessage + ' </div></label> ' +
+                    '<div class="radio"> <label for="selectAll"> ' +
+                    '<input type="radio" id="selectAll" type="radio" name="radioBoxGroup" value="true"> ' +
+                    addToAllMessage + ' </label> ' + '</div>' + '</div>',
+                buttons: {
+                    cancel: {
+                        label: 'Cancel',
+                        className: 'btn-default',
+                        callback: function () {
+                        }
+                    },
+                    success: {
+                        label: 'Add institution',
+                        className: 'btn-success',
+                        callback: function () {
+                            self._modifyInst(item);
+                        }
                     }
                 }
             }
+        ).on("shown.bs.modal", function(e) {
+            if($("input:radio[name=radioBoxGroup]").length) {
+                $("input:radio[name=radioBoxGroup]").click(function() {
+                    self.modifyChildren($(this).val());
+
+                });
+            }
         });
     };
-
+    
     self.pageTitle = ko.computed(function () {
         return self.isAddInstitution() ? 'Add institution' : 'Remove institution';
     });
@@ -210,4 +221,7 @@ var InstitutionProjectSettings = function(selector, data)  {
 
 };
 
-module.exports = InstitutionProjectSettings;
+module.exports = {
+    InstitutionProjectSettings: InstitutionProjectSettings,
+    ViewModel: ViewModel
+};
