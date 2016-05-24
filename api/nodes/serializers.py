@@ -19,7 +19,7 @@ from api.base.utils import get_user_auth, get_object_or_error, absolute_reverse
 from api.registrations.utils import create_jsonschema_from_metaschema, is_prereg_admin_not_project_admin
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
                                   TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly,
-                                  HideIfRegistration)
+                                  HideIfRegistration, RestrictedDictSerializer, )
 from api.base.exceptions import InvalidModelValueError
 
 
@@ -31,6 +31,12 @@ class NodeTagField(ser.Field):
 
     def to_internal_value(self, data):
         return data
+
+
+class NodeLicenseSerializer(RestrictedDictSerializer):
+
+    copyright_holders = ser.ListField(allow_empty=True, read_only=True)
+    year = ser.CharField(allow_blank=True, read_only=True)
 
 
 class NodeSerializer(JSONAPISerializer):
@@ -61,6 +67,7 @@ class NodeSerializer(JSONAPISerializer):
         'registration',
         'tags',
         'public',
+        'license',
         'links',
         'children',
         'comments',
@@ -87,6 +94,7 @@ class NodeSerializer(JSONAPISerializer):
     fork = ser.BooleanField(read_only=True, source='is_fork')
     collection = ser.BooleanField(read_only=True, source='is_collection')
     tags = JSONAPIListField(child=NodeTagField(), required=False)
+    node_license = NodeLicenseSerializer(read_only=True, required=False)
     template_from = ser.CharField(required=False, allow_blank=False, allow_null=False,
                                   help_text='Specify a node id for a node you would like to use as a template for the '
                                             'new node. Templating is like forking, except that you do not copy the '
@@ -107,6 +115,11 @@ class NodeSerializer(JSONAPISerializer):
 
     links = LinksField({'html': 'get_absolute_html_url'})
     # TODO: When we have osf_permissions.ADMIN permissions, make this writable for admins
+
+    license = RelationshipField(
+        related_view='licenses:license-detail',
+        related_view_kwargs={'license_id': '<node_license.node_license._id>'},
+    )
 
     children = RelationshipField(
         related_view='nodes:node-children',

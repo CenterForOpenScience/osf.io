@@ -79,6 +79,9 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
         fork                            boolean            is this project a fork?
         registration                    boolean            has this project been registered? (always true - may be deprecated in future versions)
         collection                      boolean            is this registered node a collection? (always false - may be deprecated in future versions)
+        node_license                    object             details of the license applied to the node
+            year                        string             date range of the license
+            copyright_holders           array of strings   holders of the applied license
         public                          boolean            has this registration been made publicly-visible?
         withdrawn                       boolean            has this registration been withdrawn?
         date_registered                 iso8601 timestamp  timestamp that the registration was created
@@ -187,6 +190,9 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, Regist
         fork                            boolean            is this project a fork?
         registration                    boolean            has this project been registered? (always true - may be deprecated in future versions)
         collection                      boolean            is this registered node a collection? (always false - may be deprecated in future versions)
+        node_license                    object             details of the license applied to the node
+            year                        string             date range of the license
+            copyright_holders           array of strings   holders of the applied license
         public                          boolean            has this registration been made publicly-visible?
         withdrawn                       boolean            has this registration been withdrawn?
         date_registered                 iso8601 timestamp  timestamp that the registration was created

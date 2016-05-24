@@ -55,6 +55,8 @@ class CoreScopes(object):
     NODE_COMMENTS_READ = 'comments.data_read'
     NODE_COMMENTS_WRITE = 'comments.data_write'
 
+    LICENSE_READ = 'license.data_read'
+
     COMMENT_REPORTS_READ = 'comments.reports_read'
     COMMENT_REPORTS_WRITE = 'comments.reports_write'
 
@@ -114,7 +116,7 @@ class ComposedScopes(object):
     # Base node data includes node metadata, links, and children.
     NODE_METADATA_READ = (CoreScopes.NODE_BASE_READ, CoreScopes.NODE_CHILDREN_READ, CoreScopes.NODE_LINKS_READ,
                           CoreScopes.NODE_CITATIONS_READ, CoreScopes.NODE_COMMENTS_READ, CoreScopes.NODE_LOG_READ,
-                          CoreScopes.NODE_FORKS_READ, CoreScopes.WIKI_BASE_READ)
+                          CoreScopes.NODE_FORKS_READ, CoreScopes.WIKI_BASE_READ, CoreScopes.LICENSE_READ)
     NODE_METADATA_WRITE = NODE_METADATA_READ + \
                     (CoreScopes.NODE_BASE_WRITE, CoreScopes.NODE_CHILDREN_WRITE, CoreScopes.NODE_LINKS_WRITE,
                      CoreScopes.NODE_CITATIONS_WRITE, CoreScopes.NODE_COMMENTS_WRITE, CoreScopes.NODE_FORKS_WRITE)
