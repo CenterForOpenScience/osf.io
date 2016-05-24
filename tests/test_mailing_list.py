@@ -15,7 +15,7 @@ from framework.auth.signals import user_confirmed
 from werkzeug.datastructures import ImmutableMultiDict
 
 from website import mails, settings
-from website.mailing_list.utils import get_unsubscribes
+from website.mailing_list.utils import get_unsubscribes, jsonify_users_list
 from website.mailing_list.model import MailingListEventLog
 from website.util import api_url_for
 
@@ -95,3 +95,42 @@ class TestMailingListViews(OsfTestCase):
         self.app.post(url, payload, auth=self.user.auth)
         self.project.reload()
         assert_true(self.project.mailing_enabled)
+
+
+class TestMailingListUtils(OsfTestCase):
+
+    def setUp(self):
+        super(TestMailingListUtils, self).setUp()
+        self.user = AuthUserFactory()
+
+    def test_jsonify_user_one_page(self):
+        expected_primary = {
+            'address': self.user.username,
+            'subscribed': True,
+            'vars': {'_id': self.user._id, 'primary': True}
+        }
+        user_json_pages = jsonify_users_list((self.user, ))
+        assert_equal(len(user_json_pages), 1)
+        assert_equal(user_json_pages[0][0], expected_primary)
+
+    def test_jsonify_user_two_pages(self):
+        for i in range(0, 999):
+            self.user.emails.append('email_address{}@osf.io'.format(i))
+        self.user.save()
+
+        expected_primary = {
+            'address': self.user.username,
+            'subscribed': True,
+            'vars': {'_id': self.user._id, 'primary': True}
+        }
+        expected_secondary = {
+            'address': self.user.emails[-1],
+            'subscribed': False,
+            'vars': {'_id': self.user._id, 'primary': False}
+        }
+
+        user_json_pages = jsonify_users_list((self.user, ))
+        assert_equal(len(user_json_pages), 2)
+        assert_equal(len(user_json_pages[0]), 999)
+        assert_equal(user_json_pages[0][0], expected_primary)
+        assert_equal(user_json_pages[1][0], expected_secondary)
