@@ -3482,7 +3482,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             action=NodeLog.EMBARGO_TERMINATED,
             params={
                 'project': self._id,
-                'node': self._id,
+                'node': self.registered_from_id,
+                'registration': self._id,
             },
             auth=None,
             save=True
