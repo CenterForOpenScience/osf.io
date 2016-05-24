@@ -949,8 +949,7 @@ def node_child_tree(user, node_ids):
         node = Node.load(node_id)
         assert node, '{} is not a valid Node.'.format(node_id)
 
-        can_read = node.has_permission(user, 'read')
-        is_admin = node.has_permission(user, 'admin')
+        can_read = node.has_permission(user, READ)
         can_read_children = node.has_permission_on_children(user, 'read')
         if not can_read and not can_read_children:
             continue
@@ -988,7 +987,7 @@ def node_child_tree(user, node_ids):
                 'url': node.url if can_read else '',
                 'title': node.title if can_read else 'Private Project',
                 'is_public': node.is_public,
-                'can_write': can_write,
+                'can_write': node.has_permission(user, WRITE),
                 'contributors': contributors,
                 'visible_contributors': node.visible_contributor_ids,
                 'is_admin': node.has_permission(user, ADMIN),
