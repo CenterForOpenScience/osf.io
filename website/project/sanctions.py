@@ -502,7 +502,7 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
             action=NodeLog.EMBARGO_CANCELLED,
             params={
                 'node': parent_registration.registered_from_id,
-                'registration':  parent_registration._id,
+                'registration': parent_registration._id,
                 'embargo_id': self._id,
             },
             auth=Auth(user),
@@ -832,9 +832,9 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
         registered_from.add_log(
             action=NodeLog.REGISTRATION_APPROVAL_CANCELLED,
             params={
-                  'node': registered_from._id,
-                  'registration': register._id,
-                  'registration_approval_id': self._id,
+                'node': registered_from._id,
+                'registration': register._id,
+                'registration_approval_id': self._id,
             },
             auth=Auth(user),
         )
