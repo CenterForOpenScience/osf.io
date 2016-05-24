@@ -143,6 +143,10 @@ span#nodeDescriptionEditable{
     white-space:pre-line;
 }
 
+.panel-body-with-instructions {
+    padding-top: 0px;
+}
+
 .license-text {
     white-space: pre-wrap;       /* CSS 3 */
     white-space: -pre-wrap;      /* Opera 4-6 */
