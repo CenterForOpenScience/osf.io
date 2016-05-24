@@ -22,8 +22,7 @@ from website.identifiers.model import Identifier
 class IdentifierList(JSONAPIBaseView, generics.ListAPIView, RegistrationMixin, ODMFilterMixin):
     """List of identifiers for a specified node. *Read-only*.
 
-
-   ##Identifier Attributes
+    ##Identifier Attributes
 
     OSF Identifier entities have the "identifiers" `type`.
 
@@ -83,7 +82,7 @@ class IdentifierDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     """List of identifiers for a specified node. *Read-only*.
 
 
-   ##Identifier Attributes
+    ##Identifier Attributes
 
     OSF Identifier entities have the "identifiers" `type`.
 
