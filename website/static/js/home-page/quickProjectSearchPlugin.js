@@ -76,6 +76,7 @@ var QuickSearchProject = {
             }, function _error(result){
                 self.requestError(result);
             });
+            
         // Recursively fetches remaining user's nodes
         self.recursiveNodes = function (url) {
             if (self.next()) {
