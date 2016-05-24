@@ -3,6 +3,7 @@ from urlparse import urlparse
 from nose.tools import *  # flake8: noqa
 
 from api.base.settings.defaults import API_BASE
+from website.addons.wiki.model import NodeWikiPage
 from tests.base import ApiWikiTestCase
 from tests.factories import (ProjectFactory, RegistrationFactory,
                              NodeWikiFactory, PrivateLinkFactory)
@@ -177,7 +178,9 @@ class TestWikiDetailView(ApiWikiTestCase):
 
     def test_old_wiki_versions_not_returned(self):
         self._set_up_public_project_with_wiki_page()
-        current_wiki = NodeWikiFactory(project=self.public_project, user=self.user)
-        url = '/{}wikis/{}/'.format(API_BASE, current_wiki._id)
+        current_wiki = NodeWikiFactory(node=self.public_project, user=self.user)
+        old_version_id = self.public_project.wiki_pages_versions[current_wiki.page_name][-2]
+        old_version = NodeWikiPage.load(old_version_id)
+        url = '/{}wikis/{}/'.format(API_BASE, old_version._id)
         res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, 404)
