@@ -22,7 +22,7 @@ class TestIdentifierList(ApiTestCase):
 
         self.registration = RegistrationFactory(creator=self.user, is_public=True)
         self.identifier = IdentifierFactory(referent=self.registration)
-        self.url = '/{}nodes/{}/identifiers/'.format(API_BASE, self.registration._id)
+        self.url = '/{}registrations/{}/identifiers/'.format(API_BASE, self.registration._id)
 
         self.res = self.app.get(self.url)
         self.data = self.res.json['data']
