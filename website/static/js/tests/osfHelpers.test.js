@@ -179,8 +179,8 @@ describe('osfHelpers', () => {
     });
 
     describe('valueProgressBar', () => {
-        it('Returns a css class for a progress bar with a width specified on a scale of 0 to 4', () => {
-            for (var i = 0; i < 5; i++) {
+        it('Returns a css class for a progress bar with a width specified on a scale of 1 to 5', () => {
+            for (var i = 1; i < 6; i++) {
                 assert.equal($osf.valueProgressBar[i].style, 'width: ' + (i+1)*20 + '%');
             }
         });
