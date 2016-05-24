@@ -21,7 +21,7 @@ class TestCloneWikiPages(OsfTestCase):
     def set_up_project_with_wiki_page(self):
         self.project_with_wikis = ProjectFactory(creator=self.user, is_public=True)
         self.wiki = NodeWikiFactory(node=self.project_with_wikis)
-        self.current_wiki = NodeWikiFactory(node=self.project_with_wikis, version=2, is_current=True)
+        self.current_wiki = NodeWikiFactory(node=self.project_with_wikis, version=2)
         return self.project_with_wikis
 
     def tearDown(self):
@@ -88,7 +88,7 @@ class TestCloneWikiPages(OsfTestCase):
         fork_creator = AuthUserFactory()
         fork = self.project.fork_node(auth=Auth(fork_creator))
         wiki = NodeWikiFactory(node=fork)
-        current_wiki = NodeWikiFactory(node=fork, version=2, is_current=True)
+        current_wiki = NodeWikiFactory(node=fork, version=2)
         main()
         assert_equal(fork.wiki_pages_versions, {wiki.page_name: [wiki._id, current_wiki._id]})
         assert_equal(fork.wiki_pages_current, {wiki.page_name: current_wiki._id})

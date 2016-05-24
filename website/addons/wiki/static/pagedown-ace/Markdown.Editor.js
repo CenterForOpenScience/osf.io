@@ -1,4 +1,4 @@
-﻿// OSF Note: This file has been changed for UI reasons, to prevent
+// OSF Note: This file has been changed for UI reasons, to prevent
 // automatic rendering, and to add a checkbox for toggling snippet
 // autocompletion. This is only here for the toolbar
 

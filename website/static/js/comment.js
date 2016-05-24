@@ -281,6 +281,18 @@ var CommentModel = function(data, $parent, $root) {
     self.isAbuse = ko.observable(data.attributes.is_abuse);
     self.canEdit = ko.observable(data.attributes.can_edit);
     self.hasChildren = ko.observable(data.attributes.has_children);
+    self.hasReport = ko.observable(data.attributes.has_report);
+    self.isHam = ko.observable(data.attributes.is_ham);
+
+    self.isDeletedAbuse = ko.pureComputed(function() {
+        return self.isDeleted() && self.isAbuse();
+    });
+    self.isDeletedNotAbuse = ko.pureComputed(function() {
+        return self.isDeleted() && !self.isAbuse();
+    });
+    self.isAbuseNotDeleted = ko.pureComputed(function() {
+        return !self.isDeleted() && self.isAbuse();
+    });
 
     if (window.contextVars.node.anonymous) {
         self.author = {
@@ -453,6 +465,7 @@ CommentModel.prototype.submitAbuse = function() {
     request.done(function() {
         self.isAbuse(true);
         self.reporting(false);
+        self.hasReport(true);
     });
     request.fail(function(xhr, status, error) {
         self.errorMessage('Could not report abuse.');
