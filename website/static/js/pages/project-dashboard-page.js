@@ -95,7 +95,9 @@ var institutionLogos = {
 
 $(document).ready(function () {
 
-    m.mount(document.getElementById('instLogo'), m.component(institutionLogos, {institutions: window.contextVars.node.institutions}));
+    if (ctx.node.institutions.length){
+        m.mount(document.getElementById('instLogo'), m.component(institutionLogos, {institutions: window.contextVars.node.institutions}));
+    }
     $('#contributorsList').osfToggleHeight();
     if (!ctx.node.isRetracted) {
         // Treebeard Files view
