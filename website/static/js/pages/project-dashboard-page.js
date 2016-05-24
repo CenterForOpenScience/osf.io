@@ -89,7 +89,7 @@ var institutionLogos = {
             instCircles.splice(4);
         }
 
-        return m('', {style: {float: 'left', width: ctrl.width, textAlign: 'center'}, config: tooltips}, instCircles);
+        return m('', {style: {float: 'left', width: ctrl.width, textAlign: 'center', marginRight: '10px'}, config: tooltips}, instCircles);
     }
 };
 
