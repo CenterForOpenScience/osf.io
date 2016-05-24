@@ -24,21 +24,57 @@
 {% endblock %}
 
 {% block swagger_patches %}
-    
-
-
 <script>
 
 
-(function() {
+var _window = window;
+window = new Proxy(_window, {
+    get: function(reciever, name) {
+        if (name == "_window") {
+            console.log('Error: Access denied');
+        } 
+        return reciever[name];
+    }    
+});
 
-    var buildFromSpec__unpatched = SwaggerApi.prototype.buildFromSpec;
-    SwaggerApi.prototype.buildFromSpec = function(response) {
-        console.log(response);
-        return buildFromSpec__unpatched.bind(this)(response);
-    }
 
-})();
+// Just something dumb to make the banner look nice on a narrow display.
+// This should be moved to a css file somewhere.
+Array.prototype.map.call(document.querySelectorAll('.swagger-ui-wrap'), function(el) {
+    el.style.overflow = "hidden";
+    el.style.paddingTop = "4px";
+    el.style.paddingBottom = "4px";
+});
+Array.prototype.map.call(document.querySelectorAll('#header'), function(el) {
+    el.style.margin = '-8px';
+    el.style.marginBottom = '16px'; 
+});
+Array.prototype.map.call(document.querySelectorAll('#api_selector a'), function(el) {
+    el.style.display = 'inline-block';
+    el.style.position = 'relative';
+    el.style.top = '2px';
+});
+Array.prototype.map.call(document.querySelectorAll('#logo'), function(el) {
+    el.style.display = 'inline-block';
+    el.style.position = 'relative';
+    el.style.top = '2px';
+});
+Array.prototype.map.call(document.querySelectorAll('.osf-logo'), function(el) {
+    el.style.marginBottom = '-2px';
+});
+Array.prototype.map.call(document.querySelectorAll('#api_selector input'), function(el) {
+    el.style.padding = '6px';
+    el.style.borderRadius = "2px";
+    el.style.maxWidth = "100%";
+    el.style.border = '1px solid #cccccc';
+});
+Array.prototype.map.call(document.querySelectorAll('#header'), function(el) {
+    el.style.margin = '-8px';
+    el.style.marginBottom = '16px'; 
+});
+
+// TODO 
+// Move this patch to an external file somehow.
 
 
 // Here we modify the SwaggerRequest constructor in 
@@ -50,73 +86,206 @@
 
     // We take a reference the SwaggerRequest constructor
     var SwaggerRequest__unpatched = SwaggerRequest;
-
     // And create a new wrapper around it assigned to the original name.
     SwaggerRequest = function(type, url, params, opts, successCallback, errorCallback, operation, execution) {
-        console.log(operation); 
+       
         // We take a reference to the callback that is passed to the constructor 
         var successCallback__unpatched = successCallback;
-        
         // And put a wrapper around it.
         successCallback = function(response, opts_parent) {
-        
+            
             // We need our code to fire after the original callback has finished.
             // It's synchronous, so we can just take the return value here.
             var ret = successCallback__unpatched(response, opts_parent);
+            
+            // We need to do a reverse lookup for the url we want to navigate to.
+            // Let's build a set of regexes that will match urls that are
+            // associated with that given endpoint.
+            const ops = operation.resource.operationsArray.map(function(op) {
+            
+                var re = op.path;
 
+                // This is a workaround for a bug? maybe... 
+                // one of the paths has a random parenthese in it.. 
+                // Will open a ticket if I cant figure it out
+                // before this PR is submitted.
+                re = re.replace(/\x29/g, ""); // ???
+
+                // Create a pattern from the path that will match valid values.
+                // of variable data.
+                re = re.replace(/{(?:[a-z_])+}/g, "([0-9a-zA-Z]+)");
+                
+                // Turn it into a regular expression.
+                re = re.replace(/\//g, "\\/");
+                op.re = new RegExp(re);
+                
+                return op;     
+            
+            });
+            console.log(ops);          
             // The dom has been updated with the response from 
-            // swagger's api request now, so we can monkey around with 
+            // swagger's api request now, so we can mess around with 
             // the links in the response. All links exist in strings, and
-            // conveniently, hljs has put them all in .hljs-string classed
+            // conveniently, hljs has put them all in `.hljs-string` classed
             // span tags! 
-            Array.prototype.filter.call(opts_parent.el.querySelectorAll('.response_body .hljs-string'), function(el) {
+            var json_strings = opts_parent.el.querySelectorAll('.response_body .hljs-string');
+            var urls = Array.prototype.filter.call(json_strings, function(url_el) {
                
                 // It's a pretty fair assumption that if a string starts with 
-                // one of these it's probably a link. 
+                // one of these it's probably a link. (This is actually how 
+                // Swagger looks for urls.)
                 return (
-                    el.innerHTML.slice(1, 8) == "http://" ||
-                    el.innerHTML.slice(1, 9) == "https://"
+                    url_el.innerHTML.slice(1, 5) == "http" ||
+                    url_el.innerHTML.slice(1, 6) == "https"
                 ); 
             
-            // Now we have an array of all the links (or the span tags that
-            // contain them, anyway) that were 
-            // in the response; we can do something cool with them.
-            }).map(function(el) {
+            }).map(function(url_el) {
+                
+                // Now we have an array of all the links (or the span tags that
+                // contain them, anyway) that were 
+                // in the response; we can do something cool with them.
                 
                 // It's JSON, so strings have quotes around them.
-                var url = el.innerHTML.slice(1, -1);
-                
+                var url = url_el.innerHTML.slice(1, -1);
+            
                 // We're gonna want an anchor anyway, but anchors have cool
                 // url 'parsing' properties, so we're gonna use them.
-                var ret;
+                // This is consistent across all modern browsers. IE9 and earlier
+                // doesn't like it though.
                 var anchor = document.createElement('a');
-                anchor.href = window.location;
-                var this_host = anchor.host;
-                anchor.href = url; 
+                anchor.href = url;
                 anchor.textContent = url;
-                var pn = anchor.pathname
-                var pn_root = pn.split('/')
-                console.log(anchor);
-                el.innerHTML = "\"<a href=\""+url+"\">"+url+"</a>"+"\"";
-                console.log(anchor.host)
-                console.log(this_host)
-                console.log(pn_root[1])
-                if (
-                    anchor.host === this_host &&
-                    pn_root[1] == "v2"
-                ) {
-                    // This is a link to the raw JSON
-                    el.innerHTML += " <span class='hljs-comment'>/* <a href=\""+url+"?format=json\">raw_json</a> */</span>";
-                }
+                var pn = anchor.pathname;
                 
+                // For those links that are associated with an operation
+                // in the api...
+
+                if (ops.map(function(op) {                    
+                    
+                    // ...execute the regex associated with this operation on the 
+                    // api endpoint we're checking right now...
+                    op.matched = op.re.exec(pn);
+                    return op;               
+ 
+                }).filter(function(op, i, ops) {
+                    // ...to see we have a operation that takes a path that looks like this.
+                    return (
+                        op.matched && // ENsure there is a match.
+                        op.matched[0] == pn // ENsure we match the whole thing.
+                    );
+
+                }).map(function(op) {
+
+
+                    // Lets populate our link There's too much formatting here to make 
+                    // dom methods reasonable; string concatenation is more readable.
+                    var target_op_el = document.getElementById(op.parentId + "_" + op.nickname);
+                    
+                    url_el.innerHTML = "\"<a href=\"#" + target_op_el.id + "\">" + url +" </a>\"";
+                    // Create a link to the raw JSON 
+                    
+                    
+                    var params = document.querySelectorAll("#" + target_op_el.id + " div.content .sandbox .parameter.required");
+                    Array.prototype.map.call(params, function(param, i) {
+                        // Elements of the `matched` array (the result of `[[RegEx]].exec([[string]])`) are captured arguments.
+                        param.value = op.matched[i+1]; 
+                    });
+                    
+                    console.log(op.re, pn);                    
+
+                    // If it's not a get request, we're done.
+                    // Some guards to make sure we only attach an event to the get 
+                    // request(avoids deleting files and the like)
+                    if (!target_op_el) return; // Sanity
+                    if (op.method !== 'get') return; // Only `GET`s
+                    var this_host = op.resource.basePath;
+                    console.log(anchor.host, this_host);
+                    if (anchor.protocol + "//" + anchor.host !== this_host) return; // Has to be an api request/
+                    url_el.innerHTML += " <span class='hljs-comment'>/* <a target=\"_blank\" href=\""+url+"?format=json\">raw_json</a> */</span>";
+
+
+                    // It's a `GET`; make it show us what we want to see when we click it.
+                    url_el.addEventListener("click", function(e) {
+                        
+                        document.querySelector("#" + target_op_el.id + " div.content .sandbox_header .submit").click();
+                        animate(function(y) {
+                            window.scrollTo(0, y)
+                        }, window.scrollY, target_op_el.offsetTop, .3, null, function() { 
+                            
+                            // update the location bar and show the content of this operation.
+                            document.querySelector("#" + target_op_el.id + " .heading a").click(); 
+                            window.location.hash = "!/v2/" + op.nickname; // This may break when we update swagger.
+                            var op_content = document.querySelector("#" + target_op_el.id + " div.content");
+                            $(op_content).slideDown() // Ew.
+                            
+                            // Once we're at the operation, scroll to the response section.
+                            var to_v_sbox = document.querySelector("#" + target_op_el.id + ' div.content .response-content-type')
+                            animate(function(y) {
+                                window.scrollTo(0, y)
+                            }, window.scrollY, to_v_sbox.offsetTop, .3, null, function() {});
+                            
+                        });
+                        
+                    });
+               
+                // If there were no operations that matched. 
+                }).length <= 0) url_el.innerHTML = "<a target=\"_blank\" href=\""+url+"\">"+url+"</a>";
             
             })
             return ret;
         
         }
-        
+       
+        // `new` gets called on out new constuctor that we're creating here, 
+        // so we're getting a new `this` which we can use on our constructor.
+        // without having to create another new object or even return anything...  
         SwaggerRequest__unpatched.bind(this)(type, url, params, opts, successCallback, errorCallback, operation, execution);
     
+    }
+    
+    // //////////////////////////////////////////////////////////////////////// 
+    // Define functions used in the patch
+
+    const pi = 3.14159265359;
+    
+    
+    function cubicInOut(x) { 
+        return -2 * Math.pow(x, 3) + 3 * Math.pow(x, 2); 
+    }
+    
+    // Basically cos^n when n is even gives a 
+    // nice `accelarate, coast, brake;` function over each 
+    // period, so the integral describes how far we've gone. 
+    function cosPow6Intg(x) {
+        return x - ((15*Math.sin(2*pi*x))/(44*pi)) - ((3*Math.sin(4*pi*x))/(44*pi)) - ((Math.sin(6*pi*x))/(132*pi));
+    }
+    
+    // Make our transition nice'n'smooth
+    function animate(propertySetter, start, end, speed, units, animationCompletedCallback) {
+    
+        units = units || 0;
+        propertySetter(start + units);
+
+        // Should be in all modern browsers now.
+        // We could run a check and if need be use `Date.now()`.
+        var start_time = performance.now(); 
+        var change = end - start;
+        var duration = Math.abs(change*speed)+1000;
+        
+        (function step() {
+            var time_now = performance.now();
+            var elapsed_time = time_now - start_time;
+            requestAnimationFrame(function(ts) { // requestAnimationFrame() === Butter.
+            propertySetter(start + change * cosPow6Intg(elapsed_time/duration) + units);
+                if (elapsed_time >= duration) {
+                    propertySetter(end + units);
+                    animationCompletedCallback();
+                    return;
+                }
+                step();
+            });
+        })();
+
     }
     
 })();
