@@ -1,4 +1,4 @@
-Hello ${refferer.fullname},
+Hello ${referer.fullname},
 
 You recently added ${invitedUser.fullname} to "${node.title}". ${invitedUser.fullname} wants to claim their account, but the email address they provided is different from the one you provided.  To maintain security of your project, we are sending the account confirmation to you first.
 
@@ -10,7 +10,7 @@ After ${invitedUser.fullname} confirms their account, they will be able to contr
 
 Hello ${invitedUser.fullname},
 
-You have been added by ${refferer.fullname} as a contributor to the project "${node.title}" on the Open Science Framework. To set a password for your account, visit:
+You have been added by ${referer.fullname} as a contributor to the project "${node.title}" on the Open Science Framework. To set a password for your account, visit:
 
 ${claim_url}
 
