@@ -129,9 +129,15 @@
                 <div id="deactivateAccount" class="panel panel-default">
                     <div class="panel-heading clearfix"><h3 class="panel-title">Deactivate Account</h3></div>
                     <div class="panel-body">
-                        <p class="alert alert-warning"><strong>Warning:</strong> This action is irreversible.</p>
+                        %if not requestedDeactivation:
+                            <p class="alert alert-warning"><strong>Warning:</strong> This action is irreversible.</p>
+                        %endif
                         <p>Deactivating your account will remove you from all public projects to which you are a contributor. Your account will no longer be associated with OSF projects, and your work on the OSF will be inaccessible.</p>
-                        <a class="btn btn-danger" data-bind="click: submit, css: success() === true ? 'disabled' : ''">Request deactivation</a>
+                        %if not requestedDeactivation:
+                             <a class="btn btn-danger" data-bind="click: submit, css: success() === true ? 'disabled' : ''">Request deactivation</a>
+                        %else:
+                             <p><b>Your account is currently pending deactivation.</b></p>
+                        %endif
                     </div>
                 </div>
             </div>

@@ -343,7 +343,8 @@ def user_account(auth, **kwargs):
         'user_id': user._id,
         'addons': user_addons,
         'addons_js': collect_user_config_js([addon for addon in settings.ADDONS_AVAILABLE if 'user' in addon.configs]),
-        'addons_css': []
+        'addons_css': [],
+        'requestedDeactivationgit ': user.requestedDeactivation
     }
 
 
@@ -815,6 +816,7 @@ def request_deactivation(auth):
         user=auth.user,
     )
     user.email_last_sent = datetime.datetime.utcnow()
+    user.requestedDeactivation = True
     user.save()
     return {'message': 'Sent account deactivation request'}
 
