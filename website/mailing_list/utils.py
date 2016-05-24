@@ -356,7 +356,7 @@ def jsonify_users_list(users, unsubs=()):
             # Mailgun allows 1000 user upserts per request
             if floor(len(members_list[page]) / 999):
                 page += 1
-                members_list[page] = []
+                members_list.append([])
             members_list[page].append({
                 'address': email,
                 'subscribed': member not in unsubs and email == member.username,
