@@ -201,7 +201,8 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
 @must_not_be_registration
 @decorators.autoload_filenode()
 def osfstorage_delete(file_node, payload, node_addon, **kwargs):
-    auth = Auth(User.load(payload['user']))
+    user = User.load(payload['user'])
+    auth = Auth(user)
 
     #TODO Auth check?
     if not auth:
@@ -211,7 +212,7 @@ def osfstorage_delete(file_node, payload, node_addon, **kwargs):
         raise HTTPError(httplib.BAD_REQUEST)
 
     try:
-        file_node.delete()
+        file_node.delete(user=user)
 
     except exceptions.FileNodeCheckedOutError:
         raise HTTPError(httplib.FORBIDDEN)

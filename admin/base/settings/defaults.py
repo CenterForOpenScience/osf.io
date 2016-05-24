@@ -67,6 +67,7 @@ INSTALLED_APPS = (
     'admin.metrics',
     'admin.nodes',
     'admin.users',
+    'admin.meetings',
     'admin.sales_analytics',
 
     # 3rd party

@@ -209,10 +209,6 @@ table.responsive-table tbody tr td .card-header > span{
         display: inline-block;
     }
 
-    table.responsive-table-xxs tbody .card-body {
-        display: none;
-    }
-
     table.responsive-table-xxs tbody td>.header {
         display: inline-block;
         font-weight: bold;
@@ -301,10 +297,6 @@ table.responsive-table tbody tr td .card-header > span{
         -webkit-transform: translate(0, -50%);
         -ms-transform: translate(0, -50%);
         display: inline-block;
-    }
-
-    table.responsive-table-xs tbody .card-body {
-        display: none;
     }
 
     table.responsive-table-xs tbody td>.header {

@@ -18,7 +18,7 @@ from api.nodes.views import (
     NodeChildrenList, NodeCommentsList, NodeProvidersList, NodeLinksList,
     NodeContributorDetail, NodeFilesList, NodeLinksDetail, NodeFileDetail,
     NodeAlternativeCitationsList, NodeAlternativeCitationDetail, NodeLogList,
-    NodeInstitutionDetail, WaterButlerMixin, NodeForksList)
+    NodeInstitutionDetail, WaterButlerMixin, NodeForksList, NodeWikiList)
 
 from api.registrations.serializers import RegistrationNodeLinksSerializer, RegistrationFileSerializer
 
@@ -80,6 +80,9 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
         fork                            boolean            is this project a fork?
         registration                    boolean            has this project been registered? (always true - may be deprecated in future versions)
         collection                      boolean            is this registered node a collection? (always false - may be deprecated in future versions)
+        node_license                    object             details of the license applied to the node
+            year                        string             date range of the license
+            copyright_holders           array of strings   holders of the applied license
         public                          boolean            has this registration been made publicly-visible?
         withdrawn                       boolean            has this registration been withdrawn?
         date_registered                 iso8601 timestamp  timestamp that the registration was created
@@ -188,6 +191,9 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveAPIView, Registration
         fork                            boolean            is this project a fork?
         registration                    boolean            has this project been registered? (always true - may be deprecated in future versions)
         collection                      boolean            is this registered node a collection? (always false - may be deprecated in future versions)
+        node_license                    object             details of the license applied to the node
+            year                        string             date range of the license
+            copyright_holders           array of strings   holders of the applied license
         public                          boolean            has this registration been made publicly-visible?
         withdrawn                       boolean            has this registration been withdrawn?
         date_registered                 iso8601 timestamp  timestamp that the registration was created
@@ -336,3 +342,8 @@ class RegistrationAlternativeCitationDetail(NodeAlternativeCitationDetail, Regis
 class RegistrationInstitutionDetail(NodeInstitutionDetail, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-institution-detail'
+
+
+class RegistrationWikiList(NodeWikiList, RegistrationMixin):
+    view_category = 'registrations'
+    view_name = 'registration-wikis'

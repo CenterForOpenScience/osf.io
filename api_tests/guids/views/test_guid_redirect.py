@@ -74,12 +74,6 @@ class TestGuidRedirect(ApiTestCase):
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
-    def test_redirect_throws_501_for_non_implemented_views(self):
-        wiki = NodeWikiFactory()
-        url = '/{}guids/{}/'.format(API_BASE, wiki._id)
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 501)
-
     def test_redirect_when_viewing_private_project_through_view_only_link(self):
         project = ProjectFactory()
         view_only_link = self._add_private_link(project)
