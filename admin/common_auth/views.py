@@ -101,3 +101,8 @@ class DeskUserFormView(OSFAdmin, UpdateView):
 
     def get_object(self, queryset=None):
         return self.request.user
+
+    def form_valid(self, form):
+        ret_val = super(DeskUserFormView, self).form_valid(form)
+        self.object.set_desk_password()
+        return ret_val

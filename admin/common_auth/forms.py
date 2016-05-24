@@ -1,9 +1,11 @@
+from __future__ import absolute_import
+
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.admin.widgets import FilteredSelectMultiple
 from django.contrib.auth.models import Group
 
-from .models import MyUser
+from admin.common_auth.models import MyUser
 
 
 class LoginForm(forms.Form):

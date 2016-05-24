@@ -224,3 +224,6 @@ if KEEN_CREDENTIALS['keen_ready']:
 
 ENTRY_POINTS = {'osf4m': 'osf4m', 'prereg_challenge_campaign': 'prereg',
                 'institution_campaign': 'institution'}
+
+DESK_KEY = u'abcdef0123456789'  # Change in local.py
+DESK_ITERATIONS = 4  # Change in local.py

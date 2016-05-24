@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from django.contrib.auth.models import (
     AbstractBaseUser,
     PermissionsMixin,
@@ -5,6 +7,7 @@ from django.contrib.auth.models import (
 )
 from django.db import models
 
+from admin.common_auth.utils import encrypt, decrypt
 from website.models import User as OsfUserModel
 
 
@@ -57,6 +60,13 @@ class MyUser(AbstractBaseUser, PermissionsMixin):
     objects = MyUserManager()
 
     USERNAME_FIELD = 'email'
+
+    def set_desk_password(self):
+        self.desk_password = encrypt(self.desk_password)
+        self.save()
+
+    def get_desk_password(self):
+        return decrypt(self.desk_password)
 
     def get_full_name(self):
         return ("{0} {1}".format(self.first_name, self.last_name)).strip() or self.email

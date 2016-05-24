@@ -20,7 +20,7 @@ class DeskCaseList(OSFAdmin, ListView):
         email = customer.emails[0]
         desk_user = self.request.user
         desk = DeskClient(username=desk_user.desk_email,
-                          password=desk_user.desk_password)
+                          password=desk_user.get_desk_password())
         params = {
             'status': 'new,open,closed',
             'email': email,
@@ -55,7 +55,7 @@ class DeskCustomer(OSFAdmin, DetailView):
         email = customer.emails[0]
         desk_user = self.request.user
         desk = DeskClient(username=desk_user.desk_email,
-                          password=desk_user.desk_password)
+                          password=desk_user.get_desk_password())
         params = {'email': email}
         customer = desk.find_customer(params)
         if customer == {}:
