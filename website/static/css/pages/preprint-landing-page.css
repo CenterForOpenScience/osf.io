@@ -1,0 +1,111 @@
+.osf-meeting-header-img {
+    background: #67a3bf;
+    /* Old browsers */
+    background: -moz-linear-gradient(35deg, #67a3bf 0%, #166596 18%, #000000 100%);
+    /* FF3.6+ */
+    background: -webkit-gradient(linear, left bottom, right top, color-stop(0%, #67a3bf), color-stop(18%, #166596), color-stop(100%, #000000));
+    /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(35deg, #67a3bf 0%, #166596 18%, #000000 100%);
+    /* Chrome10+,Safari5.1+ */
+    background: -o-linear-gradient(35deg, #67a3bf 0%, #166596 18%, #000000 100%);
+    /* Opera 11.10+ */
+    background: -ms-linear-gradient(35deg, #67a3bf 0%, #166596 18%, #000000 100%);
+    /* IE10+ */
+    background: linear-gradient(35deg, #67a3bf 0%, #166596 18%, #000000 100%);
+    /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#67a3bf', endColorstr='#000000', GradientType=1);
+    /* IE6-9 fallback on horizontal gradient */
+    color: #fff;
+    padding-top: 40px;
+    position: relative;
+}
+
+.icon-circle {
+    display: inline-block  ;
+    -moz-border-radius: 60px;
+    -webkit-border-radius: 60px;
+    border-radius: 60px;
+    width: 100px;
+    height: 100px;
+    padding-top: 20px;
+    border: 3px solid #D3E1EE;
+}
+
+.icon-bar .fa-custom-7x {
+    font-size: 50px;
+}
+
+.osf-meeting-header .fa-users {
+    font-size: 85px;
+    padding-top: 25px;
+}
+
+.osf-meeting-header .fa-cloud-upload, .osf-meeting-header .fa-search, .osf-meeting-header .fa-cubes {
+    font-size: 100px;
+    padding-top: 25px;
+}
+
+.osf-meeting-header .fa-users, .fa-cloud-upload, .osf-meeting-header .fa-search, .osf-meeting-header .fa-cubes {
+    border-radius: 85px;
+    box-shadow: 0px 0px 10px #E0E7EC;
+    width: 140px;
+    height: 140px;
+}
+
+.osf-meeting-header h1 {
+    font-size: 8em;
+}
+
+.osf-meeting-header .osf-preprint-subheading {
+    font-size: 3em;
+}
+
+.org-logo {
+    -webkit-transform: translateY(50%);
+    -moz-transform: translateY(50%);
+    -ms-transform: translateY(50%);
+    -o-transform: translateY(50%);
+    transform: translateY(50%);
+}
+
+.org-logo img {
+    padding: 20px 20% 0 20%;
+}
+
+.org-logo div {
+    position: relative;
+    top: 50%;
+    -webkit-transform: translateY(-50%);
+    -moz-transform: translateY(-50%);
+    -ms-transform: translateY(-50%);
+    -o-transform: translateY(-50%);
+    transform: translateY(-50%);
+}
+
+.blue-icon {
+    color: #337ab7;
+}
+
+.osf-meeting-p {
+    font-size: 16px;
+}
+
+.network-img {
+    background: url("/static/img/meeting-page/network-web.png") repeat;
+    background-size: contain;
+    height: 1000px;
+    margin-bottom: -1000px;
+    opacity: 0.35;
+    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=25)";
+}
+
+.grey-background {
+    background-color: #FFFFFF;
+    z-index: 2;
+    position: relative;
+}
+
+.preprint-feature a {
+    color: white;
+    font-weight: bold;
+}
