@@ -34,6 +34,13 @@ var ViewModel = function(data) {
     self.isAddInstitution = ko.observable(false);
     self.needsWarning = ko.observable(false);
 
+    self.buttonInfo = ko.computed(function() {
+        return {
+            buttonLabel: self.isAddInstitution() ? 'Add institution' : 'Remove institution',
+            buttonColor: self.isAddInstitution() ? 'btn-success' : 'btn-danger'
+        };
+    });
+
     self.modifyChildrenDialog = function (item) {
         var message;
         var addToOneMessage;
@@ -47,7 +54,6 @@ var ViewModel = function(data) {
         else
             message = 'Remove ' + item.name + ' from <b>' + window.contextVars.node.title + '</b> or to <b>' +
                 window.contextVars.node.title + '</b> and all its components?<br><br>';
-
         if (self.needsWarning()) {
             message += '<div class="text-danger f-w-xl">Warning, you are not affialiated with <b>' + item.name +
                     '</b>.  If you remove it from your project, you cannot add it back.<div>';
@@ -76,8 +82,8 @@ var ViewModel = function(data) {
                         }
                     },
                     success: {
-                        label: 'Add institution',
-                        className: 'btn-success',
+                        label: self.buttonInfo().buttonLabel,
+                        className: self.buttonInfo().buttonColor,
                         callback: function () {
                             self._modifyInst(item);
                         }
@@ -93,7 +99,7 @@ var ViewModel = function(data) {
             }
         });
     };
-    
+
     self.pageTitle = ko.computed(function () {
         return self.isAddInstitution() ? 'Add institution' : 'Remove institution';
     });
