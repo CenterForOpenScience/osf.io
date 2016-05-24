@@ -209,6 +209,8 @@ $(document).ready(function () {
                 mathrender.mathjaxify(markdownElement);
                 $('#markdownRender').css('display', 'inherit');
             });
+        } else {
+            $('#markdownRender').css('display', 'inherit');
         }
     }
 
