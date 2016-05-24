@@ -46,7 +46,7 @@ var QuickSearchProject = {
         self.templateNodes.start();
 
         // Load up to first ten nodes
-        var url = $osf.apiV2Url('users/me/nodes/', { query : { 'embed': 'contributors'}});
+        var url = $osf.apiV2Url('users/me/nodes/', { query : { 'embed': ['contributors','root']}});
         var promise = m.request({method: 'GET', url : url, config : xhrconfig, background: true});
         promise.then(function(result) {
             self.countDisplayed(result.data.length);
@@ -76,7 +76,6 @@ var QuickSearchProject = {
             }, function _error(result){
                 self.requestError(result);
             });
-
         // Recursively fetches remaining user's nodes
         self.recursiveNodes = function (url) {
             if (self.next()) {
@@ -504,8 +503,8 @@ var QuickSearchProject = {
                         m('a', {href: '/search/', onclick: function(){ $osf.trackClick('quickSearch', 'navigate', 'navigate-to-search-the-OSF'); }}, 'search'), ' the OSF' ]),
                     m('.quick-search-table', [
                         m('.row.node-col-headers.m-t-md', [
-                            m('.col-sm-4.col-md-4', m('.quick-search-col', 'Title', sortAlphaAsc(), sortAlphaDesc())),
                             m('.col-sm-4.col-md-3', m('.quick-search-col', 'Project', sortAlphaAsc(), sortAlphaDesc())),
+                            m('.col-sm-4.col-md-4', m('.quick-search-col', 'Component', sortAlphaAsc(), sortAlphaDesc())),
                             m('.col-sm-4.col-md-3', m('.quick-search-col', 'Contributors')),
                             m('.col-sm-4.col-md-2', m('.quick-search-col','Modified', m('span.sort-group', sortDateAsc(), sortDateDesc())))
                         ]),
@@ -546,13 +545,17 @@ var QuickSearchNodeDisplay = {
             return m('.', args.eligibleNodes().slice(0, args.countDisplayed()).map(function(n){
                 var project = args.nodes()[n];
                 var numContributors = project.embeds.contributors.links.meta.total;
-//                var root = project.embeds.root.links.related;
+                var title = project.attributes.title
+                var root = project.embeds.root.data.attributes.title;
+                if (title === root) {
+                    title = '-';
+                }
                 return m('a', {href: '/' + project.id, onclick: function() {
                     $osf.trackClick('quickSearch', 'navigate', 'navigate-to-specific-project');
                 }}, m('.m-v-sm.node-styling',  m('.row', m('div',
                     [
-                        m('.col-sm-4.col-md-4.p-v-xs', m('.quick-search-col',  project.attributes.title)),
-                        m('.col-sm-4.col-md-3.p-v-xs', m('.quick-search-col',  'root')),
+                        m('.col-sm-4.col-md-3.p-v-xs', m('.quick-search-col',  root)),
+                        m('.col-sm-4.col-md-4.p-v-xs', m('.quick-search-col',  title)),
                         m('.col-sm-4.col-md-3.p-v-xs', m('.quick-search-col', $osf.contribNameFormat(project, numContributors, args.getFamilyName))),
                         m('.col-sm-4.col-md-2.p-v-xs', m('.quick-search-col', args.formatDate(project)))
                     ]
