@@ -76,7 +76,7 @@ var QuickSearchProject = {
             }, function _error(result){
                 self.requestError(result);
             });
-            
+
         // Recursively fetches remaining user's nodes
         self.recursiveNodes = function (url) {
             if (self.next()) {
@@ -291,6 +291,11 @@ var QuickSearchProject = {
             return self.preSelectDirection() === sort ? 'selected' : 'not-selected';
         };
 
+        // Filtering on root project
+        self.rootMatch = function (node) {
+            return (node.embeds.root.data.attributes.title.toUpperCase().indexOf(self.filter().toUpperCase()) !== -1);
+        };
+
         // Filtering on title
         self.titleMatch = function (node) {
             return (node.attributes.title.toUpperCase().indexOf(self.filter().toUpperCase()) !== -1);
@@ -323,7 +328,7 @@ var QuickSearchProject = {
         self.filterNodes = function (){
             for (var n = 0;  n < self.nodes().length;  n++) {
                 var node = self.nodes()[n];
-                if (self.titleMatch(node) || self.contributorMatch(node) || self.tagMatch(node)) {
+                if (self.titleMatch(node) || self.contributorMatch(node) || self.tagMatch(node) || self.rootMatch(node)) {
                     self.eligibleNodes().push(n);
                 }
             }
@@ -504,8 +509,8 @@ var QuickSearchProject = {
                         m('a', {href: '/search/', onclick: function(){ $osf.trackClick('quickSearch', 'navigate', 'navigate-to-search-the-OSF'); }}, 'search'), ' the OSF' ]),
                     m('.quick-search-table', [
                         m('.row.node-col-headers.m-t-md', [
-                            m('.col-sm-4.col-md-3', m('.quick-search-col', 'Project', sortAlphaAsc(), sortAlphaDesc())),
-                            m('.col-sm-4.col-md-4', m('.quick-search-col', 'Component', sortAlphaAsc(), sortAlphaDesc())),
+                            m('.col-sm-4.col-md-4', m('.quick-search-col', 'Project', sortAlphaAsc(), sortAlphaDesc())),
+                            m('.col-sm-4.col-md-3', m('.quick-search-col', 'Component', sortAlphaAsc(), sortAlphaDesc())),
                             m('.col-sm-4.col-md-3', m('.quick-search-col', 'Contributors')),
                             m('.col-sm-4.col-md-2', m('.quick-search-col','Modified', m('span.sort-group', sortDateAsc(), sortDateDesc())))
                         ]),
@@ -555,8 +560,8 @@ var QuickSearchNodeDisplay = {
                     $osf.trackClick('quickSearch', 'navigate', 'navigate-to-specific-project');
                 }}, m('.m-v-sm.node-styling',  m('.row', m('div',
                     [
-                        m('.col-sm-4.col-md-3.p-v-xs', m('.quick-search-col',  root)),
-                        m('.col-sm-4.col-md-4.p-v-xs', m('.quick-search-col',  title)),
+                        m('.col-sm-4.col-md-4.p-v-xs', m('.quick-search-col',  root)),
+                        m('.col-sm-4.col-md-3.p-v-xs', m('.quick-search-col',  title)),
                         m('.col-sm-4.col-md-3.p-v-xs', m('.quick-search-col', $osf.contribNameFormat(project, numContributors, args.getFamilyName))),
                         m('.col-sm-4.col-md-2.p-v-xs', m('.quick-search-col', args.formatDate(project)))
                     ]
