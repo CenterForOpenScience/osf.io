@@ -201,22 +201,34 @@ var QuickSearchProject = {
             return (A > B) ? -1 : (A < B) ? 1 : 0;
         };
 
-        self.sortAlphabeticalAscending = function () {
+        self.sortAlphabeticalAscending = function (node) {
             self.nodes().sort(function(a,b){
+            if (node === 'rootTitle') {
+                var A = a.embeds.root.data.attributes.title.toUpperCase();
+                var B = b.embeds.root.data.attributes.title.toUpperCase();
+                }
+            else if (node === 'nodeTitle') {
                 var A = a.attributes.title.toUpperCase();
                 var B = b.attributes.title.toUpperCase();
-                return self.sortAscending(A, B);
+                }
+            return self.sortAscending(A, B);
             });
-            self.sortState('alphaAsc');
+            self.sortState(node + 'AlphaAsc');
         };
 
-        self.sortAlphabeticalDescending = function () {
+        self.sortAlphabeticalDescending = function (node) {
             self.nodes().sort(function(a,b){
+            if (node === 'rootTitle') {
+                var A = a.embeds.root.data.attributes.title.toUpperCase();
+                var B = b.embeds.root.data.attributes.title.toUpperCase();
+                }
+            else if (node === 'nodeTitle') {
                 var A = a.attributes.title.toUpperCase();
                 var B = b.attributes.title.toUpperCase();
+                }
                 return self.sortDescending(A, B);
             });
-            self.sortState('alphaDesc');
+            self.sortState(node + 'AlphaDesc');
         };
 
         self.sortDateAscending = function () {
@@ -240,11 +252,17 @@ var QuickSearchProject = {
         // Sorts nodes depending on current sort state.
         self.sortBySortState = function () {
             switch (self.sortState()) {
-                case 'alphaAsc':
-                    self.sortAlphabeticalAscending();
+                case 'rootTitleAlphaAsc':
+                    self.sortAlphabeticalAscending('rootTitle');
                     break;
-                case 'alphaDesc':
-                    self.sortAlphabeticalDescending();
+                case 'rootTitleAlphaDesc':
+                    self.sortAlphabeticalDescending('rootTitle');
+                    break;
+                case 'nodeTitleAlphaAsc':
+                    self.sortAlphabeticalAscending('nodeTitle');
+                    break;
+                case 'nodeTitleAlphaDesc':
+                    self.sortAlphabeticalDescending('nodeTitle');
                     break;
                 case 'dateAsc':
                     self.sortDateAscending();
@@ -365,20 +383,20 @@ var QuickSearchProject = {
             }
         }
 
-        function sortAlphaAsc() {
+        function sortAlphaAsc(node) {
             if (ctrl.loadingComplete()) {
-                return m('button', {'class': ctrl.colorSortButtons('alphaAsc'), onclick: function() {
-                    ctrl.sortBySortState(ctrl.sortState('alphaAsc'));
+                return m('button', {'class': ctrl.colorSortButtons(node + 'AlphaAsc'), onclick: function() {
+                    ctrl.sortBySortState(ctrl.sortState(node + 'AlphaAsc'));
                     $osf.trackClick('quickSearch', 'view', 'sort-' + ctrl.sortState());
                 }},
                     m('i.fa.fa-angle-up'));
             }
         }
 
-        function sortAlphaDesc(){
+        function sortAlphaDesc(node){
             if (ctrl.loadingComplete()){
-                return m('button', {'class': ctrl.colorSortButtons('alphaDesc'), onclick: function() {
-                    ctrl.sortBySortState(ctrl.sortState('alphaDesc'));
+                return m('button', {'class': ctrl.colorSortButtons(node + 'AlphaDesc'), onclick: function() {
+                    ctrl.sortBySortState(ctrl.sortState(node + 'AlphaDesc'));
                     $osf.trackClick('quickSearch', 'view', 'sort-' + ctrl.sortState());
                 }},
                     m('i.fa.fa-angle-down'));
@@ -509,8 +527,8 @@ var QuickSearchProject = {
                         m('a', {href: '/search/', onclick: function(){ $osf.trackClick('quickSearch', 'navigate', 'navigate-to-search-the-OSF'); }}, 'search'), ' the OSF' ]),
                     m('.quick-search-table', [
                         m('.row.node-col-headers.m-t-md', [
-                            m('.col-sm-4.col-md-4', m('.quick-search-col', 'Project', sortAlphaAsc(), sortAlphaDesc())),
-                            m('.col-sm-4.col-md-3', m('.quick-search-col', 'Component', sortAlphaAsc(), sortAlphaDesc())),
+                            m('.col-sm-4.col-md-4', m('.quick-search-col', 'Project', sortAlphaAsc('rootTitle'), sortAlphaDesc('rootTitle'))),
+                            m('.col-sm-4.col-md-3', m('.quick-search-col', 'Component', sortAlphaAsc('nodeTitle'), sortAlphaDesc('nodeTitle'))),
                             m('.col-sm-4.col-md-3', m('.quick-search-col', 'Contributors')),
                             m('.col-sm-4.col-md-2', m('.quick-search-col','Modified', m('span.sort-group', sortDateAsc(), sortDateDesc())))
                         ]),
