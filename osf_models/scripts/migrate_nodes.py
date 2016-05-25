@@ -563,7 +563,7 @@ def set_user_many_to_many_on_nodes(page_size=5000):
                                     modm_m2m_value._id]
                                 write = 'write' in modm_node.permissions[
                                     modm_m2m_value._id]
-                                # import ipdb; ipdb.set_trace()
+
                                 Contributor.objects.get_or_create(
                                     user_id=modm_to_django[modm_m2m_value._id],
                                     node=django_node,
