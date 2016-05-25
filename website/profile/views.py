@@ -344,7 +344,7 @@ def user_account(auth, **kwargs):
         'addons': user_addons,
         'addons_js': collect_user_config_js([addon for addon in settings.ADDONS_AVAILABLE if 'user' in addon.configs]),
         'addons_css': [],
-        'requestedDeactivationgit ': user.requestedDeactivation
+        'requestedDeactivation': user.requestedDeactivation
     }
 
 
