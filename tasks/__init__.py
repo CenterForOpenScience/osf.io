@@ -897,10 +897,7 @@ def webpack(clean=False, watch=False, dev=False):
         clean_assets()
     webpack_bin = os.path.join(HERE, 'node_modules', 'webpack', 'bin', 'webpack.js')
     args = [webpack_bin]
-    if settings.DEBUG_MODE and dev:
-        args += ['--colors']
-    else:
-        args += ['--progress']
+    args += ['--progress']
     if watch:
         args += ['--watch']
     config_file = 'webpack.dev.config.js' if dev else 'webpack.prod.config.js'
