@@ -12,8 +12,6 @@ from framework.celery_tasks import app
 
 from flask import request
 
-
-
 collection = database['pagecounters']
 
 @run_postcommit(once_per_request=False, celery=True)

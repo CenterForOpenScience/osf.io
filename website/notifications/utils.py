@@ -11,8 +11,6 @@ from website.notifications.model import NotificationSubscription
 from website.project import signals
 
 from framework.celery_tasks import app
-from framework.celery_tasks.handlers import queued_task
-from framework.transactions.context import transaction
 
 
 class NotificationsDict(dict):
