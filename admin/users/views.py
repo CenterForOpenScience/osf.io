@@ -4,7 +4,7 @@ from furl import furl
 from django.views.generic import FormView, DeleteView
 from django.core.mail import send_mail
 from django.shortcuts import redirect
-from django.http import Http404
+from django.http import Http404, HttpResponse
 
 from website.settings import SUPPORT_EMAIL, DOMAIN
 from website.security import random_string
@@ -142,12 +142,14 @@ class ResetPasswordView(OSFAdmin, FormView):
         email = form.cleaned_data.get('emails')
         user = get_user(email)
         if user is None or user.pk != self.kwargs.get('guid'):
-            raise Http404(
+            return HttpResponse(
                 '{} with id "{}" and email "{}" not found.'.format(
                     self.context_object_name.title(),
                     self.kwargs.get('guid'),
-                    email,
-                ))
+                    email
+                ),
+                status=409
+            )
         reset_abs_url = furl(DOMAIN)
         user.verification_key = random_string(20)
         user.save()
