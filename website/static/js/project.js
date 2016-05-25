@@ -336,7 +336,7 @@ $(document).ready(function() {
 
         // Remove Comments link from project nav bar for pages not bound to the comment view model
         var commentsLinkElm = document.getElementById('commentsLink');
-        if (!ko.dataFor(commentsLinkElm)) {
+        if (!ko.dataFor(commentsLinkElm) && commentsLinkElm != null) {
              commentsLinkElm.remove();
         }
     });

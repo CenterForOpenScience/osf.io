@@ -319,3 +319,17 @@ select.form-control {
 .wiki-toolbar-icon:hover {
   background: rgba(51, 122, 183, 0.15);
 }
+.wiki-view-icon-container  /* this keeps the container of the view icon and dropdown responsive */
+{
+    position: relative;
+    top: 50%;
+    transform: translateY(-50%);
+    -ms-transform: translateY(-50%);
+    -webkit-transform: translateY(-50%);
+    -moz-transform: translateY(-50%);
+}
+.no-padding
+{
+    padding-top: 0;
+    padding-bottom: 0;
+}
