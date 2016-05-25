@@ -7,7 +7,7 @@
                 </div>
                 <div class="modal-body">
                   <p>
-                    Wiki uses the Markdown syntax. This gives you many options but can be very simple as well. To see more information and examples go to markdown <a href="https://daringfireball.net/projects/markdown/">guides.</a>
+                    Wiki uses the <a href="https://daringfireball.net/projects/markdown/ ">Markdown</a> syntax. This gives you many options but can be very simple as well. To see more information and examples go to our <a href="http://help.osf.io/m/collaborating/l/524109-using-the-wiki">guides.</a>
                   </p>
                 </div>
                 <div class="modal-footer">
