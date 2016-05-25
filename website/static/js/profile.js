@@ -355,7 +355,7 @@ BaseViewModel.prototype.submit = function() {
         ).fail(
             this.handleError.bind(this)
         ).always(
-            this.saving(false)
+            function() { this.saving(false); }
         );
     } else {
         this.showMessages(true);
@@ -725,7 +725,7 @@ SocialViewModel.prototype.submit = function() {
         ).fail(
             this.handleError.bind(this)
         ).always(
-            this.saving(false)
+            function() { this.saving(false); }
         );
     } else {
         this.showMessages(true);

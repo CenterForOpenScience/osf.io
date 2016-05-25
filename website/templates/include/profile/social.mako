@@ -113,7 +113,7 @@
                 <input class="form-control" data-bind="value: academiaProfileID" placeholder="profileID"/>
                 </div>
             </div>
-            
+
             <div class="form-group">
                 <label>Baidu Scholar</label>
                 <div class="input-group">
@@ -137,10 +137,10 @@
                     >Save</button>
             </div>
 
-                <!-- Flashed Messages -->
-                <div class="help-block flashed-message">
-                    <p data-bind="html: message, attr: {class: messageClass}"></p>
-                </div>
+            <!-- Flashed Messages -->
+            <div class="help-block flashed-message">
+                <p data-bind="html: message, attr: {class: messageClass}"></p>
+            </div>
 
 
         </form>
