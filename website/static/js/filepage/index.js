@@ -378,16 +378,16 @@ var FileViewPage = {
         }
 
         function changeVersionHeader(value){
-          m.render(document.getElementById('version-link'), m("a", {onclick: goToRevisions},'Version:  ' + String(value)));
+          m.render(document.getElementById('version-link'), m('a', {onclick: goToRevisions},'Version:  ' + String(value)));
         }
 
         function httpGetAsync(theUrl, callback) {
             var xmlHttp = new XMLHttpRequest();
             xmlHttp.onreadystatechange = function() {
-                if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+                if (xmlHttp.readyState === 4 && xmlHttp.status === 200)
                     callback(xmlHttp.responseText);
             }
-            xmlHttp.open("GET", theUrl, true); // true for asynchronous
+            xmlHttp.open('GET', theUrl, true); // true for asynchronous
             xmlHttp.send(null);
         }
 
@@ -403,16 +403,16 @@ var FileViewPage = {
             // An anchor was passed in, so let's retrieve and render it.
             var idx_anchor = anchor.indexOf('=');
             var behavior = (idx_anchor > 0) ? anchor.slice(0,idx_anchor) : '';
-            if (behavior == 'show'){
+            if (behavior === 'show'){
                 var value = anchor.slice(idx_anchor + 1);
-                if (value == 'revision'){
+                if (value === 'revision'){
                    self.mfrIframeParent.toggle();
                    self.revisions.selected = true;
                 }
             }
-            if (behavior == "version"){
-              var value = anchor.slice(idx_anchor + 1,idx_anchor + 2);
-              changeVersionHeader(value);
+            if (behavior === 'version'){
+              var anchor_value = anchor.slice(idx_anchor + 1,idx_anchor + 2);
+              changeVersionHeader(anchor_value);
             } else {
                 httpGetAsync(self.file.urls.revisions, setVersionHeader);
             }
