@@ -271,7 +271,6 @@ var CommentModel = function(data, $parent, $root) {
     self.$root = $root;
 
     self.id = ko.observable(data.id);
-    data.attributes.content = replaceURLWithHTMLLinks(data.attributes.content);
     self.content = ko.observable(data.attributes.content || '');
     self.page = ko.observable(data.attributes.page);
     self.dateCreated = ko.observable(data.attributes.date_created);
@@ -300,7 +299,7 @@ var CommentModel = function(data, $parent, $root) {
     } else {
         self.author = self.$root.author;
     }
-    self.contentDisplay = ko.observable(markdown.full.render(self.content()));
+    self.contentDisplay = ko.observable(replaceURLWithHTMLLinks(markdown.full.render(self.content())));
     // Update contentDisplay with rendered markdown whenever content changes
     self.content.subscribe(function(newContent) {
         self.contentDisplay(markdown.full.render(newContent));
@@ -657,7 +656,7 @@ var onOpen = function(page, rootId, nodeApiUrl, currentUserId) {
 
 function replaceURLWithHTMLLinks (text) {
     var exp = /(\b(http|ftp|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?)/ig;
-    return text.replace(exp,"<a href=\"$1\">$1</a>")
+    return text.replace(exp,"<a href='$1'>$1</a>");
 }
 
 /* options example: {
