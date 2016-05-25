@@ -84,22 +84,22 @@ class User2FactorDeleteView(UserDeleteView):
     template_name = 'users/remove_2_factor.html'
 
     def delete(self, request, *args, **kwargs):
+        user = self.get_object()
         try:
-            user = self.get_object()
             user.delete_addon('twofactor')
-            update_admin_log(
-                user_id=self.request.user.id,
-                object_id=user.pk,
-                object_repr='User',
-                message='Removed 2 factor auth for user {}'.format(user.pk),
-                action_flag=USER_2_FACTOR
-            )
         except AttributeError:
             raise Http404(
                 '{} with id "{}" not found.'.format(
                     self.context_object_name.title(),
                     self.kwargs.get('guid')
                 ))
+        update_admin_log(
+            user_id=self.request.user.id,
+            object_id=user.pk,
+            object_repr='User',
+            message='Removed 2 factor auth for user {}'.format(user.pk),
+            action_flag=USER_2_FACTOR
+        )
         return redirect(reverse_user(self.kwargs.get('guid')))
 
 
