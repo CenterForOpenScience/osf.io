@@ -447,14 +447,16 @@ var QuickSearchProject = {
             }
         }
 
-        // Dropdown for XS screen - if sort on title on large screen, when resize to xs, 'title' is default selected
+        // Dropdown for XS screen - if sort on root on large screen, when resize to xs, 'root' is default selected
         function defaultSelected() {
             var selected = ctrl.preSelectField();
-            if (selected === 'alpha') {
-                return [m('option', {value: 'alpha', selected:'selected'}, 'Title'), m('option', {value: 'date'}, 'Modified')];
-            }
-            else {
-                return [m('option', {value: 'alpha'}, 'Title'), m('option', {value: 'date', selected:'selected'}, 'Modified')];
+            switch (selected) {
+                case 'root':
+                    return [m('option', {value: 'root', selected:'selected'}, 'Project'), m('option', {value: 'date'}, 'Modified')];
+
+                case 'date':
+                    return [m('option', {value: 'root'}, 'Project'), m('option', {value: 'date', selected:'selected'}, 'Modified')];
+                    break;
             }
         }
 
@@ -527,10 +529,10 @@ var QuickSearchProject = {
                         m('a', {href: '/search/', onclick: function(){ $osf.trackClick('quickSearch', 'navigate', 'navigate-to-search-the-OSF'); }}, 'search'), ' the OSF' ]),
                     m('.quick-search-table', [
                         m('.row.node-col-headers.m-t-md', [
-                            m('.col-sm-4.col-md-4', m('.quick-search-col', 'Project', sortAlphaAsc('rootTitle'), sortAlphaDesc('rootTitle'))),
-                            m('.col-sm-4.col-md-3', m('.quick-search-col', 'Component', sortAlphaAsc('nodeTitle'), sortAlphaDesc('nodeTitle'))),
-                            m('.col-sm-4.col-md-3', m('.quick-search-col', 'Contributors')),
-                            m('.col-sm-4.col-md-2', m('.quick-search-col','Modified', m('span.sort-group', sortDateAsc(), sortDateDesc())))
+                            m('.col-sm-3.col-md-4', m('.quick-search-col', 'Project', sortAlphaAsc('rootTitle'), sortAlphaDesc('rootTitle'))),
+                            m('.col-sm-3.col-md-3', m('.quick-search-col', 'Component', sortAlphaAsc('nodeTitle'), sortAlphaDesc('nodeTitle'))),
+                            m('.col-sm-3.col-md-3', m('.quick-search-col', 'Contributors')),
+                            m('.col-sm-3.col-md-2', m('.quick-search-col','Modified', m('span.sort-group', sortDateAsc(), sortDateDesc())))
                         ]),
                         xsDropdown(),
                         m.component(QuickSearchNodeDisplay, {
@@ -578,10 +580,10 @@ var QuickSearchNodeDisplay = {
                     $osf.trackClick('quickSearch', 'navigate', 'navigate-to-specific-project');
                 }}, m('.m-v-sm.node-styling',  m('.row', m('div',
                     [
-                        m('.col-sm-4.col-md-4.p-v-xs', m('.quick-search-col',  root)),
-                        m('.col-sm-4.col-md-3.p-v-xs', m('.quick-search-col',  title)),
-                        m('.col-sm-4.col-md-3.p-v-xs', m('.quick-search-col', $osf.contribNameFormat(project, numContributors, args.getFamilyName))),
-                        m('.col-sm-4.col-md-2.p-v-xs', m('.quick-search-col', args.formatDate(project)))
+                        m('.col-sm-3.col-md-4.p-v-xs', m('.quick-search-col',  root)),
+                        m('.col-sm-3.col-md-3.p-v-xs', m('.quick-search-col',  title)),
+                        m('.col-sm-3.col-md-3.p-v-xs', m('.quick-search-col', $osf.contribNameFormat(project, numContributors, args.getFamilyName))),
+                        m('.col-sm-3.col-md-2.p-v-xs', m('.quick-search-col', args.formatDate(project)))
                     ]
                 ))));
             }));
