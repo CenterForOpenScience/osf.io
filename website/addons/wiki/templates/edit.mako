@@ -74,12 +74,12 @@
                class="${'col-sm-{0}'.format(12 / num_columns)}"
                style="${'' if 'view' in panels_used else 'display: none'}">
               <div class="osf-panel panel panel-default no-border" data-bind="css: { 'no-border reset-height': $root.singleVis() === 'view', 'osf-panel-flex': $root.singleVis() !== 'view' }">
-                <div class="panel-heading wiki-panel-header wiki-single-heading" data-bind="css: { 'osf-panel-heading-flex': $root.singleVis() !== 'view', 'wiki-single-heading': $root.singleVis() === 'view' }" style=" padding-top: 0; padding-bottom: 0;">
-                    <div class="row" style="position: relative; top: 50%; transform: translateY(-50%);">
-                        <div class="col-lg-4" >
-                            <div class="panel-title" > <i class="fa fa-eye"> </i>  View</div>
+                <div class="panel-heading wiki-panel-header wiki-single-heading" data-bind="css: { 'osf-panel-heading-flex': $root.singleVis() !== 'view', 'wiki-single-heading': $root.singleVis() === 'view' }">
+                    <div class="row">
+                        <div class="col-sm-4">
+                            <span class="panel-title" > <i class="fa fa-eye"> </i>  View</span>
                         </div>
-                        <div class="col-lg-8" >
+                        <div class="col-sm-8">
 
                             <div class="pull-right">
                                 <!-- Version Picker -->
