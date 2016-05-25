@@ -203,31 +203,31 @@ var QuickSearchProject = {
 
         self.sortAlphabeticalAscending = function (node) {
             self.nodes().sort(function(a,b){
-            if (node === 'rootTitle') {
-                var A = a.embeds.root.data.attributes.title.toUpperCase();
-                var B = b.embeds.root.data.attributes.title.toUpperCase();
-                }
-            else if (node === 'nodeTitle') {
-                var A = a.attributes.title.toUpperCase();
-                var B = b.attributes.title.toUpperCase();
-                }
-            return self.sortAscending(A, B);
-            });
+                if (node === 'rootTitle') {
+                    var A = a.embeds.root.data.attributes.title.toUpperCase();
+                    var B = b.embeds.root.data.attributes.title.toUpperCase();
+                    }
+                else if (node === 'nodeTitle') {
+                    var A = a.attributes.title.toUpperCase();
+                    var B = b.attributes.title.toUpperCase();
+                    }
+                return self.sortAscending(A, B);
+                });
             self.sortState(node + 'AlphaAsc');
         };
 
         self.sortAlphabeticalDescending = function (node) {
             self.nodes().sort(function(a,b){
-            if (node === 'rootTitle') {
-                var A = a.embeds.root.data.attributes.title.toUpperCase();
-                var B = b.embeds.root.data.attributes.title.toUpperCase();
-                }
-            else if (node === 'nodeTitle') {
-                var A = a.attributes.title.toUpperCase();
-                var B = b.attributes.title.toUpperCase();
-                }
-                return self.sortDescending(A, B);
-            });
+                if (node === 'rootTitle') {
+                    var A = a.embeds.root.data.attributes.title.toUpperCase();
+                    var B = b.embeds.root.data.attributes.title.toUpperCase();
+                    }
+                else if (node === 'nodeTitle') {
+                    var A = a.attributes.title.toUpperCase();
+                    var B = b.attributes.title.toUpperCase();
+                    }
+                    return self.sortDescending(A, B);
+                });
             self.sortState(node + 'AlphaDesc');
         };
 
@@ -531,8 +531,8 @@ var QuickSearchProject = {
                         m('.row.node-col-headers.m-t-md', [
                             m('.col-sm-3.col-md-4', m('.quick-search-col', 'Project', sortAlphaAsc('rootTitle'), sortAlphaDesc('rootTitle'))),
                             m('.col-sm-3.col-md-3', m('.quick-search-col', 'Component', sortAlphaAsc('nodeTitle'), sortAlphaDesc('nodeTitle'))),
-                            m('.col-sm-3.col-md-3', m('.quick-search-col', 'Contributors')),
-                            m('.col-sm-3.col-md-2', m('.quick-search-col','Modified', m('span.sort-group', sortDateAsc(), sortDateDesc())))
+                            m('.col-sm-3.col-md-2', m('.quick-search-col', 'Contributors')),
+                            m('.col-sm-3.col-md-3', m('.quick-search-col','Modified', m('span.sort-group', sortDateAsc(), sortDateDesc())))
                         ]),
                         xsDropdown(),
                         m.component(QuickSearchNodeDisplay, {
@@ -582,8 +582,8 @@ var QuickSearchNodeDisplay = {
                     [
                         m('.col-sm-3.col-md-4.p-v-xs', m('.quick-search-col',  root)),
                         m('.col-sm-3.col-md-3.p-v-xs', m('.quick-search-col',  title)),
-                        m('.col-sm-3.col-md-3.p-v-xs', m('.quick-search-col', $osf.contribNameFormat(project, numContributors, args.getFamilyName))),
-                        m('.col-sm-3.col-md-2.p-v-xs', m('.quick-search-col', args.formatDate(project)))
+                        m('.col-sm-3.col-md-2.p-v-xs', m('.quick-search-col', $osf.contribNameFormat(project, numContributors, args.getFamilyName))),
+                        m('.col-sm-3.col-md-3.p-v-xs', m('.quick-search-col', args.formatDate(project)))
                     ]
                 ))));
             }));
