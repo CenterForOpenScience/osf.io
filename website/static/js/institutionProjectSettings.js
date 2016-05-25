@@ -2,7 +2,6 @@
 var $ = require('jquery');
 var ko = require('knockout');
 var Raven = require('raven-js');
-var m = require('mithril');
 var bootbox = require('bootbox');
 
 var $osf = require('js/osfHelpers');
@@ -13,16 +12,15 @@ var ViewModel = function(data) {
     self.loading = ko.observable(true);
     self.showAdd = ko.observable(false);
     self.institutionHref = ko.observable('');
-    self.userInstitutions = window.contextVars.currentUser.institutions;
-    var userInstitutionsIds = self.userInstitutions.map(function (item) {
-        return item.id;
-    });
-    self.userInstitutionsIds = ko.observable(userInstitutionsIds);
+    self.userInstitutions = data.currentUser.institutions;
+    self.userInstitutionsIds = self.userInstitutions.map(function(item){return item.id;});
     self.selectedInstitution = ko.observable();
-    self.affiliatedInstitutions = ko.observable(window.contextVars.node.institutions);
-    self.affiliatedInstitutionsIds = self.affiliatedInstitutions().map(function (item) {
-        return item.id;
-    });
+    self.affiliatedInstitutions = ko.observable(data.node.institutions);
+
+    self.affiliatedInstitutionsIds = self.affiliatedInstitutions().map(function(item){return item.id;});
+    self.availableInstitutions = ko.observable(self.userInstitutions.filter(function(each){
+        return ($.inArray(each.id, self.affiliatedInstitutionsIds)) === -1;
+    }));
 
     //Has child nodes
     self.hasChildren = ko.observable(false);
@@ -41,19 +39,20 @@ var ViewModel = function(data) {
         };
     });
 
+
     self.modifyChildrenDialog = function (item) {
         var message;
         var addToOneMessage;
         var addToAllMessage;
-        addToOneMessage = 'Add <b>' + item.name + '</b> to <b>' +  window.contextVars.node.title + '</b>.',
-        addToAllMessage = 'Add <b>' + item.name + '</b> to <b>' +  window.contextVars.node.title + '</b> and every component in it.';
+        addToOneMessage = 'Add <b>' + item.name + '</b> to <b>' +  data.node.title + '</b>.',
+        addToAllMessage = 'Add <b>' + item.name + '</b> to <b>' +  data.node.title + '</b> and every component in it.';
         if (self.isAddInstitution()) {
-            message = 'Add <b>' + item.name + '</b> to <b>' + window.contextVars.node.title + '</b> or to <b>' +
-                window.contextVars.node.title + '</b> and all its components?<br><br>';
+            message = 'Add <b>' + item.name + '</b> to <b>' + data.node.title + '</b> or to <b>' +
+                data.node.title + '</b> and all its components?<br><br>';
         }
         else
-            message = 'Remove ' + item.name + ' from <b>' + window.contextVars.node.title + '</b> or to <b>' +
-                window.contextVars.node.title + '</b> and all its components?<br><br>';
+            message = 'Remove ' + item.name + ' from <b>' + data.node.title + '</b> or to <b>' +
+                data.node.title + '</b> and all its components?<br><br>';
         if (self.needsWarning()) {
             message += '<div class="text-danger f-w-xl">Warning, you are not affialiated with <b>' + item.name +
                     '</b>.  If you remove it from your project, you cannot add it back.<div>';
@@ -104,20 +103,9 @@ var ViewModel = function(data) {
         return self.isAddInstitution() ? 'Add institution' : 'Remove institution';
     });
 
-    var affiliatedInstitutionsIds = self.affiliatedInstitutions().map(function (item) {
-        return item.id;
-    });
-    self.availableInstitutions = ko.observable(self.userInstitutions.filter(function (each) {
-        return ($.inArray(each.id, affiliatedInstitutionsIds)) === -1;
-    }));
-
     self.hasThingsToAdd = ko.computed(function () {
         return self.availableInstitutions().length ? true : false;
     });
-
-    self.toggle = function () {
-        self.showAdd(self.showAdd() ? false : true);
-    };
 
     self.submitInst = function (item) {
         self.isAddInstitution(true);
@@ -131,7 +119,7 @@ var ViewModel = function(data) {
 
     };
     self.clearInst = function(item) {
-        self.needsWarning((self.userInstitutionsIds().indexOf(item.id) === -1));
+        self.needsWarning((self.userInstitutionsIds.indexOf(item.id) === -1));
         self.isAddInstitution(false);
         if (self.hasChildren()) {
             self.modifyChildrenDialog(item);
@@ -175,7 +163,7 @@ var ViewModel = function(data) {
             }
             else {
                 var removed = self.affiliatedInstitutions().splice(indexes.indexOf(item.id), 1)[0];
-                if ($.inArray(removed.id, self.userInstitutionsIds()) >= 0){
+                if ($.inArray(removed.id, self.userInstitutionsIds) >= 0){
                     self.availableInstitutions().push(removed);
                 }
                 self.affiliatedInstitutions(self.affiliatedInstitutions());
@@ -208,7 +196,7 @@ ViewModel.prototype.fetchNodeTree = function(treebeardUrl) {
         }).done(function (response) {
             nodesOriginal = projectSettingsTreebeardBase.getNodesOriginal(response[0], nodesOriginal);
             self.nodeParent = response[0].node.id;
-            self.hasChildren(Object.keys(self.nodesOriginal).length > 1);
+            self.hasChildren(Object.keys(nodesOriginal).length > 1);
             self.nodesOriginal(nodesOriginal);
         }).fail(function (xhr, status, error) {
             $osf.growl('Error', 'Unable to retrieve project settings');
@@ -221,7 +209,7 @@ ViewModel.prototype.fetchNodeTree = function(treebeardUrl) {
 var InstitutionProjectSettings = function(selector, data)  {
     this.viewModel = new ViewModel(data);
     var self = this;
-    var treebeardUrl = window.contextVars.node.urls.api + 'tree/';
+    var treebeardUrl = data.node.urls.api + 'tree/';
     self.viewModel.fetchNodeTree(treebeardUrl);
     $osf.applyBindings(this.viewModel, selector);
 

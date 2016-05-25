@@ -89,13 +89,15 @@ var institutionLogos = {
             instCircles.splice(4);
         }
 
-        return m('', {style: {float: 'left', width: ctrl.width, textAlign: 'center'}, config: tooltips}, instCircles);
+        return m('', {style: {float: 'left', width: ctrl.width, textAlign: 'center', marginRight: '10px'}, config: tooltips}, instCircles);
     }
 };
 
 $(document).ready(function () {
 
-    m.mount(document.getElementById('instLogo'), m.component(institutionLogos, {institutions: window.contextVars.node.institutions}));
+    if (ctx.node.institutions.length){
+        m.mount(document.getElementById('instLogo'), m.component(institutionLogos, {institutions: window.contextVars.node.institutions}));
+    }
     $('#contributorsList').osfToggleHeight();
     if (!ctx.node.isRetracted) {
         // Treebeard Files view

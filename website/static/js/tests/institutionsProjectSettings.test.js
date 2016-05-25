@@ -6,20 +6,20 @@ var m = require('mithril');
 var InstitutionProjectSettings = require('js/institutionProjectSettings');
 var bootbox = require('bootbox');
 
-var expectedTitle = 'Sample Project';
-
-window.contextVars = $.extend(true, {}, window.contextVars, {
-    node: {
-        title: expectedTitle,
-        institutions: [{
-            id: 'cos',
-            logo_path: '/static/img/institutions/cos-shield.png',
-            name: 'Center For Open Science'
-        }, {
-            id: 'uoa',
-            logo_path: '/static/img/institutions/cos-shield.png',
-            name: 'University of Awesome'
-        }],
+describe('InstitutionSettings', () => {
+    var data = {
+        apiV2Prefix: 'http://localhost:8000/v2/',
+        node: {
+            title: 'Sample Project',
+            institutions: [{
+                id: 'cos',
+                logo_path: '/static/img/institutions/cos-shield.png',
+                name: 'Center For Open Science'
+            }, {
+                id: 'uoa',
+                logo_path: '/static/img/institutions/cos-shield.png',
+                name: 'University of Awesome'
+            }]},
         currentUser: {
             fullname: 'John Cena',
             institutions: [{
@@ -33,13 +33,8 @@ window.contextVars = $.extend(true, {}, window.contextVars, {
                     name: 'Best Friend University'
                 }]
         }
-    }
-});
-
-describe('InstitutionSettings', () => {
-    var data = {
-        apiV2Prefix: 'http://localhost:8000/v2/'
     };
+
     var item = {
         name: 'Sample Institution'
     };
@@ -51,23 +46,23 @@ describe('InstitutionSettings', () => {
     var viewModel = new InstitutionProjectSettings.ViewModel(data);
 
     it('user variables set', () => {
-        assert.equal(viewModel.userInstitutions, window.contextVars.currentUser.institutions);
-        assert.equal(viewModel.userInstitutionsIds().length, 2);
-        assert.equal(viewModel.userInstitutionsIds()[0], ['cos']);
-        assert.equal(viewModel.userInstitutionsIds()[1], ['bff']);
+        assert.equal(viewModel.userInstitutions, data.currentUser.institutions);
+        assert.equal(viewModel.userInstitutionsIds.length, 2);
+        assert.equal(viewModel.userInstitutionsIds[0], ['cos']);
+        assert.equal(viewModel.userInstitutionsIds[1], ['bff']);
     });
 
     it('node variables set', () => {
-        assert.equal(viewModel.affiliatedInstitutions(), window.contextVars.node.institutions);
+        assert.equal(viewModel.affiliatedInstitutions(), data.node.institutions);
         assert.equal(viewModel.affiliatedInstitutionsIds.length, 2);
         assert.equal(viewModel.affiliatedInstitutionsIds[0], ['cos']);
         assert.equal(viewModel.affiliatedInstitutionsIds[1], ['uoa']);
         assert.equal(viewModel.availableInstitutions().length, 1);
-        assert.equal(viewModel.availableInstitutions()[0], window.contextVars.currentUser.institutions[1]);
+        assert.equal(viewModel.availableInstitutions()[0], data.currentUser.institutions[1]);
     });
 
     it('computed variables set', () => {
-        assert.equal(viewModel.affiliatedInstitutions(), window.contextVars.node.institutions);
+        assert.equal(viewModel.affiliatedInstitutions(), data.node.institutions);
         assert.equal(viewModel.affiliatedInstitutionsIds.length, 2);
         assert.equal(viewModel.affiliatedInstitutionsIds[0], ['cos']);
         assert.equal(viewModel.affiliatedInstitutionsIds[1], ['uoa']);
