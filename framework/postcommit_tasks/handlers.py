@@ -72,7 +72,6 @@ def run_postcommit(once_per_request=True, celery=False):
             return func
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
-            # print 'Celery: {} Type: {}'.format(celery, type(func))
             if celery is True and isinstance(func, PromiseProxy):
                 func.delay(*args, **kwargs)
             else:

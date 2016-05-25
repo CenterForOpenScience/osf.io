@@ -73,12 +73,12 @@ def remove_contributor_from_subscriptions(node, user):
 
 
 @signals.node_deleted.connect
-def i_am_a_bad_person(node):
-    remove_subscription(node._id)
+def remove_subscription(node):
+    remove_subscription_task(node._id)
 
 @run_postcommit(once_per_request=False, celery=True)
 @app.task(max_retries=5, default_retry_delay=60)
-def remove_subscription(node_id):
+def remove_subscription_task(node_id):
     node = Node.load(node_id)
     model.NotificationSubscription.remove(Q('owner', 'eq', node))
     parent = node.parent_node
