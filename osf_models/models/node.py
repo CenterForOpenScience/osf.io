@@ -19,33 +19,31 @@ from website import settings
 
 class Node(GuidMixin, BaseModel):
     # TODO: Alphabetize properties because sanity
-    CATEGORY_MAP = dict((
-        ('analysis', 'Analysis'),
-        ('communication', 'Communication'),
-        ('data', 'Data'),
-        ('hypothesis', 'Hypothesis'),
-        ('instrumentation', 'Instrumentation'),
-        ('methods and measures', 'Methods and Measures'),
-        ('procedure', 'Procedure'),
-        ('project', 'Project'),
-        ('software', 'Software'),
-        ('other', 'Other'),
-        ('', 'Uncategorized')
-    ))
+    CATEGORY_MAP = dict(
+        (('analysis', 'Analysis'), ('communication', 'Communication'),
+         ('data', 'Data'), ('hypothesis', 'Hypothesis'), (
+             'instrumentation', 'Instrumentation'), (
+                 'methods and measures', 'Methods and Measures'), (
+                     'procedure', 'Procedure'), ('project', 'Project'),
+         ('software', 'Software'), ('other', 'Other'), ('', 'Uncategorized')))
 
     @classmethod
     def find_one(cls, query=None, allow_institution=False, **kwargs):
         if not allow_institution:
-            query = (query & Q('institution_id', 'eq', None)) if query else Q('institution_id', 'eq', None)
+            query = (query & Q('institution_id', 'eq', None)) if query else Q(
+                'institution_id', 'eq', None)
         return super(Node, cls).find_one(query, **kwargs)
 
-    date_created = models.DateTimeField(null=False) # auto_now_add=True)
-    date_modified = models.DateTimeField(null=True, db_index=True) # auto_now=True)
+    # TODO: Uncomment auto_* attributes after migration is complete
+    date_created = models.DateTimeField(null=False)  # auto_now_add=True)
+    date_modified = models.DateTimeField(null=True,
+                                         db_index=True)  # auto_now=True)
 
     is_public = models.BooleanField(default=False, db_index=True)
 
     # permissions = Permissions are now on contributors
     # visible_contributor_ids =
+    # visible_contributor_ids was moved to this property
     @property
     def visible_contributor_ids(self):
         return self.contributor_set.filter(visible=True)
@@ -58,7 +56,10 @@ class Node(GuidMixin, BaseModel):
 
     is_registration = models.BooleanField(default=False, db_index=True)
     registered_date = models.DateTimeField(db_index=True, null=True)
-    registered_user = models.ForeignKey(User, related_name='related_to', on_delete=models.SET_NULL, null=True)
+    registered_user = models.ForeignKey(User,
+                                        related_name='related_to',
+                                        on_delete=models.SET_NULL,
+                                        null=True)
 
     # registered_schema = models.ManyToManyField(Metaschema)
 
@@ -70,9 +71,13 @@ class Node(GuidMixin, BaseModel):
     is_fork = models.BooleanField(default=False, db_index=True)
     forked_date = models.DateTimeField(db_index=True, null=True)
 
-    title = models.TextField(validators=[validate_title]) # this should be a charfield but data from mongo didn't fit in 255
+    title = models.TextField(
+        validators=[validate_title]
+    )  # this should be a charfield but data from mongo didn't fit in 255
     description = models.TextField()
-    category = models.CharField(max_length=255, choices=CATEGORY_MAP.items(), default=CATEGORY_MAP[''])
+    category = models.CharField(max_length=255,
+                                choices=CATEGORY_MAP.items(),
+                                default=CATEGORY_MAP[''])
     # node_license = models.ForeignKey(NodeLicenseRecord)
 
     public_comments = models.BooleanField(default=True)
@@ -84,8 +89,14 @@ class Node(GuidMixin, BaseModel):
     wiki_private_uuids = DatetimeAwareJSONField()
     file_guid_to_share_uuids = DatetimeAwareJSONField()
 
-    creator = models.ForeignKey(User, db_index=True, related_name='created', on_delete=models.SET_NULL, null=True)
-    contributors = models.ManyToManyField(User, through=Contributor, related_name='contributed_to')
+    creator = models.ForeignKey(User,
+                                db_index=True,
+                                related_name='created',
+                                on_delete=models.SET_NULL,
+                                null=True)
+    contributors = models.ManyToManyField(User,
+                                          through=Contributor,
+                                          related_name='contributed_to')
     # TODO why is this here if it's empty
     users_watching_node = models.ManyToManyField(User, related_name='watching')
 
@@ -96,13 +107,28 @@ class Node(GuidMixin, BaseModel):
     system_tags = models.ManyToManyField(Tag, related_name='tagged_by_system')
 
     nodes = models.ManyToManyField('self', related_name='children')
-    forked_from = models.ForeignKey('self', related_name='forks', on_delete=models.SET_NULL, null=True)
-    registered_from = models.ForeignKey('self', related_name='registrations', on_delete=models.SET_NULL, null=True)
-    root = models.ForeignKey('self', related_name='absolute_parent', on_delete=models.SET_NULL, null=True)
-    parent_node = models.ForeignKey('self', related_name='parent', on_delete=models.SET_NULL, null=True)
+    forked_from = models.ForeignKey('self',
+                                    related_name='forks',
+                                    on_delete=models.SET_NULL,
+                                    null=True)
+    registered_from = models.ForeignKey('self',
+                                        related_name='registrations',
+                                        on_delete=models.SET_NULL,
+                                        null=True)
+    root = models.ForeignKey('self',
+                             related_name='absolute_parent',
+                             on_delete=models.SET_NULL,
+                             null=True)
+    parent_node = models.ForeignKey('self',
+                                    related_name='parent',
+                                    on_delete=models.SET_NULL,
+                                    null=True)
 
     # The node (if any) used as a template for this node's creation
-    template_node = models.ForeignKey('self', related_name='templated_from', on_delete=models.SET_NULL, null=True)
+    template_node = models.ForeignKey('self',
+                                      related_name='templated_from',
+                                      on_delete=models.SET_NULL,
+                                      null=True)
 
     piwik_site_id = models.IntegerField(null=True)
 
@@ -112,13 +138,18 @@ class Node(GuidMixin, BaseModel):
     child_node_subscriptions = DatetimeAwareJSONField()
 
     # TODO: Sort this out so it's not awful
-    institution_id = models.CharField(db_index=True, max_length=255, blank=True)
+    institution_id = models.CharField(db_index=True,
+                                      max_length=255,
+                                      blank=True)
     institution_domains = DatetimeAwareJSONField(default=None)
     institution_auth_url = models.URLField(blank=True)
     institution_logo_name = models.CharField(max_length=255, blank=True)
     institution_email_domains = DatetimeAwareJSONField(default=None)
     institution_banner_name = models.CharField(max_length=255, blank=True)
-    _primary_institution = models.ForeignKey('self', related_name='primary_institution', null=True)
+    _primary_institution = models.ForeignKey(
+        'self',
+        related_name='primary_institution',
+        null=True)
     _affiliated_institutions = models.ManyToManyField('self')
 
     # alternative_citations = models.ManyToManyField(AlternativeCitation)
@@ -137,7 +168,8 @@ class Node(GuidMixin, BaseModel):
         elif value == 'private':
             self.public_comments = False
         else:
-            raise ValidationError('comment_level must be either `public` or `private`')
+            raise ValidationError(
+                'comment_level must be either `public` or `private`')
 
     def get_permissions(self, user):
         contrib = user.contributor_set.get(node=self)
@@ -184,12 +216,10 @@ class Node(GuidMixin, BaseModel):
         if not auth and not self.is_public:
             return False
 
-        return (
-            self.is_public or
-            (auth.user and self.has_permission(auth.user, 'read')) or
-            auth.private_key in self.private_link_keys_active or
-            self.is_admin_parent(auth.user)
-        )
+        return (self.is_public or
+                (auth.user and self.has_permission(auth.user, 'read')) or
+                auth.private_key in self.private_link_keys_active or
+                self.is_admin_parent(auth.user))
 
     @property
     def is_retracted(self):

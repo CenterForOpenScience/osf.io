@@ -24,13 +24,12 @@ def main():
     blank_nodes = 0
 
     while count < total:
+        garbage = gc.collect()
+        print 'Collected {} whole garbages!'.format(garbage)
         print 'Migrating {} through {}'.format(count, count + page_size)
 
         django_nodelogs = deque()
-        # django_nodelogs_was_connected_to = dict()
-        # m2m_count = 0
         nodelog_guids = deque()
-        # was_connected_to = deque()
 
         for modm_nodelog in MODMNodeLog.find().sort('-date')[count:count +
                                                              page_size]:
@@ -55,9 +54,6 @@ def main():
                 print 'Found blank node on {}'.format(modm_nodelog._id)
                 node_pk = None
 
-            # for wct in modm_nodelog.was_connected_to:
-            #     was_connected_to.append(modm_to_django[wct._id])
-
             if modm_nodelog.date is None:
                 nodelog_date = None
             else:
@@ -71,9 +67,6 @@ def main():
                         user_id=user_pk,
                         foreign_user=modm_nodelog.foreign_user or '',
                         node_id=node_pk))
-
-            # django_nodelogs_was_connected_to[
-            #     modm_nodelog._id] = was_connected_to
 
             count += 1
             if count % 1000 == 0:
@@ -96,23 +89,8 @@ def main():
                     (datetime.now() - splat).total_seconds(),
                     len(django_nodelogs))
 
-                # print 'Starting m2m values'
-                # splot = datetime.now()
-                #
-                # with transaction.atomic():
-                #     for nl in NodeLog.objects.filter(guid__in=nodelog_guids):
-                #         nl.was_connected_to.add(
-                #             *django_nodelogs_was_connected_to[nl.guid])
-                #         m2m_count += len(django_nodelogs_was_connected_to[
-                #             nl.guid])
-                # print 'Finished {} m2m values in {}'.format(m2m_count, (
-                #     datetime.now() - splot).total_seconds())
-
                 django_nodelogs = deque()
-                # django_nodelogs_was_connected_to = dict()
-                # m2m_count = 0
                 nodelog_guids = deque()
-                # was_connected_to = deque()
 
                 garbage = gc.collect()
                 print 'Collected {} whole garbages!'.format(garbage)

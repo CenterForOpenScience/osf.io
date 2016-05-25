@@ -57,6 +57,7 @@ node_key_blacklist = [
     'retraction',
     'embargo',
     'node_license',
+    'embargo_termination_approval',
 ] + fk_user_fields + fk_node_fields + m2m_node_fields + m2m_user_fields + m2m_tag_fields
 user_key_blacklist = [
     '__backrefs',
@@ -65,6 +66,7 @@ user_key_blacklist = [
     # '_affiliated_institutions',
     'watched',
     'external_accounts',
+    'email_last_sent',
 ] + fk_user_fields + fk_node_fields + m2m_node_fields + m2m_user_fields + m2m_tag_fields
 
 
@@ -561,6 +563,7 @@ def set_user_many_to_many_on_nodes(page_size=5000):
                                     modm_m2m_value._id]
                                 write = 'write' in modm_node.permissions[
                                     modm_m2m_value._id]
+                                # import ipdb; ipdb.set_trace()
                                 Contributor.objects.get_or_create(
                                     user_id=modm_to_django[modm_m2m_value._id],
                                     node=django_node,
@@ -785,6 +788,7 @@ def set_system_tag_many_to_many_on_users(page_size=10000):
         sys._getframe().f_code.co_name,
         (datetime.now() - start).total_seconds())
 
+
 def set_tag_many_to_many_on_nodes(page_size=10000):
     print 'Starting {}...'.format(sys._getframe().f_code.co_name)
     node_count = 0
@@ -813,12 +817,14 @@ def set_tag_many_to_many_on_nodes(page_size=10000):
                             suffix = 'system' if m2m_tag_field == 'system_tags' else 'not_system'
                             if isinstance(modm_m2m_value, MODMTag):
                                 django_pks.append(modm_to_django[
-                                    '{}:{}'.format(modm_m2m_value._id, suffix)])
+                                    '{}:{}'.format(modm_m2m_value._id,
+                                                   suffix)])
                             elif isinstance(modm_m2m_value, basestring):
                                 django_pks.append(modm_to_django[
                                     '{}:{}'.format(modm_m2m_value, suffix)])
                             elif modm_m2m_value is None:
-                                print 'Tag of None found on Node {}'.format(modm_node._id)
+                                print 'Tag of None found on Node {}'.format(
+                                    modm_node._id)
                             else:
                                 # wth
                                 print '\a'  # bells!
