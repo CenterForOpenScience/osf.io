@@ -50,14 +50,14 @@ describe('InstitutionSettings', () => {
 
     var viewModel = new InstitutionProjectSettings.ViewModel(data);
 
-    it('user variables set', (done) => {
+    it('user variables set', () => {
         assert.equal(viewModel.userInstitutions, window.contextVars.currentUser.institutions);
         assert.equal(viewModel.userInstitutionsIds().length, 2);
         assert.equal(viewModel.userInstitutionsIds()[0], ['cos']);
         assert.equal(viewModel.userInstitutionsIds()[1], ['bff']);
     });
 
-    it('node variables set', (done) => {
+    it('node variables set', () => {
         assert.equal(viewModel.affiliatedInstitutions(), window.contextVars.node.institutions);
         assert.equal(viewModel.affiliatedInstitutionsIds.length, 2);
         assert.equal(viewModel.affiliatedInstitutionsIds[0], ['cos']);
@@ -66,14 +66,14 @@ describe('InstitutionSettings', () => {
         assert.equal(viewModel.availableInstitutions()[0], window.contextVars.currentUser.institutions[1]);
     });
 
-    it('computed variables set', (done) => {
+    it('computed variables set', () => {
         assert.equal(viewModel.affiliatedInstitutions(), window.contextVars.node.institutions);
         assert.equal(viewModel.affiliatedInstitutionsIds.length, 2);
         assert.equal(viewModel.affiliatedInstitutionsIds[0], ['cos']);
         assert.equal(viewModel.affiliatedInstitutionsIds[1], ['uoa']);
     });
 
-    it('shows a dialog if the Node has children', (done) => {
+    it('shows a dialog if the Node has children', () => {
         modifyStub = sinon.stub(viewModel, 'modifyChildrenDialog');
         viewModel.hasChildren(true);
         viewModel.submitInst({});
@@ -81,7 +81,7 @@ describe('InstitutionSettings', () => {
         modifyStub.restore();
     });
 
-    it('does not show dialog if the Node has no children', (done) => {
+    it('does not show dialog if the Node has no children', () => {
         modifyStub = sinon.stub(viewModel, 'modifyChildrenDialog');
         viewModel.hasChildren(false);
         viewModel.submitInst({});
