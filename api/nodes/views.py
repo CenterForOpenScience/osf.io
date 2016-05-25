@@ -79,8 +79,9 @@ class NodeMixin(object):
 
 class WaterButlerMixin(object):
 
-    path_lookup_url_kwarg = 'path'
-    provider_lookup_url_kwarg = 'provider'
+    def __init__(self):
+        self.path = "/{}".format(self.kwargs['path'])
+        self.provider = self.kwargs['provider']
 
     def get_file_item(self, item):
         attrs = item['attributes']
@@ -98,15 +99,12 @@ class WaterButlerMixin(object):
 
     def fetch_from_waterbutler(self):
         node = self.get_node(check_object_permissions=False)
-        path = self.kwargs[self.path_lookup_url_kwarg]
-        provider = self.kwargs[self.provider_lookup_url_kwarg]
-        return self.get_file_object(node, path, provider)
+        return self.get_file_object(node, self.path, self.provider)
 
     def get_file_object(self, node, path, provider, check_object_permissions=True):
         obj = get_file_object(node=node, path=path, provider=provider, request=self.request)
-        if provider == 'osfstorage':
-            if check_object_permissions:
-                self.check_object_permissions(self.request, obj)
+        if provider == 'osfstorage' and check_object_permissions:
+            self.check_object_permissions(self.request, obj)
         return obj
 
 
@@ -195,6 +193,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     #This Request/Response
 
     """
+
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -209,6 +208,9 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     view_name = 'node-list'
 
     ordering = ('-date_modified', )  # default ordering
+
+    def __init__(self):
+        WaterButlerMixin.__init__(self)
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
@@ -451,6 +453,9 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
     serializer_class = NodeDetailSerializer
     view_category = 'nodes'
     view_name = 'node-detail'
+
+    def __init__(self):
+        WaterButlerMixin.__init__(self)
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):
@@ -1182,6 +1187,7 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, ODMF
 
     #This Request/Response
     """
+
     permission_classes = (
         IsPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -1450,6 +1456,11 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
     #This Request/Response
 
     """
+
+    def __init__(self):
+        WaterButlerMixin.__init__(self)
+        self.path = '{}/'.format(self.path)
+
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.PermissionWithGetter(ContributorOrPublic, 'node'),
@@ -1487,6 +1498,10 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
 
 
 class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin, NodeMixin):
+
+    def __init__(self):
+        WaterButlerMixin.__init__(self)
+
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.PermissionWithGetter(ContributorOrPublic, 'node'),
@@ -1661,8 +1676,7 @@ class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
             self.get_provider_item(addon.config.short_name)
             for addon
             in self.get_node().get_addons()
-            if addon.config.has_hgrid_files
-            and addon.configured
+            if addon.config.has_hgrid_files and addon.configured
         ]
 
 class NodeProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
