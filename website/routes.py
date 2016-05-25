@@ -299,7 +299,7 @@ def make_url_map(app):
         Rule(
             '/news/',
             'get',
-            website_views.redirect_to_cosNews,
+            website_views.redirect_to_cos_news,
             notemplate
         ),
 
