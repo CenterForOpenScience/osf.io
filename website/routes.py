@@ -299,8 +299,8 @@ def make_url_map(app):
         Rule(
             '/news/',
             'get',
-            {},
-            OsfWebRenderer('public/pages/news.mako', trust=False)
+            website_views.redirect_to_cos_news,
+            notemplate
         ),
 
         Rule(
