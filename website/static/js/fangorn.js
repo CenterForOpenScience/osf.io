@@ -1229,18 +1229,18 @@ function _fangornTitleColumn(item, col) {
  * @private
  */
 function _fangornVersionColumn(item) {
-    var tb = this;
-//    if (typeof tb.options.links === 'undefined') {
-//        tb.options.links = true;
-//    }
-//    if (item.data.isAddonRoot && item.connected === false) { // as opposed to undefined, avoids unnecessary setting of this value
-//        return _connectCheckTemplate.call(this, item);
-//    }
+  var tb = this;
+   if (typeof tb.options.links === 'undefined') {
+       tb.options.links = true;
+   }
+   if (item.data.isAddonRoot && item.connected === false) { // as opposed to undefined, avoids unnecessary setting of this value
+       return _connectCheckTemplate.call(this, item);
+   }
     if (item.kind === 'file' && item.data.permissions.view) {
         var attrs = {};
         if (tb.options.links) {
             attrs =  {
-            className: 'link-solid f-w-lg text-primary',
+            className: 'fg-version-links',
                 onclick: function(event) {
                     event.stopImmediatePropagation();
                     gotoVersionEvent.call(tb, item);
@@ -1254,7 +1254,7 @@ function _fangornVersionColumn(item) {
         );
     }
     if ((item.data.nodeType === 'project' || item.data.nodeType ==='component') && item.data.permissions.view) {
-        return m('a.link-solid.bg-color-select',{ href: '/' + item.data.nodeID.toString() + '/' + '?view=revisions'},
+        return m('a.fg-version-links',{ href: '/' + item.data.nodeID.toString() + '/' + '?view=revisions'},
                 String(item.data.extra.version));
     }
     return m('span', String(item.data.extra.version));
@@ -1382,7 +1382,7 @@ function _fangornColumnTitles () {
     }, {
       title: 'Version',
       width : '10%',
-      sort : true,
+      sort : false,
       sortType : 'text'
     },{
         title : 'Size',

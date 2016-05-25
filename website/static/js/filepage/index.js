@@ -378,7 +378,7 @@ var FileViewPage = {
         }
 
         function changeVersionHeader(value){
-          m.render(document.getElementById('version-link'), m("a", {onclick: goToRevisions},String('Version: ' + String(value))));
+          m.render(document.getElementById('version-link'), m("a", {onclick: goToRevisions},'Version:  ' + String(value)));
         }
 
         function httpGetAsync(theUrl, callback) {
