@@ -1726,7 +1726,7 @@ var Range = ace.require('ace/range').Range;
             makeCheckBox("wmd-autocom-toggle", "autocom", "-240px", "Autocomplete");
 
             makeSpacer(5);
-            buttons.help = makeHelpButton("wmd-help-button", getStringAndKey("help"), "-240px");
+            buttons.help = makeHelpButton("wmd-help-button", getString("help"), "-240px");
 
             if (helpOptions) {
                 var helpButton = document.createElement("li");
