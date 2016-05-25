@@ -19,10 +19,10 @@ var KeenViz = function(){
         var visitsQuery = {
             'type':'count_unique',
             'params' : {
-                event_collection: 'pageviews',
+                event_collection: 'public-pageviews',
                 timeframe: 'this_7_days',
                 interval: 'daily',
-                target_property: 'sessionId'
+                target_property: 'visitor.session'
             }
         };
 
@@ -47,10 +47,10 @@ var KeenViz = function(){
         var topReferrersQuery = {
             'queryType': 'count_unique',
             'queryParams': {
-                event_collection: 'pageviews',
+                event_collection: 'public-pageviews',
                 timeframe: 'this_7_days',
-                target_property: 'user.id',
-                group_by: 'parsedReferrerUrl.domain'
+                target_property: 'keen.id',
+                group_by: 'referrer.info.domain'
             }
         };
 
@@ -72,7 +72,7 @@ var KeenViz = function(){
             (function(){
             return data.map(function(obj){
                 return {
-                    'referrer': obj['parsedReferrerUrl.domain'],
+                    'referrer': obj['referrer.info.domain'],
                     'count': obj.result
                 };
             });}())
@@ -84,10 +84,10 @@ var KeenViz = function(){
         var serverTimeVisitsQuery = {
             'type': 'count_unique',
             'params': {
-                event_collection: 'pageviews',
+                event_collection: 'public-pageviews',
                 timeframe: 'this_7_days',
-                interval: 'hourly',
-                target_property: 'sessionId'
+                target_property: 'keen.id',
+                group_by: 'time.local.hour_of_day',
             }
         };
 
