@@ -751,6 +751,16 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
+    'OGH': {
+        'name': 'Open Global Health',
+        'info_url': None,
+        'logo_url': 'http://s33.postimg.org/7tjjpvg4f/Drawing.png',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
 }
 
 
