@@ -743,7 +743,7 @@ MEETING_DATA = {
     },
     'HEPA2016': {
         'name': 'HEPA Europe Annual Meeting 2016',
-        'info_url': 'http://www.hepaeurope2016.eu/)',
+        'info_url': 'http://www.hepaeurope2016.eu/',
         'logo_url': None,
         'active': True,
         'admins': [],
