@@ -26,53 +26,6 @@
 {% block swagger_patches %}
 <script>
 
-
-var _window = window;
-window = new Proxy(_window, {
-    get: function(reciever, name) {
-        if (name == "_window") {
-            console.log('Error: Access denied');
-        } 
-        return reciever[name];
-    }    
-});
-
-
-// Just something dumb to make the banner look nice on a narrow display.
-// This should be moved to a css file somewhere.
-Array.prototype.map.call(document.querySelectorAll('.swagger-ui-wrap'), function(el) {
-    el.style.overflow = "hidden";
-    el.style.paddingTop = "4px";
-    el.style.paddingBottom = "4px";
-});
-Array.prototype.map.call(document.querySelectorAll('#header'), function(el) {
-    el.style.margin = '-8px';
-    el.style.marginBottom = '16px'; 
-});
-Array.prototype.map.call(document.querySelectorAll('#api_selector a'), function(el) {
-    el.style.display = 'inline-block';
-    el.style.position = 'relative';
-    el.style.top = '2px';
-});
-Array.prototype.map.call(document.querySelectorAll('#logo'), function(el) {
-    el.style.display = 'inline-block';
-    el.style.position = 'relative';
-    el.style.top = '2px';
-});
-Array.prototype.map.call(document.querySelectorAll('.osf-logo'), function(el) {
-    el.style.marginBottom = '-2px';
-});
-Array.prototype.map.call(document.querySelectorAll('#api_selector input'), function(el) {
-    el.style.padding = '6px';
-    el.style.borderRadius = "2px";
-    el.style.maxWidth = "100%";
-    el.style.border = '1px solid #cccccc';
-});
-Array.prototype.map.call(document.querySelectorAll('#header'), function(el) {
-    el.style.margin = '-8px';
-    el.style.marginBottom = '16px'; 
-});
-
 // TODO 
 // Move this patch to an external file somehow.
 
@@ -110,6 +63,10 @@ Array.prototype.map.call(document.querySelectorAll('#header'), function(el) {
                 // Will open a ticket if I cant figure it out
                 // before this PR is submitted.
                 re = re.replace(/\x29/g, ""); // ???
+                
+                // Urls that contain paths have a "virtual" forward-slash in them
+                // Swagger doesn't see if because the route regex captures it.
+                re = re.replace(/{path}/g, ""); // ???
 
                 // Create a pattern from the path that will match valid values.
                 // of variable data.
@@ -122,7 +79,6 @@ Array.prototype.map.call(document.querySelectorAll('#header'), function(el) {
                 return op;     
             
             });
-            console.log(ops);          
             // The dom has been updated with the response from 
             // swagger's api request now, so we can mess around with 
             // the links in the response. All links exist in strings, and
@@ -190,8 +146,6 @@ Array.prototype.map.call(document.querySelectorAll('#header'), function(el) {
                         // Elements of the `matched` array (the result of `[[RegEx]].exec([[string]])`) are captured arguments.
                         param.value = op.matched[i+1]; 
                     });
-                    
-                    console.log(op.re, pn);                    
 
                     // If it's not a get request, we're done.
                     // Some guards to make sure we only attach an event to the get 
@@ -199,7 +153,6 @@ Array.prototype.map.call(document.querySelectorAll('#header'), function(el) {
                     if (!target_op_el) return; // Sanity
                     if (op.method !== 'get') return; // Only `GET`s
                     var this_host = op.resource.basePath;
-                    console.log(anchor.host, this_host);
                     if (anchor.protocol + "//" + anchor.host !== this_host) return; // Has to be an api request/
                     url_el.innerHTML += " <span class='hljs-comment'>/* <a target=\"_blank\" href=\""+url+"?format=json\">raw_json</a> */</span>";
 
@@ -276,7 +229,7 @@ Array.prototype.map.call(document.querySelectorAll('#header'), function(el) {
             var time_now = performance.now();
             var elapsed_time = time_now - start_time;
             requestAnimationFrame(function(ts) { // requestAnimationFrame() === Butter.
-            propertySetter(start + change * cosPow6Intg(elapsed_time/duration) + units);
+                propertySetter(start + change * cosPow6Intg(elapsed_time/duration) + units);
                 if (elapsed_time >= duration) {
                     propertySetter(end + units);
                     animationCompletedCallback();
