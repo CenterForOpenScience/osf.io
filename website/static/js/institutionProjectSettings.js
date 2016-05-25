@@ -11,10 +11,10 @@ var ViewModel = function(data) {
     self.loading = ko.observable(true);
     self.showAdd = ko.observable(false);
     self.institutionHref = ko.observable('');
-    self.userInstitutions = window.contextVars.currentUser.institutions;
+    self.userInstitutions = data.currentUser.institutions;
     self.userInstitutionsIds = self.userInstitutions.map(function(item){return item.id;});
     self.selectedInstitution = ko.observable();
-    self.affiliatedInstitutions = ko.observable(window.contextVars.node.institutions);
+    self.affiliatedInstitutions = ko.observable(data.node.institutions);
 
     var affiliatedInstitutionsIds = self.affiliatedInstitutions().map(function(item){return item.id;});
     self.availableInstitutions = ko.observable(self.userInstitutions.filter(function(each){
