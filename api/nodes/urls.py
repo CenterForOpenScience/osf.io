@@ -3,6 +3,10 @@ from django.conf.urls import url
 from api.nodes import views
 from website import settings
 
+#nodeProviderDetailView = views.NodeProviderDetailView.as_view()
+#def nodeProviderDetailHandler(node_id, provider, path):
+#    nodeProviderDetailView(node_id, provider, "/{}".format(path))
+
 urlpatterns = [
     # Examples:
     # url(r'^$', 'api.views.home', name='home'),
@@ -15,8 +19,8 @@ urlpatterns = [
     url(r'^(?P<node_id>\w+)/forks/$', views.NodeForksList.as_view(), name=views.NodeForksList.view_name),
     url(r'^(?P<node_id>\w+)/files/$', views.NodeProvidersList.as_view(), name=views.NodeProvidersList.view_name),
     url(r'^(?P<node_id>\w+)/files/providers/(?P<provider>\w+)/?$', views.NodeProviderDetail.as_view(), name=views.NodeProviderDetail.view_name),
-    url(r'^(?P<node_id>\w+)/files/(?P<provider>\w+)(?P<path>/(?:.*/)?)$', views.NodeFilesList.as_view(), name=views.NodeFilesList.view_name),
-    url(r'^(?P<node_id>\w+)/files/(?P<provider>\w+)(?P<path>/.+[^/])$', views.NodeFileDetail.as_view(), name=views.NodeFileDetail.view_name),
+    url(r'^(?P<node_id>\w+)/files/(?P<provider>\w+)/(?P<path>.*)/$', views.NodeFilesList.as_view(), name=views.NodeFilesList.view_name),
+    url(r'^(?P<node_id>\w+)/files/(?P<provider>\w+)/(?P<path>.*)$', views.NodeFileDetail.as_view(), name=views.NodeFileDetail.view_name),
     url(r'^(?P<node_id>\w+)/comments/$', views.NodeCommentsList.as_view(), name=views.NodeCommentsList.view_name),
     url(r'^(?P<node_id>\w+)/logs/$', views.NodeLogList.as_view(), name=views.NodeLogList.view_name),
     url(r'^(?P<node_id>\w+)/institution/$', views.NodeInstitutionDetail.as_view(), name=views.NodeInstitutionDetail.view_name),
