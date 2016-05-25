@@ -656,7 +656,7 @@ var onOpen = function(page, rootId, nodeApiUrl, currentUserId) {
 
 function replaceURLWithHTMLLinks (text) {
     var exp = /(\b(http|ftp|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?)/ig;
-    return text.replace(exp,"<a href='$1'>$1</a>");
+    return text.replace(exp,'<a href=\'$1\'>$1</a>');
 }
 
 /* options example: {
