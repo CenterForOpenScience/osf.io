@@ -7,7 +7,6 @@ from django.contrib.auth.models import (
 )
 from django.db import models
 
-from admin.common_auth.utils import encrypt, decrypt
 from website.models import User as OsfUserModel
 
 
@@ -52,21 +51,10 @@ class MyUser(AbstractBaseUser, PermissionsMixin):
     date_joined = models.DateTimeField(auto_now_add=True)
     confirmed = models.BooleanField(default=False)
     osf_id = models.CharField(max_length=5, blank=True)
-    desk_email = models.EmailField(verbose_name='desk email', max_length=255,
-                                   default='')
-    desk_password = models.CharField(verbose_name='desk password',
-                                     max_length=128, default='')  # TODO: encrypt
 
     objects = MyUserManager()
 
     USERNAME_FIELD = 'email'
-
-    def set_desk_password(self):
-        self.desk_password = encrypt(self.desk_password)
-        self.save()
-
-    def get_desk_password(self):
-        return decrypt(self.desk_password)
 
     def get_full_name(self):
         return ("{0} {1}".format(self.first_name, self.last_name)).strip() or self.email

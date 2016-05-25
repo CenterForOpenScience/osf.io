@@ -4,6 +4,9 @@ Modified from https://gist.github.com/pamelafox/5855372
 
 import requests
 import json
+from requests_oauthlib import OAuth1Session
+
+from django.conf import settings
 
 
 class DeskError(Exception):
@@ -27,9 +30,13 @@ class DeskClient(object):
     BASE_URL = 'desk.com/api/v2'
     SITE_NAME = 'openscience'
 
-    def __init__(self, username, password):
-        self.username = username
-        self.password = password
+    def __init__(self):
+        self.oauth = OAuth1Session(
+            settings.DESK_KEY,
+            client_secret=settings.DESK_KEY_SECRET,
+            resource_owner_key=settings.DESK_TOKEN,
+            resource_owner_secret=settings.DESK_TOKEN_SECRET
+        )
 
     def build_url(self, service):
         """ Constructs the URL for a given service."""
@@ -38,7 +45,7 @@ class DeskClient(object):
     def call_get(self, service, params=None, data=None):
         """ Calls a GET API for the given service name and URL parameters."""
         url = self.build_url(service)
-        r = requests.get(url, params=params, data=json.dumps(data), auth=(self.username, self.password))
+        r = self.oauth.get(url, params=params, data=json.dumps(data))
         if r.status_code != requests.codes.ok:
             raise DeskError(str(r.status_code))
         return json.loads(r.content)
@@ -46,7 +53,7 @@ class DeskClient(object):
     def call_post(self, service, data=None):
         """ Calls a POST API for the given service name and POST data."""
         url = self.build_url(service)
-        r = requests.post(url, data=json.dumps(data), auth=(self.username, self.password))
+        r = self.oauth.post(url, data=json.dumps(data))
         if r.status_code >= 400:
             raise DeskError(str(r.status_code))
         return json.loads(r.content)

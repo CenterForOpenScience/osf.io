@@ -34,10 +34,3 @@ class UserRegistrationForm(UserCreationForm):
         self.fields['first_name'].required = True
         self.fields['last_name'].required = True
         self.fields['osf_id'].required = True
-
-
-class DeskUserForm(forms.ModelForm):
-    desk_password = forms.CharField(widget=forms.PasswordInput)
-    class Meta:
-        model = MyUser
-        fields = ['desk_email', 'desk_password']
