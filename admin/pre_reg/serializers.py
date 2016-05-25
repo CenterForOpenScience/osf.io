@@ -1,4 +1,5 @@
 from furl import furl
+from datetime import datetime
 
 from framework.utils import iso8601format
 from dateutil import parser
@@ -50,7 +51,7 @@ def serialize_draft_registration(draft, json_safe=True):
 
 
 def serialize_draft_logs(log):
-    return '{} on {}'.format(log.action, log.date)
+    return '{} on {}'.format(log.action, datetime.strftime(log.date, '%c'))
 
 
 def get_url(draft):

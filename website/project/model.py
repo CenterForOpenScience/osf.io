@@ -3793,8 +3793,9 @@ class DraftRegistrationLog(StoredObject):
     field - user - user who did the action
     """
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
-    date = fields.DateTimeField(default=datetime.datetime.utcnow, index=True)
-    action = fields.StringField(index=True)
+    date = fields.DateTimeField(default=datetime.datetime.utcnow)
+    action = fields.StringField()
+    draft = fields.ForeignField('draftregistration', index=True)
     user = fields.ForeignField('user')
 
     SUBMITTED = 'submitted'
@@ -3840,8 +3841,6 @@ class DraftRegistration(StoredObject):
     registered_node = fields.ForeignField('node', index=True)
 
     approval = fields.ForeignField('draftregistrationapproval', default=None)
-
-    status_logs = fields.ForeignField('draftregistrationlog', list=True)
 
     # Dictionary field mapping extra fields defined in the MetaSchema.schema to their
     # values. Defaults should be provided in the schema (e.g. 'paymentSent': false),
@@ -3906,6 +3905,11 @@ class DraftRegistration(StoredObject):
                 return self.approval.is_rejected
         else:
             return False
+
+    @property
+    def status_logs(self):
+        """ List of logs associated with this node"""
+        return DraftRegistrationLog.find(Q('draft', 'eq', self._id)).sort('date')
 
     @classmethod
     def create_from_node(cls, node, user, schema, data=None):
@@ -3983,6 +3987,5 @@ class DraftRegistration(StoredObject):
         self.approval.save()
 
     def add_status_log(self, user, action):
-        log = DraftRegistrationLog(action=action, user=user)
+        log = DraftRegistrationLog(action=action, user=user, draft=self)
         log.save()
-        self.status_logs.append(log)
