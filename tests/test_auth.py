@@ -560,6 +560,7 @@ class TestMustBeContributorOrPublicButNotAnonymizedDecorator(AuthAppTestCase):
         res = res.follow(expect_errors=True)
         assert_equal(res.status_code, 500)
 
+
 @must_be_logged_in
 def protected(**kwargs):
     return 'open sesame'
