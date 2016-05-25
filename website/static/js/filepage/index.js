@@ -140,7 +140,7 @@ var FileViewPage = {
                 dataType: 'json',
                 async: true,
                 url: fileWebViewUrl,
-                beforeSend: $osf.setXHRAuthorization 
+                beforeSend: $osf.setXHRAuthorization
             }).done(function(response) {
                 window.contextVars.file.urls.external = response.data.extra.webView;
             });
@@ -363,6 +363,64 @@ var FileViewPage = {
         }, 1000);
 
         self.mfrIframeParent = $('#mfrIframeParent');
+        function goToRevisions(e){
+          var editable = self.editor && self.editor.selected;
+          var viewable = self.mfrIframeParent.is(':visible');
+          if (editable || viewable){
+              if (viewable){
+                  self.mfrIframeParent.toggle();
+              }
+              if (editable) {
+                  self.editor.selected = false;
+              }
+          }
+          self.revisions.selected = true;
+        }
+
+        function changeVersionHeader(value){
+          m.render(document.getElementById('version-link'), m("a", {onclick: goToRevisions},String('Version: ' + String(value))));
+        }
+
+        function httpGetAsync(theUrl, callback) {
+            var xmlHttp = new XMLHttpRequest();
+            xmlHttp.onreadystatechange = function() {
+                if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+                    callback(xmlHttp.responseText);
+            }
+            xmlHttp.open("GET", theUrl, true); // true for asynchronous
+            xmlHttp.send(null);
+        }
+
+        function setVersionHeader(responseText) {
+            var obj = JSON.parse(responseText);
+            changeVersionHeader(obj.data[0].version);
+        }
+
+        //anchor checking hack that will select if true
+        var idx = window.location.href.indexOf('?');
+        var anchor = (idx > 0) ? window.location.href.slice(idx + 1) : '';
+        if (anchor !== '') {
+            // An anchor was passed in, so let's retrieve and render it.
+            var idx_anchor = anchor.indexOf('=');
+            var behavior = (idx_anchor > 0) ? anchor.slice(0,idx_anchor) : '';
+            if (behavior == 'show'){
+                var value = anchor.slice(idx_anchor + 1);
+                if (value == 'revision'){
+                   self.mfrIframeParent.toggle();
+                   self.revisions.selected = true;
+                }
+            }
+            if (behavior == "version"){
+              var value = anchor.slice(idx_anchor + 1,idx_anchor + 2);
+              changeVersionHeader(value);
+            } else {
+                httpGetAsync(self.file.urls.revisions, setVersionHeader);
+            }
+        } else {
+            httpGetAsync(self.file.urls.revisions, setVersionHeader);
+        }
+
+
     },
     view: function(ctrl) {
         //This code was abstracted into a panel toggler at one point
