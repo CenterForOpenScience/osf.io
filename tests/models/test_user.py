@@ -411,18 +411,14 @@ class TestUserMerging(base.OsfTestCase):
         # from the explicit rules above, compile expected field/value pairs
         expected = {}
         expected.update(calculated_fields)
-        print(expected)
         for key in default_to_master_user_fields:
             expected[key] = getattr(self.user, key)
-        print(set(expected.keys()))
-        print("/n")
-        print(set(self.user._fields))
+
         # ensure all fields of the user object have an explicit expectation
         assert_equal(
             set(expected.keys()),
             set(self.user._fields),
         )
-
 
         # mock mailchimp
         mock_client = mock.MagicMock()
