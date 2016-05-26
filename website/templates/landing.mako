@@ -83,7 +83,7 @@
                           </div>
                           <!-- /ko -->
                           <div>
-                              <button type="submit" class="btn btn-warning" data-bind="visible: !submitted()" id="signupSubmit">Sign up free</button>
+                              <button type="submit" class="btn btn-warning" data-bind="visible: !submitted(), css: {disabled: !password.isValid()}" id="signupSubmit">Sign up free</button>
                           </div>
                   </form>
 
