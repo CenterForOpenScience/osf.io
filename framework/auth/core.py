@@ -407,6 +407,9 @@ class User(GuidStoredObject, AddonModelMixin):
     # user language and locale data (e.g. 'en_US')
     locale = fields.StringField(default='en_US')
 
+    # whether the user has requested to deactivate their account
+    requested_deactivation = fields.BooleanField(default=False)
+
     _meta = {'optimistic': True}
 
     def __repr__(self):
