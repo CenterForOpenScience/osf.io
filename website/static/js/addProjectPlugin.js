@@ -25,7 +25,6 @@ var AddProject = {
             stayCallback :null, // Function to call when user decides to stay after project creation
             categoryList : []
         };
-
         self.viewState = m.prop('form'); // 'processing', 'success', 'error';
         self.options = $.extend({}, self.defaults, options);
         self.nodeType = self.options.parentID === null ? 'project' : 'component';
@@ -35,6 +34,7 @@ var AddProject = {
         self.newProjectDesc = m.prop('');
         self.newProjectCategory = m.prop(self.defaultCat);
         self.newProjectTemplate = m.prop('');
+        self.newProjectInstitutions = [];
         self.goToProjectLink = m.prop('');
         self.saveResult = m.prop({});
         self.errorMessageType = m.prop('unknown');
@@ -89,6 +89,13 @@ var AddProject = {
             var success = function _success (result) {
                 self.viewState('success');
                 self.goToProjectLink(result.data.links.html);
+                if (self.newProjectInstitutions.length > 0){
+                    var newNodeApiUrl = $osf.apiV2Url('nodes/' + result.data.id + '/relationships/institutions/');
+                    var data = {data: self.newProjectInstitutions.map(
+                        function(inst){return {type: 'institutions', id: inst};}
+                    )};
+                    m.request({method: 'POST', url: newNodeApiUrl, data: data, config: xhrconfig});
+                }
                 self.saveResult(result);
             };
             var error = function _error (result) {
@@ -165,6 +172,44 @@ var AddProject = {
                                     placeholder : 'Enter ' + ctrl.nodeType + ' description'
                                 })
                             ]),
+                            window.contextVars.currentUser.institutions.length ? m('.form-group.m-v-sm', [
+                                m('label[for="projectDesc].f-w-lg.text-bigger', 'Add institution affiliation'),
+                                m('table', m('tr', window.contextVars.currentUser.institutions.map(
+                                    function(inst){
+                                        return m('td',
+                                            m('a', {onclick: function(){
+                                                $('#instLogo' + inst.id).toggleClass('hidden');
+                                                if (ctrl.newProjectInstitutions.indexOf(inst.id) !== -1){
+                                                    ctrl.newProjectInstitutions.pop(inst.id);
+                                                } else {
+                                                    ctrl.newProjectInstitutions.push(inst.id);
+                                                }
+                                            }},m('', {style: {position: 'relative',  margin: '10px'}, width: '45px', height: '45px'},
+                                                [
+                                                m('img.img-circle.text-muted',
+                                                    {
+                                                        src: inst.logo_path, width: '45px', height: '45px',
+                                                    }
+                                                ),
+                                                m('i.hidden.img-circle.fa.fa-check#instLogo' + inst.id,
+                                                    {
+                                                        style: {
+                                                            color: 'lightgreen',
+                                                            textAlign: 'center',
+                                                            fontSize: '275%',
+                                                            width: '45px', height: '100%',
+                                                            top: '0', left: '0',
+                                                            position: 'absolute',
+                                                            display: 'block',
+                                                            background: 'rgba(0, 0, 0, .4)'
+                                                        }
+                                                    }
+                                                )
+                                            ]))
+                                        )
+                                    }
+                                ))),
+                            ]): '',
                             ctrl.options.parentID !== null ? [
                                 m('.f-w-lg.text-bigger','Category'),
                                 m('.category-radio.p-h-md', [
