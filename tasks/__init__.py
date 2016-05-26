@@ -891,18 +891,17 @@ def clean_assets():
 
 
 @task(aliases=['pack'])
-def webpack(clean=False, watch=False, dev=False):
+def webpack(clean=False, watch=False, dev=False, colors=False):
     """Build static assets with webpack."""
     if clean:
         clean_assets()
     webpack_bin = os.path.join(HERE, 'node_modules', 'webpack', 'bin', 'webpack.js')
     args = [webpack_bin]
-    if settings.DEBUG_MODE and dev:
-        args += ['--colors']
-    else:
-        args += ['--progress']
+    args += ['--progress']
     if watch:
         args += ['--watch']
+    if colors:
+        args += ['--colors']
     config_file = 'webpack.dev.config.js' if dev else 'webpack.prod.config.js'
     args += ['--config {0}'.format(config_file)]
     command = ' '.join(args)

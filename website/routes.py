@@ -299,8 +299,8 @@ def make_url_map(app):
         Rule(
             '/news/',
             'get',
-            {},
-            OsfWebRenderer('public/pages/news.mako', trust=False)
+            website_views.redirect_to_cos_news,
+            notemplate
         ),
 
         Rule(
@@ -315,6 +315,13 @@ def make_url_map(app):
             'get',
             preprint_views.preprint_landing_page,
             OsfWebRenderer('public/pages/preprint_landing.mako', trust=False),
+        ),
+
+        Rule(
+            '/preprint/',
+            'get',
+            preprint_views.preprint_redirect,
+            notemplate,
         ),
 
         Rule(

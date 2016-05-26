@@ -218,7 +218,7 @@ var BaseViewModel = function(urls, modes, preventUnsaved) {
     self.editAllowed = $.inArray('edit', self.modes) >= 0;
     self.editable = ko.observable(self.editAllowed);
     self.mode = ko.observable(self.editable() ? 'edit' : 'view');
-
+    self.saving = ko.observable(false);
     self.original = ko.observable();
     self.tracked = [];  // Define for each view model that inherits
 
@@ -344,6 +344,7 @@ BaseViewModel.prototype.cancel = function(data, event) {
 
 BaseViewModel.prototype.submit = function() {
     if (this.hasValidProperty() && this.isValid()) {
+        this.saving(true);
         $osf.putJSON(
             this.urls.crud,
             this.serialize()
@@ -353,6 +354,8 @@ BaseViewModel.prototype.submit = function() {
             this.setOriginal.bind(this)
         ).fail(
             this.handleError.bind(this)
+        ).always(
+            function() { this.saving(false); }
         );
     } else {
         this.showMessages(true);
@@ -711,6 +714,7 @@ SocialViewModel.prototype.submit = function() {
         );
     }
     else if (this.hasValidProperty() && this.isValid()) {
+        this.saving(true);
         $osf.putJSON(
             this.urls.crud,
             this.serialize()
@@ -720,6 +724,8 @@ SocialViewModel.prototype.submit = function() {
             this.setOriginal.bind(this)
         ).fail(
             this.handleError.bind(this)
+        ).always(
+            function() { this.saving(false); }
         );
     } else {
         this.showMessages(true);
@@ -914,7 +920,7 @@ var JobViewModel = function() {
         trimmed: true,
         required: {
             onlyIf: function() {
-               return !!self.department() || !!self.title();
+               return !!self.department() || !!self.title() || !!self.startYear() || !!self.endYear();
             },
             message: 'Institution/Employer required'
         }
@@ -968,7 +974,7 @@ var SchoolViewModel = function() {
         trimmed: true,
         required: {
             onlyIf: function() {
-                return !!self.department() || !!self.degree();
+                return !!self.department() || !!self.degree() || !!self.startYear() || !!self.endYear();
             },
             message: 'Institution required'
         }

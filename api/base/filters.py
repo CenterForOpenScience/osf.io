@@ -291,8 +291,10 @@ class ODMFilterMixin(FilterMixin):
             param_query = self.query_params_to_odm_query(self.request.query_params)
         default_query = self.get_default_odm_query()
 
-        if param_query:
+        if param_query and default_query:
             query = param_query & default_query
+        elif param_query:
+            query = param_query
         else:
             query = default_query
 
