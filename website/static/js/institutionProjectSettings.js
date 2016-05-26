@@ -160,16 +160,14 @@ var ViewModel = function(data) {
         ).done(function () {
             if (self.isAddInstitution()) {
                 index = self.availableInstitutionsIds().indexOf(item.id);
-                var added = self.availableInstitutions().splice(index, 1)[0];
-                self.affiliatedInstitutions().push(added);
+                var added = self.availableInstitutions.splice(index, 1)[0];
+                self.affiliatedInstitutions.push(added);
             }
             else {
                 index = self.affiliatedInstitutionsIds().indexOf(item.id);
-                var removed = self.affiliatedInstitutions().splice(index, 1)[0];
-                self.availableInstitutions().push(removed);
+                var removed = self.affiliatedInstitutions.splice(index, 1)[0];
+                self.availableInstitutions.push(removed);
             }
-            self.availableInstitutions(self.availableInstitutions());
-            self.affiliatedInstitutions(self.affiliatedInstitutions());
             self.loading(false);
         }).fail(function (xhr, status, error) {
             $osf.growl('Unable to modify the institution on this node. Please try again. If the problem persists, email <a href="mailto:support@osf.io.">support@osf.io</a>');
