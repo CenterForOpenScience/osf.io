@@ -100,12 +100,18 @@ def find_bookmark_collection(user):
 
 @must_be_logged_in
 def dashboard(auth):
+    return redirect('/')
+
+
+@must_be_logged_in
+def my_projects(auth):
     user = auth.user
-    dashboard_folder = find_bookmark_collection(user)
-    dashboard_id = dashboard_folder._id
+    bookmark_collection = find_bookmark_collection(user)
+    my_projects_id = bookmark_collection._id
     return {'addons_enabled': user.get_addon_names(),
-            'dashboard_id': dashboard_id,
+            'dashboard_id': my_projects_id,
             }
+
 
 def validate_page_num(page, pages):
     if page < 0 or (pages and page >= pages):
@@ -238,21 +244,28 @@ def resolve_guid(guid, suffix=None):
     # GUID not found
     raise HTTPError(http.NOT_FOUND)
 
-##### Redirects #####
 
-# Redirect /about/ to OSF wiki page
-# https://github.com/CenterForOpenScience/osf.io/issues/3862
-# https://github.com/CenterForOpenScience/community/issues/294
+# Redirects #
+
+# redirect osf.io/about/ to OSF wiki page osf.io/4znzp/wiki/home/
 def redirect_about(**kwargs):
     return redirect('https://osf.io/4znzp/wiki/home/')
 
 
+# redirect osf.io/howosfworks to osf.io/getting-started/
 def redirect_howosfworks(**kwargs):
     return redirect('/getting-started/')
 
+
+# redirect osf.io/getting-started to help.osf.io/
 def redirect_getting_started(**kwargs):
     return redirect('http://help.osf.io/')
 
+
+# Redirect to home page
 def redirect_to_home():
-    # Redirect to support page
     return redirect('/')
+
+def redirect_to_cos_news(**kwargs):
+    # Redirect to COS News page
+    return redirect('https://cos.io/news/')

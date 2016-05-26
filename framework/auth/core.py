@@ -409,6 +409,9 @@ class User(GuidStoredObject, AddonModelMixin):
     # user language and locale data (e.g. 'en_US')
     locale = fields.StringField(default='en_US')
 
+    # whether the user has requested to deactivate their account
+    requested_deactivation = fields.BooleanField(default=False)
+
     _meta = {'optimistic': True}
 
     def __repr__(self):
@@ -441,6 +444,8 @@ class User(GuidStoredObject, AddonModelMixin):
 
     # used by django and DRF
     def get_absolute_url(self):
+        if not self.is_registered:
+            return None
         return self.absolute_api_v2_url
 
     @classmethod
