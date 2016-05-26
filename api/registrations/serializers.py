@@ -4,6 +4,8 @@ from rest_framework import exceptions
 
 from api.base.utils import absolute_reverse
 from api.files.serializers import FileSerializer
+from api.nodes.serializers import NodeSerializer, NodeProviderSerializer
+from api.nodes.serializers import NodeLinksSerializer, NodeLicenseSerializer
 from api.nodes.serializers import NodeSerializer
 from api.nodes.serializers import NodeLinksSerializer
 from api.nodes.serializers import NodeContributorsSerializer, NodeTagField
@@ -85,6 +87,13 @@ class RegistrationSerializer(NodeSerializer):
         related_view='registrations:registration-providers',
         related_view_kwargs={'node_id': '<pk>'}
     ))
+    #
+    # files = NodeFileHyperLinkField(
+    #     related_view='registrations:registration-files',
+    #     related_view_kwargs={'node_id': '<node_id>', 'path': '<path>', 'provider': '<provider>'},
+    #     kind='folder',
+    #     never_embed=True
+    # )
 
     forked_from = HideIfWithdrawal(RelationshipField(
         related_view=lambda n: 'registrations:registration-detail' if getattr(n, 'is_registration', False) else 'nodes:node-detail',
@@ -216,3 +225,15 @@ class RegistrationFileSerializer(FileSerializer):
                                             related_view_kwargs={'node_id': '<node._id>'},
                                             related_meta={'unread': 'get_unread_comments_count'},
                                             filter={'target': 'get_file_guid'})
+
+
+class RegistrationProviderSerializer(NodeProviderSerializer):
+    """
+    Overrides NodeProviderSerializer to lead to correct registration file links
+    """
+    files = NodeFileHyperLinkField(
+        related_view='registrations:registration-files',
+        related_view_kwargs={'node_id': '<node_id>', 'path': '<path>', 'provider': '<provider>'},
+        kind='folder',
+        never_embed=True
+    )
