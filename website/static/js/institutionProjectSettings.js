@@ -58,8 +58,8 @@ var ViewModel = function(data) {
         else {
             message = 'Remove ' + item.name + ' from <b>' + data.node.title + '</b> or to <b>' +
                 data.node.title + '</b> and all its components?<br><br>';
-            modifyOneMessage = 'Remove <b>' + item.name + '</b> to <b>' +  data.node.title + '</b>.',
-            modifyAllMessage = 'Remove <b>' + item.name + '</b> to <b>' +  data.node.title + '</b> and every component in it.';
+            modifyOneMessage = 'Remove <b>' + item.name + '</b> from <b>' +  data.node.title + '</b>.',
+            modifyAllMessage = 'Remove <b>' + item.name + '</b> from <b>' +  data.node.title + '</b> and every component in it.';
         }
         if (self.needsWarning()) {
             message += '<div class="text-danger f-w-xl">Warning, you are not affialiated with <b>' + item.name +
