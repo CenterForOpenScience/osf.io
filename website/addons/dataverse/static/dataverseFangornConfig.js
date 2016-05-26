@@ -74,6 +74,8 @@ var _dataverseItemButtons = {
                     ];
                     tb.modal.update(modalContent, modalActions, m('h3.break-word.modal-title', 'Successfully published'));
                     item.data.dataverseIsPublished = true;
+                    item.data.datasetIsPublished = true;
+                    item.data.datasetDraftModified = false;
                     item.data.hasPublishedFiles = item.children.length > 0;
                     item.data.version = item.data.hasPublishedFiles ? 'latest-published' : 'latest';
                     for (var i = 0; i < item.children.length; i++) { // Brute force the child files to be set as "latest-published" without page reload
@@ -116,7 +118,7 @@ var _dataverseItemButtons = {
             var options = [
                 m('option', {selected: item.data.version === 'latest', value: 'latest'}, 'Draft')
             ];
-            if (item.data.dataverseIsPublished) {
+            if (item.data.datasetIsPublished) {
                 options.push(m('option', {selected: item.data.version === 'latest-published', value: 'latest-published'}, 'Published'));
             }
             buttons.push(
@@ -141,8 +143,8 @@ var _dataverseItemButtons = {
                         className: 'text-success'
                     }, 'Upload')
                 );
-                // Only allow the Publish button to appear if this is truly an unpublished dataset, vs. a draft version of a published dataset.
-                if(!item.data.dataverseIsPublished) {
+                // Only allow the Publish button to appear if the draft dataset is modified
+                if(item.data.datasetDraftModified) {
                     buttons.push(
                         m.component(Fangorn.Components.button, {
                             onclick: function (event) {
