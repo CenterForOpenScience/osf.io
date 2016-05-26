@@ -157,9 +157,17 @@
                     <p class="help-block" data-bind="validationMessage: password" style="display: none;"></p>
                     <p class="help-block" data-bind="text: passwordFeedback"></p>
                 </div>
-                <!-- Flashed Messages -->
-                <div class="help-block" >
-                    <p class="m-l-md" data-bind="html: flashMessage, attr: {class: flashMessageClass}"></p>
+            </div>
+            <!-- Flashed Messages -->
+            <div class="help-block" >
+                <p data-bind="html: flashMessage, attr: {class: flashMessageClass}"></p>
+            </div>
+            <div>
+                <p> By clicking "Create account", you agree to our <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md">Terms</a> and that you have read our <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>, including our information on <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md#f-cookies">Cookie Use</a>.</p>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-offset-4 col-sm-8">
+                    <button type="submit" class="btn pull-right btn-success" data-bind="disable: submitted(), css: {disabled: !password.isValid()}">Create account</button>
                 </div>
                 </br>
                 <div class="form-group">
