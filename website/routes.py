@@ -217,14 +217,15 @@ def make_url_map(app):
         Rule(
             '/dashboard/',
             'get',
-            website_views.redirect_to_home,
+            website_views.dashboard,
             OsfWebRenderer('home.mako', trust=False)
         ),
+
         Rule(
             '/myprojects/',
             'get',
-            website_views.dashboard,
-            OsfWebRenderer('dashboard.mako', trust=False)
+            website_views.my_projects,
+            OsfWebRenderer('my_projects.mako', trust=False)
         ),
 
         Rule(
@@ -300,8 +301,8 @@ def make_url_map(app):
         Rule(
             '/news/',
             'get',
-            {},
-            OsfWebRenderer('public/pages/news.mako', trust=False)
+            website_views.redirect_to_cos_news,
+            notemplate
         ),
 
         Rule(
