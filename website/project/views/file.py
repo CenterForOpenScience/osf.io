@@ -5,7 +5,7 @@ from flask import request
 
 from website.util import rubeus
 from website.project.decorators import must_be_contributor_or_public
-from website.project.views.node import _view_project
+from website.project.views.node import _view_project, _view_share_window
 
 
 @must_be_contributor_or_public
@@ -24,7 +24,7 @@ def collect_file_trees_for_share_window(auth, node, **kwargs):
     """Collect file trees for all add-ons implementing HGrid views, then
     format data as appropriate.
     """
-    serialized = _view_project(node, auth, primary=True)
+    serialized = _view_share_window(node, auth, primary=True)
     # Add addon static assets
     serialized.update(rubeus.collect_addon_assets(node))
     return serialized

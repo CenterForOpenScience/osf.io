@@ -6,7 +6,7 @@
     <header class="subhead" id="overview">
         <nav id="projectSubnav" class="navbar osf-project-navbar" role="navigation">
             <div class="container">
-            % if not node['is_share_window']:
+            % if node['category']  == 'share window':
                 <div class="navbar-header">
                     <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".project-nav">
                         <span class="sr-only">Toggle navigation</span>
