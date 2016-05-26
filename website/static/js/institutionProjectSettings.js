@@ -156,12 +156,12 @@ var ViewModel = function(data) {
             }
         ).done(function () {
             if (self.isAddInstitution()) {
-                index = self.availableInstitutionsIds().indexOf(item.id)
+                index = self.availableInstitutionsIds().indexOf(item.id);
                 var added = self.availableInstitutions().splice(index, 1)[0];
                 self.affiliatedInstitutions().push(added);
             }
             else {
-                index = self.affiliatedInstitutionsIds().indexOf(item.id)
+                index = self.affiliatedInstitutionsIds().indexOf(item.id);
                 var removed = self.affiliatedInstitutions().splice(index, 1)[0];
                 self.availableInstitutions().push(removed);
             }
