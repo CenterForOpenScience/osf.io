@@ -716,7 +716,7 @@ class TestNotificationUtils(OsfTestCase):
             {
                 'node': {
                     'id': self.user._id,
-                    'title': 'User Notifications'
+                    'title': 'Default Global Notification Settings'
             },
                 'kind': 'heading',
                 'children': utils.format_user_subscriptions(self.user)
