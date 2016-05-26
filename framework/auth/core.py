@@ -408,7 +408,7 @@ class User(GuidStoredObject, AddonModelMixin):
     locale = fields.StringField(default='en_US')
 
     # whether the user has requested to deactivate their account
-    requestedDeactivation = fields.BooleanField(default=False)
+    requested_deactivation = fields.BooleanField(default=False)
 
     _meta = {'optimistic': True}
 
