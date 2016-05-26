@@ -168,8 +168,8 @@ STATICFILES_DIRS = (
 
 # TODO: Revisit methods for excluding private routes from swagger docs
 SWAGGER_SETTINGS = {
+    'api_path': '/',
     'info': {
-        'api_path': '/',
         'description':
         """
         Welcome to the fine documentation for the Open Science Framework's API!  Please click
