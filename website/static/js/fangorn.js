@@ -1157,23 +1157,11 @@ function _fangornUploadMethod(item) {
     return configOption || 'PUT';
 }
 
-function gotoFileEvent (item) {
+function gotoFileEvent (item, toUrl) {
     var tb = this;
     var redir = new URI(item.data.nodeUrl);
     redir.segment('files').segment(item.data.provider).segmentCoded(item.data.path.substring(1));
-    var fileurl  = redir.toString() + '/';
-    if(COMMAND_KEYS.indexOf(tb.pressedKey) !== -1) {
-        window.open(fileurl, '_blank');
-    } else {
-        window.open(fileurl, '_self');
-    }
-}
-
-function gotoVersionEvent (item) {
-    var tb = this;
-    var redir = new URI(item.data.nodeUrl);
-    redir.segment('files').segment(item.data.provider).segmentCoded(item.data.path.substring(1));
-    var fileurl  = redir.toString() + '/?show=revision';
+    var fileurl  = redir.toString() + toUrl;
     if(COMMAND_KEYS.indexOf(tb.pressedKey) !== -1) {
         window.open(fileurl, '_blank');
     } else {
@@ -1188,76 +1176,45 @@ function gotoVersionEvent (item) {
  * @returns {Array} Returns an array of mithril template objects using m()
  * @private
  */
+function _fangornTitleColumnHelper(tb,item,col,nameTitle,toUrl,classNameOption){
+  if (typeof tb.options.links === 'undefined') {
+      tb.options.links = true;
+  }
+  if (item.data.isAddonRoot && item.connected === false) { // as opposed to undefined, avoids unnecessary setting of this value
+      return _connectCheckTemplate.call(this, item);
+  }
+  if (item.kind === 'file' && item.data.permissions.view) {
+      var attrs = {};
+      if (tb.options.links) {
+          attrs =  {
+              className: classNameOption,
+              onclick: function(event) {
+                  event.stopImmediatePropagation();
+                  gotoFileEvent.call(tb, item, toUrl);
+              }
+          };
+      }
+      return m(
+          'span',
+          attrs,
+          nameTitle
+      );
+  }
+  if ((item.data.nodeType === 'project' || item.data.nodeType ==='component') && item.data.permissions.view) {
+      return m('a.' + classNameOption,{ href: '/' + item.data.nodeID.toString() + toUrl},
+              nameTitle);
+  }
+  return m('span', nameTitle);
+}
+
 function _fangornTitleColumn(item, col) {
-    var tb = this;
-    if (typeof tb.options.links === 'undefined') {
-        tb.options.links = true;
-    }
-    if (item.data.isAddonRoot && item.connected === false) { // as opposed to undefined, avoids unnecessary setting of this value
-        return _connectCheckTemplate.call(this, item);
-    }
-    if (item.kind === 'file' && item.data.permissions.view) {
-        var attrs = {};
-        if (tb.options.links) {
-            attrs =  {
-                className: 'fg-file-links',
-                onclick: function(event) {
-                    event.stopImmediatePropagation();
-                    gotoFileEvent.call(tb, item);
-                }
-            };
-        }
-        return m(
-            'span',
-            attrs,
-            item.data.name
-        );
-    }
-    if ((item.data.nodeType === 'project' || item.data.nodeType ==='component') && item.data.permissions.view) {
-        return m('a.fg-file-links',{ href: '/' + item.data.nodeID.toString() + '/'},
-                item.data.name);
-    }
-    return m('span', item.data.name);
+  var tb = this;
+  return _fangornTitleColumnHelper(tb,item,col,item.data.name,'/','fg-file-links');
 }
 
-/**
- * Defines the contents of the title column (does not include the toggle and folder sections
- * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
- * @param {Object} col Options for this particulat column
- * @this Treebeard.controller
- * @returns {Array} Returns an array of mithril template objects using m()
- * @private
- */
-function _fangornVersionColumn(item) {
+function _fangornVersionColumn(item,col) {
   var tb = this;
-   if (typeof tb.options.links === 'undefined') {
-       tb.options.links = true;
-   }
-   if (item.data.isAddonRoot && item.connected === false) { // as opposed to undefined, avoids unnecessary setting of this value
-       return _connectCheckTemplate.call(this, item);
-   }
-    if (item.kind === 'file' && item.data.permissions.view) {
-        var attrs = {};
-        if (tb.options.links) {
-            attrs =  {
-            className: 'fg-version-links',
-                onclick: function(event) {
-                    event.stopImmediatePropagation();
-                    gotoVersionEvent.call(tb, item);
-                }
-            };
-        }
-        return m(
-            'span',
-            attrs,
-            String(item.data.extra.version)
-        );
-    }
-    if ((item.data.nodeType === 'project' || item.data.nodeType ==='component') && item.data.permissions.view) {
-        return m('a.fg-version-links',{ href: '/' + item.data.nodeID.toString() + '/' + '?view=revisions'},
-                String(item.data.extra.version));
-    }
-    return m('span', String(item.data.extra.version));
+  return _fangornTitleColumnHelper(tb,item,col,String(item.data.extra.version),'/?show=revision','fg-version-links');
 }
 
 /**
@@ -1641,7 +1598,7 @@ var FGItemButtons = {
                     rowButtons.push(
                         m.component(FGButton, {
                             onclick: function (event) {
-                                gotoFileEvent.call(tb, item);
+                                gotoFileEvent.call(tb, item, '/');
                             },
                             icon: 'fa fa-file-o',
                             className: 'text-info'
@@ -2500,7 +2457,6 @@ Fangorn.ButtonEvents = {
     _removeEvent: _removeEvent,
     createFolder: _createFolder,
     _gotoFileEvent : gotoFileEvent,
-    _gotoVersionEvent : gotoVersionEvent
 };
 
 Fangorn.DefaultColumns = {
