@@ -529,9 +529,8 @@ var QuickSearchProject = {
                         m('a', {href: '/search/', onclick: function(){ $osf.trackClick('quickSearch', 'navigate', 'navigate-to-search-the-OSF'); }}, 'search'), ' the OSF' ]),
                     m('.quick-search-table', [
                         m('.row.node-col-headers.m-t-md', [
-                            m('.col-sm-3.col-md-4', m('.quick-search-col', 'Project', sortAlphaAsc('rootTitle'), sortAlphaDesc('rootTitle'))),
-                            m('.col-sm-3.col-md-3', m('.quick-search-col', 'Component', sortAlphaAsc('nodeTitle'), sortAlphaDesc('nodeTitle'))),
-                            m('.col-sm-3.col-md-2', m('.quick-search-col', 'Contributors')),
+                            m('.col-sm-3.col-md-6', m('.quick-search-col', 'Title', sortAlphaAsc('rootTitle'), sortAlphaDesc('rootTitle'))),
+                            m('.col-sm-3.col-md-3', m('.quick-search-col', 'Contributors')),
                             m('.col-sm-3.col-md-3', m('.quick-search-col','Modified', m('span.sort-group', sortDateAsc(), sortDateDesc())))
                         ]),
                         xsDropdown(),
@@ -571,18 +570,25 @@ var QuickSearchNodeDisplay = {
             return m('.', args.eligibleNodes().slice(0, args.countDisplayed()).map(function(n){
                 var project = args.nodes()[n];
                 var numContributors = project.embeds.contributors.links.meta.total;
-                var title = project.attributes.title
-                var root = project.embeds.root.data.attributes.title;
+                var title = project.attributes.title;
+                try {
+                    var root = project.embeds.root.data.attributes.title;
+                }
+                catch (err) {
+                    var root = "Private Project";
+                }
                 if (title === root) {
-                    title = '-';
+                    title = '';
+                }
+                else {
+                    root = root.replace('.','') + ' / ';
                 }
                 return m('a', {href: '/' + project.id, onclick: function() {
                     $osf.trackClick('quickSearch', 'navigate', 'navigate-to-specific-project');
                 }}, m('.m-v-sm.node-styling',  m('.row', m('div',
                     [
-                        m('.col-sm-3.col-md-4.p-v-xs', m('.quick-search-col',  root)),
-                        m('.col-sm-3.col-md-3.p-v-xs', m('.quick-search-col',  title)),
-                        m('.col-sm-3.col-md-2.p-v-xs', m('.quick-search-col', $osf.contribNameFormat(project, numContributors, args.getFamilyName))),
+                        m('.col-sm-3.col-md-6.p-v-xs', m('.quick-search-col', root, m('strong', title))),
+                        m('.col-sm-3.col-md-3.p-v-xs', m('.quick-search-col', $osf.contribNameFormat(project, numContributors, args.getFamilyName))),
                         m('.col-sm-3.col-md-3.p-v-xs', m('.quick-search-col', args.formatDate(project)))
                     ]
                 ))));
