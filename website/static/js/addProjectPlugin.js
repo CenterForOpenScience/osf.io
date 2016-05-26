@@ -34,7 +34,9 @@ var AddProject = {
         self.newProjectDesc = m.prop('');
         self.newProjectCategory = m.prop(self.defaultCat);
         self.newProjectTemplate = m.prop('');
-        self.newProjectInstitutions = [];
+        self.newProjectInstitutions = window.contextVars.currentUser.institutions.map(
+            function(inst){return inst.id;}
+        );
         self.goToProjectLink = m.prop('');
         self.saveResult = m.prop({});
         self.errorMessageType = m.prop('unknown');
@@ -151,6 +153,54 @@ var AddProject = {
                                 name : 'projectName'
                             })
                         ]),
+                        window.contextVars.currentUser.institutions.length ? m('.form-group.m-v-sm', [
+                            m('label.f-w-lg.text-bigger', 'Affiliation'),
+                            m('a', {onclick: function(){
+                                $('.img-circle.fa.fa-check').addClass('hidden');
+                                ctrl.newProjectInstitutions = [];
+                            }, style: {float: 'right'}},'Remove all'),
+                            m('a', {onclick: function(){
+                                $('.img-circle.fa.fa-check').removeClass('hidden');
+                                ctrl.newProjectInstitutions = window.contextVars.currentUser.institutions.map(
+                                    function(inst){return inst.id;}
+                                );
+                            }, style: {float: 'right', marginRight: '5px'}}, 'Select all'),
+                            m('table', m('tr', window.contextVars.currentUser.institutions.map(
+                                function(inst){
+                                    return m('td',
+                                        m('a', {onclick: function(){
+                                            $('#instLogo' + inst.id).toggleClass('hidden');
+                                            if (ctrl.newProjectInstitutions.indexOf(inst.id) !== -1){
+                                                ctrl.newProjectInstitutions.pop(inst.id);
+                                            } else {
+                                                ctrl.newProjectInstitutions.push(inst.id);
+                                            }
+                                        }},m('', {style: {position: 'relative',  margin: '10px'}, width: '45px', height: '45px'},
+                                            [
+                                            m('img.img-circle.text-muted',
+                                                {
+                                                    src: inst.logo_path, width: '45px', height: '45px',
+                                                }
+                                            ),
+                                            m('i.img-circle.fa.fa-check#instLogo' + inst.id,
+                                                {
+                                                    style: {
+                                                        color: 'lightgreen',
+                                                        textAlign: 'center',
+                                                        fontSize: '275%',
+                                                        width: '45px', height: '100%',
+                                                        top: '0', left: '0',
+                                                        position: 'absolute',
+                                                        display: 'block',
+                                                        background: 'rgba(0, 0, 0, .4)'
+                                                    }
+                                                }
+                                            )
+                                        ]))
+                                    );
+                                }
+                            ))),
+                        ]): '',
                         m('.text-muted.pointer', { onclick : function(){
                             ctrl.showMore(!ctrl.showMore());
                             $osf.trackClick(options.trackingCategory, options.trackingAction, 'show-more-or-less');
@@ -172,54 +222,6 @@ var AddProject = {
                                     placeholder : 'Enter ' + ctrl.nodeType + ' description'
                                 })
                             ]),
-                            window.contextVars.currentUser.institutions.length ? m('.form-group.m-v-sm', [
-                                m('label.f-w-lg.text-bigger', 'Affiliation'),
-                                m('a', {onclick: function(){
-                                    $('.img-circle.fa.fa-check').addClass('hidden');
-                                    ctrl.newProjectInstitutions = [];
-                                }, style: {float: 'right'}},'Remove all'),
-                                m('a', {onclick: function(){
-                                    $('.img-circle.fa.fa-check').removeClass('hidden');
-                                    ctrl.newProjectInstitutions = window.contextVars.currentUser.institutions.map(
-                                        function(inst){return inst.id;}
-                                    );
-                                }, style: {float: 'right', marginRight: '5px'}}, 'Select all'),
-                                m('table', m('tr', window.contextVars.currentUser.institutions.map(
-                                    function(inst){
-                                        return m('td',
-                                            m('a', {onclick: function(){
-                                                $('#instLogo' + inst.id).toggleClass('hidden');
-                                                if (ctrl.newProjectInstitutions.indexOf(inst.id) !== -1){
-                                                    ctrl.newProjectInstitutions.pop(inst.id);
-                                                } else {
-                                                    ctrl.newProjectInstitutions.push(inst.id);
-                                                }
-                                            }},m('', {style: {position: 'relative',  margin: '10px'}, width: '45px', height: '45px'},
-                                                [
-                                                m('img.img-circle.text-muted',
-                                                    {
-                                                        src: inst.logo_path, width: '45px', height: '45px',
-                                                    }
-                                                ),
-                                                m('i.hidden.img-circle.fa.fa-check#instLogo' + inst.id,
-                                                    {
-                                                        style: {
-                                                            color: 'lightgreen',
-                                                            textAlign: 'center',
-                                                            fontSize: '275%',
-                                                            width: '45px', height: '100%',
-                                                            top: '0', left: '0',
-                                                            position: 'absolute',
-                                                            display: 'block',
-                                                            background: 'rgba(0, 0, 0, .4)'
-                                                        }
-                                                    }
-                                                )
-                                            ]))
-                                        );
-                                    }
-                                ))),
-                            ]): '',
                             ctrl.options.parentID !== null ? [
                                 m('.f-w-lg.text-bigger','Category'),
                                 m('.category-radio.p-h-md', [
