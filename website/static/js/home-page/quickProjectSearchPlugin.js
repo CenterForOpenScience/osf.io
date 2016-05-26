@@ -573,16 +573,23 @@ var QuickSearchNodeDisplay = {
                 var title = project.attributes.title;
                 try {
                     var root = project.embeds.root.data.attributes.title;
+                    if (title === root) {
+                    title = '';
+                    }
+                    else {
+                        root = root.replace('.','') + ' / ';
+                    }
                 }
                 catch (err) {
-                    var root = "Private Project";
+                    if (project.embeds.root.errors[0].detail == "You do not have permission to perform this action.") {
+                        var errorMessage = "Private Project";
+                    }
+                    else {
+                        var errorMessage = "Project Name Unavailable";
+                    }
+                    root = m('em', errorMessage + ' / ');
                 }
-                if (title === root) {
-                    title = '';
-                }
-                else {
-                    root = root.replace('.','') + ' / ';
-                }
+
                 return m('a', {href: '/' + project.id, onclick: function() {
                     $osf.trackClick('quickSearch', 'navigate', 'navigate-to-specific-project');
                 }}, m('.m-v-sm.node-styling',  m('.row', m('div',
