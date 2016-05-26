@@ -1,8 +1,9 @@
-﻿// OSF Note: This file has been changed for UI reasons, to prevent
+// OSF Note: This file has been changed for UI reasons, to prevent
 // automatic rendering, and to add a checkbox for toggling snippet
 // autocompletion. This is only here for the toolbar
 
 // needs Markdown.Converter.js at the moment
+
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 var Range = ace.require('ace/range').Range;
@@ -59,7 +60,7 @@ var Range = ace.require('ace/range').Range;
         undo: "Undo -",
         redo: "Redo -",
 
-        help: "Markdown Editing Help"
+        help: "Wiki Syntax Help"
     };
 
     var keyStrokes = {
@@ -110,7 +111,7 @@ var Range = ace.require('ace/range').Range;
         redo: {
             win: 'Ctrl-Y|Ctrl-Shift-Z',
             mac: 'Command-Y|Command-Shift-Z',
-        },
+        }
     };
 
 
@@ -1649,6 +1650,22 @@ var Range = ace.require('ace/range').Range;
                 buttonRow.appendChild(button);
                 return button;
             };
+            var makeHelpButton = function(id,title,XShift){
+              var button = document.createElement("li");
+              button.className = "wmd-button";
+              button.setAttribute('data-toggle','modal');
+              button.setAttribute('data-target','#wiki-help-modal');
+              button.style.left = xPosition + "px";
+              xPosition += 25;
+              var buttonImage = document.createElement("span");
+              button.id = id + postfix;
+              button.appendChild(buttonImage);
+              button.title = title;
+              button.XShift = XShift;
+              setupButton(button, true);
+              buttonRow.appendChild(button);
+              return button;
+            }
             var makeCheckBox = function (div_id, cb_id, XShift, text) {
                 var li = document.createElement("li");
                 li.id = div_id;
@@ -1704,8 +1721,12 @@ var Range = ace.require('ace/range').Range;
 
             buttons.redo = makeButton("wmd-redo-button", getStringAndKey("redo"), "-220px", null);
             buttons.redo.execute = function (manager) { inputBox.session.getUndoManager().redo(); };
+
             makeSpacer(4);
             makeCheckBox("wmd-autocom-toggle", "autocom", "-240px", "Autocomplete");
+
+            makeSpacer(5);
+            buttons.help = makeHelpButton("wmd-help-button",getString("help"),"-240px");
 
             if (helpOptions) {
                 var helpButton = document.createElement("li");
@@ -2440,6 +2461,5 @@ var Range = ace.require('ace/range').Range;
         chunk.selection = "";
         chunk.skipLines(2, 1, true);
     }
-
 
 })();

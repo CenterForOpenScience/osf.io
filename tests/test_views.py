@@ -544,7 +544,7 @@ class TestProjectViews(OsfTestCase):
                             auth=self.auth2).maybe_follow()
         self.project.reload()
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['redirectUrl'], '/myprojects/')
+        assert_equal(res.json['redirectUrl'], '/dashboard/')
         assert_not_in(self.user2._id, self.project.contributors)
 
     def test_public_project_remove_self_not_admin(self):
