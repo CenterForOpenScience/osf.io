@@ -89,7 +89,6 @@ var LogText = {
             return false;
         };
         var logText = function() {
-            console.log(logObject);
             var text = logActions[logObject.attributes.action];
             if (text) {
                 if (text.indexOf('${user}') !== -1) {
