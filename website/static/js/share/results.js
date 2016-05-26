@@ -6,6 +6,9 @@ var m = require('mithril');
 var $osf = require('js/osfHelpers');
 var utils = require('./utils');
 require('truncate');
+var mathrender = require('js/mathrender');
+
+
 
 var LoadingIcon = {
     view: function(ctrl) {
@@ -17,7 +20,7 @@ var Results = {
     view: function(ctrl, params) {
         var vm = params.vm;
         var resultViews = $.map(vm.results || [], function(result, i) {
-            return m.component(Result, {result: result, vm: vm,});
+            return m.component(Result, {result: result, vm: vm});
         });
 
 
@@ -37,20 +40,29 @@ var Results = {
         };
 
         return m('', [
-            m('.row', m('.col-md-12', maybeResults(resultViews, vm.resultsLoading()))),
-            m('.row', m('.col-md-12', m('div', {style: {display: 'block', margin: 'auto', 'text-align': 'center'}},
+            
+            m('.row.hasMath', m('.col-md-12', {
+                config: function(el, ini, ctx) {
+                    mathrender.typeset(el); // We can start mathjax here and trigger it once to rendoer for all results...
+                }
+            },
+                maybeResults(resultViews, vm.resultsLoading())
+            )),
+
+            m('.row', m('.col-md-12', m('div', {style: {display: 'block', margin: 'auto', 'text-align': 'center'}}, 
                 len > 0 && len < vm.count ?
                 m('a.btn.btn-md.btn-default', {
                     onclick: function(){
                         utils.loadMore(vm)
                             .then(function(data) {
                                 utils.updateVM(vm, data);
+
                             });
-                    }
+		                }
                 }, 'More') : [])
             ))
         ]);
-
+    
     }
 };
 
@@ -87,7 +99,13 @@ var TitleBar = {
     view: function(ctrl, params) {
         var result = params.result;
         return m('span', {}, [
-            m('a[href=' + result.uris.canonicalUri + ']', ((result.title || 'No title provided'))),
+            m('a[href=' + result.uris.canonicalUri + ']', {
+                    config: function(el, ini, ctx) {
+                        //mathrender.typeset(el)
+                    }
+                },
+                ((result.title || 'No title provided'))
+            ),
             m('br'),
             m.component(Description, params)
         ]);
@@ -107,12 +125,22 @@ var Description = {
         };
         if ((result.description || '').length > 350) {
             return m('', [
-                m('p.readable.pointer', {onclick: showOnClick},
+                m('p.readable.pointer', {
+                    onclick: showOnClick,
+                    config: function(el, ini, ctx) {
+                        //mathrender.typeset(el)
+                    }
+                },
                     ctrl.showAll() ? result.description : $.truncate(result.description, {length: 350})
                 ),
                 m('a.sr-only', {href: '#', onclick: showOnClick}, ctrl.showAll() ? 'See less' : 'See more')]);
         } else {
-            return m('p.readable', result.description);
+            return m('p.readable', {
+                config: function(el, ini, ctx) {
+                    //mathrender.typeset(el)
+                }
+            },
+            result.description);
         }
     }
 };
