@@ -5,15 +5,9 @@
   <h2 class="text-300">Analytics</h2>
 </div>
 
-<div id="hiddenFlag" class="ad_block_display">
+<div>
   <div class="m-b-md p-md osf-box-lt box-round text-center">The use of adblocking software may prevent site analytics from loading properly.</div>
 </div>
-<script src="/static/js/ads.js"></script>
-<script>
-if( window.canRunAds === undefined ){
-  $('.ad-block-display').css({'display':'block'});
-}
-</script>
 
 <%
     if user['is_contributor']:
