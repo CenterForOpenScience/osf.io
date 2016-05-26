@@ -3,21 +3,20 @@ import gc
 from framework.auth import User as MODMUser
 from modularodm import Q
 from osf_models.models import Node, NodeLog, User
+from django.db import transaction
 
 from website.models import Node as MODMNode
 from website.models import NodeLog as MODMNodeLog
-from osf_models.db.backends.postgresql_psycopg2.base import server_side_cursors
+from osf_models.db.backends.postgresql_cursors.base import server_side_cursors
 import pytz
 
 
 def main():
     total = NodeLog.objects.all().count()
     count = 0
-    page_size = 1000
-
-    while count < total:
-        print '{} through {}'.format(count, count + page_size)
-        qs = NodeLog.objects.all().order_by('-date')
+    page_size = 50000
+    with transaction.atomic():
+        qs = NodeLog.objects.all().order_by('-date').select_related('user').select_related('node').select_related('user___guid').select_related('node___guid')
         with server_side_cursors(qs, itersize=page_size):
             for log in qs.iterator():
                 modm_nodelog = MODMNodeLog.load(log.guid)
@@ -47,4 +46,9 @@ def main():
                             log.guid, modm_nodelog.foreign_user, log.foreign_user)
                 else:
                     print 'MODMNodeLog with id {} not found.'.format(log.guid)
+
                 count += 1
+                if count % page_size == 0:
+                    MODMNodeLog._cache.clear()
+                    MODMNodeLog._object_cache.clear()
+                    print '{} through {}'.format(count, count + page_size)
