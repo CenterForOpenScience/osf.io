@@ -73,7 +73,6 @@ def build_page(rex, kwargs):
     except KeyError:
         return None
 
-
 def update_counter(page, db=None):
     """Update counters for page.
 
