@@ -556,8 +556,9 @@ var QuickSearchNodeDisplay = {
                 var project = args.nodes()[n];
                 var numContributors = project.embeds.contributors.links.meta.total;
                 var title = project.attributes.title;
+                var root;
                 try {
-                    var root = project.embeds.root.data.attributes.title;
+                    root = project.embeds.root.data.attributes.title;
                     if (title === root) {
                     root = '';
                     }
@@ -566,11 +567,12 @@ var QuickSearchNodeDisplay = {
                     }
                 }
                 catch (err) {
-                    if (project.embeds.root.errors[0].detail == 'You do not have permission to perform this action.') {
-                        var errorMessage = 'Private Project';
+                    var errorMessage;
+                    if (project.embeds.root.errors[0].detail === 'You do not have permission to perform this action.') {
+                        errorMessage = 'Private Project';
                     }
                     else {
-                        var errorMessage = 'Project Name Unavailable';
+                        errorMessage = 'Project Name Unavailable';
                     }
                     root = m('em', errorMessage + ' / ');
                 }
