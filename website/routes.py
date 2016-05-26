@@ -1019,8 +1019,8 @@ def make_url_map(app):
         # Share Window
         Rule(
             [
-                '/share_window/',
-                '/share_window/',
+                '/project/<pid>/share_window/',
+                '/project/<pid>/node/<nid>/share_window/',
             ],
             'get',
             project_views.file.collect_file_trees_for_share_window,
