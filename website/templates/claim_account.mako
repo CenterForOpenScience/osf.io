@@ -85,6 +85,11 @@
 </%def>
 
 <%def name="javascript_bottom()">
+    <script type="text/javascript">
+        window.contextVars = $.extend(true, {}, window.contextVars, {
+            username: ${email | sjson, n}
+        });
+    </script>
     ${parent.javascript_bottom()}
     <script src=${"/static/public/js/claimaccount-page.js" | webpack_asset}></script>
 </%def>
