@@ -85,7 +85,7 @@ class TestAuthUtils(OsfTestCase):
         res = res.follow()
 
         assert_equal(res.status_code, 302)
-        assert_equal('/myprojects/', urlparse.urlparse(res.location).path)
+        assert_equal('/', urlparse.urlparse(res.location).path)
         assert_equal(len(mock_mail.call_args_list), 1)
         session = Session.find(
             Q('data.auth_user_id', 'eq', user._id)
@@ -559,7 +559,6 @@ class TestMustBeContributorOrPublicButNotAnonymizedDecorator(AuthAppTestCase):
                            {'view_only': self.anonymized_link_to_private_project.key})
         res = res.follow(expect_errors=True)
         assert_equal(res.status_code, 500)
-
 
 @must_be_logged_in
 def protected(**kwargs):
