@@ -14,12 +14,12 @@ var ViewModel = function(data) {
     self.institutionHref = ko.observable('');
     self.userInstitutions = data.currentUser.institutions;
     self.userInstitutionsIds = self.userInstitutions.map(function(item){return item.id;});
-    self.affiliatedInstitutions = ko.observable(data.node.institutions);
+    self.affiliatedInstitutions = ko.observableArray(data.node.institutions);
 
     self.affiliatedInstitutionsIds = ko.computed(function() {
         return self.affiliatedInstitutions().map(function(item){return item.id;});
     });
-    self.availableInstitutions = ko.observable(self.userInstitutions.filter(function(each){
+    self.availableInstitutions = ko.observableArray(self.userInstitutions.filter(function(each){
         return ($.inArray(each.id, self.affiliatedInstitutionsIds())) === -1;
     }));
 
@@ -47,17 +47,20 @@ var ViewModel = function(data) {
 
     self.modifyChildrenDialog = function (item) {
         var message;
-        var addToOneMessage;
-        var addToAllMessage;
-        addToOneMessage = 'Add <b>' + item.name + '</b> to <b>' +  data.node.title + '</b>.',
-        addToAllMessage = 'Add <b>' + item.name + '</b> to <b>' +  data.node.title + '</b> and every component in it.';
+        var modifyOneMessage;
+        var modifyAllMessage;
         if (self.isAddInstitution()) {
             message = 'Add <b>' + item.name + '</b> to <b>' + data.node.title + '</b> or to <b>' +
                 data.node.title + '</b> and all its components?<br><br>';
+            modifyOneMessage = 'Add <b>' + item.name + '</b> to <b>' +  data.node.title + '</b>.',
+            modifyAllMessage = 'Add <b>' + item.name + '</b> to <b>' +  data.node.title + '</b> and every component in it.';
         }
-        else
+        else {
             message = 'Remove ' + item.name + ' from <b>' + data.node.title + '</b> or to <b>' +
                 data.node.title + '</b> and all its components?<br><br>';
+            modifyOneMessage = 'Remove <b>' + item.name + '</b> to <b>' +  data.node.title + '</b>.',
+            modifyAllMessage = 'Remove <b>' + item.name + '</b> to <b>' +  data.node.title + '</b> and every component in it.';
+        }
         if (self.needsWarning()) {
             message += '<div class="text-danger f-w-xl">Warning, you are not affialiated with <b>' + item.name +
                     '</b>.  If you remove it from your project, you cannot add it back.<div>';
@@ -74,10 +77,10 @@ var ViewModel = function(data) {
                     '<span>' + message + '</span> ' +
                     '<div class="radio" > <label for="selectOne"> ' +
                     '<input type="radio" id="selectOne" type="radio" name="radioBoxGroup"' +
-                    ' value="false" checked="checked"> ' + addToOneMessage + ' </div></label> ' +
+                    ' value="false" checked="checked"> ' + modifyOneMessage + ' </div></label> ' +
                     '<div class="radio"> <label for="selectAll"> ' +
                     '<input type="radio" id="selectAll" type="radio" name="radioBoxGroup" value="true"> ' +
-                    addToAllMessage + ' </label> ' + '</div>' + '</div>',
+                    modifyAllMessage + ' </label> ' + '</div>' + '</div>',
                 buttons: {
                     cancel: {
                         label: 'Cancel',
@@ -168,8 +171,6 @@ var ViewModel = function(data) {
             self.availableInstitutions(self.availableInstitutions());
             self.affiliatedInstitutions(self.affiliatedInstitutions());
             self.loading(false);
-
-
         }).fail(function (xhr, status, error) {
             $osf.growl('Unable to modify the institution on this node. Please try again. If the problem persists, email <a href="mailto:support@osf.io.">support@osf.io</a>');
             Raven.captureMessage('Unable to modify this institution!', {
