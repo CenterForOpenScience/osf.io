@@ -32,7 +32,6 @@ var ViewModel = function(data) {
 
     //user chooses to delete all nodes
     self.modifyChildren = ko.observable(false);
-    self.title = 'Add Institution';
     self.nodesOriginal = ko.observable();
     self.isAddInstitution = ko.observable(false);
     self.needsWarning = ko.observable(false);
