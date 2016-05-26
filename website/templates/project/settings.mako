@@ -307,7 +307,7 @@
                     <div class="panel-body">
                         <div class="help-block">
                             <!-- ko if: affiliatedInstitutions().length == 0 -->
-                            Projects can be affiliated with institutions that have created OSF for Institution accounts.
+                            Projects can be affiliated with Institutions that have created OSF for Institution accounts.
                             This allows:
                             <ul>
                                <li>institutional logos to be displayed on public projects</li>

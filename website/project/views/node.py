@@ -945,6 +945,7 @@ def node_child_tree(user, node_ids):
     """ Format data to test for node privacy settings for use in treebeard.
     """
     items = []
+
     for node_id in node_ids:
         node = Node.load(node_id)
         assert node, '{} is not a valid Node.'.format(node_id)
@@ -962,12 +963,11 @@ def node_child_tree(user, node_ids):
                 'is_confirmed': contributor.is_confirmed
             })
 
-            affiliated_institutions = []
-        for affiliated_institution in node.affiliated_institutions:
-            affiliated_institutions.append({
-                'id': affiliated_institution.pk,
-                'name': affiliated_institution.name
-            })
+        affiliated_institutions = [{
+            'id': affiliated_institution.pk,
+            'name': affiliated_institution.name
+        } for affiliated_institution in node.affiliated_institutions]
+
         children = []
         # List project/node if user has at least 'read' permissions (contributor or admin viewer) or if
         # user is contributor on a component of the project/node

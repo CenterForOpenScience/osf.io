@@ -42,9 +42,10 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
         }
     }
     var nodeInstitutions = [];
-    for (i=0; i < nodeTree.node.affiliated_institutions.length; i++) {
-            nodeInstitutions.push(nodeTree.node.affiliated_institutions[i].id);
-    }
+
+    nodeInstitutions = nodeTree.node.affiliated_institutions.map(function(item) {
+        return item.id;
+    });
 
     nodesOriginal[nodeId] = {
         isPublic: nodeTree.node.is_public,
