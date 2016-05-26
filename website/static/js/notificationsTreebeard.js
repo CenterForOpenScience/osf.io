@@ -76,6 +76,11 @@ function displayParentNotificationType(item){
     return '';
 }
 
+var popOver = function(element, isInit) {
+    if (!isInit) {
+        $(element).tooltip();
+    }
+};
 
 function ProjectNotifications(data) {
 
@@ -118,11 +123,13 @@ function ProjectNotifications(data) {
                         filter : true,
                         sortInclude : false,
                         custom : function() {
-                            return m('div[style="padding-left:5px"]',
-                                    [m('p',
-                                        [m('b', item.data.node.title + ':')]
-                                )]
-                            );
+                            var globalNotificationsMessage = "These are default settings for new projects you create or are added to. Modifying these settings will not modify settings on existing projects."
+                            return m('div[style="padding-left:5px; padding-bottom:50px"]', [
+                                m('p', [
+                                    m('b', item.data.node.title + ':  '),
+                                    m('span[class="fa fa-info-circle"]', {'data-toggle': 'tooltip', 'title':globalNotificationsMessage, config: popOver, 'data-placement': 'bottom'})
+                                ])
+                            ]);
                         }
                     });
                 }
