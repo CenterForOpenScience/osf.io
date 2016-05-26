@@ -199,6 +199,12 @@
 </%def>
 
 <%def name="javascript_bottom()">
+    <script type="text/javascript">
+        window.contextVars = $.extend(true, {}, window.contextVars, {
+            username: ${user_name | sjson, n}
+        });
+    </script>
+    ${parent.javascript_bottom()}
     ## Webpack bundles
     % for js_asset in addons_js:
       <script src="${js_asset | webpack_asset}"></script>
