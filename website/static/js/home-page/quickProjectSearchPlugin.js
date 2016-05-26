@@ -201,34 +201,22 @@ var QuickSearchProject = {
             return (A > B) ? -1 : (A < B) ? 1 : 0;
         };
 
-        self.sortAlphabeticalAscending = function (node) {
+        self.sortAlphabeticalAscending = function () {
             self.nodes().sort(function(a,b){
-                if (node === 'rootTitle') {
-                    var A = a.embeds.root.data.attributes.title.toUpperCase();
-                    var B = b.embeds.root.data.attributes.title.toUpperCase();
-                    }
-                else if (node === 'nodeTitle') {
-                    var A = a.attributes.title.toUpperCase();
-                    var B = b.attributes.title.toUpperCase();
-                    }
+                var A = a.attributes.title.toUpperCase();
+                var B = b.attributes.title.toUpperCase();
                 return self.sortAscending(A, B);
-                });
-            self.sortState(node + 'AlphaAsc');
+            });
+            self.sortState('alphaAsc');
         };
 
-        self.sortAlphabeticalDescending = function (node) {
+        self.sortAlphabeticalDescending = function () {
             self.nodes().sort(function(a,b){
-                if (node === 'rootTitle') {
-                    var A = a.embeds.root.data.attributes.title.toUpperCase();
-                    var B = b.embeds.root.data.attributes.title.toUpperCase();
-                    }
-                else if (node === 'nodeTitle') {
-                    var A = a.attributes.title.toUpperCase();
-                    var B = b.attributes.title.toUpperCase();
-                    }
-                    return self.sortDescending(A, B);
-                });
-            self.sortState(node + 'AlphaDesc');
+                var A = a.attributes.title.toUpperCase();
+                var B = b.attributes.title.toUpperCase();
+                return self.sortDescending(A, B);
+            });
+            self.sortState('alphaDesc');
         };
 
         self.sortDateAscending = function () {
@@ -252,17 +240,11 @@ var QuickSearchProject = {
         // Sorts nodes depending on current sort state.
         self.sortBySortState = function () {
             switch (self.sortState()) {
-                case 'rootTitleAlphaAsc':
-                    self.sortAlphabeticalAscending('rootTitle');
+                case 'alphaAsc':
+                    self.sortAlphabeticalAscending();
                     break;
-                case 'rootTitleAlphaDesc':
-                    self.sortAlphabeticalDescending('rootTitle');
-                    break;
-                case 'nodeTitleAlphaAsc':
-                    self.sortAlphabeticalAscending('nodeTitle');
-                    break;
-                case 'nodeTitleAlphaDesc':
-                    self.sortAlphabeticalDescending('nodeTitle');
+                case 'alphaDesc':
+                    self.sortAlphabeticalDescending();
                     break;
                 case 'dateAsc':
                     self.sortDateAscending();
@@ -311,7 +293,11 @@ var QuickSearchProject = {
 
         // Filtering on root project
         self.rootMatch = function (node) {
-            return (node.embeds.root.data.attributes.title.toUpperCase().indexOf(self.filter().toUpperCase()) !== -1);
+            try {
+                var root = project.embeds.root.data.attributes.title;
+                return (node.embeds.root.data.attributes.title.toUpperCase().indexOf(self.filter().toUpperCase()) !== -1);
+                }
+            catch (err) {return false;}
         };
 
         // Filtering on title
@@ -383,20 +369,20 @@ var QuickSearchProject = {
             }
         }
 
-        function sortAlphaAsc(node) {
+        function sortAlphaAsc() {
             if (ctrl.loadingComplete()) {
-                return m('button', {'class': ctrl.colorSortButtons(node + 'AlphaAsc'), onclick: function() {
-                    ctrl.sortBySortState(ctrl.sortState(node + 'AlphaAsc'));
+                return m('button', {'class': ctrl.colorSortButtons('alphaAsc'), onclick: function() {
+                    ctrl.sortBySortState(ctrl.sortState('alphaAsc'));
                     $osf.trackClick('quickSearch', 'view', 'sort-' + ctrl.sortState());
                 }},
                     m('i.fa.fa-angle-up'));
             }
         }
 
-        function sortAlphaDesc(node){
+        function sortAlphaDesc(){
             if (ctrl.loadingComplete()){
-                return m('button', {'class': ctrl.colorSortButtons(node + 'AlphaDesc'), onclick: function() {
-                    ctrl.sortBySortState(ctrl.sortState(node + 'AlphaDesc'));
+                return m('button', {'class': ctrl.colorSortButtons('alphaDesc'), onclick: function() {
+                    ctrl.sortBySortState(ctrl.sortState('alphaDesc'));
                     $osf.trackClick('quickSearch', 'view', 'sort-' + ctrl.sortState());
                 }},
                     m('i.fa.fa-angle-down'));
@@ -447,16 +433,15 @@ var QuickSearchProject = {
             }
         }
 
-        // Dropdown for XS screen - if sort on root on large screen, when resize to xs, 'root' is default selected
+        // Dropdown for XS screen - if sort on title on large screen, when resize to xs, 'title' is default selected
         function defaultSelected() {
             var selected = ctrl.preSelectField();
             switch (selected) {
-                case 'root':
-                    return [m('option', {value: 'root', selected:'selected'}, 'Project'), m('option', {value: 'date'}, 'Modified')];
+                case 'title':
+                    return [m('option', {value: 'title', selected:'selected'}, 'Title'), m('option', {value: 'date'}, 'Modified')];
 
                 case 'date':
-                    return [m('option', {value: 'root'}, 'Project'), m('option', {value: 'date', selected:'selected'}, 'Modified')];
-                    break;
+                    return [m('option', {value: 'title'}, 'Title'), m('option', {value: 'date', selected:'selected'}, 'Modified')];
             }
         }
 
@@ -529,7 +514,7 @@ var QuickSearchProject = {
                         m('a', {href: '/search/', onclick: function(){ $osf.trackClick('quickSearch', 'navigate', 'navigate-to-search-the-OSF'); }}, 'search'), ' the OSF' ]),
                     m('.quick-search-table', [
                         m('.row.node-col-headers.m-t-md', [
-                            m('.col-sm-3.col-md-6', m('.quick-search-col', 'Title', sortAlphaAsc('rootTitle'), sortAlphaDesc('rootTitle'))),
+                            m('.col-sm-3.col-md-6', m('.quick-search-col', 'Title', sortAlphaAsc(), sortAlphaDesc())),
                             m('.col-sm-3.col-md-3', m('.quick-search-col', 'Contributors')),
                             m('.col-sm-3.col-md-3', m('.quick-search-col','Modified', m('span.sort-group', sortDateAsc(), sortDateDesc())))
                         ]),
@@ -574,18 +559,18 @@ var QuickSearchNodeDisplay = {
                 try {
                     var root = project.embeds.root.data.attributes.title;
                     if (title === root) {
-                    title = '';
+                    root = '';
                     }
                     else {
                         root = root.replace('.','') + ' / ';
                     }
                 }
                 catch (err) {
-                    if (project.embeds.root.errors[0].detail == "You do not have permission to perform this action.") {
-                        var errorMessage = "Private Project";
+                    if (project.embeds.root.errors[0].detail == 'You do not have permission to perform this action.') {
+                        var errorMessage = 'Private Project';
                     }
                     else {
-                        var errorMessage = "Project Name Unavailable";
+                        var errorMessage = 'Project Name Unavailable';
                     }
                     root = m('em', errorMessage + ' / ');
                 }
