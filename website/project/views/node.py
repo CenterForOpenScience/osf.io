@@ -252,6 +252,11 @@ def node_fork_page(auth, node, **kwargs):
 def node_registrations(auth, node, **kwargs):
     return _view_project(node, auth, primary=True)
 
+@must_be_valid_project
+@must_be_contributor_or_public_but_not_anonymized
+def node_share_window(auth, node, **kwargs):
+    return _view_project(node, auth, primary=True)
+
 
 @must_be_valid_project
 @must_be_contributor_or_public_but_not_anonymized
@@ -712,6 +717,7 @@ def _view_project(node, auth, primary=False):
                 node.embargo_termination_approval and
                 node.embargo_termination_approval.is_pending_approval
             ),
+            'is_share_window' : node.is_share_window,
             'registered_from_url': node.registered_from.url if node.is_registration else '',
             'registered_date': iso8601format(node.registered_date) if node.is_registration else '',
             'root_id': node.root._id if node.root else None,
