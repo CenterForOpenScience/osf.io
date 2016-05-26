@@ -741,6 +741,26 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
+    'HEPA2016': {
+        'name': 'HEPA Europe Annual Meeting 2016',
+        'info_url': 'http://www.hepaeurope2016.eu/',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
+    'OGH': {
+        'name': 'Open Global Health',
+        'info_url': None,
+        'logo_url': 'http://s33.postimg.org/7tjjpvg4f/Drawing.png',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
 }
 
 
