@@ -173,7 +173,17 @@ var AddProject = {
                                 })
                             ]),
                             window.contextVars.currentUser.institutions.length ? m('.form-group.m-v-sm', [
-                                m('label[for="projectDesc].f-w-lg.text-bigger', 'Add institution affiliation'),
+                                m('label.f-w-lg.text-bigger', 'Affiliation'),
+                                m('a', {onclick: function(){
+                                    $('.img-circle.fa.fa-check').addClass('hidden');
+                                    ctrl.newProjectInstitutions = [];
+                                }, style: {float: 'right'}},'Remove all'),
+                                m('a', {onclick: function(){
+                                    $('.img-circle.fa.fa-check').removeClass('hidden');
+                                    ctrl.newProjectInstitutions = window.contextVars.currentUser.institutions.map(
+                                        function(inst){return inst.id;}
+                                    );
+                                }, style: {float: 'right', marginRight: '5px'}}, 'Select all'),
                                 m('table', m('tr', window.contextVars.currentUser.institutions.map(
                                     function(inst){
                                         return m('td',
