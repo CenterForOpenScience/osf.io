@@ -1,9 +1,9 @@
 var ko = require('knockout');
+var moment = require('moment');
 var pikaday = require('pikaday');
 require('pikaday-css');
 var bootbox = require('bootbox');
 var $ = require('jquery');
-var moment = require('moment');
 var $osf = require('js/osfHelpers');
 var language = require('js/osfLanguage').registrations;
 
@@ -11,10 +11,6 @@ var template = require('raw!templates/registration-modal.html');
 $(document).ready(function() {
     $('body').append(template);
 });
-
-// TODO(hrybacki): Import min/max dates from website.settings
-var TWO_DAYS_FROM_TODAY_TIMESTAMP = new Date().getTime() + (2 * 24 * 60 * 60 * 1000);
-var FOUR_YEARS_FROM_TODAY_TIMESTAMP = new Date().getTime() + (1460 * 24 * 60 * 60 * 1000);
 
 var MAKE_PUBLIC = {
     value: 'immediate',
@@ -24,6 +20,7 @@ var MAKE_EMBARGO = {
     value: 'embargo',
     message: 'Enter registration into embargo'
 };
+var utcOffset = moment().utcOffset();
 var today = new Date();
 
 var RegistrationViewModel = function(confirm, prompts, validator) {
@@ -48,21 +45,31 @@ var RegistrationViewModel = function(confirm, prompts, validator) {
         }
     );
     self.embargoEndDate = ko.computed(function() {
-        return new Date(self.pikaday());
+        return moment(new Date(self.pikaday())).subtract(utcOffset, 'minutes');
     });
 
+    self.minimumTimeValidation = function (embargoLocalDateTime) {
+        var minEmbargoMoment = getMinimumDate(embargoLocalDateTime),
+            endEmbargoMoment = self.embargoEndDate();
+        return minEmbargoMoment.isBefore(endEmbargoMoment);
+    };
+
+    self.maximumTimeValidation = function (embargoLocalDateTime) {
+        var maxEmbargoMoment = getMaximumDate(embargoLocalDateTime),
+            endEmbargoMoment = self.embargoEndDate();
+        return maxEmbargoMoment.isAfter(endEmbargoMoment);
+    };
+
     var validation = [{
-        validator: function() {
-            var endEmbargoMoment = moment(self.embargoEndDate()).subtract(moment().utcOffset(), 'm');
-            return endEmbargoMoment.valueOf() > TWO_DAYS_FROM_TODAY_TIMESTAMP;
+        validator: function () {
+            return self.minimumTimeValidation();
         },
         message: 'Embargo end date must be at least three days in the future.'
     }, {
-	validator: function() {
-            var endEmbargoMoment = moment(self.embargoEndDate()).subtract(moment().utcOffset(), 'm');
-        return endEmbargoMoment < FOUR_YEARS_FROM_TODAY_TIMESTAMP;
-	},
-	message: 'Embargo end date must be less than four years in the future.'
+        validator: function () {
+            return self.maximumTimeValidation();
+        },
+        message: 'Embargo end date must be less than four years in the future.'
     }];
     if(validator) {
         validation.unshift(validator);
@@ -104,10 +111,20 @@ RegistrationViewModel.prototype.show = function() {
 RegistrationViewModel.prototype.register = function() {
     this.confirm({
         registrationChoice: this.registrationChoice(),
-        embargoEndDate: this.embargoEndDate()
+        embargoEndDate: this.embargoEndDate(),
+        minimumTimeValidation: this.minimumTimeValidation(),
+        maximumTimeValidation: this.maximumTimeValidation()
     });
 };
 
 module.exports = {
     ViewModel: RegistrationViewModel
 };
+
+function getMinimumDate(embargoLocalDateTime) {
+    return moment(embargoLocalDateTime).add(2, 'days');
+}
+
+function getMaximumDate(embargoLocalDateTime) {
+    return moment(embargoLocalDateTime).add(4, 'years').subtract(1, 'days');
+}
