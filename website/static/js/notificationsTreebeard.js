@@ -123,7 +123,7 @@ function ProjectNotifications(data) {
                         filter : true,
                         sortInclude : false,
                         custom : function() {
-                            var globalNotificationsMessage = "These are default settings for new projects you create or are added to. Modifying these settings will not modify settings on existing projects."
+                            var globalNotificationsMessage = 'These are default settings for new projects you create or are added to. Modifying these settings will not modify settings on existing projects.';
                             return m('div[style="padding-left:5px; padding-bottom:50px"]', [
                                 m('p', [
                                     m('b', item.data.node.title + ':  '),
