@@ -1,11 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import os
+from gevent import monkey
+monkey.patch_all()
 
-from website import settings
-from website.app import init_app
+# PATCH: avoid deadlock on getaddrinfo, this patch is necessary while waiting for
+# the final gevent 1.1 release (https://github.com/gevent/gevent/issues/349)
+unicode('foo').encode('idna')  # noqa
 
-app = init_app('website.settings', set_backends=True, routes=True)
+
+import os  # noqa
+
+from website import settings  # noqa
+from website.app import init_app  # noqa
+
+application = app = init_app('website.settings', set_backends=True, routes=True)
 
 if __name__ == '__main__':
     host = os.environ.get('OSF_HOST', None)

@@ -3,32 +3,41 @@
 import abc
 import logging
 import datetime
+import functools
 import httplib as http
+import time
+import urlparse
+import uuid
 
 from flask import request
-from modularodm import Q
-from modularodm import fields
+from oauthlib.oauth2.rfc6749.errors import MissingTokenError
+from oauthlib.oauth2 import InvalidGrantError
+from requests.exceptions import HTTPError as RequestsHTTPError
+
+from modularodm import fields, Q
 from modularodm.storage.base import KeyExistsException
+from modularodm.validators import MaxLengthValidator, URLValidator
 from requests_oauthlib import OAuth1Session
 from requests_oauthlib import OAuth2Session
 
-from framework.exceptions import HTTPError
-from framework.exceptions import PermissionsError
-from framework.mongo import ObjectId
-from framework.mongo import StoredObject
+from framework.auth import cas
+from framework.exceptions import HTTPError, PermissionsError
+from framework.mongo import ObjectId, StoredObject
 from framework.mongo.utils import unique_on
+from framework.mongo.validators import string_required
 from framework.sessions import session
-
-from website.util import web_url_for
-from requests.exceptions import HTTPError as RequestsHTTPError
-from oauthlib.oauth2.rfc6749.errors import MissingTokenError
+from website import settings
+from website.addons.base.exceptions import InvalidAuthError
 from website.oauth.utils import PROVIDER_LOOKUP
-
+from website.security import random_string
+from website.util import web_url_for, api_v2_url
 
 logger = logging.getLogger(__name__)
 
 OAUTH1 = 1
 OAUTH2 = 2
+
+generate_client_secret = functools.partial(random_string, length=40)
 
 
 @unique_on(['provider', 'provider_id'])
@@ -106,11 +115,15 @@ class ExternalProvider(object):
     # Default to OAuth v2.0.
     _oauth_version = OAUTH2
 
-    def __init__(self):
+    # Providers that have expiring tokens must override these
+    auto_refresh_url = None
+    refresh_time = 0
+
+    def __init__(self, account=None):
         super(ExternalProvider, self).__init__()
 
         # provide an unauthenticated session by default
-        self.account = None
+        self.account = account
 
     def __repr__(self):
         return '<{name}: {status}>'.format(
@@ -199,12 +212,15 @@ class ExternalProvider(object):
         """Name of the service to be used internally. e.g.: orcid, github"""
         pass
 
-    def auth_callback(self, user):
+    def auth_callback(self, user, **kwargs):
         """Exchange temporary credentials for permanent credentials
 
         This is called in the view that handles the user once they are returned
         to the OSF after authenticating on the external service.
         """
+
+        if 'error' in request.args:
+            return False
 
         # make sure the user has temporary credentials for this provider
         try:
@@ -249,12 +265,14 @@ class ExternalProvider(object):
                 )
             except (MissingTokenError, RequestsHTTPError):
                 raise HTTPError(http.SERVICE_UNAVAILABLE)
-
         # pre-set as many values as possible for the ``ExternalAccount``
         info = self._default_handle_callback(response)
         # call the hook for subclasses to parse values from the response
         info.update(self.handle_callback(response))
 
+        return self._set_external_account(user, info)
+
+    def _set_external_account(self, user, info):
         try:
             # create a new ``ExternalAccount`` ...
             self.account = ExternalAccount(
@@ -293,6 +311,8 @@ class ExternalProvider(object):
         if self.account not in user.external_accounts:
             user.external_accounts.append(self.account)
             user.save()
+
+        return True
 
     def _default_handle_callback(self, data):
         """Parse as much out of the key exchange's response as possible.
@@ -348,3 +368,235 @@ class ExternalProvider(object):
         :return dict:
         """
         pass
+
+    def refresh_oauth_key(self, force=False, extra={}, resp_auth_token_key='access_token',
+                          resp_refresh_token_key='refresh_token', resp_expiry_fn=None):
+        """Handles the refreshing of an oauth_key for account associated with this provider.
+           Not all addons need to use this, as some do not have oauth_keys that expire.
+
+        Subclasses must define the following for this functionality:
+        `auto_refresh_url` - URL to use when refreshing tokens. Must use HTTPS
+        `refresh_time` - Time (in seconds) that the oauth_key should be refreshed after.
+                            Typically half the duration of validity. Cannot be 0.
+
+        Providers may have different keywords in their response bodies, kwargs
+        `resp_*_key` allow subclasses to override these if necessary.
+
+        kwarg `resp_expiry_fn` allows subclasses to specify a function that will return the
+        datetime-formatted oauth_key expiry key, given a successful refresh response from
+        `auto_refresh_url`. A default using 'expires_at' as a key is provided.
+        """
+        # Ensure this is an authenticated Provider that uses token refreshing
+        if not (self.account and self.auto_refresh_url):
+            return False
+
+        # Ensure this Provider is for a valid addon
+        if not (self.client_id and self.client_secret):
+            return False
+
+        # Ensure a refresh is needed
+        if not (force or self._needs_refresh()):
+            return False
+
+        resp_expiry_fn = resp_expiry_fn or (lambda x: datetime.datetime.utcfromtimestamp(time.time() + float(x['expires_in'])))
+
+        client = OAuth2Session(
+            self.client_id,
+            token={
+                'access_token': self.account.oauth_key,
+                'refresh_token': self.account.refresh_token,
+                'token_type': 'Bearer',
+                'expires_in': '-30',
+            }
+        )
+
+        extra.update({
+            'client_id': self.client_id,
+            'client_secret': self.client_secret
+        })
+
+        try:
+            token = client.refresh_token(
+                self.auto_refresh_url,
+                **extra
+            )
+        except InvalidGrantError:
+            raise InvalidAuthError()
+        else:
+            self.account.oauth_key = token[resp_auth_token_key]
+            self.account.refresh_token = token[resp_refresh_token_key]
+            self.account.expires_at = resp_expiry_fn(token)
+            self.account.save()
+            return True
+
+    def _needs_refresh(self):
+        """Determines whether or not an associated ExternalAccount needs
+        a oauth_key.
+
+        return bool: True if needs_refresh
+        """
+        if self.refresh_time and self.account.expires_at:
+            return (self.account.expires_at - datetime.datetime.utcnow()).total_seconds() < self.refresh_time
+        return False
+
+
+class ApiOAuth2Scope(StoredObject):
+    """
+    Store information about recognized OAuth2 scopes. Only scopes registered under this database model can
+        be requested by third parties.
+    """
+    _id = fields.StringField(primary=True,
+                             default=lambda: str(ObjectId()))
+    name = fields.StringField(unique=True, required=True, index=True)
+    description = fields.StringField(required=True)
+    is_active = fields.BooleanField(default=True, index=True)  # TODO: Add mechanism to deactivate a scope?
+
+
+class ApiOAuth2Application(StoredObject):
+    """Registration and key for user-created OAuth API applications
+
+    This collection is also used by CAS to create the master list of available applications.
+    Any changes made to field names in this model must be echoed in the CAS implementation.
+    """
+    _id = fields.StringField(
+        primary=True,
+        default=lambda: str(ObjectId())
+    )
+
+    # Client ID and secret. Use separate ID field so ID format doesn't have to be restricted to database internals.
+    client_id = fields.StringField(default=lambda: uuid.uuid4().hex,  # Not *guaranteed* unique, but very unlikely
+                                   unique=True,
+                                   index=True)
+    client_secret = fields.StringField(default=generate_client_secret)
+
+    is_active = fields.BooleanField(default=True,  # Set to False if application is deactivated
+                                    index=True)
+
+    owner = fields.ForeignField('User',
+                                index=True,
+                                required=True)
+
+    # User-specified application descriptors
+    name = fields.StringField(index=True, required=True, validate=[string_required, MaxLengthValidator(200)])
+    description = fields.StringField(required=False, validate=MaxLengthValidator(1000))
+
+    date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow,
+                                        editable=False)
+
+    home_url = fields.StringField(required=True,
+                                  validate=URLValidator())
+    callback_url = fields.StringField(required=True,
+                                      validate=URLValidator())
+
+    def deactivate(self, save=False):
+        """
+        Deactivate an ApiOAuth2Application
+
+        Does not delete the database record, but revokes all tokens and sets a flag that hides this instance from API
+        """
+        client = cas.get_client()
+        # Will raise a CasHttpError if deletion fails, which will also stop setting of active=False.
+        resp = client.revoke_application_tokens(self.client_id, self.client_secret)  # noqa
+
+        self.is_active = False
+
+        if save:
+            self.save()
+        return True
+
+    def reset_secret(self, save=False):
+        """
+        Reset the secret of an ApiOAuth2Application
+        Revokes all tokens
+        """
+        client = cas.get_client()
+        client.revoke_application_tokens(self.client_id, self.client_secret)
+        self.client_secret = generate_client_secret()
+
+        if save:
+            self.save()
+        return True
+
+    @property
+    def url(self):
+        return '/settings/applications/{}/'.format(self.client_id)
+
+    @property
+    def absolute_url(self):
+        return urlparse.urljoin(settings.DOMAIN, self.url)
+
+    # Properties used by Django and DRF "Links: self" field
+    @property
+    def absolute_api_v2_url(self):
+        path = '/applications/{}/'.format(self.client_id)
+        return api_v2_url(path)
+
+    # used by django and DRF
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url
+
+class ApiOAuth2PersonalToken(StoredObject):
+    """Information for user-created personal access tokens
+
+    This collection is also used by CAS to create the master list of available tokens.
+    Any changes made to field names in this model must be echoed in the CAS implementation.
+    """
+    _id = fields.StringField(primary=True,
+                             default=lambda: str(ObjectId()))
+
+    # Name of the field being `token_id` is a CAS requirement.
+    # This is the actual value of the token that's used to authenticate
+    token_id = fields.StringField(default=functools.partial(random_string, length=70),
+                                  unique=True)
+
+    owner = fields.ForeignField('User',
+                                index=True,
+                                required=True)
+
+    name = fields.StringField(required=True, index=True)
+
+    # This field is a space delimited list of scopes, e.g. "osf.full_read osf.full_write"
+    scopes = fields.StringField(required=True)
+
+    is_active = fields.BooleanField(default=True, index=True)
+
+    def deactivate(self, save=False):
+        """
+        Deactivate an ApiOAuth2PersonalToken
+
+        Does not delete the database record, but hides this instance from API
+        """
+        client = cas.get_client()
+        # Will raise a CasHttpError if deletion fails for any reason other than the token
+        # not yet being created. This will also stop setting of active=False.
+        try:
+            resp = client.revoke_tokens({'token': self.token_id})  # noqa
+        except cas.CasHTTPError as e:
+            if e.code == 400:
+                pass  # Token hasn't been used yet, so not created in cas
+            else:
+                raise e
+
+        self.is_active = False
+
+        if save:
+            self.save()
+        return True
+
+    @property
+    def url(self):
+        return '/settings/tokens/{}/'.format(self._id)
+
+    @property
+    def absolute_url(self):
+        return urlparse.urljoin(settings.DOMAIN, self.url)
+
+    # Properties used by Django and DRF "Links: self" field
+    @property
+    def absolute_api_v2_url(self):
+        path = '/tokens/{}/'.format(self._id)
+        return api_v2_url(path)
+
+    # used by django and DRF
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url

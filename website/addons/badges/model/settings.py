@@ -1,6 +1,6 @@
 # -*- coding: utf -*-
 
-from modularodm import fields
+from modularodm import fields, Q
 
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
 
@@ -22,7 +22,7 @@ class BadgesUserSettings(AddonUserSettingsBase):
 
     @property
     def badges(self):
-        return list(self.badge__creator) + [badge for badge in Badge.get_system_badges() if badge.creator != self]
+        return list(Badge.find(Q('creator', 'eq', self._id))) + [badge for badge in Badge.get_system_badges() if badge.creator != self]
 
     @property
     def issued(self):

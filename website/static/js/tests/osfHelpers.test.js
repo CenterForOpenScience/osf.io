@@ -74,7 +74,8 @@ describe('osfHelpers', () => {
             responseJSON: {
                 message_short: 'Oh no!',
                 message_long: 'Something went wrong'
-            }
+            },
+            status: 400
         };
         it('uses the response body if available', () => {
             $osf.handleJSONError(response);
@@ -87,6 +88,32 @@ describe('osfHelpers', () => {
         it('logs error with Raven', () => {
             $osf.handleJSONError(response);
             assert.called(growlStub);
+            assert.called(ravenStub);
+        });
+    });
+
+    describe('handleEditableError', () => {
+
+        var ravenStub;
+        beforeEach(() => {
+            ravenStub = new sinon.stub(Raven, 'captureMessage');
+        });
+
+        afterEach(() => {
+            ravenStub.restore();
+        });
+        var response = {
+            responseJSON: {
+                message_short: 'Oh no!',
+                message_long: 'Something went wrong'
+            }
+        };
+        it('uses the response text if available', () => {
+            assert.equal('Error: ' + response.responseJSON.message_long, $osf.handleEditableError(response));
+        });
+
+        it('logs error with Raven', () => {
+            $osf.handleEditableError(response);
             assert.called(ravenStub);
         });
     });
@@ -197,6 +224,59 @@ describe('osfHelpers', () => {
             stub.restore();
         });
 
+        describe('ajaxJSON', () => {
+            it('calls $.ajax as GET request, not crossorigin by default', () => {
+                var url = '/foo';
+                $osf.ajaxJSON('GET', url);
+                assert.calledOnce(stub);
+                assert.calledWith(stub, {
+                    url: url,
+                    type: 'GET',
+                    contentType: 'application/json',
+                    dataType: 'json'
+                });
+            });
+            it('calls $.ajax as POST request, and isCors flags sends credentials by default', () => {
+                var url = '/foo';
+                var payload = {'bar': 42};
+
+                $osf.ajaxJSON('POST', url,
+                    {data: payload, isCors: true}
+                );
+                assert.calledOnce(stub);
+                assert.calledWith(stub, {
+                    url: url,
+                    type: 'POST',
+                    data: JSON.stringify(payload),
+                    contentType: 'application/json',
+                    dataType: 'json',
+                    crossOrigin: true,
+                    xhrFields:
+                        {withCredentials: true}
+                });
+            });
+            it('calls $.ajax as crossorigin PATCH request, omitting credentials when specified', () => {
+                var url = '/foo';
+                var payload = {'bar': 42};
+
+                $osf.ajaxJSON('PATCH', url,
+                    {data: payload, isCors: true,
+                     fields: {xhrFields: {withCredentials: false}}
+                    });
+                assert.calledOnce(stub);
+                assert.calledWith(stub, {
+                    url: url,
+                    type: 'PATCH',
+                    data: JSON.stringify(payload),
+                    contentType: 'application/json',
+                    dataType: 'json',
+                    crossOrigin: true,
+                    xhrFields:
+                        {withCredentials: false}
+                });
+            });
+        });
+
         describe('postJSON', () => {
             it('calls $.ajax with correct args', () => {
                 var url = '/foo';
@@ -268,7 +348,13 @@ describe('osfHelpers', () => {
             var dateString = [year, month, day].join('-');
             var dateTimeString = dateString + 'T' + [hour, minute, second].join(':') + '.' + millisecond.toString();
 
-            var assertDateEqual = function(date, year, month, day, hour, minute, second, millisecond) {
+            var assertDateEqual = function(date, year, month, day) {
+                assert.equal(date.getUTCFullYear(), year);
+                assert.equal(date.getUTCMonth(), month - 1); // Javascript months count from 0
+                assert.equal(date.getUTCDate(), day);
+            };
+
+            var assertDateTimeEqual = function(date, year, month, day, hour, minute, second, millisecond) {
                 assert.equal(date.getUTCFullYear(), year);
                 assert.equal(date.getUTCMonth(), month - 1); // Javascript months count from 0
                 assert.equal(date.getUTCDate(), day);
@@ -289,20 +375,19 @@ describe('osfHelpers', () => {
         });
         it('should parse date strings', () => {
             var parsedDate = new $osf.FormattableDate(dateString).date;
-            var parsedDateTime = new $osf.FormattableDate(dateTimeString).date;
-            assertDateEqual(parsedDate, year, month, day, 0, 0, 0, 0);
+            assertDateEqual(parsedDate, year, month, day);
         });
         it('should parse datetime strings', () => {
             var parsedDateTime = new $osf.FormattableDate(dateTimeString).date;
-            assertDateEqual(parsedDateTime, year, month, day, hour, minute, second, millisecond);
+            assertDateTimeEqual(parsedDateTime, year, month, day, hour, minute, second, millisecond);
         });
         it('should allow datetimes with UTC offsets', () => {
             var parsedDateTime = null;
-            var UTCOffsets = ['+00', '+00:00', '+0000', 'Z'];
+            var UTCOffsets = ['+00', '-00', '+00:00', '-00:00', '+0000', '-0000', 'Z'];
 
             UTCOffsets.forEach(function(offset) {
                 parsedDateTime = new $osf.FormattableDate(dateTimeString + offset).date;
-                assertDateEqual(parsedDateTime, year, month, day, hour, minute, second, millisecond);
+                assertDateTimeEqual(parsedDateTime, year, month, day, hour, minute, second, millisecond);
             });
         });
         it('should allow datetimes with positive offsets', () => {
@@ -310,7 +395,7 @@ describe('osfHelpers', () => {
             var positiveOffset = '+02:00';
 
             parsedDateTime = new $osf.FormattableDate(dateTimeString + positiveOffset).date;
-            assertDateEqual(parsedDateTime, year, month, day, hour - 2, minute, second, millisecond);
+            assertDateTimeEqual(parsedDateTime, year, month, day, hour - 2, minute, second, millisecond);
 
         });
         it('should allow datetimes with negative offsets', () => {
@@ -318,7 +403,7 @@ describe('osfHelpers', () => {
             var negativeOffset = '-02:00';
 
             parsedDateTime = new $osf.FormattableDate(dateTimeString + negativeOffset).date;
-            assertDateEqual(parsedDateTime, year, month, day, hour + 2, minute, second, millisecond);
+            assertDateTimeEqual(parsedDateTime, year, month, day, hour + 2, minute, second, millisecond);
         });
     });
 
@@ -334,6 +419,79 @@ describe('osfHelpers', () => {
         it('should trigger bootbox', () => {
             $osf.confirmDangerousAction({callback: callbackStub});
             assert.calledOnce(bootboxStub);
+        });
+    });
+
+    describe('iterObject', () => {
+        var get = function(obj, key) {
+            return obj[key];
+        };
+
+        it('maps an object to an array {key: KEY, value: VALUE} pairs', () => {
+            var obj = {
+                foo: 'bar',
+                cat: 'dog'
+            };
+            var keys = Object.keys(obj);
+            var values = keys.map(get.bind(null, obj));
+            var iterable = $osf.iterObject(obj);
+            for(var i = 0; i < iterable.length; i++) {
+                var item = iterable[i];
+                assert.include(keys, item.key);
+                assert.include(values, item.value);
+                assert.equal(item.value, get(obj, keys[i]));
+            }
+        });
+    });
+
+    describe('indexOf', () => {
+        it('returns a positive integer index if it finds a matching item', () => {
+            var list = [];
+            for(var i = 0; i < 5; i++){
+                list.push({
+                    foo: 'bar' + i
+                });
+            }
+            var idx = Math.floor(Math.random() * 5);
+            var search = function(item) {
+                return item.foo === 'bar' + idx;
+            };
+            var found = $osf.indexOf(list, search);
+            assert.equal(idx, found);
+        });
+        it('returns -1 if no item is matched', () => {
+            var list = [];
+            for(var i = 0; i < 5; i++){
+                list.push({
+                    foo: 'bar' + i
+                });
+            }
+            var search = function(item) {
+                return item.foo === 42;
+            };
+            var found = $osf.indexOf(list, search);
+            assert.equal(-1, found);
+        });
+    });
+    
+    describe('any', () => {
+        it('returns true if any of the values in an array are truthy', () => {
+            var TRUTHY = [true, {}, [], 42, 'foo', new Date()];
+            $.each(TRUTHY, function(_, item) {
+                assert.isTrue(
+                    $osf.any([false, item, false])
+                );
+            });
+        });
+        it('returns false if none of the values in an array are truthy', () => {
+            assert.isFalse(
+                $osf.any([false, null, undefined, 0, NaN, ''])
+            );
+        });
+        it('returns false if the array is empty', () => {
+            assert.isFalse(
+                $osf.any([])
+            );            
         });
     });
 });

@@ -1,28 +1,10 @@
 'use strict';
 
 var $ = require('jquery');
-var bootbox = require('bootbox');
 var m = require('mithril');
 var Treebeard = require('treebeard');
 var $osf = require('js/osfHelpers');
-var Fangorn = require('js/fangorn');
-require('../css/fangorn.css');
-
-
-// TODO: Refactor out shared utility code between this module, folder picker, and fangorn.js
-function resolveToggle(item) {
-    var toggleMinus = m('i.fa.fa-minus', ' '),
-        togglePlus = m('i.fa.fa-plus', ' ');
-
-    if (item.children.length > 0) {
-        if (item.open) {
-            return toggleMinus;
-        }
-        return togglePlus;
-    }
-    item.open = true;
-    return '';
-}
+var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 
 function expandOnLoad() {
     var tb = this;  // jshint ignore: line
@@ -78,13 +60,12 @@ function subscribe(item, notification_type) {
     });
 }
 
-
 function displayParentNotificationType(item){
     var notificationTypeDescriptions = {
-        'email_transactional': 'Emails',
-        'email_digest': 'Email Digest',
+        'email_transactional': 'Instantly',
+        'email_digest': 'Daily',
         'adopt_parent': 'Adopt setting from parent project',
-        'none': 'None'
+        'none': 'Never'
     };
 
     if (item.data.event.parent_notification_type) {
@@ -99,38 +80,15 @@ function displayParentNotificationType(item){
 function ProjectNotifications(data) {
 
     //  Treebeard version
-    var tbOptions = {
+    var tbOptions = $.extend({}, projectSettingsTreebeardBase.defaults, {
         divID: 'grid',
         filesData: data,
-        rowHeight : 33,         // user can override or get from .tb-row height
-        resolveToggle: resolveToggle,
-        paginate : false,       // Whether the applet starts with pagination or not.
-        paginateToggle : false, // Show the buttons that allow users to switch between scroll and paginate.
-        uploads : false,         // Turns dropzone on/off.
-        resolveIcon : Fangorn.Utils.resolveIconView,
-        hideColumnTitles: true,
-        columnTitles : function notificationColumnTitles(item, col) {
-            return [
-                {
-                    title: 'Project',
-                    width: '60%',
-                    sortType : 'text',
-                    sort : false
-                },
-                {
-                    title: 'Notification Type',
-                    width : '40%',
-                    sort : false
-
-                }
-            ];
+        naturalScrollLimit : 0,
+        onload : function () {
+            var tb = this;
+            expandOnLoad.call(tb);
         },
-        ontogglefolder : function (item){
-            var containerHeight = this.select('#tb-tbody').height();
-            this.options.showTotal = Math.floor(containerHeight / this.options.rowHeight) + 1;
-            this.redraw();
-        },
-        resolveRows : function notificationResolveRows(item){
+        resolveRows: function notificationResolveRows(item){
             var columns = [];
             var iconcss = '';
             // check if should not get icon
@@ -208,9 +166,9 @@ function ProjectNotifications(data) {
                                     subscribe(item, ev.target.value);
                                 }},
                                 [
-                                    m('option', {value: 'none', selected : item.data.event.notificationType === 'none' ? 'selected': ''}, 'None'),
-                                    m('option', {value: 'email_transactional', selected : item.data.event.notificationType === 'email_transactional' ? 'selected': ''}, 'Emails'),
-                                    m('option', {value: 'email_digest', selected : item.data.event.notificationType === 'email_digest' ? 'selected': ''}, 'Email Digest')
+                                    m('option', {value: 'none', selected : item.data.event.notificationType === 'none' ? 'selected': ''}, 'Never'),
+                                    m('option', {value: 'email_transactional', selected : item.data.event.notificationType === 'email_transactional' ? 'selected': ''}, 'Instantly'),
+                                    m('option', {value: 'email_digest', selected : item.data.event.notificationType === 'email_digest' ? 'selected': ''}, 'Daily')
                             ])
                         ]);
                     }
@@ -243,9 +201,9 @@ function ProjectNotifications(data) {
                                     m('option', {value: 'adopt_parent',
                                                  selected: item.data.event.notificationType === 'adopt_parent' ? 'selected' : ''},
                                                  'Adopt setting from parent project ' + displayParentNotificationType(item)),
-                                    m('option', {value: 'none', selected : item.data.event.notificationType === 'none' ? 'selected': ''}, 'None'),
-                                    m('option', {value: 'email_transactional',  selected : item.data.event.notificationType === 'email_transactional' ? 'selected': ''}, 'Emails'),
-                                    m('option', {value: 'email_digest', selected : item.data.event.notificationType === 'email_digest' ? 'selected': ''}, 'Email Digest')
+                                    m('option', {value: 'none', selected : item.data.event.notificationType === 'none' ? 'selected': ''}, 'Never'),
+                                    m('option', {value: 'email_transactional',  selected : item.data.event.notificationType === 'email_transactional' ? 'selected': ''}, 'Instantly'),
+                                    m('option', {value: 'email_digest', selected : item.data.event.notificationType === 'email_digest' ? 'selected': ''}, 'Daily')
                             ])
                         ]);
                     }
@@ -253,20 +211,9 @@ function ProjectNotifications(data) {
             }
 
             return columns;
-        },
-        sortButtonSelector : {
-            up : 'i.fa.fa-chevron-up',
-            down : 'i.fa.fa-chevron-down'
-        },
-        showFilter : false,     // Gives the option to filter by showing the filter box.
-        allowMove : false,       // Turn moving on or off.
-        hoverClass : '',
-        resolveRefreshIcon : function() {
-          return m('i.fa.fa-refresh.fa-spin');
         }
-    };
+    });
     var grid = new Treebeard(tbOptions);
-    expandOnLoad.call(grid.tbController);
 }
 
 module.exports = ProjectNotifications;

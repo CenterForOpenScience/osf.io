@@ -2,7 +2,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 data-bind="text:pageTitle"></h3>
+              <h3>Create a new link to share your project</h3>
             </div>
 
             <div class="modal-body">
@@ -16,6 +16,9 @@
                                 type="text"
                                 class="form-control private-link-name"
                                 placeholder='Optional link name (e.g., For peer review, Sharing data, Share project)' />
+                        </div>
+                        <div class="help-block">
+                            <p data-bind="html: message, attr: {class: messageClass}"></p>
                         </div>
                     </div>
 

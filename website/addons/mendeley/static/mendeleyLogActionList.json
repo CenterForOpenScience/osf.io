@@ -1,0 +1,5 @@
+{
+  "mendeley_folder_selected" : "${user} linked Mendeley folder ${folder_name} to ${node}",
+  "mendeley_node_authorized" : "${user} authorized the Mendeley addon for ${node}",
+  "mendeley_node_deauthorized" : "${user} deauthorized the Mendeley addon for ${node}"
+}

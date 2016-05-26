@@ -2,10 +2,11 @@
 import uuid
 
 from .model import Node, PrivateLink
-from framework.forms.utils import sanitize
 from framework.mongo.utils import from_mongo
 from modularodm import Q
+from modularodm.exceptions import ValidationValueError
 from website.exceptions import NodeStateError
+from website.util.sanitize import strip_html
 
 def show_diff(seqm):
     """Unify operations between two compared strings
@@ -16,8 +17,8 @@ seqm is a difflib.SequenceMatcher instance whose a & b are strings"""
     del_el = '<span style="background:#D16587; font-size:1.5em;">'
     del_el_close = '</span>'
     for opcode, a0, a1, b0, b1 in seqm.get_opcodes():
-        content_a = sanitize(seqm.a[a0:a1])
-        content_b = sanitize(seqm.b[b0:b1])
+        content_a = strip_html(seqm.a[a0:a1])
+        content_b = strip_html(seqm.b[b0:b1])
         if opcode == 'equal':
             output.append(content_a)
         elif opcode == 'insert':
@@ -43,9 +44,9 @@ def new_node(category, title, user, description=None, parent=None):
 
     """
     category = category
-    title = sanitize(title.strip())
+    title = strip_html(title.strip())
     if description:
-        description = sanitize(description.strip())
+        description = strip_html(description.strip())
 
     node = Node(
         title=title,
@@ -59,27 +60,27 @@ def new_node(category, title, user, description=None, parent=None):
 
     return node
 
-def new_dashboard(user):
-    """Create a new dashboard project.
+
+def new_bookmark_collection(user):
+    """Create a new bookmark collection project.
 
     :param User user: User object
     :return Node: Created node
 
     """
-    existing_dashboards = user.node__contributed.find(
-        Q('category', 'eq', 'project') &
-        Q('is_dashboard', 'eq', True)
+    existing_bookmark_collection = Node.find(
+        Q('is_bookmark_collection', 'eq', True) & Q('contributors', 'eq', user._id)
     )
 
-    if existing_dashboards.count() > 0:
-        raise NodeStateError("Users may only have one dashboard")
+    if existing_bookmark_collection.count() > 0:
+        raise NodeStateError("Users may only have one bookmark collection")
 
     node = Node(
-        title='Dashboard',
+        title='Bookmarks',
         creator=user,
         category='project',
-        is_dashboard=True,
-        is_folder=True
+        is_bookmark_collection=True,
+        is_collection=True
     )
 
     node.save()
@@ -87,7 +88,7 @@ def new_dashboard(user):
     return node
 
 
-def new_folder(title, user):
+def new_collection(title, user):
     """Create a new folder project.
 
     :param str title: Node title
@@ -95,18 +96,19 @@ def new_folder(title, user):
     :return Node: Created node
 
     """
-    title = sanitize(title.strip())
+    title = strip_html(title.strip())
 
     node = Node(
         title=title,
         creator=user,
         category='project',
-        is_folder=True
+        is_collection=True
     )
 
     node.save()
 
     return node
+
 
 def new_private_link(name, user, nodes, anonymous):
     """Create a new private link.
@@ -120,7 +122,9 @@ def new_private_link(name, user, nodes, anonymous):
     """
     key = str(uuid.uuid4()).replace("-", "")
     if name:
-        name = sanitize(name.strip())
+        name = strip_html(name)
+        if name is None or not name.strip():
+            raise ValidationValueError('Invalid link name.')
     else:
         name = "Shared project link"
 

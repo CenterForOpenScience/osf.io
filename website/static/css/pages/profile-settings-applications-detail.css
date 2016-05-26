@@ -1,0 +1,8 @@
+.border-box {
+    padding: 15px 10px;
+    border: solid #DDD;
+    border-width: 1px 0;
+    line-height: 1.1;
+    display: block;
+    margin-bottom: 1em;
+}

@@ -5,6 +5,7 @@ from dataverse.exceptions import ConnectionError, UnauthorizedError, OperationFa
 
 from framework.exceptions import HTTPError
 
+from website.addons.dataverse import settings
 
 def _connect(host, token):
     try:
@@ -26,9 +27,12 @@ def connect_from_settings(node_settings):
         return None
 
 
-def connect_or_401(host, token):
+def connect_or_error(host, token):
     try:
-        return _connect(host, token)
+        connection = _connect(host, token)
+        if not connection:
+            raise HTTPError(http.SERVICE_UNAVAILABLE)
+        return connection
     except UnauthorizedError:
         raise HTTPError(http.UNAUTHORIZED)
 
@@ -40,7 +44,7 @@ def connect_from_settings_or_401(node_settings):
     host = node_settings.external_account.oauth_key
     token = node_settings.external_account.oauth_secret
 
-    return connect_or_401(host, token)
+    return connect_or_error(host, token)
 
 
 def get_files(dataset, published=False):
@@ -59,14 +63,12 @@ def publish_dataset(dataset):
     if dataset.get_state() == 'RELEASED':
         raise HTTPError(http.CONFLICT, data=dict(
             message_short='Dataset conflict',
-            message_long='This version of the dataset has already been '
-                         'published.'
+            message_long='This version of the dataset has already been published.'
         ))
     if not dataset.dataverse.is_published:
         raise HTTPError(http.METHOD_NOT_ALLOWED, data=dict(
             message_short='Method not allowed',
-            message_long='A dataset cannot be published until its parent '
-                         'Dataverse is published.'
+            message_long='A dataset cannot be published until its parent Dataverse is published.'
         ))
 
     try:
@@ -78,19 +80,18 @@ def publish_dataset(dataset):
 def get_datasets(dataverse):
     if dataverse is None:
         return []
-    return dataverse.get_datasets()
+    return dataverse.get_datasets(timeout=settings.REQUEST_TIMEOUT)
 
 
 def get_dataset(dataverse, doi):
     if dataverse is None:
         return
-    dataset = dataverse.get_dataset_by_doi(doi)
+    dataset = dataverse.get_dataset_by_doi(doi, timeout=settings.REQUEST_TIMEOUT)
     try:
         if dataset and dataset.get_state() == 'DEACCESSIONED':
             raise HTTPError(http.GONE, data=dict(
                 message_short='Dataset deaccessioned',
-                message_long='This dataset has been deaccessioned and can no '
-                             'longer be linked to the OSF.'
+                message_long='This dataset has been deaccessioned and can no longer be linked to the OSF.'
             ))
         return dataset
     except UnicodeDecodeError:

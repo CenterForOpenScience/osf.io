@@ -1,52 +1,148 @@
 from rest_framework import serializers as ser
 
-from api.base.serializers import JSONAPISerializer, LinksField, Link
+from modularodm.exceptions import ValidationValueError
+
+from api.base.exceptions import InvalidModelValueError
+from api.base.serializers import AllowMissing, JSONAPIRelationshipSerializer, HideIfDisabled
+from website.models import User
+
+from api.base.serializers import (
+    JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField
+)
+from api.base.utils import absolute_reverse
 
 
 class UserSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
-        'fullname',
+        'full_name',
         'given_name',
-        'middle_name',
+        'middle_names',
         'family_name',
         'id'
     ])
-    id = ser.CharField(read_only=True, source='_id')
-    fullname = ser.CharField(help_text='Display name used in the general user interface')
-    given_name = ser.CharField(help_text='For bibliographic citations')
-    middle_name = ser.CharField(source='middle_names', help_text='For bibliographic citations')
-    family_name = ser.CharField(help_text='For bibliographic citations')
-    suffix = ser.CharField(help_text='For bibliographic citations')
-    date_registered = ser.DateTimeField(read_only=True)
-    gravatar_url = ser.CharField(help_text='URL for the icon used to identify the user. Relies on http://gravatar.com ')
-    employment_institutions = ser.ListField(source='jobs', help_text='An array of dictionaries representing the '
-                                                                     'places the user has worked')
-    educational_institutions = ser.ListField(source='schools', help_text='An array of dictionaries representing the '
-                                                                         'places the user has attended school')
-    social_accounts = ser.DictField(source='social', help_text='A dictionary of various social media account '
-                                                               'identifiers including an array of user-defined URLs')
+    non_anonymized_fields = ['type']
+    id = IDField(source='_id', read_only=True)
+    type = TypeField()
+    full_name = ser.CharField(source='fullname', required=True, label='Full name', help_text='Display name used in the general user interface')
+    given_name = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
+    middle_names = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
+    family_name = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
+    suffix = HideIfDisabled(ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations'))
+    date_registered = HideIfDisabled(ser.DateTimeField(read_only=True))
+    active = HideIfDisabled(ser.BooleanField(read_only=True, source='is_active'))
 
-    links = LinksField({
-        'html': 'absolute_url',
-        'nodes': {
-            'relation': Link('users:user-nodes', kwargs={'user_id': '<pk>'})
+    # Social Fields are broken out to get around DRF complex object bug and to make API updating more user friendly.
+    gitHub = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.github',
+                                                          allow_blank=True, help_text='GitHub Handle'), required=False, source='social.github')))
+    scholar = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.scholar',
+                                                           allow_blank=True, help_text='Google Scholar Account'), required=False, source='social.scholar')))
+    personal_website = DevOnly(HideIfDisabled(AllowMissing(ser.URLField(required=False, source='social.personal',
+                                                                   allow_blank=True, help_text='Personal Website'), required=False, source='social.personal')))
+    twitter = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.twitter',
+                                                           allow_blank=True, help_text='Twitter Handle'), required=False, source='social.twitter')))
+    linkedIn = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.linkedIn',
+                                                            allow_blank=True, help_text='LinkedIn Account'), required=False, source='social.linkedIn')))
+    impactStory = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.impactStory',
+                                                               allow_blank=True, help_text='ImpactStory Account'), required=False, source='social.impactStory')))
+    orcid = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.orcid',
+                                                         allow_blank=True, help_text='ORCID'), required=False, source='social.orcid')))
+    researcherId = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.researcherId',
+                                                      allow_blank=True, help_text='ResearcherId Account'), required=False, source='social.researcherId')))
+    researchGate = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.researchGate',
+                                                      allow_blank=True, help_text='ResearchGate Account'), required=False, source='social.researchGate')))
+    academiaInstitution = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.academiaInstitution',
+                                                      allow_blank=True, help_text='AcademiaInstitution Field'), required=False, source='social.academiaInstitution')))
+    academiaProfileID = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.academiaProfileID',
+                                                      allow_blank=True, help_text='AcademiaProfileID Field'), required=False, source='social.academiaProfileID')))
+    baiduScholar = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.baiduScholar',
+                                                           allow_blank=True, help_text='Baidu Scholar Account'), required=False, source='social.baiduScholar')))
+    timezone = HideIfDisabled(ser.CharField(required=False, help_text="User's timezone, e.g. 'Etc/UTC"))
+    locale = HideIfDisabled(ser.CharField(required=False, help_text="User's locale, e.g.  'en_US'"))
+
+    links = HideIfDisabled(LinksField(
+        {
+            'html': 'absolute_url',
+            'profile_image': 'profile_image_url',
         }
-    })
+    ))
+
+    nodes = HideIfDisabled(RelationshipField(
+        related_view='users:user-nodes',
+        related_view_kwargs={'user_id': '<pk>'},
+    ))
+
+    registrations = DevOnly(HideIfDisabled(RelationshipField(
+        related_view='users:user-registrations',
+        related_view_kwargs={'user_id': '<pk>'},
+    )))
+
+    institutions = HideIfDisabled(RelationshipField(
+        related_view='users:user-institutions',
+        related_view_kwargs={'user_id': '<pk>'},
+        self_view='users:user-institutions-relationship',
+        self_view_kwargs={'user_id': '<pk>'},
+    ))
 
     class Meta:
         type_ = 'users'
 
     def absolute_url(self, obj):
-        return obj.absolute_url
+        if obj is not None:
+            return obj.absolute_url
+        return None
+
+    def get_absolute_url(self, obj):
+        return absolute_reverse('users:user-detail', kwargs={'user_id': obj._id})
+
+    def profile_image_url(self, user):
+        size = self.context['request'].query_params.get('profile_image_size')
+        return user.profile_image_url(size=size)
 
     def update(self, instance, validated_data):
-        # TODO
-        pass
+        assert isinstance(instance, User), 'instance must be a User'
+        for attr, value in validated_data.items():
+            if 'social' == attr:
+                for key, val in value.items():
+                    instance.social[key] = val
+            else:
+                setattr(instance, attr, value)
+        try:
+            instance.save()
+        except ValidationValueError as e:
+            raise InvalidModelValueError(detail=e.message)
+        return instance
 
 
-class ContributorSerializer(UserSerializer):
+class UserDetailSerializer(UserSerializer):
+    """
+    Overrides UserSerializer to make id required.
+    """
+    id = IDField(source='_id', required=True)
 
-    local_filterable = frozenset(['bibliographic'])
-    filterable_fields = frozenset.union(UserSerializer.filterable_fields, local_filterable)
 
-    bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not')
+class RelatedInstitution(JSONAPIRelationshipSerializer):
+    id = ser.CharField(required=False, allow_null=True, source='_id')
+    class Meta:
+        type_ = 'institutions'
+
+    def get_absolute_url(self, obj):
+        return obj.absolute_api_v2_url
+
+
+class UserInstitutionsRelationshipSerializer(ser.Serializer):
+
+    data = ser.ListField(child=RelatedInstitution())
+    links = LinksField({'self': 'get_self_url',
+                        'html': 'get_related_url'})
+
+    def get_self_url(self, obj):
+        return absolute_reverse('users:user-institutions-relationship', kwargs={'user_id': obj['self']._id})
+
+    def get_related_url(self, obj):
+        return absolute_reverse('users:user-institutions', kwargs={'user_id': obj['self']._id})
+
+    def get_absolute_url(self, obj):
+        return obj.absolute_api_v2_url
+
+    class Meta:
+        type_ = 'institutions'

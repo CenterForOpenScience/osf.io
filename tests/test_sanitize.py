@@ -1,3 +1,4 @@
+import datetime
 import unittest
 from nose.tools import *  # flake8: noqa
 from website.util import sanitize
@@ -33,23 +34,41 @@ class TestSanitize(unittest.TestCase):
             sanitize.strip_html('<foo>bar</foo>'),
             'bar'
         )
+        assert_equal(
+            sanitize.strip_html(b'<foo>bar</foo>'),
+            'bar'
+        )
+
+    def test_strip_html_on_non_strings_returns_original_value(self):
+        assert_true(sanitize.strip_html(True))
+        assert_false(sanitize.strip_html(False))
+
+        assert_equal(sanitize.strip_html(12), 12)
+        assert_equal(sanitize.strip_html(12.3), 12.3)
+
+        dtime = datetime.datetime.now()
+        assert_equal(sanitize.strip_html(dtime), dtime)
+
+    def test_strip_html_sanitizes_collection_types_as_strings(self):
+        assert_equal(sanitize.strip_html({'foo': '<b>bar</b>'}), "{'foo': 'bar'}")
+        assert_equal(sanitize.strip_html(['<em>baz</em>']), "['baz']")
 
     def test_unescape_html(self):
         assert_equal(
-            sanitize.safe_unescape_html('&lt;&gt; diamonds &amp; diamonds &lt;&gt;'),
-            '<> diamonds & diamonds <>'
+            sanitize.unescape_entities('&lt;&gt; diamonds &amp; diamonds &lt;&gt;'),
+            '&lt;&gt; diamonds & diamonds &lt;&gt;'
         )
         assert_equal(
-            sanitize.safe_unescape_html(['&lt;&gt;&amp;'])[0],
-            '<>&'
+            sanitize.unescape_entities(['&lt;&gt;&amp;'])[0],
+            '&lt;&gt;&'
         )
         assert_equal(
-            sanitize.safe_unescape_html(('&lt;&gt;&amp;', ))[0],
-            '<>&'
+            sanitize.unescape_entities(('&lt;&gt;&amp;', ))[0],
+            '&lt;&gt;&'
         )
         assert_equal(
-            sanitize.safe_unescape_html({'key': '&lt;&gt;&amp;'})['key'],
-            '<>&'
+            sanitize.unescape_entities({'key': '&lt;&gt;&amp;'})['key'],
+            '&lt;&gt;&'
         )
 
     def test_safe_json(self):

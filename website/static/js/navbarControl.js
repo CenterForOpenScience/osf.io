@@ -1,7 +1,7 @@
 
 var $ = require('jquery');
 var ko = require('knockout');
-var bootbox = require('bootbox');
+var bootbox = require('bootbox'); // TODO: Why is this import required? Is it? See [#OSF-6100]
 var signIn = require('js/signIn');
 var $osf = require('js/osfHelpers');
 
@@ -41,6 +41,11 @@ var NavbarViewModel = function() {
            window.location.href = '/search/?q=' + self.query();
        }
     };
+
+    $('.navbar .dropdown').on('show.bs.dropdown', function () {
+        self.showSearch(false);
+        self.searchCSS('');
+    });
 
 };
 

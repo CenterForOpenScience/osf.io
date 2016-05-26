@@ -8,7 +8,7 @@
 
 <%def name="content()">
 <% from website import settings%>
-<h2 class="page-header">Notifications</h2>
+<h2 class="page-header">Settings</h2>
 
 <div id="notificationSettings" class="row">
     <div class="col-sm-3 affix-parent">
@@ -23,11 +23,20 @@
                     </br>
                     <form>
                         <div class="form-group">
-
                             <input type="checkbox"
-                                   data-bind="checked: subscribed"/>
-                            <label data-bind="text: list"></label>
+                                data-bind="checked: subscribed"
+                                value="${settings.MAILCHIMP_GENERAL_LIST}"/>
+                              <label>${settings.MAILCHIMP_GENERAL_LIST}</label>
                             <p class="text-muted" style="padding-left: 15px">Receive general notifications about the OSF every 2-3 weeks.</p>
+                        </div>
+                    </form>
+                    <form>
+                        <div class="form-group">
+                            <input type="checkbox"
+                                data-bind="checked: subscribed"
+                                value="${settings.OSF_HELP_LIST}"/>
+                              <label>${settings.OSF_HELP_LIST}</label>
+                            <p class="text-muted" style="padding-left: 15px">Receive helpful tips on how to make the most of the OSF, up to once per week.</p>
                         </div>
                         <div class="p-t-md p-b-md">
                         <button
@@ -48,7 +57,7 @@
                 <form id="selectNotifications" class="osf-treebeard-minimal">
                     <div id="grid">
                         <div class="spinner-loading-wrapper">
-                            <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"> </div>
+                            <div class="logo-spin logo-lg"></div>
                             <p class="m-t-sm fg-load-message"> Loading notification settings... </p>
                         </div>
                     </div>
@@ -65,7 +74,9 @@
     <% import website %>
     ${parent.javascript()}
     <script type="text/javascript">
-        window.contextVars = $.extend({}, window.contextVars, {'mailingList': ${website.settings.MAILCHIMP_GENERAL_LIST | sjson, n }});
+        window.contextVars = $.extend({}, window.contextVars, {
+            'mailingLists': ${ [website.settings.MAILCHIMP_GENERAL_LIST, website.settings.OSF_HELP_LIST] | sjson, n }
+        });
     </script>
 </%def>
 

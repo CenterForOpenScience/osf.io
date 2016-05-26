@@ -11,7 +11,7 @@ import datetime
 
 from dateutil.relativedelta import relativedelta
 
-from website.addons.box import model
+from website.oauth.models import ExternalAccount
 
 from scripts.refresh_box_tokens import get_targets, main
 
@@ -20,20 +20,20 @@ class TestRefreshTokens(OsfTestCase):
 
     def tearDown(self):
         super(TestRefreshTokens, self).tearDown()
-        model.BoxOAuthSettings.remove()
+        ExternalAccount.remove()
 
     def test_get_targets(self):
         now = datetime.datetime.utcnow()
         records = [
-            factories.BoxOAuthSettingsFactory(expires_at=now + datetime.timedelta(days=8)),
-            factories.BoxOAuthSettingsFactory(expires_at=now + datetime.timedelta(days=6)),
+            factories.BoxAccountFactory(expires_at=now + datetime.timedelta(days=8)),
+            factories.BoxAccountFactory(expires_at=now + datetime.timedelta(days=6)),
         ]
-        targets = list(get_targets(delta=relativedelta(days=7)))
-        assert_in(records[1], targets)
+        targets = list(get_targets(delta=relativedelta(days=-7)))
+        assert_equal(records[1]._id, targets[0]._id)
         assert_not_in(records[0], targets)
 
-    @mock.patch('website.addons.box.model.BoxOAuthSettings.refresh_access_token')
+    @mock.patch('scripts.refresh_box_tokens.Box.refresh_oauth_key')
     def test_refresh(self, mock_refresh):
-        factories.BoxOAuthSettingsFactory(expires_at=datetime.datetime.utcnow())
+        fake_account = factories.BoxAccountFactory(expires_at=datetime.datetime.utcnow())
         main(delta=relativedelta(days=7), dry_run=False)
-        mock_refresh.assert_called_once_with(force=True)
+        mock_refresh.assert_called_once()

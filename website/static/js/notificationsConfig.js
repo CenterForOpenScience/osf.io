@@ -1,15 +1,14 @@
 'use strict';
 
 var ko = require('knockout');
-require('knockout.punches');
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
-ko.punches.enableAll();
+
 
 var ViewModel = function(list) {
     var self = this;
     self.list = list;
-    self.subscribed = ko.observable();
+    self.subscribed = ko.observableArray();
     // Flashed messages
     self.message = ko.observable('');
     self.messageClass = ko.observable('text-success');
@@ -20,8 +19,11 @@ var ViewModel = function(list) {
             type: 'GET',
             dataType: 'json',
             success: function(response) {
-                var isSubscribed = response.mailing_lists ? response.mailing_lists[self.list] : false;
-                self.subscribed(isSubscribed);
+                for (var key in response.mailing_lists){
+                    if (response.mailing_lists[key]){
+                        self.subscribed.push(key);
+                    }
+                }
             },
             error: function() {
                 var message = 'Could not retrieve settings information.';
@@ -47,7 +49,9 @@ var ViewModel = function(list) {
 
     self.submit = function () {
         var payload = {};
-        payload[self.list] = self.subscribed();
+        for (var i in self.list){
+            payload[self.list[i]] = $.inArray(self.list[i], self.subscribed()) !== -1;
+        }
         var request = $osf.postJSON('/api/v1/settings/notifications/', payload);
         request.done(function () {
             self.changeMessage('Settings updated.', 'text-success', 5000);

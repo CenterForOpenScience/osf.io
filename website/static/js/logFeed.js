@@ -8,12 +8,9 @@ var $ = require('jquery');
 var moment = require('moment');
 var Paginator = require('js/paginator');
 var oop = require('js/oop');
-require('knockout.punches');
 
-var $osf = require('js/osfHelpers');  // Injects 'listing' binding hanlder to to Knockout
+var $osf = require('js/osfHelpers');  // Injects 'listing' binding handler to to Knockout
 var nodeCategories = require('json!built/nodeCategories.json');
-
-ko.punches.enableAll();  // Enable knockout punches
 
 /**
   * Log model.
@@ -23,6 +20,10 @@ var Log = function(params) {
 
     $.extend(self, params);
     self.date = new $osf.FormattableDate(params.date);
+
+    if(params.params.submitted_time)
+        self.params.submitted_time = new $osf.FormattableDate(params.params.submitted_time);
+
     self.wikiUrl = ko.computed(function() {
         return self.nodeUrl + 'wiki/' + encodeURIComponent(self.params.page);
     });
@@ -34,22 +35,22 @@ var Log = function(params) {
       * Given an item in self.contributors, return its anchor element representation.
       */
     self._asContribLink = function(person) {
-        return '<a class="contrib-link" href="/profile/' + person.id + '/">' + person.fullname + '</a>';
+        return '<a class="contrib-link" href="/profile/' + person.id + '/">' +  $osf.htmlEscape(person.fullname) + '</a>';
     };
+
+    self.hasUser = ko.pureComputed(function() {
+        return Boolean(self.user && self.user.fullname);
+    });
 
     /**
       * Return whether a knockout template exists for the log.
       */
     self.hasTemplate = ko.computed(function() {
-        if (!self.user) {
-            $('script#' + self.action + '_no_user').length > 0;
+        if (!self.hasUser()) {
+            return $('script#' + self.action + '_no_user').length > 0;
         } else {
             return $('script#' + self.action).length > 0;
         }
-    });
-
-    self.hasUser = ko.pureComputed(function() {
-        return Boolean(self.user && self.user.fullname);
     });
 
     self.mapUpdates = function(key, item) {
@@ -79,7 +80,7 @@ var Log = function(params) {
                 if (person.registered) {
                     ret += self._asContribLink(person);
                 } else {
-                    ret += '<span>' + person.fullname + '</span>';
+                    ret += '<span>' + $osf.htmlEscape(person.fullname) + '</span>';
                 }
                 if (i < self.contributors.length - 1 && self.contributors.length > 2) {
                     ret += ', ';
@@ -180,7 +181,8 @@ var createLogs = function(logData){
             nodeTitle: item.node.title,
             nodeDescription: item.params.description_new,
             nodePath: item.node.path,
-            user: item.user
+            user: item.user,
+            registrationCancelled: item.node.is_registration && item.node.registered_from_id == null
         });
     });
     return mappedLogs;

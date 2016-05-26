@@ -76,7 +76,7 @@ function treebeardSelectView(item) {
     var templateUnchecked = m('input', {
         type: 'radio',
         onclick: setTempPicked.bind(tb),
-        onchange: function(evt) {
+        onmousedown: function(evt) {
             tb.options.onPickFolder(evt, item);
         },
         name: '#' + tb.options.divID + INPUT_NAME
@@ -198,7 +198,7 @@ function FolderPicker(selector, opts) {
     self.options.rootName = opts.rootName;
 
     // Start up the grid
-    self.grid = new Treebeard(self.options).tbController;
+    self.grid = new Treebeard(self.options);
 }
 
 FolderPicker.prototype.destroy = function() {

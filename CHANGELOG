@@ -2,7 +2,325 @@
 Changelog
 *********
 
-0.45.0 (unreleased)
+0.74.0 (2016-05-25)
+===================
+
+- Numerous fixes for displaying logs consistently.
+
+Migrations
+----------
+
+- python -m scripts.migrate_regressed_registration_logs
+
+0.73.0 (2016-05-19)
+===================
+
+- Allow category to be set from project dashboard page.
+- Improve algorithm for computing "New and Noteworthy" nodes.
+- Improve error messaging for file rendering.
+- Improve UI for personal access tokens page.
+- Responsiveness fixes for file grid.
+- Many UI fixes.
+- APIv2: Add forks endpoints.
+- APIv2: Fix sorting for /users/<user_id>/nodes/
+- APIv2: Add institutions to FULL_READ scope.
+
+0.72.0 (2016-05-17)
+===================
+
+- Make all pages escape user values on the frontend.
+- Remove usage of knockout-punches and remove strip_ko Mako filter.
+
+0.71.0 (2016-05-11)
+===================
+
+- Admin: create new user form.
+- Admin: refactor registration.
+- Admin: refactor and bugfixes for prereg module.
+- Admin: refactor and bugfixes for spam module.
+
+0.70.0 (2016-05-09)
+===================
+
+- Allow multiple files to be attached to pre-registrations.
+- Add "Pre-Registration in Social Psychology (van 't Veer & Giner-Sorolla, 2016)".
+
+Migrations
+----------
+
+- python -m scripts.migration.migrate_registration_extra_drafts
+- python -m scripts.migration.migrate_registration_extra
+
+0.69.0 (2016-05-03)
+===================
+
+- Add links to new Guides page at http://help.osf.io.
+
+0.68.0 (2016-04-28)
+===================
+
+- Wiki commenting.
+- End embargoes early.
+- UI fixes.
+
+Migrations
+----------
+
+See https://openscience.atlassian.net/browse/OSF-6081
+
+0.67.0 (2016-04-21)
+===================
+
+- Change "Retraction" to "Withdrawal".
+- Multiple GitHub accounts can be associated with a user account.
+- Multiple S3 accounts can be associated with a user account.
+- Dev: Remove various unnecessary backrefs, including nodelog -> node backref.
+- Dev: Lots of addons refactoring.
+- Dev: Use celerybeat for periodic task execution.
+- Bug fixes.
+
+Migrations
+----------
+
+See https://openscience.atlassian.net/browse/OSF-5986
+
+0.66.0 (2016-03-16)
+===================
+
+- Redesign of Dashboard and addition of "My Projects" page.
+- OSF4Institutions landing pages.
+- Commenting on addon files.
+- Admin: Marking comments as spam; disabling users; view registrations.
+- Various UI improvements.
+
+Migrations
+----------
+
+See https://openscience.atlassian.net/browse/OSF-5861
+
+0.65.0 (2016-03-02)
+===================
+
+- Add UI for adding contributors from parent projects to subprojects.
+- Add UI for removing a contributor from multiple subprojects.
+- Add Baidu Scholar links to user profiles.
+- APIv2: Allow client to request specific relationship counts, e.g. `?related_counts=children`.
+- Backend for OSF4Institutions: nodes and users can be affiliated with an institution (alpha; disabled on production).
+- Add visitor tracking with Keen.io.
+- Refactor Google Drive addon to use generic views.
+- Use Sendgrid API for sending emails; add categorization of emails.
+- UI fixes.
+
+0.64.0 (2016-02-10)
+===================
+
+- By default, any OSF user can comment on public projects.
+- Add UI to make multiple projects in a hierarchy public or private.
+- APIv2: Filtering on text fields is case-insensitive.
+- APIv2: Fix bug in using `page[size]` with embedding.
+- UI fixes.
+
+0.63.0 (2016-02-02)
+===================
+
+- Added date_modified field to Node (no longer a property).
+- Add ResearchGate links to user profiles.
+- Add Academia.edu links to user profiles.
+- Components may be categorized as "Software".
+- Reorganize wiki configuration on project settings page.
+- APIv2: Support filtering nodes by `root` and `parent.`
+- APIv2: Nodes are sorted by date modified by default.
+- APIv2: Add materialized_path, date_created, date_modified, and extras.hashes fields to file responses.
+- APIv2: Support 'ne' as a comparison operator.
+- APIv2: When doing bulk updates, objects for which the client doesn't have access can be skipped using `?skip_uneditable=true` (experimental).
+- Dev: Remove node__contributed and node__created backrefs to improve performance and prevent locking errors.
+- UI fixes.
+
+Migrations
+----------
+
+- python -m scripts.migration.migrate_date_modified_for_existing_nodes
+- python -m scripts.migration.migrate_root_and_parent_on_node
+
+0.62.0 (2016-01-25)
+===================
+
+- File commenting.
+
+Migrations
+----------
+
+- python -m scripts.update_comments
+
+0.61.0 (2016-01-06)
+===================
+
+- APIv2: Support filtering against multiple ids, e.g. ?filter[id]=abc12,def34
+- APIv2: Support authentication with view-only link keys.
+- Wiki: Disable snippet autocomplete by default.
+- Merge Admin app into codebase.
+- Many UI fixes.
+
+0.60.0 (2015-12-17)
+===================
+
+- UI updates to Contributors page. Adds filtering and responsiveness.
+- UI updates to Employment and Education profile sections
+- Multiple Dropbox accounts can be associated with a user account.
+- Prereg beta: Many bug fixes and UI improvements, including author import.
+- APIv2: Bulk extension support for collections endpoints.
+- APIv2: Require target_id and type to be passed when creating comments.
+- APIv2: Allow filtering on relationships, e.g. filtering by a comment's target with ?filter[target]=<target_id>
+
+Migrations
+----------
+
+- python -m scripts.dropbox.migrate_to_external_accounts
+- python -m scripts.prereg.migrate_metadata_for_uploaders
+
+0.59.0 (2015-12-02)
+===================
+
+- Add Prereg Challenge workflow.
+- APIv2: Omit relationship objects for null and missing relationships.
+- APIv2: Support embedded resources.
+- Add button to reset client secret for developer applications.
+
+0.58.0 (2015-11-18)
+===================
+
+- Add draft registrations.
+
+0.57.0 (2015-11-17)
+===================
+
+- APIv2: Replace JSONAPIHyperlinkRelated field with RelationshipField.
+- APIv2: Add collections endpoints (staging/dev environments only).
+- APIv2: Fix ordering and pagination of OSF Storage files.
+- Add personal access tokens for APIv2.
+- APIv2: Access MD5 and SHA256 hashes for OSF Storage files.
+
+0.56.0 (2015-11-13)
+===================
+
+- APIv2: Add commenting endpoints.
+- APIv2: Add support for bulk operations using JSON API's Bulk Extension (experimental).
+- APIv2: Fix date_modified field for all fields.
+- UI fixes.
+
+0.55.0 (2015-11-04)
+===================
+
+- File Check-out/Check-in.
+- Add tags to files.
+- Search files by name and tags.
+- Add licenses to projects.
+- Multiple Google Drive accounts can be associated with a user account.
+- Redesign of OSF for Meetings landing page.
+- APIv2: Comparison operators for filtering.
+
+Migrations
+----------
+
+* scripts.migration.migrate_index_for_existing_files
+* scripts.googledrive.migrate_to_external_account
+* scripts.googledrive.connect_external_accounts
+
+0.54.0 (2015-10-25)
+===================
+
+- Add engagement emails.
+- Multiple Box.com accounts can be associated with a user account.
+- Dev: Improve speed of Travis builds.
+- APIv2: JSON API compliance fixes.
+
+Migrations
+----------
+
+* scripts.migrate_date_last_login_for_current_users
+* scripts.migrate_mailing_lists_to_mailchimp_field
+* scripts.box.migrate_to_external_account
+* scripts.box.connect_external_account
+
+0.53.4 (2015-10-20)
+===================
+
+- Enable UI for creating developer applications.
+
+0.53.0 (2015-10-08)
+===================
+
+- Use JWTs for authenticating with Waterbutler and MFR.
+
+0.52.0 (2015-10-07)
+===================
+
+- Add Share button on file detail pages with UI for embedding rendered files.
+- User profiles can have multiple personal websites.
+- Update Add contributor UI to show current contributors in search.
+- APIv2: Lots of documentation updates.
+- APIv2: Fix bug that caused a 500 when updating a user's name.
+- APIv2: Fix bug that caused an invalid log when updating a Node's title or description.
+- Dev: Remove dead file GUID code left over from 0.50.0.
+
+0.51.0 (2015-09-24)
+===================
+
+- Alpha release of API v2.
+
+0.50.0 (2015-09-17)
+===================
+
+- Migration of all addon file collecitons to a single GuidFile collection.
+
+0.49.0 (2015-09-11)
+===================
+
+- Add email subscriptions to file events, configurable from project settings.
+- File rendering: Add support for multi-sheet XLSX files.
+- File rendering: Add filtering support for tabular formats.
+- APIv2: Responses are compliant with the JSON API 1.0 spec.
+- APIv2: Unauthenticated responses correctly return a 401 rather than 403 response.
+- APIv2: Add endpoints and UI for creating Developer Applications (hidden until APIv2 is released).
+- Log file rename events.
+
+0.48.0 (2015-08-31)
+===================
+
+- Add project settings that allows a project's wiki to be editable by any OSF user.
+- MD5 and SHA1 hashes appear in a file's Revisions table.
+- Update UI for OSF for Meetings page.
+- Various UI improvements.
+
+0.47.0 (2015-08-15)
+===================
+
+- Project registrations require approval from admin contributors.
+- Add tokens module for implementing JWT token-based actions. Currently allows
+generating URLs for registration approval/disapproval, embargo
+approval/disapproval, and retraction approval/disapproval.
+- Change sign-up flow: users are taken to Dashboard after confirming their
+email address.
+- APIv2: Fix serialization of Node tags. Remove Node system tags from
+response.
+- APIv2: Fix node and user endpoints so that they don't return deleted
+nodes/users.
+- APIv2: Implement POST and PATCH for the User resource.
+
+0.46.0 (2015-08-17)
+===================
+
+- Send email notification when user is added to a project.
+- Condense large contributor lists on the Project Overview page; make them expand/collapse-able.
+- SHARE: Major refactor: Query formatting and aggregations done client-side;
+add initial code for displaying raw and normalized documents.
+- SHARE: Search uses latest version of SHARE Schema.
+- APIv2: Add functionality for creating components.
+- APIv2: Fix bugs with the /me/ shorthand in URLs.
+- Add dates to registrations in search results.
+- Many UI consistency fixes.
+
+0.45.0 (2015-08-10)
 ===================
 
 - S3: Uploads to S3 are encrypted.
@@ -24,7 +342,7 @@ Changelog
 - Improved wiki menu/table of contents (based on Treebeard).
 - More style changes for consistency with OSF Style Guidelines.
 - Many UI bug fixes.
-- Dev: Allow markup-safe rendering of mako files by passing ``trust=True`` parameter to OsfWebRenderer.
+- Dev: Allow markup-safe rendering of mako files by passing ``trust=False`` parameter to OsfWebRenderer.
 
 0.42.6 (2015-07-14)
 ===================
@@ -391,3 +709,5 @@ install` to installthem.
 in the ``setUp`` and ``tearDown`` methods.
 - Developers: Update stale requirements.
 - Various bugfixes and minor UI improvements.
+
+# vi: ft=markdown

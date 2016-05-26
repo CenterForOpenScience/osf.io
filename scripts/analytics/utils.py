@@ -10,6 +10,7 @@ import matplotlib.dates as mdates
 import requests
 
 from website import util
+from website import settings as website_settings
 
 
 def oid_to_datetime(oid):
@@ -24,6 +25,10 @@ def mkdirp(path):
 
 
 def plot_dates(dates, *args, **kwargs):
+
+    if dates is None or len(dates) == 0:
+        return -1
+
     """Plot date histogram."""
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -47,13 +52,50 @@ def make_csv(fp, rows, headers=None):
     writer.writerows(rows)
 
 
-def send_file(app, name, content_type, file_like, node, user):
-    """Upload file to OSF."""
-    file_like.seek(0)
-    with app.test_request_context():
-        upload_url = util.waterbutler_url_for('upload', 'osfstorage', name, node, user=user)
-    requests.put(
-        upload_url,
-        data=file_like,
-        headers={'Content-Type': content_type},
-    )
+def create_object(name, content_type, node, user, stream=None, kind=None, path='/'):
+    """Create an object (file/folder) OSF using WaterButler v1 API
+    :param str name: The name of the requested file
+    :param str content_type: Content-Type
+    :param StringIO stream: file-like stream to be uploaded
+    :param Node node: Project Node
+    :param User user: User whose cookie will be used
+    :param str path: Waterbutler V1 path of the requested file
+    """
+    assert(kind != 'file' or stream != None)
+
+    node_id = node._id
+    cookies = {website_settings.COOKIE_NAME: user.get_or_create_cookie()}
+
+    # create or update a file
+    url = util.waterbutler_api_url_for(node_id, 'osfstorage', path)
+    resp = requests.get(url, cookies=cookies)
+    data = resp.json()['data']
+
+    existing = None
+    for item in data:
+        if item['attributes']['name'] == name:
+            existing = item
+
+    if stream:
+        stream.seek(0)
+
+    # create a new file/folder?
+    if not existing:
+        url = util.waterbutler_api_url_for(node_id, 'osfstorage', path, kind=kind, name=name)
+        resp = requests.put(
+            url,
+            data=stream,
+            headers={'Content-Type': content_type},
+            cookies=cookies,
+        )
+    elif kind == 'file':
+        url = util.waterbutler_api_url_for(node_id, 'osfstorage', existing['attributes']['path'], kind=kind)
+        resp = requests.put(
+            url,
+            data=stream,
+            headers={'Content-Type': content_type},
+            cookies=cookies,
+        )
+    else:
+        return existing
+    return resp.json()['data']

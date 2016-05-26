@@ -8,6 +8,18 @@ from framework.mongo import StoredObject
 
 from website.conferences.exceptions import ConferenceError
 
+DEFAULT_FIELD_NAMES = {
+    'submission1': 'poster',
+    'submission2': 'talk',
+    'submission1_plural': 'posters',
+    'submission2_plural': 'talks',
+    'meeting_title_type': 'Posters & Talks',
+    'add_submission': 'poster or talk',
+    'mail_subject': 'Presentation title',
+    'mail_message_body': 'Presentation abstract (if any)',
+    'mail_attachment': 'Your presentation file (e.g., PowerPoint, PDF, etc.)'
+}
+
 
 class Conference(StoredObject):
     #: Determines the email address for submission and the OSF url
@@ -23,6 +35,14 @@ class Conference(StoredObject):
     admins = fields.ForeignField('user', list=True, required=False, default=None)
     #: Whether to make submitted projects public
     public_projects = fields.BooleanField(required=False, default=True)
+    poster = fields.BooleanField(default=True)
+    talk = fields.BooleanField(default=True)
+    # field_names are used to customize the text on the conference page, the categories
+    # of submissions, and the email adress to send material to.
+    field_names = fields.DictionaryField(default=lambda: DEFAULT_FIELD_NAMES)
+
+    # Cached number of submissions
+    num_submissions = fields.IntegerField(default=0)
 
     @classmethod
     def get_by_endpoint(cls, endpoint, active=True):
@@ -38,4 +58,4 @@ class Conference(StoredObject):
 class MailRecord(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(bson.ObjectId()))
     data = fields.DictionaryField()
-    records = fields.AbstractForeignField(list=True, backref='created')
+    records = fields.AbstractForeignField(list=True)

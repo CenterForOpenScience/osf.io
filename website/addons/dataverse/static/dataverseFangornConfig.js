@@ -32,27 +32,27 @@ var _dataverseItemButtons = {
         function dataversePublish(event, item, col) {
             var both = !item.data.dataverseIsPublished;
             var url = item.data.urls.publish;
+            var host = item.data.host;
             var toPublish = both ? 'Dataverse and dataset' : 'dataset';
+            // Set the modal content to reflect the file's external host
             var modalContent = [
-                m('h3', 'Publish this ' + toPublish + '?'),
-                m('p.m-md', both ? 'This dataset cannot be published until ' + item.data.dataverse + ' Dataverse is published. ' : ''),
-                m('p.m-md', 'By publishing this ' + toPublish + ', all content will be made available through the Harvard Dataverse using their internal privacy settings, regardless of your OSF project settings. '),
+                m('p.m-md', both ? 'This dataset cannot be published until the ' + item.data.dataverse + ' Dataverse is published. ' : ''),
+                m('p.m-md', 'By publishing this ' + toPublish + ', all content will be made available through ' + host + ' using their internal privacy settings, regardless of your OSF project settings. '),
                 m('p.font-thick.m-md', both ? 'Do you want to publish this Dataverse AND this dataset?' : 'Are you sure you want to publish this dataset?')
             ];
-            var modalActions = [
-                m('button.btn.btn-default.m-sm', {
+            var modalActions =
+                [m('button.btn.btn-default', {
                     'onclick': function () {
                         tb.modal.dismiss();
                     }
                 }, 'Cancel'),
-                m('button.btn.btn-primary.m-sm', {
+                m('button.btn.btn-primary', {
                     'onclick': function () {
                         publishDataset();
                     }
-                }, 'Publish ' + toPublish)
-            ];
+                }, 'Publish')];
 
-            tb.modal.update(modalContent, modalActions);
+            tb.modal.update(modalContent, modalActions, m('h3.break-word.modal-title', 'Publish this ' + toPublish + '?'));
 
             function publishDataset() {
                 tb.modal.dismiss();
@@ -66,16 +66,22 @@ var _dataverseItemButtons = {
                         m('p.m-md', 'Your content has been published.')
                     ];
                     var modalActions = [
-                        m('button.btn.btn-primary.m-sm', {
+                        m('button.btn.btn-primary', {
                             'onclick': function () {
                                 tb.modal.dismiss();
                             }
-                        }, 'Okay')
+                        }, 'Got it')
+
                     ];
-                    tb.modal.update(modalContent, modalActions);
+                    tb.modal.update(modalContent, modalActions, m('h3.break-word.modal-title', 'Successfully published'));
                     item.data.dataverseIsPublished = true;
+                    item.data.datasetIsPublished = true;
+                    item.data.datasetDraftModified = false;
                     item.data.hasPublishedFiles = item.children.length > 0;
                     item.data.version = item.data.hasPublishedFiles ? 'latest-published' : 'latest';
+                    for (var i = 0; i < item.children.length; i++) { // Brute force the child files to be set as "latest-published" without page reload
+                        item.children[i].data.extra.datasetVersion = item.data.version;
+                    }
                 }).fail(function (xhr, status, error) {
                     var statusCode = xhr.responseJSON.code;
                     var message;
@@ -99,7 +105,7 @@ var _dataverseItemButtons = {
                         m('p.m-md', message)
                     ];
                     var modalActions = [
-                        m('button.btn.btn-primary.m-sm', {
+                        m('button.btn.btn-primary', {
                             'onclick': function () {
                                 tb.modal.dismiss();
                             }
@@ -111,9 +117,11 @@ var _dataverseItemButtons = {
         }
         if (item.data.addonFullname) {
             var options = [
-                m('option', {selected: item.data.version === 'latest-published', value: 'latest-published'}, 'Published'),
                 m('option', {selected: item.data.version === 'latest', value: 'latest'}, 'Draft')
             ];
+            if (item.data.datasetIsPublished) {
+                options.push(m('option', {selected: item.data.version === 'latest-published', value: 'latest-published'}, 'Published'));
+            }
             buttons.push(
                 m.component(Fangorn.Components.dropdown, {
                     'label': 'Version: ',
@@ -125,64 +133,71 @@ var _dataverseItemButtons = {
                 }, options)
             );
         }
-        if (item.kind === 'folder' && item.data.addonFullname && item.data.version === 'latest' && item.data.permissions.edit) {
-            buttons.push(
-                m.component(Fangorn.Components.button, {
-                    onclick: function (event) {
-                        _uploadEvent.call(tb, event, item);
-                    },
-                    icon: 'fa fa-upload',
-                    className: 'text-success'
-                }, 'Upload'),
-                m.component(Fangorn.Components.button, {
-                    onclick: function (event) {
-                        dataversePublish.call(tb, event, item);
-                    },
-                    icon: 'fa fa-globe',
-                    className: 'text-primary'
-                }, 'Publish')
-            );
-        } else if (item.kind === 'folder' && !item.data.addonFullname) {
-            buttons.push(
-                m.component(Fangorn.Components.button, {
-                    onclick: function (event) {
-                        _uploadEvent.call(tb, event, item);
-                    },
-                    icon: 'fa fa-upload',
-                    className: 'text-success'
-                }, 'Upload')
-            );
-        } else if (item.kind === 'file') {
-            buttons.push(
-                m.component(Fangorn.Components.button, {
-                    onclick: function (event) {
-                        _downloadEvent.call(tb, event, item);
-                    },
-                    icon: 'fa fa-download',
-                    className: 'text-primary'
-                }, 'Download')
-            );
-            if (item.parent().data.version === 'latest' && item.data.permissions.edit) {
+        if (tb.options.placement !== 'fileview') {
+            if (item.kind === 'folder' && item.data.addonFullname && item.data.version === 'latest' && item.data.permissions.edit) {
                 buttons.push(
                     m.component(Fangorn.Components.button, {
                         onclick: function (event) {
-                            Fangorn.ButtonEvents._removeEvent.call(tb, event, [item]);
+                            _uploadEvent.call(tb, event, item);
                         },
-                        icon: 'fa fa-trash',
-                        className: 'text-danger'
-                    }, 'Delete')
+                        icon: 'fa fa-upload',
+                        className: 'text-success'
+                    }, 'Upload')
                 );
-            }
-            if (item.data.permissions && item.data.permissions.view) {
+                // Only allow the Publish button to appear if the draft dataset is modified
+                if(item.data.datasetDraftModified) {
+                    buttons.push(
+                        m.component(Fangorn.Components.button, {
+                            onclick: function (event) {
+                                dataversePublish.call(tb, event, item);
+                            },
+                            icon: 'fa fa-globe',
+                            className: 'text-primary'
+                        }, 'Publish')
+                    );
+                }
+            } else if (item.kind === 'folder' && !item.data.addonFullname) {
                 buttons.push(
                     m.component(Fangorn.Components.button, {
-                        onclick: function(event) {
-                            gotoFile(item);
+                        onclick: function (event) {
+                            _uploadEvent.call(tb, event, item);
                         },
-                        icon: 'fa fa-file-o',
-                        className : 'text-info'
-                    }, 'View'));
+                        icon: 'fa fa-upload',
+                        className: 'text-success'
+                    }, 'Upload')
+                );
+            } else if (item.kind === 'file') {
+                buttons.push(
+                    m.component(Fangorn.Components.button, {
+                        onclick: function (event) {
+                            _downloadEvent.call(tb, event, item);
+                        },
+                        icon: 'fa fa-download',
+                        className: 'text-primary'
+                    }, 'Download')
+                );
+                if (item.parent().data.version === 'latest' && item.data.permissions.edit) {
+                    buttons.push(
+                        m.component(Fangorn.Components.button, {
+                            onclick: function (event) {
+                                Fangorn.ButtonEvents._removeEvent.call(tb, event, [item]);
+                            },
+                            icon: 'fa fa-trash',
+                            className: 'text-danger'
+                        }, 'Delete')
+                    );
+                }
+                if (item.data.permissions && item.data.permissions.view) {
+                    buttons.push(
+                        m.component(Fangorn.Components.button, {
+                            onclick: function(event) {
+                                gotoFile(item);
+                            },
+                            icon: 'fa fa-external-link',
+                            className : 'text-info'
+                        }, 'View'));
 
+                }
             }
         }
         return m('span', buttons);
@@ -240,10 +255,6 @@ function _fangornDataverseTitle(item, col) {
 function _fangornColumns(item) {
     var tb = this;
     var selectClass = '';
-    if (item.data.kind === 'file' && tb.currentFileID === item.id) {
-        item.css = 'fangorn-selected';
-        tb.multiselected([item]);
-    }
     var columns = [];
     columns.push({
         data : 'name',

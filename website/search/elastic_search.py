@@ -2,27 +2,32 @@
 
 from __future__ import division
 
-import re
 import copy
-import math
+import functools
 import logging
+import math
+import re
 import unicodedata
 
-import six
-
 from elasticsearch import (
-    Elasticsearch,
-    RequestError,
-    NotFoundError,
     ConnectionError,
+    Elasticsearch,
+    NotFoundError,
+    RequestError,
+    TransportError,
     helpers,
 )
+from modularodm import Q
+import six
 
 from framework import sentry
+from framework.celery_tasks import app as celery_app
+from framework.mongo.utils import paginated
 
 from website import settings
 from website.filters import gravatar
 from website.models import User, Node
+from website.project.licenses import serialize_node_license_record
 from website.search import exceptions
 from website.search.util import build_query
 from website.util import sanitize
@@ -37,7 +42,9 @@ ALIASES = {
     'component': 'Components',
     'registration': 'Registrations',
     'user': 'Users',
-    'total': 'Total'
+    'total': 'Total',
+    'file': 'Files',
+    'institution': 'Institutions',
 }
 
 # Prevent tokenizing and stop word removal.
@@ -79,10 +86,35 @@ def requires_search(func):
                 if 'ParseException' in e.error:
                     raise exceptions.MalformedQueryError(e.error)
                 raise exceptions.SearchException(e.error)
+            except TransportError as e:
+                # Catch and wrap generic uncaught ES error codes. TODO: Improve fix for https://openscience.atlassian.net/browse/OSF-4538
+                raise exceptions.SearchException(e.error)
 
         sentry.log_message('Elastic search action failed. Is elasticsearch running?')
         raise exceptions.SearchUnavailableError("Failed to connect to elasticsearch")
     return wrapped
+
+
+@requires_search
+def get_aggregations(query, doc_type):
+    query['aggregations'] = {
+        'licenses': {
+            'terms': {
+                'field': 'license.id'
+            }
+        }
+    }
+
+    res = es.search(index=INDEX, doc_type=doc_type, search_type='count', body=query)
+    ret = {
+        doc_type: {
+            item['key']: item['doc_count']
+            for item in agg['buckets']
+        }
+        for doc_type, agg in res['aggregations'].iteritems()
+    }
+    ret['total'] = res['hits']['total']
+    return ret
 
 
 @requires_search
@@ -96,7 +128,6 @@ def get_counts(count_query, clean=True):
     }
 
     res = es.search(index=INDEX, doc_type=None, search_type='count', body=count_query)
-
     counts = {x['key']: x['doc_count'] for x in res['aggregations']['counts']['buckets'] if x['key'] in ALIASES.keys()}
 
     counts['total'] = sum([val for val in counts.values()])
@@ -133,16 +164,24 @@ def search(query, index=None, doc_type='_all'):
     """
     index = index or INDEX
     tag_query = copy.deepcopy(query)
+    aggs_query = copy.deepcopy(query)
     count_query = copy.deepcopy(query)
 
     for key in ['from', 'size', 'sort']:
         try:
             del tag_query[key]
+            del aggs_query[key]
             del count_query[key]
         except KeyError:
             pass
 
     tags = get_tags(tag_query, index)
+    try:
+        del aggs_query['query']['filtered']['filter']
+        del count_query['query']['filtered']['filter']
+    except KeyError:
+        pass
+    aggregations = get_aggregations(aggs_query, doc_type=doc_type)
     counts = get_counts(count_query, index)
 
     # Run the real query and get the results
@@ -152,6 +191,7 @@ def search(query, index=None, doc_type='_all'):
     return_value = {
         'results': format_results(results),
         'counts': counts,
+        'aggs': aggregations,
         'tags': tags,
         'typeAliases': ALIASES
     }
@@ -163,35 +203,40 @@ def format_results(results):
     for result in results:
         if result.get('category') == 'user':
             result['url'] = '/profile/' + result['id']
+        elif result.get('category') == 'file':
+            parent_info = load_parent(result.get('parent_id'))
+            result['parent_url'] = parent_info.get('url') if parent_info else None
+            result['parent_title'] = parent_info.get('title') if parent_info else None
         elif result.get('category') in {'project', 'component', 'registration'}:
             result = format_result(result, result.get('parent_id'))
         ret.append(result)
     return ret
-
 
 def format_result(result, parent_id=None):
     parent_info = load_parent(parent_id)
     formatted_result = {
         'contributors': result['contributors'],
         'wiki_link': result['url'] + 'wiki/',
-        # TODO: Remove safe_unescape_html when mako html safe comes in
-        'title': sanitize.safe_unescape_html(result['title']),
+        # TODO: Remove unescape_entities when mako html safe comes in
+        'title': sanitize.unescape_entities(result['title']),
         'url': result['url'],
         'is_component': False if parent_info is None else True,
-        'parent_title': sanitize.safe_unescape_html(parent_info.get('title')) if parent_info else None,
+        'parent_title': sanitize.unescape_entities(parent_info.get('title')) if parent_info else None,
         'parent_url': parent_info.get('url') if parent_info is not None else None,
         'tags': result['tags'],
         'is_registration': (result['is_registration'] if parent_info is None
                                                         else parent_info.get('is_registration')),
         'is_retracted': result['is_retracted'],
-        'pending_retraction': result['pending_retraction'],
+        'is_pending_retraction': result['is_pending_retraction'],
         'embargo_end_date': result['embargo_end_date'],
-        'pending_embargo': result['pending_embargo'],
+        'is_pending_embargo': result['is_pending_embargo'],
         'description': result['description'] if parent_info is None else None,
         'category': result.get('category'),
         'date_created': result.get('date_created'),
-        'date_registered': result.get('registration_date'),
-        'n_wikis': len(result['wikis'])
+        'date_registered': result.get('registered_date'),
+        'n_wikis': len(result['wikis']),
+        'license': result.get('license'),
+        'primary_institution': result.get('primary_institution'),
     }
 
     return formatted_result
@@ -215,35 +260,41 @@ def load_parent(parent_id):
     return parent_info
 
 
-COMPONENT_CATEGORIES = set([k for k in Node.CATEGORY_MAP.keys() if not k == 'project'])
+COMPONENT_CATEGORIES = set(Node.CATEGORY_MAP.keys())
 
 def get_doctype_from_node(node):
-
-    if node.category in COMPONENT_CATEGORIES:
-        return 'component'
-    elif node.is_registration:
+    if node.is_registration:
         return 'registration'
+    elif node.parent_node is None:
+        # ElasticSearch categorizes top-level projects differently than children
+        return 'project'
+    elif node.category in COMPONENT_CATEGORIES:
+        return 'component'
     else:
         return node.category
 
+@celery_app.task(bind=True, max_retries=5, default_retry_delay=60)
+def update_node_async(self, node_id, index=None, bulk=False):
+    node = Node.load(node_id)
+    try:
+        update_node(node=node, index=index, bulk=bulk)
+    except Exception as exc:
+        self.retry(exc=exc)
 
 @requires_search
-def update_node(node, index=None):
+def update_node(node, index=None, bulk=False):
     index = index or INDEX
     from website.addons.wiki.model import NodeWikiPage
 
     category = get_doctype_from_node(node)
 
-    if category == 'project':
-        elastic_document_id = node._id
-        parent_id = None
-    else:
-        try:
-            elastic_document_id = node._id
-            parent_id = node.parent_id
-        except IndexError:
-            # Skip orphaned components
-            return
+    elastic_document_id = node._id
+    parent_id = node.parent_id
+
+    from website.files.models.osfstorage import OsfStorageFile
+    for file_ in paginated(OsfStorageFile, Q('node', 'eq', node)):
+        update_file(file_, index=index)
+
     if node.is_deleted or not node.is_public or node.archiving:
         delete_doc(elastic_document_id, node)
     else:
@@ -271,17 +322,19 @@ def update_node(node, index=None):
             'description': node.description,
             'url': node.url,
             'is_registration': node.is_registration,
+            'is_pending_registration': node.is_pending_registration,
             'is_retracted': node.is_retracted,
-            'pending_retraction': node.pending_retraction,
+            'is_pending_retraction': node.is_pending_retraction,
             'embargo_end_date': node.embargo_end_date.strftime("%A, %b. %d, %Y") if node.embargo_end_date else False,
-            'pending_embargo': node.pending_embargo,
+            'is_pending_embargo': node.is_pending_embargo,
             'registered_date': node.registered_date,
             'wikis': {},
             'parent_id': parent_id,
             'date_created': node.date_created,
+            'license': serialize_node_license_record(node.license),
+            'primary_institution': node.primary_institution.name if node.primary_institution else None,
             'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
         }
-
         if not node.is_retracted:
             for wiki in [
                 NodeWikiPage.load(x)
@@ -289,39 +342,53 @@ def update_node(node, index=None):
             ]:
                 elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
 
-        es.index(index=index, doc_type=category, id=elastic_document_id, body=elastic_document, refresh=True)
+        if bulk:
+            return elastic_document
+        else:
+            es.index(index=index, doc_type=category, id=elastic_document_id, body=elastic_document, refresh=True)
 
+def bulk_update_nodes(serialize, nodes, index=None):
+    """Updates the list of input projects
 
-def bulk_update_contributors(nodes, index=INDEX):
-    """Updates only the list of contributors of input projects
-
-    :param nodes: Projects, components or registrations
-    :param index: Index of the nodes
+    :param function Node-> dict serialize:
+    :param Node[] nodes: Projects, components or registrations
+    :param str index: Index of the nodes
     :return:
     """
+    index = index or INDEX
     actions = []
     for node in nodes:
-        actions.append({
-            '_op_type': 'update',
-            '_index': index,
-            '_id': node._id,
-            '_type': get_doctype_from_node(node),
-            'doc': {
-                'contributors': [
-                    {
-                        'fullname': user.fullname,
-                        'url': user.profile_url if user.is_active else None
-                    } for user in node.visible_contributors
-                    if user is not None
-                    and user.is_active
-                ]
-            }
-        })
-    return helpers.bulk(es, actions)
+        logger.info('Updating node {}'.format(node._id))
+        serialized = serialize(node)
+        if serialized:
+            actions.append({
+                '_op_type': 'update',
+                '_index': index,
+                '_id': node._id,
+                '_type': get_doctype_from_node(node),
+                'doc': serialized
+            })
+    if actions:
+        return helpers.bulk(es, actions)
+
+def serialize_contributors(node):
+    return {
+        'contributors': [
+            {
+                'fullname': user.fullname,
+                'url': user.profile_url if user.is_active else None
+            } for user in node.visible_contributors
+            if user is not None
+            and user.is_active
+        ]
+    }
+
+bulk_update_contributors = functools.partial(bulk_update_nodes, serialize_contributors)
 
 
 @requires_search
 def update_user(user, index=None):
+
     index = index or INDEX
     if not user.is_active:
         try:
@@ -366,6 +433,63 @@ def update_user(user, index=None):
 
     es.index(index=index, doc_type='user', body=user_doc, id=user._id, refresh=True)
 
+@requires_search
+def update_file(file_, index=None, delete=False):
+
+    index = index or INDEX
+
+    if not file_.node.is_public or delete or file_.node.is_deleted or file_.node.archiving:
+        es.delete(
+            index=index,
+            doc_type='file',
+            id=file_._id,
+            refresh=True,
+            ignore=[404]
+        )
+        return
+
+    # We build URLs manually here so that this function can be
+    # run outside of a Flask request context (e.g. in a celery task)
+    file_deep_url = '/{node_id}/files/{provider}{path}/'.format(
+        node_id=file_.node._id,
+        provider=file_.provider,
+        path=file_.path,
+    )
+    node_url = '/{node_id}/'.format(node_id=file_.node._id)
+
+    file_doc = {
+        'id': file_._id,
+        'deep_url': file_deep_url,
+        'tags': [tag._id for tag in file_.tags],
+        'name': file_.name,
+        'category': 'file',
+        'node_url': node_url,
+        'node_title': file_.node.title,
+        'parent_id': file_.node.parent_node._id if file_.node.parent_node else None,
+        'is_registration': file_.node.is_registration,
+    }
+
+    es.index(
+        index=index,
+        doc_type='file',
+        body=file_doc,
+        id=file_._id,
+        refresh=True
+    )
+
+@requires_search
+def update_institution(institution, index=None):
+    index = index or INDEX
+
+    institution_doc = {
+        'id': institution._id,
+        'url': '/institutions/{}/'.format(institution._id),
+        'logo_path': institution.logo_path,
+        'category': 'institution',
+        'name': institution.name,
+    }
+
+    es.index(index=index, doc_type='institution', body=institution_doc, id=institution._id, refresh=True)
 
 @requires_search
 def delete_all():
@@ -383,13 +507,23 @@ def create_index(index=None):
     all of which are applied to all projects, components, and registrations.
     '''
     index = index or INDEX
-    document_types = ['project', 'component', 'registration', 'user']
+    document_types = ['project', 'component', 'registration', 'user', 'file', 'institution']
     project_like_types = ['project', 'component', 'registration']
     analyzed_fields = ['title', 'description']
 
-    es.indices.create(index, ignore=[400])
+    es.indices.create(index, ignore=[400])  # HTTP 400 if index already exists
     for type_ in document_types:
-        mapping = {'properties': {'tags': NOT_ANALYZED_PROPERTY}}
+        mapping = {
+            'properties': {
+                'tags': NOT_ANALYZED_PROPERTY,
+                'license': {
+                    'properties': {
+                        'id': NOT_ANALYZED_PROPERTY,
+                        'name': NOT_ANALYZED_PROPERTY,
+                    }
+                }
+            }
+        }
         if type_ in project_like_types:
             analyzers = {field: ENGLISH_ANALYZER_PROPERTY
                          for field in analyzed_fields}
@@ -416,7 +550,6 @@ def create_index(index=None):
             }
             mapping['properties'].update(fields)
         es.indices.put_mapping(index=index, doc_type=type_, body=mapping, ignore=[400, 404])
-
 
 @requires_search
 def delete_doc(elastic_document_id, node, index=None, category=None):
@@ -466,7 +599,9 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
         # TODO: use utils.serialize_user
         user = User.load(doc['id'])
 
-        if current_user:
+        if current_user and current_user._id == user._id:
+            n_projects_in_common = -1
+        elif current_user:
             n_projects_in_common = current_user.n_projects_in_common(user)
         else:
             n_projects_in_common = 0
@@ -493,7 +628,7 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
                 'gravatar_url': gravatar(
                     user,
                     use_ssl=True,
-                    size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR,
+                    size=settings.PROFILE_IMAGE_MEDIUM
                 ),
                 'profile_url': user.profile_url,
                 'registered': user.is_registered,

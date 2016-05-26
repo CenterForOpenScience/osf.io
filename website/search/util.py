@@ -93,7 +93,7 @@ def generate_color():
             new_colors = get_new_colors(colors_used)
             colors_to_generate = new_colors
             colors_used = []
-        yield webcolors.rgb_to_hex(color)
+        yield [webcolors.rgb_to_hex(color), color]
 
 
 def calculate_distance_between_colors(color1, color2):

@@ -3,6 +3,8 @@
 # TODO: Remove me
 
 from wtforms import ValidationError
+
+from framework import auth
 from framework.forms import (
     Form,
     NoHtmlCharacters,
@@ -15,9 +17,6 @@ from framework.forms import (
     stripped,
     lowerstripped
 )
-
-from framework import auth
-
 from website import language
 
 
@@ -121,8 +120,26 @@ confirm_password_field = PasswordField(
 
 
 class ResetPasswordForm(Form):
-    password = password_field
-    password2 = confirm_password_field
+    password = PasswordField('New Password',
+        [
+            validators.Required(message=u'Password is required'),
+            validators.Length(min=6, message=u'Password is too short. '
+                'Password should be at least 6 characters.'),
+            validators.Length(max=256, message=u'Password is too long. '
+                'Password should be at most 256 characters.'),
+        ],
+        filters=[stripped],
+        widget=BootstrapPasswordInput()
+    )
+
+    password2 = PasswordField(
+        'Verify New Password',
+        [
+            validators.EqualTo('password', message='Passwords must match')
+        ],
+        filters=[stripped],
+        widget=BootstrapPasswordInput()
+    )
 
 
 class SetEmailAndPasswordForm(ResetPasswordForm):

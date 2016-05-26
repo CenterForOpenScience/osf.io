@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% load static %}
+{% load spam_extras %}
+{% block title %}
+    <title>Email</title>
+{% endblock title %}
+{% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="btn-group col-sm-12">
+                <a href="{% reverse_spam_list page=page_number %}"
+                   class="btn btn-primary">
+                    Back to list
+                </a>
+                <a href="{% reverse_spam_detail comment.id page=page_number %}"
+                   class="btn btn-default">
+                    Back to detail
+                </a>
+            </div>
+        </div>
+
+        <hr>
+        <form action="{% url 'spam:email' comment.id %}?page={{ page_number }}"
+              method="post">
+            {% csrf_token %}
+            {{ form.media }}
+            <div class="form-group row">
+                <label for="{{ form.author.id_for_label }}">
+                    <strong>Author:</strong>
+                </label>
+                {{ form.author }}
+            </div>
+
+            <div class="form-group row">
+                <label for="{{ form.email.id_for_label }}">
+                    <strong>Email:</strong>
+                </label>
+                {{ form.email }}
+            <p class="help-block">User's primary email originally selected</p>
+            </div>
+
+            <div class="form-group row">
+                <label for="{{ form.subject.id_for_label }}">
+                    <strong>Subject:</strong>
+                </label>
+                {{ form.subject }}
+            </div>
+
+            <div class="form-group row">
+                <label for="{{ form.message.id_for_label }}">
+                    <strong>Message:</strong>
+                </label>
+                <br>
+                {{ form.message }}
+            </div>
+            <div class="row">
+                <input type="submit" class="btn btn-primary" value="Submit" />
+            </div>
+        </form>
+    </div>
+{% endblock content %}

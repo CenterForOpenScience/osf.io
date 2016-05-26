@@ -7,7 +7,7 @@
     "select2": "3.5.1",
     "ace-builds": "1.1.8",
     "bootstrap.growl": "2.0.0",
-    "MathJax": "^2.5",
+    "MathJax": "2.6",
     "jquery.tagsinput": "1.3.2",
     "jquery-autosize": "1.18.15",
     "jquery-qrcode": "https://github.com/samanehsan/jquery-qrcode.git#5edbf81811b128a6df62bee4cff37892de3ac894",
@@ -15,11 +15,10 @@
     "truncate": "https://github.com/pathable/truncate.git#5da408e2325dd965e0c94c354622ad54645824b9",
     "xhook": "1.3.0",
     "osf-panel": "https://github.com/caneruguz/osf-panel.git#fda8e05d9f3ba8ed7bd43b46ceffe265b3d73b39",
-    "styles": "https://github.com/lyndsysimon/styles.git#master",
+    "styles": "https://github.com/CenterForOpenScience/styles.git#master",
     "locales": "https://github.com/citation-style-language/locales.git#d2b612f8a6f764cbd66e67238636fac3888a7736",
-    "raven-js": "1.1.17",
+    "raven-js": "2.1.0",
     "zeroclipboard": "2.1.6",
-    "osf-style": "https://github.com/CenterForOpenScience/osf-style.git#7864d222e69b274a42de17d88dc326e405347a87"
-
+    "osf-style": "https://github.com/CenterForOpenScience/osf-style.git#5dcf5997ad2808ffc7c8564f94cde102bf7a4a96"
   }
 }

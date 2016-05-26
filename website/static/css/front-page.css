@@ -80,7 +80,11 @@ h6 {
 }
 #home-hero h1 {
     font-size: 3.5em;
-    margin-bottom: -20px;
+    margin-bottom: -15px;
+}
+#home-hero h1, #home-hero h3 {
+    z-index: 9;
+    position: relative;
 }
 #home-hero h2 {
     margin-top: -50px;
@@ -101,7 +105,9 @@ h6 {
     top: 0;
     left: 0;
 }
-
+.hero-brand {
+    font-weight: bold;
+}
 #hero-signup {
     background: rgba(255, 255, 255, 0.15);
     position: absolute;
@@ -123,6 +129,10 @@ h6 {
 }
 #hero-signup a:hover {
     text-decoration: none;
+}
+#signUpScope button, #signUpScope input, #signUpScope .help-block {
+    z-index: 9;
+    position: relative;
 }
 #screenshot {
     margin-top: -10%;
@@ -560,22 +570,12 @@ footer {
         min-height: 100px;
     }
     .student-image .quote:before {
-        left: 90px;
+        left: 80px;
+        border-width: 0 14px 26px 14px;
+        top: -26px;
     }
     .student-image .main {
         font-size: 1.0em !important;
-    }
-    .sign-in .btn-group {
-        width: 90%;
-        padding-left: 5%;
-    }
-    .sign-in .btn {
-        width: 100%;
-        margin-bottom: 20px;
-    }
-    #formLogin {
-        padding: 0;
-        width: 100%;
     }
     .grey-pullout {
         padding-bottom: 90px;

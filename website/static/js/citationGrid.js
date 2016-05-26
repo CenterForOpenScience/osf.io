@@ -6,6 +6,7 @@ var Raven = require('raven-js');
 var Treebeard = require('treebeard');
 var citations = require('js/citations');
 var clipboard = require('js/clipboard');
+var $osf = require('js/osfHelpers');
 
 var apaStyle = require('raw!styles/apa.csl');
 
@@ -219,10 +220,16 @@ var renderActions = function(item, col) {
             css: 'btn btn-default btn-xs',
             tooltip: 'Download citations',
             config: function(elm, isInit, ctx) {
-                var text = self.getCitations(item).join('\n');
+                // In JS, double-backlashes escape in-string backslashes,
+                // Quick overview of RTF file formatting (see https://msdn.microsoft.com/en-us/library/aa140284%28v=office.10%29.aspx for more):
+                // "{\rtf1\ansi             <- RTF headers indicating RTF version and char encoding, other headers possible but unecessary
+                //  [content line 1]\       <- Trailing backlash indicating newline in displayed file, \n otherwise ignored for display
+                //  [content line 2]        <- Trailing backslash not strictly necessary for final line, but doesn't hurt
+                //  }"                      <- Closing brace indicates EOF for display purposes
+                var text = '{\\rtf1\\ansi\n' + self.getCitations(item, 'rtf').join('\\\n') + '\n}';
                 $(elm).parent('a')
-                    .attr('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text))
-                    .attr('download', item.data.name + '-' + self.styleName + '.txt');
+                    .attr('href', 'data:text/enriched;charset=utf-8,' + encodeURIComponent(text))
+                    .attr('download', item.data.name + '-' + self.styleName + '.rtf');
             }
         });
     }
@@ -309,7 +316,7 @@ CitationGrid.prototype.initStyleSelect = function() {
         allowClear: false,
         formatResult: formatResult,
         formatSelection: formatSelection,
-        placeholder: 'Citation Style (e.g. "APA")',
+        placeholder: 'Enter citation style (e.g. "APA")',
         minimumInputLength: 1,
         ajax: {
             url: '/api/v1/citations/styles/',
@@ -332,9 +339,11 @@ CitationGrid.prototype.initStyleSelect = function() {
             self.updateStyle(event.val, xml);
         }).fail(function(jqxhr, status, error) {
             Raven.captureMessage('Error while selecting citation style: ' + event.val, {
-                url: styleUrl,
-                status: status,
-                error: error
+                extra: {
+                    url: styleUrl,
+                    status: status,
+                    error: error
+                }
             });
         });
     });
@@ -344,10 +353,10 @@ CitationGrid.prototype.updateStyle = function(name, xml) {
     this.styleName = name;
     this.styleXml = xml;
     this.bibliographies = {};
-    this.treebeard.tbController.redraw();
+    this.treebeard.redraw();
 };
 
-CitationGrid.prototype.makeBibliography = function(folder) {
+CitationGrid.prototype.makeBibliography = function(folder, format) {
     var data = objectify(
         folder.children.filter(function(child) {
             return child.kind === 'file';
@@ -355,7 +364,8 @@ CitationGrid.prototype.makeBibliography = function(folder) {
             return child.data.csl;
         })
     );
-    var citeproc = citations.makeCiteproc(this.styleXml, data, 'html');
+    format = format || 'html';
+    var citeproc = citations.makeCiteproc(this.styleXml, data, format);
     var bibliography = citeproc.makeBibliography();
     if (bibliography[0].entry_ids) {
         return utils.reduce(
@@ -368,22 +378,25 @@ CitationGrid.prototype.makeBibliography = function(folder) {
     return {};
 };
 
-CitationGrid.prototype.getBibliography = function(folder) {
+CitationGrid.prototype.getBibliography = function(folder, format) {
+    if (format) {
+        return this.makeBibliography(folder, format);
+    }
     this.bibliographies[folder.id] = this.bibliographies[folder.id] || this.makeBibliography(folder);
     return this.bibliographies[folder.id];
 };
 
-CitationGrid.prototype.getCitation = function(item) {
-    var bibliography = this.getBibliography(item.parent());
+CitationGrid.prototype.getCitation = function(item, format) {
+    var bibliography = this.getBibliography(item.parent(), format);
     return bibliography[item.data.csl.id];
 };
 
-CitationGrid.prototype.getCitations = function(folder) {
+CitationGrid.prototype.getCitations = function(folder, format) {
     var self = this;
     return folder.children.filter(function(child) {
         return child.kind === 'file';
     }).map(function(child) {
-        return self.getCitation(child);
+        return self.getCitation(child, format);
     });
 };
 

@@ -8,13 +8,13 @@ from tests.factories import (
     RegistrationFactory,
     NodeFactory,
     NodeLogFactory,
-    FolderFactory,
+    CollectionFactory,
 )
 from tests.base import OsfTestCase
 
 from framework.auth import Auth
 from framework import utils as framework_utils
-from website.project.views.node import _get_summary, _view_project, _serialize_node_search
+from website.project.views.node import _get_summary, _view_project, _serialize_node_search, _get_children
 from website.views import _render_node
 from website.profile import utils
 from website.views import serialize_log
@@ -28,10 +28,9 @@ class TestNodeSerializers(OsfTestCase):
     def test_get_summary_private_node_should_include_id_and_primary_boolean_reg_and_fork(self):
         user = UserFactory()
         # user cannot see this node
-        node = ProjectFactory(public=False)
+        node = ProjectFactory(is_public=False)
         result = _get_summary(
             node, auth=Auth(user),
-            rescale_ratio=None,
             primary=True,
             link_id=None
         )
@@ -45,7 +44,7 @@ class TestNodeSerializers(OsfTestCase):
     # https://github.com/CenterForOpenScience/openscienceframework.org/issues/668
     def test_get_summary_for_registration_uses_correct_date_format(self):
         reg = RegistrationFactory()
-        res = _get_summary(reg, auth=Auth(reg.creator), rescale_ratio=None)
+        res = _get_summary(reg, auth=Auth(reg.creator))
         assert_equal(res['summary']['registered_date'],
                 reg.registered_date.strftime('%Y-%m-%d %H:%M UTC'))
 
@@ -53,9 +52,9 @@ class TestNodeSerializers(OsfTestCase):
     def test_get_summary_private_registration_should_include_is_registration(self):
         user = UserFactory()
         # non-contributor cannot see private registration of public project
-        node = ProjectFactory(public=True)
+        node = ProjectFactory(is_public=True)
         reg = RegistrationFactory(project=node, user=node.creator)
-        res = _get_summary(reg, auth=Auth(user), rescale_ratio=None)
+        res = _get_summary(reg, auth=Auth(user))
 
         # serialized result should have is_registration
         assert_true(res['summary']['is_registration'])
@@ -86,18 +85,41 @@ class TestNodeSerializers(OsfTestCase):
         res_writer = _render_node(node, Auth(writer))
         assert_equal(res_writer['permissions'], 'write')
 
+    # https://openscience.atlassian.net/browse/OSF-4618
+    def test_get_children_only_returns_child_nodes_with_admin_permissions(self):
+        user = UserFactory()
+        admin_project = ProjectFactory()
+        admin_project.add_contributor(user, auth=Auth(admin_project.creator),
+                                      permissions=permissions.expand_permissions(permissions.ADMIN))
+        admin_project.save()
 
+        admin_component = NodeFactory(parent=admin_project)
+        admin_component.add_contributor(user, auth=Auth(admin_component.creator),
+                                        permissions=permissions.expand_permissions(permissions.ADMIN))
+        admin_component.save()
+
+        read_and_write = NodeFactory(parent=admin_project)
+        read_and_write.add_contributor(user, auth=Auth(read_and_write.creator),
+                                       permissions=permissions.expand_permissions(permissions.WRITE))
+        read_and_write.save()
+        read_only = NodeFactory(parent=admin_project)
+        read_only.add_contributor(user, auth=Auth(read_only.creator),
+                                  permissions=permissions.expand_permissions(permissions.READ))
+        read_only.save()
+
+        non_contributor = NodeFactory(parent=admin_project)
+        components = _get_children(admin_project, Auth(user))
+        assert_equal(len(components), 1)
 
     def test_get_summary_private_fork_should_include_is_fork(self):
         user = UserFactory()
         # non-contributor cannot see private fork of public project
-        node = ProjectFactory(public=True)
+        node = ProjectFactory(is_public=True)
         consolidated_auth = Auth(user=node.creator)
         fork = node.fork_node(consolidated_auth)
 
         res = _get_summary(
             fork, auth=Auth(user),
-            rescale_ratio=None,
             primary=True,
             link_id=None
         )
@@ -107,7 +129,7 @@ class TestNodeSerializers(OsfTestCase):
     def test_get_summary_private_fork_private_project_should_include_is_fork(self):
         # contributor on a private project
         user = UserFactory()
-        node = ProjectFactory(public=False)
+        node = ProjectFactory(is_public=False)
         node.add_contributor(user)
 
         # contributor cannot see private fork of this project
@@ -116,7 +138,6 @@ class TestNodeSerializers(OsfTestCase):
 
         res = _get_summary(
             fork, auth=Auth(user),
-            rescale_ratio=None,
             primary=True,
             link_id=None
         )
@@ -137,29 +158,56 @@ class TestNodeSerializers(OsfTestCase):
 
 class TestViewProject(OsfTestCase):
 
+    def setUp(self):
+        super(TestViewProject, self).setUp()
+        self.user = UserFactory()
+        self.node = ProjectFactory(creator=self.user)
+
     # related to https://github.com/CenterForOpenScience/openscienceframework.org/issues/1109
     def test_view_project_pointer_count_excludes_folders(self):
-        user = UserFactory()
         pointer_project = ProjectFactory(is_public=True)  # project that points to another project
-        pointed_project = ProjectFactory(creator=user)  # project that other project points to
+        pointed_project = self.node  # project that other project points to
         pointer_project.add_pointer(pointed_project, Auth(pointer_project.creator), save=True)
 
-        # Project is in a dashboard folder
-        folder = FolderFactory(creator=pointed_project.creator)
+        # Project is in a organizer collection
+        folder = CollectionFactory(creator=pointed_project.creator)
         folder.add_pointer(pointed_project, Auth(pointed_project.creator), save=True)
 
         result = _view_project(pointed_project, Auth(pointed_project.creator))
         # pointer_project is included in count, but not folder
         assert_equal(result['node']['points'], 1)
 
+    def test_view_project_pending_registration_for_admin_contributor_does_contain_cancel_link(self):
+        pending_reg = RegistrationFactory(project=self.node, archive=True)
+        assert_true(pending_reg.is_pending_registration)
+        result = _view_project(pending_reg, Auth(self.user))
+
+        assert_not_equal(result['node']['disapproval_link'], '')
+        assert_in('/?token=', result['node']['disapproval_link'])
+        pending_reg.remove()
+
+    def test_view_project_pending_registration_for_write_contributor_does_not_contain_cancel_link(self):
+        write_user = UserFactory()
+        self.node.add_contributor(write_user, permissions=permissions.WRITE,
+                                  auth=Auth(self.user), save=True)
+        pending_reg = RegistrationFactory(project=self.node, archive=True)
+        assert_true(pending_reg.is_pending_registration)
+        result = _view_project(pending_reg, Auth(write_user))
+
+        assert_equal(result['node']['disapproval_link'], '')
+        pending_reg.remove()
+
 
 class TestNodeLogSerializers(OsfTestCase):
 
     def test_serialize_log(self):
         node = NodeFactory(category='hypothesis')
-        log = NodeLogFactory(params={'node': node._primary_key})
-        node.logs.append(log)
         node.save()
+        log = NodeLogFactory(
+                params={'node': node._id},
+                node=node,
+                original_node=node
+            )
         d = serialize_log(log)
         assert_equal(d['action'], log.action)
         assert_equal(d['node']['node_type'], 'component')
@@ -185,6 +233,7 @@ class TestNodeLogSerializers(OsfTestCase):
         assert_equal(d['api_url'], node.api_url)
         assert_equal(d['is_public'], node.is_public)
         assert_equal(d['is_registration'], node.is_registration)
+
 
 class TestAddContributorJson(OsfTestCase):
 

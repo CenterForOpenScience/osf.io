@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
-import os
+import datetime
 import mock
+import os
+import time
 import unittest
+
 from flask import Flask
 from nose.tools import *  # noqa (PEP8 asserts)
-import datetime
+import blinker
 
 from tests.base import OsfTestCase
 from tests.factories import RegistrationFactory
@@ -13,10 +16,12 @@ from framework.routing import Rule, json_renderer
 from framework.utils import secure_filename
 from website.routes import process_rules, OsfWebRenderer
 from website import settings
+from website import util
 from website.util import paths
 from website.util.mimetype import get_mimetype
 from website.util import web_url_for, api_url_for, is_json_request, waterbutler_url_for, conjunct, api_v2_url
 from website.project import utils as project_utils
+from website.util.time import throttle_period_expired
 
 try:
     import magic  # noqa
@@ -25,6 +30,27 @@ except ImportError:
     LIBMAGIC_AVAILABLE = False
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+
+class TestTimeUtils(unittest.TestCase):
+    def test_throttle_period_expired_no_timestamp(self):
+        is_expired = throttle_period_expired(timestamp=None, throttle=30)
+        assert_true(is_expired)
+
+    def test_throttle_period_expired_using_datetime(self):
+        timestamp = datetime.datetime.utcnow()
+        is_expired = throttle_period_expired(timestamp=(timestamp + datetime.timedelta(seconds=29)),  throttle=30)
+        assert_false(is_expired)
+
+        is_expired = throttle_period_expired(timestamp=(timestamp - datetime.timedelta(seconds=31)),  throttle=30)
+        assert_true(is_expired)
+
+    def test_throttle_period_expired_using_timestamp_in_seconds(self):
+        timestamp = int(time.time())
+        is_expired = throttle_period_expired(timestamp=(timestamp + 29), throttle=30)
+        assert_false(is_expired)
+
+        is_expired = throttle_period_expired(timestamp=(timestamp - 31), throttle=30)
+        assert_true(is_expired)
 
 
 class TestUrlForHelpers(unittest.TestCase):
@@ -74,12 +100,6 @@ class TestUrlForHelpers(unittest.TestCase):
                               base_route='http://localhost:8000/',
                               base_prefix='v2/')
         assert_equal(full_url, "http://localhost:8000/v2/nodes/abcd3/contributors/")
-
-        # User is still responsible for the trailing slash. If they omit it, it doesn't appear at end of URL
-        full_url = api_v2_url('/nodes/abcd3/contributors',
-                              base_route='http://localhost:8000/',
-                              base_prefix='v2/')
-        assert_not_equal(full_url, "http://localhost:8000/v2/nodes/abcd3/contributors/")
 
     def test_api_v2_url_with_params(self):
         """Handles- and encodes- URLs with parameters (dict and kwarg) correctly"""
@@ -304,6 +324,65 @@ class TestWebsiteUtils(unittest.TestCase):
         assert_equal(conjunct(words), 'a, b, and c')
         assert_equal(conjunct(words, conj='or'), 'a, b, or c')
 
+    def test_rapply(self):
+        inputs = {
+            'foo': 'bar',
+            'baz': {
+                'boom': ['kapow'],
+                'bang': 'bam'
+            },
+            'bat': ['man']
+        }
+        outputs = util.rapply(inputs, str.upper)
+        assert_equal(outputs['foo'], 'bar'.upper())
+        assert_equal(outputs['baz']['boom'], ['kapow'.upper()])
+        assert_equal(outputs['baz']['bang'], 'bam'.upper())
+        assert_equal(outputs['bat'], ['man'.upper()])
+
+        r_assert = lambda s: assert_equal(s.upper(), s)
+        util.rapply(outputs, r_assert)
+
+    def test_rapply_on_list(self):
+        inputs = range(5)
+        add_one = lambda n: n + 1
+        outputs = util.rapply(inputs, add_one)
+        for i in inputs:
+            assert_equal(outputs[i], i + 1)
+
+    def test_rapply_on_tuple(self):
+        inputs = tuple(i for i in range(5))
+        add_one = lambda n: n + 1
+        outputs = util.rapply(inputs, add_one)
+        for i in inputs:
+            assert_equal(outputs[i], i + 1)
+        assert_equal(type(outputs), tuple)
+
+    def test_rapply_on_set(self):
+        inputs = set(i for i in range(5))
+        add_one = lambda n: n + 1
+        outputs = util.rapply(inputs, add_one)
+        for i in inputs:
+            assert_in(i + 1, outputs)
+        assert_true(isinstance(outputs, set))
+
+    def test_rapply_on_str(self):
+        input = "bob"
+        convert = lambda s: s.upper()
+        outputs = util.rapply(input, convert)
+
+        assert_equal("BOB", outputs)
+        assert_true(isinstance(outputs, basestring))
+
+    def test_rapply_preserves_args_and_kwargs(self):
+        def zero_if_not_check(item, check, checkFn=lambda n: n):
+            if check and checkFn(item):
+                return item
+            return 0
+        inputs = range(5)
+        outputs = util.rapply(inputs, zero_if_not_check, True, checkFn=lambda n: n % 2)
+        assert_equal(outputs, [0, 1, 0, 3, 0])
+        outputs = util.rapply(inputs, zero_if_not_check, False, checkFn=lambda n: n % 2)
+        assert_equal(outputs, [0, 0, 0, 0, 0])
 
 class TestProjectUtils(OsfTestCase):
 
@@ -336,3 +415,25 @@ class TestProjectUtils(OsfTestCase):
             self.set_registered_date(reg, tdiff)
         regs = [r for r in project_utils.recent_public_registrations(7)]
         assert_equal(len(regs), 7)
+
+
+class TestSignalUtils(unittest.TestCase):
+
+    def setUp(self):
+        self.signals = blinker.Namespace()
+        self.signal_ = self.signals.signal('signal-')
+        self.mock_listener = mock.MagicMock()
+
+    def listener(self, signal):
+        self.mock_listener()
+
+    def test_signal(self):
+        self.signal_.connect(self.listener)
+        self.signal_.send()
+        assert_true(self.mock_listener.called)
+
+    def test_temporary_disconnect(self):
+        self.signal_.connect(self.listener)
+        with util.disconnected_from(self.signal_, self.listener):
+            self.signal_.send()
+        assert_false(self.mock_listener.called)

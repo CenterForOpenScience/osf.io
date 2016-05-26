@@ -1,42 +1,58 @@
 <%inherit file="project/project_base.mako"/>
-<%def name="title()">Register ${node['title']}</%def>
 
 <legend class="text-center">Register</legend>
 
-% if schema:
-    <%include file="metadata/register_${str(metadata_version)}.mako" />
+% if node.get('registered_schema'):
+<%def name="title()">Registration of ${node['title']}</%def>
+  <div id="registrationMetaDataScope" class="container scripted">
+    <div class="row">
+      <div class="col-md-2">
+        <ul class="nav nav-stacked list-group" data-bind="foreach: {data: metaSchema.schema.pages, as: 'page'}, visible: metaSchema.schema.pages.length > 1">
+          <li class="re-navbar">
+            <a class="registration-editor-page" id="top-nav" style="text-align: left; font-weight:bold;" data-bind="text: title, attr: {href: '#' + page.id}">
+            </a>
+            <span class="btn-group-vertical" role="group">
+              <ul class="list-group" data-bind="foreach: {data: Object.keys(page.questions), as: 'qid'}">
+                <span data-bind="with: page.questions[qid]">
+                  <li class="registration-editor-question list-group-item">
+                    <a data-bind="text: $data.nav || $data.title, attr: {href: '#' + qid}"></a>
+                  </li>
+                </span>
+              </ul>
+            </span>
+          </li>
+        </ul>
+      </div>
+      <div class="col-md-9" style="padding-left: 30px">
+        <div data-bind="foreach: {data: metaSchema.pages, as: 'page'}">
+          <h3 data-bind="attr: {id: page.id}, text: page.title"></h3>
+          <div class="row">
+            <div data-bind="foreach: {data: page.questions, as: 'question'}">
+              <div class="row">
+                <h4 data-bind="attr: {id: question.id}, text: question.title"></h4>
+                <div class="col-md-12 well">
+                   <span data-bind="previewQuestion: $root.editor.context(question, $root.editor)"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 % else:
-
-    <form role="form">
-
-        <div class="help-block">${language.REGISTRATION_INFO}</div>
-
-        <select class="form-control" id="select-registration-template">
-            <option value="">Please select a registration form to initiate registration</option>
-            % for option in options:
-                <option value="${option['template_name']}">${option['template_name_clean']}</option>
-            % endfor
-        </select>
-    </form>
-
-
-    <script type="text/javascript">
-        $('#select-registration-template').on('change', function() {
-            var $this = $(this);
-            var val = $this.val();
-            if (val !== '') {
-                var urlparse = window.location.href.split("?");
-                urlparse[0] += '/' + val;
-                window.location.href = urlparse.join("?")
-            }
-        });
-    </script>
-
+  <%def name="title()">Register ${node['title']}</%def>
+<script type="text/javascript">
+  window.location.href = '${node['url']}' + 'registrations/';
+</script>
 % endif
 
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
-    % if schema:
-    <script src="${'/static/public/js/register_{0}-page.js'.format(metadata_version) | webpack_asset}"></script>
+    % if node.get('registered_schema') and not node.get('is_retracted'):
+      <script type="text/javascript">
+        window.contextVars.node.registrationMetaSchema = ${ node['registered_schema'] | sjson, n };
+      </script>
+      <script src="${'/static/public/js/register-page.js' | webpack_asset}"></script>
     % endif
 </%def>

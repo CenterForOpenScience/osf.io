@@ -1,14 +1,18 @@
 # -*- coding: utf-8 -*-
 
+import collections
 import re
+import urllib
 import logging
 import urlparse
+from contextlib import contextmanager
 
 import furl
 
 from flask import request, url_for
 
 from website import settings as website_settings
+from api.base import settings as api_settings
 
 # Keep me: Makes rubeus importable from website.util
 from . import rubeus  # noqa
@@ -20,6 +24,7 @@ guid_url_node_pattern = re.compile('^/project/[a-zA-Z0-9]{5,}/node(?=/[a-zA-Z0-9
 guid_url_project_pattern = re.compile('^/project(?=/[a-zA-Z0-9]{5,})')
 guid_url_profile_pattern = re.compile('^/profile(?=/[a-zA-Z0-9]{5,})')
 
+
 waterbutler_action_map = {
     'upload': 'file',
     'delete': 'file',
@@ -27,6 +32,27 @@ waterbutler_action_map = {
     'metadata': 'data',
     'create_folder': 'file',
 }
+
+
+# Function courtesy of @brianjgeiger and @abought, moved from API utils
+def rapply(data, func, *args, **kwargs):
+    """Recursively apply a function to all values in an iterable
+    :param dict | list | basestring data: iterable to apply func to
+    :param function func:
+    """
+    if isinstance(data, collections.Mapping):
+        return {
+            key: rapply(value, func, *args, **kwargs)
+            for key, value in data.iteritems()
+        }
+    elif isinstance(data, collections.Iterable) and not isinstance(data, basestring):
+        desired_type = type(data)
+        return desired_type(
+            rapply(item, func, *args, **kwargs) for item in data
+        )
+    else:
+        return func(data, *args, **kwargs)
+
 
 def conjunct(words, conj='and'):
     words = list(words)
@@ -40,6 +66,7 @@ def conjunct(words, conj='and'):
     elif num_words > 2:
         return ', '.join(words[:-1]) + ', {0} {1}'.format(conj, words[-1])
 
+
 def _get_guid_url_for(url):
     """URL Post-processor transforms specific `/project/<pid>` or `/project/<pid>/node/<nid>`
     urls into guid urls. Ex: `<nid>/wiki/home`.
@@ -48,6 +75,7 @@ def _get_guid_url_for(url):
     guid_url = guid_url_project_pattern.sub('', guid_url, count=1)
     guid_url = guid_url_profile_pattern.sub('', guid_url, count=1)
     return guid_url
+
 
 def api_url_for(view_name, _absolute=False, _xml=False, *args, **kwargs):
     """Reverse URL lookup for API routes (that use the JSONRenderer or XMLRenderer).
@@ -69,7 +97,7 @@ def api_url_for(view_name, _absolute=False, _xml=False, *args, **kwargs):
 def api_v2_url(path_str,
                params=None,
                base_route=website_settings.API_DOMAIN,
-               base_prefix='',
+               base_prefix=api_settings.API_BASE,
                **kwargs):
     """
     Convenience function for APIv2 usage: Concatenates parts of the absolute API url based on arguments provided
@@ -83,9 +111,8 @@ def api_v2_url(path_str,
     params = params or {}  # Optional params dict for special-character param names, eg filter[fullname]
 
     base_url = furl.furl(base_route + base_prefix)
-    sub_url = furl.furl(path_str)
 
-    base_url.path.add(sub_url.path.segments)
+    base_url.path.add([x for x in path_str.split('/') if x] + [''])
 
     base_url.args.update(params)
     base_url.args.update(kwargs)
@@ -116,13 +143,14 @@ def is_json_request():
 
 
 def waterbutler_url_for(route, provider, path, node, user=None, **kwargs):
-    """Reverse URL lookup for WaterButler routes
+    """DEPRECATED Use waterbutler_api_url_for
+    Reverse URL lookup for WaterButler routes
     :param str route: The action to preform, upload, download, delete...
     :param str provider: The name of the requested provider
     :param str path: The path of the requested file or folder
     :param Node node: The node being accessed
     :param User user: The user whos cookie will be used or None
-    :param dict **query: Addition query parameters to be appended
+    :param dict kwargs: Addition query parameters to be appended
     """
     url = furl.furl(website_settings.WATERBUTLER_URL)
     url.path.segments.append(waterbutler_action_map[route])
@@ -148,3 +176,20 @@ def waterbutler_url_for(route, provider, path, node, user=None, **kwargs):
 
     url.args.update(kwargs)
     return url.url
+
+
+def waterbutler_api_url_for(node_id, provider, path='/', **kwargs):
+    assert path.startswith('/'), 'Path must always start with /'
+    url = furl.furl(website_settings.WATERBUTLER_URL)
+    segments = ['v1', 'resources', node_id, 'providers', provider] + path.split('/')[1:]
+    url.path.segments.extend([urllib.quote(x.encode('utf-8')) for x in segments])
+    url.args.update(kwargs)
+    return url.url
+
+
+@contextmanager
+def disconnected_from(signal, listener):
+    """Temporarily disconnect a Blinker signal."""
+    signal.disconnect(listener)
+    yield
+    signal.connect(listener)

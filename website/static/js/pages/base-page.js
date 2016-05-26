@@ -17,8 +17,10 @@ require('jquery.cookie');
 require('js/crossOrigin.js');
 var $osf = require('js/osfHelpers');
 var NavbarControl = require('js/navbarControl');
-var Auth = require('js/auth');
 var Raven = require('raven-js');
+var moment = require('moment');
+var KeenTracker = require('js/keen');
+var DevModeControls = require('js/devModeControls');
 
 // Prevent IE from caching responses
 $.ajaxSetup({cache: false});
@@ -109,24 +111,16 @@ $(function() {
     if(affix.length){
         $osf.initializeResponsiveAffix();
     }
-
     new NavbarControl('.osf-nav-wrapper');
+    new DevModeControls('#devModeControls', '/static/built/git_logs.json');
+    if(window.contextVars.keenProjectId){
+        var params = {};
+        params.currentUser = window.contextVars.currentUser;
+        params.node = window.contextVars.node;
 
-    if (window.contextVars.accessToken) {
-        new Auth(window.contextVars.profileUrl).getCurrentUser().fail(
-            function (xhr, error, status) {
-                if (xhr.status === 401) { // Unauthorized
-                    Raven.captureMessage('Access Token is invalid requiring user to re-authenticate.', {
-                        location: window.document.location.toString(),
-                        status: xhr.status,
-                        error: error,
-                        userId: window.contextVars.userId,
-                        accessToken: window.contextVars.accessToken,
-                        authUrl: window.contextVars.authUrl
-                    });
-                    window.document.location = window.contextVars.authUrl;
-                }
-            }
-        );
+        //Don't track PhantomJS visits with KeenIO
+        if(!(/PhantomJS/.test(navigator.userAgent))){
+            new KeenTracker(window.contextVars.keenProjectId, window.contextVars.keenWriteKey, params);
+        }
     }
 });

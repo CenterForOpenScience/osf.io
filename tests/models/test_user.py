@@ -7,11 +7,11 @@ from nose.tools import *  # flake8: noqa (PEP8 asserts)
 from framework import auth
 from framework.auth import exceptions
 from framework.exceptions import PermissionsError
-from website import models
+from website import models, project
 from tests import base
 from tests.base import fake
 from tests import factories
-from framework.tasks import handlers
+from framework.celery_tasks import handlers
 
 
 class TestUser(base.OsfTestCase):
@@ -120,9 +120,60 @@ class TestUser(base.OsfTestCase):
         with assert_raises(exceptions.InvalidTokenError):
             self.user._get_unconfirmed_email_for_token(token1)
 
+    def test_contributed_property(self):
+        projects_contributed_to = project.model.Node.find(Q('contributors', 'eq', self.user._id))
+        assert_equal(list(self.user.contributed), list(projects_contributed_to))
+
+    def test_contributor_to_property(self):
+        normal_node = factories.ProjectFactory(creator=self.user)
+        normal_contributed_node = factories.ProjectFactory()
+        normal_contributed_node.add_contributor(self.user)
+        normal_contributed_node.save()
+        deleted_node = factories.ProjectFactory(creator=self.user, is_deleted=True)
+        bookmark_collection_node = factories.BookmarkCollectionFactory(creator=self.user)
+        collection_node = factories.CollectionFactory(creator=self.user)
+        project_to_be_invisible_on = factories.ProjectFactory()
+        project_to_be_invisible_on.add_contributor(self.user, visible=False)
+        project_to_be_invisible_on.save()
+        contributor_to_nodes = [node._id for node in self.user.contributor_to]
+
+        assert_in(normal_node._id, contributor_to_nodes)
+        assert_in(normal_contributed_node._id, contributor_to_nodes)
+        assert_in(project_to_be_invisible_on._id, contributor_to_nodes)
+        assert_not_in(deleted_node._id, contributor_to_nodes)
+        assert_not_in(bookmark_collection_node._id, contributor_to_nodes)
+        assert_not_in(collection_node._id, contributor_to_nodes)
+
+    def test_visible_contributor_to_property(self):
+        invisible_contributor = factories.UserFactory()
+        normal_node = factories.ProjectFactory(creator=invisible_contributor)
+        deleted_node = factories.ProjectFactory(creator=invisible_contributor, is_deleted=True)
+        bookmark_collection_node = factories.BookmarkCollectionFactory(creator=invisible_contributor)
+        collection_node = factories.CollectionFactory(creator=invisible_contributor)
+        project_to_be_invisible_on = factories.ProjectFactory()
+        project_to_be_invisible_on.add_contributor(invisible_contributor, visible=False)
+        project_to_be_invisible_on.save()
+        visible_contributor_to_nodes = [node._id for node in invisible_contributor.visible_contributor_to]
+
+        assert_in(normal_node._id, visible_contributor_to_nodes)
+        assert_not_in(deleted_node._id, visible_contributor_to_nodes)
+        assert_not_in(bookmark_collection_node._id, visible_contributor_to_nodes)
+        assert_not_in(collection_node._id, visible_contributor_to_nodes)
+        assert_not_in(project_to_be_invisible_on._id, visible_contributor_to_nodes)
+
+    def test_created_property(self):
+        # make sure there's at least one project
+        factories.ProjectFactory(creator=self.user)
+        projects_created_by_user = project.model.Node.find(Q('creator', 'eq', self.user._id))
+        assert_equal(list(self.user.created), list(projects_created_by_user))
+
 
 class TestUserMerging(base.OsfTestCase):
     ADDONS_UNDER_TEST = {
+        'deletable': {
+            'user_settings': factories.MockAddonUserSettings,
+            'node_settings': factories.MockAddonNodeSettings,
+        },
         'unmergeable': {
             'user_settings': factories.MockAddonUserSettings,
             'node_settings': factories.MockAddonNodeSettings,
@@ -176,6 +227,13 @@ class TestUserMerging(base.OsfTestCase):
         self.user.add_addon('unmergeable')
 
         assert_false(self.user.can_be_merged)
+
+    def test_can_be_merged_delete_unmergable_addon(self):
+        self.user.add_addon('mergeable')
+        self.user.add_addon('deletable')
+        self.user.delete_addon('deletable')
+
+        assert_true(self.user.can_be_merged)
 
     def test_merge_unconfirmed_into_unmergeable(self):
         self.user.add_addon('unmergeable')
@@ -244,12 +302,12 @@ class TestUserMerging(base.OsfTestCase):
         self.user.external_accounts = [factories.ExternalAccountFactory()]
         other_user.external_accounts = [factories.ExternalAccountFactory()]
 
-        self.user.mailing_lists = {
+        self.user.mailchimp_mailing_lists = {
             'user': True,
             'shared_gt': True,
             'shared_lt': False,
         }
-        other_user.mailing_lists = {
+        other_user.mailchimp_mailing_lists = {
             'other': True,
             'shared_gt': False,
             'shared_lt': True,
@@ -283,6 +341,7 @@ class TestUserMerging(base.OsfTestCase):
             'date_disabled',
             'date_last_login',
             'date_registered',
+            'email_last_sent',
             'family_name',
             'fullname',
             'given_name',
@@ -301,7 +360,10 @@ class TestUserMerging(base.OsfTestCase):
             'suffix',
             'timezone',
             'username',
+            'mailing_lists',
             'verification_key',
+            '_affiliated_institutions',
+            'contributor_added_email_records'
         ]
 
         calculated_fields = {
@@ -323,11 +385,14 @@ class TestUserMerging(base.OsfTestCase):
                 self.user.external_accounts[0]._id,
                 other_user.external_accounts[0]._id,
             ],
-            'mailing_lists': {
+            'mailchimp_mailing_lists': {
                 'user': True,
                 'other': True,
                 'shared_gt': True,
                 'shared_lt': True,
+            },
+            'osf_mailing_lists': {
+                'Open Science Framework Help': True
             },
             'security_messages': {
                 'user': today,
@@ -357,7 +422,7 @@ class TestUserMerging(base.OsfTestCase):
         # mock mailchimp
         mock_client = mock.MagicMock()
         mock_get_mailchimp_api.return_value = mock_client
-        mock_client.lists.list.return_value = {'data': [{'id': x, 'list_name': list_name} for x, list_name in enumerate(self.user.mailing_lists)]}
+        mock_client.lists.list.return_value = {'data': [{'id': x, 'list_name': list_name} for x, list_name in enumerate(self.user.mailchimp_mailing_lists)]}
 
         # perform the merge
         self.user.merge_user(other_user)
@@ -417,7 +482,15 @@ class TestUserMerging(base.OsfTestCase):
 
         self.user.merge_user(self.unregistered)
 
+        self.project_with_unreg_contrib.reload()
         assert_true(self.user.is_invited)
-
         assert_in(self.user, self.project_with_unreg_contrib.contributors)
 
+    @mock.patch('website.project.views.contributor.mails.send_mail')
+    def test_merge_doesnt_send_signal(self, mock_notify):
+        #Explictly reconnect signal as it is disconnected by default for test
+        project.signals.contributor_added.connect(project.views.contributor.notify_added_contributor)
+        other_user = factories.UserFactory()
+        self.user.merge_user(other_user)
+        assert_equal(other_user.merged_by._id, self.user._id)
+        assert_false(mock_notify.called)

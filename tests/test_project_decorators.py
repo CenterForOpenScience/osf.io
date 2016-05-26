@@ -4,10 +4,13 @@ from nose.tools import *  # noqa
 
 from website.project.decorators import must_be_valid_project
 
+from website.project.sanctions import Sanction
+
 from tests.base import OsfTestCase
-from tests.factories import ProjectFactory, NodeFactory, RetractionFactory
+from tests.factories import ProjectFactory, NodeFactory, RetractionFactory, CollectionFactory
 
 from framework.exceptions import HTTPError
+from framework.auth import Auth
 
 
 @must_be_valid_project
@@ -26,6 +29,7 @@ class TestValidProject(OsfTestCase):
         self.project = ProjectFactory()
         self.node = NodeFactory(project=self.project)
         self.retraction = RetractionFactory()
+        self.auth = Auth(user=self.project.creator)
 
     def test_populates_kwargs_node(self):
         res = valid_project_helper(pid=self.project._id)
@@ -64,7 +68,14 @@ class TestValidProject(OsfTestCase):
     def test_valid_project_as_factory_allow_retractions_is_retracted(self):
         self.project.is_registration = True
         self.project.retraction = self.retraction
-        self.retraction.state = 'retracted'
+        self.retraction.state = Sanction.UNAPPROVED
         self.retraction.save()
         res = as_factory_allow_retractions(pid=self.project._id)
         assert_equal(res['node'], self.project)
+
+    def test_collection_guid_not_found(self):
+        collection = CollectionFactory()
+        collection.add_pointer(self.project, self.auth)
+        with assert_raises(HTTPError) as exc_info:
+            valid_project_helper(pid=collection._id, nid=collection._id)
+        assert_equal(exc_info.exception.code, 404)

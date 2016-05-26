@@ -1,13 +1,16 @@
 /*global describe, it, expect, example, before, after, beforeEach, afterEach, mocha, sinon*/
 'use strict';
 var $ = require('jquery');
+var bootbox = require('bootbox');
 
 var assert = require('chai').assert;
 
 var utils = require('tests/utils');
 var faker = require('faker');
 
-var s3NodeConfigVM = require('../s3NodeConfig')._S3NodeConfigViewModel;
+var s3NodeConfig = require('../s3NodeConfig');
+var s3NodeConfigVM = s3NodeConfig._S3NodeConfigViewModel;
+var isValidBucketName = s3NodeConfig._isValidBucketName;
 
 var API_BASE = '/api/v1/12345/s3';
 var SETTINGS_URL = [API_BASE, 'settings', ''].join('/');
@@ -76,6 +79,89 @@ var s3ViewModelSettings = {
 };
 
 describe('s3NodeConfigViewModel', () => {
+    describe('isValidBucketName', () => {
+        var chars = [];
+        for (var i = 0; i < 63; i++) {
+            chars.push('a');
+        }
+            var longName = chars.join('');
+
+        var moreChars = [];
+        for (var j = 0; j < 255; j++) {
+            moreChars.push('a');
+        }
+        var reallyLongName = moreChars.join('');
+
+        it('allows these names in strict mode', () => {
+            assert.isTrue(isValidBucketName('valid'), 'basic label');
+            assert.isTrue(isValidBucketName('also.valid'), 'two labels');
+            assert.isTrue(isValidBucketName('pork.beef.chicken'), 'three labels');
+            assert.isTrue(isValidBucketName('a-o.valid'), 'label w/ hyphen');
+            assert.isTrue(isValidBucketName('11.12.m'), 'numbers as labels');
+            assert.isTrue(isValidBucketName('aa.22.cc'), 'mixed label types');
+            assert.isTrue(isValidBucketName('a------a'), 'multiple hypens');
+            assert.isTrue(isValidBucketName(longName), 'name up to 63 characters');
+        });
+
+        it('DOES NOT allow these names in strict mode', () => {
+            assert.isFalse(isValidBucketName(''), 'empty');
+            assert.isFalse(isValidBucketName('no'), 'too short');
+            assert.isFalse(isValidBucketName(longName + 'a'), '64 characters, too long');
+            assert.isFalse(isValidBucketName(' aaa'), 'leading space');
+            assert.isFalse(isValidBucketName('aaa '), 'trailing space');
+            assert.isFalse(isValidBucketName('aaa.'), 'trailing period');
+            assert.isFalse(isValidBucketName('.aaa'), 'leading period');
+            assert.isFalse(isValidBucketName('aaa-'), 'trailing hyphen');
+            assert.isFalse(isValidBucketName('-aaa'), 'leading hyphen');
+            assert.isFalse(isValidBucketName('aAa'), 'mixed case');
+            assert.isFalse(isValidBucketName('Aaa'), 'capital first letter');
+            assert.isFalse(isValidBucketName('aaA'), 'capital last letter');
+            assert.isFalse(isValidBucketName('a..b'), 'empty label');
+            assert.isFalse(isValidBucketName('a-.b'), 'label cannot end with hyphen');
+            assert.isFalse(isValidBucketName('a.-b'), 'label cannot begin with hyphen');
+            assert.isFalse(isValidBucketName('8.8.8.8'), 'label cannot look like IP addr');
+            assert.isFalse(isValidBucketName('600.9000.0.28'), '  ..not even a fake IP addr');
+            assert.isFalse(isValidBucketName(':aa', true), 'colon leading character');
+            assert.isFalse(isValidBucketName('aa;', true), 'semicolon trailing');
+            assert.isFalse(isValidBucketName('space middle', true), 'space in the middle');
+        });
+
+        it('allows these names in lax mode', () => {
+            assert.isTrue(isValidBucketName('valid', true), 'basic label');
+            assert.isTrue(isValidBucketName('also.valid', true), 'two labels');
+            assert.isTrue(isValidBucketName('pork.beef.chicken', true), 'three labels');
+            assert.isTrue(isValidBucketName('a-o.valid', true), 'label w/ hyphen');
+            assert.isTrue(isValidBucketName('11.12.m', true), 'numbers as labels');
+            assert.isTrue(isValidBucketName('aa.22.cc', true), 'mixed label types');
+            assert.isTrue(isValidBucketName('a------a', true), 'multiple hypens');
+            assert.isTrue(isValidBucketName('.aaa', true), 'leading period');
+            assert.isTrue(isValidBucketName('aaa.', true), 'trailing period');
+            assert.isTrue(isValidBucketName('a_a', true), 'underscore');
+            assert.isTrue(isValidBucketName('a..b', true), 'empty label');
+            assert.isTrue(isValidBucketName('a______a', true), 'multiple underscores');
+            assert.isTrue(isValidBucketName(reallyLongName, true), 'name up to 255 characters');
+            assert.isTrue(isValidBucketName('no', true), 'too short');
+            assert.isTrue(isValidBucketName('aaa-', true), 'trailing hyphen');
+            assert.isTrue(isValidBucketName('-aaa', true), 'leading hyphen');
+            assert.isTrue(isValidBucketName('bBb', true), 'mixed case');
+            assert.isTrue(isValidBucketName('a-.b', true), 'label can end with hyphen');
+            assert.isTrue(isValidBucketName('a.-b', true), 'label can begin with hyphen');
+            assert.isTrue(isValidBucketName('8.8.8.8', true), 'label can look like IP addr');
+            assert.isTrue(isValidBucketName('600.9000.0.28', true), '  ..not even a fake IP addr');
+        });
+
+        it('DOES NOT allow these names in lax mode', () => {
+            assert.isFalse(isValidBucketName('', true), 'empty');
+            assert.isFalse(isValidBucketName(reallyLongName + 'a', true), ' 256 characters, too long');
+            assert.isFalse(isValidBucketName(' aaa', true), 'leading space');
+            assert.isFalse(isValidBucketName('aaa ', true), 'trailing space');
+            assert.isFalse(isValidBucketName(':aa', true), 'colon leading character');
+            assert.isFalse(isValidBucketName('aa;', true), 'semicolon trailing');
+            assert.isFalse(isValidBucketName('space middle', true), 'space in the middle');
+        });
+
+    });
+
     describe('ViewModel', () => {
         it('imports default settings if not given during instantiation', (done) => {
             // Default settings defined in s3NodeConfig.js
@@ -126,9 +212,9 @@ describe('s3NodeConfigViewModel', () => {
                             .always(function() {
                                 // VM is updated with data from the fake server
                                 // observables
-                                assert.equal(vm.ownerName(), expected.owner);
-                                assert.equal(vm.nodeHasAuth(), expected.node_has_auth);
-                                assert.equal(vm.userHasAuth(), expected.user_has_auth);
+                                assert.equal(vm.ownerName(), expected.ownerName);
+                                assert.equal(vm.nodeHasAuth(), expected.nodeHasAuth);
+                                assert.equal(vm.userHasAuth(), expected.userHasAuth);
                                 assert.equal(vm.currentBucket(), (expected.bucket === null) ? null : '');
                                 assert.deepEqual(vm.urls(), expected.urls);
                                 done();
@@ -196,12 +282,12 @@ describe('s3NodeConfigViewModel', () => {
             }, [{
                 description: 'Node is unauthorized and User is unauthorized',
                 endpoint: makeSettingsEndpoint({
-                    node_has_auth: false,
-                    user_has_auth: false,
-                    user_is_owner: false,
-                    owner: null,
+                    nodeHasAuth: false,
+                    userHasAuth: false,
+                    userIsOwner: false,
+                    ownerName: null,
                     bucket: null,
-                    valid_credentials: false
+                    validCredentials: false
                 }),
                 data: {
                     showSettings: false,
@@ -215,12 +301,12 @@ describe('s3NodeConfigViewModel', () => {
             }, {
                 description: 'Node is authorized and User not auth owner',
                 endpoint: makeSettingsEndpoint({
-                    node_has_auth: true,
-                    user_has_auth: false,
-                    user_is_owner: false,
-                    owner: faker.name.findName(),
+                    nodeHasAuth: true,
+                    userHasAuth: false,
+                    userIsOwner: false,
+                    ownerName: faker.name.findName(),
                     bucket: null,
-                    valid_credentials: true
+                    validCredentials: true
                 }),
                 data: {
                     showSettings: true,
@@ -234,12 +320,12 @@ describe('s3NodeConfigViewModel', () => {
             }, {
                 description: 'Node is unauthorized and User has auth',
                 endpoint: makeSettingsEndpoint({
-                    node_has_auth: false,
-                    user_has_auth: true,
-                    user_is_owner: true,
-                    owner: faker.name.findName(),
+                    nodeHasAuth: false,
+                    userHasAuth: true,
+                    userIsOwner: true,
+                    ownerName: faker.name.findName(),
                     bucket: null,
-                    valid_credentials: true
+                    validCredentials: true
                 }),
                 data: {
                     showSettings: false,
@@ -253,12 +339,12 @@ describe('s3NodeConfigViewModel', () => {
             }, {
                 description: 'Node is authorized and User is auth owner',
                 endpoint: makeSettingsEndpoint({
-                    node_has_auth: true,
-                    user_has_auth: true,
-                    user_is_owner: true,
-                    owner: faker.name.findName(),
+                    nodeHasAuth: true,
+                    userHasAuth: true,
+                    userIsOwner: true,
+                    ownerName: faker.name.findName(),
                     bucket: null,
-                    valid_credentials: true
+                    validCredentials: true
                 }),
                 data: {
                     showSettings: true,
@@ -301,20 +387,22 @@ describe('s3NodeConfigViewModel', () => {
                         assert.isTrue(vm.loadedBucketList());
                         assert.isAbove(vm.bucketList().length, 0);
                         assert(spy.calledOnce);
+                        spy.restore();
                         done();
                     });
                 });
         });
     });
     describe('#selectBucket', () => {
-        var postEndpoint = makeSettingsEndpoint();
-        postEndpoint.method = 'POST';
-        postEndpoint.response = postEndpoint.response.result;
-        var bucket = faker.internet.domainWord();
-        postEndpoint.response.bucket = bucket;
-        postEndpoint.response.has_bucket = true;
+        var putEndpoint = makeSettingsEndpoint();
+        putEndpoint.method = 'PUT';
+        putEndpoint.response = putEndpoint.response.result;
+        // Bucket names cannot include periods
+        var bucket = 'validbucket';
+        putEndpoint.response.bucket = bucket;
+        putEndpoint.response.hasBucket = true;
         var endpoints = [
-            postEndpoint,
+            putEndpoint,
             makeSettingsEndpoint()
         ];
         var server;
@@ -326,12 +414,13 @@ describe('s3NodeConfigViewModel', () => {
         });
         it('submits the selected bucket to the server, and updates data on success', (done) => {
             var vm = new s3NodeConfigVM('', {url: '/api/v1/12345/s3/settings/' });
+
             vm.updateFromData()
                 .always(function() {
                     vm.selectedBucket(bucket);
                     var promise = vm.selectBucket();
                     promise.always(function() {
-                        assert.equal(vm.currentBucket(), bucket);
+                        assert.equal(vm.currentBucket(), bucket, 'currentBucket not equal to ' + bucket);
                         done();
                     });
                 });
@@ -339,37 +428,37 @@ describe('s3NodeConfigViewModel', () => {
     });
     describe('Authorization/Authentication: ', () => {
         var deleteEndpoint = makeSettingsEndpoint({
-            user_has_auth: true,
-            user_is_owner: true,
-            node_has_auth: false,
-            valid_credentials: true
+            nodeHasAuth: false,
+            userHasAuth: true,
+            userIsOwner: false,
+            validCredentials: false
         });
         deleteEndpoint.method = 'DELETE';
         deleteEndpoint.response = deleteEndpoint.response.result;
         var importEndpoint = makeSettingsEndpoint({
-            node_has_auth: true,
-            user_has_auth: true,
-            user_is_owner: true,
-            valid_credentials: true
+            nodeHasAuth: true,
+            userHasAuth: true,
+            userIsOwner: true,
+            validCredentials: true
         });
-        importEndpoint.method = 'POST';
+        importEndpoint.method = 'PUT';
         importEndpoint.url = URLS.import_auth;
         importEndpoint.response = importEndpoint.response.result;
         var createEndpoint = makeSettingsEndpoint({
-            node_has_auth: true,
-            user_has_auth: true,
-            user_is_owner: true,
-            valid_credentials: true
+            nodeHasAuth: true,
+            userHasAuth: true,
+            userIsOwner: true,
+            validCredentials: true
         });
         createEndpoint.method = 'POST';
-        createEndpoint.url = URLS.create_auth;
+        createEndpoint.url = URLS.create;
         createEndpoint.response = createEndpoint.response.result;
         var endpoints = [
             makeSettingsEndpoint({
-                user_has_auth: true,
-                user_is_owner: true,
-                node_has_auth: true,
-                valid_credentials: true                    
+                nodeHasAuth: true,
+                userHasAuth: true,
+                userIsOwner: true,
+                validCredentials: true
             }),
             deleteEndpoint,
             importEndpoint,
@@ -391,8 +480,8 @@ describe('s3NodeConfigViewModel', () => {
                     .always(function() {
                         var promise = vm._deauthorizeNodeConfirm();
                         promise.always(function() {
-                            assert.equal(vm.userHasAuth(), expected.user_has_auth);
-                            assert.equal(vm.nodeHasAuth(), expected.node_has_auth);
+                            assert.equal(vm.userHasAuth(), expected.userHasAuth);
+                            assert.equal(vm.nodeHasAuth(), expected.nodeHasAuth);
                             assert.isFalse(vm.showSettings());
                             assert.isTrue(vm.showImport());
                             done();
@@ -403,16 +492,18 @@ describe('s3NodeConfigViewModel', () => {
         describe('#_importAuthConfirm', () => {
             before(() => {
                 // Prepare settings endpoint for next test
-                endpoints[0].response.result.node_has_auth = false;
+                endpoints[0].response.result.nodeHasAuth = false;
+                endpoints[0].response.result.validCredentials = false;
+
             });
-            it('makes a POST request to import auth and updates settings on success', (done) => {
+            it('makes a PUT request to import auth and updates settings on success', (done) => {
                 var expected = endpoints[2].response;
                 var vm = new s3NodeConfigVM('', {url: '/api/v1/12345/s3/settings/' });
                 vm.updateFromData()
                     .always(function() {
                         var promise = vm._importAuthConfirm();
                         promise.always(function() {
-                            assert.equal(vm.nodeHasAuth(), expected.node_has_auth);
+                            assert.equal(vm.nodeHasAuth(), expected.nodeHasAuth);
                             assert.isTrue(vm.showSettings());
                             done();
                         });
@@ -422,9 +513,8 @@ describe('s3NodeConfigViewModel', () => {
         describe('#createCredentials', () => {
             before(() => {
                 // Prepare settings endpoint for next test
-                endpoints[0].response.result.node_has_auth = false;
-                endpoints[0].response.result.user_has_auth = false;
-                endpoints[0].response.result.user_is_owner = false;
+                endpoints[0].response.result.nodeHasAuth = false;
+                endpoints[0].response.result.userHasAuth = false;
                 // temporarily disable mock server autoRespond
                 server.autoRespond = false;
             });
@@ -435,9 +525,11 @@ describe('s3NodeConfigViewModel', () => {
             var expected = endpoints[0].response;
             it('makes a POST request to create auth and updates settings on success', (done) => {
                 var vm = new s3NodeConfigVM('', {url: '/api/v1/12345/s3/settings/' });
+                vm.accessKey('key-0');
+                vm.secretKey('secret-0');
                 vm.updateFromData()
                     .always(function() {
-                        var promise = vm.createCredentials();
+                        var promise = vm.sendAuth();
                         assert.isTrue(vm.creatingCredentials());
                         assert.isFalse(vm.userHasAuth());
                         server.respond();
@@ -458,7 +550,7 @@ describe('s3NodeConfigViewModel', () => {
         }
         buckets.push(name);
         var createEndpoint = {
-            method:  'POST',    
+            method:  'POST',
             url: URLS.create_bucket,
             response: {
                 buckets: buckets

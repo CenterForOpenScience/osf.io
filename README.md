@@ -1,7 +1,7 @@
 # OSF
 
 - `master` Build Status: [![Build Status](https://travis-ci.org/CenterForOpenScience/osf.io.svg?branch=master)](https://travis-ci.org/CenterForOpenScience/osf.io)
-- `develop` Build Status: [![Build Status](https://travis-ci.org/CenterForOpenScience/osf.io.svg?branch=master)](https://travis-ci.org/CenterForOpenScience/osf.io)
+- `develop` Build Status: [![Build Status](https://travis-ci.org/CenterForOpenScience/osf.io.svg?branch=develop)](https://travis-ci.org/CenterForOpenScience/osf.io)
 - Public Repo: https://github.com/CenterForOpenScience/osf.io/
 - Issues: https://github.com/CenterForOpenScience/osf.io/issues?state=open
 - COS Development Docs: http://cosdev.readthedocs.org/
@@ -51,21 +51,22 @@ In order to log in on your local server, you will also need to run the authentic
 - For daily use, run fakeCAS. See [CenterForOpenScience/fakeCAS](https://github.com/CenterForOpenScience/fakeCAS) for information on how to set up this service.
 - For developing authentication-related features, run CAS. See [CenterForOpenScience/docker-library/cas](https://github.com/CenterForOpenScience/docker-library/tree/master/cas) for information on how to set up this service.
 
-## Running the API Server
+### Running the API Server
 
 If you have already installed all of the required services and Python packages, and activated your virtual environment,
-then you can start a working local API server with the sequence delineated under [Running the OSF] (#running-the-osf) and:
+then you can start a working local API server with the sequence delineated under [running the OSF] (#running-the-osf) and:
 
 ```bash
 invoke apiserver
 ```
 
-Browse to `localhost:8000/v2/` in your browser to go to the root of the browse-able API.
+Browse to `localhost:8000/v2/` in your browser to go to the root of the browsable API. If the page looks strange, 
+run `python manage.py collectstatic` to ensure that CSS files are deposited in the correct location.
 
 
 ### Livereload support
 
-You can run the app server in livereload mode with:
+You can run the OSF server in livereload mode with:
 
 ```bash
 $ invoke server --live
@@ -76,25 +77,13 @@ This will make your browser automatically refresh whenever a code change is made
 ### Optional extras
 
 Some functionality depends on additional services that will not be started using the sequence above.
-For most development tasks, it is sufficient to run the OSF without these services, except as noted below.
-No additional installation is needed to use these features.
+For many development tasks, it is sufficient to run the OSF without these services, except as noted below.
+Some additional installation will be needed to use these features (where noted), in which case updates will also need 
+to be installed separately.
 
-
-#### Downloading citation styles
-
-To download citation styles, run:
-
-```bash
-$ invoke update_citation_styles
-```
-
-#### Sharejs
-
-ShareJS is used for collaborative editing features, such as the OSF wiki. To run a local ShareJS server:
-
-```bash
-$ invoke sharejs
-```
+#### Authentication
+An authentication server (either CAS or FakeCAS) must be available in order to log in to the OSF while running locally. 
+This must be installed separately from the OSF. See [running the OSF](#running-the-osf) for details.
 
 #### Waterbutler
 
@@ -105,13 +94,45 @@ installed. Consult the Waterbutler
 
 #### Modular File Renderer
 
-The Modular File Renderer (MFR) is used to render uploaded files to HTML via an iFrame so that they can be viewed directly on the OSF. Files will not be rendered if the MFR is not running. Consult the MFR [repository] (https://github.com/CenterForOpenScience/modular-file-renderer) for information on how to install and run the MFR.
+The Modular File Renderer (MFR) is used to render uploaded files to HTML via an iFrame so that they can be 
+viewed directly on the OSF. Files will not be rendered if the MFR is not running. Consult the 
+MFR [repository] (https://github.com/CenterForOpenScience/modular-file-renderer) for information on how to install 
+and run the MFR.
+
+#### Celery Beat
+
+Normally you don't need to run celery_beat. If you work on tasks that are dispatched by celery_beat:
+```
+invoke celery_beat
+```
+Some beat-dispatched tasks require metrics and release requirements. If needed:
+```
+invoke requirements --metrics
+```
+
+#### Sharejs
+
+ShareJS is used for collaborative editing features, such as the OSF wiki. It will be installed by the OSF installer 
+script, but must be run separately. To run a local ShareJS server:
+
+```bash
+$ invoke sharejs
+```
+
+#### Downloading citation styles
+
+To download citation styles, run:
+
+```bash
+$ invoke update_citation_styles
+```
 
 ## Installation
 
 These instructions assume a working knowledge of package managers and the command line.
 For a detailed step-by-step walkthrough suitable for new programmers, consult the
-[COS Development Docs](http://cosdev.readthedocs.org/en/latest/osf/setup.html).
+[COS Development Docs](http://cosdev.readthedocs.org/en/latest/osf/setup.html). See [optional extras](#optional-extras) 
+for information about services not included in the automated install process below.
 
 ### Pre-requisites
 
@@ -128,6 +149,14 @@ The following packages must be installed before running the automatic setup scri
     - pip
     - virtualenv (`pip install virtualenv`)
 
+##### El Capitan and newer
+If you are using Mac OS X >= 10.11 (El Capitan), you will also 
+[need](http://lists.apple.com/archives/macnetworkprog/2015/Jun/msg00025.html) to install OpenSSL headers 
+and [set](http://cryptography.readthedocs.org/en/latest/installation/#building-cryptography-on-os-x) some configuration:
+```bash 
+brew install openssl
+env LDFLAGS="-L$(brew --prefix openssl)/lib" CFLAGS="-I$(brew --prefix openssl)/include" pip install cryptography
+```
 
 ### Quickstart
 
@@ -136,7 +165,7 @@ These instructions should work on Mac OSX >= 10.7
 
 - Clone the OSF repository to your computer. Change to that folder before running the commands below.
 - Create and activate your virtualenv.
-```
+```bash
 virtualenv env
 source env/bin/activate
 ```
@@ -150,6 +179,7 @@ it as you wish.
 
 ```bash
 $ cp website/settings/local-dist.py website/settings/local.py
+$ cp api/base/settings/local-dist.py api/base/settings/local.py
 ```
 
 - On MacOSX with [homebrew](http://brew.sh/), there is a script that should automate much of the install process:
@@ -173,7 +203,7 @@ limit maxfiles 16384 16384
 limit maxproc 2048 2048
 ```
 
-Then create or edit either `~./bash_profile` or `/etc/profile` to include the following:
+Then create or edit either `~/.bash_profile` or `/etc/profile` to include the following:
 
 `ulimit -n 2048`
 
@@ -181,8 +211,8 @@ Then reboot.
 
 #### Additional things to install
 
-The automated installer does not install Waterbutler, which may be needed to run some OSF features locally.
-Consult the [Waterbutler repository](https://github.com/CenterForOpenScience/waterbutler) for setup instructions.
+The automated installer does not install CAS, Waterbutler, or MFR, which may be needed to run some OSF features locally.
+Consult the [optional extras](#optional-extras) section for more details.
 
 ### Manual installation
 [At present](CONTRIBUTING.md), there is no complete automated install process for other platforms.
@@ -445,7 +475,7 @@ Sent emails will show up in your server logs.
 $ invoke mailserver -p 1025
 ```
 
-### Building assets with webpack
+### Building front-end assets with webpack
 
 Use the following command to update your requirements and build the asset bundles:
 
@@ -453,7 +483,8 @@ Use the following command to update your requirements and build the asset bundle
 $ inv assets -dw
 ```
 
-The -w option puts you in "watch": assets will be built when a file changes.
+The -w option puts you in "watch" mode: the script will continue running so that assets will be 
+built when a file changes.
 
 
 ### Getting application credentials
@@ -461,4 +492,6 @@ The -w option puts you in "watch": assets will be built when a file changes.
 Many addons require application credentials (typically an app key and secret) to be able to authenticate through the
 OSF. These credentials go in each addon's `local.py` settings file (e.g. `website/addons/dropbox/settings/local.py`).
 
-For local development, the COS provides [test app credentials](https://osf.io/m2hig/wiki/home/) for a number of services.
+### COS is Hiring!
+
+Want to help save science? Want to get paid to develop free, open source software? [Check out our openings!](http://cos.io/jobs)

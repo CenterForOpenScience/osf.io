@@ -16,7 +16,7 @@
 </style>
 
 <% from website import settings %>
-<h2 class="page-header">Configure Add-on Accounts</h2>
+<h2 class="page-header">Settings</h2>
 
 
 <div id="addonSettings" class="row">
@@ -40,10 +40,6 @@
     </div><!-- end-col -->
 </div><!-- end row -->
 
-
-% for name, capabilities in addon_capabilities.iteritems():
-    <script id="capabilities-${name}" type="text/html">${capabilities}</script>
-% endfor
 
 </%def>
 

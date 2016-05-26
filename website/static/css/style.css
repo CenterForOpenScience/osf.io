@@ -7,12 +7,34 @@ body {
     padding-top: 50px; /* body padding for fixed top nav */
     position: relative; /* for bootstrap affix */
     -webkit-font-smoothing: antialiased;
+    font-family: 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 
 a {
     cursor: pointer;
 }
 
+/*Meta Info
+----------------------------------------------------*/
+
+#metaInfo {
+    text-shadow: 0 1px 0 #fff;
+    border-top: 1px solid #e5e5e5;
+    border-bottom: 1px solid #e5e5e5;
+    width: 100%;
+    color: #555;
+    position: relative;
+    padding-top:20px;
+    padding-bottom:20px;
+    z-index:10;
+    background-color:white;
+    border-top:2px solid black;
+}
+
+#metaInfo th, #metaInfo td{
+    padding-left: 15px;
+    text-align: left;
+}
 
 /* Footer
 -------------------------------------------------- */
@@ -87,13 +109,15 @@ a {
     margin-top: -60px;
     padding-top: 60px;
     display: block;
+    z-index: -1;
+    position: relative;
 }
 
 .scripted {display: none;}
 
 .pointer {cursor: pointer;}
 
-/* Minimal Treebeard for Configure Notifications in project and user settings */
+/* Minimal Treebeard for Configure Notifications/Wiki in project and user settings */
 .osf-treebeard-minimal #tb-tbody {
     border: none;
     max-height: 500px;
@@ -147,6 +171,24 @@ a {
     padding-right: 0;
 }
 
+/* Multiple device support for project nav-bar */
+@media (max-width: 767px) {
+    .project-nav {
+        overflow: hidden;
+    }
+
+    /* Allow project nav to move the content on small screen */
+    #projectBanner .osf-project-navbar {
+        position: relative;
+        top: 0;
+        margin-top: -55px;
+    }
+    #projectBanner {
+        margin-right: -15px;
+        margin-left: -15px;
+    }
+}
+
 /* Allow search-bar and nav-bar to support mutiple size of screen */
 @media (max-width: 767px) {
     .navbar .search-query {
@@ -178,6 +220,14 @@ a {
         font-size: 20px;
     }
 
+    .sign-in .btn-group {
+        width: 90%;
+        padding-left: 5%;
+    }
+    .sign-in .btn {
+        width: 100%;
+        margin-bottom: 20px;
+    }
 }
 
 @media (min-width: 768px) {
@@ -225,6 +275,9 @@ a {
  * affix scrolling into columns on small devices/affix
  * needs to be relative any smaller. See above @media.
  */
+.osf-affix {
+    display: none;
+}
 @media (min-width: 769px) {
     .osf-affix.profile-affix {
         top: 80px;
@@ -299,51 +352,6 @@ a {
     display: inline-block;
 }
 
-/* Comments Panel */
-.comment-actions i {
-    cursor: pointer;
-}
-
-.comment-container {
-    margin-top: 10px;
-    margin-bottom: 10px;
-}
-
-.comment-body {
-    padding: 5px;
-    background-color: white;
-}
-
-.comment-author {
-    color: #999999;
-}
-
-.comment-date {
-    color: #999999;
-}
-.edit-comment {
-    background-color: #F3F3F3;
-}
-
-.comment-body i {
-    padding-right: 5px;
-}
-
-.comment-handle-icon {
-    color: white;
-    vertical-align: middle;
-    line-height: 50px;
-    cursor: pointer;
-    position: relative;
-}
-
-.unread-comments-count {
-    font-size: medium;
-    color: white;
-    position: absolute;
-    margin-left: 40px;
-}
-
 /*  Add-on styles */
 .addon-auth {
     margin-top: 4.8px;
@@ -351,6 +359,7 @@ a {
 
 .user-settings-addon-auth {
     font-size: 13.5px;
+    border-bottom: 2px solid #DDD;
 }
 
 .default-authorized-by {
@@ -407,6 +416,10 @@ a {
     max-height: 140px;
     overflow-y: hidden;
 }
+.table-hover {
+    word-break: break-all;
+
+}
 select {
     word-wrap: normal;
 }
@@ -414,14 +427,23 @@ select {
 .tag:hover
 {
     background-color: #337ab7;
+    color: #E0EBF3;
 }
-.tag:hover > .tag-text
+.tag:hover > .tag-text, .tag:hover > a
 {
     color: #E0EBF3;
 }
 .tag:hover > .remove-tag
 {
     visibility: visible;
+/* to make the center of the x not transparent */
+    background: -moz-radial-gradient(center, ellipse cover,  rgba(255,255,255,1) 35%, rgba(255,255,255,1) 44%, rgba(255,255,255,1) 53%, rgba(255,255,255,0) 64%, rgba(255,255,255,0) 72%); /* FF3.6+ */
+    background: -webkit-gradient(radial, center center, 0px, center center, 100%, color-stop(35%,rgba(255,255,255,1)), color-stop(44%,rgba(255,255,255,1)), color-stop(53%,rgba(255,255,255,1)), color-stop(64%,rgba(255,255,255,0)), color-stop(72%,rgba(255,255,255,0))); /* Chrome,Safari4+ */
+    background: -webkit-radial-gradient(center, ellipse cover,  rgba(255,255,255,1) 35%,rgba(255,255,255,1) 44%,rgba(255,255,255,1) 53%,rgba(255,255,255,0) 64%,rgba(255,255,255,0) 72%); /* Chrome10+,Safari5.1+ */
+    background: -o-radial-gradient(center, ellipse cover,  rgba(255,255,255,1) 35%,rgba(255,255,255,1) 44%,rgba(255,255,255,1) 53%,rgba(255,255,255,0) 64%,rgba(255,255,255,0) 72%); /* Opera 12+ */
+    background: -ms-radial-gradient(center, ellipse cover,  rgba(255,255,255,1) 35%,rgba(255,255,255,1) 44%,rgba(255,255,255,1) 53%,rgba(255,255,255,0) 64%,rgba(255,255,255,0) 72%); /* IE10+ */
+    background: radial-gradient(ellipse at center,  rgba(255,255,255,1) 35%,rgba(255,255,255,1) 44%,rgba(255,255,255,1) 53%,rgba(255,255,255,0) 64%,rgba(255,255,255,0) 72%); /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#00ffffff',GradientType=1 ); /* IE6-9 fallback on horizontal gradient */
 }
 .tag-big
 {
@@ -468,6 +490,13 @@ select {
     height:100px;
     overflow-y: auto;
 }
+#node-tags_tag:focus {
+    outline: 2px solid #DEF;
+}
+
+.tagsinput div {
+    float: left;
+}
 
 .tagsinput span.tag {
     float: left;
@@ -490,7 +519,7 @@ select {
     color: #000;
     text-decoration:none;
     font-size: 11px;
-
+    vertical-align: top;
 }
 
 .tag {
@@ -502,12 +531,8 @@ select {
     font-size:13px;
     padding:5px;
     border:1px solid transparent;
-    border-radius: 5px;
+    border-radius: 2px;
     cursor: pointer;
-}
-
-tr a, b, em, td {
-    word-break: break-word;
 }
 
 .btn-link.project-toggle {
@@ -544,7 +569,126 @@ button.close {
     word-break: break-word; /* Non standard for webkit*/
 }
 
+/* Style for toggle height knockout helper */
+.toggle-height-toggle {
+    border: 1px solid #EEE;
+    background-color: #F8F8F8;
+    height: 15px;
+    line-height: 10px;
+    color: #888;
+    width: 100%;
+    margin-bottom: 10px;
+}
+.toggle-height-toggle:hover {
+    background-color: #F5F5F5;
+    color: #666;
+    cursor: pointer;
+}
+.toggle-height-gradient {
+    background: -moz-linear-gradient(top,  rgba(255,255,255,0) 0%, rgba(255,255,255,1) 100%); /* FF3.6+ */
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(255,255,255,0)), color-stop(100%,rgba(255,255,255,1))); /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(top,  rgba(255,255,255,0) 0%,rgba(255,255,255,1) 100%); /* Chrome10+,Safari5.1+ */
+    background: -o-linear-gradient(top,  rgba(255,255,255,0) 0%,rgba(255,255,255,1) 100%); /* Opera 11.10+ */
+    background: -ms-linear-gradient(top,  rgba(255,255,255,0) 0%,rgba(255,255,255,1) 100%); /* IE10+ */
+    background: linear-gradient(to bottom,  rgba(255,255,255,0) 0%,rgba(255,255,255,1) 100%); /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#ffffff',GradientType=0 ); /* IE6-9 */
+    width: 100%;
+    height: 30px;
+    position: absolute;
+    bottom: 0;
+}
+.toggle-height-parent {
+    position: relative;
+    overflow: hidden;
+}
+
 /* growlBox style */
 .alert.growl-animated {
     padding-right: 35px; /* work as alert-dismissable in bootstrap */
+}
+
+.tb-modal-shade {
+    /*  Override z-index here to avoid clashing with navigation elements */
+    z-index: 98 !important;
+}
+
+
+/* Cards
+-------------------------------------------------- */
+
+.toggle-icon {
+    color: #337ab7;
+    margin-right: 10px;
+}
+
+.header-content {
+    max-width: 75%;
+    display: inline-block
+}
+
+/* Navigation -- general style should be in style guide
+-------------------------------------------------- */
+#navbarScope a.nav-user-dropdown {
+    padding-top: 12px;
+    padding-bottom: 11px;
+}
+
+/* Anonymous-mode notification bar
+-------------------------------------------------- */
+#anonymous-mode {
+    position: fixed;
+    bottom: 30px;
+    left: 0;
+    z-index: 8;
+    width: 100%;
+    text-align: center;
+    background-color: #f0ad4e;
+    padding: .5em;
+}
+
+/* Override insane add tag font
+-------------------------------------------------- */
+.tagsinput input {
+    font-family : 'Open Sans', Helvetica, sans-serif;
+}
+
+/* Bootstrap Accesibility Override */
+.btn-success-high-contrast {
+    background-color: #52A452;
+    border-color: #54AC54;
+}
+
+
+/* Trying out to move to osf-style */
+.comma-separated:after {
+    content: ", ";
+}
+
+.comma-separated:last-of-type:after {
+    content: "";
+}
+
+.action-buttons {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.token-warning {
+    margin-bottom: 5px;
+    margin-top: 15px;
+    padding-left: 10px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+#copy-button {
+    margin-top: 10px;
+}
+
+.more-replies {
+    margin-right: 15px;
+}
+
+div.ball-scale-blue>div {
+    background-color: #BED1E2;
 }

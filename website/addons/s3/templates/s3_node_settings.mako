@@ -1,12 +1,14 @@
  <div id="s3Scope" class="scripted">
+
+    <!-- Add credentials modal -->
+    <%include file="s3_credentials_modal.mako"/>
+
     <h4 class="addon-title">
-        <img class="addon-icon" src="${addon_icon_url}"></img>
+        <img class="addon-icon" src="${addon_icon_url}">
         Amazon S3
         <small class="authorized-by">
             <span data-bind="if: nodeHasAuth">
-                authorized by <a data-bind="attr.href: urls().owner">
-                {{ownerName}}
-                </a>
+                authorized by <a data-bind="attr: {href: urls().owner}, text: ownerName"></a>
                 % if not is_registration:
                     <a data-bind="click: deauthorizeNode" class="text-danger pull-right addon-auth">
                       Disconnect Account
@@ -16,6 +18,11 @@
             <span data-bind="if: showImport">
                 <a data-bind="click: importAuth" class="text-primary pull-right addon-auth">
                   Import Account from Profile
+                </a>
+            </span>
+            <span data-bind="if: showCreateCredentials">
+                <a href="#s3InputCredentials" data-toggle="modal" class="pull-right text-primary addon-auth">
+                    Connect  Account
                 </a>
             </span>
         </small>
@@ -28,15 +35,15 @@
           <span data-bind="ifnot: currentBucket">
             None
           </span>
-          <a data-bind="if: currentBucket, attr.href: urls().files">
-            {{currentBucket}}
+          <a data-bind="if: currentBucket, attr: {href: urls().files}">
+              <span data-bind="text: currentBucket"></span>
           </a>
         </p>
-        <div data-bind="attr.disabled: creating">
+        <div data-bind="attr: {disabled: creating}">
           <button data-bind="visible: canChange, click: toggleSelect,
                              css: {active: showSelect}" class="btn btn-primary">Change</button>
           <button data-bind="visible: showNewBucket, click: openCreateBucket,
-                             attr.disabled: creating" class="btn btn-success" id="newBucket">Create Bucket</button>
+                             attr: {disabled: creating}" class="btn btn-success" id="newBucket">Create Bucket</button>
         </div>
         <br />
         <br />
@@ -44,7 +51,7 @@
           <div class="form-group col-md-8">
             <select class="form-control" id="s3_bucket" name="s3_bucket"
                     data-bind="value: selectedBucket,
-                               attr.disabled: !loadedBucketList(),
+                               attr: {disabled: !loadedBucketList()},
                                options: bucketList"> </select>
           </div>
           ## Remove comments to enable user toggling of file upload encryption
@@ -54,7 +61,8 @@
           ## </div>
           <div class="col-md-2">
             <button data-bind="click: selectBucket,
-                               attr.disabled: !allowSelectBucket()"
+                               attr: {disabled: !allowSelectBucket()},
+                               text: saveButtonText"
                     class="btn btn-success">
               Save
             </button>
@@ -63,22 +71,8 @@
       </div>
       </div>
     </div>
-    <div data-bind="if: showCreateCredentials">
-      <div class="form-group">
-        <label for="s3Addon">Access Key</label>
-        <input data-bind="value: accessKey" class="form-control" id="access_key" name="access_key" />
-      </div>
-      <div class="form-group">
-        <label for="s3Addon">Secret Key</label>
-        <input data-bind="value: secretKey" type="password" class="form-control" id="secret_key" name="secret_key" />
-      </div>
-      <button data-bind="click: createCredentials,
-                         attr.disabled: creatingCredentials" class="btn btn-success addon-settings-submit">
-        Save
-      </button>
-    </div>
     <!-- Flashed Messages -->
     <div class="help-block">
-        <p data-bind="html: message, attr.class: messageClass"></p>
+        <p data-bind="html: node_message, attr: {class: messageClass}"></p>
     </div>
 </div>

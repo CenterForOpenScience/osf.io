@@ -17,7 +17,7 @@
 
         <div class="components panel panel-default">
             <div class="panel-heading clearfix">
-                <h3 class="panel-title">Recent Activity </h3>
+                <h3 class="panel-title">Recent activity </h3>
                 <div class="pull-right">
                 </div>
             </div>
@@ -29,13 +29,12 @@
                 </p>
                 <span data-bind="if: loading()">
                     <div class="spinner-loading-wrapper">
-		                <div class="logo-spin logo-lg "><img src="/static/img/logo_spin.png" alt="loader"> </div>
+		                <div class="logo-spin logo-lg"></div>
 	                	<p class="m-t-sm text-center"> Loading logs...  </p>
 	                </div>
                 </span>
                 <p data-bind="if: !logs().length && !loading()" class="help-block">
-                    No logs to show. Click the watch icon (<i class="fa fa-eye"></i>) icon on a
-                    project's page to get activity updates here.
+                    No logs to show.
                 </p>
                 <span data-bind="if: !loading()">
                     <dl class="dl-horizontal activity-log" data-bind="foreach: {data: logs, as: 'log'}"  >
@@ -47,17 +46,21 @@
                                 <span class="contributor-anonymous">A user</span>
                             </span>
                                 <span data-bind="ifnot:log.anonymous">
+                                    <span data-bind="if: log.user.registered">
                                     <span data-bind="if: log.userURL">
                                         <a class="overflow" data-bind="text: log.userFullName || log.apiKey, attr: {href: log.userURL}"></a>
                                     </span>
                                     <span data-bind="ifnot: log.userURL">
                                         <span class="overflow" data-bind="text: log.userFullName"></span>
                                     </span>
+                                    </span>
+                                    <span data-bind="ifnot: log.user.registered">
+                                        A deactivated user
+                                    </span>
                                 </span>
                                 <!-- Log actions are the same as their template name -->
-                                <span data-bind="template: {name: log.action, data: log}"></span>
+                                    <span data-bind="template: {name: log.action, data: log}"></span>
                                 <!-- /ko -->
-
                                 <!-- ko ifnot: log.hasUser() -->
                                     <!-- Log actions are the same as their template name  + no_user -->
                                     <span data-bind="template: {name: log.action + '_no_user', data: log}"></span>
@@ -75,11 +78,11 @@
                 </span>
                 <div class='help-block absolute-bottom'>
                     <ul class="pagination pagination-sm" data-bind="foreach: paginators">
-                        <li data-bind="css: style"><a href="#" data-bind="click: handler, html: text"></a></li>
+                        <li data-bind="css: style"><a href="#" data-bind="click: handler, text: text"></a></li>
                     </ul>
                 </div>
 
-            </div> 
+            </div>
         </div>
 </div>
 </div><!-- end #logScope -->

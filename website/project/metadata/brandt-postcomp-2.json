@@ -1,0 +1,70 @@
+{
+    "name": "Replication Recipe (Brandt et al., 2013): Post-Completion",
+    "version": 2,
+    "description": "Replication Recipe: Post-Completion: This template is intended for use upon completion of a replication study, as outlined by Brandt et al., \"The Replication Recipe: What Makes for a Convincing Replication?\" You will be asked to answer a series of questions about the outcomes of your replication and how they compare to the original study.",
+    "pages": [{
+        "id": "page1",
+        "title": "Registering the Replication Attempt",
+        "questions": [{
+            "qid": "item29",
+            "type": "string",
+            "format": "text",
+            "title": "The finalized materials, procedures, analysis plan etc of the replication are registered here",
+            "nav": "Finalized materials"
+        }]
+    }, {
+        "id": "page2",
+        "title": "Reporting the Replication",
+        "questions": [{
+            "qid": "item30",
+            "type": "string",
+            "format": "text",
+            "title": "The effect size of the replication is",
+            "nav": "Effect size"
+        },{
+            "qid": "item31",
+            "type": "string",
+            "format": "text",
+            "title": "The confidence interval of the replication effect size is",
+            "nav": "Confidence interval"
+        },{
+            "qid": "item32",
+            "type": "choose",
+            "format": "singleselect",
+            "title": "The replication effect size is",
+            "options": ["significantly different from the original effect size", "not significantly different from the original effect size"],
+            "nav": "Difference in effect size"
+        },{
+            "qid": "item33",
+            "type": "choose",
+            "format": "singleselect",
+            "title": "I judge the replication to be a(n)",
+            "options": ["success", "informative failure to replicate", "practical failure to replicate", "inconclusive"],
+            "nav": "Outcome"
+        },{
+            "qid": "item34",
+            "type": "string",
+            "format": "textarea",
+            "title": "I judge it so because",
+            "nav": "Outcome justification"
+        },{
+            "qid": "item35",
+            "type": "string",
+            "format": "text",
+            "title": "Interested experts can obtain my data and syntax here",
+            "nav": "Expert followup"
+        },{
+            "qid": "item36",
+            "type": "string",
+            "format": "text",
+            "title": "All of the analyses were reported in the report or are available here",
+            "nav": "Location of analyses"
+        },{
+            "qid": "item37",
+            "type": "string",
+            "format": "textarea",
+            "title": "The limitations of my replication study are",
+            "nav": "Limitations"
+        }]
+    }]
+}

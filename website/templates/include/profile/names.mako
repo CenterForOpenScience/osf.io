@@ -3,8 +3,11 @@
     <form role="form" data-bind="submit: submit">
 
         <div class="form-group">
-            <label>Full Name (e.g. Rosalind Elsie Franklin)</label>
+            <label>Full name (e.g. Rosalind Elsie Franklin)</label>
             <input class="form-control" data-bind="value: full" />
+            <div data-bind="visible: showMessages, css:'text-danger'">
+                <p data-bind="validationMessage: full"></p>
+            </div>
         </div>
 
         <span class="help-block">
@@ -19,17 +22,17 @@
         </div>
 
         <div class="form-group">
-            <label>Given Name (e.g. Rosalind)</label>
+            <label>Given name (e.g. Rosalind)</label>
             <input class="form-control" data-bind="value: given" />
         </div>
 
         <div class="form-group">
-            <label>Middle Name(s) (e.g. Elsie)</label>
+            <label>Middle name(s) (e.g. Elsie)</label>
             <input class="form-control" data-bind="value: middle" />
         </div>
 
         <div class="form-group">
-            <label>Family Name (e.g. Franklin)</label>
+            <label>Family name (e.g. Franklin)</label>
             <input class="form-control" data-bind="value: family" />
         </div>
 
@@ -40,22 +43,22 @@
 
         <hr />
 
-        <h4>Citation Preview</h4>
+        <h4>Citation preview</h4>
         <table class="table">
             <thead>
                 <tr>
                     <th>Style</th>
-                    <th class="overflow-block" width="30%">Citation Format</th>
+                    <th class="overflow-block" width="30%">Citation format</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
                     <td>APA</td>
-                    <td class="overflow-block" width="30%">{{ citeApa }}</td>
+                    <td class="overflow-block" width="30%"><span data-bind="text: citeApa"></span></td>
                 </tr>
                 <tr>
                     <td>MLA</td>
-                    <td class="overflow-block" width="30%">{{ citeMla }}</td>
+                    <td class="overflow-block" width="30%"><span data-bind="text: citeMla"></span></td>
                 </tr>
             </tbody>
         </table>
@@ -66,9 +69,10 @@
                     type="button"
                     class="btn btn-default"
                     data-bind="click: cancel"
-                >Cancel</button>
+                >Discard changes</button>
 
             <button
+                    data-bind="disable: saving(), text: saving() ? 'Saving' : 'Save'"
                     type="submit"
                     class="btn btn-success"
                 >Save</button>
@@ -77,9 +81,8 @@
 
         <!-- Flashed Messages -->
         <div class="help-block">
-            <p data-bind="html: message, attr.class: messageClass"></p>
+            <p data-bind="html: message, attr: {class: messageClass}"></p>
         </div>
-
     </form>
 
 </script>

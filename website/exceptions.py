@@ -1,12 +1,12 @@
+from website.tokens.exceptions import TokenError
+
 class OSFError(Exception):
     """Base class for exceptions raised by the Osf application"""
     pass
 
-
 class NodeError(OSFError):
     """Raised when an action cannot be performed on a Node model"""
     pass
-
 
 class NodeStateError(NodeError):
     """Raised when the Node's state is not suitable for the requested action
@@ -15,36 +15,35 @@ class NodeStateError(NodeError):
     """
     pass
 
-
-class RetractionTokenError(NodeError):
-    """Base class for errors arising from the user of a retraction token."""
+class SanctionTokenError(TokenError):
+    """Base class for errors arising from the user of a sanction token."""
     pass
 
-
-class InvalidRetractionApprovalToken(RetractionTokenError):
-    """Raised if a retraction approval token is not found."""
+class InvalidSanctionRejectionToken(TokenError):
+    """Raised if a Sanction subclass disapproval token submitted is invalid
+     or associated with another admin authorizer
+    """
     message_short = "Invalid Token"
-    message_long = "This retraction approval link is invalid. Are you logged into the correct account?"
+    message_long = "This disapproval link is invalid. Are you logged into the correct account?"
 
-
-class InvalidRetractionDisapprovalToken(RetractionTokenError):
-    """Raised if a retraction disapproval token is not found."""
+class InvalidSanctionApprovalToken(TokenError):
+    """Raised if a Sanction subclass approval token submitted is invalid
+     or associated with another admin authorizer
+    """
     message_short = "Invalid Token"
-    message_long = "This retraction disapproval link is invalid. Are you logged into the correct account?"
+    message_long = "This approval link is invalid. Are you logged into the correct account?"
 
-
-class EmbargoTokenError(NodeError):
-    """Base class for errors arising from the user of a embargo token."""
+class InvalidTagError(OSFError):
+    """Raised when attempting to perform an invalid operation on a tag"""
     pass
 
+class TagNotFoundError(OSFError):
+    """Raised when attempting to perform an operation on an absent tag"""
+    pass
 
-class InvalidEmbargoApprovalToken(EmbargoTokenError):
-    """Raised if a embargo approval token is not found."""
-    message_short = "Invalid Token"
-    message_long = "This embargo approval link is invalid. Are you logged into the correct account?"
-
-
-class InvalidEmbargoDisapprovalToken(EmbargoTokenError):
-    """Raised if a embargo disapproval token is not found."""
-    message_short = "Invalid Token"
-    message_long = "This embargo disapproval link is invalid. Are you logged into the correct account?"
+class UserNotAffiliatedError(OSFError):
+    """Raised if a user attempts to add an institution that is not currently
+    one of its affiliations.
+    """
+    message_short = "User not affiliated"
+    message_long = "This user is not affiliated with this institution."

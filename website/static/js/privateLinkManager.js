@@ -3,6 +3,7 @@
 var $ = require('jquery');
 var ko = require('knockout');
 var $osf = require('./osfHelpers');
+var ChangeMessageMixin = require('js/changeMessage');
 
 var NODE_OFFSET = 25;
 
@@ -11,24 +12,19 @@ var nodeApiUrl = window.contextVars.node.urls.api;
 
 var PrivateLinkViewModel = function(url) {
     var self = this;
-
+    ChangeMessageMixin.call(self);
     self.url = url;
     self.title = ko.observable('');
     self.isPublic = ko.observable('');
     self.name = ko.observable(null);
     self.anonymous = ko.observable(false);
-    self.pageTitle = 'Generate New Link to Share Project';
     self.errorMsg = ko.observable('');
     self.id = ko.observable('');
 
     self.nodes = ko.observableArray([]);
     self.nodesToChange = ko.observableArray();
     self.disableSubmit = ko.observable(false);
-    self.submitText = ko.observable('Generate');
-
-    self.isChildVisible = function(data) {
-        return (self.nodesToChange().indexOf(data.parent_id) !== -1 ||  data.parent_id === self.id());
-    };
+    self.submitText = ko.observable('Create');
 
     self.changingNodesCleaner = ko.computed(function(){
         self.nodesToChange();
@@ -61,7 +57,7 @@ var PrivateLinkViewModel = function(url) {
 
     function onFetchError() {
         $osf.growl('Could not retrieve projects.', 'Please refresh the page or ' +
-                'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
+                'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
                 'problem persists.');
     }
 
@@ -79,6 +75,10 @@ var PrivateLinkViewModel = function(url) {
 
     // Initial fetch of data
     fetch();
+
+    self.isChildVisible = function(data) {
+        return (self.nodesToChange().indexOf(data.parent_id) !== -1 ||  data.parent_id === self.id());
+    };
 
     self.cantSelectNodes = function() {
         return self.nodesToChange().length === self.nodes().length;
@@ -109,10 +109,10 @@ var PrivateLinkViewModel = function(url) {
             }
         ).done(function() {
             window.location.reload();
-        }).fail(function() {
-            $osf.growl('Error:','Failed to create a view-only link.');
+        }).fail(function(response) {
+            self.changeMessage(response.responseJSON.message_long, 'text-danger');
             self.disableSubmit(false);
-            self.submitText('Generate');
+            self.submitText('Create');
         });
     };
 
@@ -120,6 +120,7 @@ var PrivateLinkViewModel = function(url) {
         self.nodesToChange([]);
     };
 };
+$.extend(PrivateLinkViewModel.prototype, ChangeMessageMixin.prototype);
 
 
 function PrivateLinkManager (selector, url) {

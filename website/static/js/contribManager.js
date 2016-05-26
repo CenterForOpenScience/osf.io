@@ -5,164 +5,143 @@ var ko = require('knockout');
 var bootbox = require('bootbox');
 require('jquery-ui');
 require('knockout-sortable');
+var ContribAdder = require('js/contribAdder');
+var ContribRemover = require('js/contribRemover');
 
+var rt = require('js/responsiveTable');
 var $osf = require('./osfHelpers');
+require('js/filters');
 
-var contribsEqual = function(a, b) {
-    return a.id === b.id &&
-        a.visible === b.visible &&
-        a.permission === b.permission &&
-        Boolean(a.deleteStaged) === Boolean(b.deleteStaged);
+//http://stackoverflow.com/questions/12822954/get-previous-value-of-an-observable-in-subscribe-of-same-observable
+ko.subscribable.fn.subscribeChanged = function (callback) {
+    var self = this;
+    var savedValue = self.peek();
+    return self.subscribe(function (latestValue) {
+        var oldValue = savedValue;
+        savedValue = latestValue;
+        callback(latestValue, oldValue);
+    });
 };
 
-// Modified from http://stackoverflow.com/questions/7837456/comparing-two-arrays-in-javascript
-var arraysEqual = function(a, b) {
-    var i = a.length;
-    if (i !== b.length) { return false;}
-    while (i--) {
-        if (!contribsEqual(a[i], b[i])) {return false;}
-    }
-    return true;
-};
-
-var sortMap = {
-    surname: {
-        label: 'Surname',
-        order: 1,
-        func: function(item) {
-            return item.surname;
-        }
+ko.bindingHandlers.filters = {
+    init: function(element, valueAccessor, allBindingsAccessor, data, context) {
+        var $element = $(element);
+        var value = ko.utils.unwrapObservable(valueAccessor()) || {};
+        value.callback = data.callback;
+        $element.filters(value);
     }
 };
 
 // TODO: We shouldn't need both pageOwner (the current user) and currentUserCanEdit. Separate
 // out the permissions-related functions and remove currentUserCanEdit.
-var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRegistration, isAdmin) {
+var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRegistration, isAdmin, index, options, contribShouter, changeShouter) {
 
     var self = this;
+    self.options = options;
     $.extend(self, contributor);
 
-    self.permissionList = [
-        {value: 'read', text: 'Read'},
-        {value: 'write', text: 'Read + Write'},
-        {value: 'admin', text: 'Administrator'}
-    ];
-    self.getPermission = function(permission) {
-        for(var i = 0; i < self.permissionList.length; i++) {
-            if(permission === self.permissionList[i].value) {
-                return self.permissionList[i];
+    self.originals = {
+        permission: contributor.permission,
+        visible: contributor.visible,
+        index: index
+    };
+
+    self.toggleExpand = function() {
+        self.expanded(!self.expanded());
+    };
+
+    self.expanded = ko.observable(false);
+
+    self.filtered = ko.observable(false);
+
+    self.permission = ko.observable(contributor.permission);
+
+    self.permissionText = ko.observable(self.options.permissionMap[self.permission()]);
+
+    self.visible = ko.observable(contributor.visible);
+
+    self.permission.subscribeChanged(function(newValue, oldValue) {
+        self.options.onPermissionChanged(newValue, oldValue);
+        self.permissionText(self.options.permissionMap[newValue]);
+    });
+
+    self.visible.subscribeChanged(function(newValue, oldValue) {
+        self.options.onVisibleChanged(newValue, oldValue);
+    });
+
+    self.permissionChange = ko.computed(function() {
+        return self.permission() !== self.originals.permission;
+    });
+
+    self.reset = function(adminCount, visibleCount) {
+        if (self.deleteStaged()) {
+            if (self.visible()) {
+                visibleCount(visibleCount() + 1);
             }
+            if (self.permission() === 'admin') {
+                adminCount(adminCount() + 1);
+            }
+            self.deleteStaged(false);
         }
-        return self.permissionList[0];
+        self.permission(self.originals.permission);
+        self.visible(self.originals.visible);
     };
 
     self.currentUserCanEdit = currentUserCanEdit;
     self.isAdmin = isAdmin;
-    self.visible = ko.observable(contributor.visible);
-    self.permission = ko.observable(contributor.permission);
-    self.curPermission = ko.observable(self.getPermission(self.permission()));
-    self.deleteStaged = ko.observable(contributor.deleteStaged || false);
-    self.removeContributor = 'Remove contributor';
+
+    self.deleteStaged = ko.observable(false);
+
     self.pageOwner = pageOwner;
+    self.contributorToRemove = ko.observable();
+
+    self.contributorToRemove.subscribe(function(newValue) {
+        contribShouter.notifySubscribers(newValue, 'contribMessageToPublish');
+    });
+
     self.serialize = function() {
         return JSON.parse(ko.toJSON(self));
     };
 
     self.canEdit = ko.computed(function() {
-      return self.currentUserCanEdit && !self.isAdmin;
+        return self.currentUserCanEdit && !self.isAdmin;
     });
 
     self.remove = function() {
-        self.deleteStaged(true);
+        self.contributorToRemove({
+            fullname: self.fullname,
+            id:self.id});
     };
-    self.unremove = function(data, event) {
-        var $target = $(event.target);
-        if (!$target.hasClass('contrib-button')) {
+
+    self.unremove = function() {
+        if (self.deleteStaged()) {
             self.deleteStaged(false);
+            self.options.onVisibleChanged(self.visible(), null);
+            self.options.onPermissionChanged(self.permission(), null);
         }
         // Allow default action
         return true;
     };
     self.profileUrl = ko.observable(contributor.url);
-    self.notDeleteStaged = ko.computed(function() {
-        return !self.deleteStaged();
-    });
-    self.formatPermission = ko.computed(function() {
-        var permission = self.permission();
-        return self.getPermission(permission).text;
-    });
 
     self.canRemove = ko.computed(function(){
         return (self.id === pageOwner.id) && !isRegistration;
     });
 
-    self.change = ko.pureComputed(function() {
-        self.permission(self.curPermission().value);
-        var currentValue = self.curPermission().value;
-        return currentValue === self.original;
+    self.isDirty = ko.pureComputed(function() {
+        return self.permissionChange() ||
+            self.visible() !== self.originals.visible || self.deleteStaged();
     });
-    // TODO: copied-and-pasted from nodeControl. When nodeControl
-    // gets refactored, update this to use global method.
-    self.removeSelf = function(parent) {
-        parent.messages([]);
 
-        var id = self.id,
-            name = self.fullname;
-        var payload = {
-            id: id,
-            name: self.fullname
-        };
-
-        if (parent.validVisible() === 1 && self.visible()){
-            parent.messages.push(
-                new MessageModel(
-                    'Must have at least one bibliographic contributor',
-                    'error'
-                )
-            );
-        } else {
-            $osf.postJSON(
-                window.contextVars.node.urls.api + 'beforeremovecontributors/',
-                payload
-            ).done(function (response) {
-                    bootbox.confirm({
-                        title: 'Delete contributor?',
-                        message: ('Are you sure you want to remove yourself (<strong>' + name + '</strong>) from contributor list?'),
-                        callback: function (result) {
-                            if (result) {
-                                $osf.postJSON(
-                                    window.contextVars.node.urls.api + 'removecontributors/',
-                                    payload
-                                ).done(function (response) {
-                                        if (response.redirectUrl) {
-                                            window.location.href = response.redirectUrl;
-                                        } else {
-                                            window.location.reload();
-                                        }
-                                    }).fail(
-                                    $osf.handleJSONError
-                                );
-                            }
-                        },
-                        buttons:{
-                            confirm:{
-                                label:'Delete',
-                                className:'btn-danger'
-                            }
-                        }
-                    });
-                }).fail(
-                $osf.handleJSONError
-            );
-            return false;
-        }
+    self.optionsText = function(val) {
+        return self.options.permissionMap[val];
     };
-
 };
 
 var MessageModel = function(text, level) {
 
     var self = this;
+
 
     self.text = ko.observable(text || '');
     self.level = ko.observable(level || '');
@@ -182,50 +161,80 @@ var MessageModel = function(text, level) {
 
 };
 
-var ContributorsViewModel = function(contributors, adminContributors, user, isRegistration) {
+var ContributorsViewModel = function(contributors, adminContributors, user, isRegistration, table, adminTable, contribShouter, pageChangedShouter) {
 
     var self = this;
 
     self.original = ko.observableArray(contributors);
 
-    self.contributors = ko.observableArray();
-    self.adminContributors = adminContributors;
+    self.table = $(table);
+    self.adminTable = $(adminTable);
 
-    self.user = ko.observable(user);
-    // TODO: Does this need to be an observable?
-    self.userIsAdmin  = ko.observable($.inArray('admin', user.permissions) !== -1);
-    self.canEdit = ko.computed(function() {
-        return (self.userIsAdmin()) && !isRegistration;
+    self.permissionMap = {
+        read: 'Read',
+        write: 'Read + Write',
+        admin: 'Administrator'
+    };
+
+    self.permissionList = Object.keys(self.permissionMap);
+    self.contributorToRemove = ko.observable('');
+
+    self.contributors = ko.observableArray();
+
+    self.adminContributors = ko.observableArray();
+
+    self.filteredContribs = ko.pureComputed(function() {
+        return ko.utils.arrayFilter(self.contributors(), function(item) {
+            return item.filtered();
+        });
     });
 
-    self.messages = ko.observableArray([]);
+    self.filteredAdmins = ko.pureComputed(function() {
+        return ko.utils.arrayFilter(self.adminContributors(), function(item) {
+            return item.filtered();
+        });
+    });
+
+    self.empty = ko.pureComputed(function() {
+        return (self.contributors().length - self.filteredContribs().length) === 0;
+    });
+
+    self.adminEmpty = ko.pureComputed(function() {
+        return (self.adminContributors().length - self.filteredAdmins().length === 0);
+    });
+
+    self.callback = function (filtered, empty, activeItems) {
+        $.each(activeItems, function (i, contributor) {
+            activeItems[i] = ko.dataFor(contributor);
+        });
+        $.each(self.contributors(), function (i, contributor) {
+            contributor.filtered($.inArray(contributor, activeItems) === -1);
+        });
+        $.each(self.adminContributors(), function (i, contributor) {
+            contributor.filtered($.inArray(contributor, activeItems) === -1);
+        });
+    };
+
+    self.user = ko.observable(user);
+    self.canEdit = ko.computed(function() {
+        return ($.inArray('admin', user.permissions) > -1) && !isRegistration;
+    });
+
+    self.isSortable = ko.computed(function() {
+        return self.canEdit() && self.filteredContribs().length === 0;
+    });
 
     // Hack: Ignore beforeunload when submitting
     // TODO: Single-page-ify and remove this
     self.forceSubmit = ko.observable(false);
 
-    self.sortKeys = Object.keys(sortMap);
-    self.sortKey = ko.observable(self.sortKeys[0]);
-    self.sortOrder = ko.observable(0);
-    self.sortClass = ko.computed(function() {
-        if (self.sortOrder() === 1) {
-                return 'fa fa-caret-up';
-        } else if (self.sortOrder() === -1) {
-                return 'fa fa-caret-down';
-        }
-    });
-    self.sortFunc = ko.computed(function() {
-        return sortMap[self.sortKey()].func;
-    });
-    self.sortKey.subscribe(function() {
-        self.sortOrder(0);
-    });
-
     self.changed = ko.computed(function() {
-        var contributorData = ko.utils.arrayMap(self.contributors(), function(item) {
-            return item.serialize();
-        });
-        return !arraysEqual(contributorData, self.original());
+        for (var i = 0, contributor; contributor = self.contributors()[i]; i++) {
+            if (contributor.isDirty() || contributor.originals.index !== i){
+                return true;
+            }
+        }
+        return false;
     });
 
     self.retainedContributors = ko.computed(function() {
@@ -234,105 +243,103 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
         });
     });
 
-    self.validAdmin = ko.computed(function() {
-        var admins = ko.utils.arrayFilter(self.retainedContributors(), function(item) {
-            return item.permission() === 'admin' &&
-                item.registered;
-        });
-        return !!admins.length;
-    });
-    self.validVisible = ko.computed(function() {
-        return ko.utils.arrayFilter(self.retainedContributors(), function(item) {
-            return item.visible();
-        }).length;
-    });
+    self.adminCount = ko.observable(0);
+
+    self.visibleCount = ko.observable(0);
 
     self.canSubmit = ko.computed(function() {
-        return self.changed() && self.validAdmin() && self.validVisible();
-    });
-    self.changed.subscribe(function() {
-        self.messages([]);
+        return self.changed() && self.adminCount() && self.visibleCount();
     });
 
-    self.validAdmin.subscribe(function(value) {
-        if (!value) {
-            self.messages.push(
+    self.changed.subscribe(function(newValue) {
+        pageChangedShouter.notifySubscribers(newValue, 'changedMessageToPublish');
+    });
+
+    self.messages = ko.computed(function() {
+        var messages = [];
+        if(!self.adminCount()) {
+            messages.push(
                 new MessageModel(
                     'Must have at least one registered admin contributor',
                     'error'
                 )
             );
-        } else {
-            self.messages([]);
         }
-    });
-    self.validVisible.subscribe(function(value) {
-        if (!value) {
-            self.messages.push(
+        if (!self.visibleCount()) {
+            messages.push(
                 new MessageModel(
                     'Must have at least one bibliographic contributor',
                     'error'
                 )
             );
         }
+        return messages;
     });
 
-    self.init = function() {
-        self.messages([]);
-        self.contributors(self.original().map(function(item) {
-            return new ContributorModel(item, self.canEdit(), self.user(), isRegistration);
-        }));
-        self.adminContributors = adminContributors.map(function(contributor) {
-          return new ContributorModel(contributor, self.canEdit(), self.user(), isRegistration, true);
-        });
+    self.handlePermissionChanged = function(newPerm, oldPerm) {
+        if (oldPerm === 'admin') {
+            self.adminCount(self.adminCount() - 1);
+        }
+        if (newPerm === 'admin') {
+            self.adminCount(self.adminCount() + 1);
+        }
     };
 
-    self.initListeners = function() {
-        var self = this;
-        // Warn on add contributors if pending changes
-        $('[href="#addContributors"]').on('click', function() {
-            if (self.changed()) {
-                $osf.growl('Error:',
-                        'Your contributor list has unsaved changes. Please ' +
-                        'save or cancel your changes before adding ' +
-                        'contributors.'
-                );
-                return false;
-            }
-        });
-        // Warn on URL change if pending changes
-        $(window).on('beforeunload', function() {
-            if (self.changed() && !self.forceSubmit()) {
-                // TODO: Use GrowlBox.
-                return 'There are unsaved changes to your contributor ' +
-                    'settings. Are you sure you want to leave this page?';
-            }
-        });
+    self.handleVisibleChanged = function(newVis, oldVis) {
+        if (oldVis) {
+            self.visibleCount(self.visibleCount() - 1);
+        }
+        if (newVis) {
+            self.visibleCount(self.visibleCount() + 1);
+        }
     };
+
+    self.options = {
+        onPermissionChanged: self.handlePermissionChanged,
+        onVisibleChanged: self.handleVisibleChanged,
+        permissionMap: self.permissionMap
+    };
+
+    self.init = function() {
+        var index = -1;
+        self.contributors(self.original().map(function(item) {
+            index++;
+            if (item.permission === 'admin') {
+                self.adminCount(self.adminCount() + 1);
+            }
+            if (item.visible) {
+                self.visibleCount(self.visibleCount() + 1);
+            }
+            return new ContributorModel(item, self.canEdit(), self.user(), isRegistration, false, index, self.options, contribShouter, pageChangedShouter);
+        }));
+        self.adminContributors(adminContributors.map(function(contributor) {
+          if (contributor.permission === 'admin') {
+                self.adminCount(self.adminCount() + 1);
+            }
+          return new ContributorModel(contributor, self.canEdit(), self.user(), isRegistration, true, index, self.options, contribShouter, pageChangedShouter);
+        }));
+    };
+
+    // Warn on add contributors if pending changes
+    $('[href="#addContributors"]').on('click', function() {
+        if (self.changed()) {
+            $osf.growl('Error:',
+                    'Your contributor list has unsaved changes. Please ' +
+                    'save or cancel your changes before adding ' +
+                    'contributors.'
+            );
+            return false;
+        }
+    });
+    // Warn on URL change if pending changes
+    $(window).bind('beforeunload', function() {
+        if (self.changed() && !self.forceSubmit()) {
+            // TODO: Use GrowlBox.
+            return 'There are unsaved changes to your contributor settings';
+        }
+    });
 
     self.init();
-    self.initListeners();
-
-    self.sort = function() {
-        if (self.sortOrder() === 0) {
-            self.sortOrder(sortMap[self.sortKey()].order);
-        } else {
-            self.sortOrder(-1 * self.sortOrder());
-        }
-        var func = sortMap[self.sortKey()].func;
-        var comparator = function(left, right) {
-            var leftVal = func(left);
-            var rightVal = func(right);
-            var spaceship = leftVal === rightVal ?
-                0 :
-                (leftVal < rightVal ?
-                    -1 :
-                    1
-                );
-            return self.sortOrder() * spaceship;
-        };
-        self.contributors.sort(comparator);
-    };
 
     self.serialize = function() {
         return ko.utils.arrayMap(
@@ -346,11 +353,15 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
     };
 
     self.cancel = function() {
-        self.init();
+        self.contributors().forEach(function(contributor) {
+            contributor.reset(self.adminCount, self.visibleCount);
+        });
+        self.contributors(self.contributors.sort(function(left, right) {
+            return left.originals.index > right.originals.index ? 1 : -1;
+        }));
     };
 
     self.submit = function() {
-        self.messages([]);
         self.forceSubmit(true);
         bootbox.confirm({
             title: 'Save changes?',
@@ -368,13 +379,9 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
                             window.location.reload();
                         }
                     }).fail(function(xhr) {
-                        self.init();
                         var response = xhr.responseJSON;
-                        self.messages.push(
-                            new MessageModel(
-                                'Submission failed: ' + response.message_long,
-                                'error'
-                            )
+                        $osf.growl('Error:',
+                            'Submission failed: ' + response.message_long
                         );
                         self.forceSubmit(false);
                     });
@@ -389,19 +396,66 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
         });
     };
 
+    self.afterRender = function(elements, data) {
+        var table;
+        if (data === 'contrib') {
+            table = self.table[0];
+        }
+        else if (data === 'admin') {
+            table = self.adminTable[0];
+        }
+        if (!!table) {
+            rt.responsiveTable(table);
+        }
+    };
+
+    self.collapsed = ko.observable(true);
+
+    self.onWindowResize = function() {
+        self.collapsed(self.table.children().filter('thead').is(':hidden'));
+    };
+
 };
 
 ////////////////
 // Public API //
 ////////////////
 
-function ContribManager(selector, contributors, adminContributors, user, isRegistration) {
+function ContribManager(selector, contributors, adminContributors, user, isRegistration, table, adminTable) {
     var self = this;
+    //shouter allows communication between ContribManager and ContribRemover, in particular which contributor needs to
+    // be removed is passed to ContribRemover
+    var contribShouter = new ko.subscribable();
+    var pageChangedShouter = new ko.subscribable();
     self.selector = selector;
     self.$element = $(selector);
     self.contributors = contributors;
     self.adminContributors = adminContributors;
-    self.viewModel = new ContributorsViewModel(contributors, adminContributors, user, isRegistration);
+    self.viewModel = new ContributorsViewModel(contributors, adminContributors, user, isRegistration, table, adminTable, contribShouter, pageChangedShouter);
+    $('body').on('nodeLoad', function(event, data) {
+        // If user is a contributor, initialize the contributor modal
+        // controller
+        if (data.user.can_edit) {
+            new ContribAdder(
+                '#addContributors',
+                data.node.title,
+                data.node.id,
+                data.parent_node.id,
+                data.parent_node.title
+            );
+        }
+        if (data.user.can_edit || data.user.is_contributor) {
+            new ContribRemover(
+                '#removeContributor',
+                data.node.title,
+                data.node.id,
+                data.user.username,
+                data.user.id,
+                contribShouter,
+                pageChangedShouter
+            );
+        }
+    });
     self.init();
 }
 

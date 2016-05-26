@@ -1,0 +1,390 @@
+{
+    "name": "Prereg Challenge",
+    "version": 2,
+    "flags": {
+        "payment_sent": false,
+        "proof_of_publication": false,
+        "assignee": null
+    },
+    "config": {
+	"hasFiles": true,
+        "requiresApproval": true,
+        "requiresConsent": true,
+        "messages": {
+            "beforeSkipReview": "You are about to register your project without having its content reviewed. This preregistration will NOT BE ELIGIBLE for the Preregistration Challenge. You may click “Continue” to register your project or “Cancel” to return to the form and then “Submit for review” to enter the Preregistration Challenge.",
+            "preConsentHeader": "<div class='text-center m-t-lg'><h3>Preregistration Challenge </h3><hr><h2> Notice </h2></div><div class='row m-t-xl'><div class='col-lg-10 col-lg-offset-1'><p>We designed this process to encourage preregistration. Below are some important items for those who choose to enter the Preregistration Challenge. If you do not agree to the terms you may still continue, use the form, and register your research study without entering the Challenge. <strong>Only Preregistrations that enter the challenge and undergo review are eligible for a $1,000 prize. </strong>We welcome questions and comments (learn more <a target='_blank' href='https://cos.io/preregprivate'>here</a> or email us at <a href='mailto:prereg@cos.io'>prereg@cos.io</a>).</p>",
+            "postConsentHeader": "<div class='text-center m-t-lg'><h3>Preregistration Challenge </h3><hr><h2> Notice of Consent </h2></div><div class='row m-t-xl'><div class='col-lg-10 col-lg-offset-1'><p>Please read and agree to the terms before submitting your research plan to the Preregistration Challenge.</p>",
+            "consentBody": "<ol id='consentList'> <li>After submitting your research plan for review, it is not yet registered. Your research plan will become a static, time stamped preregistration after it passes review. <strong>Please do not begin your study until it is registered.</strong> You will hear back from the review team within 10 business days</li><li>The published article must also be reviewed before receiving the prize.</li><li>Prizes will be awarded at predetermined dates to eligible entrants. If more eligible entrants exist than available prizes, entrants will be ranked based on the date of registration.</li><li>Articles must be published in an <a target='_blank' href='https://cos.io/preregjournals'> eligible journal.</a></li><li>The use of pre-existing data may make your registration ineligible for the Preregistration Challenge.</li><li>Residents of countries on the U.S. State Department's <a target='_blank' href='http://www.pmddtc.state.gov/embargoed_countries/'>list of embargoed countries</a> may not participate in the Preregistration Challenge.</li><li>Entering the Preregistration Challenge requires that you agree to <a target='_blank' href='https://osf.io/4uxbj/'>all of its terms.</a></li></ol></div></div>"
+        },
+        "fulfills": [{
+            "name": "Prereg Challenge",
+            "info": "http://centerforopenscience.org/prereg/"
+        }]
+    },
+    "description": "Preregistration Challenge (pre-data collection): You will be asked a series of questions to ensure that your sampling, design, and analysis plans are solidified prior to beginning your study. Publications that pre register with this template may be eligible for a $1,000 prize. See project page for complete information.",
+    "pages": [{
+        "id": "page1",
+        "title": "Study Information",
+        "questions": [{
+            "qid": "q1",
+            "nav": "Title",
+            "type": "string",
+            "format": "text",
+            "title": "Title",
+            "description": "Provide the working title of your study. It is helpful if this is the same title that you submit for publication of your final manuscript, but it is not a requirement.",
+            "help": "Effect of sugar on brownie tastiness. <br /><br />How responses will be evaluated: The title should be a specific and informative description of a project. Vague titles such as 'Fruit fly preregistration plan' are not appropriate.",
+            "required": true
+        }, {
+            "qid": "q2",
+            "nav": "Authors",
+            "type": "string",
+            "title": "Authors",
+            "description": "The author who submits the preregistration is the recipient of the award money and must also be an author of the published manuscript. Additional authors may be added or removed at any time.",
+            "help": "Jimmy Stewart, Ava Gardner, Bob Hope, Greta Garbo",
+            "type": "osf-author-import",
+            "format": "textarea",
+            "required": true
+        }, {
+            "qid": "q3",
+            "nav": "Research Questions",
+            "type": "string",
+            "format": "textarea",
+            "title": "Research Questions",
+            "description": "Please list each research question included in this study.",
+            "help": "Though there is strong evidence to suggest that sugar affects taste preferences, the effect has never been demonstrated in brownies. Therefore, we will measure taste preference for four different levels of sugar concentration in a standard brownie recipe to determine if the effect exists in this pastry. <br /><br />How responses will be evaluated: The type of submissions for this question will vary widely by discipline, and we cannot determine if the question is worth asking. However, questions that are excessively vague so as to make understanding later sections difficult are not appropriate. For some studies, the research questions and hypotheses are extremely similar, so overlap between this and the subsequent question is expected.",
+            "required": true
+        }, {
+            "qid": "q4",
+            "nav": "Hypotheses",
+            "type": "string",
+            "format": "textarea",
+            "title": "Hypotheses",
+            "description": "For each of the research questions listed in the previous section, provide one or multiple specific and testable hypotheses. Please state if the hypotheses are directional or non-directional. If directional, state the direction. A predicted effect is also appropriate here.",
+            "help": "If taste affects preference, then mean preference indices will be higher with higher concentrations of sugar. <br /><br /> How responses will be evaluated:  In this section, the submission should provide a prediction as to the outcome of the study or a statement that no specific prediction is expected.",
+            "required": true
+        }]
+    }, {
+        "id": "page2",
+        "title": "Sampling Plan",
+        "description": "In this section we’ll ask you to describe how you plan to collect samples, as well as the number of samples you plan to collect and your rationale for this decision. Please keep in mind that the data described in this section should be the actual data used for analysis, so if you are using a subset of a larger dataset, please describe the subset that will actually be used in your study.",
+        "questions": [{
+            "qid": "q5",
+            "nav": "Existing Data",
+            "title": "Existing Data",
+            "description": "Preregistration is designed to make clear the distinction between confirmatory tests, specified prior to seeing the data, and exploratory analyses conducted after observing the data. Therefore, creating a research plan in which existing data will be used presents unique challenges. Please select the description that best describes your situation. Please do not hesitate to contact us if you have questions about how to answer this question (prereg@cos.io).",
+            "type": "choose",
+            "format": "singleselect",
+            "options": [
+                {
+                    "text": "Registration prior to creation of data ",
+                    "tooltip": "As of the date of submission of this research plan for preregistration, the data have not yet been collected, created, or realized."
+                },
+                {
+                    "text": "Registration prior to any human observation of the data ",
+                    "tooltip": "As of the date of submission, the data exist but have not yet been quantified, constructed, observed, or reported by anyone - including individuals that are not associated with the proposed study. Examples include museum specimens that have not been measured and data that have been collected by non-human collectors and are inaccessible."
+                },
+                {
+                    "text": "Registration prior to accessing the data ",
+                    "tooltip": "As of the date of submission, the data exist, but have not been accessed by you or your collaborators. Commonly, this includes data that has been collected by another researcher or institution."
+                },
+                {
+                    "text": "Registration prior to analysis of the data ",
+                    "tooltip": "As of the date of submission, the data exist and you have accessed it, though no analysis has been conducted related to the research plan (including calculation of summary statistics). A common situation for this scenario when a large dataset exists that is used for many different studies over time, or when a data set is randomly split into a sample for exploratory analyses, and the other section of data is reserved for later confirmatory data analysis."
+                },
+                {
+                    "text": "Registration following analysis of the data ",
+                    "tooltip": "As of the date of submission, you have accessed and analyzed some of the data relevant to the research plan. This includes preliminary analysis of variables, calculation of descriptive statistics, and observation of data distributions. Studies that fall into this category are ineligible for the Prereg Challenge. Please contact us (prereg@cos.io) and we will be happy to help you."
+                }
+            ],
+            "required": true
+        }, {
+            "qid": "q6",
+            "nav": "Explanation",
+            "type": "string",
+            "format": "textarea",
+            "title": "Explanation of existing data",
+            "description": "If you indicate that you will be using some data that already exist in this study, please describe the steps you have taken to assure that you are unaware of any patterns or summary statistics in the data. This may include an explanation of how access to the data has been limited, who has observed the data, or how you have avoided observing any analysis of the specific data you will use in your study. The purpose of this question is to assure that the line between confirmatory and exploratory analysis is clear.",
+            "help": " An appropriate instance of using existing data would be collecting a sample size much larger than is required for the study, using a small portion of it to conduct exploratory analysis, and then registering one particular analysis that showed promising results. After registration, conduct the specified analysis on that part of the dataset that had not been investigated by the researcher up to that point. <br /><br /> How responses will be evaluated: Both confirmatory (hypothesis testing) and exploratory (hypothesis generating) analysis contribute to scientific progress, and do so best when it is clear which is which.  The Preregistration Challenge stimulates experience with preregistration of analysis plans for hypothesis testing, and transparency about the distinction between confirmatory and exploratory analysis. Research plans using existing data present unique challenges for hypothesis testing because observation of data can influence subsequent analysis plans of the same data. This can produce a gray area between confirmatory and exploratory analysis. Research plans using existing data may not be eligible for the Challenge. Determination of eligibility is based on evidence that the diagnosticity of the confirmatory analysis plans is retained despite the fact that the data exist.",
+            "required": true
+        }, {
+            "qid": "q7",
+            "nav": "Data collection procedures",
+            "type": "object",
+            "title": "Data collection procedures",
+            "description": "Please describe the process by which you will collect your data. If you are using human subjects, this should include the population from which you obtain subjects, recruitment efforts, payment for participation, how subjects will be selected for eligibility from the initial pool (e.g. inclusion and exclusion rules), and your study timeline. For studies that don’t include human subjects, include information about how you will collect samples, duration of data gathering efforts, source or location of samples, or batch numbers you will use.",
+            "help": "Participants will be recruited through advertisements at local pastry shops. Participants will be paid $10 for agreeing to participate (raised to $30 if our sample size is not reached within 15 days of beginning recruitment). Participants must be at least 18 years old and be able to eat the ingredients of the pastries.<br /><br /> How responses will be evaluated: The answer to this question requires a specific set of instructions so that another person could repeat the data collection procedures and recreate the study population. Alternatively, if the study population would be unable to be reproduced because it relies on a specific set of circumstances unlikely to be recreated (e.g., a community of people from a specific time and location), the criteria and methods for creating the group and the rationale for this unique set of subjects should be clear.",
+            "properties": [
+                {
+                    "id": "question",
+                    "type": "string",
+                    "format": "textarea",
+                    "required": true
+                },
+                {
+                    "id": "uploader",
+                    "type": "osf-upload",
+                    "format": "osf-upload-toggle"
+                }
+            ]
+        }, {
+            "qid": "q8",
+            "nav": "Sample size",
+            "type": "string",
+            "format": "textarea",
+            "title": "Sample size",
+            "description": "Describe the sample size of your study. How many units will be analyzed in the study? This could be the number of people, birds, classrooms, plots, interactions, or countries included. If the units are not individuals, then describe the size requirements for each unit. If you are using a clustered or multilevel design, how many units are you collecting at each level of the analysis?",
+            "help": "Our target sample size is 280 participants. We will attempt to recruit up to 320, assuming that not all will complete the total task. <br /><br /> How responses will be evaluated: For some studies, this will simply be the number of samples or the number of clusters. For others, this could be an expected range, minimum, or maximum number.",
+            "required": true
+        }, {
+            "qid": "q9",
+            "nav": "Sample size rationale",
+            "type": "string",
+            "format": "textarea",
+            "title": "Sample size rationale",
+            "description": "This could include a power analysis or an arbitrary constraint such as time, money, or personnel.",
+            "help": "We used the software program G*Power to conduct a power analysis. Our goal was to obtain .95 power to detect a medium effect size of .25 at the standard .05 alpha error probability. <br /><br /> How responses will be evaluated: This gives you an opportunity to specifically state how the sample size will be determined. A wide range of possible answers is acceptable; remember that transparency is more important than principled justifications. If you state any reason for a sample size upfront, it is better than stating no reason and leaving the reader to “fill in the blanks.” Acceptable rationales include: a power analysis, an arbitrary number of subjects, or a number based on time or monetary constraints.",
+            "required": true
+        }, {
+            "qid": "q10",
+            "nav": "Stopping rule",
+            "title": "Stopping rule",
+            "type": "string",
+            "format": "textarea",
+            "description": "If your data collection procedures do not give you full control over your exact sample size, specify how you will decide when to terminate your data collection. ",
+            "help": "We will post participant sign-up slots by week on the preceding Friday night, with 20 spots posted per week. We will post 20 new slots each week if, on that Friday night, we are below 320 participants. <br /><br /> How responses will be evaluated: You may specify a stopping rule based on p-values only in the specific case of sequential analyses with pre-specified checkpoints, alphas levels, and stopping rules. Unacceptable rationales include stopping based on p-values if checkpoints and stopping rules are not specified. If you have control over your sample size, then including a stopping rule is not necessary, though it must be clear in this question or a previous question how an exact sample size is attained.",
+            "required": true
+        }]
+    }, {
+        "id": "page3",
+        "title": "Variables",
+        "description": "In this section you can describe all variables (both manipulated and measured variables) that will later be used in your confirmatory analysis plan. In your analysis plan, you will have the opportunity to describe how each variable will be used. If you have variables which you are measuring for exploratory analyses, you are not required to list them, though you are permitted to do so.",
+        "questions": [{
+            "qid": "q11",
+            "nav": "Manipulated",
+            "type": "object",
+            "title": "Manipulated variables",
+            "description": "Describe all variables you plan to manipulate and the levels or treatment arms of each variable. For observational studies and meta-analyses, simply state that this is not applicable.",
+            "help": "We manipulated the percentage of sugar by mass added to brownies. The four levels of this categorical variable are: 15%, 20%, 25%, or 40% cane sugar by mass. <br /><br /> How responses will be evaluated: For any experimental manipulation, you should give a precise definition of each manipulated variable. This must include a precise description of the levels at which each variable will be set, or a specific definition for each categorical treatment. For example, “loud or quiet,” should instead give either a precise decibel level or a means of recreating each level. 'Presence/absence' or 'positive/negative' is an acceptable description if the variable is precisely described.",
+            "properties": [
+                {
+                    "id": "question",
+                    "type": "string",
+                    "format": "textarea",
+                    "required": true
+                },
+                {
+                    "id": "uploader",
+                    "type": "osf-upload",
+                    "format": "osf-upload-toggle"
+                }
+            ]
+        }, {
+            "qid": "q12",
+            "nav": "Measured",
+            "type": "object",
+            "title": "Measured variables",
+            "description": "Describe each variable that you will measure. This will include outcome measures, as well as any predictors or covariates that you will measure. You do not need to include any variables that you plan on collecting if they are not going to be included in the confirmatory analyses of this study.",
+            "help": "The single outcome variable will be the perceived tastiness of the single brownie each participant will eat. We will measure this by asking participants ‘How much did you enjoy eating the brownie’ (on a scale of 1-7, 1 being ‘not at all’, 7 being ‘a great deal’) and ‘How good did the brownie taste’ (on a scale of 1-7, 1 being ‘very bad’, 7 being ‘very good’). <br /><br /> How responses will be evaluated: Observational studies and meta-analyses will include only measured variables. As with the previous questions, the answers here must be precise. For example, 'intelligence,' 'accuracy,' 'aggression,' and 'color' are too vague. Acceptable alternatives could be  'IQ as measured by Wechsler Adult Intelligence Scale' 'percent correct,' 'number of threat displays,' and 'percent reflectance at 400 nm.' ",
+            "properties": [
+                {
+                    "id": "question",
+                    "type": "string",
+                    "format": "textarea",
+                    "required": true
+                },
+                {
+                    "id": "uploader",
+                    "type": "osf-upload",
+                    "format": "osf-upload-toggle"
+                }
+            ]
+        }, {
+            "qid": "q13",
+            "nav": "Indices",
+            "type": "object",
+            "title": "Indices",
+            "description": "If any measurements are  going to be combined into an index (or even a mean), what measures will you use and how will they be combined? Include either a formula or a precise description of your method. If your are using a more complicated statistical method to combine measures (e.g. a factor analysis), you can note that here but describe the exact method in the analysis plan section.",
+            "help": "We will take the mean of the two questions above to create a single measure of ‘brownie enjoyment.’ <br /><br /> How responses will be evaluated: If you are using multiple pieces of data to construct a single variable, how will this occur? Both the data that are included and the formula or weights for each measure m. Standard summary statistics, such as “means” do not require a formula, though more complicated indices require either the exact formula or, if it is an established index in the field, the index must be unambiguously defined. For example, “biodiversity index” is too broad, whereas “Shannon’s biodiversity index” is appropriate.",
+            "properties": [
+                {
+                    "id": "question",
+                    "type": "string",
+                    "format": "textarea",
+                    "required": true
+                },
+                {
+                    "id": "uploader",
+                    "type": "osf-upload",
+                    "format": "osf-upload-toggle"
+                }
+            ]
+        }]
+    }, {
+        "id": "page4",
+        "title": "Design Plan",
+        "description": "In this section, you will be asked to describe the overall design of your study. Remember that this research plan is designed to register a single study, so if you have multiple experimental designs, please complete a separate preregistration.",
+        "questions": [{
+            "qid": "q14",
+            "nav": "Study type",
+            "title": "Study type",
+            "description": "Please check one of the following statements",
+            "type": "choose",
+            "format": "singleselect",
+            "options": [
+                "Experiment - A researcher randomly assigns treatments to study subjects, this includes field or lab experiments. This is also known as an intervention experiment and includes randomized controlled trials.",
+                "Observational Study - Data is collected from study subjects that are not randomly assigned to a treatment. This includes surveys, “natural experiments,” and regression discontinuity designs.",
+                "Meta-Analysis - A systematic review of published studies.",
+                "Other"
+            ],
+            "required": true
+        }, {
+            "qid": "q15",
+            "nav": "Blinding",
+            "title": "Blinding",
+            "description": "Blinding describes who is aware of the experimental manipulations within a study. Mark all that apply.",
+            "type": "choose",
+            "format": "multiselect",
+            "options": [
+                "No blinding is involved in this study.",
+                "For studies that involve human subjects, they will not know the treatment group to which they have been assigned.",
+                "Research personnel who interact directly with the study subjects (either human or non-human subjects) will not be aware of the assigned treatments.",
+                "Research personnel who analyze the data collected from the study are not aware of the treatment applied to any given group."
+            ],
+            "required": true
+        }, {
+            "qid": "q16",
+            "nav": "Study design",
+            "type": "object",
+            "title": "Study design",
+            "description": "Describe your study design. Examples include two-group, factorial, randomized block, and repeated measures. Is it a between (unpaired), within-subject (paired), or mixed design? Describe any counterbalancing required. Typical study designs for observation studies include cohort, cross sectional, and case-control studies. ",
+            "help": "We have a between subjects design with 1 factor (sugar by mass) with 4 levels. <br /><br /> How responses will be evaluated: This question has a variety of possible answers. The key is for a researcher to be as detailed as is necessary given the specifics of their design. Be careful to determine if every parameter has been specified in the description of the study design. There may be some overlap between this question and the following questions. That is OK, as long as sufficient detail is given in one of the areas to provide all of the requested information. For example, if the study design describes a complete factorial, 2 X 3 design and the treatments and levels are specified previously, you do not have to repeat that information.",
+            "properties": [
+                {
+                    "id": "question",
+                    "type": "string",
+                    "format": "textarea",
+                    "required": true
+                },
+                {
+                    "id": "uploader",
+                    "type": "osf-upload",
+                    "format": "osf-upload-toggle"
+                }
+            ]
+        }, {
+            "qid": "q17",
+            "nav": "Randomization",
+            "title": "Randomization",
+            "description": "If you are doing a randomized study, how will you randomize, and at what level? ",
+            "help": "We will use block randomization, where each participant will be randomly assigned to one of the four equally sized, predetermined blocks. The random number list used to create these four blocks will be created using the web applications available at http://random.org. <br /><br /> How responses will be evaluated: Typical randomization techniques include: simple, block, stratified, and adaptive covariate randomization. If randomization is required for the study, the method should be specified here, not simply the source of random numbers.",
+            "required": true,
+            "type": "string",
+            "format": "textarea"
+        }]
+    }, {
+        "id": "page5",
+        "title": "Analysis Plan",
+        "type": "object",
+        "description": "You may describe one or more confirmatory analysis in this preregistration. Please remember that all analyses specified below must be reported in the final article, and any additional analyses must be noted as exploratory or hypothesis-generating.<br /><br />A confirmatory analysis plan must state up front which variables are predictors (independent) and which are the outcomes (dependent), otherwise it is an exploratory analysis. You are allowed to describe any exploratory work here, but a clear confirmatory analysis is required.",
+        "questions": [{
+            "qid": "q19",
+            "nav": "Statistical models",
+            "type": "object",
+            "title": "Statistical models",
+            "description": "What statistical model will you use to test each hypothesis? Please include the type of model (e.g. ANOVA, multiple regression, SEM, etc) and the specification of the model (this includes each variable that will be included as predictors, outcomes, or covariates). Please specify any interactions that will be tested and remember that any test not included here must be noted as an exploratory test in your final article.",
+            "help": "We will use a one-way between subjects ANOVA to analyze our results. The manipulated, categorical independent variable is 'sugar' whereas the dependent variable is our taste index. <br /><br /> How responses will be evaluated: This is perhaps the most important and most complicated question within the preregistration. As with all of the other questions, the key is to provide a specific recipe for analyzing the collected data. Ask yourself: is enough detail provided to run the same analysis again with the information provided by the user? Be aware for instances where the statistical models appear specific, but actually leave openings for the precise test. See the following examples:<br /><br /> If someone specifies a 2x3 ANOVA with both factors within subjects, there is still flexibility with the various types of ANOVAs that could be run. Either a repeated measures ANOVA (RMANOVA) or a multivariate ANOVA (MANOVA) could be used for that design, which are two different tests. <br /><br />If you are going to perform a sequential analysis and check after 50, 100, and 150 samples, you must also specify the p-values you’ll test against at those three points.",
+            "properties": [
+                {
+                    "id": "question",
+                    "type": "string",
+                    "format": "textarea",
+                    "required": true
+                },
+                {
+                    "id": "uploader",
+                    "type": "osf-upload",
+                    "format": "osf-upload-toggle"
+                }
+            ]
+        }, {
+            "qid": "q20",
+            "nav": "Transformations",
+            "title": "Transformations",
+            "description": "If you plan on transforming, centering, recoding the data, or will require a coding scheme for categorical variables, please describe that process.",
+            "help": "The “Effect of sugar on brownie tastiness” does not require any additional transformations. However, if it were using a regression analysis and each level of sweet had been categorically described (e.g. not sweet, somewhat sweet, sweet, and very sweet), ‘sweet’ could be dummy coded with ‘not sweet’ as the reference category. <br /><br /> How responses will be evaluated: If any categorical predictors are included in a regression, indicate how those variables will be coded (e.g. dummy coding, summation coding, etc.) and what the reference category will be.",
+            "required": true,
+            "type": "string",
+            "format": "textarea"
+        }, {
+            "qid": "q21",
+            "nav": "Follow-up analyses",
+            "title": "Follow-up analyses",
+            "description": "If not specified previously, will you be conducting any confirmatory analyses to follow up on effects in your statistical model, such as subgroup analyses, pairwise or complex contrasts, or follow-up tests from interactions? Remember that any analyses not specified in this research plan must be noted as exploratory.",
+            "help": "If the the ANOVA indicates that the mean taste perceptions are significantly different (p<.05), then we will use a Tukey-Kramer HSD test to conduct all possible pairwise comparison.<br /><br /> How responses will be evaluated: This is simply a place to allow entering in any additional analyses. The criteria for these follow up analyses are identical to any analyses listed in other sections. It is also fine to enter these follow up analyses in a separate analysis section. The purpose of this question is to allow entering of any follow up tests that naturally follow from a primary analysis.",
+            "required": true,
+            "type": "string",
+            "format": "textarea"
+        }, {
+            "qid": "q22",
+            "nav": "Inference criteria",
+            "title": "Inference criteria",
+            "description": "What criteria will you use to make inferences? Please describe the information you’ll use (e.g. specify the p-values, Bayes factors, specific model fit indices), as well as cut-off criterion, where appropriate. Will you be using one or two tailed tests for each of your analyses? If you are comparing multiple conditions or testing multiple hypotheses, will you account for this? ",
+            "help": "We will use the standard p<.05 criteria for determining if the ANOVA and the post hoc test suggest that the results are significantly different from those expected if the null hypothesis were correct. The post-hoc Tukey-Kramer test adjusts for multiple comparisons.<br /><br /> How responses will be evaluated: P-values, confidence intervals, and effect sizes are standard means for making an inference, and any level is acceptable, though some criteria must be specified in this or previous fields. Bayesian analyses should specify a Bayes factor or a credible interval. If you are selecting models, then how will you determine the relative quality of each? In regards to multiple comparisons, this is a question with few “wrong” answers. In other words, transparency is more important than any specific method of controlling the false discovery rate or false error rate. One may state an intention to report all tests conducted or one may conduct a specific correction procedure; either strategy is acceptable.",
+            "required": true,
+            "type": "string",
+            "format": "textarea"
+        }, {
+            "qid": "q23",
+            "nav": "Data exclusion",
+            "title": "Data exclusion",
+            "description": "How will you determine which data points or samples (if any) to exclude from your analyses? How will outliers be handled?",
+            "help": "No checks will be performed to determine eligibility for inclusion besides verification that each subject answered each of the three tastiness indices. Outliers will be included in the analysis. <br /><br /> How responses will be evaluated: Any rule for excluding a particular set of data is acceptable. One may describe rules for excluding a participant or for identifying outlier data.",
+            "required": true,
+            "type": "string",
+            "format": "textarea"
+        }, {
+            "qid": "q24",
+            "nav": "Missing data",
+            "title": "Missing data",
+            "description": "How will you deal with incomplete or missing data?",
+            "help": "If a subject does not complete any of the three indices of tastiness, that subject will not be included in the analysis.<br /><br /> How responses will be evaluated:  Any relevant explanation is acceptable. As a final reminder, remember that the final analysis must follow the specified plan, and deviations must be either strongly justified or included as a separate, exploratory analysis.",
+            "required": true,
+            "type": "string",
+            "format": "textarea"
+        }, {
+            "qid": "q25",
+            "nav": "Exploratory analysis",
+            "title": "Exploratory analysis",
+            "description": "If you plan to explore your data set to look for unexpected differences or relationships, you may describe those tests here. An exploratory test is any test where a prediction is not made up front, or there are multiple possible tests that you are going to use. A statistically significant finding in an exploratory test is a great way to form a new confirmatory hypothesis, which could be registered at a later time.",
+            "help": "We expect that certain demographic traits may be related to taste preferences. Therefore, we will look for relationships between demographic variables (age, gender, income, and marital status) and the primary outcome measures of taste preferences.",
+            "type": "string",
+            "format": "textarea"
+        }]
+    }, {
+        "id": "page6",
+        "title": "Scripts",
+        "type": "object",
+        "description": "The purpose of a fully commented analysis script is to unambiguously provide the responses to all of the questions raised in the analysis section. This step is not common, but we encourage you to try creating an analysis script, refine it using a modeled dataset, and use it in place of your written analysis plan.",
+        "questions": [{
+            "qid": "q26",
+            "nav": "Script",
+            "title": "Upload an analysis script with clear comments",
+            "type": "osf-upload",
+            "format": "osf-upload-open",
+            "description": "This optional step is helpful in order to create a process that is completely transparent and increase the likelihood that your analysis can be replicated. We recommend that you run the code on a simulated dataset in order to check that it will run without errors."
+        }]
+    }, {
+        "id": "page7",
+        "title": "Other",
+        "type": "object",
+        "questions": [{
+            "qid": "q27",
+            "nav": "Other",
+            "title": "Other",
+            "description": "If there is any additional information that you feel needs to be included in your preregistration, please enter it here.",
+            "help": "",
+            "type": "string",
+            "format": "textarea"
+        }]
+    }]
+}

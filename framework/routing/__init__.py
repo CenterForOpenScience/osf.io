@@ -1,22 +1,24 @@
 # -*- coding: utf-8 -*-
-import os
-import logging
+
 import copy
-import json
 import functools
 import httplib as http
+import json
+import logging
+import os
 
-import lxml.html
-import werkzeug.wrappers
-from werkzeug.exceptions import NotFound
-from mako.template import Template
-from mako.lookup import TemplateLookup
 from flask import request, make_response
+import lxml.html
+from mako.lookup import TemplateLookup
+from mako.template import Template
+import markupsafe
+from werkzeug.exceptions import NotFound
+import werkzeug.wrappers
 
 from framework import sentry
+from framework.exceptions import HTTPError
 from framework.flask import app, redirect
 from framework.sessions import session
-from framework.exceptions import HTTPError
 
 from website import settings
 
@@ -25,6 +27,9 @@ logger = logging.getLogger(__name__)
 TEMPLATE_DIR = settings.TEMPLATES_PATH
 
 _TPL_LOOKUP = TemplateLookup(
+    default_filters=[
+        'unicode',  # default filter; must set explicitly when overriding
+    ],
     directories=[
         TEMPLATE_DIR,
         os.path.join(settings.BASE_PATH, 'addons/'),
@@ -35,10 +40,12 @@ _TPL_LOOKUP = TemplateLookup(
 _TPL_LOOKUP_SAFE = TemplateLookup(
     default_filters=[
         'unicode',  # default filter; must set explicitly when overriding
-        'temp_ampersand_fixer',  # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe.
+        'temp_ampersand_fixer',  # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe. See [#OSF-4432]
         'h',
     ],
-    imports=['from website.util.sanitize import temp_ampersand_fixer'],  # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe.
+    imports=[
+        'from website.util.sanitize import temp_ampersand_fixer',  # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe. See [#OSF-4432]
+    ],
     directories=[
         TEMPLATE_DIR,
         os.path.join(settings.BASE_PATH, 'addons/'),
@@ -50,7 +57,6 @@ REDIRECT_CODES = [
     http.MOVED_PERMANENTLY,
     http.FOUND,
 ]
-
 
 class Rule(object):
     """ Container for routing and rendering rules."""
@@ -212,6 +218,7 @@ def render_mako_string(tpldir, tplname, data, trust=True):
     :param trust: Optional. If ``False``, markup-save escaping will be enabled
     """
 
+    show_errors = settings.DEBUG_MODE  # thanks to abought
     # TODO: The "trust" flag is expected to be temporary, and should be removed
     #       once all templates manually set it to False.
 
@@ -223,11 +230,12 @@ def render_mako_string(tpldir, tplname, data, trust=True):
             tpl_text = f.read()
         tpl = Template(
             tpl_text,
+            format_exceptions=show_errors,
             lookup=lookup_obj,
             input_encoding='utf-8',
             output_encoding='utf-8',
             default_filters=lookup_obj.template_args['default_filters'],
-            imports=lookup_obj.template_args['imports']  # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe.
+            imports=lookup_obj.template_args['imports']  # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe. See [#OSF-4432]
         )
     # Don't cache in debug mode
     if not app.debug:
@@ -476,7 +484,7 @@ class WebRenderer(Renderer):
             element_meta = json.loads(attributes_string)
         except ValueError:
             return '<div>No JSON object could be decoded: {}</div>'.format(
-                attributes_string
+                markupsafe.escape(attributes_string)
             ), True
 
         uri = element_meta.get('uri')
@@ -496,11 +504,11 @@ class WebRenderer(Renderer):
                 uri_data = call_url(uri, view_kwargs=view_kwargs)
                 render_data.update(uri_data)
             except NotFound:
-                return '<div>URI {} not found</div>'.format(uri), is_replace
+                return '<div>URI {} not found</div>'.format(markupsafe.escape(uri)), is_replace
             except Exception as error:
                 logger.exception(error)
                 if error_msg:
-                    return '<div>{}</div>'.format(error_msg), is_replace
+                    return '<div>{}</div>'.format(markupsafe.escape(unicode(error_msg))), is_replace
                 return '<div>Error retrieving URI {}: {}</div>'.format(
                     uri,
                     repr(error)

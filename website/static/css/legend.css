@@ -1,9 +1,15 @@
+.legend-grid {
+    -webkit-column-count: 2; /* Chrome, Safari, Opera */
+    -moz-column-count: 2; /* Firefox */
+    column-count: 2;
+    margin-bottom: 5px;
+}
+
 .legend-grid-item {
-    width: auto;
+    width: 100%;
     padding-left: 5px;
     padding-right: 3px;
-    padding-bottom: 5px;
-    border-left: 1px solid #EEEEEE;
+    margin-bottom: 8px;
     line-break: strict;
     display: inline-block;
 }

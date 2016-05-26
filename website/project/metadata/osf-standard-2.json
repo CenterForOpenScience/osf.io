@@ -1,0 +1,32 @@
+{
+    "name": "OSF-Standard Pre-Data Collection Registration",
+    "version": 2,
+    "description": "You will be asked if data collection is underway and if you have looked at your data already. You will be provided an opportunity to post other comments about your project. This template is not a valid submission for the Pre-registration Prize.",
+    "pages": [{
+        "title": "OSF-Standard Pre-Data Collection Registration",
+        "id": "page1",
+        "questions": [{
+            "qid": "datacompletion",
+            "title": "Has data collection begun for this project?",
+            "nav": "Data Completion",
+            "type": "choose",
+            "format": "singleselect",
+            "options": ["No, data collection has not begun", "Yes, data collection is underway or complete"],
+            "description": "Please choose"
+        },{
+            "qid": "looked",
+            "title": "Have you looked at the data?",
+            "nav": "Looked at Data",
+            "type": "choose",
+            "format": "singleselect",
+            "options": ["Yes", "No"],
+            "description": "Please choose"
+        },{
+            "qid": "comments",
+            "title": "Other Comments",
+            "nav": "Comments",
+            "type": "string",
+            "format": "textarea"
+        }]
+    }]
+}

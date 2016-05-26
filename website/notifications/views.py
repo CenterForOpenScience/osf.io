@@ -26,12 +26,22 @@ def get_node_subscriptions(auth, **kwargs):
 
 
 @must_be_logged_in
+def get_file_subscriptions(auth, **kwargs):
+    node_id = request.args.get('node_id')
+    path = request.args.get('path')
+    provider = request.args.get('provider')
+    return utils.format_file_subscription(auth.user, node_id, path, provider)
+
+
+@must_be_logged_in
 def configure_subscription(auth):
     user = auth.user
     json_data = request.get_json()
     target_id = json_data.get('id')
     event = json_data.get('event')
     notification_type = json_data.get('notification_type')
+    path = json_data.get('path')
+    provider = json_data.get('provider')
 
     if not event or (notification_type not in NOTIFICATION_TYPES and notification_type != 'adopt_parent'):
         raise HTTPError(http.BAD_REQUEST, data=dict(
@@ -39,6 +49,9 @@ def configure_subscription(auth):
         )
 
     node = Node.load(target_id)
+    if 'file_updated' in event and path is not None and provider is not None:
+        wb_path = path.lstrip('/')
+        event = wb_path + '_file_updated'
     event_id = utils.to_subscription_key(target_id, event)
 
     if not node:
@@ -64,13 +77,16 @@ def configure_subscription(auth):
         if notification_type != 'adopt_parent':
             owner = node
         else:
-            parent = node.parent_node
-            if not parent:
-                sentry.log_message(
-                    '{!r} attempted to adopt_parent of '
-                    'the parentless project, {!r}'.format(user, node)
-                )
-                raise HTTPError(http.BAD_REQUEST)
+            if 'file_updated' in event and len(event) > len('file_updated'):
+                pass
+            else:
+                parent = node.parent_node
+                if not parent:
+                    sentry.log_message(
+                        '{!r} attempted to adopt_parent of '
+                        'the parentless project, {!r}'.format(user, node)
+                    )
+                    raise HTTPError(http.BAD_REQUEST)
 
             # If adopt_parent make sure that this subscription is None for the current User
             subscription = NotificationSubscription.load(event_id)

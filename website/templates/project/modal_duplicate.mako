@@ -9,7 +9,7 @@
                                     ${ node['points'] }
                                 </span>
                         </h4>
-                        ${ language.LINK_DESCRIPTION }
+                        ${ language.LINK_DESCRIPTION | n }
                         % if node['points'] > 0:
 
                         <a class="btn btn-info btn-block" href="#showLinks"
@@ -25,12 +25,12 @@
                                 ${ node['templated_count'] }
                             </span>
                         </h4>
-                        ${ language.TEMPLATE_DESCRIPTION }
+                        ${ language.TEMPLATE_DESCRIPTION | n }
                         <a class="btn btn-primary form-control${'' if user_name and (user['is_contributor'] or node['is_public']) else ' disabled'}"
                            data-dismiss="modal"
                            onclick="NodeActions.useAsTemplate();"
                         >
-                            ${ language.TEMPLATE_ACTION }
+                            ${ language.TEMPLATE_ACTION | n }
                         </a>
 
                     </div>
@@ -42,16 +42,16 @@
                             </button>
                         </h4>
                         % if not disk_saving_mode:
-                            ${ language.FORK_DESCRIPTION }
+                            ${ language.FORK_DESCRIPTION | n }
                         % else:
-                            ${ language.DISK_SAVING_MODE}
+                            ${ language.DISK_SAVING_MODE | n }
                         % endif
                         % if not disk_saving_mode:
                             <a class="btn btn-primary form-control${ '' if user_name and (user['is_contributor'] or node['is_public']) else ' disabled'}"
                                data-dismiss="modal"
                                onclick="NodeActions.forkNode();"
                             >
-                                ${ language.FORK_ACTION }
+                                ${ language.FORK_ACTION | n }
                             </a>
                             <a class="btn btn-info btn-block m-t-xs" href="${ node['url'] }forks/">View Forks</a>
                         % endif

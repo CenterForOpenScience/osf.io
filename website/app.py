@@ -1,30 +1,39 @@
 # -*- coding: utf-8 -*-
 
-import os
 import importlib
-from collections import OrderedDict
 import json
+import os
+from collections import OrderedDict
 
-from modularodm import storage
+import django
 from werkzeug.contrib.fixers import ProxyFix
+
 import framework
+import website.models
+from framework.addons.utils import render_addon_capabilities
 from framework.flask import app, add_handlers
 from framework.logging import logger
-from framework.mongo import set_up_storage
-from framework.addons.utils import render_addon_capabilities
-from framework.sentry import sentry
 from framework.mongo import handlers as mongo_handlers
-from framework.tasks import handlers as task_handlers
+from framework.mongo import set_up_storage
+from framework.postcommit_tasks import handlers as postcommit_handlers
+from framework.sentry import sentry
+from framework.celery_tasks import handlers as celery_task_handlers
 from framework.transactions import handlers as transaction_handlers
-
-import website.models
-from website.routes import make_url_map
+from modularodm import storage
 from website.addons.base import init_addon
+from website.project.licenses import ensure_licenses
 from website.project.model import ensure_schemas, Node
+from website.routes import make_url_map
+
+# This import is necessary to set up the archiver signal listeners
+from website.archiver import listeners  # noqa
+from website.mails import listeners  # noqa
+from api.caching import listeners  # noqa
 
 def build_js_config_files(settings):
     with open(os.path.join(settings.STATIC_FOLDER, 'built', 'nodeCategories.json'), 'wb') as fp:
         json.dump(Node.CATEGORY_MAP, fp)
+
 
 def init_addons(settings, routes=True):
     """Initialize each addon in settings.ADDONS_REQUESTED.
@@ -47,8 +56,9 @@ def attach_handlers(app, settings):
     """Add callback handlers to ``app`` in the correct order."""
     # Add callback handlers to application
     add_handlers(app, mongo_handlers.handlers)
-    add_handlers(app, task_handlers.handlers)
+    add_handlers(app, celery_task_handlers.handlers)
     add_handlers(app, transaction_handlers.handlers)
+    add_handlers(app, postcommit_handlers.handlers)
 
     # Attach handler for checking view-only link keys.
     # NOTE: This must be attached AFTER the TokuMX to avoid calling
@@ -85,6 +95,7 @@ def build_log_templates(settings):
         build_fp.write('\n')
         build_addon_log_templates(build_fp, settings)
 
+
 def do_set_backends(settings):
     logger.debug('Setting storage backends')
     set_up_storage(
@@ -93,8 +104,9 @@ def do_set_backends(settings):
         addons=settings.ADDONS_AVAILABLE,
     )
 
+
 def init_app(settings_module='website.settings', set_backends=True, routes=True,
-        attach_request_handlers=True):
+             attach_request_handlers=True):
     """Initializes the OSF. A sort of pseudo-app factory that allows you to
     bind settings, set up routing, and set storage backends, but only acts on
     a single app instance (rather than creating multiple instances).
@@ -110,6 +122,9 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
     build_log_templates(settings)
     init_addons(settings, routes)
     build_js_config_files(settings)
+
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.base.settings')
+    django.setup()
 
     app.debug = settings.DEBUG_MODE
 
@@ -132,6 +147,7 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
 
     if set_backends:
         ensure_schemas()
+        ensure_licenses()
     apply_middlewares(app, settings)
 
     return app
@@ -144,5 +160,3 @@ def apply_middlewares(flask_app, settings):
         flask_app.wsgi_app = ProxyFix(flask_app.wsgi_app)
 
     return flask_app
-
-from website.archiver import listeners  # noqa

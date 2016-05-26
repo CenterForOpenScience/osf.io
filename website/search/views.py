@@ -1,31 +1,31 @@
 # -*- coding: utf-8 -*-
-import time
-import logging
 import functools
 import httplib as http
+import json
+import logging
+import time
+from urllib2 import unquote
 
 import bleach
-
 from flask import request
 
 from modularodm import Q
+
 from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
-
+from framework.exceptions import HTTPError
+from framework import sentry
+from website import language
 from website import settings
-from website.models import Node
-from website.models import User
-from website.search import util
-from website.util import api_url_for
+from website.models import Node, User
+from website.project.views.contributor import get_node_contributors_abbrev
 from website.search import exceptions
 from website.search import share_search
+from website.search import util
+from website.search.exceptions import IndexNotFoundError, MalformedQueryError
 import website.search.search as search
-from framework.exceptions import HTTPError
-from website.search.exceptions import IndexNotFoundError
-from website.search.exceptions import MalformedQueryError
 from website.search.util import build_query
-from website.project.views.contributor import get_node_contributors_abbrev
-
+from website.util import api_url_for
 
 logger = logging.getLogger(__name__)
 
@@ -40,14 +40,22 @@ def handle_search_errors(func):
         except exceptions.MalformedQueryError:
             raise HTTPError(http.BAD_REQUEST, data={
                 'message_short': 'Bad search query',
-                'message_long': ('Please check our help (the question mark beside the search box) for more information '
-                                 'on advanced search queries.'),
+                'message_long': language.SEARCH_QUERY_HELP,
             })
         except exceptions.SearchUnavailableError:
             raise HTTPError(http.SERVICE_UNAVAILABLE, data={
                 'message_short': 'Search unavailable',
                 'message_long': ('Our search service is currently unavailable, if the issue persists, '
-                'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.'),
+                                 'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.'),
+            })
+        except exceptions.SearchException:
+            # Interim fix for issue where ES fails with 500 in some settings- ensure exception is still logged until it can be better debugged. See OSF-4538
+            sentry.log_exception()
+            sentry.log_message('Elasticsearch returned an unexpected error response')
+            # TODO: Add a test; may need to mock out the error response due to inability to reproduce error code locally
+            raise HTTPError(http.BAD_REQUEST, data={
+                'message_short': 'Could not perform search query',
+                'message_long': language.SEARCH_QUERY_HELP,
             })
     return wrapped
 
@@ -115,7 +123,7 @@ def search_projects_by_title(**kwargs):
     max_results = int(request.args.get('maxResults', '10'))
     category = request.args.get('category', 'project').lower()
     is_deleted = request.args.get('isDeleted', 'no').lower()
-    is_folder = request.args.get('isFolder', 'no').lower()
+    is_collection = request.args.get('isFolder', 'no').lower()
     is_registration = request.args.get('isRegistration', 'no').lower()
     include_public = request.args.get('includePublic', 'yes').lower()
     include_contributed = request.args.get('includeContributed', 'yes').lower()
@@ -127,7 +135,7 @@ def search_projects_by_title(**kwargs):
     )
 
     matching_title = conditionally_add_query_item(matching_title, 'is_deleted', is_deleted)
-    matching_title = conditionally_add_query_item(matching_title, 'is_folder', is_folder)
+    matching_title = conditionally_add_query_item(matching_title, 'is_collection', is_collection)
     matching_title = conditionally_add_query_item(matching_title, 'is_registration', is_registration)
 
     if len(ignore_nodes) > 0:
@@ -141,7 +149,7 @@ def search_projects_by_title(**kwargs):
     if include_contributed == "yes":
         my_projects = Node.find(
             matching_title &
-            Q('contributors', 'contains', user._id)  # user is a contributor
+            Q('contributors', 'eq', user._id)  # user is a contributor
         ).limit(max_results)
         my_project_count = my_project_count
 
@@ -192,6 +200,7 @@ def search_contributor(auth):
     user = auth.user if auth else None
     nid = request.args.get('excludeNode')
     exclude = Node.load(nid).contributors if nid else []
+    # TODO: Determine whether bleach is appropriate for ES payload. Also, inconsistent with website.sanitize.util.strip_html
     query = bleach.clean(request.args.get('query', ''), tags=[], strip=True)
     page = int(bleach.clean(request.args.get('page', '0'), tags=[], strip=True))
     size = int(bleach.clean(request.args.get('size', '5'), tags=[], strip=True))
@@ -239,17 +248,31 @@ def search_share_stats():
 
 @handle_search_errors
 def search_share_atom(**kwargs):
-    q = request.args.get('q', '*')
-    sort = request.args.get('sort', 'dateUpdated')
-
-    # we want the results per page to be constant between pages
-    # TODO -  move this functionality into build_query in util
+    json_query = request.args.get('jsonQuery')
     start = util.compute_start(request.args.get('page', 1), RESULTS_PER_PAGE)
 
-    query = build_query(q, size=RESULTS_PER_PAGE, start=start, sort=sort)
+    if not json_query:
+        q = request.args.get('q', '*')
+        sort = request.args.get('sort')
+
+        # we want the results per page to be constant between pages
+        # TODO -  move this functionality into build_query in util
+
+        query = build_query(q, size=RESULTS_PER_PAGE, start=start, sort=sort)
+    else:
+        query = json.loads(unquote(json_query))
+        query['from'] = start
+        query['size'] = RESULTS_PER_PAGE
+
+        # Aggregations are expensive, and we really don't want to
+        # execute them if they won't be used
+        for field in ['aggs', 'aggregations']:
+            if query.get(field):
+                del query[field]
+        q = query  # Do we really want to display this?
 
     try:
-        search_results = search.search_share(query, index='share_v1')
+        search_results = search.search_share(query)
     except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
     except IndexNotFoundError:

@@ -1,73 +1,18 @@
 # -*- coding: utf-8 -*-
 
-import pymongo
+import markupsafe
 from modularodm import fields
 
 from framework.auth.decorators import Auth
 
 from website.models import NodeLog
-from website.addons.base import GuidFile
 from website.addons.base import exceptions
 from website.addons.base import AddonNodeSettingsBase, AddonUserSettingsBase
 from website.addons.base import StorageAddonBase
 
 from . import messages
 from .api import Figshare
-from . import exceptions as fig_exceptions
 from . import settings as figshare_settings
-
-
-class FigShareGuidFile(GuidFile):
-
-    __indices__ = [
-        {
-            'key_or_list': [
-                ('node', pymongo.ASCENDING),
-                ('article_id', pymongo.ASCENDING),
-                ('file_id', pymongo.ASCENDING),
-            ],
-            'unique': True,
-        }
-    ]
-
-    article_id = fields.StringField(index=True)
-    file_id = fields.StringField(index=True)
-
-    @property
-    def waterbutler_path(self):
-        if getattr(self.node.get_addon('figshare'), 'figshare_type', None) == 'project':
-            return '/{}/{}'.format(self.article_id, self.file_id)
-
-        return '/' + str(self.file_id)
-
-    @property
-    def provider(self):
-        return 'figshare'
-
-    @property
-    def external_url(self):
-        extra = self._metadata_cache['extra']
-        if extra['status'] == 'public':
-            return self._metadata_cache['extra']['webView']
-        return None
-
-    def _exception_from_response(self, response):
-        try:
-            if response.json()['data']['extra']['status'] == 'drafts':
-                self._metadata_cache = response.json()['data']
-                raise fig_exceptions.FigshareIsDraftError(self)
-        except KeyError:
-            pass
-
-        super(FigShareGuidFile, self)._exception_from_response(response)
-
-    @property
-    def version_identifier(self):
-        return ''
-
-    @property
-    def unique_identifier(self):
-        return '{}{}'.format(self.article_id, self.file_id)
 
 
 class AddonFigShareUserSettings(AddonUserSettingsBase):
@@ -121,33 +66,20 @@ class AddonFigShareNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
         api = Figshare.from_settings(self.user_settings)
         items = []
         if self.figshare_type in ('article', 'fileset'):
-            items = api.article(self, self.figshare_id)['items']
+            article = api.article(self, self.figshare_id)
+            items = article['items'] if article else []
         else:
-            items = api.project(self, self.figshare_id)['articles']
+            project = api.project(self, self.figshare_id)
+            items = project['articles'] if project else []
         private = any(
             [item for item in items if item['status'] != 'Public']
         )
 
         if private:
             return 'The figshare {figshare_type} <strong>{figshare_title}</strong> contains private content that we cannot copy to the registration. If this content is made public on figshare we should then be able to copy those files. You can view those files <a href="{url}" target="_blank">here.</a>'.format(
-                figshare_type=self.figshare_type,
-                figshare_title=self.figshare_title,
+                figshare_type=markupsafe.escape(self.figshare_type),
+                figshare_title=markupsafe.escape(self.figshare_title),
                 url=self.owner.web_url_for('collect_file_trees'))
-
-    def find_or_create_file_guid(self, path):
-        # path should be /aid/fid
-        # split return ['', aid, fid] or ['', fid]
-        split_path = path.split('/')
-        if len(split_path) == 3:
-            _, article_id, file_id = split_path
-        else:
-            _, file_id = split_path
-            article_id = self.figshare_id
-        return FigShareGuidFile.get_or_create(
-            node=self.owner,
-            file_id=file_id,
-            article_id=article_id,
-        )
 
     @property
     def api_url(self):
@@ -346,7 +278,8 @@ class AddonFigShareNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
             )
             if article_permissions == 'private' and node_permissions == 'public':
                 message += messages.BEFORE_PAGE_LOAD_PUBLIC_NODE_PRIVATE_FS
-            return [message]
+            # No HTML snippets, so escape message all at once
+            return [markupsafe.escape(message)]
 
     def before_remove_contributor(self, node, removed):
         """
@@ -380,9 +313,9 @@ class AddonFigShareNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
                 u'Because the FigShare add-on for {category} "{title}" was authenticated '
                 u'by {user}, authentication information has been deleted.'
             ).format(
-                category=node.category_display,
-                title=node.title,
-                user=removed.fullname
+                category=markupsafe.escape(node.category_display),
+                title=markupsafe.escape(node.title),
+                user=markupsafe.escape(removed.fullname)
             )
 
             if not auth or auth.user != removed:
@@ -411,11 +344,11 @@ class AddonFigShareNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
         if self.user_settings and self.user_settings.owner == user:
             clone.user_settings = self.user_settings
             message = messages.AFTER_FORK_OWNER.format(
-                category=fork.project_or_component,
+                category=markupsafe.escape(fork.project_or_component),
             )
         else:
             message = messages.AFTER_FORK_NOT_OWNER.format(
-                category=fork.project_or_component,
+                category=markupsafe.escape(fork.project_or_component),
                 url=fork.url + 'settings/'
             )
             return AddonFigShareNodeSettings(), message
