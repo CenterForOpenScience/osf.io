@@ -52,7 +52,7 @@ def get_node_id(url):
         # Avoid circular import
         from website.models import Node
         for seg in furl.furl(url).path.segments:
-            if len(seg) == 5:
+            if len(seg) == 5:  # this will need to change if guids == 5 or 6
                 if Node.find(Q('_id', 'eq', seg)).count() == 1:
                     return seg
     except IndexError:
@@ -76,8 +76,7 @@ def valid_private_link_context(key, request):
         if node_id:
             return node_id in private_link.nodes
         else:
-            segs = furl.furl(request.url).path.segments
-            if 'files' in segs and 'auth' in segs: # this hack allows water butler to still work
+            if 'api' in furl.furl(request.url).path.segments: # this hack allows water butler to still work
                 return True
     return False
 
@@ -86,7 +85,7 @@ def vpl_context(request):
     if node_id:
         return True
     segs = furl.furl(request.url).path.segments
-    if 'files' in segs and 'auth' in segs: # this hack allows water butler to still work
+    if 'api' in segs: # this hack allows water butler to still work
         return True
     return False
 
@@ -103,16 +102,28 @@ def prepare_private_key():
     if request.method != 'GET':
         return
 
-    node_id = get_node_id(request.url)
+    # Don't strip keys if coming from an API context
+    if 'api' in furl.furl(request.url).path.segments: # this allows waterbutler to still work
+        return    
+
     key_from_args = request.args.get('view_only', '')
 
     if key_from_args != '': # This is intentially '' and not None
-        if valid_private_link_context(key_from_args, request):
-            return
+        private_link = get_private_link(key_from_args)
+
+        # Must be a valid private link
+        if private_link:
+            node_id = get_node_id(request.url)
+            # Must be a valid node
+            if node_id:
+                # Must be a valid node for the private link
+                if node_id in private_link.nodes:
+                    return
+        # If key isn't valid for context, strip it from the url
         return redirect(request.base_url, code=http.TEMPORARY_REDIRECT, strip_view_only=True)
 
     # grab query key from previous request for not login user
-    if request.referrer and vpl_context(request):
+    if request.referrer and not session.is_authenticated:
         referrer_parsed = urlparse.urlparse(request.referrer)
         scheme = referrer_parsed.scheme
         key = urlparse.parse_qs(
@@ -120,17 +131,23 @@ def prepare_private_key():
         ).get('view_only')
         if key:
             key = key[0]
-    else:
-        scheme = None
-        key = None
+            private_link = get_private_link(key)
+            # Must be a valid private link
+            if private_link:
+                node_id = get_node_id(request.url)
+                # Must be a valid node
+                if node_id:
+                    # Must be a valid node for the private link
+                    if node_id in private_link.nodes:
+                        new_url = add_key_to_url(request.url, scheme, key)
+                        return redirect(new_url, code=http.TEMPORARY_REDIRECT)
+                else:
+                    # No redirect if not on a valid node to prevent infinite redirects
+                    return
+            # If not a valid private link replace it with 'None' to prevent infinite redirects
+            new_url = add_key_to_url(request.url, scheme, 'None')                                
+            return redirect(new_url, code=http.TEMPORARY_REDIRECT)
 
-    # Update URL and redirect
-    if key and not session.is_authenticated:
-        if valid_private_link_context(key, request):
-            new_url = add_key_to_url(request.url, scheme, key)
-        else:
-            new_url = add_key_to_url(request.url, scheme, 'None')
-        return redirect(new_url, code=http.TEMPORARY_REDIRECT)
 
 def get_session():
     session = sessions.get(request._get_current_object())
