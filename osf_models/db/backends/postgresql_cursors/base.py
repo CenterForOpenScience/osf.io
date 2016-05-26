@@ -1,11 +1,11 @@
-import psycopg2
 import uuid
-from django.conf import settings
 
-from django.db.backends.postgresql.base import *
+import psycopg2
+from django.conf import settings
+from django.db.backends import utils
 from django.db.backends.postgresql.base import \
     DatabaseWrapper as PostgresqlDatabaseWrapper
-from django.db.backends import utils
+from django.db.backends.postgresql.base import *
 
 
 class server_side_cursors(object):
@@ -57,33 +57,10 @@ class DatabaseWrapper(PostgresqlDatabaseWrapper):
             return super(DatabaseWrapper, self).create_cursor()
 
         cursor = self.connection.cursor(
-            name='osf_models.db.backends.postgresql_cursors:{}'.format(uuid.uuid4().hex),
-            cursor_factory=psycopg2.extras.DictCursor,
-        )
+            name='osf_models.db.backends.postgresql_cursors:{}'.format(
+                uuid.uuid4().hex),
+            cursor_factory=psycopg2.extras.DictCursor, )
         cursor.tzinfo_factory = utc_tzinfo_factory if settings.USE_TZ else None
         cursor.itersize = self.server_side_cursor_itersize
 
         return cursor
-
-    # def _cursor(self):
-    #     """
-    #     Returns a unique server side cursor if they are enabled,
-    #     otherwise falls through to the default client side cursors.
-    #     """
-    #     # import ipdb; ipdb.set_trace()
-    #     if self.server_side_cursors:
-    #         # intialise the connection if we haven't already
-    #         # this will waste a client side cursor, but only on the first call
-    #         if self.connection is None:
-    #             super(DatabaseWrapper, self)._cursor()
-    #
-    #         # give the cursor a unique name which will invoke server side cursors
-    #         cursor = self.connection.cursor(
-    #             name='cur{}'.format(uuid.uuid4().hex), cursor_factory=psycopg2.extras.DictCursor)
-    #         cursor.tzinfo_factory = utc_tzinfo_factory if settings.USE_TZ else None
-    #
-    #         cursor.itersize = self.server_side_cursor_itersize
-    #
-    #         return cursor
-    #
-    #     return super(DatabaseWrapper, self)._cursor()
