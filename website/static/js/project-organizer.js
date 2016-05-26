@@ -14,6 +14,7 @@ var $ = require('jquery');
 var m = require('mithril');
 var moment = require('moment');
 var $osf = require('js/osfHelpers');
+var lodashGet = require('lodash.get');
 var lodashFind = require('lodash.find');
 
 var LinkObject;
@@ -55,14 +56,12 @@ function _poTitleColumn(item) {
  */
 
 function _poContributors(item) {
-    var contributorList = item.data.embeds.contributors.data;
-    if(!contributorList){
-        return '';
-    }
+    var contributorList = lodashGet(item, 'data.embeds.contributors.data', []);
+
     if (contributorList.length === 0) {
         return '';
     }
-    var totalContributors = item.data.embeds.contributors.links.meta.total;
+    var totalContributors = lodashGet(item, 'data.embeds.contributors.links.meta.total');
     var isContributor = lodashFind(contributorList, ['id', window.contextVars.currentUser.id]);
 
     if (!isContributor) {

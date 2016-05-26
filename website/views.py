@@ -261,3 +261,7 @@ def redirect_getting_started(**kwargs):
 def redirect_to_home():
     # Redirect to support page
     return redirect('/')
+
+def redirect_to_cos_news(**kwargs):
+    # Redirect to COS News page
+    return redirect('https://cos.io/news/')
