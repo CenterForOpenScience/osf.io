@@ -112,8 +112,8 @@
                     % if 'admin' in user['permissions']: 
                         <div>
                             <br>
-                            <button type="button" id="registrationCancelButton" class="btn btn-danger" data-toggle="modal" data-target="#registrationCancel" text-case="sentence">
-                                Cancel Registration
+                            <button type="button" id="registrationCancelButton" class="btn btn-danger" data-toggle="modal" data-target="#registrationCancel">
+                                Cancel registration
                             </button>
                         </div>
                         <%include file="modal_confirm_cancel_registration.mako"/>
@@ -144,8 +144,8 @@
                 % if 'admin' in user['permissions']:
                         <div>
                             <br>
-                            <button type="button" id="registrationCancelButton" class="btn btn-danger" data-toggle="modal" data-target="#registrationCancel" text-case="sentence">
-                                Cancel Registration
+                            <button type="button" id="registrationCancelButton" class="btn btn-danger" data-toggle="modal" data-target="#registrationCancel">
+                                Cancel registration
                             </button>
                         </div>
                         <%include file="modal_confirm_cancel_registration.mako"/>
