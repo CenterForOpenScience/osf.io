@@ -846,6 +846,7 @@ def _view_project(node, auth, primary=False):
             'private_links': [x.to_json() for x in node.private_links_active],
             'link': view_only_link,
             'anonymous': anonymous,
+            'points': len(node.get_points(deleted=False, folders=False)),
             'piwik_site_id': node.piwik_site_id,
             'comment_level': node.comment_level,
             'has_comments': bool(Comment.find(Q('node', 'eq', node))),
