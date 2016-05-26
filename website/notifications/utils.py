@@ -382,7 +382,7 @@ def format_user_and_project_subscriptions(user):
         {
             'node': {
                 'id': user._id,
-                'title': 'User Notifications',
+                'title': 'Global Notification Settings',
             },
             'kind': 'heading',
             'children': format_user_subscriptions(user)
