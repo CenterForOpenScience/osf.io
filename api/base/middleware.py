@@ -9,7 +9,6 @@ import types
 import functools
 
 from django.conf import settings
-from modularodm import Q
 from raven.contrib.django.raven_compat.models import sentry_exception_handler
 import corsheaders.middleware
 
@@ -31,7 +30,6 @@ from framework.transactions.handlers import (
     transaction_after_request,
     transaction_teardown_request
 )
-from website import models
 from .api_globals import api_globals
 from api.base import settings as api_settings
 
@@ -108,29 +106,23 @@ class CorsMiddleware(corsheaders.middleware.CorsMiddleware):
     """
     Augment CORS origin white list with the Institution model's domains.
     """
-    def origin_not_found_in_white_lists(self, origin, url):
-        not_found = super(CorsMiddleware, self).origin_not_found_in_white_lists(origin, url)
-        if not_found:
-            not_found = models.Institution.find(Q('domains', 'eq', url.netloc.lower())).count() == 0
-        return not_found
-
     def process_request(self, request):
         def origin_not_found_in_white_lists(self, request, origin, url):
             not_found = super(CorsMiddleware, self).origin_not_found_in_white_lists(origin, url)
             if not_found:
                 # Check if origin is in the dynamic Institutions whitelist
                 if url.netloc.lower() in api_settings.INSTITUTION_ORIGINS_WHITELIST:
-                    return False
+                    return
                 # Check if a cross-origin request using the Authorization header
                 elif not request.COOKIES:
                     if request.META.get('HTTP_AUTHORIZATION'):
-                        return False
+                        return
                     elif (
                         request.method == 'OPTIONS' and
                         'HTTP_ACCESS_CONTROL_REQUEST_METHOD' in request.META and
                         'authorization' in request.META.get('HTTP_ACCESS_CONTROL_REQUEST_HEADERS', '').split(', ')
                     ):
-                        return False
+                        return
             return not_found
         # Re-bind origin_not_found_in_white_lists to the instance with
         # the request as the first arguments
