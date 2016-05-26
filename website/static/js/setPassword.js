@@ -133,6 +133,29 @@ var ViewModel = function(passwordViewType, submitUrl, campaign, redirectUrl) {
 
     }
 
+    // pick up the email from contextVars if we can't get it from first typing it in
+    if (window.contextVars.username) {
+        self.email1 = ko.observable(window.contextVars.username);
+    }
+
+    // If we have gotten an email to compare to at this point, also validate against that
+    if (self.email1) {
+        self.password.extend({
+            validation: {
+                validator: function(val, other) {
+                    if (String(val).toLowerCase() === String(other).toLowerCase()) {
+                        self.typedPassword(' ');
+                        return false;
+                    } else {
+                        return true;
+                    }
+                },
+                'message': 'Your password cannot be the same as your username.',
+                params: self.email1
+            }
+        });
+    }
+
     // Collect validated fields
     self.validatedFields = ko.validatedObservable($.extend({}, validatedFields));
 
