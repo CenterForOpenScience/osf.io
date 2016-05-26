@@ -61,6 +61,7 @@ class TestFileView(ApiTestCase):
         assert_equal(attributes['date_created'], _dt_to_iso8601(self.file.versions[0].date_created.replace(tzinfo=pytz.utc)))
         assert_equal(attributes['extra']['hashes']['md5'], None)
         assert_equal(attributes['extra']['hashes']['sha256'], None)
+        assert_equal(attributes['tags'], [])
 
 
     def test_file_has_comments_link(self):
