@@ -107,7 +107,7 @@ class ArchiverTask(celery.Task):
         archiver_signals.archive_fail.send(dst, errors=errors)
 
 
-@celery_app.task(base=ArchiverTask, name="archiver.stat_addon")
+@celery_app.task(base=ArchiverTask)
 @logged('stat_addon')
 def stat_addon(addon_short_name, job_pk):
     """Collect metadata about the file tree of a given addon
@@ -144,7 +144,7 @@ def stat_addon(addon_short_name, job_pk):
     return result
 
 
-@celery_app.task(base=ArchiverTask, name="archiver.make_copy_request")
+@celery_app.task(base=ArchiverTask)
 @logged('make_copy_request')
 def make_copy_request(job_pk, url, data):
     """Make the copy request to the WaterBulter API and handle
@@ -186,7 +186,7 @@ def make_waterbutler_payload(src, dst, addon_short_name, rename, cookie, revisio
     return ret
 
 
-@celery_app.task(base=ArchiverTask, name="archiver.archive_addon")
+@celery_app.task(base=ArchiverTask)
 @logged('archive_addon')
 def archive_addon(addon_short_name, job_pk, stat_result):
     """Archive the contents of an addon by making a copy request to the
@@ -225,7 +225,7 @@ def archive_addon(addon_short_name, job_pk, stat_result):
         make_copy_request.delay(job_pk=job_pk, url=copy_url, data=data)
 
 
-@celery_app.task(base=ArchiverTask, name="archiver.archive_node")
+@celery_app.task(base=ArchiverTask)
 @logged('archive_node')
 def archive_node(stat_results, job_pk):
     """First use the results of #stat_node to check disk usage of the
@@ -294,7 +294,7 @@ def archive(job_pk):
         ]
     )
 
-@celery_app.task(base=ArchiverTask, name="archiver.archive_success")
+@celery_app.task(base=ArchiverTask)
 @logged('archive_success')
 def archive_success(dst_pk, job_pk):
     """Archiver's final callback. For the time being the use case for this task
