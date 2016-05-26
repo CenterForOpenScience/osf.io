@@ -326,7 +326,9 @@
                                     <td><img class="img-circle" width="50px" height="50px" data-bind="attr: {src: item.logo_path}"></td>
                                     <td><span data-bind="text: item.name"></span></td>
                                     % if 'admin' in user['permissions']:
-                                        <td><button data-bind="click: $parent.clearInst" class="pull-right btn btn-danger">Remove</button></td>
+                                        <td><button data-bind="disable: $parent.loading(),
+                                        click: $parent.clearInst"
+                                                    class="pull-right btn btn-danger">Remove</button></td>
                                     % endif
                                 </tr>
                                 <!-- /ko -->
@@ -336,7 +338,6 @@
                             </br>
                         <!-- ko if: availableInstitutions().length > 0 -->
                         <label>Available Institutions: </label>
-                        <!-- /ko -->
                         <table class="table">
                             <tbody>
                                 <!-- ko foreach: {data: availableInstitutions, as: 'item'} -->
@@ -344,12 +345,16 @@
                                     <td><img class="img-circle" width="50px" height="50px" data-bind="attr: {src: item.logo_path}"></td>
                                     <td><span data-bind="text: item.name"></span></td>
                                     % if 'admin' in user['permissions']:
-                                        <td><button data-bind="click: $parent.submitInst" class="pull-right btn btn-success">Add</button></td>
+                                        <td><button
+                                                data-bind="disable: $parent.loading(),
+                                                click: $parent.submitInst"
+                                                class="pull-right btn btn-success">Add</button></td>
                                     % endif
                                 </tr>
                                 <!-- /ko -->
                             </tbody>
                         </table>
+                        <!-- /ko -->
                     </div>
                 </div>
                 % endif

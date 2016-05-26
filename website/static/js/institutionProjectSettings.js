@@ -9,18 +9,23 @@ var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 
 var ViewModel = function(data) {
     var self = this;
-    self.loading = ko.observable(true);
+    self.loading = ko.observable(false);
     self.showAdd = ko.observable(false);
     self.institutionHref = ko.observable('');
     self.userInstitutions = data.currentUser.institutions;
     self.userInstitutionsIds = self.userInstitutions.map(function(item){return item.id;});
-    self.selectedInstitution = ko.observable();
     self.affiliatedInstitutions = ko.observable(data.node.institutions);
 
-    self.affiliatedInstitutionsIds = self.affiliatedInstitutions().map(function(item){return item.id;});
+    self.affiliatedInstitutionsIds = ko.computed(function() {
+        return self.affiliatedInstitutions().map(function(item){return item.id;});
+    });
     self.availableInstitutions = ko.observable(self.userInstitutions.filter(function(each){
-        return ($.inArray(each.id, self.affiliatedInstitutionsIds)) === -1;
+        return ($.inArray(each.id, self.affiliatedInstitutionsIds())) === -1;
     }));
+
+    self.availableInstitutionsIds = ko.computed(function() {
+        return self.availableInstitutions().map(function(item){return item.id;});
+    });
 
     //Has child nodes
     self.hasChildren = ko.observable(false);
@@ -103,10 +108,6 @@ var ViewModel = function(data) {
         return self.isAddInstitution() ? 'Add institution' : 'Remove institution';
     });
 
-    self.hasThingsToAdd = ko.computed(function () {
-        return self.availableInstitutions().length ? true : false;
-    });
-
     self.submitInst = function (item) {
         self.isAddInstitution(true);
         self.needsWarning(false);
@@ -130,16 +131,18 @@ var ViewModel = function(data) {
     };
 
     self._modifyInst = function(item) {
+        var index;
         var url = data.apiV2Prefix + 'institutions/' + item.id + '/relationships/nodes/';
         var ajaxJSONType = self.isAddInstitution() ? 'POST': 'DELETE';
         var nodesToModify = [];
+        self.loading(true);
         if (self.modifyChildren()) {
             for (var node in self.nodesOriginal()) {
                 nodesToModify.push({'type': 'nodes', 'id': self.nodesOriginal()[node].id});
             }
         }
         else {
-                nodesToModify.push({'type': 'nodes', 'id': self.nodeParent});
+            nodesToModify.push({'type': 'nodes', 'id': self.nodeParent});
         }
         return $osf.ajaxJSON(
             ajaxJSONType,
@@ -152,27 +155,24 @@ var ViewModel = function(data) {
                 fields: {xhrFields: {withCredentials: true}}
             }
         ).done(function () {
-            var indexes = self.affiliatedInstitutions().map(function(each){return each.id;});
             if (self.isAddInstitution()) {
-                var index = indexes.indexOf(self.selectedInstitution());
+                index = self.availableInstitutionsIds().indexOf(item.id)
                 var added = self.availableInstitutions().splice(index, 1)[0];
-                self.availableInstitutions(self.availableInstitutions());
                 self.affiliatedInstitutions().push(added);
-                self.affiliatedInstitutions(self.affiliatedInstitutions());
-                self.showAdd(false);
             }
             else {
-                var removed = self.affiliatedInstitutions().splice(indexes.indexOf(item.id), 1)[0];
-                if ($.inArray(removed.id, self.userInstitutionsIds) >= 0){
-                    self.availableInstitutions().push(removed);
-                }
-                self.affiliatedInstitutions(self.affiliatedInstitutions());
+                index = self.affiliatedInstitutionsIds().indexOf(item.id)
+                var removed = self.affiliatedInstitutions().splice(index, 1)[0];
+                self.availableInstitutions().push(removed);
             }
             self.availableInstitutions(self.availableInstitutions());
+            self.affiliatedInstitutions(self.affiliatedInstitutions());
+            self.loading(false);
+
 
         }).fail(function (xhr, status, error) {
             $osf.growl('Unable to modify the institution on this node. Please try again. If the problem persists, email <a href="mailto:support@osf.io.">support@osf.io</a>');
-            Raven.captureMessage('Unable to modufy this institution!', {
+            Raven.captureMessage('Unable to modify this institution!', {
                 extra: {
                     url: url,
                     status: status,

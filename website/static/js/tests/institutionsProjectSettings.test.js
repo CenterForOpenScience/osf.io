@@ -11,6 +11,7 @@ describe('InstitutionSettings', () => {
         apiV2Prefix: 'http://localhost:8000/v2/',
         node: {
             title: 'Sample Project',
+            id: 'abcde',
             institutions: [{
                 id: 'cos',
                 logo_path: '/static/img/institutions/cos-shield.png',
@@ -54,18 +55,18 @@ describe('InstitutionSettings', () => {
 
     it('node variables set', () => {
         assert.equal(viewModel.affiliatedInstitutions(), data.node.institutions);
-        assert.equal(viewModel.affiliatedInstitutionsIds.length, 2);
-        assert.equal(viewModel.affiliatedInstitutionsIds[0], ['cos']);
-        assert.equal(viewModel.affiliatedInstitutionsIds[1], ['uoa']);
+        assert.equal(viewModel.affiliatedInstitutionsIds().length, 2);
+        assert.equal(viewModel.affiliatedInstitutionsIds()[0], ['cos']);
+        assert.equal(viewModel.affiliatedInstitutionsIds()[1], ['uoa']);
         assert.equal(viewModel.availableInstitutions().length, 1);
         assert.equal(viewModel.availableInstitutions()[0], data.currentUser.institutions[1]);
     });
 
     it('computed variables set', () => {
         assert.equal(viewModel.affiliatedInstitutions(), data.node.institutions);
-        assert.equal(viewModel.affiliatedInstitutionsIds.length, 2);
-        assert.equal(viewModel.affiliatedInstitutionsIds[0], ['cos']);
-        assert.equal(viewModel.affiliatedInstitutionsIds[1], ['uoa']);
+        assert.equal(viewModel.affiliatedInstitutionsIds().length, 2);
+        assert.equal(viewModel.affiliatedInstitutionsIds()[0], ['cos']);
+        assert.equal(viewModel.affiliatedInstitutionsIds()[1], ['uoa']);
     });
 
     it('shows a dialog if the Node has children', () => {
