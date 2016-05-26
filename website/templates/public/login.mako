@@ -229,7 +229,7 @@
             </div>
             <div class="form-group">
                 <div class="col-sm-offset-4 col-sm-8">
-                    <button type="submit" class="btn pull-right btn-success" data-bind="disable: submitted()">Create account</button>
+                    <button type="submit" class="btn pull-right btn-success" data-bind="disable: submitted(), css: {disabled: !password.isValid()}">Create account</button>
                 </div>
             </div>
         </form>
