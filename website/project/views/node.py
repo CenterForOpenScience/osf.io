@@ -376,7 +376,10 @@ def configure_comments(node, **kwargs):
 @process_token_or_pass
 def view_project(auth, node, **kwargs):
     primary = '/api/v1' not in request.path
-    ret = _view_project(node, auth, primary=primary)
+    if node.category == "share window":
+        return redirect(node.url+"share_window")
+    else:
+        ret = _view_project(node, auth, primary=primary)
 
     ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
     # Collect the URIs to the static assets for addons that have widgets
@@ -652,124 +655,10 @@ def _should_show_wiki_widget(node, user):
     else:
         return has_wiki
 
-def _view_share_window(node, auth, primary=False):
-
-    user = auth.user
-
-    parent = node.parent_node
-
-    data = {
-        'node': {
-            'id': node._primary_key,
-            'title': node.title,
-            'category': node.category_display,
-            'category_short': node.category,
-            'node_type': node.project_or_component,
-            'points': False,
-            'description': node.description or '',
-            'license': serialize_node_license_record(node.license),
-            'url': node.url,
-            'api_url': node.api_url,
-            'absolute_url': node.absolute_url,
-            'display_absolute_url': node.display_absolute_url,
-            'update_url': node.api_url_for('update_node'),
-            'is_public': node.is_public,
-            'is_archiving': node.archiving,
-            'date_created': iso8601format(node.date_created),
-            'date_modified': iso8601format(node.logs[-1].date) if node.logs else '',
-            'tags': [tag._primary_key for tag in node.tags],
-            'children': bool(node.nodes_active),
-            'is_registration': node.is_registration,
-            'is_pending_registration': node.is_pending_registration,
-            'is_retracted': node.is_retracted,
-            'is_pending_retraction': node.is_pending_retraction,
-            'retracted_justification': getattr(node.retraction, 'justification', None),
-            'embargo_end_date': node.embargo_end_date.strftime("%A, %b. %d, %Y") if node.embargo_end_date else False,
-            'is_pending_embargo': node.is_pending_embargo,
-            'is_embargoed': node.is_embargoed,
-            'is_pending_embargo_termination': node.is_embargoed and (
-                node.embargo_termination_approval and
-                node.embargo_termination_approval.is_pending_approval
-            ),
-            'registered_from_url': node.registered_from.url if node.is_registration else '',
-            'registered_date': iso8601format(node.registered_date) if node.is_registration else '',
-            'root_id': node.root._id if node.root else None,
-            'registered_meta': node.registered_meta,
-            'registered_schemas': serialize_meta_schemas(node.registered_schema),
-            'registration_count': node.registrations_all.count(),
-            'is_fork': node.is_fork,
-            'forked_from_id': node.forked_from._primary_key if node.is_fork else '',
-            'forked_from_display_absolute_url': node.forked_from.display_absolute_url if node.is_fork else '',
-            'forked_date': iso8601format(node.forked_date) if node.is_fork else '',
-            'fork_count': node.forks.count(),
-            'templated_count': node.templated_list.count(),
-            'watched_count': node.watches.count(),
-            'private_links': [x.to_json() for x in node.private_links_active],
-            'link': False,
-            'anonymous': False,
-            'piwik_site_id': node.piwik_site_id,
-            'comment_level': node.comment_level,
-            'has_comments': bool(Comment.find(Q('node', 'eq', node))),
-            'has_children': bool(Comment.find(Q('node', 'eq', node))),
-            'identifiers': {
-                'doi': node.get_identifier_value('doi'),
-                'ark': node.get_identifier_value('ark'),
-            },
-            'institution': {
-                'name': node.primary_institution.name if node.primary_institution else None,
-                'logo_path': node.primary_institution.logo_path if node.primary_institution else None,
-                'id': node.primary_institution._id if node.primary_institution else None
-            },
-            'alternative_citations': [citation.to_json() for citation in node.alternative_citations],
-            'has_draft_registrations': node.has_active_draft_registrations,
-            'contributors': [contributor._id for contributor in node.contributors]
-        },
-        'parent_node': {
-            'exists': parent is not None,
-            'id': parent._primary_key if parent else '',
-            'title': parent.title if parent else '',
-            'category': parent.category_display if parent else '',
-            'url': parent.url if parent else '',
-            'api_url': parent.api_url if parent else '',
-            'absolute_url': parent.absolute_url if parent else '',
-            'registrations_url': parent.web_url_for('node_registrations') if parent else '',
-            'is_public': parent.is_public if parent else '',
-            'is_contributor': parent.is_contributor(user) if parent else '',
-            'can_view': parent.can_view(auth) if parent else False
-        },
-        'user': {
-            'is_contributor': node.is_contributor(user),
-            'is_admin': node.has_permission(user, ADMIN),
-            'is_admin_parent': parent.is_admin_parent(user) if parent else False,
-            'can_edit': (node.can_edit(auth)
-                         and not node.is_registration),
-            'has_read_permissions': node.has_permission(user, READ),
-            'permissions': node.get_permissions(user) if user else [],
-            'is_watching': user.is_watching(node) if user else False,
-            'piwik_token': user.piwik_token if user else '',
-            'id': user._id if user else None,
-            'username': user.username if user else None,
-            'fullname': user.fullname if user else '',
-            'can_comment': node.can_comment(auth),
-            'show_wiki_widget': _should_show_wiki_widget(node, user),
-            'institutions': get_affiliated_institutions(user) if user else [],
-        },
-        'badges': _get_badge(user),
-        # TODO: Namespace with nested dicts
-        'addons_enabled': node.get_addon_names(),
-        'node_categories': Node.CATEGORY_MAP
-    }
-    return data
-
 def _view_project(node, auth, primary=False):
     """Build a JSON object containing everything needed to render
     project.view.mako.
     """
-
-    if node.category == "share window":
-        raise HTTPError(http.BAD_REQUEST)
-
-
     user = auth.user
 
     parent = node.parent_node

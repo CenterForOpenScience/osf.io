@@ -14,7 +14,7 @@
 
 
             <div class="container">
-            % if node['category']  == 'share window':
+            % if node['category_short']  != 'share window':
                 <div class="navbar-header">
                     <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".project-nav">
                         <span class="sr-only">Toggle navigation</span>
