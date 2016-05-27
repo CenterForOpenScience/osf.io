@@ -57,7 +57,7 @@ var ViewModel = function(data) {
         }
         else {
             message = 'Remove <b>' + item.name + '</b> from <b>' + data.node.title + '</b> or from <b>' +
-                data.node.title + '</b> and all its components?<br><br>';
+                data.node.title + '</b> and every component in it?<br><br>';
             modifyOneMessage = 'Remove from <b>' +  data.node.title + '</b>.',
             modifyAllMessage = 'Remove from <b>' +  data.node.title + '</b> and every component in it.';
         }
