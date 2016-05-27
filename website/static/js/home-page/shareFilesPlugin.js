@@ -531,7 +531,7 @@ var QuickSearchProject = {
     }
 };
 
-var QuickSearchNodeDisplay = {
+var ShareFilesProjectDisplay = {
   view: function(ctrl, args) {
       if (args.eligibleNodes().length === 0 && args.filter() != null && args.loadingComplete() === true) {
           return m('.row.m-v-sm', m('.col-sm-12',
@@ -558,4 +558,4 @@ var QuickSearchNodeDisplay = {
   }
 };
 
-module.exports = QuickSearchProject;
+module.exports = ShareFilesProject;

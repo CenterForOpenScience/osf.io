@@ -7,6 +7,7 @@
 var $ = require('jquery');
 var m = require('mithril');
 
+var ShareFilesProject = require('js/home-page/quickProjectSearchPlugin');
 var QuickSearchProject = require('js/home-page/quickProjectSearchPlugin');
 var NewAndNoteworthy = require('js/home-page/newAndNoteworthyPlugin');
 var MeetingsAndConferences = require('js/home-page/meetingsAndConferencesPlugin');
