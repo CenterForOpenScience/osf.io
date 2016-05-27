@@ -262,37 +262,37 @@ def full_update(node_id):
 ###############################################################################
 
 @queued_task
-@app.task(bind=True, max_retries=3, default_retry_delay=3 * 60)  # Retry after 3 minutes
+@app.task(max_retries=3, default_retry_delay=3 * 60)  # Retry after 3 minutes
 def celery_create_list(*args, **kwargs):
     create_list(*args, **kwargs)
 
 @queued_task
-@app.task(bind=True, max_retries=3, default_retry_delay=3 * 60)  # Retry after 3 minutes
+@app.task(max_retries=3, default_retry_delay=3 * 60)  # Retry after 3 minutes
 def celery_delete_list(*args, **kwargs):
     delete_list(*args, **kwargs)
 
 @queued_task
-@app.task(bind=True, max_retries=3, default_retry_delay=3 * 60)  # Retry after 3 minutes
+@app.task(max_retries=3, default_retry_delay=3 * 60)  # Retry after 3 minutes
 def celery_update_title(*args, **kwargs):
     update_title(*args, **kwargs)
 
 @queued_task
-@app.task(bind=True, max_retries=3, default_retry_delay=3 * 60)  # Retry after 3 minutes
+@app.task(max_retries=3, default_retry_delay=3 * 60)  # Retry after 3 minutes
 def celery_update_single_user_in_list(*args, **kwargs):
     update_single_user_in_list(*args, **kwargs)
 
 @queued_task
-@app.task(bind=True, max_retries=3, default_retry_delay=3 * 60)  # Retry after 3 minutes
+@app.task(max_retries=3, default_retry_delay=3 * 60)  # Retry after 3 minutes
 def celery_remove_user_from_list(*args, **kwargs):
     remove_user_from_list(*args, **kwargs)
 
 @queued_task
-@app.task(bind=True, max_retries=3, default_retry_delay=3 * 60)  # Retry after 3 minutes
+@app.task(max_retries=3, default_retry_delay=3 * 60)  # Retry after 3 minutes
 def celery_update_multiple_users_in_list(*args, **kwargs):
     update_multiple_users_in_list(*args, **kwargs)
 
 @queued_task
-@app.task(bind=True, max_retries=3, default_retry_delay=3 * 60)  # Retry after 3 minutes
+@app.task(max_retries=3, default_retry_delay=3 * 60)  # Retry after 3 minutes
 def celery_full_update(*args, **kwargs):
     full_update(*args, **kwargs)
 
