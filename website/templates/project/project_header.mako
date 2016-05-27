@@ -3,8 +3,16 @@
 %>
 
 <div id="projectBanner" >
-    <header class="subhead" id="overview">
-        <nav id="projectSubnav" class="navbar osf-project-navbar" role="navigation">
+
+
+     % if node['category_short']  == 'share window':
+     <nav role="navigation">
+     % else:
+     <header class="subhead" id="overview">
+     <nav id="projectSubnav" class="navbar osf-project-navbar" role="navigation">
+     % endif
+
+
             <div class="container">
             % if node['category']  == 'share window':
                 <div class="navbar-header">
