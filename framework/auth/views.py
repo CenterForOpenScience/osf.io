@@ -29,7 +29,7 @@ from website import mails
 from website import language
 from website import security
 from website.util.time import throttle_period_expired
-from website.models import User
+from website.models import User, Node
 from website.util import web_url_for
 from website.util.sanitize import strip_html
 
@@ -329,6 +329,7 @@ def register_user(**kwargs):
             full_name,
             campaign=campaign,
         )
+
         framework.auth.signals.user_registered.send(user)
     except (ValidationValueError, DuplicateEmailError):
         raise HTTPError(
