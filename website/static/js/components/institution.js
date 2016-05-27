@@ -14,9 +14,6 @@ var required = utils.required;
 var MUTED_OPACITY = '0.5';
 var InstitutionImg = {
     view: function(ctrl, opts) {
-        var defaults = {
-            muted: false
-        };
         if (!opts.width && !opts.height) {
             throw new Error('InstitutionImg requires width and/or height option.');
         }
@@ -41,7 +38,7 @@ var InstitutionImg = {
     }
 };
 
-var CheckableInst = {
+var CheckableInstitution = {
     view: function(ctrl, opts) {
         var checked = required(opts, 'checked');
         return m('',[
@@ -67,5 +64,5 @@ var CheckableInst = {
 
 module.exports = {
     InstitutionImg: InstitutionImg,
-    CheckableInst: CheckableInst,
+    CheckableInstitution: CheckableInstitution,
 };

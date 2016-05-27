@@ -7,7 +7,8 @@ require('css/add-project-plugin.css');
 var $ = require('jquery');
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
-var InstitutionImg = require('js/components/institution');
+var institutionComponents = require('js/components/institution');
+var CheckableInstitution = institutionComponents.CheckableInstitution;
 
 // XHR configuration to get apiserver connection to work
 var xhrconfig = function (xhr) {
@@ -35,8 +36,9 @@ var AddProject = {
         self.newProjectDesc = m.prop('');
         self.newProjectCategory = m.prop(self.defaultCat);
         self.newProjectTemplate = m.prop('');
+        self.institutions = options.institutions || window.contextVars.currentUser.institutions || [];
         self.checkedInstitutions = {};
-        self.newProjectInstitutions = window.contextVars.currentUser.institutions.map(
+        self.newProjectInstitutions = self.institutions.map(
             function(inst){
                 self.checkedInstitutions[inst.id] = true;
                 return inst.id;
@@ -96,22 +98,30 @@ var AddProject = {
             var success = function _success (result) {
                 self.viewState('success');
                 self.goToProjectLink(result.data.links.html);
-                if (self.newProjectInstitutions.length > 0){
-                    var newNodeApiUrl = $osf.apiV2Url('nodes/' + result.data.id + '/relationships/institutions/');
-                    var data = {data: self.newProjectInstitutions.filter(
-                        function(id){return self.checkedInstitutions[id];}
-                    ).map(
-                        function(id){return {type: 'institutions', id: id};}
-                    )};
-                    m.request({method: 'POST', url: newNodeApiUrl, data: data, config: xhrconfig});
-                }
                 self.saveResult(result);
             };
             var error = function _error (result) {
                 self.viewState('error');
             };
-            m.request({method : 'POST', url : url, data : data, config : xhrconfig})
-                .then(success, error);
+            var request = m.request({method : 'POST', url : url, data : data, config : xhrconfig});
+            if (self.newProjectInstitutions.length > 0) {
+                request.then(function (result) {
+                    var newNodeApiUrl = $osf.apiV2Url('nodes/' + result.data.id + '/relationships/institutions/');
+                    var data = {
+                        data: self.newProjectInstitutions.filter(
+                            function (id) {
+                                return self.checkedInstitutions[id];
+                            }
+                        ).map(
+                            function (id) {
+                                return {type: 'institutions', id: id};
+                            }
+                        )
+                    };
+                    m.request({method: 'POST', url: newNodeApiUrl, data: data, config: xhrconfig});
+                });
+            }
+            request.then(success, error);
             self.newProjectName('');
             self.newProjectDesc('');
             self.isValid(false);
@@ -160,30 +170,30 @@ var AddProject = {
                                 name : 'projectName'
                             })
                         ]),
-                        window.contextVars.currentUser.institutions.length ? m('.form-group.m-v-sm', [
+                        ctrl.institutions.length ? m('.form-group.m-v-sm', [
                             m('label.f-w-lg.text-bigger', 'Affiliation'),
                             m('a', {onclick: function(){
-                                window.contextVars.currentUser.institutions.map(
+                                ctrl.institutions.map(
                                     function(inst){
                                         ctrl.checkedInstitutions[inst.id] = false;
                                     }
                                 );
                             }, style: {float: 'right'}},'Remove all'),
                             m('a', {onclick: function(){
-                                window.contextVars.currentUser.institutions.map(
+                                ctrl.institutions.map(
                                     function(inst){
                                         ctrl.checkedInstitutions[inst.id] = true;
                                     }
                                 );
                             }, style: {float: 'right', marginRight: '5px'}}, 'Select all'),
-                            m('table', m('tr', window.contextVars.currentUser.institutions.map(
+                            m('table', m('tr', ctrl.institutions.map(
                                 function(inst){
                                     return m('td',
                                         m('a', {onclick: function(){
                                             ctrl.checkedInstitutions[inst.id] = !ctrl.checkedInstitutions[inst.id];
 
                                         }},m('', {style: {position: 'relative',  margin: '10px'}, width: '45px', height: '45px'},
-                                            m.component(InstitutionImg.CheckableInst, {name: inst.name, width: '45px', logoPath: inst.logo_path, checked: ctrl.checkedInstitutions[inst.id]})
+                                            m.component(CheckableInstitution, {name: inst.name, width: '45px', logoPath: inst.logo_path, checked: ctrl.checkedInstitutions[inst.id]})
                                         ))
                                     );
                                 }
