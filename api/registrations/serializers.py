@@ -87,13 +87,6 @@ class RegistrationSerializer(NodeSerializer):
         related_view='registrations:registration-providers',
         related_view_kwargs={'node_id': '<pk>'}
     ))
-    #
-    # files = NodeFileHyperLinkField(
-    #     related_view='registrations:registration-files',
-    #     related_view_kwargs={'node_id': '<node_id>', 'path': '<path>', 'provider': '<provider>'},
-    #     kind='folder',
-    #     never_embed=True
-    # )
 
     forked_from = HideIfWithdrawal(RelationshipField(
         related_view=lambda n: 'registrations:registration-detail' if getattr(n, 'is_registration', False) else 'nodes:node-detail',
