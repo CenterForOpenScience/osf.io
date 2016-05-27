@@ -50,15 +50,15 @@ var ViewModel = function(data) {
         var modifyAllMessage;
         if (self.isAddInstitution()) {
             message = 'Add <b>' + item.name + '</b> to <b>' + data.node.title + '</b> or to <b>' +
-                data.node.title + '</b> and all its components?<br><br>';
+                data.node.title + '</b> and every component in it?<br><br>';
             modifyOneMessage = 'Add <b>' + item.name + '</b> to <b>' +  data.node.title + '</b>.',
             modifyAllMessage = 'Add <b>' + item.name + '</b> to <b>' +  data.node.title + '</b> and every component in it.';
         }
         else {
-            message = 'Remove ' + item.name + ' from <b>' + data.node.title + '</b> or to <b>' +
+            message = 'Remove <b>' + item.name + '</b> from <b>' + data.node.title + '</b> or from <b>' +
                 data.node.title + '</b> and all its components?<br><br>';
-            modifyOneMessage = 'Remove <b>' + item.name + '</b> to <b>' +  data.node.title + '</b>.',
-            modifyAllMessage = 'Remove <b>' + item.name + '</b> to <b>' +  data.node.title + '</b> and every component in it.';
+            modifyOneMessage = 'Remove from <b>' +  data.node.title + '</b>.',
+            modifyAllMessage = 'Remove from <b>' +  data.node.title + '</b> and every component in it.';
         }
         if (self.needsWarning()) {
             message += '<div class="text-danger f-w-xl">Warning, you are not affialiated with <b>' + item.name +
