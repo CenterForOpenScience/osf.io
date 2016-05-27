@@ -2,6 +2,7 @@
 # encoding: utf-8
 
 import os
+import sys
 
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
@@ -16,7 +17,8 @@ from datetime import datetime
 
 def main():
     init_app(set_backends=True, routes=False)
-    populate_conferences()
+    dev = 'dev' in sys.argv
+    populate_conferences(dev=dev)
 
 
 MEETING_DATA = {
