@@ -84,7 +84,6 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
             return {'id': project_id, 'title': node.title}
         return None
 
-
     def get_contributors(self, obj):
 
         contributor_info = []
