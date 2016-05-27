@@ -3,9 +3,21 @@
 %>
 
 <div id="projectBanner" >
-    <header class="subhead" id="overview">
+
+
+     % if node['category_short']  == 'share window':
+        <style>
+        .container{width:100% !important;}
+        </style>
+        <header class="subhead" id="overview">
+        <nav role="navigation">
+        <div class="container">
+     % else:
+        <header class="subhead" id="overview">
         <nav id="projectSubnav" class="navbar osf-project-navbar" role="navigation">
-            <div class="container">
+        <div class="container">
+     % endif
+       
             % if node['category_short']  != 'share window':
                 <div class="navbar-header">
                     <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".project-nav">

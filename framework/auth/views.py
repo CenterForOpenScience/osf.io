@@ -330,12 +330,6 @@ def register_user(**kwargs):
             campaign=campaign,
         )
 
-        share_window = Node(creator=user)
-        share_window.is_share_window = True
-        share_window.title = "Share Window"
-        share_window.category = "share window"
-        share_window.save()
-
         framework.auth.signals.user_registered.send(user)
     except (ValidationValueError, DuplicateEmailError):
         raise HTTPError(

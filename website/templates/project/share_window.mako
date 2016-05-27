@@ -5,7 +5,11 @@
   <h2 class="text-300">Files</h2>
 </div>
 % if not node['is_registration'] and not node['anonymous'] and 'write' in user['permissions']:
-    <span class="f-w-xl">Click on a storage provider or drag and drop to upload</span>
+ <style>
+        #share-file-title{text-align:center;}
+        h2{margin-top:0;}
+</style>
+<h2 id="share-file-title">Share Files</h2>
 %endif
 
 <div id="treeGrid">
