@@ -34,8 +34,12 @@ var AddProject = {
         self.newProjectDesc = m.prop('');
         self.newProjectCategory = m.prop(self.defaultCat);
         self.newProjectTemplate = m.prop('');
+        self.checkedInstitutions = {};
         self.newProjectInstitutions = window.contextVars.currentUser.institutions.map(
-            function(inst){return inst.id;}
+            function(inst){
+                self.checkedInstitutions[inst.id] = true;
+                return inst.id;
+            }
         );
         self.goToProjectLink = m.prop('');
         self.saveResult = m.prop({});
@@ -93,8 +97,10 @@ var AddProject = {
                 self.goToProjectLink(result.data.links.html);
                 if (self.newProjectInstitutions.length > 0){
                     var newNodeApiUrl = $osf.apiV2Url('nodes/' + result.data.id + '/relationships/institutions/');
-                    var data = {data: self.newProjectInstitutions.map(
-                        function(inst){return {type: 'institutions', id: inst};}
+                    var data = {data: self.newProjectInstitutions.filter(
+                        function(id){return self.checkedInstitutions[id];}
+                    ).map(
+                        function(id){return {type: 'institutions', id: id};}
                     )};
                     m.request({method: 'POST', url: newNodeApiUrl, data: data, config: xhrconfig});
                 }
@@ -121,6 +127,24 @@ var AddProject = {
         };
     },
     view : function (ctrl, options) {
+        var selected = {
+            view: function(ctrl, args){
+                return m(args.hidden ? '.hidden' : '', m('i.img-circle.fa.fa-check#instLogo' + args.id,
+                    {
+                        style: {
+                            color: '#C7FFC7',
+                            textAlign: 'center',
+                            fontSize: '275%',
+                            width: '45px', height: '100%',
+                            top: '0', left: '0',
+                            position: 'absolute',
+                            display: 'block',
+                            background: 'rgba(0, 0, 0, .4)'
+                        }
+                    }
+                ))
+            }
+        };
         var templates = {
             form : m('.modal-content', [
                 m('.modal-header', [
@@ -156,46 +180,32 @@ var AddProject = {
                         window.contextVars.currentUser.institutions.length ? m('.form-group.m-v-sm', [
                             m('label.f-w-lg.text-bigger', 'Affiliation'),
                             m('a', {onclick: function(){
-                                $('.img-circle.fa.fa-check').addClass('hidden');
-                                ctrl.newProjectInstitutions = [];
+                                window.contextVars.currentUser.institutions.map(
+                                    function(inst){
+                                        ctrl.checkedInstitutions[inst.id] = false;
+                                    }
+                                );
                             }, style: {float: 'right'}},'Remove all'),
                             m('a', {onclick: function(){
-                                $('.img-circle.fa.fa-check').removeClass('hidden');
-                                ctrl.newProjectInstitutions = window.contextVars.currentUser.institutions.map(
-                                    function(inst){return inst.id;}
+                                window.contextVars.currentUser.institutions.map(
+                                    function(inst){
+                                        ctrl.checkedInstitutions[inst.id] = true;
+                                    }
                                 );
                             }, style: {float: 'right', marginRight: '5px'}}, 'Select all'),
                             m('table', m('tr', window.contextVars.currentUser.institutions.map(
                                 function(inst){
                                     return m('td',
                                         m('a', {onclick: function(){
-                                            $('#instLogo' + inst.id).toggleClass('hidden');
-                                            if (ctrl.newProjectInstitutions.indexOf(inst.id) !== -1){
-                                                ctrl.newProjectInstitutions.pop(inst.id);
-                                            } else {
-                                                ctrl.newProjectInstitutions.push(inst.id);
-                                            }
+                                            ctrl.checkedInstitutions[inst.id] = !ctrl.checkedInstitutions[inst.id];
+
                                         }},m('', {style: {position: 'relative',  margin: '10px'}, width: '45px', height: '45px'},
                                             [
                                             m('img.img-circle.text-muted',
                                                 {
                                                     src: inst.logo_path, width: '45px', height: '45px',
                                                 }
-                                            ),
-                                            m('i.img-circle.fa.fa-check#instLogo' + inst.id,
-                                                {
-                                                    style: {
-                                                        color: 'lightgreen',
-                                                        textAlign: 'center',
-                                                        fontSize: '275%',
-                                                        width: '45px', height: '100%',
-                                                        top: '0', left: '0',
-                                                        position: 'absolute',
-                                                        display: 'block',
-                                                        background: 'rgba(0, 0, 0, .4)'
-                                                    }
-                                                }
-                                            )
+                                            ), m.component(selected, {id: inst.id, hidden: !ctrl.checkedInstitutions[inst.id]})
                                         ]))
                                     );
                                 }
