@@ -844,7 +844,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     is_fork = fields.BooleanField(default=False, index=True)
     forked_date = fields.DateTimeField(index=True)
 
-    is_share_window = fields.BooleanField(default=False, index=True)
 
     title = fields.StringField(validate=validate_title)
     description = fields.StringField()
