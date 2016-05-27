@@ -253,6 +253,14 @@ $(document).ready(function() {
         window.location = '/search/?q=(tags:"' + $(e.target).text().toString().trim()+ '")';
     });
 
+    // Proxy loading of media sharing widgets
+    $('#shareDropDown').on('click', function() {
+        var deferredContents = $(this).attr('deferredContents');
+        if (deferredContents.length) {
+            $(this).append(deferredContents);
+            $(this).attr('deferredContents', '');
+        }
+    });
 
     // Portlet feature for the dashboard, to be implemented in later versions.
     // $( ".osf-dash-col" ).sortable({

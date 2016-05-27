@@ -47,8 +47,28 @@
                             <a class="btn btn-default" href="#nodesPrivacy" data-toggle="modal">Make Private</a>
                         % endif
                         <button class="btn btn-default disabled">Public</button>
+                    </div>
+                    <%
+                        unrendered_contents = r"""
+                        <ul class="dropdown-menu" role="menu" id="shareDropDownMenu">
+                            <li><a data-url="${node['absolute_url']}" class="twitter-share-button">Tweet</a><script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script></li>
+                            <li><iframe src="https://www.facebook.com/plugins/share_button.php?href=${node['absolute_url'] | u}&layout=button&mobile_iframe=true&appId=46124579504&width=58&height=20" width="58" height="20" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowTransparency="true"></iframe></li>
+                            <li><script src="//platform.linkedin.com/in.js" type="text/javascript"> lang: en_US</script><script type="IN/Share" data-url="${node['absolute_url']}"></script></li>
+                            <li>
+                                <a href="mailto:?subject=${node['title']} on the Open Science Framework&amp;body=This project is being openly shared at ${node['absolute_url']}" target="_blank">
+                                    Share by email
+                                </a>
+                            </li>
+                        </ul>
+                        """
+                        from mako.template import Template
+                        deferred_contents = Template(unrendered_contents).render(node=node)
+                    %>
+                    <div class="btn-group dropdown" id="shareDropDown" deferredContents="${deferred_contents | h}">
+                        <a class="btn btn-default" data-toggle="dropdown">Share</a>
                     % endif
                     </div>
+
                     <!-- ko if: canBeOrganized -->
                     <div class="btn-group" style="display: none;" data-bind="visible: true">
 
@@ -442,6 +462,7 @@
     % endfor
 
     <link rel="stylesheet" href="/static/css/pages/project-page.css">
+    <link rel="stylesheet" href="/static/css/pages/share-dropdown.css">
 </%def>
 
 <%def name="javascript_bottom()">

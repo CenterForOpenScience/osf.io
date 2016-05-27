@@ -47,13 +47,38 @@ var SharePopover =  {
                 if (!pop){
                     return window.setTimeout(popOverShow, 100);
                 }
+                var deferredShareContents = $('#shareContentHolder').attr('deferredContents');
                 m.render(document.getElementById('popOver'), [
                     m('ul.nav.nav-tabs.nav-justified', [
                         m('li.active', m('a[href="#share"][data-toggle="tab"]', 'Share')),
                         m('li', m('a[href="#embed"][data-toggle="tab"]', 'Embed'))
                     ]), m('br'),
                     m('.tab-content', [
-                        m('.tab-pane.active#share', m('.input-group', [
+                        m('.tab-pane.active#share', {
+                            config: function(element) {
+                                var deferredContents = $('#shareContentHolder').attr('deferredContents');
+                                if ($(element).find('#shareButtons').length == 0) {
+                                    var contentUrl = $('#share input').val();
+                                    var safeUrl = $('<div>').text(contentUrl).html();
+
+                                    deferredContents = deferredContents.replace('CONTENT_URL', safeUrl);
+                                    deferredContents = deferredContents.replace('CONTENT_URL', safeUrl);
+                                    deferredContents = deferredContents.replace('CONTENT_URL', safeUrl);
+                                    deferredContents = deferredContents.replace('CONTENT_ENCODED_URL', encodeURIComponent(contentUrl));
+                                    console.log(deferredContents);
+                                    $(element).append(deferredContents);
+                                    // These two buttons need extra help to load correctly
+                                    // each time after the scripts are already loaded
+                                    if (typeof twttr !== 'undefined') {
+                                        twttr.widgets.load();
+                                    }
+                                    if (typeof IN !== 'undefined') {
+                                        IN.parse();
+                                    }
+                                    //$('#shareContentHolder').attr('deferredContents', '');
+                                }
+                            }
+                        }, m('.input-group', [
                             CopyButton.view(ctrl, {link: link, height: copyButtonHeight}), //workaround to allow button to show up on first click
                             m('input.form-control[readonly][type="text"][value="'+ link +'"]')
                         ])),
@@ -140,7 +165,7 @@ var FileViewPage = {
                 dataType: 'json',
                 async: true,
                 url: fileWebViewUrl,
-                beforeSend: $osf.setXHRAuthorization 
+                beforeSend: $osf.setXHRAuthorization
             }).done(function(response) {
                 window.contextVars.file.urls.external = response.data.extra.webView;
             });

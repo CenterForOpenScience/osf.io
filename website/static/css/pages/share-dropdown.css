@@ -1,0 +1,21 @@
+div.dropdown .dropdown-menu li iframe, div.dropdown .dropdown-menu li .IN-widget {
+    margin: 3px 20px;
+}
+
+div.dropdown .dropdown-menu, div.dropdown .dropdown-menu a {
+    background-color: #f8f8f8;
+    color: black;
+}
+
+div.dropdown .dropdown-menu a:hover {
+    background-image: none;
+    background-color: #e7e7e7;
+}
+
+div.shareButtons, div.shareButton {
+    display: inline-block;
+    margin-top: 12px;
+    margin-left: 4px;
+    margin-right: 4px;
+    vertical-align: top;
+}
