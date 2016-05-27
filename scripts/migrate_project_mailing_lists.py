@@ -47,6 +47,7 @@ def migrate(dry_run=True):
                 node.save()
                 successful_disables.append(node._id)
             except Exception as e:
+                logger.exception('Error while handling node {}'.format(node._id))
                 unknown_failures[node._id] = e
         else:
             try:
@@ -68,6 +69,7 @@ def migrate(dry_run=True):
                 node.save()
                 successful_enables.append(node._id)
             except Exception as e:
+                logger.exception('Error while handling node {}'.format(node._id))
                 unknown_failures[node._id] = e
             else:
                 create_list(node._id)
