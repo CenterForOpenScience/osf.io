@@ -363,7 +363,7 @@ def jsonify_users_list(users, unsubs=(), initial=False):
     return [members_list[i:i + 999] for i in range(0, len(members_list), 999)]
 
 def address(node_id):
-    return '{}@{}'.format(node_id, furl(settings.DOMAIN).host)
+    return '{}@{}'.format(node_id, settings.MAILGUN_LIST_ADDRESS_DOMAIN)
 
 def list_title(node):
     return '{} Mailing List'.format(node.title)

@@ -9,6 +9,7 @@ import os
 import json
 import hashlib
 from datetime import timedelta
+from urlparse import urlparse
 
 os_env = os.environ
 
@@ -158,6 +159,7 @@ SHORT_DOMAIN = 'osf.io'
 
 # TODO: Override in local.py
 MAILGUN_API_KEY = None
+MAILGUN_LIST_ADDRESS_DOMAIN = urlparse(DOMAIN).hostname
 MAILGUN_API_URL = 'https://api.mailgun.net/v3'
 
 # TODO: Combine Python and JavaScript config
