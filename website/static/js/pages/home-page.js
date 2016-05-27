@@ -7,6 +7,7 @@
 var $ = require('jquery');
 var m = require('mithril');
 
+var ShareFilesProject = require('js/home-page/quickProjectSearchPlugin');
 var QuickSearchProject = require('js/home-page/quickProjectSearchPlugin');
 var NewAndNoteworthy = require('js/home-page/newAndNoteworthyPlugin');
 var MeetingsAndConferences = require('js/home-page/meetingsAndConferencesPlugin');
@@ -17,13 +18,6 @@ $(document).ready(function(){
     var osfHome = {
         view : function(ctrl, args) {
             return [
-                m('.shareFiles', m('.container',
-                    [
-                        m('.row', [
-                            m(columnSizeClass, m.component(QuickSearchProject, {}))
-                        ])
-                    ]
-                )),
                 m('.quickSearch', m('.container.p-t-lg',
                     [
                         m('.row.m-t-lg', [
