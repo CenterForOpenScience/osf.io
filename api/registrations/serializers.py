@@ -5,8 +5,6 @@ from rest_framework import exceptions
 from api.base.utils import absolute_reverse
 from api.files.serializers import FileSerializer
 from api.nodes.serializers import NodeSerializer, NodeProviderSerializer
-from api.nodes.serializers import NodeLinksSerializer, NodeLicenseSerializer
-from api.nodes.serializers import NodeSerializer
 from api.nodes.serializers import NodeLinksSerializer
 from api.nodes.serializers import NodeContributorsSerializer, NodeTagField
 from api.base.serializers import (IDField, RelationshipField, LinksField, HideIfWithdrawal,
