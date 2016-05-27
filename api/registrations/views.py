@@ -20,7 +20,9 @@ from api.nodes.views import (
     NodeAlternativeCitationsList, NodeAlternativeCitationDetail, NodeLogList,
     NodeInstitutionDetail, WaterButlerMixin, NodeForksList, NodeWikiList)
 
-from api.registrations.serializers import RegistrationNodeLinksSerializer, RegistrationFileSerializer
+from api.registrations.serializers import (
+    RegistrationNodeLinksSerializer, RegistrationFileSerializer, RegistrationProviderSerializer
+)
 
 from api.nodes.permissions import (
     ContributorOrPublic,
@@ -296,6 +298,8 @@ class RegistrationLogList(NodeLogList, RegistrationMixin):
 
 
 class RegistrationProvidersList(NodeProvidersList, RegistrationMixin):
+    serializer_class = RegistrationProviderSerializer
+
     view_category = 'registrations'
     view_name = 'registration-providers'
 
