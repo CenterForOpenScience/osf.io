@@ -38,12 +38,3 @@
     background-color: #CCC;
     border-color: #BBB;
 }
-.existing-user-signin {
-    /*height: 320px;*/
-    background-color: #EEE;
-    border-radius: 4px;
-    margin-top: 75px;
-}
-.existing-user-signin-button {
-    margin-right: 0px !important;
-}

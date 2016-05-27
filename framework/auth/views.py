@@ -134,6 +134,9 @@ def auth_login(auth, **kwargs):
     next_url = request.args.get('next')
     must_login_warning = True
 
+    if auth.user and auth.user.email_verifications:
+        auth.user.clean_email_verifications()
+        auth.user.save()
     if campaign:
         next_url = campaigns.campaign_url_for(campaign)
 
@@ -203,7 +206,7 @@ def auth_logout(redirect_url=None):
 def auth_email_logout(token, user):
     """When a user is adding an email or merging an account, add the email to the user and log them out.
     """
-    redirect_url = web_url_for('auth_login') + '?existing_user={}'.format(urllib.quote_plus(user.email))
+    redirect_url = web_url_for('auth_login')
     try:
         unconfirmed_email = user.get_unconfirmed_email_for_token(token)
     except InvalidTokenError:
