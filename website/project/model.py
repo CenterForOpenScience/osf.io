@@ -652,9 +652,9 @@ def get_pointer_parent(pointer):
 
 def validate_category(value):
     """Validator for Node#category. Makes sure that the value is one of the
-    categories defined in CATEGORY_MAP.
+    categories defined in NODE_CATEGORY_MAP.
     """
-    if value not in Node.CATEGORY_MAP.keys():
+    if value not in settings.NODE_CATEGORY_MAP.keys():
         raise ValidationValueError('Invalid value for category.')
     return True
 
@@ -767,23 +767,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         'node_license',
         'primary_institution'
     }
-
-    # Maps category identifier => Human-readable representation for use in
-    # titles, menus, etc.
-    # Use an OrderedDict so that menu items show in the correct order
-    CATEGORY_MAP = OrderedDict([
-        ('analysis', 'Analysis'),
-        ('communication', 'Communication'),
-        ('data', 'Data'),
-        ('hypothesis', 'Hypothesis'),
-        ('instrumentation', 'Instrumentation'),
-        ('methods and measures', 'Methods and Measures'),
-        ('procedure', 'Procedure'),
-        ('project', 'Project'),
-        ('software', 'Software'),
-        ('other', 'Other'),
-        ('', 'Uncategorized')
-    ])
 
     # Fields that are writable by Node.update
     WRITABLE_WHITELIST = [
@@ -951,7 +934,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     @property
     def category_display(self):
         """The human-readable representation of this node's category."""
-        return self.CATEGORY_MAP[self.category]
+        return settings.NODE_CATEGORY_MAP[self.category]
 
     # We need the following 2 properties in order to serialize related links in NodeRegistrationSerializer
     @property

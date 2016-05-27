@@ -7,6 +7,8 @@ from modularodm.exceptions import ValidationValueError
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 
+from django.conf import settings
+
 from website.models import Node, User, Comment, Institution
 from website.exceptions import NodeStateError, UserNotAffiliatedError
 from website.util import permissions as osf_permissions
@@ -78,7 +80,7 @@ class NodeSerializer(JSONAPISerializer):
     id = IDField(source='_id', read_only=True)
     type = TypeField()
 
-    category_choices = Node.CATEGORY_MAP.items()
+    category_choices = settings.NODE_CATEGORY_MAP.items()
     category_choices_string = ', '.join(["'{}'".format(choice[0]) for choice in category_choices])
 
     title = ser.CharField(required=True)
@@ -300,7 +302,7 @@ class NodeDetailSerializer(NodeSerializer):
 
 class NodeForksSerializer(NodeSerializer):
 
-    category_choices = Node.CATEGORY_MAP.items()
+    category_choices = settings.NODE_CATEGORY_MAP.items()
     category_choices_string = ', '.join(["'{}'".format(choice[0]) for choice in category_choices])
 
     title = ser.CharField(required=False)

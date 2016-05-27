@@ -315,7 +315,7 @@ def node_setting(auth, node, **kwargs):
         'level': node.comment_level,
     }
 
-    ret['categories'] = Node.CATEGORY_MAP
+    ret['categories'] = settings.NODE_CATEGORY_MAP
     ret['categories'].update({
         'project': 'Project'
     })
@@ -787,7 +787,7 @@ def _view_project(node, auth, primary=False):
         'addon_widgets': widgets,
         'addon_widget_js': js,
         'addon_widget_css': css,
-        'node_categories': Node.CATEGORY_MAP
+        'node_categories': settings.NODE_CATEGORY_MAP
     }
     return data
 

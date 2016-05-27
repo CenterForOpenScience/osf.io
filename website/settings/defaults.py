@@ -9,6 +9,7 @@ import os
 import json
 import hashlib
 from datetime import timedelta
+from collections import OrderedDict
 
 os_env = os.environ
 
@@ -194,6 +195,23 @@ WIKI_WHITELIST = {
         'list-style',
     ]
 }
+
+# Maps category identifier => Human-readable representation for use in
+# titles, menus, etc.
+# Use an OrderedDict so that menu items show in the correct order
+NODE_CATEGORY_MAP = OrderedDict([
+    ('analysis', 'Analysis'),
+    ('communication', 'Communication'),
+    ('data', 'Data'),
+    ('hypothesis', 'Hypothesis'),
+    ('instrumentation', 'Instrumentation'),
+    ('methods and measures', 'Methods and Measures'),
+    ('procedure', 'Procedure'),
+    ('project', 'Project'),
+    ('software', 'Software'),
+    ('other', 'Other'),
+    ('', 'Uncategorized')
+])
 
 # Add-ons
 # Load addons from addons.json

@@ -185,6 +185,8 @@ SWAGGER_SETTINGS = {
     "exclude_namespaces": ['applications', 'tokens'],
 }
 
+NODE_CATEGORY_MAP = osf_settings.NODE_CATEGORY_MAP
+
 DEBUG_TRANSACTIONS = DEBUG
 
 JWT_SECRET = 'osf_api_cas_login_jwt_secret_32b'

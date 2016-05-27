@@ -21,7 +21,7 @@ from website.notifications import emails
 from website.notifications import utils
 from website.project.model import Node, Comment
 from website.project.signals import contributor_removed, node_deleted
-from website import mails
+from website import mails, settings
 from website.util import api_url_for
 from website.util import web_url_for
 
@@ -327,7 +327,7 @@ def subscription_schema(project, structure, level=0):
         'kind': And(str, Use(lambda s: s in ('node', 'folder'),
                              error="kind didn't match node or folder {}".format(level))),
         'nodeType': Use(lambda s: s in ('project', 'component'), error='nodeType not project or component'),
-        'category': Use(lambda s: s in Node.CATEGORY_MAP, error='category not in Node.CATEGORY_MAP'),
+        'category': Use(lambda s: s in settings.NODE_CATEGORY_MAP, error='category not in settings.NODE_CATEGORY_MAP'),
         'permissions': {
             'view': Use(lambda s: s in (True, False), error='view permissions is not True/False')
         },
