@@ -52,8 +52,8 @@ var ViewModel = function(data) {
         if (self.isAddInstitution()) {
             message = 'Add <b>' + item.name + '</b> to <b>' + data.node.title + '</b> or to <b>' +
                 data.node.title + '</b> and every component in it?<br><br>';
-            modifyOneMessage = 'Add <b>' + item.name + '</b> to <b>' +  data.node.title + '</b>.',
-            modifyAllMessage = 'Add <b>' + item.name + '</b> to <b>' +  data.node.title + '</b> and every component in it.';
+            modifyOneMessage = 'Add to <b>' +  data.node.title + '</b>.',
+            modifyAllMessage = 'Add to <b>' +  data.node.title + '</b> and every component in it.';
         }
         else {
             message = 'Remove <b>' + item.name + '</b> from <b>' + data.node.title + '</b> or from <b>' +
