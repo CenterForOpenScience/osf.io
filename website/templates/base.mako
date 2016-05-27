@@ -188,10 +188,13 @@
                     id: ${ user_id | sjson, n },
                     locale: ${ user_locale | sjson, n },
                     timezone: ${ user_timezone | sjson, n },
-                    entryPoint: ${ user_entry_point | sjson, n }
+                    entryPoint: ${ user_entry_point | sjson, n },
+                    emailsToAdd: ${ user_email_verifications | sjson, n }
                 },
                 popular: ${ popular_links_node | sjson, n },
-                newAndNoteworthy: ${ noteworthy_links_node | sjson, n }
+                newAndNoteworthy: ${ noteworthy_links_node | sjson, n },
+                confirmedEmailURL: ${ api_url_for('unconfirmed_email_add') | sjson, n }
+
             });
         </script>
 

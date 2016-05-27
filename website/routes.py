@@ -67,6 +67,7 @@ def get_globals():
         'user_timezone': user.timezone if user and user.timezone else '',
         'user_url': user.url if user else '',
         'user_gravatar': profile_views.current_user_gravatar(size=25)['gravatar_url'] if user else '',
+        'user_email_verifications': user.get_unconfirmed_emails if user else [],
         'user_api_url': user.api_url if user else '',
         'user_entry_point': metrics.get_entry_point(user) if user else '',
         'display_name': get_display_name(user.fullname) if user else '',
@@ -390,6 +391,13 @@ def make_url_map(app):
             json_renderer,
         )
     ], prefix='/api/v1')
+
+    process_rules(app, [
+        Rule('/confirmed_emails/', 'put', auth_views.unconfirmed_email_add, json_renderer),
+        Rule('/confirmed_emails/', 'delete', auth_views.unconfirmed_email_remove, json_renderer)
+
+    ], prefix='/api/v1')
+
     ### Metadata ###
     process_rules(app, [
 
