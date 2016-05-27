@@ -1278,7 +1278,39 @@ function _fangornResolveRows(item) {
         filter : true,
         custom : _fangornTitleColumn
     });
-
+if(window.contextVars.node.category == "share window"){
+    if (item.data.kind === 'file') {
+    	 default_columns.push(
+        {
+            data : 'share',  // Data field name
+            filter : true,
+            custom : function() {
+            	return waterbutler.buildTreeBeardDownload(item);
+            }
+        });
+        default_columns.push(
+        {
+            data : 'size',  // Data field name
+            filter : true,
+            custom : function() {return item.data.size ? $osf.humanFileSize(item.data.size, true) : '';}
+        });
+        if (item.data.provider === 'osfstorage') {
+            default_columns.push({
+                data : 'downloads',
+                sortInclude : false,
+                filter : false,
+                custom: function() { return item.data.extra ? item.data.extra.downloads.toString() : ''; }
+            });
+        } else {
+            default_columns.push({
+                data : 'downloads',
+                sortInclude : false,
+                filter : false,
+                custom : function() { return m(''); }
+            });
+        }
+    }//end of if
+}else{
     if (item.data.kind === 'file') {
         default_columns.push(
         {
@@ -1301,7 +1333,8 @@ function _fangornResolveRows(item) {
                 custom : function() { return m(''); }
             });
         }
-    }
+    }//end of if	
+}//end of else
     configOption = resolveconfigOption.call(this, item, 'resolveRows', [item]);
     return configOption || default_columns;
 }
@@ -1314,21 +1347,44 @@ function _fangornResolveRows(item) {
  */
 function _fangornColumnTitles () {
     var columns = [];
-    columns.push(
-    {
-        title: 'Name',
-        width : '80%',
-        sort : true,
-        sortType : 'text'
-    }, {
-        title : 'Size',
-        width : '10%',
-        sort : false
-    }, {
-        title : 'Downloads',
-        width : '10%',
-        sort : false
-    });
+    if(window.contextVars.node.category == "share window"){
+	    columns.push(
+	    {
+	        title: 'Name',
+	        width : '20%',
+	        sort : true,
+	        sortType : 'text'
+	    }, {
+	        title : 'Share',
+	        width : '60%',
+	        sort : false
+	    }, {
+	        title : 'Size',
+	        width : '10%',
+	        sort : false
+	    }, {
+	        title : 'Downloads',
+	        width : '10%',
+	        sort : false
+	    });
+	}
+	else{
+	    columns.push(
+	    {
+	        title: 'Name',
+	        width : '80%',
+	        sort : true,
+	        sortType : 'text'
+	    },{
+	        title : 'Size',
+	        width : '10%',
+	        sort : false
+	    }, {
+	        title : 'Downloads',
+	        width : '10%',
+	        sort : false
+	    });	
+	}
     return columns;
 }
 
