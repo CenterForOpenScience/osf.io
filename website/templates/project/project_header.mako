@@ -30,7 +30,7 @@
 
                     % endif
                         <li>
-                            <a href="${node['url']}"  class="project-title"> 
+                            <a href="${node['url']}"  class="project-title">
                                 ${ node['title'] }
                             </a>
                         </li>
@@ -67,7 +67,7 @@
                         % if not node['anonymous']:
                             <li><a href="${node['url']}forks/">Forks</a></li>
                         %endif
-                        
+
                         % if user['is_contributor']:
                             <li><a href="${node['url']}contributors/">Contributors</a></li>
                         % endif
@@ -110,7 +110,7 @@
                 <div class="alert alert-info">
                     <div>This is a pending registration of <a class="link-solid" href="${node['registered_from_url']}">this ${node['node_type']}</a>, awaiting approval from project administrators. This registration will be final when all project administrators approve the registration or 48 hours pass, whichever comes first.</div>
 
-                    % if 'admin' in user['permissions']: 
+                    % if 'admin' in user['permissions']:
                         <div>
                             <br>
                             <button type="button" id="registrationCancelButton" class="btn btn-danger" data-toggle="modal" data-target="#registrationCancel">

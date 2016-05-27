@@ -17,6 +17,13 @@ $(document).ready(function(){
     var osfHome = {
         view : function(ctrl, args) {
             return [
+                m('.shareFiles', m('.container',
+                    [
+                        m('.row', [
+                            m(columnSizeClass, m.component(QuickSearchProject, {}))
+                        ])
+                    ]
+                )),
                 m('.quickSearch', m('.container.p-t-lg',
                     [
                         m('.row.m-t-lg', [
