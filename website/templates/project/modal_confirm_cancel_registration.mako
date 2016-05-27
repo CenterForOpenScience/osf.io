@@ -6,7 +6,7 @@
                 <h3 class="modal-title">Are you sure you want to cancel this registration?</h3>
             </div><!-- end modal-header -->
             <div class="modal-footer">
-                <a class="btn btn-danger" href="${node['disapproval_link']}">Cancel Registration<a/></button>
+                <a class="btn btn-danger" href="${node['disapproval_link']}">Cancel registration<a/></button>
             </div><!-- end modal-footer -->
         </div><!-- end modal- content -->
     </div><!-- end modal-dialog -->

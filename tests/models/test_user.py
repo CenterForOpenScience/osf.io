@@ -363,7 +363,8 @@ class TestUserMerging(base.OsfTestCase):
             'mailing_lists',
             'verification_key',
             '_affiliated_institutions',
-            'contributor_added_email_records'
+            'contributor_added_email_records',
+            'requested_deactivation'
         ]
 
         calculated_fields = {
