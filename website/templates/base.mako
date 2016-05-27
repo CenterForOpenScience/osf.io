@@ -191,8 +191,9 @@
                     entryPoint: ${ user_entry_point | sjson, n },
                     institutions: ${ user_institutions | sjson, n}
                 },
+                allInstitutions: ${ all_institutions | sjson, n},
                 popular: ${ popular_links_node | sjson, n },
-                newAndNoteworthy: ${ noteworthy_links_node | sjson, n }
+                newAndNoteworthy: ${ noteworthy_links_node | sjson, n },
             });
         </script>
 

@@ -306,8 +306,8 @@
                     </div>
                     <div class="panel-body">
                         <div class="help-block">
-                            Projects can be affiliated with institutions that have created OSF for Institution accounts.
                             <!-- ko if: affiliatedInstitutions().length == 0 -->
+                            Projects can be affiliated with institutions that have created OSF for Institutions accounts.
                             This allows:
                             <ul>
                                <li>institutional logos to be displayed on public projects</li>
@@ -316,10 +316,9 @@
                             </ul>
                             <!-- /ko -->
                         </div>
-                        <span>Affiliated Institutions: </span>
-                                <!-- ko if: affiliatedInstitutions().length == 0 -->
-                                <i>None</i>
-                                <!-- /ko -->
+                        <!-- ko if: affiliatedInstitutions().length > 0 -->
+                        <label>Affiliated Institutions: </label>
+                        <!-- /ko -->
                         <table class="table">
                             <tbody>
                                 <!-- ko foreach: {data: affiliatedInstitutions, as: 'item'} -->
@@ -327,35 +326,35 @@
                                     <td><img class="img-circle" width="50px" height="50px" data-bind="attr: {src: item.logo_path}"></td>
                                     <td><span data-bind="text: item.name"></span></td>
                                     % if 'admin' in user['permissions']:
-                                        <td><a data-bind="click: $parent.clearInst"><i class="fa fa-times"></i></a></td>
+                                        <td><button data-bind="disable: $parent.loading(),
+                                        click: $parent.clearInst"
+                                                    class="pull-right btn btn-danger">Remove</button></td>
                                     % endif
                                 </tr>
                                 <!-- /ko -->
 
                             </tbody>
                         </table>
-                        % if 'admin' in user['permissions']:
-                            <div data-bind="visible: hasThingsToAdd">
-                                <a data-bind="click: toggle">Add institution</a>
-                                <div data-bind="visible: showAdd()">
-                                    <div class="help-block">
-                                        You are authorized to affiliate your projects with the following institutions:
-                                    </div>
-                                    <div class="radio">
-                                        <div data-bind="foreach: {data: availableInstitutions, as: 'item'}">
-                                            <div>
-                                            <label>
-                                                <input type="radio" data-bind="value: item.id, checked: $parent.selectedInstitution">
-                                                <p data-bind="text: item.name"></p>
-                                            </label>
-
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <button data-bind="click: submitInst, css: {disabled: selectedInstitution() == null}" class="btn btn-success">Affiliate</button>
-                                </div>
-                           </div>
-                        % endif
+                            </br>
+                        <!-- ko if: availableInstitutions().length > 0 -->
+                        <label>Available Institutions: </label>
+                        <table class="table">
+                            <tbody>
+                                <!-- ko foreach: {data: availableInstitutions, as: 'item'} -->
+                                <tr>
+                                    <td><img class="img-circle" width="50px" height="50px" data-bind="attr: {src: item.logo_path}"></td>
+                                    <td><span data-bind="text: item.name"></span></td>
+                                    % if 'admin' in user['permissions']:
+                                        <td><button
+                                                data-bind="disable: $parent.loading(),
+                                                click: $parent.submitInst"
+                                                class="pull-right btn btn-success">Add</button></td>
+                                    % endif
+                                </tr>
+                                <!-- /ko -->
+                            </tbody>
+                        </table>
+                        <!-- /ko -->
                     </div>
                 </div>
                 % endif
