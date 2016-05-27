@@ -27,6 +27,7 @@ def _dt_to_iso8601(value):
 
     return iso8601
 
+
 class TestFileView(ApiTestCase):
     def setUp(self):
         super(TestFileView, self).setUp()
@@ -62,7 +63,6 @@ class TestFileView(ApiTestCase):
         assert_equal(attributes['extra']['hashes']['md5'], None)
         assert_equal(attributes['extra']['hashes']['sha256'], None)
         assert_equal(attributes['tags'], [])
-
 
     def test_file_has_comments_link(self):
         res = self.app.get('/{}files/{}/'.format(API_BASE, self.file._id), auth=self.user.auth)
@@ -361,3 +361,41 @@ class TestFileVersionView(ApiTestCase):
             expect_errors=True,
             auth=self.user.auth,
         ).status_code, 405)
+
+
+class TestFileTagging(ApiTestCase):
+    def setUp(self):
+        super(TestFileTagging, self).setUp()
+        self.user = AuthUserFactory()
+        self.node = ProjectFactory(creator=self.user)
+        self.file1 = api_utils.create_test_file(
+            self.node, self.user, filename='file1')
+
+    def test_tags_add_and_remove_properly(self):
+        payload = {
+            "data": {
+                "type": "files",
+                "id": self.file1._id,
+                "attributes": {
+                    "checkout": None,
+                    "tags": ["goofy"]
+                }
+            }
+        }
+        url = '/{}files/{}/'.format(API_BASE, self.file1._id)
+        res = self.app.put_json_api(url, payload, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        # Ensure adding tag data is correct from the PATCH response
+        assert_equal(len(res.json['data']['attributes']['tags']), 1)
+        assert_equal(res.json['data']['attributes']['tags'][0], 'goofy')
+        # Ensure removing and adding tag data is correct from the PATCH response
+        payload['data']['attributes']['tags'] = ['goofier']
+        res = self.app.put_json_api(url, payload, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']['attributes']['tags']), 1)
+        assert_equal(res.json['data']['attributes']['tags'][0], 'goofier')
+        # Ensure removing tag data is correct from the PATCH response
+        payload['data']['attributes']['tags'] = []
+        res = self.app.put_json_api(url, payload, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']['attributes']['tags']), 0)

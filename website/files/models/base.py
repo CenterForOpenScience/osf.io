@@ -199,7 +199,7 @@ class StoredFileNode(StoredObject, Commentable):
     checkout = fields.AbstractForeignField('User')
 
     #Tags for a file, currently only used for osfStorage
-    tags = fields.ForeignField('Tag', list=True)
+    tags = fields.ForeignField('Tag', list=True, index=True)
 
     # For Django compatibility
     @property

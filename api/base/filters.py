@@ -19,7 +19,7 @@ from api.base.exceptions import (
     InvalidFilterFieldError
 )
 from api.base import utils
-from api.base.serializers import RelationshipField, TargetField
+from api.base.serializers import RelationshipField, TargetField, JSONAPIListField
 
 def sort_multiple(fields):
     fields = list(fields)
@@ -376,6 +376,13 @@ class ListFilterMixin(FilterMixin):
             return_val = [
                 item for item in default_queryset
                 if params['value'].lower() in getattr(item, field_name, {}).lower()
+            ]
+        elif isinstance(field, JSONAPIListField):
+            return_val = [
+                item for item in default_queryset
+                if params['value'].lower() in [
+                    i.lower for i in getattr(item, field_name, [])
+                ]
             ]
         else:
             try:
