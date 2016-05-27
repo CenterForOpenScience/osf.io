@@ -7,7 +7,7 @@ require('css/add-project-plugin.css');
 var $ = require('jquery');
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
-var InstitutionImage = require('js/components/institutions');
+var InstitutionImg = require('js/components/institution');
 
 // XHR configuration to get apiserver connection to work
 var xhrconfig = function (xhr) {
@@ -183,7 +183,7 @@ var AddProject = {
                                             ctrl.checkedInstitutions[inst.id] = !ctrl.checkedInstitutions[inst.id];
 
                                         }},m('', {style: {position: 'relative',  margin: '10px'}, width: '45px', height: '45px'},
-                                            m.component(InstitutionImage.CheckableInst, {logoPath: inst.logo_path, checked: ctrl.checkedInstitutions[inst.id]})
+                                            m.component(InstitutionImg.CheckableInst, {name: inst.name, width: '45px', logoPath: inst.logo_path, checked: ctrl.checkedInstitutions[inst.id]})
                                         ))
                                     );
                                 }

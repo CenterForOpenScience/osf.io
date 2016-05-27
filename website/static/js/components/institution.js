@@ -18,7 +18,7 @@ var InstitutionImg = {
             muted: false
         };
         if (!opts.width && !opts.height) {
-            throw new Error('InstitionImg requires width and/or height option.');
+            throw new Error('InstitutionImg requires width and/or height option.');
         }
         if (opts.width && !opts.height) { opts.height = opts.width; }
         if (opts.height && !opts.width) { opts.width = opts.height; }
@@ -41,6 +41,31 @@ var InstitutionImg = {
     }
 };
 
+var CheckableInst = {
+    view: function(ctrl, opts) {
+        var checked = required(opts, 'checked');
+        return m('',[
+            m.component(InstitutionImg, opts),
+            checked ?
+            m('i.img-circle.fa.fa-check',
+                {
+                    style: {
+                        color: '#C7FFC7',
+                        textAlign: 'center',
+                        fontSize: '275%',
+                        width: '100%', height: '100%',
+                        top: '0', left: '0',
+                        position: 'absolute',
+                        display: 'block',
+                        background: 'rgba(0, 0, 0, .4)'
+                    }
+                }
+            ) : '',
+        ])
+    }
+};
+
 module.exports = {
-    InstitutionImg: InstitutionImg
+    InstitutionImg: InstitutionImg,
+    CheckableInst: CheckableInst,
 };
