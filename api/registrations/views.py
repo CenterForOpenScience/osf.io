@@ -11,6 +11,7 @@ from api.registrations.serializers import (
     RegistrationSerializer,
     RegistrationDetailSerializer,
     RegistrationContributorsSerializer,
+    RegistrationProviderSerializer
 )
 
 from api.nodes.views import (
@@ -290,6 +291,8 @@ class RegistrationLogList(NodeLogList, RegistrationMixin):
 
 
 class RegistrationProvidersList(NodeProvidersList, RegistrationMixin):
+    serializer_class = RegistrationProviderSerializer
+
     view_category = 'registrations'
     view_name = 'registration-providers'
 
