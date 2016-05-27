@@ -18,7 +18,7 @@ var InstitutionImage = {
         var opts = $.extend({}, defaults, options);
         var logoPath = required(opts.logoPath);
         return m('img', {
-            className: 'img-circle text-muted',
+            className: 'img-circle',
             src: logoPath,
             width: opts.width, height: opts.height
         })
@@ -29,15 +29,30 @@ var InstitutionImage = {
 var CheckableInst = {
     view: function(ctrl, opts) {
         var checked = required(opts.checked);
-        return [
-            m.comp(Institution, opts),
-            checked ? m.comp(Checkmark): ''
-        ]
+        return m('',[
+            m.component(InstitutionImage, opts),
+            checked ?
+            m('i.img-circle.fa.fa-check',
+                {
+                    style: {
+                        color: '#C7FFC7',
+                        textAlign: 'center',
+                        fontSize: '275%',
+                        width: '100%', height: '100%',
+                        top: '0', left: '0',
+                        position: 'absolute',
+                        display: 'block',
+                        background: 'rgba(0, 0, 0, .4)'
+                    }
+                }
+            ) : '',
+        ])
     }
 }
 
 
 
 module.exports = {
-    InstitutionImage: InstitutionImage
+    InstitutionImage: InstitutionImage,
+    CheckableInst: CheckableInst,
 };

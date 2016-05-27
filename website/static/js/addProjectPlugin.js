@@ -7,6 +7,7 @@ require('css/add-project-plugin.css');
 var $ = require('jquery');
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
+var InstitutionImage = require('js/components/institutions');
 
 // XHR configuration to get apiserver connection to work
 var xhrconfig = function (xhr) {
@@ -127,24 +128,6 @@ var AddProject = {
         };
     },
     view : function (ctrl, options) {
-        var selected = {
-            view: function(ctrl, args){
-                return m(args.hidden ? '.hidden' : '', m('i.img-circle.fa.fa-check#instLogo' + args.id,
-                    {
-                        style: {
-                            color: '#C7FFC7',
-                            textAlign: 'center',
-                            fontSize: '275%',
-                            width: '45px', height: '100%',
-                            top: '0', left: '0',
-                            position: 'absolute',
-                            display: 'block',
-                            background: 'rgba(0, 0, 0, .4)'
-                        }
-                    }
-                ))
-            }
-        };
         var templates = {
             form : m('.modal-content', [
                 m('.modal-header', [
@@ -200,13 +183,8 @@ var AddProject = {
                                             ctrl.checkedInstitutions[inst.id] = !ctrl.checkedInstitutions[inst.id];
 
                                         }},m('', {style: {position: 'relative',  margin: '10px'}, width: '45px', height: '45px'},
-                                            [
-                                            m('img.img-circle.text-muted',
-                                                {
-                                                    src: inst.logo_path, width: '45px', height: '45px',
-                                                }
-                                            ), m.component(selected, {id: inst.id, hidden: !ctrl.checkedInstitutions[inst.id]})
-                                        ]))
+                                            m.component(InstitutionImage.CheckableInst, {logoPath: inst.logo_path, checked: ctrl.checkedInstitutions[inst.id]})
+                                        ))
                                     );
                                 }
                             ))),
