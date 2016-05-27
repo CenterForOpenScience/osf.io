@@ -35,7 +35,7 @@ $(document).ready(function(){
                         ])
                     ]
                 )),
-                allInstitutions.length ? m('.institutions-panel', m('.container',
+                affiliatedInstitutions.length ? m('.institutions-panel', m('.container',
                     [
                         m('.row', [
                             m(columnSizeClass,  m.component(InstitutionsPanel, {
