@@ -560,6 +560,7 @@ class TestMustBeContributorOrPublicButNotAnonymizedDecorator(AuthAppTestCase):
         res = res.follow(expect_errors=True)
         assert_equal(res.status_code, 500)
 
+
 @must_be_logged_in
 def protected(**kwargs):
     return 'open sesame'
@@ -584,7 +585,7 @@ class TestPermissionDecorators(AuthAppTestCase):
         resp = protected()
         assert_true(isinstance(resp, BaseResponse))
         login_url = cas.get_login_url(service_url='http://localhost/')
-        assert_in(login_url, resp.headers.get('location'))
+        assert_equal(login_url, resp.headers.get('location'))
 
     @mock.patch('website.project.decorators._kwargs_to_nodes')
     @mock.patch('framework.auth.decorators.Auth.from_kwargs')
