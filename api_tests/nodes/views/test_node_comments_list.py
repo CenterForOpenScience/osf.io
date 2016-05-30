@@ -981,6 +981,11 @@ class TestCommentFiltering(ApiTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 0)
 
+    def test_filtering_by_target_no_results_with_related_counts(self):
+        url = '{}?filter[target]=fakeid&related_counts=True'.format(self.base_url)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(len(res.json['data']), 0)
+
     def test_filtering_for_comment_replies(self):
         reply = CommentFactory(node=self.project, user=self.user, target=Guid.load(self.comment._id))
         url = self.base_url + '?filter[target]=' + str(self.comment._id)
