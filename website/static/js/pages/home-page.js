@@ -7,6 +7,7 @@
 var $ = require('jquery');
 var m = require('mithril');
 
+var ShareFilesProject = require('js/home-page/shareFilesPlugin');
 var QuickSearchProject = require('js/home-page/quickProjectSearchPlugin');
 var NewAndNoteworthy = require('js/home-page/newAndNoteworthyPlugin');
 var MeetingsAndConferences = require('js/home-page/meetingsAndConferencesPlugin');
@@ -17,8 +18,22 @@ $(document).ready(function(){
     var osfHome = {
         view : function(ctrl, args) {
             return [
+            // m('.quickSearch', m('.container',
+            //     [
+            //         m('.row', [
+            //             m(columnSizeClass, m('h3', 'Your Share Folder'))
+            //         ]),
+            //         m('.row', [
+            //             m(columnSizeClass, m.component(ShareFilesProject, {}))
+            //         ])
+            //
+            //     ]
+            // )),
                 m('.quickSearch', m('.container.p-t-lg',
                     [
+                        m('.row.m-t-lg', [
+                            m(columnSizeClass, m.component(ShareFilesProject, {}))
+                        ]),
                         m('.row.m-t-lg', [
                             m(columnSizeClass, m.component(QuickSearchProject, {}))
                         ])
@@ -49,7 +64,5 @@ $(document).ready(function(){
     // If logged in...
     m.mount(document.getElementById('osfHome'), m.component(osfHome, {}));
     $('#osfNavDashboard').addClass('active');
-
-
 
 });

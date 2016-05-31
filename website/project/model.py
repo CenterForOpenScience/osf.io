@@ -781,6 +781,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         ('procedure', 'Procedure'),
         ('project', 'Project'),
         ('software', 'Software'),
+        ('share window', 'Share Window'),
         ('other', 'Other'),
         ('', 'Uncategorized')
     ])
@@ -842,6 +843,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
     is_fork = fields.BooleanField(default=False, index=True)
     forked_date = fields.DateTimeField(index=True)
+
 
     title = fields.StringField(validate=validate_title)
     description = fields.StringField()
