@@ -1,4 +1,4 @@
-<footer class="footer m-t-lg m-b-lg p-lg bg-color-light">
+<footer class="footer m-t-lg m-b-lg p-lg bg-color-light" id="pagefooter">
     <div class="container">
         <div class="row">
             <div class="col-sm-2 col-md-3 col-md-offset-1">
