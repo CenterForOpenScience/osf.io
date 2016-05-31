@@ -1555,7 +1555,7 @@ class NodeAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, Node
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [CoreScopes.ADDONS_READ]
+    required_read_scopes = [CoreScopes.NODE_ADDON_READ]
     required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = NodeAddonSettingsSerializer
@@ -1587,7 +1587,7 @@ class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, ge
     implicit read permissions for all child nodes.
 
     Any users with write or admin access to the node are able to deauthorize an enabled addon, but only the addon authorizer is able
-    to change the configuration (i.e. selected folder) of an alread-configured <Addon>NodeSettings entity.
+    to change the configuration (i.e. selected folder) of an already-configured <Addon>NodeSettings entity.
 
     ## <Addon>NodeSettings Attributes
 
@@ -1648,7 +1648,7 @@ class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, ge
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [CoreScopes.ADDONS_READ]
+    required_read_scopes = [CoreScopes.NODE_ADDON_READ]
     required_write_scopes = [CoreScopes.NODE_ADDON_WRITE]
 
     serializer_class = NodeAddonSettingsSerializer
@@ -1718,7 +1718,7 @@ class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Addo
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [CoreScopes.ADDONS_READ, CoreScopes.NODE_FILE_READ]
+    required_read_scopes = [CoreScopes.NODE_ADDON_READ, CoreScopes.NODE_FILE_READ]
     required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = NodeAddonFolderSerializer

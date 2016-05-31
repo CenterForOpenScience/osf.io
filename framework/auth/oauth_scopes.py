@@ -12,6 +12,19 @@ from website import settings
 #   not this scope is available to be requested by the general public
 scope = namedtuple('scope', ['parts', 'description', 'is_public'])
 
+@property
+def inject_public_scope(self):
+    """ Patch to add `ALWAYS_PUBLIC` scope to every selectable scope,
+        ensuring that public endpoints are accessible with any token.
+
+        TODO [OSF-6435]: Evaluate possible alternatives to this approach
+    """
+    parts = self._parts
+    return frozenset((CoreScopes.ALWAYS_PUBLIC, )).union(parts)
+
+scope._parts = scope.parts
+scope.parts = inject_public_scope
+
 
 class CoreScopes(object):
     """
@@ -23,7 +36,7 @@ class CoreScopes(object):
     USERS_READ = 'users_read'
     USERS_WRITE = 'users_write'
 
-    ADDONS_READ = 'addons_read'
+    USER_ADDON_READ = 'users.addon_read'
 
     NODE_BASE_READ = 'nodes.base_read'
     NODE_BASE_WRITE = 'nodes.base_write'
@@ -40,6 +53,7 @@ class CoreScopes(object):
     NODE_FILE_READ = 'nodes.files_read'
     NODE_FILE_WRITE = 'nodes.files_write'
 
+    NODE_ADDON_READ = 'nodes.addon_read'
     NODE_ADDON_WRITE = 'nodes.addon_write'
 
     NODE_LINKS_READ = 'nodes.links_read'
@@ -89,11 +103,11 @@ class ComposedScopes(object):
     # All views should be based on selections from CoreScopes, above
 
     # Users collection
-    USERS_READ = (CoreScopes.USERS_READ,)
+    USERS_READ = (CoreScopes.USERS_READ, CoreScopes.ALWAYS_PUBLIC, )
     USERS_WRITE = USERS_READ + (CoreScopes.USERS_WRITE,)
 
     # Applications collection
-    APPLICATIONS_READ = (CoreScopes.APPLICATIONS_READ,)
+    APPLICATIONS_READ = (CoreScopes.APPLICATIONS_READ, CoreScopes.ALWAYS_PUBLIC, )
     APPLICATIONS_WRITE = APPLICATIONS_READ + (CoreScopes.APPLICATIONS_WRITE,)
 
     # Tokens collection
@@ -135,11 +149,12 @@ class ComposedScopes(object):
     NODE_ALL_WRITE = NODE_ALL_READ + NODE_METADATA_WRITE + NODE_DATA_WRITE + NODE_ACCESS_WRITE
 
     # Full permissions: all routes intended to be exposed to third party API users
-    FULL_READ = NODE_ALL_READ + USERS_READ + ORGANIZER_READ + GUIDS_READ + (CoreScopes.INSTITUTION_READ, CoreScopes.ADDONS_READ, )
-    FULL_WRITE = NODE_ALL_WRITE + USERS_WRITE + ORGANIZER_WRITE + GUIDS_READ + (CoreScopes.NODE_ADDON_WRITE, )
+    FULL_READ = NODE_ALL_READ + USERS_READ + ORGANIZER_READ + GUIDS_READ + (CoreScopes.INSTITUTION_READ, )
+    FULL_WRITE = NODE_ALL_WRITE + USERS_WRITE + ORGANIZER_WRITE + GUIDS_READ
 
     # Admin permissions- includes functionality not intended for third-party use
-    ADMIN_LEVEL = FULL_WRITE + APPLICATIONS_WRITE + TOKENS_WRITE + COMMENT_REPORTS_WRITE
+    ADMIN_LEVEL = FULL_WRITE + APPLICATIONS_WRITE + TOKENS_WRITE + COMMENT_REPORTS_WRITE + \
+                    (CoreScopes.USER_ADDON_READ, CoreScopes.NODE_ADDON_READ, CoreScopes.NODE_ADDON_WRITE, )
 
 # List of all publicly documented scopes, mapped to composed scopes defined above.
 #   Return as sets to enable fast comparisons of provided scopes vs those required by a given node
