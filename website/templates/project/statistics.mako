@@ -5,9 +5,11 @@
   <h2 class="text-300">Analytics</h2>
 </div>
 
-<div>
-  <div class="m-b-md p-md osf-box-lt box-round text-center">The use of adblocking software may prevent site analytics from loading properly.</div>
-</div>
+% if node['is_public']:
+    <div>
+      <div class="m-b-md p-md osf-box-lt box-round text-center">The use of adblocking software may prevent site analytics from loading properly.</div>
+    </div>
+% endif
 
 <%
     if user['is_contributor']:
