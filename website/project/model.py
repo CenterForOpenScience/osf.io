@@ -68,6 +68,7 @@ from website.project.sanctions import (
     RegistrationApproval,
     Retraction,
 )
+from website.files.models.osfstorage import OsfStorageFileNode
 
 logger = logging.getLogger(__name__)
 
@@ -3997,12 +3998,34 @@ class DraftRegistration(StoredObject):
         self.approval.approve(user)
         self.add_status_log(user, DraftRegistrationLog.APPROVED)
         self.approval.save()
+        self.checkin_files()
 
     def reject(self, user):
         self.approval.reject(user)
         self.add_status_log(user, DraftRegistrationLog.REJECTED)
         self.approval.save()
+        self.checkin_files()
 
     def add_status_log(self, user, action):
         log = DraftRegistrationLog(action=action, user=user, draft=self)
         log.save()
+
+    def get_metadata_files(self):
+        for q in ['q7', 'q16', 'q11', 'q13', 'q12', 'q19']:
+            for file_info in self.registration_metadata[q]['value']['uploader']['extra']:
+                if file_info['data']['provider'] != 'osfstorage':
+                    continue
+                fid = file_info['data']['path'].split('/')[1]
+                yield OsfStorageFileNode.load(fid)
+
+    def checkout_files(self, user):
+        """Check out all metadata files"""
+        for item in self.get_metadata_files():
+            item.checkout = user
+            item.save()
+
+    def checkin_files(self):
+        """Check in all metadata files"""
+        for item in self.get_metadata_files():
+            item.checkout = None
+            item.save()
