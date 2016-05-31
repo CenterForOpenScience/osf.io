@@ -45,7 +45,7 @@ def configure_subscription(auth):
 
     if not event or (notification_type not in NOTIFICATION_TYPES and notification_type != 'adopt_parent'):
         raise HTTPError(http.BAD_REQUEST, data=dict(
-            message_long="Must provide an event and notification type for subscription.")
+            message_long='Must provide an event and notification type for subscription.')
         )
 
     node = Node.load(target_id)

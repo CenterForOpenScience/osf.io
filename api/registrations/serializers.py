@@ -15,7 +15,7 @@ class RegistrationSerializer(NodeSerializer):
 
     category_choices = NodeSerializer.category_choices
     category_choices_string = NodeSerializer.category_choices_string
-    category = HideIfWithdrawal(ser.ChoiceField(choices=category_choices, help_text="Choices: " + category_choices_string))
+    category = HideIfWithdrawal(ser.ChoiceField(choices=category_choices, help_text='Choices: ' + category_choices_string))
 
     date_modified = HideIfWithdrawal(ser.DateTimeField(read_only=True))
     fork = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_fork'))

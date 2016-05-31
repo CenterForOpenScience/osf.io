@@ -522,7 +522,7 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
     if isinstance(file_node, TrashedFileNode):
         deleted_by = file_node.deleted_by
         deleted_by_guid = file_node.deleted_by._id if deleted_by else None
-        deleted_on = file_node.deleted_on.strftime("%c") + ' UTC'
+        deleted_on = file_node.deleted_on.strftime('%c') + ' UTC'
         if file_node.suspended:
             error_type = 'FILE_SUSPENDED'
         elif file_node.deleted_by is None:

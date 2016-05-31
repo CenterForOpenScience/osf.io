@@ -432,7 +432,7 @@ def project_statistics(auth, node, **kwargs):
 @must_be_valid_project
 @must_be_contributor_or_public
 def project_statistics_redirect(auth, node, **kwargs):
-    return redirect(node.web_url_for("project_statistics", _guid=True))
+    return redirect(node.web_url_for('project_statistics', _guid=True))
 
 ###############################################################################
 # Make Private/Public
@@ -700,7 +700,7 @@ def _view_project(node, auth, primary=False):
             'is_retracted': node.is_retracted,
             'is_pending_retraction': node.is_pending_retraction,
             'retracted_justification': getattr(node.retraction, 'justification', None),
-            'embargo_end_date': node.embargo_end_date.strftime("%A, %b. %d, %Y") if node.embargo_end_date else False,
+            'embargo_end_date': node.embargo_end_date.strftime('%A, %b. %d, %Y') if node.embargo_end_date else False,
             'is_pending_embargo': node.is_pending_embargo,
             'is_embargoed': node.is_embargoed,
             'is_pending_embargo_termination': node.is_embargoed and (
@@ -859,7 +859,7 @@ def _get_summary(node, auth, primary=True, link_id=None, show_path=False):
         'is_pending_registration': node.is_pending_registration,
         'is_retracted': node.is_retracted,
         'is_pending_retraction': node.is_pending_retraction,
-        'embargo_end_date': node.embargo_end_date.strftime("%A, %b. %d, %Y") if node.embargo_end_date else False,
+        'embargo_end_date': node.embargo_end_date.strftime('%A, %b. %d, %Y') if node.embargo_end_date else False,
         'is_pending_embargo': node.is_pending_embargo,
         'is_embargoed': node.is_embargoed,
         'archiving': node.archiving,
