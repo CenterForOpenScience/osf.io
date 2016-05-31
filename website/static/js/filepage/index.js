@@ -388,7 +388,7 @@ var FileViewPage = {
         if (idx_uri !== '') {
             // The parser found a query so lets check what we need to do
             if ('show' in idx_uri){
-               if(idx_uri['show'] === 'revision'){
+               if(idx_uri.show === 'revision'){
                  self.mfrIframeParent.toggle();
                  self.revisions.selected = true;
                }
