@@ -68,6 +68,13 @@ class CoreScopes(object):
 
     NULL = 'null'
 
+    # NOTE: Use with extreme caution.
+    # This should NEVER be assigned to endpoints:
+    #    - with mutable data,
+    #    - that might contain *anything* that could be personally-identifiable,
+    #    - as a write scope
+    ALWAYS_PUBLIC = 'always_public'
+
     ORGANIZER_COLLECTIONS_BASE_READ = 'collections.base_read'
     ORGANIZER_COLLECTIONS_BASE_WRITE = 'collections.base_write'
 

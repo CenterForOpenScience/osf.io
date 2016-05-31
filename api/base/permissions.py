@@ -34,6 +34,9 @@ class TokenHasScope(permissions.BasePermission):
 
         required_scopes = self._get_scopes(request, view)
 
+        if oauth_scopes.CoreScopes.ALWAYS_PUBLIC in required_scopes:
+            return True
+
         # Scopes are returned as a space-delimited list in the token
         allowed_scopes = token.attributes['accessTokenScope']
 

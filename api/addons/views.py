@@ -65,7 +65,7 @@ class AddonList(JSONAPIBaseView, generics.ListAPIView):
         drf_permissions.IsAuthenticatedOrReadOnly,
         TokenHasScope, )
 
-    required_read_scopes = [CoreScopes.ADDONS_READ]
+    required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
     required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = AddonSerializer
