@@ -103,7 +103,8 @@ def get_or_http_error(Model, pk_or_query, allow_deleted=False, display_name=None
             ))
     if getattr(instance, 'is_deleted', False) and getattr(instance, 'suspended', False):
         raise HTTPError(451, data=dict(  # 451 - Unavailable For Legal Reasons
-            message_long="This {name} record has been suspended".format(name=display_name)
+            message_short='Content removed',
+            message_long='This content has been removed'
         ))
     if not allow_deleted and getattr(instance, 'is_deleted', False):
         raise HTTPError(http.GONE, data=dict(

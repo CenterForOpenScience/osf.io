@@ -67,6 +67,8 @@ INSTALLED_APPS = (
     'admin.metrics',
     'admin.nodes',
     'admin.users',
+    'admin.meetings',
+    'admin.sales_analytics',
 
     # 3rd party
     'raven.contrib.django.raven_compat',
@@ -197,3 +199,23 @@ CKEDITOR_CONFIGS = {
         ]
     },
 }
+
+# Keen.io settings in local.py
+KEEN_PROJECT_ID = osf_settings.KEEN_PROJECT_ID
+KEEN_READ_KEY = osf_settings.KEEN_READ_KEY
+KEEN_WRITE_KEY = osf_settings.KEEN_WRITE_KEY
+
+KEEN_CREDENTIALS = {
+    'keen_ready': False
+}
+
+if KEEN_CREDENTIALS['keen_ready']:
+    KEEN_CREDENTIALS.update({
+        'keen_project_id': KEEN_PROJECT_ID,
+        'keen_read_key': KEEN_READ_KEY,
+        'keen_write_key': KEEN_WRITE_KEY
+    })
+
+
+ENTRY_POINTS = {'osf4m': 'osf4m', 'prereg_challenge_campaign': 'prereg',
+                'institution_campaign': 'institution'}

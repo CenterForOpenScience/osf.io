@@ -158,8 +158,8 @@
                                                style="border: 1px solid black;" width="30px" height="30px">
                                       </a></li>
                              <!-- /ko -->
-                          <!-- /ko --> 
-                                <li><span data-bind="text: andOthersMessage"></span></li>      
+                          <!-- /ko -->
+                                <li><span data-bind="text: andOthersMessage"></span></li>
                               </ul>
                               <div id="wmd-button-bar"></div>
                               <div id="editor" class="wmd-input wiki-editor"
@@ -234,8 +234,9 @@
   </div>
 </div><!-- end wiki -->
 
-<!-- Wiki modals should also be placed here! --> 
+<!-- Wiki modals should also be placed here! -->
   <%include file="wiki/templates/add_wiki_page.mako"/>
+  <%include file="wiki/templates/wiki-bar-modal-help.mako"/>
 % if wiki_id and wiki_name != 'home':
   <%include file="wiki/templates/delete_wiki_page.mako"/>
 % endif
@@ -388,7 +389,7 @@ ${parent.javascript_bottom()}
             userGravatar: ${ urls['gravatar'] | sjson, n }.replace('&amp;', '&')
         }
     };
-    
+
 </script>
 <script src="//${sharejs_url}/text.js"></script>
 <script src="//${sharejs_url}/share.js"></script>
