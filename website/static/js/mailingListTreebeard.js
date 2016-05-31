@@ -9,7 +9,7 @@ var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 
 function subscribe(item, notification_type, reload) {
     var id = item.data.node.id;
-    var url = '/api/v1/project/' + id + '/mailing_list/';
+    var url = '/api/v1/project/' + id + '/mailing_list/';  // TODO [OSF-6400]: Update to V2
     var method = notification_type === 'enabled' ? 'POST' : 'DELETE';
     $.ajax({
         url: url,
