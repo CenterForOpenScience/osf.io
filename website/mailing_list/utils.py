@@ -324,7 +324,7 @@ def unsubscribe_contributor_from_mailing_list(node, user, auth=None):
 
 
 @user_confirmed.connect
-def resubscribe_on_confirm(user):
+def subscribe_on_confirm(user):
     for node in user.contributed:
         subscribe_contributor_to_mailing_list(node, user)
 
