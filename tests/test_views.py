@@ -3496,7 +3496,22 @@ class TestAuthViews(OsfTestCase):
         self.user.save()
         self.user.reload()
         assert_equal(self.user.email_verifications[token]['email'], email)
-        self.user.clean_email_verifications()
+        self.user.clean_email_verifications(given_token=token)
+        unconfirmed_emails = self.user.get_unconfirmed_emails
+        assert_equal(unconfirmed_emails, [])
+        assert_equal(self.user.email_verifications, {})
+
+    def test_clean_email_verifications(self):
+        # Do not return bad token and removes it from user.email_verifications
+        email = 'test@example.com'
+        token = 'blahblahblah'
+        self.user.email_verifications[token] = {'expiration': dt.datetime.utcnow() + dt.timedelta(days=1),
+                                                'email': email,
+                                                'confirmed': False }
+        self.user.save()
+        self.user.reload()
+        assert_equal(self.user.email_verifications[token]['email'], email)
+        self.user.clean_email_verifications(given_token=token)
         unconfirmed_emails = self.user.get_unconfirmed_emails
         assert_equal(unconfirmed_emails, [])
         assert_equal(self.user.email_verifications, {})
