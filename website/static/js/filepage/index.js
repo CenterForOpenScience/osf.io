@@ -367,13 +367,11 @@ var FileViewPage = {
         function goToRevisions(e){
           var editable = self.editor && self.editor.selected;
           var viewable = self.mfrIframeParent.is(':visible');
-          if (editable || viewable){
-              if (viewable){
-                  self.mfrIframeParent.toggle();
-              }
-              if (editable) {
-                  self.editor.selected = false;
-              }
+          if (viewable){
+              self.mfrIframeParent.toggle();
+          }
+          if (editable) {
+              self.editor.selected = false;
           }
           self.revisions.selected = true;
         }
