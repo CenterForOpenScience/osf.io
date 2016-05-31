@@ -7,7 +7,10 @@
 
 % if node['is_public']:
     <div>
-      <div class="m-b-md p-md osf-box-lt box-round text-center">The use of adblocking software may prevent site analytics from loading properly.</div>
+      <div class="alert alert-info text-center alert-dismissible">
+      <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">×</span></button>
+        The use of adblocking software may prevent site analytics from loading properly.
+      </div>
     </div>
 % endif
 
