@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django import forms
 from django.core.validators import validate_email
 
@@ -39,6 +41,20 @@ class MeetingForm(forms.Form):
         label='Info url',
         required=False,
         widget=forms.TextInput(attrs={'size': '60'}),
+    )
+    location = forms.CharField(
+        label='Location',
+        required=False,
+    )
+    start_date = forms.DateField(
+        widget=forms.DateInput(format='%b %d %Y'),
+        required=False,
+        label='Start date (e.g. Nov 7 2016)'
+    )
+    end_date = forms.DateField(
+        widget=forms.DateInput(format='%b %d %Y'),
+        required=False,
+        label='End date (e.g. Nov 9 2016)'
     )
     logo_url = forms.CharField(
         label='Logo url',
@@ -99,6 +115,16 @@ class MeetingForm(forms.Form):
         label='Mail attachment message',
         widget=forms.TextInput(attrs={'size': '60'}),
     )
+
+    def clean_start_date(self):
+        date = self.cleaned_data.get('start_date')
+        if date is not None:
+            return datetime.combine(date, datetime.min.time())
+
+    def clean_end_date(self):
+        date = self.cleaned_data.get('end_date')
+        if date is not None:
+            return datetime.combine(date, datetime.min.time())
 
     def clean_endpoint(self):
         endpoint = self.cleaned_data['endpoint']
