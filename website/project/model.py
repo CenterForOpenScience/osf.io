@@ -853,7 +853,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     comment_level = fields.StringField(default='public')
 
     # Project Mailing
+
+    # Indicates whether or not the mailing list for this node should be enabled
     mailing_enabled = fields.BooleanField(default=True, index=True)
+
+    # Flag indicating this node should be inspected by a weekly celerybeat job
+    # to synchronize the mailing list on Mailgun
     mailing_updated = fields.BooleanField(default=False, index=True)
 
     wiki_pages_current = fields.DictionaryField()
