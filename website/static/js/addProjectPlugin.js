@@ -38,7 +38,7 @@ var AddProject = {
         self.newProjectTemplate = m.prop('');
         self.institutions = options.institutions || window.contextVars.currentUser.institutions || [];
         self.checkedInstitutions = {};
-        self.newProjectInstitutions = self.institutions.map(
+        self.institutions.map(
             function(inst){
                 self.checkedInstitutions[inst.id] = true;
                 return inst.id;
@@ -104,26 +104,28 @@ var AddProject = {
                 self.viewState('error');
             };
             var request = m.request({method : 'POST', url : url, data : data, config : xhrconfig});
-            if (self.newProjectInstitutions.length > 0) {
+            if (self.institutions.length > 0) {
                 request.then(function (result) {
                     var newNodeApiUrl = $osf.apiV2Url('nodes/' + result.data.id + '/relationships/institutions/');
                     var data = {
-                        data: self.newProjectInstitutions.filter(
-                            function (id) {
-                                return self.checkedInstitutions[id];
+                        data: self.institutions.filter(
+                            function (inst) {
+                                return self.checkedInstitutions[inst.id];
                             }
                         ).map(
-                            function (id) {
-                                return {type: 'institutions', id: id};
+                            function (inst) {
+                                return {type: 'institutions', id: inst.id};
                             }
                         )
                     };
-                    m.request({method: 'POST', url: newNodeApiUrl, data: data, config: xhrconfig}).then(
-                        function(){},
-                        function(){
-                            self.viewState('instError');
-                        }
-                    );
+                    if (data.data.length > 0){
+                        m.request({method: 'POST', url: newNodeApiUrl, data: data, config: xhrconfig}).then(
+                            function(){},
+                            function(){
+                                self.viewState('instError');
+                            }
+                        );
+                    }
                 });
             }
             request.then(success, error);
