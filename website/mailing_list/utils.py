@@ -17,8 +17,6 @@ from website.mailing_list.exceptions import UnsubscribeHookException
 from website.mailing_list.model import MailingListEventLog
 from website.project.signals import contributor_added, contributor_removed, node_deleted
 
-ANGLE_BRACKETS_REGEX = re.compile(r'<(.*?)>')
-
 MAILGUN_BASE_LISTS_URL = '{}/lists'.format(settings.MAILGUN_API_URL)
 
 ###############################################################################
@@ -366,16 +364,6 @@ def address(node_id):
 
 def list_title(node):
     return '{} Mailing List'.format(node.title)
-
-def find_email(long_email):
-    # allow for both "{email}" syntax and "{name} <{email}>" syntax
-    if '<' in long_email:
-        email_match = ANGLE_BRACKETS_REGEX.search(long_email)
-        if email_match:
-            return email_match.groups()[0].lower().strip()
-    elif '@' in long_email:
-        return long_email.lower().strip()
-    return None
 
 def log_message(target, sender_email, message):
     """ Acquires and logs messages sent through Mailgun"""
