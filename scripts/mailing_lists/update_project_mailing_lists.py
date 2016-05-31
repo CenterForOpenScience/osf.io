@@ -13,6 +13,8 @@ from website.app import init_app
 from website.mailing_list.utils import full_update as real_full_update
 from website.project.model import Node
 
+from scripts import utils as script_utils
+
 logger = logging.getLogger(__name__)
 
 def fake(*args, **kwargs):
@@ -49,7 +51,7 @@ def main(dry_run=True):
     if dry_run:
         raise RuntimeError('Dry run, transaction rolled back.')
 
-@celery_app.task(name='scripts.update_project_mailing_list')
+@celery_app.task(name='scripts.mailing_lists.update_project_mailing_list')
 def run_main(dry_run=True):
     if not dry_run:
         scripts_utils.add_file_logger(logger, __file__)

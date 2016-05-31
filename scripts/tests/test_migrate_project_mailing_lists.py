@@ -9,7 +9,7 @@ from tests.factories import NodeFactory
 from tests.factories import ProjectFactory
 from tests.factories import RegistrationFactory
 
-from scripts.migrate_project_mailing_lists import migrate
+from scripts.mailing_lists.migrate_project_mailing_lists import migrate
 
 
 class TestMigrateMailingLists(OsfTestCase):
@@ -19,7 +19,7 @@ class TestMigrateMailingLists(OsfTestCase):
         Node.remove()
         NotificationSubscription.remove()
 
-    @mock.patch('scripts.migrate_project_mailing_lists.create_list')
+    @mock.patch('scripts.mailing_lists.migrate_project_mailing_lists.create_list')
     def test_migrate_node(self, mock_create):
         node = ProjectFactory()
         NotificationSubscription.remove()
@@ -27,7 +27,7 @@ class TestMigrateMailingLists(OsfTestCase):
         assert_true(node.mailing_enabled)
         assert node._id in str(mock_create.call_args_list)
 
-    @mock.patch('scripts.migrate_project_mailing_lists.create_list')
+    @mock.patch('scripts.mailing_lists.migrate_project_mailing_lists.create_list')
     def test_migrate_node_with_parent(self, mock_create):
         node = ProjectFactory(parent=NodeFactory())
         NotificationSubscription.remove()
@@ -36,7 +36,7 @@ class TestMigrateMailingLists(OsfTestCase):
         assert node._id in str(mock_create.call_args_list)
         assert node.parent._id in str(mock_create.call_args_list)
 
-    @mock.patch('scripts.migrate_project_mailing_lists.create_list')
+    @mock.patch('scripts.mailing_lists.migrate_project_mailing_lists.create_list')
     def test_migrate_registration(self, mock_create):
         node = RegistrationFactory()
         NotificationSubscription.remove()
@@ -44,7 +44,7 @@ class TestMigrateMailingLists(OsfTestCase):
         assert_false(node.mailing_enabled)
         assert node._id not in str(mock_create.call_args_list)
 
-    @mock.patch('scripts.migrate_project_mailing_lists.create_list')
+    @mock.patch('scripts.mailing_lists.migrate_project_mailing_lists.create_list')
     def test_migrate_dashboard(self, mock_create):
         node = CollectionFactory()
         NotificationSubscription.remove()
