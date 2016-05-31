@@ -166,7 +166,7 @@ NodeFetcher.prototype = {
     this.nextLink = results.links.next;
     this.loaded += results.data.length;
     for(var i = 0; i < results.data.length; i++) {
-      if(results.data[i].attributes.category == "share window"){
+      if(results.data[i].attributes.category === 'share window'){
           continue; // Exclude share window
       }
 

@@ -27,7 +27,7 @@ def migrate_user(user, dry_run):
     query = Q('creator', 'eq', user._id)
     query = query & Q('category', 'eq', "share window")
 
-    if Node.find(query).count() >= 1:
+    if Node.find(query).count() > 0:
         return
     else:
         share_window = Node(creator=user)
