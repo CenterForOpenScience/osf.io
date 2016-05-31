@@ -6,6 +6,7 @@ from framework import sentry
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
 
+from website.mailing_list.utils import celery_update_single_user_in_list
 from website.notifications import utils
 from website.notifications.constants import NOTIFICATION_TYPES
 from website.notifications.model import NotificationSubscription
@@ -104,5 +105,12 @@ def configure_subscription(auth):
     subscription.add_user_to_subscription(user, notification_type)
 
     subscription.save()
+
+    if 'mailing_list_events' in event:
+        celery_update_single_user_in_list(
+            node_id=target_id,
+            user_id=user._id,
+            enabled=bool(event != 'none')
+        )
 
     return {'message': 'Successfully subscribed to {} list on {}'.format(notification_type, event_id)}
