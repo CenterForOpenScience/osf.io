@@ -76,4 +76,3 @@ def redirect(location, code=302, strip_view_only=False):
         url.args['view_only'] = view_only
         location = url.url
     return flask_redirect(location, code=code)
-
