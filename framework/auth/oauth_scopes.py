@@ -15,7 +15,6 @@ class scope(namedtuple('scope', ['parts_', 'description', 'is_public'])):
     """ Patch to add `ALWAYS_PUBLIC` scope to every selectable scope,
         ensuring that public endpoints are accessible with any token.
     """
-    # TODO [OSF-6435]: Evaluate possible alternatives to this approach
     @property
     def parts(self):
         return frozenset((CoreScopes.ALWAYS_PUBLIC, )).union(self.parts_)
