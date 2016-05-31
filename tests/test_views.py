@@ -3492,7 +3492,6 @@ class TestAuthViews(OsfTestCase):
         # Do not return expired token and removes it from user.email_verifications
         email = 'test@example.com'
         token = self.user.add_unconfirmed_email(email)
-        dt.datetime.utcnow() - dt.timedelta(days=100)
         self.user.email_verifications[token]['expiration'] = dt.datetime.utcnow() - dt.timedelta(days=100)
         self.user.save()
         self.user.reload()

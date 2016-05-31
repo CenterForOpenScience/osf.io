@@ -301,7 +301,6 @@ def confirm_email_get(token, auth=None, **kwargs):
     ))
 
 
-@collect_auth
 @must_be_logged_in
 def unconfirmed_email_remove(auth=None):
     """Called at login if user cancels their merge or email add.
@@ -324,7 +323,6 @@ def unconfirmed_email_remove(auth=None):
     }, 200
 
 
-@collect_auth
 @must_be_logged_in
 def unconfirmed_email_add(auth=None):
     """Called at login if user confirms their merge or email add.
@@ -337,22 +335,22 @@ def unconfirmed_email_add(auth=None):
     except KeyError:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': 'Invalid token',
-            'message_long': 'The token provided is invalid'
+            'message_long': 'Must provide a token'
         })
     try:
         user.confirm_email(token, merge=True)
+    except exceptions.InvalidTokenError:
+        raise InvalidTokenError(http.BAD_REQUEST, data={
+            'message_short': 'Invalid User Token',
+            'message_long': 'The user token is invalid'
+        })
     except exceptions.EmailConfirmTokenError as e:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': e.message_short,
             'message_long': e.message_long
         })
 
-    if token:
-        user.save()
-        return {
-            'status': 'success',
-        }, 200
-
+    user.save()
     return {
         'status': 'success',
         'removed_email': json_body['address']

@@ -118,10 +118,10 @@ function confirmEmails(emailsToAdd) {
                 'If you change your mind, visit the \<a href="/settings/account/">user settings page</a>.';
         }
 
-        var confirmFailMessage = 'There are a problem adding \<b>' + email.address +
+        var confirmFailMessage = 'There was a problem adding \<b>' + email.address +
             '\</b>. Please contact <a href="mailto: support@osf.io">support@osf.io</a> if the problem persists.';
 
-        var cancelFailMessage = 'There are a problem removing \<b>' + email.address +
+        var cancelFailMessage = 'There was a problem removing \<b>' + email.address +
             '\</b>. Please contact <a href="mailto: support@osf.io">support@osf.io</a> if the problem persists.';
 
         bootbox.dialog({
