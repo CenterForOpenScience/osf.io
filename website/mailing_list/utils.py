@@ -1,4 +1,3 @@
-from furl import furl
 import json
 import re
 import requests
