@@ -118,7 +118,12 @@ var AddProject = {
                             }
                         )
                     };
-                    m.request({method: 'POST', url: newNodeApiUrl, data: data, config: xhrconfig});
+                    m.request({method: 'POST', url: newNodeApiUrl, data: data, config: xhrconfig}).then(
+                        function(){},
+                        function(){
+                            self.viewState('instError');
+                        }
+                    );
                 });
             }
             request.then(success, error);
@@ -322,6 +327,31 @@ var AddProject = {
                         m('button[type="button"].btn.btn-default[data-dismiss="modal"]', {onclick: function() {
                             $osf.trackClick(options.trackingCategory, options.trackingAction, 'click-OK-couldn\'t-create-your-project');
                         }},  'OK')
+                    ])
+                )
+            ]),
+            instError: m('.modal-content', [
+                m('.modal-content',
+                    m('.modal-body.text-left', [
+                            m('button.close[data-dismiss="modal"][aria-label="Close"]',{ onclick : function() {
+                                ctrl.reset();
+                                }}, [
+                                m('span[aria-hidden="true"]','×')
+                            ]),
+                            m('h4.add-project-error.text-danger', 'Could not add institution affiliation to your new ' + ctrl.nodeType + ''),
+                            m('p', ctrl.errorMessage[ctrl.errorMessageType()])
+                        ]
+                    ),
+                    m('.modal-footer', [
+                        m('button[type="button"].btn.btn-default[data-dismiss="modal"]', {
+                            onclick : function() {
+                                ctrl.reset();
+                                ctrl.options.stayCallback.call(ctrl); // results are at ctrl.saveResult
+                            }
+                        },  'Keep working here'),
+                        m('a.btn.btn-success', {
+                            href : ctrl.goToProjectLink()
+                        },'Go to new ' + ctrl.nodeType + '')
                     ])
                 )
             ])
