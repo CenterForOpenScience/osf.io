@@ -73,6 +73,7 @@ class NodeSerializer(JSONAPISerializer):
         'parent',
         'root',
         'logs',
+        'wikis'
     ]
 
     id = IDField(source='_id', read_only=True)
