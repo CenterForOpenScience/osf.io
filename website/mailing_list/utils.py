@@ -49,7 +49,7 @@ def get_info(node_id):
         auth=('api', settings.MAILGUN_API_KEY),
     )
     if resp.status_code == 200:
-        return json.loads(resp.text)
+        return resp.json()
     elif resp.status_code == 404:
         return None
     raise HTTPError(resp.status_code, data={'message_long': resp.json() or ''})
@@ -65,7 +65,7 @@ def get_members(node_id):
         auth=('api', settings.MAILGUN_API_KEY),
     )
     if resp.status_code == 200:
-        return json.loads(resp.text)
+        return resp.json()
     raise HTTPError(resp.status_code, data={'message_long': resp.json() or ''})
 
 @require_mailgun
@@ -228,10 +228,10 @@ def full_update(node_id):
     if node.is_deleted:
         delete_list(node_id)
     elif node.mailing_enabled:
-        if 'list' in info.keys():
+        if 'list' in info:
             info = info['list']
-            remote_subscribes = [member['address'] for member in members['items'] if member['subscribed']].sort()
-            local_subscribes = [user.username for user in get_recipients(node)].sort()
+            remote_subscribes = set([member['address'] for member in members['items'] if member['subscribed']])
+            local_subscribes = set([user.username for user in get_recipients(node)])
 
             if info['name'] != list_title(node):
                 # Update title if necessary
