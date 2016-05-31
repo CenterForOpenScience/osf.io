@@ -3081,7 +3081,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         :param permissions: A string, either 'public' or 'private'
         :param auth: All the auth information including user, API key.
         :param bool log: Whether to add a NodeLog for the privacy change.
-        :param bool meeting_creation: Whther this was creayed due to a meetings email.
+        :param bool meeting_creation: Whether this was created due to a meetings email.
         """
         if auth and not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Must be an admin to change privacy settings.')
@@ -3482,7 +3482,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             action=NodeLog.EMBARGO_TERMINATED,
             params={
                 'project': self._id,
-                'node': self._id,
+                'node': self.registered_from_id,
+                'registration': self._id,
             },
             auth=None,
             save=True
@@ -3779,6 +3780,7 @@ class PrivateLink(StoredObject):
             "anonymous": self.anonymous
         }
 
+
 class AlternativeCitation(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
     name = fields.StringField(required=True, validate=MaxLengthValidator(256))
@@ -3790,6 +3792,32 @@ class AlternativeCitation(StoredObject):
             "name": self.name,
             "text": self.text
         }
+
+
+class DraftRegistrationLog(StoredObject):
+    """ Simple log to show status changes for DraftRegistrations
+
+    field - _id - primary key
+    field - date - date of the action took place
+    field - action - simple action to track what happened
+    field - user - user who did the action
+    """
+    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+    date = fields.DateTimeField(default=datetime.datetime.utcnow)
+    action = fields.StringField()
+    draft = fields.ForeignField('draftregistration', index=True)
+    user = fields.ForeignField('user')
+
+    SUBMITTED = 'submitted'
+    REGISTERED = 'registered'
+    APPROVED = 'approved'
+    REJECTED = 'rejected'
+
+    def __repr__(self):
+        return ('<DraftRegistrationLog({self.action!r}, date={self.date!r}), '
+                'user={self.user!r} '
+                'with id {self._id!r}>').format(self=self)
+
 
 class DraftRegistration(StoredObject):
 
@@ -3841,10 +3869,13 @@ class DraftRegistration(StoredObject):
         if meta_schema:
             schema = meta_schema.schema
             flags = schema.get('flags', {})
+            dirty = False
             for flag, value in flags.iteritems():
                 if flag not in self._metaschema_flags:
                     self._metaschema_flags[flag] = value
-            self.save()
+                    dirty = True
+            if dirty:
+                self.save()
         return self._metaschema_flags
 
     @flags.setter
@@ -3892,6 +3923,11 @@ class DraftRegistration(StoredObject):
         else:
             return False
 
+    @property
+    def status_logs(self):
+        """ List of logs associated with this node"""
+        return DraftRegistrationLog.find(Q('draft', 'eq', self._id)).sort('date')
+
     @classmethod
     def create_from_node(cls, node, user, schema, data=None):
         draft = cls(
@@ -3938,6 +3974,7 @@ class DraftRegistration(StoredObject):
         )
         approval.save()
         self.approval = approval
+        self.add_status_log(initiated_by, DraftRegistrationLog.SUBMITTED)
         if save:
             self.save()
 
@@ -3951,14 +3988,21 @@ class DraftRegistration(StoredObject):
             data=self.registration_metadata
         )
         self.registered_node = register
+        self.add_status_log(auth.user, DraftRegistrationLog.REGISTERED)
         if save:
             self.save()
         return register
 
     def approve(self, user):
         self.approval.approve(user)
+        self.add_status_log(user, DraftRegistrationLog.APPROVED)
         self.approval.save()
 
     def reject(self, user):
         self.approval.reject(user)
+        self.add_status_log(user, DraftRegistrationLog.REJECTED)
         self.approval.save()
+
+    def add_status_log(self, user, action):
+        log = DraftRegistrationLog(action=action, user=user, draft=self)
+        log.save()

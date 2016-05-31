@@ -39,7 +39,7 @@ initiated an embargoed registration of
 <script type="text/html" id="embargo_terminated_no_user">
 Embargo for
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
-ended.
+ended
 </script>
 
 ## Retraction related logs
