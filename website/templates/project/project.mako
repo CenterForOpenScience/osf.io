@@ -55,11 +55,13 @@
                     <div class="btn-group" style="display: none;" data-bind="visible: true">
 
                         <!-- ko ifnot: inDashboard -->
-                           <a id="addDashboardFolder" data-bind="click: addToDashboard, tooltip: {title: 'Add to bookmarks',
-                            placement: 'bottom', container : 'body'}" class="btn btn-default">
-                               <i class="fa fa-bookmark"></i>
-                               <i class="fa fa-plus"></i>
-                           </a>
+                            %if not private_link:
+                               <a id="addDashboardFolder" data-bind="click: addToDashboard, tooltip: {title: 'Add to bookmarks',
+                                placement: 'bottom', container : 'body'}" class="btn btn-default">
+                                   <i class="fa fa-bookmark"></i>
+                                   <i class="fa fa-plus"></i>
+                               </a>
+                               %endif
                         <!-- /ko -->
                         <!-- ko if: inDashboard -->
                            <a id="removeDashboardFolder" data-bind="click: removeFromDashboard, tooltip: {title: 'Remove from bookmarks',
