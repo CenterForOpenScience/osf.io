@@ -520,3 +520,6 @@ ESI_MEDIA_TYPES = {'application/vnd.api+json', 'application/json'}
 
 # Used for gathering meta information about the current build
 GITHUB_API_TOKEN = None
+
+DISCOURSE_SSO_SECRET = 'changeme'
+DISCOURSE_SERVER_URL = 'http://192.168.99.100'
