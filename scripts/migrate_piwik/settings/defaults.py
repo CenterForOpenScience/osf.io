@@ -14,8 +14,8 @@ PHASES = {
     'EXTRACT': {
         'DIR': 'extract',
     },
-    'TRANSFORM': {
-        'DIR': 'transform',
+    'TRANSFORM01': {
+        'DIR': 'transform-01',
     },
     'LOAD': {
         'DIR': 'load',
@@ -23,7 +23,7 @@ PHASES = {
 }
 
 EXTRACT_FILE = 'extracted.data'
-TRANSFORM_FILE = 'transform.data'
+TRANSFORM01_FILE = 'transform-01.data'
 LOAD_FILE = 'load.data'
 
 HISTORY_FILENAME = 'history.txt'
