@@ -579,7 +579,6 @@ class User(GuidStoredObject, AddonModelMixin):
         share_window.category = "share window"
         share_window.save()
 
-
     def add_unclaimed_record(self, node, referrer, given_name, email=None):
         """Add a new project entry in the unclaimed records dictionary.
 

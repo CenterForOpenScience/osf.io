@@ -377,7 +377,7 @@ def configure_comments(node, **kwargs):
 def view_project(auth, node, **kwargs):
     primary = '/api/v1' not in request.path
     if node.category == "share window":
-        return redirect(node.url+"share_window")
+        return redirect(node.url + "share_window")
     else:
         ret = _view_project(node, auth, primary=primary)
 
