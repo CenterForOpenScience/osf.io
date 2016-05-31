@@ -1158,6 +1158,8 @@ function _fangornUploadMethod(item) {
 }
 
 function gotoFileEvent (item, toUrl) {
+    if(toUrl === undefined)
+      toUrl = '/';
     var tb = this;
     var redir = new URI(item.data.nodeUrl);
     redir.segment('files').segment(item.data.provider).segmentCoded(item.data.path.substring(1));
@@ -1208,13 +1210,13 @@ function _fangornTitleColumnHelper(tb,item,col,nameTitle,toUrl,classNameOption){
 }
 
 function _fangornTitleColumn(item, col) {
-  var tb = this;
-  return _fangornTitleColumnHelper(tb,item,col,item.data.name,'/','fg-file-links');
+    var tb = this;
+    return _fangornTitleColumnHelper(tb,item,col,item.data.name,'/','fg-file-links');
 }
 
 function _fangornVersionColumn(item,col) {
-  var tb = this;
-  return _fangornTitleColumnHelper(tb,item,col,String(item.data.extra.version),'/?show=revision','fg-version-links');
+    var tb = this;
+    return _fangornTitleColumnHelper(tb,item,col,String(item.data.extra.version),'/?show=revision','fg-version-links');
 }
 
 /**
