@@ -19,6 +19,11 @@
 	</div>
 </div>
 
+<button data-clipboard-text=url title="Copy to clipboard" class="btn btn-default btn-sm m-r-xs copy-button" data-bind=URL >
+<i class="fa fa-copy"></i>
+</button>
+<input readonly="readonly" class="link-url" data-bind="value: linkUrl, readonly="readonly"  type="text">
+
 
 <%def name="stylesheets()">
     ${parent.stylesheets()}

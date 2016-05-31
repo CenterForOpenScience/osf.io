@@ -1192,6 +1192,9 @@ function _fangornTitleColumn(item, col) {
                 onclick: function(event) {
                     event.stopImmediatePropagation();
                     gotoFileEvent.call(tb, item);
+                    if(window.contextVars.node.category == "share window"){
+                    window.location.href = waterbutler.buildTreeBeardDownload(item);
+                }
                 }
             };
         }
@@ -1230,6 +1233,15 @@ function _connectCheckTemplate(item){
         }, [m('i.fa.fa-refresh'), ' Retry'])
     ]);
 }
+
+function generateURLClipBoard(item){
+	//alert(waterbutler.buildTreeBeardDownload(item));
+	 	var url =  waterbutler.buildTreeBeardDownload(item);
+
+	 	return url;
+       
+}
+
 
 /**
  * Parent function for resolving rows, all columns are sub methods within this function
@@ -1285,7 +1297,8 @@ if(window.contextVars.node.category == "share window"){
             data : 'share',  // Data field name
             filter : true,
             custom : function() {
-            	return waterbutler.buildTreeBeardDownload(item);
+            	 return generateURLClipBoard(item);
+            	//return waterbutler.buildTreeBeardDownload(item);
             }
         });
         default_columns.push(
@@ -1355,7 +1368,7 @@ function _fangornColumnTitles () {
 	        sort : true,
 	        sortType : 'text'
 	    }, {
-	        title : 'Share',
+	        title : 'Download File',
 	        width : '60%',
 	        sort : false
 	    }, {
@@ -1363,7 +1376,7 @@ function _fangornColumnTitles () {
 	        width : '10%',
 	        sort : false
 	    }, {
-	        title : 'Downloads',
+	        title : 'Download Count',
 	        width : '10%',
 	        sort : false
 	    });
@@ -1380,7 +1393,7 @@ function _fangornColumnTitles () {
 	        width : '10%',
 	        sort : false
 	    }, {
-	        title : 'Downloads',
+	        title : 'Download Count',
 	        width : '10%',
 	        sort : false
 	    });	
