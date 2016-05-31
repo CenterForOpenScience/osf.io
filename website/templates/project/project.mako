@@ -72,6 +72,7 @@
                     </div>
                     <!-- /ko -->
                     <div class="btn-group">
+                        % if not private_link:
                         <a
                         % if user_name:
                             class="btn btn-default"
@@ -83,6 +84,7 @@
                             href="#">
                             <span class="glyphicon glyphicon-share"></span>&nbsp; ${ node['templated_count'] + node['fork_count'] + node['points'] }
                         </a>
+                        % endif
                     </div>
                     % if 'badges' in addons_enabled and badges and badges['can_award']:
                         <div class="btn-group">
