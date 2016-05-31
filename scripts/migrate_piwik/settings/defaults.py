@@ -17,6 +17,9 @@ PHASES = {
     'TRANSFORM01': {
         'DIR': 'transform-01',
     },
+    'TRANSFORM02': {
+        'DIR': 'transform-02',
+    },
     'LOAD': {
         'DIR': 'load',
     },
@@ -29,3 +32,5 @@ LOAD_FILE = 'load.data'
 HISTORY_FILENAME = 'history.txt'
 COMPLAINTS_FILENAME = 'complaints.txt'
 RUN_HEADER = 'Run ID: '
+
+BATCH_SIZE = 5000
