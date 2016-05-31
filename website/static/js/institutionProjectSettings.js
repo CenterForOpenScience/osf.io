@@ -48,6 +48,7 @@ var ViewModel = function(data) {
         var message;
         var modifyOneMessage;
         var modifyAllMessage;
+        var htmlMessage;
         if (self.isAddInstitution()) {
             message = 'Add <b>' + item.name + '</b> to <b>' + data.node.title + '</b> or to <b>' +
                 data.node.title + '</b> and every component in it?<br><br>';
@@ -62,24 +63,32 @@ var ViewModel = function(data) {
         }
         if (self.needsWarning()) {
             message += '<div class="text-danger f-w-xl">Warning, you are not affialiated with <b>' + item.name +
-                    '</b>.  If you remove it from your project, you cannot add it back.<div>';
+                    '</b>.  If you remove it from your project, you cannot add it back.</div></br>';
         }
-
+        if (self.hasChildren()) {
+            htmlMessage = '<div class="row">  ' +
+                        '<div class="col-md-12"> ' +
+                        '<span>' + message + '</span> ' +
+                        '<div class="radio" > <label for="selectOne"> ' +
+                        '<input type="radio" id="selectOne" type="radio" name="radioBoxGroup"' +
+                        ' value="false" checked="checked"> ' + modifyOneMessage + ' </div></label> ' +
+                        '<div class="radio"> <label for="selectAll"> ' +
+                        '<input type="radio" id="selectAll" type="radio" name="radioBoxGroup" value="true"> ' +
+                        modifyAllMessage + ' </label> ' + '</div>' + '</div>';
+        }
+        else {
+            htmlMessage = '<div class="row">  ' +
+                        '<div class="col-md-12"> ' +
+                        '<span>' + message + '</span> ' +
+                        '</div>' + '</div>';
+        }
         bootbox.dialog({
                 title: self.pageTitle(),
                 onEscape: function () {
                 },
                 backdrop: true,
                 closeButton: true,
-                message: '<div class="row">  ' +
-                    '<div class="col-md-12"> ' +
-                    '<span>' + message + '</span> ' +
-                    '<div class="radio" > <label for="selectOne"> ' +
-                    '<input type="radio" id="selectOne" type="radio" name="radioBoxGroup"' +
-                    ' value="false" checked="checked"> ' + modifyOneMessage + ' </div></label> ' +
-                    '<div class="radio"> <label for="selectAll"> ' +
-                    '<input type="radio" id="selectAll" type="radio" name="radioBoxGroup" value="true"> ' +
-                    modifyAllMessage + ' </label> ' + '</div>' + '</div>',
+                message: htmlMessage,
                 buttons: {
                     cancel: {
                         label: 'Cancel',
@@ -124,7 +133,7 @@ var ViewModel = function(data) {
     self.clearInst = function(item) {
         self.needsWarning((self.userInstitutionsIds.indexOf(item.id) === -1));
         self.isAddInstitution(false);
-        if (self.hasChildren()) {
+        if (self.hasChildren() || self.needsWarning()) {
             self.modifyChildrenDialog(item);
         }
         else {
@@ -165,7 +174,9 @@ var ViewModel = function(data) {
             else {
                 index = self.affiliatedInstitutionsIds().indexOf(item.id);
                 var removed = self.affiliatedInstitutions.splice(index, 1)[0];
-                self.availableInstitutions.push(removed);
+                if (self.userInstitutionsIds.indexOf(removed.id) > -1) {
+                    self.availableInstitutions.push(removed);
+                }
             }
             self.loading(false);
         }).fail(function (xhr, status, error) {
