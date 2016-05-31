@@ -83,13 +83,12 @@ def prepare_private_key():
     if request.method != 'GET':
         return
 
-    # Don't strip keys if coming from an API context
-    if 'api' in furl.furl(request.url).path.segments:  # this allows waterbutler to still work
-        return
-
     key_from_args = request.args.get('view_only', '')
 
     if key_from_args != '':  # This is intentially '' and not None
+        # Do not disrupt waterbutler and other api services
+        if 'api' in furl.furl(request.url).path.segments:
+            return
         private_link = get_private_link(key_from_args)
 
         # Must be a valid private link
@@ -113,6 +112,12 @@ def prepare_private_key():
         if key:
             key = key[0]
             private_link = get_private_link(key)
+
+            # Do not disrupt waterbutler and other api services
+            if 'api' in furl.furl(request.url).path.segments:
+                new_url = add_key_to_url(request.url, scheme, key)
+                return redirect(new_url, code=http.TEMPORARY_REDIRECT)
+
             # Must be a valid private link
             if private_link:
                 node_id = get_node_id(request.url)
