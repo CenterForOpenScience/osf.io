@@ -50,6 +50,7 @@ from website.project.sanctions import (
 )
 from website.notifications.model import NotificationSubscription, NotificationDigest
 from website.archiver.model import ArchiveTarget, ArchiveJob
+from website.identifiers.model import Identifier
 from website.archiver import ARCHIVER_SUCCESS
 from website.project.licenses import NodeLicense, NodeLicenseRecord, ensure_licenses
 ensure_licenses = functools.partial(ensure_licenses, warn=False)
@@ -769,6 +770,20 @@ class NodeLicenseRecordFactory(ModularOdmFactory):
             )
         )
         return super(NodeLicenseRecordFactory, cls)._create(*args, **kwargs)
+
+
+class IdentifierFactory(ModularOdmFactory):
+    class Meta:
+        model = Identifier
+
+    referent = SubFactory(RegistrationFactory)
+    value = Sequence(lambda n: 'carp:/2460{}'.format(n))
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        kwargs['category'] = kwargs.get('category', 'carpid')
+
+        return super(IdentifierFactory, cls)._create(*args, **kwargs)
 
 
 def render_generations_from_parent(parent, creator, num_generations):

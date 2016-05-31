@@ -14,6 +14,7 @@ from framework.mongo import (
 
 from website import settings
 
+
 def _serialize(fields, instance):
     return {
         field: getattr(instance, field)
@@ -21,6 +22,7 @@ def _serialize(fields, instance):
     }
 
 serialize_node_license = functools.partial(_serialize, ('id', 'name', 'text'))
+
 
 def serialize_node_license_record(node_license_record):
     if node_license_record is None:
@@ -39,6 +41,7 @@ class NodeLicense(StoredObject):
     name = fields.StringField(required=True, unique=True)
     text = fields.StringField(required=True)
     properties = fields.StringField(list=True)
+
 
 class NodeLicenseRecord(StoredObject):
 
