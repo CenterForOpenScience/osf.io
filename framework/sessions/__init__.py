@@ -70,26 +70,6 @@ def get_private_link(key):
     except QueryException:
         return None
 
-def valid_private_link_context(key, request):
-    private_link = get_private_link(key)
-    if private_link:
-        node_id = get_node_id(request.url)
-        if node_id:
-            return node_id in private_link.nodes
-        else:
-            if 'api' in furl.furl(request.url).path.segments: # this hack allows water butler to still work
-                return True
-    return False
-
-def vpl_context(request):
-    node_id = get_node_id(request.url)
-    if node_id:
-        return True
-    segs = furl.furl(request.url).path.segments
-    if 'api' in segs: # this hack allows water butler to still work
-        return True
-    return False
-
 def prepare_private_key():
     """`before_request` handler that checks the Referer header to see if the user
     is requesting from a view-only link. If so, reappend the view-only key.
@@ -104,12 +84,12 @@ def prepare_private_key():
         return
 
     # Don't strip keys if coming from an API context
-    if 'api' in furl.furl(request.url).path.segments: # this allows waterbutler to still work
-        return    
+    if 'api' in furl.furl(request.url).path.segments:  # this allows waterbutler to still work
+        return
 
     key_from_args = request.args.get('view_only', '')
 
-    if key_from_args != '': # This is intentially '' and not None
+    if key_from_args != '':  # This is intentially '' and not None
         private_link = get_private_link(key_from_args)
 
         # Must be a valid private link
@@ -146,7 +126,7 @@ def prepare_private_key():
                     # No redirect if not on a valid node to prevent infinite redirects
                     return
             # If not a valid private link replace it with 'None' to prevent infinite redirects
-            new_url = add_key_to_url(request.url, scheme, 'None')                                
+            new_url = add_key_to_url(request.url, scheme, 'None')
             return redirect(new_url, code=http.TEMPORARY_REDIRECT)
 
 
