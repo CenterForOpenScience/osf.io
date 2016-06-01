@@ -30,11 +30,14 @@ DEBUG = osf_settings.DEBUG_MODE
 DEBUG_PROPAGATE_EXCEPTIONS = True
 
 # session:
+SESSION_COOKIE_NAME = 'api'
 SESSION_COOKIE_SECURE = osf_settings.SECURE_MODE
 SESSION_COOKIE_HTTPONLY = osf_settings.SECURE_MODE
+
+# csrf:
+CSRF_COOKIE_NAME = 'api-csrf'
 CSRF_COOKIE_SECURE = osf_settings.SECURE_MODE
-# set to False because current CSRF token in admin server is accessed by javascript
-CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_HTTPONLY = osf_settings.SECURE_MODE
 
 ALLOWED_HOSTS = [
     '.osf.io'

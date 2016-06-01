@@ -22,8 +22,12 @@ DEBUG_PROPAGATE_EXCEPTIONS = True
 
 
 # session:
+SESSION_COOKIE_NAME = 'admin'
 SESSION_COOKIE_SECURE = osf_settings.SECURE_MODE
 SESSION_COOKIE_HTTPONLY = osf_settings.SECURE_MODE
+
+# csrf:
+CSRF_COOKIE_NAME = 'admin-csrf'
 CSRF_COOKIE_SECURE = osf_settings.SECURE_MODE
 # set to False because current CSRF token in admin server is accessed by javascript
 CSRF_COOKIE_HTTPONLY = False
