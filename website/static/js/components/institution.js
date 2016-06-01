@@ -32,7 +32,8 @@ var InstitutionImg = {
             style: style,
             src: logoPath,
             width: opts.width, height: opts.height,
-            alt: opts.alt || institutionName
+            alt: opts.alt || institutionName,
+            title: opts.title || institutionName
         });
         return m('img', imgOpts);
     }
@@ -42,6 +43,7 @@ var SelectableInstitution = {
     view: function(ctrl, opts) {
         var checked = required(opts, 'checked');
         var mutedStyle = {
+            cursor: 'pointer',
             opacity: '0.25',
             '-webkit-filter': 'grayscale(100%)',
             filter: 'grayscale(100%)'
