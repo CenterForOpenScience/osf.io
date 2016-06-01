@@ -1425,20 +1425,21 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         notification_type = 'email_transactional'
         target_id = self._id
 
-        for event in events:
-            event_id = to_subscription_key(target_id, event)
-            global_event_id = to_subscription_key(user._id, 'global_' + event)
-            global_subscription = NotificationSubscription.load(global_event_id)
+        if user.is_registered:
+            for event in events:
+                event_id = to_subscription_key(target_id, event)
+                global_event_id = to_subscription_key(user._id, 'global_' + event)
+                global_subscription = NotificationSubscription.load(global_event_id)
 
-            subscription = NotificationSubscription.load(event_id)
-            if not subscription:
-                subscription = NotificationSubscription(_id=event_id, owner=self, event_name=event)
-            if global_subscription:
-                global_notification_type = get_global_notification_type(global_subscription, user)
-                subscription.add_user_to_subscription(user, global_notification_type)
-            else:
-                subscription.add_user_to_subscription(user, notification_type)
-            subscription.save()
+                subscription = NotificationSubscription.load(event_id)
+                if not subscription:
+                    subscription = NotificationSubscription(_id=event_id, owner=self, event_name=event)
+                if global_subscription:
+                    global_notification_type = get_global_notification_type(global_subscription, user)
+                    subscription.add_user_to_subscription(user, global_notification_type)
+                else:
+                    subscription.add_user_to_subscription(user, notification_type)
+                subscription.save()
 
     def update(self, fields, auth=None, save=True):
         """Update the node with the given fields.
@@ -3009,7 +3010,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 while len(user.recently_added) > MAX_RECENT_LENGTH:
                     user.recently_added.pop()
 
-            if contrib_to_add.is_registered and settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION:
+            if settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION:
                 self.subscribe_user_to_notifications(contrib_to_add)
 
             if log:
