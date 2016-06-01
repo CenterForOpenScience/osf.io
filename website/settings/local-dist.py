@@ -36,8 +36,6 @@ ENABLE_EMAIL_SUBSCRIPTIONS = False
 COOKIE_NAME = 'osf'
 OSF_COOKIE_DOMAIN = None
 SECRET_KEY = 'CHANGEME'
-SESSION_COOKIE_SECURE = SECURE_MODE
-SESSION_COOKIE_HTTPONLY = False
 
 # Uncomment if GPG was installed with homebrew
 # GNUPG_BINARY = '/usr/local/bin/gpg'

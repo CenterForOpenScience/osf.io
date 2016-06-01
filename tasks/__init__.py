@@ -439,7 +439,7 @@ def flake():
 
 
 @task(aliases=['req'])
-def requirements(base=False, addons=False, release=False, dev=False, metrics=False, secure=False, quick=False):
+def requirements(base=False, addons=False, release=False, dev=False, metrics=False, quick=False):
     """Install python dependencies.
 
     Examples:
@@ -475,11 +475,6 @@ def requirements(base=False, addons=False, release=False, dev=False, metrics=Fal
         if base:  # then base requirements
             req_file = os.path.join(HERE, 'requirements.txt')
             run(pip_install(req_file), echo=True)
-
-    # local development using https
-    if secure:
-        req_file = os.path.join(HERE, 'requirements', 'secure.txt')
-        run(pip_install(req_file), echo=True)
 
 
 @task

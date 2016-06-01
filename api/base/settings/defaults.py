@@ -31,15 +31,10 @@ DEBUG_PROPAGATE_EXCEPTIONS = True
 
 # session:
 SESSION_COOKIE_SECURE = osf_settings.SECURE_MODE
+SESSION_COOKIE_HTTPONLY = osf_settings.SECURE_MODE
 CSRF_COOKIE_SECURE = osf_settings.SECURE_MODE
-
-SESSION_COOKIE_HTTPONLY = True
-# TODO: use osf settings below instead after ticket #SEC-16 has been resolved
-# SESSION_COOKIE_HTTPONLY = settings.SESSION_COOKIE_HTPPONLY
-
+# set to False because current CSRF token in admin server is accessed by javascript
 CSRF_COOKIE_HTTPONLY = False
-# TODO: use osf settings below instead if ticket #SEC-16 has been resolved and we don't use javascript to pull CSRF token in admin
-# CSRF_COOKIE_HTTPONLY = settings.CSRF_COOKIE_HTPPONLY
 
 ALLOWED_HOSTS = [
     '.osf.io'
@@ -60,8 +55,8 @@ INSTALLED_APPS = (
     'raven.contrib.django.raven_compat',
 )
 
-# only for local development using https
-if osf_settings.SECURE_MODE and osf_settings.LOCAL_MODE:
+# local development using https
+if osf_settings.SECURE_MODE and osf_settings.DEBUG_MODE:
     INSTALLED_APPS += ('sslserver',)
 
 # TODO: Are there more granular ways to configure reporting specifically related to the API?

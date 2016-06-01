@@ -20,3 +20,6 @@ livereload==2.3.2
 
 # Avoid eating cpu with live reloading
 watchdog==0.8.3
+
+# Django SSL for local https development
+django-sslserver==0.19
