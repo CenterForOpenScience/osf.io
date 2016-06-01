@@ -15,10 +15,9 @@ h3, h4 {
 }
 
 .institutions-panel {
-    min-height: 200px;
-    background: #45818E;
+    background: #166595 url("/static/img/front-page/bg-web.png") no-repeat center top;
+    background-size: cover;
     padding-top: 25px;
-    padding-bottom: 25px;
 }
 
 .meetings {
