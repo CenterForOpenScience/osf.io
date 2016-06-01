@@ -34,3 +34,5 @@ COMPLAINTS_FILENAME = 'complaints.txt'
 RUN_HEADER = 'Run ID: '
 
 BATCH_SIZE = 5000
+
+ES_INDEX = 'piwik-migration-test'
