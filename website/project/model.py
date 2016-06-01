@@ -1581,7 +1581,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 save=True,
             )
 
-            if self.creator and settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION:
+            if settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION:
                 self.subscribe_user_to_notifications(user=self.creator)
 
         # Only update Solr if at least one stored field has changed, and if
