@@ -168,22 +168,22 @@ def main(nworkers, worker_id, dry_run):
     audit(parity_targets(), nworkers, worker_id, dry_run)
     logger.info('parity audit complete')
 
-@celery_app.task(name='scripts.osfstorage.files_audit_0')
+@celery_app.task(name='scripts.osfstorage.files_audit.0')
 def file_audit_1(num_of_workers=4, dry_run=True):
     run_main(num_of_workers, 0, dry_run)
 
 
-@celery_app.task(name='scripts.osfstorage.files_audit_1')
+@celery_app.task(name='scripts.osfstorage.files_audit.1')
 def file_audit_2(num_of_workers=4, dry_run=True):
     run_main(num_of_workers, 1, dry_run)
 
 
-@celery_app.task(name='scripts.osfstorage.files_audit_2')
+@celery_app.task(name='scripts.osfstorage.files_audit.2')
 def file_audit_3(num_of_workers=4, dry_run=True):
     run_main(num_of_workers, 2, dry_run)
 
 
-@celery_app.task(name='scripts.osfstorage.files_audit_3')
+@celery_app.task(name='scripts.osfstorage.files_audit.3')
 def file_audit_4(num_of_workers=4, dry_run=True):
     run_main(num_of_workers, 3, dry_run)
 
