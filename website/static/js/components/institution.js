@@ -47,7 +47,7 @@ var SelectableInstitution = {
             filter: 'grayscale(100%)'
         };
         if (!checked) {
-            opts.style = mutedStyle;
+            opts.style = $.extend({}, mutedStyle, opts.style);
         }
         return m.component(InstitutionImg, opts);
     }

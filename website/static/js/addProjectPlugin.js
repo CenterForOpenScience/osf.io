@@ -192,7 +192,7 @@ var AddProject = {
                                         ctrl.checkedInstitutions[inst.id] = true;
                                     }
                                 );
-                            }, style: {float: 'right', marginRight: '5px'}}, 'Select all'),
+                            }, style: {float: 'right', marginRight: '12px'}}, 'Select all'),
                             m('table', m('tr', ctrl.institutions.map(
                                 function(inst){
                                     return m('td',
