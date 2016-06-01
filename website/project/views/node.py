@@ -678,6 +678,9 @@ def _view_project(node, auth, primary=False):
     if (node.is_pending_registration and node.has_permission(user, ADMIN)):
         disapproval_link = node.root.registration_approval.stashed_urls.get(user._id, {}).get('reject', '')
 
+    if (node.is_pending_embargo and node.has_permission(user, ADMIN)):
+        disapproval_link = node.root.embargo.stashed_urls.get(user._id, {}).get('reject', '')
+
     # Before page load callback; skip if not primary call
     if primary:
         for addon in node.get_addons():

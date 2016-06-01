@@ -757,6 +757,11 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
     }
     var url = item.data.nodeUrl + 'files/' + item.data.provider + item.data.path;
     addFileStatus(treebeard, file, true, '', url);
+
+    if (item.data.provider === 'dataverse') {
+        item.parent().data.datasetDraftModified = true;
+    }
+
     treebeard.redraw();
 }
 
@@ -932,6 +937,10 @@ function _removeEvent (event, items, col) {
             tb.deleteNode(item.parentID, item.id);
             tb.modal.dismiss();
             tb.clearMultiselect();
+
+            if (item.data.provider === 'dataverse') {
+                item.parent().data.datasetDraftModified = true;
+            }
         })
         .fail(function(data){
             tb.modal.dismiss();
@@ -1171,6 +1180,7 @@ function gotoFileEvent (item) {
         window.open(fileurl, '_self');
     }
 }
+
 /**
  * Defines the contents of the title column (does not include the toggle and folder sections
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
