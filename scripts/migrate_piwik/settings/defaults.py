@@ -32,7 +32,10 @@ LOAD_FILE = 'load.data'
 HISTORY_FILENAME = 'history.txt'
 COMPLAINTS_FILENAME = 'complaints.txt'
 RUN_HEADER = 'Run ID: '
+BATCH_HEADER = 'Batch Count: '
 
 BATCH_SIZE = 5000
 
 ES_INDEX = 'piwik-migration-test'
+
+EVENT_DATA_FILE_TEMPLATE = '{domain}-{batch_id:04d}.data'

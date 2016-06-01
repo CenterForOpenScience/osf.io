@@ -25,10 +25,9 @@ def main():
 
     run_id = utils.get_history_run_id_for('transform02')
     complaints_file = utils.get_complaints_for('transform02', 'w')
-    complaints_file.write('Run ID: {}\n'.format(run_id))
+    complaints_file.write(settings.RUN_HEADER + '{}\n'.format(run_id))
 
-    history_file = utils.get_history_for('transform02', 'r')
-    batch_count = int(history_file.readlines()[-1].replace('Batch Count: ', ''))
+    batch_count = utils.get_batch_count()
 
     complaints = 0
     print('Validating private data\n')
@@ -71,10 +70,6 @@ def verify_files(domain, batch_count, run_id, complaints_file):
             break
 
         events = json.loads(data_file.readline())
-
-        print("Event size is: {}, Batch size is: {}, Batch count is: {}, Filename is: {}, BRent is: {}".format(
-            len(events), settings.BATCH_SIZE, batch_count, filename, lastfile_re,
-        ))
         if len(events) != settings.BATCH_SIZE and not re.search(lastfile_re, filename):
             complaints += 1
             complaints_file.write('Not enough events for {}! got {}, expected {}\n'.format(
@@ -99,7 +94,6 @@ def verify_files(domain, batch_count, run_id, complaints_file):
                             eventnum, filename, event['user']['id'],
                         )
                     )
-
 
     return complaints
 

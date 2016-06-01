@@ -17,7 +17,7 @@ def main():
 
     extract_complaints = utils.get_complaints_for('transform01', 'r')
     extract_complaints.readline()  # toss header
-    if extract_complaints.readline() is not None:
+    if extract_complaints.readline():
         print("You have unaddressed complaints in your first-phase transform! Bailing...")
         sys.exit()
 
@@ -52,21 +52,21 @@ def main():
 
         if linenum % settings.BATCH_SIZE == 0:
             batchnum += 1
-            write_batch(batchnum, complaints_run_id, public_template, public_pageviews)
-            write_batch(batchnum, complaints_run_id, private_template, private_pageviews)
+            write_batch(batchnum, complaints_run_id, 'public', public_pageviews, transform_dir)
+            write_batch(batchnum, complaints_run_id, 'private', private_pageviews, transform_dir)
         
     if linenum % settings.BATCH_SIZE != 0:
         batchnum += 1
-        write_batch(batchnum, complaints_run_id, public_template, public_pageviews)
-        write_batch(batchnum, complaints_run_id, private_template, private_pageviews)
+        write_batch(batchnum, complaints_run_id, 'public', public_pageviews, transform_dir)
+        write_batch(batchnum, complaints_run_id, 'private', private_pageviews, transform_dir)
 
-    history_file.write('Batch Count: {}\n'.format(batchnum))
+    history_file.write(settings.BATCH_HEADER + '{}\n'.format(batchnum))
 
 
-def write_batch(batchnum, run_id, template, pageviews):
+def write_batch(batchnum, run_id, domain, pageviews, base_dir):
     print("---Writing Batch")
-    batch_file = open(template.format(batchnum), 'w')
-    batch_file.write('Run ID: {}\n'.format(run_id))
+    batch_file = open(base_dir + '/' + settings.EVENT_DATA_FILE_TEMPLATE.format(domain=domain, batch_id=batchnum), 'w')
+    batch_file.write(settings.RUN_HEADER + '{}\n'.format(run_id))
     batch_file.write(json.dumps(pageviews))
     del pageviews[:]
 

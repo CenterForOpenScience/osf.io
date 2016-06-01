@@ -22,3 +22,6 @@ def get_complaints_for(phase, mode):
     filename = '/'.join([get_dir_for(phase), settings.COMPLAINTS_FILENAME])
     return open(filename, mode)
 
+def get_batch_count():
+    history_file = get_history_for('transform02', 'r')
+    return int(history_file.readlines()[-1].replace(settings.BATCH_HEADER, '').rstrip())
