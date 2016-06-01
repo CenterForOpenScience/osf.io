@@ -772,8 +772,7 @@ Draft.prototype.reject = function() {
  * @property {Object} extensions: mapping of extenstion names to their view models
  **/
 var RegistrationEditor = function(urls, editorId, preview) {
-    var self = this;
-
+    var self = this; 
     self.urls = urls;
 
     self.readonly = ko.observable(false);
@@ -1052,8 +1051,10 @@ RegistrationEditor.prototype.updateData = function(response) {
     var self = this;
 
     var draft = self.draft();
+
     draft.pk = response.pk;
     draft.updated = new Date(response.updated);
+
     self.draft(draft);
 };
 

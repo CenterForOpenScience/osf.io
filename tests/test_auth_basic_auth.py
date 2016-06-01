@@ -3,12 +3,9 @@
 '''Basic Authorization tests for the OSF.'''
 
 from __future__ import absolute_import
-import unittest
-import mock
 
 from nose.tools import *  # noqa PEP8 asserts
 from datetime import datetime, timedelta
-from modularodm import fields
 
 from website.addons.twofactor.tests import _valid_code
 from website import settings
@@ -26,7 +23,7 @@ class TestAuthBasicAuthentication(OsfTestCase):
         self.user1 = AuthUserFactory()
         self.user2 = AuthUserFactory()
 
-        # Test projects for which a given user DOES and DOES NOT  have appropriate permissions
+        # Test projects for which a given user DOES and DOES NOT have appropriate permissions
         self.reachable_project = ProjectFactory(title="Private Project User 1", is_public=False, creator=self.user1)
         self.unreachable_project = ProjectFactory(title="Private Project User 2", is_public=False, creator=self.user2)
         self.reachable_url = self.reachable_project.web_url_for('view_project')
