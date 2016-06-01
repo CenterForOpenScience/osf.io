@@ -859,14 +859,16 @@ var trackClick = function(category, action, label){
     window.ga('send', 'event', category, action, label);
     //in order to make the href redirect work under knockout onclick binding
 
-    var keenData = {
-        category: category,
-        action: action,
-        label: label,
-    };
-
     // KeenTracker from base-page.js
-    KeenTracker.getKeenInstance().trackCustomEvent('private-front-end-events', {frontEndEvent: keenData});
+    KeenTracker.getInstance().trackPrivateEvent(
+        'front-end-events', {
+            frontEndEvent: {
+                category: category,
+                action: action,
+                label: label,
+            },
+        }
+    );
 
     return true;
 };

@@ -78,7 +78,7 @@
     %if keen_project_id:
         <script>
             window.contextVars = $.extend(true, {}, window.contextVars, {
-                keenReadKey: ${node['keenio_read_key'] | sjson, n}
+                keen: { public: { readKey: ${node['keenio_read_key'] | sjson, n} } }
             })
         </script>
     %endif

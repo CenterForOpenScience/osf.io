@@ -11,8 +11,8 @@ var KeenViz = function(){
     var self = this;
 
     self.keenClient = new keenAnalysis({
-        projectId: ctx.keenProjectId,
-        readKey : ctx.keenReadKey
+        projectId: ctx.keen.public.projectId,
+        readKey : ctx.keen.public.readKey,
     });
 
     self.visitsByDay = function() {

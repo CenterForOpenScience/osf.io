@@ -57,7 +57,7 @@ def get_globals():
     user = _get_current_user()
     user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path} for inst in user.affiliated_institutions] if user else []
     all_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path} for inst in Institution.find().sort('name')]
-    location = geolite2.lookup(request.remote_addr)
+    location = geolite2.lookup(request.remote_addr) if request.remote_addr else None
     if request.host_url != settings.DOMAIN:
         try:
             inst_id = (Institution.find_one(Q('domains', 'eq', request.host.lower())))._id
@@ -110,9 +110,10 @@ def get_globals():
         'reauth_url': util.web_url_for('auth_logout', redirect_url=request.url, reauth=True),
         'profile_url': cas.get_profile_url(),
         'enable_institutions': settings.ENABLE_INSTITUTIONS,
-        'keen_project_id': settings.KEEN_PROJECT_ID,
-        'keen_write_key': settings.KEEN_WRITE_KEY,
-        'keen_read_key': settings.KEEN_READ_KEY,
+        'keen_public_project_id': settings.KEEN['public']['project_id'],
+        'keen_public_write_key': settings.KEEN['public']['write_key'],
+        'keen_private_project_id': settings.KEEN['private']['project_id'],
+        'keen_private_write_key': settings.KEEN['private']['write_key'],
         'maintenance': maintenance.get_maintenance(),
     }
 
