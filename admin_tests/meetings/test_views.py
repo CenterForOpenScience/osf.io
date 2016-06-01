@@ -44,7 +44,10 @@ class TestMeetingFormView(AdminTestCase):
         mod_data.update({
             'edit': 'True',
             'endpoint': self.conf.endpoint,
-            'admins': self.user.emails[0]
+            'admins': self.user.emails[0],
+            'location': 'Timbuktu, Mali',
+            'start date': 'Dec 11 2014',
+            'end_date': 'Jan 12 2013'
         })
         self.form = MeetingForm(data=mod_data)
         self.form.is_valid()
@@ -80,6 +83,8 @@ class TestMeetingFormView(AdminTestCase):
         view.form_valid(self.form)
         self.conf.reload()
         nt.assert_equal(self.conf.admins[0].emails[0], self.user.emails[0])
+        nt.assert_equal(self.conf.location, self.form.cleaned_data['location'])
+        nt.assert_equal(self.conf.start_date, self.form.cleaned_data['start_date'])
 
 
 class TestMeetingCreateFormView(AdminTestCase):

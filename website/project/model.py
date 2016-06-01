@@ -3869,10 +3869,13 @@ class DraftRegistration(StoredObject):
         if meta_schema:
             schema = meta_schema.schema
             flags = schema.get('flags', {})
+            dirty = False
             for flag, value in flags.iteritems():
                 if flag not in self._metaschema_flags:
                     self._metaschema_flags[flag] = value
-            self.save()
+                    dirty = True
+            if dirty:
+                self.save()
         return self._metaschema_flags
 
     @flags.setter
@@ -3937,30 +3940,29 @@ class DraftRegistration(StoredObject):
         return draft
 
     def update_metadata(self, metadata):
-        if self.is_approved:
-            return []
-
         changes = []
-        for question_id, value in metadata.iteritems():
-            old_value = self.registration_metadata.get(question_id)
-            if old_value:
-                old_comments = {
-                    comment['created']: comment
-                    for comment in old_value.get('comments', [])
-                }
-                new_comments = {
-                    comment['created']: comment
-                    for comment in value.get('comments', [])
-                }
-                old_comments.update(new_comments)
-                metadata[question_id]['comments'] = sorted(
-                    old_comments.values(),
-                    key=lambda c: c['created']
-                )
-                if old_value.get('value') != value.get('value'):
+        # Prevent comments on approved drafts
+        if not self.is_approved:
+            for question_id, value in metadata.iteritems():
+                old_value = self.registration_metadata.get(question_id)
+                if old_value:
+                    old_comments = {
+                        comment['created']: comment
+                        for comment in old_value.get('comments', [])
+                    }
+                    new_comments = {
+                        comment['created']: comment
+                        for comment in value.get('comments', [])
+                    }
+                    old_comments.update(new_comments)
+                    metadata[question_id]['comments'] = sorted(
+                        old_comments.values(),
+                        key=lambda c: c['created']
+                    )
+                    if old_value.get('value') != value.get('value'):
+                        changes.append(question_id)
+                else:
                     changes.append(question_id)
-            else:
-                changes.append(question_id)
         self.registration_metadata.update(metadata)
         return changes
 

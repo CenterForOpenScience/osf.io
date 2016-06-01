@@ -262,6 +262,10 @@ def _dataverse_root_folder(node_addon, auth, **kwargs):
         dataset_is_published = False
         dataset_draft_modified = True
 
+    # Get the dataverse host
+    # (stored in oauth_key because dataverse doesn't use that)
+    dataverse_host = node_addon.external_account.oauth_key
+
     return [rubeus.build_addon_root(
         node_addon,
         node_addon.dataset,
@@ -275,6 +279,7 @@ def _dataverse_root_folder(node_addon, auth, **kwargs):
         datasetIsPublished=dataset_is_published,
         datasetDraftModified=dataset_draft_modified,
         version=version,
+        host=dataverse_host,
     )]
 
 

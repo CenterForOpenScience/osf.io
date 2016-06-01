@@ -301,7 +301,7 @@ var CommentModel = function(data, $parent, $root) {
             'fullname': 'A User',
             'gravatarUrl': ''
         };
-    } else if ('embeds' in data && 'user' in data.embeds) {
+    } else if ('embeds' in data && 'user' in data.embeds && 'data' in data.embeds.user) {
         var userData = data.embeds.user.data;
         self.author = {
             'id': userData.id,
@@ -309,6 +309,19 @@ var CommentModel = function(data, $parent, $root) {
             'fullname': userData.attributes.full_name,
             'gravatarUrl': userData.links.profile_image
         };
+    } else if ('embeds' in data && 'user' in data.embeds && 'errors' in data.embeds.user) {
+        var errors = data.embeds.user.errors;
+        for (var e in data.embeds.user.errors) {
+            if ('meta' in errors[e] && 'full_name' in errors[e].meta) {
+                self.author = {
+                    'id': null,
+                    'urls': {'profile': ''},
+                    'fullname': errors[e].meta.full_name,
+                    'gravatarUrl': ''
+                };
+                break;
+            }
+        }
     } else {
         self.author = self.$root.author;
     }
