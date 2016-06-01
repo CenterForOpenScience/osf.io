@@ -15,12 +15,6 @@ class DeskError(Exception):
         Exception.__init__(self, message)  # Exception is an old-school class
         self.message = message
 
-    def __str__(self):
-        return self.message
-
-    def __unicode__(self):
-        return unicode(self.__str__())
-
 
 class DeskClient(object):
     """ Initialize the client with the given sitename, username,
