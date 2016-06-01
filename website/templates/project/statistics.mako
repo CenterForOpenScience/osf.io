@@ -6,12 +6,12 @@
 </div>
 
 % if node['is_public']:
-    <div>
-      <div class="alert alert-info text-center alert-dismissible">
-      <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">×</span></button>
+    ## Ad alert
+    <div id="adBlock" class="scripted alert alert-info text-center alert-dismissible" role="alert">
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
         The use of adblocking software may prevent site analytics from loading properly.
-      </div>
     </div>
+    ## End Ad alert
 % endif
 
 <%
