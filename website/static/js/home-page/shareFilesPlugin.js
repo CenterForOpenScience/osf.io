@@ -24,12 +24,7 @@ var ShareFilesProject = {
         self.nodes = m.prop([]); // Master node list
         self.eligibleNodes = m.prop([]); // Array of indices corresponding to self.nodes() that are eligible to be loaded
         self.countDisplayed = m.prop(); // Max number of nodes that can be rendered.  'Load more' increases this by up to ten.
-        self.next = m.prop(); // URL for getting the next ten user nodes. When null, all nodes are loaded.
         self.loadingComplete = m.prop(false); // True when all user nodes are loaded.
-        self.contributorMapping = {}; // Maps node id to list of contributors for searching
-        self.filter = m.prop(); // Search query from user
-        self.fieldSort = m.prop(); // For xs screen, either alpha or date
-        self.directionSort = m.prop(); // For xs screen, either Asc or Desc
         self.errorLoading = m.prop(false);  // True if error retrieving projects or contributors.
         self.someDataLoaded = m.prop(false);
 
@@ -61,7 +56,6 @@ var ShareFilesProject = {
                 self.nodes().push(node);
             });
             self.populateEligibleNodes(0, self.countDisplayed());
-            //self.next(result.links.next);
             self.someDataLoaded = m.prop(true);
             // NOTE: This manual redraw is necessary because we set background: true on
             // the request, which prevents a redraw. This redraw allows the loading
@@ -106,7 +100,7 @@ var ShareFilesProject = {
               m('.quick-search-table', [
                   m('.row.node-col-headers.m-t-md', [
                       m('.col-sm-4.col-md-5', m('.quick-search-col', 'Title')),
-                      m('.col-sm-4.col-md-3', m('.quick-search-col','Modified', m('span.sort-group')))
+                      m('.col-sm-4.col-md-3.pull-right', m('.quick-search-col','Modified', m('span.sort-group')))
                   ]),
                   m.component(ShareFilesNodeDisplay, {
                       eligibleNodes: ctrl.eligibleNodes,
@@ -134,7 +128,7 @@ var ShareFilesNodeDisplay = {
               }}, m('.m-v-sm.node-styling',  m('.row', m('div',
                   [
                       m('.col-sm-4.col-md-5.p-v-xs', m('.quick-search-col',  project.attributes.title)),
-                      m('.col-sm-4.col-md-3.p-v-xs', m('.quick-search-col', args.formatDate(project)))
+                      m('.col-sm-4.col-md-3.p-v-xs.pull-right', m('.quick-search-col', args.formatDate(project)))
                   ]
               ))));
           }));
