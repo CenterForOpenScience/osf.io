@@ -22,19 +22,24 @@ class SSOView(JSONAPIBaseView):
     # NOTE: directing a user to DISCOURSE/session/sso should trigger the sso process
     # for automatic sso login.
 
+    # send DELETE /session/username/
+
     def get(self, request):
         auth = get_user_auth(request)
         user = request.user
         sso_secret = settings.DISCOURSE_SSO_SECRET
 
         if not auth.logged_in:
-            return HttpResponseRedirect(settings.CAS_SERVER_URL)
+            return HttpResponseRedirect(settings.DOMAIN)
 
         encoded_payload = request.GET.get('sso', '')
         payload = base64.b64decode(encoded_payload)
-        payload_dict = {unquote(item[0]): unquote(item[1])
-                        for item in
-                        [item.split('=') for item in payload.split('&')]}
+        try:
+            payload_dict = {unquote(item[0]): unquote(item[1])
+                            for item in
+                            [item.split('=') for item in payload.split('&')]}
+        except IndexError:
+            raise AuthenticationFailed
 
         nonce = payload_dict['nonce']
         signature = request.GET.get('sig', '')
@@ -52,12 +57,11 @@ class SSOView(JSONAPIBaseView):
                           'avatar_url': user.profile_image_url()}
 
         encoded_return_64 = base64.b64encode(urlencode(return_payload))
-        encoded_return_payload = quote(encoded_return_64)
 
         return_signature = hmac.new(sso_secret, encoded_return_64, hashlib.sha256).hexdigest()
 
         return_url = furl(settings.DISCOURSE_SERVER_URL).join('/session/sso_login')
-        return_url.args['sso'] = encoded_return_payload
+        return_url.args['sso'] = encoded_return_64
         return_url.args['sig'] = return_signature
 
         return HttpResponseRedirect(return_url.url)

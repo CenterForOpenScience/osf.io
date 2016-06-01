@@ -13,7 +13,7 @@ from modularodm.exceptions import ValidationValueError
 import framework.auth
 
 from framework.auth import cas, campaigns
-from framework import forms, status
+from framework import forms, status, discourse
 from framework.flask import redirect  # VOL-aware redirect
 from framework.auth import exceptions
 from framework.auth.exceptions import ExpiredTokenError, InvalidTokenError
@@ -188,6 +188,8 @@ def auth_login(auth, **kwargs):
 def auth_logout(redirect_url=None):
     """Log out and delete cookie.
     """
+    discourse.logout()
+
     redirect_url = redirect_url or request.args.get('redirect_url') or web_url_for('goodbye', _absolute=True)
     logout()
     if 'reauth' in request.args:

@@ -523,3 +523,25 @@ GITHUB_API_TOKEN = None
 
 DISCOURSE_SSO_SECRET = 'changeme'
 DISCOURSE_SERVER_URL = 'http://192.168.99.100'
+DISCOURSE_API_KEY = 'changeme'
+DISCOURSE_API_ADMIN_USER = 'changeme'
+
+DISCOURSE_SERVER_SETTINGS = {'title': 'Open Science Framework',
+                             'site_description': 'A scholarly commons to connect the entire research cycle',
+                             'contact_email': 'changeme',
+                             'contact_url': '',
+                             'notification_email': 'noreply@osf.io',
+                             'logo_url': '',
+                             'logo_small_url': '',
+                             'favicon_url': 'http://localhost:5000/favicon.ico',
+                             'enable_local_logins': 'false',
+                             'enable_sso': 'true',
+                             'sso_url': 'http://localhost:8000/v2/sso',
+                             'sso_secret': DISCOURSE_SSO_SECRET,
+                             'sso_overrides_email': 'true',
+                             'sso_overrides_username': 'true',
+                             'sso_overrides_name': 'true',
+                             'sso_overrides_avatar': 'true',
+                             'logout_redirect': 'http://localhost:5000/logout',
+                             'cors_origins': 'http://localhost:5000',
+                             }

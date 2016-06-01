@@ -52,7 +52,8 @@ def authenticate(user, access_token, response):
 
 
 def logout():
-    for key in ['auth_user_username', 'auth_user_id', 'auth_user_fullname', 'auth_user_access_token']:
+    for key in ['auth_user_username', 'auth_user_id', 'auth_user_fullname',
+                'auth_user_access_token', 'auth_discourse_username']:
         try:
             del session.data[key]
         except KeyError:
