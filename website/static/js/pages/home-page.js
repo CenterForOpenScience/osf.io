@@ -10,12 +10,14 @@ var m = require('mithril');
 var QuickSearchProject = require('js/home-page/quickProjectSearchPlugin');
 var NewAndNoteworthy = require('js/home-page/newAndNoteworthyPlugin');
 var MeetingsAndConferences = require('js/home-page/meetingsAndConferencesPlugin');
+var UsersInstitutions = require('js/home-page/usersInstitutionsPlugin');
 
 var columnSizeClass = '.col-md-10 col-md-offset-1 col-lg-8 col-lg-offset-2';
 
 $(document).ready(function(){
     var osfHome = {
         view : function(ctrl, args) {
+            var userInstitutions = window.contextVars.user_institutions;
             return [
                 m('.quickSearch', m('.container.p-t-lg',
                     [
@@ -24,6 +26,16 @@ $(document).ready(function(){
                         ])
                     ]
                 )),
+                m('', userInstitutions.length ? m('.container',
+                    [
+                        m('.row', [
+                            m(columnSizeClass, m('h3', 'Your Institutions'))
+                        ]),
+                        m('.row', [
+                            m(columnSizeClass, m.component(UsersInstitutions, {institutions: userInstitutions}))
+                        ])
+                    ]
+                ) : ''),
                 m('.newAndNoteworthy', m('.container',
                     [
                         m('.row', [

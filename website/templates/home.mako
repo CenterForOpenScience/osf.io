@@ -26,5 +26,10 @@
 
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
+    <script type="text/javascript">
+        window.contextVars = $.extend(true, {}, window.contextVars, {
+            'user_institutions': ${ user_institutions or [] | sjson, n },
+        });
+    </script>
     <script src=${"/static/public/js/home-page.js" | webpack_asset}></script>
 </%def>

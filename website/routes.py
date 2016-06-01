@@ -50,6 +50,7 @@ def get_globals():
     OSFWebRenderer.
     """
     user = _get_current_user()
+    user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path} for inst in user.affiliated_institutions] if user else []
     if request.host_url != settings.DOMAIN:
         try:
             inst_id = (Institution.find_one(Q('domains', 'eq', request.host.lower())))._id
@@ -69,6 +70,7 @@ def get_globals():
         'user_gravatar': profile_views.current_user_gravatar(size=25)['gravatar_url'] if user else '',
         'user_api_url': user.api_url if user else '',
         'user_entry_point': metrics.get_entry_point(user) if user else '',
+        'user_institutions': user_institutions if user else None,
         'display_name': get_display_name(user.fullname) if user else '',
         'use_cdn': settings.USE_CDN_FOR_CLIENT_LIBS,
         'piwik_host': settings.PIWIK_HOST,
