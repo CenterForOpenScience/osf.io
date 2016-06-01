@@ -205,9 +205,9 @@ var LogPieces = {
     // Contributor list of added, updated etc.
     contributors: {
         view: function (ctrl, logObject) {
-            var contributors = logObject.embeds.contributors;
+            var contributors = logObject.attributes.params.contributors;
             if(paramIsReturned(contributors, logObject)) {
-                return m('span', contributors.data.map(function(item, index, arr){
+                return m('span', contributors.map(function(item, index, arr){
                     var comma = ' ';
                     if(index !== arr.length - 1){
                         comma = ', ';
@@ -216,24 +216,14 @@ var LogPieces = {
                         comma = ' and ';
                     }
 
-
-                    var attributes = item.attributes;
-                    if (attributes == null && item.data && item.data.attributes) {
-                        attributes = item.data.attributes;
+                    if (item.active) {
+                        return [ m('a', {href: '/' + item.id + '/'}, item.full_name), comma];
                     }
-
-                    var links = item.links;
-                    if (links == null && item.data && item.data.links){
-                        links = item.data.links;
-                    }
-
-                    if (attributes) {
-                        if (attributes.active && links) {
-                            return [ m('a', {href: links.html}, attributes.full_name), comma];
+                    else {
+                        if (item.unregistered_name) {
+                            return [item.unregistered_name, comma];
                         }
-                        else {
-                            return [attributes.full_name, comma];
-                        }
+                        return [item.full_name, comma];
                     }
                 }));
             }

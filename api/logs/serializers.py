@@ -5,8 +5,10 @@ from api.base.serializers import (
     RelationshipField,
     RestrictedDictSerializer,
     LinksField,
+    is_anonymized
 )
 from website.project.model import Node
+from framework.auth.core import User
 
 
 class NodeLogIdentifiersSerializer(RestrictedDictSerializer):
@@ -33,6 +35,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     addon = ser.CharField(read_only=True)
     bucket = ser.CharField(read_only=True)
     citation_name = ser.CharField(read_only=True, source='citation.name')
+    contributors = ser.SerializerMethodField(read_only=True)
     data_set = ser.CharField(read_only=True, source='dataset')
     destination = NodeLogFileParamsSerializer(read_only=True)
     figshare_title = ser.CharField(read_only=True, source='figshare.title')
@@ -81,6 +84,34 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
             return {'id': project_id, 'title': node.title}
         return None
 
+    def get_contributors(self, obj):
+
+        contributor_info = []
+
+        if is_anonymized(self.context['request']):
+            return contributor_info
+
+        contributor_ids = obj.get('contributors', None)
+        params_node = obj.get('node', None)
+
+        if contributor_ids:
+            for contrib_id in contributor_ids:
+                user = User.load(contrib_id)
+                unregistered_name = None
+                if user.unclaimed_records.get(params_node):
+                    unregistered_name = user.unclaimed_records[params_node].get('name', None)
+
+                contributor_info.append({
+                    'id': contrib_id,
+                    'full_name': user.fullname,
+                    'given_name': user.given_name,
+                    'middle_names': user.middle_names,
+                    'family_name': user.family_name,
+                    'unregistered_name': unregistered_name,
+                    'active': user.is_active
+                })
+        return contributor_info
+
 
 class NodeLogSerializer(JSONAPISerializer):
 
@@ -113,11 +144,6 @@ class NodeLogSerializer(JSONAPISerializer):
     user = RelationshipField(
         related_view='users:user-detail',
         related_view_kwargs={'user_id': '<user._id>'},
-    )
-
-    contributors = RelationshipField(
-        related_view='logs:log-contributors',
-        related_view_kwargs={'log_id': '<pk>'},
     )
 
     # This would be a node_link, except that data isn't stored in the node log params
