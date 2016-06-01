@@ -11,12 +11,12 @@ from django.conf import settings
 
 class DeskError(Exception):
 
-    def __init__(self, status):
-        Exception.__init__(self, status)  # Exception is an old-school class
-        self.status = status
+    def __init__(self, message):
+        Exception.__init__(self, message)  # Exception is an old-school class
+        self.message = message
 
     def __str__(self):
-        return self.status
+        return self.message
 
     def __unicode__(self):
         return unicode(self.__str__())

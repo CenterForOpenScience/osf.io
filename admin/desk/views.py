@@ -43,8 +43,8 @@ class DeskCustomer(OSFAdmin, DetailView):
         except (AttributeError, DeskError) as e:
             return render(request, 'desk/user_not_found.html',
                           context={
-                              'email': e.status,
-                              'desk_inbox': 'https://openscience.desk.com/web/agent/filters/inbox'
+                              'email': e.message,
+                              'desk_inbox': 'https://{}.desk.com/web/agent/filters/inbox'.format(DeskClient.SITE_NAME)
                           })
 
     def get_object(self, queryset=None):

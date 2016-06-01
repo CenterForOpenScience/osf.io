@@ -1,6 +1,6 @@
 from django.conf.urls import url
 
-from . import views
+from admin.desk import views
 
 urlpatterns = [
     url(r'^$', views.DeskCaseList.as_view(), name='cases'),
