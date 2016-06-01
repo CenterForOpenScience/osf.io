@@ -49,7 +49,7 @@ if ($('#mailingListGrid').length) {
         type: 'GET',
         dataType: 'json'
     }).done( function(response) {
-        new ProjectMailingList(response, initNotificationsTB);
+        new ProjectMailingList(response, initNotificationsTB, mailingListSettingsURL);
     }).fail( function() {
         $mailingListMsg.addClass('text-danger');
         $mailingListMsg.text('Could not retrieve mailing list settings.');

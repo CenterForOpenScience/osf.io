@@ -7,9 +7,8 @@ var $osf = require('js/osfHelpers');
 var $tb = require('js/treebeardHelpers');
 var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 
-function subscribe(item, notification_type, reload) {
+function subscribe(item, notification_type, reload, url) {
     var id = item.data.node.id;
-    var url = '/api/v1/project/' + id + '/mailing_list/';  // TODO [OSF-6400]: Update to V2
     var method = notification_type === 'enabled' ? 'POST' : 'DELETE';
     $.ajax({
         url: url,
@@ -25,7 +24,7 @@ function subscribe(item, notification_type, reload) {
     });
 }
 
-function ProjectMailingList(data, reload) {
+function ProjectMailingList(data, reload, url) {
 
     //  Treebeard version
     var tbOptions = $.extend({}, projectSettingsTreebeardBase.defaults, {
@@ -94,7 +93,7 @@ function ProjectMailingList(data, reload) {
                         return m('div[style="padding-right:10px"]',
                             [m('select.form-control', {
                                 onchange: function(ev) {
-                                    subscribe(item, ev.target.value, reload);
+                                    subscribe(item, ev.target.value, reload, url);
                                 }},
                                 [
                                     m('option', {value: 'disabled', selected : item.data.node.mailing_list === 'disabled' ? 'selected': ''}, 'Mailing List Disabled'),
