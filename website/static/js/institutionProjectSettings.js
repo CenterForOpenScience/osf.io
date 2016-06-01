@@ -9,6 +9,7 @@ var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 
 var ViewModel = function(data) {
     var self = this;
+    self.treebeardUrl = data.node.urls.api + 'tree/';
     self.loading = ko.observable(false);
     self.showAdd = ko.observable(false);
     self.institutionHref = ko.observable('');
@@ -44,7 +45,7 @@ var ViewModel = function(data) {
     });
 
 
-    self.modifyChildrenDialog = function (item) {
+    self.modifyDialog = function (item) {
         var message;
         var modifyOneMessage;
         var modifyAllMessage;
@@ -53,18 +54,19 @@ var ViewModel = function(data) {
             message = 'Add <b>' + item.name + '</b> to <b>' + data.node.title + '</b> or to <b>' +
                 data.node.title + '</b> and every component in it?<br><br>';
             modifyOneMessage = 'Add to <b>' +  data.node.title + '</b>.',
-            modifyAllMessage = 'Add to <b>' +  data.node.title + '</b> and every component in it.';
+            modifyAllMessage = 'Add to <b>' +  data.node.title + '</b> and every component for which you have permission.';
         }
         else {
             message = 'Remove <b>' + item.name + '</b> from <b>' + data.node.title + '</b> or from <b>' +
                 data.node.title + '</b> and every component in it?<br><br>';
             modifyOneMessage = 'Remove from <b>' +  data.node.title + '</b>.',
-            modifyAllMessage = 'Remove from <b>' +  data.node.title + '</b> and every component in it.';
+            modifyAllMessage = 'Remove from <b>' +  data.node.title + '</b> and every component for which you have permission.';
         }
         if (self.needsWarning()) {
             message += '<div class="text-danger f-w-xl">Warning, you are not affiliated with <b>' + item.name +
                     '</b>.  If you remove it from your project, you cannot add it back.</div></br>';
         }
+        //If the Institution has children, give the choice to select.  If not, that means a warning is necessary.
         if (self.hasChildren()) {
             htmlMessage = '<div class="row">  ' +
                         '<div class="col-md-12"> ' +
@@ -122,22 +124,47 @@ var ViewModel = function(data) {
         return self.isAddInstitution() ? 'Add institution' : 'Remove institution';
     });
 
+    self.institutionInNoChildren = function(institutionID) {
+        for (var key in self.nodesOriginal()) {
+            if (self.nodesOriginal()[self.nodeParent].id !== key) {
+                if (self.nodesOriginal()[key].institutions.indexOf(institutionID) > -1 &&
+                    self.nodesOriginal()[key].isAdmin) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    };
+
+    self.institutionInAllChildren = function(institutionID) {
+        for (var key in self.nodesOriginal()) {
+            if (self.nodesOriginal()[self.nodeParent].id !== key) {
+                if (self.nodesOriginal()[key].institutions.indexOf(institutionID) === -1 &&
+                    self.nodesOriginal()[key].isAdmin) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    };
+
     self.submitInst = function (item) {
         self.isAddInstitution(true);
         self.needsWarning(false);
-        if (self.hasChildren()) {
-            self.modifyChildrenDialog(item);
+        if ((self.hasChildren() && !self.institutionInAllChildren(item.id))) {
+            self.modifyDialog(item);
         }
         else {
             return self._modifyInst(item);
         }
 
     };
+
     self.clearInst = function(item) {
         self.needsWarning((self.userInstitutionsIds.indexOf(item.id) === -1));
         self.isAddInstitution(false);
-        if (self.hasChildren() || self.needsWarning()) {
-            self.modifyChildrenDialog(item);
+        if ((self.hasChildren() && !self.institutionInNoChildren(item.id)) || self.needsWarning()) {
+            self.modifyDialog(item);
         }
         else {
             return self._modifyInst(item);
@@ -152,7 +179,9 @@ var ViewModel = function(data) {
         self.loading(true);
         if (self.modifyChildren()) {
             for (var node in self.nodesOriginal()) {
-                nodesToModify.push({'type': 'nodes', 'id': self.nodesOriginal()[node].id});
+                if (self.nodesOriginal()[node].isAdmin) {
+                    nodesToModify.push({'type': 'nodes', 'id': self.nodesOriginal()[node].id});
+                }
             }
         }
         else {
@@ -182,6 +211,9 @@ var ViewModel = function(data) {
                 }
             }
             self.loading(false);
+            //fetchNodeTree is called to refresh self.nodesOriginal after a state change.  This is the simplest way to
+            //update state check if the modal is necessary.
+            self.fetchNodeTree(self.treebeardUrl);
         }).fail(function (xhr, status, error) {
             $osf.growl('Unable to modify the institution on this node. Please try again. If the problem persists, email <a href="mailto:support@osf.io.">support@osf.io</a>');
             Raven.captureMessage('Unable to modify this institution!', {
@@ -221,8 +253,7 @@ ViewModel.prototype.fetchNodeTree = function(treebeardUrl) {
 var InstitutionProjectSettings = function(selector, data)  {
     this.viewModel = new ViewModel(data);
     var self = this;
-    var treebeardUrl = data.node.urls.api + 'tree/';
-    self.viewModel.fetchNodeTree(treebeardUrl);
+    self.viewModel.fetchNodeTree(self.viewModel.treebeardUrl);
     $osf.applyBindings(this.viewModel, selector);
 
 };
