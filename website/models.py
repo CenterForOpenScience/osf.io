@@ -12,6 +12,7 @@ from website.project.model import (
     Comment, PrivateLink, MetaData,
     AlternativeCitation,
     DraftRegistration,
+    DraftRegistrationLog,
 )
 from website.project.sanctions import (
     DraftRegistrationApproval,
@@ -48,7 +49,7 @@ MODELS = (
     Embargo, Retraction, RegistrationApproval, EmbargoTerminationApproval,
     ArchiveJob, ArchiveTarget, BlacklistGuid,
     QueuedMail, AlternativeCitation,
-    DraftRegistration, DraftRegistrationApproval,
+    DraftRegistration, DraftRegistrationApproval, DraftRegistrationLog,
     NodeLicense, NodeLicenseRecord, MailingListEventLog
 )
 

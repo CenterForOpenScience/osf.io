@@ -3,6 +3,7 @@ from nose.tools import *
 from framework.sessions import utils
 from tests import factories
 from tests.base import DbTestCase
+from tests.factories import SessionFactory
 from website.models import User
 from website.models import Session
 
@@ -18,7 +19,7 @@ class SessionUtilsTestCase(DbTestCase):
         Session.remove()
 
     def test_remove_session_for_user(self):
-        factories.SessionFactory(user=self.user)
+        SessionFactory(user=self.user)
 
         # sanity check
         assert_equal(1, Session.find().count())
@@ -26,8 +27,8 @@ class SessionUtilsTestCase(DbTestCase):
         utils.remove_sessions_for_user(self.user)
         assert_equal(0, Session.find().count())
 
-        factories.SessionFactory()
-        factories.SessionFactory(user=self.user)
+        SessionFactory()
+        SessionFactory(user=self.user)
 
         # sanity check
         assert_equal(2, Session.find().count())
@@ -36,9 +37,15 @@ class SessionUtilsTestCase(DbTestCase):
         assert_equal(1, Session.find().count())
 
     def test_password_change_clears_sessions(self):
-        factories.SessionFactory(user=self.user)
-        factories.SessionFactory(user=self.user)
-        factories.SessionFactory(user=self.user)
+        SessionFactory(user=self.user)
+        SessionFactory(user=self.user)
+        SessionFactory(user=self.user)
         assert_equal(3, Session.find().count())
         self.user.set_password('killerqueen')
+        assert_equal(0, Session.find().count())
+
+    def test_remove_session(self):
+        session = SessionFactory(user=self.user)
+        assert_equal(1, Session.find().count())
+        utils.remove_session(session)
         assert_equal(0, Session.find().count())

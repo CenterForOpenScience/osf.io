@@ -1172,7 +1172,6 @@ class TestNodeWikiPage(OsfTestCase):
         wiki = NodeWikiFactory()
         assert_equal(wiki.page_name, 'home')
         assert_equal(wiki.version, 1)
-        assert_true(hasattr(wiki, 'is_current'))
         assert_equal(wiki.content, 'Some content')
         assert_true(wiki.user)
         assert_true(wiki.node)
@@ -1181,17 +1180,17 @@ class TestNodeWikiPage(OsfTestCase):
         assert_equal(self.wiki.url, '{project_url}wiki/home/'
                                     .format(project_url=self.project.url))
 
-    def test_absolute_url_for_wiki_page_name_with_spaces(self):
+    def test_url_for_wiki_page_name_with_spaces(self):
         wiki = NodeWikiFactory(user=self.user, node=self.project, page_name='Test Wiki')
-        url = '{}wiki/{}/'.format(self.project.absolute_url, urllib.quote(wiki.page_name))
-        assert_equal(wiki.get_absolute_url(), url)
+        url = '{}wiki/{}/'.format(self.project.url, urllib.quote(wiki.page_name))
+        assert_equal(wiki.url, url)
 
-    def test_absolute_url_for_wiki_page_name_with_special_characters(self):
+    def test_url_for_wiki_page_name_with_special_characters(self):
         wiki = NodeWikiFactory(user=self.user, node=self.project)
         wiki.page_name = 'Wiki!@#$%^&*()+'
         wiki.save()
-        url = '{}wiki/{}/'.format(self.project.absolute_url, urllib.quote(wiki.page_name))
-        assert_equal(wiki.get_absolute_url(), url)
+        url = '{}wiki/{}/'.format(self.project.url, urllib.quote(wiki.page_name))
+        assert_equal(wiki.url, url)
 
 
 class TestUpdateNodeWiki(OsfTestCase):
@@ -3933,7 +3932,7 @@ class TestForkNode(OsfTestCase):
     def test_forking_clones_project_wiki_pages(self):
         project = ProjectFactory(creator=self.user, is_public=True)
         wiki = NodeWikiFactory(node=project)
-        current_wiki = NodeWikiFactory(node=project, version=2, is_current=True)
+        current_wiki = NodeWikiFactory(node=project, version=2)
         fork = project.fork_node(self.auth)
         assert_equal(fork.wiki_private_uuids, {})
 
@@ -4164,7 +4163,7 @@ class TestRegisterNode(OsfTestCase):
     def test_registration_clones_project_wiki_pages(self):
         project = ProjectFactory(creator=self.user, is_public=True)
         wiki = NodeWikiFactory(node=project)
-        current_wiki = NodeWikiFactory(node=project, version=2, is_current=True)
+        current_wiki = NodeWikiFactory(node=project, version=2)
         registration = project.register_node(get_default_metaschema(), Auth(self.user), '', None)
         assert_equal(self.registration.wiki_private_uuids, {})
 

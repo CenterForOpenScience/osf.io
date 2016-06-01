@@ -1,4 +1,5 @@
 from django.test import RequestFactory
+from django.http import Http404
 from nose import tools as nt
 import mock
 
@@ -91,6 +92,11 @@ class TestDisableUser(AdminTestCase):
         self.user.reload()
         nt.assert_false(self.user.is_disabled)
         nt.assert_equal(OSFLogEntry.objects.count(), count + 1)
+
+    def test_no_user(self):
+        view = setup_view(UserDeleteView(), self.request, guid='meh')
+        with nt.assert_raises(Http404):
+            view.delete(self.request)
 
 
 class TestRemove2Factor(AdminTestCase):

@@ -698,3 +698,7 @@ button.copy-button {
 .more-replies {
     margin-right: 15px;
 }
+
+div.ball-scale-blue>div {
+    background-color: #BED1E2;
+}
