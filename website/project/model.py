@@ -3976,6 +3976,7 @@ class DraftRegistration(StoredObject):
         approval.save()
         self.approval = approval
         self.add_status_log(initiated_by, DraftRegistrationLog.SUBMITTED)
+        self.checkout_files(initiated_by, save=save)
         if save:
             self.save()
 
@@ -4018,14 +4019,21 @@ class DraftRegistration(StoredObject):
                 fid = file_info['data']['path'].split('/')[1]
                 yield OsfStorageFileNode.load(fid)
 
-    def checkout_files(self, user):
+    def checkout_files(self, user, save=False):
         """Check out all metadata files"""
         for item in self.get_metadata_files():
-            item.checkout = user
-            item.save()
+            try:
+                item.checkout = user
+            except AttributeError:
+                continue  # ignore files that have changed
+            if save:
+                item.save()
 
     def checkin_files(self):
         """Check in all metadata files"""
         for item in self.get_metadata_files():
-            item.checkout = None
+            try:
+                item.checkout = None
+            except AttributeError:
+                continue  # ignore files that are no longer there
             item.save()

@@ -103,15 +103,13 @@ class DraftDetailView(PreregAdmin, DetailView):
 
     def get_object(self, queryset=None):
         draft = DraftRegistration.load(self.kwargs.get('draft_pk'))
-        user = self.request.user.osf_user
         try:
-            draft.checkout_files(user)
+            return serializers.serialize_draft_registration(draft)
         except AttributeError:
             raise Http404('{} with id "{}" not found.'.format(
                 self.context_object_name.title(),
                 self.kwargs.get('draft_pk')
             ))
-        return serializers.serialize_draft_registration(draft)
 
 
 class DraftFormView(PreregAdmin, FormView):
