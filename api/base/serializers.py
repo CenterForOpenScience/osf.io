@@ -225,7 +225,7 @@ class IDField(ser.CharField):
             if request.method in utils.UPDATE_METHODS and not utils.is_bulk_request(request):
                 id_field = getattr(self.root.instance, self.source, '_id')
                 if id_field != data:
-                    raise Conflict()
+                    raise Conflict(detail=('The resource id you specified "' + data + '" does not match the id of the resource you specified "' + id_field + '".'))
         return super(IDField, self).to_internal_value(data)
 
 
@@ -249,7 +249,7 @@ class TypeField(ser.CharField):
             type_ = self.root.Meta.type_
 
         if type_ != data:
-            raise Conflict()
+            raise Conflict(detail=('The resource type you specified "' + data + '" does not match the type of the resource you specified "' + type_ + '".'))
 
         return super(TypeField, self).to_internal_value(data)
 
@@ -267,7 +267,7 @@ class TargetTypeField(ser.CharField):
 
     def to_internal_value(self, data):
         if self.target_type != data:
-            raise Conflict()
+            raise Conflict(detail=('The resource type you specified "' + data + '" does not match the type of the target resource you specified "' + self.target_type + '".'))
         return super(TargetTypeField, self).to_internal_value(data)
 
 
