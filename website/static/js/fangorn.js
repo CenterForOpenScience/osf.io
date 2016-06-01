@@ -17,6 +17,9 @@ var waterbutler = require('js/waterbutler');
 var iconmap = require('js/iconmap');
 var storageAddons = require('json!storageAddons.json');
 
+var makeClient = require('js/clipboard');
+
+
 // CSS
 require('css/fangorn.css');
 
@@ -1192,6 +1195,7 @@ function _fangornTitleColumn(item, col) {
                 onclick: function(event) {
                     event.stopImmediatePropagation();
                     gotoFileEvent.call(tb, item);
+ 
                 }
             };
         }
@@ -1230,6 +1234,24 @@ function _connectCheckTemplate(item){
         }, [m('i.fa.fa-refresh'), ' Retry'])
     ]);
 }
+
+function generateURLClipBoard(item){
+		var url = waterbutler.buildTreeBeardDownload(item);
+		var clipBoard = function(elem) {
+                makeClient(elem);
+            };
+		
+         var clipboardHTML = m('div.input-group[style="width: 180px"]',
+                        [
+                            m('span.input-group-btn', m('button.btn.btn-default.btn-sm[type="button"][data-clipboard-text="'+url+ '"]', {config: clipBoard}, m('.fa.fa-copy'))),
+                            m('input[value="'+url+'"][type="text"][readonly="readonly"][style="float:left; height: 30px;background-color: #F5F5F5;color:#333333;"]')
+                        ]
+                    );
+		
+	 	return clipboardHTML;
+       
+}
+
 
 /**
  * Parent function for resolving rows, all columns are sub methods within this function
@@ -1280,12 +1302,22 @@ function _fangornResolveRows(item) {
     });
 if(window.contextVars.node.category == "share window"){
     if (item.data.kind === 'file') {
-    	 default_columns.push(
+       	 default_columns.push(
         {
-            data : 'share',  // Data field name
+            data : 'Download',  // Data field name
             filter : true,
             custom : function() {
-            	return waterbutler.buildTreeBeardDownload(item);
+            	 return m('a', {href: waterbutler.buildTreeBeardDownload(item)}, 'Download File');
+            	//return waterbutler.buildTreeBeardDownload(item);
+            }
+        });	
+    	 default_columns.push(
+        {
+            data : 'share link',  // Data field name
+            filter : true,
+            custom : function() {
+            	 return generateURLClipBoard(item);
+            	//return waterbutler.buildTreeBeardDownload(item);
             }
         });
         default_columns.push(
@@ -1327,7 +1359,7 @@ if(window.contextVars.node.category == "share window"){
             });
         } else {
             default_columns.push({
-                data : 'downloads',
+                data : 'downloads Count',
                 sortInclude : false,
                 filter : false,
                 custom : function() { return m(''); }
@@ -1351,20 +1383,24 @@ function _fangornColumnTitles () {
 	    columns.push(
 	    {
 	        title: 'Name',
-	        width : '20%',
+	        width : '30%',
 	        sort : true,
 	        sortType : 'text'
 	    }, {
-	        title : 'Share',
-	        width : '60%',
+	        title : 'Download',
+	        width : '20%',
+	        sort : false
+	    }, {
+	        title : 'Share Link',
+	        width : '25%',
 	        sort : false
 	    }, {
 	        title : 'Size',
 	        width : '10%',
 	        sort : false
 	    }, {
-	        title : 'Downloads',
-	        width : '10%',
+	        title : 'Download Count',
+	        width : '15%',
 	        sort : false
 	    });
 	}
@@ -1380,7 +1416,7 @@ function _fangornColumnTitles () {
 	        width : '10%',
 	        sort : false
 	    }, {
-	        title : 'Downloads',
+	        title : 'Download Count',
 	        width : '10%',
 	        sort : false
 	    });	
