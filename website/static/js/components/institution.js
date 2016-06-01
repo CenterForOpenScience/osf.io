@@ -38,7 +38,7 @@ var InstitutionImg = {
     }
 };
 
-var CheckableInstitution = {
+var SelectableInstitution = {
     view: function(ctrl, opts) {
         var checked = required(opts, 'checked');
         var mutedStyle = {
@@ -55,5 +55,5 @@ var CheckableInstitution = {
 
 module.exports = {
     InstitutionImg: InstitutionImg,
-    CheckableInstitution: CheckableInstitution,
+    SelectableInstitution: SelectableInstitution,
 };
