@@ -14,7 +14,7 @@ from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationError
 from modularodm.exceptions import ValidationValueError
 
-from framework import forms, status
+from framework import forms, status, discourse
 from framework import auth as framework_auth
 from framework.auth import exceptions
 from framework.auth import cas, campaigns
@@ -390,6 +390,7 @@ def auth_logout(redirect_url=None):
     :param redirect_url: url to redirect user after CAS logout, default is 'goodbye'
     :return:
     """
+    discourse.logout()
 
     # OSF tells CAS where it wants to be redirected back after successful logout.
     # However, CAS logout flow may not respect this url if user is authenticated through remote identity provider.
