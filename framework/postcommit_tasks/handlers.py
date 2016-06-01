@@ -1,5 +1,12 @@
 import logging
 import threading
+import os
+
+import binascii
+from collections import OrderedDict
+
+from celery.local import PromiseProxy
+from gevent.pool import Pool
 
 from website import settings
 
@@ -19,13 +26,15 @@ def postcommit_after_request(response, base_status_error_code=500):
         _local.postcommit_queue = set()
         return response
     try:
-        if settings.ENABLE_VARNISH and postcommit_queue():
-            import gevent
-            threads = [gevent.spawn(func, *args) for func, args in postcommit_queue()]
-            gevent.joinall(threads)
-    except AttributeError:
+        if postcommit_queue():
+            number_of_threads = 30  # one db connection per greenlet, let's share
+            pool = Pool(number_of_threads)
+            for func in postcommit_queue().values():
+                pool.spawn(func)
+            pool.join(timeout=5.0, raise_error=True)  # 5 second timeout and reraise exceptions
+    except AttributeError as ex:
         if not settings.DEBUG_MODE:
-            logger.error('Post commit task queue not initialized')
+            logger.error('Post commit task queue not initialized: {}'.format(ex))
     return response
 
 def enqueue_postcommit_task(function_and_args):
@@ -36,3 +45,22 @@ handlers = {
     'before_request': postcommit_before_request,
     'after_request': postcommit_after_request,
 }
+
+def run_postcommit(once_per_request=True, celery=False):
+    '''
+    Delays function execution until after the request's transaction has been committed.
+    !!!Tasks enqueued using this decorator **WILL NOT** run if the return status code is >= 500!!!
+    :return:
+    '''
+    def wrapper(func):
+        # if we're local dev or running unit tests, run without queueing
+        if settings.DEBUG_MODE:
+            return func
+        @functools.wraps(func)
+        def wrapped(*args, **kwargs):
+            if celery is True and isinstance(func, PromiseProxy):
+                func.delay(*args, **kwargs)
+            else:
+                enqueue_postcommit_task(func, args, kwargs, once_per_request=once_per_request)
+        return wrapped
+    return wrapper
