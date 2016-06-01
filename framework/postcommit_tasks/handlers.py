@@ -1,9 +1,7 @@
+# -*- coding: utf-8 -*-
+import functools
 import logging
 import threading
-import os
-
-import binascii
-from collections import OrderedDict
 
 from celery.local import PromiseProxy
 from gevent.pool import Pool
