@@ -294,8 +294,8 @@ var QuickSearchProject = {
         // Filtering on root project
         self.rootMatch = function (node) {
             try {
-                var root = project.embeds.root.data.attributes.title;
-                return (node.embeds.root.data.attributes.title.toUpperCase().indexOf(self.filter().toUpperCase()) !== -1);
+                var root = node.embeds.root.data.attributes.title;
+                return (root.toUpperCase().indexOf(self.filter().toUpperCase()) !== -1);
                 }
             catch (err) {return false;}
         };
