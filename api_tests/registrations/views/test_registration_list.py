@@ -655,7 +655,6 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
     def test_embargo_must_be_less_than_four_years(self, mock_enqueue):
         today = datetime.datetime.utcnow()
         five_years = (today + dateutil.relativedelta.relativedelta(years=5)).strftime('%Y-%m-%dT%H:%M:%S')
-        print five_years
         payload = {
             "data": {
                 "type": "registrations",

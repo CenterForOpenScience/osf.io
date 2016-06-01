@@ -12,7 +12,7 @@ from website.exceptions import NodeStateError
 from website.project.model import NodeUpdateError
 
 from api.files.serializers import FileSerializer
-from api.nodes.serializers import NodeSerializer
+from api.nodes.serializers import NodeSerializer, NodeProviderSerializer
 from api.nodes.serializers import NodeLinksSerializer, NodeLicenseSerializer
 from api.nodes.serializers import NodeContributorsSerializer, NodeTagField
 from api.base.serializers import (IDField, RelationshipField, LinksField, HideIfWithdrawal,
@@ -150,6 +150,10 @@ class RegistrationSerializer(NodeSerializer):
 
     registrations = HideIfRegistration(RelationshipField(
         related_view='nodes:node-registrations',
+        related_view_kwargs={'node_id': '<pk>'}
+    ))
+    identifiers = HideIfWithdrawal(RelationshipField(
+        related_view='registrations:identifier-list',
         related_view_kwargs={'node_id': '<pk>'}
     ))
 
@@ -296,3 +300,15 @@ class RegistrationFileSerializer(FileSerializer):
                                             related_view_kwargs={'node_id': '<node._id>'},
                                             related_meta={'unread': 'get_unread_comments_count'},
                                             filter={'target': 'get_file_guid'})
+
+
+class RegistrationProviderSerializer(NodeProviderSerializer):
+    """
+    Overrides NodeProviderSerializer to lead to correct registration file links
+    """
+    files = NodeFileHyperLinkField(
+        related_view='registrations:registration-files',
+        related_view_kwargs={'node_id': '<node_id>', 'path': '<path>', 'provider': '<provider>'},
+        kind='folder',
+        never_embed=True
+    )

@@ -78,6 +78,8 @@ class CoreScopes(object):
 
     WIKI_BASE_READ = 'wikis.base_read'
 
+    IDENTIFIERS_READ = 'identifiers.data_read'
+
 
 class ComposedScopes(object):
     """
@@ -108,6 +110,9 @@ class ComposedScopes(object):
     DRAFT_READ = (CoreScopes.NODE_DRAFT_REGISTRATIONS_READ, )
     DRAFT_WRITE = (CoreScopes.NODE_DRAFT_REGISTRATIONS_WRITE, )
 
+    # Identifier views
+    IDENTIFIERS_READ = (CoreScopes.IDENTIFIERS_READ, )
+
     # Comment reports collection
     COMMENT_REPORTS_READ = (CoreScopes.COMMENT_REPORTS_READ,)
     COMMENT_REPORTS_WRITE = COMMENT_REPORTS_READ + (CoreScopes.COMMENT_REPORTS_WRITE,)
@@ -116,7 +121,7 @@ class ComposedScopes(object):
     # Base node data includes node metadata, links, and children.
     NODE_METADATA_READ = (CoreScopes.NODE_BASE_READ, CoreScopes.NODE_CHILDREN_READ, CoreScopes.NODE_LINKS_READ,
                           CoreScopes.NODE_CITATIONS_READ, CoreScopes.NODE_COMMENTS_READ, CoreScopes.NODE_LOG_READ,
-                          CoreScopes.NODE_FORKS_READ, CoreScopes.WIKI_BASE_READ, CoreScopes.LICENSE_READ)
+                          CoreScopes.NODE_FORKS_READ, CoreScopes.WIKI_BASE_READ, CoreScopes.LICENSE_READ, CoreScopes.IDENTIFIERS_READ)
     NODE_METADATA_WRITE = NODE_METADATA_READ + \
                     (CoreScopes.NODE_BASE_WRITE, CoreScopes.NODE_CHILDREN_WRITE, CoreScopes.NODE_LINKS_WRITE,
                      CoreScopes.NODE_CITATIONS_WRITE, CoreScopes.NODE_COMMENTS_WRITE, CoreScopes.NODE_FORKS_WRITE)
