@@ -1023,12 +1023,12 @@ class User(GuidStoredObject, AddonModelMixin):
         return '/profile/{}/'.format(self._primary_key)
 
     @property
-    def get_unconfirmed_emails(self):
+    def unconfirmed_email_info(self):
         """Called at login to see if there are emails to add or users to merge.  Delete expired tokens.
         methods: GET
         """
         unconfirmed_emails = []
-        email_verifications = deepcopy(self.email_verifications)
+        email_verifications = self.email_verifications
         for token in email_verifications:
             if self.email_verifications[token]['confirmed']:
                 try:

@@ -132,29 +132,6 @@ function confirmEmails(emailsToAdd) {
             backdrop: true,
             closeButton: true,
             buttons: {
-                confirm: {
-                    label: 'Add email',
-                    className: 'btn-success',
-                    callback: function () {
-                        $osf.putJSON(
-                            confirmedEmailURL,
-                            email
-                        ).done(function () {
-                            $osf.growl('Success', confirmMessage, 'success', 3000);
-                            confirmEmails(emailsToAdd.slice(1));
-                        }).fail(function (xhr, textStatus, error) {
-                            Raven.captureMessage('Could not add email', {
-                                url: confirmedEmailURL,
-                                textStatus: textStatus,
-                                error: error
-                            });
-                            $osf.growl('Error',
-                                confirmFailMessage,
-                                'danger'
-                            );
-                        });
-                    }
-                },
                 cancel: {
                     label: 'Do not add email',
                     className: 'btn-default',
@@ -176,6 +153,29 @@ function confirmEmails(emailsToAdd) {
                             });
                             $osf.growl('Error',
                                 cancelFailMessage,
+                                'danger'
+                            );
+                        });
+                    }
+                },
+                confirm: {
+                    label: 'Add email',
+                    className: 'btn-success pull-right',
+                    callback: function () {
+                        $osf.putJSON(
+                            confirmedEmailURL,
+                            email
+                        ).done(function () {
+                            $osf.growl('Success', confirmMessage, 'success', 3000);
+                            confirmEmails(emailsToAdd.slice(1));
+                        }).fail(function (xhr, textStatus, error) {
+                            Raven.captureMessage('Could not add email', {
+                                url: confirmedEmailURL,
+                                textStatus: textStatus,
+                                error: error
+                            });
+                            $osf.growl('Error',
+                                confirmFailMessage,
                                 'danger'
                             );
                         });

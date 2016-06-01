@@ -312,8 +312,8 @@ def unconfirmed_email_remove(auth=None):
         given_token = json_body['token']
     except KeyError:
         raise HTTPError(http.BAD_REQUEST, data={
-            'message_short': 'Invalid token',
-            'message_long': 'The token provided is invalid'
+            'message_short': 'Missing token',
+            'message_long': 'Must provide a token'
         })
     user.clean_email_verifications(given_token=given_token)
     user.save()
@@ -334,14 +334,14 @@ def unconfirmed_email_add(auth=None):
         token = json_body['token']
     except KeyError:
         raise HTTPError(http.BAD_REQUEST, data={
-            'message_short': 'Invalid token',
+            'message_short': 'Missing token',
             'message_long': 'Must provide a token'
         })
     try:
         user.confirm_email(token, merge=True)
     except exceptions.InvalidTokenError:
         raise InvalidTokenError(http.BAD_REQUEST, data={
-            'message_short': 'Invalid User Token',
+            'message_short': 'Invalid user token',
             'message_long': 'The user token is invalid'
         })
     except exceptions.EmailConfirmTokenError as e:
