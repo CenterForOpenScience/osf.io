@@ -219,10 +219,8 @@ class FileSerializer(JSONAPISerializer):
         old_tags = set([tag._id for tag in instance.tags])
         if 'tags' in validated_data:
             current_tags = set(validated_data.pop('tags', []))
-        elif self.partial:
-            current_tags = set(old_tags)
         else:
-            current_tags = set()
+            current_tags = set(old_tags)
 
         for new_tag in (current_tags - old_tags):
             instance.add_tag(new_tag, auth=auth)
