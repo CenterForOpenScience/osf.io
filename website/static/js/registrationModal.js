@@ -48,27 +48,25 @@ var RegistrationViewModel = function(confirm, prompts, validator) {
         return moment(new Date(self.pikaday())).subtract(utcOffset, 'minutes');
     });
 
-    self.minimumTimeValidation = function (embargoLocalDateTime) {
+    self.minimumTimeValidation = function (x, y, embargoLocalDateTime) {
         var minEmbargoMoment = getMinimumDate(embargoLocalDateTime),
             endEmbargoMoment = self.embargoEndDate();
         return minEmbargoMoment.isBefore(endEmbargoMoment);
     };
 
-    self.maximumTimeValidation = function (embargoLocalDateTime) {
+    self.maximumTimeValidation = function (x, y, embargoLocalDateTime) {
         var maxEmbargoMoment = getMaximumDate(embargoLocalDateTime),
             endEmbargoMoment = self.embargoEndDate();
         return maxEmbargoMoment.isAfter(endEmbargoMoment);
     };
 
     var validation = [{
-        validator: function () {
-            return self.minimumTimeValidation();
-        },
+        validator: self.minimumTimeValidation
+        ,
         message: 'Embargo end date must be at least three days in the future.'
     }, {
-        validator: function () {
-            return self.maximumTimeValidation();
-        },
+        validator: self.maximumTimeValidation
+        ,
         message: 'Embargo end date must be less than four years in the future.'
     }];
     if(validator) {
