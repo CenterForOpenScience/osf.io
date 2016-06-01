@@ -61,12 +61,10 @@ var RegistrationViewModel = function(confirm, prompts, validator) {
     };
 
     var validation = [{
-        validator: self.minimumTimeValidation
-        ,
+        validator: self.minimumTimeValidation,
         message: 'Embargo end date must be at least three days in the future.'
     }, {
-        validator: self.maximumTimeValidation
-        ,
+        validator: self.maximumTimeValidation,
         message: 'Embargo end date must be less than four years in the future.'
     }];
     if(validator) {

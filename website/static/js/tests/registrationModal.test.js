@@ -128,38 +128,6 @@ describe('registrationModal', () => {
             vm.pikaday(new Date (2020, 0, 1));
             assert.isFalse(vm.maximumTimeValidation(null, null, invalidDateFourYears));
         });
-        it('returns true for date more than 2 days in the future, regardless of time zone', () => {
-            var validDateTwoDaysTZ = new Date(2016, 0, 1);
-            validDateTwoDaysTZ.setMinutes(validDateTwoDaysTZ.getMinutes() - validDateTwoDaysTZ.getTimezoneOffset());
-            var validDateTZFuture = new Date(validDateTwoDaysTZ);
-            validDateTZFuture.setDate(validDateTwoDaysTZ.getDate() + 3);
-            vm.pikaday(validDateTZFuture);
-            assert.isTrue(vm.minimumTimeValidation(null, null, validDateTwoDaysTZ));
-        });
-        it('returns true for date less than 4 years in the future, regardless of time zone', () => {
-            var validDateFourYearsTZ = new Date(2016, 0, 1);
-            validDateFourYearsTZ.setMinutes(validDateFourYearsTZ.getMinutes() - validDateFourYearsTZ.getTimezoneOffset());
-            var validDateTZFutureYears = new Date(validDateFourYearsTZ);
-            validDateTZFutureYears.setDate(validDateTZFutureYears.getDate() + 1459);
-            vm.pikaday(validDateTZFutureYears);
-            assert.isTrue(vm.maximumTimeValidation(null, null, validDateFourYearsTZ));
-        });
-        it('returns false for date less than 2 days in the future, regardless of time zone', () => {
-            var invalidDateTwoDaysTZ = new Date(2016, 0, 1);
-            invalidDateTwoDaysTZ.setMinutes(invalidDateTwoDaysTZ.getMinutes() - invalidDateTwoDaysTZ.getTimezoneOffset());
-            var invalidDateTZFuture = new Date(invalidDateTwoDaysTZ);
-            invalidDateTZFuture.setDate(invalidDateTwoDaysTZ.getDate() + 1);
-            vm.pikaday(invalidDateTZFuture);
-            assert.isFalse(vm.minimumTimeValidation(null, null, invalidDateTwoDaysTZ));
-        });
-        it('returns false for date at least 4 years in the future, regardless of time zone', () => {
-            var invalidDateFourYearsTZ = new Date(2016, 0, 1);
-            invalidDateFourYearsTZ.setMinutes(invalidDateFourYearsTZ.getMinutes() - invalidDateFourYearsTZ.getTimezoneOffset());
-            var invalidDateTZFutureYears = new Date(invalidDateFourYearsTZ);
-            invalidDateTZFutureYears.setDate(invalidDateTZFutureYears.getDate() + 1460);
-            vm.pikaday(invalidDateTZFutureYears);
-            assert.isFalse(vm.maximumTimeValidation(null, null, invalidDateFourYearsTZ));
-        });
         it('returns true for date more than 2 days in the future, in a western timezone', () => {
             var validDateTwoDaysTZWest = moment().utcOffset(-4).toDate();
             validDateTwoDaysTZWest.setMinutes(validDateTwoDaysTZWest.getMinutes() - validDateTwoDaysTZWest.getTimezoneOffset());
@@ -184,7 +152,7 @@ describe('registrationModal', () => {
             vm.pikaday(validDateTZFutureWest);
             assert.isTrue(vm.maximumTimeValidation(null, null, validDateFourYearsTZWest));
         });
-        it('returns true for date less than 4 years in the future, in a western timezone', () => {
+        it('returns true for date less than 4 years in the future, in an eastern timezone', () => {
             var validDateFourYearsTZEast = moment().utcOffset(4).toDate();
             validDateFourYearsTZEast.setMinutes(validDateFourYearsTZEast.getMinutes() - validDateFourYearsTZEast.getTimezoneOffset());
             var validDateTZFutureEastFY = new Date(validDateFourYearsTZEast);
