@@ -31,7 +31,7 @@ SESSION_COOKIE_HTTPONLY = osf_settings.SECURE_MODE
 # csrf:
 CSRF_COOKIE_NAME = 'admin-csrf'
 CSRF_COOKIE_SECURE = osf_settings.SECURE_MODE
-# set to False because current CSRF token in admin server is accessed by javascript
+# set to False: prereg uses a SPA and ajax and grab the token to use it in the requests
 CSRF_COOKIE_HTTPONLY = False
 
 ALLOWED_HOSTS = [
@@ -90,7 +90,7 @@ INSTALLED_APPS = (
     'password_reset',
 )
 
-# local developing use https
+# local development using https
 if osf_settings.SECURE_MODE and osf_settings.DEBUG_MODE:
     INSTALLED_APPS += ('sslserver',)
 
