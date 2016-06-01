@@ -41,6 +41,12 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
             registeredContributors.push(nodeTree.node.contributors[i].id);
         }
     }
+    var nodeInstitutions = [];
+
+    nodeInstitutions = nodeTree.node.affiliated_institutions.map(function(item) {
+        return item.id;
+    });
+
     nodesOriginal[nodeId] = {
         isPublic: nodeTree.node.is_public,
         id: nodeTree.node.id,
@@ -51,6 +57,7 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
         adminContributors: adminContributors,
         registeredContributors: registeredContributors,
         canWrite: nodeTree.node.can_write,
+        institutions: nodeInstitutions,
         changed: false,
         checked: false,
         enabled: true

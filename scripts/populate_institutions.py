@@ -133,6 +133,26 @@ def main(env):
                 'domains': ['staging-osf-nd.cos.io'],
                 'email_domains': [],
             },
+            {
+                '_id': 'google',
+                'name': 'Google [Stage]',
+                'description': 'Google [Stage]',
+                'banner_name': 'google-banner.png',
+                'logo_name': 'google-shield.png',
+                'auth_url': None,
+                'domains': [],
+                'email_domains': ['gmail.com'],
+            },
+            {
+                '_id': 'yahoo',
+                'name': 'Yahoo [Stage]',
+                'description': 'Yahoo [Stage]',
+                'banner_name': 'yahoo-banner.png',
+                'logo_name': 'yahoo-shield.png',
+                'auth_url': None,
+                'domains': [],
+                'email_domains': ['yahoo.com'],
+            },
         ]
     if env == 'stage2':
         INSTITUTIONS = [
@@ -218,7 +238,7 @@ def main(env):
             # update the nodes elastic docs, to have current names of institutions. This will
             # only work properly if this file is the only thing changing institution attributes
             if not inst_created:
-                nodes = Node.find_by_institution(new_inst, query=Q('is_deleted', 'ne', True))
+                nodes = Node.find_by_institutions(new_inst, query=Q('is_deleted', 'ne', True))
                 for node in nodes:
                     update_node(node, async=False)
         for extra_inst in Institution.find(Q('_id', 'nin', [x['_id'] for x in INSTITUTIONS])):

@@ -236,7 +236,7 @@ def format_result(result, parent_id=None):
         'date_registered': result.get('registered_date'),
         'n_wikis': len(result['wikis']),
         'license': result.get('license'),
-        'primary_institution': result.get('primary_institution'),
+        'affiliated_institutions': result.get('affiliated_institutions'),
     }
 
     return formatted_result
@@ -332,7 +332,7 @@ def update_node(node, index=None, bulk=False):
             'parent_id': parent_id,
             'date_created': node.date_created,
             'license': serialize_node_license_record(node.license),
-            'primary_institution': node.primary_institution.name if node.primary_institution else None,
+            'affiliated_institutions': [inst.name for inst in node.affiliated_institutions],
             'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
         }
         if not node.is_retracted:
