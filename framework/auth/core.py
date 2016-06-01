@@ -666,7 +666,7 @@ class User(GuidStoredObject, AddonModelMixin):
         had_existing_password = bool(self.password)
         self.password = generate_password_hash(raw_password)
         if self.username == raw_password:
-            raise HTTPError(httplib.CONFLICT)
+            raise HTTPError(httplib.BAD_REQUEST)
         if had_existing_password and notify:
             mails.send_mail(
                 to_addr=self.username,

@@ -207,7 +207,7 @@ var ViewModel = function(passwordViewType, submitUrl, campaign, redirectUrl) {
     };
 
     self.submitError = function(xhr) {
-        if (xhr.status === 409) {
+        if (xhr.status === 400) {
             self.changeMessage(
                 self.flashMessage,
                 self.flashMessageClass,
