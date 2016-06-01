@@ -336,7 +336,9 @@ HIGH_PRI_MODULES = {
     'scripts.embargo_registrations',
     'scripts.refresh_box_tokens',
     'scripts.retract_registrations',
+    'scripts.mailing_lists.update_project_mailing_list',
     'website.archiver.tasks',
+    'website.mailing_list.utils'
 }
 
 try:
