@@ -49,7 +49,6 @@ var ShareFilesProject = {
         // Load up to share node
         var url = $osf.apiV2Url('users/me/nodes/', { query : { 'filter[category]' : 'share window'}});
         var promise = m.request({method: 'GET', url : url, config : xhrconfig, background: true});
-        console.log(promise);
         promise.then(function(result) {
             self.countDisplayed(result.data.length);
             result.data.forEach(function (node) {
