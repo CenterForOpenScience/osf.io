@@ -358,7 +358,6 @@ def bulk_update_nodes(serialize, nodes, index=None):
     index = index or INDEX
     actions = []
     for node in nodes:
-        logger.info('Updating node {}'.format(node._id))
         serialized = serialize(node)
         if serialized:
             actions.append({

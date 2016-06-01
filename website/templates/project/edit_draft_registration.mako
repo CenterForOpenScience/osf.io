@@ -48,7 +48,7 @@
 
                 <div class="row" style="margin-bottom: 10px;">
                   <span>
-                    Last saved: <span data-bind="text: lastSaveTime"></span>
+                    Last auto-saved: <span data-bind="text: lastSaveTime"></span>
                   </span>
                   <!-- ko if: onLastPage -->
                   <span data-bind="if: onLastPage() && hasValidationInfo()" class="pull-right">
