@@ -22,37 +22,30 @@ var InstitutionImg = {
             style: opts.style,
             src: logoPath,
             width: opts.width, height: opts.height,
-            alt: opts.alt || institutionName
+            alt: opts.alt || institutionName,
+            title: opts.title || institutionName
         });
         return m('img', imgOpts);
     }
 };
 
-var CheckableInstitution = {
+var SelectableInstitution = {
     view: function(ctrl, opts) {
         var checked = required(opts, 'checked');
-        return m('',[
-            m.component(InstitutionImg, opts),
-            checked ?
-            m('i.img-circle.fa.fa-check',
-                {
-                    style: {
-                        color: '#C7FFC7',
-                        textAlign: 'center',
-                        fontSize: '275%',
-                        width: '100%', height: '100%',
-                        top: '0', left: '0',
-                        position: 'absolute',
-                        display: 'block',
-                        background: 'rgba(0, 0, 0, .4)'
-                    }
-                }
-            ) : '',
-        ]);
+        var mutedStyle = {
+            cursor: 'pointer',
+            opacity: '0.25',
+            '-webkit-filter': 'grayscale(100%)',
+            filter: 'grayscale(100%)'
+        };
+        if (!checked) {
+            opts.style = $.extend({}, mutedStyle, opts.style);
+        }
+        return m.component(InstitutionImg, opts);
     }
 };
 
 module.exports = {
     InstitutionImg: InstitutionImg,
-    CheckableInstitution: CheckableInstitution,
+    SelectableInstitution: SelectableInstitution,
 };
