@@ -9,13 +9,7 @@ from . import defaults
 
 DEV_MODE = True
 DEBUG_MODE = True  # Sets app to debug mode, turns off template caching, etc.
-
-LOCAL_MODE = True
-SECURE_MODE = False
-
-PROTOCOL = 'https://' if SECURE_MODE else 'http://'
-DOMAIN = PROTOCOL + 'localhost:5000/'
-API_DOMAIN = PROTOCOL + 'localhost:8000/'
+SECURE_MODE = not DEBUG_MODE
 
 SEARCH_ENGINE = 'elastic'
 ELASTIC_TIMEOUT = 10
@@ -44,10 +38,6 @@ OSF_COOKIE_DOMAIN = None
 SECRET_KEY = 'CHANGEME'
 SESSION_COOKIE_SECURE = SECURE_MODE
 SESSION_COOKIE_HTTPONLY = False
-
-# local private key and certificate
-OSF_SERVER_KEY = None
-OSF_SERVER_CERT = None
 
 # Uncomment if GPG was installed with homebrew
 # GNUPG_BINARY = '/usr/local/bin/gpg'

@@ -51,12 +51,7 @@ PROXY_ADDRS = []
 # May set these to True in local.py for development
 DEV_MODE = False
 DEBUG_MODE = False
-
-# True if in local development and False if on staging, staging2, production
-LOCAL_MODE = False
-
-# True if in staging, staging2 and production, or if using https in local development
-SECURE_MODE = False
+SECURE_MODE = not DEBUG_MODE  # disable osf cookie secure and httponly
 
 PROTOCOL = 'https://' if SECURE_MODE else 'http://'
 DOMAIN = PROTOCOL + 'localhost:5000/'
@@ -93,10 +88,10 @@ OSF_COOKIE_DOMAIN = None
 # TODO: Override SECRET_KEY in local.py in production
 SECRET_KEY = 'CHANGEME'
 SESSION_COOKIE_SECURE = SECURE_MODE
-# TODO: Change to True after ticket #SEC-16 has been resolved
+# TODO: Change to SECURE_MODE after ticket #OSF-6339 has been resolved
 SESSION_COOKIE_HTTPONLY = False
 
-# local path to private key and certificate for local development using https, overwrite them in local.py
+# local path to key and cert for local https, overwrite in local.py
 OSF_SERVER_KEY = None
 OSF_SERVER_CERT = None
 
