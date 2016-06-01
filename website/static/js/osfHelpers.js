@@ -7,6 +7,8 @@ var moment = require('moment');
 var URI = require('URIjs');
 var bootbox = require('bootbox');
 var iconmap = require('js/iconmap');
+var lodashGet = require('lodash.get');
+
 
 // TODO: For some reason, this require is necessary for custom ko validators to work
 // Why?!
@@ -252,6 +254,7 @@ var joinPrompts = function(prompts, base) {
     if (prompts.length !==0) {
         prompt += '<hr />';
         prompt += '<ul>';
+        // Assumes prompts are pre-escaped before constructing this string
         for (var i=0; i<prompts.length; i++) {
             prompt += '<li>' + prompts[i] + '</li>';
         }
@@ -646,7 +649,7 @@ var isSafari = function(userAgent) {
   * Confirm a dangerous action by requiring the user to enter specific text
   *
   * This is an abstraction over bootbox, and passes most options through to
-  * bootbox.dailog(). The exception to this is `callback`, which is called only
+  * bootbox.dialog(). The exception to this is `callback`, which is called only
   * if the user correctly confirms the action.
   *
   * @param  {Object} options
@@ -696,7 +699,7 @@ var confirmDangerousAction = function (options) {
 
     bootboxOptions.message += [
         '<p>Type the following to continue: <strong>',
-        confirmationString,
+        htmlEscape(confirmationString),
         '</strong></p>',
         '<input id="bbConfirmText" class="form-control">'
     ].join('');
@@ -838,11 +841,59 @@ var findContribName = function (userAttributes) {
     }
 };
 
+// For use in extracting contributor names from API v2 contributor response
+var extractContributorNamesFromAPIData = function(contributor){
+    var familyName = '';
+    var givenName = '';
+    var fullName = '';
+    var middleNames = '';
+
+    if (lodashGet(contributor, 'attributes.unregistered_contributor')){
+        fullName = contributor.attributes.unregistered_contributor;
+    }
+
+    else if (lodashGet(contributor, 'embeds.users.data')) {
+        var attributes = contributor.embeds.users.data.attributes;
+        familyName = attributes.family_name;
+        givenName = attributes.given_name;
+        fullName = attributes.full_name;
+        middleNames = attributes.middle_names;
+    }
+    else if (lodashGet(contributor, 'embeds.users.errors')) {
+        var meta = contributor.embeds.users.errors[0].meta;
+        familyName = meta.family_name;
+        givenName = meta.given_name;
+        fullName = meta.full_name;
+        middleNames = meta.middle_names;
+    }
+
+    return {
+        'familyName': familyName,
+        'givenName': givenName,
+        'fullName': fullName,
+        'middleNames': middleNames
+    };
+};
+
+
+// Google analytics event tracking on the dashboard/my projects pages
 var trackClick = function(category, action, label){
     window.ga('send', 'event', category, action, label);
     //in order to make the href redirect work under knockout onclick binding
     return true;
 };
+
+
+// Call a function when scrolled to the bottom of the element
+/// Useful for triggering an event at the bottom of a window, like infinite scroll
+function onScrollToBottom(element, callback) {
+    $(element).scroll(function() {
+        var $this = $(this);
+        if ($this.scrollTop() + $this.innerHeight() >= $this[0].scrollHeight) {
+            callback();
+        }
+    });
+}
 
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
@@ -882,5 +933,7 @@ module.exports = window.$.osf = {
     dialog: dialog,
     contribNameFormat: contribNameFormat,
     trackClick: trackClick,
-    findContribName: findContribName
+    findContribName: findContribName,
+    extractContributorNamesFromAPIData: extractContributorNamesFromAPIData,
+    onScrollToBottom: onScrollToBottom
 };

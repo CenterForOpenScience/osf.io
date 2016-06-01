@@ -4,6 +4,9 @@
 <div class="page-header  visible-xs">
   <h2 class="text-300">Files</h2>
 </div>
+% if not node['is_registration'] and not node['anonymous'] and 'write' in user['permissions']:
+    <span class="f-w-xl">Click on a storage provider or drag and drop to upload</span>
+%endif
 
 <div id="treeGrid">
 	<div class="spinner-loading-wrapper">

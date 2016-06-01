@@ -136,6 +136,9 @@ $(document).ready(function () {
                 buttonState
             ]);
             if (typeof editor !== 'undefined') { ace.edit(editor).resize(); } // jshint ignore: line
+        },
+        complete : function() {
+            if (typeof editor !== 'undefined') { ace.edit(editor).resize(); } // jshint ignore: line
         }
     });
 
@@ -170,7 +173,7 @@ $(document).ready(function () {
 });
 
 var $comments = $('.comments');
-if ($comments.length && window.contextVars.wiki.wikiID !== 'None') {
+if ($comments.length && window.contextVars.wiki.wikiID !== null) {
     var options = {
         nodeId: window.contextVars.node.id,
         nodeApiUrl: window.contextVars.node.urls.api,

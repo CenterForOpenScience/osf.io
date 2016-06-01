@@ -1,8 +1,6 @@
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import NotFound
 
-from modularodm import Q
-from framework.auth.core import User
 from framework.auth.oauth_scopes import CoreScopes
 
 from website.models import NodeLog
@@ -10,9 +8,7 @@ from api.logs.permissions import (
     ContributorOrPublicForLogs
 )
 
-from api.base.filters import ODMFilterMixin
 from api.base import permissions as base_permissions
-from api.users.serializers import UserSerializer
 from api.logs.serializers import NodeLogSerializer
 from api.base.views import JSONAPIBaseView
 
@@ -45,6 +41,8 @@ class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView, LogMixin):
     * 'pointer_created': A Pointer is created
     * 'pointer_forked': A Pointer is forked
     * 'pointer_removed': A Pointer is removed
+    * 'node_removed': A component is deleted
+    * 'node_forked': A Node is forked
     ---
     * 'made_public': A Node is made public
     * 'made_private': A Node is made private
@@ -57,8 +55,8 @@ class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView, LogMixin):
     ---
     * 'contributor_added': A Contributor is added to a Node
     * 'contributor_removed': A Contributor is removed from a Node
-    * 'contributors_reordered': A Contributor's position is a Node's biliography is changed
-    * 'permissions_update': A Contributor's permissions on a Node are changed
+    * 'contributors_reordered': A Contributor's position in a Node's bibliography is changed
+    * 'permissions_updated': A Contributor's permissions on a Node are changed
     * 'made_contributor_visible': A Contributor is made bibliographically visible on a Node
     * 'made_contributor_invisible': A Contributor is made bibliographically invisible on a Node
     ---
@@ -73,6 +71,8 @@ class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView, LogMixin):
     * 'addon_file_moved': A File in a Node's linked add-on is moved
     * 'addon_file_copied': A File in a Node's linked add-on is copied
     * 'addon_file_renamed': A File in a Node's linked add-on is renamed
+    * 'node_authorized': An addon is authorized for a project
+    * 'node_deauthorized': An addon is deauthorized for a project
     * 'folder_created': A Folder is created in a Node's linked add-on
     * 'file_added': A File is added to a Node's linked add-on
     * 'file_updated': A File is updated on a Node's linked add-on
@@ -87,16 +87,14 @@ class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView, LogMixin):
     * 'embargo_approved': A proposed Embargo of a Node is approved
     * 'embargo_cancelled': A proposed Embargo of a Node is cancelled
     * 'embargo_completed': A proposed Embargo of a Node is completed
-    * 'retraction_initiated': A Retraction of a Registration is proposed
-    * 'retraction_approved': A Retraction of a Registration is approved
-    * 'retraction_cancelled': A Retraction of a Registration is cancelled
+    * 'retraction_initiated': A Withdrawal of a Registration is proposed
+    * 'retraction_approved': A Withdrawal of a Registration is approved
+    * 'retraction_cancelled': A Withdrawal of a Registration is cancelled
     * 'registration_initiated': A Registration of a Node is proposed
     * 'registration_approved': A proposed Registration is approved
     * 'registration_cancelled': A proposed Registration is cancelled
     ---
     * 'node_created': A Node is created (_deprecated_)
-    * 'node_forked': A Node is forked (_deprecated_)
-    * 'node_removed': A Node is deleted (_deprecated_)
 
    ##Log Attributes
 
@@ -161,75 +159,3 @@ class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView, LogMixin):
     # overrides RetrieveUpdateDestroyAPIView
     def perform_destroy(self, instance):
         pass
-
-
-class NodeLogContributors(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin, LogMixin):
-    """List of contributors that a given log is associated with. *Read-only*.
-
-    Paginated list of users that were associated with a contributor log action. For example, if a log action was `contributor_added`,
-    the new contributors' names would be found at this endpoint. If the relevant log had nothing to do with contributors,
-    an empty list would be returned. Each resource contains the full representation of the user, meaning additional requests
-    to an individual user's detail view are not necessary.
-
-    ##User Attributes
-
-    <!--- Copied Attributes from UserDetail -->
-
-    OSF User entities have the "users" `type`.
-
-        name               type               description
-        ========================================================================================
-        full_name          string             full name of the user; used for display
-        given_name         string             given name of the user; for bibliographic citations
-        middle_names       string             middle name of user; for bibliographic citations
-        family_name        string             family name of user; for bibliographic citations
-        suffix             string             suffix of user's name for bibliographic citations
-        date_registered    iso8601 timestamp  timestamp when the user's account was created
-
-
-    ##Links
-
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
-
-    ##Actions
-
-    *None*.
-
-    <!--- Copied Query Params from UserList -->
-
-    ##Query Params
-
-    + `page=<Int>` -- page number of results to view, default 1
-
-    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
-
-    Users may be filtered by their `id`, `full_name`, `given_name`, `middle_names`, or `family_name`.
-
-    + `profile_image_size=<Int>` -- Modifies `/links/profile_image_url` of the user entities so that it points to
-    the user's profile image scaled to the given size in pixels.  If left blank, the size depends on the image provider.
-
-    #This Request/Response
-    """
-
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope,
-        ContributorOrPublicForLogs
-    )
-
-    required_read_scopes = [CoreScopes.USERS_READ]
-    required_write_scopes = [CoreScopes.NULL]
-
-    serializer_class = UserSerializer
-
-    view_category = 'logs'
-    view_name = 'log-contributors'
-
-    # overrides ListAPIView
-    def get_queryset(self):
-        log = self.get_log()
-        associated_contrib_ids = log.params.get('contributors')
-        if associated_contrib_ids is None:
-            return []
-        associated_users = User.find(Q('_id', 'in', associated_contrib_ids))
-        return associated_users

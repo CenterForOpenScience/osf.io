@@ -15,6 +15,8 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticate
 from api.base.permissions import TokenHasScope
 from website.settings import DEBUG_MODE
 
+from django.contrib.auth.models import User
+
 import importlib
 
 URLS_MODULES = []
@@ -112,5 +114,9 @@ class TestJSONAPIBaseView(ApiTestCase):
     def test_request_added_to_serializer_context(self, mock_to_representation):
         self.app.get(self.url, auth=self.user.auth)
         assert_in('request', mock_to_representation.call_args[0][0].context)
+
+    def test_reverse_sort_possible(self):
+        response = self.app.get('http://localhost:8000/v2/users/me/nodes/?sort=-title', auth=self.user.auth)
+        assert_equal(response.status_code, 200)
 
 

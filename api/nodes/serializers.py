@@ -15,7 +15,7 @@ from website.project.model import NodeUpdateError
 from api.base.utils import get_user_auth, get_object_or_error, absolute_reverse
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
                                   TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly,
-                                  HideIfRegistration)
+                                  HideIfRegistration, RestrictedDictSerializer, )
 from api.base.exceptions import InvalidModelValueError
 
 
@@ -27,6 +27,12 @@ class NodeTagField(ser.Field):
 
     def to_internal_value(self, data):
         return data
+
+
+class NodeLicenseSerializer(RestrictedDictSerializer):
+
+    copyright_holders = ser.ListField(allow_empty=True, read_only=True)
+    year = ser.CharField(allow_blank=True, read_only=True)
 
 
 class NodeSerializer(JSONAPISerializer):
@@ -57,6 +63,7 @@ class NodeSerializer(JSONAPISerializer):
         'registration',
         'tags',
         'public',
+        'license',
         'links',
         'children',
         'comments',
@@ -83,6 +90,7 @@ class NodeSerializer(JSONAPISerializer):
     fork = ser.BooleanField(read_only=True, source='is_fork')
     collection = ser.BooleanField(read_only=True, source='is_collection')
     tags = JSONAPIListField(child=NodeTagField(), required=False)
+    node_license = NodeLicenseSerializer(read_only=True, required=False)
     template_from = ser.CharField(required=False, allow_blank=False, allow_null=False,
                                   help_text='Specify a node id for a node you would like to use as a template for the '
                                             'new node. Templating is like forking, except that you do not copy the '
@@ -103,6 +111,11 @@ class NodeSerializer(JSONAPISerializer):
 
     links = LinksField({'html': 'get_absolute_html_url'})
     # TODO: When we have osf_permissions.ADMIN permissions, make this writable for admins
+
+    license = RelationshipField(
+        related_view='licenses:license-detail',
+        related_view_kwargs={'license_id': '<node_license.node_license._id>'},
+    )
 
     children = RelationshipField(
         related_view='nodes:node-children',
@@ -126,9 +139,19 @@ class NodeSerializer(JSONAPISerializer):
         related_view_kwargs={'node_id': '<pk>'}
     )
 
+    wikis = RelationshipField(
+        related_view='nodes:node-wikis',
+        related_view_kwargs={'node_id': '<pk>'}
+    )
+
     forked_from = RelationshipField(
-        related_view='nodes:node-detail',
+        related_view=lambda n: 'registrations:registration-detail' if getattr(n, 'is_registration', False) else 'nodes:node-detail',
         related_view_kwargs={'node_id': '<forked_from_id>'}
+    )
+
+    forks = RelationshipField(
+        related_view='nodes:node-forks',
+        related_view_kwargs={'node_id': '<pk>'}
     )
 
     node_links = RelationshipField(
@@ -262,6 +285,8 @@ class NodeSerializer(JSONAPISerializer):
                 raise exceptions.PermissionDenied
             except NodeUpdateError as e:
                 raise exceptions.ValidationError(detail=e.reason)
+            except NodeStateError as e:
+                raise InvalidModelValueError(detail=e.message)
 
         return node
 
@@ -271,6 +296,30 @@ class NodeDetailSerializer(NodeSerializer):
     Overrides NodeSerializer to make id required.
     """
     id = IDField(source='_id', required=True)
+
+
+class NodeForksSerializer(NodeSerializer):
+
+    category_choices = Node.CATEGORY_MAP.items()
+    category_choices_string = ', '.join(["'{}'".format(choice[0]) for choice in category_choices])
+
+    title = ser.CharField(required=False)
+    category = ser.ChoiceField(read_only=True, choices=category_choices, help_text="Choices: " + category_choices_string)
+    forked_date = ser.DateTimeField(read_only=True)
+
+    def create(self, validated_data):
+        node = validated_data.pop('node')
+        fork_title = validated_data.pop('title', 'Fork of ')
+        request = self.context['request']
+        auth = get_user_auth(request)
+        fork = node.fork_node(auth, title=fork_title)
+
+        try:
+            fork.save()
+        except ValidationValueError as e:
+            raise InvalidModelValueError(detail=e.message)
+
+        return fork
 
 
 class NodeContributorsSerializer(JSONAPISerializer):
@@ -291,6 +340,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
     permission = ser.ChoiceField(choices=osf_permissions.PERMISSIONS, required=False, allow_null=True,
                                  default=osf_permissions.reduce_permissions(osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS),
                                  help_text='User permission level. Must be "read", "write", or "admin". Defaults to "write".')
+    unregistered_contributor = ser.SerializerMethodField()
 
     links = LinksField({
         'self': 'get_absolute_url'
@@ -315,6 +365,10 @@ class NodeContributorsSerializer(JSONAPISerializer):
             }
         )
 
+    def get_unregistered_contributor(self, obj):
+        unclaimed_records = obj.unclaimed_records.get(obj.node_id, None)
+        if unclaimed_records:
+            return unclaimed_records.get('name', None)
 
 class NodeContributorsCreateSerializer(NodeContributorsSerializer):
     """
@@ -354,6 +408,8 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
         try:
             node.update_contributor(contributor, permission, visible, auth, save=True)
         except NodeStateError as e:
+            raise exceptions.ValidationError(detail=e.message)
+        except ValueError as e:
             raise exceptions.ValidationError(detail=e.message)
         contributor.permission = osf_permissions.reduce_permissions(node.get_permissions(contributor))
         contributor.bibliographic = node.get_visible(contributor)

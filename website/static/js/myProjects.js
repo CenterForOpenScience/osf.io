@@ -12,6 +12,7 @@ var LogText = require('js/logTextParser');
 var AddProject = require('js/addProjectPlugin');
 var mC = require('js/mithrilComponents');
 var lodashGet = require('lodash.get');
+var lodashFind = require('lodash.find');
 
 var MOBILE_WIDTH = 767; // Mobile view break point for responsiveness
 var NODE_PAGE_SIZE = 10; // Load 10 nodes at a time from server
@@ -268,18 +269,14 @@ function _formatDataforPO(item) {
     if (contributorsData){
         item.embeds.contributors.data.forEach(function(c){
             var attr;
-            var users = lodashGet(c, 'embeds.users.data', null);
-            if (users) {
-                if (users.errors) {
-                    attr = users.errors[0].meta;
-                } else {
-                    attr = users.attributes;
-                }
-            }
-            if (attr) {
-                item.contributors += attr.full_name + ' ' + attr.middle_names + ' ' + attr.given_name + ' ' + attr.family_name + ' ' ;
-            }
+            var contribNames = $osf.extractContributorNamesFromAPIData(c);
 
+            if (lodashGet(c, 'attributes.unregistered_contributor', null)) {
+                item.contributors += contribNames.fullName;
+            }
+            else {
+                item.contributors += contribNames.fullName + ' ' + contribNames.middleNames + ' ' + contribNames.givenName + ' ' + contribNames.familyName + ' ' ;
+            }
         });
     }
     item.date = new $osf.FormattableDate(item.attributes.date_modified);
@@ -287,7 +284,7 @@ function _formatDataforPO(item) {
     //
     //Sets for filtering
     item.tagSet = new Set(item.attributes.tags || []);
-    var contributors = item.embeds.contributors.data || [];
+    var contributors = lodashGet(item, 'embeds.contributors.data', []);
     item.contributorSet= new Set(contributors.map(function(contrib) {
       return contrib.id;
     }));
@@ -445,7 +442,7 @@ var MyProjects = {
                 var id = item.data.id;
                 if(!item.data.attributes.retracted){
                     var urlPrefix = item.data.attributes.registration ? 'registrations' : 'nodes';
-                    var url = $osf.apiV2Url(urlPrefix + '/' + id + '/logs/', { query : { 'page[size]' : 6, 'embed' : ['original_node', 'user', 'linked_node', 'template_node', 'contributors']}});
+                    var url = $osf.apiV2Url(urlPrefix + '/' + id + '/logs/', { query : { 'page[size]' : 6, 'embed' : ['original_node', 'user', 'linked_node', 'template_node']}});
                     var promise = self.getLogs(url);
                     return promise;
                 }
@@ -664,21 +661,39 @@ var MyProjects = {
 
             self.filteredData().forEach(function(item) {
                 var contributors = lodashGet(item, 'embeds.contributors.data', []);
-
+                var isContributor = lodashFind(contributors, ['id', window.contextVars.currentUser.id]);
                 if (contributors) {
                     for(var i = 0; i < contributors.length; i++) {
                         var u = contributors[i];
                         if ((u.id === window.contextVars.currentUser.id) && !(self.institutionId)) {
                           continue;
                         }
+                        if (!isContributor && !u.attributes.bibliographic) {
+                            continue;
+                        }
+
                         if(self.users[u.id] === undefined) {
                             self.users[u.id] = {
                                 data : u,
-                                count: 1
+                                count: 1,
+                                unregistered_contributors: u.attributes.unregistered_contributor
                         };
                     } else {
                         self.users[u.id].count++;
-                    }}
+                            var currentUnregisteredName = lodashGet(u, 'attributes.unregistered_contributor');
+                            if (currentUnregisteredName) {
+                                var otherUnregisteredName = lodashGet(self.users[u.id], 'unregistered_contributors');
+                                if (otherUnregisteredName) {
+                                     if (otherUnregisteredName.indexOf(currentUnregisteredName) === -1) {
+                                         self.users[u.id].unregistered_contributors += ' a.k.a. ' + currentUnregisteredName;
+                                     }
+                                }
+                                else {
+                                    self.users[u.id].unregistered_contributors = currentUnregisteredName;
+                                }
+                            }
+                        }
+                    }
                     var tags = item.attributes.tags || [];
                     for(var j = 0; j < tags.length; j++) {
                         var t = tags[j];
@@ -690,7 +705,6 @@ var MyProjects = {
                     }
                 }
             });
-
 
             // Sorting by number of items utility function
             function sortByCountDesc (a,b){
@@ -709,6 +723,9 @@ var MyProjects = {
             self.nameFilters = [];
 
             var userFinder = function(lo) {
+                if (u2.unregistered_contributors) {
+                    return lo.label === u2.unregistered_contributors;
+                }
               return lo.label === u2.data.embeds.users.data.attributes.full_name;
             };
 
@@ -716,7 +733,14 @@ var MyProjects = {
             for (var user in self.users) {
                 var u2 = self.users[user];
                 if (u2.data.embeds.users.data) {
-                  var link = oldNameFilters.find(userFinder) || new LinkObject('contributor', {id: u2.data.id, count: u2.count, query: { 'related_counts' : 'children' }}, u2.data.embeds.users.data.attributes.full_name, options.institutionId || false);
+                    var name;
+                    if (u2.unregistered_contributors) {
+                        name = u2.unregistered_contributors;
+                    }
+                    else {
+                        name = u2.data.embeds.users.data.attributes.full_name;
+                    }
+                  var link = oldNameFilters.find(userFinder) || new LinkObject('contributor', {id: u2.data.id, count: u2.count, query: { 'related_counts' : 'children' }}, name, options.institutionId || false);
                   link.data.count = u2.count;
                   self.nameFilters.push(link);
                 }

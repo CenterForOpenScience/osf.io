@@ -64,7 +64,7 @@ def escape_html(data):
     return data
 
 
-# FIXME: Not sure what this function is trying to accomplish. Candidate for deletion?
+# FIXME: Doesn't raise either type of exception expected, and can probably be deleted along with sole use
 def assert_clean(data):
     """Ensure that data is cleaned
 

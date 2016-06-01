@@ -13,7 +13,6 @@ from tests.factories import (
     RegistrationFactory,
     AuthUserFactory,
     CommentFactory,
-    RetractedRegistrationFactory,
     NodeWikiFactory
 )
 
@@ -109,15 +108,6 @@ class TestNodeCommentsList(NodeCommentsListMixin, ApiTestCase):
         self.registration = RegistrationFactory(creator=self.user)
         self.registration_comment = CommentFactory(node=self.registration, user=self.user)
         self.registration_url = '/{}registrations/{}/comments/'.format(API_BASE, self.registration._id)
-
-    def test_cannot_access_retracted_comments(self):
-        self.public_project = ProjectFactory(is_public=True, creator=self.user)
-        self.public_comment = CommentFactory(node=self.public_project, user=self.user)
-        registration = RegistrationFactory(creator=self.user, project=self.public_project)
-        url = '/{}nodes/{}/comments/'.format(API_BASE, registration._id)
-        retraction = RetractedRegistrationFactory(registration=registration, user=self.user)
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
 
 
 class TestNodeCommentsListFiles(NodeCommentsListMixin, ApiTestCase):
@@ -991,6 +981,11 @@ class TestCommentFiltering(ApiTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 0)
 
+    def test_filtering_by_target_no_results_with_related_counts(self):
+        url = '{}?filter[target]=fakeid&related_counts=True'.format(self.base_url)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(len(res.json['data']), 0)
+
     def test_filtering_for_comment_replies(self):
         reply = CommentFactory(node=self.project, user=self.user, target=Guid.load(self.comment._id))
         url = self.base_url + '?filter[target]=' + str(self.comment._id)
@@ -1013,7 +1008,7 @@ class TestCommentFiltering(ApiTestCase):
         url = self.base_url + '?filter[target]=' + str(test_wiki._id)
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 1)
-        assert_in(test_wiki.page_name, res.json['data'][0]['relationships']['target']['links']['related']['href'])
+        assert_equal(test_wiki.get_absolute_url(), res.json['data'][0]['relationships']['target']['links']['related']['href'])
 
     def test_filtering_by_page_node(self):
         url = self.base_url + '?filter[page]=node'

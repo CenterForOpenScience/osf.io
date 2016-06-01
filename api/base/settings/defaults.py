@@ -112,6 +112,8 @@ CORS_ORIGIN_ALLOW_ALL = False
 CORS_ORIGIN_WHITELIST = (urlparse(osf_settings.DOMAIN).netloc,
                          osf_settings.DOMAIN,
                          )
+# This needs to remain True to allow cross origin requests that are in CORS_ORIGIN_WHITELIST to
+# use cookies.
 CORS_ALLOW_CREDENTIALS = True
 # Set dynamically on app init
 INSTITUTION_ORIGINS_WHITELIST = ()
@@ -182,8 +184,8 @@ STATICFILES_DIRS = (
 
 # TODO: Revisit methods for excluding private routes from swagger docs
 SWAGGER_SETTINGS = {
+    'api_path': '/',
     'info': {
-        'api_path': '/',
         'description':
         """
         Welcome to the fine documentation for the Open Science Framework's API!  Please click
@@ -194,6 +196,7 @@ SWAGGER_SETTINGS = {
         'title': 'OSF APIv2 Documentation',
     },
     'doc_expansion': 'list',
+    "exclude_namespaces": ['applications', 'tokens'],
 }
 
 DEBUG_TRANSACTIONS = DEBUG

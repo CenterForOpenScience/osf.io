@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import json
 import httplib
 import logging
 from datetime import datetime
@@ -216,7 +215,7 @@ def conference_results(meeting):
     data = conference_data(meeting)
 
     return {
-        'data': json.dumps(data),
+        'data': data,
         'label': meeting,
         'meeting': conf.to_storage(),
         # Needed in order to use base.mako namespace
@@ -262,7 +261,9 @@ def conference_view(**kwargs):
             continue
         meetings.append({
             'name': conf.name,
-            'active': conf.active,
+            'location': conf.location,
+            'end_date': conf.end_date.strftime("%b %d, %Y") if conf.end_date else None,
+            'start_date': conf.start_date.strftime("%b %d, %Y") if conf.start_date else None,
             'url': web_url_for('conference_results', meeting=conf.endpoint),
             'count': conf.num_submissions,
         })

@@ -252,12 +252,6 @@ class ApiAppTestCase(SimpleTestCase):
         self.app = TestAppJSONAPI(api_django_app)
 
 
-class AdminAppTestCase(DjangoTestCase):
-    def setUp(self):
-        super(AdminAppTestCase, self).setUp()
-        self.app = TestApp(admin_django_app)
-
-
 class UploadTestCase(unittest.TestCase):
 
     @classmethod
@@ -337,9 +331,22 @@ class ApiTestCase(DbTestCase, ApiAppTestCase, UploadTestCase, MockRequestTestCas
         settings.USE_EMAIL = False
 
 
-class AdminTestCase(DbTestCase, AdminAppTestCase, UploadTestCase, MockRequestTestCase):
+class AdminTestCase(DbTestCase, DjangoTestCase, UploadTestCase, MockRequestTestCase):
     pass
 
+
+class ApiWikiTestCase(ApiTestCase):
+
+    def setUp(self):
+        from tests.factories import AuthUserFactory
+        super(ApiWikiTestCase, self).setUp()
+        self.user = AuthUserFactory()
+        self.non_contributor = AuthUserFactory()
+
+    def _add_project_wiki_page(self, node, user):
+        from tests.factories import NodeWikiFactory
+        # API will only return current wiki pages
+        return NodeWikiFactory(node=node, user=user)
 
 # From Flask-Security: https://github.com/mattupstate/flask-security/blob/develop/flask_security/utils.py
 class CaptureSignals(object):

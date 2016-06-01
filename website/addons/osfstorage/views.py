@@ -12,6 +12,7 @@ from framework.auth import Auth
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_signed
 
+from website.exceptions import InvalidTagError, TagNotFoundError
 from website.models import User
 from website.project.decorators import (
     must_not_be_registration, must_have_addon, must_have_permission
@@ -200,7 +201,8 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
 @must_not_be_registration
 @decorators.autoload_filenode()
 def osfstorage_delete(file_node, payload, node_addon, **kwargs):
-    auth = Auth(User.load(payload['user']))
+    user = User.load(payload['user'])
+    auth = Auth(user)
 
     #TODO Auth check?
     if not auth:
@@ -210,7 +212,7 @@ def osfstorage_delete(file_node, payload, node_addon, **kwargs):
         raise HTTPError(httplib.BAD_REQUEST)
 
     try:
-        file_node.delete()
+        file_node.delete(user=user)
 
     except exceptions.FileNodeCheckedOutError:
         raise HTTPError(httplib.FORBIDDEN)
@@ -227,7 +229,7 @@ def osfstorage_download(file_node, payload, node_addon, **kwargs):
         try:
             version_id = int(request.args['version'])
         except ValueError:
-            raise make_error(httplib.BAD_REQUEST, 'Version must be an integer if not specified')
+            raise make_error(httplib.BAD_REQUEST, message_short='Version must be an integer if not specified')
 
     version = file_node.get_version(version_id, required=True)
 
@@ -257,6 +259,11 @@ def osfstorage_add_tag(file_node, **kwargs):
 @decorators.autoload_filenode(must_be='file')
 def osfstorage_remove_tag(file_node, **kwargs):
     data = request.get_json()
-    if file_node.remove_tag(data['tag'], kwargs['auth']):
+    try:
+        file_node.remove_tag(data['tag'], kwargs['auth'])
+    except TagNotFoundError:
+        return {'status': 'failure'}, httplib.CONFLICT
+    except InvalidTagError:
+        return {'status': 'failure'}, httplib.BAD_REQUEST
+    else:
         return {'status': 'success'}, httplib.OK
-    return {'status': 'failure'}, httplib.BAD_REQUEST

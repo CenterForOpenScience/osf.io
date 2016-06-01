@@ -43,8 +43,8 @@
                             <tbody data-bind="foreach: profile().alternateEmails()">
                                 <tr>
                                     <td style="word-break: break-all;"><span data-bind="text: $data.address"></span></td>
-                                    <td style="width:150px;"><a data-bind="click: $parent.makeEmailPrimary">make&nbsp;primary</a></td>
-                                    <td style="width:50px;"><a data-bind="click: $parent.removeEmail"><i class="fa fa-times text-danger"></i></a></td>
+                                    <td style="width:150px;"><a data-bind="click: $parent.makeEmailPrimary.bind($parent)">make&nbsp;primary</a></td>
+                                    <td style="width:50px;"><a data-bind="click: $parent.removeEmail.bind($parent)"><i class="fa fa-times text-danger"></i></a></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -58,8 +58,8 @@
                                 <!-- ko foreach: profile().unconfirmedEmails() -->
                                 <tr>
                                     <td style="word-break: break-all;"><span data-bind="text: $data.address"></span></td>
-                                    <td style="width:150px;"><a data-bind="click: $parent.resendConfirmation">resend&nbsp;confirmation</a></td>
-                                    <td style="width:50px;" ><a data-bind="click: $parent.removeEmail"><i class="fa fa-times text-danger"></i></a></td>
+                                    <td style="width:150px;"><a data-bind="click: $parent.resendConfirmation.bind($parent)">resend&nbsp;confirmation</a></td>
+                                    <td style="width:50px;" ><a data-bind="click: $parent.removeEmail.bind($parent)"><i class="fa fa-times text-danger"></i></a></td>
                                 </tr>
                                 <!-- /ko -->
                                 <tr>
@@ -129,9 +129,15 @@
                 <div id="deactivateAccount" class="panel panel-default">
                     <div class="panel-heading clearfix"><h3 class="panel-title">Deactivate Account</h3></div>
                     <div class="panel-body">
-                        <p class="alert alert-warning"><strong>Warning:</strong> This action is irreversible.</p>
+                        %if not requested_deactivation:
+                            <p class="alert alert-warning"><strong>Warning:</strong> This action is irreversible.</p>
+                        %endif
                         <p>Deactivating your account will remove you from all public projects to which you are a contributor. Your account will no longer be associated with OSF projects, and your work on the OSF will be inaccessible.</p>
-                        <a class="btn btn-danger" data-bind="click: submit, css: success() === true ? 'disabled' : ''">Request deactivation</a>
+                        %if not requested_deactivation:
+                             <a class="btn btn-danger" data-bind="click: submit, css: success() === true ? 'disabled' : ''">Request deactivation</a>
+                        %else:
+                             <p><b>Your account is currently pending deactivation.</b></p>
+                        %endif
                     </div>
                 </div>
             </div>
