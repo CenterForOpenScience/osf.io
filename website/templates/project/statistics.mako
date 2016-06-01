@@ -6,13 +6,12 @@
 </div>
 
 % if node['is_public']:
-<%include file="alert.mako" args="extra_css='alert-front text-center'"/>
-    <!--<div>
+    <div>
       <div class="alert alert-info text-center alert-dismissible">
       <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">×</span></button>
         The use of adblocking software may prevent site analytics from loading properly.
       </div>
-    </div> -->
+    </div>
 % endif
 
 <%
