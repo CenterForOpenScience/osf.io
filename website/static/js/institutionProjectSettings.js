@@ -211,8 +211,8 @@ var ViewModel = function(data) {
                 }
             }
             self.loading(false);
-            //fetchNodeTree is called to refresh self.nodesOriginal after a state change.  This is necessary for the
-            //logic to check if the modal is necessary.
+            //fetchNodeTree is called to refresh self.nodesOriginal after a state change.  This is the simplest way to
+            //update state check if the modal is necessary.
             self.fetchNodeTree(self.treebeardUrl);
         }).fail(function (xhr, status, error) {
             $osf.growl('Unable to modify the institution on this node. Please try again. If the problem persists, email <a href="mailto:support@osf.io.">support@osf.io</a>');
