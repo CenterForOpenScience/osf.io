@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-
 import logging
 import threading
 import functools
 
 from celery import group
+from flask import _app_ctx_stack as context_stack
 
 from website import settings
 
@@ -50,11 +50,11 @@ def enqueue_task(signature):
     after request is complete; else run signature immediately.
     :param signature: Celery task signature
     """
-    try:
+    if context_stack.top is None:  # Not in a request context
+        signature()
+    else:
         if signature not in queue():
             queue().append(signature)
-    except (RuntimeError):
-        signature()
 
 
 def queued_task(task):
