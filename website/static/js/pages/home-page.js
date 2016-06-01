@@ -34,7 +34,7 @@ $(document).ready(function(){
                         m('.row.m-t-lg', [
                             m(columnSizeClass, m.component(ShareFilesProject, {}))
                         ]),
-                        m('.row.m-t-lg', [
+                        m('.row.m-t-lg.p-b-md', [
                             m(columnSizeClass, m.component(QuickSearchProject, {}))
                         ])
                     ]
