@@ -209,9 +209,11 @@ var ViewModel = function(data) {
                 if (self.userInstitutionsIds.indexOf(removed.id) > -1) {
                     self.availableInstitutions.push(removed);
                 }
-            self.fetchNodeTree(self.treebeardUrl);
             }
             self.loading(false);
+            //fetchNodeTree is called to refresh self.nodesOriginal after a state change.  This is necessary for the
+            //logic to check if the modal is necessary.
+            self.fetchNodeTree(self.treebeardUrl);
         }).fail(function (xhr, status, error) {
             $osf.growl('Unable to modify the institution on this node. Please try again. If the problem persists, email <a href="mailto:support@osf.io.">support@osf.io</a>');
             Raven.captureMessage('Unable to modify this institution!', {
