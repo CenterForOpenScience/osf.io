@@ -97,7 +97,7 @@ AddContributorViewModel = oop.extend(Paginator, {
         self.childrenToChange = ko.observableArray();
 
         self.emailSearch = ko.pureComputed(function () {
-            var emailRegex = new RegExp('[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[a-z]+');
+            var emailRegex = new RegExp('[a-z0-9!#$%&\'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&\'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?');
             if (emailRegex.test(String(self.query()))) {
                 return true;
             } else {
