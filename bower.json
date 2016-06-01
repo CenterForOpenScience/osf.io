@@ -1,5 +1,5 @@
 {
-  "name": "OSF",
+  "name":"OSF",
   "dependencies": {
     "jquery": "^1.11.2",
     "jquery-ui": "~1.10.4",

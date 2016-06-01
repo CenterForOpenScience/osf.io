@@ -781,6 +781,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         ('procedure', 'Procedure'),
         ('project', 'Project'),
         ('software', 'Software'),
+        ('share window', 'Share Window'),
         ('other', 'Other'),
         ('', 'Uncategorized')
     ])
