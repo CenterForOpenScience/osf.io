@@ -3976,7 +3976,8 @@ class DraftRegistration(StoredObject):
         approval.save()
         self.approval = approval
         self.add_status_log(initiated_by, DraftRegistrationLog.SUBMITTED)
-        self.checkout_files(initiated_by, save=save) # won't stop changes!
+        prereg_user = User.load(settings.PREREG_FILE_CHECKOUT_USER)
+        self.checkout_files(prereg_user, save=save)
         if save:
             self.save()
 

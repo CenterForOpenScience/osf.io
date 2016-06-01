@@ -457,6 +457,8 @@ DRAFT_REGISTRATION_APPROVAL_PERIOD = datetime.timedelta(days=10)
 assert (DRAFT_REGISTRATION_APPROVAL_PERIOD > EMBARGO_END_DATE_MIN), 'The draft registration approval period should be more than the minimum embargo end date.'
 
 PREREG_ADMIN_TAG = "prereg_admin"
+# User who checks out files for prereg (guid)
+PREREG_FILE_CHECKOUT_USER = ''
 
 ENABLE_INSTITUTIONS = False
 
