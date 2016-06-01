@@ -77,7 +77,7 @@ var ViewModel = function(data) {
                         modifyAllMessage + ' </label> ' + '</div>' + '</div>';
         }
         else {
-            message = 'Remove <b>' + item.name + '</b> from <b>' + data.node.title + '</b><br><br>' +
+            message = 'Remove <b>' + item.name + '</b> from <b>' + data.node.title + '</b>.<br><br>' +
                 '<div class="text-danger f-w-xl">Warning, you are not affiliated with <b>' + item.name +
                 '</b>.  If you remove it from your project, you cannot add it back.</div></br>';
             htmlMessage = '<div class="row">  ' +
