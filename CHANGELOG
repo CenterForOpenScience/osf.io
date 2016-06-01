@@ -2,6 +2,12 @@
 Changelog
 *********
 
+0.75.0 (unreleased)
+===================
+
+- Add support for affiliating users and projects with multiple institutions.
+- Use multiple celery queues and queue prioritization.
+
 0.74.0 (2016-05-25)
 ===================
 
