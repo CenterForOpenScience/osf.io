@@ -571,7 +571,6 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
         'file_path': file_path,
         'file_name_title': file_name_title,
         'file_name_ext': file_name_ext,
-        'version_id': version.identifier,
         'file_guid': file_guid,
         'file_id': file_node._id,
         'provider': file_node.provider,
