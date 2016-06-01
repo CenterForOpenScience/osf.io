@@ -3976,7 +3976,7 @@ class DraftRegistration(StoredObject):
         approval.save()
         self.approval = approval
         self.add_status_log(initiated_by, DraftRegistrationLog.SUBMITTED)
-        self.checkout_files(initiated_by, save=save)
+        self.checkout_files(initiated_by, save=save) # won't stop changes!
         if save:
             self.save()
 
