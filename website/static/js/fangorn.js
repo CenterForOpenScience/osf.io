@@ -1407,11 +1407,11 @@ function _fangornColumnTitles () {
 	    }, {
 	        title : 'Size',
 	        width : '10%',
-	        sort : false
+	        sort : true
 	    }, {
 	        title : 'Download Count',
 	        width : '15%',
-	        sort : false
+	        sort : true
 	    });
 	}
 	else{
