@@ -1,3 +1,4 @@
+import re
 import sys
 import json
 import uuid
@@ -42,6 +43,10 @@ def main():
     history_file.write('Run ID: {}\n'.format(complaints_run_id))
     history_file.write('Beginning extraction at: {}Z\n'.format(datetime.utcnow()))
 
+    user_cache = {}
+    node_cache = {}
+    location_cache = {}
+
     linenum = 0
     tally = {'missing_user': 0, 'missing_node': 0}
     for pageview_json in input_file.readlines():
@@ -54,44 +59,66 @@ def main():
         action = raw_pageview['action']
 
         location = None
-        if visit['ip_addr'] is not None:
-            location = geolite2.lookup(visit['ip_addr'])
+        ip_addr = visit['ip_addr']
+        if ip_addr is not None:
+            if not location_cache.has_key(ip_addr):
+                location_cache[ip_addr] = geolite2.lookup(ip_addr)
+
+            location = location_cache[ip_addr]
 
         session_id = str(uuid.uuid4())
         keen_id = get_or_create_keen_id(visit['visitor_id'], sqlite_db)
-        user = User.load(visit['user_id']) or None
-        node = Node.load(action['node_id']) or None
-        anon_id = None
-        if visit['user_id']:
-            anon_id = sha256(visit['user_id'] + settings.ANALYTICS_SALT).hexdigest()
 
-        user_entry_point = get_entry_point(user) if user else None
+        user_id = visit['user_id']
+        if user_id is not None:
+            if not user_cache.has_key(user_id):
+                user_obj = User.load(user_id)
+                user_cache[user_id] = {
+                    'anon': sha256(user_id + settings.ANALYTICS_SALT).hexdigest(),
+                    'entry_point': None if user_obj is None else get_entry_point(user_obj)
+                }
+
+            anon_id = user_cache[user_id]['anon']
+            user_entry_point = user_cache[user_id]['entry_point']
+
+
+        node = None
+        node_id = action['node_id']
+        if node_id is not None:
+            if not node_cache.has_key(node_id):
+                node_cache[node_id] = Node.load(node_id)
+            node = node_cache[node_id]
+
+        browser_version = [None, None]
+        if visit['ua']['browser']['version']:
+            browser_version = visit['ua']['browser']['version'].split('.')
+
         browser_info = {
             'device': {
-                'family': None
+                'family': visit['ua']['device'],
             },
             'os': {
                 'major': None,
                 'patch_minor': None,
                 'minor': None,
-                'family': parse_os_family(visit['ua']['os']), #Needs parser
-                'patch': None
+                'family': parse_os_family(visit['ua']['os']),
+                'patch': None,
             },
             'browser': {
-                'major': None,
-                'minor': None,
-                'family': parse_browser_family(visit['ua']['browser']['name']),  # Needs parser
-                'patch': None
+                'major': browser_version[0],
+                'minor': browser_version[1],
+                'family': parse_browser_family(visit['ua']['browser']['name']),
+                'patch': None,
             },
-            'resolution': visit['ua']['screen'],
         }
 
-        if visit['ua']['browser']['version']:
-            browser_version = visit['ua']['browser']['version']
-            browser_info['browser']['major'] = browser_version.split('.')[0]
-            browser_info['browser']['minor'] = browser_version.split('.')[1]
-
         node_tags = action['node_tags'] or ''
+
+        # piwik stores resolution as 1900x600 mostly, but sometimes as a float?
+        # For the sake of my sanity and yours, let's ignore floats.
+        screen_resolution = (None, None)
+        if re.search('x', visit['ua']['screen']):
+            screen_resolution = visit['ua']['screen'].split('x')
 
         pageview = {
             'page': {
@@ -104,9 +131,15 @@ def main():
                 'info': {}, # (add-on)
             },
             'tech': {
-                'browser': {},  # JS: Keen.helpers.getBrowserProfile(),
-                'ip': None,
-                'ua': None,  # manual
+                'browser': {  # JS-side will be filled in by Keen.helpers.getBrowserProfile()
+                    'cookies': True if visit['ua']['browser']['cookies'] else False,
+                    'screen': {
+                        'height': screen_resolution[1],
+                        'width': screen_resolution[0],
+                    },
+                },
+                'ip': ip_addr,  # private
+                'ua': None,
                 'info': browser_info,
             },
             'time': {
@@ -119,10 +152,11 @@ def main():
                 'returning': True if visit['visitor_returning'] else False,  # visit
             },
             'user': {
+                'id': user_id,  # private
                 'entryPoint': user_entry_point,
             },
             'node': {
-                'id': action['node_id'],
+                'id': node_id,
                 'title': getattr(node, 'title', None),
                 'type': getattr(node, 'category', None),
                 'tags': [tag for tag in node_tags.split(',')]
@@ -159,25 +193,22 @@ def main():
                             'url': 'referrer.url'
                         },
                         'output': 'referrer.info'
+                    },
+                    {  # private
+                        'name': 'keen:ip_to_geo',
+                        'input': {
+                            'ip': 'tech.ip'
+                        },
+                        'output': 'geo',
                     }
-                ]
+                ],
             }
         }
 
-        pageview['user']['id'] = visit['user_id'] or None
-        pageview['tech']['ip'] = visit['ip_addr']
-        pageview['keen']['addons'].append({
-            'name': 'keen:ip_to_geo',
-            'input': {
-                'ip': 'tech.ip'
-            },
-            'output': 'geo',
-        })
-
-        if action['node_id'] is None:
+        if node_id is None:
             tally['missing_node'] += 1
 
-        if visit['user_id'] is None:
+        if user_id is None:
             tally['missing_user'] += 1
 
         output_file.write(json.dumps(pageview) + '\n')
@@ -262,8 +293,6 @@ def parse_server_time(server_time):
         'month': timestamp.month,
         'year': timestamp.year,
     }
-
-
 
 if __name__ == "__main__":
     init_app(set_backends=True, routes=False)
