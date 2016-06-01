@@ -365,19 +365,19 @@ var FileViewPage = {
 
         self.mfrIframeParent = $('#mfrIframeParent');
         function goToRevisions(e){
-          var editable = self.editor && self.editor.selected;
-          var viewable = self.mfrIframeParent.is(':visible');
-          if (viewable){
-              self.mfrIframeParent.toggle();
-          }
-          if (editable) {
-              self.editor.selected = false;
-          }
-          self.revisions.selected = true;
+            var editable = self.editor && self.editor.selected;
+            var viewable = self.mfrIframeParent.is(':visible');
+            if (viewable){
+                self.mfrIframeParent.toggle();
+            }
+            if (editable) {
+                self.editor.selected = false;
+            }
+            self.revisions.selected = true;
         }
 
         function changeVersionHeader(){
-          m.render(document.getElementById('version-link'), m('a', {onclick: goToRevisions}, document.getElementById('version-link').innerHTML));
+            m.render(document.getElementById('version-link'), m('a', {onclick: goToRevisions}, document.getElementById('version-link').innerHTML));
         }
 
         //anchor checking hack that will select if true
@@ -386,9 +386,9 @@ var FileViewPage = {
         if (idx_uri !== '') {
             // The parser found a query so lets check what we need to do
             if ('show' in idx_uri){
-               if(idx_uri.show === 'revision'){
-                 self.mfrIframeParent.toggle();
-                 self.revisions.selected = true;
+                if(idx_uri.show === 'revision'){
+                    self.mfrIframeParent.toggle();
+                    self.revisions.selected = true;
                }
             }
         }

@@ -1159,7 +1159,7 @@ function _fangornUploadMethod(item) {
 
 function gotoFileEvent (item, toUrl) {
     if(toUrl === undefined)
-      toUrl = '/';
+        toUrl = '/';
     var tb = this;
     var redir = new URI(item.data.nodeUrl);
     redir.segment('files').segment(item.data.provider).segmentCoded(item.data.path.substring(1));
@@ -1179,34 +1179,34 @@ function gotoFileEvent (item, toUrl) {
  * @private
  */
 function _fangornTitleColumnHelper(tb,item,col,nameTitle,toUrl,classNameOption){
-  if (typeof tb.options.links === 'undefined') {
-      tb.options.links = true;
-  }
-  if (item.data.isAddonRoot && item.connected === false) { // as opposed to undefined, avoids unnecessary setting of this value
-      return _connectCheckTemplate.call(this, item);
-  }
-  if (item.kind === 'file' && item.data.permissions.view) {
-      var attrs = {};
-      if (tb.options.links) {
-          attrs =  {
-              className: classNameOption,
-              onclick: function(event) {
-                  event.stopImmediatePropagation();
-                  gotoFileEvent.call(tb, item, toUrl);
-              }
-          };
-      }
-      return m(
-          'span',
-          attrs,
-          nameTitle
-      );
-  }
-  if ((item.data.nodeType === 'project' || item.data.nodeType ==='component') && item.data.permissions.view) {
+    if (typeof tb.options.links === 'undefined') {
+        tb.options.links = true;
+    }
+    if (item.data.isAddonRoot && item.connected === false) { // as opposed to undefined, avoids unnecessary setting of this value
+        return _connectCheckTemplate.call(this, item);
+    }
+    if (item.kind === 'file' && item.data.permissions.view) {
+        var attrs = {};
+        if (tb.options.links) {
+            attrs =  {
+                className: classNameOption,
+                onclick: function(event) {
+                event.stopImmediatePropagation();
+                gotoFileEvent.call(tb, item, toUrl);
+            }
+            };
+        }
+        return m(
+            'span',
+            attrs,
+            nameTitle
+        );
+    }
+    if ((item.data.nodeType === 'project' || item.data.nodeType ==='component') && item.data.permissions.view) {
       return m('a.' + classNameOption,{ href: '/' + item.data.nodeID.toString() + toUrl},
               nameTitle);
-  }
-  return m('span', nameTitle);
+    }
+    return m('span', nameTitle);
 }
 
 function _fangornTitleColumn(item, col) {
@@ -1291,13 +1291,13 @@ function _fangornResolveRows(item) {
     });
 
     if (item.data.kind === 'file') {
-      default_columns.push(
-      {
-        data: 'version',
-        filter: true,
-        sortInclude : false,
-        custom: _fangornVersionColumn
-      });
+        default_columns.push(
+        {
+            data: 'version',
+            filter: true,
+            sortInclude : false,
+            custom: _fangornVersionColumn
+        });
         default_columns.push(
         {
             data : 'size',  // Data field name
@@ -1339,10 +1339,9 @@ function _fangornColumnTitles () {
         sort : true,
         sortType : 'text'
     }, {
-      title: 'Version',
-      width : '10%',
-      sort : false,
-      sortType : 'text'
+        title: 'Version',
+        width : '10%',
+        sort : false
     },{
         title : 'Size',
         width : '10%',

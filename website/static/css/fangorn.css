@@ -81,9 +81,9 @@
     color: #333333;
 }
 .fg-version-links {
-  cursor: pointer !important;
-  color: #337ab7;
-  font-weight: bold;
+    cursor: pointer !important;
+    color: #337ab7;
+    font-weight: bold;
 }
 .fg-file-links:hover, .fg-version-links:hover {
     text-decoration: underline;
