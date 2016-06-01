@@ -5,7 +5,6 @@ from modularodm import fields, Q
 from modularodm.exceptions import ModularOdmException
 
 from framework.mongo import StoredObject
-
 from website.conferences.exceptions import ConferenceError
 
 DEFAULT_FIELD_NAMES = {
@@ -31,6 +30,9 @@ class Conference(StoredObject):
     name = fields.StringField(required=True)
     info_url = fields.StringField(required=False, default=None)
     logo_url = fields.StringField(required=False, default=None)
+    location = fields.StringField(required=False, default=None)
+    start_date = fields.DateTimeField(default=None)
+    end_date = fields.DateTimeField(default=None)
     active = fields.BooleanField(required=True)
     admins = fields.ForeignField('user', list=True, required=False, default=None)
     #: Whether to make submitted projects public
