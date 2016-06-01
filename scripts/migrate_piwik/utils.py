@@ -8,7 +8,7 @@ def get_dir_for(phase):
 
 def get_history_run_id_for(phase):
     history = get_history_for(phase, 'r')
-    return history.readline().replace('Run ID: ', '').rstrip()
+    return history.readline().replace(settings.RUN_HEADER, '').rstrip()
 
 def get_history_for(phase, mode):
     filename = '/'.join([get_dir_for(phase), settings.HISTORY_FILENAME])
@@ -16,7 +16,7 @@ def get_history_for(phase, mode):
 
 def get_complaints_run_id_for(phase):
     complaints = get_complaints_for(phase, 'r')
-    return complaints.readline().replace('Run ID: ', '').rstrip()
+    return complaints.readline().replace(settings.RUN_HEADER, '').rstrip()
 
 def get_complaints_for(phase, mode):
     filename = '/'.join([get_dir_for(phase), settings.COMPLAINTS_FILENAME])

@@ -28,3 +28,4 @@ LOAD_FILE = 'load.data'
 
 HISTORY_FILENAME = 'history.txt'
 COMPLAINTS_FILENAME = 'complaints.txt'
+RUN_HEADER = 'Run ID: '
