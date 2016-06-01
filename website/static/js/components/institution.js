@@ -41,24 +41,15 @@ var InstitutionImg = {
 var CheckableInstitution = {
     view: function(ctrl, opts) {
         var checked = required(opts, 'checked');
-        return m('',[
-            m.component(InstitutionImg, opts),
-            checked ?
-            m('i.img-circle.fa.fa-check',
-                {
-                    style: {
-                        color: '#C7FFC7',
-                        textAlign: 'center',
-                        fontSize: '275%',
-                        width: '100%', height: '100%',
-                        top: '0', left: '0',
-                        position: 'absolute',
-                        display: 'block',
-                        background: 'rgba(0, 0, 0, .4)'
-                    }
-                }
-            ) : '',
-        ]);
+        var mutedStyle = {
+            opacity: '0.25',
+            '-webkit-filter': 'grayscale(100%)',
+            filter: 'grayscale(100%)'
+        };
+        if (!checked) {
+            opts.style = mutedStyle;
+        }
+        return m.component(InstitutionImg, opts);
     }
 };
 
