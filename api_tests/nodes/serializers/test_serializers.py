@@ -46,7 +46,7 @@ class TestNodeSerializer(DbTestCase):
         assert_in('contributors', relationships)
         assert_in('files', relationships)
         assert_in('parent', relationships)
-        assert_in('primary_institution', relationships)
+        assert_in('affiliated_institutions', relationships)
         parent_link = relationships['parent']['links']['related']['href']
         assert_equal(
             urlparse(parent_link).path,
