@@ -6,6 +6,11 @@ require('css/quick-project-search-plugin.css');
 require('loaders.css/loaders.min.css');
 var Dropzone = require('dropzone');
 
+// Don't show dropped content if user drags outside dropzone
+window.ondragover = function(e) { e.preventDefault(); };
+window.ondrop = function(e) { e.preventDefault(); };
+
+
 var xhrconfig = function(xhr) {
     xhr.withCredentials = true;
 };
