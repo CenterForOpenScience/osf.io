@@ -27,9 +27,9 @@ def main():
             complaints += 1
             complaints_file.write('Line {}: empty url!\n'.format(linenum))
 
-        if pageview['page']['title'] is None:
-            complaints += 1
-            complaints_file.write('Line {}: empty page title!\n'.format(linenum))
+        # if pageview['page']['title'] is None:
+        #     complaints += 1
+        #     complaints_file.write('Line {}: empty page title!\n'.format(linenum))
 
         if pageview['time']['utc'] is None:
             complaints += 1
