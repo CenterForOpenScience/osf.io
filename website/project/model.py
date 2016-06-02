@@ -859,8 +859,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     mailing_enabled = fields.BooleanField(default=True, index=True)
 
     # Flag indicating this node should be inspected by a weekly celerybeat job
-    # to synchronize the mailing list on Mailgun
-    mailing_updated = fields.BooleanField(default=False, index=True)
+    # to synchronize the mailing list on Mailgun. Defaults to True in case the
+    # initial create_list job fails.
+    mailing_updated = fields.BooleanField(default=True, index=True)
 
     wiki_pages_current = fields.DictionaryField()
     wiki_pages_versions = fields.DictionaryField()
@@ -1523,6 +1524,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         # Set mailing attribute before save
         if self.is_registration or self.is_collection:
             self.mailing_enabled = False
+            self.mailing_updated = False
 
         is_original = not self.is_registration and not self.is_fork
         if 'suppress_log' in kwargs.keys():
@@ -2296,6 +2298,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         registered.tags = self.tags
         registered.piwik_site_id = None
         registered.mailing_enabled = False
+        registered.mailing_updated = False
         registered.primary_institution = self.primary_institution
         registered._affiliated_institutions = self._affiliated_institutions
         registered.alternative_citations = self.alternative_citations

@@ -44,6 +44,7 @@ def migrate(dry_run=True):
             try:
                 logger.info('({0}/{1})Disabling mailing list for registration/dashboard {2}'.format(i+1, ncount, node._id))
                 node.mailing_enabled = False    
+                node.mailing_updated = False
                 node.save()
                 successful_disables.append(node._id)
             except Exception as e:
@@ -58,6 +59,7 @@ def migrate(dry_run=True):
                 )
                 logger.info('({0}/{1})Enabling mailing list for node {2}'.format(i+1, ncount, node._id))
                 node.mailing_enabled = True
+                node.mailing_updated = True
 
                 for user in node.contributors:
                     if user.is_active:
