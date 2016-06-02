@@ -1247,13 +1247,13 @@ function _connectCheckTemplate(item){
 
 function generateURLClipBoard(item){
 		var url = waterbutler.buildTreeBeardDownload(item);
-		var clipBoard = function(elem) {
+		var cb = function(elem) {
                 makeClient(elem);
             };
 		
          var clipboardHTML = m('div.input-group[style="width: 180px"]',
                         [
-                            m('span.input-group-btn', m('button.btn.btn-default.btn-sm[type="button"][data-clipboard-text="'+url+ '"]', {config: clipBoard}, m('.fa.fa-copy'))),
+                            m('span.input-group-btn', m('button.btn.btn-default.btn-sm[type="button"][data-clipboard-text="'+url+ '"]', {config: cb}, m('.fa.fa-copy'))),
                             m('input[value="'+url+'"][type="text"][readonly="readonly"][style="float:left; height: 30px;background-color: #F5F5F5;color:#333333;"]')
                         ]
                     );
@@ -1407,11 +1407,11 @@ function _fangornColumnTitles () {
 	    }, {
 	        title : 'Size',
 	        width : '10%',
-	        sort : true
+	        sort : false
 	    }, {
 	        title : 'Download Count',
 	        width : '15%',
-	        sort : true
+	        sort : false
 	    });
 	}
 	else{
