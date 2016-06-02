@@ -32,7 +32,7 @@ def main():
         print("You have unaddressed complaints! Bailing...")
         sys.exit()
 
-    sqlite_db = sqlite3.connect('piwik_users.sqlite')
+    sqlite_db = sqlite3.connect(script_settings.SQLITE_PATH)
     sqlite_setup(sqlite_db)
 
     input_file = open(utils.get_dir_for('extract') + '/' + script_settings.EXTRACT_FILE, 'r')

@@ -7,8 +7,10 @@ PIWIK_DB_NAME = 'piwik_staging'
 PROJECT_ID = 'keen-project-id'
 WRITE_KEY = 'keen-write-key'
 
-
 OUTPUT_DIR = 'piwik-migration'
+
+SQLITE_NAME = 'piwik-users.sqlite'
+SQLITE_PATH = '{}/{}'.format(OUTPUT_DIR, SQLITE_NAME)
 
 PHASES = {
     'EXTRACT': {
