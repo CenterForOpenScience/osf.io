@@ -141,7 +141,7 @@ class TestCollectionCreate(ApiTestCase):
         }
         res = self.app.post_json_api(self.url, collection, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
-        assert_equal(res.json['errors'][0]['detail'], 'Resource identifier does not match server endpoint.')
+        assert_equal(res.json['errors'][0]['detail'], 'The resource type you specified "Wrong type." does not match the type of the resource you specified "collections".')
 
     def test_creates_collection_properties_not_nested(self):
         project = {
@@ -867,7 +867,7 @@ class TestCollectionNodeLinkCreate(ApiTestCase):
         payload = self.post_payload(self.public_project._id, outer_type='wrong_type')
         res = self.app.post_json_api(self.url, payload, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
-        assert_equal(res.json['errors'][0]['detail'], 'Resource identifier does not match server endpoint.')
+        assert_equal(res.json['errors'][0]['detail'], 'The resource type you specified "wrong_type" does not match the type of the resource you specified "node_links".')
 
 
 class TestCollectionNodeLinkDetail(ApiTestCase):
@@ -1623,7 +1623,7 @@ class TestCollectionLinksBulkCreate(ApiTestCase):
         payload = {'data': [{'type': 'Wrong type.', 'relationships': {'nodes': {'data': {'type': 'nodes', 'id': self.user_two_collection._id}}}}]}
         res = self.app.post_json_api(self.collection_url, payload, auth=self.user.auth, expect_errors=True, bulk=True)
         assert_equal(res.status_code, 409)
-        assert_equal(res.json['errors'][0]['detail'], 'Resource identifier does not match server endpoint.')
+        assert_equal(res.json['errors'][0]['detail'], 'The resource type you specified "Wrong type." does not match the type of the resource you specified "node_links".')
 
 
 class TestBulkDeleteCollectionNodeLinks(ApiTestCase):
