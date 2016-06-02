@@ -857,12 +857,10 @@ var extractContributorNamesFromAPIData = function(contributor){
 // Google analytics event tracking on the dashboard/my projects pages
 var trackClick = function(category, action, label){
     window.ga('send', 'event', category, action, label);
-    //in order to make the href redirect work under knockout onclick binding
 
-    // KeenTracker from base-page.js
     KeenTracker.getInstance().trackPrivateEvent(
         'front-end-events', {
-            frontEndEvent: {
+            interaction: {
                 category: category,
                 action: action,
                 label: label,
@@ -870,6 +868,7 @@ var trackClick = function(category, action, label){
         }
     );
 
+    //in order to make the href redirect work under knockout onclick binding
     return true;
 };
 

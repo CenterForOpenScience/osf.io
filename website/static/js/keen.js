@@ -71,7 +71,7 @@ var KeenTracker = (function() {
                 tags: lodashGet(node, 'tags'),
             },
             user: {
-                entryPoint: user.entryPoint,
+                entry_point: user.entryPoint,
             },
             geo: {},
             anon: {
