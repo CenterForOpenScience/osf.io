@@ -986,7 +986,6 @@ def node_child_tree(user, node_ids):
                 'url': node.url if can_read else '',
                 'title': node.title if can_read else 'Private Project',
                 'is_public': node.is_public,
-                'can_write': node.has_permission(user, WRITE),
                 'contributors': contributors,
                 'visible_contributors': node.visible_contributor_ids,
                 'is_admin': node.has_permission(user, ADMIN),

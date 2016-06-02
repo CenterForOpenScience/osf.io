@@ -56,7 +56,6 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
         visibleContributors: nodeTree.node.visible_contributors,
         adminContributors: adminContributors,
         registeredContributors: registeredContributors,
-        canWrite: nodeTree.node.can_write,
         institutions: nodeInstitutions,
         changed: false,
         checked: false,
