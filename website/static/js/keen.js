@@ -220,7 +220,6 @@ var KeenTracker = (function() {
     return {
         getInstance: function(keenParams) {
             if (!instance) {
-                console.log('In builder, contextvars is:', window.contextVars);
                 instance = new KeenTracker();
                 instance.init(window.contextVars.keen);
             }
