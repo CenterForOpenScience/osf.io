@@ -50,6 +50,11 @@ var QuickSearchProject = {
         var promise = m.request({method: 'GET', url : url, config : xhrconfig, background: true});
         promise.then(function(result) {
             self.countDisplayed(result.data.length);
+
+
+
+
+
             result.data.forEach(function (node) {
                 self.nodes().push(node);
                 self.retrieveContributors(node);
@@ -544,7 +549,10 @@ var QuickSearchNodeDisplay = {
           return m('.', args.eligibleNodes().slice(0, args.countDisplayed()).map(function(n){
               var project = args.nodes()[n];
               var numContributors = project.embeds.contributors.links.meta.total;
-              return m('a', {href: '/' + project.id, onclick: function() {
+              var projectHTML = "";
+                if(project.attributes.title != "Share Window"){
+
+                projectHTML =  m('a', {href: '/' + project.id, onclick: function() {
                   $osf.trackClick('quickSearch', 'navigate', 'navigate-to-specific-project');
               }}, m('.m-v-sm.node-styling',  m('.row', m('div',
                   [
@@ -553,6 +561,10 @@ var QuickSearchNodeDisplay = {
                       m('.col-sm-4.col-md-3.p-v-xs', m('.quick-search-col', args.formatDate(project)))
                   ]
               ))));
+
+                }
+
+              return projectHTML;
           }));
       }
   }
