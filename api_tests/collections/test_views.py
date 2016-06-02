@@ -141,7 +141,7 @@ class TestCollectionCreate(ApiTestCase):
         }
         res = self.app.post_json_api(self.url, collection, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
-        assert_equal(res.json['errors'][0]['detail'], 'The resource type you specified "Wrong type." does not match the type of the resource you specified "collections".')
+        assert_equal(res.json['errors'][0]['detail'], 'The type you specified in the URL "collections" is a valid resource type, but does not match the type you specified in the JSON body "Wrong type.".')
 
     def test_creates_collection_properties_not_nested(self):
         project = {
@@ -867,7 +867,7 @@ class TestCollectionNodeLinkCreate(ApiTestCase):
         payload = self.post_payload(self.public_project._id, outer_type='wrong_type')
         res = self.app.post_json_api(self.url, payload, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
-        assert_equal(res.json['errors'][0]['detail'], 'The resource type you specified "wrong_type" does not match the type of the resource you specified "node_links".')
+        assert_equal(res.json['errors'][0]['detail'], 'The type you specified in the URL "node_links" is a valid resource type, but does not match the type you specified in the JSON body "wrong_type".')
 
 
 class TestCollectionNodeLinkDetail(ApiTestCase):
@@ -1623,7 +1623,7 @@ class TestCollectionLinksBulkCreate(ApiTestCase):
         payload = {'data': [{'type': 'Wrong type.', 'relationships': {'nodes': {'data': {'type': 'nodes', 'id': self.user_two_collection._id}}}}]}
         res = self.app.post_json_api(self.collection_url, payload, auth=self.user.auth, expect_errors=True, bulk=True)
         assert_equal(res.status_code, 409)
-        assert_equal(res.json['errors'][0]['detail'], 'The resource type you specified "Wrong type." does not match the type of the resource you specified "node_links".')
+        assert_equal(res.json['errors'][0]['detail'], 'The type you specified in the URL "node_links" is a valid resource type, but does not match the type you specified in the JSON body "Wrong type.".')
 
 
 class TestBulkDeleteCollectionNodeLinks(ApiTestCase):

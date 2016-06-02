@@ -274,7 +274,7 @@ class TestNodeChildCreate(ApiTestCase):
         }
         res = self.app.post_json_api(self.url, child, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
-        assert_equal(res.json['errors'][0]['detail'], 'The resource type you specified "Wrong type." does not match the type of the resource you specified "nodes".')
+        assert_equal(res.json['errors'][0]['detail'], 'The type you specified in the URL "nodes" is a valid resource type, but does not match the type you specified in the JSON body "Wrong type.".')
 
     def test_creates_child_properties_not_nested(self):
         child = {
@@ -471,7 +471,7 @@ class TestNodeChildrenBulkCreate(ApiTestCase):
         }
         res = self.app.post_json_api(self.url, child, auth=self.user.auth, expect_errors=True, bulk=True)
         assert_equal(res.status_code, 409)
-        assert_equal(res.json['errors'][0]['detail'], 'The resource type you specified "Wrong type." does not match the type of the resource you specified "nodes".')
+        assert_equal(res.json['errors'][0]['detail'], 'The type you specified in the URL "nodes" is a valid resource type, but does not match the type you specified in the JSON body "Wrong type.".')
 
         self.project.reload()
         assert_equal(len(self.project.nodes), 0)

@@ -473,7 +473,7 @@ class TestNodeLinkCreate(ApiTestCase):
         }
         res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
-        assert_equal(res.json['errors'][0]['detail'], 'The resource type you specified "Wrong type." does not match the type of the resource you specified "node_links".')
+        assert_equal(res.json['errors'][0]['detail'], 'The type you specified in the URL "node_links" is a valid resource type, but does not match the type you specified in the JSON body "Wrong type.".')
 
 
 class TestNodeLinksBulkCreate(ApiTestCase):
@@ -742,7 +742,7 @@ class TestNodeLinksBulkCreate(ApiTestCase):
         payload = {'data': [{'type': 'Wrong type.', 'relationships': {'nodes': {'data': {'type': 'nodes', 'id': self.user_two_project._id}}}}]}
         res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True, bulk=True)
         assert_equal(res.status_code, 409)
-        assert_equal(res.json['errors'][0]['detail'], 'The resource type you specified "Wrong type." does not match the type of the resource you specified "node_links".')
+        assert_equal(res.json['errors'][0]['detail'], 'The type you specified in the URL "node_links" is a valid resource type, but does not match the type you specified in the JSON body "Wrong type.".')
 
 
 class TestBulkDeleteNodeLinks(ApiTestCase):

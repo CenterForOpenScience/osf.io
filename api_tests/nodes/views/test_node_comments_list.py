@@ -572,7 +572,7 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
         }
         res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
-        assert_equal(res.json['errors'][0]['detail'], 'The resource type you specified "cookies" does not match the type of the resource you specified "comments".')
+        assert_equal(res.json['errors'][0]['detail'], 'The type you specified in the URL "comments" is a valid resource type, but does not match the type you specified in the JSON body "cookies".')
 
     def test_create_comment_no_content(self):
         self._set_up_private_project_with_private_comment_level()

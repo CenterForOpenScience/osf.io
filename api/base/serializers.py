@@ -225,7 +225,7 @@ class IDField(ser.CharField):
             if request.method in utils.UPDATE_METHODS and not utils.is_bulk_request(request):
                 id_field = getattr(self.root.instance, self.source, '_id')
                 if id_field != data:
-                    raise Conflict(detail=('The resource id you specified "' + data + '" does not match the id of the resource you specified "' + id_field + '".'))
+                    raise Conflict(detail=('The id you specified in the URL "' + id_field + '" exists, but does not match the id you specified in the JSON body "' + data + '".'))
         return super(IDField, self).to_internal_value(data)
 
 
@@ -249,7 +249,8 @@ class TypeField(ser.CharField):
             type_ = self.root.Meta.type_
 
         if type_ != data:
-            raise Conflict(detail=('The resource type you specified "' + data + '" does not match the type of the resource you specified "' + type_ + '".'))
+            raise Conflict(detail=('The type you specified in the URL "' +
+                                   type_ + '" is a valid resource type, but does not match the type you specified in the JSON body "' + data + '".'))
 
         return super(TypeField, self).to_internal_value(data)
 
@@ -260,6 +261,8 @@ class TargetTypeField(ser.CharField):
     """
 
     def __init__(self, **kwargs):
+        for key, value in kwargs.iteritems():
+            print "%s = %s" % (key, value)
         kwargs['write_only'] = True
         kwargs['required'] = True
         self.target_type = kwargs.pop('target_type')
@@ -267,7 +270,7 @@ class TargetTypeField(ser.CharField):
 
     def to_internal_value(self, data):
         if self.target_type != data:
-            raise Conflict(detail=('The resource type you specified "' + data + '" does not match the type of the target resource you specified "' + self.target_type + '".'))
+            raise Conflict(detail=('The target type you specified in the JSON body "' + data + '" does not match the correct type for this target "' + self.target_type + '".'))
         return super(TargetTypeField, self).to_internal_value(data)
 
 
