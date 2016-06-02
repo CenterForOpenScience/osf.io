@@ -35,7 +35,8 @@ $(document).ready(function(){
                         ])
                     ]
                 )),
-                affiliatedInstitutions.length ? m('.institutions-panel', m('.container',
+                // TODO: We hide the institution logos on small screens. Better to make the carousel responsive.
+                affiliatedInstitutions.length ? m('.institutions-panel.hidden-xs', m('.container',
                     [
                         m('.row', [
                             m(columnSizeClass,  m.component(InstitutionsPanel, {
