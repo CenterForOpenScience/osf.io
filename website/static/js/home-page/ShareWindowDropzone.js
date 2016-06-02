@@ -54,7 +54,7 @@ var ShareWindowDropzone = {
 
   },
   view: function(ctrl, args) {
-          return m('div.p-v-xl.text-center .pointer .panel #shareWindowDropzone',m('p',m('h1',  'Drag and drop files to upload them')), "Having trouble click anywhere in this box to manually upload a file");
+          return m('div.p-v-xl.text-center .pointer .panel #shareWindowDropzone', m('p', m('h1',  'Drag and drop files here'), 'Having trouble? Click anywhere in this box to manually upload a file.'));
   }
 };
 
