@@ -267,10 +267,11 @@ def node_setting(auth, node, **kwargs):
     #check institutions:
     try:
         email_domains = [email.split('@')[1] for email in auth.user.emails]
-        inst = Institution.find_one(Q('email_domains', 'in', email_domains))
-        if inst not in auth.user.affiliated_institutions:
-            auth.user.affiliated_institutions.append(inst)
-            auth.user.save()
+        insts = Institution.find(Q('email_domains', 'in', email_domains))
+        for inst in insts:
+            if inst not in auth.user.affiliated_institutions:
+                auth.user.affiliated_institutions.append(inst)
+                auth.user.save()
     except (IndexError, NoResultsFound):
         pass
 
@@ -737,11 +738,7 @@ def _view_project(node, auth, primary=False):
                 'doi': node.get_identifier_value('doi'),
                 'ark': node.get_identifier_value('ark'),
             },
-            'institution': {
-                'name': node.primary_institution.name if node.primary_institution else None,
-                'logo_path': node.primary_institution.logo_path if node.primary_institution else None,
-                'id': node.primary_institution._id if node.primary_institution else None
-            },
+            'institutions': get_affiliated_institutions(node) if node else [],
             'alternative_citations': [citation.to_json() for citation in node.alternative_citations],
             'has_draft_registrations': node.has_active_draft_registrations,
             'contributors': [contributor._id for contributor in node.contributors]
@@ -948,11 +945,12 @@ def node_child_tree(user, node_ids):
     """ Format data to test for node privacy settings for use in treebeard.
     """
     items = []
+
     for node_id in node_ids:
         node = Node.load(node_id)
         assert node, '{} is not a valid Node.'.format(node_id)
 
-        can_read = node.has_permission(user, 'read')
+        can_read = node.has_permission(user, READ)
         can_read_children = node.has_permission_on_children(user, 'read')
         if not can_read and not can_read_children:
             continue
@@ -965,10 +963,14 @@ def node_child_tree(user, node_ids):
                 'is_confirmed': contributor.is_confirmed
             })
 
+        affiliated_institutions = [{
+            'id': affiliated_institution.pk,
+            'name': affiliated_institution.name
+        } for affiliated_institution in node.affiliated_institutions]
+
         children = []
         # List project/node if user has at least 'read' permissions (contributor or admin viewer) or if
         # user is contributor on a component of the project/node
-        can_write = node.has_permission(user, 'admin')
         children.extend(node_child_tree(
             user,
             [
@@ -984,10 +986,10 @@ def node_child_tree(user, node_ids):
                 'url': node.url if can_read else '',
                 'title': node.title if can_read else 'Private Project',
                 'is_public': node.is_public,
-                'can_write': can_write,
                 'contributors': contributors,
                 'visible_contributors': node.visible_contributor_ids,
-                'is_admin': node.has_permission(user, ADMIN)
+                'is_admin': node.has_permission(user, ADMIN),
+                'affiliated_institutions': affiliated_institutions
             },
             'user_id': user._id,
             'children': children,
@@ -996,6 +998,7 @@ def node_child_tree(user, node_ids):
             'category': node.category,
             'permissions': {
                 'view': can_read,
+                'is_admin': node.has_permission(user, 'read')
             }
         }
 

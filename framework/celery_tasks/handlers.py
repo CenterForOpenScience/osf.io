@@ -5,8 +5,8 @@ import functools
 
 from celery import group
 from flask import _app_ctx_stack as context_stack
-from api.base.api_globals import api_globals
 
+from api.base.api_globals import api_globals
 from website import settings
 
 

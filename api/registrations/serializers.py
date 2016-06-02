@@ -118,8 +118,8 @@ class RegistrationSerializer(NodeSerializer):
         related_view_kwargs={'node_id': '<root._id>'}
     ))
 
-    primary_institution = HideIfWithdrawal(RelationshipField(
-        related_view='registrations:registration-institution-detail',
+    affiliated_institutions = HideIfWithdrawal(RelationshipField(
+        related_view='registrations:registration-institutions',
         related_view_kwargs={'node_id': '<pk>'}
     ))
     registrations = HideIfRegistration(RelationshipField(
