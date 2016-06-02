@@ -46,15 +46,15 @@ var ShareWindowDropzone = {
                                withCredentials: true,
                                url:'placeholder',
                                method:'put',
-                               previewTemplate: '<div class="text-center dz-filename"><span data-dz-name></span> is uploaded to to Share Window</div>'
+                               previewTemplate: '<div class="text-center dz-filename"><span data-dz-name></span> has been uploaded to your Share Window</div>'
 
                                });
 
   },
   view: function(ctrl, args) {
-          return  m('.m-v-xs.node-styling',  m('.row', m('div',
+          return  m('.node-styling',  m('.row', m('div',
                   [
-                      m('.m-v-xl', m('#shareWindowDropzone',  m('h1.text-center',  'Dropzone'))),
+                      m('.m-v-xl', m('#shareWindowDropzone',  m('h1.text-center',  'Drag and drop files to upload them'))),
                   ]
               )));
   }
