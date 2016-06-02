@@ -210,11 +210,6 @@ var ViewModel = function(data) {
                     self.availableInstitutions.push(removed);
                 }
             }
-            self.loading(false);
-            self.modifyChildren(false);
-            //fetchNodeTree is called to refresh self.nodesOriginal after a state change.  This is the simplest way to
-            //update state check if the modal is necessary.
-            self.fetchNodeTree(self.treebeardUrl);
         }).fail(function (xhr, status, error) {
             $osf.growl('Unable to modify the institution on this node. Please try again. If the problem persists, email <a href="mailto:support@osf.io.">support@osf.io</a>');
             Raven.captureMessage('Unable to modify this institution!', {
@@ -224,7 +219,12 @@ var ViewModel = function(data) {
                     error: error
                 }
             });
-        });
+        }).always(function() {
+            self.modifyChildren(false);
+            self.loading(false);
+            //fetchNodeTree is called to refresh self.nodesOriginal after a state change.  This is the simplest way to
+            //update state to check if the modal is necessary.
+            self.fetchNodeTree(self.treebeardUrl);        });
     };
 };
 
