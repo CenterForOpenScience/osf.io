@@ -10,10 +10,7 @@ from django.conf import settings
 
 
 class DeskError(Exception):
-
-    def __init__(self, message):
-        Exception.__init__(self, message)  # Exception is an old-school class
-        self.message = message
+    pass
 
 
 class DeskClient(object):
@@ -36,10 +33,10 @@ class DeskClient(object):
         """ Constructs the URL for a given service."""
         return 'https://%s.%s/%s' % (self.SITE_NAME, DeskClient.BASE_URL, service)
 
-    def call_get(self, service, params=None, data=None):
+    def call_get(self, service, params=None):
         """ Calls a GET API for the given service name and URL parameters."""
         url = self.build_url(service)
-        r = self.oauth.get(url, params=params, data=json.dumps(data))
+        r = self.oauth.get(url, params=params)
         if r.status_code != requests.codes.ok:
             raise DeskError(str(r.status_code))
         return json.loads(r.content)
@@ -148,12 +145,12 @@ class DeskClient(object):
 
     def cases(self, params):
         case_list = [None]
-        data = {
+        params.update({
             'sort_field': 'created_at',
             'sort_direction': 'desc'
-        }
+        })
         try:
-            case_list = self.call_get('cases/search', params, data)
+            case_list = self.call_get('cases/search', params)
         except DeskError:
             pass
         return case_list[u'_embedded'][u'entries']
