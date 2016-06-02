@@ -2,6 +2,8 @@ from django.http import HttpResponseRedirect
 
 from rest_framework.exceptions import AuthenticationFailed
 
+from framework.auth import cas
+
 from api.base.utils import get_user_auth
 from api.base.views import JSONAPIBaseView
 
@@ -30,7 +32,8 @@ class SSOView(JSONAPIBaseView):
         sso_secret = settings.DISCOURSE_SSO_SECRET
 
         if not auth.logged_in:
-            return HttpResponseRedirect(settings.DOMAIN)
+            #sso_url = furl(settings.DISCOURSE_SERVER_URL).join('/session/sso')
+            return HttpResponseRedirect(cas.get_login_url(settings.HOST, auto=True))
 
         encoded_payload = request.GET.get('sso', '')
         payload = base64.b64decode(encoded_payload)
