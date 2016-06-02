@@ -257,7 +257,6 @@ KEEN = {
         'project_id': None,
         'master_key': None,
         'write_key': None,
-        'read_key': None,
     },
     'private': {
         'project_id': None,
