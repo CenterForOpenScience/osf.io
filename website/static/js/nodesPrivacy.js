@@ -52,7 +52,7 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
             public: nodeMeta.node.is_public,
             id: nodeMeta.node.id,
             title: nodeMeta.node.title,
-            canWrite: nodeMeta.node.can_write,
+            isAdmin: nodeMeta.node.is_admin,
             changed: false
         };
     });
@@ -252,7 +252,7 @@ NodesPrivacyViewModel.prototype.clear = function() {
 NodesPrivacyViewModel.prototype.selectAll = function() {
     var nodesState = ko.toJS(this.nodesState());
     for (var node in nodesState) {
-        if (nodesState[node].canWrite) {
+        if (nodesState[node].isAdmin) {
             nodesState[node].public = true;
             nodesState[node].changed = nodesState[node].public !== this.nodesOriginal[node].public;
         }
@@ -264,7 +264,7 @@ NodesPrivacyViewModel.prototype.selectAll = function() {
 NodesPrivacyViewModel.prototype.selectNone = function() {
     var nodesState = ko.toJS(this.nodesState());
     for (var node in nodesState) {
-        if (nodesState[node].canWrite) {
+        if (nodesState[node].isAdmin) {
             nodesState[node].public = false;
             nodesState[node].changed = nodesState[node].public !== this.nodesOriginal[node].public;
 
