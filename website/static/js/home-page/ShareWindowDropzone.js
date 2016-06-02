@@ -25,12 +25,21 @@ var ShareWindowDropzone = {
         shareWindowId = result.data[0].id;
     });
 
-      Dropzone.options.shareWindowDropzone = {
+    Dropzone.options.shareWindowDropzone = {
 
-             accept: function(file, done) {
+            accept: function(file, done) {
                 this.options.url = waterbutler.buildUploadUrl(false,'osfstorage',shareWindowId, file,{});
                 done();
-            }
+            },
+
+            sending: function(file, xhr) {
+             //Hack to remove webkitheaders
+             var _send = xhr.send;
+             xhr.send = function() {
+                 _send.call(xhr, file);
+             };
+         }
+
     };
 
     $('#shareWindowDropzone').dropzone({
