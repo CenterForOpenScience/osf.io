@@ -426,7 +426,9 @@ def project_reorder_components(node, **kwargs):
 def project_statistics(auth, node, **kwargs):
     if not (node.can_edit(auth) or node.is_public):
         raise HTTPError(http.FORBIDDEN)
-    return _view_project(node, auth, primary=True)
+    ret = _view_project(node, auth, primary=True)
+    ret['node']['keenio_read_key'] = node.get_or_create_keenio_readkey()
+    return ret
 
 
 @must_be_valid_project
@@ -725,7 +727,6 @@ def _view_project(node, auth, primary=False):
             'anonymous': anonymous,
             'points': len(node.get_points(deleted=False, folders=False)),
             'piwik_site_id': node.piwik_site_id,
-            'keenio_read_key': node.get_or_create_keenio_readkey(),
             'comment_level': node.comment_level,
             'has_comments': bool(Comment.find(Q('node', 'eq', node))),
             'has_children': bool(Comment.find(Q('node', 'eq', node))),

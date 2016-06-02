@@ -4,22 +4,21 @@ var keenAnalysis = require('keen-analysis');
 var keenDataviz = require('keen-dataviz');
 require('keen-dataviz/dist/keen-dataviz.min.css');
 var ko = require('knockout');
-var ctx = window.contextVars;
 var $osf = require('js/osfHelpers');
 
 var KeenViz = function(){
     var self = this;
 
     self.keenClient = new keenAnalysis({
-        projectId: ctx.keen.public.projectId,
-        readKey : ctx.keen.public.readKey,
+        projectId: window.contextVars.keen.public.projectId,
+        readKey : window.contextVars.keen.public.readKey,
     });
 
     self.visitsByDay = function() {
         var visitsQuery = {
             'type':'count_unique',
             'params' : {
-                event_collection: 'public-pageviews',
+                event_collection: 'pageviews',
                 timeframe: 'this_7_days',
                 interval: 'daily',
                 target_property: 'visitor.session'
@@ -47,7 +46,7 @@ var KeenViz = function(){
         var topReferrersQuery = {
             'queryType': 'count_unique',
             'queryParams': {
-                event_collection: 'public-pageviews',
+                event_collection: 'pageviews',
                 timeframe: 'this_7_days',
                 target_property: 'keen.id',
                 group_by: 'referrer.info.domain'
@@ -61,7 +60,7 @@ var KeenViz = function(){
                 self.loadRefs(false);
             })
             .catch(function(err){
-                new keenDataviz.el('#topReferrers').message(err.message);
+                new keenDataviz().el('#topReferrers').message(err.message);
             });
 
         $osf.applyBindings(self, '#topReferrers');
@@ -84,7 +83,7 @@ var KeenViz = function(){
         var serverTimeVisitsQuery = {
             'type': 'count_unique',
             'params': {
-                event_collection: 'public-pageviews',
+                event_collection: 'pageviews',
                 timeframe: 'this_7_days',
                 target_property: 'keen.id',
                 group_by: 'time.local.hour_of_day',
