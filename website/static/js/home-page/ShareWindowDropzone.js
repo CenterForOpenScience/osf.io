@@ -4,10 +4,12 @@ var waterbutler =  require('js/waterbutler');
 
 require('css/quick-project-search-plugin.css');
 require('loaders.css/loaders.min.css');
+
 var Dropzone = require('dropzone');
 
 var xhrconfig = function(xhr) {
     xhr.withCredentials = true;
+
 };
 
 var ShareWindowDropzone = {
@@ -38,9 +40,33 @@ var ShareWindowDropzone = {
 
   },
   view: function(ctrl, args) {
-          return  m('.node-styling',  m('.row', m('div',
+              return m('.node-styling', m('.row', m('div',
                   [
-                      m('.m-v-xl', m('#shareWindowDropzone',  m('h1.text-center',  'Drag and drop files to upload them'))),
+                      m('.m-v-xl', m('#shareWindowDropzone', m('h1.text-center', 'Drag and drop files to upload'),
+/*
+                          m('p.text-center.f-w-lg', m.component(Fangorn.Components.button, {
+                            onclick: function (event) {
+                                event.preventDefault();
+                                var input = $(document.createElement('input'));
+                                input.attr("type", "file");
+                                input.trigger('click');
+                            },
+                        }, 'Manual Upload'))))
+*/
+/*
+                          m('p.text-center.f-w-lg', ['Having trouble? Use the ', m('a', {
+                              href: '', onclick: function (event) {
+                                  event.preventDefault();
+                                  var input = $(document.createElement('input'));
+                                  input.attr("type", "file");
+                                  input.trigger('click');
+                                  return false;
+                                  //Fangorn.ButtonEvents._uploadEvent.call(tb, event, item);
+                          }
+                          }, 'manual uploader'), ' instead. '])))
+                      */
+
+                      m('p.text-center.f-w-lg', ['Having trouble? Click anywhere in this box to manually upload a file.'])))
                   ]
               )));
   }
