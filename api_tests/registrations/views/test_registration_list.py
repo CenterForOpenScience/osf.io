@@ -636,7 +636,8 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/attributes/registration_choice')
         assert_equal(res.json['errors'][0]['detail'], '"tomorrow" is not a valid choice.')
 
-    def test_embargo_end_date_provided_if_registration_choice_is_embargo(self):
+    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
+    def test_embargo_end_date_provided_if_registration_choice_is_embargo(self, mock_enqueue):
         payload = {
             "data": {
                 "type": "registrations",
