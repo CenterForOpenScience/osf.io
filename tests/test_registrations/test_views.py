@@ -93,7 +93,8 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         super(TestDraftRegistrationViews, self).tearDown()
         DraftRegistration.remove()
 
-    def test_submit_draft_for_review(self):
+    @mock.patch('website.models.DraftRegistration.checkout_files')
+    def test_submit_draft_for_review(self, mock):
         url = self.draft_api_url('submit_draft_for_review')
         res = self.app.post_json(
             url,
@@ -519,7 +520,8 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         except Exception:
             self.fail()
 
-    def test_check_draft_state_pending_review(self):
+    @mock.patch('website.models.DraftRegistration.checkout_files')
+    def test_check_draft_state_pending_review(self, mock_files):
         self.draft.submit_for_review(self.user, self.immediate_payload, save=True)
         try:
             with mock.patch.object(DraftRegistration, 'requires_approval', mock.PropertyMock(return_value=True)):
