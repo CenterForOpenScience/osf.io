@@ -224,7 +224,8 @@ var ViewModel = function(data) {
             self.loading(false);
             //fetchNodeTree is called to refresh self.nodesOriginal after a state change.  This is the simplest way to
             //update state to check if the modal is necessary.
-            self.fetchNodeTree(self.treebeardUrl);        });
+            self.fetchNodeTree(self.treebeardUrl);
+        });
     };
 };
 

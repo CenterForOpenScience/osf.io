@@ -12,6 +12,9 @@ describe('InstitutionSettings', () => {
         node: {
             title: 'Sample Project',
             id: 'abcde',
+            urls: {
+                api: '/api/v1/project/abcde'
+            },
             institutions: [{
                 id: 'cos',
                 logo_path: '/static/img/institutions/cos-shield.png',
