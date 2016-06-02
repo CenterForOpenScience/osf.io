@@ -96,7 +96,7 @@ $(document).on('click', '.panel-heading', function(){
 //choose which emails/users to add to an account and which to deny
 function confirmEmails(emailsToAdd) {
     if (emailsToAdd.length > 0) {
-        var confirmedEmailURL = window.contextVars.confirmedEmailURL;
+        var confirmedEmailURL = '/api/v1/confirmed_emails/';
         var email = emailsToAdd[0];
         var title;
         var requestMessage;
