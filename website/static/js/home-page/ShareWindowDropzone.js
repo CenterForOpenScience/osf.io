@@ -50,12 +50,11 @@ var ShareWindowDropzone = {
                                url:'placeholder',
                                method:'put',
                                previewTemplate: '<div class="text-center dz-filename"><span data-dz-name></span> has been uploaded to your Share Window</div>'
-
                                });
 
   },
   view: function(ctrl, args) {
-          return m('h1.p-v-xl.text-center .pointer .panel #shareWindowDropzone',  'Drag and drop files to upload them')
+          return m('div.p-v-xl.text-center .pointer .panel #shareWindowDropzone',m('p',m('h1',  'Drag and drop files to upload them')), "Having trouble click anywhere in this box to manually upload a file");
   }
 };
 
