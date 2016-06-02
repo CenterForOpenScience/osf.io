@@ -55,13 +55,7 @@ var ShareWindowDropzone = {
 
   },
   view: function(ctrl, args) {
-          return m('h1.p-v-xl.text-center .panel #shareWindowDropzone',  'Drag and drop files to upload them')
-              return m('.node-styling', m('.row', m('div',
-                  [
-                      m('.m-v-xl', m('#shareWindowDropzone', m('h1.text-center', 'Drag and drop files to upload'),
-                      m('p.text-center.f-w-lg', ['Having trouble? Click anywhere in this box to manually upload a file.'])))
-                  ]
-              )));
+          return m('h1.p-v-xl.text-center .pointer .panel #shareWindowDropzone',  'Drag and drop files to upload them')
   }
 };
 
