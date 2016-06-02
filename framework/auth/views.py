@@ -58,7 +58,7 @@ def reset_password(auth, **kwargs):
         # Redirect to CAS and authenticate the user with a verification key.
         return redirect(cas.get_login_url(
             web_url_for('user_account', _absolute=True),
-            auto=True,
+            # auto=True,
             username=user_obj.username,
             verification_key=user_obj.verification_key
         ))
@@ -251,7 +251,7 @@ def confirm_email_get(token, auth=None, **kwargs):
 
     return redirect(cas.get_login_url(
         request.url,
-        auto=True,
+        # auto=True,
         username=user.username,
         verification_key=user.verification_key
     ))
