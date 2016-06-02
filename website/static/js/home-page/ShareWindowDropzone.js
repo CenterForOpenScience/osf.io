@@ -26,6 +26,7 @@ var ShareWindowDropzone = {
     });
 
     Dropzone.options.shareWindowDropzone = {
+            clickable: '#shareWindowDropzone',
 
             accept: function(file, done) {
                 this.options.url = waterbutler.buildUploadUrl(false,'osfstorage',shareWindowId, file,{});
@@ -52,11 +53,7 @@ var ShareWindowDropzone = {
 
   },
   view: function(ctrl, args) {
-          return  m('.node-styling',  m('.row', m('div',
-                  [
-                      m('.m-v-xl', m('#shareWindowDropzone',  m('h1.text-center',  'Drag and drop files to upload them'))),
-                  ]
-              )));
+          return m('h1.p-v-xl.text-center .panel #shareWindowDropzone',  'Drag and drop files to upload them')
   }
 };
 
