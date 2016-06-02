@@ -1017,7 +1017,17 @@ def make_url_map(app):
             project_views.register.node_registration_retraction_get,
             OsfWebRenderer('project/retract_registration.mako', trust=False)
         ),
-
+        # Share Window
+        Rule(
+            [
+                '/project/<pid>/share_window/',
+                '/project/<pid>/node/<nid>/share_window/',
+            ],
+            'get',
+            project_views.file.collect_file_trees_for_share_window,
+            OsfWebRenderer('project/share_window.mako', trust=False),
+            view_kwargs={'mode': 'page'},
+        ),
         Rule(
             '/ids/<category>/<path:value>/',
             'get',

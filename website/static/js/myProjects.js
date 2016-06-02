@@ -166,6 +166,10 @@ NodeFetcher.prototype = {
     this.nextLink = results.links.next;
     this.loaded += results.data.length;
     for(var i = 0; i < results.data.length; i++) {
+      if(results.data[i].attributes.category === 'share window'){
+          continue; // Exclude share window
+      }
+
       if (this.type === 'registrations' && (results.data[i].attributes.withdrawn === true || results.data[i].attributes.pending_registration_approval === true))
           continue; // Exclude retracted and pending registrations
       else if (results.data[i].relationships.parent && this._handleOrphans)
@@ -1776,31 +1780,6 @@ var Filters = {
  */
 var Information = {
     view : function (ctrl, args) {
-        function categoryMap(category) {
-            // TODO, you don't need to do this, CSS will do this case change
-            switch (category) {
-                case 'analysis':
-                    return 'Analysis';
-                case 'communication':
-                    return 'Communication';
-                case 'data':
-                    return 'Data';
-                case 'hypothesis':
-                    return 'Hypothesis';
-                case 'methods and measures':
-                    return 'Methods and Measures';
-                case 'procedure':
-                    return 'Procedure';
-                case 'project':
-                    return 'Project';
-                case 'software':
-                    return 'Software';
-                case 'other':
-                    return 'Other';
-                default:
-                    return 'Uncategorized';
-            }
-        }
         var template = '';
         var showRemoveFromCollection;
         var collectionFilter = args.currentView().collection;
@@ -1835,7 +1814,7 @@ var Information = {
                         m('[role="tabpanel"].tab-pane.active#tab-information',[
                             m('p.db-info-meta.text-muted', [
                                 m('', 'Visibility : ' + (item.attributes.public ? 'Public' : 'Private')),
-                                m('', 'Category: ' + categoryMap(item.attributes.category)),
+                                m('div.capitalize', 'Category: ' + item.attributes.category),
                                 m('', 'Last Modified on: ' + (item.date ? item.date.local : ''))
                             ]),
                             m('p', [
