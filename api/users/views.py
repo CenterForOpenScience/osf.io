@@ -300,7 +300,6 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
         user = self.get_user()
-        user.update_affiliated_institutions_by_email_domain()
         query = Q('contributors', 'eq', user) & default_node_list_query()
         if user != self.request.user:
             query &= default_node_permission_query(self.request.user)
