@@ -2,7 +2,7 @@
 
 from modularodm import fields
 from modularodm.validators import (
-    URLValidator, MinValueValidator, MaxValueValidator
+    URLValidator
 )
 from modularodm.exceptions import ValidationValueError
 
