@@ -40,14 +40,25 @@ describe('InstitutionSettings', () => {
     };
 
     var item = {
-        name: 'Sample Institution'
+        name: 'Sample Institution',
+        id: 'abcde'
     };
 
     var modifyStub;
-    var modifyInstStub;
-    var bootboxStub;
+
+    beforeEach(() => {
+        modifyStub = sinon.stub(viewModel, 'modifyDialog');
+    });
+
+    afterEach(() => {
+        modifyStub.restore();
+    });
 
     var viewModel = new InstitutionProjectSettings.ViewModel(data);
+
+    viewModel.institutionInAllChildren = function() {
+        return false;
+    };
 
     it('user variables set', () => {
         assert.equal(viewModel.userInstitutions, data.currentUser.institutions);
@@ -73,19 +84,16 @@ describe('InstitutionSettings', () => {
     });
 
     it('shows a dialog if the Node has children', () => {
-        modifyStub = sinon.stub(viewModel, 'modifyChildrenDialog');
         viewModel.hasChildren(true);
-        viewModel.submitInst({});
+        viewModel.submitInst(item);
         assert(modifyStub.called);
-        modifyStub.restore();
     });
 
     it('does not show dialog if the Node has no children', () => {
-        modifyStub = sinon.stub(viewModel, 'modifyChildrenDialog');
+
         viewModel.hasChildren(false);
-        viewModel.submitInst({});
+        viewModel.submitInst(item);
         assert.isFalse(modifyStub.called);
-        modifyStub.restore();
     });
 
 
