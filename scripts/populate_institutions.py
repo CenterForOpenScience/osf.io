@@ -51,6 +51,16 @@ def main(env):
     if env == 'prod':
         INSTITUTIONS = [
             {
+                '_id': 'busara',
+                'name': 'Busara Center for Behavioral Economics',
+                'description': 'The <a href="http://www.busaracenter.org/">Busara Center</a> for Behavioral Economics',
+                'banner_name': 'busara-banner.png',
+                'logo_name': 'busara-shield.png',
+                'auth_url': None,
+                'domains': [],
+                'email_domains': ['busaracenter.org'],
+            },
+            {
                 '_id': 'cos',
                 'name': 'Center For Open Science',
                 'description': 'COS is a non-profit technology company providing free and open services to increase inclusivity and transparency of research. Find out more at <a href="https://cos.io">cos.io</a>.',
@@ -59,6 +69,16 @@ def main(env):
                 'auth_url': None,
                 'domains': ['osf.cos.io'],
                 'email_domains': ['cos.io'],
+            },
+            {
+                '_id': 'esip',
+                'name': 'Federation of Earth Science Information Partners (ESIP) [Test]',
+                'description': '<a href="http://www.esipfed.org/">ESIP\'s</a> mission is to support the networking and data dissemination needs of our members and the global Earth science data community by linking the functional sectors of observation, research, application, education and use of Earth science.',
+                'banner_name': 'esip-banner.png',
+                'logo_name': 'esip-shield.png',
+                'auth_url': None,
+                'domains': [],
+                'email_domains': ['esipfed.org'],
             },
             {
                 '_id': 'nd',
@@ -170,6 +190,16 @@ def main(env):
     elif env == 'test':
         INSTITUTIONS = [
             {
+                '_id': 'busara',
+                'name': 'Busara Center for Behavioral Economics [Test]',
+                'description': 'The <a href="http://www.busaracenter.org/">Busara Center</a> for Behavioral Economics',
+                'banner_name': 'busara-banner.png',
+                'logo_name': 'busara-shield.png',
+                'auth_url': None,
+                'domains': [],
+                'email_domains': ['busaracenter.org'],
+            },
+            {
                 '_id': 'cos',
                 'name': 'Center For Open Science [Test]',
                 'description': 'COS is a non-profit technology company providing free and open services to increase inclusivity and transparency of research. Find out more at <a href="https://cos.io">cos.io</a>.',
@@ -178,6 +208,16 @@ def main(env):
                 'auth_url': None,
                 'domains': ['test-osf.cos.io'],
                 'email_domains': ['cos.io'],
+            },
+            {
+                '_id': 'esip',
+                'name': 'Federation of Earth Science Information Partners (ESIP) [Test]',
+                'description': '<a href="http://www.esipfed.org/">ESIP\'s</a> mission is to support the networking and data dissemination needs of our members and the global Earth science data community by linking the functional sectors of observation, research, application, education and use of Earth science.',
+                'banner_name': 'esip-banner.png',
+                'logo_name': 'esip-shield.png',
+                'auth_url': None,
+                'domains': [],
+                'email_domains': ['esipfed.org'],
             },
             {
                 '_id': 'nd',
