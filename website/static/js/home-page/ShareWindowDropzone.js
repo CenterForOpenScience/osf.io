@@ -55,39 +55,13 @@ var ShareWindowDropzone = {
 
   },
   view: function(ctrl, args) {
-<<<<<<< HEAD
           return m('h1.p-v-xl.text-center .panel #shareWindowDropzone',  'Drag and drop files to upload them')
-=======
               return m('.node-styling', m('.row', m('div',
                   [
                       m('.m-v-xl', m('#shareWindowDropzone', m('h1.text-center', 'Drag and drop files to upload'),
-/*
-                          m('p.text-center.f-w-lg', m.component(Fangorn.Components.button, {
-                            onclick: function (event) {
-                                event.preventDefault();
-                                var input = $(document.createElement('input'));
-                                input.attr("type", "file");
-                                input.trigger('click');
-                            },
-                        }, 'Manual Upload'))))
-*/
-/*
-                          m('p.text-center.f-w-lg', ['Having trouble? Use the ', m('a', {
-                              href: '', onclick: function (event) {
-                                  event.preventDefault();
-                                  var input = $(document.createElement('input'));
-                                  input.attr("type", "file");
-                                  input.trigger('click');
-                                  return false;
-                                  //Fangorn.ButtonEvents._uploadEvent.call(tb, event, item);
-                          }
-                          }, 'manual uploader'), ' instead. '])))
-                      */
-
                       m('p.text-center.f-w-lg', ['Having trouble? Click anywhere in this box to manually upload a file.'])))
                   ]
               )));
->>>>>>> f1bf633895e3e49ba54ade7c5d319fd24f48e468
   }
 };
 
