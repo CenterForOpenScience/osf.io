@@ -193,7 +193,6 @@
                 },
                 popular: ${ popular_links_node | sjson, n },
                 newAndNoteworthy: ${ noteworthy_links_node | sjson, n }
-
             });
         </script>
 
