@@ -1,11 +1,15 @@
+# -*- coding: utf-8 -*-
 import functools
-import hashlib
 import logging
+import hashlib
 import threading
 import os
 
 import binascii
 from collections import OrderedDict
+
+from celery.local import PromiseProxy
+from gevent.pool import Pool
 
 from celery.local import PromiseProxy
 from gevent.pool import Pool
@@ -56,7 +60,6 @@ handlers = {
     'before_request': postcommit_before_request,
     'after_request': postcommit_after_request,
 }
-
 
 def run_postcommit(once_per_request=True, celery=False):
     '''

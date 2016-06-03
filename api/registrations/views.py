@@ -11,6 +11,7 @@ from api.registrations.serializers import (
     RegistrationSerializer,
     RegistrationDetailSerializer,
     RegistrationContributorsSerializer,
+    RegistrationProviderSerializer
 )
 
 from api.nodes.views import (
@@ -18,7 +19,7 @@ from api.nodes.views import (
     NodeChildrenList, NodeCommentsList, NodeProvidersList, NodeLinksList,
     NodeContributorDetail, NodeFilesList, NodeLinksDetail, NodeFileDetail,
     NodeAlternativeCitationsList, NodeAlternativeCitationDetail, NodeLogList,
-    NodeInstitutionDetail, WaterButlerMixin, NodeForksList)
+    NodeInstitutionsList, WaterButlerMixin, NodeForksList)
 
 from api.registrations.serializers import RegistrationNodeLinksSerializer, RegistrationFileSerializer
 
@@ -290,6 +291,8 @@ class RegistrationLogList(NodeLogList, RegistrationMixin):
 
 
 class RegistrationProvidersList(NodeProvidersList, RegistrationMixin):
+    serializer_class = RegistrationProviderSerializer
+
     view_category = 'registrations'
     view_name = 'registration-providers'
 
@@ -333,6 +336,6 @@ class RegistrationAlternativeCitationDetail(NodeAlternativeCitationDetail, Regis
     view_name = 'registration-alternative-citation-detail'
 
 
-class RegistrationInstitutionDetail(NodeInstitutionDetail, RegistrationMixin):
+class RegistrationInstitutionsList(NodeInstitutionsList, RegistrationMixin):
     view_category = 'registrations'
-    view_name = 'registration-institution-detail'
+    view_name = 'registration-institutions'
