@@ -11,7 +11,8 @@ class DiscourseException(Exception):
     pass
 
 def get_username(user_id=None):
-    if not user_id:
+    for_current_user = user_id is None
+    if for_current_user:
         if 'auth_discourse_username' in session.data:
             return session.data['auth_discourse_username']
 
@@ -30,7 +31,9 @@ def get_username(user_id=None):
                                  + str(result.status_code) + ' ' + result.text)
 
     username = result.json()['user']['username']
-    session.data['auth_discourse_username'] = username
+
+    if for_current_user:
+        session.data['auth_discourse_username'] = username
 
     return username
 
@@ -163,8 +166,8 @@ def sync_group(project_node):
     update_group_visibility(project_node)
 
     users = [get_username(user._id) for user in project_node.contributors]
-    
     current_users = [user['username'] for user in get_group_users(project_node)]
+
     users_to_add = [u for u in users if u not in current_users]
     if users_to_add:
         add_group_users(project_node, users_to_add)

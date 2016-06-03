@@ -16,6 +16,9 @@ def local_group_test():
     project_node = literal(title = 'The Test Project', _id = 'test1234',
                            contributors = [user1, user2], is_public = False)
 
+    delete_group(project_node)
+    time.sleep(0.125)
+
     sync_group(project_node)
     assert len(get_group_users(project_node)) == 2
     time.sleep(0.125)
