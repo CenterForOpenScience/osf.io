@@ -13,6 +13,7 @@ from scripts import utils as scripts_utils
 
 from website.app import init_app
 from website.addons.box.model import Box
+from website.addons.googledrive.model import GoogleDriveProvider
 from website.addons.mendeley.model import Mendeley
 from website.oauth.models import ExternalAccount
 from website.addons.base.exceptions import AddonError
@@ -20,7 +21,7 @@ from website.addons.base.exceptions import AddonError
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-PROVIDER_CLASSES = (Box, Mendeley, )
+PROVIDER_CLASSES = (Box, GoogleDriveProvider, Mendeley, )
 
 
 def look_up_provider(addon_short_name):
@@ -68,9 +69,9 @@ def run_main(addons=None, dry_run=True):
         scripts_utils.add_file_logger(logger, __file__)
     for addon in addons:
         try:
-            days = int(addons[addon])
+            days = int(addons[addon]) - 3 # refresh tokens that expire this in the next three days
         except (ValueError, TypeError):
-            days = 7  # refresh tokens that expire this week
+            days = 11  # OAuth2 spec's default refresh token expiry time is 14 days
         delta = relativedelta(days=days)
         Provider = look_up_provider(addon)
         if not Provider:
