@@ -377,8 +377,9 @@ class NodeContributorsSerializer(JSONAPISerializer):
 
 class NodeContributorsCreateSerializer(NodeContributorsSerializer):
     """
-    Overrides NodeContributorsSerializer to add target_type field
+    Overrides NodeContributorsSerializer to add target_type and required id field
     """
+    id = IDField(source='_id', required=True)
     target_type = TargetTypeField(target_type='users')
 
     def create(self, validated_data):
