@@ -4149,11 +4149,10 @@ class TestRegisterNode(OsfTestCase):
     def test_registration_gets_institution_affiliation(self):
         node = NodeFactory()
         institution = InstitutionFactory()
-        node.primary_institution = institution
+        node.affiliated_institutions.append(institution)
         node.save()
         registration = RegistrationFactory(project=node)
-        assert_equal(registration.primary_institution._id, node.primary_institution._id)
-        assert_equal(set(registration.affiliated_institutions), set(node.affiliated_institutions))
+        assert_equal(registration.affiliated_institutions, node.affiliated_institutions)
 
     def test_registration_of_project_with_no_wiki_pages(self):
         assert_equal(self.registration.wiki_pages_versions, {})

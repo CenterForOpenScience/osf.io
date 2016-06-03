@@ -7,6 +7,7 @@ from urllib import urlencode
 
 import requests
 
+from framework.mongo import database as db
 from website import settings
 
 
@@ -166,8 +167,9 @@ def _provision_node(node):
     )
 
     try:
-        node.piwik_site_id = json.loads(response.content)['value']
-        node.save(update_piwik=False)
+        # Use pymongo so that we can save a single field without overwriting node
+        piwik_site_id = json.loads(response.content)['value']
+        db.node.update({'_id': node._id}, {'$set': {'piwik_site_id': piwik_site_id}})
     except ValueError:
         raise PiwikException('Piwik site creation failed for ' + node._id)
 
