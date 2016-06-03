@@ -263,6 +263,8 @@ var BaseComment = function() {
     self.replyContent = ko.observable('');
     self.replyMentions = ko.observableArray([]);
 
+    self.urlForNext = ko.observable();
+
     self.saveContent = ko.computed(function() {
         var content = self.replyContent();
         if (!content) {
@@ -351,18 +353,20 @@ BaseComment.prototype.fetch = function() {
         if (self.id() !== undefined) {
             query += '&filter[target]=' + self.id();
         }
+        query += '&page[size]=30';
         var url = osfHelpers.apiV2Url(self.$root.nodeType + '/' + window.contextVars.node.id + '/comments/', {query: query});
         self.fetchNext(url, [], setUnread);
     }
 };
 
-/* Go through the paginated API response to fetch all comments for the specified target */
+/* Go get the next specified page of the API response, and add to the comments list */
 BaseComment.prototype.fetchNext = function(url, comments, setUnread) {
     var self = this;
     var request = osfHelpers.ajaxJSON(
         'GET',
         url,
         {'isCors': true});
+    self.loadingComments(true);
     request.done(function(response) {
         comments = response.data;
         if (self._loaded !== true) {
@@ -378,14 +382,21 @@ BaseComment.prototype.fetchNext = function(url, comments, setUnread) {
             );
         });
         self.configureCommentsVisibility();
-        if (response.links.next !== null) {
-            self.fetchNext(response.links.next, comments, setUnread);
-        } else {
-            self.loadingComments(false);
-        }
-    }).fail(function () {
+        self.urlForNext(response.links.next);
+    }).always(function () {
         self.loadingComments(false);
     });
+};
+
+BaseComment.prototype.getMoreComments = function() {
+    var self = this;
+    var nextUrl = self.urlForNext();
+    var comments = self.comments();
+    var setUnread = self.getTargetType() !== 'comments' && !osfHelpers.urlParams().view_only && self.author.id !== '';
+
+    if (self.urlForNext() && !self.loadingComments()) {
+        self.fetchNext(nextUrl, comments, setUnread);
+    }
 };
 
 BaseComment.prototype.configureCommentsVisibility = function() {
@@ -491,6 +502,18 @@ var CommentModel = function(data, $parent, $root) {
     self.isAbuse = ko.observable(data.attributes.is_abuse);
     self.canEdit = ko.observable(data.attributes.can_edit);
     self.hasChildren = ko.observable(data.attributes.has_children);
+    self.hasReport = ko.observable(data.attributes.has_report);
+    self.isHam = ko.observable(data.attributes.is_ham);
+
+    self.isDeletedAbuse = ko.pureComputed(function() {
+        return self.isDeleted() && self.isAbuse();
+    });
+    self.isDeletedNotAbuse = ko.pureComputed(function() {
+        return self.isDeleted() && !self.isAbuse();
+    });
+    self.isAbuseNotDeleted = ko.pureComputed(function() {
+        return !self.isDeleted() && self.isAbuse();
+    });
 
     if (window.contextVars.node.anonymous) {
         self.author = {
@@ -499,7 +522,7 @@ var CommentModel = function(data, $parent, $root) {
             'fullname': 'A User',
             'gravatarUrl': ''
         };
-    } else if ('embeds' in data && 'user' in data.embeds) {
+    } else if ('embeds' in data && 'user' in data.embeds && 'data' in data.embeds.user) {
         var userData = data.embeds.user.data;
         self.author = {
             'id': userData.id,
@@ -507,6 +530,19 @@ var CommentModel = function(data, $parent, $root) {
             'fullname': userData.attributes.full_name,
             'gravatarUrl': userData.links.profile_image
         };
+    } else if ('embeds' in data && 'user' in data.embeds && 'errors' in data.embeds.user) {
+        var errors = data.embeds.user.errors;
+        for (var e in data.embeds.user.errors) {
+            if ('meta' in errors[e] && 'full_name' in errors[e].meta) {
+                self.author = {
+                    'id': null,
+                    'urls': {'profile': ''},
+                    'fullname': errors[e].meta.full_name,
+                    'gravatarUrl': ''
+                };
+                break;
+            }
+        }
     } else {
         self.author = self.$root.author;
     }
@@ -602,10 +638,6 @@ var CommentModel = function(data, $parent, $root) {
 
     self.canReport = ko.pureComputed(function() {
         return self.$root.canComment() && !self.canEdit();
-    });
-
-    self.shouldShow = ko.pureComputed(function() {
-        return !self.isDeleted() || self.hasChildren() || self.canEdit();
     });
 
     self.nodeUrl = '/' + self.$root.nodeId() + '/';
@@ -726,6 +758,7 @@ CommentModel.prototype.submitAbuse = function() {
     request.done(function() {
         self.isAbuse(true);
         self.reporting(false);
+        self.hasReport(true);
     });
     request.fail(function(xhr, status, error) {
         self.errorMessage('Could not report abuse.');
@@ -888,8 +921,9 @@ var CommentListModel = function(options) {
         self.unreadComments(0);
     };
 
-    self.fetch(options.nodeId);
+    osfHelpers.onScrollToBottom(document.getElementById('comments_window'), self.getMoreComments.bind(self));
 
+    self.fetch(options.nodeId);
 };
 
 CommentListModel.prototype = new BaseComment();

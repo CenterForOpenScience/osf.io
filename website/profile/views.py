@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import datetime
 import logging
 import httplib
 import httplib as http  # TODO: Inconsistent usage of aliased import
@@ -25,9 +26,11 @@ from website import mails
 from website import mailchimp_utils
 from website import settings
 from website.project.model import Node
+from website.project.utils import PROJECT_QUERY, TOP_LEVEL_PROJECT_QUERY
 from website.models import ApiOAuth2Application, ApiOAuth2PersonalToken, User
 from website.oauth.utils import get_available_scopes
 from website.profile import utils as profile_utils
+from website.util.time import throttle_period_expired
 from website.util import api_v2_url, web_url_for, paths
 from website.util.sanitize import escape_html
 from website.util.sanitize import strip_html
@@ -39,14 +42,12 @@ logger = logging.getLogger(__name__)
 
 def get_public_projects(uid=None, user=None):
     user = user or User.load(uid)
-
+    # In future redesign, should be limited for users with many projects / components
     nodes = Node.find_for_user(
         user,
         subquery=(
-            Q('category', 'eq', 'project') &
-            Q('is_public', 'eq', True) &
-            Q('is_registration', 'eq', False) &
-            Q('is_deleted', 'eq', False)
+            TOP_LEVEL_PROJECT_QUERY &
+            Q('is_public', 'eq', True)
         )
     )
     return _render_nodes(list(nodes))
@@ -55,15 +56,14 @@ def get_public_projects(uid=None, user=None):
 def get_public_components(uid=None, user=None):
     user = user or User.load(uid)
     # TODO: This should use User.visible_contributor_to?
-
+    # In future redesign, should be limited for users with many projects / components
     nodes = list(
         Node.find_for_user(
             user,
-            (
-                Q('category', 'ne', 'project') &
-                Q('is_public', 'eq', True) &
-                Q('is_registration', 'eq', False) &
-                Q('is_deleted', 'eq', False)
+            subquery=(
+                PROJECT_QUERY &
+                Q('parent_node', 'ne', None) &
+                Q('is_public', 'eq', True)
             )
         )
     )
@@ -103,6 +103,9 @@ def resend_confirmation(auth):
     data = request.get_json()
 
     validate_user(data, user)
+    if not throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
+        raise HTTPError(httplib.BAD_REQUEST,
+                        data={'message_long': 'Too many requests. Please wait a while before sending another confirmation email.'})
 
     try:
         primary = data['email']['primary']
@@ -119,6 +122,7 @@ def resend_confirmation(auth):
     # TODO: This setting is now named incorrectly.
     if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
         send_confirm_email(user, email=address)
+        user.email_last_sent = datetime.datetime.utcnow()
 
     user.save()
 
@@ -339,7 +343,8 @@ def user_account(auth, **kwargs):
         'user_id': user._id,
         'addons': user_addons,
         'addons_js': collect_user_config_js([addon for addon in settings.ADDONS_AVAILABLE if 'user' in addon.configs]),
-        'addons_css': []
+        'addons_css': [],
+        'requested_deactivation': user.requested_deactivation
     }
 
 
@@ -779,21 +784,40 @@ def unserialize_schools(auth, **kwargs):
 
 @must_be_logged_in
 def request_export(auth):
+    user = auth.user
+    if not throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
+        raise HTTPError(httplib.BAD_REQUEST,
+                        data={'message_long': 'Too many requests. Please wait a while before sending another account export request.',
+                              'error_type': 'throttle_error'})
+
     mails.send_mail(
         to_addr=settings.SUPPORT_EMAIL,
         mail=mails.REQUEST_EXPORT,
         user=auth.user,
     )
+    user.email_last_sent = datetime.datetime.utcnow()
+    user.save()
     return {'message': 'Sent account export request'}
 
 
 @must_be_logged_in
 def request_deactivation(auth):
+    user = auth.user
+    if not throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
+        raise HTTPError(http.BAD_REQUEST,
+                        data={
+                            'message_long': 'Too many requests. Please wait a while before sending another account deactivation request.',
+                            'error_type': 'throttle_error'
+                        })
+
     mails.send_mail(
         to_addr=settings.SUPPORT_EMAIL,
         mail=mails.REQUEST_DEACTIVATION,
         user=auth.user,
     )
+    user.email_last_sent = datetime.datetime.utcnow()
+    user.requested_deactivation = True
+    user.save()
     return {'message': 'Sent account deactivation request'}
 
 

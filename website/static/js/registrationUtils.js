@@ -182,7 +182,11 @@ var Question = function(questionSchema, data) {
     self.properties = questionSchema.properties || [];
     self.match = questionSchema.match || '';
 
-    self.extra = ko.observableArray(self.data.extra || []);
+    var extra = self.data.extra;
+    if (self.data.extra && !$.isArray(self.data.extra)) {
+        extra = [self.data.extra];
+    }
+    self.extra = ko.observableArray(extra || []);
 
     self.formattedFileList = ko.pureComputed(function() {
         return self.extra().map(function(elem) {
@@ -768,8 +772,7 @@ Draft.prototype.reject = function() {
  * @property {Object} extensions: mapping of extenstion names to their view models
  **/
 var RegistrationEditor = function(urls, editorId, preview) {
-    var self = this;
-
+    var self = this; 
     self.urls = urls;
 
     self.readonly = ko.observable(false);
@@ -865,13 +868,14 @@ var RegistrationEditor = function(urls, editorId, preview) {
 	    var $elem = $('<span>');
 	    if (question.type === 'object') {
                 $elem.append(
-		    $('<p class="breaklines"><small><em>' + question.description + '</em></small></p>'),
+		    $('<p class="breaklines"><small><em>' + $osf.htmlEscape(question.description) + '</em></small></p>'),
                     $.map(question.properties, function(subQuestion) {
                         subQuestion = self.context(subQuestion, self, true);
 			return unwrap(subQuestion);
 		    })
                 );
-            } else {
+            }
+	    else {
                 var value;
                 if (self.extensions[question.type] ) {
                     value = question.preview();
@@ -880,10 +884,9 @@ var RegistrationEditor = function(urls, editorId, preview) {
                 }
 		$elem.append(
 		    $('<span class="col-md-12">').append(
-			$('<p class="breaklines"><small><em>' + question.description + '</em></small></p>'),
-			$('<span class="well col-md-12">' + value + '</span>')
-		    )
-		);
+			$('<p class="breaklines"><small><em>' + $osf.htmlEscape(question.description) + '</em></small></p>'),
+                            $('<span class="well col-md-12">').append(value)
+		));
             }
 	    return $elem;
 	};
@@ -1048,8 +1051,10 @@ RegistrationEditor.prototype.updateData = function(response) {
     var self = this;
 
     var draft = self.draft();
+
     draft.pk = response.pk;
     draft.updated = new Date(response.updated);
+
     self.draft(draft);
 };
 
@@ -1229,7 +1234,7 @@ var RegistrationManager = function(node, draftsSelector, urls, createButton) {
 
     self.urls = urls;
 
-    self.schemas = ko.observableArray();
+    self.schemas = ko.observableArray([]);
     self.selectedSchema = ko.computed({
         read: function() {
             return self.schemas().filter(function(s) {
@@ -1258,7 +1263,7 @@ var RegistrationManager = function(node, draftsSelector, urls, createButton) {
 
     // TODO: convert existing registration UI to frontend impl.
     // self.registrations = ko.observable([]);
-    self.drafts = ko.observableArray();
+    self.drafts = ko.observableArray([]);
     self.hasDrafts = ko.pureComputed(function() {
         return self.drafts().length > 0;
     });

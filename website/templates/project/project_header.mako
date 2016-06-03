@@ -113,7 +113,7 @@
                         <div>
                             <br>
                             <button type="button" id="registrationCancelButton" class="btn btn-danger" data-toggle="modal" data-target="#registrationCancel">
-                                Cancel Registration
+                                Cancel registration
                             </button>
                         </div>
                         <%include file="modal_confirm_cancel_registration.mako"/>
@@ -139,10 +139,21 @@
         % endif
 
         % if node['is_pending_embargo']:
-            <div class="alert alert-info">This ${node['node_type']} is currently pending registration, awaiting approval from project administrators. This registration will be final and enter the embargo period when all project administrators approve the registration or 48 hours pass, whichever comes first. The embargo will keep the registration private until the embargo period ends.</div>
+            <div
+                class="alert alert-info">This ${node['node_type']} is currently pending registration, awaiting approval from project administrators. This registration will be final and enter the embargo period when all project administrators approve the registration or 48 hours pass, whichever comes first. The embargo will keep the registration private until the embargo period ends.
+                % if 'admin' in user['permissions']:
+                        <div>
+                            <br>
+                            <button type="button" id="registrationCancelButton" class="btn btn-danger" data-toggle="modal" data-target="#registrationCancel">
+                                Cancel registration
+                            </button>
+                        </div>
+                        <%include file="modal_confirm_cancel_registration.mako"/>
+                    % endif
+            </div>
         % endif
 
-        % if node['embargo_end_date']:
+        % if node['is_embargoed']:
             <div class="alert alert-danger">This ${node['node_type']} is currently embargoed. It will remain private until its embargo date, ${ node['embargo_end_date'] }.</div>
         % endif
 

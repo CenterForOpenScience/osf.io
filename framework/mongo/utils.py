@@ -101,12 +101,16 @@ def get_or_http_error(Model, pk_or_query, allow_deleted=False, display_name=None
             raise HTTPError(http.NOT_FOUND, data=dict(
                 message_long="No {name} record with that primary key could be found".format(name=safe_name)
             ))
+    if getattr(instance, 'is_deleted', False) and getattr(instance, 'suspended', False):
+        raise HTTPError(451, data=dict(  # 451 - Unavailable For Legal Reasons
+            message_short='Content removed',
+            message_long='This content has been removed'
+        ))
     if not allow_deleted and getattr(instance, 'is_deleted', False):
         raise HTTPError(http.GONE, data=dict(
             message_long="This {name} record has been deleted".format(name=safe_name)
         ))
-    else:
-        return instance
+    return instance
 
 
 def autoload(Model, extract_key, inject_key, func):
@@ -143,7 +147,15 @@ def autoload(Model, extract_key, inject_key, func):
         return func(*args, **kwargs)
     return wrapper
 
-def paginated(model, query=None, increment=200):
+def paginated(model, query=None, increment=200, each=True):
+    """Paginate a MODM query.
+
+    :param StoredObject model: Model to query.
+    :param Q query: Optional query object.
+    :param int increment: Page size
+    :param bool each: If True, each record is yielded. If False, pages
+        are yielded.
+    """
     last_id = ''
     pages = (model.find(query).count() / increment) + 1
     for i in xrange(pages):
@@ -151,7 +163,12 @@ def paginated(model, query=None, increment=200):
         if query:
             q &= query
         page = list(model.find(q).limit(increment))
-        for item in page:
-            yield item
-        if page:
-            last_id = item._id
+        if each:
+            for item in page:
+                yield item
+            if page:
+                last_id = item._id
+        else:
+            if page:
+                yield page
+                last_id = page[-1]._id

@@ -1,13 +1,16 @@
 import collections
 
+from framework.postcommit_tasks.handlers import run_postcommit
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
-from framework.auth import signals
 from website.models import Node, User
 from website.notifications import constants
 from website.notifications import model
 from website.notifications.model import NotificationSubscription
+from website.project import signals
+
+from framework.celery_tasks import app
 
 
 class NotificationsDict(dict):
@@ -57,18 +60,24 @@ def from_subscription_key(key):
 
 
 @signals.contributor_removed.connect
-def remove_contributor_from_subscriptions(contributor, node):
+def remove_contributor_from_subscriptions(node, user):
     """ Remove contributor from node subscriptions unless the user is an
         admin on any of node's parent projects.
     """
-    if contributor._id not in node.admin_contributor_ids:
-        node_subscriptions = get_all_node_subscriptions(contributor, node)
+    if user._id not in node.admin_contributor_ids:
+        node_subscriptions = get_all_node_subscriptions(user, node)
         for subscription in node_subscriptions:
-            subscription.remove_user_from_subscription(contributor)
+            subscription.remove_user_from_subscription(user)
 
 
 @signals.node_deleted.connect
 def remove_subscription(node):
+    remove_subscription_task(node._id)
+
+@run_postcommit(once_per_request=False, celery=True)
+@app.task(max_retries=5, default_retry_delay=60)
+def remove_subscription_task(node_id):
+    node = Node.load(node_id)
     model.NotificationSubscription.remove(Q('owner', 'eq', node))
     parent = node.parent_node
 
@@ -371,12 +380,9 @@ def get_global_notification_type(global_subscription, user):
     :param obj user: modular odm User object
     :return: str notification type (e.g. 'email_transactional')
     """
-    if global_subscription and isinstance(global_subscription, NotificationSubscription):
-        for notification_type in constants.NOTIFICATION_TYPES:
-            if user in getattr(global_subscription, notification_type):
-                return notification_type
-    else:
-        return None
+    for notification_type in constants.NOTIFICATION_TYPES:
+        if user in getattr(global_subscription, notification_type):
+            return notification_type
 
 
 def format_user_and_project_subscriptions(user):
@@ -385,7 +391,7 @@ def format_user_and_project_subscriptions(user):
         {
             'node': {
                 'id': user._id,
-                'title': 'User Notifications',
+                'title': 'Default Global Notification Settings',
             },
             'kind': 'heading',
             'children': format_user_subscriptions(user)

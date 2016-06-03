@@ -12,6 +12,7 @@ var LogText = require('js/logTextParser');
 var AddProject = require('js/addProjectPlugin');
 var mC = require('js/mithrilComponents');
 var lodashGet = require('lodash.get');
+var lodashFind = require('lodash.find');
 
 var MOBILE_WIDTH = 767; // Mobile view break point for responsiveness
 var NODE_PAGE_SIZE = 10; // Load 10 nodes at a time from server
@@ -287,7 +288,7 @@ function _formatDataforPO(item) {
     //
     //Sets for filtering
     item.tagSet = new Set(item.attributes.tags || []);
-    var contributors = item.embeds.contributors.data || [];
+    var contributors = lodashGet(item, 'embeds.contributors.data', []);
     item.contributorSet= new Set(contributors.map(function(contrib) {
       return contrib.id;
     }));
@@ -664,13 +665,17 @@ var MyProjects = {
 
             self.filteredData().forEach(function(item) {
                 var contributors = lodashGet(item, 'embeds.contributors.data', []);
-
+                var isContributor = lodashFind(contributors, ['id', window.contextVars.currentUser.id]);
                 if (contributors) {
                     for(var i = 0; i < contributors.length; i++) {
                         var u = contributors[i];
                         if ((u.id === window.contextVars.currentUser.id) && !(self.institutionId)) {
                           continue;
                         }
+                        if (!isContributor && !u.attributes.bibliographic) {
+                            continue;
+                        }
+
                         if(self.users[u.id] === undefined) {
                             self.users[u.id] = {
                                 data : u,

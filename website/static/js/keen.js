@@ -102,7 +102,12 @@ var KeenTracker = oop.defclass({
             };
         }
         if(this.currentUser){
-            pageView.user = this.currentUser;
+            pageView.user = {
+                id: this.currentUser.id,
+                locale: this.currentUser.locale,
+                timezone: this.currentUser.timezone,
+                entryPoint: this.currentUser.entryPoint
+            };
         }
 
         this.keenClient.addEvent('pageviews', pageView, function(err){

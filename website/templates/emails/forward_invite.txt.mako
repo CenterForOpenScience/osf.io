@@ -18,11 +18,11 @@ You have been added by ${referrer.fullname} as a contributor to the project "${n
 
 ${claim_url}
 
-Once you have set a password, you will be able to make contributions to ${node.title}. You will automatically be subscribed to notifications when a comment is added or a file is changed on this project. To change your email notification preferences once you've created your account, visit your project or your user settings: ${settings.DOMAIN + "settings/notifications/"}
+Once you have set a password, you will be able to make contributions to ${node.title}. You will automatically be subscribed to notification emails for updates to this project. To change your email notification preferences, visit your project or your user settings: ${settings.DOMAIN + "settings/notifications/"}
 
 Sincerely,
 
 The OSF Team
 
 
-Want more information? Visit http://osf.io/ or http://cos.io/ for information about the Open Science Framework and its supporting organization, the Center for Open Science. Questions? Email contact@osf.io.
+Want more information? Visit https://osf.io/ or https://cos.io/ for information about the Open Science Framework and its supporting organization, the Center for Open Science. Questions? Email contact@osf.io.

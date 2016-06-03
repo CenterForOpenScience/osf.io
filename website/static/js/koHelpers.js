@@ -4,6 +4,9 @@ var $ = require('jquery');
 var ko = require('knockout');
 var pikaday = require('pikaday');
 require('knockout.validation');
+var makeClient = require('js/clipboard');
+
+require('css/koHelpers.css');
 
 var iconmap = require('js/iconmap');
 
@@ -250,8 +253,19 @@ ko.bindingHandlers.fitText = {
 };
 
 var tooltip = function(el, valueAccessor) {
-    var params = valueAccessor();
-    $(el).tooltip(params);
+    var params = ko.toJS(valueAccessor());
+    if(params.title) {
+        $(el).tooltip(params);
+        if(params.disabled) {
+            // A slight hack to get tooltips to work on
+            // disabled btn/a/etc. '.ensure-bs-tooltips'
+            // lets pointer events get captured on the
+            // disabled element, while the added onclick
+            // handler keeps these events from bubbling
+            $(el).addClass('ensure-bs-tooltips');
+            $(el).on('click', function() {return false;});
+        }
+    }
 };
 // Run Bootstrap tooltip JS automagically
 // http://getbootstrap.com/javascript/#tooltips
@@ -259,6 +273,15 @@ ko.bindingHandlers.tooltip = {
     init: tooltip,
     update: tooltip
 };
+
+var clipboard = function(el, valueAccessor) {
+    makeClient(el);
+    $(el).attr('data-clipboard-text', ko.unwrap(valueAccessor()));
+};
+ko.bindingHandlers.clipboard = {
+    init: clipboard
+};
+
 // Attach view model logic to global keypress events
 ko.bindingHandlers.onKeyPress = {
     init: function(el, valueAccessor) {

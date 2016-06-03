@@ -1,3 +1,6 @@
+## This page is rendered as a standalone template, outside of `OsfWebRenderer` defaults
+<%page expression_filter="h"/>
+
 <h3>${full_name} Add-on Terms</h3>
 
 <table class="table table-bordered table-addon-terms">

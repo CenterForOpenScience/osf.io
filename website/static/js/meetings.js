@@ -13,23 +13,29 @@ function Meetings(data) {
         paginateToggle : false, // Show the buttons that allow users to switch between scroll and paginate.
         uploads : false,         // Turns dropzone on/off.
         columnTitles : function() {
-             return [
+            return [
                 {
                     title: 'Name',
-                    width: '50%',
+                    width: '45%',
                     sortType : 'text',
                     sort : true
                 },
                 {
-                     title: 'Submissions',
-                     width : '25%',
-                     sortType : 'number',
-                     sort : true
+                    title: 'Submissions',
+                    width : '15%',
+                    sortType : 'number',
+                    sort : true
                 },
                 {
-                    title: 'Accepting submissions',
-                    width: '25%',
-                    sortType: 'text',
+                    title: 'Location',
+                    width : '20%',
+                    sortType : 'text',
+                    sort : true
+                },
+                {
+                    title: 'Date',
+                    width: '20%',
+                    sortType: 'date',
                     sort: true
                 }
             ];
@@ -46,13 +52,35 @@ function Meetings(data) {
                 {
                     data: 'count',
                     sortInclude: true,
-                    filter : false
+                    custom: function(){
+                        return m('span.text-center', item.data.count );
+                    }
                 },
                 {
-                    data: 'active', // Data field name
-                    sortInclude: true,
-                    filter : false,
-                    custom: function() { return item.data.active ? 'Yes' : 'No'; }
+                    data: 'location',
+                    sortInclude : true,
+                    custom : function() {
+                        return item.data.location; }
+                },
+                {
+                    data: 'start_date', // Data field name
+                    sortInclude : true,
+                    custom: function() {
+                        if (item.data.start_date === null && item.data.end_date === null){
+                            return;
+                        }
+                        if (item.data.start_date === null) {
+                            return item.data.end_date;
+                        }
+                        if (item.data.end_date === null) {
+                            return item.data.start_date;
+                        }
+                        if (item.data.end_date === item.data.start_date) {
+                            return item.data.end_date;
+                        }
+                        return item.data.start_date + ' - ' + item.data.end_date;
+                    },
+                    filter : false
                 }
             ];
         },
