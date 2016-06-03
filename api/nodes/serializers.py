@@ -480,7 +480,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
         'permission'
     ])
 
-    id = IDField(source='_id', required=True)
+    id = ser.SerializerMethodField()
     type = TypeField()
 
     bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not.',
@@ -502,6 +502,11 @@ class NodeContributorsSerializer(JSONAPISerializer):
 
     class Meta:
         type_ = 'contributors'
+
+    def get_id(self, obj):
+        node_id = self.context['request'].parser_context['kwargs']['node_id']
+        user_id = obj._id
+        return node_id + user_id
 
     def get_absolute_url(self, obj):
         node_id = self.context['request'].parser_context['kwargs']['node_id']
