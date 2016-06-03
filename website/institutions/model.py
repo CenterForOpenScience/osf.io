@@ -69,6 +69,7 @@ class Institution(object):
         'description': 'description',
         'email_domains': 'institution_email_domains',
         'banner_name': 'institution_banner_name',
+        'is_deleted': 'is_deleted'
     }
 
     def __init__(self, node=None):

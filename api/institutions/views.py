@@ -155,19 +155,13 @@ class InstitutionNodeList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
         Q('is_deleted', 'ne', True) &
         Q('is_folder', 'ne', True) &
         Q('is_registration', 'eq', False) &
-        Q('parent_node', 'eq', None)
+        Q('parent_node', 'eq', None) &
+        Q('is_public', 'eq', True)
     )
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
-        base_query = self.base_node_query
-        user = self.request.user
-        permission_query = Q('is_public', 'eq', True)
-        if not user.is_anonymous():
-            permission_query = (permission_query | Q('contributors', 'eq', user._id))
-
-        query = base_query & permission_query
-        return query
+        return self.base_node_query
 
     # overrides RetrieveAPIView
     def get_queryset(self):
@@ -231,7 +225,8 @@ class InstitutionRegistrationList(InstitutionNodeList):
     base_node_query = (
         Q('is_deleted', 'ne', True) &
         Q('is_folder', 'ne', True) &
-        Q('is_registration', 'eq', True)
+        Q('is_registration', 'eq', True) &
+        Q('is_public', 'eq', True)
     )
 
     ordering = ('-date_modified', )
