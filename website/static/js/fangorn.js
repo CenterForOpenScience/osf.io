@@ -90,44 +90,17 @@ function findByTempID(parent, tmpID) {
 }
 
 /**
- * Cancel pending upload(s)
+ * Cancel a pending upload
  * @this Treebeard.controller
- * @param {Object|null} row Treebeard row containing the file to cancel. If omitted, cancel all pending uploads.
+ * @param {Object} row Treebeard row containing the file to cancel.
  */
-function cancelUploads(row) {
+function cancelUpload(row) {
     var tb = this;
     var cancelableStatuses = [Dropzone.UPLOADING, Dropzone.QUEUED];
     // Select files that are uploading, queued, or rejected (!accepted)
     var filesArr = tb.dropzone.files.filter(function(file) {
         return cancelableStatuses.indexOf(file.status) > -1 || !file.accepted;
     });
-    // Remove all queued files
-    if (row === undefined) {
-        var removeFromUI = function(file) {
-            var parent = file.treebeardParent || tb.dropzoneItemCache;
-            var item = findByTempID(parent, file.tmpID);
-            tb.deleteNode(parent.id, item.id);
-        };
-        // Clear all synchronous uploads
-        SYNC_UPLOAD_ADDONS.forEach(function(provider) {
-            if (tb.dropzone.syncFileCache[provider] !== undefined) {
-                // Remove cached provider files from UI
-                tb.dropzone.syncFileCache[provider].forEach(removeFromUI);
-                // Clear provider cache
-                tb.dropzone.syncFileCache[provider].length = 0;
-            }
-        });
-        // Clear all ongoing uploads
-        filesArr.forEach(function(file, index) {
-            // Ignore completed files
-            if (file.upload.progress === 100) return;
-            removeFromUI(file);
-            // Cancel currently uploading file
-            tb.dropzone.removeFile(file);
-        });
-        tb.isUploading(false);
-        return;
-    }
     var handled = false;
     // Search for and remove specified file from queue
     if (SYNC_UPLOAD_ADDONS.indexOf(row.data.provider) !== -1) {
@@ -150,6 +123,43 @@ function cancelUploads(row) {
         });
     }
     tb.isUploading(handled && filesArr.length > 1);
+}
+
+/**
+ * Cancel all pending uploads
+ * @this Treebeard.controller
+ */
+function cancelAllUploads() {
+    var tb = this;
+    var cancelableStatuses = [Dropzone.UPLOADING, Dropzone.QUEUED];
+    // Select files that are uploading, queued, or rejected (!accepted)
+    var filesArr = tb.dropzone.files.filter(function(file) {
+        return cancelableStatuses.indexOf(file.status) > -1 || !file.accepted;
+    });
+    // Remove all queued files
+    var removeFromUI = function(file) {
+        var parent = file.treebeardParent || tb.dropzoneItemCache;
+        var item = findByTempID(parent, file.tmpID);
+        tb.deleteNode(parent.id, item.id);
+    };
+    // Clear all synchronous uploads
+    SYNC_UPLOAD_ADDONS.forEach(function(provider) {
+        if (tb.dropzone.syncFileCache[provider] !== undefined) {
+            // Remove cached provider files from UI
+            tb.dropzone.syncFileCache[provider].forEach(removeFromUI);
+            // Clear provider cache
+            tb.dropzone.syncFileCache[provider].length = 0;
+        }
+    });
+    // Clear all ongoing uploads
+    filesArr.forEach(function(file, index) {
+        // Ignore completed files
+        if (file.upload.progress === 100) return;
+        removeFromUI(file);
+        // Cancel currently uploading file
+        tb.dropzone.removeFile(file);
+    });
+    tb.isUploading(false);
 }
 
 var uploadRowTemplate = function(item) {
@@ -189,7 +199,7 @@ var uploadRowTemplate = function(item) {
                             },
                             'onclick' : function (e) {
                                 e.stopImmediatePropagation();
-                                cancelUploads.call(tb, item);
+                                cancelUpload.call(tb, item);
                             }},
                          m('span.text-muted','×')
                     ))
@@ -1820,7 +1830,7 @@ var FGToolbar = {
             generalButtons.push(
                 m.component(FGButton, {
                     onclick: function() {
-                        cancelUploads.call(ctrl.tb);
+                        cancelAllUploads.call(ctrl.tb);
                     },
                     icon: 'fa fa-time-circle',
                     className : 'text-danger'
