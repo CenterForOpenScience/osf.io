@@ -157,7 +157,7 @@ class MetaData(GuidStoredObject):
 
 
 def validate_contributor(guid, contributors):
-    if guid != '':
+    if guid:
         user = User.find(
             Q('_id', 'eq', guid) &
             Q('is_claimed', 'eq', True)
@@ -169,17 +169,17 @@ def validate_contributor(guid, contributors):
     return True
 
 def add_new_mentions(comment, contributors):
-        """ Check if there are any new_mentions that are not in old_mentions and are a contributor
+    """ Check if there are any new_mentions that are not in old_mentions and are a contributor
 
-        :param Node comment: Node that has new_mentions and old_mentions
-        :param list contributors: List of contributors on the node
-        :return bool new_mentions_added: Whether there are valid new_mentions
-        """
-        validate = lambda m: m not in comment.old_mentions and validate_contributor(m, contributors)
-        comment.new_mentions = filter(validate, comment.new_mentions)
-        if len(comment.new_mentions) > 0:
-            return True
-        return False
+    :param Node comment: Node that has new_mentions and old_mentions
+    :param list contributors: List of contributors on the node
+    :return bool new_mentions_added: Whether there are valid new_mentions
+    """
+    validate = lambda m: m not in comment.old_mentions and validate_contributor(m, contributors)
+    comment.new_mentions = filter(validate, comment.new_mentions)
+    if len(comment.new_mentions) > 0:
+        return True
+    return False
 
 class Comment(GuidStoredObject, SpamMixin, Commentable):
 

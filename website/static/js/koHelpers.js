@@ -477,11 +477,11 @@ ko.bindingHandlers.editableHTML = {
     update: function(element, valueAccessor, allBindings, bindingContext) {
         var $element = $(element);
         var initialValue = ko.utils.unwrapObservable(valueAccessor());
-        var bindings = bindingContext;
         var charLimit = $element.attr('maxlength');
         if (charLimit && bindingContext.underMaxLength) {
             var inputTextLength = $element[0].innerText.length;
-            var errorExceedsCharacterLimit = 'Exceeds character limit. Please reduce to ' + charLimit + ' characters or less.';
+            var errorExceedsCharacterLimit = 'Exceeds character limit. Please reduce to ' +
+                charLimit + ' characters or less.';
             if (inputTextLength > parseInt(charLimit) + 1) {
                 bindingContext.underMaxLength(false);
                 if (bindingContext.errorMessage) {
