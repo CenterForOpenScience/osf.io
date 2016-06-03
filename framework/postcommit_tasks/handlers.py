@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import functools
 import hashlib
 import logging
@@ -56,7 +57,6 @@ handlers = {
     'before_request': postcommit_before_request,
     'after_request': postcommit_after_request,
 }
-
 
 def run_postcommit(once_per_request=True, celery=False):
     '''

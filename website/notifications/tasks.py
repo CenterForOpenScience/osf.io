@@ -16,7 +16,7 @@ from website.notifications.model import NotificationDigest
 from website import mails
 
 
-@celery_app.task(name='notify.send_users_email', max_retries=0)
+@celery_app.task(name='website.notifications.tasks.send_users_email', max_retries=0)
 def send_users_email(send_type):
     """Find pending Emails and amalgamates them into a single Email.
 
