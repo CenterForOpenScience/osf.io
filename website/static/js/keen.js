@@ -116,6 +116,9 @@ var KeenTracker = (function() {
     }  // end _defaultKeenPayload
 
     function _trackCustomEvent(client, collection, eventData) {
+        if (client === null) {
+            return;
+        }
         client.recordEvent(collection, eventData, function (err) {
             if (err) {
                 Raven.captureMessage('Error sending Keen data to ' + collection + ': <' + err + '>', {
@@ -126,6 +129,9 @@ var KeenTracker = (function() {
     }
 
     function _trackCustomEvents(client, events) {
+        if (client === null) {
+            return;
+        }
         client.recordEvents(events, function (err, res) {
             if (err) {
                 Raven.captureMessage('Error sending Keen data for multiple events: <' + err + '>', {
@@ -157,6 +163,10 @@ var KeenTracker = (function() {
 
             self.init = function _initKeentracker(params) {
                 var self = this;
+
+                if (params === undefined) {
+                    return self;
+                }
 
                 self._publicClient = new keenTracking({
                     projectId: params.public.projectId,
@@ -220,7 +230,7 @@ var KeenTracker = (function() {
 
     var instance = null;
     return {
-        getInstance: function(keenParams) {
+        getInstance: function() {
             if (!instance) {
                 instance = new KeenTracker();
                 instance.init(window.contextVars.keen);
