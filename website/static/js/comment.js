@@ -7,6 +7,7 @@ var $ = require('jquery');
 var ko = require('knockout');
 var moment = require('moment');
 var Raven = require('raven-js');
+var linkifyHtml = require('linkifyjs/html');
 var koHelpers = require('./koHelpers');
 require('jquery-autosize');
 
@@ -326,11 +327,11 @@ var CommentModel = function(data, $parent, $root) {
         self.author = self.$root.author;
     }
 
-    self.contentDisplay = ko.observable(markdown.full.render(self.content()));
+    self.contentDisplay = ko.observable(linkifyHtml(markdown.full.render(self.content())));
 
     // Update contentDisplay with rendered markdown whenever content changes
     self.content.subscribe(function(newContent) {
-        self.contentDisplay(markdown.full.render(newContent));
+        self.contentDisplay(linkifyHtml(markdown.full.render(newContent)));
     });
 
     self.prettyDateCreated = ko.computed(function() {
