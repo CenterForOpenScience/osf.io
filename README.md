@@ -1,3 +1,9 @@
+This repo depends on our [fork of ichord/At.js](https://github.com/CenterForOpenScience/At.js) which
+contains a bug fix for @ mentions. If the PR [ichord/At.js#394](https://github.com/ichord/At.js/pull/394)
+is merged then the original repo will be used instead of our fork.
+
+- - -
+
 # OSF
 
 - `master` Build Status: [![Build Status](https://travis-ci.org/CenterForOpenScience/osf.io.svg?branch=master)](https://travis-ci.org/CenterForOpenScience/osf.io)
@@ -9,7 +15,7 @@
 ## Table of contents
 - [Help](#help)
 - [Running the OSF](#running-the-osf)
-- [Running the API Server] (#running-the-api-server)
+- [Running the API Server](#running-the-api-server)
 - [Installation](#installation)
 - [Common Development Tasks](#common-development-tasks)
 
@@ -54,13 +60,13 @@ In order to log in on your local server, you will also need to run the authentic
 ### Running the API Server
 
 If you have already installed all of the required services and Python packages, and activated your virtual environment,
-then you can start a working local API server with the sequence delineated under [running the OSF] (#running-the-osf) and:
+then you can start a working local API server with the sequence delineated under [running the OSF](#running-the-osf) and:
 
 ```bash
 invoke apiserver
 ```
 
-Browse to `localhost:8000/v2/` in your browser to go to the root of the browsable API. If the page looks strange, 
+Browse to `localhost:8000/v2/` in your browser to go to the root of the browsable API. If the page looks strange,
 run `python manage.py collectstatic` to ensure that CSS files are deposited in the correct location.
 
 
@@ -78,11 +84,11 @@ This will make your browser automatically refresh whenever a code change is made
 
 Some functionality depends on additional services that will not be started using the sequence above.
 For many development tasks, it is sufficient to run the OSF without these services, except as noted below.
-Some additional installation will be needed to use these features (where noted), in which case updates will also need 
+Some additional installation will be needed to use these features (where noted), in which case updates will also need
 to be installed separately.
 
 #### Authentication
-An authentication server (either CAS or FakeCAS) must be available in order to log in to the OSF while running locally. 
+An authentication server (either CAS or FakeCAS) must be available in order to log in to the OSF while running locally.
 This must be installed separately from the OSF. See [running the OSF](#running-the-osf) for details.
 
 #### Waterbutler
@@ -94,9 +100,9 @@ installed. Consult the Waterbutler
 
 #### Modular File Renderer
 
-The Modular File Renderer (MFR) is used to render uploaded files to HTML via an iFrame so that they can be 
-viewed directly on the OSF. Files will not be rendered if the MFR is not running. Consult the 
-MFR [repository] (https://github.com/CenterForOpenScience/modular-file-renderer) for information on how to install 
+The Modular File Renderer (MFR) is used to render uploaded files to HTML via an iFrame so that they can be
+viewed directly on the OSF. Files will not be rendered if the MFR is not running. Consult the
+MFR [repository] (https://github.com/CenterForOpenScience/modular-file-renderer) for information on how to install
 and run the MFR.
 
 #### Celery Beat
@@ -112,7 +118,7 @@ invoke requirements --metrics
 
 #### Sharejs
 
-ShareJS is used for collaborative editing features, such as the OSF wiki. It will be installed by the OSF installer 
+ShareJS is used for collaborative editing features, such as the OSF wiki. It will be installed by the OSF installer
 script, but must be run separately. To run a local ShareJS server:
 
 ```bash
@@ -131,7 +137,7 @@ $ invoke update_citation_styles
 
 These instructions assume a working knowledge of package managers and the command line.
 For a detailed step-by-step walkthrough suitable for new programmers, consult the
-[COS Development Docs](http://cosdev.readthedocs.org/en/latest/osf/setup.html). See [optional extras](#optional-extras) 
+[COS Development Docs](http://cosdev.readthedocs.org/en/latest/osf/setup.html). See [optional extras](#optional-extras)
 for information about services not included in the automated install process below.
 
 ### Pre-requisites
@@ -150,10 +156,10 @@ The following packages must be installed before running the automatic setup scri
     - virtualenv (`pip install virtualenv`)
 
 ##### El Capitan and newer
-If you are using Mac OS X >= 10.11 (El Capitan), you will also 
-[need](http://lists.apple.com/archives/macnetworkprog/2015/Jun/msg00025.html) to install OpenSSL headers 
+If you are using Mac OS X >= 10.11 (El Capitan), you will also
+[need](http://lists.apple.com/archives/macnetworkprog/2015/Jun/msg00025.html) to install OpenSSL headers
 and [set](http://cryptography.readthedocs.org/en/latest/installation/#building-cryptography-on-os-x) some configuration:
-```bash 
+```bash
 brew install openssl
 env LDFLAGS="-L$(brew --prefix openssl)/lib" CFLAGS="-I$(brew --prefix openssl)/include" pip install cryptography
 ```
@@ -483,7 +489,7 @@ Use the following command to update your requirements and build the asset bundle
 $ inv assets -dw
 ```
 
-The -w option puts you in "watch" mode: the script will continue running so that assets will be 
+The -w option puts you in "watch" mode: the script will continue running so that assets will be
 built when a file changes.
 
 
