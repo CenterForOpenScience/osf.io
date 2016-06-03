@@ -104,7 +104,8 @@ var callbacks = {
         if (!query) {
             return li;
         }
-        regexp = new RegExp('>\\s*([\\w\\s]*?)(' + query.replace('+', '\\+') + ')([\\w\\s]*)\\s*<', 'ig');
+        regexp = new RegExp('>\\s*([\\w\\s]*?)(' + query.replace('+', '\\+') +
+            ')([\\w\\s]*)\\s*<', 'ig');
         return li.replace(regexp, function(str, $1, $2, $3) {
             return '> ' + $1 + '<strong>' + $2 + '</strong>' + $3 + ' <';
         });
@@ -119,7 +120,8 @@ var callbacks = {
         _a = decodeURI('%C3%80');
         _y = decodeURI('%C3%BF');
         space = acceptSpaceBar ? '\ ' : '';
-        regexp = new RegExp(flag + '([A-Za-z' + _a + '-' + _y + '0-9_' + space + '\'\.\+\-]*)$|' + flag + '([^\\x00-\\xff]*)$', 'gi');
+        regexp = new RegExp(flag + '([A-Za-z' + _a + '-' + _y + '0-9_' + space +
+            '\'\.\+\-]*)$|' + flag + '([^\\x00-\\xff]*)$', 'gi');
         match = regexp.exec(subtext.replace(/\s/g, ' '));
         if (match) {
             return match[2] || match[1];
@@ -190,11 +192,17 @@ var getContributorList = function(input, nodeId) {
 };
 
 getContributorList(input, nodeId);
-input.atwho(at_config).atwho(plus_config).bind('paste', onPaste).on('focusin keyup', lastElementBr).on('focusout', onlyElementBr).keydown(function(e) {
-    if(e.which === 13 && !e.isDefaultPrevented()) {
-        onReturn(e);
-    }
-});
+input
+    .atwho(at_config)
+    .atwho(plus_config)
+    .bind('paste', onPaste)
+    .on('focusin keyup', lastElementBr)
+    .on('focusout', onlyElementBr)
+    .keydown(function(e) {
+        if(e.which === 13 && !e.isDefaultPrevented()) {
+            onReturn(e);
+        }
+    });
 
 // Maximum length for comments, in characters
 var MAXLENGTH = 500;
@@ -266,10 +274,7 @@ var BaseComment = function() {
     self.urlForNext = ko.observable();
 
     self.saveContent = ko.computed(function() {
-        var content = self.replyContent();
-        if (!content) {
-            content = '';
-        }
+        var content = self.replyContent() || '';
         self.replyMentions([]);
         var regex = /<span.*?data-atwho-guid="([a-z\d]{5})".*?>((@|\+)[\w\s]+)<\/span>/;
         var matches = content.match(/<span.*?data-atwho-guid="([a-z\d]{5})".*?>((@|\+)[\w\s]+)<\/span>/g);
@@ -561,17 +566,19 @@ var CommentModel = function(data, $parent, $root) {
                 var guid = match[3];
                 var mention = match[2];
 
-                content = content.replace(match[0], '<span class="atwho-inserted" contenteditable="false" data-atwho-guid="'+ guid + '" data-atwho-at-query="' + atwho + '">' + atwho + mention + '</span>');
+                content = content.replace(
+                    match[0],
+                    '<span class="atwho-inserted" contenteditable="false" data-atwho-guid="' +
+                        guid + '" data-atwho-at-query="' + atwho + '">' +
+                        atwho + mention + '</span>'
+                );
             }
         }
-        return content.replace(/\x0D\x0A/g, '<br>');
+        return content.replace(/\r\n/g, '<br>');
     });
 
     self.editedContent = ko.computed(function() {
-        var content = self.content();
-        if (!content) {
-            content = '';
-        }
+        var content = self.content() || '';
         self.replyMentions([]);
         var regex = /<span.*?data-atwho-guid="([a-z\d]{5})".*?>((@|\+)[\w\s]+)<\/span>/;
         var matches = content.match(/<span.*?data-atwho-guid="([a-z\d]{5})".*?>((@|\+)[\w\s]+)<\/span>/g);
@@ -588,6 +595,8 @@ var CommentModel = function(data, $parent, $root) {
                 }
             }
         }
+        // '&#13;&#10;' is the character entity reference for '\r\n'
+        // '\r\n' is treated differently and breaks conversion from markdown to html
         return content.replace(/<br>/g, '&#13;&#10;');
     });
 
@@ -657,11 +666,18 @@ CommentModel.prototype.edit = function() {
 
 CommentModel.prototype.autosizeText = function(elm) {
     $(elm).find('textarea').autosize().focus();
-    $(elm).find('.atwho-input').atwho(at_config).atwho(plus_config).bind('paste', onPaste).on('focusin', lastElementBr).on('focusout', onlyElementBr).keydown(function(e) {
-        if(e.which === 13 && !e.isDefaultPrevented()) {
-            onReturn(e);
-        }
-    });
+    $(elm)
+        .find('.atwho-input')
+        .atwho(at_config)
+        .atwho(plus_config)
+        .bind('paste', onPaste)
+        .on('focusin', lastElementBr)
+        .on('focusout', onlyElementBr)
+        .keydown(function(e) {
+            if(e.which === 13 && !e.isDefaultPrevented()) {
+                onReturn(e);
+            }
+        });
 };
 
 CommentModel.prototype.cancelEdit = function() {
