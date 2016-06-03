@@ -276,8 +276,8 @@ var BaseComment = function() {
     self.saveContent = ko.computed(function() {
         var content = self.replyContent() || '';
         self.replyMentions([]);
-        var regex = /<span.*?data-atwho-guid="([a-z\d]{5})".*?>((@|\+)[\w\s]+)<\/span>/;
-        var matches = content.match(/<span.*?data-atwho-guid="([a-z\d]{5})".*?>((@|\+)[\w\s]+)<\/span>/g);
+        var regex = /<span[^>]*?data-atwho-guid="([a-z\d]{5})"[^>]*?>((@|\+)[\w\s]+)<\/span>/;
+        var matches = content.match(/<span[^>]*?data-atwho-guid="([a-z\d]{5})"[^>]*?>((@|\+)[\w\s]+)<\/span>/g);
         if (matches) {
             for (var i = 0; i < matches.length; i++) {
                 var match = regex.exec(matches[i]);
@@ -580,8 +580,8 @@ var CommentModel = function(data, $parent, $root) {
     self.editedContent = ko.computed(function() {
         var content = self.content() || '';
         self.replyMentions([]);
-        var regex = /<span.*?data-atwho-guid="([a-z\d]{5})".*?>((@|\+)[\w\s]+)<\/span>/;
-        var matches = content.match(/<span.*?data-atwho-guid="([a-z\d]{5})".*?>((@|\+)[\w\s]+)<\/span>/g);
+        var regex = /<span[^>]*?data-atwho-guid="([a-z\d]{5})"[^>]*?>((@|\+)[\w\s]+)<\/span>/;
+        var matches = content.match(/<span[^>]*?data-atwho-guid="([a-z\d]{5})"[^>]*?>((@|\+)[\w\s]+)<\/span>/g);
         if (matches) {
             for (var i = 0; i < matches.length; i++) {
                 var match = regex.exec(matches[i]);
