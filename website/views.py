@@ -66,6 +66,7 @@ def _render_nodes(nodes, auth=None, show_path=False):
     :param nodes:
     :return:
     """
+
     ret = {
         'nodes': [
             _render_node(node, auth)
@@ -75,9 +76,7 @@ def _render_nodes(nodes, auth=None, show_path=False):
     }
     return ret
 
-@must_be_logged_in
-def index(auth):
-    auth.user.update_affiliated_institutions_by_email_domain()
+def index():
     try:
         #TODO : make this way more robust
         inst = Institution.find_one(Q('domains', 'eq', request.host.lower()))
