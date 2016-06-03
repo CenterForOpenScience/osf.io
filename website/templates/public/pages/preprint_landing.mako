@@ -25,25 +25,25 @@
                     <h1 class="osf-preprint-lead">OSF Preprints</h1>
                     <h2 class="osf-preprint-subheading">Coming Soon</h2>
                 </div>
-                    <div class="network-img"> </div>
+                <div class="network-img" style="height: 700px; margin-bottom: -700px;"> </div>
                 <div class="row">
                     <div class="col-md-6 col-lg-5 col-xl-4 text-center m-b-lg preprint-feature" >
-                        <i class="fa fa-search m-v-sm"></i>
+                        <i class="fa fa-search m-v-sm" style="padding-top: 10px;"></i>
                         <h3 class="f-w-xl">Share and discover research as it happens</h3>
                     </div>
                     <div class="col-md-6 col-lg-5 col-lg-offset-2 col-xl-4 col-xl-offset-4 text-center m-b-lg preprint-feature">
-                        <i class="fa fa-users m-v-sm"></i>
+                        <i class="fa fa-users m-v-sm" style="padding-top: 30px;"></i>
                         <h3 class="f-w-xl">Receive quick feedback on your research</h3>
                     </div>
                 </div>
 
                 <div class="row">
                     <div class="col-md-6 col-lg-5 col-xl-4 text-center m-b-lg preprint-feature" >
-                        <i class="fa fa-cloud-upload m-v-sm"></i>
+                        <i class="fa fa-cloud-upload m-v-sm" style="padding-top: 20px;"></i>
                         <h3 class="f-w-xl">Deposit and search via <a href="https://osf.io ">OSF</a></h3>
                     </div>
                     <div class="col-md-6 col-lg-5 col-lg-offset-2 col-xl-4 col-xl-offset-4 text-center m-b-lg preprint-feature">
-                        <i class="fa fa-cubes m-v-sm"></i>
+                        <i class="fa fa-cubes m-v-sm" style="padding-top: 15px; padding-left: 7px;"></i>
                         <h3 class="f-w-xl">Aggregate across preprint services via <a href="https://osf.io/share/">SHARE</a></h3>
                     </div>
                 </div>
@@ -51,7 +51,7 @@
         </div>
     </div>
 
-    <div class="space-top space-bottom feature-6">
+    <div class="space-top space-bottom feature-6 grey-background" style="">
       <div class="container">
         <div class="row">
           <div class="col-md-8">
