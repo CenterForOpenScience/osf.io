@@ -225,7 +225,8 @@ class InstitutionRegistrationList(InstitutionNodeList):
     base_node_query = (
         Q('is_deleted', 'ne', True) &
         Q('is_folder', 'ne', True) &
-        Q('is_registration', 'eq', True)
+        Q('is_registration', 'eq', True) &
+        Q('is_public', 'eq', True)
     )
 
     ordering = ('-date_modified', )
