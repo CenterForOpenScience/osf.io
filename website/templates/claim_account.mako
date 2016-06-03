@@ -74,6 +74,7 @@
                 <p>By clicking "Save" and creating an account you agree to our <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md">Terms</a> and that you have read our <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>, including our information on <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md#f-cookies">Cookie Use</a>.</p>
             </div>
             ${form.token | unicode, n }
+            ${form.email | unicode, n }
             %if next_url:
                 <input type='hidden' name='next_url' value='${next_url}'>
             %endif
