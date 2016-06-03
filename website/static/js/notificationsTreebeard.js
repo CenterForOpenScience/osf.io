@@ -173,9 +173,18 @@ function ProjectNotifications(data) {
                                     subscribe(item, ev.target.value);
                                 }},
                                 [
-                                    item.data.event.title !== 'comment_replies' ? m('option', {value: 'none', selected : item.data.event.notificationType === 'none' ? 'selected': ''}, 'Never') : null,
-                                    m('option', {value: 'email_transactional', selected : item.data.event.notificationType === 'email_transactional' ? 'selected': ''}, 'Instantly'),
-                                    m('option', {value: 'email_digest', selected : item.data.event.notificationType === 'email_digest' ? 'selected': ''}, 'Daily')
+                                    item.data.event.title !== 'comment_replies' && !~item.data.event.title.indexOf('mentions') ?
+                                        m('option', {value: 'none', selected : item.data.event.notificationType === 'none' ? 'selected': ''}, 'Never') :
+                                        null,
+                                    ~item.data.event.title.indexOf('mentions') ?
+                                        null :
+                                        m('option', {value: 'email_transactional', selected : item.data.event.notificationType === 'email_transactional' ? 'selected': ''}, 'Instantly'),
+                                    ~item.data.event.title.indexOf('mentions') ?
+                                        null :
+                                        m('option', {value: 'email_digest', selected : item.data.event.notificationType === 'email_digest' ? 'selected': ''}, 'Daily'),
+                                    ~item.data.event.title.indexOf('mentions') ?
+                                        m('option', {value: 'email_transactional', selected: 'email_transactional', disabled: true}, 'Instantly') :
+                                        null,
                             ])
                         ]);
                     }
