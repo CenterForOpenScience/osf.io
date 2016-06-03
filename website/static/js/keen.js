@@ -70,9 +70,7 @@ var KeenTracker = (function() {
                 type: lodashGet(node, 'category'),
                 tags: lodashGet(node, 'tags'),
             },
-            user: {
-                entry_point: user.entryPoint,
-            },
+            user: {},
             geo: {},
             anon: {
                 id: user.anon.id,
@@ -180,9 +178,13 @@ var KeenTracker = (function() {
                 var payload = _defaultKeenPayload();
                 var user = window.contextVars.currentUser;
                 payload.tech.ip = '${keen.ip}';
-                payload.user.id = user.id;
-                payload.user.locale = user.locale;
-                payload.user.timezone = user.timezone;
+                payload.user = {
+                    id: user.id,
+                    entry_point: user.entryPoint,
+                    institutions: user.institutions,
+                    locale: user.locale,
+                    timezone: user.timezone,
+                };
                 payload.keen.addons.push({
                     name: 'keen:ip_to_geo',
                     input: {
