@@ -1058,6 +1058,16 @@ def make_url_map(app):
             OsfWebRenderer('project/statistics.mako', trust=False)
         ),
 
+        # Forum
+        Rule(
+            [
+                '/project/<pid>/forum/',
+            ],
+            'get',
+            project_views.forum.forum_view,
+            OsfWebRenderer('project/forum.mako', trust=False)
+        ),
+
         ### Files ###
 
         # Note: Web endpoint for files view must pass `mode` = `page` to

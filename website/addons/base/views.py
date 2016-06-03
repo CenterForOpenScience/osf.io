@@ -15,7 +15,7 @@ import jwt
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
-from framework import sentry
+from framework import sentry, discourse
 from framework.auth import Auth
 from framework.auth import cas
 from framework.auth import oauth_scopes
@@ -708,4 +708,8 @@ def addon_view_file(auth, node, file_node, version):
     })
 
     ret.update(rubeus.collect_addon_assets(node))
+
+    ret['discourse_url'] = settings.DISCOURSE_SERVER_URL
+    ret['discourse_topic_id'] = discourse.get_or_create_topic_id(node, file_node)
+
     return ret
