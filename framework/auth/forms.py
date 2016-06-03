@@ -119,6 +119,11 @@ confirm_password_field = PasswordField(
 )
 
 
+def match_email(form, field):
+    if field.data == form.email.data:
+            raise ValidationError("Your password cannot be the same as your email address.")
+
+
 class SetEmailAndPasswordForm(Form):
     password = PasswordField('New Password',
         [
@@ -127,6 +132,7 @@ class SetEmailAndPasswordForm(Form):
                 'Password should be at least 6 characters.'),
             validators.Length(max=256, message=u'Password is too long. '
                 'Password should be at most 256 characters.'),
+            match_email,
         ],
         filters=[stripped],
         widget=BootstrapPasswordInput()
@@ -142,6 +148,7 @@ class SetEmailAndPasswordForm(Form):
     )
 
     token = HiddenField()
+    email = HiddenField()
 
 
 # TODO: use unique email field and remove redundant status message and
