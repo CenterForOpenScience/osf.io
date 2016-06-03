@@ -937,6 +937,22 @@ class User(GuidStoredObject, AddonModelMixin):
         from website.search import search
         search.update_contributors(self.visible_contributor_to)
 
+    def update_affiliated_institutions_by_email_domain(self):
+        """
+        Append affiliated_institutions by email domain.
+        :return:
+        """
+        # Avoid circular import
+        from website.project.model import Institution
+        try:
+            email_domains = [email.split('@')[1] for email in self.emails]
+            inst = Institution.find_one(Q('email_domains', 'in', email_domains))
+            if inst not in self.affiliated_institutions:
+                self.affiliated_institutions.append(inst)
+                self.save()
+        except (IndexError, NoResultsFound):
+            pass
+
     @property
     def is_confirmed(self):
         return bool(self.date_confirmed)
