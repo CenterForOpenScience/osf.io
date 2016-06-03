@@ -203,7 +203,7 @@ def auth_logout(redirect_url=None):
 def auth_email_logout(token, user):
     """When a user is adding an email or merging an account, add the email to the user and log them out.
     """
-    redirect_url = web_url_for('auth_login') + '?existing_user={}'.format(urllib.quote_plus(user.email))
+    redirect_url = web_url_for('auth_login')
     try:
         unconfirmed_email = user.get_unconfirmed_email_for_token(token)
     except InvalidTokenError:
