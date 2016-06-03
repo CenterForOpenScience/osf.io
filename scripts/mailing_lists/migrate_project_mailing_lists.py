@@ -105,7 +105,7 @@ def migrate(dry_run=True):
 
 def main():
     init_app(routes=False)
-    dry_run = 'dry' in sys.argv
+    dry_run = '--dry' in sys.argv
     if not dry_run:
         script_utils.add_file_logger(logger, __file__)
     with TokuTransaction():
