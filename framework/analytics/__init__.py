@@ -5,8 +5,11 @@ import functools
 from datetime import datetime
 
 from framework.mongo import database
+from framework.postcommit_tasks.handlers import run_postcommit
 from framework.sessions import session
 from framework.postcommit_tasks.handlers import run_postcommit
+from framework.celery_tasks import app
+
 from framework.celery_tasks import app
 
 from flask import request
@@ -72,6 +75,7 @@ def build_page(rex, kwargs):
         return rex.format(**data)
     except KeyError:
         return None
+
 
 def update_counter(page, db=None):
     """Update counters for page.
