@@ -479,16 +479,19 @@ def update_file(file_, index=None, delete=False):
 @requires_search
 def update_institution(institution, index=None):
     index = index or INDEX
+    id_ = institution._id
+    if institution.is_deleted:
+        es.delete(index=index, doc_type='institution', id=id_, refresh=True, ignore=[404])
+    else:
+        institution_doc = {
+            'id': id_,
+            'url': '/institutions/{}/'.format(institution._id),
+            'logo_path': institution.logo_path,
+            'category': 'institution',
+            'name': institution.name,
+        }
 
-    institution_doc = {
-        'id': institution._id,
-        'url': '/institutions/{}/'.format(institution._id),
-        'logo_path': institution.logo_path,
-        'category': 'institution',
-        'name': institution.name,
-    }
-
-    es.index(index=index, doc_type='institution', body=institution_doc, id=institution._id, refresh=True)
+        es.index(index=index, doc_type='institution', body=institution_doc, id=id_, refresh=True)
 
 @requires_search
 def delete_all():
