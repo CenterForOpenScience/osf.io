@@ -10,7 +10,11 @@ from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.views import JSONAPIBaseView
-from api.base.parsers import JSONAPIOnetoOneRelationshipParser, JSONAPIOnetoOneRelationshipParserForRegularJSON
+from api.base.parsers import (
+    JSONAPIRelationshipParser,
+    JSONAPIRelationshipParserForRegularJSON,
+)
+from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.base.pagination import CommentPagination, NodeContributorPagination
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
 from api.files.serializers import FileSerializer
@@ -29,7 +33,7 @@ from api.nodes.serializers import (
     DraftRegistrationDetailSerializer,
     NodeContributorsSerializer,
     NodeContributorDetailSerializer,
-    NodeInstitutionRelationshipSerializer,
+    NodeInstitutionsRelationshipSerializer,
     NodeAlternativeCitationSerializer,
     NodeContributorsCreateSerializer
 )
@@ -46,6 +50,7 @@ from api.nodes.permissions import (
     ContributorDetailPermissions,
     ReadOnlyIfRegistration,
     IsAdminOrReviewer,
+    AdminOrPublicForRelationshipInstitutions,
     ExcludeWithdrawals,
 )
 from api.logs.serializers import NodeLogSerializer
@@ -2329,10 +2334,9 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
         serializer.validated_data['node'] = node
         serializer.save()
 
-
-class NodeInstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
-    """ Detail of the one primary_institution a node has, if any. Returns NotFound
-    if the node does not have a primary_institution.
+class NodeInstitutionsList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin, NodeMixin):
+    """ Detail of the affiliated institutions a node has, if any. Returns [] if the node has no
+    affiliated institution.
 
     ##Attributes
 
@@ -2361,82 +2365,107 @@ class NodeInstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin
 
     model = Institution
     view_category = 'nodes'
-    view_name = 'node-institution-detail'
+    view_name = 'node-institutions'
 
-    # overrides RetrieveAPIView
-    def get_object(self):
+    def get_queryset(self):
         node = self.get_node()
-        if not node.primary_institution:
-            raise NotFound
-        return node.primary_institution
+        return node.affiliated_institutions or []
 
 
-class NodeInstitutionRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin):
-    """ Relationship Endpoint for Node -> Institution Relationship
+class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, generics.CreateAPIView, NodeMixin):
+    """ Relationship Endpoint for Node -> Institutions Relationship
 
-    Used to set the primary_institution of a node to an institution
+    Used to set, remove, update and retrieve the affiliated_institutions of a node to an institution
 
     ##Actions
 
     ###Create
 
+        Method:        POST
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": [{
+                           "type": "institutions",   # required
+                           "id": <institution_id>   # required
+                         }]
+                       }
+        Success:       201
+
+    This requires admin permissions on the node and for the user making the request to
+    have the institutions in the payload as affiliated in their account.
+
+    ###Update
+
         Method:        PUT || PATCH
         URL:           /links/self
         Query Params:  <none>
         Body (JSON):   {
-                         "data": {
+                         "data": [{
                            "type": "institutions",   # required
                            "id": <institution_id>   # required
-                         }
+                         }]
                        }
         Success:       200
 
-    This requires both admin permission on the node, and for the user that is
-    making the request to be affiliated with the institution (`User.affiliated_institutions`)
+        This requires admin permissions on the node and for the user making the request to
+        have the institutions in the payload as affiliated in their account. This will delete
+        all institutions not listed, meaning a data: [] payload does the same as a DELETE with all
+        the institutions.
 
     ###Destroy
 
-        Method:        PUT || PATCH
+        Method:        DELETE
         URL:           /links/self
         Query Params:  <none>
         Body (JSON):   {
-                         "data": {
-                           null
-                         }
+                         "data": [{
+                           "type": "institutions",   # required
+                           "id": <institution_id>   # required
+                         }]
                        }
         Success:       204
 
-    This requires admin permission on the node.
+    This requires admin permissions in the node.
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        AdminOrPublic
+        AdminOrPublicForRelationshipInstitutions
     )
-    required_read_scopes = [CoreScopes.NODE_BASE_READ, CoreScopes.INSTITUTION_READ]
+    required_read_scopes = [CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
-    serializer_class = NodeInstitutionRelationshipSerializer
-    parser_classes = (JSONAPIOnetoOneRelationshipParser, JSONAPIOnetoOneRelationshipParserForRegularJSON, )
+    serializer_class = NodeInstitutionsRelationshipSerializer
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
 
     view_category = 'nodes'
-    view_name = 'node-relationships-institution'
+    view_name = 'node-relationships-institutions'
 
-    # overrides RetrieveAPIView
     def get_object(self):
-        return self.get_node()
+        node = self.get_node(check_object_permissions=False)
+        obj = {
+            'data': node.affiliated_institutions,
+            'self': node
+        }
+        self.check_object_permissions(self.request, obj)
+        return obj
 
-    def update(self, request, *args, **kwargs):
-        # same as drf's update method from the update mixin, with the addition of
-        # returning a 204 when successfully deletes relationship with PUT/PATCH
-        partial = kwargs.pop('partial', False)
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        inst = request.data.get('id', None)
-        if not inst:
+    def perform_destroy(self, instance):
+        data = self.request.data['data']
+        user = self.request.user
+        current_insts = {inst._id: inst for inst in instance['data']}
+        node = instance['self']
+        for val in data:
+            if val['id'] in current_insts:
+                node.remove_affiliated_institution(inst=current_insts[val['id']], user=user)
+        node.save()
+
+    def create(self, *args, **kwargs):
+        try:
+            ret = super(NodeInstitutionsRelationship, self).create(*args, **kwargs)
+        except RelationshipPostMakesNoChanges:
             return Response(status=HTTP_204_NO_CONTENT)
-        return Response(serializer.data)
+        return ret
 
 
 class NodeWikiList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMixin):

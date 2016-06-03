@@ -499,10 +499,10 @@ class NodeLog(StoredObject):
     REGISTRATION_APPROVAL_APPROVED = 'registration_approved'
     PREREG_REGISTRATION_INITIATED = 'prereg_registration_initiated'
 
-    PRIMARY_INSTITUTION_CHANGED = 'primary_institution_changed'
-    PRIMARY_INSTITUTION_REMOVED = 'primary_institution_removed'
+    AFFILIATED_INSTITUTION_ADDED = 'affiliated_institution_added'
+    AFFILIATED_INSTITUTION_REMOVED = 'affiliated_institution_removed'
 
-    actions = [CHECKED_IN, CHECKED_OUT, FILE_TAG_REMOVED, FILE_TAG_ADDED, CREATED_FROM, PROJECT_CREATED, PROJECT_REGISTERED, PROJECT_DELETED, NODE_CREATED, NODE_FORKED, NODE_REMOVED, POINTER_CREATED, POINTER_FORKED, POINTER_REMOVED, WIKI_UPDATED, WIKI_DELETED, WIKI_RENAMED, MADE_WIKI_PUBLIC, MADE_WIKI_PRIVATE, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED, PERMISSIONS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, TAG_ADDED, TAG_REMOVED, EDITED_TITLE, EDITED_DESCRIPTION, UPDATED_FIELDS, FILE_MOVED, FILE_COPIED, FOLDER_CREATED, FILE_ADDED, FILE_UPDATED, FILE_REMOVED, FILE_RESTORED, ADDON_ADDED, ADDON_REMOVED, COMMENT_ADDED, COMMENT_REMOVED, COMMENT_UPDATED, MADE_CONTRIBUTOR_VISIBLE, MADE_CONTRIBUTOR_INVISIBLE, EXTERNAL_IDS_ADDED, EMBARGO_APPROVED, EMBARGO_CANCELLED, EMBARGO_COMPLETED, EMBARGO_INITIATED, RETRACTION_APPROVED, RETRACTION_CANCELLED, RETRACTION_INITIATED, REGISTRATION_APPROVAL_CANCELLED, REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED, PREREG_REGISTRATION_INITIATED, CITATION_ADDED, CITATION_EDITED, CITATION_REMOVED, PRIMARY_INSTITUTION_CHANGED, PRIMARY_INSTITUTION_REMOVED]
+    actions = [CHECKED_IN, CHECKED_OUT, FILE_TAG_REMOVED, FILE_TAG_ADDED, CREATED_FROM, PROJECT_CREATED, PROJECT_REGISTERED, PROJECT_DELETED, NODE_CREATED, NODE_FORKED, NODE_REMOVED, POINTER_CREATED, POINTER_FORKED, POINTER_REMOVED, WIKI_UPDATED, WIKI_DELETED, WIKI_RENAMED, MADE_WIKI_PUBLIC, MADE_WIKI_PRIVATE, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED, PERMISSIONS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, TAG_ADDED, TAG_REMOVED, EDITED_TITLE, EDITED_DESCRIPTION, UPDATED_FIELDS, FILE_MOVED, FILE_COPIED, FOLDER_CREATED, FILE_ADDED, FILE_UPDATED, FILE_REMOVED, FILE_RESTORED, ADDON_ADDED, ADDON_REMOVED, COMMENT_ADDED, COMMENT_REMOVED, COMMENT_UPDATED, MADE_CONTRIBUTOR_VISIBLE, MADE_CONTRIBUTOR_INVISIBLE, EXTERNAL_IDS_ADDED, EMBARGO_APPROVED, EMBARGO_CANCELLED, EMBARGO_COMPLETED, EMBARGO_INITIATED, RETRACTION_APPROVED, RETRACTION_CANCELLED, RETRACTION_INITIATED, REGISTRATION_APPROVAL_CANCELLED, REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED, PREREG_REGISTRATION_INITIATED, CITATION_ADDED, CITATION_EDITED, CITATION_REMOVED, AFFILIATED_INSTITUTION_ADDED, AFFILIATED_INSTITUTION_REMOVED]
 
     def __repr__(self):
         return ('<NodeLog({self.action!r}, params={self.params!r}) '
@@ -774,7 +774,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         'wiki_pages_current',
         'is_retracted',
         'node_license',
-        'primary_institution'
+        '_affiliated_institutions',
     }
 
     # Maps category identifier => Human-readable representation for use in
@@ -2263,7 +2263,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         registered.creator = self.creator
         registered.tags = self.tags
         registered.piwik_site_id = None
-        registered.primary_institution = self.primary_institution
         registered._affiliated_institutions = self._affiliated_institutions
         registered.alternative_citations = self.alternative_citations
         registered.node_license = original.license.copy() if original.license else None
@@ -3621,25 +3620,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         return super(Node, cls).find_one(query, **kwargs)
 
     @classmethod
-    def find_by_institution(cls, inst, query=None):
+    def find_by_institutions(cls, inst, query=None):
         inst_node = inst.node
-        query = query & Q('_primary_institution', 'eq', inst_node) if query else Q('_primary_institution', 'eq', inst_node)
+        query = query & Q('_affiliated_institutions', 'eq', inst_node) if query else Q('_affiliated_institutions', 'eq', inst_node)
         return cls.find(query, allow_institution=True)
-
-    # Primary institution node is attached to
-    _primary_institution = fields.ForeignField('node')
-
-    @property
-    def primary_institution(self):
-        '''
-        Should behave as if this was a foreign field pointing to Institution
-        :return: this node's _primary_institution wrapped with Institution.
-        '''
-        return Institution(self._primary_institution) if self._primary_institution else None
-
-    @primary_institution.setter
-    def primary_institution(self, institution):
-        self._primary_institution = institution.node if institution else None
 
     _affiliated_institutions = fields.ForeignField('node', list=True)
 
@@ -3651,61 +3635,52 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         '''
         return AffiliatedInstitutionsList([Institution(node) for node in self._affiliated_institutions], obj=self, private_target='_affiliated_institutions')
 
-    def add_primary_institution(self, user, inst, log=True):
-        if not isinstance(inst, Institution):
-            raise TypeError
+    def add_affiliated_institution(self, inst, user, save=False, log=True):
         if not user.is_affiliated_with_institution(inst):
             raise UserNotAffiliatedError('User is not affiliated with {}'.format(inst.name))
-        if inst == self.primary_institution:
-            return False
-        previous = self.primary_institution if self.primary_institution else None
-        self.primary_institution = inst
         if inst not in self.affiliated_institutions:
             self.affiliated_institutions.append(inst)
         if log:
             self.add_log(
-                action=NodeLog.PRIMARY_INSTITUTION_CHANGED,
+                action=NodeLog.AFFILIATED_INSTITUTION_ADDED,
                 params={
                     'node': self._primary_key,
                     'institution': {
                         'id': inst._id,
                         'name': inst.name
-                    },
-                    'previous_institution': {
-                        'id': previous._id if previous else None,
-                        'name': previous.name if previous else 'None'
                     }
                 },
                 auth=Auth(user)
             )
+        if save:
+            self.save()
         return True
 
-    def remove_primary_institution(self, user, log=True):
-        inst = self.primary_institution
-        if not inst:
-            return False
-        self.primary_institution = None
+    def remove_affiliated_institution(self, inst, user, save=False, log=True):
         if inst in self.affiliated_institutions:
             self.affiliated_institutions.remove(inst)
-        if log:
-            self.add_log(
-                action=NodeLog.PRIMARY_INSTITUTION_REMOVED,
-                params={
-                    'node': self._primary_key,
-                    'institution': {
-                        'id': inst._id,
-                        'name': inst.name
-                    }
-                },
-                auth=Auth(user)
-            )
-        return True
+            if log:
+                self.add_log(
+                    action=NodeLog.AFFILIATED_INSTITUTION_REMOVED,
+                    params={
+                        'node': self._primary_key,
+                        'institution': {
+                            'id': inst._id,
+                            'name': inst.name
+                        }
+                    },
+                    auth=Auth(user)
+                )
+            if save:
+                self.save()
+            return True
+        return False
 
-    def institution_url(self):
-        return self.absolute_api_v2_url + 'institution/'
+    def institutions_url(self):
+        return self.absolute_api_v2_url + 'institutions/'
 
-    def institution_relationship_url(self):
-        return self.absolute_api_v2_url + 'relationships/institution/'
+    def institutions_relationship_url(self):
+        return self.absolute_api_v2_url + 'relationships/institutions/'
 
 
 @Node.subscribe('before_save')
