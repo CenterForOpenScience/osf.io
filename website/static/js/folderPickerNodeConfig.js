@@ -514,9 +514,13 @@ var FolderPickerViewModel = oop.defclass({
             lazyLoadPreprocess: function(data) {
                 // Also handle data from API -- squash `attributes` to what TB expects
                 // TODO: [OSF-6384] DRY this up when PR #5240 goes in
-                var saved_attributes = data.attributes;
-                delete data.attributes;
-                $.extend(true, data, saved_attributes);
+                if (data.data) {
+                    $.each(data.data, function(i, obj) {
+                        var saved_attributes = obj.attributes;
+                        delete obj.attributes;
+                        $.extend(true, obj, saved_attributes);
+                    });
+                }
                 return data;
             },
         }, self.treebeardOptions);
