@@ -1741,7 +1741,7 @@ class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Addo
         folder_id = self.request.query_params.get('id', 'root')
 
         if not hasattr(node_addon, 'get_folders'):
-            raise MethodNotAllowed('Requested addon unavailable.')
+            raise MethodNotAllowed('get_folders', detail='Requested addon unavailable.')
 
         return node_addon.get_folders(path=path, folder_id=folder_id)
 
