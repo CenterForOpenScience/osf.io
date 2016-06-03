@@ -66,7 +66,6 @@ def _render_nodes(nodes, auth=None, show_path=False):
     :param nodes:
     :return:
     """
-
     ret = {
         'nodes': [
             _render_node(node, auth)
@@ -75,6 +74,7 @@ def _render_nodes(nodes, auth=None, show_path=False):
         'show_path': show_path
     }
     return ret
+
 
 def index():
     try:
