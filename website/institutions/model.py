@@ -129,7 +129,7 @@ class Institution(object):
     def load(cls, key):
         from website.models import Node
         try:
-            node = Node.find_one(Q('institution_id', 'eq', key) & Q('is_deleted', 'ne', True), allow_institution=True)
+            node = Node.find_one(Q('institution_id', 'eq', key), allow_institution=True)
             return cls(node)
         except NoResultsFound:
             return None
