@@ -7,6 +7,7 @@ var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
 var AddProject = require('js/addProjectPlugin');
 var NodeFetcher = require('js/myProjects').NodeFetcher;
+var lodashGet = require('lodash.get');
 
 // CSS
 require('css/quick-project-search-plugin.css');
@@ -293,11 +294,8 @@ var QuickSearchProject = {
 
         // Filtering on root project
         self.rootMatch = function (node) {
-            try {
-                var root = node.embeds.root.data.attributes.title;
-                return (root.toUpperCase().indexOf(self.filter().toUpperCase()) !== -1);
-                }
-            catch (err) {return false;}
+            var root = lodashGet(node, 'embeds.root.data.attributes.title', '');
+            return (root.toUpperCase().indexOf(self.filter().toUpperCase()) !== -1);
         };
 
         // Filtering on title
@@ -556,25 +554,25 @@ var QuickSearchNodeDisplay = {
                 var project = args.nodes()[n];
                 var numContributors = project.embeds.contributors.links.meta.total;
                 var title = project.attributes.title;
-                var root;
-                try {
-                    root = project.embeds.root.data.attributes.title;
-                    if (title === root) {
-                    root = '';
-                    }
-                    else {
-                        root = root.replace('.','') + ' / ';
-                    }
-                }
-                catch (err) {
-                    var errorMessage;
-                    if (project.embeds.root.errors[0].detail === 'You do not have permission to perform this action.') {
-                        errorMessage = 'Private Project';
-                    }
-                    else {
-                        errorMessage = 'Project Name Unavailable';
-                    }
-                    root = m('em', errorMessage + ' / ');
+                var rootRequest = lodashGet(project, 'embeds.root.data.attributes.title', '');
+                var error = lodashGet(project, 'embeds.root.errors[0].detail', '');
+
+                switch(error) {
+                    case '':
+                        if (title === rootRequest) {
+                            root = '';
+                        }
+                        else {
+                            root = rootRequest.replace('.', '') + ' / ';
+                        }
+                        break;
+
+                    case 'You do not have permission to perform this action.':
+                        root = m('em', 'Private Project / ');
+                        break;
+
+                    default:
+                        root = m('em', 'Project Name Unavailable / ');
                 }
 
                 return m('a', {href: '/' + project.id, onclick: function() {
