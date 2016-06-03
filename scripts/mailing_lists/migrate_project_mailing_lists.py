@@ -40,7 +40,7 @@ def migrate(dry_run=True):
     ncount = len(nodes)
     logger.info('Preparing to migrate {} nodes.'.format(ncount))
     for i, node in enumerate(nodes):
-        if node.is_registration or node.is_collection or node.is_deleted:
+        if not node.is_mutable_project:
             try:
                 logger.info('({0}/{1})Disabling mailing list for registration/dashboard {2}'.format(i+1, ncount, node._id))
                 node.mailing_enabled = False    

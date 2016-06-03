@@ -1066,6 +1066,21 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         return self.embargo and self.embargo.is_approved and not self.is_public
 
     @property
+    def is_mutable_project(self):
+        """ Flag indicating if this node is a project that can be readily interacted with
+            by a user. That is, not 'frozen' in some way (e.g. registered, deleted), and
+            having the standard set of 'project' views (e.g. not a collection).
+
+            Makes performing this check easier and more maintainable.
+        """
+        return not (
+            self.is_registration or
+            self.is_deleted or
+            self.is_collection or
+            self.is_bookmark_collection
+        )
+
+    @property
     def private_links(self):
         # TODO: Consumer code assumes this is a list. Hopefully there aren't many links?
         return list(PrivateLink.find(Q('nodes', 'eq', self._id)))
@@ -1522,7 +1537,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             self.title = 'Bookmarks'
 
         # Set mailing attribute before save
-        if self.is_registration or self.is_collection:
+        if not self.is_mutable_project:
             self.mailing_enabled = False
             self.mailing_updated = False
 
@@ -1662,7 +1677,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         new.is_fork = False
         new.is_registration = False
         new.piwik_site_id = None
-        new.mailing_enabled = not new.is_collection
+        new.mailing_enabled = new.is_mutable_project
+        new.mailing_updated = new.is_mutable_project
         new.node_license = self.license.copy() if self.license else None
 
         # If that title hasn't been changed, apply the default prefix (once)
@@ -2192,7 +2208,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         forked.forked_from = original
         forked.creator = user
         forked.piwik_site_id = None
-        forked.mailing_enabled = not forked.is_collection
+        forked.mailing_enabled = forked.is_mutable_project
+        forked.mailing_updated = forked.is_mutable_project
         forked.node_license = original.license.copy() if original.license else None
         forked.wiki_private_uuids = {}
 

@@ -72,7 +72,7 @@ def format_node_data_recursive(nodes, user):
                     n
                     for n in node.nodes
                     if n.primary and
-                    not (n.is_deleted or n.is_registration)
+                    n.is_mutable_project
                 ],
                 user
             ))

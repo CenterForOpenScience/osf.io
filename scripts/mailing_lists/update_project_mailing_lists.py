@@ -32,7 +32,8 @@ def main(dry_run=True):
     for node in updated_nodes:
         # reload the node to ensure that it is current
         node.reload()
-        assert not node.is_registration and not node.is_collection
+        if not node.is_mutable_project:
+            assert node.is_deleted
         # Reset mailing_updated now in case of a user-change during this update
         node.mailing_updated = False
         node.save()
