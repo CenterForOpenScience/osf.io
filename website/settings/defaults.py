@@ -327,7 +327,7 @@ HIGH_PRI_MODULES = {
     'scripts.approve_embargo_terminations',
     'scripts.approve_registrations',
     'scripts.embargo_registrations',
-    'scripts.refresh_box_tokens',
+    'scripts.refresh_addon_tokens',
     'scripts.retract_registrations',
     'website.archiver.tasks',
 }
@@ -368,7 +368,7 @@ CELERY_IMPORTS = (
     'website.archiver.tasks',
     'website.search.search',
     'scripts.populate_new_and_noteworthy_projects',
-    'scripts.refresh_box_tokens',
+    'scripts.refresh_addon_tokens',
     'scripts.retract_registrations',
     'scripts.embargo_registrations',
     'scripts.approve_registrations',
@@ -405,10 +405,10 @@ else:
             'schedule': crontab(minute=0, hour=0),
             'args': ('email_digest',),
         },
-        'refresh_box': {
-            'task': 'scripts.refresh_box_tokens',
+        'refresh_addons': {
+            'task': 'scripts.refresh_addon_tokens',
             'schedule': crontab(minute=0, hour= 2),  # Daily 2:00 a.m
-            'kwargs': {'dry_run': False},
+            'kwargs': {'dry_run': False, 'addons': {'box': 60, 'mendeley': 14}},
         },
         'retract_registrations': {
             'task': 'scripts.retract_registrations',
