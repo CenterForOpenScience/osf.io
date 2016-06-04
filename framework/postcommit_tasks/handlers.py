@@ -5,6 +5,7 @@ import logging
 import threading
 import binascii
 from collections import OrderedDict
+import os
 
 
 from celery.local import PromiseProxy
