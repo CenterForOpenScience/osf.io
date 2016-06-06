@@ -3452,7 +3452,7 @@ class TestAuthViews(OsfTestCase):
         self.user.reload()
         assert_equal(self.user.email_verifications[token]['confirmed'], True)
         assert_equal(res.status_code, 302)
-        login_url = '/login/?existing_user={}'.format(urllib.quote_plus(self.user.username))
+        login_url = 'login?service'
         assert_in(login_url, res.body)
 
     def test_get_email_to_add_no_email(self):
