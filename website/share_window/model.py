@@ -15,7 +15,7 @@ class ShareWindow(object):
         self.node = node
         self.node.share_window_id = user._id
 
-        self.node.title = user.fullname + "'s Window"
+        self.node.title = user.fullname + "'s Window" #needs title for elastic search
         self.save()
         return self
 
