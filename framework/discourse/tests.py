@@ -52,3 +52,16 @@ def local_category_test():
     assert get_category_id(project_node) is None
 
     print('test passed')
+
+def local_comment_test():
+    user1 = literal(_id='etfhq')
+    project_node = literal(title = 'The Test Project', _id = 'test1234', contributors=[user1], is_public = True)
+    file_node = literal(_id='573cb78e96f6d02370c991a9', name='superRickyRobot.jpg')
+
+    comment_id = create_comment(project_node, file_node, 'I think your robot is the coolest little bugger ever!')
+    edit_comment(comment_id, 'Actually, your robot is the coolest little bugger ever!')
+    delete_comment(comment_id)
+    undelete_comment(comment_id)
+    delete_comment(comment_id)
+
+    print('test passed')

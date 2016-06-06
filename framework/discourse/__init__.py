@@ -315,7 +315,6 @@ def create_topic(project_node, file_node):
     url.args['raw'] = 'The file ' + file_node.name + ' has been uploaded. What do you think about it?'
 
     result = requests.post(url.url)
-    print(url.url)
     if result.status_code != 200:
         raise DiscourseException('Discourse server responded to topic create request ' + result.url + ' with '
                                  + str(result.status_code) + ' ' + result.text)
@@ -335,6 +334,19 @@ def get_or_create_topic_id(project_node, file_node):
         return topic_id
     return create_topic(project_node, file_node)
 
+def get_topic(project_node, file_node):
+    topic_id = get_or_create_topic_id(project_node, file_node)
+
+    url = furl(settings.DISCOURSE_SERVER_URL).join('/t/' + str(topic_id) + '.json')
+    url.args['api_key'] = settings.DISCOURSE_API_KEY
+    url.args['api_username'] = settings.DISCOURSE_API_ADMIN_USER
+
+    result = requests.get(url.url)
+    if result.status_code != 200:
+        raise DiscourseException('Discourse server responded to topic get request ' + result.url + ' with '
+                                 + str(result.status_code) + ' ' + result.text)
+    return result.json()
+
 def delete_topic(project_node, file_node):
     topic_id = get_topic_id(project_node, file_node)
     if topic_id is None:
@@ -347,4 +359,55 @@ def delete_topic(project_node, file_node):
     result = requests.delete(url.url)
     if result.status_code != 200:
         raise DiscourseException('Discourse server responded to topic delete request ' + result.url + ' with '
+                                 + str(result.status_code) + ' ' + result.text)
+
+def create_comment(project_node, file_node, comment_text):
+    url = furl(settings.DISCOURSE_SERVER_URL).join('/posts')
+    url.args['api_key'] = settings.DISCOURSE_API_KEY
+    url.args['api_username'] = settings.DISCOURSE_API_ADMIN_USER
+
+    category_id = get_or_create_category_id(project_node)
+    topic_id = get_or_create_topic_id(project_node, file_node)
+    url.args['category'] = category_id
+    url.args['topic_id'] = topic_id
+    url.args['raw'] = comment_text
+    url.args['nested_post'] = 'true'
+
+    result = requests.post(url.url)
+    if result.status_code != 200:
+        raise DiscourseException('Discourse server responded to comment create request ' + result.url + ' with '
+                                 + str(result.status_code) + ' ' + result.text)
+
+    return result.json()['post']['id']
+
+def edit_comment(comment_id, comment_text):
+    url = furl(settings.DISCOURSE_SERVER_URL).join('/posts/' + str(comment_id))
+    url.args['api_key'] = settings.DISCOURSE_API_KEY
+    url.args['api_username'] = settings.DISCOURSE_API_ADMIN_USER
+
+    url.args['post[raw]'] = comment_text
+
+    result = requests.put(url.url)
+    if result.status_code != 200:
+        raise DiscourseException('Discourse server responded to comment edit request ' + result.url + ' with '
+                                 + str(result.status_code) + ' ' + result.text)
+
+def delete_comment(comment_id):
+    url = furl(settings.DISCOURSE_SERVER_URL).join('/posts/' + str(comment_id))
+    url.args['api_key'] = settings.DISCOURSE_API_KEY
+    url.args['api_username'] = settings.DISCOURSE_API_ADMIN_USER
+
+    result = requests.delete(url.url)
+    if result.status_code != 200:
+        raise DiscourseException('Discourse server responded to comment delete request ' + result.url + ' with '
+                                 + str(result.status_code) + ' ' + result.text)
+
+def undelete_comment(comment_id):
+    url = furl(settings.DISCOURSE_SERVER_URL).join('/posts/' + str(comment_id) + '/recover')
+    url.args['api_key'] = settings.DISCOURSE_API_KEY
+    url.args['api_username'] = settings.DISCOURSE_API_ADMIN_USER
+
+    result = requests.put(url.url)
+    if result.status_code != 200:
+        raise DiscourseException('Discourse server responded to comment undelete request ' + result.url + ' with '
                                  + str(result.status_code) + ' ' + result.text)
