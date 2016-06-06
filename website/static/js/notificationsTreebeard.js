@@ -173,7 +173,7 @@ function ProjectNotifications(data) {
                                     subscribe(item, ev.target.value);
                                 }},
                                 [
-                                    item.data.event.title !== 'comment_replies' ? m('option', {value: 'none', selected : item.data.event.notificationType === 'none' ? 'selected': ''}, 'Never') : null,
+                                    m('option', {value: 'none', selected : item.data.event.notificationType === 'none' ? 'selected': ''}, 'Never'),
                                     m('option', {value: 'email_transactional', selected : item.data.event.notificationType === 'email_transactional' ? 'selected': ''}, 'Instantly'),
                                     m('option', {value: 'email_digest', selected : item.data.event.notificationType === 'email_digest' ? 'selected': ''}, 'Daily')
                             ])
