@@ -4,6 +4,8 @@ import httplib as http
 
 from flask import request
 from flask import send_from_directory
+from modularodm import Q
+from modularodm.exceptions import QueryException, NoResultsFound
 
 from framework import status
 from framework import sentry
@@ -19,10 +21,6 @@ from framework.routing import process_rules
 from framework.auth import views as auth_views
 from framework.routing import render_mako_string
 from framework.auth.core import _get_current_user
-
-from modularodm import Q
-from modularodm.exceptions import QueryException, NoResultsFound
-
 from website import util
 from website import prereg
 from website import settings
@@ -43,6 +41,7 @@ from website.discovery import views as discovery_views
 from website.conferences import views as conference_views
 from website.preprints import views as preprint_views
 from website.institutions import views as institution_views
+from website.share_window import views as share_window_views
 from website.notifications import views as notification_views
 
 def get_globals():
@@ -218,6 +217,14 @@ def make_url_map(app):
             'get',
             website_views.dashboard,
             OsfWebRenderer('home.mako', trust=False)
+        ),
+        Rule(
+            [
+                '/share_window/',
+            ],
+            'get',
+            share_window_views.view_share_window,
+            OsfWebRenderer('share_window.mako', trust=False),
         ),
 
         Rule(
@@ -1016,17 +1023,6 @@ def make_url_map(app):
             'get',
             project_views.register.node_registration_retraction_get,
             OsfWebRenderer('project/retract_registration.mako', trust=False)
-        ),
-        # Share Window
-        Rule(
-            [
-                '/project/<pid>/share_window/',
-                '/project/<pid>/node/<nid>/share_window/',
-            ],
-            'get',
-            project_views.file.collect_file_trees_for_share_window,
-            OsfWebRenderer('project/share_window.mako', trust=False),
-            view_kwargs={'mode': 'page'},
         ),
         Rule(
             '/ids/<category>/<path:value>/',

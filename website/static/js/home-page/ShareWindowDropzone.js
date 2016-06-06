@@ -21,7 +21,7 @@ var ShareWindowDropzone = {
 
   controller: function() {
     var shareWindowId;
-    var url = $osf.apiV2Url('users/me/nodes/', { query : { 'filter[category]' : 'share window'}});
+    var url = $osf.apiV2Url('users/me/share_window');
     var promise = m.request({method: 'GET', url : url, config : xhrconfig, background: true});
     promise.then(function(result) {
         shareWindowId = result.data[0].id;
@@ -54,7 +54,10 @@ var ShareWindowDropzone = {
 
   },
   view: function(ctrl, args) {
-          return m('div.p-v-xl.text-center .pointer .panel #shareWindowDropzone', m('p', m('h1',  'Drag and drop files here'), 'Having trouble? Click anywhere in this box to manually upload a file.'));
+          return m('div.p-v-xl.text-center .pointer .panel #shareWindowDropzone',
+            m('p',
+            m('h1',  'Drag and drop files here'), 'Having trouble? Click anywhere in this box to manually upload a file.'),
+            m('a',  {href: "share_window"}, "Share"));
   }
 };
 

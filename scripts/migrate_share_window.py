@@ -14,6 +14,8 @@ from modularodm import Q
 from website.app import init_app
 from framework.auth import core
 from website.project.model import Node
+from website.share_window.model import ShareWindow
+
 
 from scripts import utils as script_utils
 
@@ -22,21 +24,17 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
+def delete_old_windows(user, dry_run):
+
+    query = Q('_id', 'eq', user._id)
+    for node in Node.find(query):
+        node.is_public = True
+
+
 def migrate_user(user, dry_run):
 
-    query = Q('creator', 'eq', user._id)
-    query = query & Q('category', 'eq', "share window")
 
-    if Node.find(query).count() > 0:
-        return
-    else:
-        share_window = Node(creator=user)
-        share_window.title = "Share Window"
-        share_window.category = "share window"
-
-    if not dry_run:
-        user.save()
-        share_window.save()
+    ShareWindow().create(user)
 
 
 def get_targets():
@@ -46,6 +44,7 @@ def get_targets():
 def main(dry_run):
     users = get_targets()
     for user in users:
+#        delete_old_windows(user, dry_run)
         migrate_user(user, dry_run)
 
 
