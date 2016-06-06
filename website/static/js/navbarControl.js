@@ -2,7 +2,6 @@
 var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox'); // TODO: Why is this import required? Is it? See [#OSF-6100]
-var signIn = require('js/signIn');
 var $osf = require('js/osfHelpers');
 
 /**
@@ -20,9 +19,6 @@ var NavbarViewModel = function() {
     self.onSearchPage = ko.computed(function() {
         return window.contextVars.search;
     });
-
-    // signIn viewmodel component
-    self.signIn = new signIn.ViewModel();
 
     self.toggleSearch = function(){
         if(self.showSearch()){

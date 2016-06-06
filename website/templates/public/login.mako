@@ -52,67 +52,7 @@
     </div>
     %endif
     %if campaign != "institution" or not enable_institutions:
-        %if not sign_up:
-            <div class="col-sm-5 col-sm-offset-1 toggle-box toggle-box-left toggle-box-active p-h-lg">
-        <form
-            id="logInForm"
-            class="form-horizontal"
-            action="${login_url}"
-            method="POST"
-            data-bind="submit: submit"
-        >
-            <h3 class="m-b-lg"> Login </h3>
-            <div class="form-group">
-                <label for="inputEmail3" class="col-sm-3 control-label">Email</label>
-                <div class="col-sm-9">
-                    <input
-                        ${'autofocus' if not sign_up else ''}
-                        type="email"
-                        class="form-control"
-                        data-bind="value: username"
-                        name="username"
-                        id="inputEmail3"
-                        placeholder="Email"
-                    >
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="inputPassword3" class="col-sm-3 control-label">Password</label>
-                    <div class="col-sm-9">
-                    <input
-                        type="password"
-                        class="form-control"
-                        id="inputPassword3"
-                        placeholder="Password"
-                        data-bind="value: password"
-                        name="password"
-                    >
-                </div>
-            </div>
-            <div class="form-group">
-                <div class="col-sm-offset-3 col-sm-9">
-                    <div class="checkbox">
-                    <label><input type="checkbox"> Remember me</label>
-                    </div>
-                </div>
-            </div>
-            <div class="form-group">
-                <div class="col-sm-offset-3 col-sm-9">
-                    <button type="submit" class="btn btn-success pull-right">Sign in</button>
-                </div>
-            </div>
-        </form>
-    </div>
-        %else:
-            <div id="logInForm"></div>
-            <div id="signu"></div>
-        %endif
-
-        %if sign_up:
-            <div id="signUpScope" class="col-sm-6 col-sm-offset-3 existing-user-signin p-b-md m-b-m">
-        %else:
-            <div id="signUpScope" class="col-sm-5 toggle-box toggle-box-right toggle-box-muted p-h-lg" style="height: auto;">
-        %endif
+        <div id="signUpScope" class="col-sm-6 col-sm-offset-3 existing-user-signin p-b-md m-b-m">
         <form data-bind="submit: submit" class="form-horizontal">
             <h3 class="m-b-lg"> Create a free account </h3>
                 <div
@@ -126,7 +66,7 @@
                     <label for="inputName" class="col-sm-4 control-label">Full Name</label>
                     <div class="col-sm-8">
                         <input
-                            ${'autofocus' if sign_up else ''}
+                            autofocus
                             type="text"
                             class="form-control"
                             id="inputName"
@@ -219,7 +159,6 @@
             <div class="help-block" >
                 <p class="m-l-md" data-bind="html: flashMessage, attr: {class: flashMessageClass}"></p>
             </div>
-            %if sign_up:
                     </br>
             <div class="form-group">
                 <div class="col-sm-6">
@@ -253,7 +192,6 @@
         %else:
             <div class="text-center m-b-sm col-sm-12" style="padding-top: 15px"> <a href="${domain}login/?campaign=institution">Login through your institution  <i class="fa fa-arrow-right"></i></a></div>
         %endif
-    %endif
 </div>
 %endif
 </%def>
