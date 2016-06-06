@@ -327,11 +327,12 @@ var CommentModel = function(data, $parent, $root) {
         self.author = self.$root.author;
     }
 
-    self.contentDisplay = ko.observable(linkifyHtml(markdown.full.render(self.content())));
+    var linkify_opts = { target: function (href, type) { return type === 'url' ? '_top' : null; } };
+    self.contentDisplay = ko.observable(linkifyHtml(markdown.full.render(self.content()), linkify_opts));
 
     // Update contentDisplay with rendered markdown whenever content changes
     self.content.subscribe(function(newContent) {
-        self.contentDisplay(linkifyHtml(markdown.full.render(newContent)));
+        self.contentDisplay(linkifyHtml(markdown.full.render(newContent), linkify_opts));
     });
 
     self.prettyDateCreated = ko.computed(function() {
