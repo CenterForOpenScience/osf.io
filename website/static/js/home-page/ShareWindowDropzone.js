@@ -20,18 +20,12 @@ var xhrconfig = function(xhr) {
 var ShareWindowDropzone = {
 
   controller: function() {
-    var shareWindowId;
-    var url = $osf.apiV2Url('users/me/share_window');
-    var promise = m.request({method: 'GET', url : url, config : xhrconfig, background: true});
-    promise.then(function(result) {
-        shareWindowId = result.data[0].id;
-    });
 
     Dropzone.options.shareWindowDropzone = {
             clickable: '#shareWindowDropzone',
 
             accept: function(file, done) {
-                this.options.url = waterbutler.buildUploadUrl(false,'osfstorage',shareWindowId, file,{});
+                this.options.url = waterbutler.buildUploadUrl(false,'osfstorage',window.contextVars['currentUser']['id'], file,{});
                 done();
             },
 
