@@ -18,11 +18,13 @@ $(document).ready(function(){
     var osfHome = {
         view : function(ctrl, args) {
             return [
+                 m('div',
+                    [
+                        m('div', m(columnSizeClass, m.component(ShareWindowDropzone, {})))
+                    ]
+                ),
                 m('.quickSearch', m('.container.p-t-lg',
                     [
-                        m('.row.m-t-sm', [
-                            m(columnSizeClass, m.component(ShareWindowDropzone, {}))
-                         ]),
                         m('.row.m-t-lg.p-b-md', [
                             m(columnSizeClass, m.component(QuickSearchProject, {}))
                         ])
