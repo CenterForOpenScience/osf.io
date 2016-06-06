@@ -33,7 +33,6 @@ class CommentDetailMixin(object):
                 'type': 'comments',
                 'attributes': {
                     'content': 'Updating this comment',
-                    'new_mentions': [],
                     'deleted': False
                 }
             }
