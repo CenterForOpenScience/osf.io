@@ -51,9 +51,3 @@ class TestShareWindow(OsfTestCase):
 
         assert shareWindow.share_window_id == shareWindowLoaded.share_window_id
 
-    def test_o(self):
-        institution = InstitutionFactory()
-        institution.save()
-
-        assert Node.find_one(Q('institution_id', 'eq', institution.institution_id), allow_institution=True)
-
