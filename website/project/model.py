@@ -781,7 +781,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         ('procedure', 'Procedure'),
         ('project', 'Project'),
         ('software', 'Software'),
-        ('share window', 'Share Window'),
         ('other', 'Other'),
         ('', 'Uncategorized')
     ])
@@ -3589,16 +3588,26 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     institution_email_domains = fields.StringField(list=True)
     institution_banner_name = fields.StringField()
 
+    share_window_id = fields.StringField(unique=True, index=True)
+
     @classmethod
-    def find(cls, query=None, allow_institution=False, **kwargs):
+    def find(cls, query=None, allow_institution=False, allow_share_windows=False, **kwargs):
         if not allow_institution:
             query = (query & Q('institution_id', 'eq', None)) if query else Q('institution_id', 'eq', None)
+
+        if not allow_share_windows:
+            query = (query & Q('share_window_id', 'eq', None)) if query else Q('share_window_id', 'eq', None)
+
         return super(Node, cls).find(query, **kwargs)
 
     @classmethod
-    def find_one(cls, query=None, allow_institution=False, **kwargs):
+    def find_one(cls, query=None, allow_institution=False,  allow_share_windows=False, **kwargs):
         if not allow_institution:
             query = (query & Q('institution_id', 'eq', None)) if query else Q('institution_id', 'eq', None)
+
+        if not allow_share_windows:
+            query = query & Q('share_window_id', 'eq', None) if query else Q('share_window_id', 'eq', None)
+
         return super(Node, cls).find_one(query, **kwargs)
 
     @classmethod

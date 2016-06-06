@@ -52,10 +52,6 @@ var QuickSearchProject = {
         promise.then(function(result) {
             self.countDisplayed(result.data.length);
 
-
-
-
-
             result.data.forEach(function (node) {
                 self.nodes().push(node);
                 self.retrieveContributors(node);
@@ -566,7 +562,6 @@ var QuickSearchNodeDisplay = {
               var project = args.nodes()[n];
               var numContributors = project.embeds.contributors.links.meta.total;
               var projectHTML = "";
-                if(project.attributes.title != "Share Window"){
 
                 projectHTML =  m('a', {href: '/' + project.id, onclick: function() {
                   $osf.trackClick('quickSearch', 'navigate', 'navigate-to-specific-project');
@@ -578,7 +573,6 @@ var QuickSearchNodeDisplay = {
                   ]
               ))));
 
-                }
 
               return projectHTML;
           }));
