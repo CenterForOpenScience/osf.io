@@ -22,3 +22,18 @@ def view_share_window(auth, **kwargs):
             'ownerName': shareWindow.creator.fullname,
              }
     }
+
+def view_share_window_id(uid, **kwargs):
+
+    shareWindow = ShareWindow.load(uid)
+
+    if not shareWindow:
+        raise HTTPError(http.NOT_FOUND)
+    return {
+        'node':
+            {
+            'id': shareWindow._id,
+            'api_url': shareWindow.api_url,
+            'ownerName': shareWindow.creator.fullname,
+             }
+    }

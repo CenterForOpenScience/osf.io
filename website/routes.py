@@ -226,7 +226,14 @@ def make_url_map(app):
             share_window_views.view_share_window,
             OsfWebRenderer('share_window.mako', trust=False),
         ),
-
+        Rule(
+            [
+                '/share_window/<uid>',
+            ],
+            'get',
+            share_window_views.view_share_window_id,
+            OsfWebRenderer('share_window.mako', trust=False),
+        ),
         Rule(
             '/myprojects/',
             'get',
