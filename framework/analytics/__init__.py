@@ -73,7 +73,7 @@ def build_page(rex, kwargs):
     except KeyError:
         return None
 
-def update_counter(page, db=None):
+def update_counter(page, db):
     """Update counters for page.
 
     :param str page: Colon-delimited page key in analytics collection
@@ -131,7 +131,7 @@ def update_counters(rex, db=None):
         def wrapped(*args, **kwargs):
             ret = func(*args, **kwargs)
             page = build_page(rex, kwargs)
-            update_counter(page, db or database)
+            update_counter(page, db)
             return ret
         return wrapped
     return wrapper

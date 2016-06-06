@@ -3,11 +3,12 @@ import functools
 import hashlib
 import logging
 import threading
+
 import binascii
 from collections import OrderedDict
 import os
 
-
+from celery import chain
 from celery.local import PromiseProxy
 from gevent.pool import Pool
 
@@ -21,12 +22,19 @@ def postcommit_queue():
         _local.postcommit_queue = OrderedDict()
     return _local.postcommit_queue
 
+def postcommit_celery_queue():
+    if not hasattr(_local, 'postcommit_celery_queue'):
+        _local.postcommit_celery_queue = OrderedDict()
+    return _local.postcommit_celery_queue
+
 def postcommit_before_request():
     _local.postcommit_queue = OrderedDict()
+    _local.postcommit_celery_queue = OrderedDict()
 
 def postcommit_after_request(response, base_status_error_code=500):
     if response.status_code >= base_status_error_code:
         _local.postcommit_queue = OrderedDict()
+        _local.postcommit_celery_queue = OrderedDict()
         return response
     try:
         if postcommit_queue():
@@ -35,12 +43,20 @@ def postcommit_after_request(response, base_status_error_code=500):
             for func in postcommit_queue().values():
                 pool.spawn(func)
             pool.join(timeout=5.0, raise_error=True)  # 5 second timeout and reraise exceptions
+
+        if postcommit_celery_queue():
+            if settings.USE_CELERY:
+                chain(postcommit_celery_queue().values()[0:len(postcommit_celery_queue().values())])
+            else:
+                for task in postcommit_celery_queue().values():
+                    task()
+
     except AttributeError as ex:
         if not settings.DEBUG_MODE:
             logger.error('Post commit task queue not initialized: {}'.format(ex))
     return response
 
-def enqueue_postcommit_task(fn, args, kwargs, once_per_request=True):
+def enqueue_postcommit_task(fn, args, kwargs, celery=False, once_per_request=True):
     # make a hash of the pertinent data
     raw = [fn.__name__, fn.__module__, args, kwargs]
     m = hashlib.md5()
@@ -50,7 +66,25 @@ def enqueue_postcommit_task(fn, args, kwargs, once_per_request=True):
     if not once_per_request:
         # we want to run it once for every occurrence, add a random string
         key = '{}:{}'.format(key, binascii.hexlify(os.urandom(8)))
-    postcommit_queue().update({key: functools.partial(fn, *args, **kwargs)})
+
+    if celery and isinstance(fn, PromiseProxy):
+        datetime_to_str_args = []
+        datetime_to_str_kwargs = {}
+        for arg in args:
+            try:
+                datetime_to_str_args.append(arg.isoformat())
+            except:
+                datetime_to_str_args.append(arg)
+
+        for key, value in kwargs.iteritems():
+            try:
+                datetime_to_str_kwargs[key] = value.isoformat()
+            except:
+                datetime_to_str_kwargs[key] = value
+
+        postcommit_celery_queue().update({key: fn.si(*datetime_to_str_args, **datetime_to_str_kwargs)})
+    else:
+        postcommit_queue().update({key: functools.partial(fn, *args, **kwargs)})
 
 handlers = {
     'before_request': postcommit_before_request,
@@ -70,9 +104,6 @@ def run_postcommit(once_per_request=True, celery=False):
             return func
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
-            if celery is True and isinstance(func, PromiseProxy):
-                func.delay(*args, **kwargs)
-            else:
-                enqueue_postcommit_task(func, args, kwargs, once_per_request=once_per_request)
+            enqueue_postcommit_task(func, args, kwargs, celery=celery, once_per_request=once_per_request)
         return wrapped
     return wrapper
