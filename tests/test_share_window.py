@@ -23,7 +23,7 @@ class TestShareWindow(OsfTestCase):
         User.remove()
 
     def test_create_share_window(self):
-        shareWindow = ShareWindow(self.user)
+        shareWindow = ShareWindow().create(self.user)
         assert(shareWindow._id == self.user._id)
 
     def test_share_window_created_on_register(self):
