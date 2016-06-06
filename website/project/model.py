@@ -7,7 +7,6 @@ import logging
 import pymongo
 import datetime
 import urlparse
-from collections import OrderedDict
 import warnings
 
 import pytz
