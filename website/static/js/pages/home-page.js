@@ -32,12 +32,12 @@ $(document).ready(function(){
             // )),
                 m('.quickSearch', m('.container.p-t-lg',
                     [
-                        m('.row.m-t-sm', [
-                            m(columnSizeClass, m.component(ShareWindowDropzone, {}))
-                        ]),
-                        m('.row.m-t-sm', [
-                            m(columnSizeClass, m.component(ShareFilesProject, {}))
-                        ]),
+                        //m('.row.m-t-sm', [
+                        //    m(columnSizeClass, m.component(ShareWindowDropzone, {}))
+                        // ]),
+                        //m('.row.m-t-sm', [
+                        //    m(columnSizeClass, m.component(ShareFilesProject, {}))
+                        //]),
                         m('.row.m-t-lg.p-b-md', [
                             m(columnSizeClass, m.component(QuickSearchProject, {}))
                         ])

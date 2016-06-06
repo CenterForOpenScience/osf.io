@@ -6,6 +6,7 @@ var m = require('mithril');
 var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
 var AddProject = require('js/addProjectPlugin');
+var ViewShareFiles = require('js/ShareFilesPlugin');
 var NodeFetcher = require('js/myProjects').NodeFetcher;
 
 // CSS
@@ -466,10 +467,25 @@ var QuickSearchProject = {
             }
         }
 
-        function headerTemplate ( ){
-            return [ m('h2.col-xs-9', 'Dashboard'), m('m-b-lg.col-xs-3', m('.pull-right', m.component(AddProject, {
-                buttonTemplate : m('button.btn.btn-success.btn-success-high-contrast.m-t-md.f-w-xl[data-toggle="modal"][data-target="#addProjectFromHome"]', {onclick: function(){
-                                $osf.trackClick('quickSearch', 'add-project', 'open-add-project-modal');
+
+function headerTemplate ( ){
+            return [
+             m('h2.col-xs-7', 'Dashboard'), m('m-b-lg.col-xs-3', {style:{display: 'inline-flex'}},
+              
+                m('.pull-right', m.component(ViewShareFiles, {
+                    buttonTemplate :  m('button.btn.btn-primary.m-t-md.f-w-xl[data-toggle="modal"][data-target="#PublicFilesFromHome"]', {onclick: function() {$osf.trackClick('quickSearch', 'add-project', 'open-add-project-modal');}}, 'Public Files'), 
+                modalID : 'PublicFilesFromHome',
+                stayCallback : function _stayCallback_inPanel() {
+                                document.location.reload(true);
+                },
+                trackingCategory: 'quickSearch',
+                trackingAction: 'add-project',
+                templatesFetcher: ctrl.templateNodes
+            })),
+
+                m('.pull-right', m.component(AddProject, {
+                    buttonTemplate : m('button.btn.btn-success.btn-success-high-contrast.m-t-md.f-w-xl[data-toggle="modal"][data-target="#addProjectFromHome"]', {onclick: function() {
+                    $osf.trackClick('quickSearch', 'add-project', 'open-add-project-modal');
                 }}, 'Create new project'),
                 modalID : 'addProjectFromHome',
                 stayCallback : function _stayCallback_inPanel() {
