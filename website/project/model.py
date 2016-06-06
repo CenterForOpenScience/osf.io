@@ -3596,7 +3596,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             query = (query & Q('institution_id', 'eq', None)) if query else Q('institution_id', 'eq', None)
 
         if not allow_share_windows:
-            query = (query & Q('share_window_id', 'eq', None)) if query else Q('share_window_id', 'eq', None)
+            query = (query & Q('share_window_id', 'eq', None) if query else Q('share_window_id', 'eq', None))
 
         return super(Node, cls).find(query, **kwargs)
 
@@ -3606,7 +3606,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             query = (query & Q('institution_id', 'eq', None)) if query else Q('institution_id', 'eq', None)
 
         if not allow_share_windows:
-            query = query & Q('share_window_id', 'eq', None) if query else Q('share_window_id', 'eq', None)
+            query = (query & Q('share_window_id', 'eq', None) if query else Q('share_window_id', 'eq', None))
 
         return super(Node, cls).find_one(query, **kwargs)
 
