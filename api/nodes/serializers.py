@@ -11,7 +11,7 @@ from framework.exceptions import PermissionsError
 
 from website.project.metadata.schemas import ACTIVE_META_SCHEMAS
 from website.models import Node, User, Comment, Institution, MetaSchema, DraftRegistration
-from website.exceptions import NodeStateError, UserNotAffiliatedError
+from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
 from website.project.model import NodeUpdateError
 
