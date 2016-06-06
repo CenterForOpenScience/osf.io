@@ -47,7 +47,6 @@ var SharePopover =  {
                 if (!pop){
                     return window.setTimeout(popOverShow, 100);
                 }
-                var deferredShareContents = $('#shareContentHolder').attr('deferredContents');
                 m.render(document.getElementById('popOver'), [
                     m('ul.nav.nav-tabs.nav-justified', [
                         m('li.active', m('a[href="#share"][data-toggle="tab"]', 'Share')),
@@ -56,26 +55,23 @@ var SharePopover =  {
                     m('.tab-content', [
                         m('.tab-pane.active#share', {
                             config: function(element) {
-                                var deferredContents = $('#shareContentHolder').attr('deferredContents');
-                                if ($(element).find('#shareButtons').length == 0) {
+                                var shareContents = $('#shareContentHolder').html();
+                                if ($(element).find('.shareButtons').length == 0) {
                                     var contentUrl = $('#share input').val();
+                                    var encodedUrl = encodeURIComponent(contentUrl);
                                     var safeUrl = $('<div>').text(contentUrl).html();
 
-                                    deferredContents = deferredContents.replace('CONTENT_URL', safeUrl);
-                                    deferredContents = deferredContents.replace('CONTENT_URL', safeUrl);
-                                    deferredContents = deferredContents.replace('CONTENT_URL', safeUrl);
-                                    deferredContents = deferredContents.replace('CONTENT_ENCODED_URL', encodeURIComponent(contentUrl));
-                                    console.log(deferredContents);
-                                    $(element).append(deferredContents);
-                                    // These two buttons need extra help to load correctly
-                                    // each time after the scripts are already loaded
-                                    if (typeof twttr !== 'undefined') {
-                                        twttr.widgets.load();
-                                    }
-                                    if (typeof IN !== 'undefined') {
-                                        IN.parse();
-                                    }
-                                    //$('#shareContentHolder').attr('deferredContents', '');
+                                    shareContents = shareContents.replace('CONTENT_URL', safeUrl);
+                                    shareContents = shareContents.replace('CONTENT_ENCODED_URL', encodedUrl);
+                                    shareContents = shareContents.replace('CONTENT_ENCODED_URL', encodedUrl);
+                                    shareContents = shareContents.replace('CONTENT_ENCODED_URL', encodedUrl);
+
+                                    $(element).append(shareContents);
+
+                                    $('.shareButtons a').on('click', function(e) {
+                                        window.open(this.href, '', 'menubar=no,toolbar=no,resizable=yes,scrollbars=yes,width=600,height=400');
+                                        e.preventDefault();
+                                    });
                                 }
                             }
                         }, m('.input-group', [

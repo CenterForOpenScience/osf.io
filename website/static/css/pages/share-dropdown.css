@@ -1,21 +1,34 @@
-div.dropdown .dropdown-menu li iframe, div.dropdown .dropdown-menu li .IN-widget {
+div.dropdown .dropdown-menu li, .shareButtons {
     margin: 3px 20px;
 }
 
-div.dropdown .dropdown-menu, div.dropdown .dropdown-menu a {
+div.dropdown .dropdown-menu li a, .shareButtons a {
+    padding: 0px 2px;
+    display: inline-block;
+}
+
+div.dropdown .dropdown-menu {
     background-color: #f8f8f8;
-    color: black;
 }
 
 div.dropdown .dropdown-menu a:hover {
     background-image: none;
-    background-color: #e7e7e7;
+    background-color: #f8f8f8;
 }
 
-div.shareButtons, div.shareButton {
+div.dropdown .fa, .shareButtons .fa {
+    color: #08c;
+    font-size: 1.6em;
+}
+
+.shareButtons {
     display: inline-block;
     margin-top: 12px;
     margin-left: 4px;
     margin-right: 4px;
     vertical-align: top;
+}
+
+#shareContentHolder {
+    display: none;
 }

@@ -1,6 +1,8 @@
 <%inherit file="project/project_base.mako"/>
 <%include file="project/nodes_privacy.mako"/>
 
+<link rel="stylesheet" href="/static/font-awesome/css/font-awesome.min.css">
+
 <%
     is_project = node['node_type'] == 'project'
 %>
@@ -48,24 +50,24 @@
                         % endif
                         <button class="btn btn-default disabled">Public</button>
                     </div>
-                    <%
-                        unrendered_contents = r"""
+                    <div class="btn-group dropdown" id="shareDropDown">
+                        <a class="btn btn-default" data-toggle="dropdown">Share</a>
                         <ul class="dropdown-menu" role="menu" id="shareDropDownMenu">
-                            <li><a data-url="${node['absolute_url']}" class="twitter-share-button">Tweet</a><script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script></li>
-                            <li><iframe src="https://www.facebook.com/plugins/share_button.php?href=${node['absolute_url'] | u}&layout=button&mobile_iframe=true&appId=46124579504&width=58&height=20" width="58" height="20" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowTransparency="true"></iframe></li>
-                            <li><script src="//platform.linkedin.com/in.js" type="text/javascript"> lang: en_US</script><script type="IN/Share" data-url="${node['absolute_url']}"></script></li>
                             <li>
-                                <a href="mailto:?subject=${node['title']} on the Open Science Framework&amp;body=This project is being openly shared at ${node['absolute_url']}" target="_blank">
-                                    Share by email
+                                <a href="https://twitter.com/intent/tweet?url=${node['absolute_url'] | u}&text=${node['title'] | u}&via=OSFramework" target="_blank">
+                                    <i class="fa fa-twitter-square" aria-hidden="true"></i>
+                                </a>
+                                <a href="https://www.facebook.com/sharer/sharer.php?u=${node['absolute_url'] | u}" target="_blank">
+                                    <i class="fa fa-facebook-square" aria-hidden="true"></i>
+                                </a>
+                                <a href="https://www.linkedin.com/cws/share?url=${node['absolute_url'] | u}&title=${node['title'] | u}" target="_blank">
+                                    <i class="fa fa-linkedin-square" aria-hidden="true"></i>
+                                </a>
+                                <a href="mailto:?subject=${node['title']}&amp;body=${node['absolute_url']}" target="_blank">
+                                    <i class="fa fa-envelope-square" aria-hidden="true"></i>
                                 </a>
                             </li>
                         </ul>
-                        """
-                        from mako.template import Template
-                        deferred_contents = Template(unrendered_contents).render(node=node)
-                    %>
-                    <div class="btn-group dropdown" id="shareDropDown" deferredContents="${deferred_contents | h}">
-                        <a class="btn btn-default" data-toggle="dropdown">Share</a>
                     % endif
                     </div>
 

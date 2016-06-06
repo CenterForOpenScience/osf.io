@@ -253,13 +253,9 @@ $(document).ready(function() {
         window.location = '/search/?q=(tags:"' + $(e.target).text().toString().trim()+ '")';
     });
 
-    // Proxy loading of media sharing widgets
-    $('#shareDropDown').on('click', function() {
-        var deferredContents = $(this).attr('deferredContents');
-        if (deferredContents.length) {
-            $(this).append(deferredContents);
-            $(this).attr('deferredContents', '');
-        }
+    $('#shareDropDownMenu li a').on('click', function(e) {
+        window.open(this.href, '', 'menubar=no,toolbar=no,resizable=yes,scrollbars=yes,width=600,height=400');
+        e.preventDefault();
     });
 
     // Portlet feature for the dashboard, to be implemented in later versions.

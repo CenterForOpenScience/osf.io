@@ -24,23 +24,22 @@
     </h2>
   </div>
   <div class="col-sm-7">
-  <%
-      unrendered_contents = r"""
-      <div id="shareButtons">
-          <div class="shareButton"><a data-url="CONTENT_URL" class="twitter-share-button">Tweet</a><script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script></div>
-          <div class="shareButton"><iframe src="https://www.facebook.com/plugins/share_button.php?href=CONTENT_ENCODED_URL&layout=button&mobile_iframe=true&appId=46124579504&width=58&height=20" width="58" height="20" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowTransparency="true"></iframe></div>
-          <div class="shareButton"><script src="//platform.linkedin.com/in.js" type="text/javascript"> lang: en_US</script><script type="IN/Share" data-url="CONTENT_URL"></script></div>
-          <div class="shareButton">
-              <a href="mailto:?subject=${file_name} file from ${node['title']} on the Open Science Framework&amp;body=This file is being openly shared at CONTENT_URL" target="_blank">
-                  Share by email
-              </a>
-          </div>
-      </div>
-      """
-      from mako.template import Template
-      deferred_contents = Template(unrendered_contents).render(node=node, file_name=file_name, file_path=file_path, file_id=file_id, url_content=urls['render'])
-  %>
-    <div id="shareContentHolder" deferredContents="${deferred_contents | h}"></div>
+    <div id="shareContentHolder" deferredContents="${deferred_contents | h}">
+        <div class="shareButtons">
+            <a href="https://twitter.com/intent/tweet?url=CONTENT_ENCODED_URL&text=${file_name | u}&via=OSFramework" target="_blank">
+                <i class="fa fa-twitter-square" aria-hidden="true"></i>
+            </a>
+            <a href="https://www.facebook.com/sharer/sharer.php?u=CONTENT_ENCODED_URL" target="_blank">
+                <i class="fa fa-facebook-square" aria-hidden="true"></i>
+            </a>
+            <a href="https://www.linkedin.com/cws/share?url=CONTENT_ENCODED_URL&title=${file_name | u}" target="_blank">
+                <i class="fa fa-linkedin-square" aria-hidden="true"></i>
+            </a>
+            <a href="mailto:?subject=${file_name}&amp;body=CONTENT_URL" target="_blank">
+                <i class="fa fa-envelope-square" aria-hidden="true"></i>
+            </a>
+        </div>
+    </div>
     <div id="toggleBar" class="pull-right"></div>
   </div>
 </div>
