@@ -14,12 +14,10 @@ class TestInstitutionNodeList(ApiTestCase):
         self.node1.affiliated_institutions.append(self.institution)
         self.node1.save()
         self.user1 = AuthUserFactory()
-        self.user2 = AuthUserFactory()
         self.node2 = ProjectFactory(creator=self.user1, is_public=False)
         self.node2.affiliated_institutions.append(self.institution)
-        self.node2.add_contributor(self.user2, auth=Auth(self.user1))
         self.node2.save()
-        self.node3 = ProjectFactory(creator=self.user2, is_public=False)
+        self.node3 = ProjectFactory(is_public=False)
         self.node3.affiliated_institutions.append(self.institution)
         self.node3.save()
 
@@ -35,22 +33,12 @@ class TestInstitutionNodeList(ApiTestCase):
         assert_not_in(self.node2._id, ids)
         assert_not_in(self.node3._id, ids)
 
-    def test_return_private_nodes_with_auth(self):
+    def test_does_not_return_private_nodes_with_auth(self):
         res = self.app.get(self.institution_node_url, auth=self.user1.auth)
 
         assert_equal(res.status_code, 200)
         ids = [each['id'] for each in res.json['data']]
 
         assert_in(self.node1._id, ids)
-        assert_in(self.node2._id, ids)
+        assert_not_in(self.node2._id, ids)
         assert_not_in(self.node3._id, ids)
-
-    def test_return_private_nodes_mixed_auth(self):
-        res = self.app.get(self.institution_node_url, auth=self.user2.auth)
-
-        assert_equal(res.status_code, 200)
-        ids = [each['id'] for each in res.json['data']]
-
-        assert_in(self.node1._id, ids)
-        assert_in(self.node2._id, ids)
-        assert_in(self.node3._id, ids)
