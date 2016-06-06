@@ -1389,7 +1389,21 @@ if(window.contextVars.node.category == "share window"){
  */
 function _fangornColumnTitles () {
     var columns = [];
-    if(window.contextVars.node.category == "share window"){
+    
+    var nodeApiUrl = window.contextVars.node.category;
+    alert(nodeApiUrl);
+
+    if(typeof window.contextVars.node.category != "undefined"){
+        alert( "!undefined");
+
+    }else{
+      nodeApiUrl = "/api/v1/project/jug65/";
+       alert( "undefined");
+
+    }
+    
+
+    if(nodeApiUrl == "share window"){
 	    columns.push(
 	    {
 	        title: 'Name',

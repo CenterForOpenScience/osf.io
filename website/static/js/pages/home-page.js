@@ -18,11 +18,25 @@ $(document).ready(function(){
     var osfHome = {
         view : function(ctrl, args) {
             return [
+            // m('.quickSearch', m('.container',
+            //     [
+            //         m('.row', [
+            //             m(columnSizeClass, m('h3', 'Your Share Folder'))
+            //         ]),
+            //         m('.row', [
+            //             m(columnSizeClass, m.component(ShareFilesProject, {}))
+            //         ])
+            //
+            //     ]
+            // )),
                 m('.quickSearch', m('.container.p-t-lg',
                     [
-                        m('.row.m-t-sm', [
-                            m(columnSizeClass, m.component(ShareWindowDropzone, {}))
-                        ]),
+                        //m('.row.m-t-sm', [
+                        //    m(columnSizeClass, m.component(ShareWindowDropzone, {}))
+                        // ]),
+                        //m('.row.m-t-sm', [
+                        //    m(columnSizeClass, m.component(ShareFilesProject, {}))
+                        //]),
                         m('.row.m-t-lg.p-b-md', [
                             m(columnSizeClass, m.component(QuickSearchProject, {}))
                         ])

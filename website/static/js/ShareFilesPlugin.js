@@ -1,0 +1,263 @@
+/**
+ * UI and function to add project
+ */
+'use strict';
+
+require('css/add-project-plugin.css');
+var $ = require('jquery');
+var m = require('mithril');
+var $osf = require('js/osfHelpers');
+//var ShareWindowDropzone = require('js/home-page/ShareWindowDropzone');
+var Fangorn = require('js/fangorn');
+
+
+
+// XHR configuration to get apiserver connection to work
+var xhrconfig = function (xhr) {
+    xhr.withCredentials = true;
+};
+
+
+var ViewShareFiles = {
+    controller : function (options) {
+        var self = this;
+        self.defaults = {
+            buttonTemplate : m('.btn.btn-primary[data-toggle="modal"][data-target="#addProjectFromHome"]',  'Public Files'),
+            parentID : null,
+            title: 'Share Window',
+            modalID : 'addProjectModal',
+            stayCallback :null, // Function to call when user decides to stay after project creation
+            categoryList : []
+        };
+
+        self.viewState = m.prop('form'); // 'processing', 'success', 'error';
+        self.options = $.extend({}, self.defaults, options);
+        self.nodeType = self.options.parentID === null ? 'project' : 'component';
+        self.defaultCat = self.options.parentID === null ? 'project' : '';
+        self.showMore = m.prop(false);
+        self.newProjectName = m.prop('');
+        self.newProjectDesc = m.prop('');
+        self.newProjectCategory = m.prop(self.defaultCat);
+        self.newProjectTemplate = m.prop('');
+        self.goToProjectLink = m.prop('');
+        self.saveResult = m.prop({});
+        self.errorMessageType = m.prop('unknown');
+        self.errorMessage = {
+            'unknown' : 'There was an unknown error. Please try again later.'
+        };
+        self.userProjects =  m.prop([]); // User nodes
+
+        // Validation
+        self.isValid = m.prop(false);
+
+        self.mapTemplates = function() {
+            self.userProjects([]);
+            options.templatesFetcher._flat.map(function(node){
+                self.userProjects().push({title: node.attributes.title, id: node.id});
+            });
+            return self.userProjects();
+        };
+
+        if(options.templatesFetcher){
+            options.templatesFetcher.on(['page', 'done'], self.mapTemplates);
+            if(self.userProjects().length === 0){ // Run this in case fetcher callbacks have already finished
+                self.mapTemplates();
+            }
+        }
+
+
+        self.add = function _add () {
+            var url;
+            var data;
+            self.viewState('processing');
+            if(self.options.parentID) {
+                url = $osf.apiV2Url('nodes/' + self.options.parentID + '/children/', { query : {}});
+            } else {
+                url = $osf.apiV2Url('nodes/', { query : {}});
+            }
+            data = {
+                    'data' : {
+                        'type': 'nodes',
+                        'attributes': {
+                            'title': self.newProjectName(),
+                            'category': self.newProjectCategory(),
+                            'description' : self.newProjectDesc()
+                        }
+                    }
+                };
+
+            if (self.newProjectTemplate()) {
+                data.data.attributes.template_from = self.newProjectTemplate();
+            }
+
+            var success = function _success (result) {
+                self.viewState('success');
+                self.goToProjectLink(result.data.links.html);
+                self.saveResult(result);
+            };
+            var error = function _error (result) {
+                self.viewState('error');
+            };
+            m.request({method : 'POST', url : url, data : data, config : xhrconfig})
+                .then(success, error);
+            self.newProjectName('');
+            self.newProjectDesc('');
+            self.isValid(false);
+        };
+        self.reset = function _reset(){
+            self.newProjectName('');
+            $('#' + self.options.modalID + ' .project-name').val('');
+            $('#' + self.options.modalID + ' .project-desc').val('');
+            self.viewState('form');
+            self.newProjectDesc('');
+            self.newProjectCategory(self.defaultCat);
+            $('.modal').modal('hide');
+            self.isValid(false);
+        };
+    },
+    view : function (ctrl, options) {
+        var templates = {
+            form : m('.modal-content', [
+                m('.modal-header', [
+                    m('button.close[data-dismiss="modal"][aria-label="Close"]',{ onclick : function() {
+                        ctrl.reset();
+                        $osf.trackClick(options.trackingCategory, options.trackingAction, 'click-close-add-project-modal');
+                    }}, [
+                        m('span[aria-hidden="true"]','×')
+                    ]),
+                    m('h3.modal-title', ctrl.options.title)
+                ]),
+                m('.modal-body', [
+                    m('.text-left', [
+                        m('.form-group.m-v-sm', [
+                            //m('.col-md-10 col-md-offset-1 col-lg-8 col-lg-offset-2', m.component(ShareWindowDropzone, {})),
+                            m('div#treeGrid',[
+                                m('div',{ 'class' : 'logo-spin logo-lg'}, ''),
+                                m('p', { 'class' : 'm-t-sm fg-load-message'},'Loading files... ')
+                                ]),
+
+
+
+                        ]),
+                    ])
+                ]),
+                m('.modal-footer', [
+                    m('button[type="button"].btn.btn-default[data-dismiss="modal"]', { onclick : function(){
+                        ctrl.reset();
+                        $osf.trackClick(options.trackingCategory, options.trackingAction, 'click-cancel-button');
+                    }},  'Close'),
+                    ctrl.isValid() ? m('button[type="button"].btn.btn-success', { onclick : function(){
+                        ctrl.add();
+                        $osf.trackClick(options.trackingCategory, options.trackingAction, 'click-create-button');
+                    }},'Upload') : m('button[type="button"].btn.btn-success','Upload')
+                ])
+            ]),
+            processing : m('.modal-content',
+                m('.modal-content',
+                    m('.modal-header', [
+                        m('button.close[data-dismiss="modal"][aria-label="Close"]',{ onclick : ctrl.reset}, [
+                            m('span[aria-hidden="true"]','×')
+                        ])
+                    ]),
+                    m('.modal-body.text-left', [
+                            m('.add-project-processing', 'Saving your ' + ctrl.nodeType + '...')
+                        ]
+                    )
+                )
+            ),
+            success : m('.modal-content', [
+                m('.modal-content',
+                    m('.modal-body.text-left', [
+                            m('button.close[data-dismiss="modal"][aria-label="Close"]',{ onclick : function() {
+                                ctrl.reset();
+                                $osf.trackClick(options.trackingCategory, options.trackingAction, 'click-close-success-modal');
+                            }}, [
+                                m('span[aria-hidden="true"]','×')
+                            ]),
+                            m('h4.add-project-success.text-success', 'New ' + ctrl.nodeType + ' created successfully!')
+                        ]
+                    ),
+                    m('.modal-footer', [
+                        m('button[type="button"].btn.btn-default[data-dismiss="modal"]', {
+                            onclick : function() {
+                                ctrl.reset();
+                                ctrl.options.stayCallback.call(ctrl); // results are at ctrl.saveResult
+                                $osf.trackClick(options.trackingCategory, options.trackingAction, 'keep-working-here');
+                            }
+                        },  'Keep working here'),
+                        m('a.btn.btn-success', {
+                            href : ctrl.goToProjectLink(),
+                            onclick: function(){
+                            $osf.trackClick(options.trackingCategory, options.trackingAction, 'go-to-new-project');
+                            }
+                        },'Go to new ' + ctrl.nodeType + '')
+                    ])
+                )
+            ]),
+            error : m('.modal-content', [
+                m('.modal-content',
+                    m('.modal-body.text-left', [
+                            m('button.close[data-dismiss="modal"][aria-label="Close"]',{ onclick : function() {
+                                ctrl.reset();
+                                $osf.trackClick(options.trackingCategory, options.trackingAction, 'close-couldn\'t-create-your-project');
+                                }}, [
+                                m('span[aria-hidden="true"]','×')
+                            ]),
+                            m('h4.add-project-error.text-danger', 'Couldn\'t create your ' + ctrl.nodeType + ''),
+                            m('p', ctrl.errorMessage[ctrl.errorMessageType()])
+                        ]
+                    ),
+                    m('.modal-footer', [
+                        m('button[type="button"].btn.btn-default[data-dismiss="modal"]', {onclick: function() {
+                            $osf.trackClick(options.trackingCategory, options.trackingAction, 'click-OK-couldn\'t-create-your-project');
+                        }},  'OK')
+                    ])
+                )
+            ])
+        };
+
+        return  m('span', [
+            ctrl.options.buttonTemplate,
+            m('#' + ctrl.options.modalID + '.modal.fade[tabindex=-1][role="dialog"][aria-labelledby="addProject"][aria-hidden="true"]',
+                m('.modal-dialog.text-left',
+                    templates[ctrl.viewState()]
+                )
+            )
+        ]);
+    }
+};
+
+var Select2Template = {
+    view: function(ctrl, options) {
+        return m('select', {config: Select2Template.config(options), onchange: function(){
+            $osf.trackClick(options.trackingCategory, options.trackingAction, 'select-project-template');
+        }}, [
+            m('option', {value: ''}, ''),
+            options.userProjects().map(function(node) {
+                var args = {value: node.id};
+                return m('option', args, node.title);
+            })
+        ]);
+    },
+    /**Select2 config factory - adapted from https://lhorie.github.io/mithril/integration.html **/
+    config: function(ctrl) {
+        return function(element, isInitialized) {
+            var $el = $(element);
+            if (!isInitialized) {
+                $el.select2({placeholder: 'Select a project to use as a template', allowClear: true, width: '100%'}).on('change', function(e) {
+                    var id = $el.select2('val');
+                    m.startComputation();
+                    //Set the value to the selected option
+                    ctrl.userProjects().map(function(node){
+                        if(node.id === id) {
+                            ctrl.value(node.id);
+                        }
+                    });
+                    m.endComputation();
+                });
+            }
+        };
+    }
+};
+
+module.exports = ViewShareFiles;
