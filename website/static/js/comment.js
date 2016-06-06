@@ -93,9 +93,6 @@ var callbacks = {
     beforeInsert: function(value, $li) {
         var data = $li.data('item-data');
         var model = ko.dataFor(this.$inputor[0]);
-        if (model.replyMentions().indexOf(data.id) === -1) {
-            model.replyMentions().push(data.id);
-        }
         this.query.el.attr('data-atwho-guid', '' + data.id);
         return value;
     },
@@ -269,13 +266,11 @@ var BaseComment = function() {
 
     self.replying = ko.observable(false);
     self.replyContent = ko.observable('');
-    self.replyMentions = ko.observableArray([]);
 
     self.urlForNext = ko.observable();
 
     self.saveContent = ko.computed(function() {
         var content = self.replyContent() || '';
-        self.replyMentions([]);
         var regex = /<span[^>]*?data-atwho-guid="([a-z\d]{5})"[^>]*?>((@|\+)[\w\s]+)<\/span>/;
         var matches = content.match(/<span[^>]*?data-atwho-guid="([a-z\d]{5})"[^>]*?>((@|\+)[\w\s]+)<\/span>/g);
         if (matches) {
@@ -285,10 +280,6 @@ var BaseComment = function() {
                 var mention = match[2];
                 var url = '/' + guid + '/';
                 content = content.replace(match[0], '['+ mention + '](' + url + ')');
-
-                if (guid && self.replyMentions.indexOf(guid) === -1) {
-                    self.replyMentions.push(guid);
-                }
             }
         }
         return content.replace(/<br>/g, '&#13;&#10;');
@@ -329,7 +320,6 @@ BaseComment.prototype.cancelReply = function() {
     this.submittingReply(false);
     this.replyErrorMessage('');
     this.errorMessage('');
-    this.replyMentions([]);
 };
 
 BaseComment.prototype.setupToolTips = function(elm) {
@@ -447,7 +437,6 @@ BaseComment.prototype.submitReply = function() {
                     'type': 'comments',
                     'attributes': {
                         'content': self.saveContent(),
-                        'new_mentions': self.replyMentions()
                     },
                     'relationships': {
                         'target': {
@@ -463,7 +452,6 @@ BaseComment.prototype.submitReply = function() {
     request.done(function(response) {
         self.cancelReply();
         self.replyContent(null);
-        self.replyMentions([]);
         var newComment = new CommentModel(response.data, self, self.$root);
         newComment.loading(false);
         self.comments.unshift(newComment);
@@ -476,7 +464,6 @@ BaseComment.prototype.submitReply = function() {
     });
     request.fail(function(xhr, status, error) {
         self.cancelReply();
-        self.replyMentions([]);
         self.errorMessage('Could not submit comment');
         Raven.captureMessage('Error creating comment', {
             extra: {
@@ -579,7 +566,6 @@ var CommentModel = function(data, $parent, $root) {
 
     self.editedContent = ko.computed(function() {
         var content = self.content() || '';
-        self.replyMentions([]);
         var regex = /<span[^>]*?data-atwho-guid="([a-z\d]{5})"[^>]*?>((@|\+)[\w\s]+)<\/span>/;
         var matches = content.match(/<span[^>]*?data-atwho-guid="([a-z\d]{5})"[^>]*?>((@|\+)[\w\s]+)<\/span>/g);
         if (matches) {
@@ -589,10 +575,6 @@ var CommentModel = function(data, $parent, $root) {
                 var mention = match[2];
                 var url = '/' + guid + '/';
                 content = content.replace(match[0], '['+ mention + '](' + url + ')');
-
-                if (guid && self.replyMentions.indexOf(guid) === -1) {
-                    self.replyMentions.push(guid);
-                }
             }
         }
         // '&#13;&#10;' is the character entity reference for '\r\n'
@@ -685,7 +667,6 @@ CommentModel.prototype.cancelEdit = function() {
     this.$root.editors -= 1;
     this.editErrorMessage('');
     this.errorMessage('');
-    this.replyMentions([]);
     this.content(this._content);
 };
 
@@ -710,7 +691,6 @@ CommentModel.prototype.submitEdit = function(data, event) {
                     'type': 'comments',
                     'attributes': {
                         'content': self.editedContent(),
-                        'new_mentions': self.replyMentions(),
                         'deleted': false
                     }
                 }
@@ -719,7 +699,6 @@ CommentModel.prototype.submitEdit = function(data, event) {
     request.done(function(response) {
         self.content(response.data.attributes.content);
         self.dateModified(response.data.attributes.date_modified);
-        self.replyMentions([]);
         self.editing(false);
         self.modified(true);
         self.editErrorMessage('');
@@ -730,7 +709,6 @@ CommentModel.prototype.submitEdit = function(data, event) {
     });
     request.fail(function(xhr, status, error) {
         self.cancelEdit();
-        self.replyMentions([]);
         self.errorMessage('Could not submit comment');
         Raven.captureMessage('Error editing comment', {
             extra: {
@@ -836,7 +814,6 @@ CommentModel.prototype.submitUndelete = function() {
                     'type': 'comments',
                     'attributes': {
                         'content': self.content(),
-                        'new_mentions': [],
                         'deleted': false
                     }
                 }

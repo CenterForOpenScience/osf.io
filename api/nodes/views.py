@@ -1946,7 +1946,6 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
         is_abuse       boolean            has this comment been reported by the current user?
         has_children   boolean            does this comment have replies?
         can_edit       boolean            can the current user edit this comment?
-        new_mentions   list               list of guid's of mentioned users
 
     ##Links
 
@@ -1964,7 +1963,6 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
                            "type": "comments",   # required
                            "attributes": {
                              "content":       {content},        # mandatory
-                             "new_mentions":  {[guid]},
                            },
                            "relationships": {
                              "target": {

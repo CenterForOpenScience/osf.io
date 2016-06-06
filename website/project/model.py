@@ -168,18 +168,21 @@ def validate_contributor(guid, contributors):
             raise ValidationValueError('Mentioned user is not a contributor.')
     return True
 
-def add_new_mentions(comment, contributors):
-    """ Check if there are any new_mentions that are not in old_mentions and are a contributor
+def get_valid_mentioned_users_guids(comment, contributors):
+    """ Returns a list of valid users mentioned in the comment content.
 
-    :param Node comment: Node that has new_mentions and old_mentions
+    :param Node comment: Node that has new_mentions and ever_mentioned
+    :param list new_mentions: List of guids of mentioned users
     :param list contributors: List of contributors on the node
     :return bool new_mentions_added: Whether there are valid new_mentions
     """
-    validate = lambda m: m not in comment.old_mentions and validate_contributor(m, contributors)
-    comment.new_mentions = filter(validate, comment.new_mentions)
-    if len(comment.new_mentions) > 0:
-        return True
-    return False
+    new_mentions = set(re.findall(r"\[[@|\+].*?\]\(\/([a-z\d]{5})\/\)", comment.content))
+    new_mentions = [
+        m for m in new_mentions if
+        m not in comment.ever_mentioned and
+        validate_contributor(m, contributors)
+    ]
+    return new_mentions
 
 class Comment(GuidStoredObject, SpamMixin, Commentable):
 
@@ -209,7 +212,7 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
                                  validate=[MaxLengthValidator(settings.COMMENT_MAXLENGTH), validators.string_required])
     # The mentioned users
     new_mentions = fields.ListField(fields.StringField(default=[]))
-    old_mentions = fields.ListField(fields.StringField())
+    ever_mentioned = fields.ListField(fields.StringField())
 
     # For Django compatibility
     @property
@@ -326,11 +329,11 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
             save=False,
         )
 
+        comment.new_mentions = get_valid_mentioned_users_guids(comment, comment.node.contributors)
+
         if comment.new_mentions:
-            new_mentions_added = add_new_mentions(comment, comment.node.contributors)
-            if new_mentions_added:
-                project_signals.mention_added.send(comment, auth=auth)
-                comment.old_mentions.extend(comment.new_mentions)
+            project_signals.mention_added.send(comment, auth=auth)
+            comment.ever_mentioned.extend(comment.new_mentions)
             comment.save()
 
         comment.node.save()
@@ -338,7 +341,7 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
 
         return comment
 
-    def edit(self, content, new_mentions, auth, save=False):
+    def edit(self, content, auth, save=False):
         if not self.node.can_comment(auth) or self.user._id != auth.user._id:
             raise PermissionsError('{0!r} does not have permission to edit this comment'.format(auth.user))
         log_dict = {
@@ -351,13 +354,11 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
         self.content = content
         self.modified = True
         self.date_modified = datetime.datetime.utcnow()
-        self.new_mentions = new_mentions
+        self.new_mentions = get_valid_mentioned_users_guids(self, self.node.contributors)
 
         if self.new_mentions:
-            new_mentions_added = add_new_mentions(self, self.node.contributors)
-            if new_mentions_added and save:
-                project_signals.mention_added.send(self, auth=auth)
-                self.old_mentions.extend(self.new_mentions)
+            project_signals.mention_added.send(self, auth=auth)
+            self.ever_mentioned.extend(self.new_mentions)
 
         if save:
             self.save()

@@ -325,8 +325,7 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
             'data': {
                 'type': 'comments',
                 'attributes': {
-                    'content': 'This is a comment',
-                    'new_mentions': []
+                    'content': 'This is a comment'
                 },
                 'relationships': {
                     'target': {
@@ -379,8 +378,7 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
             'data': {
                 'type': 'comments',
                 'attributes': {
-                    'content': 'This is a comment',
-                    'new_mentions': []
+                    'content': 'This is a comment'
                 }
             }
         }
@@ -395,8 +393,7 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
             'data': {
                 'type': 'comments',
                 'attributes': {
-                    'content': 'This is a comment',
-                    'new_mentions': []
+                    'content': 'This is a comment'
                 },
                 'relationships': {}
             }
@@ -412,8 +409,7 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
             'data': {
                 'type': 'comments',
                 'attributes': {
-                    'content': 'This is a comment',
-                    'new_mentions': []
+                    'content': 'This is a comment'
                 },
                 'relationships': [{'id': self.private_project._id}]
             }
@@ -428,8 +424,7 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
             'data': {
                 'type': 'comments',
                 'attributes': {
-                    'content': 'This is a comment',
-                    'new_mentions': []
+                    'content': 'This is a comment'
                 },
                 'relationships': {
                     'target': {}
@@ -447,8 +442,7 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
             'data': {
                 'type': 'comments',
                 'attributes': {
-                    'content': 'This is a comment',
-                    'new_mentions': []
+                    'content': 'This is a comment'
                 },
                 'relationships': {
                     'data': {
@@ -468,8 +462,7 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
             'data': {
                 'type': 'comments',
                 'attributes': {
-                    'content': 'This is a comment',
-                    'new_mentions': []
+                    'content': 'This is a comment'
                 },
                 'relationships': {
                     'target': {
@@ -499,8 +492,7 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
             'data': {
                 'type': 'comments',
                 'attributes': {
-                    'content': 'This is a comment',
-                    'new_mentions': []
+                    'content': 'This is a comment'
                 },
                 'relationships': {
                     'target': {
@@ -522,8 +514,7 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
             'data': {
                 'type': 'comments',
                 'attributes': {
-                    'content': 'This is a comment',
-                    'new_mentions': []
+                    'content': 'This is a comment'
                 },
                 'relationships': {
                     'target': {
@@ -544,8 +535,7 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
             'data': {
                 'type': '',
                 'attributes': {
-                    'content': 'This is a comment',
-                    'new_mentions': []
+                    'content': 'This is a comment'
                 },
                 'relationships': {
                     'target': {
@@ -568,8 +558,7 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
             'data': {
                 'type': 'cookies',
                 'attributes': {
-                    'content': 'This is a comment',
-                    'new_mentions': []
+                    'content': 'This is a comment'
                 },
                 'relationships': {
                     'target': {
@@ -585,37 +574,13 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
         assert_equal(res.status_code, 409)
         assert_equal(res.json['errors'][0]['detail'], 'Resource identifier does not match server endpoint.')
 
-    def test_create_comment_no_new_mentions(self):
-        self._set_up_private_project_with_private_comment_level()
-        payload = {
-            'data': {
-                'type': 'comments',
-                'attributes': {
-                    'content': 'This is a comment'
-                },
-                'relationships': {
-                    'target': {
-                        'data': {
-                            'type': 'nodes',
-                            'id': self.private_project._id
-                        }
-                    }
-                }
-            }
-        }
-        res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/attributes/new_mentions')
-
     def test_create_comment_no_content(self):
         self._set_up_private_project_with_private_comment_level()
         payload = {
             'data': {
                 'type': 'comments',
                 'attributes': {
-                    'content': '',
-                    'new_mentions': []
+                    'content': ''
                 },
                 'relationships': {
                     'target': {
@@ -638,8 +603,7 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
             'data': {
                 'type': 'comments',
                 'attributes': {
-                    'content': '   ',
-                    'new_mentions': []
+                    'content': '   '
                 },
                 'relationships': {
                     'target': {
@@ -661,8 +625,7 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
             'data': {
                 'type': 'comments',
                 'attributes': {
-                    'content': '<em>Cool</em> <strong>Comment</strong>',
-                    'new_mentions': []
+                    'content': '<em>Cool</em> <strong>Comment</strong>'
                 },
                 'relationships': {
                     'target': {
@@ -684,8 +647,7 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
             'data': {
                 'type': 'comments',
                 'attributes': {
-                    'content': (''.join(['c' for c in range(osf_settings.COMMENT_MAXLENGTH + 1)])),
-                    'new_mentions': []
+                    'content': (''.join(['c' for c in range(osf_settings.COMMENT_MAXLENGTH + 1)]))
                 },
                 'relationships': {
                     'target': {
@@ -717,8 +679,7 @@ class TestFileCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
             'data': {
                 'type': 'comments',
                 'attributes': {
-                    'content': 'This is a comment',
-                    'new_mentions': []
+                    'content': 'This is a comment'
                 },
                 'relationships': {
                     'target': {
@@ -778,8 +739,7 @@ class TestFileCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
             'data': {
                 'type': 'comments',
                 'attributes': {
-                    'content': 'This is a comment',
-                    'new_mentions': []
+                    'content': 'This is a comment'
                 },
                 'relationships': {
                     'target': {
@@ -803,8 +763,7 @@ class TestWikiCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
             'data': {
                 'type': 'comments',
                 'attributes': {
-                    'content': 'This is a comment',
-                    'new_mentions': []
+                    'content': 'This is a comment'
                 },
                 'relationships': {
                     'target': {
@@ -864,8 +823,7 @@ class TestWikiCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
             'data': {
                 'type': 'comments',
                 'attributes': {
-                    'content': 'This is a comment',
-                    'new_mentions': []
+                    'content': 'This is a comment'
                 },
                 'relationships': {
                     'target': {
@@ -889,8 +847,7 @@ class TestCommentRepliesCreate(NodeCommentsCreateMixin, ApiTestCase):
             'data': {
                 'type': 'comments',
                 'attributes': {
-                    'content': 'This is a comment',
-                    'new_mentions': []
+                    'content': 'This is a comment'
                 },
                 'relationships': {
                     'target': {
@@ -953,7 +910,7 @@ class TestCommentFiltering(ApiTestCase):
         self.base_url = '/{}nodes/{}/comments/'.format(API_BASE, self.project._id)
 
         self.formatted_date_created = self.comment.date_created.strftime('%Y-%m-%dT%H:%M:%S.%f')
-        self.comment.edit('Edited comment', [], auth=core.Auth(self.user), save=True)
+        self.comment.edit('Edited comment', auth=core.Auth(self.user), save=True)
         self.formatted_date_modified = self.comment.date_modified.strftime('%Y-%m-%dT%H:%M:%S.%f')
 
     def test_node_comments_with_no_filter_returns_all_comments(self):

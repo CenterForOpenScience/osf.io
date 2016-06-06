@@ -117,8 +117,8 @@ class TestCommentModel(OsfTestCase):
         assert_equal(comment.target, self.comment.target)
         assert_equal(len(comment.node.logs), 2)
         assert_equal(comment.node.logs[-1].action, NodeLog.COMMENT_ADDED)
-        assert_equal([], self.comment.old_mentions)
-        assert_equal(comment.new_mentions, self.comment.old_mentions)
+        assert_equal([], self.comment.ever_mentioned)
+        assert_equal(comment.new_mentions, self.comment.ever_mentioned)
 
     def test_create_comment_content_cannot_exceed_max_length(self):
         with assert_raises(ValidationValueError):
@@ -188,8 +188,7 @@ class TestCommentModel(OsfTestCase):
                 node=self.comment.node,
                 target=self.comment.target,
                 is_public=True,
-                content='This is a comment.',
-                new_mentions=[self.comment.user._id]
+                content='This is a comment with a bad mention [@Unconfirmed User](/' + self.comment.user._id + '/).'
             )
         assert_equal(mock_signals.signals_sent(), set([comment_added, mention_added]))
 
@@ -209,8 +208,7 @@ class TestCommentModel(OsfTestCase):
                     node=self.comment.node,
                     target=self.comment.target,
                     is_public=True,
-                    content='This is a comment.',
-                    new_mentions=[user._id]
+                    content='This is a comment with a bad mention [@Unconfirmed User](/' + user._id + '/).'
                 )
         assert_equal(mock_signals.signals_sent(), set([contributor_added]))
         assert_equal(error.exception.message, 'User does not exist or is not active.')
@@ -225,8 +223,7 @@ class TestCommentModel(OsfTestCase):
                     node=self.comment.node,
                     target=self.comment.target,
                     is_public=True,
-                    content='This is a comment.',
-                    new_mentions=[user._id]
+                    content='This is a comment with a bad mention [@Non-contributor User](/' + user._id + '/).'
                 )
         assert_equal(mock_signals.signals_sent(), set([]))
         assert_equal(error.exception.message, 'Mentioned user is not a contributor.')
@@ -240,8 +237,7 @@ class TestCommentModel(OsfTestCase):
                     node=self.comment.node,
                     target=self.comment.target,
                     is_public=True,
-                    content='This is a comment.',
-                    new_mentions=['noncontributor']
+                    content='This is a comment with a bad mention [@Not a User](/qwert/).'
                 )
         assert_equal(mock_signals.signals_sent(), set([]))
         assert_equal(error.exception.message, 'User does not exist or is not active.')
@@ -249,7 +245,6 @@ class TestCommentModel(OsfTestCase):
     def test_edit(self):
         self.comment.edit(
             auth=self.auth,
-            new_mentions=[],
             content='edited',
             save=True
         )
@@ -260,11 +255,9 @@ class TestCommentModel(OsfTestCase):
 
     def test_edit_sends_mention_added_signal_if_mentions(self):
         with capture_signals() as mock_signals:
-            self.comment.new_mentions=[self.comment.user._id]
             self.comment.edit(
                 auth=self.auth,
-                new_mentions=self.comment.new_mentions,
-                content='edited',
+                content='This is a comment with a bad mention [@Mentioned User](/' + self.comment.user._id + '/).',
                 save=True
             )
         assert_equal(mock_signals.signals_sent(), set([mention_added]))
@@ -272,11 +265,9 @@ class TestCommentModel(OsfTestCase):
     def test_edit_does_not_send_mention_added_signal_if_nonuser_mentioned(self):
         with assert_raises(ValidationValueError) as error:
             with capture_signals() as mock_signals:
-                self.comment.new_mentions=['noncontributor']
                 self.comment.edit(
                     auth=self.auth,
-                    new_mentions=self.comment.new_mentions,
-                    content='edited',
+                    content='This is a comment with a bad mention [@Not a User](/qwert/).',
                     save=True
                 )
         assert_equal(mock_signals.signals_sent(), set([]))
@@ -286,11 +277,9 @@ class TestCommentModel(OsfTestCase):
         with assert_raises(ValidationValueError) as error:
             with capture_signals() as mock_signals:
                 user = UserFactory()
-                self.comment.new_mentions=[user._id]
                 self.comment.edit(
                     auth=self.auth,
-                    new_mentions=self.comment.new_mentions,
-                    content='edited',
+                    content='This is a comment with a bad mention [@Non-contributor User](/' + user._id + '/).',
                     save=True
                 )
         assert_equal(mock_signals.signals_sent(), set([]))
@@ -306,11 +295,9 @@ class TestCommentModel(OsfTestCase):
                 self.comment.node.add_contributor(user, visible=False,permissions=[permissions.READ])
                 self.comment.node.save()
 
-                self.comment.new_mentions=[user._id]
                 self.comment.edit(
                     auth=self.auth,
-                    new_mentions=self.comment.new_mentions,
-                    content='edited',
+                    content='This is a comment with a bad mention [@Unconfirmed User](/' + user._id + '/).',
                     save=True
                 )
         assert_equal(mock_signals.signals_sent(), set([contributor_added]))
@@ -318,12 +305,10 @@ class TestCommentModel(OsfTestCase):
 
     def test_edit_does_not_send_mention_added_signal_if_already_mentioned(self):
         with capture_signals() as mock_signals:
-            self.comment.old_mentions=[self.comment.user._id]
-            self.comment.new_mentions=[self.comment.user._id]
+            self.comment.ever_mentioned=[self.comment.user._id]
             self.comment.edit(
                 auth=self.auth,
-                new_mentions=self.comment.new_mentions,
-                content='edited',
+                content='This is a comment with a bad mention [@Already Mentioned User](/' + self.comment.user._id + '/).',
                 save=True
             )
         assert_equal(mock_signals.signals_sent(), set([]))
@@ -421,7 +406,6 @@ class TestCommentModel(OsfTestCase):
         # Edit previously read comment
         comment.edit(
             auth=Auth(project.creator),
-            new_mentions=[],
             content='edited',
             save=True
         )
