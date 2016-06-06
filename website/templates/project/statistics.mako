@@ -75,15 +75,16 @@
         </div>
     </div>
 
-    <%def name="javascript_bottom()">
-        ${parent.javascript_bottom()}
-        % if keen_public_project_id:
-        <script>
-            window.contextVars = $.extend(true, {}, window.contextVars, {
-                keen: { public: { readKey: ${node['keenio_read_key'] | sjson, n} } }
-            });
-        </script>
-        <script src="${'/static/public/js/statistics-page.js' | webpack_asset}"></script>
-        % endif
-    </%def>
 %endif
+
+<%def name="javascript_bottom()">
+  ${parent.javascript_bottom()}
+  % if keen_public_project_id and node['is_public']:
+    <script>
+     window.contextVars = $.extend(true, {}, window.contextVars, {
+         keen: { public: { readKey: ${node['keenio_read_key'] | sjson, n} } }
+     });
+    </script>
+    <script src="${'/static/public/js/statistics-page.js' | webpack_asset}"></script>
+  % endif
+</%def>
