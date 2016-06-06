@@ -34,26 +34,25 @@ def notify(event, user, node, timestamp, **context):
                     store_emails([m], notification_type, event_type, user, node,
                                      timestamp, **context)
                     sent_users.extend([m])
-        return sent_users
-
-    if target_user:
-        target_user_id = target_user._id
-        if event_type in constants.USER_SUBSCRIPTIONS_AVAILABLE:
-            subscriptions = get_user_subscriptions(target_user, event_type)
-    for notification_type in subscriptions:
-        if notification_type != 'none' and subscriptions[notification_type]:
-            if user in subscriptions[notification_type]:
-                subscriptions[notification_type].pop(subscriptions[notification_type].index(user))
-            if target_user and target_user_id in subscriptions[notification_type]:
-                subscriptions[notification_type].pop(subscriptions[notification_type].index(target_user_id))
-                if target_user_id != user._id:
-                    store_emails([target_user_id], notification_type, 'comment_replies', user, node,
+    else:
+        if target_user:
+            target_user_id = target_user._id
+            if event_type in constants.USER_SUBSCRIPTIONS_AVAILABLE:
+                subscriptions = get_user_subscriptions(target_user, event_type)
+        for notification_type in subscriptions:
+            if notification_type != 'none' and subscriptions[notification_type]:
+                if user in subscriptions[notification_type]:
+                    subscriptions[notification_type].pop(subscriptions[notification_type].index(user))
+                if target_user and target_user_id in subscriptions[notification_type]:
+                    subscriptions[notification_type].pop(subscriptions[notification_type].index(target_user_id))
+                    if target_user_id != user._id:
+                        store_emails([target_user_id], notification_type, 'comment_replies', user, node,
+                                     timestamp, **context)
+                        sent_users.append(target_user_id)
+                if subscriptions[notification_type]:
+                    store_emails(subscriptions[notification_type], notification_type, event_type, user, node,
                                  timestamp, **context)
-                    sent_users.append(target_user_id)
-            if subscriptions[notification_type]:
-                store_emails(subscriptions[notification_type], notification_type, event_type, user, node,
-                             timestamp, **context)
-                sent_users.extend(subscriptions[notification_type])
+                    sent_users.extend(subscriptions[notification_type])
     return sent_users
 
 
