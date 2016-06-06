@@ -18,13 +18,6 @@
 
     <div id="osfHome"></div>
 
-<div id="treeGrid">
-    <div class="spinner-loading-wrapper">
-        <div class="logo-spin logo-lg"></div>
-        <p class="m-t-sm fg-load-message"> Loading files...  </p>
-    </div>
-</div>
-
 </%def>
 
 <%def name="stylesheets()">
@@ -35,6 +28,5 @@
     ${parent.javascript_bottom()}
     <script src=${"/static/public/js/home-page.js" | webpack_asset}></script>
     
-    <script src=${"/static/public/js/homeFiles-page.js" | webpack_asset}></script>
 
 </%def>

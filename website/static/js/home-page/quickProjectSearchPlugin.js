@@ -6,7 +6,6 @@ var m = require('mithril');
 var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
 var AddProject = require('js/addProjectPlugin');
-var ViewShareFiles = require('js/ShareFilesPlugin');
 var NodeFetcher = require('js/myProjects').NodeFetcher;
 
 // CSS
@@ -51,7 +50,6 @@ var QuickSearchProject = {
         var promise = m.request({method: 'GET', url : url, config : xhrconfig, background: true});
         promise.then(function(result) {
             self.countDisplayed(result.data.length);
-
             result.data.forEach(function (node) {
                 self.nodes().push(node);
                 self.retrieveContributors(node);
@@ -157,7 +155,11 @@ var QuickSearchProject = {
             var contributorList = [];
             contributors.data.forEach(function(contrib){
                 var fullName;
-                if (contrib.embeds.users.data) {
+                if (contrib.attributes.unregistered_contributor) {
+                    fullName = contrib.attributes.unregistered_contributor;
+                    contributorList.push(fullName);
+                }
+                else if (contrib.embeds.users.data) {
                     fullName = contrib.embeds.users.data.attributes.full_name;
                     contributorList.push(fullName);
                 }
@@ -176,12 +178,15 @@ var QuickSearchProject = {
             var attributes;
 
             if (contributor) {
-                 if (contributor.embeds.users.data) {
+                if (contributor.attributes.unregistered_contributor) {
+                    return contributor.attributes.unregistered_contributor;
+                }
+                else if (contributor.embeds.users.data) {
                     attributes = contributor.embeds.users.data.attributes;
-                 }
-                 else if (contributor.embeds.users.errors) {
+                }
+                else if (contributor.embeds.users.errors) {
                     attributes = contributor.embeds.users.errors[0].meta;
-                 }
+                }
                 return $osf.findContribName(attributes);
             }
             return 'a contributor';
@@ -463,25 +468,10 @@ var QuickSearchProject = {
             }
         }
 
-
-function headerTemplate ( ){
-            return [
-             m('h2.col-xs-7', 'Dashboard'), m('m-b-lg.col-xs-3', {style:{display: 'inline-flex'}},
-              
-                m('.pull-right', m.component(ViewShareFiles, {
-                    buttonTemplate :  m('button.btn.btn-primary.m-t-md.f-w-xl[data-toggle="modal"][data-target="#PublicFilesFromHome"]', {onclick: function() {$osf.trackClick('quickSearch', 'add-project', 'open-add-project-modal');}}, 'Public Files'), 
-                modalID : 'PublicFilesFromHome',
-                stayCallback : function _stayCallback_inPanel() {
-                                document.location.reload(true);
-                },
-                trackingCategory: 'quickSearch',
-                trackingAction: 'add-project',
-                templatesFetcher: ctrl.templateNodes
-            })),
-
-                m('.pull-right', m.component(AddProject, {
-                    buttonTemplate : m('button.btn.btn-success.btn-success-high-contrast.m-t-md.f-w-xl[data-toggle="modal"][data-target="#addProjectFromHome"]', {onclick: function() {
-                    $osf.trackClick('quickSearch', 'add-project', 'open-add-project-modal');
+        function headerTemplate ( ){
+            return [ m('h2.col-xs-9', 'Dashboard'), m('m-b-lg.col-xs-3', m('.pull-right', m.component(AddProject, {
+                buttonTemplate : m('button.btn.btn-success.btn-success-high-contrast.m-t-md.f-w-xl[data-toggle="modal"][data-target="#addProjectFromHome"]', {onclick: function(){
+                                $osf.trackClick('quickSearch', 'add-project', 'open-add-project-modal');
                 }}, 'Create new project'),
                 modalID : 'addProjectFromHome',
                 stayCallback : function _stayCallback_inPanel() {
@@ -548,36 +538,32 @@ function headerTemplate ( ){
     }
 };
 
+
 var QuickSearchNodeDisplay = {
-  view: function(ctrl, args) {
-      if (args.eligibleNodes().length === 0 && args.filter() != null && args.loadingComplete() === true) {
-          return m('.row.m-v-sm', m('.col-sm-12',
-              m('.row',
-                  m('.col-sm-12', m('em', 'No results found!'))
-              ))
-          );
-      }
-      else {
-          return m('.', args.eligibleNodes().slice(0, args.countDisplayed()).map(function(n){
-              var project = args.nodes()[n];
-              var numContributors = project.embeds.contributors.links.meta.total;
-              var projectHTML = "";
-
-                projectHTML =  m('a', {href: '/' + project.id, onclick: function() {
-                  $osf.trackClick('quickSearch', 'navigate', 'navigate-to-specific-project');
-              }}, m('.m-v-sm.node-styling',  m('.row', m('div',
-                  [
-                      m('.col-sm-4.col-md-5.p-v-xs', m('.quick-search-col',  project.attributes.title)),
-                      m('.col-sm-4.col-md-4.p-v-xs', m('.quick-search-col', $osf.contribNameFormat(project, numContributors, args.getFamilyName))),
-                      m('.col-sm-4.col-md-3.p-v-xs', m('.quick-search-col', args.formatDate(project)))
-                  ]
-              ))));
-
-
-              return projectHTML;
-          }));
-      }
-  }
+    view: function(ctrl, args) {
+        if (args.eligibleNodes().length === 0 && args.filter() != null && args.loadingComplete() === true) {
+            return m('.row.m-v-sm', m('.col-sm-12',
+                m('.row',
+                    m('.col-sm-12', m('em', 'No results found!'))
+                ))
+            );
+        }
+        else {
+            return m('.', args.eligibleNodes().slice(0, args.countDisplayed()).map(function(n){
+                var project = args.nodes()[n];
+                var numContributors = project.embeds.contributors.links.meta.total;
+                return m('a', {href: '/' + project.id, onclick: function() {
+                    $osf.trackClick('quickSearch', 'navigate', 'navigate-to-specific-project');
+                }}, m('.m-v-sm.node-styling',  m('.row', m('div',
+                    [
+                        m('.col-sm-4.col-md-5.p-v-xs', m('.quick-search-col',  project.attributes.title)),
+                        m('.col-sm-4.col-md-4.p-v-xs', m('.quick-search-col', $osf.contribNameFormat(project, numContributors, args.getFamilyName))),
+                        m('.col-sm-4.col-md-3.p-v-xs', m('.quick-search-col', args.formatDate(project)))
+                    ]
+                ))));
+            }));
+        }
+    }
 };
 
 module.exports = QuickSearchProject;
