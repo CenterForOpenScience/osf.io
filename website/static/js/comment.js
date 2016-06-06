@@ -115,6 +115,50 @@ var exclusifyGroup = function() {
     }
 };
 
+ko.subscribable.fn.convertHtmlToMarkdown = function(commentContent) {
+    return ko.computed(function() {
+        var content = commentContent() || '';
+        var regex = /<span[^>]*?data-atwho-guid="([a-z\d]{5})"[^>]*?>((@|\+)[\w\s]+)<\/span>/;
+        var matches = content.match(/<span[^>]*?data-atwho-guid="([a-z\d]{5})"[^>]*?>((@|\+)[\w\s]+)<\/span>/g);
+        if (matches) {
+            for (var i = 0; i < matches.length; i++) {
+                var match = regex.exec(matches[i]);
+                var guid = match[1];
+                var mention = match[2];
+                var url = '/' + guid + '/';
+                content = content.replace(match[0], '['+ mention + '](' + url + ')');
+            }
+        }
+        // '&#13;&#10;' is the character entity reference for '\r\n'
+        // '\r\n' is treated differently and breaks conversion from markdown to html
+        return content.replace(/<br>/g, '&#13;&#10;');
+    }, this);
+};
+
+ko.subscribable.fn.convertMarkdownToHtml = function(commentContent) {
+    return ko.computed(function() {
+        var content = commentContent();
+        var regex = /\[(@|\+)(.*?)\]\(\/([a-z\d]{5})\/\)/;
+        var matches = content.match(/\[(@|\+)(.*?)\]\(\/([a-z\d]{5})\/\)/g);
+        if (matches) {
+            for (var i = 0; i < matches.length; i++) {
+                var match = regex.exec(matches[i]);
+                var atwho = match[1];
+                var guid = match[3];
+                var mention = match[2];
+
+                content = content.replace(
+                    match[0],
+                    '<span class="atwho-inserted" contenteditable="false" data-atwho-guid="' +
+                        guid + '" data-atwho-at-query="' + atwho + '">' +
+                        atwho + mention + '</span>'
+                );
+            }
+        }
+        return content.replace(/\r\n/g, '<br>');
+    }, this);
+};
+
 var BaseComment = function() {
 
     var self = this;
@@ -133,22 +177,7 @@ var BaseComment = function() {
 
     self.urlForNext = ko.observable();
 
-    self.saveContent = ko.computed(function() {
-        var content = self.replyContent() || '';
-        var regex = /<span[^>]*?data-atwho-guid="([a-z\d]{5})"[^>]*?>((@|\+)[\w\s]+)<\/span>/;
-        var matches = content.match(/<span[^>]*?data-atwho-guid="([a-z\d]{5})"[^>]*?>((@|\+)[\w\s]+)<\/span>/g);
-        if (matches) {
-            for (var i = 0; i < matches.length; i++) {
-                var match = regex.exec(matches[i]);
-                var guid = match[1];
-                var mention = match[2];
-                var url = '/' + guid + '/';
-                content = content.replace(match[0], '['+ mention + '](' + url + ')');
-            }
-        }
-        return content.replace(/<br>/g, '&#13;&#10;');
-
-    });
+    self.saveContent = ko.observable().convertHtmlToMarkdown(self.replyContent);
 
     self.submittingReply = ko.observable(false);
 
@@ -403,48 +432,9 @@ var CommentModel = function(data, $parent, $root) {
         self.author = self.$root.author;
     }
 
-    self.editableContent = ko.computed(function() {
-        var content = self.content();
-        if (!content) {
-            content = '';
-        }
-        var regex = /\[(@|\+)(.*?)\]\(\/([a-z\d]{5})\/\)/;
-        var matches = content.match(/\[(@|\+)(.*?)\]\(\/([a-z\d]{5})\/\)/g);
-        if (matches) {
-            for (var i = 0; i < matches.length; i++) {
-                var match = regex.exec(matches[i]);
-                var atwho = match[1];
-                var guid = match[3];
-                var mention = match[2];
+    self.editableContent = ko.observable().convertMarkdownToHtml(self.content);
 
-                content = content.replace(
-                    match[0],
-                    '<span class="atwho-inserted" contenteditable="false" data-atwho-guid="' +
-                        guid + '" data-atwho-at-query="' + atwho + '">' +
-                        atwho + mention + '</span>'
-                );
-            }
-        }
-        return content.replace(/\r\n/g, '<br>');
-    });
-
-    self.editedContent = ko.computed(function() {
-        var content = self.content() || '';
-        var regex = /<span[^>]*?data-atwho-guid="([a-z\d]{5})"[^>]*?>((@|\+)[\w\s]+)<\/span>/;
-        var matches = content.match(/<span[^>]*?data-atwho-guid="([a-z\d]{5})"[^>]*?>((@|\+)[\w\s]+)<\/span>/g);
-        if (matches) {
-            for (var i = 0; i < matches.length; i++) {
-                var match = regex.exec(matches[i]);
-                var guid = match[1];
-                var mention = match[2];
-                var url = '/' + guid + '/';
-                content = content.replace(match[0], '['+ mention + '](' + url + ')');
-            }
-        }
-        // '&#13;&#10;' is the character entity reference for '\r\n'
-        // '\r\n' is treated differently and breaks conversion from markdown to html
-        return content.replace(/<br>/g, '&#13;&#10;');
-    });
+    self.editedContent = ko.observable().convertHtmlToMarkdown(self.content);
 
     self.contentDisplay = ko.observable(markdown.full.render(self.content()));
 
