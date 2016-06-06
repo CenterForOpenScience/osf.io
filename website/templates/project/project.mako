@@ -364,8 +364,20 @@
 
         %endif
 
-
-        <%include file="log_list.mako" args="scripted=True" />
+        <!-- Recent Activity (Logs) -->
+        <div class="panel panel-default">
+            <div class="panel-heading clearfix">
+                <h3 class="panel-title">Recent Activity</h3>
+            </div>
+            <div class="panel-body">
+                <div id="logFeed">
+                    <div class="spinner-loading-wrapper">
+                        <div class="logo-spin logo-lg"></div>
+                         <p class="m-t-sm fg-load-message"> Loading logs...  </p>
+                    </div>
+                </div>
+            </div>
+        </div>
 
     </div>
 
@@ -415,6 +427,7 @@
     % endfor
 
     <link rel="stylesheet" href="/static/css/pages/project-page.css">
+    <link rel="stylesheet" href="/static/css/my-projects.css">
 </%def>
 
 <%def name="javascript_bottom()">

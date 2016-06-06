@@ -7,6 +7,7 @@ var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
 var ko = require('knockout');
+var m = require('mithril');
 
 var $osf = require('js/osfHelpers');
 var LogFeed = require('js/logFeed.js');
@@ -215,29 +216,33 @@ NodeActions.removePointer = function(pointerId, pointerElm) {
 /*
 Display recent logs for for a node on the project view page.
 */
-NodeActions.openCloseNode = function(nodeId) {
-    var $logs = $('#logs-' + nodeId);
-    var $loader = $('#body-' + nodeId + '> .ball-scale');
-    if (!$logs.hasClass('active')) {
-        if (!$logs.hasClass('served')) {
-            $loader.show();
-            $.getJSON(
-                $logs.attr('data-uri'),
-                {count: 3}
-            ).done(function(response) {
-                $loader.hide();
-                new LogFeed('#logs-' + nodeId, response.logs);
-                $logs.addClass('served');
-            }).fail(function() {
-                $loader.hide();
-                $osf.growl('Error:', 'Can not show recent activity right now.  Please try again later.');
-                Raven.captureMessage('Error occurred retrieving log');
-            });
-        }
-        $logs.addClass('active');
-    } else {
-        $logs.removeClass('active');
-    }
+NodeActions.openCloseNode = function(nodeId, isRetracted, isRegistration) {
+
+    console.log('node? ' + nodeId);
+
+    m.mount(document.getElementById('componentLogFeed'), m.component(LogFeed.LogFeed, {nodeId: nodeId, isRetracted: Boolean(isRetracted), isRegistration: Boolean(isRegistration)}));
+//    var $logs = $('#logs-' + nodeId);
+//    var $loader = $('#body-' + nodeId + '> .ball-scale');
+//    if (!$logs.hasClass('active'))
+//        if (!$logs.hasClass('served')) {
+//            $loader.show();
+//            $.getJSON(
+//                $logs.attr('data-uri'),
+//                {count: 3}
+//            ).done(function(response) {
+//                $loader.hide();
+//                new LogFeed('#logs-' + nodeId, response.logs);
+//                $logs.addClass('served');
+//            }).fail(function() {
+//                $loader.hide();
+//                $osf.growl('Error:', 'Can not show recent activity right now.  Please try again later.');
+//                Raven.captureMessage('Error occurred retrieving log');
+//            });
+//        }
+//        $logs.addClass('active');
+//    } else {
+//        $logs.removeClass('active');
+//    }
     // Hide/show the html
     NodeActions._openCloseNode(nodeId);
 };

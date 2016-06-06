@@ -30,7 +30,7 @@ $('body').on('nodeLoad', function(event, data) {
     if (!data.node.is_retracted) {
         // Initialize controller for "Add Links" modal
         new pointers.PointerManager('#addPointer', window.contextVars.node.title);
-        new LogFeed('#logScope', nodeApiUrl + 'log/');
+        m.mount(document.getElementById('logFeed'), m.component(LogFeed.LogFeed, {nodeId: data.node.id, isRetracted: data.node.is_retracted, isRegistration: data.node.is_registration}));
     }
     // Initialize CitationWidget if user isn't viewing through an anonymized VOL
     if (!data.node.anonymous && !data.node.is_retracted) {
