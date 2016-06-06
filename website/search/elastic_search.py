@@ -236,7 +236,7 @@ def format_result(result, parent_id=None):
         'date_registered': result.get('registered_date'),
         'n_wikis': len(result['wikis']),
         'license': result.get('license'),
-        'primary_institution': result.get('primary_institution'),
+        'affiliated_institutions': result.get('affiliated_institutions'),
     }
 
     return formatted_result
@@ -332,7 +332,7 @@ def update_node(node, index=None, bulk=False):
             'parent_id': parent_id,
             'date_created': node.date_created,
             'license': serialize_node_license_record(node.license),
-            'primary_institution': node.primary_institution.name if node.primary_institution else None,
+            'affiliated_institutions': [inst.name for inst in node.affiliated_institutions],
             'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
         }
         if not node.is_retracted:
@@ -358,7 +358,6 @@ def bulk_update_nodes(serialize, nodes, index=None):
     index = index or INDEX
     actions = []
     for node in nodes:
-        logger.info('Updating node {}'.format(node._id))
         serialized = serialize(node)
         if serialized:
             actions.append({
@@ -480,16 +479,19 @@ def update_file(file_, index=None, delete=False):
 @requires_search
 def update_institution(institution, index=None):
     index = index or INDEX
+    id_ = institution._id
+    if institution.is_deleted:
+        es.delete(index=index, doc_type='institution', id=id_, refresh=True, ignore=[404])
+    else:
+        institution_doc = {
+            'id': id_,
+            'url': '/institutions/{}/'.format(institution._id),
+            'logo_path': institution.logo_path,
+            'category': 'institution',
+            'name': institution.name,
+        }
 
-    institution_doc = {
-        'id': institution._id,
-        'url': '/institutions/{}/'.format(institution._id),
-        'logo_path': institution.logo_path,
-        'category': 'institution',
-        'name': institution.name,
-    }
-
-    es.index(index=index, doc_type='institution', body=institution_doc, id=institution._id, refresh=True)
+        es.index(index=index, doc_type='institution', body=institution_doc, id=id_, refresh=True)
 
 @requires_search
 def delete_all():

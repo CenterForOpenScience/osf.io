@@ -54,6 +54,7 @@ function _poTitleColumn(item) {
  * @returns {Object} A Mithril virtual DOM template object
  * @private
  */
+
 function _poContributors(item) {
     var contributorList = lodashGet(item, 'data.embeds.contributors.data', []);
 
@@ -72,21 +73,12 @@ function _poContributors(item) {
     }
 
     return contributorList.map(function (person, index, arr) {
+        var names = $osf.extractContributorNamesFromAPIData(person);
         var name;
-        var familyName;
-        var givenName;
-        var fullName;
-        if (person.embeds.users.data) {
-            familyName = person.embeds.users.data.attributes.family_name;
-            givenName = person.embeds.users.data.attributes.given_name;
-            fullName = person.embeds.users.data.attributes.full_name;
+        var familyName = names.familyName;
+        var givenName = names.givenName;
+        var fullName = names.fullName;
 
-        }
-        if (person.embeds.users.errors) {
-            familyName = person.embeds.users.errors[0].meta.family_name;
-            givenName = person.embeds.users.errors[0].meta.given_name;
-            fullName = person.embeds.users.errors[0].meta.full_name;
-        }
         if (familyName) {
             name = familyName;
         } else if(givenName){

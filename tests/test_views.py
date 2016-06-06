@@ -35,6 +35,7 @@ from tests.factories import (
     BookmarkCollectionFactory, CollectionFactory, MockAddonNodeSettings, NodeFactory,
     NodeLogFactory, PrivateLinkFactory, ProjectWithAddonFactory, ProjectFactory,
     RegistrationFactory, UnconfirmedUserFactory, UnregUserFactory, UserFactory, WatchConfigFactory,
+    InstitutionFactory,
 )
 from tests.test_features import requires_search
 from website import mailchimp_utils
@@ -238,6 +239,28 @@ class TestProjectViews(OsfTestCase):
         )
         self.project2.add_contributor(self.user2, auth=Auth(self.user1))
         self.project2.save()
+
+    def test_node_setting_with_multiple_matched_institution_email_domains(self):
+        # User has alternate emails matching more than one institution's email domains
+        inst1 = InstitutionFactory(email_domains=['foo.bar'])
+        inst2 = InstitutionFactory(email_domains=['baz.qux'])
+
+        user = AuthUserFactory()
+        user.emails.append('queen@foo.bar')
+        user.emails.append('brian@baz.qux')
+        user.save()
+        project = ProjectFactory(creator=user)
+
+        # node settings page loads without error
+        url = project.web_url_for('node_setting')
+        res = self.app.get(url, auth=user.auth)
+        assert_equal(res.status_code, 200)
+
+        # user is automatically affiliated with institutions
+        # that matched email domains
+        user.reload()
+        assert_in(inst1, user.affiliated_institutions)
+        assert_in(inst2, user.affiliated_institutions)
 
     def test_edit_title_empty(self):
         node = ProjectFactory(creator=self.user1)
