@@ -1,3 +1,4 @@
+import mock
 from nose.tools import *  # flake8: noqa
 
 from website.project.model import ensure_schemas
@@ -92,14 +93,16 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
         res = self.app.get(self.url, expect_errors=True)
         assert_equal(res.status_code, 401)
 
-    def test_draft_with_registered_node_does_not_show_up_in_draft_list(self):
+    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
+    def test_draft_with_registered_node_does_not_show_up_in_draft_list(self, mock_enqueue):
         self.draft_registration.register(auth=Auth(self.user), save=True)
         res = self.app.get(self.url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         data = res.json['data']
         assert_equal(len(data), 0)
 
-    def test_draft_with_deleted_registered_node_shows_up_in_draft_list(self):
+    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
+    def test_draft_with_deleted_registered_node_shows_up_in_draft_list(self, mock_enqueue):
         registration = self.draft_registration.register(auth=Auth(self.user), save=True)
         registration.is_deleted = True
         registration.save()

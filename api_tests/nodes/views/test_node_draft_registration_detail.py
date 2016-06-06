@@ -1,3 +1,4 @@
+import mock
 import hashlib, binascii
 from nose.tools import *  # flake8: noqa
 
@@ -491,7 +492,8 @@ class TestDraftRegistrationDelete(DraftRegistrationTestCase):
         res = self.app.delete_json_api(self.url, expect_errors=True)
         assert_equal(res.status_code, 401)
 
-    def test_draft_that_has_been_registered_cannot_be_deleted(self):
+    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
+    def test_draft_that_has_been_registered_cannot_be_deleted(self, mock_enqueue):
         self.draft_registration.register(auth=Auth(self.user), save=True)
         res = self.app.delete_json_api(self.url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
