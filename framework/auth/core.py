@@ -575,8 +575,6 @@ class User(GuidStoredObject, AddonModelMixin):
         from website.project.model import Node
         share_window = Node(creator=self)
         share_window.is_share_window = True
-        share_window.title = "Share Window"
-        share_window.category = "share window"
         share_window.save()
 
     def add_unclaimed_record(self, node, referrer, given_name, email=None):

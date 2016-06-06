@@ -1397,7 +1397,7 @@ function _fangornColumnTitles () {
         alert( "!undefined");
 
     }else{
-      nodeApiUrl = "/api/v1/project/3ha6s/";
+      nodeApiUrl = "/api/v1/project/jug65/";
        alert( "undefined");
 
     }
