@@ -72,7 +72,7 @@ def main(env):
             },
             {
                 '_id': 'esip',
-                'name': 'Federation of Earth Science Information Partners (ESIP) [Test]',
+                'name': 'Federation of Earth Science Information Partners (ESIP)',
                 'description': '<a href="http://www.esipfed.org/">ESIP\'s</a> mission is to support the networking and data dissemination needs of our members and the global Earth science data community by linking the functional sectors of observation, research, application, education and use of Earth science.',
                 'banner_name': 'esip-banner.png',
                 'logo_name': 'esip-shield.png',

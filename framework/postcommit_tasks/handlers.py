@@ -3,10 +3,10 @@ import functools
 import hashlib
 import logging
 import threading
-import os
-
 import binascii
 from collections import OrderedDict
+import os
+
 
 from celery.local import PromiseProxy
 from gevent.pool import Pool
@@ -52,7 +52,6 @@ def enqueue_postcommit_task(fn, args, kwargs, once_per_request=True):
         key = '{}:{}'.format(key, binascii.hexlify(os.urandom(8)))
     postcommit_queue().update({key: functools.partial(fn, *args, **kwargs)})
 
-
 handlers = {
     'before_request': postcommit_before_request,
     'after_request': postcommit_after_request,
@@ -62,6 +61,7 @@ def run_postcommit(once_per_request=True, celery=False):
     '''
     Delays function execution until after the request's transaction has been committed.
     !!!Tasks enqueued using this decorator **WILL NOT** run if the return status code is >= 500!!!
+    Unless celery is marked True, then they run any way
     :return:
     '''
     def wrapper(func):
