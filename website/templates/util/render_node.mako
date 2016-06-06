@@ -99,44 +99,14 @@
             % if summary['is_retracted']:
                 <h4>Recent activity information has been withdrawn.</h4>
             % else:
-
                 <!-- Recent Activity (Logs) -->
                 Recent Activity
-                <div id="componentLogFeed">
+                <div id="logFeed-${summary['id']}">
                     <div class="spinner-loading-wrapper">
                         <div class="logo-spin logo-lg"></div>
                          <p class="m-t-sm fg-load-message"> Loading logs...  </p>
                     </div>
                 </div>
-
-##                Recent activity
-##                <!-- ko stopBinding: true -->
-##                        <div class="ball-scale ball-scale-blue text-center m-sm"><div ></div></div>
-##                    <div id="logs-${summary['id']}" class="log-container" data-uri="${summary['api_url']}log/">
-##                        <dl class="dl-horizontal activity-log" data-bind="foreach: {data: logs, as: 'log'}">
-##                            <dt><span class="date log-date" data-bind="text: log.date.local, tooltip: {title: log.date.utc}"></span></dt>
-##                            <dd class="log-content">
-##                                <span data-bind="if:log.anonymous">
-##                                    <span data-bind="html: $parent.anonymousUserName"></span>
-##                                </span>
-##
-##                                <!-- ko ifnot: log.anonymous -->
-##                                    <a data-bind="text: log.userFullName, attr: {href: log.userURL}"></a>
-##                                <!-- /ko -->
-##
-##                                <!-- ko if: log.hasUser() -->
-##                                    <!-- log actions are the same as their template name -->
-##                                    <span data-bind="template: {name: log.action, data: log}"></span>
-##                                <!-- /ko -->
-##
-##                                <!-- ko ifnot: log.hasUser() -->
-##                                    <!-- Log actions are the same as their template name  + no_user -->
-##                                    <span data-bind="template: {name: log.action + '_no_user', data: log}"></span>
-##                                <!-- /ko -->
-##                            </dd>
-##                        </dl><!-- end foreach logs -->
-##                    </div>
-##                <!-- /ko -->
             % endif
         </div>
         % endif
