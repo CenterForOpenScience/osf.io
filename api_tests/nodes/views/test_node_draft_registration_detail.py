@@ -1,9 +1,7 @@
-import mock
 import hashlib, binascii
 from nose.tools import *  # flake8: noqa
 
 from modularodm import Q
-from framework.auth.core import Auth
 from website.models import MetaSchema
 from api.base.settings.defaults import API_BASE
 from website.settings import PREREG_ADMIN_TAG
@@ -13,7 +11,8 @@ from test_node_draft_registration_list import DraftRegistrationTestCase
 from tests.factories import (
     ProjectFactory,
     DraftRegistrationFactory,
-    AuthUserFactory
+    AuthUserFactory,
+    RegistrationFactory
 )
 
 
@@ -492,9 +491,10 @@ class TestDraftRegistrationDelete(DraftRegistrationTestCase):
         res = self.app.delete_json_api(self.url, expect_errors=True)
         assert_equal(res.status_code, 401)
 
-    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
-    def test_draft_that_has_been_registered_cannot_be_deleted(self, mock_enqueue):
-        self.draft_registration.register(auth=Auth(self.user), save=True)
+    def test_draft_that_has_been_registered_cannot_be_deleted(self):
+        reg = RegistrationFactory(project=self.public_project)
+        self.draft_registration.registered_node = reg
+        self.draft_registration.save()
         res = self.app.delete_json_api(self.url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_equal(res.json['errors'][0]['detail'], 'This draft has already been registered and cannot be modified.')

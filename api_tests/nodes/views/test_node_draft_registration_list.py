@@ -1,10 +1,8 @@
-import mock
 from nose.tools import *  # flake8: noqa
 
 from website.project.model import ensure_schemas
 from website.models import MetaSchema
 from modularodm import Q
-from framework.auth.core import Auth
 from website.util import permissions
 from website.settings import PREREG_ADMIN_TAG
 
@@ -93,19 +91,21 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
         res = self.app.get(self.url, expect_errors=True)
         assert_equal(res.status_code, 401)
 
-    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
-    def test_draft_with_registered_node_does_not_show_up_in_draft_list(self, mock_enqueue):
-        self.draft_registration.register(auth=Auth(self.user), save=True)
+    def test_draft_with_registered_node_does_not_show_up_in_draft_list(self):
+        reg = RegistrationFactory(project = self.public_project)
+        self.draft_registration.registered_node = reg
+        self.draft_registration.save()
         res = self.app.get(self.url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         data = res.json['data']
         assert_equal(len(data), 0)
 
-    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
-    def test_draft_with_deleted_registered_node_shows_up_in_draft_list(self, mock_enqueue):
-        registration = self.draft_registration.register(auth=Auth(self.user), save=True)
-        registration.is_deleted = True
-        registration.save()
+    def test_draft_with_deleted_registered_node_shows_up_in_draft_list(self):
+        reg = RegistrationFactory(project=self.public_project)
+        self.draft_registration.registered_node = reg
+        self.draft_registration.save()
+        reg.is_deleted = True
+        reg.save()
         res = self.app.get(self.url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         data = res.json['data']
