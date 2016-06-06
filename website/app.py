@@ -117,7 +117,7 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
 
     build_log_templates(settings)
     init_addons(settings, routes)
-    with open(os.path.join(settings.NODE_STATIC_FOLDER, 'built', 'nodeCategories.json'), 'wb') as fp:
+    with open(os.path.join(settings.STATIC_FOLDER, 'built', 'nodeCategories.json'), 'wb') as fp:
         json.dump(Node.CATEGORY_MAP, fp)
 
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.base.settings')
