@@ -1,6 +1,7 @@
 <%inherit file="project/project_base.mako"/>
 
-<link rel="stylesheet" href="/static/css/pages/share-dropdown.css">
+<link rel="stylesheet" href="/static/font-awesome/css/font-awesome.min.css">
+<link rel="stylesheet" href="/static/css/pages/share-buttons.css">
 
 <div id="alertBar"></div>
 
@@ -24,7 +25,7 @@
     </h2>
   </div>
   <div class="col-sm-7">
-    <div id="shareContentHolder" deferredContents="${deferred_contents | h}">
+    <div id="shareContentHolder">
         <div class="shareButtons">
             <a href="https://twitter.com/intent/tweet?url=CONTENT_ENCODED_URL&text=${file_name | u}&via=OSFramework" target="_blank">
                 <i class="fa fa-twitter-square" aria-hidden="true"></i>

@@ -1,8 +1,6 @@
 <%inherit file="project/project_base.mako"/>
 <%include file="project/nodes_privacy.mako"/>
 
-<link rel="stylesheet" href="/static/font-awesome/css/font-awesome.min.css">
-
 <%
     is_project = node['node_type'] == 'project'
 %>
@@ -464,7 +462,8 @@
     % endfor
 
     <link rel="stylesheet" href="/static/css/pages/project-page.css">
-    <link rel="stylesheet" href="/static/css/pages/share-dropdown.css">
+    <link rel="stylesheet" href="/static/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/static/css/pages/share-buttons.css">
 </%def>
 
 <%def name="javascript_bottom()">
