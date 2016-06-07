@@ -1,0 +1,16 @@
+.drop-zone-format {
+    background: rgba(255, 255, 255, 0.49);
+    padding: 50px;
+    border-radius: 2px;
+    margin-top: 0px;
+    clear: both;
+    border: 2px dashed #b8b8b8;
+}
+
+.drop-zone-disp {
+    display: inline-flex;
+}
+
+.drop-zone-invis {
+    display: none;
+}
