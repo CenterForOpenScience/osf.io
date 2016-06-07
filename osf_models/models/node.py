@@ -55,6 +55,7 @@ class Node(GuidMixin, BaseModel):
 
     is_deleted = models.BooleanField(default=False, db_index=True)
     deleted_date = models.DateTimeField(null=True)
+    suspended = models.BooleanField(default=False, db_index=True)
 
     is_registration = models.BooleanField(default=False, db_index=True)
     registered_date = models.DateTimeField(db_index=True, null=True)

@@ -14,8 +14,6 @@ import osf_models.utils.datetime_aware_jsonfield
 
 class Migration(migrations.Migration):
 
-    replaces = [(b'osf_models', '0001_initial'), (b'osf_models', '0002_auto_20160428_1416'), (b'osf_models', '0003_auto_20160503_1826'), (b'osf_models', '0004_user__affiliated_institutions'), (b'osf_models', '0005_auto_20160503_1838'), (b'osf_models', '0006_auto_20160505_1910'), (b'osf_models', '0007_auto_20160518_1848'), (b'osf_models', '0008_remove_nodelog_was_connected_to'), (b'osf_models', '0009_auto_20160603_1437'), (b'osf_models', '0010_node_registration_approval'), (b'osf_models', '0011_auto_20160607_0920'), (b'osf_models', '0012_auto_20160607_0923')]
-
     initial = True
 
     dependencies = [

@@ -7,7 +7,7 @@ from django.db import transaction
 
 from website.models import Node as MODMNode
 from website.models import NodeLog as MODMNodeLog
-from osf_models.db.backends.postgresql_cursors.base import server_side_cursors
+from osf_models.db.backends.postgresql.base import server_side_cursors
 import pytz
 
 

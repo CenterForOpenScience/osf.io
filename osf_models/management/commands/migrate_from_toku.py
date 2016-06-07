@@ -69,10 +69,10 @@ class Command(BaseCommand):
         verify_guids()
         verify_nodes()
 
-        nodelogs
+        # nodelogs
         migrate_nodelogs()
 
-        verify nodelogs
+        # verify nodelogs
         verify_nodelogs()
 
         print 'Finished in {} seconds...'.format((datetime.now() - start
