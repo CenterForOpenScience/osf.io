@@ -32,9 +32,13 @@ var ShareWindowDropzone = {
 
     Dropzone.options.shareWindowDropzone = {
         clickable: '#shareWindowDropzone',
+          thumbnailWidth: 80,
+  thumbnailHeight: 80,
+        //previewsContainer: "#dropzone-preview",
+
         accept: function(file, done) {
                 this.options.url = waterbutler.buildUploadUrl(false,'osfstorage',shareWindowId, file,{});
-            this.on('dragend', function(event) { document.getElementById('shareWindowDropzone').style.border = 'solid #333';});
+            //this.on('dragend', function(event) { event.getElementById('shareWindowDropzone').style.border = 'solid #333';});
                 done();
             },
 
@@ -69,11 +73,11 @@ var ShareWindowDropzone = {
       });
 
   },
+
   view: function(ctrl, args) {
               function headerTemplate ( ){
             return [ m('h2.col-xs-7', 'Dashboard'), m('m-b-lg.col-xs-3.drop-zone-disp', m('button.btn.btn-primary.m-t-md.f-w-xl #ShareButton', {onclick: function() {
-                //var isClicked = document.getElementById('shareWindowDropzone');
-               // isClicked.style.display = (isClicked.style.display === "none") ? "block" : "none";
+
             }}, 'Upload Public Files'), m('.pull-right', m.component(AddProject, {
                 buttonTemplate : m('button.btn.btn-success.btn-success-high-contrast.m-t-md.f-w-xl[data-toggle="modal"][data-target="#addProjectFromHome"]', {onclick: function() {
                     $osf.trackClick('quickSearch', 'add-project', 'open-add-project-modal');
