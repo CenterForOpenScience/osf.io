@@ -23,15 +23,22 @@ var xhrconfig = function(xhr) {
 var ShareWindowDropzone = {
 
   controller: function() {
+    var shareWindowId;
+    var url = $osf.apiV2Url('users/me/nodes/', { query : { 'filter[category]' : 'share window'}});
+    var promise = m.request({method: 'GET', url : url, config : xhrconfig, background: true});
+    promise.then(function(result) {
+       shareWindowId = result.data[0].id;
+    });
 
     Dropzone.options.shareWindowDropzone = {
         clickable: '#shareWindowDropzone',
-        thumbnailWidth: 80,
-        thumbnailHeight: 80,
+          thumbnailWidth: 80,
+  thumbnailHeight: 80,
         //previewsContainer: "#dropzone-preview",
 
         accept: function(file, done) {
-                this.on('dragend', function(event) { event.getElementById('shareWindowDropzone').style.border = 'solid #333';});
+                this.options.url = waterbutler.buildUploadUrl(false,'osfstorage',shareWindowId, file,{});
+            //this.on('dragend', function(event) { event.getElementById('shareWindowDropzone').style.border = 'solid #333';});
                 done();
             },
 
@@ -59,15 +66,15 @@ var ShareWindowDropzone = {
     });
 
       $('#ShareButton').click(function() {
-        $('#ShareButton').attr('disabled', 'disabled').css("cursor", "pointer");
-         setTimeout(enable, 200);
+        $('#ShareButton').attr('disabled', 'disabled');
+         setTimeout(enable, 300);
 
           $('#shareWindowDropzone').slideToggle();
           $('#LinkToShareFiles').slideToggle();
           $(this).toggleClass('btn-primary');
       });
     function enable () {
-        $('#ShareButton').removeAttr('disabled');
+        $('#').removeAttr('disabled');
     }
 
   },
