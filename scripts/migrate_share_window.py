@@ -14,27 +14,14 @@ from modularodm import Q
 from website.app import init_app
 from framework.auth import core
 from website.project.model import Node
-from website.share_window.model import ShareWindow
-
+from modularodm.exceptions import NoResultsFound
+from website.project import new_public_files_collection
 
 from scripts import utils as script_utils
 
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
-
-
-def delete_old_windows(user, dry_run):
-
-    query = Q('_id', 'eq', user._id)
-    for node in Node.find(query):
-        node.is_public = True
-
-
-def migrate_user(user, dry_run):
-
-
-    ShareWindow().create(user)
 
 
 def get_targets():
@@ -44,9 +31,10 @@ def get_targets():
 def main(dry_run):
     users = get_targets()
     for user in users:
-#        delete_old_windows(user, dry_run)
-        migrate_user(user, dry_run)
-
+        try:
+            Node.find_one(Q('is_public_files_collection', 'eq', True) & Q('contributors', 'eq', user._id))
+        except NoResultsFound:
+            new_public_files_collection(user)
 
 if __name__ == '__main__':
     init_app(set_backends=True, routes=False)

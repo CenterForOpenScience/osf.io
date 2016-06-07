@@ -29,6 +29,7 @@ from framework.sessions import session
 from framework.sessions.model import Session
 from framework.sessions.utils import remove_sessions_for_user
 
+
 from website import mails, settings, filters, security
 
 name_formatters = {
@@ -564,17 +565,13 @@ class User(GuidStoredObject, AddonModelMixin):
         self.date_confirmed = dt.datetime.utcnow()
         self.update_search()
         self.update_search_nodes()
-        self.create_share_window()
+        from website.project import new_public_files_collection #avoids circular import
+        new_public_files_collection(self)
 
         # Emit signal that a user has confirmed
         signals.user_confirmed.send(self)
 
         return self
-
-    def create_share_window(self):
-        from website.share_window.model import ShareWindow
-        share_window = ShareWindow().create(self)
-        share_window.save()
 
     def add_unclaimed_record(self, node, referrer, given_name, email=None):
         """Add a new project entry in the unclaimed records dictionary.
