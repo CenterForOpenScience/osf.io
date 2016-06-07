@@ -60,5 +60,8 @@ def run_main(dry_run=True):
         main(dry_run=dry_run)
 
 if __name__ == '__main__':
+    dry_run = '--dry' in sys.argv
+    if not dry_run:
+        script_utils.add_file_logger(logger, __file__)
     with TokuTransaction():
-        main()
+        main(dry_run=dry_run)
