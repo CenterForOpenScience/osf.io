@@ -59,15 +59,15 @@ var ShareWindowDropzone = {
     });
 
       $('#ShareButton').click(function() {
-        $('#ShareButton').attr('disabled', 'disabled');
-         setTimeout(enable, 300);
+        $('#ShareButton').attr('disabled', 'disabled').css("cursor", "pointer");
+         setTimeout(enable, 200);
 
           $('#shareWindowDropzone').slideToggle();
           $('#LinkToShareFiles').slideToggle();
           $(this).toggleClass('btn-primary');
       });
     function enable () {
-        $('#').removeAttr('disabled');
+        $('#ShareButton').removeAttr('disabled');
     }
 
   },
