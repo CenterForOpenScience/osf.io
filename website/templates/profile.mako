@@ -142,6 +142,18 @@
     <div class="col-sm-6">
         <div class="panel panel-default">
             <div class="panel-heading clearfix">
+                <a href="/share_window/${profile['id']}" class="panel-title">
+                  <h4 class="" >Share Window</h4>
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>
+<div class="row">
+    <div class="col-sm-6">
+        <div class="panel panel-default">
+            <div class="panel-heading clearfix">
               <h3 class="panel-title" >Public projects</h3>
             </div>
             <div class="panel-body">

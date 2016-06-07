@@ -7,7 +7,6 @@
 var $ = require('jquery');
 var m = require('mithril');
 
-var ShareFilesProject = require('js/home-page/shareFilesPlugin');
 var ShareWindowDropzone = require('js/home-page/ShareWindowDropzone');
 var QuickSearchProject = require('js/home-page/quickProjectSearchPlugin');
 var NewAndNoteworthy = require('js/home-page/newAndNoteworthyPlugin');
@@ -24,6 +23,7 @@ $(document).ready(function(){
                         m('.row.m-t-sm', [
                             m(columnSizeClass, m.component(ShareWindowDropzone, {}))
                         ]),
+
                         m('.row.m-t-lg.p-b-md', [
                             m(columnSizeClass, m.component(QuickSearchProject, {}))
                         ])
