@@ -32,13 +32,8 @@ var ShareWindowDropzone = {
 
     Dropzone.options.shareWindowDropzone = {
         clickable: '#shareWindowDropzone',
-          thumbnailWidth: 80,
-  thumbnailHeight: 80,
-        //previewsContainer: "#dropzone-preview",
-
         accept: function(file, done) {
                 this.options.url = waterbutler.buildUploadUrl(false,'osfstorage',shareWindowId, file,{});
-            //this.on('dragend', function(event) { event.getElementById('shareWindowDropzone').style.border = 'solid #333';});
                 done();
             },
 
@@ -56,10 +51,9 @@ var ShareWindowDropzone = {
         withCredentials: true,
         url:'placeholder',
         method:'put',
-        addRemoveLinks: true,
         uploadMultiple: true,
+        addRemoveLinks: true,
         border: '2px dashed #ccc',
-        //previewTemplate: '<div class="text-center dz-filename"><span data-dz-name></span> has been uploaded to your Share Window </div>'
         previewTemplate: '<div class="dz-preview dz-file-preview" style="display: inline-block;width:50%"><div class="dz-details"><div class="dz-filename"><span data-dz-name></span></div>' +
         '<div class="dz-size" data-dz-size></div><img data-dz-thumbnail /></div><div class="dz-progress"><span class="dz-upload" data-dz-uploadprogress></span></div>' +
         '<div class="dz-success-mark"></div><div class="dz-error-mark"></div><div class="dz-error-message"><span data-dz-errormessage></span></div></div>'
@@ -91,7 +85,7 @@ var ShareWindowDropzone = {
                 templatesFetcher: ctrl.templateNodes
             })))];
         }
-          return m('.row', m('.col-xs-12', headerTemplate()), m('div.p-v-xl.text-center.drop-zone-format.drop-zone-invis .pointer .panel #shareWindowDropzone',
+          return m('.row', m('.col-xs-12', headerTemplate()), m('div.p-v-xs.text-center.drop-zone-format.drop-zone-invis .pointer .panel #shareWindowDropzone',
               m('p#shareWindowDropzone', m('h1',  'Drop files to upload'), 'Having trouble? Click anywhere in this box to manually upload a file.')),
               m('.h4.text-center.drop-zone-invis #LinkToShareFiles', 'Or go to your ', m('a', {href: '/share_window/', onclick: function() {}}, 'Public Files Project')));
   }
