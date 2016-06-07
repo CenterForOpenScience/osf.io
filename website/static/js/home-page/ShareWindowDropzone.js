@@ -23,7 +23,13 @@ var xhrconfig = function(xhr) {
 var ShareWindowDropzone = {
 
   controller: function() {
-
+    var shareWindowId;
+    var url = $osf.apiV2Url('users/me/nodes/', { query : { 'filter[category]' : 'share window'}});
+    var promise = m.request({method: 'GET', url : url, config : xhrconfig, background: true});
+    promise.then(function(result) {
+       shareWindowId = result.data[0].id;
+    });
+      
     Dropzone.options.shareWindowDropzone = {
         clickable: '#shareWindowDropzone',
         accept: function(file, done) {
@@ -47,6 +53,7 @@ var ShareWindowDropzone = {
         url:'placeholder',
         method:'put',
         addRemoveLinks: true,
+        uploadMultiple: true,
         border: '2px dashed #ccc',
         //previewTemplate: '<div class="text-center dz-filename"><span data-dz-name></span> has been uploaded to your Share Window </div>'
         previewTemplate: '<div class="dz-preview dz-file-preview" style="display: inline-block;width:50%"><div class="dz-details"><div class="dz-filename"><span data-dz-name></span></div>' +
