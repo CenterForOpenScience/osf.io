@@ -35,5 +35,6 @@ def view_share_window_id(uid, **kwargs):
             'id': shareWindow._id,
             'api_url': shareWindow.api_url,
             'ownerName': shareWindow.creator.fullname,
-             }
+            'isPublicFilesCol': shareWindow.is_public_files_collection,
+            }
     }
