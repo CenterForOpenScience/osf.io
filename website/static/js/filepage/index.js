@@ -56,7 +56,7 @@ var SharePopover =  {
                         m('.tab-pane.active#share', {
                             config: function(element) {
                                 var shareContents = $('#shareContentHolder').html();
-                                if ($(element).find('.shareButtons').length == 0) {
+                                if ($(element).find('.shareButtons').length === 0) {
                                     var contentUrl = $('#share input').val();
                                     var encodedUrl = encodeURIComponent(contentUrl);
                                     var safeUrl = $('<div>').text(contentUrl).html();
