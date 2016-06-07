@@ -34,6 +34,6 @@ function openAncestors (tb, item) {
     }
 }
 
-module.exports = window.$.tb = {
+module.exports = {
     expandOnLoad: expandOnLoad,
 };
