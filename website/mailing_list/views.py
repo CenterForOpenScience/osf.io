@@ -8,6 +8,7 @@ from website.project.decorators import (
 )
 from website.util.permissions import ADMIN, READ
 from website.mailing_list import utils
+from website.mailing_list.exceptions import UnsubscribeHookException
 
 
 ###############################################################################
@@ -43,6 +44,8 @@ def flask_unsubscribe_user(*args, **kwargs):
     message = request.form
     unsub = message.get('recipient', None)
     mailing_list = message.get('mailing-list', None)
+    if not unsub or not mailing_list:
+        raise UnsubscribeHookException()
     utils.unsubscribe_user_hook(unsub, mailing_list)
 
 def flask_log_message(*args, **kwargs):

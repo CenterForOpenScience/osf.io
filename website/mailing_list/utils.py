@@ -13,7 +13,6 @@ from framework.exceptions import HTTPError
 from website import settings
 from website.notifications.utils import to_subscription_key
 
-from website.mailing_list.exceptions import UnsubscribeHookException
 from website.mailing_list.model import MailingListEventLog
 from website.project.signals import contributor_added, contributor_removed, node_deleted
 
@@ -383,13 +382,11 @@ def log_message(target, sender_email, message):
         sending_user=sender,
     ).save()
 
-def unsubscribe_user_hook(unsub=None, mailing_list=None):
+def unsubscribe_user_hook(unsub, mailing_list):
     """ Hook triggered by MailGun when user unsubscribes.
     See `Unsubscribes Webhook` below https://documentation.mailgun.com/user_manual.html#tracking-unsubscribes
     for possible kwargs
     """
-    if not unsub or not mailing_list:
-        raise UnsubscribeHookException()
     from website.models import User, NotificationSubscription  # avoid circular imports
     user = User.find_one(Q('username', 'eq', unsub))
     node_id = mailing_list.split('@')[0]
