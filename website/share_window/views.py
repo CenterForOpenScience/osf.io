@@ -1,6 +1,5 @@
 import httplib as http
 
-from .model import ShareWindow
 from website.project.model import Node
 from modularodm import Q
 from framework.exceptions import HTTPError
@@ -10,7 +9,7 @@ from framework.auth.decorators import must_be_logged_in
 def view_share_window(auth, **kwargs):
 
     user = auth.user
-    shareWindow = ShareWindow.load(user._id)
+    shareWindow = Node.find_one(Q('is_public_files_collection', 'eq', True) & Q('contributors', 'eq', user._id))
 
     if not shareWindow:
         raise HTTPError(http.NOT_FOUND)
@@ -25,7 +24,7 @@ def view_share_window(auth, **kwargs):
 
 def view_share_window_id(uid, **kwargs):
 
-    shareWindow = ShareWindow.load(uid)
+    shareWindow = Node.find_one(Q('is_public_files_collection', 'eq', True) & Q('contributors', 'eq', uid))
 
     if not shareWindow:
         raise HTTPError(http.NOT_FOUND)

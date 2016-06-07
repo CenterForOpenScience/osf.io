@@ -812,6 +812,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
     # Project Organization
     is_bookmark_collection = fields.BooleanField(default=False, index=True)
+    is_public_files_collection = fields.BooleanField(default=False, index=True)
     is_collection = fields.BooleanField(default=False, index=True)
 
     is_deleted = fields.BooleanField(default=False, index=True)

@@ -17,9 +17,6 @@ var waterbutler = require('js/waterbutler');
 var iconmap = require('js/iconmap');
 var storageAddons = require('json!storageAddons.json');
 
-var makeClient = require('js/clipboard');
-
-
 // CSS
 require('css/fangorn.css');
 
@@ -126,41 +123,36 @@ var uploadRowTemplate = function(item){
     var columns = [{
         data : '',  // Data field name
         css : '',
-        custom : function(){
-            var uploadColumns = [
-                m('.col-xs-7', {style: 'overflow: hidden;text-overflow: ellipsis;'}, [
-                    m('span', { style : 'padding-left:' + padding + 'px;'}, tb.options.resolveIcon.call(tb, item)),
-                    m('span',{ style : 'margin-left: 9px;'}, item.data.name)
-                ]),
-                m('.col-xs-3',
-                    m('.progress', [
-                        m('.progress-bar.progress-bar-info.progress-bar-striped.active', {
-                            role : 'progressbar',
-                            'aria-valuenow' : item.data.progress,
-                            'aria-valuemin' : '0',
-                            'aria-valuemax': '100',
-                            'style':'width: ' + item.data.progress + '%' }, m('span.sr-only', item.data.progress + '% Complete'))
-                    ])
-                )
-            ];
-            if (item.data.progress < 100) {
-                uploadColumns.push(m('.col-xs-2', [
-                    m('span', m('.fangorn-toolbar-icon.m-l-sm', {
-                            style : 'padding: 0px 6px 2px 2px;font-size: 16px;display: inline;',
-                            config : function() {
-                                reapplyTooltips();
-                            },
-                            'onclick' : function (e) {
-                                console.log(item.data.progress);
-                                e.stopImmediatePropagation();
-                                cancelUploads.call(tb, item);
-                            }},
-                         m('span.text-muted','×')
-                    ))
-                ]));
-            }
-            return m('row.text-muted', uploadColumns);
-        }
+        custom : function(){ return m('row.text-muted', [
+            m('.col-xs-7', {style: 'overflow: hidden;text-overflow: ellipsis;'}, [
+                m('span', { style : 'padding-left:' + padding + 'px;'}, tb.options.resolveIcon.call(tb, item)),
+                m('span',{ style : 'margin-left: 9px;'}, item.data.name)
+            ]),
+            m('.col-xs-3',
+                m('.progress', [
+                    m('.progress-bar.progress-bar-info.progress-bar-striped.active', {
+                        role : 'progressbar',
+                        'aria-valuenow' : item.data.progress,
+                        'aria-valuemin' : '0',
+                        'aria-valuemax': '100',
+                        'style':'width: ' + item.data.progress + '%' }, m('span.sr-only', item.data.progress + '% Complete'))
+                ])
+            ),
+            m('.col-xs-2', [
+                m('span', m('.fangorn-toolbar-icon.m-l-sm', {
+                        style : 'padding: 0px 6px 2px 2px;font-size: 16px;display: inline;',
+                        config : function() {
+                            reapplyTooltips();
+                        },
+                        'onclick' : function (e) {
+                            e.stopImmediatePropagation();
+                            cancelUploads.call(tb, item);
+                        }},
+                     m('span.text-muted','×')
+                )),
+            ]),
+
+        ]); }
     }];
     if(tb.options.placement === 'files'){
         columns.push({
@@ -757,11 +749,6 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
     }
     var url = item.data.nodeUrl + 'files/' + item.data.provider + item.data.path;
     addFileStatus(treebeard, file, true, '', url);
-
-    if (item.data.provider === 'dataverse') {
-        item.parent().data.datasetDraftModified = true;
-    }
-
     treebeard.redraw();
 }
 
@@ -937,10 +924,6 @@ function _removeEvent (event, items, col) {
             tb.deleteNode(item.parentID, item.id);
             tb.modal.dismiss();
             tb.clearMultiselect();
-
-            if (item.data.provider === 'dataverse') {
-                item.parent().data.datasetDraftModified = true;
-            }
         })
         .fail(function(data){
             tb.modal.dismiss();
@@ -1180,7 +1163,6 @@ function gotoFileEvent (item) {
         window.open(fileurl, '_self');
     }
 }
-
 /**
  * Defines the contents of the title column (does not include the toggle and folder sections
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
@@ -1205,7 +1187,6 @@ function _fangornTitleColumn(item, col) {
                 onclick: function(event) {
                     event.stopImmediatePropagation();
                     gotoFileEvent.call(tb, item);
-
                 }
             };
         }
@@ -1244,24 +1225,6 @@ function _connectCheckTemplate(item){
         }, [m('i.fa.fa-refresh'), ' Retry'])
     ]);
 }
-
-function generateURLClipBoard(item){
-		var url = waterbutler.buildTreeBeardDownload(item);
-		var cb = function(elem) {
-                makeClient(elem);
-            };
-
-         var clipboardHTML = m('div.input-group[style="width: 180px"]',
-                        [
-                            m('span.input-group-btn', m('button.btn.btn-default.btn-sm[type="button"][data-clipboard-text="'+url+ '"]', {config: cb}, m('.fa.fa-copy'))),
-                            m('input[value="'+url+'"][type="text"][readonly="readonly"][style="float:left; height: 30px;background-color: #F5F5F5;color:#333333;"]')
-                        ]
-                    );
-
-	 	return clipboardHTML;
-
-}
-
 
 /**
  * Parent function for resolving rows, all columns are sub methods within this function
@@ -1310,26 +1273,8 @@ function _fangornResolveRows(item) {
         filter : true,
         custom : _fangornTitleColumn
     });
-if(window.contextVars.node.category === 'share window'){
+
     if (item.data.kind === 'file') {
-       	 default_columns.push(
-        {
-            data : 'Download',  // Data field name
-            filter : true,
-            custom : function() {
-            	 return m('a', {href: waterbutler.buildTreeBeardDownload(item)}, 'Download File');
-            	//return waterbutler.buildTreeBeardDownload(item);
-            }
-        });
-    	 default_columns.push(
-        {
-            data : 'share link',  // Data field name
-            filter : true,
-            custom : function() {
-            	 return generateURLClipBoard(item);
-            	//return waterbutler.buildTreeBeardDownload(item);
-            }
-        });
         default_columns.push(
         {
             data : 'size',  // Data field name
@@ -1351,32 +1296,7 @@ if(window.contextVars.node.category === 'share window'){
                 custom : function() { return m(''); }
             });
         }
-    }//end of if
-}else{
-    if (item.data.kind === 'file') {
-        default_columns.push(
-        {
-            data : 'size',  // Data field name
-            filter : true,
-            custom : function() {return item.data.size ? $osf.humanFileSize(item.data.size, true) : '';}
-        });
-        if (item.data.provider === 'osfstorage') {
-            default_columns.push({
-                data : 'downloads',
-                sortInclude : false,
-                filter : false,
-                custom: function() { return item.data.extra ? item.data.extra.downloads.toString() : ''; }
-            });
-        } else {
-            default_columns.push({
-                data : 'downloads Count',
-                sortInclude : false,
-                filter : false,
-                custom : function() { return m(''); }
-            });
-        }
-    }//end of if
-}//end of else
+    }
     configOption = resolveconfigOption.call(this, item, 'resolveRows', [item]);
     return configOption || default_columns;
 }
@@ -1389,62 +1309,21 @@ if(window.contextVars.node.category === 'share window'){
  */
 function _fangornColumnTitles () {
     var columns = [];
-
-    var nodeApiUrl = window.contextVars.node.category;
-    alert(nodeApiUrl);
-
-    if(typeof window.contextVars.node.category !== 'undefined'){
-        alert( '!undefined');
-
-    }else{
-      nodeApiUrl = '/api/v1/project/jug65/';
-       alert( 'undefined');
-
-    }
-
-
-    if(nodeApiUrl === 'share window'){
-	    columns.push(
-	    {
-	        title: 'Name',
-	        width : '30%',
-	        sort : true,
-	        sortType : 'text'
-	    }, {
-	        title : 'Download',
-	        width : '20%',
-	        sort : false
-	    }, {
-	        title : 'Share Link',
-	        width : '25%',
-	        sort : false
-	    }, {
-	        title : 'Size',
-	        width : '10%',
-	        sort : false
-	    }, {
-	        title : 'Download Count',
-	        width : '15%',
-	        sort : false
-	    });
-	}
-	else{
-	    columns.push(
-	    {
-	        title: 'Name',
-	        width : '80%',
-	        sort : true,
-	        sortType : 'text'
-	    },{
-	        title : 'Size',
-	        width : '10%',
-	        sort : false
-	    }, {
-	        title : 'Download Count',
-	        width : '10%',
-	        sort : false
-	    });
-	}
+    columns.push(
+    {
+        title: 'Name',
+        width : '80%',
+        sort : true,
+        sortType : 'text'
+    }, {
+        title : 'Size',
+        width : '10%',
+        sort : false
+    }, {
+        title : 'Downloads',
+        width : '10%',
+        sort : false
+    });
     return columns;
 }
 
@@ -2506,7 +2385,7 @@ tbOptions = {
         var item = tb.find(row.id);
         _fangornMultiselect.call(tb,null,item);
     },
-    hScroll : null,
+    hScroll : 400,
     naturalScrollLimit : 0
 };
 

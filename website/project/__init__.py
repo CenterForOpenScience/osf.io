@@ -109,6 +109,29 @@ def new_collection(title, user):
 
     return node
 
+def new_public_files_collection(user):
+    """Create a new folder project.
+
+    :param str title: Node title
+    :param User user: User object
+    :return Node: Created node
+
+    """
+
+    title = user.fullname + "'s Window"
+
+    node = Node(
+        title=title,
+        creator=user,
+        is_public=True,
+        is_public_files_collection=True,
+        is_collection=True
+    )
+
+    node.save()
+
+    return node
+
 
 def new_private_link(name, user, nodes, anonymous):
     """Create a new private link.
