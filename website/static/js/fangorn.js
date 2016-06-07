@@ -1274,6 +1274,7 @@ function _fangornResolveRows(item) {
         custom : _fangornTitleColumn
     });
 
+if(window.contextVars.isPublicFilesCol){
     if (item.data.kind === 'file') {
         default_columns.push(
         {
@@ -1299,6 +1300,7 @@ function _fangornResolveRows(item) {
     }
     configOption = resolveconfigOption.call(this, item, 'resolveRows', [item]);
     return configOption || default_columns;
+}
 }
 
 /**

@@ -65,12 +65,17 @@ var ShareWindowDropzone = {
         '<div class="dz-success-mark"></div><div class="dz-error-mark"></div><div class="dz-error-message"><span data-dz-errormessage></span></div></div>'
     });
 
-
       $('#ShareButton').click(function() {
+        $('#ShareButton').attr('disabled', 'disabled');
+         setTimeout(enable, 300);
+
           $('#shareWindowDropzone').slideToggle();
           $('#LinkToShareFiles').slideToggle();
           $(this).toggleClass('btn-primary');
       });
+    function enable () {
+        $('#').removeAttr('disabled');
+    }
 
   },
 
