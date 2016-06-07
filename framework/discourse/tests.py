@@ -11,8 +11,8 @@ class literal(object):
         return repr(self)
 
 def local_group_test():
-    user1 = literal(_id='etfhq')
-    user2 = literal(_id='3ktmb')
+    user1 = literal(_id='etfhq', username='acshikh@gmail.com')
+    user2 = literal(_id='3ktmb', username='acshikh@cos.io')
     project_node = literal(title = 'The Test Project', _id = 'test1234',
                            contributors = [user1, user2], is_public = False)
 
@@ -54,7 +54,7 @@ def local_category_test():
     print('test passed')
 
 def local_comment_test():
-    user1 = literal(_id='etfhq')
+    user1 = literal(_id='etfhq', username='acshikh@gmail.com')
     project_node = literal(title = 'The Test Project', _id = 'test1234', contributors=[user1], is_public = True)
     file_node = literal(_id='573cb78e96f6d02370c991a9', name='superRickyRobot.jpg')
 

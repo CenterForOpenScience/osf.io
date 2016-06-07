@@ -4,6 +4,7 @@ from django.utils.text import slugify
 import requests
 from furl import furl
 import json
+import pdb
 
 from website import settings
 
@@ -26,8 +27,11 @@ def get_username(user_id=None):
     url.args['api_username'] = settings.DISCOURSE_API_ADMIN_USER
 
     result = requests.get(url.url)
-    if result.status_code != 200:
-        raise DiscourseException('Discourse server responded to user request with '
+    if result.status_code == 404:
+        return None
+    elif result.status_code != 200:
+        raise DiscourseException('Discourse server responded to user request '
+                                 + url.url + ' with '
                                  + str(result.status_code) + ' ' + result.text)
 
     username = result.json()['user']['username']
@@ -165,7 +169,8 @@ def remove_group_users(project_node, users):
 def sync_group(project_node):
     update_group_visibility(project_node)
 
-    users = [get_username(user._id) for user in project_node.contributors]
+    users = [get_username(user._id) for user in project_node.contributors if user.username]
+    users = [u for u in users if u]
     current_users = [user['username'] for user in get_group_users(project_node)]
 
     users_to_add = [u for u in users if u not in current_users]
@@ -361,10 +366,18 @@ def delete_topic(project_node, file_node):
         raise DiscourseException('Discourse server responded to topic delete request ' + result.url + ' with '
                                  + str(result.status_code) + ' ' + result.text)
 
-def create_comment(project_node, file_node, comment_text):
+def create_comment(project_node, file_node, comment_text, user=None, reply_to_post_number=None):
+    if user is None:
+        user_name = get_username()
+    else:
+        user_name = get_username(user._id)
+
+    if user_name is None:
+        raise DiscourseException('The user given does not exist in discourse!')
+
     url = furl(settings.DISCOURSE_SERVER_URL).join('/posts')
     url.args['api_key'] = settings.DISCOURSE_API_KEY
-    url.args['api_username'] = settings.DISCOURSE_API_ADMIN_USER
+    url.args['api_username'] = user_name
 
     category_id = get_or_create_category_id(project_node)
     topic_id = get_or_create_topic_id(project_node, file_node)
@@ -372,6 +385,8 @@ def create_comment(project_node, file_node, comment_text):
     url.args['topic_id'] = topic_id
     url.args['raw'] = comment_text
     url.args['nested_post'] = 'true'
+    if reply_to_post_number:
+        url.args['reply_to_post_number'] = reply_to_post_number
 
     result = requests.post(url.url)
     if result.status_code != 200:
