@@ -6,12 +6,14 @@ import logging
 from bs4 import BeautifulSoup
 from flask import request
 
+from framework import discourse
 from framework.mongo.utils import to_mongo_key
 from framework.exceptions import HTTPError
 from framework.auth.utils import privacy_info_handle
 from framework.auth.decorators import must_be_logged_in
 from framework.flask import redirect
 
+import website
 from website.addons.wiki import settings
 from website.addons.wiki import utils as wiki_utils
 from website.profile.utils import get_gravatar
@@ -324,6 +326,10 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
     }
     ret.update(_view_project(node, auth, primary=True))
     ret['user']['can_edit_wiki_body'] = can_edit
+
+    ret['discourse_url'] = website.settings.DISCOURSE_SERVER_URL
+    ret['discourse_topic_id'] = discourse.get_or_create_topic_id(wiki_page)
+
     return ret
 
 

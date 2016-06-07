@@ -76,19 +76,6 @@
   </div>
 </div>
 
-## Discourse comment embedding
-<div id='discourse-comments'></div>
-<script type="text/javascript">
-  DiscourseEmbed = { discourseUrl: '${ discourse_url }/',
-                     topicId: ${ discourse_topic_id } };
-
-  (function() {
-    var d = document.createElement('script'); d.type = 'text/javascript'; d.async = true;
-    d.src = DiscourseEmbed.discourseUrl + 'javascripts/embed.js';
-    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(d);
-  })();
-</script>
-
 ## Begin Modals
 <div class="modal fade" id="connectedModal" tabindex="-1">
   <div class="modal-dialog">

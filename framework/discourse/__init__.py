@@ -241,6 +241,13 @@ def update_category(project_node, category_id):
         raise DiscourseException('Discourse server responded to category update request ' + result.url + ' with '
                                  + str(result.status_code) + ' ' + result.text)
 
+# returns containing project OR component node
+def _get_project_node(node):
+    try:
+        return node.node
+    except AttributeError:
+        return node
+
 def get_categories():
     url = furl(settings.DISCOURSE_SERVER_URL).join('/categories.json')
     url.args['api_key'] = settings.DISCOURSE_API_KEY
@@ -271,13 +278,19 @@ def delete_category(project_node):
     if category_id is None:
         return
 
+    topic_ids = [topic['id'] for topic in get_topics(project_node) if not topic['pinned']]
+    for topic_id in topic_ids:
+        delete_topic(topic_id)
+
     url = furl(settings.DISCOURSE_SERVER_URL).join('/categories/' + str(category_id))
     url.args['api_key'] = settings.DISCOURSE_API_KEY
     url.args['api_username'] = settings.DISCOURSE_API_ADMIN_USER
 
     result = requests.delete(url.url)
+
     if result.status_code != 200:
-        raise DiscourseException('Discourse server responded to category delete request with '
+        raise DiscourseException('Discourse server responded to category delete request '
+                                 + url.url + ' with '
                                  + str(result.status_code) + ' ' + result.text)
 
 def sync_project(project_node):
@@ -307,17 +320,35 @@ def get_topics(project_node):
 
     return result.json()['topic_list']['topics']
 
-def create_topic(project_node, file_node):
+def create_topic(node):
+    project_node = _get_project_node(node)
     sync_project(project_node)
 
     url = furl(settings.DISCOURSE_SERVER_URL).join('/posts')
     url.args['api_key'] = settings.DISCOURSE_API_KEY
     url.args['api_username'] = settings.DISCOURSE_API_ADMIN_USER
 
+    # we can't do a more elegant isinstance check because that
+    # causes import errors with circular referencing.
+    try:
+        node_title = 'the wiki page ' + node.page_name
+    except AttributeError:
+        try:
+            node_title = 'the file ' + node.name
+        except AttributeError:
+                node_title = node.title
+
+    #if isinstance(node, Node):
+    #    node_title = node.title
+    #elif isinstance(node, File):
+    #    node_title = 'the file ' + node.name
+    #elif isinstance(node, NodeWikiPage):
+    #    node_title = 'the wiki page ' + node.page_name
+
     category_id = get_or_create_category_id(project_node)
     url.args['category'] = category_id
-    url.args['title'] = 'File: ' + file_node.name + ' (' + file_node._id + ')'
-    url.args['raw'] = 'The file ' + file_node.name + ' has been uploaded. What do you think about it?'
+    url.args['title'] = node_title + ' (' + node._id + ')'
+    url.args['raw'] = 'This is the discussion topic for ' + node_title + '. What do you think about it?'
 
     result = requests.post(url.url)
     if result.status_code != 200:
@@ -326,22 +357,21 @@ def create_topic(project_node, file_node):
 
     return result.json()['topic_id']
 
-def get_topic_id(project_node, file_node):
+def get_topic_id(node):
+    project_node = _get_project_node(node)
     topics = get_topics(project_node)
-    ids = [topic['id'] for topic in topics if topic['title'].endswith('(' + file_node._id + ')')]
+    ids = [topic['id'] for topic in topics if topic['title'].endswith('(' + node._id + ')')]
     if ids:
         return ids[0]
     return None
 
-def get_or_create_topic_id(project_node, file_node):
-    topic_id = get_topic_id(project_node, file_node)
+def get_or_create_topic_id(node):
+    topic_id = get_topic_id(node)
     if topic_id:
         return topic_id
-    return create_topic(project_node, file_node)
+    return create_topic(node)
 
-def get_topic(project_node, file_node):
-    topic_id = get_or_create_topic_id(project_node, file_node)
-
+def get_topic(topic_id):
     url = furl(settings.DISCOURSE_SERVER_URL).join('/t/' + str(topic_id) + '.json')
     url.args['api_key'] = settings.DISCOURSE_API_KEY
     url.args['api_username'] = settings.DISCOURSE_API_ADMIN_USER
@@ -352,8 +382,7 @@ def get_topic(project_node, file_node):
                                  + str(result.status_code) + ' ' + result.text)
     return result.json()
 
-def delete_topic(project_node, file_node):
-    topic_id = get_topic_id(project_node, file_node)
+def delete_topic(topic_id):
     if topic_id is None:
         return
 
@@ -366,7 +395,7 @@ def delete_topic(project_node, file_node):
         raise DiscourseException('Discourse server responded to topic delete request ' + result.url + ' with '
                                  + str(result.status_code) + ' ' + result.text)
 
-def create_comment(project_node, file_node, comment_text, user=None, reply_to_post_number=None):
+def create_comment(node, comment_text, user=None, reply_to_post_number=None):
     if user is None:
         user_name = get_username()
     else:
@@ -379,8 +408,10 @@ def create_comment(project_node, file_node, comment_text, user=None, reply_to_po
     url.args['api_key'] = settings.DISCOURSE_API_KEY
     url.args['api_username'] = user_name
 
+    project_node = _get_project_node(node)
     category_id = get_or_create_category_id(project_node)
-    topic_id = get_or_create_topic_id(project_node, file_node)
+
+    topic_id = get_or_create_topic_id(node)
     url.args['category'] = category_id
     url.args['topic_id'] = topic_id
     url.args['raw'] = comment_text

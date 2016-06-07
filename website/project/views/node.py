@@ -8,7 +8,7 @@ from flask import request
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException, ValidationValueError
 
-from framework import status
+from framework import status, discourse
 from framework.utils import iso8601format
 from framework.mongo import StoredObject
 from framework.flask import redirect
@@ -373,6 +373,10 @@ def view_project(auth, node, **kwargs):
         config_entry='widget'
     ))
     ret.update(rubeus.collect_addon_assets(node))
+
+    ret['discourse_url'] = settings.DISCOURSE_SERVER_URL
+    ret['discourse_topic_id'] = discourse.get_or_create_topic_id(node)
+
     return ret
 
 # Reorder components

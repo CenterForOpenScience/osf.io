@@ -44,10 +44,11 @@ def local_group_test():
     print('test passed')
 
 def local_category_test():
-    project_node = literal(title = 'The Test Project', _id = 'test1234', is_public = True)
+    project_node = literal(title = 'The Test Project', _id = 'test1234', is_public = True, contributors=[])
 
-    create_or_update_category(project_node)
-
+    delete_category(project_node)
+    create_category(project_node)
+    assert get_category_id(project_node) is not None
     delete_category(project_node)
     assert get_category_id(project_node) is None
 
@@ -56,9 +57,9 @@ def local_category_test():
 def local_comment_test():
     user1 = literal(_id='etfhq', username='acshikh@gmail.com')
     project_node = literal(title = 'The Test Project', _id = 'test1234', contributors=[user1], is_public = True)
-    file_node = literal(_id='573cb78e96f6d02370c991a9', name='superRickyRobot.jpg')
+    file_node = literal(_id='573cb78e96f6d02370c991a9', name='superRickyRobot.jpg', node=project_node)
 
-    comment_id = create_comment(project_node, file_node, 'I think your robot is the coolest little bugger ever!')
+    comment_id = create_comment(file_node, 'I think your robot is the coolest little bugger ever!', user1)
     edit_comment(comment_id, 'Actually, your robot is the coolest little bugger ever!')
     delete_comment(comment_id)
     undelete_comment(comment_id)
