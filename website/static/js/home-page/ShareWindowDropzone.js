@@ -29,12 +29,12 @@ var ShareWindowDropzone = {
     promise.then(function(result) {
        shareWindowId = result.data[0].id;
     });
-      
+
     Dropzone.options.shareWindowDropzone = {
         clickable: '#shareWindowDropzone',
         accept: function(file, done) {
                 this.options.url = waterbutler.buildUploadUrl(false,'osfstorage',shareWindowId, file,{});
-            //this.on('dragend', function(event) { document.getElementById('shareWindowDropzone').style.border = 'solid #333';});
+            this.on('dragend', function(event) { document.getElementById('shareWindowDropzone').style.border = 'solid #333';});
                 done();
             },
 
@@ -88,8 +88,8 @@ var ShareWindowDropzone = {
             })))];
         }
           return m('.row', m('.col-xs-12', headerTemplate()), m('div.p-v-xl.text-center.drop-zone-format.drop-zone-invis .pointer .panel #shareWindowDropzone',
-              m('p', m('h1',  'Drop files to upload'), 'Having trouble? Click anywhere in this box to manually upload a file.')),
-              m('.h4.text-center.drop-zone-invis #LinkToShareFiles', 'Or go to your ', m('a', {href: '/myprojects/', onclick: function() {}}, 'Public Files Project')));
+              m('p#shareWindowDropzone', m('h1',  'Drop files to upload'), 'Having trouble? Click anywhere in this box to manually upload a file.')),
+              m('.h4.text-center.drop-zone-invis #LinkToShareFiles', 'Or go to your ', m('a', {href: '/share_window/', onclick: function() {}}, 'Public Files Project')));
   }
 };
 
