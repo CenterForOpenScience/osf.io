@@ -462,7 +462,7 @@ def send_claim_email(email, user, node, notify=True, throttle=24 * 3600):
 
 
 @contributor_added.connect
-def notify_added_contributor(node, contributor, auth=None, throttle=None, all_global_subscriptions_none=None):
+def notify_added_contributor(node, contributor, auth=None, throttle=None, all_global_subscriptions_none=False):
     throttle = throttle or settings.CONTRIBUTOR_ADDED_EMAIL_THROTTLE
 
     # Exclude forks and templates because the user forking/templating the project gets added

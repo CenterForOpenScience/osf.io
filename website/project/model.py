@@ -1419,9 +1419,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         from website.notifications.utils import to_subscription_key
         from website.notifications.utils import get_global_notification_type
         from website.notifications.model import NotificationSubscription
-        from website.notifications.constants import NODE_SUBSCRIPTIONS_AVAILABLE
+        from website.notifications.constants import NODE_SUBSCRIPTIONS_AVAILABLE as events
 
-        events = NODE_SUBSCRIPTIONS_AVAILABLE
         notification_type = 'email_transactional'
         target_id = self._id
 
