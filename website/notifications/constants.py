@@ -4,7 +4,7 @@ NODE_SUBSCRIPTIONS_AVAILABLE = {
 }
 
 USER_SUBSCRIPTIONS_AVAILABLE = {
-    'comment_replies': 'Replies to your comments',
+    'global_comment_replies': 'Replies to your comments',
     'global_comments': 'Comments added',
     'global_file_updated': 'Files updated'
 }

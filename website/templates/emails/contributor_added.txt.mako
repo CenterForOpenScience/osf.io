@@ -6,7 +6,11 @@ Hello ${user.fullname},
 
 ${referrer_name + ' has added you' if referrer_name else 'You have been added'} as a contributor to the project "${node.title}" on the Open Science Framework: ${node.absolute_url}
 
+% if all_global_subscriptions_none:
+You will not be automatically subscribed to notification emails for updates to this project. To change your email notification preferences, visit your project or your user settings: ${settings.DOMAIN + "settings/notifications/"}
+% else:
 You will automatically be subscribed to notification emails for updates to this project. To change your email notification preferences, visit your project or your user settings: ${settings.DOMAIN + "settings/notifications/"}
+% endif
 
 If you are erroneously being associated with "${node.title}," then you may visit the project's "Contributors" page and remove yourself as a contributor.
 

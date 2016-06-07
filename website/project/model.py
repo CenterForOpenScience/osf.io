@@ -2986,6 +2986,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         :param bool save: Save after adding contributor
         :returns: Whether contributor was added
         """
+        from website.notifications.utils import check_if_all_global_subscriptions_are_none
         MAX_RECENT_LENGTH = 15
 
         # If user is merged into another account, use master account
@@ -3027,7 +3028,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             if save:
                 self.save()
 
-            project_signals.contributor_added.send(self, contributor=contributor, auth=auth)
+            all_global_subscriptions_none = check_if_all_global_subscriptions_are_none(contributor)
+            project_signals.contributor_added.send(self, contributor=contributor, auth=auth, all_global_subscriptions_none=all_global_subscriptions_none)
 
             return True
 

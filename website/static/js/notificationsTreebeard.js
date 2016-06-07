@@ -125,14 +125,10 @@ function ProjectNotifications(data) {
                         custom : function() {
                             var globalNotificationsMessage = 'These are default settings for new ' +
                                 'projects you create or are added to. Modifying these settings will ' +
-                                'not modify settings on existing projects. NOTE: Regardless of your ' +
-                                'selected preferences, OSF will continue to provide transactional and ' +
-                                'administrative service emails.';
+                                'not modify settings on existing projects.';
                             var projectNotificationsMessage = 'These are settings for each of your ' +
                                 'projects. Modifying these settings will only modify the settings ' +
-                                'for the selected project. NOTE: Regardless of your selected ' +
-                                'preferences, OSF will continue to provide transactional and ' +
-                                'administrative service emails.';
+                                'for the selected project.';
                             return m('div[style="padding-left:5px; padding-bottom:50px"]', [
                                 m('p', [
                                     m('b', item.data.node.title + ':  '),

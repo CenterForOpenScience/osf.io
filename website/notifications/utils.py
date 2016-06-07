@@ -175,7 +175,7 @@ def get_configured_projects(user):
         # If the user has opted out of emails skip
         node = subscription.owner
 
-        if not isinstance(node, Node) or (user in subscription.none and not node.parent_id):
+        if not isinstance(node, Node) or (user in subscription.none and not node.parent_id) or node.title == 'Bookmarks':
             continue
 
         while node.parent_id and not node.is_deleted:
@@ -372,6 +372,7 @@ def get_parent_notification_type(node, event, user):
     else:
         return None
 
+
 def get_global_notification_type(global_subscription, user):
     """
     Given a global subscription (e.g. NotificationSubscription object with event_type
@@ -383,6 +384,20 @@ def get_global_notification_type(global_subscription, user):
     for notification_type in constants.NOTIFICATION_TYPES:
         if user in getattr(global_subscription, notification_type):
             return notification_type
+
+
+def check_if_all_global_subscriptions_are_none(user):
+    all_global_subscriptions_none = False
+    user_sunscriptions = get_all_user_subscriptions(user)
+    for user_subscription in user_sunscriptions:
+        if 'global' in user_subscription.event_name:
+            all_global_subscriptions_none = True
+            global_notification_type = get_global_notification_type(user_subscription, user)
+            if global_notification_type != 'none':
+                all_global_subscriptions_none = False
+                break
+
+    return all_global_subscriptions_none
 
 
 def format_user_and_project_subscriptions(user):
