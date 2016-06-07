@@ -100,6 +100,7 @@ def get_globals():
         'keen_write_key': settings.KEEN_WRITE_KEY,
     }
 
+
 def is_private_link_anonymous_view():
     try:
         # Avoid circular import
@@ -521,20 +522,18 @@ def make_url_map(app):
             notemplate
         ),
 
-        # FIXME or REDIRECTME: This redirects to settings when logged in, but gives an error (no template) when logged out
         Rule(
             '/login/connected_tools/',
             'get',
             landing_page_views.connected_tools,
-            OsfWebRenderer('public/login_landing.mako', trust=False)
+            notemplate
         ),
 
-        # FIXME or REDIRECTME: mod-meta error when logged out: signin form not rendering for login_landing sidebar
         Rule(
             '/login/enriched_profile/',
             'get',
             landing_page_views.enriched_profile,
-            OsfWebRenderer('public/login_landing.mako', trust=False)
+            notemplate
         ),
 
     ])
