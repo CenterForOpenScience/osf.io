@@ -10,7 +10,7 @@ from modularodm.exceptions import ModularOdmException, ValidationError
 from django.apps import apps
 from django.db.models import Count
 
-from framework import status
+from framework import status, discourse
 from framework.utils import iso8601format
 from framework.flask import redirect
 from framework.auth.decorators import must_be_logged_in, collect_auth
@@ -385,6 +385,10 @@ def view_project(auth, node, **kwargs):
         config_entry='widget'
     ))
     ret.update(rubeus.collect_addon_assets(node))
+
+    ret['discourse_url'] = settings.DISCOURSE_SERVER_URL
+    ret['discourse_topic_id'] = discourse.get_or_create_topic_id(node)
+
     return ret
 
 # Reorder components

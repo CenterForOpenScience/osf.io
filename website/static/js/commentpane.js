@@ -60,6 +60,9 @@
                     width = options.toggleWidth * bodyWidth;
                 }
                 options.onOpen.call(self);
+
+                // force reload.
+                document.getElementById('discourse-embed-frame').src += ''
             }
             $handle.tooltip('hide');
             $toggleElm.animate(
