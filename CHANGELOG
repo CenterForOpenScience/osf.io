@@ -8,6 +8,11 @@ Changelog
 - Add support for affiliating users and projects with multiple institutions.
 - Use multiple celery queues and queue prioritization.
 
+Migrations
+----------
+
+- python -m scripts.migration.migrate_primary_institutions
+
 0.74.0 (2016-05-25)
 ===================
 
