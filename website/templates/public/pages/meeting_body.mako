@@ -12,7 +12,7 @@
         <a id="addLink" onclick="" href="#">${('Add your ' + meeting['field_names']['add_submission']) if meeting['poster'] and meeting['talk'] else ('Add your ' + meeting['field_names']['submission1_plural']) if meeting['poster'] else ('Add your ' + meeting['field_names']['submission2_plural'])}</a>
 
         % if meeting['info_url']:
-          | <a href="${ meeting['info_url'] }" target="_blank">Conference homepage <i class="fa fa-sm fa fa-external-link"></i></a>
+          | <a href="${ meeting['info_url'] }">Conference homepage <i class="fa fa-sm fa fa-external-link"></i></a>
         % endif
     </div>
 
