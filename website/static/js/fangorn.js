@@ -1205,7 +1205,7 @@ function _fangornTitleColumn(item, col) {
                 onclick: function(event) {
                     event.stopImmediatePropagation();
                     gotoFileEvent.call(tb, item);
- 
+
                 }
             };
         }
@@ -1250,16 +1250,16 @@ function generateURLClipBoard(item){
 		var cb = function(elem) {
                 makeClient(elem);
             };
-		
+
          var clipboardHTML = m('div.input-group[style="width: 180px"]',
                         [
                             m('span.input-group-btn', m('button.btn.btn-default.btn-sm[type="button"][data-clipboard-text="'+url+ '"]', {config: cb}, m('.fa.fa-copy'))),
                             m('input[value="'+url+'"][type="text"][readonly="readonly"][style="float:left; height: 30px;background-color: #F5F5F5;color:#333333;"]')
                         ]
                     );
-		
+
 	 	return clipboardHTML;
-       
+
 }
 
 
@@ -1310,7 +1310,7 @@ function _fangornResolveRows(item) {
         filter : true,
         custom : _fangornTitleColumn
     });
-if(window.contextVars.node.category == "share window"){
+if(window.contextVars.node.category === 'share window'){
     if (item.data.kind === 'file') {
        	 default_columns.push(
         {
@@ -1320,7 +1320,7 @@ if(window.contextVars.node.category == "share window"){
             	 return m('a', {href: waterbutler.buildTreeBeardDownload(item)}, 'Download File');
             	//return waterbutler.buildTreeBeardDownload(item);
             }
-        });	
+        });
     	 default_columns.push(
         {
             data : 'share link',  // Data field name
@@ -1375,7 +1375,7 @@ if(window.contextVars.node.category == "share window"){
                 custom : function() { return m(''); }
             });
         }
-    }//end of if	
+    }//end of if
 }//end of else
     configOption = resolveconfigOption.call(this, item, 'resolveRows', [item]);
     return configOption || default_columns;
@@ -1389,21 +1389,21 @@ if(window.contextVars.node.category == "share window"){
  */
 function _fangornColumnTitles () {
     var columns = [];
-    
+
     var nodeApiUrl = window.contextVars.node.category;
     alert(nodeApiUrl);
 
-    if(typeof window.contextVars.node.category != "undefined"){
-        alert( "!undefined");
+    if(typeof window.contextVars.node.category !== 'undefined'){
+        alert( '!undefined');
 
     }else{
-      nodeApiUrl = "/api/v1/project/jug65/";
-       alert( "undefined");
+      nodeApiUrl = '/api/v1/project/jug65/';
+       alert( 'undefined');
 
     }
-    
 
-    if(nodeApiUrl == "share window"){
+
+    if(nodeApiUrl === 'share window'){
 	    columns.push(
 	    {
 	        title: 'Name',
@@ -1443,7 +1443,7 @@ function _fangornColumnTitles () {
 	        title : 'Download Count',
 	        width : '10%',
 	        sort : false
-	    });	
+	    });
 	}
     return columns;
 }
