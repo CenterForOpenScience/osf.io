@@ -7,6 +7,7 @@ var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
 var AddProject = require('js/addProjectPlugin');
 var NodeFetcher = require('js/myProjects').NodeFetcher;
+var ShareWindowDropzone = require('js/home-page/ShareWindowDropzone');
 
 // CSS
 require('css/quick-project-search-plugin.css');
@@ -466,10 +467,12 @@ var QuickSearchProject = {
             }
         }
 
+
         function headerTemplate ( ){
+
             return [ m('h2.col-xs-9', 'Dashboard'), m('m-b-lg.col-xs-3', m('.pull-right', m.component(AddProject, {
-                buttonTemplate : m('button.btn.btn-success.btn-success-high-contrast.m-t-md.f-w-xl[data-toggle="modal"][data-target="#addProjectFromHome"]', {onclick: function(){
-                                $osf.trackClick('quickSearch', 'add-project', 'open-add-project-modal');
+                buttonTemplate : m('button.btn.btn-success.btn-success-high-contrast.m-t-md.f-w-xl[data-toggle="modal"][data-target="#addProjectFromHome"]', {onclick: function() {
+                    $osf.trackClick('quickSearch', 'add-project', 'open-add-project-modal');
                 }}, 'Create new project'),
                 modalID : 'addProjectFromHome',
                 stayCallback : function _stayCallback_inPanel() {
@@ -497,7 +500,7 @@ var QuickSearchProject = {
         }
         else {
             return m('.row',
-                m('.col-xs-12', headerTemplate()),
+                //m('.col-xs-12', headerTemplate()),
                 m('.col-xs-12',[
                     m('.row.quick-project', m('.col-xs-12',
                     m('.m-b-sm.text-center', [

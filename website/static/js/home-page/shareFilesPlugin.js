@@ -92,8 +92,7 @@ var ShareFilesProject = {
         // need to update hyperlink to a faq about ShareFiles (currently redirects to myprojects)
       return m('.row',
           m('.col-xs-12', headerTemplate()),
-           m('p.text-center.f-w-lg', [ m('a', {href:'/myprojects/', onclick: function(){
-                        $osf.trackClick('quickSearch', 'navigate', 'navigate-to-my-projects');}}, 'ShareFiles'), ' allows you to easily collaborate and share your work with others']),
+           m('p.text-center.f-w-lg', [ m('a', {href:'http://help.osf.io/'}, 'ShareFiles'), ' allows you to easily collaborate and share your work with others']),
           m('.col-xs-12',[
               m('.row.quick-project', m('.col-xs-12',
               m('.quick-search-table', [
