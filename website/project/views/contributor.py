@@ -633,7 +633,6 @@ def claim_user_form(auth, **kwargs):
             # Redirect to CAS and authenticate the user with a verification key.
             return redirect(cas.get_login_url(
                 web_url_for('user_profile', _absolute=True),
-                auto=True,
                 username=user.username,
                 verification_key=user.verification_key
             ))

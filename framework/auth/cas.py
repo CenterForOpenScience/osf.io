@@ -55,20 +55,15 @@ class CasClient(object):
     def __init__(self, base_url):
         self.BASE_URL = base_url
 
-    def get_login_url(self, service_url, auto=False, username=None, password=None, verification_key=None, otp=None):
+    def get_login_url(self, service_url, username=None, verification_key=None):
         url = furl.furl(self.BASE_URL)
         url.path.segments.append('login')
         url.args['service'] = service_url
-        if auto:
-            url.args['auto'] = 'true'
+        if username and verification_key:
             if username:
                 url.args['username'] = username
-            if password:
-                url.args['password'] = password
             if verification_key:
                 url.args['verification_key'] = verification_key
-            if otp:
-                url.args['otp'] = otp
         return url.url
 
     def get_logout_url(self, service_url):
@@ -173,6 +168,7 @@ class CasClient(object):
         else:
             self._handle_error(resp)
 
+
 def parse_auth_header(header):
     """Given a Authorization header string, e.g. 'Bearer abc123xyz', return a token
     or raise an error if the header is invalid.
@@ -186,8 +182,10 @@ def parse_auth_header(header):
         raise CasTokenError('Token contains spaces')
     return parts[1]  # the token
 
+
 def get_client():
     return CasClient(settings.CAS_SERVER_URL)
+
 
 def get_login_url(*args, **kwargs):
     """Convenience function for getting a login URL for a service.
@@ -197,8 +195,10 @@ def get_login_url(*args, **kwargs):
     """
     return get_client().get_login_url(*args, **kwargs)
 
+
 def get_institution_target(redirect_url):
     return '/login?service={}&auto=true'.format(urllib.quote(redirect_url, safe='~()*!.\''))
+
 
 def get_logout_url(*args, **kwargs):
     """Convenience function for getting a logout URL for a service.
@@ -208,10 +208,12 @@ def get_logout_url(*args, **kwargs):
     """
     return get_client().get_logout_url(*args, **kwargs)
 
+
 def get_profile_url():
     """Convenience function for getting a profile URL for a user.
     """
     return get_client().get_profile_url()
+
 
 def make_response_from_ticket(ticket, service_url):
     """Given a CAS ticket and service URL, attempt to the user and return a proper

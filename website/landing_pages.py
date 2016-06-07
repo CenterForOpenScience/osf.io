@@ -27,7 +27,8 @@ def _landing_page(auth, title, content_path, redirect_to, **kwargs):
     try:
         data[0]['title_text'] = title
         data[0]['content_template_path'] = content_path
-        data[0]['login_url'] = cas.get_login_url(redirect_to, auto=True)
+        # TODO: ask Steve on what is landing_page
+        data[0]['login_url'] = cas.get_login_url(redirect_to)
     except TypeError:
         pass
 

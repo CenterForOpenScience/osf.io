@@ -58,7 +58,6 @@ def reset_password(auth, **kwargs):
         # Redirect to CAS and authenticate the user with a verification key.
         return redirect(cas.get_login_url(
             web_url_for('user_account', _absolute=True),
-            # auto=True,
             username=user_obj.username,
             verification_key=user_obj.verification_key
         ))
@@ -168,7 +167,8 @@ def auth_login(auth, **kwargs):
     if campaign and campaign in campaigns.CAMPAIGNS:
         if (campaign == 'institution' and settings.ENABLE_INSTITUTIONS) or campaign != 'institution':
             data['campaign'] = campaign
-    data['login_url'] = cas.get_login_url(redirect_url, auto=True)
+    # TODO: ask michael and steve on institution
+    data['login_url'] = cas.get_login_url(redirect_url)
     data['institution_redirect'] = cas.get_institution_target(redirect_url)
     data['redirect_url'] = next_url
 
@@ -251,7 +251,6 @@ def confirm_email_get(token, auth=None, **kwargs):
 
     return redirect(cas.get_login_url(
         request.url,
-        # auto=True,
         username=user.username,
         verification_key=user.verification_key
     ))
