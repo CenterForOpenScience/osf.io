@@ -1,11 +1,7 @@
 from django.db import models
-from framework.mongo import ObjectId
 from osf_models.models.base import BaseModel
+from osf_models.utils.base import get_object_id
 from osf_models.utils.datetime_aware_jsonfield import DatetimeAwareJSONField
-
-
-def get_object_id():
-    return str(ObjectId())
 
 
 class NodeLog(BaseModel):
@@ -80,12 +76,12 @@ class NodeLog(BaseModel):
     action = models.CharField(max_length=255, db_index=True, choices=ACTIONS)
     params = DatetimeAwareJSONField(default={})
     should_hide = models.BooleanField(default=False)
-
-    # was_connected_to = models.ManyToManyField('Node')
-
     user = models.ForeignKey('User', related_name='logs', db_index=True, null=True)
     foreign_user = models.CharField(max_length=255, blank=True)
     node = models.ForeignKey('Node', related_name='logs', db_index=True, null=True)
+
+    def __unicode__(self):
+        return u'{} on {} by {} at {}'.format(self.action, self.node._id, self.user._id, self.date)
 
     @property
     def _id(self):

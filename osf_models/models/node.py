@@ -6,6 +6,8 @@ from django.db import models
 from modularodm import Q
 
 from osf_models.models.contributor import Contributor
+from osf_models.models import MetaSchema
+from osf_models.models.sanctions import Embargo, RegistrationApproval
 from osf_models.models.tag import Tag
 from osf_models.models.user import User
 from osf_models.models.validators import validate_title
@@ -42,8 +44,8 @@ class Node(GuidMixin, BaseModel):
     is_public = models.BooleanField(default=False, db_index=True)
 
     # permissions = Permissions are now on contributors
-    # visible_contributor_ids =
     # visible_contributor_ids was moved to this property
+
     @property
     def visible_contributor_ids(self):
         return self.contributor_set.filter(visible=True)
@@ -61,12 +63,12 @@ class Node(GuidMixin, BaseModel):
                                         on_delete=models.SET_NULL,
                                         null=True)
 
-    # registered_schema = models.ManyToManyField(Metaschema)
+    registered_schema = models.ManyToManyField(MetaSchema)
 
     registered_meta = DatetimeAwareJSONField(default={})
-    # registration_approval = models.ForeignKey(RegistrationApproval)
+    registration_approval = models.ForeignKey(RegistrationApproval, null=True)
     # retraction = models.ForeignKey(Retraction)
-    # embargo = models.ForeignKey(Embargo)
+    embargo = models.ForeignKey(Embargo, null=True)
 
     is_fork = models.BooleanField(default=False, db_index=True)
     forked_date = models.DateTimeField(db_index=True, null=True)
@@ -82,12 +84,12 @@ class Node(GuidMixin, BaseModel):
 
     public_comments = models.BooleanField(default=True)
 
-    wiki_pages_current = DatetimeAwareJSONField()
-    wiki_pages_versions = DatetimeAwareJSONField()
+    wiki_pages_current = DatetimeAwareJSONField(default={})
+    wiki_pages_versions = DatetimeAwareJSONField(default={})
     # Dictionary field mapping node wiki page to sharejs private uuid.
     # {<page_name>: <sharejs_id>}
-    wiki_private_uuids = DatetimeAwareJSONField()
-    file_guid_to_share_uuids = DatetimeAwareJSONField()
+    wiki_private_uuids = DatetimeAwareJSONField(default={})
+    file_guid_to_share_uuids = DatetimeAwareJSONField(default={})
 
     creator = models.ForeignKey(User,
                                 db_index=True,
@@ -135,7 +137,7 @@ class Node(GuidMixin, BaseModel):
     # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
     # {<User.id>: [<Node._id>, <Node2._id>, ...] }
     # TODO: Can this be a reference instead of data?
-    child_node_subscriptions = DatetimeAwareJSONField()
+    child_node_subscriptions = DatetimeAwareJSONField(default={})
 
     # TODO: Sort this out so it's not awful
     institution_id = models.CharField(db_index=True,
@@ -153,6 +155,9 @@ class Node(GuidMixin, BaseModel):
     _affiliated_institutions = models.ManyToManyField('self')
 
     # alternative_citations = models.ManyToManyField(AlternativeCitation)
+
+    def __unicode__(self):
+        return u'{} : ({})'.format(self.title, self._id)
 
     @property
     def comment_level(self):

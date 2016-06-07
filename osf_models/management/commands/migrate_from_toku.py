@@ -7,13 +7,20 @@ from osf_models.scripts.load_blacklist_guids import \
     main as load_blacklist_guids
 from osf_models.scripts.load_guids import main as load_guids
 from osf_models.scripts.migrate_nodelogs import main as migrate_nodelogs
-from osf_models.scripts.migrate_nodes import (
-    build_pk_caches, save_bare_nodes, save_bare_system_tags, save_bare_tags,
-    save_bare_users, set_node_foreign_keys_on_nodes,
-    set_node_many_to_many_on_nodes, set_node_many_to_many_on_users,
-    set_system_tag_many_to_many_on_users, set_tag_many_to_many_on_nodes,
-    set_user_foreign_keys_on_nodes, set_user_foreign_keys_on_users,
-    set_user_many_to_many_on_nodes, set_user_many_to_many_on_users)
+from osf_models.scripts.migrate_nodes import (build_pk_caches,
+                                              save_bare_embargos,
+                                              save_bare_nodes,
+                                              save_bare_system_tags,
+                                              save_bare_tags, save_bare_users,
+                                              set_node_foreign_keys_on_nodes,
+                                              set_node_many_to_many_on_nodes,
+                                              set_node_many_to_many_on_users,
+                                              set_system_tag_many_to_many_on_users,
+                                              set_tag_many_to_many_on_nodes,
+                                              set_user_foreign_keys_on_nodes,
+                                              set_user_foreign_keys_on_users,
+                                              set_user_many_to_many_on_nodes,
+                                              set_user_many_to_many_on_users)
 from osf_models.scripts.verify_guids import main as verify_guids
 from osf_models.scripts.verify_nodelogs import main as verify_nodelogs
 from osf_models.scripts.verify_nodes import main as verify_nodes
@@ -27,17 +34,18 @@ class Command(BaseCommand):
         print 'Initializing Flask App...'
         init_app()
         start = datetime.now()
-        # load_guids()
-        # print 'Loaded Guids in {} seconds...'.format((datetime.now() - start
-        #                                               ).total_seconds())
-        # snap = datetime.now()
-        # load_blacklist_guids()
-        # print 'Loaded Blacklist in {} seconds...'.format((datetime.now() - snap
-        #                                                   ).total_seconds())
-        # save_bare_nodes()
-        # save_bare_users()
-        # save_bare_tags()
-        # save_bare_system_tags()
+        load_guids()
+        print 'Loaded Guids in {} seconds...'.format((datetime.now() - start
+                                                      ).total_seconds())
+        snap = datetime.now()
+        load_blacklist_guids()
+        print 'Loaded Blacklist in {} seconds...'.format((datetime.now() - snap
+                                                          ).total_seconds())
+        save_bare_nodes()
+        save_bare_users()
+        save_bare_tags()
+        save_bare_system_tags()
+        save_bare_embargos()
 
         global modm_to_django
         modm_to_django = build_pk_caches()
@@ -45,26 +53,26 @@ class Command(BaseCommand):
             modm_to_django.keys()))
 
         # fk
-        # set_node_foreign_keys_on_nodes()
-        # set_user_foreign_keys_on_nodes()
-        # set_user_foreign_keys_on_users()
-        #
-        # # m2m
-        # set_node_many_to_many_on_nodes()
-        # set_user_many_to_many_on_nodes()
-        # set_node_many_to_many_on_users()
-        # set_user_many_to_many_on_users()
-        # set_system_tag_many_to_many_on_users()
-        # set_tag_many_to_many_on_nodes()
-        #
-        # # verify
-        # verify_guids()
-        # verify_nodes()
+        set_node_foreign_keys_on_nodes()
+        set_user_foreign_keys_on_nodes()
+        set_user_foreign_keys_on_users()
 
-        # nodelogs
-        # migrate_nodelogs()
+        # m2m
+        set_node_many_to_many_on_nodes()
+        set_user_many_to_many_on_nodes()
+        set_node_many_to_many_on_users()
+        set_user_many_to_many_on_users()
+        set_system_tag_many_to_many_on_users()
+        set_tag_many_to_many_on_nodes()
 
-        # verify nodelogs
+        # verify
+        verify_guids()
+        verify_nodes()
+
+        nodelogs
+        migrate_nodelogs()
+
+        verify nodelogs
         verify_nodelogs()
 
         print 'Finished in {} seconds...'.format((datetime.now() - start

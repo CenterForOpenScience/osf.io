@@ -234,6 +234,9 @@ class User(GuidMixin, BaseModel):
 
     _affiliated_institutions = models.ManyToManyField('Node')
 
+    def __unicode__(self):
+        return u'{}: {} {}'.format(self.username, self.given_name, self.family_name)
+
     @property
     def url(self):
         return '/{}/'.format(self._id)

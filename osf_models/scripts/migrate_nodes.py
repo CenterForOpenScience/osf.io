@@ -11,6 +11,8 @@ from django.db import transaction
 from framework.auth import User as MODMUser
 from modularodm import Q as MQ
 from osf_models.models import Contributor, Guid, Node, Tag, User
+from osf_models.models.sanctions import Embargo
+from website.models import Embargo as MODMEmbargo
 from website.models import Node as MODMNode
 from website.models import Tag as MODMTag
 from website.project.model import Pointer
@@ -22,7 +24,7 @@ class DryMigrationException(BaseException):
 
 fk_node_fields = [
     'forked_from', 'registered_from', 'root', 'parent_node', 'template_node',
-    '_primary_institution'
+    '_primary_institution', 'embargo'
 ]
 m2m_node_fields = ['nodes', '_affiliated_institutions']
 fk_user_fields = ['registered_user', 'creator', 'merged_by']
@@ -55,7 +57,7 @@ node_key_blacklist = [
     #  'institution_logo_name',
     'contributors',  # done elsewhere
     'retraction',
-    'embargo',
+    # 'embargo',
     'node_license',
     'embargo_termination_approval',
 ] + fk_user_fields + fk_node_fields + m2m_node_fields + m2m_user_fields + m2m_tag_fields
@@ -246,6 +248,63 @@ def save_bare_system_tags(page_size=10000):
     print 'MODM System Tags: {}'.format(total)
     print 'django system tags: {}'.format(Tag.objects.filter(system=
                                                              True).count())
+    print 'Done with {} in {} seconds...'.format(
+        sys._getframe().f_code.co_name,
+        (datetime.now() - start).total_seconds())
+
+
+def save_bare_embargos(page_size=10000):
+    print 'Starting {}...'.format(sys._getframe().f_code.co_name)
+    embargo_key_blacklist = ['__backrefs', '_version', ]
+
+    start = datetime.now()
+    count = 0
+    total = MODMEmbargo.find().count()
+
+    while count < total:
+        with transaction.atomic():
+            embargos = []
+            for modm_embargo in MODMEmbargo.find().sort('-_id')[count:count +
+                                                                page_size]:
+                embargo_fields = modm_embargo.to_storage()
+                cleaned_embargo_fields = {key: embargo_fields[key]
+                                          for key in embargo_fields
+                                          if key not in (embargo_key_blacklist)
+                                          }
+                for k, v in cleaned_embargo_fields.iteritems():
+                    if isinstance(v, datetime):
+                        cleaned_embargo_fields[k] = pytz.utc.localize(v)
+
+                try:
+                    initiated_by_id = modm_to_django[cleaned_embargo_fields[
+                        'initiated_by']]
+                except KeyError:
+                    print 'Couldn\'t find user with guid {}'.format()
+                else:
+                    cleaned_embargo_fields['initiated_by_id'] = initiated_by_id
+                    del cleaned_embargo_fields['initiated_by']
+
+                embargos.append(Embargo(**cleaned_embargo_fields))
+                count += 1
+                if count % page_size == 0 or count == total:
+                    then = datetime.now()
+                    print 'Saving embargos {} through {}...'.format(
+                        count - page_size, count)
+                    woot = Embargo.objects.bulk_create(embargos)
+                    for wit in woot:
+                        modm_to_django[wit.guid] = wit.pk
+                    now = datetime.now()
+                    print 'Done with {} embargos in {} seconds...'.format(
+                        len(woot), (now - then).total_seconds())
+                    embargos = None
+                    woot = None
+                    guid = None
+                    embargo_fields = None
+                    cleaned_embargo_fields = None
+                    trash = gc.collect()
+                    print 'Took out {} trashes'.format(trash)
+    print 'Modm embargos: {}'.format(total)
+    print 'django embargos: {}'.format(Embargo.objects.count())
     print 'Done with {} in {} seconds...'.format(
         sys._getframe().f_code.co_name,
         (datetime.now() - start).total_seconds())
