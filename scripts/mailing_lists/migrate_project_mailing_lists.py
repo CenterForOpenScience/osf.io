@@ -40,6 +40,11 @@ def migrate(dry_run=True):
     ncount = len(nodes)
     logger.info('Preparing to migrate {} nodes.'.format(ncount))
     for i, node in enumerate(nodes):
+        try:
+            assert isinstance(node, Node)
+        except:
+            continue
+
         if not node.is_mutable_project:
             try:
                 logger.info('({0}/{1})Disabling mailing list for registration/dashboard {2}'.format(i+1, ncount, node._id))
@@ -59,7 +64,6 @@ def migrate(dry_run=True):
                 )
                 logger.info('({0}/{1})Enabling mailing list for node {2}'.format(i+1, ncount, node._id))
                 node.mailing_enabled = True
-                node.mailing_updated = True
 
                 for user in node.contributors:
                     if user.is_active:
@@ -74,7 +78,19 @@ def migrate(dry_run=True):
                 logger.exception('Error while handling node {}'.format(node._id))
                 unknown_failures[node._id] = e
             else:
-                create_list(node._id)
+                try:
+                    create_list(node._id)
+                except Exception as e:
+                    logger.exception('Mailgun: error while creating list for node {}'.format(node._id))
+                    # Sync this node later
+                    node.mailing_updated = True
+                else:
+                    # Node synced
+                    node.mailing_updated = False
+                finally:
+                    node.save()
+
+
         if i % 100 == 0:
             for key in ('node', 'user', 'fileversion', 'storedfilenode'):
                 Node._cache.data.get(key, {}).clear()
