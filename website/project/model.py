@@ -3601,7 +3601,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         return super(Node, cls).find(query, **kwargs)
 
     @classmethod
-    def find_one(cls, query=None, allow_institution=False,  allow_share_windows=False, **kwargs):
+    def find_one(cls, query=None, allow_institution=False, allow_share_windows=False, **kwargs):
         if not allow_institution:
             query = (query & Q('institution_id', 'eq', None)) if query else Q('institution_id', 'eq', None)
 
