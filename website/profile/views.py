@@ -226,7 +226,7 @@ def update_user(auth):
                 if subscription:
                     mailchimp_utils.unsubscribe_mailchimp_async(list_name, user._id, username=user.username)
 
-            for node in user.node__contributed:
+            for node in user.contributed:
                 if node.mailing_enabled:
                     node.mailing_updated = True
                     node.save()
