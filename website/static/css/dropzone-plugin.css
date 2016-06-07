@@ -6,6 +6,10 @@
     clear: both;
     border: 2px dashed #b8b8b8;
 }
+.drop-zone-format:hover {
+    border: 3px solid;
+    border-color: #52A452;
+}
 
 .drop-zone-disp {
     display: inline-flex;

@@ -32,9 +32,13 @@ var ShareWindowDropzone = {
 
     Dropzone.options.shareWindowDropzone = {
         clickable: '#shareWindowDropzone',
+          thumbnailWidth: 80,
+  thumbnailHeight: 80,
+        //previewsContainer: "#dropzone-preview",
+
         accept: function(file, done) {
                 this.options.url = waterbutler.buildUploadUrl(false,'osfstorage',shareWindowId, file,{});
-            //this.on('dragend', function(event) { document.getElementById('shareWindowDropzone').style.border = 'solid #333';});
+            //this.on('dragend', function(event) { event.getElementById('shareWindowDropzone').style.border = 'solid #333';});
                 done();
             },
 
@@ -69,11 +73,11 @@ var ShareWindowDropzone = {
       });
 
   },
+
   view: function(ctrl, args) {
               function headerTemplate ( ){
             return [ m('h2.col-xs-7', 'Dashboard'), m('m-b-lg.col-xs-3.drop-zone-disp', m('button.btn.btn-primary.m-t-md.f-w-xl #ShareButton', {onclick: function() {
-                //var isClicked = document.getElementById('shareWindowDropzone');
-               // isClicked.style.display = (isClicked.style.display === "none") ? "block" : "none";
+
             }}, 'Upload Public Files'), m('.pull-right', m.component(AddProject, {
                 buttonTemplate : m('button.btn.btn-success.btn-success-high-contrast.m-t-md.f-w-xl[data-toggle="modal"][data-target="#addProjectFromHome"]', {onclick: function() {
                     $osf.trackClick('quickSearch', 'add-project', 'open-add-project-modal');
@@ -88,7 +92,7 @@ var ShareWindowDropzone = {
             })))];
         }
           return m('.row', m('.col-xs-12', headerTemplate()), m('div.p-v-xl.text-center.drop-zone-format.drop-zone-invis .pointer .panel #shareWindowDropzone',
-              m('p', m('h1',  'Drop files to upload'), 'Having trouble? Click anywhere in this box to manually upload a file.')),
+              m('p#shareWindowDropzone', m('h1',  'Drop files to upload'), 'Having trouble? Click anywhere in this box to manually upload a file.')),
               m('.h4.text-center.drop-zone-invis #LinkToShareFiles', 'Or go to your ', m('a', {href: '/share_window/', onclick: function() {}}, 'Public Files Project')));
   }
 };
