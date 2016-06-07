@@ -8,13 +8,13 @@ var $tb = require('js/treebeardHelpers');
 var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 
 
-function subscribe(item, notification_type) {
+function subscribe(item, notificationType) {
     var id = item.parent().data.node.id;
     var event = item.data.event.title;
     var payload = {
         'id': id,
         'event': event,
-        'notification_type': notification_type
+        'notification_type': notificationType
     };
     $osf.postJSON(
         '/api/v1/subscriptions/',
@@ -22,7 +22,7 @@ function subscribe(item, notification_type) {
     ).done(function(){
         //'notfiy-success' is to override default class 'success' in treebeard
         item.notify.update('Settings updated', 'notify-success', 1, 2000);
-        item.data.event.notificationType = notification_type;
+        item.data.event.notificationType = notificationType;
     }).fail(function() {
         item.notify.update('Could not update settings', 'notify-danger', 1, 2000);
     });

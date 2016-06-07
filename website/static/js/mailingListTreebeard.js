@@ -7,9 +7,9 @@ var $osf = require('js/osfHelpers');
 var $tb = require('js/treebeardHelpers');
 var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 
-function subscribe(item, notification_type, reload, url) {
+function subscribe(item, notificationType, reload, url) {
     var id = item.data.node.id;
-    var method = notification_type === 'enabled' ? 'POST' : 'DELETE';
+    var method = notificationType === 'enabled' ? 'POST' : 'DELETE';
     $.ajax({
         url: url,
         type: method,
@@ -17,7 +17,7 @@ function subscribe(item, notification_type, reload, url) {
     }).done(function(){
         //'notify-success' is to override default class 'success' in treebeard
         item.notify.update('Settings updated', 'notify-success', 1, 2000);
-        item.data.node.mailing_list = notification_type;
+        item.data.node.mailing_list = notificationType;
         reload();
     }).fail(function() {
         item.notify.update('Could not update settings', 'notify-danger', 1, 2000);
