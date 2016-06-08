@@ -16,6 +16,7 @@ var waterbutler = require('js/waterbutler');
 
 var iconmap = require('js/iconmap');
 var storageAddons = require('json!storageAddons.json');
+var makeClient = require('js/clipboard');
 
 // CSS
 require('css/fangorn.css');
@@ -1203,6 +1204,26 @@ function _fangornTitleColumn(item, col) {
     return m('span', item.data.name);
 }
 
+
+
+
+
+function generateURLClipBoard(item){
+		var url = waterbutler.buildTreeBeardDownload(item);
+		var cb = function(elem) {
+                makeClient(elem);
+            };
+
+         var clipboardHTML = m('div.input-group[style="width: 180px"]',
+                        [
+                            m('span.input-group-btn', m('button.btn.btn-default.btn-sm[type="button"][data-clipboard-text="'+url+ '"]', {config: cb}, m('.fa.fa-copy'))),
+                            m('input[value="'+url+'"][type="text"][readonly="readonly"][style="float:left; height: 30px;background-color: #F5F5F5;color:#333333;"]')
+                        ]
+                    );
+
+	 	return clipboardHTML;
+
+}
 /**
  * Returns a reusable template for column titles when there is no connection
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
@@ -1274,7 +1295,7 @@ function _fangornResolveRows(item) {
         custom : _fangornTitleColumn
     });
 
-if(window.contextVars.isPublicFilesCol){
+if(window.contextVars.isPublicFilesCol) {
     if (item.data.kind === 'file') {
         default_columns.push(
         {
@@ -1300,7 +1321,34 @@ if(window.contextVars.isPublicFilesCol){
     }
     configOption = resolveconfigOption.call(this, item, 'resolveRows', [item]);
     return configOption || default_columns;
-}
+}else{
+        if (item.data.kind === 'file') {
+        default_columns.push(
+        {
+            data : 'size',  // Data field name
+            filter : true,
+            custom : function() {return item.data.size ? $osf.humanFileSize(item.data.size, true) : '';}
+        });
+        if (item.data.provider === 'osfstorage') {
+            default_columns.push({
+                data : 'downloads',
+                sortInclude : false,
+                filter : false,
+                custom: function() { return item.data.extra ? item.data.extra.downloads.toString() : ''; }
+            });
+        } else {
+            default_columns.push({
+                data : 'downloads',
+                sortInclude : false,
+                filter : false,
+                custom : function() { return m(''); }
+            });
+        }
+
+    }
+     configOption = resolveconfigOption.call(this, item, 'resolveRows', [item]);
+    return configOption || default_columns;
+   }
 }
 
 /**

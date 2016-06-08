@@ -1,5 +1,5 @@
 <%inherit file="base.mako"/>
-<%def name="title()"> Public Files</%def>
+<%def name="title()"> ${node['ownerName']}'s Public Files</%def>
 
 <%def name="og_description()">
     Hosted on the Open Science Framework
