@@ -224,6 +224,7 @@ def make_response_from_ticket(ticket, service_url):
     cas_resp = client.service_validate(ticket, service_furl.url)
     if cas_resp.authenticated:
         user = User.load(cas_resp.user)
+        user.clean_email_verifications()
         # if we successfully authenticate and a verification key is present, invalidate it
         if user.verification_key:
             user.verification_key = None
