@@ -18,3 +18,11 @@
 .drop-zone-invis {
     display: none;
 }
+
+.drop-zone-close {
+    margin-top: -20px;
+    margin-right: -20px;
+    position:relative;
+    top: -20px;
+    right: -20px;
+}

@@ -90,7 +90,8 @@ var ShareWindowDropzone = {
                 templatesFetcher: ctrl.templateNodes
             })))];
         }
-          return m('.row', m('.col-xs-12', headerTemplate()), m('div.p-v-xs.text-center.drop-zone-format.drop-zone-invis .pointer .panel #shareWindowDropzone',
+          return m('.row', m('.col-xs-12', headerTemplate()), m('div.p-v-xs.text-center.drop-zone-format.drop-zone-invis .pointer .panel #shareWindowDropzone', m('button.close[aria-label="Close"]',{ onclick : function() { $('#shareWindowDropzone').hide(); $('#LinkToShareFiles').hide();
+                    }}, m('.drop-zone-close','x')),
               m('p#shareWindowDropzone', m('h1',  'Drop files to upload'), 'Having trouble? Click anywhere in this box to manually upload a file.')),
               m('.h4.text-center.drop-zone-invis #LinkToShareFiles', 'Or go to your ', m('a', {href: '/share_window/', onclick: function() {}}, 'Public Files Project')));
   }
