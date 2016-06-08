@@ -1,8 +1,6 @@
 from flask import redirect
 
-from framework.auth import cas
 from framework.auth import decorators
-from framework.auth import views as auth_views
 
 from website.util import web_url_for
 
