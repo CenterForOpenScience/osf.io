@@ -6,6 +6,7 @@ import sys
 
 from modularodm import Q
 
+from framework.mongo import database
 from framework.mongo.utils import paginated
 from framework.transactions.context import TokuTransaction
 
@@ -49,9 +50,12 @@ def migrate(dry_run=True):
         if not node.is_mutable_project:
             try:
                 logger.info('({0}/{1})Disabling mailing list for registration/dashboard {2}'.format(i+1, ncount, node._id))
-                node.mailing_enabled = False    
-                node.mailing_updated = False
-                node.save()
+                database['node'].find_and_modify(
+                    {'_id': node._id},
+                    {'$set': {'mailing_enabled': False,
+                              'mailing_updated': False}
+                    }
+                )
                 successful_disables.append(node._id)
             except Exception as e:
                 logger.exception('Error while handling node {}'.format(node._id))
@@ -73,7 +77,10 @@ def migrate(dry_run=True):
                         # users added on `create_list`
 
                 subscription.save()
-                node.save()
+                database['node'].find_and_modify(
+                    {'_id': node._id},
+                    {'$set': {'mailing_enabled': True}}
+                )
                 successful_enables.append(node._id)
             except Exception as e:
                 logger.exception('Error while handling node {}'.format(node._id))
@@ -84,13 +91,16 @@ def migrate(dry_run=True):
                 except Exception as e:
                     logger.exception('Mailgun: error while creating list for node {}'.format(node._id))
                     # Sync this node later
-                    node.mailing_updated = True
+                    database['node'].find_and_modify(
+                        {'_id': node._id},
+                        {'$set': {'mailing_updated': True}}
+                    )
                 else:
                     # Node synced
-                    node.mailing_updated = False
-                finally:
-                    node.save()
-
+                    database['node'].find_and_modify(
+                        {'_id': node._id},
+                        {'$set': {'mailing_updated': False}}
+                    )
 
         if i % 100 == 0:
             for key in ('node', 'user', 'fileversion', 'storedfilenode'):
