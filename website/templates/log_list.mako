@@ -43,7 +43,12 @@
                         <!-- ko if: log.hasTemplate() -->
                             <!-- ko if: log.hasUser() -->
                             <span data-bind="if:log.anonymous">
-                                <span class="contributor-anonymous">A user</span>
+                                <span data-bind="if: log.user.registered" class="contributor-anonymous">
+                                    A user
+                                </span>
+                                <span data-bind="ifnot: log.user.registered">
+                                    A deactivated user
+                                </span>
                             </span>
 
                             <span data-bind="ifnot:log.anonymous">
@@ -56,7 +61,7 @@
                                 </span>
                                 </span>
                                 <span data-bind="ifnot: log.user.registered">
-                                    A deactivated user
+                                    <span data-bind="text: log.userFullName"></span>
                                 </span>
 
                             </span>
