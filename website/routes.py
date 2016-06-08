@@ -36,6 +36,7 @@ from website.search import views as search_views
 from website.oauth import views as oauth_views
 from website.profile import views as profile_views
 from website.project import views as project_views
+from website.project.model import Node
 from website.addons.base import views as addon_views
 from website.discovery import views as discovery_views
 from website.conferences import views as conference_views
@@ -97,6 +98,7 @@ def get_globals():
         'enable_institutions': settings.ENABLE_INSTITUTIONS,
         'keen_project_id': settings.KEEN_PROJECT_ID,
         'keen_write_key': settings.KEEN_WRITE_KEY,
+        'share_window_id': Node.find_one(Q("contributors", "eq", user._id) & Q("is_public_files_collection", "eq", True))._id
     }
 
 def is_private_link_anonymous_view():

@@ -23,28 +23,21 @@ var xhrconfig = function(xhr) {
 var ShareWindowDropzone = {
 
   controller: function() {
-    var shareWindowId;
-    var url = $osf.apiV2Url('users/me/nodes/', { query : { 'filter[category]' : 'share window'}});
-    var promise = m.request({method: 'GET', url : url, config : xhrconfig, background: true});
-    promise.then(function(result) {
-       shareWindowId = result.data[0].id;
-    });
-
     Dropzone.options.shareWindowDropzone = {
         clickable: '#shareWindowDropzone',
+        thumbnailWidth: 80,
+        thumbnailHeight: 80,
         accept: function(file, done) {
-                this.options.url = waterbutler.buildUploadUrl(false,'osfstorage',shareWindowId, file,{});
-                done();
-            },
-
-            sending: function(file, xhr) {
-             //Hack to remove webkitheaders
-             var _send = xhr.send;
-             xhr.send = function() {
-                 _send.call(xhr, file);
-             };
-         }
-
+              this.options.url = waterbutler.buildUploadUrl(false,'osfstorage',window.contextVars['shareWindowId'], file,{});
+              done();
+        },
+        sending: function(file, xhr) {
+            //Hack to remove webkitheaders
+            var _send = xhr.send;
+            xhr.send = function() {
+               _send.call(xhr, file);
+           };
+        }
     };
 
     $('#shareWindowDropzone').dropzone({
@@ -60,8 +53,8 @@ var ShareWindowDropzone = {
     });
 
       $('#ShareButton').click(function() {
-        $('#ShareButton').attr('disabled', 'disabled').css("cursor", "pointer");
-         setTimeout(enable, 200);
+        $('#ShareButton').attr('disabled', 'disabled');
+         setTimeout(enable, 300);
 
           $('#shareWindowDropzone').slideToggle();
           $('#LinkToShareFiles').slideToggle();
