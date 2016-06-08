@@ -36,12 +36,16 @@ def migrate(dry_run=True):
         create_list = real_create_list
 
     successful_enables = []
+    successful_noops = []
     successful_disables = []
+    mailgun_failures = []
     unknown_failures = {}
     nodes = get_targets()
-    ncount = len(nodes)
+    ncount = Node.find().count()
+    i = 0
     logger.info('Preparing to migrate {} nodes.'.format(ncount))
-    for i, node in enumerate(nodes):
+    for node in nodes:
+        i += 1
         try:
             assert isinstance(node, Node)
         except:
@@ -49,7 +53,15 @@ def migrate(dry_run=True):
 
         if not node.is_mutable_project:
             try:
-                logger.info('({0}/{1})Disabling mailing list for registration/dashboard {2}'.format(i+1, ncount, node._id))
+                node_kind = 'immutable project'
+                if node.is_registration:
+                    node_kind = 'registration'
+                elif node.is_collection:
+                    node_kind = 'collection' 
+                elif node.is_deleted:
+                    node_kind = 'deleted project' 
+                logger.info('({done}/{total}) Disabling mailing list for {kind} {_id}'.format(done=i, total=ncount, _id=node._id, kind=node_kind)
+                )
                 database['node'].find_and_modify(
                     {'_id': node._id},
                     {'$set': {'mailing_enabled': False,
@@ -61,14 +73,19 @@ def migrate(dry_run=True):
                 logger.exception('Error while handling node {}'.format(node._id))
                 unknown_failures[node._id] = e
         else:
+            subscription = NotificationSubscription.load(to_subscription_key(node._id, EVENT))
+            if subscription:
+                assert node.mailing_enabled
+                logger.info('({0}/{1}) Mailing list for node {2} already enabled'.format(i, ncount, node._id))
+                successful_noops.append(node._id)
+                continue
             try:
                 subscription = NotificationSubscription(
                     _id=to_subscription_key(node._id, EVENT),
                     owner=node,
                     event_name=EVENT
                 )
-                logger.info('({0}/{1})Enabling mailing list for node {2}'.format(i+1, ncount, node._id))
-                node.mailing_enabled = True
+                logger.info('({0}/{1}) Enabling mailing list for node {2}'.format(i, ncount, node._id))
 
                 for user in node.contributors:
                     if user.is_active:
@@ -91,6 +108,7 @@ def migrate(dry_run=True):
                 except Exception as e:
                     logger.exception('Mailgun: error while creating list for node {}'.format(node._id))
                     # Sync this node later
+                    mailgun_failures.append(node.id)
                     database['node'].find_and_modify(
                         {'_id': node._id},
                         {'$set': {'mailing_updated': True}}
@@ -119,6 +137,19 @@ def migrate(dry_run=True):
             len(successful_disables), successful_disables
         )
     )
+
+    if successful_noops:
+        logger.info(
+            "Successfully skipped {0} nodes that were already configured:\n{1}".format(
+                len(successful_noops), successful_noops
+            )
+        )
+
+    if mailgun_failures:
+        logger.error('Encountered {0} problems when making API calls to mailgun:\n{1}'.format(
+                len(mailgun_failures), mailgun_failures
+            )
+        )
 
     if unknown_failures:
         logger.error('Handled {0} unknown exceptions while creating lists:\n{1}'.format(
