@@ -1,6 +1,5 @@
 import json
 import os
-import requests
 import re
 from website.settings import GITHUB_API_TOKEN
 from subprocess import check_output
@@ -10,6 +9,7 @@ GIT_STATUS_FILE = os.path.join('website', 'static', 'built', 'git_branch.txt')
 
 
 def gather_pr_data(current_branch='develop', master_branch='master'):
+    import requests
     regex = re.compile(ur'\(#([\d]{4,})\)|Merge pull request #([\d]{4,})')
     pr_data = []
     headers = {
@@ -38,6 +38,7 @@ def gather_pr_data(current_branch='develop', master_branch='master'):
 
 
 def get_pr_data(pr):
+    import requests
     headers = {
         'Authorization': 'token %s' % GITHUB_API_TOKEN,
         'media_type': 'application/vnd.github.VERSION.sha',
