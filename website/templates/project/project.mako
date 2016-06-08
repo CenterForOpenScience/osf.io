@@ -109,7 +109,7 @@
                                 <a href="https://www.linkedin.com/cws/share?url=${node['absolute_url'] | u}&title=${node['title'] | u}" target="_blank">
                                     <i class="fa fa-linkedin-square" aria-hidden="true"></i>
                                 </a>
-                                <a href="mailto:?subject=${node['title']}&amp;body=${node['absolute_url']}" target="_blank">
+                                <a href="mailto:?subject=${node['title']}&amp;body=${node['absolute_url'] | u}" target="_blank">
                                     <i class="fa fa-envelope-square" aria-hidden="true"></i>
                                 </a>
                             </li>
