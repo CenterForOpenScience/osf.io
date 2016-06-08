@@ -23,33 +23,23 @@ var xhrconfig = function(xhr) {
 var ShareWindowDropzone = {
 
   controller: function() {
-    var shareWindowId;
-    var url = $osf.apiV2Url('users/me/nodes/', { query : { 'filter[category]' : 'share window'}});
-    var promise = m.request({method: 'GET', url : url, config : xhrconfig, background: true});
-    promise.then(function(result) {
-       shareWindowId = result.data[0].id;
-    });
-
     Dropzone.options.shareWindowDropzone = {
         clickable: '#shareWindowDropzone',
-          thumbnailWidth: 80,
-  thumbnailHeight: 80,
-        //previewsContainer: "#dropzone-preview",
+        thumbnailWidth: 80,
+        thumbnailHeight: 80,
 
         accept: function(file, done) {
-                this.options.url = waterbutler.buildUploadUrl(false,'osfstorage',shareWindowId, file,{});
-            //this.on('dragend', function(event) { event.getElementById('shareWindowDropzone').style.border = 'solid #333';});
-                done();
-            },
 
-            sending: function(file, xhr) {
-             //Hack to remove webkitheaders
-             var _send = xhr.send;
-             xhr.send = function() {
-                 _send.call(xhr, file);
-             };
-         }
-
+              this.options.url = waterbutler.buildUploadUrl(false,'osfstorage',window.contextVars['shareWindowId'], file,{});
+              done();
+        },
+        sending: function(file, xhr) {
+            //Hack to remove webkitheaders
+            var _send = xhr.send;
+            xhr.send = function() {
+               _send.call(xhr, file);
+           };
+        }
     };
 
     $('#shareWindowDropzone').dropzone({
@@ -59,7 +49,6 @@ var ShareWindowDropzone = {
         addRemoveLinks: true,
         uploadMultiple: true,
         border: '2px dashed #ccc',
-        //previewTemplate: '<div class="text-center dz-filename"><span data-dz-name></span> has been uploaded to your Share Window </div>'
         previewTemplate: '<div class="dz-preview dz-file-preview" style="display: inline-block;width:50%"><div class="dz-details"><div class="dz-filename"><span data-dz-name></span></div>' +
         '<div class="dz-size" data-dz-size></div><img data-dz-thumbnail /></div><div class="dz-progress"><span class="dz-upload" data-dz-uploadprogress></span></div>' +
         '<div class="dz-success-mark"></div><div class="dz-error-mark"></div><div class="dz-error-message"><span data-dz-errormessage></span></div></div>'
@@ -74,7 +63,7 @@ var ShareWindowDropzone = {
           $(this).toggleClass('btn-primary');
       });
     function enable () {
-        $('#').removeAttr('disabled');
+        $('#ShareButton').removeAttr('disabled');
     }
 
   },

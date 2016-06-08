@@ -123,9 +123,9 @@ def new_public_files_collection(user):
     node = Node(
         title=title,
         creator=user,
+        category='project',
         is_public=True,
         is_public_files_collection=True,
-        is_collection=True
     )
 
     node.save()
