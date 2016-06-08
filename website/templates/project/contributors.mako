@@ -6,6 +6,8 @@
 <%include file="project/modal_remove_contributor.mako"/>
 <%include file="project/modal_mailing_list_contributors.mako"/>
 
+<% from website.settings import PROJECT_MAILING_ENABLED %>
+
 <div class="page-header  visible-xs">
   <h2 class="text-300">Contributors</h2>
 </div>
@@ -60,7 +62,7 @@
                   <i class="fa fa-plus"></i> Add
                 </a>
             <!-- /ko -->
-            % if node['mailing_list_enabled']:
+            % if node['mailing_list_enabled'] and PROJECT_MAILING_ENABLED:
                 <span class="m-l-md pull-right" style="font-size: 65%">Mailing List Info: 
                 <a data-toggle="modal" data-target="#mailingListContributorsModal"><i class="fa fa-envelope"></i></a>
                 </span>
@@ -240,7 +242,7 @@
                 data-bind="css: {sortable: ($data === 'contrib' && $root.isSortable())}">Name
             </th>
             <th></th>
-            % if node['mailing_list_enabled']:
+            % if node['mailing_list_enabled'] and PROJECT_MAILING_ENABLED:
                 <th class="col-md-3" style="text-align: center">
                     In Mailing List
                     <i class="fa fa-question-circle mailing-list-info"
@@ -324,7 +326,7 @@
                 <a class="name-search" data-bind="text: contributor.shortname, attr:{href: profileUrl}"></a>
             </span>
         </td>
-        % if node['mailing_list_enabled']:
+        % if node['mailing_list_enabled'] and PROJECT_MAILING_ENABLED:
             <td class="text-center">
                 <i class="fa fa-check" data-bind="visible: subscribed"></i>
                 <i class="fa fa-close" data-bind="visible: !subscribed"></i>
