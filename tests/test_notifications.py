@@ -698,8 +698,8 @@ class TestNotificationUtils(OsfTestCase):
         expected = [
             {
                 'event': {
-                    'title': 'comment_replies',
-                    'description': constants.USER_SUBSCRIPTIONS_AVAILABLE['comment_replies'],
+                    'title': 'global_file_updated',
+                    'description': constants.USER_SUBSCRIPTIONS_AVAILABLE['global_file_updated'],
                     'notificationType': 'email_transactional',
                     'parent_notification_type': None
                 },
@@ -707,8 +707,8 @@ class TestNotificationUtils(OsfTestCase):
                 'children': []
             }, {
                 'event': {
-                    'title': 'global_file_updated',
-                    'description': constants.USER_SUBSCRIPTIONS_AVAILABLE['global_file_updated'],
+                    'title': 'global_comment_replies',
+                    'description': constants.USER_SUBSCRIPTIONS_AVAILABLE['global_comment_replies'],
                     'notificationType': 'email_transactional',
                     'parent_notification_type': None
                 },
@@ -740,6 +740,19 @@ class TestNotificationUtils(OsfTestCase):
         notification_type = utils.get_global_notification_type(self.user_subscription[1] ,self.user)
         assert_equal('email_transactional', notification_type)
 
+    def test_check_if_all_global_subscriptions_are_none_false(self):
+        all_global_subscriptions_none = utils.check_if_all_global_subscriptions_are_none(self.user)
+        assert_false(all_global_subscriptions_none)
+
+    def test_check_if_all_global_subscriptions_are_none_true(self):
+        for x in self.user_subscription:
+            x.none.append(self.user)
+            x.email_transactional.remove(self.user)
+        for x in self.user_subscription:
+            x.save()
+        all_global_subscriptions_none = utils.check_if_all_global_subscriptions_are_none(self.user)
+        assert_true(all_global_subscriptions_none)
+
     def test_format_data_user_settings(self):
         data = utils.format_user_and_project_subscriptions(self.user)
         expected = [
@@ -765,14 +778,14 @@ class TestNotificationUtils(OsfTestCase):
         user_subscriptions = [x for x in utils.get_all_user_subscriptions(self.user)]
         user_subscription = None
         for subscription in user_subscriptions:
-            if 'comment_replies' in getattr(subscription, 'event_name'):
+            if 'global_comment_replies' in getattr(subscription, 'event_name'):
                 user_subscription = subscription
-        data = utils.serialize_event(self.user, event_description='comment_replies',
+        data = utils.serialize_event(self.user, event_description='global_comment_replies',
                                      subscription=user_subscription)
         expected = {
             'event': {
-                'title': 'comment_replies',
-                'description': constants.USER_SUBSCRIPTIONS_AVAILABLE['comment_replies'],
+                'title': 'global_comment_replies',
+                'description': constants.USER_SUBSCRIPTIONS_AVAILABLE['global_comment_replies'],
                 'notificationType': 'email_transactional',
                 'parent_notification_type': None
             },
@@ -1116,9 +1129,9 @@ class TestSendEmails(NotificationTestCase):
         )
         self.node_subscription.save()
         self.user_subscription = factories.NotificationSubscriptionFactory(
-            _id=self.user._id + '_' + 'comment_replies',
+            _id=self.user._id + '_' + 'global_comment_replies',
             owner=self.user,
-            event_name='comment_replies',
+            event_name='global_comment_replies',
             email_transactional=[self.user._id]
         )
 
@@ -1191,7 +1204,7 @@ class TestSendEmails(NotificationTestCase):
     @mock.patch('website.notifications.emails.store_emails')
     def test_notify_sends_comment_reply_when_target_user_is_subscribed_via_user_settings(self, mock_store):
         time_now = datetime.datetime.utcnow()
-        emails.notify('comment_replies', user=self.project.creator, node=self.node, timestamp=time_now, target_user=self.user)
+        emails.notify('global_comment_replies', user=self.project.creator, node=self.node, timestamp=time_now, target_user=self.user)
         mock_store.assert_called_with([self.user._id], 'email_transactional', 'comment_replies',
                                       self.project.creator, self.node, time_now, target_user=self.user)
 

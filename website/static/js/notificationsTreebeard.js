@@ -123,11 +123,28 @@ function ProjectNotifications(data) {
                         filter : true,
                         sortInclude : false,
                         custom : function() {
-                            var globalNotificationsMessage = 'These are default settings for new projects you create or are added to. Modifying these settings will not modify settings on existing projects.';
+                            var globalNotificationsMessage = 'These are default settings for new ' +
+                                'projects you create or are added to. Modifying these settings will ' +
+                                'not modify settings on existing projects.';
+                            var projectNotificationsMessage = 'These are settings for each of your ' +
+                                'projects. Modifying these settings will only modify the settings ' +
+                                'for the selected project.';
                             return m('div[style="padding-left:5px; padding-bottom:50px"]', [
                                 m('p', [
                                     m('b', item.data.node.title + ':  '),
-                                    m('span[class="fa fa-info-circle"]', {'data-toggle': 'tooltip', 'title':globalNotificationsMessage, config: popOver, 'data-placement': 'bottom'})
+                                    item.data.node.title === 'Default Global Notification Settings' ?
+                                        m('span[class="fa fa-info-circle"]', {
+                                            'data-toggle': 'tooltip',
+                                            'title':globalNotificationsMessage,
+                                            'config': popOver,
+                                            'data-placement': 'bottom'
+                                        }) :
+                                        m('span[class="fa fa-info-circle"]', {
+                                            'data-toggle': 'tooltip',
+                                            'title':projectNotificationsMessage,
+                                            'config': popOver,
+                                            'data-placement': 'bottom'
+                                        })
                                 ])
                             ]);
                         }
@@ -173,9 +190,9 @@ function ProjectNotifications(data) {
                                     subscribe(item, ev.target.value);
                                 }},
                                 [
-                                    item.data.event.title !== 'comment_replies' && !~item.data.event.title.indexOf('mentions') ?
-                                        m('option', {value: 'none', selected : item.data.event.notificationType === 'none' ? 'selected': ''}, 'Never') :
-                                        null,
+                                    ~item.data.event.title.indexOf('mentions') ?
+                                        null :
+                                        m('option', {value: 'none', selected : item.data.event.notificationType === 'none' ? 'selected': ''}, 'Never'),
                                     ~item.data.event.title.indexOf('mentions') ?
                                         null :
                                         m('option', {value: 'email_transactional', selected : item.data.event.notificationType === 'email_transactional' ? 'selected': ''}, 'Instantly'),
