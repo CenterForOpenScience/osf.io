@@ -60,10 +60,8 @@ class CasClient(object):
         url.path.segments.append('login')
         url.args['service'] = service_url
         if username and verification_key:
-            if username:
-                url.args['username'] = username
-            if verification_key:
-                url.args['verification_key'] = verification_key
+            url.args['username'] = username
+            url.args['verification_key'] = verification_key
         return url.url
 
     def get_logout_url(self, service_url):
