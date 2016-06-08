@@ -49,7 +49,14 @@ def get_globals():
     """Context variables that are available for every template rendered by
     OSFWebRenderer.
     """
+
     user = _get_current_user()
+
+    try:
+        share_window_id = Node.find_one(Q("contributors", "eq", user._id) & Q("is_public_files_collection", "eq", True))._id
+    except AttributeError or NoResultsFound:
+        share_window_id = None
+
     if request.host_url != settings.DOMAIN:
         try:
             inst_id = (Institution.find_one(Q('domains', 'eq', request.host.lower())))._id
@@ -98,7 +105,7 @@ def get_globals():
         'enable_institutions': settings.ENABLE_INSTITUTIONS,
         'keen_project_id': settings.KEEN_PROJECT_ID,
         'keen_write_key': settings.KEEN_WRITE_KEY,
-        'share_window_id': Node.find_one(Q("contributors", "eq", user._id) & Q("is_public_files_collection", "eq", True))._id
+        'share_window_id': share_window_id
     }
 
 def is_private_link_anonymous_view():
