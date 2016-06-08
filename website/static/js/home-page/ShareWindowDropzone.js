@@ -45,7 +45,6 @@ var ShareWindowDropzone = {
         url:'placeholder',
         method:'put',
         uploadMultiple: true,
-        addRemoveLinks: true,
         border: '2px dashed #ccc',
         previewTemplate: '<div class="dz-preview dz-file-preview" style="display: inline-block;width:50%"><div class="dz-details"><div class="dz-filename"><span data-dz-name></span></div>' +
         '<div class="dz-size" data-dz-size></div><img data-dz-thumbnail /></div><div class="dz-progress"><span class="dz-upload" data-dz-uploadprogress></span></div>' +
