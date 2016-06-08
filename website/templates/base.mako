@@ -54,6 +54,7 @@
     % if dev_mode:
         <div class="dev-mode-helper scripted" id="devModeControls">
         <div id="metaInfo" data-bind="visible: showMetaInfo">
+            <h2>Current branch: <span data-bind="text: branch"></span></h2>
             <table>
                 <thead>
                 <tr>
