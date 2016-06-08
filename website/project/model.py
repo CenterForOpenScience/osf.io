@@ -886,6 +886,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
     alternative_citations = fields.ForeignField('alternativecitation', list=True)
 
+    comment_topic_id = fields.StringField(default=None)
+
     _meta = {
         'optimistic': True,
     }

@@ -194,6 +194,8 @@ class StoredFileNode(StoredObject, Commentable):
     path = fields.StringField(required=True)
     materialized_path = fields.StringField(required=True)
 
+    comment_topic_id = fields.StringField(default=None)
+
     # The User that has this file "checked out"
     # Should only be used for OsfStorage
     checkout = fields.AbstractForeignField('User')
@@ -543,6 +545,7 @@ class FileNode(object):
             versions=self.versions,
             last_touched=self.last_touched,
             materialized_path=self.materialized_path,
+            comment_topic_id=self.comment_topic_id,
 
             deleted_by=user
         )

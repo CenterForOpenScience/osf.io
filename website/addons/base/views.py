@@ -710,6 +710,12 @@ def addon_view_file(auth, node, file_node, version):
     ret.update(rubeus.collect_addon_assets(node))
 
     ret['discourse_url'] = settings.DISCOURSE_SERVER_URL
-    ret['discourse_topic_id'] = discourse.get_or_create_topic_id(file_node)
+
+    discourse_topic_id = file_node.comment_topic_id
+    if discourse_topic_id is None:
+        discourse_topic_id = discourse.get_or_create_topic_id(file_node)
+        file_node.comment_topic_id = discourse_topic_id
+        file_node.save()
+    ret['discourse_topic_id'] = discourse_topic_id
 
     return ret
