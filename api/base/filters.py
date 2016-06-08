@@ -377,6 +377,13 @@ class ListFilterMixin(FilterMixin):
                 item for item in default_queryset
                 if params['value'].lower() in getattr(item, field_name, {}).lower()
             ]
+        elif isinstance(field, ser.ListField):
+            return_val = [
+                item for item in default_queryset
+                if params['value'].lower() in [
+                    i.lower() for i in getattr(item, field_name, [])
+                ]
+            ]
         else:
             try:
                 return_val = [
