@@ -129,10 +129,13 @@ ko.subscribable.fn.convertHtmlToMarkdown = function(commentContent) {
                 content = content.replace(match[0], '['+ mention + '](' + url + ')');
             }
         }
-        content = content.replace(/&nbsp;/g, ' ');
         // '&#13;&#10;' is the character entity reference for '\r\n'
         // '\r\n' is treated differently and breaks conversion from markdown to html
-        return content.replace(/<br>/g, '&#13;&#10;');
+        content = content.replace(/<span[^>]*?>/g, '')
+            .replace(/<\/span>/g, '')
+            .replace(/&nbsp;/g, ' ')
+            .replace(/<br>/g, '&#13;&#10;');
+        return content;
     }, this);
 };
 
