@@ -44,6 +44,7 @@ def authenticate(user, access_token, response):
         'auth_user_access_token': access_token,
     })
     user.date_last_login = datetime.utcnow()
+    user.clean_email_verifications()
     user.update_affiliated_institutions_by_email_domain()
     user.save()
     response = create_session(response, data=data)
