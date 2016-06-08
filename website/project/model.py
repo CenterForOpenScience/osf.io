@@ -1512,6 +1512,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if self.is_bookmark_collection and self.title != 'Bookmarks':
             self.title = 'Bookmarks'
 
+        if first_save and self.is_public_files_collection:
+            existing_public_files_collections = Node.find(
+                Q('is_public_files_collection', 'eq', True) & Q('contributors', 'eq', self.creator._id)
+            )
+            if existing_public_files_collections.count() > 0:
+                raise NodeStateError("Only one bookmark collection allowed per user.")
+
+
         is_original = not self.is_registration and not self.is_fork
         if 'suppress_log' in kwargs.keys():
             suppress_log = kwargs['suppress_log']
@@ -2053,6 +2061,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
         if self.is_bookmark_collection:
             raise NodeStateError("Bookmark collections may not be deleted.")
+
+        if self.is_public_files_collection:
+            raise NodeStateError("Public Files collections may not be deleted.")
 
         if not self.can_edit(auth):
             raise PermissionsError('{0!r} does not have permission to modify this {1}'.format(auth.user, self.category or 'node'))
