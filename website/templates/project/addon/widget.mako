@@ -19,7 +19,7 @@
             ${self.body()}
         </div>
 
-    % elif not complete and 'admin' in user['permissions']:
+    % elif not complete and 'write' in user['permissions']:
 
         <div mod-meta='{
                 "tpl": "project/addon/config_error.mako",
