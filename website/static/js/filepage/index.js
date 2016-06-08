@@ -55,23 +55,10 @@ var SharePopover =  {
                     m('.tab-content', [
                         m('.tab-pane.active#share', {
                             config: function(element) {
-                                var shareContents = $('#shareContentHolder').html();
                                 if ($(element).find('.shareButtons').length === 0) {
-                                    var contentUrl = $('#share input').val();
-                                    var encodedUrl = encodeURIComponent(contentUrl);
-                                    var safeUrl = $('<div>').text(contentUrl).html();
-
-                                    shareContents = shareContents.replace('CONTENT_URL', safeUrl);
-                                    shareContents = shareContents.replace('CONTENT_ENCODED_URL', encodedUrl);
-                                    shareContents = shareContents.replace('CONTENT_ENCODED_URL', encodedUrl);
-                                    shareContents = shareContents.replace('CONTENT_ENCODED_URL', encodedUrl);
-
+                                    var shareContents = $('#shareContentHolder').html();
                                     $(element).append(shareContents);
-
-                                    $('.shareButtons a').on('click', function(e) {
-                                        window.open(this.href, '', 'menubar=no,toolbar=no,resizable=yes,scrollbars=yes,width=600,height=400');
-                                        e.preventDefault();
-                                    });
+                                    $osf.makeLinksOpenInPopup('.shareButtons a');
                                 }
                             }
                         }, m('.input-group', [

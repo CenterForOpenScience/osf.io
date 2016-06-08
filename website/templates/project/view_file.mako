@@ -1,6 +1,5 @@
 <%inherit file="project/project_base.mako"/>
 
-<link rel="stylesheet" href="/static/font-awesome/css/font-awesome.min.css">
 <link rel="stylesheet" href="/static/css/pages/share-buttons.css">
 
 <div id="alertBar"></div>
@@ -27,16 +26,16 @@
   <div class="col-sm-7">
     <div id="shareContentHolder">
         <div class="shareButtons">
-            <a href="https://twitter.com/intent/tweet?url=CONTENT_ENCODED_URL&text=${file_name | u}&via=OSFramework" target="_blank">
+            <a href="https://twitter.com/intent/tweet?url=${urls['render'] | u}&text=${file_name | u}&via=OSFramework" target="_blank">
                 <i class="fa fa-twitter-square" aria-hidden="true"></i>
             </a>
-            <a href="https://www.facebook.com/sharer/sharer.php?u=CONTENT_ENCODED_URL" target="_blank">
+            <a href="https://www.facebook.com/sharer/sharer.php?u=${urls['render'] | u}" target="_blank">
                 <i class="fa fa-facebook-square" aria-hidden="true"></i>
             </a>
-            <a href="https://www.linkedin.com/cws/share?url=CONTENT_ENCODED_URL&title=${file_name | u}" target="_blank">
+            <a href="https://www.linkedin.com/cws/share?url=${urls['render'] | u}&title=${file_name | u}" target="_blank">
                 <i class="fa fa-linkedin-square" aria-hidden="true"></i>
             </a>
-            <a href="mailto:?subject=${file_name}&amp;body=CONTENT_URL" target="_blank">
+            <a href="mailto:?subject=${file_name}&amp;body=${urls['render'] | u}" target="_blank">
                 <i class="fa fa-envelope-square" aria-hidden="true"></i>
             </a>
         </div>

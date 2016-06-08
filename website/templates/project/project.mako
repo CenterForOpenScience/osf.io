@@ -48,26 +48,8 @@
                         % endif
                         <button class="btn btn-default disabled">Public</button>
                     </div>
-                    <div class="btn-group dropdown" id="shareDropDown">
-                        <a class="btn btn-default" data-toggle="dropdown">Share</a>
-                        <ul class="dropdown-menu" role="menu" id="shareDropDownMenu">
-                            <li>
-                                <a href="https://twitter.com/intent/tweet?url=${node['absolute_url'] | u}&text=${node['title'] | u}&via=OSFramework" target="_blank">
-                                    <i class="fa fa-twitter-square" aria-hidden="true"></i>
-                                </a>
-                                <a href="https://www.facebook.com/sharer/sharer.php?u=${node['absolute_url'] | u}" target="_blank">
-                                    <i class="fa fa-facebook-square" aria-hidden="true"></i>
-                                </a>
-                                <a href="https://www.linkedin.com/cws/share?url=${node['absolute_url'] | u}&title=${node['title'] | u}" target="_blank">
-                                    <i class="fa fa-linkedin-square" aria-hidden="true"></i>
-                                </a>
-                                <a href="mailto:?subject=${node['title']}&amp;body=${node['absolute_url']}" target="_blank">
-                                    <i class="fa fa-envelope-square" aria-hidden="true"></i>
-                                </a>
-                            </li>
-                        </ul>
+
                     % endif
-                    </div>
 
                     <!-- ko if: canBeOrganized -->
                     <div class="btn-group" style="display: none;" data-bind="visible: true">
@@ -112,6 +94,27 @@
                                 <i class="fa fa-plus"></i> Award
                             </button>
                         </div>
+                    % endif
+                    % if node["is_public"]:
+                    <div class="btn-group dropdown" id="shareDropDown">
+                        <a class="btn btn-default" data-toggle="dropdown">Share</a>
+                        <ul class="dropdown-menu pull-right" role="menu" id="shareDropDownMenu">
+                            <li>
+                                <a href="https://twitter.com/intent/tweet?url=${node['absolute_url'] | u}&text=${node['title'] | u}&via=OSFramework" target="_blank">
+                                    <i class="fa fa-twitter-square" aria-hidden="true"></i>
+                                </a>
+                                <a href="https://www.facebook.com/sharer/sharer.php?u=${node['absolute_url'] | u}" target="_blank">
+                                    <i class="fa fa-facebook-square" aria-hidden="true"></i>
+                                </a>
+                                <a href="https://www.linkedin.com/cws/share?url=${node['absolute_url'] | u}&title=${node['title'] | u}" target="_blank">
+                                    <i class="fa fa-linkedin-square" aria-hidden="true"></i>
+                                </a>
+                                <a href="mailto:?subject=${node['title']}&amp;body=${node['absolute_url']}" target="_blank">
+                                    <i class="fa fa-envelope-square" aria-hidden="true"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                     % endif
                 </div>
             </div>
@@ -462,7 +465,6 @@
     % endfor
 
     <link rel="stylesheet" href="/static/css/pages/project-page.css">
-    <link rel="stylesheet" href="/static/font-awesome/css/font-awesome.min.css">
     <link rel="stylesheet" href="/static/css/pages/share-buttons.css">
 </%def>
 

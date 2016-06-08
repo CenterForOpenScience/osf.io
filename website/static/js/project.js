@@ -253,9 +253,15 @@ $(document).ready(function() {
         window.location = '/search/?q=(tags:"' + $(e.target).text().toString().trim()+ '")';
     });
 
-    $('#shareDropDownMenu li a').on('click', function(e) {
-        window.open(this.href, '', 'menubar=no,toolbar=no,resizable=yes,scrollbars=yes,width=600,height=400');
-        e.preventDefault();
+    $osf.makeLinksOpenInPopup('#shareDropDownMenu li a');
+
+    // Make sure the drop down share menu is not obscured
+    // by the tool tip when users are not logged-in
+    $('#shareDropDown').on('mouseenter focusin', function() {
+        return false;
+    });
+    $('#shareDropDown').on('mouseover', function() {
+        $('.tooltip').tooltip('hide');
     });
 
     // Portlet feature for the dashboard, to be implemented in later versions.

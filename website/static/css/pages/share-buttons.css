@@ -19,6 +19,7 @@ div.dropdown .dropdown-menu a:hover {
 div.dropdown .fa, .shareButtons .fa {
     color: #08c;
     font-size: 1.6em;
+    line-height: 1.6em;
 }
 
 .shareButtons {
@@ -27,6 +28,12 @@ div.dropdown .fa, .shareButtons .fa {
     margin-left: 4px;
     margin-right: 4px;
     vertical-align: top;
+}
+
+
+#shareDropDown .dropdown-menu {
+    min-width: 0px;
+    white-space: nowrap;
 }
 
 #shareContentHolder {

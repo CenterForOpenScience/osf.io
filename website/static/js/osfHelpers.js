@@ -767,9 +767,9 @@ var any = function(listOfBools, check) {
     return false;
 };
 
-/** 
+/**
  * A helper for creating a style-guide conformant bootbox modal. Returns a promise.
- * @param {String} title: 
+ * @param {String} title:
  * @param {String} message:
  * @param {String} actionButtonLabel:
  * @param {Object} options: optional options
@@ -895,6 +895,15 @@ function onScrollToBottom(element, callback) {
     });
 }
 
+// Changes how links open when clicked
+// Useful for social media dialogs
+function makeLinksOpenInPopup(selector) {
+    $(selector).on('click', function(e) {
+        window.open(this.href, '', 'menubar=no,toolbar=no,resizable=yes,scrollbars=yes,width=600,height=400');
+        e.preventDefault();
+    });
+}
+
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
 module.exports = window.$.osf = {
@@ -935,5 +944,6 @@ module.exports = window.$.osf = {
     trackClick: trackClick,
     findContribName: findContribName,
     extractContributorNamesFromAPIData: extractContributorNamesFromAPIData,
-    onScrollToBottom: onScrollToBottom
+    onScrollToBottom: onScrollToBottom,
+    makeLinksOpenInPopup: makeLinksOpenInPopup
 };
