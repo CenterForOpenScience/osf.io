@@ -188,10 +188,12 @@
                     id: ${ user_id | sjson, n },
                     locale: ${ user_locale | sjson, n },
                     timezone: ${ user_timezone | sjson, n },
-                    entryPoint: ${ user_entry_point | sjson, n }
+                    entryPoint: ${ user_entry_point | sjson, n },
+                    institutions: ${ user_institutions | sjson, n}
                 },
+                allInstitutions: ${ all_institutions | sjson, n},
                 popular: ${ popular_links_node | sjson, n },
-                newAndNoteworthy: ${ noteworthy_links_node | sjson, n }
+                newAndNoteworthy: ${ noteworthy_links_node | sjson, n },
             });
         </script>
 
