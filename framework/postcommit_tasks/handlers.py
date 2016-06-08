@@ -34,6 +34,8 @@ def postcommit_before_request():
 
 @app.task(max_retries=5, default_retry_delay=60)
 def postcommit_celery_task_wrapper(queue):
+    # chain.apply calls the tasks synchronously without re-enqueuing each one
+    # http://stackoverflow.com/questions/34177131/how-to-solve-python-celery-error-when-using-chain-encodeerrorruntimeerrormaxi?answertab=votes#tab-top
     chain(*queue.values()).apply()
 
 def postcommit_after_request(response, base_status_error_code=500):
@@ -51,6 +53,7 @@ def postcommit_after_request(response, base_status_error_code=500):
 
         if postcommit_celery_queue():
             if settings.USE_CELERY:
+                # delay pushes the wrapper task into celery
                 postcommit_celery_task_wrapper.delay(postcommit_celery_queue())
             else:
                 for task in postcommit_celery_queue().values():
