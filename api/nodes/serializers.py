@@ -17,7 +17,8 @@ from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHy
                                   TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly,
                                   HideIfRegistration, RestrictedDictSerializer,
                                   JSONAPIRelationshipSerializer, relationship_diff)
-from api.base.exceptions import InvalidModelValueError, RelationshipPostMakesNoChanges, Conflict
+from api.base.exceptions import (InvalidModelValueError, RelationshipPostMakesNoChanges, Conflict,
+                                 EndpointNotImplementedError)
 from api.base.settings import ADDONS_FOLDER_CONFIGURABLE
 
 from website.oauth.models import ExternalAccount
@@ -373,7 +374,7 @@ class NodeAddonSettingsSerializer(JSONAPISerializer):
     def update(self, instance, validated_data):
         addon_name = instance.config.short_name
         if addon_name not in ADDONS_FOLDER_CONFIGURABLE:
-            raise exceptions.MethodNotAllowed('Requested addon not currently configurable via API.')
+            raise EndpointNotImplementedError('Requested addon not currently configurable via API.')
 
         auth = get_user_auth(self.context['request'])
 

@@ -15,7 +15,7 @@ from api.base.parsers import (
     JSONAPIRelationshipParser,
     JSONAPIRelationshipParserForRegularJSON,
 )
-from api.base.exceptions import RelationshipPostMakesNoChanges
+from api.base.exceptions import RelationshipPostMakesNoChanges, EndpointNotImplementedError
 from api.base.pagination import CommentPagination, NodeContributorPagination
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
 from api.base.settings import ADDONS_OAUTH
@@ -1748,7 +1748,7 @@ class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Addo
         folder_id = self.request.query_params.get('id', 'root')
 
         if not hasattr(node_addon, 'get_folders'):
-            raise MethodNotAllowed('get_folders', detail='Requested addon unavailable.')
+            raise EndpointNotImplementedError('Endpoint not yet implemented for this addon')
 
         return node_addon.get_folders(path=path, folder_id=folder_id)
 
