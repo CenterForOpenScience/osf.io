@@ -73,21 +73,7 @@ def enqueue_postcommit_task(fn, args, kwargs, celery=False, once_per_request=Tru
         key = '{}:{}'.format(key, binascii.hexlify(os.urandom(8)))
 
     if celery and isinstance(fn, PromiseProxy):
-        datetime_to_str_args = []
-        datetime_to_str_kwargs = {}
-        for arg in args:
-            try:
-                datetime_to_str_args.append(arg.isoformat())
-            except:
-                datetime_to_str_args.append(arg)
-
-        for key, value in kwargs.iteritems():
-            try:
-                datetime_to_str_kwargs[key] = value.isoformat()
-            except:
-                datetime_to_str_kwargs[key] = value
-
-        postcommit_celery_queue().update({key: fn.si(*datetime_to_str_args, **datetime_to_str_kwargs)})
+        postcommit_celery_queue().update({key: fn.si(*args, **kwargs)})
     else:
         postcommit_queue().update({key: functools.partial(fn, *args, **kwargs)})
 
@@ -99,8 +85,8 @@ handlers = {
 def run_postcommit(once_per_request=True, celery=False):
     '''
     Delays function execution until after the request's transaction has been committed.
-    !!!Tasks enqueued using this decorator **WILL NOT** run if the return status code is >= 500!!!
-    Unless celery is marked True, then they run any way
+    If you set the celery kwarg to True args and kwargs must be JSON serializable
+    Tasks will only be run if the response's status code is < 500.
     :return:
     '''
     def wrapper(func):
