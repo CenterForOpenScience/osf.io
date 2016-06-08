@@ -169,12 +169,11 @@ def validate_contributor(guid, contributors):
     return True
 
 def get_valid_mentioned_users_guids(comment, contributors):
-    """ Returns a list of valid users mentioned in the comment content.
+    """ Get a list of valid users that are mentioned in the comment content.
 
-    :param Node comment: Node that has new_mentions and ever_mentioned
-    :param list new_mentions: List of guids of mentioned users
+    :param Node comment: Node that has content and ever_mentioned
     :param list contributors: List of contributors on the node
-    :return bool new_mentions_added: Whether there are valid new_mentions
+    :return list new_mentions: List of valid users mentioned in the comment content
     """
     new_mentions = set(re.findall(r"\[[@|\+].*?\]\(\/([a-z\d]{5})\/\)", comment.content))
     new_mentions = [

@@ -5,8 +5,9 @@
 
 var $ = require('jquery');
 var ko = require('knockout');
-var caret = require('Caret.js');
-var atWho = require('At.js');
+
+require('Caret.js');
+require('At.js');
 
 // preventing unexpected contenteditable behavior
 var onPaste = function(e){
