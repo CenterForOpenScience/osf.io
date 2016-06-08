@@ -110,6 +110,15 @@
     font-weight: bold;
 }
 
+.preprint-mailing-list-container {
+    background-color: #474747;
+    color: #ffffff;
+}
+
+.preprint-mailing-list-container h2 {
+    font-size: 48px;
+}
+
 /* Adapted from front-page.css */
 
 h1,
@@ -253,7 +262,7 @@ h6 {
 }
 #logo {
     width: 200px;
-    margin: 30px auto;
+    margin: -75px auto;
     position: relative;
     -webkit-transition: all 1s ease-in-out;
     -o-transition: all 1s ease-in-out;
@@ -555,8 +564,8 @@ h6 {
     top: 40px;
 }
 .feature-6 {
-    background-color: #474747;
-    color: #ffffff;
+    background: #34495e;
+    color: #FFF;
     padding: 50px 0;
     margin-bottom: 20px;
 }

@@ -50,15 +50,29 @@
         </div>
     </div>
 
+
+    <div class="space-top space-bottom preprint-mailing-list-container">
+        <div class="container">
+            <div class="row">
+              <div class="col-md-8 col-md-offset-4 col-lg-6 col-lg-offset-3">
+                    <h2><strong>Stay up to date</strong></h2>
+                </div>
+            </div>
+            <div class="row">
+              <div class="col-md-8 col-md-offset-4 col-lg-6 col-lg-offset-3">
+                ${mailchimp_form()}
+              </div>
+            </div>
+        </div>
+    </div>
+
     <div class="space-top space-bottom feature-6 grey-background" style="">
       <div class="container">
         <div class="row">
           <div class="col-md-7">
             <h2><strong>Tools for communities</strong></h2>
             <h4> Create your own branded preprint servers backed by the OSF.</h4>
-            ## <a href="mailto:contact@osf.io" class="btn btn-info btn-lg">Contact us</a>
-
-            ${mailchimp_form()}
+            <a href="mailto:contact@osf.io" class="btn btn-info btn-lg">Contact us</a>
           </div>
           <div class="col-md-5 hidden-xs hidden-sm">
             <div id="logo">
@@ -92,12 +106,8 @@
   <input type="email" value="" placeholder="Required" name="EMAIL" class="form-control required email" id="mce-EMAIL">
 </div>
 <div class="form-group mc-field-group">
-  <label for="mce-FNAME">First Name </label>
-  <input type="text" value="" name="FNAME" placeholder="Optional" class="form-control" id="mce-FNAME">
-</div>
-<div class="form-group mc-field-group">
-  <label for="mce-LNAME">Last Name </label>
-  <input type="text" value="" name="LNAME" placeholder="Optional" class="form-control" id="mce-LNAME">
+  <label for="mce-NAME">Name </label>
+  <input type="text" value="" name="NAME" placeholder="Optional" class="form-control" id="mce-NAME">
 </div>
   <div id="mce-responses" class="clear">
     <div class="response" id="mce-error-response" style="display:none"></div>
@@ -105,7 +115,7 @@
   </div>    <!-- real people should not fill this in and expect good things - do not remove this or risk form bot signups-->
     <div style="position: absolute; left: -5000px;" aria-hidden="true"><input type="text" name="b_4ea2d63bcf7c2776e53a62167_9acfb7c169" tabindex="-1" value=""></div>
     ## <div class="clear">
-    <input type="submit" value="Sign up for updates" name="subscribe" id="mc-embedded-subscribe" class="btn btn-primary btn-large button"></div>
+    <input type="submit" value="Sign up for updates" name="subscribe" id="mc-embedded-subscribe" class="btn btn-primary btn-lg button"></div>
     ## </div>
 </form>
 </div>
