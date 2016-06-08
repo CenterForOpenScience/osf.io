@@ -54,6 +54,10 @@ var ShareWindowDropzone = {
 
       $('#ShareButton').click(function() {
         $('#ShareButton').attr('disabled', 'disabled');
+        document.getElementById("ShareButton").style.cursor = "pointer";
+
+
+
          setTimeout(enable, 300);
 
           $('#shareWindowDropzone').slideToggle();
