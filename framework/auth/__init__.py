@@ -3,14 +3,15 @@
 import uuid
 from datetime import datetime
 
-from framework.sessions import session, create_session, Session
 from modularodm import Q
+
 from framework import bcrypt
 from framework.auth import signals
 from framework.auth.exceptions import DuplicateEmailError
+from framework.sessions import session, create_session, Session
 
 from .core import User, Auth
-from .core import get_user
+from .core import get_user, generate_verification_key
 
 
 __all__ = [
@@ -23,6 +24,7 @@ __all__ = [
     'logout',
     'register_unconfirmed',
 ]
+
 
 def get_display_name(username):
     """Return the username to display in the navbar. Shortens long usernames."""
@@ -95,10 +97,9 @@ def get_or_create_user(fullname, address, is_spam=False):
     if user:
         return user, False
     else:
-        from website import security  # Avoid circular imports
         password = str(uuid.uuid4())
         user = User.create_confirmed(address, password, fullname)
-        user.verification_key = security.random_string(20)
+        user.verification_key = generate_verification_key()
         if is_spam:
             user.system_tags.append('is_spam')
         return user, True

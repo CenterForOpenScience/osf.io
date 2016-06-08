@@ -8,8 +8,8 @@ from modularodm.exceptions import ValidationError, ValidationValueError
 from framework import forms
 from framework import status
 from framework.auth import cas
-from framework.auth import User, get_user
-from framework.auth.core import generate_confirm_token
+from framework.auth import User
+from framework.auth.core import get_user, generate_confirm_token, generate_verification_key
 from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.auth.forms import PasswordForm, SetEmailAndPasswordForm
 from framework.auth.signals import user_registered
@@ -19,20 +19,19 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions import session
 from framework.transactions.handlers import no_auto_transaction
 
-from website.util.time import get_timestamp, throttle_period_expired
-from website import mails
-from website import language
-from website import security
-from website import settings
+from website import mails, language, settings
 from website.models import Node
 from website.profile import utils as profile_utils
 from website.project.decorators import (must_have_permission, must_be_valid_project,
-        must_not_be_registration, must_be_contributor_or_public, must_be_contributor)
+                                        must_not_be_registration, must_be_contributor_or_public,
+                                        must_be_contributor)
 from website.project.model import has_anonymous_link
 from website.project.signals import unreg_contributor_added, contributor_added
+from website.util import sanitize
 from website.util import web_url_for, is_json_request
 from website.util.permissions import expand_permissions, ADMIN
-from website.util import sanitize
+from website.util.time import get_timestamp, throttle_period_expired
+
 
 @collect_auth
 @must_be_valid_project(retractions_valid=True)
@@ -624,7 +623,7 @@ def claim_user_form(auth, **kwargs):
             user.register(username=username, password=password)
             # Clear unclaimed records
             user.unclaimed_records = {}
-            user.verification_key = security.random_string(20)
+            user.verification_key = generate_verification_key()
             user.save()
             # Authenticate user and redirect to project page
             status.push_status_message(language.CLAIMED_CONTRIBUTOR,

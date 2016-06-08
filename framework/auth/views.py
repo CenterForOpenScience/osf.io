@@ -3,35 +3,32 @@ import datetime
 import furl
 import httplib as http
 
-from flask import request
 import markupsafe
+from flask import request
 
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationValueError
 
-import framework.auth
-
-from framework.auth import cas, campaigns
 from framework import forms, status
-from framework.flask import redirect  # VOL-aware redirect
-from framework.auth import exceptions
 from framework.exceptions import HTTPError
-from framework.auth import (logout, get_user, DuplicateEmailError)
-from framework.auth.decorators import collect_auth, must_be_logged_in
-from framework.auth.forms import (
-    MergeAccountForm, RegistrationForm, ResendConfirmationForm,
-    ResetPasswordForm, ForgotPasswordForm
-)
+from framework.flask import redirect  # VOL-aware redirect
 
-from website import settings
-from website import mails
-from website import language
-from website import security
-from website.util.time import throttle_period_expired
+import framework.auth
+from framework.auth import exceptions
+from framework.auth import cas, campaigns
+from framework.auth import logout, get_user
+from framework.auth.exceptions import DuplicateEmailError
+from framework.auth.core import generate_verification_key
+from framework.auth.decorators import collect_auth, must_be_logged_in
+from framework.auth.forms import ( MergeAccountForm, RegistrationForm, ResendConfirmationForm,
+                                   ResetPasswordForm, ForgotPasswordForm)
+
+from website import settings, mails, language, security
 from website.models import User
 from website.util import web_url_for
 from website.util.sanitize import strip_html
+from website.util.time import throttle_period_expired
 
 
 @collect_auth
@@ -51,7 +48,7 @@ def reset_password(auth, **kwargs):
 
     if request.method == 'POST' and form.validate():
         # new random verification key, allows CAS to authenticate the user w/o password one time only.
-        user_obj.verification_key = security.random_string(20)
+        user_obj.verification_key = generate_verification_key()
         user_obj.set_password(form.password.data)
         user_obj.save()
         status.push_status_message('Password reset', kind='success', trust=False)
@@ -81,7 +78,7 @@ def forgot_password_post():
         user_obj = get_user(email=email)
         if user_obj:
             if throttle_period_expired(user_obj.email_last_sent, settings.SEND_EMAIL_THROTTLE):
-                user_obj.verification_key = security.random_string(20)
+                user_obj.verification_key = generate_verification_key()
                 user_obj.email_last_sent = datetime.datetime.utcnow()
                 user_obj.save()
                 reset_link = furl.urljoin(
@@ -248,7 +245,7 @@ def confirm_email_get(token, auth=None, **kwargs):
         )
 
     # Redirect to CAS and authenticate the user with a verification key.
-    user.verification_key = security.random_string(20)
+    user.verification_key = generate_verification_key()
     user.save()
 
     return redirect(cas.get_login_url(

@@ -42,12 +42,17 @@ name_formatters = {
 
 logger = logging.getLogger(__name__)
 
+
 # Hide implementation of token generation
 def generate_confirm_token():
     return security.random_string(30)
 
 
 def generate_claim_token():
+    return security.random_string(30)
+
+
+def generate_verification_key():
     return security.random_string(30)
 
 
