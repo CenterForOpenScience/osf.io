@@ -47,7 +47,7 @@ var QuickSearchProject = {
         self.templateNodes.start();
 
         // Load up to first ten nodes
-        var url = $osf.apiV2Url('users/me/nodes/', { query : { 'embed': ['contributors','root']}});
+        var url = $osf.apiV2Url('users/me/nodes/', { query : { 'embed': ['contributors','root', 'parent']}});
         var promise = m.request({method: 'GET', url : url, config : xhrconfig, background: true});
         promise.then(function(result) {
             self.countDisplayed(result.data.length);
@@ -539,6 +539,29 @@ var QuickSearchProject = {
     }
 };
 
+function ancestorName(node, ancestor, title) {
+    var name;
+    var request = lodashGet(node, 'embeds.' + ancestor + '.data.attributes.title', '');
+    var error = lodashGet(node, 'embeds.' + ancestor + '.errors[0].detail', '');
+        switch(error) {
+            case '':
+                if (title === request | request === '') {
+                    name = '';
+                }
+                else {
+                    name = request.replace('.', '') + ' / ';
+                }
+                break;
+
+            case 'You do not have permission to perform this action.':
+                name = m('em', 'Private ' + ancestor + ' / ');
+                break;
+
+            default:
+                name = m('em', 'Name Unavailable / ');
+        }
+    return name;
+}
 
 var QuickSearchNodeDisplay = {
     view: function(ctrl, args) {
@@ -554,32 +577,24 @@ var QuickSearchNodeDisplay = {
                 var project = args.nodes()[n];
                 var numContributors = project.embeds.contributors.links.meta.total;
                 var title = project.attributes.title;
-                var rootRequest = lodashGet(project, 'embeds.root.data.attributes.title', '');
-                var error = lodashGet(project, 'embeds.root.errors[0].detail', '');
+                var root = ancestorName(project, 'root', title);
+                var parent = ancestorName(project, 'parent', title);
 
-                switch(error) {
-                    case '':
-                        if (title === rootRequest) {
-                            root = '';
-                        }
-                        else {
-                            root = rootRequest.replace('.', '') + ' / ';
-                        }
-                        break;
+                if (root == parent) {
+                    parent = '';
+                }
 
-                    case 'You do not have permission to perform this action.':
-                        root = m('em', 'Private Project / ');
-                        break;
-
-                    default:
-                        root = m('em', 'Project Name Unavailable / ');
+                var grandParentURL = lodashGet(project, 'embeds.parent.data.relationships.parent.links.related.href', '');
+                var rootURL = lodashGet(project, 'embeds.root.data.links.self', '');
+                if (grandParentURL !== rootURL && grandParentURL !== '') {
+                    root += '... / ';
                 }
 
                 return m('a', {href: '/' + project.id, onclick: function() {
                     $osf.trackClick('quickSearch', 'navigate', 'navigate-to-specific-project');
                 }}, m('.m-v-sm.node-styling',  m('.row', m('div',
                     [
-                        m('.col-sm-3.col-md-6.p-v-xs', m('.quick-search-col', root, m('strong', title))),
+                        m('.col-sm-3.col-md-6.p-v-xs', m('.quick-search-col', root, parent, m('strong', title))),
                         m('.col-sm-3.col-md-3.p-v-xs', m('.quick-search-col', $osf.contribNameFormat(project, numContributors, args.getFamilyName))),
                         m('.col-sm-3.col-md-3.p-v-xs', m('.quick-search-col', args.formatDate(project)))
                     ]
