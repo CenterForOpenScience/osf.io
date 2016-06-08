@@ -21,10 +21,7 @@ var LogFeed = {
     controller: function(options) {
         var self = this;
 
-        self.nodeId = options.nodeId;
-        self.isRetracted = options.isRetracted;
-        self.isRegistration = options.isRegistration;
-
+        self.node = options.node;
         self.activityLogs = m.prop();
         self.logRequestPending = false;
         self.showMoreActivityLogs = m.prop(null);
@@ -66,21 +63,18 @@ var LogFeed = {
 
         };
 
-        self.getCurrentLogs = function _getCurrentLogs (nodeId, isRetracted, isRegistration){
-            console.log('getting logs for: ' + nodeId);
+        self.getCurrentLogs = function _getCurrentLogs (node){
             if(!self.logRequestPending) {
-                if (!isRetracted) {
-                    console.log('building log URL for: ' + nodeId);
-                    var urlPrefix = isRegistration ? 'registrations' : 'nodes';
-                    var url = $osf.apiV2Url(urlPrefix + '/' + nodeId + '/logs/', { query: { 'page[size]': 6, 'embed': ['original_node', 'user', 'linked_node', 'template_node']}});
-                    console.log('URL for: ' + nodeId + ' is ' + url);
+                if (!node.is_retracted) {
+                    var urlPrefix = node.is_registration ? 'registrations' : 'nodes';
+                    var url = $osf.apiV2Url(urlPrefix + '/' + node.id + '/logs/', { query: { 'page[size]': 6, 'embed': ['original_node', 'user', 'linked_node', 'template_node']}});
                     var promise = self.getLogs(url);
                     return promise;
                 }
             }
         };
 
-        self.getCurrentLogs(self.nodeId, self.isRetracted, self.isRegistration);
+        self.getCurrentLogs(self.node);
     },
 
     view : function (ctrl, args) {

@@ -169,7 +169,10 @@ $(function() {
     });
 });
 
-NodeActions._openCloseNode = function(nodeId) {
+/*
+Hide/show recent logs for for a node on the project view page.
+*/
+NodeActions.openCloseNode = function(nodeId) {
 
     var icon = $('#icon-' + nodeId);
     var body = $('#body-' + nodeId);
@@ -210,18 +213,6 @@ NodeActions.removePointer = function(pointerId, pointerElm) {
     }).fail(
         $osf.handleJSONError
     );
-};
-
-
-/*
-Display recent logs for for a node on the project view page.
-*/
-NodeActions.openCloseNode = function(nodeId, isRetracted, isRegistration) {
-    var componentLogFeed = 'logFeed-' + nodeId;
-    m.mount(document.getElementById(componentLogFeed), m.component(LogFeed.LogFeed, {nodeId: nodeId, isRetracted: Boolean(isRetracted), isRegistration: Boolean(isRegistration)}));
-
-    // Hide/show the html
-    NodeActions._openCloseNode(nodeId);
 };
 
 // TODO: remove this
