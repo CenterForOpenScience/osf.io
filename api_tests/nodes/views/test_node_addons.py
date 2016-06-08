@@ -164,7 +164,7 @@ class NodeAddonDetailMixin(object):
             assert_equal(addon_data['folder_id'], '0987654321')
             assert_true(addon_data['node_has_auth'])
         if wrong_type:
-            assert_in(res.status_code, [404, 405])
+            assert_in(res.status_code, [404, 501])
 
 
     def test_settings_detail_PUT_none_and_enabled_clears_settings(self):
@@ -186,7 +186,7 @@ class NodeAddonDetailMixin(object):
             assert_equal(addon_data['folder_id'], None)
             assert_false(addon_data['node_has_auth'])
         if wrong_type:
-            assert_in(res.status_code, [404, 405])
+            assert_in(res.status_code, [404, 501])
 
     def test_settings_detail_PUT_none_and_disabled_deauthorizes(self):
         wrong_type = self.should_expect_errors(success_types=('CONFIGURABLE', ))
@@ -207,7 +207,7 @@ class NodeAddonDetailMixin(object):
             assert_equal(addon_data['folder_id'], None)
             assert_false(addon_data['node_has_auth'])
         if wrong_type:
-            assert_in(res.status_code, [404, 405])
+            assert_in(res.status_code, [404, 501])
 
     def test_settings_detail_DELETE_disables(self):
         wrong_type = self.should_expect_errors()
@@ -268,7 +268,7 @@ class NodeAddonDetailMixin(object):
             assert_equal(addon_data['folder_id'], None)
             assert_true(addon_data['node_has_auth'])
         if wrong_type:
-            assert_in(res.status_code, [404, 405])
+            assert_in(res.status_code, [404, 501])
 
     def test_settings_detail_PATCH_to_remove_external_account_id(self):
         wrong_type = self.should_expect_errors(success_types=('CONFIGURABLE', ))
@@ -288,7 +288,7 @@ class NodeAddonDetailMixin(object):
             assert_equal(addon_data['folder_id'], None)
             assert_false(addon_data['node_has_auth'])
         if wrong_type:
-            assert_in(res.status_code, [404, 405])
+            assert_in(res.status_code, [404, 501])
 
     def test_settings_detail_PATCH_to_add_folder_without_auth_conflict(self):
         wrong_type = self.should_expect_errors(success_types=('CONFIGURABLE', ))
@@ -313,7 +313,7 @@ class NodeAddonDetailMixin(object):
             assert_equal('Cannot set folder without authorization',
                          res.json['errors'][0]['detail'])
         if wrong_type:
-            assert_in(res.status_code, [404, 405])
+            assert_in(res.status_code, [404, 501])
 
     def test_settings_detail_PATCH_readcontrib_raises_error(self):
         read_user = AuthUserFactory()
@@ -463,7 +463,7 @@ class NodeAddonFolderMixin(object):
             assert_equal(addon_data['name'], '/ (Full Google Drive)')
             assert_equal(addon_data['folder_id'], 'FAKEROOTID')
         if wrong_type:
-            assert_in(res.status_code, [404, 405])
+            assert_in(res.status_code, [404, 501])
 
 
     def test_folder_list_raises_error_if_PUT(self):
