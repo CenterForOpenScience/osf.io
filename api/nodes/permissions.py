@@ -14,7 +14,7 @@ class ContributorOrPublic(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         if isinstance(obj, AddonSettingsBase):
             obj = obj.owner
-        assert isinstance(obj, (Node, Pointer)), 'obj must be a Node, Pointer, or AddonSettings got {}'.format(obj)
+        assert isinstance(obj, (Node, Pointer)), 'obj must be a Node, Pointer, or AddonSettings; got {}'.format(obj)
         auth = get_user_auth(request)
         if request.method in permissions.SAFE_METHODS:
             return obj.is_public or obj.can_view(auth)
@@ -33,7 +33,7 @@ class IsPublic(permissions.BasePermission):
 class AdminOrPublic(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (Node, User, Institution, AddonSettingsBase)), 'obj must be a Node, User, Institution, or AddonSettings got {}'.format(obj)
+        assert isinstance(obj, (Node, User, Institution, AddonSettingsBase)), 'obj must be a Node, User, Institution, or AddonSettings; got {}'.format(obj)
         auth = get_user_auth(request)
         node = Node.load(request.parser_context['kwargs'][view.node_lookup_url_kwarg])
         if request.method in permissions.SAFE_METHODS:
