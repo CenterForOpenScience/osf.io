@@ -1,5 +1,5 @@
 <%inherit file="base.mako"/>
-<%def name="title()"> Public Files</%def>
+<%def name="title()"> ${node['ownerName']}'s Public Files</%def>
 
 <%def name="og_description()">
     Hosted on the Open Science Framework
@@ -9,12 +9,11 @@
 
 ## To change the postion of alert on project pages, override alert()
 <%def name="alert()"> </%def>
-
 <%def name="content()">
 <div class="page-header  visible-xs">
-  <h2 class="text-300">Files</h2>
+  <h2 class="text-300">Public Files</h2>
 </div>
-
+    <h2 class="text-center"> ${node['ownerName']}'s Public Files</h2>
 
 <div id="treeGrid">
 	<div class="spinner-loading-wrapper">
