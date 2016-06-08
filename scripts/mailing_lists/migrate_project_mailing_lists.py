@@ -27,7 +27,7 @@ def fake(*args, **kwargs):
     return
 
 def get_targets():
-    return paginated(Node)
+    return paginated(Node, Q('mailing_enabled', 'eq', None))
 
 def migrate(dry_run=True):
     if dry_run:
