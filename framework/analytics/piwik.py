@@ -4,7 +4,6 @@ import json
 import uuid
 from hashlib import md5
 from urllib import urlencode
-
 import requests
 
 from framework.mongo import database as db
@@ -150,8 +149,6 @@ def _change_view_access(users, node, access):
         )
 
 
-@run_postcommit(once_per_request=False, celery=True)
-@app.task(max_retries=5, default_retry_delay=60)
 def _provision_node(node_id):
     from website.project import Node
     node = Node.load(node_id)

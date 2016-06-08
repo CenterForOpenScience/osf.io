@@ -9,6 +9,7 @@ from collections import OrderedDict
 import os
 
 from celery import chain
+from framework.celery_tasks import app
 from celery.local import PromiseProxy
 from gevent.pool import Pool
 
@@ -31,6 +32,10 @@ def postcommit_before_request():
     _local.postcommit_queue = OrderedDict()
     _local.postcommit_celery_queue = OrderedDict()
 
+@app.task(max_retries=5, default_retry_delay=60)
+def postcommit_celery_task_wrapper(queue):
+    chain(*queue.values()).apply()
+
 def postcommit_after_request(response, base_status_error_code=500):
     if response.status_code >= base_status_error_code:
         _local.postcommit_queue = OrderedDict()
@@ -46,7 +51,7 @@ def postcommit_after_request(response, base_status_error_code=500):
 
         if postcommit_celery_queue():
             if settings.USE_CELERY:
-                chain(postcommit_celery_queue().values()[0:len(postcommit_celery_queue().values())])
+                postcommit_celery_task_wrapper.delay(postcommit_celery_queue())
             else:
                 for task in postcommit_celery_queue().values():
                     task()
