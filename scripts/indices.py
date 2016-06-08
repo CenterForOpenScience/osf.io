@@ -4,6 +4,9 @@
 
 from pymongo import ASCENDING, DESCENDING
 
+db['storedfilenode'].create_index([
+    ('tags', ASCENDING),
+])
 
 db['user'].create_index([
     ('emails', ASCENDING),
