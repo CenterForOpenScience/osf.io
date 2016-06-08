@@ -6,6 +6,7 @@ import sys
 
 from modularodm import Q
 
+from framework.mongo.utils import paginated
 from framework.transactions.context import TokuTransaction
 
 from website.app import init_app
@@ -25,7 +26,7 @@ def fake(*args, **kwargs):
     return
 
 def get_targets():
-    return Node.find()
+    return paginated(Node)
 
 def migrate(dry_run=True):
     if dry_run:
