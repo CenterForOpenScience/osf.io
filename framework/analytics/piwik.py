@@ -4,7 +4,6 @@ import json
 import uuid
 from hashlib import md5
 from urllib import urlencode
-
 import requests
 
 from framework.mongo import database as db
@@ -54,7 +53,7 @@ def _update_node_object(node, updated_fields=None):
     """
     # If no site has been created for the node, create one.
     if not node.piwik_site_id:
-        return _provision_node(node)
+        return _provision_node(node._id)
 
     # If contributors have changed
     if updated_fields is None or 'contributors' in updated_fields:
@@ -150,7 +149,9 @@ def _change_view_access(users, node, access):
         )
 
 
-def _provision_node(node):
+def _provision_node(node_id):
+    from website.project import Node
+    node = Node.load(node_id)
     response = requests.post(
         settings.PIWIK_HOST,
         data={
