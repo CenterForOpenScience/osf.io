@@ -21,10 +21,10 @@ from framework.auth import logout, get_user
 from framework.auth.exceptions import DuplicateEmailError
 from framework.auth.core import generate_verification_key
 from framework.auth.decorators import collect_auth, must_be_logged_in
-from framework.auth.forms import ( MergeAccountForm, RegistrationForm, ResendConfirmationForm,
-                                   ResetPasswordForm, ForgotPasswordForm)
+from framework.auth.forms import (MergeAccountForm, RegistrationForm, ResendConfirmationForm,
+                                  ResetPasswordForm, ForgotPasswordForm)
 
-from website import settings, mails, language, security
+from website import settings, mails, language
 from website.models import User
 from website.util import web_url_for
 from website.util.sanitize import strip_html
