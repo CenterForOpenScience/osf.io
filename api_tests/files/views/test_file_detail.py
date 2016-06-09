@@ -205,10 +205,6 @@ class TestFileView(ApiTestCase):
         assert_equal(self.node.logs[-1].user, self.user)
 
     def test_admin_can_checkout(self):
-        user = UserFactory()
-        self.node.add_contributor(user)
-        self.file.checkout = user
-        self.file.save()
         res = self.app.put_json_api(
             '/{}files/{}/'.format(API_BASE, self.file._id),
             {'data': {'id': self.file._id, 'type': 'files', 'attributes': {'checkout': self.user._id}}},
@@ -221,6 +217,39 @@ class TestFileView(ApiTestCase):
         assert_equal(self.file.checkout, self.user)
         assert_equal(self.node.logs[-1].action, NodeLog.CHECKED_OUT)
         assert_equal(self.node.logs[-1].user, self.user)
+
+    def test_cannot_checkin_when_already_checked_in(self):
+        count = len(self.node.logs)
+        assert_false(self.file.is_checked_out)
+        res = self.app.put_json_api(
+            '/{}files/{}/'.format(API_BASE, self.file._id),
+            {'data': {'id': self.file._id, 'type': 'files', 'attributes': {'checkout': None}}},
+            auth=self.user.auth,
+            expect_errors=True,
+        )
+        self.file.reload()
+        self.node.reload()
+        assert_equal(res.status_code, 200)
+        assert_equal(len(self.node.logs), count)
+        assert_equal(self.file.checkout, None)
+
+    def test_cannot_checkout_when_checked_out(self):
+        user = UserFactory()
+        self.node.add_contributor(user)
+        self.file.checkout = user
+        self.file.save()
+        count = len(self.node.logs)
+        res = self.app.put_json_api(
+            '/{}files/{}/'.format(API_BASE, self.file._id),
+            {'data': {'id': self.file._id, 'type': 'files', 'attributes': {'checkout': self.user._id}}},
+            auth=self.user.auth,
+            expect_errors=True,
+        )
+        self.file.reload()
+        self.node.reload()
+        assert_equal(res.status_code, 200)
+        assert_equal(self.file.checkout, user)
+        assert_equal(len(self.node.logs), count)
 
     def test_noncontrib_cannot_checkout(self):
         user = AuthUserFactory()
