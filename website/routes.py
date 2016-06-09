@@ -470,6 +470,8 @@ def make_url_map(app):
             auth_views.resend_confirmation,
             OsfWebRenderer('resend.mako', render_mako_string, trust=False)
         ),
+        
+        Rule('/api/v1/register/', 'post', auth_views.register_user, json_renderer),
 
         Rule(
             [
