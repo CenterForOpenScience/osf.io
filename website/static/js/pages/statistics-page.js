@@ -1,10 +1,11 @@
+'use strict';
 $(function(){
     // Ad script alert
-    var adBlockPersistKey = 'adBlock';
+    var adBlockPersistKey = 'adBlockDismiss';
     var $adBlock = $('#adBlock').on('closed.bs.alert', function() {
-        $.cookie(adBlockPersistKey, '0', { expires: 1, path: '/'});
+        $.cookie(adBlockPersistKey, '1', {path: '/'});
     });
-    var dismissed = $.cookie(adBlockPersistKey) === '0';
+    var dismissed = $.cookie(adBlockPersistKey) === '1';
     if (!dismissed) {
         $adBlock.show();
     }
