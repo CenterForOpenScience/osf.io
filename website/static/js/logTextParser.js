@@ -5,6 +5,7 @@
  */
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
 var logActions = require('json!js/_allLogTexts.json');
+var anonymousLogActions = require('json!js/_anonymousLogTexts.json');
 var $ = require('jquery');  // jQuery
 var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
@@ -103,7 +104,9 @@ var LogText = {
         var logText = function() {
             var text = logActions[logObject.attributes.action];
             if (text) {
-                if (text.indexOf('${user}') !== -1) {
+                if (logObject.anonymous) {
+                    return anonymousLogActions[logObject.attributes.action];
+                } else if (text.indexOf('${user}') !== -1) {
                     var userObject = logObject.embeds.user;
                     if (userInfoReturned(userObject)) {
                         return text;
@@ -112,14 +115,16 @@ var LogText = {
                         var newAction = logObject.attributes.action + '_no_user';
                         return logActions[newAction] ? logActions[newAction]: text;
                     }
+                } else {
+                    return text;
                 }
-                return text;
             }
         return null;
         };
         var message = '';
         var text = logText();
         if(text){
+            if (logObject.anonymous) { return m('span.osf-log-item', text); }
             var list = text.split(/(\${.*?})/);
             return m('span.osf-log-item', [
                 list.map(function(piece){

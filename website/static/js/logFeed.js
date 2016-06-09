@@ -8,7 +8,6 @@ var LogText = require('js/logTextParser');
 var mC = require('js/mithrilComponents');
 
 
-
 /* Send with ajax calls to work with api2 */
 var xhrconfig = function (xhr) {
     xhr.withCredentials = window.contextVars.isOnRootDomain,
@@ -67,7 +66,8 @@ var LogFeed = {
             if(!self.logRequestPending) {
                 if (!node.is_retracted) {
                     var urlPrefix = node.is_registration ? 'registrations' : 'nodes';
-                    var url = $osf.apiV2Url(urlPrefix + '/' + node.id + '/logs/', { query: { 'page[size]': 6, 'embed': ['original_node', 'user', 'linked_node', 'template_node']}});
+                    var query = node.link ? { 'page[size]': 6, 'embed': ['original_node', 'user', 'linked_node', 'template_node'], 'view_only': node.link} : { 'page[size]': 6, 'embed': ['original_node', 'user', 'linked_node', 'template_node']};
+                    var url = $osf.apiV2Url(urlPrefix + '/' + node.id + '/logs/', { query: query});
                     var promise = self.getLogs(url);
                     return promise;
                 }
@@ -77,16 +77,15 @@ var LogFeed = {
         self.getCurrentLogs(self.node);
     },
 
-    view : function (ctrl, args) {
+    view : function (ctrl) {
 
         return m('.db-activity-list.m-t-md', [
             ctrl.activityLogs() ? ctrl.activityLogs().map(function(item){
-
+                if (ctrl.node.anonymous) { item.anonymous = true; }
                 var image = m('i.fa.fa-desktop');
-                if (item.embeds.user && item.embeds.user.data) {
+                if (!item.anonymous && item.embeds.user && item.embeds.user.data) {
                     image = m('img', { src : item.embeds.user.data.links.profile_image});
-                }
-                else if (item.embeds.user && item.embeds.user.errors[0].meta){
+                } else if (!item.anonymous && item.embeds.user && item.embeds.user.errors[0].meta){
                     image = m('img', { src : item.embeds.user.errors[0].meta.profile_image});
                 }
                 return m('.db-activity-item', [
@@ -101,7 +100,6 @@ var LogFeed = {
                     $osf.trackClick('myProjects', 'information-panel', 'show-more-activity');
                 }}, [ 'Show more', m('i.fa.fa-caret-down.m-l-xs')]) : ''
             ])
-
         ]);
     }
 };

@@ -90,6 +90,7 @@ var entry = {
 
 // Collect log text from addons
 var mainLogs = require(staticPath('js/logActionsList.json'));
+var anonymousLogs = require(staticPath('js/_anonymousLogTexts.js'))
 var addonLog;
 
 // Collect addons endpoints. If an addon's static folder has
@@ -115,6 +116,7 @@ addons.addons.forEach(function(addonName) {
 });
 
 fs.writeFileSync(staticPath('js/_allLogTexts.json'), JSON.stringify(mainLogs));
+fs.writeFileSync(staticPath('js/_anonymousLogTexts.json'), JSON.stringify(anonymousLogs));
 
 var resolve = {
     extensions: ['', '.es6.js', '.js', '.min.js'],
