@@ -1044,7 +1044,7 @@ class User(GuidStoredObject, AddonModelMixin):
         user's unconfirmed emails.
         """
         unconfirmed_emails = []
-        email_verifications = self.email_verifications
+        email_verifications = self.email_verifications or []
         for token in email_verifications:
             if self.email_verifications[token].get('confirmed', False):
                 try:
