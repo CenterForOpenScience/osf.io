@@ -3255,21 +3255,6 @@ class TestAuthViews(OsfTestCase):
         assert_true(dupe.is_merged)
 
     @mock.patch('framework.auth.views.mails.send_mail')
-    def test_register_sends_confirm_email(self, send_mail):
-        url = '/register/'
-        self.app.post(url, {
-            'register-fullname': 'Freddie Mercury',
-            'register-username': 'fred@queen.com',
-            'register-password': 'killerqueen',
-            'register-username2': 'fred@queen.com',
-            'register-password2': 'killerqueen',
-        })
-        assert_true(send_mail.called)
-        assert_true(send_mail.called_with(
-            to_addr='fred@queen.com'
-        ))
-
-    @mock.patch('framework.auth.views.mails.send_mail')
     def test_register_ok(self, _):
         url = api_url_for('register_user')
         name, email, password = fake.name(), fake.email(), 'underpressure'
