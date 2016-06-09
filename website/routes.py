@@ -45,6 +45,7 @@ from website.preprints import views as preprint_views
 from website.institutions import views as institution_views
 from website.notifications import views as notification_views
 
+
 def get_globals():
     """Context variables that are available for every template rendered by
     OSFWebRenderer.
@@ -161,6 +162,7 @@ def goodbye():
     status.push_status_message(language.LOGOUT, kind='success', trust=False)
     return {}
 
+
 def make_url_map(app):
     """Set up all the routes for the OSF app.
 
@@ -248,15 +250,6 @@ def make_url_map(app):
             'get',
             {},
             OsfWebRenderer('public/explore.mako', trust=False)
-        ),
-        Rule(
-            [
-                '/messages/',
-                '/help/'
-            ],
-            'get',
-            {},
-            OsfWebRenderer('public/comingsoon.mako', trust=False)
         ),
 
         Rule(
