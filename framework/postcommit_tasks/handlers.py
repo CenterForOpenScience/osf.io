@@ -7,7 +7,6 @@ import binascii
 from collections import OrderedDict
 import os
 
-
 from celery.local import PromiseProxy
 from gevent.pool import Pool
 
