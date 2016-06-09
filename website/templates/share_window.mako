@@ -11,7 +11,6 @@
 <%def name="alert()"> </%def>
 <%def name="content()">
 <div class="page-header  visible-xs">
-  <h2 class="text-300">Public Files</h2>
 </div>
     <h2 class="text-center"> ${node['ownerName']}'s Public Files</h2>
 
