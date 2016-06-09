@@ -11,11 +11,9 @@ from website import settings
 
 from furl import furl
 import base64
-from urllib import urlencode, quote, unquote
+from urllib import urlencode, unquote
 import hashlib
 import hmac
-
-import pprint
 
 class SSOView(JSONAPIBaseView):
     view_name = 'sso-view'

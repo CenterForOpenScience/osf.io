@@ -411,6 +411,8 @@ class User(GuidStoredObject, AddonModelMixin):
     # whether the user has requested to deactivate their account
     requested_deactivation = fields.BooleanField(default=False)
 
+    discourse_username = fields.StringField(default=None)
+
     _meta = {'optimistic': True}
 
     def __repr__(self):

@@ -176,7 +176,7 @@ class NodeWikiPage(GuidStoredObject, Commentable):
     user = fields.ForeignField('user')
     node = fields.ForeignField('node')
 
-    comment_topic_id = fields.StringField(default=None)
+    discourse_topic_id = fields.StringField(default=None)
 
     # For Django compatibility
     @property

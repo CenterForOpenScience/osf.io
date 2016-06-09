@@ -328,13 +328,7 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
     ret['user']['can_edit_wiki_body'] = can_edit
 
     ret['discourse_url'] = website.settings.DISCOURSE_SERVER_URL
-
-    discourse_topic_id = wiki_page.comment_topic_id
-    if discourse_topic_id is None:
-        discourse_topic_id = discourse.get_or_create_topic_id(wiki_page)
-        wiki_page.comment_topic_id = discourse_topic_id
-        wiki_page.save()
-    ret['discourse_topic_id'] = discourse_topic_id
+    ret['discourse_topic_id'] = discourse.get_or_create_topic_id(wiki_page)
 
     return ret
 
