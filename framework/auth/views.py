@@ -454,8 +454,3 @@ def merge_user_post(auth, **kwargs):
             return merge_user_get(**kwargs)
     else:
         raise HTTPError(http.BAD_REQUEST)
-
-
-# TODO: Is this used?
-def auth_registerbeta():
-    return redirect('/account')

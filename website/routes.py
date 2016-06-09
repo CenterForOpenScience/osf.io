@@ -508,18 +508,6 @@ def make_url_map(app):
         ),
 
         Rule(
-            [
-                '/midas/',
-                '/summit/',
-                '/accountbeta/',
-                '/decline/'
-            ],
-            'get',
-            auth_views.auth_registerbeta,
-            notemplate
-        ),
-
-        Rule(
             '/login/connected_tools/',
             'get',
             landing_page_views.connected_tools,
