@@ -29,7 +29,9 @@ if(!window.canRunAds){
         )
 %>
 
-% if not piwik_host or not node['piwik_site_id'] or not node['is_public']:
+% if not piwik_host:
+  <div class="m-b-md p-md osf-box-lt box-round text-center">The analytics service is undergoing temporary maintenance. Thank you for your patience.</div>
+% elif not node['piwik_site_id'] or not node['is_public']:
     <div class="row m-lg">
         <div class="col-xs-12 text-center">
             <img src="/static/img/no_analytics.png">
