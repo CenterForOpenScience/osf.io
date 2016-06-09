@@ -120,7 +120,7 @@ var anonymousLogActions = {
     'zotero_node_deauthorized' : 'A user deauthorized the Zotero addon for a project',
     'dataverse_study_released' : 'A user published a new version of a Dataverse dataset to a project',
     'dataverse_node_deauthorized_no_user' : 'Dataverse addon for a project deauthorized',
-    'primary_institution_changed': 'A user changed the primary institution of a project',
-    'primary_institution_removed': 'A used removed the primary institution of a project'
+    'affiliated_institution_added': 'A user added an affiliation to a project',
+    'affiliated_institution_removed': 'A user removed an affiliation from a project'
 };
  module.exports = anonymousLogActions;
