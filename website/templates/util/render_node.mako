@@ -137,3 +137,13 @@
 
 % endif
 </div>
+<script type="text/javascript">
+    window.contextVars = $.extend(true, {}, window.contextVars, {
+        project: ${node | sjson, n},
+        component: ${summary | sjson, n},
+        user: {
+            canView: ${summary['can_view'] | sjson, n}
+        }
+    });
+</script>
+<script src=${"/static/public/js/render-node.js" | webpack_asset}></script>

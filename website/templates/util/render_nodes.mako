@@ -51,11 +51,5 @@
     <div class="help-block">No ${pluralized_node_type} to display.</div>
 % endif
 % if not skipBindings:
-    <script type="text/javascript">
-    window.contextVars = $.extend(true, {}, window.contextVars, {
-        project: ${node | sjson, n},
-        components: ${nodes | sjson, n}
-    });
-    </script>
     <script src=${"/static/public/js/render-nodes.js" | webpack_asset}></script>
 % endif

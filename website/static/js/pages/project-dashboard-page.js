@@ -22,6 +22,7 @@ var mathrender = require('js/mathrender');
 var md = require('js/markdown').full;
 
 var ctx = window.contextVars;
+var node = window.contextVars.node;
 var nodeApiUrl = ctx.node.urls.api;
 var nodeCategories = ctx.nodeCategories || {};
 
@@ -62,6 +63,8 @@ if ($comments.length) {
 $(document).ready(function () {
 
     $('#contributorsList').osfToggleHeight();
+
+    m.mount(document.getElementById('logFeed'), m.component(LogFeed.LogFeed, {node: node}));
 
     if (!ctx.node.isRetracted) {
         // Treebeard Files view
