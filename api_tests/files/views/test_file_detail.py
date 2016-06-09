@@ -417,14 +417,14 @@ class TestFileTagging(ApiTestCase):
     def test_add_tag_adds_log(self):
         count = len(self.node.logs)
         self.app.put_json_api(self.url, self.payload, auth=self.user.auth)
-        assert_equal(len(self.node.logs), count + 2)
-        assert_equal(NodeLog.FILE_TAG_ADDED, self.node.logs[-2].action)
+        assert_equal(len(self.node.logs), count + 1)
+        assert_equal(NodeLog.FILE_TAG_ADDED, self.node.logs[-1].action)
 
     def test_remove_tag_adds_log(self):
         self.app.put_json_api(self.url, self.payload, auth=self.user.auth)
         self.payload['data']['attributes']['tags'] = []
         count = len(self.node.logs)
         self.app.put_json_api(self.url, self.payload, auth=self.user.auth)
-        assert_equal(len(self.node.logs), count + 2)
-        assert_equal(NodeLog.FILE_TAG_REMOVED, self.node.logs[-2].action)
+        assert_equal(len(self.node.logs), count + 1)
+        assert_equal(NodeLog.FILE_TAG_REMOVED, self.node.logs[-1].action)
 
