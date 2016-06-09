@@ -346,39 +346,6 @@ def register_user(**kwargs):
         return {'message': 'You may now log in.'}
 
 
-# TODO: Remove me
-def auth_register_post():
-    if not settings.ALLOW_REGISTRATION:
-        status.push_status_message(language.REGISTRATION_UNAVAILABLE, trust=False)
-        return redirect('/')
-    form = RegistrationForm(request.form, prefix='register')
-
-    # Process form
-    if form.validate():
-        try:
-            user = framework.auth.register_unconfirmed(
-                form.username.data,
-                form.password.data,
-                form.fullname.data)
-            framework.auth.signals.user_registered.send(user)
-        except (ValidationValueError, DuplicateEmailError):
-            status.push_status_message(
-                language.ALREADY_REGISTERED.format(email=form.username.data),
-                trust=False)
-            return auth_login()
-        if user:
-            if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
-                send_confirm_email(user, email=user.username)
-                message = language.REGISTRATION_SUCCESS.format(email=user.username)
-                status.push_status_message(message, kind='success', trust=False)
-                return auth_login()
-            else:
-                return redirect('/login/first/')
-    else:
-        forms.push_errors_to_status(form.errors)
-        return auth_login()
-
-
 def merge_user_get(**kwargs):
     '''Web view for merging an account. Renders the form for confirmation.
     '''
