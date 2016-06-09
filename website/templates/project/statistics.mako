@@ -5,15 +5,13 @@
   <h2 class="text-300">Analytics</h2>
 </div>
 
-<div id="hiddenFlag" class="scripted">
-  <div class="m-b-md p-md osf-box-lt box-round text-center">The use of adblocking software may prevent site analytics from loading properly. You may need to whitelist this domain in your adblocker.</div>
-</div>
-<script src="/static/js/ads.js"></script>
-<script>
-if(!window.canRunAds){
-    $('#hiddenFlag').show();
-}
-</script>
+% if node['is_public']:
+    <script src=${"/static/js/pages/statistics-page.js" | webpack_asset}> </script>
+    <div id="adBlock" class="scripted alert alert-info text-center alert-dismissible" role="alert">
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        The use of adblocking software may prevent site analytics from loading properly.
+    </div>
+% endif
 
 <%
     if user['is_contributor']:
