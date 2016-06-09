@@ -66,6 +66,12 @@ class TestUser(base.OsfTestCase):
             [user.username]
         )
 
+    # regression test for https://sentry.cos.io/sentry/osf/issues/6510/
+    def test_unconfirmed_email_info_when_email_verifications_is_none(self):
+        user = factories.UserFactory()
+        user.email_verifications = None
+        assert_equal(user.unconfirmed_email_info, [])
+
     def test_remove_unconfirmed_email(self):
         self.user.add_unconfirmed_email('foo@bar.com')
         self.user.save()
