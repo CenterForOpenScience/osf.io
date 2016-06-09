@@ -1114,7 +1114,6 @@ var Collections = {
             self.newCollectionName('');
             self.isValid(false);
             $('#addCollInput').val('');
-            $osf.trackClick('myProjects', 'add-collection', 'click-cancel-button');
         },
         self.deleteCollection = function _deleteCollection(){
             var url = self.collectionMenuObject().item.data.node.links.self;
@@ -1381,6 +1380,7 @@ var Collections = {
                             {
                                 onclick : function(){
                                     ctrl.resetAddCollection();
+                                    $osf.trackClick('myProjects', 'add-collection', 'click-cancel-button');
                                 }
                             }, 'Cancel'),
                         ctrl.isValid() ? m('button[type="button"].btn.btn-success', { onclick : function() {
