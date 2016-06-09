@@ -457,7 +457,7 @@ else:
         },
         'update-project-mailing-lists': {
             'task': 'scripts.mailing_lists.update_project_mailing_lists',
-            'schedule': crontab(minute=0, hour=3, day_of_week=0),  # Sunday 3:00 a.m.
+            'schedule': crontab(minute=0, hour=3),  # Daily 3:00 a.m.
             'kwargs': {'dry_run': False},
         },
     }
