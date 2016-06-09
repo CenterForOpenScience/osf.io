@@ -1297,12 +1297,25 @@ function _fangornResolveRows(item) {
 
 if(window.contextVars.isPublicFilesCol) {
     if (item.data.kind === 'file') {
+            default_columns.push(
+        {
+            data : 'Download Link',  // Data field name
+            filter : true,
+            custom : function() {return m('a' ,{ href: waterbutler.buildTreeBeardDownload(item) },'Download File')}
+        });
+                default_columns.push(
+        {
+            data : 'Share Link',  // Data field name
+            filter : true,
+            custom : function() {return generateURLClipBoard(item)}
+        });
         default_columns.push(
         {
             data : 'size',  // Data field name
             filter : true,
             custom : function() {return item.data.size ? $osf.humanFileSize(item.data.size, true) : '';}
         });
+
         if (item.data.provider === 'osfstorage') {
             default_columns.push({
                 data : 'downloads',
@@ -1359,6 +1372,31 @@ if(window.contextVars.isPublicFilesCol) {
  */
 function _fangornColumnTitles () {
     var columns = [];
+    if(window.contextVars.isPublicFilesCol) {
+    columns.push(
+    {
+        title: 'Name',
+        width : '40%',
+        sort : true,
+        sortType : 'text'
+    }, {
+        title : 'Download Link',
+        width : '15%',
+        sort : false
+    }, {
+        title : 'Share Link',
+        width : '25%',
+        sort : false
+    }, {
+        title : 'Size',
+        width : '10%',
+        sort : false
+    }, {
+        title : 'Downloads',
+        width : '10%',
+        sort : false
+    });
+    }else{
     columns.push(
     {
         title: 'Name',
@@ -1374,6 +1412,7 @@ function _fangornColumnTitles () {
         width : '10%',
         sort : false
     });
+    }
     return columns;
 }
 

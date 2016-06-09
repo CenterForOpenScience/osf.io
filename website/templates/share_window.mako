@@ -9,6 +9,7 @@
 
 ## To change the postion of alert on project pages, override alert()
 <%def name="alert()"> </%def>
+
 <%def name="content()">
 <div class="page-header  visible-xs">
 </div>
@@ -20,6 +21,12 @@
 		<p class="m-t-sm fg-load-message"> Loading files...  </p>
 	</div>
 </div>
+<style>
+.container {
+    width: 100% !important;
+}
+
+</style>
 
 
 

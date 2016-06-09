@@ -544,6 +544,7 @@ var QuickSearchProject = {
 
 
 var QuickSearchNodeDisplay = {
+
     view: function(ctrl, args) {
         if (args.eligibleNodes().length === 0 && args.filter() != null && args.loadingComplete() === true) {
             return m('.row.m-v-sm', m('.col-sm-12',
@@ -551,11 +552,21 @@ var QuickSearchNodeDisplay = {
                     m('.col-sm-12', m('em', 'No results found!'))
                 ))
             );
+        }else if(args.eligibleNodes().length === 1){
+            console.log("ttge");
+              return m('.row.m-v-sm', m('.col-sm-12',
+                m('.row',
+                    m('.col-sm-12', m('em', 'No results found!'))
+                ))
+);
         }
         else {
             return m('.', args.eligibleNodes().slice(0, args.countDisplayed()).map(function(n){
                 var project = args.nodes()[n];
                 var numContributors = project.embeds.contributors.links.meta.total;
+
+                if(window.contextVars['shareWindowId'] !== project.id ){
+
                 return m('a', {href: '/' + project.id, onclick: function() {
                     $osf.trackClick('quickSearch', 'navigate', 'navigate-to-specific-project');
                 }}, m('.m-v-sm.node-styling',  m('.row', m('div',
@@ -565,6 +576,7 @@ var QuickSearchNodeDisplay = {
                         m('.col-sm-4.col-md-3.p-v-xs', m('.quick-search-col', args.formatDate(project)))
                     ]
                 ))));
+                }
             }));
         }
     }
