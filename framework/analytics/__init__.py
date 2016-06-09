@@ -5,8 +5,8 @@ import functools
 from datetime import datetime
 
 from framework.mongo import database
-from framework.sessions import session
 from framework.postcommit_tasks.handlers import run_postcommit
+from framework.sessions import session
 from framework.celery_tasks import app
 
 from flask import request

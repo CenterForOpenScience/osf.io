@@ -21,6 +21,7 @@ from api.files.serializers import FileSerializer
 from api.comments.serializers import CommentSerializer, CommentCreateSerializer
 from api.comments.permissions import CanCommentOrPublic
 from api.users.views import UserMixin
+from api.wikis.serializers import WikiSerializer
 
 from api.nodes.serializers import (
     NodeSerializer,
@@ -50,6 +51,7 @@ from api.nodes.permissions import (
 )
 from api.logs.serializers import NodeLogSerializer
 
+from website.addons.wiki.model import NodeWikiPage
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
 from website.models import Node, Pointer, Comment, NodeLog, Institution
@@ -149,6 +151,9 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         fork                            boolean            is this node a fork of another node?
         public                          boolean            has this node been made publicly-visible?
         collection                      boolean            is this a collection? (always false - may be deprecated in future versions)
+        node_license                    object             details of the license applied to the node
+            year                        string             date range of the license
+            copyright_holders           array of strings   holders of the applied license
 
     ##Links
 
@@ -340,6 +345,9 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
         fork                            boolean             is this node a fork of another node?
         public                          boolean             has this node been made publicly-visible?
         collection                      boolean             is this a collection? (always false - may be deprecated in future versions)
+        node_license                    object             details of the license applied to the node
+            year                        string             date range of the license
+            copyright_holders           array of strings   holders of the applied license
 
     ##Relationships
 
@@ -489,10 +497,11 @@ class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bu
 
     `type` is "contributors"
 
-        name           type     description
+        name                        type     description
         ======================================================================================================
-        bibliographic  boolean  Whether the user will be included in citations for this node. Default is true.
-        permission     string   User permission level. Must be "read", "write", or "admin". Default is "write".
+        bibliographic               boolean  Whether the user will be included in citations for this node. Default is true.
+        permission                  string   User permission level. Must be "read", "write", or "admin". Default is "write".
+        unregistered_contributor    string   Contributor's assigned name if contributor hasn't yet claimed account
 
     ##Links
 
@@ -643,10 +652,11 @@ class NodeContributorDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVi
 
     `type` is "contributors"
 
-        name           type     description
+        name                        type     description
         ======================================================================================================
-        bibliographic  boolean  Whether the user will be included in citations for this node. Default is true.
-        permission     string   User permission level. Must be "read", "write", or "admin". Default is "write".
+        bibliographic               boolean  Whether the user will be included in citations for this node. Default is true.
+        permission                  string   User permission level. Must be "read", "write", or "admin". Default is "write".
+        unregistered_contributor    string   Contributor's assigned name if contributor hasn't yet claimed account
 
     ##Relationships
 
@@ -1243,25 +1253,26 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
 
         name          type       description
         =========================================================================
-        name          string     name of the file
-        path          string     unique identifier for this file entity for this
-                                 project and storage provider. may not end with '/'
-        materialized  string     the full path of the file relative to the storage
-                                 root.  may not end with '/'
-        kind          string     "file"
-        etag          string     etag - http caching identifier w/o wrapping quotes
-        modified      timestamp  last modified timestamp - format depends on provider
-        contentType   string     MIME-type when available
-        provider      string     id of provider e.g. "osfstorage", "s3", "googledrive".
-                                 equivalent to addon_short_name on the OSF
-        size          integer    size of file in bytes
-        extra         object     may contain additional data beyond what's described here,
-                                 depending on the provider
-          version     integer    version number of file. will be 1 on initial upload
-          downloads   integer    count of the number times the file has been downloaded
+        name          string            name of the file
+        path          string            unique identifier for this file entity for this
+                                        project and storage provider. may not end with '/'
+        materialized  string            the full path of the file relative to the storage
+                                        root.  may not end with '/'
+        kind          string            "file"
+        etag          string            etag - http caching identifier w/o wrapping quotes
+        modified      timestamp         last modified timestamp - format depends on provider
+        contentType   string            MIME-type when available
+        provider      string            id of provider e.g. "osfstorage", "s3", "googledrive".
+                                        equivalent to addon_short_name on the OSF
+        size          integer           size of file in bytes
+        tags          array of strings  list of tags that describes the file (osfstorage only)
+        extra         object            may contain additional data beyond what's described here,
+                                        depending on the provider
+          version     integer           version number of file. will be 1 on initial upload
+          downloads   integer           count of the number times the file has been downloaded
           hashes      object
-            md5       string     md5 hash of file
-            sha256    string     SHA-256 hash of file
+            md5       string            md5 hash of file
+            sha256    string            SHA-256 hash of file
 
     ####Folder Entity
 
@@ -2188,3 +2199,75 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
         except RelationshipPostMakesNoChanges:
             return Response(status=HTTP_204_NO_CONTENT)
         return ret
+
+
+class NodeWikiList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMixin):
+    """List of wiki pages on a node. *Read only*.
+
+    Paginated list of the node's current wiki page versions ordered by their `date_modified.` Each resource contains the
+    full representation of the wiki, meaning additional requests to an individual wiki's detail view are not necessary.
+
+    Note that if an anonymous view_only key is being used, the user relationship will not be exposed.
+
+    ###Permissions
+
+    Wiki pages on public nodes are given read-only access to everyone. Wiki pages on private nodes are only visible to
+    contributors and administrators on the parent node.
+
+    ##Attributes
+
+    OSF wiki entities have the "wikis" `type`.
+
+        name                type               description
+        =================================================================================
+        name                string             name of the wiki pag
+        path                string             the path of the wiki page
+        materialized_path   string             the path of the wiki page
+        date_modified       iso8601 timestamp  timestamp when the wiki was last updated
+        content_type        string             MIME-type
+        extra               object
+            version         integer            version number of the wiki
+
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    ##Query Params
+
+    + `filter[name]=<Str>` -- filter wiki pages by name
+
+    + `filter[date_modified][comparison_operator]=YYYY-MM-DDTH:M:S` -- filter wiki pages based on date modified.
+
+    Wiki pages can be filtered based on their `date_modified` fields. Possible comparison
+    operators include 'gt' (greater than), 'gte'(greater than or equal to), 'lt' (less than) and 'lte'
+    (less than or equal to). The date must be in the format YYYY-MM-DD and the time is optional.
+
+
+    #This Request/Response
+    """
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ContributorOrPublic,
+        ExcludeWithdrawals
+    )
+
+    required_read_scopes = [CoreScopes.WIKI_BASE_READ]
+    required_write_scopes = [CoreScopes.NULL]
+    serializer_class = WikiSerializer
+
+    view_category = 'nodes'
+    view_name = 'node-wikis'
+
+    ordering = ('-date', )  # default ordering
+
+    # overrides ODMFilterMixin
+    def get_default_odm_query(self):
+        node = self.get_node()
+        node_wiki_pages = node.wiki_pages_current.values() if node.wiki_pages_current else []
+        return Q('_id', 'in', node_wiki_pages)
+
+    def get_queryset(self):
+        return NodeWikiPage.find(self.get_query_from_request())

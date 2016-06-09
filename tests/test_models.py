@@ -524,15 +524,15 @@ class TestUser(OsfTestCase):
         u.save()
 
         with assert_raises(auth_exc.InvalidTokenError):
-            u._get_unconfirmed_email_for_token('badtoken')
+            u.get_unconfirmed_email_for_token('badtoken')
 
         valid_token = u.get_confirmation_token('foo@bar.com')
-        assert_true(u._get_unconfirmed_email_for_token(valid_token))
+        assert_true(u.get_unconfirmed_email_for_token(valid_token))
         manual_expiration = datetime.datetime.utcnow() - datetime.timedelta(0, 10)
         u._set_email_token_expiration(valid_token, expiration=manual_expiration)
 
         with assert_raises(auth_exc.ExpiredTokenError):
-            u._get_unconfirmed_email_for_token(valid_token)
+            u.get_unconfirmed_email_for_token(valid_token)
 
     def test_verify_confirmation_token_when_token_has_no_expiration(self):
         # A user verification token may not have an expiration
@@ -544,7 +544,7 @@ class TestUser(OsfTestCase):
         del u.email_verifications[token]['expiration']
         u.save()
 
-        assert_true(u._get_unconfirmed_email_for_token(token))
+        assert_true(u.get_unconfirmed_email_for_token(token))
 
     def test_factory(self):
         # Clear users
@@ -1180,17 +1180,17 @@ class TestNodeWikiPage(OsfTestCase):
         assert_equal(self.wiki.url, '{project_url}wiki/home/'
                                     .format(project_url=self.project.url))
 
-    def test_absolute_url_for_wiki_page_name_with_spaces(self):
+    def test_url_for_wiki_page_name_with_spaces(self):
         wiki = NodeWikiFactory(user=self.user, node=self.project, page_name='Test Wiki')
-        url = '{}wiki/{}/'.format(self.project.absolute_url, urllib.quote(wiki.page_name))
-        assert_equal(wiki.get_absolute_url(), url)
+        url = '{}wiki/{}/'.format(self.project.url, urllib.quote(wiki.page_name))
+        assert_equal(wiki.url, url)
 
-    def test_absolute_url_for_wiki_page_name_with_special_characters(self):
+    def test_url_for_wiki_page_name_with_special_characters(self):
         wiki = NodeWikiFactory(user=self.user, node=self.project)
         wiki.page_name = 'Wiki!@#$%^&*()+'
         wiki.save()
-        url = '{}wiki/{}/'.format(self.project.absolute_url, urllib.quote(wiki.page_name))
-        assert_equal(wiki.get_absolute_url(), url)
+        url = '{}wiki/{}/'.format(self.project.url, urllib.quote(wiki.page_name))
+        assert_equal(wiki.url, url)
 
 
 class TestUpdateNodeWiki(OsfTestCase):

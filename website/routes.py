@@ -69,6 +69,7 @@ def get_globals():
         'user_timezone': user.timezone if user and user.timezone else '',
         'user_url': user.url if user else '',
         'user_gravatar': profile_views.current_user_gravatar(size=25)['gravatar_url'] if user else '',
+        'user_email_verifications': user.unconfirmed_email_info if user else [],
         'user_api_url': user.api_url if user else '',
         'user_entry_point': metrics.get_entry_point(user) if user else '',
         'user_institutions': user_institutions if user else None,
@@ -220,14 +221,15 @@ def make_url_map(app):
         Rule(
             '/dashboard/',
             'get',
-            website_views.redirect_to_home,
+            website_views.dashboard,
             OsfWebRenderer('home.mako', trust=False)
         ),
+
         Rule(
             '/myprojects/',
             'get',
-            website_views.dashboard,
-            OsfWebRenderer('dashboard.mako', trust=False)
+            website_views.my_projects,
+            OsfWebRenderer('my_projects.mako', trust=False)
         ),
 
         Rule(
@@ -303,8 +305,8 @@ def make_url_map(app):
         Rule(
             '/news/',
             'get',
-            {},
-            OsfWebRenderer('public/pages/news.mako', trust=False)
+            website_views.redirect_to_cos_news,
+            notemplate
         ),
 
         Rule(
@@ -393,6 +395,13 @@ def make_url_map(app):
             json_renderer,
         )
     ], prefix='/api/v1')
+
+    process_rules(app, [
+        Rule('/confirmed_emails/', 'put', auth_views.unconfirmed_email_add, json_renderer),
+        Rule('/confirmed_emails/', 'delete', auth_views.unconfirmed_email_remove, json_renderer)
+
+    ], prefix='/api/v1')
+
     ### Metadata ###
     process_rules(app, [
 

@@ -1008,7 +1008,7 @@ class TestCommentFiltering(ApiTestCase):
         url = self.base_url + '?filter[target]=' + str(test_wiki._id)
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 1)
-        assert_in(test_wiki.page_name, res.json['data'][0]['relationships']['target']['links']['related']['href'])
+        assert_equal(test_wiki.get_absolute_url(), res.json['data'][0]['relationships']['target']['links']['related']['href'])
 
     def test_filtering_by_page_node(self):
         url = self.base_url + '?filter[page]=node'
