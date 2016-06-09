@@ -41,11 +41,7 @@
                 </div>
                 <div class="form-group" style="padding-top: 15px">
                     <div class="text-center m-t-lg">
-                        %if redirect_url:
-                            <p>For non-institutional login, click <a href="/login/?redirect_url=${redirect_url}">here</a>.</p>
-                        %else:
-                            <p>For non-institutional login, click <a href="/login/">here</a>.</p>
-                        %endif
+                            <p>For non-institutional login, click <a href="${login_url_index}">here</a>.</p>
                     </div>
                 </div>
             </div>
@@ -162,7 +158,7 @@
                 </br>
                 <div class="form-group">
                     <div class="col-md-8 col-sm-12" style="padding-left: 25px">
-                        <a href="${login_url}" >Already have an account?</a>
+                        <a href="${login_url_index}" >Already have an account?</a>
                     </div>
                     %if redirect_url:
                         <div class="col-md-8 col-sm-12" style="padding-left: 25px">

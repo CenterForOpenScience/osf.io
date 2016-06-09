@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
-import furl
 import json
 import urllib
-import requests
 import httplib as http
-from lxml import etree
 
-from website import settings
+import furl
+from lxml import etree
+import requests
 
 from framework.auth import User
 from framework.auth import authenticate
 from framework.flask import redirect
 from framework.exceptions import HTTPError
+from website import settings
 
 
 class CasError(HTTPError):
@@ -56,8 +56,13 @@ class CasClient(object):
         self.BASE_URL = base_url
 
     def get_login_url(self, service_url, username=None, verification_key=None):
+        # avoid circular import
+        from website.util import web_url_for
+
         url = furl.furl(self.BASE_URL)
         url.path.segments.append('login')
+        if service_url == web_url_for('goodbye', _absolute=True):
+            service_url = web_url_for('index', _absolute=True)
         url.args['service'] = service_url
         if username and verification_key:
             url.args['username'] = username

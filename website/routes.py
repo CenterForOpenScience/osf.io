@@ -99,6 +99,7 @@ def get_globals():
         'webpack_asset': paths.webpack_asset,
         'waterbutler_url': settings.WATERBUTLER_URL,
         'login_url': cas.get_login_url(login_url),
+        'login_url_index': cas.get_login_url(util.web_url_for('index', _absolute=True)),
         'reauth_url': util.web_url_for('auth_logout', redirect_url=request.url, reauth=True),
         'profile_url': cas.get_profile_url(),
         'enable_institutions': settings.ENABLE_INSTITUTIONS,
@@ -860,6 +861,7 @@ def make_url_map(app):
     process_rules(app, [
         # '/' route loads home.mako if logged in, otherwise loads landing.mako
         Rule('/', 'get', website_views.index, OsfWebRenderer('index.mako', trust=False)),
+
         Rule('/goodbye/', 'get', goodbye, OsfWebRenderer('landing.mako', trust=False)),
 
         Rule(
