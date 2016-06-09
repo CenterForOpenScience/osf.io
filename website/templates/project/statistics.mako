@@ -18,7 +18,7 @@
     </div>
 
     <div class="row m-lg">
-        <div class="col-sm-12">
+        <div class="col-sm-6">
             <div class="panel panel-default">
                 <div class="panel-heading clearfix">
                     <h3 class="panel-title">Visits Over Time</h3>
@@ -29,6 +29,18 @@
                     </div>
                 </div>
             </div>
+        </div>
+        <div class="col-sm-6">
+          <div class="panel panel-default">
+            <div class="panel-heading clearfix">
+              <h3 class="panel-title">Visits by Server Time</h3>
+            </div>
+            <div id="serverTimeVisits" class="panel-body">
+              <div class="text-center">
+                <div class="logo-spin logo-lg"></div>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="col-sm-6">
             <div class="panel panel-default">
@@ -64,9 +76,9 @@
         <div class="col-sm-6">
             <div class="panel panel-default">
                 <div class="panel-heading clearfix">
-                    <h3 class="panel-title">Visits by Server Time</h3>
+                    <h3 class="panel-title">Popular Pages</h3>
                 </div>
-                <div id="serverTimeVisits" class="panel-body">
+                <div id="popularPages" class="panel-body">
                     <div class="text-center">
                         <div class="logo-spin logo-lg"></div>
                     </div>

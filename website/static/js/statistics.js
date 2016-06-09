@@ -104,6 +104,31 @@ var KeenViz = function(){
 
     };
 
+    self.popularPages = function() {
+        var popularPagesQuery = {
+            type: 'count_unique',
+            params: {
+                event_collection: 'pageviews',
+                timeframe: 'this_7_days',
+                target_property: 'visitor.session',
+                group_by: 'page.title'
+            }
+        };
+
+        var popularPagesViz = new keenDataviz()
+                .el('#popularPages')
+                .chartType('bar')
+                .chartOptions({
+                    tooltip:{
+                        format:{
+                            name: function(){return 'Visits';}
+                        }
+                    }
+                });
+
+        self.buildChart(popularPagesViz, popularPagesQuery);
+    };
+
     self.buildChart = function(dataviz, query){
         self.keenClient
             .query(query.type, query.params)
@@ -119,6 +144,7 @@ var KeenViz = function(){
         self.visitsByDay();
         self.topReferrers();
         self.visitsServerTime();
+        self.popularPages();
     };
 
 
