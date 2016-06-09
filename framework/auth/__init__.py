@@ -77,7 +77,7 @@ def external_first_login_authenticate(user, response):
 def logout():
     """Clear users' session(s) and log them out of OSF."""
     for key in ['auth_user_username', 'auth_user_id', 'auth_user_fullname',
-                'auth_user_access_token', 'auth_discourse_username']:
+                'auth_user_access_token']:
         try:
             del session.data[key]
         except KeyError:

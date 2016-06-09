@@ -477,6 +477,8 @@ class User(GuidStoredObject, AddonModelMixin):
     # keep track of who added them.
     registered_by = fields.ForeignField('user', default=None, index=True)
 
+    discourse_username = fields.StringField(default=None)
+
     _meta = {'optimistic': True}
 
     def __repr__(self):

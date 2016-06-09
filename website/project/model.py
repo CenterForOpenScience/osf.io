@@ -22,7 +22,7 @@ from modularodm import fields
 from modularodm.validators import MaxLengthValidator
 from modularodm.exceptions import KeyExistsException, ValidationValueError
 
-from framework import status
+from framework import status, discourse
 from framework.mongo import ObjectId, DummyRequest
 from framework.mongo import StoredObject
 from framework.mongo import validators
@@ -946,6 +946,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
     alternative_citations = fields.ForeignField('alternativecitation', list=True)
 
+    notification_settings_dirty = fields.BooleanField(default=False)
+
+    discourse_group_id = fields.StringField(default=None)
+    discourse_category_id = fields.StringField(default=None)
+    discourse_topic_id = fields.StringField(default=None)
+
     _meta = {
         'optimistic': True,
     }
@@ -1717,6 +1723,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
                 batch = children[:99]
                 Node.bulk_update_search(batch)
                 children = children[99:]
+
+        # For project public/private and contributors
+        discourse.sync_project(self)
 
         # Return expected value for StoredObject::save
         return saved_fields
