@@ -1040,13 +1040,13 @@ class User(GuidStoredObject, AddonModelMixin):
 
     @property
     def unconfirmed_email_info(self):
-        """Called at login to see if there are emails to add or users to merge.  Delete expired tokens.
-        methods: GET
+        """Return a list of dictionaries containing information about each of this
+        user's unconfirmed emails.
         """
         unconfirmed_emails = []
         email_verifications = self.email_verifications
         for token in email_verifications:
-            if self.email_verifications[token]['confirmed']:
+            if self.email_verifications[token].get('confirmed', False):
                 try:
                     user_merge = User.find_one(Q('emails', 'eq', self.email_verifications[token]['email'].lower()))
                 except NoResultsFound:
