@@ -31,30 +31,17 @@ from framework.sessions.model import Session
 from tests.base import fake
 from tests.base import get_default_metaschema
 from website.addons import base as addons_base
-from website.oauth.models import (
-    ApiOAuth2Application,
-    ApiOAuth2PersonalToken,
-    ExternalAccount,
-    ExternalProvider
-)
-from website.project.model import (
-    Comment, DraftRegistration, MetaSchema, Node, NodeLog, Pointer,
-    PrivateLink, Tag, WatchConfig, AlternativeCitation, ensure_schemas, Institution
-)
-from website.project.sanctions import (
-    Embargo,
-    RegistrationApproval,
-    Retraction,
-    Sanction,
-)
 from website.addons.wiki.model import NodeWikiPage
 from website.archiver import ARCHIVER_SUCCESS
 from website.archiver.model import ArchiveTarget, ArchiveJob
 from website.identifiers.model import Identifier
 from website.notifications.model import NotificationSubscription, NotificationDigest
+from website.oauth.models import ApiOAuth2Application, ApiOAuth2PersonalToken, ExternalAccount, ExternalProvider
 from website.project.licenses import NodeLicense, NodeLicenseRecord, ensure_licenses
+from website.project.model import (Comment, DraftRegistration, MetaSchema, Node, NodeLog, Pointer, PrivateLink,
+                                   Tag, WatchConfig, AlternativeCitation, ensure_schemas, Institution)
+from website.project.sanctions import Embargo, RegistrationApproval, Retraction, Sanction
 from website.util import permissions
-
 
 ensure_licenses = functools.partial(ensure_licenses, warn=False)
 

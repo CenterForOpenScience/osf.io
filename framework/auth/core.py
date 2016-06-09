@@ -10,13 +10,12 @@ import pytz
 import itsdangerous
 
 from modularodm import fields, Q
-from modularodm.exceptions import NoResultsFound
-from modularodm.exceptions import ValidationError, ValidationValueError, QueryException
+from modularodm.exceptions import NoResultsFound, ValidationError, ValidationValueError, QueryException
 from modularodm.validators import URLValidator
 
 import framework
-from framework.addons import AddonModelMixin
 from framework import analytics
+from framework.addons import AddonModelMixin
 from framework.auth import signals, utils
 from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError, InvalidTokenError,
                                        MergeConfirmedRequiredError, MergeConflictError)
@@ -28,7 +27,6 @@ from framework.sentry import log_exception
 from framework.sessions import session
 from framework.sessions.model import Session
 from framework.sessions.utils import remove_sessions_for_user
-
 from website import mails, settings, filters, security
 
 name_formatters = {
@@ -83,7 +81,6 @@ def validate_year(item):
         else:
             if len(item) != 4:
                 raise ValidationValueError('Please enter a valid year.')
-
 
 validate_url = URLValidator()
 

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-import uuid
 from datetime import datetime
+import uuid
 
 from modularodm import Q
 
@@ -9,7 +9,6 @@ from framework import bcrypt
 from framework.auth import signals
 from framework.auth.exceptions import DuplicateEmailError
 from framework.sessions import session, create_session, Session
-
 from .core import User, Auth
 from .core import get_user, generate_verification_key
 

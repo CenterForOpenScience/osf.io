@@ -42,9 +42,7 @@ from modularodm.query.querydialect import DefaultQueryDialect as Q
 from framework.auth import Auth
 from framework.auth import utils
 from framework.auth.core import generate_verification_key
-
 from tests.factories import UserFactory, ProjectFactory, NodeFactory, RegistrationFactory
-
 from website import models
 from website.app import init_app
 

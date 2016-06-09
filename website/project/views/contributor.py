@@ -5,8 +5,7 @@ import httplib as http
 from flask import request
 from modularodm.exceptions import ValidationError, ValidationValueError
 
-from framework import forms
-from framework import status
+from framework import forms, status
 from framework.auth import cas
 from framework.auth import User
 from framework.auth.core import get_user, generate_confirm_token, generate_verification_key
@@ -18,13 +17,11 @@ from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions import session
 from framework.transactions.handlers import no_auto_transaction
-
 from website import mails, language, settings
 from website.models import Node
 from website.profile import utils as profile_utils
-from website.project.decorators import (must_have_permission, must_be_valid_project,
-                                        must_not_be_registration, must_be_contributor_or_public,
-                                        must_be_contributor)
+from website.project.decorators import (must_have_permission, must_be_valid_project, must_not_be_registration,
+                                        must_be_contributor_or_public, must_be_contributor)
 from website.project.model import has_anonymous_link
 from website.project.signals import unreg_contributor_added, contributor_added
 from website.util import sanitize

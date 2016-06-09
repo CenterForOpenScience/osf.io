@@ -11,10 +11,7 @@ from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationValueError
 
 from framework import forms, status
-from framework.exceptions import HTTPError
-from framework.flask import redirect  # VOL-aware redirect
-
-import framework.auth
+from framework import auth as framework_auth
 from framework.auth import exceptions
 from framework.auth import cas, campaigns
 from framework.auth import logout, get_user
@@ -23,7 +20,8 @@ from framework.auth.core import generate_verification_key
 from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.auth.forms import (MergeAccountForm, RegistrationForm, ResendConfirmationForm,
                                   ResetPasswordForm, ForgotPasswordForm)
-
+from framework.exceptions import HTTPError
+from framework.flask import redirect  # VOL-aware redirect
 from website import settings, mails, language
 from website.models import User
 from website.util import web_url_for
@@ -116,6 +114,7 @@ def forgot_password_get(auth, *args, **kwargs):
 ###############################################################################
 # Log in
 ###############################################################################
+
 
 @collect_auth
 def auth_login(auth, **kwargs):
@@ -321,13 +320,13 @@ def register_user(**kwargs):
         if campaign and campaign not in campaigns.CAMPAIGNS:
             campaign = None
 
-        user = framework.auth.register_unconfirmed(
+        user = framework_auth.register_unconfirmed(
             request.json['email1'],
             request.json['password'],
             full_name,
             campaign=campaign,
         )
-        framework.auth.signals.user_registered.send(user)
+        framework_auth.signals.user_registered.send(user)
     except (ValidationValueError, DuplicateEmailError):
         raise HTTPError(
             http.BAD_REQUEST,
