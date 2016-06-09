@@ -16,7 +16,7 @@ var Institution = institutionComps.InstitutionImg;
 var Carousel = carouselComps.Carousel;
 var CarouselRow = carouselComps.CarouselRow;
 
-var CAROUSEL_WIDTH = 6;  // Must be a multiple of 12
+var CAROUSEL_WIDTH = 5;  // Must be a multiple of 10 (leave 2 for arrows)
 var LOGO_WIDTH = '120px';
 
 
@@ -25,8 +25,8 @@ var InstitutionsPanel = {
         // Helper method to render logo link
         this.renderLogo = function(inst, opts) {
             var href = '/institutions/' + inst.id + '/';
-            var columnWidth = (12 / CAROUSEL_WIDTH).toString();
-            return m('.col-sm-' + columnWidth, [
+            var columnWidth = (10 / CAROUSEL_WIDTH).toString();
+            return m('.col-sm-' + columnWidth, {style: {'display':'inline-block', 'float':'none'}}, [
                 m('a', {href: href, className: 'thumbnail', style: {'background': 'inherit', 'border': 'none'}},
                     [m.component(Institution,
                                 {

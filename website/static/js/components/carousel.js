@@ -39,7 +39,7 @@ var Carousel = {
 var CarouselRow = {
     view: function(ctrl, opts, children) {
         return m('div', {className: 'item' + (opts.active ? ' active' : '')}, [
-            m('.row', {}, children)
+            m('.row', {style: {'text-align': 'center'}}, children)
         ]);
     }
 };
