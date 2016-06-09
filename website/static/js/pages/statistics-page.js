@@ -1,4 +1,6 @@
 'use strict';
+var $ = require('jquery');
+
 $(function(){
     // Ad script alert
     var adBlockPersistKey = 'adBlockDismiss';
