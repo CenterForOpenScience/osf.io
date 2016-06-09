@@ -27,6 +27,7 @@ def _dt_to_iso8601(value):
 
     return iso8601
 
+
 class TestFileView(ApiTestCase):
     def setUp(self):
         super(TestFileView, self).setUp()
@@ -61,7 +62,7 @@ class TestFileView(ApiTestCase):
         assert_equal(attributes['date_created'], _dt_to_iso8601(self.file.versions[0].date_created.replace(tzinfo=pytz.utc)))
         assert_equal(attributes['extra']['hashes']['md5'], None)
         assert_equal(attributes['extra']['hashes']['sha256'], None)
-
+        assert_equal(attributes['tags'], [])
 
     def test_file_has_comments_link(self):
         res = self.app.get('/{}files/{}/'.format(API_BASE, self.file._id), auth=self.user.auth)
@@ -360,3 +361,70 @@ class TestFileVersionView(ApiTestCase):
             expect_errors=True,
             auth=self.user.auth,
         ).status_code, 405)
+
+
+class TestFileTagging(ApiTestCase):
+    def setUp(self):
+        super(TestFileTagging, self).setUp()
+        self.user = AuthUserFactory()
+        self.node = ProjectFactory(creator=self.user)
+        self.file1 = api_utils.create_test_file(
+            self.node, self.user, filename='file1')
+        self.payload = {
+            "data": {
+                "type": "files",
+                "id": self.file1._id,
+                "attributes": {
+                    "checkout": None,
+                    "tags": ["goofy"]
+                }
+            }
+        }
+        self.url = '/{}files/{}/'.format(API_BASE, self.file1._id)
+
+    def test_tags_add_properly(self):
+        res = self.app.put_json_api(self.url, self.payload, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        # Ensure adding tag data is correct from the PUT response
+        assert_equal(len(res.json['data']['attributes']['tags']), 1)
+        assert_equal(res.json['data']['attributes']['tags'][0], 'goofy')
+
+    def test_tags_update_properly(self):
+        self.app.put_json_api(self.url, self.payload, auth=self.user.auth)
+        # Ensure removing and adding tag data is correct from the PUT response
+        self.payload['data']['attributes']['tags'] = ['goofier']
+        res = self.app.put_json_api(self.url, self.payload, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']['attributes']['tags']), 1)
+        assert_equal(res.json['data']['attributes']['tags'][0], 'goofier')
+
+    def test_tags_add_and_remove_properly(self):
+        self.app.put_json_api(self.url, self.payload, auth=self.user.auth)
+        self.payload['data']['attributes']['tags'] = []
+        res = self.app.put_json_api(self.url, self.payload, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']['attributes']['tags']), 0)
+
+    def test_put_wo_tags_doesnt_remove_tags(self):
+        self.app.put_json_api(self.url, self.payload, auth=self.user.auth)
+        self.payload['data']['attributes'] = {'checkout': None}
+        res = self.app.put_json_api(self.url, self.payload, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        # Ensure adding tag data is correct from the PUT response
+        assert_equal(len(res.json['data']['attributes']['tags']), 1)
+        assert_equal(res.json['data']['attributes']['tags'][0], 'goofy')
+
+    def test_add_tag_adds_log(self):
+        count = len(self.node.logs)
+        self.app.put_json_api(self.url, self.payload, auth=self.user.auth)
+        assert_equal(len(self.node.logs), count + 2)
+        assert_equal(NodeLog.FILE_TAG_ADDED, self.node.logs[-2].action)
+
+    def test_remove_tag_adds_log(self):
+        self.app.put_json_api(self.url, self.payload, auth=self.user.auth)
+        self.payload['data']['attributes']['tags'] = []
+        count = len(self.node.logs)
+        self.app.put_json_api(self.url, self.payload, auth=self.user.auth)
+        assert_equal(len(self.node.logs), count + 2)
+        assert_equal(NodeLog.FILE_TAG_REMOVED, self.node.logs[-2].action)
+

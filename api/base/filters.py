@@ -21,6 +21,12 @@ from api.base.exceptions import (
 from api.base import utils
 from api.base.serializers import RelationshipField, TargetField
 
+def lowercase(lower):
+    if hasattr(lower, '__call__'):
+        return lower()
+    return lower
+
+
 def sort_multiple(fields):
     fields = list(fields)
     def sort_fn(a, b):
@@ -376,6 +382,13 @@ class ListFilterMixin(FilterMixin):
             return_val = [
                 item for item in default_queryset
                 if params['value'].lower() in getattr(item, field_name, {}).lower()
+            ]
+        elif isinstance(field, ser.ListField):
+            return_val = [
+                item for item in default_queryset
+                if params['value'].lower() in [
+                    lowercase(i.lower) for i in getattr(item, field_name, [])
+                ]
             ]
         else:
             try:
