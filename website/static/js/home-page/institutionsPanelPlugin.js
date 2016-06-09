@@ -16,16 +16,17 @@ var Institution = institutionComps.InstitutionImg;
 var Carousel = carouselComps.Carousel;
 var CarouselRow = carouselComps.CarouselRow;
 
-var CAROUSEL_WIDTH = 5;  // Must be a multiple of 10 (leave 2 for arrows)
+var CAROUSEL_WIDTH = 5;
+var REDUCED_CAROUSEL_WIDTH = CAROUSEL_WIDTH - 1;
+var COLUMN_WIDTH = Math.floor(12 / CAROUSEL_WIDTH);
 var LOGO_WIDTH = '120px';
-
 
 var InstitutionsPanel = {
     controller: function() {
         // Helper method to render logo link
         this.renderLogo = function(inst, opts) {
             var href = '/institutions/' + inst.id + '/';
-            var columnWidth = (10 / CAROUSEL_WIDTH).toString();
+            var columnWidth = COLUMN_WIDTH.toString();
             return m('.col-sm-' + columnWidth, {style: {'display':'inline-block', 'float':'none'}}, [
                 m('a', {href: href, className: 'thumbnail', style: {'background': 'inherit', 'border': 'none'}},
                     [m.component(Institution,
@@ -50,6 +51,9 @@ var InstitutionsPanel = {
 
         var institutions = affiliated.concat(unaffiliated);
         var controls = institutions.length > CAROUSEL_WIDTH;
+        if (controls && (12 % CAROUSEL_WIDTH) === 0 && CAROUSEL_WIDTH > REDUCED_CAROUSEL_WIDTH) {
+            CAROUSEL_WIDTH = REDUCED_CAROUSEL_WIDTH;
+        }
 
         var groupedInstitutions = lodashChunk(institutions, CAROUSEL_WIDTH);
         return m.component(Carousel, {controls: controls},
