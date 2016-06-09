@@ -580,7 +580,7 @@ var QuickSearchNodeDisplay = {
                 var root = ancestorName(project, 'root', title);
                 var parent = ancestorName(project, 'parent', title);
 
-                if (root == parent) {
+                if (root === parent) {
                     parent = '';
                 }
 
