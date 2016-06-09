@@ -3539,6 +3539,13 @@ class TestAuthViews(OsfTestCase):
         assert_equal(unconfirmed_emails, [])
         assert_equal(self.user.email_verifications, {})
 
+    def test_clean_email_verifications_when_email_verifications_is_none(self):
+        self.user.email_verifications = None
+        self.user.save()
+        ret = self.user.clean_email_verifications()
+        assert_equal(ret, None)
+        assert_equal(self.user.email_verifications, {})
+
     def test_add_invalid_email(self):
         # Do not return expired token and removes it from user.email_verifications
         email = u'\u0000\u0008\u000b\u000c\u000e\u001f\ufffe\uffffHello@yourmom.com'
