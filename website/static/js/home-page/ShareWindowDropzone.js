@@ -76,10 +76,10 @@ var ShareWindowDropzone = {
 
   view: function(ctrl, args) {
               function headerTemplate() {
-            return [ m('h2.col-xs-7', 'Dashboard'), m('m-b-lg.col-xs-3.drop-zone-disp',
-                m('button.btn.btn-primary.m-t-md.f-w-xl #ShareButton', {onclick: function() {}}, 'Upload Public Files'),
-                m('.pull-right', m.component(AddProject, {
-                buttonTemplate : m('button.btn.btn-success.btn-success-high-contrast.m-t-md.f-w-xl[data-toggle="modal"][data-target="#addProjectFromHome"]',
+            return [ m('h2.col-xs-4', 'Dashboard'), m('m-b-lg.col-xs-8.pull-right.drop-zone-disp',
+                //m('button.btn.btn-primary.m-t-md.f-w-xl.pull-right #ShareButton', {onclick: function() {}}, 'Upload Public Files'),
+                m('.pull-right', m('button.btn.btn-primary.m-t-md.f-w-xl #ShareButton', {onclick: function() {}}, 'Upload Public Files'), m.component(AddProject, {
+                buttonTemplate : m('button.btn.btn-success.btn-success-high-contrast.m-t-md.f-w-xl.pull-right[data-toggle="modal"][data-target="#addProjectFromHome"]',
                     {onclick: function() {
                     $osf.trackClick('quickSearch', 'add-project', 'open-add-project-modal');
                     }}, 'Create new project'),
@@ -92,9 +92,13 @@ var ShareWindowDropzone = {
                 templatesFetcher: ctrl.templateNodes
             })))];
         }
-          return m('.row', m('.col-xs-12', headerTemplate()), m('div.p-v-xs.text-center.drop-zone-format.drop-zone-invis .pointer .panel #shareWindowDropzone', m('button.close[aria-label="Close"]',{ onclick : function() { $('#ShareButton').toggleClass('btn-primary'); $('#shareWindowDropzone').hide(); $('#LinkToShareFiles').hide();
-                    }}, m('.drop-zone-close','x')),
-              m('p#shareWindowDropzone', m('h1',  'Drop files to upload'), 'Having trouble? Click anywhere in this box to manually upload a file.')),
+          return m('.row', m('.col-xs-12', headerTemplate()), m('div.p-v-xs.text-center.drop-zone-format.drop-zone-invis .pointer .panel #shareWindowDropzone',
+              m('button.close[aria-label="Close"]',{ onclick : function() {
+                  $('#ShareButton').toggleClass('btn-primary');
+                  $('#shareWindowDropzone').hide();
+                  $('#LinkToShareFiles').hide();
+              }}, m('.drop-zone-close','x')),
+              m('p#shareWindowDropzone', m('h1.drop-zone-head',  'Drop files to upload'), 'Having trouble? Click anywhere in this box to manually upload a file.')),
               m('.h4.text-center.drop-zone-invis #LinkToShareFiles', 'Or go to your ', m('a', {href: '/share_window/', onclick: function() {}}, 'Public Files Project')));
   }
 };
