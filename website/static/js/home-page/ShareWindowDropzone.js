@@ -24,12 +24,18 @@ var ShareWindowDropzone = {
 
   controller: function() {
     Dropzone.options.shareWindowDropzone = {
+        // Dropzone is setup to upload multiple files in one request this configuration forces it to do upload file-by-
+        //file, one request at a time.
         clickable: '#shareWindowDropzone',
         thumbnailWidth: 80,
         thumbnailHeight: 80,
+        parallelUploads: 1,
+        autoProcessQueue: false,
+        uploadMultiple: false,
+
         accept: function(file, done) {
-              this.options.url = waterbutler.buildUploadUrl(false,'osfstorage',window.contextVars['shareWindowId'], file,{});
-              done();
+            this.options.url = waterbutler.buildUploadUrl(false,'osfstorage',window.contextVars['shareWindowId'], file,{});
+            this.processFile(file);
         },
         sending: function(file, xhr) {
             //Hack to remove webkitheaders
@@ -37,6 +43,9 @@ var ShareWindowDropzone = {
             xhr.send = function() {
                _send.call(xhr, file);
            };
+        },
+        success: function(file, xhr) {
+            this.processQueue();
         }
     };
 
@@ -44,7 +53,6 @@ var ShareWindowDropzone = {
         withCredentials: true,
         url:'placeholder',
         method:'put',
-        uploadMultiple: true,
         border: '2px dashed #ccc',
         previewTemplate: '<div class="dz-preview dz-file-preview" style="display: inline-block;width:50%"><div class="dz-details"><div class="dz-filename"><span data-dz-name></span></div>' +
         '<div class="dz-size" data-dz-size></div><img data-dz-thumbnail /></div><div class="dz-progress"><span class="dz-upload" data-dz-uploadprogress></span></div>' +
