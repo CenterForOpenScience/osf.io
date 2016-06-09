@@ -1,6 +1,9 @@
 'use strict';
+var $  = require('jquery');
+require('jquery.cookie');
+
 $(function(){
-    // Ad script alert
+    // Make adblock message permanently dismissible
     var adBlockPersistKey = 'adBlockDismiss';
     var $adBlock = $('#adBlock').on('closed.bs.alert', function() {
         $.cookie(adBlockPersistKey, '1', {path: '/'});
@@ -9,5 +12,4 @@ $(function(){
     if (!dismissed) {
         $adBlock.show();
     }
-    // Ad script alert
 });
