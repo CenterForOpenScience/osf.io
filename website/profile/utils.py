@@ -74,7 +74,7 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False):
             flags = {
                 'visible': user._id in node.visible_contributor_ids,
                 'permission': reduce_permissions(node.get_permissions(user)),
-                'subscribed': user in get_recipients(node),
+                'subscribed': settings.PROJECT_MAILING_ENABLED and user in get_recipients(node),
             }
         ret.update(flags)
     if user.is_registered:
