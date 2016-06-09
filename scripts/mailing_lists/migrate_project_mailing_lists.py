@@ -41,7 +41,7 @@ def migrate(dry_run=True):
     mailgun_failures = []
     unknown_failures = {}
     nodes = get_targets()
-    ncount = Node.find().count()
+    ncount = Node.find(Q('mailing_enabled', 'eq', None)).count()
     i = 0
     logger.info('Preparing to migrate {} nodes.'.format(ncount))
     for node in nodes:
