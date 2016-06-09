@@ -16,10 +16,9 @@ var Institution = institutionComps.InstitutionImg;
 var Carousel = carouselComps.Carousel;
 var CarouselRow = carouselComps.CarouselRow;
 
-var CAROUSEL_WIDTH = 5;
+var CAROUSEL_WIDTH = 6;
 var REDUCED_CAROUSEL_WIDTH = CAROUSEL_WIDTH - 1;
 var COLUMN_WIDTH = Math.floor(12 / CAROUSEL_WIDTH);
-var LOGO_WIDTH = '120px';
 
 var InstitutionsPanel = {
     controller: function() {
