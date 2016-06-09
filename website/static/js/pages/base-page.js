@@ -207,7 +207,7 @@ $(function() {
         $osf.initializeResponsiveAffix();
     }
     new NavbarControl('.osf-nav-wrapper');
-    new DevModeControls('#devModeControls', '/static/built/git_logs.json');
+    new DevModeControls('#devModeControls', '/static/built/git_logs.json', '/static/built/git_branch.txt');
     if(window.contextVars.keenProjectId){
         var params = {};
         params.currentUser = window.contextVars.currentUser;
