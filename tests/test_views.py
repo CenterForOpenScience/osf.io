@@ -3403,6 +3403,22 @@ class TestAuthViews(OsfTestCase):
                                                        auth.signals.unconfirmed_user_created]))
         assert_true(mock_send_confirm_email.called)
 
+    @mock.patch('framework.auth.views.send_confirm_email')
+    def test_register_post_sends_user_registered_signal(self, mock_send_confirm_email):
+        url = web_url_for('auth_register_post')
+        name, email, password = fake.name(), fake.email(), 'underpressure'
+        with capture_signals() as mock_signals:
+            self.app.post(url, {
+                'register-fullname': name,
+                'register-username': email,
+                'register-password': password,
+                'register-username2': email,
+                'register-password2': password
+            })
+        assert_equal(mock_signals.signals_sent(), set([auth.signals.user_registered,
+                                                       auth.signals.unconfirmed_user_created]))
+        assert_true(mock_send_confirm_email.called)
+
     def test_resend_confirmation_get(self):
         res = self.app.get('/resend/')
         assert_equal(res.status_code, 200)

@@ -472,6 +472,15 @@ def make_url_map(app):
             OsfWebRenderer('resend.mako', render_mako_string, trust=False)
         ),
 
+        # TODO: Remove `auth_register_post`
+        Rule(
+            '/register/',
+            'post',
+            auth_views.auth_register_post,
+            OsfWebRenderer('public/login.mako', trust=False)
+        ),
+        Rule('/api/v1/register/', 'post', auth_views.register_user, json_renderer),
+
         Rule(
             [
                 '/login/',
