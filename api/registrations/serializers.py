@@ -19,18 +19,13 @@ from api.base.serializers import (IDField, RelationshipField, LinksField, HideIf
                                   FileCommentRelationshipField, NodeFileHyperLinkField, HideIfRegistration, JSONAPIListField)
 
 
-class RegistrationSerializer(NodeSerializer):
+class BaseRegistrationSerializer(NodeSerializer):
 
     title = ser.CharField(read_only=True)
     description = ser.CharField(read_only=True)
     category_choices = NodeSerializer.category_choices
     category_choices_string = NodeSerializer.category_choices_string
     category = HideIfWithdrawal(ser.ChoiceField(read_only=True, choices=category_choices, help_text="Choices: " + category_choices_string))
-
-    draft_registration = ser.CharField(write_only=True)
-    registration_choice = ser.ChoiceField(write_only=True, choices=['immediate', 'embargo'])
-    lift_embargo = ser.DateTimeField(write_only=True, default=None, input_formats=['%Y-%m-%dT%H:%M:%S'])
-
     date_modified = HideIfWithdrawal(ser.DateTimeField(read_only=True))
     fork = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_fork'))
     collection = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_collection'))
@@ -250,16 +245,19 @@ class RegistrationSerializer(NodeSerializer):
         type_ = 'registrations'
 
 
-class RegistrationDetailSerializer(RegistrationSerializer):
+class RegistrationSerializer(BaseRegistrationSerializer):
     """
-    Overrides NodeSerializer to make id required.
+    Overrides BaseRegistrationSerializer to add draft_registration, registration_choice, and lift_embargo fields
     """
+    draft_registration = ser.CharField(write_only=True)
+    registration_choice = ser.ChoiceField(write_only=True, choices=['immediate', 'embargo'])
+    lift_embargo = ser.DateTimeField(write_only=True, default=None, input_formats=['%Y-%m-%dT%H:%M:%S'])
 
-    def __init__(self, *args, **kwargs):
-        remove_fields = ['draft_registration', 'registration_choice', 'lift_embargo']
-        for field in remove_fields:
-            self.fields.pop(field)
-        super(RegistrationDetailSerializer, self).__init__(*args, **kwargs)
+
+class RegistrationDetailSerializer(BaseRegistrationSerializer):
+    """
+    Overrides BaseRegistrationSerializer to make id required.
+    """
 
     id = IDField(source='_id', required=True)
 
