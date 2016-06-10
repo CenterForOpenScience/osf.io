@@ -90,7 +90,7 @@ class ArchiverTask(celery.Task):
                 each for each in
                 dst.archive_job.target_info()
                 if each is not None
-                ]
+            ]
         elif isinstance(exc, ArchivedFileNotFound):
             dst.archive_status = ARCHIVER_FILE_NOT_FOUND
             errors = {
