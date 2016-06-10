@@ -92,11 +92,7 @@ var TitleBar = {
     view: function(ctrl, params) {
         var result = params.result;
         return m('span', {}, [
-            m('a[href=' + result.uris.canonicalUri + ']', {
-                config: function(el, ini, ctx) {
-                    // mathrender.typeset(el) // Typeset each title as it's loaded into the DOM.
-                }
-            }, ((result.title || 'No title provided'))),
+            m('a[href=' + result.uris.canonicalUri + ']', ((result.title || 'No title provided'))),
             m('br'),
             m.component(Description, params)
         ]);
@@ -118,18 +114,11 @@ var Description = {
             return m('', [
                 m('p.readable.pointer', {
                     onclick: showOnClick,
-                    config: function(el, ini, ctx) {
-                        // mathrender.typeset(el) // Typeset each desctiption as it's loaded into the DOM.
-                    }
                 }, ctrl.showAll() ? result.description : $.truncate(result.description, {length: 350})),
                 m('a.sr-only', {href: '#', onclick: showOnClick}, ctrl.showAll() ? 'See less' : 'See more')
             ]);
         } else {
-            return m('p.readable', {
-                config: function(el, ini, ctx) {
-                    // mathrender.typeset(el) // Typeset each description as it's loaded into the DOM.
-                }
-            }, result.description);
+            return m('p.readable', result.description);
         }
     }
 };
