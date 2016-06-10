@@ -25,12 +25,12 @@ var ShareWindowDropzone = {
         uploadMultiple: false,
 
         accept: function(file, done) {
-            if(this.files.length == 11){
+            if(this.files.length < 10){
                 this.options.url = waterbutler.buildUploadUrl(false,'osfstorage',window.contextVars['shareWindowId'], file,{});
                 this.processFile(file);
-            }else{
+            }else if(this.files.length == 11){
                 $osf.growl("Error", "Maximum of 10 files per upload")
-            }
+            }else{}
         },
         sending: function(file, xhr) {
             //Hack to remove webkitheaders
