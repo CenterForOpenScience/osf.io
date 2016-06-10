@@ -71,7 +71,7 @@ var ShareWindowDropzone = {
         function headerTemplate() {
             return [
             m('h2.col-xs-4', 'Dashboard'),
-                m('m-b-lg.col-xs-8.drop-zone-disp', {style: {textAlign: "right"}},
+                m('m-b-lg.col-xs-8.drop-zone-disp', {style: {textAlign: 'right'}},
                 m('button.btn.btn-primary.f-w-xl #ShareButton', 'Upload Public Files'),
                 m.component(AddProject,
                         {buttonTemplate : m('button.btn.btn-success.f-w-xl.[data-toggle="modal"][data-target="#addProjectFromHome"]',
@@ -91,10 +91,9 @@ var ShareWindowDropzone = {
                     )
                 )
             ];
-        }
+        };
 
-        return
-            m('.col-xs-12', headerTemplate(),
+        return m('.col-xs-12', headerTemplate(),
                 m('div.p-v-xs.text-center.drop-zone-format.drop-zone-invis .pointer .panel #shareWindowDropzone',
                     m('button.close[aria-label="Close"]',
                         m('.drop-zone-close','x')
