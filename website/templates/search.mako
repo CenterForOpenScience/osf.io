@@ -140,7 +140,7 @@
         <!-- /ko -->
     </script>
     <script type="text/html" id="file">
-        <h4><a data-bind="attr: {href: deep_url}, text: name"></a> (<span data-bind="if: is_registration">Registration </span>File)</h4>
+        <h4><a data-bind="attr: {href: deep_url}, text: name"></a> (<span class="text-danger" data-bind="if: is_retracted">Withdrawn </span><span data-bind="if: is_registration">Registration </span>File)</h4>
         <h5>
             <!-- ko if: parent_url --> From: <a data-bind="attr: {href: parent_url}, text: parent_title || '' + ' /'"></a> <!-- /ko -->
             <!-- ko if: !parent_url --> From: <span data-bind="if: parent_title"><span data-bind="text: parent_title"></span> /</span> <!-- /ko -->

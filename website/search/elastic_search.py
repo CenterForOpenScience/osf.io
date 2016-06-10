@@ -466,6 +466,7 @@ def update_file(file_, index=None, delete=False):
         'node_title': file_.node.title,
         'parent_id': file_.node.parent_node._id if file_.node.parent_node else None,
         'is_registration': file_.node.is_registration,
+        'is_retracted': file_.node.is_retracted
     }
 
     es.index(
