@@ -28,7 +28,10 @@ var ShareWindowDropzone = {
         clickable: '#shareWindowDropzone',
         parallelUploads: 1,
         autoProcessQueue: false,
-        uploadMultiple: false,
+        withCredentials: true,
+        method:'put',
+        border: '2px dashed #ccc',
+        maxFilesize: 1,
 
         accept: function(file, done) {
             this.options.url = waterbutler.buildUploadUrl(false,'osfstorage',window.contextVars['shareWindowId'], file,{});
@@ -43,19 +46,22 @@ var ShareWindowDropzone = {
         },
         success: function(file, xhr) {
             this.processQueue();
-        }
+            file.previewElement.classList.add("dz-success");
+        },
+
+        error: function(file, message) {
+            file.previewElement.classList.add("dz-error");
+        },
     };
 
     $('#shareWindowDropzone').dropzone({
-        withCredentials: true,
         url:'placeholder',
-        method:'put',
-        border: '2px dashed #ccc',
-
-        previewTemplate: '<div class="dz-preview dz-file-preview"><div class="dz-details"><div class="dz-filename"><span data-dz-name></span></div>' +
+        previewTemplate: '<div class="dz-preview dz-processing dz-file-preview"><div class="dz-details"><div class="dz-filename"><span data-dz-name></span></div>' +
         '<div class="dz-size" data-dz-size></div><img data-dz-thumbnail /></div><div class="dz-progress"><span class="dz-upload" data-dz-uploadprogress></span></div>' +
-        '<div class="dz-success-mark"></div><div class="dz-error-mark"></div><div class="dz-error-message"><span data-dz-errormessage></span></div></div>'
+        '<div class="dz-success-mark"><span>✔</span></div><div class="dz-error-mark"><span>✘</span></div><div class="dz-error-message"><span data-dz-errormessage></span></div></div>',
     });
+
+
 
       $('#ShareButton').click(function(e) {
         $('#ShareButton').attr('disabled', 'disabled');
