@@ -8,13 +8,19 @@ var m = require('mithril');
 // We need to use a CSS ID in order for the controls to work
 var CAROUSEL_ID = '__carousel';
 
+var controlStyle = {
+    'padding-top': '20px',
+    'font-size': '50px',
+    'width': '5%',
+    'background-image': 'none'
+};
 
 // TODO: Make these controls look better
 var CarouselControls = {
     view: function() {
         return m('div', [
-            m('a.left.carousel-control', {href: '#' + CAROUSEL_ID, 'data-slide': 'prev', style: {'padding-top': '5%', width: '5%', 'background-image': 'none'}}, '‹'),
-            m('a.right.carousel-control', {href: '#' + CAROUSEL_ID, 'data-slide': 'next', style: {'padding-top': '5%', width: '5%', 'background-image': 'none'}}, '›')
+            m('a.left.carousel-control', {href: '#' + CAROUSEL_ID, 'data-slide': 'prev', style: controlStyle}, '‹'),
+            m('a.right.carousel-control', {href: '#' + CAROUSEL_ID, 'data-slide': 'next', style: controlStyle}, '›')
         ]);
     }
 };
