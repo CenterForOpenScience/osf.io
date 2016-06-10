@@ -108,7 +108,7 @@ var NodesPrivacyViewModel = function(node, onSetPrivacy) {
 
     self.parentIsEmbargoed = node.is_embargoed;
     self.parentIsPublic = node.is_public;
-    self.isComponent = node.node_type === 'component';
+    self.parentNodeType = node.node_type;
     self.treebeardUrl = window.contextVars.node.urls.api  + 'tree/';
     self.nodesOriginal = {};
     self.nodesChanged = ko.observable();
@@ -145,7 +145,7 @@ var NodesPrivacyViewModel = function(node, onSetPrivacy) {
 
         return {
             warning: self.parentIsPublic ?
-                self.isComponent ? 'Make component private' : 'Make project private' :
+                'Make ' + self.parentNodeType + ' private' :
                 'Warning',
             select: 'Change privacy settings',
             confirm: 'Projects and components affected'
