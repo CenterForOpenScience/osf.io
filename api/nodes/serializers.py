@@ -506,7 +506,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
     def get_id(self, obj):
         node_id = self.context['request'].parser_context['kwargs']['node_id']
         user_id = obj._id
-        return node_id + user_id
+        return '{}-{}'.format(node_id, user_id)
 
     def get_absolute_url(self, obj):
         node_id = self.context['request'].parser_context['kwargs']['node_id']
