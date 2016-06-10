@@ -123,25 +123,27 @@ class OsfStorageFileNode(FileNode):
             raise exceptions.FileNodeCheckedOutError()
 
         action = NodeLog.CHECKED_OUT if checkout else NodeLog.CHECKED_IN
-        self.checkout = checkout
 
-        self.node.add_log(
-            action=action,
-            params={
-                'kind': self.kind,
-                'project': self.node.parent_id,
-                'node': self.node._id,
-                'urls': {
-                    # web_url_for unavailable -- called from within the API, so no flask app
-                    'download': "/project/{}/files/{}/{}/?action=download".format(self.node._id, self.provider, self._id),
-                    'view': "/project/{}/files/{}/{}".format(self.node._id, self.provider, self._id)},
-                'path': self.materialized_path
-            },
-            auth=Auth(user),
-        )
+        if self.is_checked_out and action == NodeLog.CHECKED_IN or not self.is_checked_out and action == NodeLog.CHECKED_OUT:
+            self.checkout = checkout
 
-        if save:
-            self.save()
+            self.node.add_log(
+                action=action,
+                params={
+                    'kind': self.kind,
+                    'project': self.node.parent_id,
+                    'node': self.node._id,
+                    'urls': {
+                        # web_url_for unavailable -- called from within the API, so no flask app
+                        'download': "/project/{}/files/{}/{}/?action=download".format(self.node._id, self.provider, self._id),
+                        'view': "/project/{}/files/{}/{}".format(self.node._id, self.provider, self._id)},
+                    'path': self.materialized_path
+                },
+                auth=Auth(user),
+            )
+
+            if save:
+                self.save()
 
     def save(self):
         self.path = ''
