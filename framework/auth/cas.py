@@ -54,15 +54,16 @@ class CasClient(object):
 
     def __init__(self, base_url):
         self.BASE_URL = base_url
+        # web_url_for() build error when get_login_url is called from _must_be_contributor_factory
+        self.goodbye_url = settings.DOMAIN + 'goodbye/'
+        self.index_url = settings.DOMAIN
 
     def get_login_url(self, service_url, username=None, verification_key=None):
-        # avoid circular import
-        from website.util import web_url_for
 
         url = furl.furl(self.BASE_URL)
         url.path.segments.append('login')
-        if service_url == web_url_for('goodbye', _absolute=True):
-            service_url = web_url_for('index', _absolute=True)
+        if service_url == self.goodbye_url:
+            service_url = self.index_url
         url.args['service'] = service_url
         if username and verification_key:
             # TODO: remove auto=True from url when new CAS (PR#18) is deployed

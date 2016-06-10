@@ -196,6 +196,7 @@ def check_key_expired(key, node, url):
 
     return url
 
+
 def _must_be_contributor_factory(include_public, include_view_only_anon=True):
     """Decorator factory for authorization wrappers. Decorators verify whether
     the current user is a contributor on the current project, or optionally
