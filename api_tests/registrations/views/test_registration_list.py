@@ -5,6 +5,7 @@ from urlparse import urlparse
 from nose.tools import *  # flake8: noqa
 
 from website.project.model import ensure_schemas
+from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.models import Node, MetaSchema, DraftRegistration
 from framework.auth.core import Auth, Q
 from api.base.settings.defaults import API_BASE
@@ -375,7 +376,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
 
         self.schema = MetaSchema.find_one(
             Q('name', 'eq', 'Replication Recipe (Brandt et al., 2013): Post-Completion') &
-            Q('schema_version', 'eq', 2)
+            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
         )
 
         self.draft_registration = DraftRegistrationFactory(
@@ -479,7 +480,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
     def test_required_top_level_questions_must_be_answered_on_draft(self, mock_enqueue):
         prereg_schema = MetaSchema.find_one(
             Q('name', 'eq', 'Prereg Challenge') &
-            Q('schema_version', 'eq', 2)
+            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
         )
 
         prereg_draft_registration = DraftRegistrationFactory(
@@ -511,7 +512,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
     def test_required_top_level_questions_must_be_answered_on_draft(self, mock_enqueue):
         prereg_schema = MetaSchema.find_one(
             Q('name', 'eq', 'Prereg Challenge') &
-            Q('schema_version', 'eq', 2)
+            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
         )
 
         prereg_draft_registration = DraftRegistrationFactory(
@@ -543,7 +544,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
     def test_required_second_level_questions_must_be_answered_on_draft(self, mock_enqueue):
         prereg_schema = MetaSchema.find_one(
             Q('name', 'eq', 'Prereg Challenge') &
-            Q('schema_version', 'eq', 2)
+            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
         )
 
         prereg_draft_registration = DraftRegistrationFactory(
@@ -575,7 +576,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
     def test_required_third_level_questions_must_be_answered_on_draft(self, mock_enqueue):
         prereg_schema = MetaSchema.find_one(
             Q('name', 'eq', 'Prereg Challenge') &
-            Q('schema_version', 'eq', 2)
+            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
         )
 
         prereg_draft_registration = DraftRegistrationFactory(

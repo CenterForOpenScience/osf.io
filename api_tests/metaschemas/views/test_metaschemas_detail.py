@@ -1,6 +1,6 @@
 from nose.tools import *  # flake8: noqa
 
-from website.project.metadata.schemas import ACTIVE_META_SCHEMAS
+from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, LATEST_SCHEMA_VERSION
 from website.project.model import ensure_schemas, MetaSchema, Q
 
 from api.base.settings.defaults import API_BASE
@@ -14,7 +14,7 @@ class TestMetaSchemaDetail(ApiTestCase):
         super(TestMetaSchemaDetail, self).setUp()
         self.user = AuthUserFactory()
         ensure_schemas()
-        self.schema = MetaSchema.find_one(Q('name', 'eq', 'Prereg Challenge') & Q('schema_version', 'eq', 2))
+        self.schema = MetaSchema.find_one(Q('name', 'eq', 'Prereg Challenge') & Q('schema_version', 'eq', LATEST_SCHEMA_VERSION))
         self.url = '/{}metaschemas/{}/'.format(API_BASE, self.schema._id)
 
     def test_pass_authenticated_user_can_retrieve_schema(self):

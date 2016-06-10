@@ -2,6 +2,7 @@ from nose.tools import *  # flake8: noqa
 
 from website.project.model import ensure_schemas
 from website.models import MetaSchema
+from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from modularodm import Q
 from website.util import permissions
 from website.settings import PREREG_ADMIN_TAG
@@ -55,7 +56,7 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
         ensure_schemas()
         self.schema = MetaSchema.find_one(
             Q('name', 'eq', 'Open-Ended Registration') &
-            Q('schema_version', 'eq', 2)
+            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
         )
 
         self.draft_registration = DraftRegistrationFactory(
@@ -122,7 +123,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         ensure_schemas()
         self.open_ended_metaschema = MetaSchema.find_one(
             Q('name', 'eq', 'Open-Ended Registration') &
-            Q('schema_version', 'eq', 2)
+            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
         )
 
         self.payload = {
@@ -241,7 +242,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
     def test_required_metaschema_questions_not_required_on_post(self):
         prereg_schema = MetaSchema.find_one(
             Q('name', 'eq', 'Prereg Challenge') &
-            Q('schema_version', 'eq', 2)
+            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
         )
 
         prereg_draft_registration = DraftRegistrationFactory(
@@ -287,7 +288,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         ensure_schemas()
         self.schema = MetaSchema.find_one(
             Q('name', 'eq', 'OSF-Standard Pre-Data Collection Registration') &
-            Q('schema_version', 'eq', 2)
+            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
         )
         self.payload['data']['attributes']['registration_supplement'] = self.schema._id
         self.payload['data']['attributes']['registration_metadata'] = {}
@@ -302,7 +303,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         ensure_schemas()
         self.schema = MetaSchema.find_one(
             Q('name', 'eq', 'OSF-Standard Pre-Data Collection Registration') &
-            Q('schema_version', 'eq', 2)
+            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
         )
         self.payload['data']['attributes']['registration_supplement'] = self.schema._id
         self.payload['data']['attributes']['registration_metadata'] = {}
@@ -319,7 +320,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         ensure_schemas()
         self.schema = MetaSchema.find_one(
             Q('name', 'eq', 'OSF-Standard Pre-Data Collection Registration') &
-            Q('schema_version', 'eq', 2)
+            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
         )
         self.payload['data']['attributes']['registration_supplement'] = self.schema._id
         self.payload['data']['attributes']['registration_metadata'] = {}
@@ -336,7 +337,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         ensure_schemas()
         self.schema = MetaSchema.find_one(
             Q('name', 'eq', 'OSF-Standard Pre-Data Collection Registration') &
-            Q('schema_version', 'eq', 2)
+            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
         )
 
         self.payload['data']['attributes']['registration_supplement'] = self.schema._id

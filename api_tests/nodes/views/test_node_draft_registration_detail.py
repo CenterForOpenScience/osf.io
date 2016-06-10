@@ -3,6 +3,7 @@ from nose.tools import *  # flake8: noqa
 
 from modularodm import Q
 from website.models import MetaSchema
+from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from api.base.settings.defaults import API_BASE
 from website.settings import PREREG_ADMIN_TAG
 from website.project.model import ensure_schemas
@@ -24,7 +25,7 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
 
         self.schema = MetaSchema.find_one(
             Q('name', 'eq', 'OSF-Standard Pre-Data Collection Registration') &
-            Q('schema_version', 'eq', 2)
+            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
         )
 
         self.draft_registration = DraftRegistrationFactory(
@@ -86,7 +87,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
 
         self.schema = MetaSchema.find_one(
             Q('name', 'eq', 'OSF-Standard Pre-Data Collection Registration') &
-            Q('schema_version', 'eq', 2)
+            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
         )
 
         self.draft_registration = DraftRegistrationFactory(
@@ -97,7 +98,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
 
         self.prereg_schema = MetaSchema.find_one(
             Q('name', 'eq', 'Prereg Challenge') &
-            Q('schema_version', 'eq', 2)
+            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
         )
 
         self.prereg_draft_registration = DraftRegistrationFactory(
@@ -384,7 +385,7 @@ class TestDraftRegistrationPatch(DraftRegistrationTestCase):
 
         self.schema = MetaSchema.find_one(
             Q('name', 'eq', 'OSF-Standard Pre-Data Collection Registration') &
-            Q('schema_version', 'eq', 2)
+            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
         )
 
         self.draft_registration = DraftRegistrationFactory(
@@ -395,7 +396,7 @@ class TestDraftRegistrationPatch(DraftRegistrationTestCase):
 
         self.prereg_schema = MetaSchema.find_one(
             Q('name', 'eq', 'Prereg Challenge') &
-            Q('schema_version', 'eq', 2)
+            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
         )
 
         self.prereg_draft_registration = DraftRegistrationFactory(
@@ -460,7 +461,7 @@ class TestDraftRegistrationDelete(DraftRegistrationTestCase):
 
         schema = MetaSchema.find_one(
             Q('name', 'eq', 'OSF-Standard Pre-Data Collection Registration') &
-            Q('schema_version', 'eq', 2)
+            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
         )
 
         self.draft_registration = DraftRegistrationFactory(
@@ -517,7 +518,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(DraftRegistrationTe
 
         self.prereg_schema = MetaSchema.find_one(
             Q('name', 'eq', 'Prereg Challenge') &
-            Q('schema_version', 'eq', 2)
+            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
         )
 
         self.prereg_draft_registration = DraftRegistrationFactory(

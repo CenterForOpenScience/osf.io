@@ -4,7 +4,7 @@ from rest_framework.exceptions import NotFound
 
 from framework.auth.oauth_scopes import CoreScopes
 
-from website.project.metadata.schemas import ACTIVE_META_SCHEMAS
+from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, LATEST_SCHEMA_VERSION
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
 from api.base.utils import get_object_or_error
@@ -53,7 +53,7 @@ class MetaSchemasList(JSONAPIBaseView, generics.ListAPIView):
     # overrides ListCreateAPIView
     def get_queryset(self):
         schemas = MetaSchema.find(Q('name', 'in', ACTIVE_META_SCHEMAS) &
-                                  Q('schema_version', 'eq', 2))
+                                  Q('schema_version', 'eq', LATEST_SCHEMA_VERSION))
         return schemas
 
 
@@ -90,6 +90,6 @@ class MetaSchemaDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     def get_object(self):
         schema_id = self.kwargs['metaschema_id']
         schema = get_object_or_error(MetaSchema, schema_id)
-        if schema.schema_version != 2 or schema.name not in ACTIVE_META_SCHEMAS:
+        if schema.schema_version != LATEST_SCHEMA_VERSION or schema.name not in ACTIVE_META_SCHEMAS:
             raise NotFound
         return schema

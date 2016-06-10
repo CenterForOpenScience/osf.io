@@ -9,7 +9,7 @@ from modularodm.exceptions import ValidationValueError
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 
-from website.project.metadata.schemas import ACTIVE_META_SCHEMAS
+from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, LATEST_SCHEMA_VERSION
 from website.models import Node, User, Comment, Institution, MetaSchema, DraftRegistration
 from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
@@ -684,7 +684,7 @@ class DraftRegistrationSerializer(JSONAPISerializer):
 
         schema_id = validated_data.pop('registration_schema').get('_id')
         schema = get_object_or_error(MetaSchema, schema_id)
-        if schema.schema_version != 2 or schema.name not in ACTIVE_META_SCHEMAS:
+        if schema.schema_version != LATEST_SCHEMA_VERSION or schema.name not in ACTIVE_META_SCHEMAS:
             raise exceptions.ValidationError('Registration supplement must be an active schema.')
 
         draft = DraftRegistration.create_from_node(node=node, user=initiator, schema=schema)
