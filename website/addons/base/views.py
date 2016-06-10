@@ -662,12 +662,12 @@ def addon_view_file(auth, node, file_node, version):
 
     ret = serialize_node(node, auth, primary=True)
 
-    if file_node._id not in node.file_guid_to_share_uuids:
-        node.file_guid_to_share_uuids[file_node._id] = uuid.uuid4()
+    if file_node._id + '-' + version._id not in node.file_guid_to_share_uuids:
+        node.file_guid_to_share_uuids[file_node._id + '-' + version._id] = uuid.uuid4()
         node.save()
 
     if ret['user']['can_edit']:
-        sharejs_uuid = str(node.file_guid_to_share_uuids[file_node._id])
+        sharejs_uuid = str(node.file_guid_to_share_uuids[file_node._id + '-' + version._id])
     else:
         sharejs_uuid = None
 

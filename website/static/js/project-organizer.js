@@ -242,7 +242,7 @@ function _poMultiselect(event, tree) {
     tb.options.updateSelected(tb.multiselected());
     if (tb.multiselected().length === 1) {
         tb.select('#tb-tbody').removeClass('unselectable');
-        if (event.currentTarget != null) {
+        if (event.currentTarget != null && event.target.className.indexOf('po-draggable') !== -1) {
             $osf.trackClick('myProjects', 'projectOrganizer', 'single-project-selected');
         }
     } else if (tb.multiselected().length > 1) {
