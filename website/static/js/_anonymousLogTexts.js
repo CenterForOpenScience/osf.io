@@ -1,7 +1,7 @@
 var anonymousLogActions = {
-    'project_created' : 'A user A user created a project',
-    'project_registered' : 'A user A user registered a project',
-    'project_deleted' : 'A user A user deleted a project',
+    'project_created' : 'A user created a project',
+    'project_registered' : 'A user registered a project',
+    'project_deleted' : 'A user deleted a project',
     'created_from' : 'A user created a project based on a template',
     'pointer_created' : 'A user created a link to a project',
     'pointer_forked' : 'A user forked a link to a project',
