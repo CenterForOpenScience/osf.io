@@ -13,12 +13,6 @@ var Dropzone = require('dropzone');
 window.ondragover = function(e) { e.preventDefault(); };
 window.ondrop = function(e) { e.preventDefault(); };
 
-
-var xhrconfig = function(xhr) {
-    xhr.withCredentials = true;
-
-};
-
 var ShareWindowDropzone = {
 
   controller: function() {
