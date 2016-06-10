@@ -55,7 +55,7 @@
         <div class="container">
             <div class="row">
               <div class="col-md-8 col-md-offset-4 col-lg-6 col-lg-offset-3">
-                    <h2><strong>Stay up to date</strong></h2>
+                  <h2><strong>Stay informed about OSF Preprints</strong></h2>
                 </div>
             </div>
             <div class="row">
