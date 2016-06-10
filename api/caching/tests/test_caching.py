@@ -158,11 +158,6 @@ class TestVarnish(DbTestCase):
                 embed_keys.sort()
                 assert item__embed_keys == embed_keys, 'Embed key mismatch: \n{}\n{}'.format(item__embed_keys,
                                                                                              embed_keys)
-            if 'relationships' in item.keys():
-                for rel_key in item['relationships'].keys():
-                    assert unicode(
-                        rel_key) not in embed_keys, 'Relationship mismatch: {}'.format(
-                        rel_key)
 
     @unittest.skipIf(not django_settings.ENABLE_VARNISH, 'Varnish is disabled')
     def test_cache_invalidation(self):
