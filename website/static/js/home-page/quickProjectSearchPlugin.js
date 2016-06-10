@@ -539,28 +539,28 @@ var QuickSearchProject = {
     }
 };
 
-function ancestorName(node, ancestor, title) {
-    var name;
-    var request = lodashGet(node, 'embeds.' + ancestor + '.data.attributes.title', '');
-    var error = lodashGet(node, 'embeds.' + ancestor + '.errors[0].detail', '');
-        switch(error) {
+function getAncestorDescriptor(node, nodeTitle, ancestor) {
+    var ancestorDescriptor;
+    var ancestorTitleRequest = lodashGet(node, 'embeds.' + ancestor + '.data.attributes.title', '');
+    var errorRequest = lodashGet(node, 'embeds.' + ancestor + '.errors[0].detail', '');
+        switch(errorRequest) {
             case '':
-                if (title === request | request === '') {
-                    name = '';
+                if (ancestorTitleRequest === nodeTitle | ancestorTitleRequest === '') {
+                    ancestorDescriptor = '';
                 }
                 else {
-                    name = request.replace('.', '') + ' / ';
+                    ancestorDescriptor = ancestorTitleRequest.replace('.', '') + ' / ';
                 }
                 break;
 
             case 'You do not have permission to perform this action.':
-                name = m('em', 'Private ' + ancestor + ' / ');
+                ancestorDescriptor = m('em', 'Private ' + ancestor + ' / ');
                 break;
 
             default:
-                name = m('em', 'Name Unavailable / ');
+                ancestorDescriptor = m('em', 'Name Unavailable / ');
         }
-    return name;
+    return ancestorDescriptor;
 }
 
 var QuickSearchNodeDisplay = {
@@ -577,8 +577,8 @@ var QuickSearchNodeDisplay = {
                 var project = args.nodes()[n];
                 var numContributors = project.embeds.contributors.links.meta.total;
                 var title = project.attributes.title;
-                var root = ancestorName(project, 'root', title);
-                var parent = ancestorName(project, 'parent', title);
+                var root = getAncestorDescriptor(project, title, 'root');
+                var parent = getAncestorDescriptor(project, title, 'parent');
 
                 if (root === parent) {
                     parent = '';
