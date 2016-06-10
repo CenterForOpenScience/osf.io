@@ -3,10 +3,10 @@ from rest_framework import permissions
 from rest_framework import exceptions
 
 from website.models import Node, Pointer, User, Institution, DraftRegistration
+from website.project.metadata.utils import is_prereg_admin
 from website.util import permissions as osf_permissions
 
 from api.base.utils import get_user_auth
-from api.registrations.utils import is_prereg_admin
 
 
 class ContributorOrPublic(permissions.BasePermission):

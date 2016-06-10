@@ -3,12 +3,12 @@ from nose.tools import *  # flake8: noqa
 from website.project.model import ensure_schemas
 from website.models import MetaSchema
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
+from website.project.metadata.utils import create_jsonschema_from_metaschema
 from modularodm import Q
 from website.util import permissions
 from website.settings import PREREG_ADMIN_TAG
 
 from api.base.settings.defaults import API_BASE
-from api.registrations.utils import create_jsonschema_from_metaschema
 
 from tests.base import ApiTestCase
 from tests.factories import (
@@ -35,7 +35,7 @@ class DraftRegistrationTestCase(ApiTestCase):
 
     def prereg_metadata(self, draft):
         test_metadata = {}
-        json_schema = create_jsonschema_from_metaschema(draft)
+        json_schema = create_jsonschema_from_metaschema(draft.registration_schema.schema)
 
         for key, value in json_schema['properties'].iteritems():
             response = 'Test response'

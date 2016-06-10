@@ -1,5 +1,3 @@
-import jsonschema
-
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 
@@ -10,13 +8,13 @@ from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 
 from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, LATEST_SCHEMA_VERSION
+from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.models import Node, User, Comment, Institution, MetaSchema, DraftRegistration
 from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
 from website.project.model import NodeUpdateError
 
 from api.base.utils import get_user_auth, get_object_or_error, absolute_reverse
-from api.registrations.utils import create_jsonschema_from_metaschema, is_prereg_admin_not_project_admin
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
                                   TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly,
                                   HideIfRegistration, RestrictedDictSerializer,
@@ -688,27 +686,17 @@ class DraftRegistrationSerializer(JSONAPISerializer):
             raise exceptions.ValidationError('Registration supplement must be an active schema.')
 
         draft = DraftRegistration.create_from_node(node=node, user=initiator, schema=schema)
+        reviewer = is_prereg_admin_not_project_admin(self.context['request'], draft)
+
         if metadata:
-            self.validate_metadata(draft, metadata)
+            try:
+                # Required fields are only required when creating the actual registration, not updating the draft.
+                draft.validate_metadata(metadata=metadata, reviewer=reviewer, required_fields=False)
+            except ValidationValueError as e:
+                raise exceptions.ValidationError(e.message)
             draft.update_metadata(metadata)
             draft.save()
         return draft
-
-    def validate_metadata(self, draft, metadata):
-        """
-        Validates registration_metadata field.  Called in update and create methods because the draft is
-        needed in the context.
-        """
-        reviewer = is_prereg_admin_not_project_admin(self.context['request'], draft)
-        # Required fields are only required when creating the actual registration, not updating the draft.
-        schema = create_jsonschema_from_metaschema(draft, required_fields=False, is_reviewer=reviewer)
-        try:
-            jsonschema.validate(metadata, schema)
-        except jsonschema.ValidationError as e:
-            raise exceptions.ValidationError(e.message)
-        except jsonschema.SchemaError as e:
-            raise exceptions.ValidationError(e.message)
-        return
 
     class Meta:
         type_ = 'draft_registrations'
@@ -730,8 +718,13 @@ class DraftRegistrationDetailSerializer(DraftRegistrationSerializer):
         Update draft instance with the validated metadata.
         """
         metadata = validated_data.pop('registration_metadata', None)
+        reviewer = is_prereg_admin_not_project_admin(self.context['request'], draft)
         if metadata:
-            self.validate_metadata(draft, metadata)
+            try:
+                # Required fields are only required when creating the actual registration, not updating the draft.
+                draft.validate_metadata(metadata=metadata, reviewer=reviewer, required_fields=False)
+            except ValidationValueError as e:
+                raise exceptions.ValidationError(e.message)
             draft.update_metadata(metadata)
             draft.save()
         return draft

@@ -1,5 +1,4 @@
 import json
-import jsonschema
 
 from modularodm.exceptions import ValidationValueError
 
@@ -7,7 +6,7 @@ from rest_framework import serializers as ser
 from rest_framework import exceptions
 
 from api.base.utils import absolute_reverse, get_user_auth
-from api.registrations.utils import create_jsonschema_from_metaschema
+from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.exceptions import NodeStateError
 from website.project.model import NodeUpdateError
 
@@ -170,8 +169,12 @@ class BaseRegistrationSerializer(NodeSerializer):
         draft = validated_data.pop('draft')
         registration_choice = validated_data.pop('registration_choice', 'immediate')
         embargo_lifted = validated_data.pop('lift_embargo', None)
+        reviewer = is_prereg_admin_not_project_admin(self.context['request'], draft)
 
-        self.check_required_questions_answered(draft)
+        try:
+            draft.validate_metadata(metadata=draft.registration_metadata, reviewer=reviewer, required_fields=True)
+        except ValidationValueError as e:
+            raise exceptions.ValidationError(e.message)
 
         registration = draft.register(auth, save=True)
 
@@ -191,17 +194,6 @@ class BaseRegistrationSerializer(NodeSerializer):
 
         registration.save()
         return registration
-
-    def check_required_questions_answered(self, draft):
-        metadata = draft.registration_metadata
-        schema = create_jsonschema_from_metaschema(draft, required_fields=True)
-        try:
-            jsonschema.validate(metadata, schema)
-        except jsonschema.ValidationError as e:
-            raise exceptions.ValidationError(e.message)
-        except jsonschema.SchemaError as e:
-            raise exceptions.ValidationError(e.message)
-        return
 
     def get_registered_meta(self, obj):
         if obj.registered_meta:

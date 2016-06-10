@@ -9,6 +9,7 @@ import datetime
 import urlparse
 from collections import OrderedDict
 import warnings
+import jsonschema
 
 import pytz
 from django.core.urlresolvers import reverse
@@ -55,6 +56,7 @@ from website.util.permissions import expand_permissions
 from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS, ADMIN
 from website.project.commentable import Commentable
 from website.project.metadata.schemas import OSF_META_SCHEMAS
+from website.project.metadata.utils import create_jsonschema_from_metaschema
 from website.project.licenses import (
     NodeLicense,
     NodeLicenseRecord,
@@ -126,6 +128,22 @@ class MetaSchema(StoredObject):
     # used by django and DRF
     def get_absolute_url(self):
         return self.absolute_api_v2_url
+
+    def validate_metadata(self, *args, **kwargs):
+        """
+        Validates registration_metadata field.
+        """
+        reviewer = kwargs.pop('reviewer', False)
+        metadata = kwargs.pop('metadata', {})
+        required_fields = kwargs.pop('required_fields', False)
+        schema = create_jsonschema_from_metaschema(self.schema, required_fields=required_fields, is_reviewer=reviewer)
+        try:
+            jsonschema.validate(metadata, schema)
+        except jsonschema.ValidationError as e:
+            raise ValidationValueError(e.message)
+        except jsonschema.SchemaError as e:
+            raise ValidationValueError(e.message)
+        return
 
 def ensure_schema(schema, name, version=1):
     schema_obj = None
@@ -4010,3 +4028,9 @@ class DraftRegistration(StoredObject):
     def add_status_log(self, user, action):
         log = DraftRegistrationLog(action=action, user=user, draft=self)
         log.save()
+
+    def validate_metadata(self, *args, **kwargs):
+        """
+        Validates draft's metadata
+        """
+        return self.registration_schema.validate_metadata(*args, **kwargs)
