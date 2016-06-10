@@ -19,4 +19,4 @@ class MetaSchemaSerializer(JSONAPISerializer):
         return obj.absolute_api_v2_url
 
     class Meta:
-        type_ = 'meta_schemas'
+        type_ = 'metaschemas'

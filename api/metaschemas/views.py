@@ -22,7 +22,7 @@ class MetaSchemasList(JSONAPIBaseView, generics.ListAPIView):
 
     ##Metaschema Attributes
 
-    Metaschemas have the "meta_schemas" `type`.
+    Metaschemas have the "metaschemas" `type`.
 
         name                type               description
         ===========================================================================
@@ -63,7 +63,7 @@ class MetaSchemaDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
     ##Metaschema Attributes
 
-    Metaschemas have the "meta_schemas" `type`.
+    Metaschemas have the "metaschemas" `type`.
 
          name                type               description
         ===========================================================================
