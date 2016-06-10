@@ -3,10 +3,7 @@
 var $ = require('jquery');  // jQuery
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
 var $osf = require('js/osfHelpers');
-var Raven = require('raven-js');
 var LogText = require('js/logTextParser');
-var mC = require('js/mithrilComponents');
-
 
 /* Send with ajax calls to work with api2 */
 var xhrconfig = function (xhr) {
@@ -19,22 +16,18 @@ var LogFeed = {
 
     controller: function(options) {
         var self = this;
-
         self.node = options.node;
         self.activityLogs = m.prop();
         self.logRequestPending = false;
         self.showMoreActivityLogs = m.prop(null);
-        self.logUrlCache = {};
 
         self.getLogs = function _getLogs (url, addToExistingList) {
-            var cachedResults;
             if(!addToExistingList){
                 self.activityLogs([]); // Empty logs from other projects while load is happening;
                 self.showMoreActivityLogs(null);
             }
 
             function _processResults (result){
-                self.logUrlCache[url] = result;
                 result.data.map(function(log){
                     log.attributes.formattableDate = new $osf.FormattableDate(log.attributes.date);
                     if(addToExistingList){
@@ -47,19 +40,13 @@ var LogFeed = {
                 self.showMoreActivityLogs(result.links.next); // Set view for show more button
             }
 
-            if(self.logUrlCache[url]){
-                cachedResults = self.logUrlCache[url];
-                _processResults(cachedResults);
-            } else {
-                self.logRequestPending = true;
-                var promise = m.request({method : 'GET', url : url, config : xhrconfig});
-                promise.then(_processResults);
-                promise.then(function(){
-                    self.logRequestPending = false;
-                });
+            self.logRequestPending = true;
+            var promise = m.request({method : 'GET', url : url, config : xhrconfig});
+            promise.then(_processResults);
+            promise.then(function(){
+                self.logRequestPending = false;
                 return promise;
-            }
-
+            });
         };
 
         self.getCurrentLogs = function _getCurrentLogs (node){
@@ -78,7 +65,6 @@ var LogFeed = {
     },
 
     view : function (ctrl) {
-
         return m('.db-activity-list.m-t-md', [
             ctrl.activityLogs() ? ctrl.activityLogs().map(function(item){
                 if (ctrl.node.anonymous) { item.anonymous = true; }
@@ -97,7 +83,6 @@ var LogFeed = {
             m('.db-activity-nav.text-center', [
                 ctrl.showMoreActivityLogs() ? m('.btn.btn-sm.btn-link', { onclick: function(){
                     ctrl.getLogs(ctrl.showMoreActivityLogs(), true);
-                    $osf.trackClick('myProjects', 'information-panel', 'show-more-activity');
                 }}, [ 'Show more', m('i.fa.fa-caret-down.m-l-xs')]) : ''
             ])
         ]);
