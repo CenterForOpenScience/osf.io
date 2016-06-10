@@ -16,7 +16,7 @@ var waterbutler = require('js/waterbutler');
 
 var iconmap = require('js/iconmap');
 var storageAddons = require('json!storageAddons.json');
-var makeClient = require('js/clipboard');
+var makeClipboardClient = require('js/clipboard');
 
 // CSS
 require('css/fangorn.css');
@@ -1208,20 +1208,22 @@ function _fangornTitleColumn(item, col) {
 
 
 
-function generateURLClipBoard(item){
-		var url = waterbutler.buildTreeBeardDownload(item);
-		var cb = function(elem) {
-                makeClient(elem);
-            };
+function generateClipboard(item){
 
-         var clipboardHTML = m('div.input-group[style="width: 180px"]',
-                        [
-                            m('span.input-group-btn', m('button.btn.btn-default.btn-sm[type="button"][data-clipboard-text="'+url+ '"]', {config: cb}, m('.fa.fa-copy'))),
-                            m('input[value="'+url+'"][type="text"][readonly="readonly"][style="float:left; height: 30px;background-color: #F5F5F5;color:#333333;"]')
-                        ]
-                    );
-
-	 	return clipboardHTML;
+    var url = window.location.host + item.data.nodeUrl + 'files/' + item.data.provider + item.data.path;
+    var cb = function(elem) {
+        makeClipboardClient(elem);
+    };
+    return m('div.input-group[style="width: 180px"]',
+                       [
+                           m('span.input-group-btn',
+                               m('button.btn.btn-default.btn-sm[type="button"][data-clipboard-text="'+url+ '"]', {config: cb},
+                                   m('.fa.fa-copy')
+                               )
+                           ),
+                           m('input[value="'+url+'"][readonly="readonly"][style="height: 30px;color:#333333;"]')
+                       ]
+                   );
 
 }
 /**
@@ -1297,17 +1299,11 @@ function _fangornResolveRows(item) {
 
 if(window.contextVars.isPublicFilesCol) {
     if (item.data.kind === 'file') {
-            default_columns.push(
-        {
-            data : 'Download Link',  // Data field name
-            filter : true,
-            custom : function() {return m('a' ,{ href: waterbutler.buildTreeBeardDownload(item) },'Download File')}
-        });
-                default_columns.push(
+        default_columns.push(
         {
             data : 'Share Link',  // Data field name
             filter : true,
-            custom : function() {return generateURLClipBoard(item)}
+            custom : function() {return generateClipboard(item);}
         });
         default_columns.push(
         {
@@ -1376,16 +1372,12 @@ function _fangornColumnTitles () {
     columns.push(
     {
         title: 'Name',
-        width : '40%',
+        width : '50%',
         sort : true,
         sortType : 'text'
     }, {
-        title : 'Download Link',
-        width : '15%',
-        sort : false
-    }, {
         title : 'Share Link',
-        width : '25%',
+        width : '30%',
         sort : false
     }, {
         title : 'Size',

@@ -13,12 +13,6 @@ var Dropzone = require('dropzone');
 window.ondragover = function(e) { e.preventDefault(); };
 window.ondrop = function(e) { e.preventDefault(); };
 
-
-var xhrconfig = function(xhr) {
-    xhr.withCredentials = true;
-
-};
-
 var ShareWindowDropzone = {
 
   controller: function() {
@@ -34,8 +28,12 @@ var ShareWindowDropzone = {
         maxFilesize: 1,
 
         accept: function(file, done) {
-            this.options.url = waterbutler.buildUploadUrl(false,'osfstorage',window.contextVars['shareWindowId'], file,{});
-            this.processFile(file);
+            if(this.files.length < 10){
+                this.options.url = waterbutler.buildUploadUrl(false,'osfstorage',window.contextVars['shareWindowId'], file,{});
+                this.processFile(file);
+            }else if(this.files.length == 11){
+                $osf.growl("Error", "Maximum of 10 files per upload")
+            }else{}
         },
         sending: function(file, xhr) {
             //Hack to remove webkitheaders
@@ -83,7 +81,6 @@ var ShareWindowDropzone = {
   view: function(ctrl, args) {
               function headerTemplate() {
             return [ m('h2.col-xs-4', 'Dashboard'), m('m-b-lg.col-xs-8.pull-right.drop-zone-disp',
-                //m('button.btn.btn-primary.m-t-md.f-w-xl.pull-right #ShareButton', {onclick: function() {}}, 'Upload Public Files'),
                 m('.pull-right', m('button.btn.btn-primary.m-t-md.f-w-xl #ShareButton', {onclick: function() {}}, 'Upload Public Files'), m.component(AddProject, {
                 buttonTemplate : m('button.btn.btn-success.btn-success-high-contrast.m-t-md.f-w-xl.pull-right[data-toggle="modal"][data-target="#addProjectFromHome"]',
                     {onclick: function() {

@@ -7,7 +7,7 @@ ZeroClipboard.config({
     swfPath: '/static/vendor/bower_components/zeroclipboard/dist/ZeroClipboard.swf'
 });
 
-var makeClient = function(elm) {
+var makeClipboardClient = function(elm) {
     var $elm = $(elm);
     var client = new ZeroClipboard(elm);
 
@@ -26,4 +26,4 @@ var makeClient = function(elm) {
     return client;
 };
 
-module.exports = makeClient;
+module.exports = makeClipboardClient;

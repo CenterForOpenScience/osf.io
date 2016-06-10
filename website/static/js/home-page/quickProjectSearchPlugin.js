@@ -553,7 +553,6 @@ var QuickSearchNodeDisplay = {
                 ))
             );
         }else if(args.eligibleNodes().length === 1){
-            console.log("ttge");
               return m('.row.m-v-sm', m('.col-sm-12',
                 m('.row',
                     m('.col-sm-12', m('em', 'No results found!'))
