@@ -13,5 +13,3 @@ class ForwardSettingsFactory(ModularOdmFactory):
 
     owner = SubFactory(ProjectFactory)
     url = 'http://frozen.pizza.reviews/'
-    redirect_bool = True
-    redirect_secs = 15
