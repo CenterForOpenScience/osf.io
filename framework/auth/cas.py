@@ -65,6 +65,8 @@ class CasClient(object):
             service_url = web_url_for('index', _absolute=True)
         url.args['service'] = service_url
         if username and verification_key:
+            # TODO: remove auto=True from url when new CAS (PR#18) is deployed
+            url.args['auto'] = 'true'
             url.args['username'] = username
             url.args['verification_key'] = verification_key
         return url.url
