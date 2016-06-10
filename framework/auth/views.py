@@ -18,7 +18,8 @@ from framework.auth import logout, get_user
 from framework.auth.exceptions import DuplicateEmailError, ExpiredTokenError, InvalidTokenError
 from framework.auth.core import generate_verification_key
 from framework.auth.decorators import collect_auth, must_be_logged_in
-from framework.auth.forms import ResendConfirmationForm, ResetPasswordForm, ForgotPasswordForm
+from framework.auth.forms import (MergeAccountForm, ResendConfirmationForm,
+                                  ResetPasswordForm, ForgotPasswordForm)
 from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions.utils import remove_sessions_for_user
@@ -31,15 +32,6 @@ from website.util.time import throttle_period_expired
 
 @collect_auth
 def reset_password(auth, **kwargs):
-    """
-    Check if reset_password request bears a valid verification_key:
-        if so, redirect user to CAS with new verification_key,
-        if not, return HTTPError 400
-
-    :param auth:
-    :param kwargs:
-    :return:
-    """
     if auth.logged_in:
         return auth_logout(redirect_url=request.url)
     verification_key = kwargs['verification_key']
@@ -54,12 +46,12 @@ def reset_password(auth, **kwargs):
         raise HTTPError(400, data=error_data)
 
     if request.method == 'POST' and form.validate():
-        # new random verification key, allows CAS to authenticate the user w/o password, one-time only.
+        # new random verification key, allows CAS to authenticate the user w/o password one time only.
         user_obj.verification_key = generate_verification_key()
         user_obj.set_password(form.password.data)
         user_obj.save()
         status.push_status_message('Password reset', kind='success', trust=False)
-        # redirect to CAS and authenticate the user with a verification key.
+        # Redirect to CAS and authenticate the user with a verification key.
         return redirect(cas.get_login_url(
             web_url_for('user_account', _absolute=True),
             username=user_obj.username,
@@ -73,9 +65,7 @@ def reset_password(auth, **kwargs):
 
 
 def forgot_password_post():
-    """
-    Attempt to send user password reset or return respective error.
-    method: POST
+    """Attempt to send user password reset or return respective error.
     """
     form = ForgotPasswordForm(request.form, prefix='forgot_password')
 
@@ -87,7 +77,6 @@ def forgot_password_post():
         user_obj = get_user(email=email)
         if user_obj:
             if throttle_period_expired(user_obj.email_last_sent, settings.SEND_EMAIL_THROTTLE):
-                # new random verification key, allows OSF to check is reset_password request is valid, one-time only
                 user_obj.verification_key = generate_verification_key()
                 user_obj.email_last_sent = datetime.datetime.utcnow()
                 user_obj.save()
@@ -117,25 +106,23 @@ def forgot_password_post():
 
 @collect_auth
 def forgot_password_get(auth, *args, **kwargs):
-    """
-    Return forgot password page upon.
-    methods: GET
+    """Return forgot password page upon.
     """
     if auth.logged_in:
         return redirect(web_url_for('dashboard'))
     return {}
 
 
+###############################################################################
+# Log in
+###############################################################################
+
+
 @collect_auth
 def auth_login(auth, **kwargs):
-    # TODO: auth_login is no longer the entry point for OSF login, need to refactor
-    """
-    This view serves several purposes:
-        GET request with '/login/': show sign up page for user to create account;
-        GET request with '/login/?campaign=institution': show institution login page;
-        GET request with '/login/?campaign=prereg': requires login and go to prereg page;
-        POST request from '/forgotpassword/': land on this page after form submission and sending email,
-        and notifications of email sent shows up
+    """If GET request, show login page. If POST, attempt to log user in if
+    login form passsed; else send forgot password email.
+
     """
     campaign = request.args.get('campaign')
     next_url = request.args.get('next')
@@ -163,6 +150,8 @@ def auth_login(auth, **kwargs):
             return redirect('/')
         # redirect user to CAS for logout, return here w/o authentication
         return auth_logout(redirect_url=request.url)
+    if kwargs.get('first', False):
+        status.push_status_message('You may now log in', kind='info', trust=False)
 
     status_message = request.args.get('status', '')
     if status_message == 'expired':
@@ -184,6 +173,7 @@ def auth_login(auth, **kwargs):
     data['login_url'] = cas.get_login_url(redirect_url)
     data['institution_redirect'] = cas.get_institution_target(redirect_url)
     data['redirect_url'] = next_url
+
     data['sign_up'] = request.args.get('sign_up', False)
     data['existing_user'] = request.args.get('existing_user', None)
 
@@ -191,14 +181,9 @@ def auth_login(auth, **kwargs):
 
 
 def auth_logout(redirect_url=None):
-    """
-    Log out, delete current session, delete CAS cookie and delete OSF cookie.
-
-    :param redirect_url:
-    :return:
+    """Log out and delete cookie.
     """
     redirect_url = redirect_url or request.args.get('redirect_url') or web_url_for('goodbye', _absolute=True)
-    # TODO: should we destroy all sessions for this user?
     logout()
     if 'reauth' in request.args:
         cas_endpoint = cas.get_login_url(redirect_url)
@@ -206,17 +191,11 @@ def auth_logout(redirect_url=None):
         cas_endpoint = cas.get_logout_url(redirect_url)
     resp = redirect(cas_endpoint)
     resp.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
-
     return resp
 
 
 def auth_email_logout(token, user):
-    """
-    When a user is adding an email or merging an account, add the email to the user and log them out.
-
-    :param token:
-    :param user:
-    :return:
+    """When a user is adding an email or merging an account, add the email to the user and log them out.
     """
     redirect_url = cas.get_logout_url(service_url=cas.get_login_url(service_url=web_url_for('index', _absolute=True)))
     try:
@@ -248,16 +227,11 @@ def auth_email_logout(token, user):
 
 @collect_auth
 def confirm_email_get(token, auth=None, **kwargs):
-    """
-    View for email confirmation links.
+    """View for email confirmation links.
     Authenticates and redirects to user settings page if confirmation is
     successful, otherwise shows an "Expired Link" error.
 
     methods: GET
-    :param token:
-    :param auth:
-    :param kwargs:
-    :return:
     """
     user = User.load(kwargs['uid'])
     is_merge = 'confirm_merge' in request.args
@@ -266,9 +240,8 @@ def confirm_email_get(token, auth=None, **kwargs):
 
     if user is None:
         raise HTTPError(http.NOT_FOUND)
-
     # if the user is merging or adding an email (they already are an osf user)
-    if logout:
+    elif logout:
         return auth_email_logout(token, user)
 
     if auth and auth.user and (auth.user._id == user._id or auth.user._id == user.merged_by._id):
@@ -276,13 +249,15 @@ def confirm_email_get(token, auth=None, **kwargs):
             # determine if the user registered through a campaign
             campaign = campaigns.campaign_for_user(user)
             if campaign:
-                return redirect(campaigns.campaign_url_for(campaign))
-
-            # go to home page with push notification
+                return redirect(
+                    campaigns.campaign_url_for(campaign)
+                )
             if len(auth.user.emails) == 1 and len(auth.user.email_verifications) == 0:
                 status.push_status_message(language.WELCOME_MESSAGE, kind='default', jumbotron=True, trust=True)
+
             if token in auth.user.email_verifications:
                 status.push_status_message(language.CONFIRM_ALTERNATE_EMAIL_ERROR, kind='danger', trust=True)
+            # Go to home page
             return redirect(web_url_for('index'))
 
         status.push_status_message(language.MERGE_COMPLETE, kind='success', trust=False)
@@ -300,7 +275,7 @@ def confirm_email_get(token, auth=None, **kwargs):
         user.date_last_login = datetime.datetime.utcnow()
         user.save()
 
-        # send out our welcome message
+        # Send out our welcome message
         mails.send_mail(
             to_addr=user.username,
             mail=mails.WELCOME,
@@ -308,10 +283,10 @@ def confirm_email_get(token, auth=None, **kwargs):
             user=user
         )
 
-    # new random verification key, allows CAS to authenticate the user w/o password one-time only.
+    # Redirect to CAS and authenticate the user with a verification key.
     user.verification_key = generate_verification_key()
     user.save()
-    # redirect to CAS and authenticate the user with a verification key.
+
     return redirect(cas.get_login_url(
         request.url,
         username=user.username,
@@ -321,12 +296,8 @@ def confirm_email_get(token, auth=None, **kwargs):
 
 @must_be_logged_in
 def unconfirmed_email_remove(auth=None):
-    """
-    Called at login if user cancels their merge or email add.
+    """Called at login if user cancels their merge or email add.
     methods: DELETE
-
-    :param auth:
-    :return:
     """
     user = auth.user
     json_body = request.get_json()
@@ -347,12 +318,8 @@ def unconfirmed_email_remove(auth=None):
 
 @must_be_logged_in
 def unconfirmed_email_add(auth=None):
-    """
-    Called at login if user confirms their merge or email add.
+    """Called at login if user confirms their merge or email add.
     methods: PUT
-
-    :param auth:
-    :return:
     """
     user = auth.user
     json_body = request.get_json()
@@ -384,13 +351,10 @@ def unconfirmed_email_add(auth=None):
 
 
 def send_confirm_email(user, email):
-    """
-    Sends a confirmation email to `user` to a given email.
+    """Sends a confirmation email to `user` to a given email.
 
-    :param user:
-    :param email:
-    :return:
-    :raises: KeyError if user does not have a confirmation token for the given email.
+    :raises: KeyError if user does not have a confirmation token for the given
+        email.
     """
     confirmation_url = user.get_confirmation_url(
         email,
@@ -428,15 +392,15 @@ def send_confirm_email(user, email):
 
 
 def register_user(**kwargs):
-    """
-    Register new user account.
+    """Register new user account.
 
     :param-json str email1:
     :param-json str email2:
     :param-json str password:
     :param-json str fullName:
     :param-json str campaign:
-    :raises: HTTPError(http.BAD_REQUEST) if validation fails or user already exists
+    :raises: HTTPError(http.BAD_REQUEST) if validation fails or user already
+        exists
 
     """
     # Verify email address match
@@ -479,9 +443,14 @@ def register_user(**kwargs):
         return {'message': 'You may now log in.'}
 
 
+def merge_user_get(**kwargs):
+    '''Web view for merging an account. Renders the form for confirmation.
+    '''
+    return forms.utils.jsonify(MergeAccountForm())
+
+
 def resend_confirmation():
-    """
-    View for resending an email confirmation email.
+    """View for resending an email confirmation email.
     """
     form = ResendConfirmationForm(request.form)
     if request.method == 'POST':
@@ -503,3 +472,49 @@ def resend_confirmation():
             forms.push_errors_to_status(form.errors)
     # Don't go anywhere
     return {'form': form}
+
+
+# TODO: shrink me
+@must_be_logged_in
+def merge_user_post(auth, **kwargs):
+    '''View for merging an account. Takes either JSON or form data.
+
+    Request data should include a "merged_username" and "merged_password" properties
+    for the account to be merged in.
+    '''
+    master = auth.user
+    if request.json:
+        merged_username = request.json.get("merged_username")
+        merged_password = request.json.get("merged_password")
+    else:
+        form = MergeAccountForm(request.form)
+        if not form.validate():
+            forms.push_errors_to_status(form.errors)
+            return merge_user_get(**kwargs)
+        master_password = form.user_password.data
+        if not master.check_password(master_password):
+            status.push_status_message("Could not authenticate. Please check your username and password.", trust=False)
+            return merge_user_get(**kwargs)
+        merged_username = form.merged_username.data
+        merged_password = form.merged_password.data
+    try:
+        merged_user = User.find_one(Q("username", "eq", merged_username))
+    except NoResultsFound:
+        status.push_status_message("Could not find that user. Please check the username and password.", trust=False)
+        return merge_user_get(**kwargs)
+    if master and merged_user:
+        if merged_user.check_password(merged_password):
+            master.merge_user(merged_user)
+            master.save()
+            if request.form:
+                status.push_status_message("Successfully merged {0} with this account".format(merged_username),
+                                           kind='success',
+                                           trust=False)
+                return redirect("/settings/")
+            return {"status": "success"}
+        else:
+            status.push_status_message("Could not find that user. Please check the username and password.",
+                                       trust=False)
+            return merge_user_get(**kwargs)
+    else:
+        raise HTTPError(http.BAD_REQUEST)

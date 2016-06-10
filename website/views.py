@@ -15,7 +15,9 @@ from framework.auth.core import User
 from framework.flask import redirect  # VOL-aware redirect
 from framework.routing import proxy_url
 from framework.exceptions import HTTPError
+from framework.auth.forms import SignInForm
 from framework.forms import utils as form_utils
+from framework.auth.forms import RegistrationForm
 from framework.auth.forms import ResetPasswordForm
 from framework.auth.forms import ForgotPasswordForm
 from framework.auth.decorators import must_be_logged_in
@@ -175,6 +177,14 @@ def serialize_log(node_log, auth=None, anonymous=False):
 
 def reproducibility():
     return redirect('/ezcuj/wiki')
+
+
+def registration_form():
+    return form_utils.jsonify(RegistrationForm(prefix='register'))
+
+
+def signin_form():
+    return form_utils.jsonify(SignInForm())
 
 
 def forgot_password_form():

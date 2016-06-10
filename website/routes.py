@@ -425,6 +425,9 @@ def make_url_map(app):
     ### Forms ###
 
     process_rules(app, [
+        Rule('/forms/registration/', 'get', website_views.registration_form, json_renderer),
+        Rule('/forms/signin/', 'get', website_views.signin_form, json_renderer),
+        Rule('/forms/forgot_password/', 'get', website_views.forgot_password_form, json_renderer),
         Rule('/forms/reset_password/', 'get', website_views.reset_password_form, json_renderer),
     ], prefix='/api/v1')
 
@@ -468,13 +471,8 @@ def make_url_map(app):
             auth_views.resend_confirmation,
             OsfWebRenderer('resend.mako', render_mako_string, trust=False)
         ),
-
-        Rule(
-            '/api/v1/register/',
-            'post',
-            auth_views.register_user,
-            json_renderer
-        ),
+        
+        Rule('/api/v1/register/', 'post', auth_views.register_user, json_renderer),
 
         Rule(
             [
@@ -485,21 +483,25 @@ def make_url_map(app):
             auth_views.auth_login,
             OsfWebRenderer('public/login.mako', trust=False)
         ),
-
+        Rule(
+            '/login/first/',
+            'get',
+            auth_views.auth_login,
+            OsfWebRenderer('public/login.mako', trust=False),
+            endpoint_suffix='__first', view_kwargs={'first': True}
+        ),
         Rule(
             '/logout/',
             'get',
             auth_views.auth_logout,
             notemplate
         ),
-
         Rule(
             '/forgotpassword/',
             'get',
             auth_views.forgot_password_get,
             OsfWebRenderer('public/forgot_password.mako', trust=False)
         ),
-
         Rule(
             '/forgotpassword/',
             'post',
@@ -540,7 +542,18 @@ def make_url_map(app):
             profile_views.profile_view_id,
             OsfWebRenderer('profile.mako', trust=False)
         ),
-
+        Rule(
+            ['/user/merge/'],
+            'get',
+            auth_views.merge_user_get,
+            OsfWebRenderer('merge_accounts.mako', trust=False)
+        ),
+        Rule(
+            ['/user/merge/'],
+            'post',
+            auth_views.merge_user_post,
+            OsfWebRenderer('merge_accounts.mako', trust=False)
+        ),
         # Route for claiming and setting email and password.
         # Verification token must be querystring argument
         Rule(
@@ -1456,6 +1469,11 @@ def make_url_map(app):
         Rule([
             '/watched/logs/'
         ], 'get', website_views.watched_logs_get, json_renderer),
+
+        ### Accounts ###
+        Rule([
+            '/user/merge/'
+        ], 'post', auth_views.merge_user_post, json_renderer),
 
         # Combined files
         Rule(
