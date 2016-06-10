@@ -19,7 +19,7 @@ from framework.auth.exceptions import DuplicateEmailError, ExpiredTokenError, In
 from framework.auth.core import generate_verification_key
 from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.auth.forms import (MergeAccountForm, ResendConfirmationForm,
-                                  ResetPasswordForm, ForgotPasswordForm)
+                                  ResetPasswordForm, ForgotPasswordForm, RegistrationForm)
 from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions.utils import remove_sessions_for_user
@@ -453,11 +453,11 @@ def auth_register_post():
     # Process form
     if form.validate():
         try:
-            user = framework.auth.register_unconfirmed(
+            user = framework_auth.register_unconfirmed(
                 form.username.data,
                 form.password.data,
                 form.fullname.data)
-            framework.auth.signals.user_registered.send(user)
+            framework_auth.signals.user_registered.send(user)
         except (ValidationValueError, DuplicateEmailError):
             status.push_status_message(
                 language.ALREADY_REGISTERED.format(email=form.username.data),
