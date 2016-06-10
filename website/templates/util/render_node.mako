@@ -139,8 +139,7 @@
 </div>
 <script type="text/javascript">
     window.contextVars = $.extend(true, {}, window.contextVars, {
-        project: ${node | sjson, n},
-        component: ${summary | sjson, n},
+        node: ${summary | sjson, n},
         user: {
             canView: ${summary['can_view'] | sjson, n}
         }

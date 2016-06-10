@@ -3,6 +3,7 @@
 <%def name="stylesheets()">
    ${parent.stylesheets()}
    <link rel="stylesheet" href='/static/css/pages/profile-page.css'>
+    <link rel="stylesheet" href="/static/css/my-projects.css">
 </%def>
 
 <%def name="javascript_bottom()">
@@ -171,7 +172,6 @@
     </div>
 </div><!-- end row -->
 
-<%include file="_log_templates.mako"/>
 <%include file="include/profile/social.mako" />
 <%include file="include/profile/jobs.mako" />
 <%include file="include/profile/schools.mako" />
