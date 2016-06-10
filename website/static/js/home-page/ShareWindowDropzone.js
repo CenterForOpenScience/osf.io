@@ -13,64 +13,60 @@ window.ondragover = function(e) { e.preventDefault(); };
 window.ondrop = function(e) { e.preventDefault(); };
 
 var ShareWindowDropzone = {
+    controller: function() {
+        Dropzone.options.shareWindowDropzone = {
+            // Dropzone is setup to upload multiple files in one request this configuration forces it to do upload file-by-
+            //file, one request at a time.
+            clickable: '#shareWindowDropzone',
+            parallelUploads: 1,
+            autoProcessQueue: false,
+            withCredentials: true,
+            method:'put',
+            border: '2px dashed #ccc',
+            maxFilesize: 1,
 
-  controller: function() {
-    Dropzone.options.shareWindowDropzone = {
-        // Dropzone is setup to upload multiple files in one request this configuration forces it to do upload file-by-
-        //file, one request at a time.
-        clickable: '#shareWindowDropzone',
-        parallelUploads: 1,
-        autoProcessQueue: false,
-        withCredentials: true,
-        method:'put',
-        border: '2px dashed #ccc',
-        maxFilesize: 1,
+            accept: function(file, done) {
+                if(this.files.length < 10){
+                    this.options.url = waterbutler.buildUploadUrl(false,'osfstorage',window.contextVars.shareWindowId, file,{});
+                    this.processFile(file);
+                }else if(this.files.length === 11){
+                    $osf.growl('Error', 'Maximum of 10 files per upload');
+                }else{}
+            },
+            sending: function(file, xhr) {
+                //Hack to remove webkitheaders
+                var _send = xhr.send;
+                xhr.send = function() {
+                   _send.call(xhr, file);
+               };
+            },
+            success: function(file, xhr) {
+                this.processQueue();
+                file.previewElement.classList.add('dz-success');
+            },
+            error: function(file, message) {
+                file.previewElement.classList.add('dz-error');
+            },
+        };
+        $('#shareWindowDropzone').dropzone({
+            url:'placeholder',
+            previewTemplate: '<div class="dz-preview dz-processing dz-file-preview"><div class="dz-details"><div class="dz-filename"><span data-dz-name></span></div>' +
+            '<div class="dz-size" data-dz-size></div><img data-dz-thumbnail /></div><div class="dz-progress"><span class="dz-upload" data-dz-uploadprogress></span></div>' +
+            '<div class="dz-success-mark"><span>✔</span></div><div class="dz-error-mark"><span>✘</span></div><div class="dz-error-message"><span data-dz-errormessage></span></div></div>',
+        });
 
-        accept: function(file, done) {
-            if(this.files.length < 10){
-                this.options.url = waterbutler.buildUploadUrl(false,'osfstorage',window.contextVars.shareWindowId, file,{});
-                this.processFile(file);
-            }else if(this.files.length === 11){
-                $osf.growl('Error', 'Maximum of 10 files per upload');
-            }else{}
-        },
-        sending: function(file, xhr) {
-            //Hack to remove webkitheaders
-            var _send = xhr.send;
-            xhr.send = function() {
-               _send.call(xhr, file);
-           };
-        },
-        success: function(file, xhr) {
-            this.processQueue();
-            file.previewElement.classList.add('dz-success');
-        },
-        error: function(file, message) {
-            file.previewElement.classList.add('dz-error');
-        },
-    };
-
-    $('#shareWindowDropzone').dropzone({
-        url:'placeholder',
-        previewTemplate: '<div class="dz-preview dz-processing dz-file-preview"><div class="dz-details"><div class="dz-filename"><span data-dz-name></span></div>' +
-        '<div class="dz-size" data-dz-size></div><img data-dz-thumbnail /></div><div class="dz-progress"><span class="dz-upload" data-dz-uploadprogress></span></div>' +
-        '<div class="dz-success-mark"><span>✔</span></div><div class="dz-error-mark"><span>✘</span></div><div class="dz-error-message"><span data-dz-errormessage></span></div></div>',
-    });
-
-    $('#ShareButton').click(function(e) { // disabled briefly to prevent button mashing.
-        $('#ShareButton').attr('disabled', 'disabled').css('cursor', 'pointer');
-        setTimeout(function() { $('#ShareButton').removeAttr('disabled'); }, 300);
-        $('#shareWindowDropzone').slideToggle();
-        $('#LinkToShareFiles').slideToggle();
-        $(this).toggleClass('btn-primary');
-    });
-
-  },
-  view: function(ctrl, args) {
-
+        $('#ShareButton').click(function(e) { // disabled briefly to prevent button mashing.
+            $('#ShareButton').attr('disabled', 'disabled').css('cursor', 'pointer');
+            setTimeout(function() { $('#ShareButton').removeAttr('disabled'); }, 300);
+            $('#shareWindowDropzone').slideToggle();
+            $('#LinkToShareFiles').slideToggle();
+            $(this).toggleClass('btn-primary');
+        });
+    },
+    view: function(ctrl, args) {
         function headerTemplate() {
             return [
-            m('h2.col-xs-4', 'Dashboard'),
+                m('h2.col-xs-4', 'Dashboard'),
                 m('m-b-lg.col-xs-8.drop-zone-disp', {style: {textAlign: 'right'}},
                 m('button.btn.btn-primary.f-w-xl #ShareButton', 'Upload Public Files'),
                 m.component(AddProject,
@@ -107,7 +103,7 @@ var ShareWindowDropzone = {
                     m('a', {href: '/share_window/'}, 'Public Files Project')
                 )
             );
-  }
+    }
 };
 
 module.exports = ShareWindowDropzone;
