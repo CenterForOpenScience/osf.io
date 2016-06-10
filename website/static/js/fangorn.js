@@ -1239,7 +1239,7 @@ function _fangornModifiedColumn(item, col) {
         return m(
             'span',
             // "new Date" required for non-ISO date formats
-            Moment(new Date(item.data.modified)).format('YYYY-MM-DD hh:mm A')
+            new Moment(new Date(item.data.modified)).format('YYYY-MM-DD hh:mm A')
         );
     }
     return m('span', '');
