@@ -70,7 +70,7 @@ def run_postcommit(once_per_request=True, celery=False):
             return func
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
-            if celery is True and isinstance(func, PromiseProxy):
+            if settings.USE_CELERY and celery is True and isinstance(func, PromiseProxy):
                 func.delay(*args, **kwargs)
             else:
                 enqueue_postcommit_task(func, args, kwargs, once_per_request=once_per_request)
