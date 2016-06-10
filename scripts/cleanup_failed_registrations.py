@@ -6,8 +6,6 @@ import logging
 from modularodm import Q
 
 from website.archiver import (
-    ARCHIVER_UNCAUGHT_ERROR,
-    ARCHIVER_FAILURE,
     ARCHIVER_INITIATED
 )
 
@@ -17,7 +15,6 @@ from website import (
 )
 
 from website.settings import ARCHIVE_TIMEOUT_TIMEDELTA
-from website.archiver.utils import handle_archive_fail
 from website.archiver.model import ArchiveJob
 
 from website.app import init_app
@@ -54,10 +51,10 @@ def notify_desk_about_failed_registrations(dry_run=True):
             # Send an email to the OSF Help Desk
             mails.send_mail(
                 to_addr=settings.SUPPORT_EMAIL,
-                mail=mails.ARCHIVE_UNCAUGHT_ERROR_DESK,
+                mail=mails.ARCHIVE_REGISTRATION_STUCK_DESK,
                 user=f.creator,
                 src=f.registered_from,
-                results=f.archive_job.target_info(),
+                archive_job=f.archve_job,
             )
 
             count += 1
