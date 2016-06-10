@@ -29,10 +29,10 @@ var ShareWindowDropzone = {
 
         accept: function(file, done) {
             if(this.files.length < 10){
-                this.options.url = waterbutler.buildUploadUrl(false,'osfstorage',window.contextVars['shareWindowId'], file,{});
+                this.options.url = waterbutler.buildUploadUrl(false,'osfstorage',window.contextVars.shareWindowId, file,{});
                 this.processFile(file);
-            }else if(this.files.length == 11){
-                $osf.growl("Error", "Maximum of 10 files per upload")
+            }else if(this.files.length === 11){
+                $osf.growl('Error', 'Maximum of 10 files per upload');
             }else{}
         },
         sending: function(file, xhr) {
@@ -44,11 +44,11 @@ var ShareWindowDropzone = {
         },
         success: function(file, xhr) {
             this.processQueue();
-            file.previewElement.classList.add("dz-success");
+            file.previewElement.classList.add('dz-success');
         },
 
         error: function(file, message) {
-            file.previewElement.classList.add("dz-error");
+            file.previewElement.classList.add('dz-error');
         },
     };
 
@@ -59,25 +59,15 @@ var ShareWindowDropzone = {
         '<div class="dz-success-mark"><span>✔</span></div><div class="dz-error-mark"><span>✘</span></div><div class="dz-error-message"><span data-dz-errormessage></span></div></div>',
     });
 
-
-
-      $('#ShareButton').click(function(e) {
-        $('#ShareButton').attr('disabled', 'disabled');
-        document.getElementById("ShareButton").style.cursor = "pointer";
-
-
-
-         setTimeout(enable, 300);
-          $('#shareWindowDropzone').slideToggle();
-          $('#LinkToShareFiles').slideToggle();
-          $(this).toggleClass('btn-primary');
-      });
-    function enable () {
-        $('#ShareButton').removeAttr('disabled');
-    }
+    $('#ShareButton').click(function(e) { // disabled briefly to prevent button mashing.
+        $('#ShareButton').attr('disabled', 'disabled').css('cursor', 'pointer');
+        setTimeout(function() { $('#ShareButton').removeAttr('disabled'); }, 300);
+        $('#shareWindowDropzone').slideToggle();
+        $('#LinkToShareFiles').slideToggle();
+        $(this).toggleClass('btn-primary');
+    });
 
   },
-
   view: function(ctrl, args) {
               function headerTemplate() {
             return [ m('h2.col-xs-4', 'Dashboard'), m('m-b-lg.col-xs-8.pull-right.drop-zone-disp',
