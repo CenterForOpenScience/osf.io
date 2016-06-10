@@ -406,7 +406,10 @@ def format_user_and_project_subscriptions(user):
         {
             'node': {
                 'id': user._id,
-                'title': 'Default Global Notification Settings',
+                'title': 'Default Notification Settings',
+                'help': 'These are default settings for new projects you create ' +
+                        'or are added to. Modifying these settings will not ' +
+                        'modify settings on existing projects.'
             },
             'kind': 'heading',
             'children': format_user_subscriptions(user)
@@ -415,6 +418,8 @@ def format_user_and_project_subscriptions(user):
             'node': {
                 'id': '',
                 'title': 'Project Notifications',
+                'help': 'These are settings for each of your projects. Modifying ' +
+                        'these settings will only modify the settings for the selected project.'
             },
             'kind': 'heading',
             'children': format_data(user, get_configured_projects(user))

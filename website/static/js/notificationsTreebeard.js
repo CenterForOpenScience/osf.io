@@ -76,7 +76,7 @@ function displayParentNotificationType(item){
     return '';
 }
 
-var popOver = function(element, isInit) {
+var tooltipConfig = function(element, isInit) {
     if (!isInit) {
         $(element).tooltip();
     }
@@ -111,7 +111,7 @@ function ProjectNotifications(data) {
                             return m('div[style="padding-left:5px"]',
                                         [m ('p', [
                                                 m('b', item.data.node.title + ': '),
-                                                m('span[class="text-warning"]', ' No configured projects.')]
+                                                m('span[class="text-muted"]', ' No configured projects.')]
                                         )]
                             );
                         }
@@ -123,26 +123,13 @@ function ProjectNotifications(data) {
                         filter : true,
                         sortInclude : false,
                         custom : function() {
-                            var globalNotificationsMessage = 'These are default settings for new ' +
-                                'projects you create or are added to. Modifying these settings will ' +
-                                'not modify settings on existing projects.';
-                            var projectNotificationsMessage = 'These are settings for each of your ' +
-                                'projects. Modifying these settings will only modify the settings ' +
-                                'for the selected project.';
                             return m('div[style="padding-left:5px; padding-bottom:50px"]', [
                                 m('p', [
                                     m('b', item.data.node.title + ':  '),
-                                    item.data.node.title === 'Default Global Notification Settings' ?
                                         m('span[class="fa fa-info-circle"]', {
                                             'data-toggle': 'tooltip',
-                                            'title':globalNotificationsMessage,
-                                            'config': popOver,
-                                            'data-placement': 'bottom'
-                                        }) :
-                                        m('span[class="fa fa-info-circle"]', {
-                                            'data-toggle': 'tooltip',
-                                            'title':projectNotificationsMessage,
-                                            'config': popOver,
+                                            'title':item.data.node.help,
+                                            'config': tooltipConfig,
                                             'data-placement': 'bottom'
                                         })
                                 ])

@@ -343,12 +343,12 @@ class NotificationTestCase(OsfTestCase):
     @classmethod
     def setUpClass(cls):
         super(NotificationTestCase, cls).setUpClass()
-        cls._original_enable_notification_subscription_creation = settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION
-        settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION = False
+        cls._original_subscribe_contributors_to_notifications = settings.SUBSCRIBE_CONTRIBUTORS_TO_NOTIFICATIONS
+        settings.SUBSCRIBE_CONTRIBUTORS_TO_NOTIFICATIONS = False
 
     @classmethod
     def tearDownClass(cls):
-        settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION = cls._original_enable_notification_subscription_creation
+        settings.SUBSCRIBE_CONTRIBUTORS_TO_NOTIFICATIONS = cls._original_subscribe_contributors_to_notifications
 
 
 class ApiWikiTestCase(ApiTestCase):

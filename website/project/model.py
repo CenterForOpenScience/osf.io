@@ -1580,7 +1580,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 save=True,
             )
 
-            if settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION:
+            if settings.SUBSCRIBE_CONTRIBUTORS_TO_NOTIFICATIONS:
                 self.subscribe_user_to_notifications(user=self.creator)
 
         # Only update Solr if at least one stored field has changed, and if
@@ -3010,7 +3010,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 while len(user.recently_added) > MAX_RECENT_LENGTH:
                     user.recently_added.pop()
 
-            if settings.ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION:
+            if settings.SUBSCRIBE_CONTRIBUTORS_TO_NOTIFICATIONS:
                 self.subscribe_user_to_notifications(contrib_to_add)
 
             if log:
