@@ -1209,7 +1209,19 @@ function _fangornTitleColumn(item, col) {
 
 
 function generateURLClipBoard(item){
-		var url = waterbutler.buildTreeBeardDownload(item);
+    var url = "";
+    var tb = this;
+
+    if(typeof (item.data.nodeUrl) !== "undefined"){
+          url = window.location.host + item.data.nodeUrl + 'files/' + item.data.provider + item.data.path;
+        console.log(url);
+
+    }else{}
+
+
+
+
+		//var url = waterbutler.buildTreeBeardDownload(item);
 		var cb = function(elem) {
                 makeClient(elem);
             };
@@ -1297,17 +1309,11 @@ function _fangornResolveRows(item) {
 
 if(window.contextVars.isPublicFilesCol) {
     if (item.data.kind === 'file') {
-            default_columns.push(
-        {
-            data : 'Download Link',  // Data field name
-            filter : true,
-            custom : function() {return m('a' ,{ href: waterbutler.buildTreeBeardDownload(item) },'Download File')}
-        });
-                default_columns.push(
+        default_columns.push(
         {
             data : 'Share Link',  // Data field name
             filter : true,
-            custom : function() {return generateURLClipBoard(item)}
+            custom : function() {return generateURLClipBoard(item);}
         });
         default_columns.push(
         {
@@ -1376,16 +1382,12 @@ function _fangornColumnTitles () {
     columns.push(
     {
         title: 'Name',
-        width : '40%',
+        width : '50%',
         sort : true,
         sortType : 'text'
     }, {
-        title : 'Download Link',
-        width : '15%',
-        sort : false
-    }, {
         title : 'Share Link',
-        width : '25%',
+        width : '30%',
         sort : false
     }, {
         title : 'Size',
