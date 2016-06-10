@@ -68,6 +68,8 @@ class TrashedFileNode(StoredObject, Commentable):
     path = fields.StringField(required=True)
     materialized_path = fields.StringField(required=True)
 
+    discourse_topic_id = fields.StringField(default=None)
+
     checkout = fields.AbstractForeignField('User')
     deleted_by = fields.AbstractForeignField('User')
     deleted_on = fields.DateTimeField(auto_now_add=True)

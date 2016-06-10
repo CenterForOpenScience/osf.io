@@ -20,10 +20,12 @@ from website.project.decorators import must_be_contributor_or_public
 from website.project.model import Node
 from website.project.signals import comment_added
 
+import pdb
 
 @file_updated.connect
 def update_file_guid_referent(self, node, event_type, payload, user=None):
     if event_type == 'addon_file_moved' or event_type == 'addon_file_renamed':
+        #pdb.set_trace()
         source = payload['source']
         destination = payload['destination']
         source_node = Node.load(source['node']['_id'])
@@ -41,6 +43,8 @@ def update_file_guid_referent(self, node, event_type, payload, user=None):
 
         for guid in file_guids:
             obj = Guid.load(guid)
+            return
+            
             if source_node != destination_node and Comment.find(Q('root_target', 'eq', guid)).count() != 0:
                 update_comment_node(guid, source_node, destination_node)
 
@@ -51,6 +55,11 @@ def update_file_guid_referent(self, node, event_type, payload, user=None):
                 if old_file and not TrashedFileNode.load(old_file._id):
                     old_file.delete()
 
+
+@file_updated.connect
+def update_discourse_topic_ids(self, node, event_type, payload, user=None):
+
+    pass
 
 def create_new_file(obj, source, destination, destination_node):
     # TODO: Remove when materialized paths are fixed in the payload returned from waterbutler
