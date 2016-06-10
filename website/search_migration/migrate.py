@@ -8,6 +8,7 @@ import logging
 from elasticsearch import helpers
 from modularodm.query.querydialect import DefaultQueryDialect as Q
 
+from framework.mongo.utils import paginated
 from website import settings
 from framework.auth import User
 from website.models import Node
@@ -21,21 +22,25 @@ logger = logging.getLogger(__name__)
 
 def migrate_nodes(index):
     logger.info("Migrating nodes to index: {}".format(index))
-    n_iter = 0
-    nodes = Node.find(Q('is_public', 'eq', True) & Q('is_deleted', 'eq', False))
-    for node in nodes:
-        logger.info('Updating node {}'.format(node._id))
-        search.update_node(node, index=index, async=False)
-        n_iter += 1
+    query = Q('is_public', 'eq', True) & Q('is_deleted', 'eq', False)
+    total = Node.find(query).count()
+    increment = 1000
+    total_pages = (total // increment) + 1
+    pages = paginated(Node, query=query, increment=increment, each=False)
+    for page_number, page in enumerate(pages):
+        logger.info('Updating page {} / {}'.format(page_number + 1, total_pages))
+        Node.bulk_update_search(page)
+        Node._clear_caches()
 
-    logger.info('Nodes migrated: {}'.format(n_iter))
+    logger.info('Nodes migrated: {}'.format(total))
 
 
 def migrate_users(index):
     logger.info("Migrating users to index: {}".format(index))
     n_migr = 0
     n_iter = 0
-    for user in User.find():
+    users = paginated(User, query=None, increment=1000, each=True)
+    for user in users:
         if user.is_active:
             search.update_user(user, index=index)
             n_migr += 1

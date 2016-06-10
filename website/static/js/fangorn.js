@@ -1664,7 +1664,7 @@ var FGItemButtons = {
                         onclick: function () {
                             mode(toolbarModes.RENAME);
                         },
-                        icon: 'fa fa-font',
+                        icon: 'fa fa-pencil',
                         className: 'text-info'
                     }, 'Rename')
                 );
@@ -1738,7 +1738,7 @@ var FGToolbar = {
                                 onclick: ctrl.createFolder,
                                 icon: 'fa fa-plus',
                                 className: 'text-success'
-                            }, 'Create'),
+                            }),
                             dismissIcon
                         ]
                     )
@@ -1768,7 +1768,7 @@ var FGToolbar = {
                                 },
                                 icon: 'fa fa-pencil',
                                 className: 'text-info'
-                            }, 'Rename'),
+                            }),
                             dismissIcon
                         ]
                     )

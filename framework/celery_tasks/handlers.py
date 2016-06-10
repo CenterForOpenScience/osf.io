@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
-
 import logging
 import threading
 import functools
 
 from celery import group
+from flask import _app_ctx_stack as context_stack
 
+from api.base.api_globals import api_globals
 from website import settings
 
 
@@ -46,15 +47,18 @@ def celery_teardown_request(error=None):
 
 
 def enqueue_task(signature):
-    """If working in a request context, push task signature to ``g`` to run
-    after request is complete; else run signature immediately.
+    """If working in a request context, push task signature to thread-local
+    queue to run after request is complete; else run signature immediately.
     :param signature: Celery task signature
     """
-    try:
+    if (
+        context_stack.top is None and
+        getattr(api_globals, 'request', None) is None
+    ):  # Not in a request context
+        signature()
+    else:
         if signature not in queue():
             queue().append(signature)
-    except (RuntimeError):
-        signature()
 
 
 def queued_task(task):

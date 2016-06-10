@@ -59,11 +59,46 @@ if ($comments.length) {
     };
     Comment.init('#commentsLink', '.comment-pane', options);
 }
+var institutionLogos = {
+    controller: function(args){
+        var self = this;
+        self.institutions = args.institutions;
+        self.nLogos = self.institutions.length;
+        self.side = self.nLogos > 1 ? (self.nLogos === 2 ? '50px' : '35px') : '75px';
+        self.width = self.nLogos > 1 ? (self.nLogos === 2 ? '115px' : '86px') : '75px';
+        self.makeLogo = function(institution){
+            return m('a', {href: '/institutions/' + institution.id},
+                m('img.img-circle', {
+                    height: self.side, width: self.side,
+                    style: {margin: '3px'},
+                    title: institution.name,
+                    src: institution.logo_path
+                })
+            );
+        };
+    },
+    view: function(ctrl, args){
+        var tooltips = function(){
+            $('[data-toggle="tooltip"]').tooltip();
+        };
+        var instCircles = $.map(ctrl.institutions, ctrl.makeLogo);
+        if (instCircles.length > 4){
+            instCircles[3] = m('.fa.fa-plus-square-o', {
+                style: {margin: '6px', fontSize: '250%', verticalAlign: 'middle'},
+            });
+            instCircles.splice(4);
+        }
+
+        return m('', {style: {float: 'left', width: ctrl.width, textAlign: 'center', marginRight: '10px'}, config: tooltips}, instCircles);
+    }
+};
 
 $(document).ready(function () {
 
+    if (ctx.node.institutions.length && !ctx.node.anonymous){
+        m.mount(document.getElementById('instLogo'), m.component(institutionLogos, {institutions: window.contextVars.node.institutions}));
+    }
     $('#contributorsList').osfToggleHeight();
-
     if (!ctx.node.isRetracted) {
         // Treebeard Files view
         $.ajax({
