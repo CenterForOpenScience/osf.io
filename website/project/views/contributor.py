@@ -25,6 +25,7 @@ from website import language
 from website import security
 from website import settings
 from website.models import Node
+from website.notifications.utils import check_if_all_global_subscriptions_are_none
 from website.profile import utils as profile_utils
 from website.project.decorators import (must_have_permission, must_be_valid_project,
         must_not_be_registration, must_be_contributor_or_public, must_be_contributor)
@@ -462,7 +463,7 @@ def send_claim_email(email, user, node, notify=True, throttle=24 * 3600):
 
 
 @contributor_added.connect
-def notify_added_contributor(node, contributor, auth=None, throttle=None, all_global_subscriptions_none=False):
+def notify_added_contributor(node, contributor, auth=None, throttle=None):
     throttle = throttle or settings.CONTRIBUTOR_ADDED_EMAIL_THROTTLE
 
     # Exclude forks and templates because the user forking/templating the project gets added
@@ -486,7 +487,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, all_gl
             user=contributor,
             node=node,
             referrer_name=auth.user.fullname if auth else '',
-            all_global_subscriptions_none=all_global_subscriptions_none
+            all_global_subscriptions_none=check_if_all_global_subscriptions_are_none(contributor)
         )
 
         contributor.contributor_added_email_records[node._id]['last_sent'] = get_timestamp()

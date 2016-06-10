@@ -394,8 +394,7 @@ def check_if_all_global_subscriptions_are_none(user):
             all_global_subscriptions_none = True
             global_notification_type = get_global_notification_type(user_subscription, user)
             if global_notification_type != 'none':
-                all_global_subscriptions_none = False
-                break
+                return False
 
     return all_global_subscriptions_none
 
