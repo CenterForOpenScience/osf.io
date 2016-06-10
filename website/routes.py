@@ -490,13 +490,7 @@ def make_url_map(app):
             auth_views.auth_login,
             OsfWebRenderer('public/login.mako', trust=False)
         ),
-        Rule(
-            '/login/first/',
-            'get',
-            auth_views.auth_login,
-            OsfWebRenderer('public/login.mako', trust=False),
-            endpoint_suffix='__first', view_kwargs={'first': True}
-        ),
+
         Rule(
             '/logout/',
             'get',
