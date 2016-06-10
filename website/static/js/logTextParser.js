@@ -602,20 +602,6 @@ var LogPieces = {
             return returnTextParams('addon', '', logObject);
         }
     },
-
-    previous_institution: {
-        view: function(ctrl, logObject){
-            var previous_institution = logObject.attributes.params.previous_institution;
-            if (paramIsReturned(previous_institution, logObject)){
-                if (previous_institution.id !== null) {
-                    return m('a', {'href': '/institutions/' + previous_institution.id + '/'}, previous_institution.name);
-                }
-                return m('span', previous_institution.name);
-            }
-            return m('span', 'an institution');
-        }
-    },
-
     institution: {
         view: function(ctrl, logObject){
             var institution = logObject.attributes.params.institution;
