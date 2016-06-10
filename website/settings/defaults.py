@@ -595,12 +595,14 @@ observeDOM(document.body, function() {
     var mfr_div = document.createElement('div');
     mfr_div.id = "mfrIframe";
     mfr_div.classList.add('mfr', 'mrf-file');
-    var reg = new RegExp('\:\/\/osf[^\/]*\/([a-z0-9]*)\/?');
-    var guid = reg.exec(topic_post.textContent)[1];
-    topic_post.appendChild(mfr_div);
-    window.jQuery || document.write('<script src="//code.jquery.com/jquery-1.11.2.min.js">\x3C/script>');
-    var mfrRender = new mfr.Render("mfrIframe", "''' + MFR_SERVER_URL + '''/render?url=''' + DOMAIN + '''"+guid+"/?action=download%26mode=render");
-
+    var reg = new RegExp('\:\/\/(?:osf|local)[^\/]*\/([a-z0-9]*)\/?');
+    var match = reg.exec(topic_post.textContent)
+    if (match) {
+        var guid = match[1];
+        topic_post.appendChild(mfr_div);
+        window.jQuery || document.write('<script src="//code.jquery.com/jquery-1.11.2.min.js">\\x3C/script>');
+        var mfrRender = new mfr.Render("mfrIframe", "''' + MFR_SERVER_URL + '''/render?url=''' + DOMAIN + '''"+guid+"/?action=download%26mode=render");
+    }
 });
 
 
