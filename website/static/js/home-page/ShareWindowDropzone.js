@@ -66,8 +66,8 @@ var ShareWindowDropzone = {
     view: function(ctrl, args) {
         function headerTemplate() {
             return [
-                m('h2.col-xs-4', 'Dashboard'),
-                m('m-b-lg.col-xs-8.drop-zone-disp', {style: {textAlign: 'right'}},
+                m('h2', {style: {display: 'inline'}}, 'Dashboard' ),
+                m('p-b-lg.col-xs-8.drop-zone-disp.pull-right', {style: {textAlign: 'right'}},
                 m('button.btn.btn-primary.f-w-xl #ShareButton', 'Upload Public Files'),
                 m.component(AddProject,
                         {buttonTemplate : m('button.btn.btn-success.f-w-xl.[data-toggle="modal"][data-target="#addProjectFromHome"]',
