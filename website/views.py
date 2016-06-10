@@ -218,6 +218,14 @@ def resolve_guid(guid, suffix=None):
     """
     # Look up GUID
     guid_object = Guid.load(guid)
+
+    try:
+        is_share_window =  Node.find_one(Q("_id", "eq", guid) & Q("is_public_files_collection", "eq", True))
+        node = Node.load(guid)
+        return redirect("share_window/" + node.creator._id)
+    except NoResultsFound:
+        pass
+
     if guid_object:
 
         # verify that the object implements a GuidStoredObject-like interface. If a model
