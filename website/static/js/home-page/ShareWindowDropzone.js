@@ -25,7 +25,7 @@ var ShareWindowDropzone = {
         uploadMultiple: false,
 
         accept: function(file, done) {
-            if(this.files.length <= 10){
+            if(this.files.length == 11){
                 this.options.url = waterbutler.buildUploadUrl(false,'osfstorage',window.contextVars['shareWindowId'], file,{});
                 this.processFile(file);
             }else{
