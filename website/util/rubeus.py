@@ -53,7 +53,7 @@ def to_hgrid(node, auth, **data):
 
 def build_addon_root(node_settings, name, permissions=None,
                      urls=None, extra=None, buttons=None, user=None,
-                     **kwargs):
+                     private_key=None, **kwargs):
     """Builds the root or "dummy" folder for an addon.
 
     :param addonNodeSettingsBase node_settings: Addon settings
@@ -66,15 +66,20 @@ def build_addon_root(node_settings, name, permissions=None,
     :param list of dicts buttons: List of buttons to appear in HGrid row. Each
         dict must have 'text', a string that will appear on the button, and
         'action', the name of a function in
+    :param bool private_key: Used to check if information should be stripped from anonymous links
     :param dict kwargs: Any additional information to add to the root folder
     :return dict: Hgrid formatted dictionary for the addon root folder
 
     """
+    from website.util import check_private_key_for_anonymized_link
+
     permissions = permissions or DEFAULT_PERMISSIONS
     if name:
         name = u'{0}: {1}'.format(node_settings.config.full_name, name)
     else:
         name = node_settings.config.full_name
+    if check_private_key_for_anonymized_link(private_key):
+        name = name.replace(node_settings.user, '')
     if hasattr(node_settings.config, 'urls') and node_settings.config.urls:
         urls = node_settings.config.urls
     if urls is None:
