@@ -104,7 +104,7 @@ class DraftMixin(object):
         if self.request.method not in drf_permissions.SAFE_METHODS:
             registered_and_deleted = draft.registered_node and draft.registered_node.is_deleted
 
-            if draft.registered_node and not registered_and_deleted:
+            if draft.registered_node and not draft.registered_node.is_deleted:
                 raise PermissionDenied('This draft has already been registered and cannot be modified.')
 
             if draft.is_pending_review:
