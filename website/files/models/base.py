@@ -498,17 +498,6 @@ class FileNode(object):
         Implemented top level so that child class may override it
         and just call super.save rather than self.stored_object.save
         """
-
-        # The best place to make sure this is called once the name is set.
-        # Try to persist the topic id when the guid already exists
-        if self.discourse_topic_id is None:
-            guid = self.get_persistant_guid()
-            if guid:
-                self.discourse_topic_id = guid.referent.discourse_topic_id
-
-        if self.discourse_topic_id is None:
-            self.discourse_topic_id = discourse.get_or_create_topic_id(self)
-
         return self.stored_object.save()
 
     def serialize(self, **kwargs):

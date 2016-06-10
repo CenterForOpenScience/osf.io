@@ -550,3 +550,128 @@ DISCOURSE_SERVER_SETTINGS = {'title': 'Open Science Framework',
                              'title_prettify': 'false',
                              'allow_duplicate_topic_titles': 'true',
                              }
+
+DISCOURSE_SERVER_CUSTOMIZATIONS = [{'name': 'MFR',
+                                    'enabled': 'true',
+                                    'head_tag': '<link href="https://mfr.osf.io/static/css/mfr.css" media="all" rel="stylesheet">',
+                                    'body_tag': '''
+<style>
+
+    #mfrIframe {
+
+        width: 100%:
+
+    }
+
+</style>
+
+<script src="https://mfr.osf.io/static/js/mfr.js"></script>
+<script>
+var observeDOM = (function(){
+    var MutationObserver = window.MutationObserver || window.WebKitMutationObserver,
+        eventListenerSupported = window.addEventListener;
+
+    return function(obj, callback){
+        if( MutationObserver ){
+            // define a new observer
+            var obs = new MutationObserver(function(mutations, observer){
+                if( mutations[0].addedNodes.length || mutations[0].removedNodes.length )
+                    callback();
+            });
+            // have the observer observe foo for changes in children
+            obs.observe( obj, { childList:true, subtree:true });
+        }
+    }
+})();
+
+// Observe a specific DOM element:
+observeDOM(document.body, function() {
+
+    var topic_post = document.querySelector('.topic-post article#post_1 .cooked');
+
+    if (!topic_post) return;
+    if (document.getElementById("mfrIframe")) return;
+
+    var mfr_div = document.createElement('div');
+    mfr_div.id = "mfrIframe";
+    mfr_div.classList.add('mfr', 'mrf-file');
+    var reg = new RegExp('\:\/\/osf[^\/]*\/([a-z0-9]*)\/?');
+    var guid = reg.exec(topic_post.textContent)[1];
+    topic_post.appendChild(mfr_div);
+    window.jQuery || document.write('<script src="//code.jquery.com/jquery-1.11.2.min.js">\x3C/script>');
+    var mfrRender = new mfr.Render("mfrIframe", "''' + MFR_SERVER_URL + '''/render?url=''' + DOMAIN + '''"+guid+"/?action=download%26mode=render");
+
+});
+
+
+</script>
+                                    ''',
+                                    },
+                                   {'name': 'Topic Header',
+                                    'enabled': 'true',
+                                    'head_tag': '',
+                                    'body_tag': '''
+<style>
+
+    #project_header {
+
+        background-color: #eee;
+        box-shadow: 0 3 10px 10px rgba(0,0,0,0.4);
+        overflow: hidden;
+    }
+
+    #project_header > ul > li {
+
+        float: left;
+        list-style-type: none;
+        padding: 10px;
+        color: #337ab7;
+
+    }
+
+    #project_header > ul > li:hover {
+
+        background-color: #337ab7;
+        color: #ffffff;
+
+    }
+
+</style>
+<script>
+// Observe a specific DOM element:
+observeDOM(document.body, function() {
+
+    var discourse_header = document.querySelector('header.d-header');
+    var topic_post = document.querySelector('.topic-post article#post_1 .cooked');
+
+    if (!discourse_header) return;
+    if (!topic_post) return;
+    if (document.getElementById("project_header")) return;
+
+    var project_header = document.createElement('div');
+    project_header.id = "project_header";
+
+    var ul = document.createElement('ul');
+    ul.classList.add("wrap");
+    ul.style.margin = "0 auto";
+
+    [
+        "Project",
+        "Files",
+        "Wiki",
+        "Analytics",
+        "Registrations",
+        "Forks"
+    ].map(function(x) {
+        var li = document.createElement("li");
+        li.textContent = x
+        ul.appendChild(li);
+    });
+
+    project_header.appendChild(ul);
+    discourse_header.appendChild(project_header);
+
+});
+</script>
+                                    ''',
+                                   }]
