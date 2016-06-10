@@ -17,9 +17,9 @@ def create_jsonschema_from_metaschema(draft, required_fields=False, is_reviewer=
             if is_required(question) and required_fields:
                 required.append(question['qid'])
             json_schema['properties'][question['qid']] = {
-                "type": "object",
-                "additionalProperties": False,
-                "properties": extract_question_values(question, required_fields, is_reviewer)
+                'type': 'object',
+                'additionalProperties': False,
+                'properties': extract_question_values(question, required_fields, is_reviewer)
             }
             if required_fields:
                 json_schema['properties'][question['qid']]['required'] = ['value']
@@ -49,9 +49,9 @@ def get_object_jsonschema(question, required_fields, is_reviewer):
                 required.append(property['id'])
             values = extract_question_values(property, required_fields, is_reviewer)
             object_jsonschema['properties'][property['id']] = {
-                "type": "object",
-                "additionalProperties": False,
-                "properties": values
+                'type': 'object',
+                'additionalProperties': False,
+                'properties': values
             }
             if required_fields:
                 object_jsonschema['properties'][property['id']]['required'] = ['value']
@@ -63,7 +63,7 @@ def get_object_jsonschema(question, required_fields, is_reviewer):
 
 def extract_question_values(question, required_fields, is_reviewer):
     """
-    Pulls structure for "value", "comments", and "extra" items
+    Pulls structure for 'value', 'comments', and 'extra' items
     """
     response = {
         'value': {'type': 'string'},
@@ -160,46 +160,46 @@ OSF_UPLOAD_EXTRA_SCHEMA = {
 }
 
 COMMENTS_SCHEMA = {
-    "type": "array",
-    "items": {
-        "type": "object",
-        "additionalProperties": False,
-        "properties": {
-            "seenBy": {
-                "type": "array",
-                "items": {
-                    "type": "integer"
+    'type': 'array',
+    'items': {
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'seenBy': {
+                'type': 'array',
+                'items': {
+                    'type': 'integer'
                 }
             },
-            "canDelete": {"type": "boolean"},
-            "created": {"type": "string"},
-            "lastModified": {"type": "string"},
-            "author": {"type": "string"},
-            "value": {"type": "string"},
-            "isOwner": {"type": "boolean"},
-            "getAuthor": {"type": "string"},
-            "user": {
-                "type": "object",
-                "additionalProperties": False,
-                "properties": {
-                    "fullname": {"type": "string"},
-                    "id": {"type": "integer"}
+            'canDelete': {'type': 'boolean'},
+            'created': {'type': 'string'},
+            'lastModified': {'type': 'string'},
+            'author': {'type': 'string'},
+            'value': {'type': 'string'},
+            'isOwner': {'type': 'boolean'},
+            'getAuthor': {'type': 'string'},
+            'user': {
+                'type': 'object',
+                'additionalProperties': False,
+                'properties': {
+                    'fullname': {'type': 'string'},
+                    'id': {'type': 'integer'}
                 }
             },
-            "saved": {"type": "boolean"},
-            "canEdit": {"type": "boolean"},
-            "isDeleted": {"type": "boolean"}
+            'saved': {'type': 'boolean'},
+            'canEdit': {'type': 'boolean'},
+            'isDeleted': {'type': 'boolean'}
         }
     }
 }
 
 def base_metaschema(metaschema):
     json_schema = {
-        "type": "object",
-        "description": metaschema['description'],
-        "title": metaschema['title'],
-        "additionalProperties": False,
-        "properties": {
+        'type': 'object',
+        'description': metaschema['description'],
+        'title': metaschema['title'],
+        'additionalProperties': False,
+        'properties': {
         }
     }
     return json_schema
