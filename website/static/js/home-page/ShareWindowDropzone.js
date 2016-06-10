@@ -3,7 +3,6 @@ var $osf = require('js/osfHelpers');
 var waterbutler =  require('js/waterbutler');
 var AddProject = require('js/addProjectPlugin');
 
-
 require('css/dropzone-plugin.css');
 require('css/quick-project-search-plugin.css');
 require('loaders.css/loaders.min.css');
@@ -46,7 +45,6 @@ var ShareWindowDropzone = {
             this.processQueue();
             file.previewElement.classList.add('dz-success');
         },
-
         error: function(file, message) {
             file.previewElement.classList.add('dz-error');
         },
@@ -69,30 +67,47 @@ var ShareWindowDropzone = {
 
   },
   view: function(ctrl, args) {
-              function headerTemplate() {
-            return [ m('h2.col-xs-4', 'Dashboard'), m('m-b-lg.col-xs-8.pull-right.drop-zone-disp',
-                m('.pull-right', m('button.btn.btn-primary.m-t-md.f-w-xl #ShareButton', {onclick: function() {}}, 'Upload Public Files'), m.component(AddProject, {
-                buttonTemplate : m('button.btn.btn-success.btn-success-high-contrast.m-t-md.f-w-xl.pull-right[data-toggle="modal"][data-target="#addProjectFromHome"]',
-                    {onclick: function() {
-                    $osf.trackClick('quickSearch', 'add-project', 'open-add-project-modal');
-                    }}, 'Create new project'),
-                modalID : 'addProjectFromHome',
-                stayCallback : function _stayCallback_inPanel() {
+
+        function headerTemplate() {
+            return [
+            m('h2.col-xs-4', 'Dashboard'),
+                m('m-b-lg.col-xs-8.drop-zone-disp', {style: {textAlign: "right"}},
+                m('button.btn.btn-primary.f-w-xl #ShareButton', 'Upload Public Files'),
+                m.component(AddProject,
+                        {buttonTemplate : m('button.btn.btn-success.f-w-xl.[data-toggle="modal"][data-target="#addProjectFromHome"]',
+                            {
+                                onclick: function() {
+                                    $osf.trackClick('quickSearch', 'add-project', 'open-add-project-modal');
+                                }
+                            }, 'Create new project'),
+                            modalID : 'addProjectFromHome',
+                            stayCallback : function _stayCallback_inPanel() {
                                 document.location.reload(true);
-                },
-                trackingCategory: 'quickSearch',
-                trackingAction: 'add-project',
-                templatesFetcher: ctrl.templateNodes
-            })))];
+                            },
+                            trackingCategory: 'quickSearch',
+                            trackingAction: 'add-project',
+                            templatesFetcher: ctrl.templateNodes
+                        }
+                    )
+                )
+            ];
         }
-          return m('.row', m('.col-xs-12', headerTemplate()), m('div.p-v-xs.text-center.drop-zone-format.drop-zone-invis .pointer .panel #shareWindowDropzone',
-              m('button.close[aria-label="Close"]',{ onclick : function() {
-                  $('#ShareButton').toggleClass('btn-primary');
-                  $('#shareWindowDropzone').hide();
-                  $('#LinkToShareFiles').hide();
-              }}, m('.drop-zone-close','x')),
-              m('p#shareWindowDropzone', m('h1.drop-zone-head',  'Drop files to upload'), 'Having trouble? Click anywhere in this box to manually upload a file.')),
-              m('.h4.text-center.drop-zone-invis #LinkToShareFiles', 'Or go to your ', m('a', {href: '/share_window/', onclick: function() {}}, 'Public Files Project')));
+
+        return
+            m('.col-xs-12', headerTemplate(),
+                m('div.p-v-xs.text-center.drop-zone-format.drop-zone-invis .pointer .panel #shareWindowDropzone',
+                    m('button.close[aria-label="Close"]',
+                        m('.drop-zone-close','x')
+                    ),
+                    m('p#shareWindowDropzone',
+                        m('h1.drop-zone-head',  'Drop files to upload'),
+                        'Having trouble? Click anywhere in this box to manually upload a file.'
+                    )
+                ),
+                m('.h4.text-center.drop-zone-invis #LinkToShareFiles', 'Or go to your ',
+                    m('a', {href: '/share_window/'}, 'Public Files Project')
+                )
+            );
   }
 };
 
