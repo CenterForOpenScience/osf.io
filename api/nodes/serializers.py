@@ -551,6 +551,7 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
     """
     Overrides node contributor serializer to add additional methods
     """
+    id = IDField(source='_id', required=True)
 
     def update(self, instance, validated_data):
         contributor = instance
