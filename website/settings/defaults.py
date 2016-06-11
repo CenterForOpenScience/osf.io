@@ -520,3 +520,4 @@ ESI_MEDIA_TYPES = {'application/vnd.api+json', 'application/json'}
 
 # Used for gathering meta information about the current build
 GITHUB_API_TOKEN = None
+

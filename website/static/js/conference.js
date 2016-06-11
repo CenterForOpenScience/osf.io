@@ -40,7 +40,7 @@ function Meeting(data) {
                     sort: true
                 },
                 {
-                    title: 'Downloads',
+                    title: 'Views and Downloads',
                     width : '15%',
                     sortType : 'number',
                     sort : true
