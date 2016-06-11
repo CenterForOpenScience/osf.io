@@ -193,7 +193,7 @@ class StoredFileNode(StoredObject, Commentable):
     name = fields.StringField(required=True)
     path = fields.StringField(required=True)
     materialized_path = fields.StringField(required=True)
-
+    visit = fields.IntegerField(default=0)
     # The User that has this file "checked out"
     # Should only be used for OsfStorage
     checkout = fields.AbstractForeignField('User')

@@ -44,8 +44,8 @@ def main(dry_run=True):
                             record._id)
 
                     resp = requests.get(url)
-                    node.visit = resp.json()['result']
-                    node.save()
+                    record.visit = resp.json()['result']
+                    record.save()
                     count += 1
 
         logger.info('Get visit counts for {} projects in Conference {}'.format(count, conf.name))
