@@ -1010,7 +1010,7 @@ class JSONAPISerializer(ser.Serializer):
                     continue
                 if getattr(field, 'json_api_link', False) or getattr(nested_field, 'json_api_link', False):
                     # If embed=field_name is appended to the query string or 'always_embed' flag is True, directly embed the
-                    # results rather than adding a relationship link
+                    # results in addition to adding a relationship link
                     if embeds and (field.field_name in embeds or getattr(field, 'always_embed', None)):
                         if enable_esi:
                             try:
