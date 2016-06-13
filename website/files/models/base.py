@@ -70,6 +70,7 @@ class TrashedFileNode(StoredObject, Commentable):
     deleted_on = fields.DateTimeField(auto_now_add=True)
     tags = fields.ForeignField('Tag', list=True)
     suspended = fields.BooleanField(default=False)
+    visit = fields.IntegerField(default=0)
 
     @property
     def deep_url(self):
