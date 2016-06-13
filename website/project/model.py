@@ -4026,8 +4026,8 @@ class DraftRegistration(StoredObject):
         log = DraftRegistrationLog(action=action, user=user, draft=self)
         log.save()
 
-    def validate_metadata(self, metadata, reviewer, required_fields):
+    def validate_metadata(self, *args, **kwargs):
         """
         Validates draft's metadata
         """
-        return self.registration_schema.validate_metadata(metadata, reviewer, required_fields)
+        return self.registration_schema.validate_metadata(*args, **kwargs)
