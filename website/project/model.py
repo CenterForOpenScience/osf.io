@@ -1551,6 +1551,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 save=True,
             )
 
+            project_signals.project_created.send(self)
+
         # Only update Solr if at least one stored field has changed, and if
         # public or privacy setting has changed
         need_update = bool(self.SOLR_UPDATE_FIELDS.intersection(saved_fields))
