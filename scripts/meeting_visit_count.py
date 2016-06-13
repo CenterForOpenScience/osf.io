@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-import datetime
 import logging
-import sys
 import requests
 from modularodm import Q
 
@@ -12,7 +10,7 @@ from framework.celery_tasks import app as celery_app
 from website import settings
 from website.app import init_app
 from framework.transactions.context import TokuTransaction
-from website.models import Tag, Conference
+from website.models import Tag, Conference, Node
 from website.files.models import StoredFileNode
 from scripts import utils as scripts_utils
 
@@ -25,7 +23,7 @@ def main(dry_run=True):
     for conf in Conference.find():
         count = 0
         for tag in Tag.find(Q('lower', 'eq', conf.endpoint.lower())):
-            for node in tag.node__tagged.find(Q('is_public', 'eq', True) & Q('is_deleted', 'eq', False)):
+            for node in Node.find(Q('is_public', 'eq', True) & Q('is_deleted', 'eq', False) & Q('tags', 'eq', tag)):
                 record = next(
                     x for x in
                     StoredFileNode.find(
