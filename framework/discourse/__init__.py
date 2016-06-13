@@ -514,9 +514,12 @@ def delete_topic(node):
     node.discourse_topic_id = None
 
 def create_comment(node, comment_text, user=None, reply_to_post_number=None):
-    user_name = get_username(user)
-    if user_name is None:
-        raise DiscourseException('The user given does not exist in discourse!')
+    if user is None or user == 'system':
+        user_name = 'system'
+    else:
+        user_name = get_username(user)
+        if user_name is None:
+            raise DiscourseException('The user given does not exist in discourse!')
 
     url = furl(settings.DISCOURSE_SERVER_URL).join('/posts')
     url.args['api_key'] = settings.DISCOURSE_API_KEY
