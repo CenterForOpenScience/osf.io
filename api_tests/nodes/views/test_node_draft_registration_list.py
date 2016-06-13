@@ -145,8 +145,6 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             }
         }
         res = self.app.post_json_api(self.url, draft_data, auth=self.user.auth, expect_errors=True)
-        errors = res.json['errors'][0]
-        assert_equal(errors['detail'], "Resource identifier does not match server endpoint.")
         assert_equal(res.status_code, 409)
 
     def test_admin_can_create_draft(self):
