@@ -4,6 +4,8 @@
 import functools
 from datetime import datetime
 
+from dateutil import parser
+
 from framework.mongo import database
 from framework.postcommit_tasks.handlers import run_postcommit
 from framework.sessions import session
@@ -15,10 +17,10 @@ collection = database['pagecounters']
 
 @run_postcommit(once_per_request=False, celery=True)
 @app.task(max_retries=5, default_retry_delay=60)
-def increment_user_activity_counters(user_id, action, date, db=None):
+def increment_user_activity_counters(user_id, action, date_string, db=None):
     db = db or database  # default to local proxy
     collection = database['useractivitycounters']
-    date = date.strftime('%Y/%m/%d')
+    date = parser.parse(date_string).strftime('%Y/%m/%d')
     query = {
         '$inc': {
             'total': 1,
@@ -131,7 +133,7 @@ def update_counters(rex, db=None):
         def wrapped(*args, **kwargs):
             ret = func(*args, **kwargs)
             page = build_page(rex, kwargs)
-            update_counter(page, db or database)
+            update_counter(page, db)
             return ret
         return wrapped
     return wrapper

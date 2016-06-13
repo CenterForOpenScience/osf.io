@@ -182,7 +182,7 @@ SWAGGER_SETTINGS = {
         'title': 'OSF APIv2 Documentation',
     },
     'doc_expansion': 'list',
-    "exclude_namespaces": ['applications', 'tokens'],
+    'exclude_namespaces': ['applications', 'tokens'],
 }
 
 NODE_CATEGORY_MAP = osf_settings.NODE_CATEGORY_MAP

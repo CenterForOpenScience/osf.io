@@ -95,7 +95,7 @@ var institutionLogos = {
 
 $(document).ready(function () {
 
-    if (ctx.node.institutions.length){
+    if (ctx.node.institutions.length && !ctx.node.anonymous){
         m.mount(document.getElementById('instLogo'), m.component(institutionLogos, {institutions: window.contextVars.node.institutions}));
     }
     $('#contributorsList').osfToggleHeight();

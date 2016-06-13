@@ -47,7 +47,7 @@ def _kwargs_to_nodes(kwargs):
             http.NOT_FOUND,
             data={
                 'message_short': 'Node not found',
-                'message_long': "No Node with that primary key could be found",
+                'message_long': 'No Node with that primary key could be found',
             }
         )
     return parent, node
@@ -68,7 +68,7 @@ def must_not_be_rejected(func):
         node = get_or_http_error(Node, kwargs.get('nid', kwargs.get('pid')), allow_deleted=True)
         if node.sanction and node.sanction.is_rejected:
             raise HTTPError(http.GONE, data=dict(
-                message_long="This registration has been rejected"
+                message_long='This registration has been rejected'
             ))
 
         return func(*args, **kwargs)
@@ -159,7 +159,7 @@ def must_be_registration(func):
                 http.BAD_REQUEST,
                 data={
                     'message_short': 'Registered Nodes only',
-                    'message_long': "This view is restricted to registered Nodes only",
+                    'message_long': 'This view is restricted to registered Nodes only',
                 }
             )
         return func(*args, **kwargs)
@@ -178,7 +178,7 @@ def check_can_access(node, user, key=None, api_node=None):
         return False
     if not node.can_view(Auth(user=user)) and api_node != node:
         if key in node.private_link_keys_deleted:
-            status.push_status_message("The view-only links you used are expired.", trust=False)
+            status.push_status_message('The view-only links you used are expired.', trust=False)
         raise HTTPError(http.FORBIDDEN)
     return True
 
