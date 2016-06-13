@@ -109,8 +109,7 @@ class TestCommentModel(OsfTestCase):
             root_target=self.comment.root_target,
             page='node',
             is_public=True,
-            content='This is a comment.',
-            new_mentions=self.comment.new_mentions
+            content='This is a comment.'
         )
         assert_equal(comment.user, self.comment.user)
         assert_equal(comment.node, self.comment.node)
@@ -118,7 +117,6 @@ class TestCommentModel(OsfTestCase):
         assert_equal(len(comment.node.logs), 2)
         assert_equal(comment.node.logs[-1].action, NodeLog.COMMENT_ADDED)
         assert_equal([], self.comment.ever_mentioned)
-        assert_equal(comment.new_mentions, self.comment.ever_mentioned)
 
     def test_create_comment_content_cannot_exceed_max_length(self):
         with assert_raises(ValidationValueError):
@@ -312,7 +310,6 @@ class TestCommentModel(OsfTestCase):
                 save=True
             )
         assert_equal(mock_signals.signals_sent(), set([]))
-        assert_equal(self.comment.new_mentions, [])
 
     def test_delete(self):
         self.comment.delete(auth=self.auth, save=True)

@@ -553,13 +553,11 @@ class CommentFactory(ModularOdmFactory):
         user = kwargs.pop('user', None) or node.creator
         target = kwargs.pop('target', None) or Guid.load(node._id)
         content = kwargs.pop('content', None) or 'Test comment.'
-        new_mentions = kwargs.pop('new_mentions', None) or []
         instance = target_class(
             node=node,
             user=user,
             target=target,
             content=content,
-            new_mentions=new_mentions,
             *args, **kwargs
         )
         if isinstance(target.referent, target_class):
@@ -574,13 +572,11 @@ class CommentFactory(ModularOdmFactory):
         user = kwargs.pop('user', None) or node.creator
         target = kwargs.pop('target', None) or Guid.load(node._id)
         content = kwargs.pop('content', None) or 'Test comment.'
-        new_mentions = kwargs.pop('new_mentions', None) or []
         instance = target_class(
             node=node,
             user=user,
             target=target,
             content=content,
-            new_mentions=new_mentions,
             *args, **kwargs
         )
         if isinstance(target.referent, target_class):
