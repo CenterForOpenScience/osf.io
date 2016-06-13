@@ -168,6 +168,7 @@ function ProjectNotifications(data) {
                 });
             }
             else if (item.parent().data.kind === 'folder' || item.parent().data.kind === 'heading' && item.data.kind === 'event') {
+                var mentionsInTitle = ~item.data.event.title.indexOf('mentions');
                 columns.push(
                 {
                     data : 'project',  // Data field name
@@ -190,16 +191,16 @@ function ProjectNotifications(data) {
                                     subscribe(item, ev.target.value);
                                 }},
                                 [
-                                    ~item.data.event.title.indexOf('mentions') ?
+                                    mentionsInTitle ?
                                         null :
                                         m('option', {value: 'none', selected : item.data.event.notificationType === 'none' ? 'selected': ''}, 'Never'),
-                                    ~item.data.event.title.indexOf('mentions') ?
+                                    mentionsInTitle ?
                                         null :
                                         m('option', {value: 'email_transactional', selected : item.data.event.notificationType === 'email_transactional' ? 'selected': ''}, 'Instantly'),
-                                    ~item.data.event.title.indexOf('mentions') ?
+                                    mentionsInTitle ?
                                         null :
                                         m('option', {value: 'email_digest', selected : item.data.event.notificationType === 'email_digest' ? 'selected': ''}, 'Daily'),
-                                    ~item.data.event.title.indexOf('mentions') ?
+                                    mentionsInTitle ?
                                         m('option', {value: 'email_transactional', selected: 'email_transactional', disabled: true}, 'Instantly') :
                                         null,
                             ])
