@@ -142,7 +142,9 @@ preview -> file-preview -> details -> filename
 
 .drop-zone-format {
      background: rgba(255, 255, 255, .49);
-    padding: 50px;
+padding-bottom: 180px;
+    padding-left: 10px;
+    padding-right: 10px;
     border-radius: 5px;
     margin-top: 0;
     clear: both;
@@ -166,11 +168,9 @@ preview -> file-preview -> details -> filename
 }
 
 .drop-zone-close {
-    margin-top: -20px;
-    margin-right: -20px;
+font-size:28px;
     position:relative;
-    top: -20px;
-    right: -20px;
+
 }
 
 .drop-zone-bold {
@@ -187,3 +187,7 @@ preview -> file-preview -> details -> filename
     margin-bottom: -30px;
 }
 
+.dz-p {
+    margin: 10px;
+    border-bottom: 2px solid;
+}

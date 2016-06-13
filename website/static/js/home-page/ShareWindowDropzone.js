@@ -22,15 +22,16 @@ var ShareWindowDropzone = {
         autoProcessQueue: false,
         withCredentials: true,
         method:'put',
-        border: '2px dashed #ccc',
         maxFilesize: 1,
 
         accept: function(file, done) {
-            if(this.files.length < 10){
+            if (this.files.length <= 10) {
                 this.options.url = waterbutler.buildUploadUrl(false,'osfstorage',window.contextVars['shareWindowId'], file,{});
                 this.processFile(file);
-            }else if(this.files.length == 11){
-                $osf.growl("Error", "Maximum of 10 files per upload")
+            }
+            else if (this.files.length > 10) {
+                $osf.growl("Error", "You can only upload 10 files at once.");
+                return this.emit("error", file);
             }else{}
         },
         sending: function(file, xhr) {
@@ -39,16 +40,17 @@ var ShareWindowDropzone = {
             xhr.send = function() {
                _send.call(xhr, file);
            };
+            $('.drop-zone-format').css({'padding-bottom': '10px'});
         },
         success: function(file, xhr) {
             this.processQueue();
             file.previewElement.classList.add("dz-success");
-            file.previewElement.classList.add("dz-preview-background-success")
+            file.previewElement.classList.add("dz-preview-background-success");
         },
 
         error: function(file, message) {
             file.previewElement.classList.add("dz-error");
-            file.previewElement.classList.add("dz-preview-background-error")
+            file.previewElement.classList.add("dz-preview-background-error");
         },
     };
 
@@ -65,7 +67,7 @@ var ShareWindowDropzone = {
 
       $('#ShareButton').click(function(e) {
         document.getElementById("ShareButton").style.cursor = "pointer";
-          $('#shareWindowDropzone').slideToggle();
+          $('#shareWindowDropzone').stop().slideToggle();
           $('#glyph').toggleClass('glyphicon glyphicon-chevron-down');
           $('#glyph').toggleClass('glyphicon glyphicon-chevron-up');
 
@@ -100,9 +102,12 @@ var ShareWindowDropzone = {
                   $('div.dz-preview').remove();
                   $('#glyph').toggleClass('glyphicon glyphicon-chevron-up');
                   $('#glyph').toggleClass('glyphicon glyphicon-chevron-down');
-              }}, m('.drop-zone-close', 'x')),
-              m('p.text-center.top#shareWindowDropzone', m('h1.drop-zone-bold',  'Drop files to upload'),
-                  'Click the box to upload files. Files are automatically uploaded to your ',m('a', {href: '/share_window/', onclick: function() {}}, 'Public Files'))));
+                  $('.drop-zone-format').css({'padding-bottom': '180px'});
+
+              }}, m('.drop-zone-close', '×')),
+              m('.dz-p.text-center.top#shareWindowDropzone', m('h1.drop-zone-bold',  'Drop files to upload'),
+                  'Click the box to upload files. Files are automatically uploaded to your ',
+                  m('a', {href: '/share_window/', onclick: function(e) {e.stopImmediatePropagation();}}, 'Public Files'))));
   }
 };
 
