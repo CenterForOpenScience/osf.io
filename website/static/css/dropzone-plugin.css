@@ -147,16 +147,23 @@ padding-bottom: 180px;
     padding-right: 10px;
     border-radius: 5px;
     margin-top: 0;
-    clear: both;
-
-    border: 2px dashed #999;
+    border: 3px solid #999;
+    -webkit-transition: background .4s ease;
+    -moz-transition: background .4s ease;
+    -o-transition: background .4s ease;
+    transition: background .4s ease, box-shadow 0.4s ease;
 
 }
 .drop-zone-format:hover {
     border: 3px solid;
     border-color: #52A452;
     background: rgba(255,255,255,0.2);
+          box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
 
+.drop-zone-format::after {
+
+  transition: opacity 0.4s ease-in-out;
 }
 
 .drop-zone-disp {
@@ -188,6 +195,7 @@ font-size:28px;
 }
 
 .dz-p {
-    margin: 10px;
-    border-bottom: 2px solid;
+    border-bottom: 2px solid #999;
+    margin:auto;
+    width:100%;
 }
