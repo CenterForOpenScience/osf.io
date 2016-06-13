@@ -2428,7 +2428,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if save:
             self.save()
         if user:
-            increment_user_activity_counters(user._primary_key, action, log.date)
+            increment_user_activity_counters(user._primary_key, action, log.date.isoformat())
         return log
 
     @classmethod
