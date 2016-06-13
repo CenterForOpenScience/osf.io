@@ -349,15 +349,9 @@ class NotificationTestCase(OsfTestCase):
 
     def setUp(self):
         super(NotificationTestCase, self).setUp()
-        for signal in self.DISCONNECTED_SIGNALS:
-            for receiver in self.DISCONNECTED_SIGNALS[signal]:
-                signal.disconnect(receiver)
 
     def tearDown(self):
         super(NotificationTestCase, self).tearDown()
-        for signal in self.DISCONNECTED_SIGNALS:
-            for receiver in self.DISCONNECTED_SIGNALS[signal]:
-                signal.connect(receiver)
 
 
 class ApiWikiTestCase(ApiTestCase):

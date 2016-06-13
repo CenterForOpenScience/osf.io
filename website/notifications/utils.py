@@ -327,7 +327,7 @@ def serialize_event(user, subscription=None, node=None, event_description=None):
         event_type = event_description
     if node and node.node__parent:
         notification_type = 'adopt_parent'
-    elif event_type.startswith('_global'):
+    elif event_type.startswith('global_'):
         notification_type = 'email_transactional'
     else:
         notification_type = 'none'
@@ -390,7 +390,7 @@ def check_if_all_global_subscriptions_are_none(user):
     all_global_subscriptions_none = False
     user_sunscriptions = get_all_user_subscriptions(user)
     for user_subscription in user_sunscriptions:
-        if user_subscription.event_name.startswith('_global'):
+        if user_subscription.event_name.startswith('global_'):
             all_global_subscriptions_none = True
             global_notification_type = get_global_notification_type(user_subscription, user)
             if global_notification_type != 'none':
