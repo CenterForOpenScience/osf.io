@@ -3,6 +3,9 @@ NODE_SUBSCRIPTIONS_AVAILABLE = {
     'file_updated': 'Files updated'
 }
 
+# Note: if the subscription starts with 'global_', it will be treated like a default
+# subscription. If no notification type has been assigned, the user subscription
+# will default to 'email_transactional'.
 USER_SUBSCRIPTIONS_AVAILABLE = {
     'global_comment_replies': 'Replies to your comments',
     'global_comments': 'Comments added',
