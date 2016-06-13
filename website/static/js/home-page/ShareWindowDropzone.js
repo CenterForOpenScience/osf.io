@@ -64,17 +64,13 @@ var ShareWindowDropzone = {
 
 
       $('#ShareButton').click(function(e) {
-        $(this).attr('disabled', 'disabled');
         document.getElementById("ShareButton").style.cursor = "pointer";
-        setTimeout(enable, 300);
           $('#shareWindowDropzone').slideToggle();
           $('#glyph').toggleClass('glyphicon glyphicon-chevron-down');
           $('#glyph').toggleClass('glyphicon glyphicon-chevron-up');
 
       });
-    function enable () {
-       $(this).removeAttr('disabled');
-    }
+
 
   },
 
