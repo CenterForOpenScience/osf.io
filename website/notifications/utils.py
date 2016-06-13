@@ -399,6 +399,32 @@ def check_if_all_global_subscriptions_are_none(user):
     return all_global_subscriptions_none
 
 
+def subscribe_user_to_notifications(node, user):
+    """ Update the notification settings for the creator or contributors
+
+    :param user: User to subscribe to notifications
+    """
+    events = constants.NODE_SUBSCRIPTIONS_AVAILABLE
+    notification_type = 'email_transactional'
+    target_id = node._id
+
+    if user.is_registered:
+        for event in events:
+            event_id = to_subscription_key(target_id, event)
+            global_event_id = to_subscription_key(user._id, 'global_' + event)
+            global_subscription = NotificationSubscription.load(global_event_id)
+
+            subscription = NotificationSubscription.load(event_id)
+            if not subscription:
+                subscription = NotificationSubscription(_id=event_id, owner=node, event_name=event)
+            if global_subscription:
+                global_notification_type = get_global_notification_type(global_subscription, user)
+                subscription.add_user_to_subscription(user, global_notification_type)
+            else:
+                subscription.add_user_to_subscription(user, notification_type)
+            subscription.save()
+
+
 def format_user_and_project_subscriptions(user):
     """ Format subscriptions data for user settings page. """
     return [

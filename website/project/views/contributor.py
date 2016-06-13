@@ -462,7 +462,6 @@ def send_claim_email(email, user, node, notify=True, throttle=24 * 3600):
     return to_addr
 
 
-@contributor_added.connect
 def notify_added_contributor(node, contributor, auth=None, throttle=None):
     throttle = throttle or settings.CONTRIBUTOR_ADDED_EMAIL_THROTTLE
 
