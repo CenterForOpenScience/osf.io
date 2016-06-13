@@ -262,7 +262,7 @@ function _fangornColumns(item) {
         filter : true,
         custom: _fangornDataverseTitle
     });
-    if(tb.options.placement === 'project-files') {
+    if (tb.options.placement === 'project-files') {
         columns.push(
         {
             data  : 'size',
@@ -271,7 +271,7 @@ function _fangornColumns(item) {
             custom : function() {return m('');}
         });
     }
-    if(tb.options.placement === 'project-files') {
+    if (tb.options.placement === 'project-files') {
         columns.push(
         {
             data  : 'downloads',

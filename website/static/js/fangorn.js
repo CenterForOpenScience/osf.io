@@ -1232,8 +1232,6 @@ function _fangornModifiedColumn(item, col) {
     if (item.data.isAddonRoot && item.connected === false) { // as opposed to undefined, avoids unnecessary setting of this value
         return _connectCheckTemplate.call(this, item);
     }
-    console.log(item.data.provider);
-    console.log(item.data.name);
     var assert = require('assert');
     if (item.kind === 'file' && item.data.permissions.view && item.data.modified) {
         return m(
@@ -1327,7 +1325,7 @@ function _fangornResolveRows(item) {
             data : 'downloads',
             sortInclude : false,
             filter : false,
-            custom: function() { return item.data.extra ? item.data.extra.downloads.toString() : ''; }
+            custom: function() { return item.data.extra && item.data.extra.downloads ? item.data.extra.downloads.toString() : ''; }
         });
     } else {
         default_columns.push({
