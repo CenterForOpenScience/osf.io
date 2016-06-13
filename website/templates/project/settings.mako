@@ -313,6 +313,7 @@
                                <li>institutional logos to be displayed on public projects</li>
                                <li>public projects to be discoverable on specific institutional landing pages</li>
                                <li>single sign-on to the OSF with institutional credentials</li>
+                               <li><a href="http://help.osf.io/m/os4i">FAQ</a></li>
                             </ul>
                             <!-- /ko -->
                         </div>

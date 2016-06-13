@@ -52,7 +52,7 @@ def to_subscription_key(uid, event):
 
 
 def from_subscription_key(key):
-    parsed_key = key.split("_", 1)
+    parsed_key = key.split('_', 1)
     return {
         'uid': parsed_key[0],
         'event': parsed_key[1]

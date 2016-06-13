@@ -239,6 +239,7 @@ def make_url_map(app):
             notemplate
         ),
         Rule('/about/', 'get', website_views.redirect_about, notemplate),
+        Rule('/help/', 'get', website_views.redirect_help, notemplate),
         Rule('/faq/', 'get', {}, OsfWebRenderer('public/pages/faq.mako', trust=False)),
         Rule(['/getting-started/', '/getting-started/email/', '/howosfworks/'], 'get', website_views.redirect_getting_started, notemplate),
         Rule('/support/', 'get', {}, OsfWebRenderer('public/pages/support.mako', trust=False)),
@@ -252,7 +253,6 @@ def make_url_map(app):
         Rule(
             [
                 '/messages/',
-                '/help/'
             ],
             'get',
             {},

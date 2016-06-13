@@ -23,7 +23,7 @@ REGISTRATION_UNAVAILABLE = 'Registration currently unavailable.'
 
 ALREADY_REGISTERED = u'The email {email} has already been registered.'
 
-AFTER_SUBMIT_FOR_REVIEW = "Your submission has been received. You will be notified within ten business days regarding the status of your submission. If you have questions you may contact us at prereg@cos.io."
+AFTER_SUBMIT_FOR_REVIEW = 'Your submission has been received. You will be notified within ten business days regarding the status of your submission. If you have questions you may contact us at prereg@cos.io.'
 
 # Shown if user tries to login with an email that is not yet confirmed
 UNCONFIRMED = ('This login email has been registered but not confirmed. Please check your email (and spam folder).'
@@ -182,7 +182,7 @@ TEMPLATE_DROPDOWN_HELP = """Start typing to search. Selecting project as
 template will duplicate its structure in the new project without importing the
 content of that project."""
 
-TEMPLATED_FROM_PREFIX = "Templated from "
+TEMPLATED_FROM_PREFIX = 'Templated from '
 
 # MFR Error handling
 ERROR_PREFIX = "Unable to render. <a href='?action=download'>Download</a> file to view it."

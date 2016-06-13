@@ -116,12 +116,12 @@ def send_comment_added_notification(comment, auth):
         page_title=comment.get_comment_page_title(),
         provider=PROVIDERS[comment.root_target.referent.provider] if comment.page == Comment.FILES else '',
         target_user=target.referent.user if is_reply(target) else None,
-        parent_comment=target.referent.content if is_reply(target) else "",
+        parent_comment=target.referent.content if is_reply(target) else '',
         url=comment.get_comment_page_url()
     )
     time_now = datetime.utcnow().replace(tzinfo=pytz.utc)
     sent_subscribers = notify(
-        event="comments",
+        event='comments',
         user=auth.user,
         node=node,
         timestamp=time_now,
@@ -145,11 +145,11 @@ def is_reply(target):
 
 def _update_comments_timestamp(auth, node, page=Comment.OVERVIEW, root_id=None):
     if node.is_contributor(auth.user):
-        enqueue_postcommit_task(ban_url, (node, ), {})
+        enqueue_postcommit_task(ban_url, (node, ), {}, celery=False, once_per_request=True)
         if root_id is not None:
             guid_obj = Guid.load(root_id)
             if guid_obj is not None:
-                enqueue_postcommit_task(ban_url, (guid_obj.referent, ), {})
+                enqueue_postcommit_task(ban_url, (guid_obj.referent, ), {}, celery=False, once_per_request=True)
 
         # update node timestamp
         if page == Comment.OVERVIEW:
