@@ -6,7 +6,7 @@ from itertools import islice
 
 from flask import request
 from modularodm import Q
-from modularodm.exceptions import ModularOdmException, ValidationValueError, NoResultsFound
+from modularodm.exceptions import ModularOdmException, ValidationValueError
 
 from framework import status
 from framework.utils import iso8601format
@@ -32,7 +32,7 @@ from website.project.decorators import (
 from website.tokens import process_token_or_pass
 from website.util.permissions import ADMIN, READ, WRITE, CREATOR_PERMISSIONS
 from website.util.rubeus import collect_addon_js
-from website.project.model import has_anonymous_link, get_pointer_parent, NodeUpdateError, validate_title, Institution
+from website.project.model import has_anonymous_link, get_pointer_parent, NodeUpdateError, validate_title
 from website.project.forms import NewNodeForm
 from website.project.metadata.utils import serialize_meta_schemas
 from website.models import Node, Pointer, WatchConfig, PrivateLink, Comment
@@ -264,16 +264,8 @@ def node_forks(auth, node, **kwargs):
 @must_have_permission(READ)
 def node_setting(auth, node, **kwargs):
 
-    #check institutions:
-    try:
-        email_domains = [email.split('@')[1] for email in auth.user.emails]
-        inst = Institution.find_one(Q('email_domains', 'in', email_domains))
-        if inst not in auth.user.affiliated_institutions:
-            auth.user.affiliated_institutions.append(inst)
-            auth.user.save()
-    except (IndexError, NoResultsFound):
-        pass
-
+    auth.user.update_affiliated_institutions_by_email_domain()
+    auth.user.save()
     ret = _view_project(node, auth, primary=True)
 
     addons_enabled = []
@@ -440,7 +432,7 @@ def project_statistics(auth, node, **kwargs):
 @must_be_valid_project
 @must_be_contributor_or_public
 def project_statistics_redirect(auth, node, **kwargs):
-    return redirect(node.web_url_for("project_statistics", _guid=True))
+    return redirect(node.web_url_for('project_statistics', _guid=True))
 
 ###############################################################################
 # Make Private/Public
@@ -671,6 +663,9 @@ def _view_project(node, auth, primary=False):
     if (node.is_pending_registration and node.has_permission(user, ADMIN)):
         disapproval_link = node.root.registration_approval.stashed_urls.get(user._id, {}).get('reject', '')
 
+    if (node.is_pending_embargo and node.has_permission(user, ADMIN)):
+        disapproval_link = node.root.embargo.stashed_urls.get(user._id, {}).get('reject', '')
+
     # Before page load callback; skip if not primary call
     if primary:
         for addon in node.get_addons():
@@ -705,7 +700,7 @@ def _view_project(node, auth, primary=False):
             'is_retracted': node.is_retracted,
             'is_pending_retraction': node.is_pending_retraction,
             'retracted_justification': getattr(node.retraction, 'justification', None),
-            'embargo_end_date': node.embargo_end_date.strftime("%A, %b. %d, %Y") if node.embargo_end_date else False,
+            'embargo_end_date': node.embargo_end_date.strftime('%A, %b. %d, %Y') if node.embargo_end_date else False,
             'is_pending_embargo': node.is_pending_embargo,
             'is_embargoed': node.is_embargoed,
             'is_pending_embargo_termination': node.is_embargoed and (
@@ -737,11 +732,7 @@ def _view_project(node, auth, primary=False):
                 'doi': node.get_identifier_value('doi'),
                 'ark': node.get_identifier_value('ark'),
             },
-            'institution': {
-                'name': node.primary_institution.name if node.primary_institution else None,
-                'logo_path': node.primary_institution.logo_path if node.primary_institution else None,
-                'id': node.primary_institution._id if node.primary_institution else None
-            },
+            'institutions': get_affiliated_institutions(node) if node else [],
             'alternative_citations': [citation.to_json() for citation in node.alternative_citations],
             'has_draft_registrations': node.has_active_draft_registrations,
             'contributors': [contributor._id for contributor in node.contributors]
@@ -868,7 +859,7 @@ def _get_summary(node, auth, primary=True, link_id=None, show_path=False):
         'is_pending_registration': node.is_pending_registration,
         'is_retracted': node.is_retracted,
         'is_pending_retraction': node.is_pending_retraction,
-        'embargo_end_date': node.embargo_end_date.strftime("%A, %b. %d, %Y") if node.embargo_end_date else False,
+        'embargo_end_date': node.embargo_end_date.strftime('%A, %b. %d, %Y') if node.embargo_end_date else False,
         'is_pending_embargo': node.is_pending_embargo,
         'is_embargoed': node.is_embargoed,
         'archiving': node.archiving,
@@ -948,11 +939,12 @@ def node_child_tree(user, node_ids):
     """ Format data to test for node privacy settings for use in treebeard.
     """
     items = []
+
     for node_id in node_ids:
         node = Node.load(node_id)
         assert node, '{} is not a valid Node.'.format(node_id)
 
-        can_read = node.has_permission(user, 'read')
+        can_read = node.has_permission(user, READ)
         can_read_children = node.has_permission_on_children(user, 'read')
         if not can_read and not can_read_children:
             continue
@@ -965,10 +957,14 @@ def node_child_tree(user, node_ids):
                 'is_confirmed': contributor.is_confirmed
             })
 
+        affiliated_institutions = [{
+            'id': affiliated_institution.pk,
+            'name': affiliated_institution.name
+        } for affiliated_institution in node.affiliated_institutions]
+
         children = []
         # List project/node if user has at least 'read' permissions (contributor or admin viewer) or if
         # user is contributor on a component of the project/node
-        can_write = node.has_permission(user, 'admin')
         children.extend(node_child_tree(
             user,
             [
@@ -984,10 +980,10 @@ def node_child_tree(user, node_ids):
                 'url': node.url if can_read else '',
                 'title': node.title if can_read else 'Private Project',
                 'is_public': node.is_public,
-                'can_write': can_write,
                 'contributors': contributors,
                 'visible_contributors': node.visible_contributor_ids,
-                'is_admin': node.has_permission(user, ADMIN)
+                'is_admin': node.has_permission(user, ADMIN),
+                'affiliated_institutions': affiliated_institutions
             },
             'user_id': user._id,
             'children': children,
@@ -996,6 +992,7 @@ def node_child_tree(user, node_ids):
             'category': node.category,
             'permissions': {
                 'view': can_read,
+                'is_admin': node.has_permission(user, 'read')
             }
         }
 

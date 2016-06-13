@@ -261,7 +261,9 @@ def conference_view(**kwargs):
             continue
         meetings.append({
             'name': conf.name,
-            'active': conf.active,
+            'location': conf.location,
+            'end_date': conf.end_date.strftime('%b %d, %Y') if conf.end_date else None,
+            'start_date': conf.start_date.strftime('%b %d, %Y') if conf.start_date else None,
             'url': web_url_for('conference_results', meeting=conf.endpoint),
             'count': conf.num_submissions,
         })

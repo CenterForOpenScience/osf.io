@@ -10,6 +10,7 @@ var m = require('mithril');
 var URI = require('URIjs');
 var Raven = require('raven-js');
 var Treebeard = require('treebeard');
+var Dropzone = require('dropzone');
 
 var $osf = require('js/osfHelpers');
 var waterbutler = require('js/waterbutler');
@@ -88,31 +89,80 @@ function findByTempID(parent, tmpID) {
     return item;
 }
 
-function cancelUploads (row) {
+/**
+ * Cancel a pending upload
+ * @this Treebeard.controller
+ * @param {Object} row Treebeard row containing the file to cancel.
+ */
+function cancelUpload(row) {
     var tb = this;
-    var uploading = tb.dropzone.getUploadingFiles();
-    var rejected = tb.dropzone.getRejectedFiles();
-    var queued = tb.dropzone.getQueuedFiles();
-    var filesArr = uploading.concat(queued, rejected);
-
-    for (var i = 0; i < filesArr.length; i++) {
-        var j = filesArr[i];
-        if(!row) {
-            var parent = j.treebeardParent || tb.dropzoneItemCache;
-            var item = findByTempID(parent, j.tmpID);
-            tb.dropzone.removeFile(j);
-            tb.deleteNode(parent.id,item.id);
-        } else {
-            tb.deleteNode(row.parentID,row.id);
-            if(row.data.tmpID === j.tmpID){
-                tb.dropzone.removeFile(j);
+    var cancelableStatuses = [Dropzone.UPLOADING, Dropzone.QUEUED];
+    // Select files that are uploading, queued, or rejected (!accepted)
+    var filesArr = tb.dropzone.files.filter(function(file) {
+        return cancelableStatuses.indexOf(file.status) > -1 || !file.accepted;
+    });
+    var handled = false;
+    // Search for and remove specified file from queue
+    if (SYNC_UPLOAD_ADDONS.indexOf(row.data.provider) !== -1) {
+        // Provider is handled in sync
+        handled = tb.dropzone.syncFileCache[row.data.provider].some(function(file, index) {
+            if (file.tmpID === row.data.tmpID) {
+                tb.deleteNode(row.parentID, row.id);
+                return tb.dropzone.syncFileCache[row.data.provider].splice(index, 1);
             }
-        }
+        });
     }
+    if (!handled) {
+        // File is currently being uploaded/managed by dropzone
+        handled = filesArr.some(function(file) {
+            if (file.tmpID === row.data.tmpID) {
+                tb.deleteNode(row.parentID, row.id);
+                tb.dropzone.removeFile(file);
+                return true;
+            }
+        });
+    }
+    tb.isUploading(handled && filesArr.length > 1);
+}
+
+/**
+ * Cancel all pending uploads
+ * @this Treebeard.controller
+ */
+function cancelAllUploads() {
+    var tb = this;
+    var cancelableStatuses = [Dropzone.UPLOADING, Dropzone.QUEUED];
+    // Select files that are uploading, queued, or rejected (!accepted)
+    var filesArr = tb.dropzone.files.filter(function(file) {
+        return cancelableStatuses.indexOf(file.status) > -1 || !file.accepted;
+    });
+    // Remove all queued files
+    var removeFromUI = function(file) {
+        var parent = file.treebeardParent || tb.dropzoneItemCache;
+        var item = findByTempID(parent, file.tmpID);
+        tb.deleteNode(parent.id, item.id);
+    };
+    // Clear all synchronous uploads
+    SYNC_UPLOAD_ADDONS.forEach(function(provider) {
+        if (tb.dropzone.syncFileCache[provider] !== undefined) {
+            // Remove cached provider files from UI
+            tb.dropzone.syncFileCache[provider].forEach(removeFromUI);
+            // Clear provider cache
+            tb.dropzone.syncFileCache[provider].length = 0;
+        }
+    });
+    // Clear all ongoing uploads
+    filesArr.forEach(function(file, index) {
+        // Ignore completed files
+        if (file.upload.progress === 100) return;
+        removeFromUI(file);
+        // Cancel currently uploading file
+        tb.dropzone.removeFile(file);
+    });
     tb.isUploading(false);
 }
 
-var uploadRowTemplate = function(item){
+var uploadRowTemplate = function(item) {
     var tb = this;
     var padding;
     if (tb.filterOn) {
@@ -148,9 +198,8 @@ var uploadRowTemplate = function(item){
                                 reapplyTooltips();
                             },
                             'onclick' : function (e) {
-                                console.log(item.data.progress);
                                 e.stopImmediatePropagation();
-                                cancelUploads.call(tb, item);
+                                cancelUpload.call(tb, item);
                             }},
                          m('span.text-muted','×')
                     ))
@@ -700,7 +749,9 @@ function _fangornComplete(treebeard, file) {
 
     if (file.isSync) {
         if (this.syncFileCache[item.data.provider].length > 0) {
-            this.processFile(this.syncFileCache[item.data.provider].pop());
+            var nextFile = this.syncFileCache[item.data.provider].pop();
+            this.files.push(nextFile);
+            this.processFile(nextFile);
         }
     }
 }
@@ -754,6 +805,11 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
     }
     var url = item.data.nodeUrl + 'files/' + item.data.provider + item.data.path;
     addFileStatus(treebeard, file, true, '', url);
+
+    if (item.data.provider === 'dataverse') {
+        item.parent().data.datasetDraftModified = true;
+    }
+
     treebeard.redraw();
 }
 
@@ -804,7 +860,7 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
             child.removeSelf();
         }
     }
-    console.log(file);
+    console.error(file);
     treebeard.options.uploadInProgress = false;
     if (msgText !== 'Upload canceled.') {
         addFileStatus(treebeard, file, false, msgText, '');
@@ -929,6 +985,10 @@ function _removeEvent (event, items, col) {
             tb.deleteNode(item.parentID, item.id);
             tb.modal.dismiss();
             tb.clearMultiselect();
+
+            if (item.data.provider === 'dataverse') {
+                item.parent().data.datasetDraftModified = true;
+            }
         })
         .fail(function(data){
             tb.modal.dismiss();
@@ -1168,6 +1228,7 @@ function gotoFileEvent (item) {
         window.open(fileurl, '_self');
     }
 }
+
 /**
  * Defines the contents of the title column (does not include the toggle and folder sections
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
@@ -1654,7 +1715,7 @@ var FGItemButtons = {
                         onclick: function () {
                             mode(toolbarModes.RENAME);
                         },
-                        icon: 'fa fa-font',
+                        icon: 'fa fa-pencil',
                         className: 'text-info'
                     }, 'Rename')
                 );
@@ -1728,7 +1789,7 @@ var FGToolbar = {
                                 onclick: ctrl.createFolder,
                                 icon: 'fa fa-plus',
                                 className: 'text-success'
-                            }, 'Create'),
+                            }),
                             dismissIcon
                         ]
                     )
@@ -1758,7 +1819,7 @@ var FGToolbar = {
                                 },
                                 icon: 'fa fa-pencil',
                                 className: 'text-info'
-                            }, 'Rename'),
+                            }),
                             dismissIcon
                         ]
                     )
@@ -1779,7 +1840,7 @@ var FGToolbar = {
             generalButtons.push(
                 m.component(FGButton, {
                     onclick: function() {
-                        cancelUploads.call(ctrl.tb);
+                        cancelAllUploads.call(ctrl.tb);
                     },
                     icon: 'fa fa-time-circle',
                     className : 'text-danger'
@@ -1912,15 +1973,14 @@ function openParentFolders (item) {
     var tb = this;
     // does it have a parent? If so change open
     var parent = item.parent();
-    if(parent ){
-        if(!parent.open) {
+    if (parent) {
+        if (!parent.open) {
             var index = tb.returnIndex(parent.id);
             parent.load = true;
             tb.toggleFolder(index);
         }
         openParentFolders.call(tb, parent);
     }
-    return;
 }
 
 /**
@@ -2276,6 +2336,10 @@ tbOptions = {
         tb.pendingFileOps = [];
         tb.select('#tb-tbody').on('click', function(event){
             if(event.target !== this) {
+                var item = tb.multiselected()[0];
+                if (item.data.isAddonRoot || item.data.category === 'project') {
+                    tb.toolbarMode(toolbarModes.DEFAULT);
+                }
                 return;
             }
             tb.clearMultiselect();

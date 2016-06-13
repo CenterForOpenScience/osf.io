@@ -44,6 +44,10 @@ git+https://github.com/CenterForOpenScience/modular-odm.git@develop
 # Python markdown extensions for comment emails
 git+git://github.com/aleray/mdx_del_ins.git
 
+# Kombu with the ability to specify queue priority
+# TODO: Remove this when Kombu has a stable release including commit c20f854
+git+git://github.com/mfraezz/kombu.git@v3.0.36
+
 # Issue: certifi-2015.9.6.1 and 2015.9.6.2 fail verification (https://github.com/certifi/python-certifi/issues/26)
 # MailChimp Ticket: LTK1218902287135X, Domain: https://us9.api.mailchimp.com
 certifi==2015.4.28
@@ -63,6 +67,7 @@ django-rest-swagger==0.3.6
 djangorestframework-bulk==0.2.1
 pyjwt==1.4.0
 pyjwe==1.0.0
+jsonschema==2.5.1
 
 # Admin requirements
 django-webpack-loader==0.2.3

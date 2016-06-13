@@ -51,6 +51,16 @@ def main(env):
     if env == 'prod':
         INSTITUTIONS = [
             {
+                '_id': 'busara',
+                'name': 'Busara Center for Behavioral Economics',
+                'description': 'The <a href="http://www.busaracenter.org/">Busara Center</a> for Behavioral Economics',
+                'banner_name': 'busara-banner.png',
+                'logo_name': 'busara-shield.png',
+                'auth_url': None,
+                'domains': [],
+                'email_domains': ['busaracenter.org'],
+            },
+            {
                 '_id': 'cos',
                 'name': 'Center For Open Science',
                 'description': 'COS is a non-profit technology company providing free and open services to increase inclusivity and transparency of research. Find out more at <a href="https://cos.io">cos.io</a>.',
@@ -60,16 +70,26 @@ def main(env):
                 'domains': ['osf.cos.io'],
                 'email_domains': ['cos.io'],
             },
-            # {
-            #     '_id': 'nd',
-            #     'name': 'University of Notre Dame',
-            #     'description': None,
-            #     'banner_name': 'nd-banner.png',
-            #     'logo_name': 'nd-shield.png',
-            #     'auth_url': SHIBBOLETH_SP.format(encode_uri_component('https://login.nd.edu/idp/shibboleth')),
-            #     'domains': ['osf.nd.edu'],
-            #     'email_domains': [],
-            # },
+            {
+                '_id': 'esip',
+                'name': 'Federation of Earth Science Information Partners (ESIP)',
+                'description': '<a href="http://www.esipfed.org/">ESIP\'s</a> mission is to support the networking and data dissemination needs of our members and the global Earth science data community by linking the functional sectors of observation, research, application, education and use of Earth science.',
+                'banner_name': 'esip-banner.png',
+                'logo_name': 'esip-shield.png',
+                'auth_url': None,
+                'domains': [],
+                'email_domains': ['esipfed.org'],
+            },
+            {
+                '_id': 'nd',
+                'name': 'University of Notre Dame',
+                'description': 'In <a href="https://research.nd.edu/news/64035-notre-dame-center-for-open-science-partner-to-advance-open-science-initiatives/">partnership</a> with the <a href="https://crc.nd.edu">Center for Research Computing</a>, <a href="http://esc.nd.edu">Engineering &amp; Science Computing</a>, and the <a href="https://library.nd.edu">Hesburgh Libraries</a>',
+                'banner_name': 'nd-banner.png',
+                'logo_name': 'nd-shield.png',
+                'auth_url': SHIBBOLETH_SP.format(encode_uri_component('https://login.nd.edu/idp/shibboleth')),
+                'domains': ['osf.nd.edu'],
+                'email_domains': [],
+            },
             {
                 '_id': 'ucr',
                 'name': 'University of California Riverside',
@@ -133,6 +153,26 @@ def main(env):
                 'domains': ['staging-osf-nd.cos.io'],
                 'email_domains': [],
             },
+            {
+                '_id': 'google',
+                'name': 'Google [Stage]',
+                'description': 'Google [Stage]',
+                'banner_name': 'google-banner.png',
+                'logo_name': 'google-shield.png',
+                'auth_url': None,
+                'domains': [],
+                'email_domains': ['gmail.com'],
+            },
+            {
+                '_id': 'yahoo',
+                'name': 'Yahoo [Stage]',
+                'description': 'Yahoo [Stage]',
+                'banner_name': 'yahoo-banner.png',
+                'logo_name': 'yahoo-shield.png',
+                'auth_url': None,
+                'domains': [],
+                'email_domains': ['yahoo.com'],
+            },
         ]
     if env == 'stage2':
         INSTITUTIONS = [
@@ -150,6 +190,16 @@ def main(env):
     elif env == 'test':
         INSTITUTIONS = [
             {
+                '_id': 'busara',
+                'name': 'Busara Center for Behavioral Economics [Test]',
+                'description': 'The <a href="http://www.busaracenter.org/">Busara Center</a> for Behavioral Economics',
+                'banner_name': 'busara-banner.png',
+                'logo_name': 'busara-shield.png',
+                'auth_url': None,
+                'domains': [],
+                'email_domains': ['busaracenter.org'],
+            },
+            {
                 '_id': 'cos',
                 'name': 'Center For Open Science [Test]',
                 'description': 'COS is a non-profit technology company providing free and open services to increase inclusivity and transparency of research. Find out more at <a href="https://cos.io">cos.io</a>.',
@@ -160,9 +210,19 @@ def main(env):
                 'email_domains': ['cos.io'],
             },
             {
+                '_id': 'esip',
+                'name': 'Federation of Earth Science Information Partners (ESIP) [Test]',
+                'description': '<a href="http://www.esipfed.org/">ESIP\'s</a> mission is to support the networking and data dissemination needs of our members and the global Earth science data community by linking the functional sectors of observation, research, application, education and use of Earth science.',
+                'banner_name': 'esip-banner.png',
+                'logo_name': 'esip-shield.png',
+                'auth_url': None,
+                'domains': [],
+                'email_domains': ['esipfed.org'],
+            },
+            {
                 '_id': 'nd',
                 'name': 'University of Notre Dame [Test]',
-                'description': 'University of Notre Dame [Test]',
+                'description': 'In <a href="https://research.nd.edu/news/64035-notre-dame-center-for-open-science-partner-to-advance-open-science-initiatives/">partnership</a> with the <a href="https://crc.nd.edu">Center for Research Computing</a>, <a href="http://esc.nd.edu">Engineering &amp; Science Computing</a>, and the <a href="https://library.nd.edu">Hesburgh Libraries</a>',
                 'banner_name': 'nd-banner.png',
                 'logo_name': 'nd-shield.png',
                 'auth_url': SHIBBOLETH_SP.format(encode_uri_component('https://login-test.cc.nd.edu/idp/shibboleth')),
@@ -218,7 +278,7 @@ def main(env):
             # update the nodes elastic docs, to have current names of institutions. This will
             # only work properly if this file is the only thing changing institution attributes
             if not inst_created:
-                nodes = Node.find_by_institution(new_inst, query=Q('is_deleted', 'ne', True))
+                nodes = Node.find_by_institutions(new_inst, query=Q('is_deleted', 'ne', True))
                 for node in nodes:
                     update_node(node, async=False)
         for extra_inst in Institution.find(Q('_id', 'nin', [x['_id'] for x in INSTITUTIONS])):

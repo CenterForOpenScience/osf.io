@@ -141,7 +141,7 @@ class TestCollectionCreate(ApiTestCase):
         }
         res = self.app.post_json_api(self.url, collection, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
-        assert_equal(res.json['errors'][0]['detail'], 'Resource identifier does not match server endpoint.')
+        assert_equal(res.json['errors'][0]['detail'], 'This resource has a type of "collections", but you set the json body\'s type field to "Wrong type.". You probably need to change the type field to match the resource\'s type.')
 
     def test_creates_collection_properties_not_nested(self):
         project = {
@@ -867,7 +867,7 @@ class TestCollectionNodeLinkCreate(ApiTestCase):
         payload = self.post_payload(self.public_project._id, outer_type='wrong_type')
         res = self.app.post_json_api(self.url, payload, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
-        assert_equal(res.json['errors'][0]['detail'], 'Resource identifier does not match server endpoint.')
+        assert_equal(res.json['errors'][0]['detail'], 'This resource has a type of "node_links", but you set the json body\'s type field to "wrong_type". You probably need to change the type field to match the resource\'s type.')
 
 
 class TestCollectionNodeLinkDetail(ApiTestCase):
@@ -1623,7 +1623,7 @@ class TestCollectionLinksBulkCreate(ApiTestCase):
         payload = {'data': [{'type': 'Wrong type.', 'relationships': {'nodes': {'data': {'type': 'nodes', 'id': self.user_two_collection._id}}}}]}
         res = self.app.post_json_api(self.collection_url, payload, auth=self.user.auth, expect_errors=True, bulk=True)
         assert_equal(res.status_code, 409)
-        assert_equal(res.json['errors'][0]['detail'], 'Resource identifier does not match server endpoint.')
+        assert_equal(res.json['errors'][0]['detail'], 'This resource has a type of "node_links", but you set the json body\'s type field to "Wrong type.". You probably need to change the type field to match the resource\'s type.')
 
 
 class TestBulkDeleteCollectionNodeLinks(ApiTestCase):

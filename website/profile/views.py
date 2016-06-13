@@ -185,7 +185,7 @@ def update_user(auth):
                 user.add_unconfirmed_email(address)
             except (ValidationError, ValueError):
                 raise HTTPError(http.BAD_REQUEST, data=dict(
-                    message_long="Invalid Email")
+                    message_long='Invalid Email')
                 )
 
             # TODO: This setting is now named incorrectly.
@@ -343,7 +343,8 @@ def user_account(auth, **kwargs):
         'user_id': user._id,
         'addons': user_addons,
         'addons_js': collect_user_config_js([addon for addon in settings.ADDONS_AVAILABLE if 'user' in addon.configs]),
-        'addons_css': []
+        'addons_css': [],
+        'requested_deactivation': user.requested_deactivation
     }
 
 
@@ -393,17 +394,17 @@ def user_notifications(auth, **kwargs):
 @must_be_logged_in
 def oauth_application_list(auth, **kwargs):
     """Return app creation page with list of known apps. API is responsible for tying list to current user."""
-    app_list_url = api_v2_url("applications/")
+    app_list_url = api_v2_url('applications/')
     return {
-        "app_list_url": app_list_url
+        'app_list_url': app_list_url
     }
 
 @must_be_logged_in
 def oauth_application_register(auth, **kwargs):
     """Register an API application: blank form view"""
-    app_list_url = api_v2_url("applications/")  # POST request to this url
-    return {"app_list_url": app_list_url,
-            "app_detail_url": ''}
+    app_list_url = api_v2_url('applications/')  # POST request to this url
+    return {'app_list_url': app_list_url,
+            'app_detail_url': ''}
 
 @must_be_logged_in
 def oauth_application_detail(auth, **kwargs):
@@ -421,25 +422,25 @@ def oauth_application_detail(auth, **kwargs):
     if record.is_active is False:
         raise HTTPError(http.GONE)
 
-    app_detail_url = api_v2_url("applications/{}/".format(client_id))  # Send request to this URL
-    return {"app_list_url": '',
-            "app_detail_url": app_detail_url}
+    app_detail_url = api_v2_url('applications/{}/'.format(client_id))  # Send request to this URL
+    return {'app_list_url': '',
+            'app_detail_url': app_detail_url}
 
 @must_be_logged_in
 def personal_access_token_list(auth, **kwargs):
     """Return token creation page with list of known tokens. API is responsible for tying list to current user."""
-    token_list_url = api_v2_url("tokens/")
+    token_list_url = api_v2_url('tokens/')
     return {
-        "token_list_url": token_list_url
+        'token_list_url': token_list_url
     }
 
 @must_be_logged_in
 def personal_access_token_register(auth, **kwargs):
     """Register a personal access token: blank form view"""
-    token_list_url = api_v2_url("tokens/")  # POST request to this url
-    return {"token_list_url": token_list_url,
-            "token_detail_url": '',
-            "scope_options": get_available_scopes()}
+    token_list_url = api_v2_url('tokens/')  # POST request to this url
+    return {'token_list_url': token_list_url,
+            'token_detail_url': '',
+            'scope_options': get_available_scopes()}
 
 @must_be_logged_in
 def personal_access_token_detail(auth, **kwargs):
@@ -456,10 +457,10 @@ def personal_access_token_detail(auth, **kwargs):
     if record.is_active is False:
         raise HTTPError(http.GONE)
 
-    token_detail_url = api_v2_url("tokens/{}/".format(_id))  # Send request to this URL
-    return {"token_list_url": '',
-            "token_detail_url": token_detail_url,
-            "scope_options": get_available_scopes()}
+    token_detail_url = api_v2_url('tokens/{}/'.format(_id))  # Send request to this URL
+    return {'token_list_url': '',
+            'token_detail_url': token_detail_url,
+            'scope_options': get_available_scopes()}
 
 
 def collect_user_config_js(addon_configs):
@@ -529,9 +530,9 @@ def update_mailchimp_subscription(user, list_name, subscription, send_goodbye=Tr
             mailchimp_utils.unsubscribe_mailchimp_async(list_name, user._id, username=user.username, send_goodbye=send_goodbye)
         except mailchimp_utils.mailchimp.ListNotSubscribedError:
             raise HTTPError(http.BAD_REQUEST,
-                data=dict(message_short="ListNotSubscribedError",
-                        message_long="The user is already unsubscribed from this mailing list.",
-                        error_type="not_subscribed")
+                data=dict(message_short='ListNotSubscribedError',
+                        message_long='The user is already unsubscribed from this mailing list.',
+                        error_type='not_subscribed')
             )
 
 
@@ -554,7 +555,7 @@ def sync_data_from_mailchimp(**kwargs):
             user = User.find_one(Q('username', 'eq', username))
         except NoResultsFound:
             sentry.log_exception()
-            sentry.log_message("A user with this username does not exist.")
+            sentry.log_message('A user with this username does not exist.')
             raise HTTPError(404, data=dict(message_short='User not found',
                                         message_long='A user with this username does not exist'))
         if action == 'unsubscribe':
@@ -815,6 +816,7 @@ def request_deactivation(auth):
         user=auth.user,
     )
     user.email_last_sent = datetime.datetime.utcnow()
+    user.requested_deactivation = True
     user.save()
     return {'message': 'Sent account deactivation request'}
 

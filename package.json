@@ -1,6 +1,6 @@
 {
   "name": "OSF",
-  "version": "0.73.0",
+  "version": "0.76.0",
   "description": "Facilitating Open Science",
   "repository": "https://github.com/CenterForOpenScience/osf.io",
   "author": "Center for Open Science",
@@ -37,8 +37,9 @@
     "livedb": "~0.4.8",
     "livedb-mongo": "~0.4.1",
     "loaders.css": "^0.1.2",
-    "lodash.get": "^4.2.1",
+    "lodash.chunk": "^4.0.6",
     "lodash.find": "^4.3.0",
+    "lodash.get": "^4.2.1",
     "markdown-it": "~4.1.0",
     "markdown-it-ins-del": "^0.1.1",
     "markdown-it-sanitizer": "~0.3.0",

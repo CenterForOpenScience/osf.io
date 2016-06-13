@@ -2,6 +2,37 @@
 Changelog
 *********
 
+0.76.0 (2016-06-08)
+===================
+
+- Improve auth flow when adding a secondary email.
+- Admin: Bug fixes and improvements to prereg module.
+- Many UI fixes and security improvements.
+- APIv2: Add file tags to file endpoint responses.
+- APIv2: Read-only routes for wikis.
+- APIv2: Add license information to node endpoints.
+
+0.75.0 (2016-06-02)
+===================
+
+- Add support for affiliating users and projects with multiple institutions.
+- Use multiple celery queues and queue prioritization.
+
+Migrations
+----------
+
+- python -m scripts.migration.migrate_primary_institutions
+
+0.74.0 (2016-05-25)
+===================
+
+- Numerous fixes for displaying logs consistently.
+
+Migrations
+----------
+
+- python -m scripts.migrate_regressed_registration_logs
+
 0.73.0 (2016-05-19)
 ===================
 

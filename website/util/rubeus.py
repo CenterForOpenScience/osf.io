@@ -118,7 +118,7 @@ def build_addon_root(node_settings, name, permissions=None,
     return ret
 
 
-def build_addon_button(text, action, title=""):
+def build_addon_button(text, action, title=''):
     """Builds am action button to be rendered in HGrid
 
     :param str text: A string or html to appear on the button itself
@@ -229,7 +229,7 @@ class NodeFileCollector(object):
                         getattr(
                             e,
                             'data',
-                            "Unexpected error when fetching file contents for {0}.".format(addon.config.full_name)
+                            'Unexpected error when fetching file contents for {0}.'.format(addon.config.full_name)
                         )
                     )
                     sentry.log_exception()

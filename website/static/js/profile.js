@@ -268,6 +268,7 @@ BaseViewModel.prototype.changeMessage = function(text, css, timeout) {
 };
 
 BaseViewModel.prototype.handleSuccess = function() {
+    this.saving(false);
     if ($.inArray('view', this.modes) >= 0) {
         this.mode('view');
     } else {
@@ -280,6 +281,7 @@ BaseViewModel.prototype.handleSuccess = function() {
 };
 
 BaseViewModel.prototype.handleError = function(response) {
+    this.saving(false);
     var defaultMsg = 'Could not update settings';
     var msg = response.message_long || defaultMsg;
     this.changeMessage(
@@ -354,8 +356,6 @@ BaseViewModel.prototype.submit = function() {
             this.setOriginal.bind(this)
         ).fail(
             this.handleError.bind(this)
-        ).always(
-            this.saving(false)
         );
     } else {
         this.showMessages(true);
@@ -725,7 +725,7 @@ SocialViewModel.prototype.submit = function() {
         ).fail(
             this.handleError.bind(this)
         ).always(
-            this.saving(false)
+            function() { this.saving(false); }
         );
     } else {
         this.showMessages(true);

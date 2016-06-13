@@ -1,5 +1,6 @@
 import collections
 
+from framework.postcommit_tasks.handlers import run_postcommit
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
@@ -8,6 +9,8 @@ from website.notifications import constants
 from website.notifications import model
 from website.notifications.model import NotificationSubscription
 from website.project import signals
+
+from framework.celery_tasks import app
 
 
 class NotificationsDict(dict):
@@ -49,7 +52,7 @@ def to_subscription_key(uid, event):
 
 
 def from_subscription_key(key):
-    parsed_key = key.split("_", 1)
+    parsed_key = key.split('_', 1)
     return {
         'uid': parsed_key[0],
         'event': parsed_key[1]
@@ -69,6 +72,12 @@ def remove_contributor_from_subscriptions(node, user):
 
 @signals.node_deleted.connect
 def remove_subscription(node):
+    remove_subscription_task(node._id)
+
+@run_postcommit(once_per_request=False, celery=True)
+@app.task(max_retries=5, default_retry_delay=60)
+def remove_subscription_task(node_id):
+    node = Node.load(node_id)
     model.NotificationSubscription.remove(Q('owner', 'eq', node))
     parent = node.parent_node
 

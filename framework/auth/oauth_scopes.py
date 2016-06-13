@@ -41,6 +41,11 @@ class CoreScopes(object):
     NODE_LINKS_READ = 'nodes.links_read'
     NODE_LINKS_WRITE = 'nodes.links_write'
 
+    METASCHEMA_READ = 'metaschemas.read'
+
+    NODE_DRAFT_REGISTRATIONS_READ = 'nodes.draft_registrations_read'
+    NODE_DRAFT_REGISTRATIONS_WRITE = 'nodes.draft_registrations_write'
+
     NODE_REGISTRATIONS_READ = 'nodes.registrations_read'
     NODE_REGISTRATIONS_WRITE = 'nodes.registrations_write'
 
@@ -73,6 +78,8 @@ class CoreScopes(object):
 
     WIKI_BASE_READ = 'wikis.base_read'
 
+    IDENTIFIERS_READ = 'identifiers.data_read'
+
 
 class ComposedScopes(object):
     """
@@ -96,6 +103,16 @@ class ComposedScopes(object):
     # Guid redirect view
     GUIDS_READ = (CoreScopes.GUIDS_READ, )
 
+    # Metaschemas collection
+    METASCHEMAS_READ = (CoreScopes.METASCHEMA_READ, )
+
+    # Draft registrations
+    DRAFT_READ = (CoreScopes.NODE_DRAFT_REGISTRATIONS_READ, )
+    DRAFT_WRITE = (CoreScopes.NODE_DRAFT_REGISTRATIONS_WRITE, )
+
+    # Identifier views
+    IDENTIFIERS_READ = (CoreScopes.IDENTIFIERS_READ, )
+
     # Comment reports collection
     COMMENT_REPORTS_READ = (CoreScopes.COMMENT_REPORTS_READ,)
     COMMENT_REPORTS_WRITE = COMMENT_REPORTS_READ + (CoreScopes.COMMENT_REPORTS_WRITE,)
@@ -104,7 +121,7 @@ class ComposedScopes(object):
     # Base node data includes node metadata, links, and children.
     NODE_METADATA_READ = (CoreScopes.NODE_BASE_READ, CoreScopes.NODE_CHILDREN_READ, CoreScopes.NODE_LINKS_READ,
                           CoreScopes.NODE_CITATIONS_READ, CoreScopes.NODE_COMMENTS_READ, CoreScopes.NODE_LOG_READ,
-                          CoreScopes.NODE_FORKS_READ, CoreScopes.WIKI_BASE_READ, CoreScopes.LICENSE_READ)
+                          CoreScopes.NODE_FORKS_READ, CoreScopes.WIKI_BASE_READ, CoreScopes.LICENSE_READ, CoreScopes.IDENTIFIERS_READ)
     NODE_METADATA_WRITE = NODE_METADATA_READ + \
                     (CoreScopes.NODE_BASE_WRITE, CoreScopes.NODE_CHILDREN_WRITE, CoreScopes.NODE_LINKS_WRITE,
                      CoreScopes.NODE_CITATIONS_WRITE, CoreScopes.NODE_COMMENTS_WRITE, CoreScopes.NODE_FORKS_WRITE)
@@ -129,11 +146,11 @@ class ComposedScopes(object):
     NODE_ALL_WRITE = NODE_ALL_READ + NODE_METADATA_WRITE + NODE_DATA_WRITE + NODE_ACCESS_WRITE
 
     # Full permissions: all routes intended to be exposed to third party API users
-    FULL_READ = NODE_ALL_READ + USERS_READ + ORGANIZER_READ + GUIDS_READ + (CoreScopes.INSTITUTION_READ, )
+    FULL_READ = NODE_ALL_READ + USERS_READ + ORGANIZER_READ + GUIDS_READ + METASCHEMAS_READ + (CoreScopes.INSTITUTION_READ, )
     FULL_WRITE = NODE_ALL_WRITE + USERS_WRITE + ORGANIZER_WRITE + GUIDS_READ
 
     # Admin permissions- includes functionality not intended for third-party use
-    ADMIN_LEVEL = FULL_WRITE + APPLICATIONS_WRITE + TOKENS_WRITE + COMMENT_REPORTS_WRITE
+    ADMIN_LEVEL = FULL_WRITE + APPLICATIONS_WRITE + TOKENS_WRITE + COMMENT_REPORTS_WRITE + DRAFT_READ + DRAFT_WRITE
 
 # List of all publicly documented scopes, mapped to composed scopes defined above.
 #   Return as sets to enable fast comparisons of provided scopes vs those required by a given node

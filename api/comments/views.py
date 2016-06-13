@@ -336,7 +336,7 @@ class CommentReportDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView
         reporter_id = self.kwargs['user_id']
 
         if reporter_id != user_id:
-            raise PermissionDenied("Not authorized to comment on this project.")
+            raise PermissionDenied('Not authorized to comment on this project.')
 
         if reporter_id in reports:
             return CommentReport(user_id, reports[user_id]['category'], reports[user_id]['text'])

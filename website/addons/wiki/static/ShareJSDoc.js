@@ -134,6 +134,10 @@ var ShareJSDoc = function(url, metadata, viewText, editor) {
                     refreshMaybe();
                 }, 3000);
                 break;
+            case 'reload':
+                refreshTriggered = true;
+                refreshMaybe();
+                break;
             case 'unlock':
                 canEdit = data.contributors.indexOf(metadata.userId) > -1;
                 refreshTriggered = true;
