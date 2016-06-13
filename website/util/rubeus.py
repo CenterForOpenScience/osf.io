@@ -74,12 +74,10 @@ def build_addon_root(node_settings, name, permissions=None,
     from website.util import check_private_key_for_anonymized_link
 
     permissions = permissions or DEFAULT_PERMISSIONS
-    if name:
+    if name and not check_private_key_for_anonymized_link(private_key):
         name = u'{0}: {1}'.format(node_settings.config.full_name, name)
     else:
         name = node_settings.config.full_name
-    if check_private_key_for_anonymized_link(private_key):
-        name = name.replace(node_settings.user, '')
     if hasattr(node_settings.config, 'urls') and node_settings.config.urls:
         urls = node_settings.config.urls
     if urls is None:
