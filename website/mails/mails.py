@@ -217,8 +217,8 @@ FILE_OPERATION_FAILED = Mail(
     subject='Your ${action} has failed',
 )
 
-UNESCAPE = "<% from website.util.sanitize import unescape_entities %> ${unescape_entities(src.title)}"
-PROBLEM_REGISTERING = "Problem registering " + UNESCAPE
+UNESCAPE = '<% from website.util.sanitize import unescape_entities %> ${unescape_entities(src.title)}'
+PROBLEM_REGISTERING = 'Problem registering ' + UNESCAPE
 
 ARCHIVE_SIZE_EXCEEDED_DESK = Mail(
     'archive_size_exceeded_desk',
@@ -258,7 +258,7 @@ ARCHIVE_UNCAUGHT_ERROR_USER = Mail(
 
 ARCHIVE_SUCCESS = Mail(
     'archive_success',
-    subject="Registration of " + UNESCAPE + " complete"
+    subject='Registration of ' + UNESCAPE + ' complete'
 )
 
 WELCOME = Mail(

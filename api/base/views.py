@@ -467,8 +467,8 @@ def root(request, format=None):
         }
     }
     if settings.DEV_MODE:
-        return_val["links"]["collections"] = absolute_reverse('collections:collection-list')
-        return_val["links"]["registrations"] = absolute_reverse('registrations:registration-list')
+        return_val['links']['collections'] = absolute_reverse('collections:collection-list')
+        return_val['links']['registrations'] = absolute_reverse('registrations:registration-list')
 
     return Response(return_val)
 

@@ -147,7 +147,7 @@ class ExternalProvider(object):
         """
 
         # create a dict on the session object if it's not already there
-        if session.data.get("oauth_states") is None:
+        if session.data.get('oauth_states') is None:
             session.data['oauth_states'] = {}
 
         if self._oauth_version == OAUTH2:
@@ -226,14 +226,14 @@ class ExternalProvider(object):
         try:
             cached_credentials = session.data['oauth_states'][self.short_name]
         except KeyError:
-            raise PermissionsError("OAuth flow not recognized.")
+            raise PermissionsError('OAuth flow not recognized.')
 
         if self._oauth_version == OAUTH1:
             request_token = request.args.get('oauth_token')
 
             # make sure this is the same user that started the flow
             if cached_credentials.get('token') != request_token:
-                raise PermissionsError("Request token does not match")
+                raise PermissionsError('Request token does not match')
 
             response = OAuth1Session(
                 client_key=self.client_id,
@@ -248,7 +248,7 @@ class ExternalProvider(object):
 
             # make sure this is the same user that started the flow
             if cached_credentials.get('state') != state:
-                raise PermissionsError("Request token does not match")
+                raise PermissionsError('Request token does not match')
 
             try:
                 response = OAuth2Session(

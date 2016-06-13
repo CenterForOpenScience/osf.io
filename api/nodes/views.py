@@ -626,12 +626,12 @@ class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bu
         auth = get_user_auth(self.request)
         node = self.get_node()
         if len(node.visible_contributors) == 1 and node.get_visible(instance):
-            raise ValidationError("Must have at least one visible contributor")
+            raise ValidationError('Must have at least one visible contributor')
         if instance not in node.contributors:
                 raise NotFound('User cannot be found in the list of contributors.')
         removed = node.remove_contributor(instance, auth)
         if not removed:
-            raise ValidationError("Must have at least one registered admin contributor")
+            raise ValidationError('Must have at least one registered admin contributor')
 
 
 class NodeContributorDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin, UserMixin):
@@ -746,10 +746,10 @@ class NodeContributorDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVi
         node = self.get_node()
         auth = get_user_auth(self.request)
         if len(node.visible_contributors) == 1 and node.get_visible(instance):
-            raise ValidationError("Must have at least one visible contributor")
+            raise ValidationError('Must have at least one visible contributor')
         removed = node.remove_contributor(instance, auth)
         if not removed:
-            raise ValidationError("Must have at least one registered admin contributor")
+            raise ValidationError('Must have at least one registered admin contributor')
 
 
 # TODO: Support creating registrations

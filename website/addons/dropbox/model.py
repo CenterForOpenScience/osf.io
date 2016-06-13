@@ -156,7 +156,7 @@ class DropboxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     def set_folder(self, folder, auth):
         self.folder = folder
         # Add log to node
-        self.nodelogger.log(action="folder_selected", save=True)
+        self.nodelogger.log(action='folder_selected', save=True)
 
     # TODO: Is this used? If not, remove this and perhaps remove the 'deleted' field
     def delete(self, save=True):
@@ -170,7 +170,7 @@ class DropboxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
         if add_log:
             extra = {'folder': folder}
-            self.nodelogger.log(action="node_deauthorized", extra=extra, save=True)
+            self.nodelogger.log(action='node_deauthorized', extra=extra, save=True)
 
         self.clear_auth()
 
