@@ -131,7 +131,7 @@ def send_comment_added_notification(comment, auth):
     if is_reply(target):
         if target.referent.user and target.referent.user not in sent_subscribers:
             notify(
-                event='comment_replies',
+                event='global_comment_replies',
                 user=auth.user,
                 node=node,
                 timestamp=time_now,

@@ -28,6 +28,7 @@ from website.routes import make_url_map
 # This import is necessary to set up the archiver signal listeners
 from website.archiver import listeners  # noqa
 from website.mails import listeners  # noqa
+from website.notifications import listeners  # noqa
 from api.caching import listeners  # noqa
 
 
