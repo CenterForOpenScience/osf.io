@@ -2366,7 +2366,7 @@ class TestUserInviteViews(OsfTestCase):
             auth=Auth(project.creator),
         )
         project.save()
-        send_claim_email(email=given_email, user=unreg_user, node=project)
+        send_claim_email(email=given_email, invitedUser=unreg_user, node=project)
 
         assert_true(send_mail.called)
         assert_true(send_mail.called_with(
@@ -2383,20 +2383,20 @@ class TestUserInviteViews(OsfTestCase):
                                                           email=given_email, auth=Auth(
                                                               referrer)
                                                           )
+        claim_url=unreg_user.get_claim_url(project._id, external=True)
+
         project.save()
-        send_claim_email(email=real_email, user=unreg_user, node=project)
+        send_claim_email(email=real_email, invitedUser=unreg_user, node=project)
 
         assert_true(send_mail.called)
         # email was sent to referrer
         send_mail.assert_called_with(
-            referrer.username,
-            mails.FORWARD_INVITE,
-            user=unreg_user,
+            mail=mails.FORWARD_INVITE,
+            invitedUser=unreg_user,
             referrer=referrer,
-            claim_url=unreg_user.get_claim_url(project._id, external=True),
-            email=real_email.lower().strip(),
-            fullname=unreg_user.get_unclaimed_record(project._id)['name'],
-            node=project
+            claim_url=claim_url,
+            node=project,
+            to_addr=referrer.email
         )
 
     @mock.patch('website.project.views.contributor.mails.send_mail')
@@ -2409,11 +2409,11 @@ class TestUserInviteViews(OsfTestCase):
             auth=Auth(project.creator),
         )
         project.save()
-        send_claim_email(email=fake.email(), user=unreg_user, node=project)
+        send_claim_email(email=fake.email(), invitedUser=unreg_user, node=project)
         send_mail.reset_mock()
         # 2nd call raises error because throttle hasn't expired
         with assert_raises(HTTPError):
-            send_claim_email(email=fake.email(), user=unreg_user, node=project)
+            send_claim_email(email=fake.email(), invitedUser=unreg_user, node=project)
         assert_false(send_mail.called)
 
 

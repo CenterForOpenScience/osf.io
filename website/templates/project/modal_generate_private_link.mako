@@ -1,4 +1,4 @@
-<div class="modal fade" id="addPrivateLink">
+<div style="z-index:99999999;" class="modal fade" id="addPrivateLink">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">

@@ -82,6 +82,7 @@ AddContributorViewModel = oop.extend(Paginator, {
         self.query = ko.observable();
         self.results = ko.observableArray([]);
         self.contributors = ko.observableArray([]);
+        self.inviteLinks = ko.observableArray([]);
         self.selection = ko.observableArray();
 
         self.contributorIDsToAdd = ko.pureComputed(function () {
@@ -220,6 +221,33 @@ AddContributorViewModel = oop.extend(Paginator, {
             self.doneSearching(true);
         }
     },
+    getInviteLinks: function () {
+        var self = this;
+        var url = self.nodeApiUrl + 'private_link/';
+
+        $.ajax({
+            url: url,
+            type: 'GET',
+            dataType: 'json'
+        }).done(function (response) {
+
+            response.node.private_links = response.node.private_links.map(function (privateLink) {
+                privateLink.date_created = new $osf.FormattableDate(privateLink.date_created);
+                privateLink.url = response.node.absolute_url + '?view_only=' +  privateLink.key;
+
+                privateLink.components = privateLink.nodes.map(function(component){
+                    return component.title;
+                }).join(', ');
+
+                return privateLink;
+            });
+
+            self.inviteLinks(response.node);
+
+            }).fail(
+        );
+
+    },
     getContributors: function () {
         var self = this;
         self.notification(false);
@@ -302,7 +330,7 @@ AddContributorViewModel = oop.extend(Paginator, {
             self.inviteError(validated);
             return false;
         }
-        return self.postInviteRequest(self.inviteName(), self.inviteEmail());
+        return self.postValidateInvite(self.inviteName(), self.inviteEmail());
     },
     add: function (data) {
         var self = this;
@@ -421,7 +449,7 @@ AddContributorViewModel = oop.extend(Paginator, {
         self.childrenToChange([]);
         self.notification(false);
     },
-    postInviteRequest: function (fullname, email) {
+    postValidateInvite: function (fullname, email) {
         var self = this;
         return $osf.postJSON(
             self.nodeApiUrl + 'invite_contributor/', {
@@ -436,6 +464,7 @@ AddContributorViewModel = oop.extend(Paginator, {
     },
     onInviteSuccess: function (result) {
         var self = this;
+        result.contributor.inviteLink = $('input:radio[name ="inviteLinkRadioGroup"]:checked').val();
         self.query('');
         self.results([]);
         self.page('whom');
@@ -505,6 +534,7 @@ ContribAdder.prototype.init = function() {
     var self = this;
     var treebeardUrl = window.contextVars.node.urls.api + 'tree/';
     self.viewModel.getContributors();
+    self.viewModel.getInviteLinks();
     self.viewModel.fetchNodeTree(treebeardUrl).done(function(response) {
         new NodeSelectTreebeard('addContributorsTreebeard', response, self.viewModel.nodesState);
     });
