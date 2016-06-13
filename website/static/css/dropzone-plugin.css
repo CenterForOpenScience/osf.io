@@ -15,6 +15,13 @@ preview -> file-preview -> details -> filename
   padding: 6px 6px 6px 6px;
     cursor:default;
 }
+.dz-preview-background-success {
+    background: #ddf0e2;
+}
+
+.dz-preview-background-error {
+    background: #f2dede;
+}
 
 .dz-preview .dz-details {
 
@@ -45,7 +52,7 @@ preview -> file-preview -> details -> filename
 
 .dz-preview .dz-details .dz-size {
     position: absolute;
-  bottom: -28px;
+  bottom: -40px;
   left: 3px;
   height: 28px;
   line-height: 28px;
@@ -60,7 +67,7 @@ preview -> file-preview -> details -> filename
 }
 .dz-preview .dz-progress {
   position: absolute;
-  top: 100px;
+  top: 110px;
   left: 10px;
   right: 10px;
   height: 10px;
@@ -90,14 +97,13 @@ preview -> file-preview -> details -> filename
   position: absolute;
   width: 40px;
   height: 40px;
-  font-size: 50px;
-  text-align: center;
-  right: -20px;
-  top: -37px;
+  font-size: 20px;
+  right: -15px;
+  top: 0;
 }
 
 .dz-preview .dz-success-mark {
-    color: #8cc657;
+    color: #449d44;
 }
 
 .dz-preview .dz-error-mark {
@@ -117,19 +123,37 @@ preview -> file-preview -> details -> filename
   background: rgba(0,0,0,0.04);
 }
 
+.dz-preview .dz-error-message {
+    display: none;
+  position: absolute;
+  top: -5px;
+  left: -20px;
+  background: rgba(245,245,245,0.8);
+  padding: 8px 10px;
+  color: #800;
+  min-width: 140px;
+  max-width: 500px;
+  z-index: 500;
+}
+
+.dz-preview:hover.dz-error .dz-error-message {
+    display:block;
+}
+
 .drop-zone-format {
-    background: rgba(255, 255, 255, .49);
+     background: rgba(255, 255, 255, .49);
     padding: 50px;
-    border-radius: 2px;
+    border-radius: 5px;
     margin-top: 0;
     clear: both;
-    border: 2px dashed #b8b8b8;
+
+    border: 2px dashed #999;
 
 }
 .drop-zone-format:hover {
     border: 3px solid;
     border-color: #52A452;
-    background: rgba(255, 255, 255, .25);
+    background: rgba(255,255,255,0.2);
 
 }
 
@@ -149,6 +173,17 @@ preview -> file-preview -> details -> filename
     right: -20px;
 }
 
-.drop-zone-head {
+.drop-zone-bold {
     font-weight: bold;
 }
+
+.text-left {
+    text-align: left;
+}
+
+.row-bottom-xs {
+  margin-right: -15px;
+  margin-left: -15px;
+    margin-bottom: -30px;
+}
+

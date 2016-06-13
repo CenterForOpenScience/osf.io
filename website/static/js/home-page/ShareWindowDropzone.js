@@ -45,10 +45,12 @@ var ShareWindowDropzone = {
         success: function(file, xhr) {
             this.processQueue();
             file.previewElement.classList.add("dz-success");
+            file.previewElement.classList.add("dz-preview-background-success")
         },
 
         error: function(file, message) {
             file.previewElement.classList.add("dz-error");
+            file.previewElement.classList.add("dz-preview-background-error")
         },
     };
 
@@ -56,24 +58,24 @@ var ShareWindowDropzone = {
         url:'placeholder',
         previewTemplate: '<div class="dz-preview dz-processing dz-file-preview"><div class="dz-details"><div class="dz-filename"><span data-dz-name></span></div>' +
         '<div class="dz-size" data-dz-size></div><img data-dz-thumbnail /></div><div class="dz-progress"><span class="dz-upload" data-dz-uploadprogress></span></div>' +
-        '<div class="dz-success-mark"><span>✔</span></div><div class="dz-error-mark"><span>✘</span></div><div class="dz-error-message"><span data-dz-errormessage></span></div></div>',
+        '<div class="dz-success-mark"><span class="glyphicon glyphicon-ok-circle"></span></div>' +
+        '<div class="dz-error-mark"><span class="glyphicon glyphicon-remove-circle"></span></div><div class="dz-error-message">' +
+        '<span data-dz-errormessage>Error: Your file could not be uploaded.</span></div></div>',
     });
 
 
 
       $('#ShareButton').click(function(e) {
-        $('#ShareButton').attr('disabled', 'disabled');
+        $(this).attr('disabled', 'disabled');
         document.getElementById("ShareButton").style.cursor = "pointer";
-
-
-
-         setTimeout(enable, 300);
+        setTimeout(enable, 300);
           $('#shareWindowDropzone').slideToggle();
-          $('#LinkToShareFiles').slideToggle();
-          $(this).toggleClass('btn-primary');
+          $('#glyph').toggleClass('glyphicon glyphicon-chevron-down');
+          $('#glyph').toggleClass('glyphicon glyphicon-chevron-up');
+
       });
     function enable () {
-        $('#ShareButton').removeAttr('disabled');
+       $(this).removeAttr('disabled');
     }
 
   },
@@ -81,7 +83,8 @@ var ShareWindowDropzone = {
   view: function(ctrl, args) {
               function headerTemplate() {
             return [ m('h2.col-xs-4', 'Dashboard'), m('m-b-lg.col-xs-8.pull-right.drop-zone-disp',
-                m('.pull-right', m('button.btn.btn-primary.m-t-md.f-w-xl #ShareButton', {onclick: function() {}}, 'Upload Public Files'), m.component(AddProject, {
+                m('.pull-right', m('button.btn.btn-primary.m-t-md.f-w-xl #ShareButton',
+                    m('span.glyphicon.glyphicon-chevron-down #glyph'),'Upload Public Files'), m.component(AddProject, {
                 buttonTemplate : m('button.btn.btn-success.btn-success-high-contrast.m-t-md.f-w-xl.pull-right[data-toggle="modal"][data-target="#addProjectFromHome"]',
                     {onclick: function() {
                     $osf.trackClick('quickSearch', 'add-project', 'open-add-project-modal');
@@ -95,14 +98,17 @@ var ShareWindowDropzone = {
                 templatesFetcher: ctrl.templateNodes
             })))];
         }
-          return m('.row', m('.col-xs-12', headerTemplate()), m('div.p-v-xs.text-center.drop-zone-format.drop-zone-invis .pointer .panel #shareWindowDropzone',
+          return m('.row-bottom-xs', m('.col-xs-12.m-b-sm', headerTemplate()),
+              m('h4.text-center #LinkToShareFiles', 'View your ', m('a', {href: '/share_window/', onclick: function() {}}, 'Public Files Project')),
+              m('div.p-v-xs.drop-zone-format.drop-zone-invis .pointer .panel #shareWindowDropzone',
               m('button.close[aria-label="Close"]',{ onclick : function() {
-                  $('#ShareButton').toggleClass('btn-primary');
                   $('#shareWindowDropzone').hide();
-                  $('#LinkToShareFiles').hide();
-              }}, m('.drop-zone-close','x')),
-              m('p#shareWindowDropzone', m('h1.drop-zone-head',  'Drop files to upload'), 'Having trouble? Click anywhere in this box to manually upload a file.')),
-              m('.h4.text-center.drop-zone-invis #LinkToShareFiles', 'Or go to your ', m('a', {href: '/share_window/', onclick: function() {}}, 'Public Files Project')));
+                  $('div.dz-preview').remove();
+                  $('#glyph').toggleClass('glyphicon glyphicon-chevron-up');
+                  $('#glyph').toggleClass('glyphicon glyphicon-chevron-down');
+              }}, m('.drop-zone-close', 'x')),
+              m('p.text-center.top#shareWindowDropzone', m('h1.drop-zone-bold',  'Drop files to upload'),
+                  'Click the box to upload files. Files are automatically uploaded to your ',m('a', {href: '/share_window/', onclick: function() {}}, 'Public Files'))));
   }
 };
 
