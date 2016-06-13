@@ -1204,10 +1204,6 @@ function _fangornTitleColumn(item, col) {
     return m('span', item.data.name);
 }
 
-
-
-
-
 function generateClipboard(item){
 
     var url = window.location.host + item.data.nodeUrl + 'files/' + item.data.provider + item.data.path;
@@ -1223,8 +1219,7 @@ function generateClipboard(item){
                            ),
                            m('input[value="'+url+'"][readonly="readonly"][style="height: 30px;color:#333333;"]')
                        ]
-                   );
-
+          );
 }
 /**
  * Returns a reusable template for column titles when there is no connection

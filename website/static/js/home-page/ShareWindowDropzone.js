@@ -3,7 +3,6 @@ var $osf = require('js/osfHelpers');
 var waterbutler =  require('js/waterbutler');
 var AddProject = require('js/addProjectPlugin');
 
-
 require('css/dropzone-plugin.css');
 require('css/quick-project-search-plugin.css');
 require('loaders.css/loaders.min.css');
@@ -14,7 +13,6 @@ window.ondragover = function(e) { e.preventDefault(); };
 window.ondrop = function(e) { e.preventDefault(); };
 
 var ShareWindowDropzone = {
-
   controller: function() {
     Dropzone.options.shareWindowDropzone = {
         // Dropzone is setup to upload multiple files in one request this configuration forces it to do upload file-by-
