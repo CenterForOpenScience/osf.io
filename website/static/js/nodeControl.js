@@ -20,7 +20,7 @@ var NodesPrivacy = require('js/nodesPrivacy').NodesPrivacy;
  * The ProjectViewModel, scoped to the project header.
  * @param {Object} data The parsed project data returned from the project's API url.
  * @param {Object} options A set of configuration options for viewModel
- * @param {Object} options.categories The CATEGORY_MAP of allowed category/ display values for nodes
+ * @param {Object} options.categories The NODE_CATEGORY_MAP of allowed category/ display values for nodes
  */
 var ProjectViewModel = function(data, options) {
     var self = this;
