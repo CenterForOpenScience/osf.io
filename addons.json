@@ -12,7 +12,8 @@
         "s3",
         "twofactor",
         "wiki",
-        "googledrive"
+        "googledrive",
+	"fedora"
     ],
     "addons_archivable": {
         "osfstorage": "full",

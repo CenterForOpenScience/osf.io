@@ -1,0 +1,10 @@
+{
+  "fedora_file_added" : "${user} added file ${path} to Fedora in ${node}",
+  "fedora_file_removed" : "${user} removed file ${path} from Fedora in ${node}",
+  "fedora_file_updated" : "${user}  updated file ${path} in Fedora in ${node}",
+  "fedora_folder_created" : "${user} created folder ${folder} in Fedora in ${node}",
+  "fedora_folder_selected" : "${user} linked Fedora folder ${folder} in ${node}",
+  "fedora_node_authorized" : "${user} authorized the Fedora addon for ${node}",
+  "fedora_node_deauthorized" : "${user} deauthorized the Fedora addon for ${node}",
+  "fedora_node_deauthorized_no_user" : "Fedora addon for ${node} deauthorized"
+}
