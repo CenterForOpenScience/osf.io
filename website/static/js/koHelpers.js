@@ -482,6 +482,8 @@ ko.bindingHandlers.editableHTML = {
             var inputTextLength = $element[0].innerText.length;
             var errorExceedsCharacterLimit = 'Exceeds character limit. Please reduce to ' +
                 charLimit + ' characters or less.';
+            // + 1 to account for the <br> that is added to the end of the contenteditable content
+            // <br> is necessary for the return key to function properly
             if (inputTextLength > parseInt(charLimit) + 1) {
                 bindingContext.underMaxLength(false);
                 if (bindingContext.errorMessage) {
