@@ -158,7 +158,7 @@ def _render_conference_node(node, idx, conf):
         )
     except StopIteration:
         download_url = ''
-        view_and_download = record.visit
+        view_and_download = 0
 
     author = node.visible_contributors[0]
     tags = [tag._id for tag in node.tags]
