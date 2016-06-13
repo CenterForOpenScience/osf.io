@@ -1,12 +1,23 @@
-Hello ${fullname},
+<%doc>
+    Purpose:
+        This message is sent when an admin invites an unregistered User to a project or component
+
+        invitedUser: User, invited to project and must claim token.
+        referrer: User, invited invitedUser user to join thier project/component.
+        node: Node, the node refferer invited invitedUser to.
+</%doc>
+
+Hello ${invitedUser.fullname},
 
 You have been added by ${referrer.fullname} as a contributor to the project "${node.title}" on the Open Science Framework. To set a password for your account, visit:
 
 ${claim_url}
 
-Once you have set a password, you will be able to make contributions to ${node.title} and create your own projects.
+To preview ${node.title} click the following link: ${node.absolute_url}
 
-If you are not ${fullname} or you are erroneously being associated with ${node.title} then email contact@osf.io with the subject line "Claiming Error" to report the problem.
+(NOTE: if this project is private, you will not be able to view it until you have confirmed your account)
+
+If you are not ${invitedUser.fullname} or you are erroneously being associated with ${node.title} then email contact@osf.io with the subject line "Claiming Error" to report the problem.
 
 Sincerely,
 
