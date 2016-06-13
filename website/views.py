@@ -256,6 +256,9 @@ def resolve_guid(guid, suffix=None):
 def redirect_about(**kwargs):
     return redirect('https://osf.io/4znzp/wiki/home/')
 
+def redirect_help(**kwargs):
+    return redirect('/faq/')
+
 
 # redirect osf.io/howosfworks to osf.io/getting-started/
 def redirect_howosfworks(**kwargs):
