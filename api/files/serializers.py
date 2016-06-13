@@ -128,6 +128,7 @@ class FileSerializer(JSONAPISerializer):
     date_created = ser.SerializerMethodField(read_only=True, help_text='Timestamp when the file was created')
     extra = ser.SerializerMethodField(read_only=True, help_text='Additional metadata about this file')
     tags = JSONAPIListField(child=FileTagField(), required=False)
+    file_guid = ser.SerializerMethodField(read_only=True, help_text='The unique id of this file')
 
     files = NodeFileHyperLinkField(
         related_view='nodes:node-files',
@@ -241,9 +242,7 @@ class FileSerializer(JSONAPISerializer):
 
     def get_file_guid(self, obj):
         if obj:
-            guid = obj.get_guid()
-            if guid:
-                return guid._id
+            return obj.get_guid(create=True)._id
         return None
 
     def get_absolute_url(self, obj):
