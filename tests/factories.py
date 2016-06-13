@@ -254,13 +254,10 @@ class RegistrationFactory(AbstractNodeFactory):
             reg.sanction.add_authorizer(reg.creator, reg)
             reg.sanction.save()
 
-        if archive:
+        with patch('framework.celery_tasks.handlers.enqueue_task'):
             reg = register()
             add_approval_step(reg)
-        else:
-            with patch('framework.celery_tasks.handlers.enqueue_task'):
-                reg = register()
-                add_approval_step(reg)
+        if not archive:
             with patch.object(reg.archive_job, 'archive_tree_finished', Mock(return_value=True)):
                 reg.archive_job.status = ARCHIVER_SUCCESS
                 reg.archive_job.save()
@@ -304,7 +301,7 @@ class ForkFactory(ModularOdmFactory):
 
         project = kwargs.pop('project', None)
         user = kwargs.pop('user', project.creator)
-        title = kwargs.pop('title', 'Fork of ')
+        title = kwargs.pop('title', None)
 
         fork = project.fork_node(auth=Auth(user), title=title)
         fork.save()

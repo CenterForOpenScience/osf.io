@@ -15,7 +15,7 @@ class JSONRendererWithESISupport(JSONRenderer):
 
 
 class JSONAPIRenderer(JSONRendererWithESISupport):
-    format = "jsonapi"
+    format = 'jsonapi'
     media_type = 'application/vnd.api+json'
 
 
