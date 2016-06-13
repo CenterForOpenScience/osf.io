@@ -66,7 +66,7 @@ var LogFeed = {
 
     view : function (ctrl) {
         return m('.db-activity-list.m-t-md', [
-            ctrl.activityLogs() ? ctrl.activityLogs().map(function(item){
+            ctrl.activityLogs() ? ctrl.activityLogs().map(function(item) {
                 if (ctrl.node.anonymous) { item.anonymous = true; }
                 var image = m('i.fa.fa-desktop');
                 if (!item.anonymous && item.embeds.user && item.embeds.user.data) {
@@ -75,11 +75,10 @@ var LogFeed = {
                     image = m('img', { src : item.embeds.user.errors[0].meta.profile_image});
                 }
                 return m('.db-activity-item', [
-                m('', [ m('.db-log-avatar.m-r-xs', image),
-                    m.component(LogText, item)]),
-                m('.text-right', m('span.text-muted.m-r-xs', item.attributes.formattableDate.local))]);
-
-            }) : '',
+                    m('', [ m('.db-log-avatar.m-r-xs', image),
+                        m.component(LogText, item)]),
+                    m('.text-right', m('span.text-muted.m-r-xs', item.attributes.formattableDate.local))]);
+                }) : '',
             m('.db-activity-nav.text-center', [
                 ctrl.showMoreActivityLogs() ? m('.btn.btn-sm.btn-link', { onclick: function(){
                     ctrl.getLogs(ctrl.showMoreActivityLogs(), true);
