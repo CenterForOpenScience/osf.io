@@ -124,7 +124,6 @@ def new_public_files_collection(user):
         title=title,
         creator=user,
         category='project',
-        is_public=True,
         is_public_files_collection=True,
     )
 

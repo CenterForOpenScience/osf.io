@@ -196,7 +196,7 @@ def check_key_expired(key, node, url):
 
     return url
 
-def _must_be_contributor_factory(include_public, include_view_only_anon=True):
+def _must_be_contributor_factory(include_public,include_share_windows=False, include_view_only_anon=True):
     """Decorator factory for authorization wrappers. Decorators verify whether
     the current user is a contributor on the current project, or optionally
     whether the current project is public.
@@ -216,6 +216,10 @@ def _must_be_contributor_factory(include_public, include_view_only_anon=True):
             kwargs['auth'] = Auth.from_kwargs(request.args.to_dict(), kwargs)
             user = kwargs['auth'].user
 
+            if include_share_windows and node.is_public_files_collection:
+                auth = kwargs['auth']
+                return func(*args, **kwargs)
+
             key = request.args.get('view_only', '').strip('/')
             #if not login user check if the key is valid or the other privilege
 
@@ -228,7 +232,7 @@ def _must_be_contributor_factory(include_public, include_view_only_anon=True):
                 except ModularOdmException:
                     pass
 
-            if not node.is_public or not include_public:
+            if not node.is_public or not include_public :
                 if not include_view_only_anon and link_anon:
                     if not check_can_access(node=node, user=user):
                         raise HTTPError(http.UNAUTHORIZED)
@@ -249,6 +253,7 @@ def _must_be_contributor_factory(include_public, include_view_only_anon=True):
 # Create authorization decorators
 must_be_contributor = _must_be_contributor_factory(False)
 must_be_contributor_or_public = _must_be_contributor_factory(True)
+must_be_contributor_or_public_or_share_window = _must_be_contributor_factory(include_public=True, include_share_windows=True)
 must_be_contributor_or_public_but_not_anonymized = _must_be_contributor_factory(include_public=True, include_view_only_anon=False)
 
 
