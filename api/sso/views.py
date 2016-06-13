@@ -11,7 +11,7 @@ from website import settings
 
 from furl import furl
 import base64
-from urllib import urlencode, unquote
+import urllib
 import hashlib
 import hmac
 
@@ -22,7 +22,7 @@ class SSOView(JSONAPIBaseView):
     # NOTE: directing a user to DISCOURSE/session/sso should trigger the sso process
     # for automatic sso login.
 
-    # send DELETE /session/username/
+    # send DELETE /session/username/ to log them out
 
     def get(self, request):
         auth = get_user_auth(request)
@@ -36,7 +36,7 @@ class SSOView(JSONAPIBaseView):
         encoded_payload = request.GET.get('sso', '')
         payload = base64.b64decode(encoded_payload)
         try:
-            payload_dict = {unquote(item[0]): unquote(item[1])
+            payload_dict = {urllib.unquote(item[0]): urllib.unquote(item[1])
                             for item in
                             [item.split('=') for item in payload.split('&')]}
         except IndexError:
@@ -57,12 +57,7 @@ class SSOView(JSONAPIBaseView):
                           'name': user.fullname,
                           'avatar_url': user.profile_image_url()}
 
-        encoded_return_64 = base64.b64encode(urlencode(return_payload))
-
-        return_signature = hmac.new(sso_secret, encoded_return_64, hashlib.sha256).hexdigest()
-
         return_url = furl(settings.DISCOURSE_SERVER_URL).join('/session/sso_login')
-        return_url.args['sso'] = encoded_return_64
-        return_url.args['sig'] = return_signature
+        return_url.args = sign_payload(return_payload)
 
         return HttpResponseRedirect(return_url.url)

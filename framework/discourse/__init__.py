@@ -1,17 +1,43 @@
 from framework.sessions import session
 from framework.auth import User
+import api.sso
 
 from django.utils.text import slugify
 
 import requests
 import re
 from furl import furl
-import pdb
+import time
+
+import ipdb
 
 from website import settings
 
 class DiscourseException(Exception):
     pass
+
+def create_user(user):
+    url = furl(settings.DISCOURSE_SERVER_URL).join('/admin/users/sync_sso')
+
+    payload = {}
+    payload['external_id'] = user._id
+    payload['email'] = user.username
+    payload['username'] = user.username
+    payload['name'] = user.fullname
+    payload['avatar_url'] = user.profile_image_url()
+
+    url.args = api.sso.sign_payload(payload)
+    url.args['api_key'] = settings.DISCOURSE_API_KEY
+    url.args['api_username'] = settings.DISCOURSE_API_ADMIN_USER
+
+    result = requests.post(url.url)
+
+    if result.status_code != 200:
+        raise DiscourseException('Discourse server responded to user create/sync request '
+                                 + url.url + ' with '
+                                 + str(result.status_code) + ' ' + result.text)
+
+    return result.json()['username']
 
 def get_username(user=None):
     for_current_user = user is None
@@ -31,7 +57,7 @@ def get_username(user=None):
 
     result = requests.get(url.url)
     if result.status_code == 404:
-        return None
+        return create_user(user)
     elif result.status_code != 200:
         raise DiscourseException('Discourse server responded to user request '
                                  + url.url + ' with '
@@ -123,6 +149,7 @@ def _config_customization():
         if result.status_code != 201:
             raise DiscourseException('Discourse server responded to setting customization with '
                                      + str(result.status_code) + ' ' + result.text)
+        time.sleep(0.1)
 
 def configure_server_settings():
     for key, val in settings.DISCOURSE_SERVER_SETTINGS.items():
@@ -135,6 +162,7 @@ def configure_server_settings():
         if result.status_code != 200:
             raise DiscourseException('Discourse server responded to setting request with '
                                      + str(result.status_code) + ' ' + result.text)
+        time.sleep(0.1)
     _config_embeddable_host()
     _config_customization()
 
