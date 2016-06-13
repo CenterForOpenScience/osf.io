@@ -232,7 +232,8 @@ def _dataverse_root_folder(node_addon, auth, **kwargs):
         return [rubeus.build_addon_root(
             node_addon,
             node_addon.dataset,
-            permissions=permissions
+            permissions=permissions,
+            private_key=kwargs.get('view_only', None),
         )]
 
     # Quit if doi does not produce a dataset
@@ -280,6 +281,7 @@ def _dataverse_root_folder(node_addon, auth, **kwargs):
         datasetDraftModified=dataset_draft_modified,
         version=version,
         host=dataverse_host,
+        private_key=kwargs.get('view_only', None),
     )]
 
 
