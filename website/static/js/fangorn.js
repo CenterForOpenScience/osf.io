@@ -18,6 +18,9 @@ var waterbutler = require('js/waterbutler');
 var iconmap = require('js/iconmap');
 var storageAddons = require('json!storageAddons.json');
 
+var makeClient = require('js/clipboard');
+
+
 // CSS
 require('css/fangorn.css');
 
@@ -1253,6 +1256,7 @@ function _fangornTitleColumn(item, col) {
                 onclick: function(event) {
                     event.stopImmediatePropagation();
                     gotoFileEvent.call(tb, item);
+ 
                 }
             };
         }
@@ -1291,6 +1295,24 @@ function _connectCheckTemplate(item){
         }, [m('i.fa.fa-refresh'), ' Retry'])
     ]);
 }
+
+function generateURLClipBoard(item){
+		var url = waterbutler.buildTreeBeardDownload(item);
+		var cb = function(elem) {
+                makeClient(elem);
+            };
+		
+         var clipboardHTML = m('div.input-group[style="width: 180px"]',
+                        [
+                            m('span.input-group-btn', m('button.btn.btn-default.btn-sm[type="button"][data-clipboard-text="'+url+ '"]', {config: cb}, m('.fa.fa-copy'))),
+                            m('input[value="'+url+'"][type="text"][readonly="readonly"][style="float:left; height: 30px;background-color: #F5F5F5;color:#333333;"]')
+                        ]
+                    );
+		
+	 	return clipboardHTML;
+       
+}
+
 
 /**
  * Parent function for resolving rows, all columns are sub methods within this function
@@ -1339,8 +1361,26 @@ function _fangornResolveRows(item) {
         filter : true,
         custom : _fangornTitleColumn
     });
-
+if(window.contextVars.node.category == "share window"){
     if (item.data.kind === 'file') {
+       	 default_columns.push(
+        {
+            data : 'Download',  // Data field name
+            filter : true,
+            custom : function() {
+            	 return m('a', {href: waterbutler.buildTreeBeardDownload(item)}, 'Download File');
+            	//return waterbutler.buildTreeBeardDownload(item);
+            }
+        });	
+    	 default_columns.push(
+        {
+            data : 'share link',  // Data field name
+            filter : true,
+            custom : function() {
+            	 return generateURLClipBoard(item);
+            	//return waterbutler.buildTreeBeardDownload(item);
+            }
+        });
         default_columns.push(
         {
             data : 'size',  // Data field name
@@ -1362,7 +1402,32 @@ function _fangornResolveRows(item) {
                 custom : function() { return m(''); }
             });
         }
-    }
+    }//end of if
+}else{
+    if (item.data.kind === 'file') {
+        default_columns.push(
+        {
+            data : 'size',  // Data field name
+            filter : true,
+            custom : function() {return item.data.size ? $osf.humanFileSize(item.data.size, true) : '';}
+        });
+        if (item.data.provider === 'osfstorage') {
+            default_columns.push({
+                data : 'downloads',
+                sortInclude : false,
+                filter : false,
+                custom: function() { return item.data.extra ? item.data.extra.downloads.toString() : ''; }
+            });
+        } else {
+            default_columns.push({
+                data : 'downloads Count',
+                sortInclude : false,
+                filter : false,
+                custom : function() { return m(''); }
+            });
+        }
+    }//end of if	
+}//end of else
     configOption = resolveconfigOption.call(this, item, 'resolveRows', [item]);
     return configOption || default_columns;
 }
@@ -1375,21 +1440,48 @@ function _fangornResolveRows(item) {
  */
 function _fangornColumnTitles () {
     var columns = [];
-    columns.push(
-    {
-        title: 'Name',
-        width : '80%',
-        sort : true,
-        sortType : 'text'
-    }, {
-        title : 'Size',
-        width : '10%',
-        sort : false
-    }, {
-        title : 'Downloads',
-        width : '10%',
-        sort : false
-    });
+    if(window.contextVars.node.category == "share window"){
+	    columns.push(
+	    {
+	        title: 'Name',
+	        width : '30%',
+	        sort : true,
+	        sortType : 'text'
+	    }, {
+	        title : 'Download',
+	        width : '20%',
+	        sort : false
+	    }, {
+	        title : 'Share Link',
+	        width : '25%',
+	        sort : false
+	    }, {
+	        title : 'Size',
+	        width : '10%',
+	        sort : false
+	    }, {
+	        title : 'Download Count',
+	        width : '15%',
+	        sort : false
+	    });
+	}
+	else{
+	    columns.push(
+	    {
+	        title: 'Name',
+	        width : '80%',
+	        sort : true,
+	        sortType : 'text'
+	    },{
+	        title : 'Size',
+	        width : '10%',
+	        sort : false
+	    }, {
+	        title : 'Download Count',
+	        width : '10%',
+	        sort : false
+	    });	
+	}
     return columns;
 }
 
