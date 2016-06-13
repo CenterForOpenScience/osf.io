@@ -177,7 +177,7 @@ class TestVarnish(DbTestCase):
         assert create_response.ok, 'Failed to create node'
 
         node_id = create_response.json()['data']['id']
-        new_title = "{} -- But Changed!".format(create_response.json()['data']['attributes']['title'])
+        new_title = '{} -- But Changed!'.format(create_response.json()['data']['attributes']['title'])
 
         response = requests.get(
             '{}/v2/nodes/{}/?format=jsonapi&esi=true&embed=comments&embed=children&embed=files&embed=registrations&embed=contributors&embed=node_links&embed=parent'.format(

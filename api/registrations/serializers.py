@@ -24,7 +24,8 @@ class BaseRegistrationSerializer(NodeSerializer):
     description = ser.CharField(read_only=True)
     category_choices = NodeSerializer.category_choices
     category_choices_string = NodeSerializer.category_choices_string
-    category = HideIfWithdrawal(ser.ChoiceField(read_only=True, choices=category_choices, help_text="Choices: " + category_choices_string))
+    category = HideIfWithdrawal(ser.ChoiceField(read_only=True, choices=category_choices, help_text='Choices: ' + category_choices_string))
+
     date_modified = HideIfWithdrawal(ser.DateTimeField(read_only=True))
     fork = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_fork'))
     collection = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_collection'))
@@ -110,14 +111,14 @@ class BaseRegistrationSerializer(NodeSerializer):
         related_view_kwargs={'license_id': '<node_license.node_license._id>'},
     ))
 
-    forks = HideIfWithdrawal(RelationshipField(
-        related_view='registrations:registration-forks',
-        related_view_kwargs={'node_id': '<pk>'}
-    ))
-
     logs = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-logs',
         related_view_kwargs={'node_id': '<pk>'},
+    ))
+
+    forks = HideIfWithdrawal(RelationshipField(
+        related_view='registrations:registration-forks',
+        related_view_kwargs={'node_id': '<pk>'}
     ))
 
     node_links = HideIfWithdrawal(RelationshipField(

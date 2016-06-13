@@ -76,6 +76,7 @@ class NodeSerializer(JSONAPISerializer):
         'parent',
         'root',
         'logs',
+        'wikis'
     ]
 
     id = IDField(source='_id', read_only=True)
@@ -86,7 +87,7 @@ class NodeSerializer(JSONAPISerializer):
 
     title = ser.CharField(required=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
-    category = ser.ChoiceField(choices=category_choices, help_text="Choices: " + category_choices_string)
+    category = ser.ChoiceField(choices=category_choices, help_text='Choices: ' + category_choices_string)
     date_created = ser.DateTimeField(read_only=True)
     date_modified = ser.DateTimeField(read_only=True)
     registration = ser.BooleanField(read_only=True, source='is_registration')
@@ -267,8 +268,7 @@ class NodeSerializer(JSONAPISerializer):
         auth = get_user_auth(self.context['request'])
         old_tags = set([tag._id for tag in node.tags])
         if 'tags' in validated_data:
-            current_tags = set(validated_data.get('tags'))
-            del validated_data['tags']
+            current_tags = set(validated_data.pop('tags', []))
         elif self.partial:
             current_tags = set(old_tags)
         else:
@@ -307,7 +307,7 @@ class NodeForksSerializer(NodeSerializer):
     category_choices_string = ', '.join(["'{}'".format(choice[0]) for choice in category_choices])
 
     title = ser.CharField(required=False)
-    category = ser.ChoiceField(read_only=True, choices=category_choices, help_text="Choices: " + category_choices_string)
+    category = ser.ChoiceField(read_only=True, choices=category_choices, help_text='Choices: ' + category_choices_string)
     forked_date = ser.DateTimeField(read_only=True)
 
     def create(self, validated_data):
@@ -599,7 +599,7 @@ class NodeInstitutionsRelationshipSerializer(ser.Serializer):
 
 class NodeAlternativeCitationSerializer(JSONAPISerializer):
 
-    id = IDField(source="_id", read_only=True)
+    id = IDField(source='_id', read_only=True)
     type = TypeField()
     name = ser.CharField(required=True)
     text = ser.CharField(required=True)

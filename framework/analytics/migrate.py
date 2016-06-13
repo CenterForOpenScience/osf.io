@@ -3,7 +3,7 @@ from website.models import Node, User
 from framework import Q
 from framework.analytics import piwik
 
-app = init_app("website.settings", set_backends=True)
+app = init_app('website.settings', set_backends=True)
 
 # NOTE: This is a naive implementation for migration, requiring a POST request
 # for every user and every node. It is possible to bundle these together in a

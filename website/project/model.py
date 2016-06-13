@@ -187,8 +187,8 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
 
     __guid_min_length__ = 12
 
-    OVERVIEW = "node"
-    FILES = "files"
+    OVERVIEW = 'node'
+    FILES = 'files'
     WIKI = 'wiki'
 
     _id = fields.StringField(primary=True)
@@ -1407,13 +1407,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
     def set_node_license(self, license_id, year, copyright_holders, auth, save=False):
         if not self.has_permission(auth.user, ADMIN):
-            raise PermissionsError("Only admins can change a project's license.")
+            raise PermissionsError('Only admins can change a project\'s license.')
         try:
             node_license = NodeLicense.find_one(
                 Q('id', 'eq', license_id)
             )
         except NoResultsFound:
-            raise NodeStateError("Trying to update a Node with an invalid license.")
+            raise NodeStateError('Trying to update a Node with an invalid license.')
         record = self.node_license
         if record is None:
             record = NodeLicenseRecord(
@@ -1452,7 +1452,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             if key not in self.WRITABLE_WHITELIST:
                 continue
             if self.is_registration and key != 'is_public':
-                raise NodeUpdateError(reason="Registered content cannot be updated", key=key)
+                raise NodeUpdateError(reason='Registered content cannot be updated', key=key)
             # Title and description have special methods for logging purposes
             if key == 'title':
                 if not self.is_bookmark_collection:
@@ -1532,7 +1532,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 Q('is_bookmark_collection', 'eq', True) & Q('contributors', 'eq', self.creator._id)
             )
             if existing_bookmark_collections.count() > 0:
-                raise NodeStateError("Only one bookmark collection allowed per user.")
+                raise NodeStateError('Only one bookmark collection allowed per user.')
 
         # Bookmark collections are always named 'Bookmarks'
         if self.is_bookmark_collection and self.title != 'Bookmarks':
@@ -2078,7 +2078,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         # TODO: rename "date" param - it's shadowing a global
 
         if self.is_bookmark_collection:
-            raise NodeStateError("Bookmark collections may not be deleted.")
+            raise NodeStateError('Bookmark collections may not be deleted.')
 
         if not self.can_edit(auth):
             raise PermissionsError('{0!r} does not have permission to modify this {1}'.format(auth.user, self.category or 'node'))
@@ -2090,7 +2090,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                     pointed.node.remove_node(auth=auth)
 
         if [x for x in self.nodes_primary if not x.is_deleted]:
-            raise NodeStateError("Any child components must be deleted prior to deleting this project.")
+            raise NodeStateError('Any child components must be deleted prior to deleting this project.')
 
         # After delete callback
         for addon in self.get_addons():
@@ -2254,7 +2254,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 'to register this node'.format(auth.user._id)
             )
         if self.is_collection:
-            raise NodeStateError("Folders may not be registered")
+            raise NodeStateError('Folders may not be registered')
 
         when = datetime.datetime.utcnow()
 
@@ -2626,7 +2626,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
     @property
     def watch_url(self):
-        return os.path.join(self.api_url, "watch/")
+        return os.path.join(self.api_url, 'watch/')
 
     @property
     def parent_id(self):
@@ -2843,7 +2843,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         Also checks to make sure unique admin is not removing own admin privilege.
         """
         if not self.has_permission(auth.user, ADMIN):
-            raise PermissionsError("Only admins can modify contributor permissions")
+            raise PermissionsError('Only admins can modify contributor permissions')
         permissions = expand_permissions(permission) or DEFAULT_CONTRIBUTOR_PERMISSIONS
         admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin') and contrib.is_active]
         if not len(admins) > 1:
@@ -3123,11 +3123,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if permissions == 'public' and not self.is_public:
             if self.is_registration:
                 if self.is_pending_embargo:
-                    raise NodeStateError("A registration with an unapproved embargo cannot be made public.")
+                    raise NodeStateError('A registration with an unapproved embargo cannot be made public.')
                 elif self.is_pending_registration:
-                    raise NodeStateError("An unapproved registration cannot be made public.")
+                    raise NodeStateError('An unapproved registration cannot be made public.')
                 elif self.is_pending_embargo:
-                    raise NodeStateError("An unapproved embargoed registration cannot be made public.")
+                    raise NodeStateError('An unapproved embargoed registration cannot be made public.')
                 elif self.is_embargoed:
                     # Embargoed registrations can be made public early
                     self.request_embargo_termination(auth=auth)
@@ -3135,7 +3135,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             self.is_public = True
         elif permissions == 'private' and self.is_public:
             if self.is_registration and not self.is_pending_embargo:
-                raise NodeStateError("Public registrations must be withdrawn, not made private.")
+                raise NodeStateError('Public registrations must be withdrawn, not made private.')
             else:
                 self.is_public = False
         else:
@@ -3491,9 +3491,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         """Initiates an EmbargoTerminationApproval to lift this Embargoed Registration's
         embargo early."""
         if not self.is_embargoed:
-            raise NodeStateError("This node is not under active embargo")
+            raise NodeStateError('This node is not under active embargo')
         if not self.root == self:
-            raise NodeStateError("Only the root of an embargoed registration can request termination")
+            raise NodeStateError('Only the root of an embargoed registration can request termination')
 
         approval = EmbargoTerminationApproval(
             initiated_by=auth.user,
@@ -3513,7 +3513,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         Adds a log to the registered_from Node.
         """
         if not self.is_embargoed:
-            raise NodeStateError("This node is not under active embargo")
+            raise NodeStateError('This node is not under active embargo')
 
         self.registered_from.add_log(
             action=NodeLog.EMBARGO_TERMINATED,
@@ -3783,14 +3783,14 @@ class PrivateLink(StoredObject):
 
     def to_json(self):
         return {
-            "id": self._id,
-            "date_created": iso8601format(self.date_created),
-            "key": self.key,
-            "name": sanitize.unescape_entities(self.name),
-            "creator": {'fullname': self.creator.fullname, 'url': self.creator.profile_url},
-            "nodes": [{'title': x.title, 'url': x.url, 'scale': str(self.node_scale(x)) + 'px', 'category': x.category}
+            'id': self._id,
+            'date_created': iso8601format(self.date_created),
+            'key': self.key,
+            'name': sanitize.unescape_entities(self.name),
+            'creator': {'fullname': self.creator.fullname, 'url': self.creator.profile_url},
+            'nodes': [{'title': x.title, 'url': x.url, 'scale': str(self.node_scale(x)) + 'px', 'category': x.category}
                       for x in self.nodes if not x.is_deleted],
-            "anonymous": self.anonymous
+            'anonymous': self.anonymous
         }
 
 
@@ -3801,9 +3801,9 @@ class AlternativeCitation(StoredObject):
 
     def to_json(self):
         return {
-            "id": self._id,
-            "name": self.name,
-            "text": self.text
+            'id': self._id,
+            'name': self.name,
+            'text': self.text
         }
 
 

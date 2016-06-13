@@ -107,10 +107,10 @@ class Sanction(StoredObject):
         return self.state == Sanction.REJECTED
 
     def approve(self, user):
-        raise NotImplementedError("Sanction subclasses must implement an approve method.")
+        raise NotImplementedError('Sanction subclasses must implement an approve method.')
 
     def reject(self, user):
-        raise NotImplementedError("Sanction subclasses must implement an approve method.")
+        raise NotImplementedError('Sanction subclasses must implement an approve method.')
 
     def _on_reject(self, user):
         """Callback for rejection of a Sanction
@@ -865,13 +865,13 @@ class DraftRegistrationApproval(Sanction):
 
     def approve(self, user):
         if settings.PREREG_ADMIN_TAG not in user.system_tags:
-            raise PermissionsError("This user does not have permission to approve this draft.")
+            raise PermissionsError('This user does not have permission to approve this draft.')
         self.state = Sanction.APPROVED
         self._on_complete(user)
 
     def reject(self, user):
         if settings.PREREG_ADMIN_TAG not in user.system_tags:
-            raise PermissionsError("This user does not have permission to approve this draft.")
+            raise PermissionsError('This user does not have permission to approve this draft.')
         self.state = Sanction.REJECTED
         self._on_reject(user)
 

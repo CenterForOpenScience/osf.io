@@ -630,7 +630,8 @@ var MyProjects = {
                             'You have not created any projects yet.');
                     } else if (lastcrumb.data.nodeType === 'registrations'){
                         template = m('.db-non-load-template.m-md.p-md.osf-box',
-                            'You have not made any registrations yet.');
+                            'You have not made any registrations yet. Go to ',
+                            m('a', {href: 'http://help.osf.io/#registrations'}, 'Getting Started'), ' to learn how registrations work.' );
                     } else {
                         template = m('.db-non-load-template.m-md.p-md.osf-box',
                             'This collection is empty.' + self.viewOnly ? '' : ' To add projects or registrations, click "All my projects" or "All my registrations" in the sidebar, and then drag and drop items into the collection link.');
@@ -1114,7 +1115,6 @@ var Collections = {
             self.newCollectionName('');
             self.isValid(false);
             $('#addCollInput').val('');
-            $osf.trackClick('myProjects', 'add-collection', 'click-cancel-button');
         },
         self.deleteCollection = function _deleteCollection(){
             var url = self.collectionMenuObject().item.data.node.links.self;
@@ -1381,6 +1381,7 @@ var Collections = {
                             {
                                 onclick : function(){
                                     ctrl.resetAddCollection();
+                                    $osf.trackClick('myProjects', 'add-collection', 'click-cancel-button');
                                 }
                             }, 'Cancel'),
                         ctrl.isValid() ? m('button[type="button"].btn.btn-success', { onclick : function() {

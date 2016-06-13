@@ -53,7 +53,7 @@ class AddonNodeLogger(object):
             params.update(extra)
 
         self.node.add_log(
-            action="{0}_{1}".format(self.addon_short_name, action),
+            action='{0}_{1}'.format(self.addon_short_name, action),
             params=params,
             auth=self.auth
         )

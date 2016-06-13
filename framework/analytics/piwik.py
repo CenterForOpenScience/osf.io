@@ -142,7 +142,7 @@ def _change_view_access(users, node, access):
         # Could also raise ValueError
         rv = json.loads(response.content)
         for x in rv:
-            if x.get("result" != "success"):
+            if x.get('result' != 'success'):
                 raise ValueError()
     except ValueError:
         raise PiwikException(

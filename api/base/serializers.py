@@ -225,7 +225,7 @@ class IDField(ser.CharField):
             if request.method in utils.UPDATE_METHODS and not utils.is_bulk_request(request):
                 id_field = getattr(self.root.instance, self.source, '_id')
                 if id_field != data:
-                    raise Conflict()
+                    raise Conflict(detail=('The id you used in the URL, "{}", does not match the id you used in the json body\'s id field, "{}". The object "{}" exists, otherwise you\'d get a 404, so most likely you need to change the id field to match.'.format(id_field, data, id_field)))
         return super(IDField, self).to_internal_value(data)
 
 
@@ -249,8 +249,7 @@ class TypeField(ser.CharField):
             type_ = self.root.Meta.type_
 
         if type_ != data:
-            raise Conflict()
-
+            raise Conflict(detail=('This resource has a type of "{}", but you set the json body\'s type field to "{}". You probably need to change the type field to match the resource\'s type.'.format(type_, data)))
         return super(TypeField, self).to_internal_value(data)
 
 
@@ -267,7 +266,7 @@ class TargetTypeField(ser.CharField):
 
     def to_internal_value(self, data):
         if self.target_type != data:
-            raise Conflict()
+            raise Conflict(detail=('The target resource has a type of "{}", but you set the json body\'s type field to "{}".  You probably need to change the type field to match the target resource\'s type.'.format(self.target_type, data)))
         return super(TargetTypeField, self).to_internal_value(data)
 
 
@@ -557,9 +556,9 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         format = self.context.get('format', None)
 
         assert request is not None, (
-            "`%s` requires the request in the serializer"
+            '`%s` requires the request in the serializer'
             " context. Add `context={'request': request}` when instantiating "
-            "the serializer." % self.__class__.__name__
+            'the serializer.' % self.__class__.__name__
         )
 
         # By default use whatever format is given for the current context
@@ -587,9 +586,9 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             if value in ('', None):
                 value_string = {'': 'the empty string', None: 'None'}[value]
                 msg += (
-                    " WARNING: The value of the field on the model instance "
+                    ' WARNING: The value of the field on the model instance '
                     "was %s, which may be why it didn't match any "
-                    "entries in your URL conf." % value_string
+                    'entries in your URL conf.' % value_string
                 )
             raise ImproperlyConfigured(msg % self.view_name)
 

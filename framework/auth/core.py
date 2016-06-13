@@ -4,6 +4,7 @@ import itertools
 import logging
 import re
 import urlparse
+from copy import deepcopy
 
 import bson
 import pytz
@@ -111,8 +112,8 @@ def get_user(email=None, password=None, verification_key=None):
     """
     # tag: database
     if password and not email:
-        raise AssertionError("If a password is provided, an email must also "
-                             "be provided.")
+        raise AssertionError('If a password is provided, an email must also '
+                             'be provided.')
 
     query_list = []
     if email:
@@ -333,13 +334,13 @@ class User(GuidStoredObject, AddonModelMixin):
                                            index=True)
 
     # watched nodes are stored via a list of WatchConfigs
-    watched = fields.ForeignField("WatchConfig", list=True)
+    watched = fields.ForeignField('WatchConfig', list=True)
 
     # list of collaborators that this user recently added to nodes as a contributor
-    recently_added = fields.ForeignField("user", list=True)
+    recently_added = fields.ForeignField('user', list=True)
 
     # Attached external accounts (OAuth)
-    external_accounts = fields.ForeignField("externalaccount", list=True)
+    external_accounts = fields.ForeignField('externalaccount', list=True)
 
     # CSL names
     given_name = fields.StringField()
@@ -747,7 +748,7 @@ class User(GuidStoredObject, AddonModelMixin):
         email = email.lower().strip()
 
         if email in self.emails:
-            raise ValueError("Email already confirmed to this user.")
+            raise ValueError('Email already confirmed to this user.')
 
         utils.validate_email(email)
 
@@ -761,7 +762,9 @@ class User(GuidStoredObject, AddonModelMixin):
         if not self.email_verifications:
             self.email_verifications = {}
 
-        self.email_verifications[token] = {'email': email}
+        # confirmed used to check if link has been clicked
+        self.email_verifications[token] = {'email': email,
+                                           'confirmed': False}
         self._set_email_token_expiration(token, expiration=expiration)
         return token
 
@@ -829,11 +832,14 @@ class User(GuidStoredObject, AddonModelMixin):
         """
         base = settings.DOMAIN if external else '/'
         token = self.get_confirmation_token(email, force=force)
-        return "{0}confirm/{1}/{2}/".format(base, self._primary_key, token)
+        return '{0}confirm/{1}/{2}/'.format(base, self._primary_key, token)
 
-    def _get_unconfirmed_email_for_token(self, token):
-        """Return whether or not a confirmation token is valid for this user.
+    def get_unconfirmed_email_for_token(self, token):
+        """Return email if valid.
         :rtype: bool
+        :raises: ExpiredTokenError if trying to access a token that is expired.
+        :raises: InvalidTokenError if trying to access a token that is invalid.
+
         """
         if token not in self.email_verifications:
             raise InvalidTokenError
@@ -848,6 +854,18 @@ class User(GuidStoredObject, AddonModelMixin):
 
         return verification['email']
 
+    def clean_email_verifications(self, given_token=None):
+        email_verifications = deepcopy(self.email_verifications or {})
+        for token in self.email_verifications or {}:
+            try:
+                self.get_unconfirmed_email_for_token(token)
+            except (KeyError, ExpiredTokenError):
+                email_verifications.pop(token)
+                continue
+            if token == given_token:
+                email_verifications.pop(token)
+        self.email_verifications = email_verifications
+
     def verify_claim_token(self, token, project_id):
         """Return whether or not a claim token is valid for this user for
         a given node which they were added as a unregistered contributor for.
@@ -860,7 +878,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def confirm_email(self, token, merge=False):
         """Confirm the email address associated with the token"""
-        email = self._get_unconfirmed_email_for_token(token)
+        email = self.get_unconfirmed_email_for_token(token)
 
         # If this email is confirmed on another account, abort
         try:
@@ -1019,6 +1037,26 @@ class User(GuidStoredObject, AddonModelMixin):
     @property
     def deep_url(self):
         return '/profile/{}/'.format(self._primary_key)
+
+    @property
+    def unconfirmed_email_info(self):
+        """Return a list of dictionaries containing information about each of this
+        user's unconfirmed emails.
+        """
+        unconfirmed_emails = []
+        email_verifications = self.email_verifications or []
+        for token in email_verifications:
+            if self.email_verifications[token].get('confirmed', False):
+                try:
+                    user_merge = User.find_one(Q('emails', 'eq', self.email_verifications[token]['email'].lower()))
+                except NoResultsFound:
+                    user_merge = False
+
+                unconfirmed_emails.append({'address': self.email_verifications[token]['email'],
+                                        'token': token,
+                                        'confirmed': self.email_verifications[token]['confirmed'],
+                                        'user_merge': user_merge.email if user_merge else False})
+        return unconfirmed_emails
 
     def profile_image_url(self, size=None):
         """A generalized method for getting a user's profile picture urls.
@@ -1257,7 +1295,7 @@ class User(GuidStoredObject, AddonModelMixin):
         """
         # Fail if the other user has conflicts.
         if not user.can_be_merged:
-            raise MergeConflictError("Users cannot be merged")
+            raise MergeConflictError('Users cannot be merged')
         # Move over the other user's attributes
         # TODO: confirm
         for system_tag in user.system_tags:

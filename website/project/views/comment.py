@@ -116,12 +116,12 @@ def send_comment_added_notification(comment, auth):
         page_title=comment.get_comment_page_title(),
         provider=PROVIDERS[comment.root_target.referent.provider] if comment.page == Comment.FILES else '',
         target_user=target.referent.user if is_reply(target) else None,
-        parent_comment=target.referent.content if is_reply(target) else "",
+        parent_comment=target.referent.content if is_reply(target) else '',
         url=comment.get_comment_page_url()
     )
     time_now = datetime.utcnow().replace(tzinfo=pytz.utc)
     sent_subscribers = notify(
-        event="comments",
+        event='comments',
         user=auth.user,
         node=node,
         timestamp=time_now,
