@@ -129,13 +129,10 @@ class MetaSchema(StoredObject):
     def get_absolute_url(self):
         return self.absolute_api_v2_url
 
-    def validate_metadata(self, *args, **kwargs):
+    def validate_metadata(self, metadata, reviewer=False, required_fields=False):
         """
         Validates registration_metadata field.
         """
-        reviewer = kwargs.pop('reviewer', False)
-        metadata = kwargs.pop('metadata', {})
-        required_fields = kwargs.pop('required_fields', False)
         schema = create_jsonschema_from_metaschema(self.schema, required_fields=required_fields, is_reviewer=reviewer)
         try:
             jsonschema.validate(metadata, schema)
@@ -4029,8 +4026,8 @@ class DraftRegistration(StoredObject):
         log = DraftRegistrationLog(action=action, user=user, draft=self)
         log.save()
 
-    def validate_metadata(self, *args, **kwargs):
+    def validate_metadata(self, metadata, reviewer, required_fields):
         """
         Validates draft's metadata
         """
-        return self.registration_schema.validate_metadata(*args, **kwargs)
+        return self.registration_schema.validate_metadata(metadata, reviewer, required_fields)
