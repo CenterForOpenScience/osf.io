@@ -15,11 +15,8 @@ from api.base.exceptions import InvalidQueryStringError, Conflict, JSONAPIExcept
 from api.base.settings import BULK_SETTINGS
 from api.base.utils import extend_querystring_params
 from framework.auth import core as auth_core
-from modularodm import Q
-from modularodm.exceptions import NoResultsFound
 from website import settings
 from website import util as website_utils
-from website.models import PrivateLink
 from website.util.sanitize import strip_html
 
 
@@ -52,16 +49,8 @@ def format_relationship_links(related_link=None, self_link=None, rel_meta=None, 
 
 
 def is_anonymized(request):
-    is_anonymous = False
     private_key = request.query_params.get('view_only', None)
-    if private_key is not None:
-        try:
-            link = PrivateLink.find_one(Q('key', 'eq', private_key))
-        except NoResultsFound:
-            link = None
-        if link is not None:
-            is_anonymous = link.anonymous
-    return is_anonymous
+    return website_utils.check_private_key_for_anonymized_link(private_key)
 
 
 class HideIfRegistration(ser.Field):
@@ -1009,7 +998,7 @@ class JSONAPISerializer(ser.Serializer):
                     continue
                 if getattr(field, 'json_api_link', False) or getattr(nested_field, 'json_api_link', False):
                     # If embed=field_name is appended to the query string or 'always_embed' flag is True, directly embed the
-                    # results rather than adding a relationship link
+                    # results in addition to adding a relationship link
                     if embeds and (field.field_name in embeds or getattr(field, 'always_embed', None)):
                         if enable_esi:
                             try:
@@ -1027,14 +1016,13 @@ class JSONAPISerializer(ser.Serializer):
                             data['embeds'][field.field_name] = result
                         else:
                             data['embeds'][field.field_name] = {'error': 'This field is not embeddable.'}
-                    else:
-                        try:
-                            if not (is_anonymous and
-                                        hasattr(field, 'view_name') and
-                                            field.view_name in self.views_to_hide_if_anonymous):
-                                data['relationships'][field.field_name] = representation
-                        except SkipField:
-                            continue
+                    try:
+                        if not (is_anonymous and
+                                    hasattr(field, 'view_name') and
+                                        field.view_name in self.views_to_hide_if_anonymous):
+                            data['relationships'][field.field_name] = representation
+                    except SkipField:
+                        continue
                 elif field.field_name == 'id':
                     data['id'] = representation
                 elif field.field_name == 'links':
