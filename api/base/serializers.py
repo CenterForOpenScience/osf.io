@@ -259,8 +259,6 @@ class TargetTypeField(ser.CharField):
     """
 
     def __init__(self, **kwargs):
-        for key, value in kwargs.iteritems():
-            print '%s = %s' % (key, value)
         kwargs['write_only'] = True
         kwargs['required'] = True
         self.target_type = kwargs.pop('target_type')
