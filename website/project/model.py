@@ -210,7 +210,6 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
     content = fields.StringField(required=True,
                                  validate=[MaxLengthValidator(settings.COMMENT_MAXLENGTH), validators.string_required])
     # The mentioned users
-    new_mentions = fields.ListField(fields.StringField(default=[]))
     ever_mentioned = fields.ListField(fields.StringField())
 
     # For Django compatibility
@@ -328,11 +327,11 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
             save=False,
         )
 
-        comment.new_mentions = get_valid_mentioned_users_guids(comment, comment.node.contributors)
+        new_mentions = get_valid_mentioned_users_guids(comment, comment.node.contributors)
 
-        if comment.new_mentions:
-            project_signals.mention_added.send(comment, auth=auth)
-            comment.ever_mentioned.extend(comment.new_mentions)
+        if new_mentions:
+            project_signals.mention_added.send(comment, new_mentions=new_mentions, auth=auth)
+            comment.ever_mentioned.extend(new_mentions)
             comment.save()
 
         comment.node.save()
@@ -353,11 +352,11 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
         self.content = content
         self.modified = True
         self.date_modified = datetime.datetime.utcnow()
-        self.new_mentions = get_valid_mentioned_users_guids(self, self.node.contributors)
+        new_mentions = get_valid_mentioned_users_guids(self, self.node.contributors)
 
-        if self.new_mentions:
-            project_signals.mention_added.send(self, auth=auth)
-            self.ever_mentioned.extend(self.new_mentions)
+        if new_mentions:
+            project_signals.mention_added.send(self, new_mentions=new_mentions, auth=auth)
+            self.ever_mentioned.extend(new_mentions)
 
         if save:
             self.save()

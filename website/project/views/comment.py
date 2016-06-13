@@ -140,7 +140,7 @@ def send_comment_added_notification(comment, auth):
 
 
 @mention_added.connect
-def send_mention_added_notification(comment, auth):
+def send_mention_added_notification(comment, new_mentions, auth):
     node = comment.node
     target = comment.target
 
@@ -152,7 +152,7 @@ def send_mention_added_notification(comment, auth):
         provider=PROVIDERS[comment.root_target.referent.provider] if comment.page == Comment.FILES else '',
         target_user=target.referent.user if is_reply(target) else None,
         parent_comment=target.referent.content if is_reply(target) else "",
-        new_mentions=comment.new_mentions,
+        new_mentions=new_mentions,
         url=comment.get_comment_page_url()
     )
     time_now = datetime.utcnow().replace(tzinfo=pytz.utc)
