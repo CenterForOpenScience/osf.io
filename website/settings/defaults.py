@@ -352,6 +352,8 @@ else:
 
     CELERY_DEFAULT_EXCHANGE_TYPE = 'direct'
     CELERY_ROUTES = ('framework.celery_tasks.routers.CeleryRouter', )
+    CELERY_IGNORE_RESULT = True
+    CELERY_STORE_ERRORS_EVEN_IF_IGNORED = True
 
 # Default RabbitMQ broker
 BROKER_URL = 'amqp://'
