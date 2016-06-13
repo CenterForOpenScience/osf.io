@@ -170,7 +170,7 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
         if add_log:
             extra = {'folder_id': self.folder_id}
-            self.nodelogger.log(action="node_deauthorized", extra=extra, save=True)
+            self.nodelogger.log(action='node_deauthorized', extra=extra, save=True)
 
         self.clear_settings()
         self.clear_auth()

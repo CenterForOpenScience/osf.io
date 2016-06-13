@@ -18,6 +18,7 @@ urlpatterns = [
                 url(r'^comments/', include('api.comments.urls', namespace='comments')),
                 url(r'^nodes/', include('api.nodes.urls', namespace='nodes')),
                 url(r'^registrations/', include('api.registrations.urls', namespace='registrations')),
+                url(r'^metaschemas/', include('api.metaschemas.urls', namespace='metaschemas')),
                 url(r'^users/', include('api.users.urls', namespace='users')),
                 url(r'^tokens/', include('api.tokens.urls', namespace='tokens')),
                 url(r'^logs/', include('api.logs.urls', namespace='logs')),

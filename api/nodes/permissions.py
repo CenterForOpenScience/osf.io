@@ -3,7 +3,8 @@ from rest_framework import permissions
 from rest_framework import exceptions
 
 from website.addons.base import AddonSettingsBase
-from website.models import Node, Pointer, User, Institution
+from website.models import Node, Pointer, User, Institution, DraftRegistration
+from website.project.metadata.utils import is_prereg_admin
 from website.util import permissions as osf_permissions
 
 from api.base.utils import get_user_auth
@@ -30,10 +31,31 @@ class IsPublic(permissions.BasePermission):
         return obj.is_public or obj.can_view(auth)
 
 
+class IsAdmin(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        assert isinstance(obj, (Node, DraftRegistration)), 'obj must be a Node or a Draft Registration, got {}'.format(obj)
+        auth = get_user_auth(request)
+        node = Node.load(request.parser_context['kwargs']['node_id'])
+        return node.has_permission(auth.user, osf_permissions.ADMIN)
+
+
+class IsAdminOrReviewer(permissions.BasePermission):
+    """
+    Prereg admins can update draft registrations.
+    """
+    def has_object_permission(self, request, view, obj):
+        assert isinstance(obj, (Node, DraftRegistration)), 'obj must be a Node or a Draft Registration, got {}'.format(obj)
+        auth = get_user_auth(request)
+        node = Node.load(request.parser_context['kwargs']['node_id'])
+        if request.method != 'DELETE' and is_prereg_admin(auth.user):
+            return True
+        return node.has_permission(auth.user, osf_permissions.ADMIN)
+
+
 class AdminOrPublic(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (Node, User, Institution, AddonSettingsBase)), 'obj must be a Node, User, Institution, or AddonSettings; got {}'.format(obj)
+        assert isinstance(obj, (Node, User, Institution, DraftRegistration, AddonSettingsBase)), 'obj must be a Node, User, Institution, Draft Registration, or AddonSettings; got {}'.format(obj)
         auth = get_user_auth(request)
         node = Node.load(request.parser_context['kwargs'][view.node_lookup_url_kwarg])
         if request.method in permissions.SAFE_METHODS:

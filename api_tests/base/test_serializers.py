@@ -178,6 +178,11 @@ class TestApiBaseSerializers(ApiTestCase):
         assert_equal(res.status_code, http.BAD_REQUEST)
         assert_equal(res.json['errors'][0]['detail'], "The following fields are not embeddable: foo")
 
+    def test_embed_does_not_remove_relationship(self):
+        res = self.app.get(self.url, params={'embed': 'root'})
+        assert_equal(res.status_code, 200)
+        assert_in(self.url, res.json['data']['relationships']['root']['links']['related']['href'])
+
     def test_counts_included_in_children_field_with_children_related_counts_query_param(self):
 
         res = self.app.get(self.url, params={'related_counts': 'children'})

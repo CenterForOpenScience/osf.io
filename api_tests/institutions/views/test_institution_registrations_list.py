@@ -35,25 +35,15 @@ class TestInstitutionRegistrationList(ApiTestCase):
         assert_not_in(self.registration2._id, ids)
         assert_not_in(self.registration3._id, ids)
 
-    def test_return_private_nodes_with_auth(self):
+    def test_does_not_return_private_nodes_with_auth(self):
         res = self.app.get(self.institution_node_url, auth=self.user1.auth)
 
         assert_equal(res.status_code, 200)
         ids = [each['id'] for each in res.json['data']]
 
         assert_in(self.registration1._id, ids)
-        assert_in(self.registration2._id, ids)
+        assert_not_in(self.registration2._id, ids)
         assert_not_in(self.registration3._id, ids)
-
-    def test_return_private_nodes_mixed_auth(self):
-        res = self.app.get(self.institution_node_url, auth=self.user2.auth)
-
-        assert_equal(res.status_code, 200)
-        ids = [each['id'] for each in res.json['data']]
-
-        assert_in(self.registration1._id, ids)
-        assert_in(self.registration2._id, ids)
-        assert_in(self.registration3._id, ids)
 
     def test_doesnt_return_retractions_without_auth(self):
         self.registration2.is_public = True

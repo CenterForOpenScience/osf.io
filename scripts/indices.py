@@ -4,6 +4,9 @@
 
 from pymongo import ASCENDING, DESCENDING
 
+db['storedfilenode'].create_index([
+    ('tags', ASCENDING),
+])
 
 db['user'].create_index([
     ('emails', ASCENDING),
@@ -34,23 +37,25 @@ db['node'].create_index([
     ('institution_id', ASCENDING),
 ])
 
-db['node'].create_index([
-    ('is_deleted', ASCENDING),
-    ('is_folder', ASCENDING),
-    ('is_registration', ASCENDING),
-    ('parent_node', ASCENDING),
-    ('is_public', ASCENDING),
-    ('contributors', ASCENDING),
-    ('_affiliated_institutions', ASCENDING),
-])
+# mongodb does not support indexes on parallel array's
+#
+# db['node'].create_index([
+#     ('is_deleted', ASCENDING),
+#     ('is_folder', ASCENDING),
+#     ('is_registration', ASCENDING),
+#     ('parent_node', ASCENDING),
+#     ('is_public', ASCENDING),
+#     ('contributors', ASCENDING),
+#     ('_affiliated_institutions', ASCENDING),
+# ])
 
-db['node'].create_index([
-    ('is_deleted', ASCENDING),
-    ('is_folder', ASCENDING),
-    ('is_registration', ASCENDING),
-    ('parent_node', ASCENDING),
-    ('is_public', ASCENDING),
-    ('contributors', ASCENDING),
-    ('_affiliated_institutions', ASCENDING),
-    ('date_modified', DESCENDING),
-])
+# db['node'].create_index([
+#     ('is_deleted', ASCENDING),
+#     ('is_folder', ASCENDING),
+#     ('is_registration', ASCENDING),
+#     ('parent_node', ASCENDING),
+#     ('is_public', ASCENDING),
+#     ('contributors', ASCENDING),
+#     ('_affiliated_institutions', ASCENDING),
+#     ('date_modified', DESCENDING),
+# ])

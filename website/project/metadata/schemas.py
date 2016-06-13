@@ -1,6 +1,8 @@
 import os
 import json
 
+LATEST_SCHEMA_VERSION = 2
+
 def _id_to_name(id):
     return ' '.join(id.split('_'))
 

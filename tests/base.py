@@ -160,7 +160,7 @@ class DbTestCase(unittest.TestCase):
         settings.BCRYPT_LOG_ROUNDS = cls._original_bcrypt_log_rounds
 
 
-class AppTestCase(unittest.TestCase):
+class   AppTestCase(unittest.TestCase):
     """Base `TestCase` for OSF tests that require the WSGI app (but no database).
     """
 

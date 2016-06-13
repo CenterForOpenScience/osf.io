@@ -6,7 +6,7 @@ from itertools import islice
 
 from flask import request
 from modularodm import Q
-from modularodm.exceptions import ModularOdmException, ValidationValueError, NoResultsFound
+from modularodm.exceptions import ModularOdmException, ValidationValueError
 
 from framework import status
 from framework.utils import iso8601format
@@ -32,7 +32,7 @@ from website.project.decorators import (
 from website.tokens import process_token_or_pass
 from website.util.permissions import ADMIN, READ, WRITE, CREATOR_PERMISSIONS
 from website.util.rubeus import collect_addon_js
-from website.project.model import has_anonymous_link, get_pointer_parent, NodeUpdateError, validate_title, Institution
+from website.project.model import has_anonymous_link, get_pointer_parent, NodeUpdateError, validate_title
 from website.project.forms import NewNodeForm
 from website.project.metadata.utils import serialize_meta_schemas
 from website.models import Node, Pointer, WatchConfig, PrivateLink, Comment
@@ -264,17 +264,8 @@ def node_forks(auth, node, **kwargs):
 @must_have_permission(READ)
 def node_setting(auth, node, **kwargs):
 
-    #check institutions:
-    try:
-        email_domains = [email.split('@')[1] for email in auth.user.emails]
-        insts = Institution.find(Q('email_domains', 'in', email_domains))
-        for inst in insts:
-            if inst not in auth.user.affiliated_institutions:
-                auth.user.affiliated_institutions.append(inst)
-                auth.user.save()
-    except (IndexError, NoResultsFound):
-        pass
-
+    auth.user.update_affiliated_institutions_by_email_domain()
+    auth.user.save()
     ret = _view_project(node, auth, primary=True)
 
     addons_enabled = []
@@ -441,7 +432,7 @@ def project_statistics(auth, node, **kwargs):
 @must_be_valid_project
 @must_be_contributor_or_public
 def project_statistics_redirect(auth, node, **kwargs):
-    return redirect(node.web_url_for("project_statistics", _guid=True))
+    return redirect(node.web_url_for('project_statistics', _guid=True))
 
 ###############################################################################
 # Make Private/Public
@@ -709,7 +700,7 @@ def _view_project(node, auth, primary=False):
             'is_retracted': node.is_retracted,
             'is_pending_retraction': node.is_pending_retraction,
             'retracted_justification': getattr(node.retraction, 'justification', None),
-            'embargo_end_date': node.embargo_end_date.strftime("%A, %b. %d, %Y") if node.embargo_end_date else False,
+            'embargo_end_date': node.embargo_end_date.strftime('%A, %b. %d, %Y') if node.embargo_end_date else False,
             'is_pending_embargo': node.is_pending_embargo,
             'is_embargoed': node.is_embargoed,
             'is_pending_embargo_termination': node.is_embargoed and (
@@ -868,7 +859,7 @@ def _get_summary(node, auth, primary=True, link_id=None, show_path=False):
         'is_pending_registration': node.is_pending_registration,
         'is_retracted': node.is_retracted,
         'is_pending_retraction': node.is_pending_retraction,
-        'embargo_end_date': node.embargo_end_date.strftime("%A, %b. %d, %Y") if node.embargo_end_date else False,
+        'embargo_end_date': node.embargo_end_date.strftime('%A, %b. %d, %Y') if node.embargo_end_date else False,
         'is_pending_embargo': node.is_pending_embargo,
         'is_embargoed': node.is_embargoed,
         'archiving': node.archiving,

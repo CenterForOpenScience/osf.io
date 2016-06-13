@@ -67,9 +67,9 @@ try:
     es.cluster.health(wait_for_status='yellow')
 except ConnectionError as e:
     sentry.log_exception()
-    sentry.log_message("The SEARCH_ENGINE setting is set to 'elastic', but there "
-            "was a problem starting the elasticsearch interface. Is "
-            "elasticsearch running?")
+    sentry.log_message('The SEARCH_ENGINE setting is set to "elastic", but there '
+            'was a problem starting the elasticsearch interface. Is '
+            'elasticsearch running?')
     es = None
 
 
@@ -91,7 +91,7 @@ def requires_search(func):
                 raise exceptions.SearchException(e.error)
 
         sentry.log_message('Elastic search action failed. Is elasticsearch running?')
-        raise exceptions.SearchUnavailableError("Failed to connect to elasticsearch")
+        raise exceptions.SearchUnavailableError('Failed to connect to elasticsearch')
     return wrapped
 
 
@@ -325,7 +325,7 @@ def update_node(node, index=None, bulk=False):
             'is_pending_registration': node.is_pending_registration,
             'is_retracted': node.is_retracted,
             'is_pending_retraction': node.is_pending_retraction,
-            'embargo_end_date': node.embargo_end_date.strftime("%A, %b. %d, %Y") if node.embargo_end_date else False,
+            'embargo_end_date': node.embargo_end_date.strftime('%A, %b. %d, %Y') if node.embargo_end_date else False,
             'is_pending_embargo': node.is_pending_embargo,
             'registered_date': node.registered_date,
             'wikis': {},
@@ -466,6 +466,7 @@ def update_file(file_, index=None, delete=False):
         'node_title': file_.node.title,
         'parent_id': file_.node.parent_node._id if file_.node.parent_node else None,
         'is_registration': file_.node.is_registration,
+        'is_retracted': file_.node.is_retracted
     }
 
     es.index(
@@ -479,16 +480,19 @@ def update_file(file_, index=None, delete=False):
 @requires_search
 def update_institution(institution, index=None):
     index = index or INDEX
+    id_ = institution._id
+    if institution.is_deleted:
+        es.delete(index=index, doc_type='institution', id=id_, refresh=True, ignore=[404])
+    else:
+        institution_doc = {
+            'id': id_,
+            'url': '/institutions/{}/'.format(institution._id),
+            'logo_path': institution.logo_path,
+            'category': 'institution',
+            'name': institution.name,
+        }
 
-    institution_doc = {
-        'id': institution._id,
-        'url': '/institutions/{}/'.format(institution._id),
-        'logo_path': institution.logo_path,
-        'category': 'institution',
-        'name': institution.name,
-    }
-
-    es.index(index=index, doc_type='institution', body=institution_doc, id=institution._id, refresh=True)
+        es.index(index=index, doc_type='institution', body=institution_doc, id=id_, refresh=True)
 
 @requires_search
 def delete_all():
@@ -585,8 +589,8 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
         normalized_items.append(normalized_item)
     items = normalized_items
 
-    query = "  AND ".join('{}*~'.format(re.escape(item)) for item in items) + \
-            "".join(' NOT id:"{}"'.format(excluded._id) for excluded in exclude)
+    query = '  AND '.join('{}*~'.format(re.escape(item)) for item in items) + \
+            ''.join(' NOT id:"{}"'.format(excluded._id) for excluded in exclude)
 
     results = search(build_query(query, start=start, size=size), index=INDEX, doc_type='user')
     docs = results['results']

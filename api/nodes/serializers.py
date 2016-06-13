@@ -7,7 +7,9 @@ from modularodm.exceptions import ValidationValueError
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 
-from website.models import Node, User, Comment, Institution
+from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, LATEST_SCHEMA_VERSION
+from website.project.metadata.utils import is_prereg_admin_not_project_admin
+from website.models import Node, User, Comment, Institution, MetaSchema, DraftRegistration
 from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
 from website.project.model import NodeUpdateError
@@ -78,6 +80,7 @@ class NodeSerializer(JSONAPISerializer):
         'parent',
         'root',
         'logs',
+        'wikis'
     ]
 
     id = IDField(source='_id', read_only=True)
@@ -88,7 +91,7 @@ class NodeSerializer(JSONAPISerializer):
 
     title = ser.CharField(required=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
-    category = ser.ChoiceField(choices=category_choices, help_text="Choices: " + category_choices_string)
+    category = ser.ChoiceField(choices=category_choices, help_text='Choices: ' + category_choices_string)
     date_created = ser.DateTimeField(read_only=True)
     date_modified = ser.DateTimeField(read_only=True)
     registration = ser.BooleanField(read_only=True, source='is_registration')
@@ -269,8 +272,7 @@ class NodeSerializer(JSONAPISerializer):
         auth = get_user_auth(self.context['request'])
         old_tags = set([tag._id for tag in node.tags])
         if 'tags' in validated_data:
-            current_tags = set(validated_data.get('tags'))
-            del validated_data['tags']
+            current_tags = set(validated_data.pop('tags', []))
         elif self.partial:
             current_tags = set(old_tags)
         else:
@@ -427,12 +429,12 @@ class NodeForksSerializer(NodeSerializer):
     category_choices_string = ', '.join(["'{}'".format(choice[0]) for choice in category_choices])
 
     title = ser.CharField(required=False)
-    category = ser.ChoiceField(read_only=True, choices=category_choices, help_text="Choices: " + category_choices_string)
+    category = ser.ChoiceField(read_only=True, choices=category_choices, help_text='Choices: ' + category_choices_string)
     forked_date = ser.DateTimeField(read_only=True)
 
     def create(self, validated_data):
         node = validated_data.pop('node')
-        fork_title = validated_data.pop('title', 'Fork of ')
+        fork_title = validated_data.pop('title', None)
         request = self.context['request']
         auth = get_user_auth(request)
         fork = node.fork_node(auth, title=fork_title)
@@ -719,7 +721,7 @@ class NodeInstitutionsRelationshipSerializer(ser.Serializer):
 
 class NodeAlternativeCitationSerializer(JSONAPISerializer):
 
-    id = IDField(source="_id", read_only=True)
+    id = IDField(source='_id', read_only=True)
     type = TypeField()
     name = ser.CharField(required=True)
     text = ser.CharField(required=True)
@@ -762,3 +764,89 @@ class NodeAlternativeCitationSerializer(JSONAPISerializer):
     def get_absolute_url(self, obj):
         #  Citations don't have urls
         raise NotImplementedError
+
+
+class DraftRegistrationSerializer(JSONAPISerializer):
+
+    id = IDField(source='_id', read_only=True)
+    type = TypeField()
+    registration_supplement = ser.CharField(source='registration_schema._id', required=True)
+    registration_metadata = ser.DictField(required=False)
+    datetime_initiated = ser.DateTimeField(read_only=True)
+    datetime_updated = ser.DateTimeField(read_only=True)
+
+    branched_from = RelationshipField(
+        related_view='nodes:node-detail',
+        related_view_kwargs={'node_id': '<branched_from._id>'}
+    )
+
+    initiator = RelationshipField(
+        related_view='users:user-detail',
+        related_view_kwargs={'user_id': '<initiator._id>'},
+    )
+
+    registration_schema = RelationshipField(
+        related_view='metaschemas:metaschema-detail',
+        related_view_kwargs={'metaschema_id': '<registration_schema._id>'}
+    )
+
+    links = LinksField({
+        'html': 'get_absolute_url'
+    })
+
+    def get_absolute_url(self, obj):
+        return obj.absolute_url
+
+    def create(self, validated_data):
+        node = validated_data.pop('node')
+        initiator = validated_data.pop('initiator')
+        metadata = validated_data.pop('registration_metadata', None)
+
+        schema_id = validated_data.pop('registration_schema').get('_id')
+        schema = get_object_or_error(MetaSchema, schema_id)
+        if schema.schema_version != LATEST_SCHEMA_VERSION or schema.name not in ACTIVE_META_SCHEMAS:
+            raise exceptions.ValidationError('Registration supplement must be an active schema.')
+
+        draft = DraftRegistration.create_from_node(node=node, user=initiator, schema=schema)
+        reviewer = is_prereg_admin_not_project_admin(self.context['request'], draft)
+
+        if metadata:
+            try:
+                # Required fields are only required when creating the actual registration, not updating the draft.
+                draft.validate_metadata(metadata=metadata, reviewer=reviewer, required_fields=False)
+            except ValidationValueError as e:
+                raise exceptions.ValidationError(e.message)
+            draft.update_metadata(metadata)
+            draft.save()
+        return draft
+
+    class Meta:
+        type_ = 'draft_registrations'
+
+
+class DraftRegistrationDetailSerializer(DraftRegistrationSerializer):
+    """
+    Overrides DraftRegistrationSerializer to make id and registration_metadata required.
+    registration_supplement cannot be changed after draft has been created.
+
+    Also makes registration_supplement read-only.
+    """
+    id = IDField(source='_id', required=True)
+    registration_metadata = ser.DictField(required=True)
+    registration_supplement = ser.CharField(read_only=True, source='registration_schema._id')
+
+    def update(self, draft, validated_data):
+        """
+        Update draft instance with the validated metadata.
+        """
+        metadata = validated_data.pop('registration_metadata', None)
+        reviewer = is_prereg_admin_not_project_admin(self.context['request'], draft)
+        if metadata:
+            try:
+                # Required fields are only required when creating the actual registration, not updating the draft.
+                draft.validate_metadata(metadata=metadata, reviewer=reviewer, required_fields=False)
+            except ValidationValueError as e:
+                raise exceptions.ValidationError(e.message)
+            draft.update_metadata(metadata)
+            draft.save()
+        return draft

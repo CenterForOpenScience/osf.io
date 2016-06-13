@@ -10,6 +10,8 @@ import json
 import math
 import time
 import unittest
+import urllib
+import datetime
 
 import mock
 from nose.tools import *  # noqa PEP8 asserts
@@ -3436,7 +3438,143 @@ class TestAuthViews(OsfTestCase):
         self.user.reload()
         assert_not_equal(token, self.user.get_confirmation_token(email))
         with assert_raises(InvalidTokenError):
-            self.user._get_unconfirmed_email_for_token(token)
+            self.user.get_unconfirmed_email_for_token(token)
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_click_confirmation_email(self, send_mail):
+        email = 'test@example.com'
+        token = self.user.add_unconfirmed_email(email)
+        self.user.save()
+        self.user.reload()
+        assert_equal(self.user.email_verifications[token]['confirmed'], False)
+        url = '/confirm/{}/{}/?logout=1'.format(self.user._id, token, self.user.username)
+        res = self.app.get(url)
+        self.user.reload()
+        assert_equal(self.user.email_verifications[token]['confirmed'], True)
+        assert_equal(res.status_code, 302)
+        login_url = 'login?service'
+        assert_in(login_url, res.body)
+
+    def test_get_email_to_add_no_email(self):
+        email_verifications = self.user.unconfirmed_email_info
+        assert_equal(email_verifications, [])
+
+    def test_get_unconfirmed_email(self):
+        email = 'test@example.com'
+        self.user.add_unconfirmed_email(email)
+        self.user.save()
+        self.user.reload()
+        email_verifications = self.user.unconfirmed_email_info
+        assert_equal(email_verifications, [])
+
+    def test_get_email_to_add(self):
+        email = 'test@example.com'
+        token = self.user.add_unconfirmed_email(email)
+        self.user.save()
+        self.user.reload()
+        assert_equal(self.user.email_verifications[token]['confirmed'], False)
+        url = '/confirm/{}/{}/?logout=1'.format(self.user._id, token, self.user.username)
+        self.app.get(url)
+        self.user.reload()
+        assert_equal(self.user.email_verifications[token]['confirmed'], True)
+        email_verifications = self.user.unconfirmed_email_info
+        assert_equal(email_verifications[0]['address'], 'test@example.com')
+
+    def test_add_email(self):
+        email = 'test@example.com'
+        token = self.user.add_unconfirmed_email(email)
+        self.user.save()
+        self.user.reload()
+        assert_equal(self.user.email_verifications[token]['confirmed'], False)
+        url = '/confirm/{}/{}/?logout=1'.format(self.user._id, token)
+        self.app.get(url)
+        self.user.reload()
+        email_verifications = self.user.unconfirmed_email_info
+        put_email_url = api_url_for('unconfirmed_email_add')
+        res = self.app.put_json(put_email_url, email_verifications[0], auth=self.user.auth)
+        self.user.reload()
+        assert_equal(res.json_body['status'], 'success')
+        assert_equal(self.user.emails[1], 'test@example.com')
+
+    def test_remove_email(self):
+        email = 'test@example.com'
+        token = self.user.add_unconfirmed_email(email)
+        self.user.save()
+        self.user.reload()
+        url = '/confirm/{}/{}/?logout=1'.format(self.user._id, token)
+        self.app.get(url)
+        self.user.reload()
+        email_verifications = self.user.unconfirmed_email_info
+        remove_email_url = api_url_for('unconfirmed_email_remove')
+        remove_res = self.app.delete_json(remove_email_url, email_verifications[0], auth=self.user.auth)
+        self.user.reload()
+        assert_equal(remove_res.json_body['status'], 'success')
+        assert_equal(self.user.unconfirmed_email_info, [])
+
+    def test_add_expired_email(self):
+        # Do not return expired token and removes it from user.email_verifications
+        email = 'test@example.com'
+        token = self.user.add_unconfirmed_email(email)
+        self.user.email_verifications[token]['expiration'] = dt.datetime.utcnow() - dt.timedelta(days=100)
+        self.user.save()
+        self.user.reload()
+        assert_equal(self.user.email_verifications[token]['email'], email)
+        self.user.clean_email_verifications(given_token=token)
+        unconfirmed_emails = self.user.unconfirmed_email_info
+        assert_equal(unconfirmed_emails, [])
+        assert_equal(self.user.email_verifications, {})
+
+    def test_clean_email_verifications(self):
+        # Do not return bad token and removes it from user.email_verifications
+        email = 'test@example.com'
+        token = 'blahblahblah'
+        self.user.email_verifications[token] = {'expiration': dt.datetime.utcnow() + dt.timedelta(days=1),
+                                                'email': email,
+                                                'confirmed': False }
+        self.user.save()
+        self.user.reload()
+        assert_equal(self.user.email_verifications[token]['email'], email)
+        self.user.clean_email_verifications(given_token=token)
+        unconfirmed_emails = self.user.unconfirmed_email_info
+        assert_equal(unconfirmed_emails, [])
+        assert_equal(self.user.email_verifications, {})
+
+    def test_clean_email_verifications_when_email_verifications_is_none(self):
+        self.user.email_verifications = None
+        self.user.save()
+        ret = self.user.clean_email_verifications()
+        assert_equal(ret, None)
+        assert_equal(self.user.email_verifications, {})
+
+    def test_add_invalid_email(self):
+        # Do not return expired token and removes it from user.email_verifications
+        email = u'\u0000\u0008\u000b\u000c\u000e\u001f\ufffe\uffffHello@yourmom.com'
+        # illegal_str = u'\u0000\u0008\u000b\u000c\u000e\u001f\ufffe\uffffHello'
+        # illegal_str += unichr(0xd800) + unichr(0xdbff) + ' World'
+        # email = 'test@example.com'
+        with assert_raises(ValidationError):
+            self.user.add_unconfirmed_email(email)
+
+    def test_add_email_merge(self):
+        email = "copy@cat.com"
+        dupe = UserFactory(
+            username=email,
+            emails=[email]
+        )
+        dupe.save()
+        token = self.user.add_unconfirmed_email(email)
+        self.user.save()
+        self.user.reload()
+        assert_equal(self.user.email_verifications[token]['confirmed'], False)
+        url = '/confirm/{}/{}/?logout=1'.format(self.user._id, token)
+        self.app.get(url)
+        self.user.reload()
+        email_verifications = self.user.unconfirmed_email_info
+        put_email_url = api_url_for('unconfirmed_email_add')
+        res = self.app.put_json(put_email_url, email_verifications[0], auth=self.user.auth)
+        self.user.reload()
+        assert_equal(res.json_body['status'], 'success')
+        assert_equal(self.user.emails[1], 'copy@cat.com')
 
     def test_resend_confirmation_without_user_id(self):
         email = 'test@example.com'
@@ -4366,6 +4504,9 @@ class TestStaticFileViews(OsfTestCase):
         res = self.app.get('/getting-started/')
         assert_equal(res.status_code, 302)
         assert_equal(res.location, 'http://help.osf.io/')
+    def test_help_redirect(self):
+        res = self.app.get('/help/')
+        assert_equal(res.status_code,302)
 
 
 class TestUserConfirmSignal(OsfTestCase):

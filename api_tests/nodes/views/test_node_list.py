@@ -662,7 +662,7 @@ class TestNodeCreate(ApiTestCase):
         }
         res = self.app.post_json_api(self.url, project, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
-        assert_equal(res.json['errors'][0]['detail'], 'Resource identifier does not match server endpoint.')
+        assert_equal(res.json['errors'][0]['detail'], 'This resource has a type of "nodes", but you set the json body\'s type field to "Wrong type.". You probably need to change the type field to match the resource\'s type.')
 
     def test_creates_project_properties_not_nested(self):
         project = {
