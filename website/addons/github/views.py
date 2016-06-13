@@ -260,6 +260,7 @@ def github_hgrid_data(node_settings, auth, **kwargs):
         permissions=permissions,
         branches=branch_names,
         defaultBranch=branch,
+        private_key=kwargs.get('view_only', None),
     )]
 
 #########

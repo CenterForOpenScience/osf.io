@@ -21,4 +21,4 @@ for node in Node.find(Q('is_public', 'eq', True) & Q('is_deleted', 'eq', False))
     if node.piwik_site_id:
         continue
 
-    piwik._provision_node(node)
+    piwik._provision_node(node._id)

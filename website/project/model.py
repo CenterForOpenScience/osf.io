@@ -1575,6 +1575,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 save=True,
             )
 
+            project_signals.project_created.send(self)
+
         # Only update Solr if at least one stored field has changed, and if
         # public or privacy setting has changed
         need_update = bool(self.SOLR_UPDATE_FIELDS.intersection(saved_fields))
@@ -2455,7 +2457,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if save:
             self.save()
         if user:
-            increment_user_activity_counters(user._primary_key, action, log.date)
+            increment_user_activity_counters(user._primary_key, action, log.date.isoformat())
         return log
 
     @classmethod

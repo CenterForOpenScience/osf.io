@@ -2337,10 +2337,12 @@ tbOptions = {
         tb.select('#tb-tbody').on('click', function(event){
             if(event.target !== this) {
                 var item = tb.multiselected()[0];
-                if (item.data.isAddonRoot || item.data.category === 'project') {
-                    tb.toolbarMode(toolbarModes.DEFAULT);
+                if (item) {
+                    if (item.data.isAddonRoot || item.data.nodeType === 'project' || item.data.nodeType === 'component') {
+                        tb.toolbarMode(toolbarModes.DEFAULT);
+                    }
+                    return;
                 }
-                return;
             }
             tb.clearMultiselect();
             dismissToolbar.call(tb);
