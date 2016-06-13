@@ -1009,7 +1009,7 @@ class JSONAPISerializer(ser.Serializer):
                     continue
                 if getattr(field, 'json_api_link', False) or getattr(nested_field, 'json_api_link', False):
                     # If embed=field_name is appended to the query string or 'always_embed' flag is True, directly embed the
-                    # results rather than adding a relationship link
+                    # results in addition to adding a relationship link
                     if embeds and (field.field_name in embeds or getattr(field, 'always_embed', None)):
                         if enable_esi:
                             try:
@@ -1027,14 +1027,13 @@ class JSONAPISerializer(ser.Serializer):
                             data['embeds'][field.field_name] = result
                         else:
                             data['embeds'][field.field_name] = {'error': 'This field is not embeddable.'}
-                    else:
-                        try:
-                            if not (is_anonymous and
-                                        hasattr(field, 'view_name') and
-                                            field.view_name in self.views_to_hide_if_anonymous):
-                                data['relationships'][field.field_name] = representation
-                        except SkipField:
-                            continue
+                    try:
+                        if not (is_anonymous and
+                                    hasattr(field, 'view_name') and
+                                        field.view_name in self.views_to_hide_if_anonymous):
+                            data['relationships'][field.field_name] = representation
+                    except SkipField:
+                        continue
                 elif field.field_name == 'id':
                     data['id'] = representation
                 elif field.field_name == 'links':
