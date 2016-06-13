@@ -553,6 +553,16 @@ button.close {
     line-height: 0.9;
 }
 
+button.copy-button {
+    margin-right: 0;
+    border-right: none;
+}
+
+.link-url{
+    padding: 3px 0px;
+    background-color: #F5F5F5;
+}
+
 /* table for add link and contributor */
 .osf-icon-td {
     width: 50px;

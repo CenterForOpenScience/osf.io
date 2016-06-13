@@ -7,6 +7,7 @@ from framework import auth
 from website import settings
 from website.filters import gravatar
 from website.project.model import Node
+from website.mailing_list.utils import get_recipients
 from website.util.permissions import reduce_permissions
 
 
@@ -67,11 +68,13 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False):
             flags = {
                 'visible': False,
                 'permission': 'read',
+                'subscribed': False,
             }
         else:
             flags = {
                 'visible': user._id in node.visible_contributor_ids,
                 'permission': reduce_permissions(node.get_permissions(user)),
+                'subscribed': settings.PROJECT_MAILING_ENABLED and user in get_recipients(node),
             }
         ret.update(flags)
     if user.is_registered:

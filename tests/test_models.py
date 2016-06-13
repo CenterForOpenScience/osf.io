@@ -3310,7 +3310,7 @@ class TestProject(OsfTestCase):
     def test_permission_override_on_readded_contributor(self):
 
         # A child node created
-        self.child_node = NodeFactory(parent=self.project, creator=self.auth)
+        self.child_node = NodeFactory(parent=self.project, creator=self.auth.user)
 
         # A user is added as with read permission
         user = UserFactory()

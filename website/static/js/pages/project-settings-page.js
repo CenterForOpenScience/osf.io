@@ -13,28 +13,48 @@ require('css/addonsettings.css');
 
 var ctx = window.contextVars;
 
-
-// Initialize treebeard grid for notifications
 var ProjectNotifications = require('js/notificationsTreebeard.js');
 var $notificationsMsg = $('#configureNotificationsMessage');
 var notificationsURL = ctx.node.urls.api  + 'subscriptions/';
-// Need check because notifications settings don't exist on registration's settings page
-if ($('#grid').length) {
+
+function initNotificationsTB() {
+    // Initialize treebeard grid for notifications
+    // Need check because notifications settings don't exist on registration's settings page
+    if ($('#grid').length) {
+        $.ajax({
+            url: notificationsURL,
+            type: 'GET',
+            dataType: 'json'
+        }).done(function(response) {
+            new ProjectNotifications(response);
+        }).fail(function(xhr, status, error) {
+            $notificationsMsg.addClass('text-danger');
+            $notificationsMsg.text('Could not retrieve notification settings.');
+            Raven.captureMessage('Could not GET notification settings.', {
+                url: notificationsURL, status: status, error: error
+            });
+        });
+    }
+}
+initNotificationsTB();
+
+//Initialize treebeard grid for node admins
+var ProjectMailingList = require('../mailingListTreebeard.js');
+var mailingListSettingsURL = ctx.node.urls.api + 'mailing_list/';  // TODO [OSF-6400]: Update to V2
+var $mailingListMsg = $('#configureMailingListMessage');
+
+if ($('#mailingListGrid').length) {
     $.ajax({
-        url: notificationsURL,
+        url: mailingListSettingsURL,
         type: 'GET',
         dataType: 'json'
-    }).done(function(response) {
-        new ProjectNotifications(response);
-    }).fail(function(xhr, status, error) {
-        $notificationsMsg.addClass('text-danger');
-        $notificationsMsg.text('Could not retrieve notification settings.');
-        Raven.captureMessage('Could not GET notification settings.', {
-            extra: { url: notificationsURL, status: status, error: error }
-        });
+    }).done( function(response) {
+        new ProjectMailingList(response, initNotificationsTB, mailingListSettingsURL);
+    }).fail( function() {
+        $mailingListMsg.addClass('text-danger');
+        $mailingListMsg.text('Could not retrieve mailing list settings.');
     });
 }
-
 //Initialize treebeard grid for wiki
 var ProjectWiki = require('js/wikiSettingsTreebeard.js');
 var wikiSettingsURL = ctx.node.urls.api  + 'wiki/settings/';

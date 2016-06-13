@@ -853,6 +853,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     # TODO: Add validator
     comment_level = fields.StringField(default='public')
 
+    # Project Mailing
+
+    # Indicates whether or not the mailing list for this node should be enabled
+    mailing_enabled = fields.BooleanField(default=True, index=True)
+
+    # Flag indicating this node should be inspected by a weekly celerybeat job
+    # to synchronize the mailing list on Mailgun. Defaults to True in case the
+    # initial create_list job fails.
+    mailing_updated = fields.BooleanField(default=True, index=True)
+
     wiki_pages_current = fields.DictionaryField()
     wiki_pages_versions = fields.DictionaryField()
     # Dictionary field mapping node wiki page to sharejs private uuid.
@@ -1054,6 +1064,21 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             if self.parent_node:
                 return self.parent_node.is_embargoed
         return self.embargo and self.embargo.is_approved and not self.is_public
+
+    @property
+    def is_mutable_project(self):
+        """ Flag indicating if this node is a project that can be readily interacted with
+            by a user. That is, not 'frozen' in some way (e.g. registered, deleted), and
+            having the standard set of 'project' views (e.g. not a collection).
+
+            Makes performing this check easier and more maintainable.
+        """
+        return not (
+            self.is_registration or
+            self.is_deleted or
+            self.is_collection or
+            self.is_bookmark_collection
+        )
 
     @property
     def private_links(self):
@@ -1511,6 +1536,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if self.is_bookmark_collection and self.title != 'Bookmarks':
             self.title = 'Bookmarks'
 
+        # Set mailing attribute before save
+        if not self.is_mutable_project:
+            self.mailing_enabled = False
+            self.mailing_updated = False
+
         is_original = not self.is_registration and not self.is_fork
         if 'suppress_log' in kwargs.keys():
             suppress_log = kwargs['suppress_log']
@@ -1574,8 +1604,30 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if settings.PIWIK_HOST and update_piwik:
             piwik_tasks.update_node(self._id, saved_fields)
 
+        # Ensure Mailing list subscription is set up
+        if first_save:
+            self.get_or_create_mailing_list_subscription()
+
         # Return expected value for StoredObject::save
         return saved_fields
+
+    def get_or_create_mailing_list_subscription(self):
+        if self.mailing_enabled:
+            # Avoid circular import
+            from website.models import NotificationSubscription
+            from website.notifications.utils import to_subscription_key
+            subscription = NotificationSubscription.load(to_subscription_key(self._id, 'mailing_list_events'))
+            if not subscription:
+                subscription = NotificationSubscription(
+                    _id=to_subscription_key(self._id, 'mailing_list_events'),
+                    owner=self,
+                    event_name='mailing_list_events'
+                )
+                subscription.add_user_to_subscription(self.creator, 'email_transactional', save=True)
+                # Avoid circular import
+                from website.mailing_list.utils import celery_create_list
+                celery_create_list(self._id)
+            return subscription
 
     ######################################
     # Methods that return a new instance #
@@ -1622,10 +1674,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         # set attributes which may NOT be overridden by `changes`
         new.creator = auth.user
         new.template_node = self
-        new.add_contributor(contributor=auth.user, permissions=CREATOR_PERMISSIONS, log=False, save=False)
         new.is_fork = False
         new.is_registration = False
         new.piwik_site_id = None
+        new.mailing_enabled = new.is_mutable_project
+        new.mailing_updated = new.is_mutable_project
         new.node_license = self.license.copy() if self.license else None
 
         # If that title hasn't been changed, apply the default prefix (once)
@@ -1642,6 +1695,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         )
 
         new.save(suppress_log=True)
+        new.add_contributor(contributor=auth.user, permissions=CREATOR_PERMISSIONS, log=False, save=False)
 
         # Log the creation
         new.add_log(
@@ -1971,6 +2025,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             auth=auth,
             save=False,
         )
+        from website.mailing_list.utils import celery_update_title
+        celery_update_title(self._id)
+        self.mailing_updated = True
         if save:
             self.save()
         return None
@@ -2151,6 +2208,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         forked.forked_from = original
         forked.creator = user
         forked.piwik_site_id = None
+        forked.mailing_enabled = forked.is_mutable_project
+        forked.mailing_updated = forked.is_mutable_project
         forked.node_license = original.license.copy() if original.license else None
         forked.wiki_private_uuids = {}
 
@@ -2160,6 +2219,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         # Clear permissions before adding users
         forked.permissions = {}
         forked.visible_contributor_ids = []
+
+        # Save before creating mailing list due to NotificationSubscription's
+        # ForeignFields -- foreign object must exist to be linked.
+        forked.save(suppress_log=True)
 
         for citation in self.alternative_citations:
             forked.add_citation(
@@ -2251,6 +2314,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         registered.creator = self.creator
         registered.tags = self.tags
         registered.piwik_site_id = None
+        registered.mailing_enabled = False
+        registered.mailing_updated = False
         registered._affiliated_institutions = self._affiliated_institutions
         registered.alternative_citations = self.alternative_citations
         registered.node_license = original.license.copy() if original.license else None

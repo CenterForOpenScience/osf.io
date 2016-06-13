@@ -9,6 +9,7 @@ from website.notifications import constants
 from website.notifications import model
 from website.notifications.model import NotificationSubscription
 from website.project import signals
+from website.settings import PROJECT_MAILING_ENABLED
 
 from framework.celery_tasks import app
 
@@ -242,13 +243,24 @@ def format_data(user, node_ids):
 
         if can_read:
             node_sub_available = list(constants.NODE_SUBSCRIPTIONS_AVAILABLE.keys())
+
+            try:
+                # Prevent "Mailing List Events" from being displayed if the UI is disabled
+                if not PROJECT_MAILING_ENABLED:
+                    node_sub_available.pop(node_sub_available.index('mailing_list_events'))
+            except ValueError:
+                pass
+
             subscriptions = [subscription for subscription in get_all_node_subscriptions(user, node)
                              if getattr(subscription, 'event_name') in node_sub_available]
             for subscription in subscriptions:
                 index = node_sub_available.index(getattr(subscription, 'event_name'))
-                children.append(serialize_event(user, subscription=subscription,
+                # If this event is not a mailing_list_event on a node with mailing lists disabled: serialize it
+                if not (subscription.event_name == 'mailing_list_events' and not node.mailing_enabled):
+                    children.append(serialize_event(user, subscription=subscription,
                                                 node=node, event_description=node_sub_available.pop(index)))
             for node_sub in node_sub_available:
+                if not (node_sub == 'mailing_list_events' and not node.mailing_enabled):
                     children.append(serialize_event(user, node=node, event_description=node_sub))
             children.sort(key=lambda s: s['event']['title'])
 

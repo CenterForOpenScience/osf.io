@@ -44,6 +44,7 @@ from website.conferences import views as conference_views
 from website.preprints import views as preprint_views
 from website.institutions import views as institution_views
 from website.notifications import views as notification_views
+from website.mailing_list import views as mailing_list_views
 
 def get_globals():
     """Context variables that are available for every template rendered by
@@ -1620,6 +1621,55 @@ def make_url_map(app):
             ],
             'post',
             project_views.node.configure_comments,
+            json_renderer,
+        ),
+
+        # Mailing List Routes
+        # TODO: [OSF-6400] Update to APIv2
+        Rule(
+            [
+                '/project/<pid>/mailing_list/',
+                '/project/<pid>/node/<nid>/mailing_list/',
+            ],
+            'get',
+            mailing_list_views.get_node_mailing_list,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/mailing_list/',
+                '/project/<pid>/node/<nid>/mailing_list/',
+            ],
+            'post',
+            mailing_list_views.enable_mailing_list,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/mailing_list/',
+                '/project/<pid>/node/<nid>/mailing_list/',
+            ],
+            'delete',
+            mailing_list_views.disable_mailing_list,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/mailing_list/messages/',
+            ],
+            'post',
+            mailing_list_views.flask_log_message,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/mailing_list/hooks/unsubscribe/',
+            ],
+            'post',
+            mailing_list_views.flask_unsubscribe_user,
             json_renderer,
         ),
 

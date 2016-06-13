@@ -1,9 +1,12 @@
 <%inherit file="project/project_base.mako"/>
 <%include file="project/nodes_privacy.mako"/>
+<%include file="project/modal_mailing_list_contributors.mako"/>
 
 <%
     is_project = node['node_type'] == 'project'
 %>
+
+<% from website.settings import PROJECT_MAILING_ENABLED %>
 
 <div id="projectScope">
     <header class="subhead" id="overview">
@@ -100,7 +103,10 @@
             <div class="col-sm-12">
                 <div id="contributorsList" style="height: 25px; overflow: hidden">
                 % if user['is_contributor']:
-                    <a class="link-dashed" href="${node['url']}contributors/">Contributors</a>:
+                    % if node['mailing_list_enabled'] and PROJECT_MAILING_ENABLED:
+                        <a data-toggle="modal" data-target="#mailingListContributorsModal"><i class="fa fa-envelope"></i></a>
+                    % endif
+                    <a class="link-dashed" href="${node['url']}contributors/"> Contributors</a>:
                 % else:
                     Contributors:
                 % endif

@@ -13,7 +13,6 @@ from framework.flask import request
 from website import settings
 from website.conferences.exceptions import ConferenceError
 
-
 logger = logging.getLogger(__name__)
 
 SSCORE_MAX_VALUE = 5

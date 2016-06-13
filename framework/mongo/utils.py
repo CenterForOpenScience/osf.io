@@ -159,10 +159,14 @@ def paginated(model, query=None, increment=200, each=True):
     last_id = ''
     pages = (model.find(query).count() / increment) + 1
     for i in xrange(pages):
-        q = Q('_id', 'gt', last_id)
-        if query:
+        q = None
+        if last_id:
+            q = Q('_id', 'lt', last_id)
+        if query and q:
             q &= query
-        page = list(model.find(q).limit(increment))
+        elif query:
+            q = query
+        page = list(model.find(q).sort('-_id').limit(increment))
         if each:
             for item in page:
                 yield item

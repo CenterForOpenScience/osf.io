@@ -9,6 +9,7 @@ import os
 import json
 import hashlib
 from datetime import timedelta
+from urlparse import urlparse
 
 os_env = os.environ
 
@@ -122,9 +123,6 @@ NO_LOGIN_OSF4M_WAIT_TIME = timedelta(weeks=6)
 NEW_PUBLIC_PROJECT_WAIT_TIME = timedelta(hours=24)
 WELCOME_OSF4M_WAIT_TIME_GRACE = timedelta(days=12)
 
-# TODO: Override in local.py
-MAILGUN_API_KEY = None
-
 # TODO: Override in local.py in production
 UPLOADS_PATH = os.path.join(BASE_PATH, 'uploads')
 MFR_CACHE_PATH = os.path.join(BASE_PATH, 'mfrcache')
@@ -158,6 +156,14 @@ SESSION_HISTORY_IGNORE_RULES = [
 CANONICAL_DOMAIN = 'openscienceframework.org'
 COOKIE_DOMAIN = '.openscienceframework.org'  # Beaker
 SHORT_DOMAIN = 'osf.io'
+
+# Mailgun
+
+# TODO: Override in local.py
+PROJECT_MAILING_ENABLED = False
+MAILGUN_API_KEY = None
+MAILGUN_LIST_ADDRESS_DOMAIN = urlparse(DOMAIN).hostname
+MAILGUN_API_URL = 'https://api.mailgun.net/v3'
 
 # TODO: Combine Python and JavaScript config
 COMMENT_MAXLENGTH = 500
@@ -331,7 +337,9 @@ HIGH_PRI_MODULES = {
     'scripts.embargo_registrations',
     'scripts.refresh_addon_tokens',
     'scripts.retract_registrations',
+    'scripts.mailing_lists.update_project_mailing_list',
     'website.archiver.tasks',
+    'website.mailing_list.utils'
 }
 
 try:
@@ -446,6 +454,11 @@ else:
             'task': 'scripts.populate_new_and_noteworthy_projects',
             'schedule': crontab(minute=0, hour=2, day_of_week=6),  # Saturday 2:00 a.m.
             'kwargs': {'dry_run': False}
+        },
+        'update-project-mailing-lists': {
+            'task': 'scripts.mailing_lists.update_project_mailing_lists',
+            'schedule': crontab(minute=0, hour=3),  # Daily 3:00 a.m.
+            'kwargs': {'dry_run': False},
         },
     }
 

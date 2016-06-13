@@ -16,7 +16,6 @@ def match_by_module(task_path):
             return HIGH_QUEUE
     return DEFAULT_QUEUE
 
-
 class CeleryRouter(object):
     def route_for_task(self, task, args=None, kwargs=None):
         """ Handles routing of celery tasks.

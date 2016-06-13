@@ -273,6 +273,16 @@ $(document).ready(function() {
         trigger: 'hover'
     });
 
+    var MailingListInfoHtml = '<p>A contributor who is not subscribed to this mailing list will not receive any emails sent to it, ' +
+        'but will still be able to send emails themselves. These emails will be distributed normally.</p>' +
+        '<p>You can change your subscription setting on the settings page.</p>';
+
+    $('.mailing-list-info').attr(
+        'data-content', MailingListInfoHtml
+    ).popover({
+        trigger: 'hover'
+    });
+
     ////////////////////
     // Event Handlers //
     ////////////////////

@@ -26,6 +26,7 @@ from website import mails
 from website import mailchimp_utils
 from website import settings
 from website.project.model import Node
+from website.mailing_list.utils import celery_update_single_user_in_list
 from website.project.utils import PROJECT_QUERY, TOP_LEVEL_PROJECT_QUERY
 from website.models import ApiOAuth2Application, ApiOAuth2PersonalToken, User
 from website.oauth.utils import get_available_scopes
@@ -224,6 +225,13 @@ def update_user(auth):
             for list_name, subscription in user.mailchimp_mailing_lists.iteritems():
                 if subscription:
                     mailchimp_utils.unsubscribe_mailchimp_async(list_name, user._id, username=user.username)
+
+            for node in user.contributed:
+                if node.mailing_enabled:
+                    node.mailing_updated = True
+                    node.save()
+                    celery_update_single_user_in_list(node._id, user._id, email=username, old_email=user.username)
+
             user.username = username
 
     ###################
