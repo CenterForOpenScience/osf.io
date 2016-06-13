@@ -309,7 +309,7 @@ class NodeAddonSettingsSerializer(JSONAPISerializer):
     node_has_auth = ser.BooleanField(source='has_auth', read_only=True)
     configured = ser.BooleanField(read_only=True)
 
-    links = links = LinksField({
+    links = LinksField({
         'self': 'get_absolute_url',
     })
 

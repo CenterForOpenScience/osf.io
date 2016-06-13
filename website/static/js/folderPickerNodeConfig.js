@@ -324,7 +324,7 @@ var FolderPickerViewModel = oop.defclass({
             .fail(onSubmitError);
     },
     onImportSuccess: function(response) {
-        var self = this;       
+        var self = this;
         var msg = response.message || self.messages.tokenImportSuccess();
         // Update view model based on response
         self.changeMessage(msg, 'text-success', 3000);
@@ -516,9 +516,9 @@ var FolderPickerViewModel = oop.defclass({
                 // TODO: [OSF-6384] DRY this up when PR #5240 goes in
                 if (data.data) {
                     $.each(data.data, function(i, obj) {
-                        var saved_attributes = obj.attributes;
+                        var savedAttributes = obj.attributes;
                         delete obj.attributes;
-                        $.extend(true, obj, saved_attributes);
+                        $.extend(true, obj, savedAttributes);
                     });
                 }
                 return data;
