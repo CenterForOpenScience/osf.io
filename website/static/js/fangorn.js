@@ -1556,6 +1556,7 @@ var FGButton = {
     }
 };
 
+
 var FGInput = {
     view : function(ctrl, args, helpText) {
         var extraCSS = args.className || '';
