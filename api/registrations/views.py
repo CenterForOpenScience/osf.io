@@ -24,8 +24,7 @@ from api.nodes.views import (
 from api.registrations.serializers import RegistrationNodeLinksSerializer, RegistrationFileSerializer
 
 from api.nodes.permissions import (
-    ContributorOrPublic,
-    ReadOnlyIfRegistration,
+    AdminOrPublic
 )
 from api.base.utils import get_object_or_error
 
@@ -165,16 +164,16 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
         return nodes
 
 
-class RegistrationDetail(JSONAPIBaseView, generics.RetrieveAPIView, RegistrationMixin, WaterButlerMixin):
+class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, RegistrationMixin, WaterButlerMixin):
     """Node Registrations.
 
     Registrations are read-only snapshots of a project. This view shows details about the given registration.
 
     Each resource contains the full representation of the registration, meaning additional requests to an individual
-    registration's detail view are not necessary. A withdrawn registration will display a limited subset of information, namely, title, description,
-    date_created, registration, withdrawn, date_registered, withdrawal_justification, and registration supplement. All
-    other fields will be displayed as null. Additionally, the only relationships permitted to be accessed for a withdrawn
-    registration are the contributors - other relationships will return a 403.
+    registration's detail view are not necessary. A withdrawn registration will display a limited subset of information,
+    namely, title, description, date_created, registration, withdrawn, date_registered, withdrawal_justification, and
+    registration supplement. All other fields will be displayed as null. Additionally, the only relationships permitted
+    to be accessed for a withdrawn registration are the contributors - other relationships will return a 403.
 
     ##Registration Attributes
 
@@ -206,6 +205,28 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveAPIView, Registration
         registered_meta                 dictionary         registration supplementary information
         registration_supplement         string             registration template
 
+    ##Actions
+
+    ###Update
+
+        Method:        PUT / PATCH
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": {
+                           "type": "registrations",   # required
+                           "id":   {registration_id}, # required
+                           "attributes": {
+                             "public": true           # required
+                           }
+                         }
+                       }
+        Success:       200 OK + node representation
+
+    To turn a registration from private to public, issue either a PUT or a PATCH request against the `/links/self` URL.
+    Registrations can only be turned from private to public, not vice versa.  The "public" field is the only field that can
+    be modified on a registration and you must have admin permission to do so.
+
     ##Relationships
 
     ###Registered from
@@ -230,8 +251,7 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveAPIView, Registration
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        ContributorOrPublic,
-        ReadOnlyIfRegistration,
+        AdminOrPublic,
         base_permissions.TokenHasScope,
     )
 

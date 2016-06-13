@@ -9,6 +9,7 @@ import datetime
 import urlparse
 from collections import OrderedDict
 import warnings
+import jsonschema
 
 import pytz
 from django.core.urlresolvers import reverse
@@ -55,6 +56,7 @@ from website.util.permissions import expand_permissions
 from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS, ADMIN
 from website.project.commentable import Commentable
 from website.project.metadata.schemas import OSF_META_SCHEMAS
+from website.project.metadata.utils import create_jsonschema_from_metaschema
 from website.project.licenses import (
     NodeLicense,
     NodeLicenseRecord,
@@ -117,6 +119,28 @@ class MetaSchema(StoredObject):
     @property
     def has_files(self):
         return self._config.get('hasFiles', False)
+
+    @property
+    def absolute_api_v2_url(self):
+        path = '/metaschemas/{}/'.format(self._id)
+        return api_v2_url(path)
+
+    # used by django and DRF
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url
+
+    def validate_metadata(self, metadata, reviewer=False, required_fields=False):
+        """
+        Validates registration_metadata field.
+        """
+        schema = create_jsonschema_from_metaschema(self.schema, required_fields=required_fields, is_reviewer=reviewer)
+        try:
+            jsonschema.validate(metadata, schema)
+        except jsonschema.ValidationError as e:
+            raise ValidationValueError(e.message)
+        except jsonschema.SchemaError as e:
+            raise ValidationValueError(e.message)
+        return
 
 def ensure_schema(schema, name, version=1):
     schema_obj = None
@@ -2103,13 +2127,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
         return True
 
-    def fork_node(self, auth, title='Fork of '):
+    def fork_node(self, auth, title=None):
         """Recursively fork a node.
 
         :param Auth auth: Consolidated authorization
         :param str title: Optional text to prepend to forked title
         :return: Forked node
         """
+        PREFIX = 'Fork of '
         user = auth.user
 
         # Non-contributors can't fork private nodes
@@ -2140,8 +2165,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 if forked_node is not None:
                     forked.nodes.append(forked_node)
 
-        if title == 'Fork of ' or title == '':
-            forked.title = title + forked.title
+        if title is None:
+            forked.title = PREFIX + original.title
+        elif title == '':
+            forked.title = original.title
         else:
             forked.title = title
 
@@ -2608,6 +2635,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     def forked_from_id(self):
         if self.forked_from:
             return self.forked_from._id
+        return None
+
+    @property
+    def registered_schema_id(self):
+        if self.registered_schema:
+            return self.registered_schema[0]._id
         return None
 
     @property
@@ -3432,6 +3465,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if not self.has_permission(user, 'admin'):
             raise PermissionsError('Only admins may embargo a registration')
         if not self._is_embargo_date_valid(end_date):
+            if (end_date - datetime.datetime.utcnow()) >= settings.EMBARGO_END_DATE_MIN:
+                raise ValidationValueError('Registrations can only be embargoed for up to four years.')
             raise ValidationValueError('Embargo end date must be more than one day in the future')
 
         embargo = self._initiate_embargo(user, end_date, for_existing_registration=for_existing_registration, notify_initiator_on_complete=notify_initiator_on_complete)
@@ -3871,6 +3906,16 @@ class DraftRegistration(StoredObject):
         return urlparse.urljoin(settings.DOMAIN, self.url)
 
     @property
+    def absolute_api_v2_url(self):
+        node = self.branched_from
+        path = '/nodes/{}/draft_registrations/{}/'.format(node._id, self._id)
+        return api_v2_url(path)
+
+    # used by django and DRF
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url
+
+    @property
     def requires_approval(self):
         return self.registration_schema.requires_approval
 
@@ -3980,3 +4025,9 @@ class DraftRegistration(StoredObject):
     def add_status_log(self, user, action):
         log = DraftRegistrationLog(action=action, user=user, draft=self)
         log.save()
+
+    def validate_metadata(self, *args, **kwargs):
+        """
+        Validates draft's metadata
+        """
+        return self.registration_schema.validate_metadata(*args, **kwargs)
