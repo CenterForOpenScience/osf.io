@@ -55,8 +55,8 @@
         <div class="panel panel-default">
             <div class="panel-heading clearfix"><h3 class="panel-title">Configure Notification Preferences</h3></div>
             <div class="panel-body">
-                <div class="help-block" style="padding-left: 15px">
-                    <p class="text-info"> NOTE: Regardless of your selected preferences, OSF will continue to provide transactional and administrative service emails.</p>
+                <div class="help-block">
+                     <p class="text-muted"> NOTE: Regardless of your selected preferences, OSF will continue to provide transactional and administrative service emails.</p>
                 </div>
                 <form id="selectNotifications" class="osf-treebeard-minimal">
                     <div id="grid">

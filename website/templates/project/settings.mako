@@ -379,8 +379,8 @@
                         <h3 class="panel-title">Email Notifications</h3>
                     </div>
                     <div class="panel-body">
-                        <div class="help-block" style="padding-left: 15px">
-                            <p class="text-info">These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>
+                        <div class="help-block">
+                            <p class="text-muted">These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>
                         </div>
                         <form id="notificationSettings" class="osf-treebeard-minimal">
                             <div id="grid">
