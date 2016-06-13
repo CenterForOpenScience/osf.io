@@ -6,6 +6,7 @@ commands, run ``$ invoke --list``.
 import os
 import sys
 import code
+import json
 import platform
 import subprocess
 import logging
@@ -911,9 +912,9 @@ def webpack(clean=False, watch=False, dev=False, colors=False):
 @task()
 def build_js_config_files():
     from website import settings
-    from website.app import build_js_config_files as _build_js_config_files
     print('Building JS config files...')
-    _build_js_config_files(settings)
+    with open(os.path.join(settings.STATIC_FOLDER, 'built', 'nodeCategories.json'), 'wb') as fp:
+        json.dump(settings.NODE_CATEGORY_MAP, fp)
     print('...Done.')
 
 
