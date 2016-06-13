@@ -516,9 +516,9 @@ var FolderPickerViewModel = oop.defclass({
                 // TODO: [OSF-6384] DRY this up when PR #5240 goes in
                 if (data.data) {
                     $.each(data.data, function(i, obj) {
-                        var saved_attributes = obj.attributes;
+                        var savedAttributes = obj.attributes;
                         delete obj.attributes;
-                        $.extend(true, obj, saved_attributes);
+                        $.extend(true, obj, savedAttributes);
                     });
                 }
                 return data;
