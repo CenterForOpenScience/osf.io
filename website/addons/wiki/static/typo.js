@@ -83,7 +83,7 @@ Typo = function (dictionary, affData, wordsData, settings) {
 				path = settings.dictionaryPath;
 			}
 			else {
-				path = 'typo/dictionaries';
+				path = '/static/dictionaries';
 			}
 
 			if (!affData) readDataFile(chrome.extension.getURL(path + '/' + dictionary + '/' + dictionary + '.aff'), setAffData);
@@ -94,10 +94,10 @@ Typo = function (dictionary, affData, wordsData, settings) {
 				path = settings.dictionaryPath;
 			}
 			else if (typeof __dirname !== 'undefined') {
-				path = __dirname + '/dictionaries';
+				path = __dirname + '/static/dictionaries';
 			}
 			else {
-				path = './dictionaries';
+				path = '/static/dictionaries';
 			}
 
 			if (!affData) readDataFile(path + '/' + dictionary + '/' + dictionary + '.aff', setAffData);
@@ -128,7 +128,6 @@ Typo = function (dictionary, affData, wordsData, settings) {
 
 	function setWordsData(data) {
 		wordsData = data;
-
 		if (affData) {
 			setup();
 		}
@@ -136,13 +135,10 @@ Typo = function (dictionary, affData, wordsData, settings) {
 
 	function setup() {
 		self.rules = self._parseAFF(affData);
-
 		// Save the rule codes that are used in compound rules.
 		self.compoundRuleCodes = {};
-
 		for (i = 0, _len = self.compoundRules.length; i < _len; i++) {
 			var rule = self.compoundRules[i];
-
 			for (j = 0, _jlen = rule.length; j < _jlen; j++) {
 				self.compoundRuleCodes[rule[j]] = [];
 			}
@@ -155,7 +151,6 @@ Typo = function (dictionary, affData, wordsData, settings) {
 		}
 
 		self.dictionaryTable = self._parseDIC(wordsData);
-
 		// Get rid of any codes from the compound rule codes that are never used
 		// (or that were special regex characters).  Not especially necessary...
 		for (i in self.compoundRuleCodes) {
@@ -169,12 +164,9 @@ Typo = function (dictionary, affData, wordsData, settings) {
 		// testing for compound words is probably slow.
 		for (i = 0, _len = self.compoundRules.length; i < _len; i++) {
 			var ruleText = self.compoundRules[i];
-
 			var expressionText = '';
-
 			for (j = 0, _jlen = ruleText.length; j < _jlen; j++) {
 				var character = ruleText[j];
-
 				if (character in self.compoundRuleCodes) {
 					expressionText += '(' + self.compoundRuleCodes[character].join('|') + ')';
 				}
@@ -182,17 +174,13 @@ Typo = function (dictionary, affData, wordsData, settings) {
 					expressionText += character;
 				}
 			}
-
 			self.compoundRules[i] = new RegExp(expressionText, 'i');
 		}
-
 		self.loaded = true;
-
 		if (settings.asyncLoad && settings.loadedCallback) {
 			settings.loadedCallback(self);
 		}
 	}
-
 	return this;
 };
 
@@ -251,34 +239,8 @@ Typo.prototype = {
 
 			if (req.overrideMimeType)
 				req.overrideMimeType('text/plain; charset=' + charset);
-
 			req.send(null);
-
 			return async ? promise : req.responseText;
-		}
-		else if (typeof require !== 'undefined') {
-			// Node.js
-			var fs = require('fs');
-
-			try {
-				if (fs.existsSync(path)) {
-					var stats = fs.statSync(path);
-
-					var fileDescriptor = fs.openSync(path, 'r');
-
-					var buffer = new Buffer(stats.size);
-
-					fs.readSync(fileDescriptor, buffer, 0, buffer.length, null);
-
-					return buffer.toString(charset, 0, buffer.length);
-				}
-				else {
-					console.log('Path ' + path + ' does not exist.');
-				}
-			} catch (e) {
-				console.log(e);
-				return '';
-			}
 		}
 	},
 
