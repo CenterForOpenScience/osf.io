@@ -126,6 +126,24 @@ def forgot_password_get(auth, *args, **kwargs):
 
 
 @collect_auth
+def auth_register(auth, **kwargs):
+    """
+    View for sign-up page.
+    Methods: GET
+
+    :param auth:
+    :param kwargs:
+    :return:
+    """
+
+    if auth.logged_in:
+        status.push_status_message('You are already a registered user. Please log out before creating a new account.', trust=False)
+        return redirect(web_url_for('user_profile'))
+
+    return {}, http.OK
+
+
+@collect_auth
 def auth_login(auth, **kwargs):
     # TODO: auth_login is no longer the entry point for OSF login, need to refactor
     """
