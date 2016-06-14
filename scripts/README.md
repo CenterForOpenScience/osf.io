@@ -38,7 +38,7 @@ def main(dry=True):
 
 
 if __name__ == '__main__':
-    dry = 'dry' in sys.argv
+    dry = '--dry' in sys.argv
     if not dry:
         # If we're not running in dry mode log everything to a file
         script_utils.add_file_logger(logger, __file__)
@@ -66,19 +66,8 @@ The code snippet below will paginate result and load them into memory so timeout
 
 ```python
 from framework.mongo.utils import paginated
-```
 
-```python
-def paginated(model, query=None, increment=200):
-    last_id = ''
-    pages = (model.find(query).count() / increment) + 1
-    for i in xrange(pages):
-        q = Q('_id', 'gt', last_id)
-        if query:
-            q &= query
-        page = list(model.find(q).limit(increment))
-        for item in page:
-            yield item
-        if page:
-            last_id = item._id
+nodes = paginated(Node, Q('is_public', 'eq', True))
+for node in nodes:
+    #...
 ```

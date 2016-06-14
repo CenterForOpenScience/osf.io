@@ -10,9 +10,22 @@ from framework.auth.core import User
 from website.files.models import FileNode
 from website.project.model import Comment
 from api.base.utils import absolute_reverse
-from api.base.serializers import NodeFileHyperLinkField, WaterbutlerLink, format_relationship_links, FileCommentRelationshipField
-from api.base.serializers import Link, JSONAPISerializer, LinksField, IDField, TypeField
+from api.base.serializers import (
+    NodeFileHyperLinkField,
+    WaterbutlerLink,
+    format_relationship_links,
+    FileCommentRelationshipField,
+    JSONAPIListField,
+    Link,
+    JSONAPISerializer,
+    LinksField,
+    IDField,
+    TypeField,
+)
+from api.base.exceptions import Conflict
+from api.base.utils import get_user_auth
 from website.util import api_v2_url
+
 
 class CheckoutField(ser.HyperlinkedRelatedField):
 
@@ -77,6 +90,16 @@ class CheckoutField(ser.HyperlinkedRelatedField):
         return ret
 
 
+class FileTagField(ser.Field):
+    def to_representation(self, obj):
+        if obj is not None:
+            return obj._id
+        return None
+
+    def to_internal_value(self, data):
+        return data
+
+
 class FileSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'id',
@@ -88,6 +111,7 @@ class FileSerializer(JSONAPISerializer):
         'size',
         'provider',
         'last_touched',
+        'tags',
     ])
     id = IDField(source='_id', read_only=True)
     type = TypeField()
@@ -103,6 +127,7 @@ class FileSerializer(JSONAPISerializer):
     date_modified = ser.SerializerMethodField(read_only=True, help_text='Timestamp when the file was last modified')
     date_created = ser.SerializerMethodField(read_only=True, help_text='Timestamp when the file was created')
     extra = ser.SerializerMethodField(read_only=True, help_text='Additional metadata about this file')
+    tags = JSONAPIListField(child=FileTagField(), required=False)
 
     files = NodeFileHyperLinkField(
         related_view='nodes:node-files',
@@ -188,6 +213,20 @@ class FileSerializer(JSONAPISerializer):
 
     def update(self, instance, validated_data):
         assert isinstance(instance, FileNode), 'Instance must be a FileNode'
+        if instance.provider != 'osfstorage' and 'tags' in validated_data:
+            raise Conflict('File service provider {} does not support tags on the OSF.'.format(instance.provider))
+        auth = get_user_auth(self.context['request'])
+        old_tags = set([tag._id for tag in instance.tags])
+        if 'tags' in validated_data:
+            current_tags = set(validated_data.pop('tags', []))
+        else:
+            current_tags = set(old_tags)
+
+        for new_tag in (current_tags - old_tags):
+            instance.add_tag(new_tag, auth=auth)
+        for deleted_tag in (old_tags - current_tags):
+            instance.remove_tag(deleted_tag, auth=auth)
+
         for attr, value in validated_data.items():
             if attr == 'checkout':
                 user = self.context['request'].user

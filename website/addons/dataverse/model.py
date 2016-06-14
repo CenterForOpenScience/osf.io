@@ -147,7 +147,7 @@ class AddonDataverseNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     def serialize_waterbutler_settings(self):
         if not self.folder_id:
-            raise exceptions.AddonError("Dataverse is not configured")
+            raise exceptions.AddonError('Dataverse is not configured')
         return {
             'host': self.external_account.oauth_key,
             'doi': self.dataset_doi,
