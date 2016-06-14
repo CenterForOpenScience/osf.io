@@ -37,8 +37,13 @@ def update_file_guid_referent(self, node, event_type, payload, user=None):
 
         if event_type == 'addon_file_renamed':
             for guid in file_guids:
+                ipdb.set_trace()
                 obj = Guid.load(guid)
-                discourse.create_comment(obj.referent, 'This file has been renamed to ' + destination['name'])
+                old_file_name = obj.referent.name
+                obj.referent.name = destination['name']
+                discourse.update_topic(obj.referent)
+                obj.referent.name = old_file_name
+                #discourse.create_comment(obj.referent, 'This file has been renamed to ' + destination['name'])
 
         if event_type == 'addon_file_renamed' and source['provider'] in settings.ADDONS_BASED_ON_IDS:
             return

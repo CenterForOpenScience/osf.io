@@ -153,6 +153,7 @@ def create_group(project_node):
 
     url.args['name'] = project_node._id
     url.args['visible'] = 'true' if project_node.is_public else 'false'
+    url.args['alias_level'] = '3' # allows to message this group directly
 
     result = requests.post(url.url)
     if result.status_code != 200:
@@ -269,8 +270,8 @@ def create_category(project_node):
     url.args['api_key'] = settings.DISCOURSE_API_KEY
     url.args['api_username'] = settings.DISCOURSE_API_ADMIN_USER
 
-    url.args['name'] = project_node.title + ' / ' + project_node._id
-    url.args['slug'] = slugify(project_node.title + '-' + project_node._id)
+    url.args['name'] = project_node.title
+    url.args['slug'] = project_node._id
     url.args['color'] = 'AB9364'
     url.args['text_color'] = 'FFFFFF'
     url.args['allow_badges'] = 'true'
@@ -298,8 +299,8 @@ def update_category(project_node, category_id):
     url.args['api_key'] = settings.DISCOURSE_API_KEY
     url.args['api_username'] = settings.DISCOURSE_API_ADMIN_USER
 
-    url.args['name'] = project_node.title + ' / ' + project_node._id
-    url.args['slug'] = slugify(project_node.title + '-' + project_node._id)
+    url.args['name'] = project_node.title
+    url.args['slug'] = project_node._id
     url.args['color'] = 'AB9364'
     url.args['text_color'] = 'FFFFFF'
     url.args['allow_badges'] = 'true'
@@ -393,11 +394,8 @@ def _escape_markdown(text):
     r = re.compile(r'([\\`*_{}[\]()#+.!-])')
     return r.sub(r'\\\1', text)
 
-def create_topic(node):
-    project_node = _get_project_node(node)
-    sync_project(project_node)
-
-    url = furl(settings.DISCOURSE_SERVER_URL).join('/posts')
+def _create_or_update_topic_base_url(node):
+    url = furl(settings.DISCOURSE_SERVER_URL)
     url.args['api_key'] = settings.DISCOURSE_API_KEY
     url.args['api_username'] = settings.DISCOURSE_API_ADMIN_USER
 
@@ -405,33 +403,36 @@ def create_topic(node):
     # causes import errors with circular referencing.
     try:
         node_type = 'wiki'
+        node_guid = node._primary_key
         node_title = 'Wiki page: ' + node.page_name
         node_description = 'the wiki page ' + _escape_markdown(node.page_name)
     except AttributeError:
         try:
             node_type = 'file'
+            node_guid = node.get_guid()._id
             node_title = 'File: ' + node.name
             node_description = 'the file ' + _escape_markdown(node.name)
         except AttributeError:
                 node_type = 'project'
+                node_guid = node._primary_key
                 node_title = node.title
                 node_description = _escape_markdown(node.title)
 
-    #if isinstance(node, Node):
-    #    node_title = node.title
-    #elif isinstance(node, File):
-    #    node_title = 'the file ' + node.name
-    #elif isinstance(node, NodeWikiPage):
-    #    node_title = 'the wiki page ' + node.page_name
-
+    project_node = _get_project_node(node)
     category_id = get_or_create_category_id(project_node)
     url.args['category'] = category_id
-    url.args['title'] = node_title
-    url.args['raw'] = 'This is the discussion topic for ' + node_description + '. What do you think about it?'
+    url.args['title'] = node_guid
+    url.args['raw'] = '`' + node_title + '` This is the discussion topic for ' + node_description + '. What do you think about it?'
 
     if node_type == 'file':
-        file_url = furl(settings.DOMAIN).join(node.get_persistant_guid()._id).url
+        file_url = furl(settings.DOMAIN).join(node_guid).url
         url.args['raw'] += '\nFile url: ' + file_url + '/'
+
+    return url
+
+def create_topic(node):
+    url = _create_or_update_topic_base_url(node)
+    url.path.add('/posts')
 
     result = requests.post(url.url)
     if result.status_code != 200:
@@ -444,6 +445,15 @@ def create_topic(node):
     node.save()
 
     return topic_id
+
+def update_topic(node):
+    url = _create_or_update_topic_base_url(node)
+    url.path.add('/posts/' + str(node.discourse_topic_id))
+
+    result = requests.put(url.url)
+    if result.status_code != 200:
+        raise DiscourseException('Discourse server responded to topic update request ' + result.url + ' with '
+                                 + str(result.status_code) + ' ' + result.text)
 
 def get_or_create_topic_id(node):
     if node is None:
