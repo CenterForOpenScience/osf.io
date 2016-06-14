@@ -23,6 +23,7 @@ var mathrender = require('js/mathrender');
 var md = require('js/markdown').full;
 var AddProject = require('js/addProjectPlugin');
 var mHelpers = require('js/mithrilHelpers');
+var SocialShare = require('js/components/socialshare')
 
 var ctx = window.contextVars;
 var node = window.contextVars.node;
@@ -285,4 +286,19 @@ $(document).ready(function () {
     $('a.btn').mouseup(function(){
         $(this).blur();
     });
+
+    if (window.contextVars.node.isPublic) {
+        m.mount(document.getElementById('shareDropdown'), m.component(SocialShare.ShareDropdown, {file_name: 'FILENAME', share_url: 'http://google.com/'}));
+
+        $osf.makeLinksOpenInPopup('div.share-buttons a');
+
+        // Make sure the drop down share menu is not obscured
+        // by the tool tip when users are not logged-in
+        $('#shareDropdown').on('mouseenter focusin', function() {
+            return false;
+        });
+        $('#shareDropdown').on('mouseover', function() {
+            $('.tooltip').tooltip('hide');
+        });
+    }
 });

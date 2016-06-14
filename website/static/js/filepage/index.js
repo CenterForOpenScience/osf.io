@@ -12,6 +12,7 @@ var makeClient = require('js/clipboard');
 var FileRevisionsTable = require('./revisions.js');
 var storageAddons = require('json!storageAddons.json');
 var CommentModel = require('js/comment');
+var SocialShare = require('js/components/socialshare')
 
 // Sanity
 var Panel = utils.Panel;
@@ -53,18 +54,13 @@ var SharePopover =  {
                         m('li', m('a[href="#embed"][data-toggle="tab"]', 'Embed'))
                     ]), m('br'),
                     m('.tab-content', [
-                        m('.tab-pane.active#share', {
-                            config: function(element) {
-                                if ($(element).find('.shareButtons').length === 0) {
-                                    var shareContents = $('#shareContentHolder').html();
-                                    $(element).append(shareContents);
-                                    $osf.makeLinksOpenInPopup('.shareButtons a');
-                                }
-                            }
-                        }, m('.input-group', [
-                            CopyButton.view(ctrl, {link: link, height: copyButtonHeight}), //workaround to allow button to show up on first click
-                            m('input.form-control[readonly][type="text"][value="'+ link +'"]')
-                        ])),
+                        m('.tab-pane.active#share', [
+                            m('.input-group', [
+                                CopyButton.view(ctrl, {link: link, height: copyButtonHeight}), //workaround to allow button to show up on first click
+                                m('input.form-control[readonly][type="text"][value="'+ link +'"]')
+                            ]),
+                            m(SocialShare.ShareButtons, {file_name: 'FILENAME', share_url: link})
+                        ]),
                         m('.tab-pane#embed', [
                             m('p', 'Dynamically render iframe with JavaScript'),
                             m('textarea.form-control[readonly][type="text"][value="' +

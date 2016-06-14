@@ -253,17 +253,6 @@ $(document).ready(function() {
         window.location = '/search/?q=(tags:"' + $(e.target).text().toString().trim()+ '")';
     });
 
-    $osf.makeLinksOpenInPopup('#shareDropDownMenu li a');
-
-    // Make sure the drop down share menu is not obscured
-    // by the tool tip when users are not logged-in
-    $('#shareDropDown').on('mouseenter focusin', function() {
-        return false;
-    });
-    $('#shareDropDown').on('mouseover', function() {
-        $('.tooltip').tooltip('hide');
-    });
-
     // Portlet feature for the dashboard, to be implemented in later versions.
     // $( ".osf-dash-col" ).sortable({
     //   connectWith: ".osf-dash-col",

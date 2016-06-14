@@ -1,7 +1,5 @@
 <%inherit file="project/project_base.mako"/>
 
-<link rel="stylesheet" href="/static/css/pages/share-buttons.css">
-
 <div id="alertBar"></div>
 
 ## Use full page width
@@ -24,22 +22,6 @@
     </h2>
   </div>
   <div class="col-sm-7">
-    <div id="shareContentHolder">
-        <div class="shareButtons">
-            <a href="https://twitter.com/intent/tweet?url=${urls['render'] | u}&text=${file_name | u}&via=OSFramework" target="_blank">
-                <i class="fa fa-twitter-square" aria-hidden="true"></i>
-            </a>
-            <a href="https://www.facebook.com/sharer/sharer.php?u=${urls['render'] | u}" target="_blank">
-                <i class="fa fa-facebook-square" aria-hidden="true"></i>
-            </a>
-            <a href="https://www.linkedin.com/cws/share?url=${urls['render'] | u}&title=${file_name | u}" target="_blank">
-                <i class="fa fa-linkedin-square" aria-hidden="true"></i>
-            </a>
-            <a href="mailto:?subject=${file_name}&amp;body=${urls['render'] | u}" target="_blank">
-                <i class="fa fa-envelope-square" aria-hidden="true"></i>
-            </a>
-        </div>
-    </div>
     <div id="toggleBar" class="pull-right"></div>
   </div>
 </div>
@@ -233,7 +215,8 @@
       window.contextVars.file.urls.external = window.contextVars.file.extra.webView;
     </script>
 
-    <link href="/static/css/pages/file-view-page.css" rel="stylesheet">
+    <link href="/static/css/pages/file-view-page.css" rel="stylesheet" />
+    <link href="/static/css/pages/share-buttons.css" rel="stylesheet" />
     <link href="${urls['mfr']}/static/css/mfr.css" media="all" rel="stylesheet" />
     <script src="${urls['mfr']}/static/js/mfr.js"></script>
 

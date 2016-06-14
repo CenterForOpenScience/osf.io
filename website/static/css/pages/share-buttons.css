@@ -1,28 +1,19 @@
-div.dropdown .dropdown-menu li, .shareButtons {
+.share-buttons {
     margin: 3px 20px;
 }
 
-div.dropdown .dropdown-menu li a, .shareButtons a {
+.share-buttons a {
     padding: 0px 2px;
     display: inline-block;
 }
 
-div.dropdown .dropdown-menu {
-    background-color: #f8f8f8;
-}
-
-div.dropdown .dropdown-menu a:hover {
-    background-image: none;
-    background-color: #f8f8f8;
-}
-
-div.dropdown .fa, .shareButtons .fa {
+.share-buttons .fa {
     color: #08c;
     font-size: 1.6em;
     line-height: 1.6em;
 }
 
-.shareButtons {
+#share .share-buttons {
     display: inline-block;
     margin-top: 12px;
     margin-left: 4px;
@@ -30,10 +21,15 @@ div.dropdown .fa, .shareButtons .fa {
     vertical-align: top;
 }
 
-
-#shareDropDown .dropdown-menu {
+#shareDropdown .dropdown-menu {
     min-width: 0px;
     white-space: nowrap;
+    background-color: #f8f8f8;
+}
+
+#shareDropdown .dropdown-menu a:hover {
+    background-image: none;
+    background-color: #f8f8f8;
 }
 
 #shareContentHolder {
