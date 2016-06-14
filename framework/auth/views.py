@@ -66,9 +66,7 @@ def reset_password(auth, **kwargs):
         ))
 
     forms.push_errors_to_status(form.errors)
-    return {
-        'verification_key': verification_key,
-    }
+    return {}
 
 
 def forgot_password_post():
@@ -111,7 +109,8 @@ def forgot_password_post():
         else:
             status.push_status_message(status_message, kind='success', trust=False)
     forms.push_errors_to_status(form.errors)
-    return auth_login(forgot_password_form=form)
+    # Don't go anywhere
+    return {}
 
 
 @collect_auth
@@ -145,15 +144,17 @@ def auth_register(auth, **kwargs):
 
 @collect_auth
 def auth_login(auth, **kwargs):
-    # TODO: auth_login is no longer the entry point for OSF login, need to refactor
     """
-    This view serves several purposes:
-        GET request with '/login/':                         show sign up page for user to create account;
-        GET request with '/login/?campaign=institution':    show institution login page;
-        GET request with '/login/?campaign=prereg':         requires login and go to prereg page;
-        POST request from '/forgotpassword/':               land on this page after form submission and sending email,
-                                                            and notifications of email sent shows up
+    This view serves as the entry point for OSF login and campaign login.
+        GET '/login/':                          redirect to CAS login
+        GET 'login/?campaign-instituion:        redirect to institution login
+        GET 'login/?campaign-prereg:            ask for login first, redirect to prereg page
+
+    :param auth:
+    :param kwargs:
+    :return:
     """
+
     campaign = request.args.get('campaign')
     next_url = request.args.get('next')
     must_login_warning = True
@@ -441,6 +442,31 @@ def send_confirm_email(user, email):
     )
 
 
+def resend_confirmation():
+    """View for resending an email confirmation email.
+    """
+    form = ResendConfirmationForm(request.form)
+    if request.method == 'POST':
+        if form.validate():
+            clean_email = form.email.data
+            user = get_user(email=clean_email)
+            if not user:
+                return {'form': form}
+            try:
+                send_confirm_email(user, clean_email)
+            except KeyError:  # already confirmed, redirect to dashboard
+                status_message = 'Email has already been confirmed.'
+                kind = 'warning'
+            else:
+                status_message = 'Resent email to {0}'.format(clean_email)
+                kind = 'success'
+            status.push_status_message(status_message, kind=kind, trust=False)
+        else:
+            forms.push_errors_to_status(form.errors)
+    # Don't go anywhere
+    return {'form': form}
+
+
 # TODO: obsolete, please remove me, and related routes, tests, forms
 def register_user(**kwargs):
     """Register new user account.
@@ -499,32 +525,6 @@ def merge_user_get(**kwargs):
     '''Web view for merging an account. Renders the form for confirmation.
     '''
     return forms.utils.jsonify(MergeAccountForm())
-
-
-# TODO: obsolete, please remove me, and related routes, tests, forms
-def resend_confirmation():
-    """View for resending an email confirmation email.
-    """
-    form = ResendConfirmationForm(request.form)
-    if request.method == 'POST':
-        if form.validate():
-            clean_email = form.email.data
-            user = get_user(email=clean_email)
-            if not user:
-                return {'form': form}
-            try:
-                send_confirm_email(user, clean_email)
-            except KeyError:  # already confirmed, redirect to dashboard
-                status_message = 'Email has already been confirmed.'
-                kind = 'warning'
-            else:
-                status_message = 'Resent email to {0}'.format(clean_email)
-                kind = 'success'
-            status.push_status_message(status_message, kind=kind, trust=False)
-        else:
-            forms.push_errors_to_status(form.errors)
-    # Don't go anywhere
-    return {'form': form}
 
 
 # TODO: obsolete, please remove me, and related routes, tests, forms

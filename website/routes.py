@@ -512,17 +512,19 @@ def make_url_map(app):
             auth_views.auth_logout,
             notemplate
         ),
+
         Rule(
             '/forgotpassword/',
             'get',
             auth_views.forgot_password_get,
             OsfWebRenderer('public/forgot_password.mako', trust=False)
         ),
+
         Rule(
             '/forgotpassword/',
             'post',
             auth_views.forgot_password_post,
-            OsfWebRenderer('public/login.mako', trust=False)
+            OsfWebRenderer('public/forgot_password.mako', trust=False)
         ),
 
         Rule(
@@ -552,24 +554,28 @@ def make_url_map(app):
             profile_views.profile_view,
             OsfWebRenderer('profile.mako', trust=False)
         ),
+
         Rule(
             '/profile/<uid>/',
             'get',
             profile_views.profile_view_id,
             OsfWebRenderer('profile.mako', trust=False)
         ),
+
         Rule(
             ['/user/merge/'],
             'get',
             auth_views.merge_user_get,
             OsfWebRenderer('merge_accounts.mako', trust=False)
         ),
+
         Rule(
             ['/user/merge/'],
             'post',
             auth_views.merge_user_post,
             OsfWebRenderer('merge_accounts.mako', trust=False)
         ),
+
         # Route for claiming and setting email and password.
         # Verification token must be querystring argument
         Rule(
@@ -578,6 +584,7 @@ def make_url_map(app):
             project_views.contributor.claim_user_form,
             OsfWebRenderer('claim_account.mako', trust=False)
         ),
+
         Rule(
             ['/user/<uid>/<pid>/claim/verify/<token>/'],
             ['get', 'post'],
