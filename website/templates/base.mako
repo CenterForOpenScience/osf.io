@@ -283,7 +283,7 @@
 <%def name="content_wrap()">
     <div class="watermarked">
         <div class="container ${self.container_class()}">
-
+            % if maintenance:
             ## Maintenance alert
             <div id="maintenance" class="scripted alert alert-info alert-dismissible" role="alert">
                 <button type="button" class="close" data-dismiss="alert" aria-label="Close">
@@ -293,6 +293,7 @@
                 Thank you for your patience.
             </div>
             ## End Maintenance alert
+            % endif
 
             % if status:
                 ${self.alert()}
