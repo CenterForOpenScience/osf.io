@@ -10,7 +10,10 @@ from modularodm import Q
 from website import settings
 from website.app import init_app
 from website.models import Institution, Node
+from website.notifications.listeners import subscribe_creator
+from website.project.signals import project_created
 from website.search.search import update_institution, update_node
+from website.util import disconnected_from
 from framework.transactions.context import TokuTransaction
 
 logger = logging.getLogger(__name__)
@@ -39,6 +42,7 @@ def update_or_create(inst_data):
         inst_data = {inst.attribute_map[k]: v for k, v in inst_data.iteritems()}
         new_inst = Node(**inst_data)
         new_inst.save()
+
         inst = Institution.load(new_inst.institution_id)
         print('Added new institution: {}'.format(new_inst.institution_id))
         update_institution(inst)
@@ -274,7 +278,10 @@ def main(env):
     init_app(routes=False)
     with TokuTransaction():
         for inst_data in INSTITUTIONS:
-            new_inst, inst_created = update_or_create(inst_data)
+            with disconnected_from(signal=project_created,
+                                   listener=subscribe_creator):
+                new_inst, inst_created = update_or_create(inst_data)
+
             # update the nodes elastic docs, to have current names of institutions. This will
             # only work properly if this file is the only thing changing institution attributes
             if not inst_created:
