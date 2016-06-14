@@ -136,8 +136,7 @@ def auth_register(auth, **kwargs):
     """
 
     if auth.logged_in:
-        status.push_status_message('You are already a registered user. Please log out before creating a new account.', trust=False)
-        return redirect(web_url_for('user_profile'))
+         return redirect(web_url_for('dashboard'))
 
     return {}, http.OK
 
