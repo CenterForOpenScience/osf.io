@@ -271,6 +271,23 @@ class NodeWikiPage(GuidStoredObject, Commentable):
 
         return self.content
 
+    def update_active_sharejs(self, node):
+        """
+        Update all active sharejs sessions with latest wiki content.
+        """
+
+        """
+        TODO: This def is meant to be used after updating wiki content via
+        the v2 API, once updating is has been implemented. It should be removed
+        if not used for that purpose.
+        """
+
+        sharejs_uuid = wiki_utils.get_sharejs_uuid(node, self.page_name)
+        contributors = [user._id for user in node.contributors]
+        wiki_utils.broadcast_to_sharejs('reload',
+                                        sharejs_uuid,
+                                        data=contributors)
+
     def save(self, *args, **kwargs):
         rv = super(NodeWikiPage, self).save(*args, **kwargs)
         if self.node:

@@ -9,6 +9,7 @@ import os
 import json
 import hashlib
 from datetime import timedelta
+from collections import OrderedDict
 
 os_env = os.environ
 
@@ -69,7 +70,6 @@ GNUPG_BINARY = 'gpg'
 CONFIRM_REGISTRATIONS_BY_EMAIL = True
 ALLOW_REGISTRATION = True
 ALLOW_LOGIN = True
-ENABLE_NOTIFICATION_SUBSCRIPTION_CREATION = True
 
 SEARCH_ENGINE = 'elastic'  # Can be 'elastic', or None
 ELASTIC_URI = 'localhost:9200'
@@ -196,6 +196,23 @@ WIKI_WHITELIST = {
         'list-style',
     ]
 }
+
+# Maps category identifier => Human-readable representation for use in
+# titles, menus, etc.
+# Use an OrderedDict so that menu items show in the correct order
+NODE_CATEGORY_MAP = OrderedDict([
+    ('analysis', 'Analysis'),
+    ('communication', 'Communication'),
+    ('data', 'Data'),
+    ('hypothesis', 'Hypothesis'),
+    ('instrumentation', 'Instrumentation'),
+    ('methods and measures', 'Methods and Measures'),
+    ('procedure', 'Procedure'),
+    ('project', 'Project'),
+    ('software', 'Software'),
+    ('other', 'Other'),
+    ('', 'Uncategorized')
+])
 
 # Add-ons
 # Load addons from addons.json
@@ -331,7 +348,7 @@ HIGH_PRI_MODULES = {
     'scripts.approve_embargo_terminations',
     'scripts.approve_registrations',
     'scripts.embargo_registrations',
-    'scripts.refresh_box_tokens',
+    'scripts.refresh_addon_tokens',
     'scripts.retract_registrations',
     'website.archiver.tasks',
 }
@@ -354,6 +371,8 @@ else:
 
     CELERY_DEFAULT_EXCHANGE_TYPE = 'direct'
     CELERY_ROUTES = ('framework.celery_tasks.routers.CeleryRouter', )
+    CELERY_IGNORE_RESULT = True
+    CELERY_STORE_ERRORS_EVEN_IF_IGNORED = True
 
 # Default RabbitMQ broker
 BROKER_URL = 'amqp://'
@@ -372,7 +391,7 @@ CELERY_IMPORTS = (
     'website.archiver.tasks',
     'website.search.search',
     'scripts.populate_new_and_noteworthy_projects',
-    'scripts.refresh_box_tokens',
+    'scripts.refresh_addon_tokens',
     'scripts.retract_registrations',
     'scripts.embargo_registrations',
     'scripts.approve_registrations',
@@ -409,10 +428,10 @@ else:
             'schedule': crontab(minute=0, hour=0),
             'args': ('email_digest',),
         },
-        'refresh_box': {
-            'task': 'scripts.refresh_box_tokens',
+        'refresh_addons': {
+            'task': 'scripts.refresh_addon_tokens',
             'schedule': crontab(minute=0, hour= 2),  # Daily 2:00 a.m
-            'kwargs': {'dry_run': False},
+            'kwargs': {'dry_run': False, 'addons': {'box': 60, 'googledrive': 14, 'mendeley': 14}},
         },
         'retract_registrations': {
             'task': 'scripts.retract_registrations',

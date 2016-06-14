@@ -65,6 +65,7 @@ class TestNodeContributorList(NodeCRUDTestCase):
         self.private_url = '/{}nodes/{}/contributors/'.format(API_BASE, self.private_project._id)
         self.public_url = '/{}nodes/{}/contributors/'.format(API_BASE, self.public_project._id)
 
+
     def test_return_public_contributor_list_logged_out(self):
         self.public_project.add_contributor(self.user_two, save=True)
 
@@ -142,6 +143,34 @@ class TestNodeContributorList(NodeCRUDTestCase):
         res = self.app.get(self.public_url, auth=self.user_two.auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.json['links']['meta']['total_bibliographic'], len(self.public_project.visible_contributor_ids))
+
+    def test_unregistered_contributor_field_is_null_if_account_claimed(self):
+        project = ProjectFactory(creator=self.user, public=True)
+        url = '/{}nodes/{}/contributors/'.format(API_BASE, project._id)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']), 1)
+        assert_equal(res.json['data'][0]['attributes'].get('unregistered_contributor'), None)
+
+    def test_unregistered_contributors_show_up_as_name_associated_with_project(self):
+        project = ProjectFactory(creator=self.user, public=True)
+        project.add_unregistered_contributor('Robert Jackson', 'robert@gmail.com', auth=Auth(self.user), save=True)
+        url = '/{}nodes/{}/contributors/'.format(API_BASE, project._id)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']), 2)
+        assert_equal(res.json['data'][1]['embeds']['users']['data']['attributes']['full_name'], 'Robert Jackson')
+        assert_equal(res.json['data'][1]['attributes'].get('unregistered_contributor'), 'Robert Jackson')
+
+        project_two = ProjectFactory(creator=self.user, public=True)
+        project_two.add_unregistered_contributor('Bob Jackson', 'robert@gmail.com', auth=Auth(self.user), save=True)
+        url = '/{}nodes/{}/contributors/'.format(API_BASE, project_two._id)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']), 2)
+
+        assert_equal(res.json['data'][1]['embeds']['users']['data']['attributes']['full_name'], 'Robert Jackson')
+        assert_equal(res.json['data'][1]['attributes'].get('unregistered_contributor'), 'Bob Jackson')
 
 
 class TestNodeContributorFiltering(ApiTestCase):

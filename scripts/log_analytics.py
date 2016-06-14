@@ -11,7 +11,7 @@ from modularodm import Q
 
 from framework.auth import Auth
 from website.app import init_app
-from website import models, security
+from website import models, security, settings
 from tests.factories import NodeFactory
 
 from website.models import NodeLog, Node
@@ -19,7 +19,7 @@ from website.models import NodeLog, Node
 fake = Faker()
 
 app = None
-CATEGORY_MAP = Node.CATEGORY_MAP
+CATEGORY_MAP = settings.NODE_CATEGORY_MAP
 descriptors = CATEGORY_MAP.keys()
 
 def create_fake_projects(creator, depth, num_logs, level=1, parent=None):

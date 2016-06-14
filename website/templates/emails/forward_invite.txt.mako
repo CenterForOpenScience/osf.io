@@ -18,7 +18,7 @@ You have been added by ${referrer.fullname} as a contributor to the project "${n
 
 ${claim_url}
 
-Once you have set a password, you will be able to make contributions to ${node.title}. You will automatically be subscribed to notification emails for updates to this project. To change your email notification preferences, visit your project or your user settings: ${settings.DOMAIN + "settings/notifications/"}
+Once you have set a password, you will be able to make contributions to ${node.title}. You will automatically be subscribed to notification emails for this project. To change your email notification preferences, visit your project or your user settings: ${settings.DOMAIN + 'settings/notifications/'}
 
 Sincerely,
 

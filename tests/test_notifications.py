@@ -429,7 +429,7 @@ def subscription_schema(project, structure, level=0):
         'kind': And(str, Use(lambda s: s in ('node', 'folder'),
                              error="kind didn't match node or folder {}".format(level))),
         'nodeType': Use(lambda s: s in ('project', 'component'), error='nodeType not project or component'),
-        'category': Use(lambda s: s in Node.CATEGORY_MAP, error='category not in Node.CATEGORY_MAP'),
+        'category': Use(lambda s: s in settings.NODE_CATEGORY_MAP, error='category not in settings.NODE_CATEGORY_MAP'),
         'permissions': {
             'view': Use(lambda s: s in (True, False), error='view permissions is not True/False')
         },
@@ -701,7 +701,7 @@ class TestNotificationUtils(OsfTestCase):
                     'title': 'global_file_updated',
                     'description': constants.USER_SUBSCRIPTIONS_AVAILABLE['global_file_updated'],
                     'notificationType': 'email_transactional',
-                    'parent_notification_type': None
+                    'parent_notification_type': None,
                 },
                 'kind': 'event',
                 'children': []
@@ -759,13 +759,15 @@ class TestNotificationUtils(OsfTestCase):
             {
                 'node': {
                     'id': self.user._id,
-                    'title': 'Default Global Notification Settings'
+                    'title': 'Default Notification Settings',
+                    'help': 'These are default settings for new projects you create or are added to. Modifying these settings will not modify settings on existing projects.'
             },
                 'kind': 'heading',
                 'children': utils.format_user_subscriptions(self.user)
             },
             {
                 'node': {
+                    'help': 'These are settings for each of your projects. Modifying these settings will only modify the settings for the selected project.',
                     'id': '',
                     'title': 'Project Notifications'
                 },

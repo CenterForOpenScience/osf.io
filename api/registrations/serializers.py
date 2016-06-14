@@ -1,8 +1,15 @@
 import json
+
+from modularodm.exceptions import ValidationValueError
+
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 
-from api.base.utils import absolute_reverse
+from api.base.utils import absolute_reverse, get_user_auth
+from website.project.metadata.utils import is_prereg_admin_not_project_admin
+from website.exceptions import NodeStateError
+from website.project.model import NodeUpdateError
+
 from api.files.serializers import FileSerializer
 from api.nodes.serializers import NodeSerializer, NodeProviderSerializer
 from api.nodes.serializers import NodeLinksSerializer, NodeLicenseSerializer
@@ -11,17 +18,19 @@ from api.base.serializers import (IDField, RelationshipField, LinksField, HideIf
                                   FileCommentRelationshipField, NodeFileHyperLinkField, HideIfRegistration, JSONAPIListField)
 
 
-class RegistrationSerializer(NodeSerializer):
+class BaseRegistrationSerializer(NodeSerializer):
 
+    title = ser.CharField(read_only=True)
+    description = ser.CharField(read_only=True)
     category_choices = NodeSerializer.category_choices
     category_choices_string = NodeSerializer.category_choices_string
-    category = HideIfWithdrawal(ser.ChoiceField(choices=category_choices, help_text="Choices: " + category_choices_string))
+    category = HideIfWithdrawal(ser.ChoiceField(read_only=True, choices=category_choices, help_text='Choices: ' + category_choices_string))
 
     date_modified = HideIfWithdrawal(ser.DateTimeField(read_only=True))
     fork = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_fork'))
     collection = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_collection'))
-    node_license = HideIfWithdrawal(NodeLicenseSerializer())
-    tags = HideIfWithdrawal(JSONAPIListField(child=NodeTagField(), required=False))
+    node_license = HideIfWithdrawal(NodeLicenseSerializer(read_only=True))
+    tags = HideIfWithdrawal(JSONAPIListField(child=NodeTagField(), read_only=True))
     public = HideIfWithdrawal(ser.BooleanField(source='is_public', required=False,
                                                help_text='Nodes that are made public will give read-only access '
                                         'to everyone. Private nodes require explicit read '
@@ -44,7 +53,7 @@ class RegistrationSerializer(NodeSerializer):
     embargo_end_date = HideIfWithdrawal(ser.SerializerMethodField(help_text='When the embargo on this registration will be lifted.'))
 
     withdrawal_justification = ser.CharField(source='retraction.justification', read_only=True)
-    template_from = HideIfWithdrawal(ser.CharField(required=False, allow_blank=False, allow_null=False,
+    template_from = HideIfWithdrawal(ser.CharField(read_only=True, allow_blank=False, allow_null=False,
                 help_text='Specify a node id for a node you would like to use as a template for the '
                 'new node. Templating is like forking, except that you do not copy the '
                 'files, only the project structure. Some information is changed on the top '
@@ -102,6 +111,11 @@ class RegistrationSerializer(NodeSerializer):
         related_view_kwargs={'license_id': '<node_license.node_license._id>'},
     ))
 
+    logs = HideIfWithdrawal(RelationshipField(
+        related_view='registrations:registration-logs',
+        related_view_kwargs={'node_id': '<pk>'},
+    ))
+
     forks = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-forks',
         related_view_kwargs={'node_id': '<pk>'}
@@ -119,20 +133,21 @@ class RegistrationSerializer(NodeSerializer):
         filter_key='parent_node'
     ))
 
-    logs = HideIfWithdrawal(RelationshipField(
-        related_view='registrations:registration-logs',
-        related_view_kwargs={'node_id': '<pk>'},
-    ))
-
     root = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-detail',
         related_view_kwargs={'node_id': '<root._id>'}
     ))
 
-    primary_institution = HideIfWithdrawal(RelationshipField(
-        related_view='registrations:registration-institution-detail',
+    affiliated_institutions = HideIfWithdrawal(RelationshipField(
+        related_view='registrations:registration-institutions',
         related_view_kwargs={'node_id': '<pk>'}
     ))
+
+    registration_schema = RelationshipField(
+        related_view='metaschemas:metaschema-detail',
+        related_view_kwargs={'metaschema_id': '<registered_schema_id>'}
+    )
+
     registrations = HideIfRegistration(RelationshipField(
         related_view='nodes:node-registrations',
         related_view_kwargs={'node_id': '<pk>'}
@@ -142,10 +157,6 @@ class RegistrationSerializer(NodeSerializer):
         related_view_kwargs={'node_id': '<pk>'}
     ))
 
-    # TODO: Finish me
-
-    # TODO: Override create?
-
     links = LinksField({'self': 'get_registration_url', 'html': 'get_absolute_html_url'})
 
     def get_registration_url(self, obj):
@@ -153,6 +164,37 @@ class RegistrationSerializer(NodeSerializer):
 
     def get_absolute_url(self, obj):
         return self.get_registration_url(obj)
+
+    def create(self, validated_data):
+        auth = get_user_auth(self.context['request'])
+        draft = validated_data.pop('draft')
+        registration_choice = validated_data.pop('registration_choice', 'immediate')
+        embargo_lifted = validated_data.pop('lift_embargo', None)
+        reviewer = is_prereg_admin_not_project_admin(self.context['request'], draft)
+
+        try:
+            draft.validate_metadata(metadata=draft.registration_metadata, reviewer=reviewer, required_fields=True)
+        except ValidationValueError as e:
+            raise exceptions.ValidationError(e.message)
+
+        registration = draft.register(auth, save=True)
+
+        if registration_choice == 'embargo':
+            if not embargo_lifted:
+                raise exceptions.ValidationError('lift_embargo must be specified.')
+            embargo_end_date = embargo_lifted.replace(tzinfo=None)
+            try:
+                registration.embargo_registration(auth.user, embargo_end_date)
+            except ValidationValueError as err:
+                raise exceptions.ValidationError(err.message)
+        else:
+            try:
+                registration.require_approval(auth.user)
+            except NodeStateError as err:
+                raise exceptions.ValidationError(err)
+
+        registration.save()
+        return registration
 
     def get_registered_meta(self, obj):
         if obj.registered_meta:
@@ -181,17 +223,35 @@ class RegistrationSerializer(NodeSerializer):
     def get_current_user_permissions(self, obj):
         return NodeSerializer.get_current_user_permissions(self, obj)
 
-    def update(self, *args, **kwargs):
-        raise exceptions.APIException('Registrations cannot be modified.')
+    def update(self, registration, validated_data):
+        is_public = validated_data.get('is_public', False)
+        if is_public:
+            try:
+                registration.update(validated_data)
+            except NodeUpdateError as err:
+                raise exceptions.ValidationError(err.reason)
+        else:
+            raise exceptions.ValidationError('Registrations can only be turned from private to public.')
+        return registration
 
     class Meta:
         type_ = 'registrations'
 
 
-class RegistrationDetailSerializer(RegistrationSerializer):
+class RegistrationSerializer(BaseRegistrationSerializer):
     """
-    Overrides NodeSerializer to make id required.
+    Overrides BaseRegistrationSerializer to add draft_registration, registration_choice, and lift_embargo fields
     """
+    draft_registration = ser.CharField(write_only=True)
+    registration_choice = ser.ChoiceField(write_only=True, choices=['immediate', 'embargo'])
+    lift_embargo = ser.DateTimeField(write_only=True, default=None, input_formats=['%Y-%m-%dT%H:%M:%S'])
+
+
+class RegistrationDetailSerializer(BaseRegistrationSerializer):
+    """
+    Overrides BaseRegistrationSerializer to make id required.
+    """
+
     id = IDField(source='_id', required=True)
 
 

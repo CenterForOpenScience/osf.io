@@ -166,7 +166,7 @@ class Mendeley(CitationsOauthProvider):
             csl['chapter-number'] = document.json.get('chapter')
 
         if document.json.get('city') and document.json.get('country'):
-            csl['publisher-place'] = document.json.get('city') + ", " + document.json.get('country')
+            csl['publisher-place'] = document.json.get('city') + ', ' + document.json.get('country')
 
         elif document.json.get('city'):
             csl['publisher-place'] = document.json.get('city')

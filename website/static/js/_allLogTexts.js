@@ -35,7 +35,7 @@ var logActions = {
     'file_updated' : '${user} updated file in ${node}', 
     'file_removed' : '${user} removed file ${path} from ${node}', 
     'file_restored' : '${user} restored file ${path} from ${node}', 
-    'comment_added' : '${user} added a comment to ${node}', 
+    'comment_added' : '${user} added a comment to ${node}',
     'comment_removed' : '${user} deleted a comment from ${node}', 
     'comment_updated' : '${user} updated a comment on ${node}', 
     'embargo_initiated' : '${user} initiated an embargoed registration of ${node}', 

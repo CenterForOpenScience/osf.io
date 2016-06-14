@@ -6,6 +6,7 @@ import functools
 from celery import group
 from flask import _app_ctx_stack as context_stack
 
+from api.base.api_globals import api_globals
 from website import settings
 
 
@@ -33,24 +34,23 @@ def celery_teardown_request(error=None):
     if error is not None:
         _local.queue = []
         return
-    try:
-        if queue():
-            if settings.USE_CELERY:
-                group(queue()).apply_async()
-            else:
-                for task in queue():
-                    task.apply()
-    except AttributeError:
-        if not settings.DEBUG_MODE:
-            logger.error('Task queue not initialized')
+    if queue():
+        if settings.USE_CELERY:
+            group(queue()).apply_async()
+        else:
+            for task in queue():
+                task.apply()
 
 
 def enqueue_task(signature):
-    """If working in a request context, push task signature to ``g`` to run
-    after request is complete; else run signature immediately.
+    """If working in a request context, push task signature to thread-local
+    queue to run after request is complete; else run signature immediately.
     :param signature: Celery task signature
     """
-    if context_stack.top is None:  # Not in a request context
+    if (
+        context_stack.top is None and
+        getattr(api_globals, 'request', None) is None
+    ):  # Not in a request context
         signature()
     else:
         if signature not in queue():
