@@ -10,6 +10,6 @@ var canView = window.contextVars.user.canView;
 $(document).ready(function() {
     if (canView) {
         var nodeLogFeed = 'logFeed-' + node.id;
-        m.mount(document.getElementById(nodeLogFeed), m.component(LogFeed.LogFeed, {node: node}));
+        m.mount(document.getElementById(nodeLogFeed), m.component(LogFeed.LogFeed, {node: node, limitLogs: true}));
     }
 });
