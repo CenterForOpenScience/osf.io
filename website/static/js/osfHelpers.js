@@ -180,17 +180,11 @@ var putJSON = function(url, data, success, error) {
 */
 var setXHRAuthorization = function (xhr, options) {
     if (navigator.appVersion.indexOf('MSIE 9.') === -1) {
-        var CORS =  true;
-        xhr.withCredentials = CORS;
+        xhr.withCredentials = true;
         if (options) {
-            options.withCredentials = CORS;
-            options.xhrFields = {withCredentials:CORS};
+            options.withCredentials = true;
+            options.xhrFields = {withCredentials:true};
         }
-        //xhr.withCredentials = true;
-        //if (options) {
-        //    options.withCredentials = true;
-        //    options.xhrFields = {withCredentials:true};
-        //}
     }
     return xhr;
 };
