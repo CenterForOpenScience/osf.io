@@ -118,7 +118,21 @@ RUN mv /code/website/settings/local-dist.py /code/website/settings/local.py \
 
 COPY ./webpack* /code/
 COPY ./website/static /code/website/static/
+COPY ./website/addons/badges/static/ /code/website/addons/badges/static/
+COPY ./website/addons/box/static/ /code/website/addons/box/static/
+COPY ./website/addons/citations/static/ /code/website/addons/citations/static/
+COPY ./website/addons/dataverse/static/ /code/website/addons/dataverse/static/
+COPY ./website/addons/dropbox/static/ /code/website/addons/dropbox/static/
+COPY ./website/addons/figshare/static/ /code/website/addons/figshare/static/
+COPY ./website/addons/forward/static/ /code/website/addons/forward/static/
+COPY ./website/addons/github/static/ /code/website/addons/github/static/
+COPY ./website/addons/googledrive/static/ /code/website/addons/googledrive/static/
+COPY ./website/addons/mendeley/static/ /code/website/addons/mendeley/static/
+COPY ./website/addons/osfstorage/static/ /code/website/addons/osfstorage/static/
+COPY ./website/addons/s3/static/ /code/website/addons/s3/static/
+COPY ./website/addons/twofactor/static/ /code/website/addons/twofactor/static/
 COPY ./website/addons/wiki/static/ /code/website/addons/wiki/static/
+COPY ./website/addons/zotero/static/ /code/website/addons/zotero/static/
 RUN mkdir -p /code/website/static/built/ \
     && invoke build_js_config_files \
     && node ./node_modules/webpack/bin/webpack.js --config webpack.prod.config.js \
