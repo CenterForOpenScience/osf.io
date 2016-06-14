@@ -133,6 +133,8 @@ COPY ./ /code/
 
 RUN touch /code/website/templates/_log_templates.mako \
     && chmod o+w /code/website/templates/_log_templates.mako \
+    && touch /code/website/static/built/nodeCategories.json \
+    && chmod o+w /code/website/static/built/nodeCategories.json \
     && rm /code/website/settings/local.py /code/api/base/settings/local.py
 
 CMD ["gosu", "nobody", "invoke", "--list"]
