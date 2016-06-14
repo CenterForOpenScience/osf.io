@@ -4,7 +4,7 @@
 
   requireImpl = ace.require != null ? ace.require : require;
 
-  Range = requireImpl("ace/range").Range;
+  Range = requireImpl('ace/range').Range;
 
   // Convert an ace delta into an op understood by share.js
   applyToShareJS = function(editorDoc, delta, doc) {
@@ -44,7 +44,7 @@
         doc.remove(pos, text.length);
         break;
       default:
-        throw new Error("unknown action: " + delta.action);
+        throw new Error('unknown action: ' + delta.action);
     }
   };
 
@@ -69,9 +69,9 @@
         editorText = editorDoc.getValue();
         otText = doc.get(); // gfodor
         if (editorText.length !=0  && typeof otText != 'undefined' && editorText !== otText ) {
-          console.error("Text does not match!");
-          console.error("editor: " + editorText);
-          return console.error("ot:     " + otText);
+          console.error('Text does not match!');
+          console.error('editor: ' + editorText);
+          return console.error('ot:     ' + otText);
           // Should probably also replace the editor text with the doc snapshot
         }
       }, 0);
@@ -106,7 +106,7 @@
       return oldTokenizer.getLineTokens = function(line, state) {
         var cIter, docTokens, modeTokens;
 
-        if ((state == null) || typeof state === "string") {
+        if ((state == null) || typeof state === 'string') {
           cIter = doc.createIterator(0);
           state = {
             modeState: state

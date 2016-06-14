@@ -1,5 +1,5 @@
 // You also need to load in typo.js and jquery.js
-var Typo = require('./typo.js');
+var Typo = require('typo');
 // You should configure these classes.
 var editor = 'editor'; // This should be the id of your editor element.
 var lang = 'en_US';
