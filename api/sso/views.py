@@ -1,3 +1,5 @@
+from . import sign_payload
+
 from django.http import HttpResponseRedirect
 
 from rest_framework.exceptions import AuthenticationFailed
