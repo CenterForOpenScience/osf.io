@@ -972,11 +972,11 @@ def set_maintenance(start=None, end=None):
     If no start or end values are displayed, default to starting now
     and ending 24 hours from now
     """
-    # TODO - should we set default time period in settings?
     start = parse(start) if start else datetime.now()
     end = parse(end) if end else start + timedelta(1)
 
-    database.maintenance.insert({'maintenance': True, 'start': start, 'end': end})
+    database.drop_collection('maintenance')
+    database.maintenance.insert({'maintenance': True, 'start': start.isoformat(), 'end': end.isoformat()})
 
 
 @task
