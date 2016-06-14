@@ -9,6 +9,7 @@ from framework import status
 from framework import sentry
 from framework.auth import cas
 from framework.routing import Rule
+from framework.mongo import database
 from framework.flask import redirect
 from framework.routing import WebRenderer
 from framework.exceptions import HTTPError
@@ -103,6 +104,7 @@ def get_globals():
         'enable_institutions': settings.ENABLE_INSTITUTIONS,
         'keen_project_id': settings.KEEN_PROJECT_ID,
         'keen_write_key': settings.KEEN_WRITE_KEY,
+        'maintenance': True if database.maintenance.find_one({'maintenance': True}) else False,
     }
 
 def is_private_link_anonymous_view():
