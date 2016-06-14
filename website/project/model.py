@@ -354,11 +354,10 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
         self.date_modified = datetime.datetime.utcnow()
         new_mentions = get_valid_mentioned_users_guids(self, self.node.contributors)
 
-        if new_mentions:
-            project_signals.mention_added.send(self, new_mentions=new_mentions, auth=auth)
-            self.ever_mentioned.extend(new_mentions)
-
         if save:
+            if new_mentions:
+                project_signals.mention_added.send(self, new_mentions=new_mentions, auth=auth)
+                self.ever_mentioned.extend(new_mentions)
             self.save()
             self.node.add_log(
                 NodeLog.COMMENT_UPDATED,
