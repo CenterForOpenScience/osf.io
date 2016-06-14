@@ -435,7 +435,6 @@ def make_url_map(app):
     ### Forms ###
 
     process_rules(app, [
-        Rule('/forms/registration/', 'get', website_views.registration_form, json_renderer),
         Rule('/forms/signin/', 'get', website_views.signin_form, json_renderer),
         Rule('/forms/forgot_password/', 'get', website_views.forgot_password_form, json_renderer),
         Rule('/forms/reset_password/', 'get', website_views.reset_password_form, json_renderer),
@@ -482,13 +481,6 @@ def make_url_map(app):
             OsfWebRenderer('resend.mako', render_mako_string, trust=False)
         ),
 
-        # TODO: Remove `auth_register_post`
-        Rule(
-            '/register/',
-            'post',
-            auth_views.auth_register_post,
-            OsfWebRenderer('public/login.mako', trust=False)
-        ),
         Rule('/api/v1/register/', 'post', auth_views.register_user, json_renderer),
 
         Rule(

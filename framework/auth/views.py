@@ -18,8 +18,7 @@ from framework.auth import logout, get_user
 from framework.auth.exceptions import DuplicateEmailError, ExpiredTokenError, InvalidTokenError
 from framework.auth.core import generate_verification_key
 from framework.auth.decorators import collect_auth, must_be_logged_in
-from framework.auth.forms import (MergeAccountForm, ResendConfirmationForm,
-                                  ResetPasswordForm, ForgotPasswordForm, RegistrationForm)
+from framework.auth.forms import MergeAccountForm, ResendConfirmationForm, ResetPasswordForm, ForgotPasswordForm
 from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions.utils import remove_sessions_for_user
@@ -475,39 +474,6 @@ def register_user(**kwargs):
         return {'message': message}
     else:
         return {'message': 'You may now log in.'}
-
-
-# TODO: obsolete, please remove me, and related routes, tests, forms
-def auth_register_post():
-    if not settings.ALLOW_REGISTRATION:
-        status.push_status_message(language.REGISTRATION_UNAVAILABLE, trust=False)
-        return redirect('/')
-    form = RegistrationForm(request.form, prefix='register')
-
-    # Process form
-    if form.validate():
-        try:
-            user = framework_auth.register_unconfirmed(
-                form.username.data,
-                form.password.data,
-                form.fullname.data)
-            framework_auth.signals.user_registered.send(user)
-        except (ValidationValueError, DuplicateEmailError):
-            status.push_status_message(
-                language.ALREADY_REGISTERED.format(email=form.username.data),
-                trust=False)
-            return auth_login()
-        if user:
-            if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
-                send_confirm_email(user, email=user.username)
-                message = language.REGISTRATION_SUCCESS.format(email=user.username)
-                status.push_status_message(message, kind='success', trust=False)
-                return auth_login()
-            else:
-                return redirect('/login/first/')
-    else:
-        forms.push_errors_to_status(form.errors)
-        return auth_login()
 
 
 # TODO: obsolete, please remove me, and related routes, tests, forms
