@@ -2168,7 +2168,8 @@ class TestAddingContributorViews(OsfTestCase):
             mails.CONTRIBUTOR_ADDED,
             user=contributor,
             node=project,
-            referrer_name=self.auth.user.fullname)
+            referrer_name=self.auth.user.fullname,
+            all_global_subscriptions_none=False)
         assert_almost_equal(contributor.contributor_added_email_records[project._id]['last_sent'], int(time.time()), delta=1)
 
     @mock.patch('website.mails.send_mail')
@@ -2456,7 +2457,7 @@ class TestClaimViews(OsfTestCase):
         args, _ = referrer_call
         assert_equal(args[0], self.referrer.username)
         args, _ = claimer_call
-        assert_equal(args[0], reg_user.username)    
+        assert_equal(args[0], reg_user.username)
 
         # view returns the correct JSON
         assert_equal(res.json, {

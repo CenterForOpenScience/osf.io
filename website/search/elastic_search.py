@@ -260,7 +260,7 @@ def load_parent(parent_id):
     return parent_info
 
 
-COMPONENT_CATEGORIES = set(Node.CATEGORY_MAP.keys())
+COMPONENT_CATEGORIES = set(settings.NODE_CATEGORY_MAP.keys())
 
 def get_doctype_from_node(node):
     if node.is_registration:
