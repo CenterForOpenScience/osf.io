@@ -25,7 +25,8 @@ from admin.common_auth.logs import OSFLogEntry
 
 
 class TestDraftListView(AdminTestCase):
-    def setUp(self):
+    @mock.patch('admin.pre_reg.views.DraftRegistration.get_metadata_files')
+    def setUp(self, mock_files):
         super(TestDraftListView, self).setUp()
         self.user = AuthUserFactory()
         schema = utils.draft_reg_util()
@@ -59,7 +60,8 @@ class TestDraftListView(AdminTestCase):
 
 
 class TestDraftDetailView(AdminTestCase):
-    def setUp(self):
+    @mock.patch('admin.pre_reg.views.DraftRegistration.get_metadata_files')
+    def setUp(self, mock_files):
         super(TestDraftDetailView, self).setUp()
         self.user = AuthUserFactory()
         schema = utils.draft_reg_util()
@@ -80,7 +82,8 @@ class TestDraftDetailView(AdminTestCase):
 
 
 class TestDraftFormView(AdminTestCase):
-    def setUp(self):
+    @mock.patch('admin.pre_reg.views.DraftRegistration.get_metadata_files')
+    def setUp(self, mock_files):
         super(TestDraftFormView, self).setUp()
         self.user = AuthUserFactory()
         self.dr1 = DraftRegistrationFactory(
@@ -169,7 +172,8 @@ class TestDraftFormView(AdminTestCase):
 
 
 class TestCommentUpdateView(AdminTestCase):
-    def setUp(self):
+    @mock.patch('admin.pre_reg.views.DraftRegistration.get_metadata_files')
+    def setUp(self, mock_files):
         super(TestCommentUpdateView, self).setUp()
         self.user = AuthUserFactory()
         self.dr1 = DraftRegistrationFactory(
