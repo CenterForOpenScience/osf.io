@@ -848,5 +848,7 @@ var init = function(commentLinkSelector, commentPaneSelector, options) {
 };
 
 module.exports = {
-    init: init
+    init: init,
+    BaseComment: BaseComment,
+    CommentModel: CommentModel
 };
