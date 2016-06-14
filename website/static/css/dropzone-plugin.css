@@ -122,11 +122,6 @@ preview -> file-preview -> details -> filename
     display: block;
 }
 
-.dz-drag-hover {
-    border-color: rgba(0, 0, 0, 0.15);
-    background: rgba(0, 0, 0, 0.04);
-}
-
 .dz-preview .dz-error-message {
     display: none;
     position: absolute;
@@ -200,7 +195,7 @@ preview -> file-preview -> details -> filename
 }
 
 .dz-p {
-    border-bottom: 2px solid #999;
+    border-bottom: 3px solid #999;
     margin: auto;
     width: 100%;
 }

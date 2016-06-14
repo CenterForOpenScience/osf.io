@@ -50,7 +50,8 @@ var ShareWindowDropzone = {
                 else {
                     dangerCount = document.getElementsByClassName('alert').length;
                     if (dangerCount === 0)
-                        $osf.growl("Error", "You can only upload a maximum of 10 files at once.", "danger", 5000);
+                        $osf.growl("Error", "You can only upload a maximum of 10 files at once. " +
+                            "<br> To upload more files, refresh the page or click X on the top right", "danger", 5000);
 
                     return this.emit("error", file);
                 }
@@ -85,6 +86,12 @@ var ShareWindowDropzone = {
                 file.previewElement.classList.add("dz-preview-background-error");
                 // Need the padding change twice because the padding doesn't resize when there is an error
                 $('.drop-zone-format').css({'padding-bottom': '10px'});
+                // get file size in MB, rounded to 1 decimal place
+                var fileSizeMB = Math.round(file.size / (1000 * 1000) * 10) / 10;
+                if (fileSizeMB > this.options.maxFilesize) {
+                    $osf.growl("Error", file.name + " could not be uploaded. <br> The file is " + fileSizeMB + " MB," +
+                        " which exceeds the max file size of " + this.options.maxFilesize + " MB", "danger", 5000);
+                }
             },
 
         };
@@ -113,7 +120,7 @@ var ShareWindowDropzone = {
         function headerTemplate() {
             return [m('h2.col-xs-4', 'Dashboard'), m('m-b-lg.col-xs-8.pull-right.drop-zone-disp',
                 m('.pull-right', m('button.btn.btn-primary.m-t-md.f-w-xl #ShareButton',
-                    m('span.glyphicon.glyphicon-chevron-down #glyph'), 'Upload Public Files'), m.component(AddProject, {
+                    m('span.glyphicon.glyphicon-chevron-down #glyph'), ' Upload Public Files'), m.component(AddProject, {
                     buttonTemplate: m('button.btn.btn-success.btn-success-high-contrast.m-t-md.f-w-xl.pull-right[data-toggle="modal"][data-target="#addProjectFromHome"]',
                         {
                             onclick: function () {
