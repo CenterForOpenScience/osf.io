@@ -14,6 +14,7 @@ var MeetingsAndConferences = require('js/home-page/meetingsAndConferencesPlugin'
 
 var columnSizeClass = '.col-md-10 col-md-offset-1 col-lg-8 col-lg-offset-2';
 
+
 $(document).ready(function(){
     var osfHome = {
         view : function(ctrl, args) {
@@ -24,7 +25,7 @@ $(document).ready(function(){
                             m(columnSizeClass, m.component(ShareWindowDropzone, {}))
                         ]),
 
-                        m('.row.m-t-lg.p-b-md', [
+                        m('.m-t-lg.p-b-md', [
                             m(columnSizeClass, m.component(QuickSearchProject, {}))
                         ])
                     ]
