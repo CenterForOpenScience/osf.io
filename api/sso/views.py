@@ -55,7 +55,7 @@ class SSOView(JSONAPIBaseView):
         return_payload = {'nonce': nonce,
                           'email': user.username,
                           'external_id': user._id,
-                          'username': user.username,
+                          'username': user._id,
                           'name': user.fullname,
                           'avatar_url': user.profile_image_url()}
 

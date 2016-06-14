@@ -22,7 +22,7 @@ def create_user(user):
     payload = {}
     payload['external_id'] = user._id
     payload['email'] = user.username
-    payload['username'] = user.username
+    payload['username'] = user._id
     payload['name'] = user.fullname
     payload['avatar_url'] = user.profile_image_url()
 
@@ -40,35 +40,14 @@ def create_user(user):
     return result.json()['username']
 
 def get_username(user=None):
-    for_current_user = user is None
-    if for_current_user:
+    if user:
+        return user._id
+    else:
         if 'auth_user_id' in session.data:
             user_id = session.data['auth_user_id']
             user = User.load(user_id)
         else:
             return None
-
-    if user.discourse_username:
-        return user.discourse_username
-
-    url = furl(settings.DISCOURSE_SERVER_URL).join('/users/by-external/' + user._id + '.json')
-    url.args['api_key'] = settings.DISCOURSE_API_KEY
-    url.args['api_username'] = settings.DISCOURSE_API_ADMIN_USER
-
-    result = requests.get(url.url)
-    if result.status_code == 404:
-        return create_user(user)
-    elif result.status_code != 200:
-        raise DiscourseException('Discourse server responded to user request '
-                                 + url.url + ' with '
-                                 + str(result.status_code) + ' ' + result.text)
-
-    username = result.json()['user']['username']
-
-    user.discourse_username = username
-    user.save()
-
-    return username
 
 def logout():
     username = get_username()
