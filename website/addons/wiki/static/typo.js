@@ -12,13 +12,13 @@
 var Typo;
 
 (function () {
-"use strict";
+'use strict';
 
 /**
  * Typo constructor.
  *
  * @param {String} [dictionary] The locale code of the dictionary being used. e.g.,
- *                              "en_US". This is only used to auto-load dictionaries.
+ *                              'en_US'. This is only used to auto-load dictionaries.
  * @param {String} [affData]    The data from the dictionary's .aff file. If omitted
  *                              and Typo.js is being used in a Chrome extension, the .aff
  *                              file will be loaded automatically from
@@ -83,11 +83,11 @@ Typo = function (dictionary, affData, wordsData, settings) {
 				path = settings.dictionaryPath;
 			}
 			else {
-				path = "typo/dictionaries";
+				path = 'typo/dictionaries';
 			}
 
-			if (!affData) readDataFile(chrome.extension.getURL(path + "/" + dictionary + "/" + dictionary + ".aff"), setAffData);
-			if (!wordsData) readDataFile(chrome.extension.getURL(path + "/" + dictionary + "/" + dictionary + ".dic"), setWordsData);
+			if (!affData) readDataFile(chrome.extension.getURL(path + '/' + dictionary + '/' + dictionary + '.aff'), setAffData);
+			if (!wordsData) readDataFile(chrome.extension.getURL(path + '/' + dictionary + '/' + dictionary + '.dic'), setWordsData);
 		}
 		else {
 			if (settings.dictionaryPath) {
@@ -100,8 +100,8 @@ Typo = function (dictionary, affData, wordsData, settings) {
 				path = './dictionaries';
 			}
 
-			if (!affData) readDataFile(path + "/" + dictionary + "/" + dictionary + ".aff", setAffData);
-			if (!wordsData) readDataFile(path + "/" + dictionary + "/" + dictionary + ".dic", setWordsData);
+			if (!affData) readDataFile(path + '/' + dictionary + '/' + dictionary + '.aff', setAffData);
+			if (!wordsData) readDataFile(path + '/' + dictionary + '/' + dictionary + '.dic', setWordsData);
 		}
 	}
 
@@ -150,7 +150,7 @@ Typo = function (dictionary, affData, wordsData, settings) {
 
 		// If we add this ONLYINCOMPOUND flag to self.compoundRuleCodes, then _parseDIC
 		// will do the work of saving the list of words that are compound-only.
-		if ("ONLYINCOMPOUND" in self.flags) {
+		if ('ONLYINCOMPOUND' in self.flags) {
 			self.compoundRuleCodes[self.flags.ONLYINCOMPOUND] = [];
 		}
 
@@ -170,20 +170,20 @@ Typo = function (dictionary, affData, wordsData, settings) {
 		for (i = 0, _len = self.compoundRules.length; i < _len; i++) {
 			var ruleText = self.compoundRules[i];
 
-			var expressionText = "";
+			var expressionText = '';
 
 			for (j = 0, _jlen = ruleText.length; j < _jlen; j++) {
 				var character = ruleText[j];
 
 				if (character in self.compoundRuleCodes) {
-					expressionText += "(" + self.compoundRuleCodes[character].join("|") + ")";
+					expressionText += '(' + self.compoundRuleCodes[character].join('|') + ')';
 				}
 				else {
 					expressionText += character;
 				}
 			}
 
-			self.compoundRules[i] = new RegExp(expressionText, "i");
+			self.compoundRules[i] = new RegExp(expressionText, 'i');
 		}
 
 		self.loaded = true;
@@ -217,7 +217,7 @@ Typo.prototype = {
 	 * Read the contents of a file.
 	 *
 	 * @param {String} path The path (relative) to the file.
-	 * @param {String} [charset="ISO8859-1"] The expected charset of the file
+	 * @param {String} [charset='ISO8859-1'] The expected charset of the file
 	 * @param {Boolean} async If true, the file will be read asynchronously. For node.js this does nothing, all
 	 *        files are read synchronously.
 	 * @returns {String} The file data if async is false, otherwise a promise object. If running node.js, the data is
@@ -225,12 +225,12 @@ Typo.prototype = {
 	 */
 
 	_readFile : function (path, charset, async) {
-		charset = charset || "utf8";
+		charset = charset || 'utf8';
 
 		if (typeof XMLHttpRequest !== 'undefined') {
 			var promise;
 			var req = new XMLHttpRequest();
-			req.open("GET", path, async);
+			req.open('GET', path, async);
 
 			if (async) {
 				promise = new Promise(function(resolve, reject) {
@@ -245,12 +245,12 @@ Typo.prototype = {
 
 					req.onerror = function() {
 						reject(req.statusText);
-					}
+					};
 				});
 			}
 
 			if (req.overrideMimeType)
-				req.overrideMimeType("text/plain; charset=" + charset);
+				req.overrideMimeType('text/plain; charset=' + charset);
 
 			req.send(null);
 
@@ -258,7 +258,7 @@ Typo.prototype = {
 		}
 		else if (typeof require !== 'undefined') {
 			// Node.js
-			var fs = require("fs");
+			var fs = require('fs');
 
 			try {
 				if (fs.existsSync(path)) {
@@ -273,7 +273,7 @@ Typo.prototype = {
 					return buffer.toString(charset, 0, buffer.length);
 				}
 				else {
-					console.log("Path " + path + " does not exist.");
+					console.log('Path ' + path + ' does not exist.');
 				}
 			} catch (e) {
 				console.log(e);
@@ -298,7 +298,7 @@ Typo.prototype = {
 		// Remove comment lines
 		data = this._removeAffixComments(data);
 
-		var lines = data.split("\n");
+		var lines = data.split('\n');
 
 		for (i = 0, _len = lines.length; i < _len; i++) {
 			line = lines[i];
@@ -307,7 +307,7 @@ Typo.prototype = {
 
 			var ruleType = definitionParts[0];
 
-			if (ruleType == "PFX" || ruleType == "SFX") {
+			if (ruleType === 'PFX' || ruleType === 'SFX') {
 				var ruleCode = definitionParts[1];
 				var combineable = definitionParts[2];
 				numEntries = parseInt(definitionParts[3], 10);
@@ -320,10 +320,10 @@ Typo.prototype = {
 					lineParts = subline.split(/\s+/);
 					var charactersToRemove = lineParts[2];
 
-					var additionParts = lineParts[3].split("/");
+					var additionParts = lineParts[3].split('/');
 
 					var charactersToAdd = additionParts[0];
-					if (charactersToAdd === "0") charactersToAdd = "";
+					if (charactersToAdd === '0') charactersToAdd = '';
 
 					var continuationClasses = this.parseRuleCodes(additionParts[1]);
 
@@ -334,18 +334,18 @@ Typo.prototype = {
 
 					if (continuationClasses.length > 0) entry.continuationClasses = continuationClasses;
 
-					if (regexToMatch !== ".") {
-						if (ruleType === "SFX") {
-							entry.match = new RegExp(regexToMatch + "$");
+					if (regexToMatch !== '.') {
+						if (ruleType === 'SFX') {
+							entry.match = new RegExp(regexToMatch + '$');
 						}
 						else {
-							entry.match = new RegExp("^" + regexToMatch);
+							entry.match = new RegExp('^' + regexToMatch);
 						}
 					}
 
-					if (charactersToRemove != "0") {
-						if (ruleType === "SFX") {
-							entry.remove = new RegExp(charactersToRemove  + "$");
+					if (charactersToRemove !== '0') {
+						if (ruleType === 'SFX') {
+							entry.remove = new RegExp(charactersToRemove  + '$');
 						}
 						else {
 							entry.remove = charactersToRemove;
@@ -355,11 +355,11 @@ Typo.prototype = {
 					entries.push(entry);
 				}
 
-				rules[ruleCode] = { "type" : ruleType, "combineable" : (combineable == "Y"), "entries" : entries };
+				rules[ruleCode] = { 'type' : ruleType, 'combineable' : (combineable === 'Y'), 'entries' : entries };
 
 				i += numEntries;
 			}
-			else if (ruleType === "COMPOUNDRULE") {
+			else if (ruleType === 'COMPOUNDRULE') {
 				numEntries = parseInt(definitionParts[1], 10);
 
 				for (j = i + 1, _jlen = i + 1 + numEntries; j < _jlen; j++) {
@@ -371,7 +371,7 @@ Typo.prototype = {
 
 				i += numEntries;
 			}
-			else if (ruleType === "REP") {
+			else if (ruleType === 'REP') {
 				lineParts = line.split(/\s+/);
 
 				if (lineParts.length === 3) {
@@ -401,13 +401,13 @@ Typo.prototype = {
 
 	_removeAffixComments : function (data) {
 		// Remove comments
-		data = data.replace(/#.*$/mg, "");
+		data = data.replace(/#.*$/mg, '');
 
 		// Trim each line
 		data = data.replace(/^\s\s*/m, '').replace(/\s\s*$/m, '');
 
 		// Remove blank lines.
-		data = data.replace(/\n{2,}/g, "\n");
+		data = data.replace(/\n{2,}/g, '\n');
 
 		// Trim the entire string
 		data = data.replace(/^\s\s*/, '').replace(/\s\s*$/, '');
@@ -426,7 +426,7 @@ Typo.prototype = {
 	_parseDIC : function (data) {
 		data = this._removeDicComments(data);
 
-		var lines = data.split("\n");
+		var lines = data.split('\n');
 		var dictionaryTable = {};
 
 		function addWord(word, rules) {
@@ -448,7 +448,7 @@ Typo.prototype = {
 		for (var i = 1, _len = lines.length; i < _len; i++) {
 			var line = lines[i];
 
-			var parts = line.split("/", 2);
+			var parts = line.split('/', 2);
 
 			var word = parts[0];
 
@@ -457,7 +457,7 @@ Typo.prototype = {
 				var ruleCodesArray = this.parseRuleCodes(parts[1]);
 
 				// Save the ruleCodes for compound word situations.
-				if (!("NEEDAFFIX" in this.flags) || ruleCodesArray.indexOf(this.flags.NEEDAFFIX) == -1) {
+				if (!('NEEDAFFIX' in this.flags) || ruleCodesArray.indexOf(this.flags.NEEDAFFIX) === -1) {
 					addWord(word, ruleCodesArray);
 				}
 
@@ -481,7 +481,7 @@ Typo.prototype = {
 									var combineRule = this.rules[combineCode];
 
 									if (combineRule) {
-										if (combineRule.combineable && (rule.type != combineRule.type)) {
+										if (combineRule.combineable && (rule.type !== combineRule.type)) {
 											var otherNewWords = this._applyRule(newWord, combineRule);
 
 											for (var iii = 0, _iiilen = otherNewWords.length; iii < _iiilen; iii++) {
@@ -521,7 +521,7 @@ Typo.prototype = {
 		// dictionary uses tab-indented lines as comments.
 
 		// Remove comments
-		data = data.replace(/^\t.*$/mg, "");
+		data = data.replace(/^\t.*$/mg, '');
 
 		return data;
 	},
@@ -530,10 +530,10 @@ Typo.prototype = {
 		if (!textCodes) {
 			return [];
 		}
-		else if (!("FLAG" in this.flags)) {
-			return textCodes.split("");
+		else if (!('FLAG' in this.flags)) {
+			return textCodes.split('');
 		}
-		else if (this.flags.FLAG === "long") {
+		else if (this.flags.FLAG === 'long') {
 			var flags = [];
 
 			for (var i = 0, _len = textCodes.length; i < _len; i += 2) {
@@ -542,8 +542,8 @@ Typo.prototype = {
 
 			return flags;
 		}
-		else if (this.flags.FLAG === "num") {
-			return textCodes.split(",");
+		else if (this.flags.FLAG === 'num') {
+			return textCodes.split(',');
 		}
 	},
 
@@ -566,10 +566,10 @@ Typo.prototype = {
 				var newWord = word;
 
 				if (entry.remove) {
-					newWord = newWord.replace(entry.remove, "");
+					newWord = newWord.replace(entry.remove, '');
 				}
 
-				if (rule.type === "SFX") {
+				if (rule.type === 'SFX') {
 					newWord = newWord + entry.add;
 				}
 				else {
@@ -578,7 +578,7 @@ Typo.prototype = {
 
 				newWords.push(newWord);
 
-				if ("continuationClasses" in entry) {
+				if ('continuationClasses' in entry) {
 					for (var j = 0, _jlen = entry.continuationClasses.length; j < _jlen; j++) {
 						var continuationRule = this.rules[entry.continuationClasses[j]];
 
@@ -613,7 +613,7 @@ Typo.prototype = {
 
 	check : function (aWord) {
 		if (!this.loaded) {
-			throw "Dictionary not loaded.";
+			throw 'Dictionary not loaded.';
 		}
 
 		// Remove leading and trailing whitespace
@@ -629,7 +629,7 @@ Typo.prototype = {
 			// Check for a capitalized form of the word.
 			var capitalizedWord = trimmedWord[0] + trimmedWord.substring(1).toLowerCase();
 
-			if (this.hasFlag(capitalizedWord, "KEEPCASE")) {
+			if (this.hasFlag(capitalizedWord, 'KEEPCASE')) {
 				// Capitalization variants are not allowed for this word.
 				return false;
 			}
@@ -642,7 +642,7 @@ Typo.prototype = {
 		var lowercaseWord = trimmedWord.toLowerCase();
 
 		if (lowercaseWord !== trimmedWord) {
-			if (this.hasFlag(lowercaseWord, "KEEPCASE")) {
+			if (this.hasFlag(lowercaseWord, 'KEEPCASE')) {
 				// Capitalization variants are not allowed for this word.
 				return false;
 			}
@@ -665,7 +665,7 @@ Typo.prototype = {
 
 	checkExact : function (word) {
 		if (!this.loaded) {
-			throw "Dictionary not loaded.";
+			throw 'Dictionary not loaded.';
 		}
 
 		var ruleCodes = this.dictionaryTable[word];
@@ -674,7 +674,7 @@ Typo.prototype = {
 
 		if (typeof ruleCodes === 'undefined') {
 			// Check if this might be a compound word.
-			if ("COMPOUNDMIN" in this.flags && word.length >= this.flags.COMPOUNDMIN) {
+			if ('COMPOUNDMIN' in this.flags && word.length >= this.flags.COMPOUNDMIN) {
 				for (i = 0, _len = this.compoundRules.length; i < _len; i++) {
 					if (word.match(this.compoundRules[i])) {
 						return true;
@@ -689,7 +689,7 @@ Typo.prototype = {
 		}
 		else if (typeof ruleCodes === 'object') { // this.dictionary['hasOwnProperty'] will be a function.
 			for (i = 0, _len = ruleCodes.length; i < _len; i++) {
-				if (!this.hasFlag(word, "ONLYINCOMPOUND", ruleCodes[i])) {
+				if (!this.hasFlag(word, 'ONLYINCOMPOUND', ruleCodes[i])) {
 					return true;
 				}
 			}
@@ -708,7 +708,7 @@ Typo.prototype = {
 
 	hasFlag : function (word, flag, wordFlags) {
 		if (!this.loaded) {
-			throw "Dictionary not loaded.";
+			throw 'Dictionary not loaded.';
 		}
 
 		if (flag in this.flags) {
@@ -735,11 +735,11 @@ Typo.prototype = {
 	 * @returns {String[]} The array of suggestions.
 	 */
 
-	alphabet : "",
+	alphabet : '',
 
 	suggest : function (word, limit) {
 		if (!this.loaded) {
-			throw "Dictionary not loaded.";
+			throw 'Dictionary not loaded.';
 		}
 
 		limit = limit || 5;
@@ -770,7 +770,7 @@ Typo.prototype = {
 		}
 
 		var self = this;
-		self.alphabet = "abcdefghijklmnopqrstuvwxyz";
+		self.alphabet = 'abcdefghijklmnopqrstuvwxyz';
 
 		/*
 		if (!self.alphabet) {
@@ -787,9 +787,9 @@ Typo.prototype = {
 				self.alphabet += i;
 			}
 
-			var alphaArray = self.alphabet.split("");
+			var alphaArray = self.alphabet.split('');
 			alphaArray.sort();
-			self.alphabet = alphaArray.join("");
+			self.alphabet = alphaArray.join('');
 		}
 		*/
 
@@ -816,7 +816,7 @@ Typo.prototype = {
 					if (s[1]) {
 						for (j = 0, _jlen = self.alphabet.length; j < _jlen; j++) {
 							// Eliminate replacement of a letter by itself
-							if (self.alphabet[j] != s[1].substring(0,1)){
+							if (self.alphabet[j] !== s[1].substring(0,1)){
 								rv.push(s[0] + self.alphabet[j] + s[1].substring(1));
 							}
 						}
@@ -886,24 +886,24 @@ Typo.prototype = {
 
 			var rv = [];
 
-			var capitalization_scheme = "lowercase";
+			var capitalization_scheme = 'lowercase';
 
 			if (word.toUpperCase() === word) {
-				capitalization_scheme = "uppercase";
+				capitalization_scheme = 'uppercase';
 			}
 			else if (word.substr(0, 1).toUpperCase() + word.substr(1).toLowerCase() === word) {
-				capitalization_scheme = "capitalized";
+				capitalization_scheme = 'capitalized';
 			}
 
 			for (i = 0, _len = Math.min(limit, sorted_corrections.length); i < _len; i++) {
-				if ("uppercase" === capitalization_scheme) {
+				if ('uppercase' === capitalization_scheme) {
 					sorted_corrections[i][0] = sorted_corrections[i][0].toUpperCase();
 				}
-				else if ("capitalized" === capitalization_scheme) {
+				else if ('capitalized' === capitalization_scheme) {
 					sorted_corrections[i][0] = sorted_corrections[i][0].substr(0, 1).toUpperCase() + sorted_corrections[i][0].substr(1);
 				}
 
-				if (!self.hasFlag(sorted_corrections[i][0], "NOSUGGEST")) {
+				if (!self.hasFlag(sorted_corrections[i][0], 'NOSUGGEST')) {
 					rv.push(sorted_corrections[i][0]);
 				}
 			}
