@@ -16,9 +16,7 @@ import invoke
 from invoke import run, Collection
 
 from website import settings
-from admin import tasks as admin_tasks
 from utils import pip_install, bin_prefix
-from scripts.meta import gatherer
 
 logging.getLogger('invoke').setLevel(logging.CRITICAL)
 
@@ -35,7 +33,12 @@ else:
     TEST_CMD = 'nosetests --rednose'
 
 ns = Collection()
-ns.add_collection(Collection.from_module(admin_tasks), name='admin')
+
+try:
+    from admin import tasks as admin_tasks
+    ns.add_collection(Collection.from_module(admin_tasks), name='admin')
+except ImportError:
+    pass
 
 
 def task(*args, **kwargs):
@@ -73,6 +76,7 @@ def server(host=None, port=5000, debug=True, live=False, gitlogs=False):
 
 @task
 def git_logs():
+    from scripts.meta import gatherer
     gatherer.main()
 
 
