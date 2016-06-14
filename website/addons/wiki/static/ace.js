@@ -68,7 +68,7 @@
 
         editorText = editorDoc.getValue();
         otText = doc.get(); // gfodor
-        if (editorText.length !=0  && typeof otText != 'undefined' && editorText !== otText ) {
+        if (editorText.length !== 0  && typeof otText !== 'undefined' && editorText !== otText ) {
           console.error('Text does not match!');
           console.error('editor: ' + editorText);
           return console.error('ot:     ' + otText);
