@@ -97,7 +97,7 @@ class DeskClient(object):
         customer_link = None
         try:
             customer_json = self.call_post('customers', data)
-            if not customer_json.get("errors"):
+            if not customer_json.get('errors'):
                 customer_link = customer_json['_links']['self']['href']
         except DeskError:
             pass
@@ -133,7 +133,7 @@ class DeskClient(object):
         case_link = None
         try:
             case_json = self.call_post('cases', data)
-            if not case_json.get("errors"):
+            if not case_json.get('errors'):
                 case_link = case_json['_links']['self']['href']
         except DeskError:
             pass
@@ -171,7 +171,7 @@ class DeskClient(object):
         elif full_name:
             first_name = full_name
         customer_link = self.create_customer({
-            'emails': [{"type": "home", "value": email}],
+            'emails': [{'type': 'home', 'value': email}],
             'first_name': first_name,
             'last_name': last_name})
         if not customer_link:
