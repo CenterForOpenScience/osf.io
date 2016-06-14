@@ -96,31 +96,47 @@ var ShareWindowDropzone = {
 
         };
 
+
+        var template = m('div.dz-preview.dz-processing.dz-file-preview',
+                            m('div.dz-details',
+                                m('div.dz-filename',
+                                    m('span[data-dz-name]')
+                                ),
+                                m('div[data-dz-size].dz-size'),
+                                m('img[data-dz-thumbnail]')
+                            ),
+                            m('div.dz-progress',
+                                m('span[data-dz-uploadprogress].dz-upload')
+                            ),
+                            m('div.dz-success-mark',
+                                m('span.glyphicon.glyphicon-ok-circle')
+                            ),
+                            m('div.dz-error-mark',
+                                m('span.glyphicon.glyphicon-remove-circle')
+                            ),
+                            m('div.dz-error-message',
+                                m('span[data-dz-errormessage]', 'Error: Your file could not be uploaded')
+                            )
+                        );
+
         $('#shareWindowDropzone').dropzone({
             url: 'placeholder',
-            previewTemplate: '<div class="dz-preview dz-processing dz-file-preview"><div class="dz-details"><div class="dz-filename"><span data-dz-name></span></div>' +
-            '<div class="dz-size" data-dz-size></div><img data-dz-thumbnail /></div><div class="dz-progress"><span class="dz-upload" data-dz-uploadprogress></span></div>' +
-            '<div class="dz-success-mark"><span class="glyphicon glyphicon-ok-circle"></span></div>' +
-            '<div class="dz-error-mark"><span class="glyphicon glyphicon-remove-circle"></span></div><div class="dz-error-message">' +
-            '<span data-dz-errormessage>Error: Your file could not be uploaded.</span></div></div>',
+            previewTemplate: $osf.mithrilToStr(template)
         });
-
 
         $('#ShareButton').click(function () {
             document.getElementById("ShareButton").style.cursor = "pointer";
             $('#shareWindowDropzone').stop().slideToggle();
-            $('#glyph').toggleClass('glyphicon glyphicon-chevron-down');
-            $('#glyph').toggleClass('glyphicon glyphicon-chevron-up');
-
+            $('#dropzoneBtnGlyphicon').toggleClass('glyphicon glyphicon-chevron-down');
+            $('#dropzoneBtnGlyphicon').toggleClass('glyphicon glyphicon-chevron-up');
         });
-
     },
 
     view: function (ctrl, args) {
         function headerTemplate() {
             return [m('h2.col-xs-4', 'Dashboard'), m('m-b-lg.col-xs-8.pull-right.drop-zone-disp',
                 m('.pull-right', m('button.btn.btn-primary.m-t-md.f-w-xl #ShareButton',
-                    m('span.glyphicon.glyphicon-chevron-down #glyph'), ' Upload Public Files'), m.component(AddProject, {
+                    m('span.glyphicon.glyphicon-chevron-down #dropzoneBtnGlyphicon'), ' Upload Public Files'), m.component(AddProject, {
                     buttonTemplate: m('button.btn.btn-success.btn-success-high-contrast.m-t-md.f-w-xl.pull-right[data-toggle="modal"][data-target="#addProjectFromHome"]',
                         {
                             onclick: function () {
