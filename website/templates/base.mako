@@ -289,7 +289,8 @@
                 <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                     <span aria-hidden="true">&times;</span></button>
                 <strong>Notice:</strong> The site will undergo maintenance between
-                <span id="maintenanceTime"></span>.
+                <strong>${ maintenance['start'] | sjson, n } and ${ maintenance['end'] | sjson, n }</strong>
+##                 <span id="maintenanceTime"></span>.
                 Thank you for your patience.
             </div>
             ## End Maintenance alert
