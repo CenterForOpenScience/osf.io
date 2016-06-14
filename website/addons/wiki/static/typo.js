@@ -8,6 +8,7 @@
  * Typo is a JavaScript implementation of a spellchecker using hunspell-style
  * dictionaries.
  */
+
 var Typo;
 
 (function () {
@@ -82,7 +83,7 @@ Typo = function (dictionary, affData, wordsData, settings) {
 				path = settings.dictionaryPath;
 			}
 			else {
-				path = '/addons/wiki/static/dictionaries';
+				path = "typo/dictionaries";
 			}
 
 			if (!affData) readDataFile(chrome.extension.getURL(path + "/" + dictionary + "/" + dictionary + ".aff"), setAffData);
@@ -96,7 +97,7 @@ Typo = function (dictionary, affData, wordsData, settings) {
 				path = __dirname + '/dictionaries';
 			}
 			else {
-				path = '/addons/wiki/static/dictionaries';
+				path = './dictionaries';
 			}
 
 			if (!affData) readDataFile(path + "/" + dictionary + "/" + dictionary + ".aff", setAffData);
@@ -226,31 +227,7 @@ Typo.prototype = {
 	_readFile : function (path, charset, async) {
 		charset = charset || "utf8";
 
-		if (typeof require !== 'undefined') {
-			// Node.js
-			console.log("Yellow");
-			console.log(fs);
-			try {
-				if (fs.existsSync(path)) {
-					var stats = fs.statSync(path);
-
-					var fileDescriptor = fs.openSync(path, 'r');
-
-					var buffer = new Buffer(stats.size);
-
-					fs.readSync(fileDescriptor, buffer, 0, buffer.length, null);
-
-					return buffer.toString(charset, 0, buffer.length);
-				}
-				else {
-					console.log("Path " + path + " does not exist.");
-				}
-			} catch (e) {
-				console.log(e);
-				return '';
-			}
-		}
-		else if (typeof XMLHttpRequest !== 'undefined') {
+		if (typeof XMLHttpRequest !== 'undefined') {
 			var promise;
 			var req = new XMLHttpRequest();
 			req.open("GET", path, async);
@@ -278,6 +255,30 @@ Typo.prototype = {
 			req.send(null);
 
 			return async ? promise : req.responseText;
+		}
+		else if (typeof require !== 'undefined') {
+			// Node.js
+			var fs = require("fs");
+
+			try {
+				if (fs.existsSync(path)) {
+					var stats = fs.statSync(path);
+
+					var fileDescriptor = fs.openSync(path, 'r');
+
+					var buffer = new Buffer(stats.size);
+
+					fs.readSync(fileDescriptor, buffer, 0, buffer.length, null);
+
+					return buffer.toString(charset, 0, buffer.length);
+				}
+				else {
+					console.log("Path " + path + " does not exist.");
+				}
+			} catch (e) {
+				console.log(e);
+				return '';
+			}
 		}
 	},
 

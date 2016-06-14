@@ -1,12 +1,12 @@
 // You also need to load in typo.js and jquery.js
-var Typo = require("./typo.js");
+var Typo = require("./typo");
 // You should configure these classes.
-var editor = "wiki-form"; // This should be the id of your editor element.
+var editor = "editor"; // This should be the id of your editor element.
 var lang = "en_US";
 var affData, dicData;
 
-var dicPath =  "/dictionaries/en_US/en_US.dic";
-var affPath =  "/dictionaries/en_US/en_US.aff";
+var dicPath =  "/static/public/dictionaries/en_US/en_US.dic";
+var affPath =  "/static/public/dictionaries/en_US/en_US.aff";
 
 // Make red underline for gutter and words.
 $("<style type='text/css'>.ace_marker-layer .misspelled { position: absolute; z-index: -2; border-bottom: 1px solid red; margin-bottom: -1px; }</style>").appendTo("head");
@@ -14,25 +14,26 @@ $("<style type='text/css'>.misspelled { border-bottom: 1px solid red; margin-bot
 
 // Load the dictionary.
 // We have to load the dictionary files sequentially to ensure
-var dictionary = new Typo(lang);
-// $.get(dicPath, function(data) {
-// 	dicData = data;
-// }).done(function() {
-//   $.get(affPath, function(data) {
-// 	  affData = data;
-//   }).done(function() {
-//   	console.log("Dictionary loaded");
-//     dictionary = new Typo(lang, affData, dicData);
-//     enable_spellcheck();
-//     spell_check();
-//   });
-// });
+var dictionary = null ;
+$.get(dicPath, function(data) {
+	dicData = data;
+}).done(function() {
+  $.get(affPath, function(data) {
+	  affData = data;
+  }).done(function() {
+  	console.log("Dictionary loaded");
+    dictionary = new Typo(lang, affData, dicData);
+    enable_spellcheck();
+    spell_check();
+  });
+});
 
 // Check the spelling of a line, and return [start, end]-pairs for misspelled words.
 function misspelled(line) {
 	var words = line.split(' ');
 	var i = 0;
 	var bads = [];
+	console.log(words);
 	for (word in words) {
 	  var x = words[word] + "";
 	  var checkWord = x.replace(/[^a-zA-Z']/g, '');
@@ -56,7 +57,6 @@ function spell_check() {
   if (dictionary == null) {
     return;
   }
-
   if (currently_spellchecking) {
   	return;
   }
@@ -81,7 +81,6 @@ function spell_check() {
 	    session.removeGutterDecoration(i, "misspelled");
 	    // Check spelling of this line.
 	    var misspellings = misspelled(lines[i]);
-
 	    // Add markers and gutter markings.
 	    if (misspellings.length > 0) {
 	      session.addGutterDecoration(i, "misspelled");
