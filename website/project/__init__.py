@@ -118,7 +118,7 @@ def new_public_files_collection(user):
 
     """
 
-    title = user.fullname + "'s Window"
+    title = user.fullname + "'s Public Files"
 
     node = Node(
         title=title,
