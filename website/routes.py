@@ -104,7 +104,7 @@ def get_globals():
         'enable_institutions': settings.ENABLE_INSTITUTIONS,
         'keen_project_id': settings.KEEN_PROJECT_ID,
         'keen_write_key': settings.KEEN_WRITE_KEY,
-        'maintenance': True if database.maintenance.find_one({'maintenance': True}) else False,
+        'maintenance': database.maintenance.find_one({'maintenance': True}),
     }
 
 def is_private_link_anonymous_view():
