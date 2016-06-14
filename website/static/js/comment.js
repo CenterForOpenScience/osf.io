@@ -118,7 +118,7 @@ var exclusifyGroup = function() {
 ko.subscribable.fn.convertHtmlToMarkdown = function(commentContent) {
     return ko.computed(function() {
         var content = commentContent() || '';
-        var pattern = /<span[^>]*?data-atwho-guid="([a-z\d]{5})"[^>]*?>((@|\+)[\w\s]+)<\/span>/,
+        var pattern = '<span[^>]*?data-atwho-guid="([a-z\\d]{5})"[^>]*?>((@|\\+)[\\w\\s]+)<\/span>',
             regex = new RegExp(pattern),
             regexG = new RegExp(pattern, 'g');
         var matches = content.match(regexG);
@@ -144,7 +144,7 @@ ko.subscribable.fn.convertHtmlToMarkdown = function(commentContent) {
 ko.subscribable.fn.convertMarkdownToHtml = function(commentContent) {
     return ko.computed(function() {
         var content = commentContent();
-        var pattern = /\[(@|\+)(.*?)\]\(\/([a-z\d]{5})\/\)/,
+        var pattern = '\[(@|\+)(.*?)\]\(\/([a-z\d]{5})\/\)',
             regex = new RegExp(pattern),
             regexG = new RegExp(pattern, 'g');
         var matches = content.match(regexG);
