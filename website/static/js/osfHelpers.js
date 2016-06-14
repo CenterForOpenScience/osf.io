@@ -1,6 +1,7 @@
 'use strict';
 var ko = require('knockout');
 var $ = require('jquery');
+var m = require('mithril');
 require('jquery-blockui');
 var Raven = require('raven-js');
 var moment = require('moment');
@@ -855,7 +856,15 @@ function onScrollToBottom(element, callback) {
             callback();
         }
     });
-}
+};
+
+// Mithril elements converted to HTML string, example m('div', 'hello world') returns '<div>hello world</div>', for
+// readablity of templates that only take strings as parameter
+function mithrilToStr(element) {
+    var tmp = document.createElement("div");
+    var el = m.render(tmp, element);
+    return tmp.innerHTML
+};
 
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
@@ -896,5 +905,6 @@ module.exports = window.$.osf = {
     contribNameFormat: contribNameFormat,
     trackClick: trackClick,
     findContribName: findContribName,
-    onScrollToBottom: onScrollToBottom
+    onScrollToBottom: onScrollToBottom,
+    mithrilToStr:mithrilToStr
 };
