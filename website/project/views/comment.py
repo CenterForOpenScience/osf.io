@@ -151,13 +151,13 @@ def send_mention_added_notification(comment, new_mentions, auth):
         page_title=comment.root_target.referent.name if comment.page == Comment.FILES else '',
         provider=PROVIDERS[comment.root_target.referent.provider] if comment.page == Comment.FILES else '',
         target_user=target.referent.user if is_reply(target) else None,
-        parent_comment=target.referent.content if is_reply(target) else "",
+        parent_comment=target.referent.content if is_reply(target) else '',
         new_mentions=new_mentions,
         url=comment.get_comment_page_url()
     )
     time_now = datetime.utcnow().replace(tzinfo=pytz.utc)
     notify(
-        event="mentions",
+        event='mentions',
         user=auth.user,
         node=node,
         timestamp=time_now,
