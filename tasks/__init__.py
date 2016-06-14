@@ -923,7 +923,7 @@ def build_js_config_files():
 
 
 @task()
-def assets(dev=False, watch=False):
+def assets(dev=False, watch=False, colors=False):
     """Install and build static assets."""
     npm = 'npm install'
     if not dev:
@@ -933,7 +933,7 @@ def assets(dev=False, watch=False):
     build_js_config_files()
     # Always set clean=False to prevent possible mistakes
     # on prod
-    webpack(clean=False, watch=watch, dev=dev)
+    webpack(clean=False, watch=watch, dev=dev, colors=colors)
 
 @task
 def generate_self_signed(domain):
