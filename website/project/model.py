@@ -887,7 +887,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     alternative_citations = fields.ForeignField('alternativecitation', list=True)
 
     discourse_group_id = fields.StringField(default=None)
-    discourse_category_id = fields.StringField(default=None)
     discourse_topic_id = fields.StringField(default=None)
 
     _meta = {

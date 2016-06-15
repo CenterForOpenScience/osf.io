@@ -549,6 +549,7 @@ DISCOURSE_SERVER_SETTINGS = {'title': 'Open Science Framework',
                              'title_min_entropy': '0',
                              'title_prettify': 'false',
                              'allow_duplicate_topic_titles': 'true',
+                             'tagging_enabled': 'true',
                              }
 
 DISCOURSE_SERVER_CUSTOMIZATIONS = [{'name': 'MFR',

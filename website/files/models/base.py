@@ -481,20 +481,6 @@ class FileNode(object):
                 kwargs['is_file'] = self.is_file
             self.stored_object = StoredFileNode(*args, **kwargs)
 
-    def get_persistant_guid(self):
-        """Attempt to find the persistant Guid that should be associated with this object.
-        :rtype: Guid or None
-        """
-        guid = self.get_guid()
-        if guid:
-            return guid
-
-        file_guids = FileNode.get_file_guids(self.materialized_path, self.provider, self.node)
-        if len(file_guids):
-            original_file_guids = Guid.find(Q('_id', 'eq', file_guids[0]))
-            if len(original_file_guids):
-                return original_file_guids[0]
-
     def save(self):
         """A proxy to self.stored_object.save.
         Implemented top level so that child class may override it
