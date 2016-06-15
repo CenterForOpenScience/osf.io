@@ -142,7 +142,7 @@
     <div class="col-sm-6">
         <div class="panel panel-default">
             <div class="panel-heading clearfix">
-                <a href="/share_window/${profile['id']}" class="panel-title">
+                <a href="/public_files/${profile['id']}" class="panel-title">
                   <h4 class="" >Share Window</h4>
                 </a>
             </div>
