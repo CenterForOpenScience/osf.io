@@ -39,7 +39,7 @@ def update_file_guid_referent(self, node, event_type, payload, user=None):
                 obj = Guid.load(guid)
                 old_file_name = obj.referent.name
                 obj.referent.name = destination['name']
-                discourse.update_topic(obj.referent)
+                discourse.update_topic_content(obj.referent)
                 obj.referent.name = old_file_name
                 #discourse.create_comment(obj.referent, 'This file has been renamed to ' + destination['name'])
 

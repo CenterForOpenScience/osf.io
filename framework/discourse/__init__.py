@@ -388,7 +388,7 @@ def create_topic(node):
 
     return result_json
 
-def _update_topic_content(node):
+def update_topic_content(node):
     url = furl(settings.DISCOURSE_SERVER_URL).join('/posts/' + str(node.discourse_post_id))
     url.args['api_key'] = settings.DISCOURSE_API_KEY
     url.args['api_username'] = settings.DISCOURSE_API_ADMIN_USER
@@ -400,7 +400,7 @@ def _update_topic_content(node):
         raise DiscourseException('Discourse server responded to topic content update request ' + result.url + ' with '
                                  + str(result.status_code) + ' ' + result.text[:500])
 
-def _convert_topic_privacy(node):
+def update_topic_privacy(node):
     url = furl(settings.DISCOURSE_SERVER_URL).join('/t/' + str(node.discourse_topic_id) + '/convert-topic')
     project_node = _get_project_node(node)
     url.path.add('/public' if project_node.is_public else '/private')
@@ -413,10 +413,7 @@ def _convert_topic_privacy(node):
         raise DiscourseException('Discourse server responded to topic privacy update request ' + result.url + ' with '
                                  + str(result.status_code) + ' ' + result.text[:500])
 
-def update_topic(node):
-    _convert_topic_privacy(node)
-    _update_topic_content(node)
-
+def update_topic_title_tags(node):
     url = _create_or_update_topic_base_url(node)
     url.path.add('/t/' + url.args['title'] + '/' + str(node.discourse_topic_id))
 
