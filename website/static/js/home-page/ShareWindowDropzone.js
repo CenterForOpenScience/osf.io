@@ -116,9 +116,6 @@ var ShareWindowDropzone = {
                     shareLink = fileURLArray[i];
                 }
             }
-            clip.setData("text/plain", shareLink);
-            console.log(clip.getData());
-
             $(e.target).parent().siblings('.alertbubble').finish().show().delay(1000).fadeOut("slow");
             $.growl({
                 icon: 'fa fa-clipboard',
