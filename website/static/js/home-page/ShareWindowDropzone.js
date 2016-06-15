@@ -8,6 +8,11 @@ require('css/quick-project-search-plugin.css');
 require('loaders.css/loaders.min.css');
 var Dropzone = require('dropzone');
 
+var ZeroClipboard = require('zeroclipboard');
+var fileURL = "";
+var fileURLArray = [];
+var clip = "";
+
 // Don't show dropped content if user drags outside dropzone
 window.ondragover = function (e) {
     e.preventDefault();
@@ -15,6 +20,7 @@ window.ondragover = function (e) {
 window.ondrop = function (e) {
     e.preventDefault();
 };
+
 
 var ShareWindowDropzone = {
     controller: function () {
@@ -67,6 +73,13 @@ var ShareWindowDropzone = {
             },
 
             success: function (file, xhr) {
+                var fileJson = JSON.parse((file.xhr.response));
+                filePath = fileJson.path
+                var url=(window.location.host+'/'+window.contextVars['shareWindowId']+'/files/osfstorage'+ filePath);
+                fileURL = url;
+                fileURLArray.push(url);
+                clip = new ZeroClipboard( document.getElementsByClassName('copy') );
+
                 this.processQueue();
                 file.previewElement.classList.add("dz-success");
                 file.previewElement.classList.add("dz-preview-background-success");
@@ -96,16 +109,53 @@ var ShareWindowDropzone = {
 
         };
 
-        $('#shareWindowDropzone').dropzone({
-                url: 'placeholder',
-                previewTemplate: '<div class="dz-preview dz-processing dz-file-preview"><div class="dz-details"><div class="dz-filename"><span data-dz-name></span></div>' +
-                '<div class="dz-size" data-dz-size></div><img data-dz-thumbnail /></div><div class="dz-progress"><span class="dz-upload" data-dz-uploadprogress></span></div>' +
-                '<div class="dz-success-mark"><span class="glyphicon glyphicon-ok-circle"></span></div>' +
-                '<div class="dz-error-mark"><span class="glyphicon glyphicon-remove-circle"></span></div><div class="dz-error-message">' +
-                '<span data-dz-errormessage>Error: Your file could not be uploaded.</span></div></div>',
-            }
-        );
 
+
+        $("#shareWindowDropzone").on("click", "div.dz-share", function(e){
+                var shareLink = "";
+                var el = document.getElementsByClassName('dz-preview');
+                    for (var i = 0; i < el.length; i++) {
+                       // console.log(i +" > "+ fileURLArray[i]);
+                        //text(fileURLArray[i]);
+                        if($(".dz-share").index(this) == i){
+                            shareLink = fileURLArray[i];
+                        }
+                    }
+                    clip.setData("text/plain" , shareLink);
+                    console.log(clip.getData());
+
+               $(e.target).parent().siblings('.alertbubble').finish().show().delay(1000).fadeOut("slow");
+        });
+
+
+        var template = m('div.dz-preview.dz-processing.dz-file-preview',
+                            m('div.dz-details',
+                                m('div.dz-filename',
+                                    m('span[data-dz-name]')
+                                ),
+                                m('div[data-dz-size].dz-size'),
+                                m('img[data-dz-thumbnail]')
+                            ),
+                            m('div.dz-progress',
+                                m('span[data-dz-uploadprogress].dz-upload')
+                            ),
+                            m(".dz-share", [" ",m("i.fa.fa-share-alt.copy[aria-hidden='true'][data-clipboard-text='Copy Me!']")," "])," ",m("span.alertbubble.alertbubblepos", [m("i.fa.fa-clipboard[aria-hidden='true']")," Copied"]),
+
+                            m('div.dz-success-mark',
+                                m('span.glyphicon.glyphicon-ok-circle')
+                            ),
+                            m('div.dz-error-mark',
+                                m('span.glyphicon.glyphicon-remove-circle')
+                            ),
+                            m('div.dz-error-message',
+                                m('span[data-dz-errormessage]', 'Error: Your file could not be uploaded')
+                            )
+                        );
+
+        $('#shareWindowDropzone').dropzone({
+           url: 'placeholder',
+            previewTemplate: $osf.mithrilToStr(template)
+        });
         // cache the selector to avoid duplicate selector warning
         var $glyph = $('#glyph');
         $('#ShareButton').click(function () {
