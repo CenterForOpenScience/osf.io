@@ -1430,9 +1430,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             # Title and description have special methods for logging purposes
             if key == 'title':
                 if not self.is_bookmark_collection:
-                    self.set_title(title=value, auth=auth, save=False)
+                    if not self.is_public_files_collection:
+                        self.set_title(title=value, auth=auth, save=False)
+                    else:
+                        raise NodeUpdateError(reason='Public Files Collections cannot be renamed.', key=key)
                 else:
-                    raise NodeUpdateError(reason='Bookmark collections cannot be renamed.', key=key)
+                    raise NodeUpdateError(reason='Bookmark collections and Public Files Collections cannot be renamed.', key=key)
             elif key == 'description':
                 self.set_description(description=value, auth=auth, save=False)
             elif key == 'is_public':
@@ -1508,9 +1511,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             if existing_bookmark_collections.count() > 0:
                 raise NodeStateError("Only one bookmark collection allowed per user.")
 
-        # Bookmark collections are always named 'Bookmarks'
-        if self.is_bookmark_collection and self.title != 'Bookmarks':
-            self.title = 'Bookmarks'
+        if first_save and self.is_public_files_collection:
+            existing_public_files_collections = Node.find(
+                Q('is_public_files_collection', 'eq', True) & Q('contributors', 'eq', self.creator._id)
+            )
+            if existing_public_files_collections.count() > 0:
+                raise NodeStateError("Only one public files collection allowed per user.")
 
         if first_save and self.is_public_files_collection:
             existing_public_files_collections = Node.find(
@@ -1519,7 +1525,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             if existing_public_files_collections.count() > 0:
                 raise NodeStateError("Only one bookmark collection allowed per user.")
 
-
+        # Bookmark collections are always named 'Bookmarks'
+        if self.is_bookmark_collection and self.title != 'Bookmarks':
+            self.title = 'Bookmarks'
         is_original = not self.is_registration and not self.is_fork
         if 'suppress_log' in kwargs.keys():
             suppress_log = kwargs['suppress_log']
@@ -1566,7 +1574,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if not self.is_public:
             if first_save or 'is_public' not in saved_fields:
                 need_update = False
-        if self.is_collection or self.archiving or self.is_public_files_collection:
+        if self.is_collection or self.archiving:
             need_update = False
         if need_update:
             self.update_search()
@@ -1716,6 +1724,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if node.is_bookmark_collection:
             raise ValueError(
                 'Pointer to bookmark collection ({0}) not allowed.'.format(node._id)
+            )
+        if node.is_public_files_collection:
+            raise ValueError(
+                'Pointer to public files collection ({0}) not allowed'.format(node._id)
             )
 
         # Append pointer
@@ -2484,9 +2496,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if self.is_registration:
             path = '/registrations/{}/'.format(self._id)
             return api_v2_url(path)
-        if self.is_collection:
+        if self.is_collection and not self.is_public_files_collection:
             path = '/collections/{}/'.format(self._id)
             return api_v2_url(path)
+            pass
         path = '/nodes/{}/'.format(self._id)
         return api_v2_url(path)
 
@@ -3600,25 +3613,17 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     institution_email_domains = fields.StringField(list=True)
     institution_banner_name = fields.StringField()
 
-    share_window_id = fields.StringField(unique=True, index=True)
-
     @classmethod
-    def find(cls, query=None, allow_institution=False, allow_share_windows=False, **kwargs):
+    def find(cls, query=None, allow_institution=False, **kwargs):
         if not allow_institution:
             query = (query & Q('institution_id', 'eq', None)) if query else Q('institution_id', 'eq', None)
-
-        if not allow_share_windows:
-            query = (query & Q('share_window_id', 'eq', None) if query else Q('share_window_id', 'eq', None))
 
         return super(Node, cls).find(query, **kwargs)
 
     @classmethod
-    def find_one(cls, query=None, allow_institution=False, allow_share_windows=False, **kwargs):
+    def find_one(cls, query=None, allow_institution=False, **kwargs):
         if not allow_institution:
             query = (query & Q('institution_id', 'eq', None)) if query else Q('institution_id', 'eq', None)
-
-        if not allow_share_windows:
-            query = (query & Q('share_window_id', 'eq', None) if query else Q('share_window_id', 'eq', None))
 
         return super(Node, cls).find_one(query, **kwargs)
 
