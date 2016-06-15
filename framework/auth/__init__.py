@@ -52,6 +52,7 @@ def authenticate(user, access_token, response):
     return response
 
 
+# TODO: should we destroy all sessions?
 def logout():
     for key in ['auth_user_username', 'auth_user_id', 'auth_user_fullname', 'auth_user_access_token']:
         try:

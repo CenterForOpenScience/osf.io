@@ -30,50 +30,27 @@ from website.util.time import throttle_period_expired
 
 
 @collect_auth
-def reset_password(auth, **kwargs):
+def forgot_password_get(auth, *args, **kwargs):
     """
-    Check if reset_password request bears a valid verification_key:
-        if so, redirect user to CAS with new verification_key,
-        if not, return HTTPError 400
+    View for "Forgot Your Password?", let user enter their email on the page.
+    methods: GET
+
     :param auth:
-    :param kwargs:
     :return:
     """
+
+    # If user is already logged in, redirect to dashboard page.
     if auth.logged_in:
-        return auth_logout(redirect_url=request.url)
-    verification_key = kwargs['verification_key']
-    form = ResetPasswordForm(request.form)
-
-    user_obj = get_user(verification_key=verification_key)
-    if not user_obj:
-        error_data = {
-            'message_short': 'Invalid url.',
-            'message_long': 'The verification key in the URL is invalid or has expired.'
-        }
-        raise HTTPError(400, data=error_data)
-
-    if request.method == 'POST' and form.validate():
-        # new random verification key, allows CAS to authenticate the user w/o password, one-time only.
-        user_obj.verification_key = generate_verification_key()
-        user_obj.set_password(form.password.data)
-        user_obj.save()
-        status.push_status_message('Password reset', kind='success', trust=False)
-        # redirect to CAS and authenticate the user with a verification key.
-        return redirect(cas.get_login_url(
-            web_url_for('user_account', _absolute=True),
-            username=user_obj.username,
-            verification_key=user_obj.verification_key
-        ))
-
-    forms.push_errors_to_status(form.errors)
+        return redirect(web_url_for('dashboard'))
     return {}
 
 
 def forgot_password_post():
     """
-    Attempt to send user password reset or return respective error.
+    User submit their email and OSF attempt to send user password reset link or return respective error.
     method: POST
     """
+
     form = ForgotPasswordForm(request.form, prefix='forgot_password')
 
     if form.validate():
@@ -110,17 +87,51 @@ def forgot_password_post():
             status.push_status_message(status_message, kind='success', trust=False)
     forms.push_errors_to_status(form.errors)
     # Don't go anywhere
+    # TODO: disable form after form submission
     return {}
 
 
 @collect_auth
-def forgot_password_get(auth, *args, **kwargs):
+def reset_password(auth, **kwargs):
     """
-    Return forgot password page upon.
-    methods: GET
+    View for user to reset their password.
+    Check if reset_password request bears a valid verification_key:
+        if so, redirect user to CAS with new verification_key,
+        if not, return HTTPError 400
+
+    :param auth:
+    :param kwargs:
+    :return:
     """
     if auth.logged_in:
-        return redirect(web_url_for('dashboard'))
+        return auth_logout(redirect_url=request.url)
+    verification_key = kwargs['verification_key']
+    form = ResetPasswordForm(request.form)
+
+    user_obj = get_user(verification_key=verification_key)
+    if not user_obj:
+        error_data = {
+            'message_short': 'Invalid url.',
+            'message_long': 'The verification key in the URL is invalid or has expired.'
+        }
+        raise HTTPError(400, data=error_data)
+
+    if request.method == 'POST' and form.validate():
+        # new random verification key, allows CAS to authenticate the user w/o password, one-time only.
+        user_obj.verification_key = generate_verification_key()
+        user_obj.set_password(form.password.data)
+        user_obj.save()
+        status.push_status_message('Password reset', kind='success', trust=False)
+        # redirect to CAS and authenticate the user with a verification key.
+        return redirect(cas.get_login_url(
+            web_url_for('user_account', _absolute=True),
+            username=user_obj.username,
+            verification_key=user_obj.verification_key
+        ))
+
+    forms.push_errors_to_status(form.errors)
+    # Don't go anywhere
+    # TODO: disable form after form submission
     return {}
 
 
@@ -135,8 +146,9 @@ def auth_register(auth, **kwargs):
     :return:
     """
 
+    # If user is already logged in, redirect to dashboard page.
     if auth.logged_in:
-         return redirect(web_url_for('dashboard'))
+        return redirect(web_url_for('dashboard'))
 
     return {}, http.OK
 
@@ -144,19 +156,40 @@ def auth_register(auth, **kwargs):
 @collect_auth
 def auth_login(auth, **kwargs):
     """
-    This view serves as the entry point for OSF login and campaign login.
-        GET '/login/':                          redirect to CAS login
-        GET 'login/?campaign-instituion:        redirect to institution login
-        GET 'login/?campaign-prereg:            ask for login first, redirect to prereg page
+    This view serves as the entry point for OSF login and campaign login:
+
+        GET '/login/' without any query parameter:
+            redirect to CAS login page with dashboard as target service
+
+        GET '/login/?logout=true
+            log user out and redirect to CAS login page with redirect_url or next_url as target service
+
+        GET '/login/?campaign=instituion:
+            if user is logged in, redirect to 'dashboard'
+            show institution login
+
+        GET '/login/?campaign=prereg:
+            if user is logged in, redirect to prereg home page
+            else show sign up page and notify user to sign in, set next to prereg home page
+
+        GET '/login/?next=next_url:
+            if user is logged in, redirect to next_url
+            else redirect to CAS login page with next_url as target service
 
     :param auth:
     :param kwargs:
     :return:
     """
 
+    # TODO: refactor login flow according to the comments above
+
     campaign = request.args.get('campaign')
     next_url = request.args.get('next')
+    logout = request.args.get('logout')
     must_login_warning = True
+
+    if not campaign and not next and not logout:
+        return redirect(cas.get_login_url(web_url_for('dashboard', _absolute=True)))
 
     if campaign:
         next_url = campaigns.campaign_url_for(campaign)
@@ -174,10 +207,10 @@ def auth_login(auth, **kwargs):
             raise HTTPError(http.InvalidURL)
 
     if auth.logged_in:
-        if not request.args.get('logout'):
+        if not logout:
             if next_url:
                 return redirect(next_url)
-            return redirect('/')
+            return redirect('dashboard')
         # redirect user to CAS for logout, return here w/o authentication
         return auth_logout(redirect_url=request.url)
 
@@ -210,17 +243,21 @@ def auth_login(auth, **kwargs):
 def auth_logout(redirect_url=None):
     """
     Log out, delete current session, delete CAS cookie and delete OSF cookie.
+
     :param redirect_url:
     :return:
     """
+
     redirect_url = redirect_url or request.args.get('redirect_url') or web_url_for('goodbye', _absolute=True)
-    # TODO: should we destroy all sessions for this user?
+    # OSF log out, remove current OSF session
     logout()
-    if 'reauth' in request.args:
-        cas_endpoint = cas.get_login_url(redirect_url)
-    else:
+    # set redirection to CAS log out (or log in if 'reauth' is present)
+    if 'reauth' not in request.args:
         cas_endpoint = cas.get_logout_url(redirect_url)
+    else:
+        cas_endpoint = cas.get_login_url(redirect_url)
     resp = redirect(cas_endpoint)
+    # delete OSF cookie
     resp.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
 
     return resp

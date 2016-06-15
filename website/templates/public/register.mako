@@ -115,7 +115,7 @@
                 </br>
                 <div class="form-group">
                     <div class="col-md-8 col-sm-12" style="padding-left: 25px">
-                        <a href="${login_url_index}" >Already have an account?</a>
+                        <a href="${login_url}" >Already have an account?</a>
                     </div>
                     %if redirect_url:
                         <div class="col-md-8 col-sm-12" style="padding-left: 25px">

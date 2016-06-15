@@ -56,11 +56,11 @@ def get_globals():
     if request.host_url != settings.DOMAIN:
         try:
             inst_id = (Institution.find_one(Q('domains', 'eq', request.host.lower())))._id
-            login_url = '{}institutions/{}'.format(settings.DOMAIN, inst_id)
+            request_login_url = '{}institutions/{}'.format(settings.DOMAIN, inst_id)
         except NoResultsFound:
-            login_url = request.url.replace(request.host_url, settings.DOMAIN)
+            request_login_url = request.url.replace(request.host_url, settings.DOMAIN)
     else:
-        login_url = request.url
+        request_login_url = request.url
     return {
         'private_link_anonymous': is_private_link_anonymous_view(),
         'user_name': user.username if user else '',
@@ -98,8 +98,7 @@ def get_globals():
         'sjson': lambda s: sanitize.safe_json(s),
         'webpack_asset': paths.webpack_asset,
         'waterbutler_url': settings.WATERBUTLER_URL,
-        'login_url': cas.get_login_url(login_url),
-        'login_url_index': cas.get_login_url(util.web_url_for('index', _absolute=True)),
+        'login_url': cas.get_login_url(request_login_url),
         'reauth_url': util.web_url_for('auth_logout', redirect_url=request.url, reauth=True),
         'profile_url': cas.get_profile_url(),
         'enable_institutions': settings.ENABLE_INSTITUTIONS,

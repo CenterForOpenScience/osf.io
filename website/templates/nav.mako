@@ -82,8 +82,8 @@
             %else :
             <li class="dropdown sign-in" data-bind="with: $root.signIn">
                 <div class="col-sm-12">
-                    <a href="${web_url_for('auth_register')}" class="btn btn-success btn-top-signup m-r-xs">Sign up</a>
-                    <a href="${login_url}" class="btn btn-info btn-top-login p-sm">Sign in</a>
+                    <a href="${web_url_for('auth_register')}" class="btn btn-success btn-top-signup m-r-xs">Sign Up</a>
+                    <a href="${login_url}" class="btn btn-info btn-top-login p-sm">Sign In</a>
                 </div>
             </li>
              %endif
