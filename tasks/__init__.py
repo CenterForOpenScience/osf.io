@@ -10,17 +10,13 @@ import json
 import platform
 import subprocess
 import logging
-import pymongo
-from datetime import datetime, timedelta
-
-from dateutil.parser import parse
 
 import invoke
 from invoke import run, Collection
 
 from website import settings
-from framework.mongo import database
 from utils import pip_install, bin_prefix
+from website.maintenance import set_maintenance, get_maintenance, unset_maintenance
 
 logging.getLogger('invoke').setLevel(logging.CRITICAL)
 
@@ -967,16 +963,12 @@ def usage():
 ### Maintenance Tasks ###
 
 @task
-def set_maintenance(start=None, end=None):
+def set_maintenance_state(start=None, end=None):
     """Set the time period for the maintenance notice to be displayed.
     If no start or end values are displayed, default to starting now
     and ending 24 hours from now
     """
-    start = parse(start) if start else datetime.now()
-    end = parse(end) if end else start + timedelta(1)
-
-    database.drop_collection('maintenance')
-    database.maintenance.insert({'maintenance': True, 'start': start.isoformat(), 'end': end.isoformat()})
+    set_maintenance(start, end)
 
 
 @task
@@ -984,15 +976,9 @@ def get_maintenance_state():
     """Get the current start and end times for the maintenance state.
     Return None for start and end if there is no maintenacne state
     """
-    maintenance_state = database.maintenance.find_one({'maintenance': True})
-    state = {}
-    if maintenance_state:
-        state['start'] = maintenance_state.get('start')
-        state['end'] = maintenance_state.get('end')
-
-    return state if state else None
+    get_maintenance()
 
 
 @task
-def unset_maintenance():
-    database.drop_collection('maintenance')
+def unset_maintenance_state():
+    unset_maintenance()
