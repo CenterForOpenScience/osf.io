@@ -1,16 +1,18 @@
-from datetime import datetime, timedelta
+from dateutil.tz import tzutc
 from dateutil.parser import parse
+from datetime import datetime, timedelta
 
 from framework.mongo import database
 
 
 def set_maintenance(start=None, end=None):
     """Set the time period for the maintenance notice to be displayed.
-    If no start or end values are displayed, default to starting now
-    and ending 24 hours from now
+    If no start or end values are given, default to starting now in UTC
+    and ending 24 hours from now.
+    All given times will be converted to UTC automatically.
     """
-    start = parse(start) if start else datetime.now()
-    end = parse(end) if end else start + timedelta(1)
+    start = parse(start).replace(tzinfo=tzutc()) if start else datetime.utcnow()
+    end = parse(end).replace(tzinfo=tzutc()) if end else start + timedelta(1)
 
     database.drop_collection('maintenance')
     database.maintenance.insert({'maintenance': True, 'start': start.isoformat(), 'end': end.isoformat()})
@@ -18,7 +20,7 @@ def set_maintenance(start=None, end=None):
 
 def get_maintenance():
     """Get the current start and end times for the maintenance state.
-    Return None for start and end if there is no maintenacne state
+    Return None for start and end if there is no maintenance state
     """
     maintenance_state = database.maintenance.find_one({'maintenance': True})
     state = {}
