@@ -28,7 +28,7 @@ def make_hook_secret():
 HOOK_SIGNATURE_KEY = 'X-Hub-Signature'
 def verify_hook_signature(node_settings, data, headers):
     """Verify hook signature.
-    :param GithubNodeSettings node_settings:
+    :param GitLabNodeSettings node_settings:
     :param dict data: JSON response body
     :param dict headers: Request headers
     :raises: HookError if signature is missing or invalid
