@@ -4,6 +4,7 @@ var $ = require('jquery');  // jQuery
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
 var oop = require('js/oop');
 var $osf = require('js/osfHelpers');
+var Raven = require('raven-js');
 var LogText = require('js/logTextParser');
 var Paginator = require('js/paginator');
 
@@ -40,6 +41,7 @@ var LogFeed = {
         self.activityLogs = m.prop();
         self.logRequestPending = m.prop();
         self.limitLogs = options.limitLogs;
+        self.failed = false;
         self.paginators = m.prop([]);
         self.nextPage = m.prop();
         self.prevPage = m.prop();
@@ -69,11 +71,17 @@ var LogFeed = {
             }
             self.logRequestPending(true);
             var promise = m.request({method : 'GET', url : url, config : xhrconfig});
-            promise.then(_processResults);
-            promise.then(function(){
-                self.logRequestPending(false);
-                return promise;
-            });
+            promise.then(
+                function(result) {
+                    _processResults(result);
+                    self.logRequestPending(false);
+                    return promise;
+                }, function(xhr, textStatus, error) {
+                    self.failed = true;
+                    var message = 'Error retrieving logs for ' + self.node.id;
+                    Raven.captureMessage(message, {extra: {url: url, textStatus: textStatus, error: error}});
+                }
+            );
         };
 
         self.getCurrentLogs = function _getCurrentLogs (node, page){
@@ -199,12 +207,15 @@ var LogFeed = {
         }
 
         return m('.db-activity-list.m-t-md', [
+
+            ctrl.failed ? m('p', 'Unable to retrieve logs at this time.') :
+
             ctrl.logRequestPending() ?  m('.spinner-loading-wrapper', [
                 m('.logo-spin.logo-lg'),
                 m('p.m-t-sm.fg-load-message', 'Loading logs...')
             ]) :
 
-            ctrl.activityLogs() ? ctrl.activityLogs().map(function(item) {
+            [ctrl.activityLogs() ? ctrl.activityLogs().map(function(item) {
                 var image = m('i.fa.fa-desktop');
                 if (ctrl.node.anonymous) { item.anonymous = true; }
                 if (!item.anonymous && item.embeds.user && item.embeds.user.data) {
@@ -224,7 +235,7 @@ var LogFeed = {
                         ctrl.getLogs(page.url());
                     }}, page.text) : m('.btn.btn-sm.btn-link.disabled', {style: 'color: black'}, page.text);
                 }) : ''
-            ])
+            ])]
         ]);
     }
 };
