@@ -143,14 +143,16 @@ function cancelAllUploads() {
         tb.deleteNode(parent.id, item.id);
     };
     // Clear all synchronous uploads
-    SYNC_UPLOAD_ADDONS.forEach(function(provider) {
-        if (tb.dropzone.syncFileCache[provider] !== undefined) {
-            // Remove cached provider files from UI
-            tb.dropzone.syncFileCache[provider].forEach(removeFromUI);
-            // Clear provider cache
-            tb.dropzone.syncFileCache[provider].length = 0;
-        }
-    });
+    if (tb.dropzone.syncFileCache !== undefined) {
+        SYNC_UPLOAD_ADDONS.forEach(function(provider) {
+            if (tb.dropzone.syncFileCache[provider] !== undefined) {
+                // Remove cached provider files from UI
+                tb.dropzone.syncFileCache[provider].forEach(removeFromUI);
+                // Clear provider cache
+                tb.dropzone.syncFileCache[provider].length = 0;
+            }
+        });
+    }
     // Clear all ongoing uploads
     filesArr.forEach(function(file, index) {
         // Ignore completed files
