@@ -200,11 +200,6 @@ CKEDITOR_CONFIGS = {
     },
 }
 
-AUTHENTICATION_BACKENDS = (
-    'django.contrib.auth.backends.ModelBackend',
-    'allaccess.backends.AuthorizedServiceBackend',
-)
-
 # Keen.io settings in local.py
 KEEN_PROJECT_ID = osf_settings.KEEN_PROJECT_ID
 KEEN_READ_KEY = osf_settings.KEEN_READ_KEY
@@ -224,10 +219,3 @@ if KEEN_CREDENTIALS['keen_ready']:
 
 ENTRY_POINTS = {'osf4m': 'osf4m', 'prereg_challenge_campaign': 'prereg',
                 'institution_campaign': 'institution'}
-
-
-# Change desk settings in local.py
-DESK_KEY = ''
-DESK_KEY_SECRET = ''
-DESK_TOKEN = ''
-DESK_TOKEN_SECRET = ''

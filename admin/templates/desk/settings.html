@@ -4,7 +4,7 @@
     <title>Desk user settings</title>
 {% endblock title %}
 {% block content %}
-    <form class="well" method="post" action="{% url 'auth:desk_settings' %}">
+    <form class="well" method="post" action="{% url 'auth:desk' %}">
         {% csrf_token %}
         {{ form }}
         <input type="submit" class="btn btn-primary" value="Save" />

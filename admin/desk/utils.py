@@ -6,8 +6,6 @@ import requests
 import json
 from requests_oauthlib import OAuth1Session
 
-from django.conf import settings
-
 
 class DeskError(Exception):
     pass
@@ -21,12 +19,12 @@ class DeskClient(object):
     BASE_URL = 'desk.com/api/v2'
     SITE_NAME = 'openscience'
 
-    def __init__(self):
+    def __init__(self, user):
         self.oauth = OAuth1Session(
-            settings.DESK_KEY,
-            client_secret=settings.DESK_KEY_SECRET,
-            resource_owner_key=settings.DESK_TOKEN,
-            resource_owner_secret=settings.DESK_TOKEN_SECRET
+            user.desk_key,
+            client_secret=user.desk_key_secret,
+            resource_owner_key=user.desk_token,
+            resource_owner_secret=user.desk_token_secret
         )
 
     def build_url(self, service):
@@ -38,8 +36,8 @@ class DeskClient(object):
         url = self.build_url(service)
         r = self.oauth.get(url, params=params)
         if r.status_code != requests.codes.ok:
-            raise DeskError(str(r.status_code))
-        return json.loads(r.content)
+            raise DeskError('{}: {}'.format(r.status_code, r.reason))
+        return r.json()  # json.loads(r.content)
 
     def call_post(self, service, data=None):
         """ Calls a POST API for the given service name and POST data."""
@@ -69,7 +67,7 @@ class DeskClient(object):
                     'link': customer['_links']['self']
                 }
         except DeskError:
-            pass
+            raise
         return customer_data
 
     def create_customer(self, data):
@@ -139,10 +137,6 @@ class DeskClient(object):
             pass
         return case_link
 
-    # def customer_cases(self, email):
-    #     params = {'email': email}
-    #     customer = self.find_customer(params)
-
     def cases(self, params):
         case_list = [None]
         params.update({
@@ -152,7 +146,7 @@ class DeskClient(object):
         try:
             case_list = self.call_get('cases/search', params)
         except DeskError:
-            pass
+            raise
         return case_list[u'_embedded'][u'entries']
 
     def create_find_customer_by_email(self, email, full_name=None):

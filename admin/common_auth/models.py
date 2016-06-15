@@ -49,6 +49,10 @@ class MyUser(AbstractBaseUser, PermissionsMixin):
     date_joined = models.DateTimeField(auto_now_add=True)
     confirmed = models.BooleanField(default=False)
     osf_id = models.CharField(max_length=5, blank=True)
+    desk_key = models.CharField(max_length=45, blank=True)
+    desk_key_secret = models.CharField(max_length=45, blank=True)
+    desk_token = models.CharField(max_length=45, blank=True)
+    desk_token_secret = models.CharField(max_length=45, blank=True)
 
     objects = MyUserManager()
 

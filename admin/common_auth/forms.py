@@ -34,3 +34,11 @@ class UserRegistrationForm(UserCreationForm):
         self.fields['first_name'].required = True
         self.fields['last_name'].required = True
         self.fields['osf_id'].required = True
+
+
+class DeskUserForm(forms.ModelForm):
+    class Meta:
+        model = MyUser
+        fields = [
+            'desk_key', 'desk_key_secret', 'desk_token', 'desk_token_secret'
+        ]
