@@ -10,6 +10,7 @@ import json
 import platform
 import subprocess
 import logging
+from time import sleep
 
 import invoke
 from invoke import run, Collection
