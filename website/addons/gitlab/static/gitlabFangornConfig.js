@@ -1,6 +1,6 @@
 'use strict';
 /**
- * Github FileBrowser configuration module.
+ * GitLab FileBrowser configuration module.
  */
 
 var m = require('mithril');
@@ -57,7 +57,7 @@ function _removeEvent (event, items) {
         var parent = items[0].parent();
         var mithrilContentSingle = m('div', [
             m('p', 'This action is irreversible.'),
-            parent.children.length < 2 ? m('p', 'If a folder in Github has no children it will automatically be removed.') : ''
+            parent.children.length < 2 ? m('p', 'If a folder in GitLab has no children it will automatically be removed.') : ''
         ]);
         var mithrilButtonsSingle = m('div', [
             m('span.btn.btn-default', { onclick : function() { cancelDelete(); } }, 'Cancel'),
@@ -117,7 +117,7 @@ function _removeEvent (event, items) {
 
 
 // Define Fangorn Button Actions
-var _githubItemButtons = {
+var _gitlabItemButtons = {
     view: function (ctrl, args, children) {
         var tb = args.treebeard;
         var item = args.item;
@@ -234,7 +234,7 @@ var _githubItemButtons = {
                 buttons.push(
                     m('a.text-info.fangorn-toolbar-icon', {href: item.data.extra.webView}, [
                         m('i.fa.fa-external-link'),
-                        m('span', 'View on GitHub')
+                        m('span', 'View on GitLab')
                     ])
                 );
             }
@@ -292,7 +292,7 @@ function gotoFile (item) {
     }
 }
 
-function _fangornGithubTitle(item, col)  {
+function _fangornGitLabTitle(item, col)  {
     var tb = this;
     if (item.data.isAddonRoot && item.connected === false) { // as opposed to undefined, avoids unnecessary setting of this value
         return Fangorn.Utils.connectCheckTemplate.call(this, item);
@@ -309,12 +309,12 @@ function _fangornGithubTitle(item, col)  {
         var branch = item.data.branch || item.data.defaultBranch;
         
         return m('span',[
-            m('github-name', item.data.name + ' (' + branch + ')')
+            m('gitlab-name', item.data.name + ' (' + branch + ')')
         ]);
     } else {
         if (item.kind === 'file' && item.data.permissions.view) {
             return m('span',[
-                m('github-name.fg-file-links', {
+                m('gitlab-name.fg-file-links', {
                     onclick: function() {
                         gotoFile.call(tb, item);
                     }
@@ -334,7 +334,7 @@ function _fangornColumns (item) {
         data : 'name',
         folderIcons : true,
         filter: true,
-        custom : _fangornGithubTitle
+        custom : _fangornGitLabTitle
     });
 
     if(tb.options.placement === 'project-files') {
@@ -366,7 +366,7 @@ function _fangornUploadSuccess(file, item, response) {
 }
 
 // Register configuration
-Fangorn.config.github = {
+Fangorn.config.gitlab = {
     // Handle changing the branch select
     uploadUrl: _uploadUrl,
     lazyload: _resolveLazyLoad,
@@ -375,6 +375,6 @@ Fangorn.config.github = {
     onUploadComplete: _fangornUploadComplete,
     lazyLoadOnLoad: _fangornLazyLoadOnLoad,
     uploadSuccess: _fangornUploadSuccess,
-    itemButtons: _githubItemButtons,
+    itemButtons: _gitlabItemButtons,
     removeEvent : _removeEvent
 };
