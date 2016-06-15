@@ -7,11 +7,10 @@ require('css/dropzone-plugin.css');
 require('css/quick-project-search-plugin.css');
 require('loaders.css/loaders.min.css');
 var Dropzone = require('dropzone');
-
-var ZeroClipboard = require('zeroclipboard');
-var fileURL = "";
+var clipboard = require("clipboard-js");
 var fileURLArray = [];
-var clip = "";
+
+
 
 // Don't show dropped content if user drags outside dropzone
 window.ondragover = function (e) {
@@ -74,12 +73,9 @@ var ShareWindowDropzone = {
 
             success: function (file, xhr) {
                 var fileJson = JSON.parse((file.xhr.response));
-                filePath = fileJson.path;
-                var url = (window.location.host + '/' + window.contextVars['shareWindowId'] + '/files/osfstorage' + filePath);
-                fileURL = url;
+                var filePath = fileJson.path;
+                var url =(window.location.host+'/'+window.contextVars['shareWindowId']+'/files/osfstorage'+ filePath);
                 fileURLArray.push(url);
-                clip = new ZeroClipboard(document.getElementsByClassName('copy'));
-
                 this.processQueue();
                 file.previewElement.classList.add("dz-success");
                 file.previewElement.classList.add("dz-preview-background-success");
@@ -109,7 +105,6 @@ var ShareWindowDropzone = {
             },
 
         };
-
 
         $("#shareWindowDropzone").on("click", "div.dz-share", function (e) {
             var shareLink = "";

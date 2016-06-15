@@ -16,11 +16,11 @@ def view_share_window(auth, **kwargs):
     return {
         'node':
             {
-            'id': shareWindow._id,
-            'api_url': shareWindow.api_url,
-            'ownerName': shareWindow.creator.fullname,
-            'isPublicFilesCol' : shareWindow.is_public_files_collection,
-             }
+                'id': shareWindow._id,
+                'api_url': shareWindow.api_url,
+                'ownerName': shareWindow.creator.fullname,
+                'isPublicFilesCol': shareWindow.is_public_files_collection,
+            }
     }
 
 def view_share_window_id(uid, **kwargs):
@@ -32,9 +32,9 @@ def view_share_window_id(uid, **kwargs):
     return {
         'node':
             {
-            'id': shareWindow._id,
-            'api_url': shareWindow.api_url,
-            'ownerName': shareWindow.creator.fullname,
-            'isPublicFilesCol': shareWindow.is_public_files_collection,
+                'id': shareWindow._id,
+                'api_url': shareWindow.api_url,
+                'ownerName': shareWindow.creator.fullname,
+                'isPublicFilesCol': shareWindow.is_public_files_collection,
             }
     }

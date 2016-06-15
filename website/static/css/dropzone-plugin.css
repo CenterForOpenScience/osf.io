@@ -125,7 +125,7 @@
     background: rgba(245, 245, 245, 0.8);
     padding: 8px 10px;
     color: #800;
-    min-width: 140px;
+    min-width: 120px;
     max-width: 500px;
     z-index: 500;
 }
