@@ -127,7 +127,7 @@
     background: rgba(245, 245, 245, 0.8);
     padding: 8px 10px;
     color: #800;
-    min-width: 140px;
+    min-width: 120px;
     max-width: 500px;
     z-index: 500;
 }
@@ -204,14 +204,14 @@
    width: 0;
    height: 0;
    border-right: 13px solid transparent;
-   border-bottom: 16px solid rgba(131, 165, 200, 0.89);
+   border-bottom: 16px solid #52A452;
    border-left: 13px solid transparent;
 
 }
 .alertbubble {
    width: 100px;
    height: 20px;
-   background: rgba(131, 165, 200, 0.89);
+   background: #52A452;
    position: relative;
    -moz-border-radius:    10px;
    -webkit-border-radius: 10px;
@@ -222,7 +222,7 @@
    font-weight: bold;
    display: none;
    z-index:40;
-
+   color:white;
 }
 
 .alertbubblepos{
