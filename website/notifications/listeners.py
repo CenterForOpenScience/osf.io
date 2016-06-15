@@ -20,8 +20,7 @@ def subscribe_contributor(node, contributor, auth=None, *args, **kwargs):
     try:
         subscribe_user_to_notifications(node, contributor)
     except InvalidSubscriptionError as err:
-        user = contributor or 'None'
-        logger.warn('Skipping subscription of user {} to node {}'.format(user, node._id))
+        logger.warn('Skipping subscription of user {} to node {}'.format(contributor, node._id))
         logger.warn('Reason: {}'.format(str(err)))
     else:
         notify_added_contributor(node, contributor, auth)

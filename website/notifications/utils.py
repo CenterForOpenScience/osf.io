@@ -409,8 +409,8 @@ def subscribe_user_to_notifications(node, user):
     if node.institution_id:
         raise InvalidSubscriptionError('Institutions are invalid targets for subscriptions')
 
-    if node.is_bookmark_collection:
-        raise InvalidSubscriptionError('Bookmark Collections are invalid targets for subscriptions')
+    if node.is_collection:
+        raise InvalidSubscriptionError('Collections are invalid targets for subscriptions')
 
     if node.is_deleted:
         raise InvalidSubscriptionError('Deleted Nodes are invalid targets for subscriptions')
