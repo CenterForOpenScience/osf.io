@@ -1,7 +1,6 @@
 import urllib
 import itertools
 
-# TODO: change to https://github.com/gpocentek/python-gitlab
 import gitlab
 import cachecontrol
 from requests.adapters import HTTPAdapter
@@ -22,11 +21,9 @@ class GitLabClient(object):
         self.access_token = getattr(external_account, 'oauth_key', None) or access_token
 
         if self.access_token:
-            self.gitlab = gitlab.Gitlab(gitlab_settings.GITLAB_BASE_URL, private_token=self.access_token)
+            self.gitlab = gitlab.Gitlab(gitlab_settings.GITLAB_BASE_URL, oauth_token=self.access_token)
         else:
             self.gitlab = gitlab.Gitlab()
-
-        self.gitlab.auth()
 
     def user(self, user=None):
         """Fetch a user or the authenticated user.
@@ -35,7 +32,7 @@ class GitLabClient(object):
             user if omitted
         :return dict: GitLab API response
         """
-        return self.gitlab.user(user)
+        return self.gitlab.currentuser()
 
     def repo(self, user, repo):
         """Get a single Github repo's info.
@@ -45,16 +42,16 @@ class GitLabClient(object):
         :return: Dict of repo information
             See #TODO: link gitlab docs
         """
-        rv = self.gitlab.projects.get(repo)
+        rv = self.gitlab.getprojects(user + '/' + repo)
         if rv:
             return rv
         raise NotFoundError
 
     def repos(self):
-        return self.gitlab.projects
+        return self.gitlab.getprojects()
 
     def user_repos(self, user):
-        return self.gitlab.projects.owned(all=True)
+        return self.gitlab.getprojectsowned(all=True)
 
     def my_org_repos(self, permissions=None):
         return []
@@ -67,7 +64,7 @@ class GitLabClient(object):
         #)
 
     def create_repo(self, repo, **kwargs):
-        return self.gitlab.projects.create({'name': repo})
+        return self.gitlab.createproject({'name': repo})
 
     def branches(self, user, repo, branch=None):
         """List a repo's branches or get a single branch (in a list).
