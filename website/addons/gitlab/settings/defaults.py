@@ -12,8 +12,8 @@ HOOK_EVENTS = ['push']  # Only log commits
 
 # OAuth related urls
 # TODO: use the gitlab instance configured by user/project
-OAUTH_AUTHORIZE_URL = 'https://gitlab.com/login/oauth/authorize'
-OAUTH_ACCESS_TOKEN_URL = 'https://gitlab.com/login/oauth/access_token'
+OAUTH_AUTHORIZE_URL = 'https://gitlab.com/oauth/authorize'
+OAUTH_ACCESS_TOKEN_URL = 'https://gitlab.com/oauth/token'
 
 # Max render size in bytes; no max if None
 MAX_RENDER_SIZE = None
