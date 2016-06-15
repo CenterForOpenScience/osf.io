@@ -967,7 +967,16 @@ def usage():
 def set_maintenance_state(start=None, end=None):
     """Set the time period for the maintenance notice to be displayed.
     If no start or end values are displayed, default to starting now
-    and ending 24 hours from now
+    and ending 24 hours from now. If no timezone info is passed along,
+    everything will be converted to UTC.
+
+    If a given end time results in a start that is after the end, start
+    will be changed to be 24 hours before the end time.
+
+    Examples:
+        invoke set_maintenance_state
+        invoke set_maintenance_state --start 2016-03-16T15:41:00-04:00
+        invoke set_maintenance_state --end 2016-03-16T15:41:00-04:00
     """
     set_maintenance(start, end)
 

@@ -1,4 +1,4 @@
-from dateutil.tz import tzutc
+import pytz
 from dateutil.parser import parse
 from datetime import datetime, timedelta
 
@@ -9,10 +9,22 @@ def set_maintenance(start=None, end=None):
     """Set the time period for the maintenance notice to be displayed.
     If no start or end values are given, default to starting now in UTC
     and ending 24 hours from now.
-    All given times will be converted to UTC automatically.
+
+    All given times w/out timezone info will be converted to UTC automatically.
+
+    If you give just an end date, start will default to 24 hours before.
     """
-    start = parse(start).replace(tzinfo=tzutc()) if start else datetime.utcnow()
-    end = parse(end).replace(tzinfo=tzutc()) if end else start + timedelta(1)
+    start = parse(start) if start else datetime.utcnow()
+    end = parse(end) if end else start + timedelta(1)
+
+    if not start.tzinfo:
+        start = start.replace(tzinfo=pytz.UTC)
+
+    if not end.tzinfo:
+        end = end.replace(tzinfo=pytz.UTC)
+
+    if start > end:
+        start = end - timedelta(1)
 
     database.drop_collection('maintenance')
     database.maintenance.insert({'maintenance': True, 'start': start.isoformat(), 'end': end.isoformat()})
