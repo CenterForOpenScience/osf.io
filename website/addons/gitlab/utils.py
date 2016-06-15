@@ -3,12 +3,13 @@ import uuid
 import urllib
 import hashlib
 import httplib as http
-from github3.repos.branch import Branch
+# TODO: change to https://github.com/gpocentek/python-gitlab
+#from github3.repos.branch import Branch
 
 from framework.exceptions import HTTPError
 from website.addons.base.exceptions import HookError
 
-from website.addons.github.api import GitHubClient
+from website.addons.gitlab.api import GitLabClient
 
 MESSAGE_BASE = 'via the Open Science Framework'
 MESSAGES = {
@@ -58,10 +59,10 @@ def get_refs(addon, branch=None, sha=None, connection=None):
     :param str branch: Branch name. If None, return the default branch from the
         repo settings.
     :param str sha: The SHA.
-    :param GitHub connection: GitHub API object. If None, one will be created
+    :param GitLab connection: GitLab API object. If None, one will be created
         from the addon's user settings.
     """
-    connection = connection or GitHubClient(external_account=addon.external_account)
+    connection = connection or GitLabClient(external_account=addon.external_account)
 
     if sha and not branch:
         raise HTTPError(http.BAD_REQUEST)
@@ -87,7 +88,7 @@ def get_refs(addon, branch=None, sha=None, connection=None):
     if registered_branches and branch not in registered_branch_names:
         raise HTTPError(http.BAD_REQUEST)
 
-    # Get data from GitHub API if not registered
+    # Get data from GitLab API if not registered
     branches = registered_branches or connection.branches(addon.user, addon.repo)
 
     # Use registered SHA if provided

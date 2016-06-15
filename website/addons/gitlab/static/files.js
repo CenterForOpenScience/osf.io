@@ -1,1 +1,1 @@
-require('./githubFangornConfig.js');
+require('./gitlabFangornConfig.js');

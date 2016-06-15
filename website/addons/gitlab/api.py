@@ -1,12 +1,13 @@
 import urllib
 import itertools
 
+# TODO: change to https://github.com/gpocentek/python-gitlab
 import github3
 import cachecontrol
 from requests.adapters import HTTPAdapter
 
-from website.addons.github import settings as github_settings
-from website.addons.github.exceptions import NotFoundError
+from website.addons.gitlab import settings as gitlab_settings
+from website.addons.gitlab.exceptions import NotFoundError
 
 
 # Initialize caches
@@ -14,7 +15,7 @@ https_cache = cachecontrol.CacheControlAdapter()
 default_adapter = HTTPAdapter()
 
 
-class GitHubClient(object):
+class GitLabClient(object):
 
     def __init__(self, external_account=None, access_token=None):
 
@@ -22,13 +23,14 @@ class GitHubClient(object):
         if self.access_token:
             self.gh3 = github3.login(token=self.access_token)
             self.gh3.set_client_id(
-                github_settings.CLIENT_ID, github_settings.CLIENT_SECRET
+                gitlab_settings.CLIENT_ID, gitlab_settings.CLIENT_SECRET
             )
         else:
             self.gh3 = github3.GitHub()
 
         # Caching libary
-        if github_settings.CACHE:
+        if gitlab_settings.CACHE:
+            # TODO: change to gitlab 
             self.gh3._session.mount('https://api.github.com/user', default_adapter)
             self.gh3._session.mount('https://', https_cache)
 

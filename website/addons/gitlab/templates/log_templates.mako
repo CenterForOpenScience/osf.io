@@ -1,81 +1,79 @@
-<script type="text/html" id="github_file_added">
+<script type="text/html" id="gitlab_file_added">
 added file
 <a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect, text: params.path"></a> to
-GitHub repo
+GitLab repo
 <span data-bind="ifnot:log.anonymous">
-    <span data-bind="text: params.github.user"></span> /
+    <span data-bind="text: params.gitlab.user"></span> /
 </span>
-<span data-bind="text: params.github.repo"></span> to
+<span data-bind="text: params.gitlab.repo"></span> to
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
-<script type="text/html" id="github_folder_created">
+<script type="text/html" id="gitlab_folder_created">
 created folder
 <span class="overflow log-folder" data-bind="text: stripSlash(params.path)"></span> in
-GitHub repo
+GitLab repo
 <span data-bind="ifnot:log.anonymous">
-    <span data-bind="text: params.github.user"></span> /
+    <span data-bind="text: params.gitlab.user"></span> /
 </span>
-<span data-bind="text: params.github.repo"></span> in
+<span data-bind="text: params.gitlab.repo"></span> in
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
-<script type="text/html" id="github_file_updated">
+<script type="text/html" id="gitlab_file_updated">
 updated file
 <a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect, text: params.path"></a> to
-GitHub repo
+GitLab repo
 <span data-bind="ifnot:log.anonymous">
-    <span data-bind="text: params.github.user"></span> /
+    <span data-bind="text: params.gitlab.user"></span> /
 </span>
-<span data-bind="text: params.github.repo"></span> in
+<span data-bind="text: params.gitlab.repo"></span> in
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
-<script type="text/html" id="github_file_removed">
+<script type="text/html" id="gitlab_file_removed">
 removed file <span class="overflow" data-bind="text: params.path"></span> from
-GitHub repo
+GitLab repo
 <span data-bind="ifnot:log.anonymous">
-    <span data-bind="text: params.github.user"></span> /
+    <span data-bind="text: params.gitlab.user"></span> /
 </span>
-<span data-bind="text: params.github.repo"></span> from
+<span data-bind="text: params.gitlab.repo"></span> from
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
-<script type="text/html" id="github_repo_linked">
-linked GitHub repo
+<script type="text/html" id="gitlab_repo_linked">
+linked GitLab repo
 <span data-bind="ifnot:log.anonymous">
-    <span data-bind="text: params.github.user"></span> /
+    <span data-bind="text: params.gitlab.user"></span> /
 </span>
-<span data-bind="text: params.github.repo"></span> to
+<span data-bind="text: params.gitlab.repo"></span> to
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
-<script type="text/html" id="github_repo_unlinked">
-unlinked GitHub repo
+<script type="text/html" id="gitlab_repo_unlinked">
+unlinked GitLab repo
 <span data-bind="ifnot:log.anonymous">
-    <span data-bind="text: params.github.user"></span> /
+    <span data-bind="text: params.gitlab.user"></span> /
 </span>
-<span data-bind="text: params.github.repo"></span> from
+<span data-bind="text: params.gitlab.repo"></span> from
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
-<script type="text/html" id="github_node_authorized">
-authorized the GitHub addon for
+<script type="text/html" id="gitlab_node_authorized">
+authorized the GitLab addon for
 <a class="log-node-title-link overflow"
     data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
-<script type="text/html" id="github_node_deauthorized">
-deauthorized the GitHub addon for
+<script type="text/html" id="gitlab_node_deauthorized">
+deauthorized the GitLab addon for
 <a class="log-node-title-link overflow"
     data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
-<script type="text/html" id="github_node_deauthorized_no_user">
-GitHub addon for
+<script type="text/html" id="gitlab_node_deauthorized_no_user">
+GitLab addon for
 <a class="log-node-title-link overflow"
     data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
     deauthorized
 </script>
-
-
