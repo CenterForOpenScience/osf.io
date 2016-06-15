@@ -92,7 +92,7 @@ var entry = {
 
 // Collect log text from addons
 var mainLogs = require(staticPath('js/logActionsList.json'));
-var anonymousLogs = require(staticPath('js/_anonymousLogTexts.js'))
+var anonymousLogs = require(staticPath('js/_anonymousLogTexts.js'));
 var addonLog;
 
 // Collect addons endpoints. If an addon's static folder has

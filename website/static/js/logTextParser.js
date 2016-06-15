@@ -147,7 +147,9 @@ var LogText = {
                 })
             ]);
         } else {
-            message = 'There is no text entry in dictionary for the action :' + logObject.attributes.action;
+            message = 'The log viewer has encountered an unexpected log action: ' + logObject.attributes.action +
+                '. Please add a new log entry for this action to logActionsList.js, ' +
+                'or the appropriate addon log file, and _anonymousLogTexts.js';
             ravenMessage(message, logObject);
             return m('em', 'Unable to retrieve log details');
         }

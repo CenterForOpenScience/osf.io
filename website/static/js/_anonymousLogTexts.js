@@ -52,7 +52,7 @@ var anonymousLogActions = {
     'retraction_initiated_no_user' : 'A withdrawal of registration of a project is proposed',
     'retraction_approved' : 'A user approved a withdrawal of registration of a project',
     'retraction_cancelled' : 'A user cancelled a withdrawal of registration of a project',
-    'registration_initiated' : 'A user initiated a withdrawal of registration of a project',
+    'registration_initiated' : 'A user initiated a registration of a project',
     'registration_approved' : 'A user approved registration of a project',
     'registration_approved_no_user' : 'Registration of a project approved',
     'registration_cancelled' : 'A user cancelled registration of a project',
