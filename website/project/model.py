@@ -1565,7 +1565,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if not self.is_public:
             if first_save or 'is_public' not in saved_fields:
                 need_update = False
-        if self.is_collection or self.archiving or self.is_public_files_collection:
+        if self.is_collection or self.archiving:
             need_update = False
         if need_update:
             self.update_search()
@@ -3600,22 +3600,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     institution_banner_name = fields.StringField()
 
     @classmethod
-    def find(cls, query=None, allow_institution=False, allow_share_windows=False, **kwargs):
+    def find(cls, query=None, allow_institution=False, **kwargs):
         if not allow_institution:
             query = (query & Q('institution_id', 'eq', None)) if query else Q('institution_id', 'eq', None)
-
-        if not allow_share_windows:
-            query = (query & Q('share_window_id', 'eq', None) if query else Q('share_window_id', 'eq', None))
 
         return super(Node, cls).find(query, **kwargs)
 
     @classmethod
-    def find_one(cls, query=None, allow_institution=False, allow_share_windows=False, **kwargs):
+    def find_one(cls, query=None, allow_institution=False, **kwargs):
         if not allow_institution:
             query = (query & Q('institution_id', 'eq', None)) if query else Q('institution_id', 'eq', None)
-
-        if not allow_share_windows:
-            query = (query & Q('share_window_id', 'eq', None) if query else Q('share_window_id', 'eq', None))
 
         return super(Node, cls).find_one(query, **kwargs)
 
