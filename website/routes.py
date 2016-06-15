@@ -453,20 +453,9 @@ def make_url_map(app):
 
     ### Auth ###
 
-    # Web
-
     process_rules(app, [
 
-        Rule(
-            '/confirm/<uid>/<token>/',
-            'get',
-            auth_views.confirm_email_get,
-            # View will either redirect or display error message
-            notemplate
-        ),
-
-
-
+        # forgot password
         Rule(
             '/forgotpassword/',
             ['get', 'post'],
@@ -474,6 +463,7 @@ def make_url_map(app):
             OsfWebRenderer('public/forgot_password.mako', trust=False)
         ),
 
+        # reset password
         Rule(
             '/resetpassword/<verification_key>/',
             ['get', 'post'],
@@ -481,22 +471,7 @@ def make_url_map(app):
             OsfWebRenderer('public/resetpassword.mako', render_mako_string, trust=False)
         ),
 
-        # Resend confirmation URL linked to in CAS login page
-        Rule(
-            '/resend/',
-            ['get', 'post'],
-            auth_views.resend_confirmation,
-            OsfWebRenderer('resend.mako', render_mako_string, trust=False)
-        ),
-
-        Rule(
-            '/api/v1/register/',
-            'post',
-            auth_views.register_user,
-            json_renderer
-        ),
-
-
+        # user sign up page
         Rule(
             '/register/',
             'get',
@@ -504,6 +479,15 @@ def make_url_map(app):
             OsfWebRenderer('public/login-and-register.mako', trust=False)
         ),
 
+        # create user account via api
+        Rule(
+            '/api/v1/register/',
+            'post',
+            auth_views.register_user,
+            json_renderer
+        ),
+
+        # osf login and campaign login
         Rule(
             '/login/',
             'get',
@@ -511,12 +495,28 @@ def make_url_map(app):
             OsfWebRenderer('public/login-and-register.mako', trust=False)
         ),
 
+        # osf logout and cas logout
         Rule(
             '/logout/',
             'get',
             auth_views.auth_logout,
             notemplate
         ),
+
+        Rule(
+            '/confirm/<uid>/<token>/',
+            'get',
+            auth_views.confirm_email_get,
+            notemplate
+        ),
+
+        Rule(
+            '/resend/',
+            ['get', 'post'],
+            auth_views.resend_confirmation,
+            OsfWebRenderer('resend.mako', render_mako_string, trust=False)
+        ),
+
 
         Rule(
             '/login/connected_tools/',

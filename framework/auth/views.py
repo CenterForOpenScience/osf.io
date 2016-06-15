@@ -34,7 +34,7 @@ def forgot_password(auth, *args, **kwargs):
     """
     View for "Forgot Your Password?". User submits the email on the page and OSF attempts to send user a password reset
     link or return respective error.
-    Method: GET, POST
+    HTTP Method: GET, POST
 
     :param auth:
     :return:
@@ -97,7 +97,7 @@ def reset_password(auth, *args, **kwargs):
     """
     View for user to reset password. User submits new password and OSF attempts to reset it and automatically log the
     user back in or return respective error.
-    Methods: GET, POST
+    HTTP Method: GET, POST
 
     :param auth:
     :return:
@@ -152,7 +152,7 @@ def reset_password(auth, *args, **kwargs):
 def auth_register(auth, **kwargs):
     """
     View for sign-up page.
-    Methods: GET
+    HTTP Method: GET
 
     :param auth:
     :param kwargs:
@@ -169,7 +169,8 @@ def auth_register(auth, **kwargs):
 @collect_auth
 def auth_login(auth, **kwargs):
     """
-    This view serves as the entry point for OSF login and campaign login:
+    This view serves as the entry point for OSF login and campaign login.
+    HTTP Method: GET
 
         GET '/login/' without any query parameter:
             redirect to CAS login page with dashboard as target service
@@ -190,7 +191,6 @@ def auth_login(auth, **kwargs):
             else redirect to CAS login page with next_url as target service
 
     :param auth:
-    :param kwargs:
     :return:
     """
 
@@ -256,6 +256,7 @@ def auth_login(auth, **kwargs):
 def auth_logout(redirect_url=None):
     """
     Log out, delete current session, delete CAS cookie and delete OSF cookie.
+    HTTP Method: GET
 
     :param redirect_url:
     :return:
@@ -274,6 +275,61 @@ def auth_logout(redirect_url=None):
     resp.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
 
     return resp
+
+
+def register_user(**kwargs):
+    """
+    Register new user account.
+    Method: POST
+
+    :param-json str email1:
+    :param-json str email2:
+    :param-json str password:
+    :param-json str fullName:
+    :param-json str campaign:
+    :raises: HTTPError(http.BAD_REQUEST) if validation fails or user already
+        exists
+
+    """
+
+    # Verify email address match
+    json_data = request.get_json()
+    if str(json_data['email1']).lower() != str(json_data['email2']).lower():
+        raise HTTPError(
+            http.BAD_REQUEST,
+            data=dict(message_long='Email addresses must match.')
+        )
+    try:
+        full_name = request.json['fullName']
+        full_name = strip_html(full_name)
+
+        campaign = json_data.get('campaign')
+        if campaign and campaign not in campaigns.CAMPAIGNS:
+            campaign = None
+
+        user = framework_auth.register_unconfirmed(
+            request.json['email1'],
+            request.json['password'],
+            full_name,
+            campaign=campaign,
+        )
+        framework_auth.signals.user_registered.send(user)
+    except (ValidationValueError, DuplicateEmailError):
+        raise HTTPError(
+            http.BAD_REQUEST,
+            data=dict(
+                message_long=language.ALREADY_REGISTERED.format(
+                    email=markupsafe.escape(request.json['email1'])
+                )
+            )
+        )
+
+    if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
+        send_confirm_email(user, email=user.username)
+        message = language.REGISTRATION_SUCCESS.format(email=user.username)
+        return {'message': message}
+    else:
+        return {'message': 'You may now log in.'}
 
 
 def auth_email_logout(token, user):
@@ -514,59 +570,6 @@ def resend_confirmation():
             forms.push_errors_to_status(form.errors)
     # Don't go anywhere
     return {'form': form}
-
-
-# TODO: obsolete, please remove me, and related routes, tests, forms
-def register_user(**kwargs):
-    """Register new user account.
-
-    :param-json str email1:
-    :param-json str email2:
-    :param-json str password:
-    :param-json str fullName:
-    :param-json str campaign:
-    :raises: HTTPError(http.BAD_REQUEST) if validation fails or user already
-        exists
-
-    """
-    # Verify email address match
-    json_data = request.get_json()
-    if str(json_data['email1']).lower() != str(json_data['email2']).lower():
-        raise HTTPError(
-            http.BAD_REQUEST,
-            data=dict(message_long='Email addresses must match.')
-        )
-    try:
-        full_name = request.json['fullName']
-        full_name = strip_html(full_name)
-
-        campaign = json_data.get('campaign')
-        if campaign and campaign not in campaigns.CAMPAIGNS:
-            campaign = None
-
-        user = framework_auth.register_unconfirmed(
-            request.json['email1'],
-            request.json['password'],
-            full_name,
-            campaign=campaign,
-        )
-        framework_auth.signals.user_registered.send(user)
-    except (ValidationValueError, DuplicateEmailError):
-        raise HTTPError(
-            http.BAD_REQUEST,
-            data=dict(
-                message_long=language.ALREADY_REGISTERED.format(
-                    email=markupsafe.escape(request.json['email1'])
-                )
-            )
-        )
-
-    if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
-        send_confirm_email(user, email=user.username)
-        message = language.REGISTRATION_SUCCESS.format(email=user.username)
-        return {'message': message}
-    else:
-        return {'message': 'You may now log in.'}
 
 
 # TODO: obsolete, please remove me, and related routes, tests, forms
