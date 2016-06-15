@@ -8,12 +8,19 @@ require('css/quick-project-search-plugin.css');
 require('loaders.css/loaders.min.css');
 var Dropzone = require('dropzone');
 
+var ZeroClipboard = require('zeroclipboard');
+var fileURL = "";
+var fileURLArray = [];
+var clip = "";
+
 // Don't show dropped content if user drags outside dropzone
 window.ondragover = function(e) { e.preventDefault(); };
 window.ondrop = function(e) { e.preventDefault(); };
 
+
 var ShareWindowDropzone = {
   controller: function() {
+
     Dropzone.options.shareWindowDropzone = {
         // Dropzone is setup to upload multiple files in one request this configuration forces it to do upload file-by-
         //file, one request at a time.
@@ -41,6 +48,15 @@ var ShareWindowDropzone = {
            };
         },
         success: function(file, xhr) {
+            var fileJson = JSON.parse((file.xhr.response));
+            filePath = fileJson.path
+            var url=(window.location.host+'/'+window.contextVars['shareWindowId']+'/files/osfstorage'+ filePath);
+            fileURL = url;
+            fileURLArray.push(url);
+
+            clip =  new ZeroClipboard( document.getElementsByClassName('copy') );
+
+
             this.processQueue();
             file.previewElement.classList.add("dz-success");
             file.previewElement.classList.add("dz-preview-background-success")
@@ -52,15 +68,44 @@ var ShareWindowDropzone = {
         },
     };
 
+
+
+        $("#shareWindowDropzone").on("click", "div.dz-share", function(e){
+                var shareLink = "";
+                var el = document.getElementsByClassName('dz-preview');
+                    for (var i = 0; i < el.length; i++) {
+                       // console.log(i +" > "+ fileURLArray[i]);
+                        //text(fileURLArray[i]);
+                        if($(".dz-share").index(this) == i){
+                            shareLink = fileURLArray[i];
+                        }
+                    }
+                    clip.setData("text/plain" , shareLink);
+                    console.log(clip.getData());
+
+               $(e.target).parent().siblings('.alertbubble').finish().show().delay(1000).fadeOut("slow");
+        });
+
+    function newUploadTemplet(){
+        return "<div class='dz-preview dz-processing dz-file-preview'>"+
+                "<div class='dz-details'><div class='dz-filename'><span data-dz-name></span></div>"+
+                "<div class='dz-size' data-dz-size></div><img data-dz-thumbnail /></div><div class='dz-progress'><span class='dz-upload' data-dz-uploadprogress></span></div>"+
+
+
+                "<div class='dz-share'> <i class='fa fa-share-alt copy' aria-hidden='true' data-clipboard-text='Copy Me!' ></i> </div> <span class='alertbubble alertbubblepos'><i class='fa fa-clipboard' aria-hidden='true'></i> Copied</span> </div>"+
+
+
+                "<div class='dz-success-mark'><span class='glyphicon glyphicon-ok-circle'></span></div>"+
+                "<div class='dz-error-mark'><span class='glyphicon glyphicon-remove-circle'></span></div><div class='dz-error-message'>"+
+                "<span data-dz-errormessage>Error: Your file could not be uploaded.</span></div></div>";
+        }  
+
+
+
     $('#shareWindowDropzone').dropzone({
         url:'placeholder',
-        previewTemplate: '<div class="dz-preview dz-processing dz-file-preview"><div class="dz-details"><div class="dz-filename"><span data-dz-name></span></div>' +
-        '<div class="dz-size" data-dz-size></div><img data-dz-thumbnail /></div><div class="dz-progress"><span class="dz-upload" data-dz-uploadprogress></span></div>' +
-        '<div class="dz-success-mark"><span class="glyphicon glyphicon-ok-circle"></span></div>' +
-        '<div class="dz-error-mark"><span class="glyphicon glyphicon-remove-circle"></span></div><div class="dz-error-message">' +
-        '<span data-dz-errormessage>Error: Your file could not be uploaded.</span></div></div>',
+        previewTemplate: newUploadTemplet(),
     });
-
 
 
       $('#ShareButton').click(function(e) {
@@ -72,10 +117,13 @@ var ShareWindowDropzone = {
       });
 
 
+
+
+
   },
 
   view: function(ctrl, args) {
-              function headerTemplate() {
+        function headerTemplate() {
             return [ m('h2.col-xs-4', 'Dashboard'), m('m-b-lg.col-xs-8.pull-right.drop-zone-disp',
                 m('.pull-right', m('button.btn.btn-primary.m-t-md.f-w-xl #ShareButton',
                     m('span.glyphicon.glyphicon-chevron-down #glyph'),'Upload Public Files'), m.component(AddProject, {
