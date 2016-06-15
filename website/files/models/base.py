@@ -69,6 +69,7 @@ class TrashedFileNode(StoredObject, Commentable):
     materialized_path = fields.StringField(required=True)
 
     discourse_topic_id = fields.StringField(default=None)
+    discourse_post_id = fields.StringField(dafault=None)
 
     checkout = fields.AbstractForeignField('User')
     deleted_by = fields.AbstractForeignField('User')
@@ -203,6 +204,7 @@ class StoredFileNode(StoredObject, Commentable):
     materialized_path = fields.StringField(required=True)
 
     discourse_topic_id = fields.StringField(default=None)
+    discourse_post_id = fields.StringField(dafault=None)
 
     # The User that has this file "checked out"
     # Should only be used for OsfStorage

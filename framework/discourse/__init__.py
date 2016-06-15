@@ -380,12 +380,25 @@ def create_topic(node):
         raise DiscourseException('Discourse server responded to topic create request ' + result.url + ' with '
                                  + str(result.status_code) + ' ' + result.text)
 
-    topic_id = result.json()['topic_id']
+    result_json = result.json()
 
-    node.discourse_topic_id = topic_id
+    node.discourse_topic_id = result_json['topic_id']
+    node.discourse_post_id = result_json['id']
     node.save()
 
-    return result.json()
+    return result_json
+
+def _update_topic_content(node):
+    url = furl(settings.DISCOURSE_SERVER_URL).join('/posts/' + str(node.discourse_post_id))
+    url.args['api_key'] = settings.DISCOURSE_API_KEY
+    url.args['api_username'] = settings.DISCOURSE_API_ADMIN_USER
+
+    url.args['post[raw]'] = _create_or_update_topic_base_url(node).args['raw']
+
+    result = requests.put(url.url)
+    if result.status_code != 200:
+        raise DiscourseException('Discourse server responded to topic content update request ' + result.url + ' with '
+                                 + str(result.status_code) + ' ' + result.text[:500])
 
 def _convert_topic_privacy(node):
     url = furl(settings.DISCOURSE_SERVER_URL).join('/t/' + str(node.discourse_topic_id) + '/convert-topic')
@@ -402,14 +415,17 @@ def _convert_topic_privacy(node):
 
 def update_topic(node):
     _convert_topic_privacy(node)
+    _update_topic_content(node)
 
     url = _create_or_update_topic_base_url(node)
-    url.path.add('/posts/' + str(node.discourse_topic_id))
+    url.path.add('/t/' + url.args['title'] + '/' + str(node.discourse_topic_id))
 
     result = requests.put(url.url)
     if result.status_code != 200:
         raise DiscourseException('Discourse server responded to topic update request ' + result.url + ' with '
                                  + str(result.status_code) + ' ' + result.text)
+
+    return result.json()
 
 def get_or_create_topic_id(node):
     if node is None:
@@ -447,6 +463,7 @@ def delete_topic(node):
                                  + str(result.status_code) + ' ' + result.text[:500])
 
     node.discourse_topic_id = None
+    node.discourse_post_id = None
 
 def create_comment(node, comment_text, user=None, reply_to_post_number=None):
     if user is None or user == 'system':

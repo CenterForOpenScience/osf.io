@@ -84,12 +84,14 @@ class TestDiscourse(DbTestCase):
         self.assertEquals(topic_json['tags'], [self.project_node._id])
 
         self.project_node.is_public = True
-        topic_json = update_topic(self.project_node)
+        update_topic(self.project_node)
+        topic_json = get_topic(self.project_node)
         self.assertEquals(topic_json['archetype'], 'regular')
         self.assertEquals(topic_json['tags'], [self.project_node._id])
 
         self.project_node.is_public = False
-        topic_json = update_topic(self.project_node)
+        update_topic(self.project_node)
+        topic_json = get_topic(self.project_node)
         self.assertEquals(topic_json['archetype'], 'private_message')
         self.assertEquals(topic_json['details']['allowed_groups'][0]['name'], self.project_node._id)
         self.assertEquals(topic_json['tags'], [self.project_node._id])
