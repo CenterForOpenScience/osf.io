@@ -4,7 +4,6 @@ import itertools
 import os
 import urlparse
 
-from github3 import GitHubError
 import markupsafe
 from modularodm import fields
 
@@ -20,7 +19,7 @@ from website.addons.gitlab import utils
 from website.addons.gitlab.api import GitLabClient
 from website.addons.gitlab.serializer import GitLabSerializer
 from website.addons.gitlab import settings as gitlab_settings
-from website.addons.gitlab.exceptions import ApiError, NotFoundError
+from website.addons.gitlab.exceptions import ApiError, NotFoundError, GitLabError
 from website.oauth.models import ExternalProvider
 
 

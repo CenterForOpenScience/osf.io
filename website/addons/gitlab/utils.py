@@ -4,7 +4,7 @@ import urllib
 import hashlib
 import httplib as http
 # TODO: change to https://github.com/gpocentek/python-gitlab
-#from github3.repos.branch import Branch
+from github3.repos.branch import Branch
 
 from framework.exceptions import HTTPError
 from website.addons.base.exceptions import HookError
