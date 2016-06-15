@@ -478,6 +478,8 @@ class User(GuidStoredObject, AddonModelMixin):
     registered_by = fields.ForeignField('user', default=None, index=True)
 
     discourse_username = fields.StringField(default=None)
+    discourse_user_id = fields.IntegerField(default=0)
+    discourse_user_created = fields.BooleanField(default=False)
 
     _meta = {'optimistic': True}
 

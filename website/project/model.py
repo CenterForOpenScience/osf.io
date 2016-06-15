@@ -949,7 +949,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
     notification_settings_dirty = fields.BooleanField(default=False)
 
     discourse_group_id = fields.StringField(default=None)
-    discourse_category_id = fields.StringField(default=None)
     discourse_topic_id = fields.StringField(default=None)
 
     _meta = {
