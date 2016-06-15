@@ -894,15 +894,6 @@ class TestUser(OsfTestCase):
         )
         assert_equal(None, User.from_cookie(cookie))
 
-    def test_user_has_share_window(self):
-        user = UserFactory()
-        user.register(username=fake.email(), password='killerqueen')
-
-        query = Q('creator', 'eq', user._id)
-        query = query & Q('category', 'eq', "share window")
-
-        assert_equal( Node.find(query).count(), 1)
-
 class TestUserParse(unittest.TestCase):
 
     def test_parse_first_last(self):
