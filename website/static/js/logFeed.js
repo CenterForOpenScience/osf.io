@@ -38,7 +38,7 @@ var LogFeed = {
         var self = this;
         self.node = options.node;
         self.activityLogs = m.prop();
-        self.logRequestPending = false;
+        self.logRequestPending = m.prop();
         self.limitLogs = options.limitLogs;
         self.paginators = m.prop([]);
         self.nextPage = m.prop();
@@ -67,17 +67,17 @@ var LogFeed = {
                 self.currentPage(parseInt(page));
                 self.totalPages = Math.ceil(result.links.meta.total / result.links.meta.per_page);
             }
-            self.logRequestPending = true;
+            self.logRequestPending(true);
             var promise = m.request({method : 'GET', url : url, config : xhrconfig});
             promise.then(_processResults);
             promise.then(function(){
-                self.logRequestPending = false;
+                self.logRequestPending(false);
                 return promise;
             });
         };
 
         self.getCurrentLogs = function _getCurrentLogs (node, page){
-            if(!self.logRequestPending) {
+            if(!self.logRequestPending()) {
                 var url = _buildLogUrl(node, page, self.limitLogs);
                 return self.getLogs(url);
             }
@@ -199,6 +199,11 @@ var LogFeed = {
         }
 
         return m('.db-activity-list.m-t-md', [
+            ctrl.logRequestPending() ?  m('.spinner-loading-wrapper', [
+                m('.logo-spin.logo-lg'),
+                m('p.m-t-sm.fg-load-message', 'Loading logs...')
+            ]) :
+
             ctrl.activityLogs() ? ctrl.activityLogs().map(function(item) {
                 var image = m('i.fa.fa-desktop');
                 if (ctrl.node.anonymous) { item.anonymous = true; }
@@ -212,6 +217,7 @@ var LogFeed = {
                     m('.text-right', m('span.text-muted.m-r-xs', item.attributes.formattableDate.local))
                 ]);
             }) : '',
+
             m('.db-activity-nav.text-center', [
                 ctrl.paginators() && !ctrl.limitLogs ? ctrl.paginators().map(function(page) {
                     return page.url() ? m('.btn.btn-sm.btn-link', { onclick : function() {
