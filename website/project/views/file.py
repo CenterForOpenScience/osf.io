@@ -4,7 +4,7 @@ Files views.
 from flask import request
 
 from website.util import rubeus
-from website.project.decorators import must_be_contributor_or_public
+from website.project.decorators import must_be_contributor_or_public, must_be_contributor_or_public_or_share_window
 from website.project.views.node import _view_project
 
 
@@ -18,9 +18,15 @@ def collect_file_trees(auth, node, **kwargs):
     serialized.update(rubeus.collect_addon_assets(node))
     return serialized
 
-@must_be_contributor_or_public
+@must_be_contributor_or_public_or_share_window
 def grid_data(auth, node, **kwargs):
     """View that returns the formatted data for rubeus.js/hgrid
     """
     data = request.args.to_dict()
-    return {'data': rubeus.to_hgrid(node, auth, **data)}
+
+    data = {'data': rubeus.to_hgrid(node, auth, **data) }
+
+    if node.is_public_files_collection: # hacks permission so it's viewable but doesn't show up in search
+        data['data'][0]["permissions"]['view'] = True
+
+    return data

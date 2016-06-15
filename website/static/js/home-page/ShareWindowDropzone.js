@@ -1,6 +1,6 @@
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
-var waterbutler =  require('js/waterbutler');
+var waterbutler = require('js/waterbutler');
 var AddProject = require('js/addProjectPlugin');
 
 require('css/dropzone-plugin.css');
@@ -14,59 +14,100 @@ var fileURLArray = [];
 var clip = "";
 
 // Don't show dropped content if user drags outside dropzone
-window.ondragover = function(e) { e.preventDefault(); };
-window.ondrop = function(e) { e.preventDefault(); };
+window.ondragover = function (e) {
+    e.preventDefault();
+};
+window.ondrop = function (e) {
+    e.preventDefault();
+};
 
 
 var ShareWindowDropzone = {
-  controller: function() {
+    controller: function () {
+        var dangerCount = 0;
+        Dropzone.options.shareWindowDropzone = {
+            // Dropzone is setup to upload multiple files in one request this configuration forces it to do upload file-by-
+            //file, one request at a time.
+            clickable: '#shareWindowDropzone',
+            // number of files to process in parallel
+            parallelUploads: 1,
+            // prevents default uploading; call processQueue() to upload
+            autoProcessQueue: false,
+            withCredentials: true,
+            uploadMultiple: true,
+            method: 'put',
+            // in MB; lower to test errors. Default is 256 MB.
+            maxFilesize: 1,
+            maxFiles: 10,
+            // checks if file is valid; if so, then adds to queue
+            init: function () {
+                // When user clicks close button on top right, reset the number of files
+                var _this = this;
+                $('button.close').on('click', function () {
+                    _this.files.length = 0;
+                });
 
-    Dropzone.options.shareWindowDropzone = {
-        // Dropzone is setup to upload multiple files in one request this configuration forces it to do upload file-by-
-        //file, one request at a time.
-        clickable: '#shareWindowDropzone',
-        parallelUploads: 1,
-        autoProcessQueue: false,
-        withCredentials: true,
-        method:'put',
-        border: '2px dashed #ccc',
-        maxFilesize: 1,
+            },
+            accept: function (file, done) {
+                if (this.files.length <= 10) {
+                    this.options.url = waterbutler.buildUploadUrl(false, 'osfstorage', window.contextVars['shareWindowId'], file, {});
+                    this.processFile(file);
+                }
+                else {
+                    dangerCount = document.getElementsByClassName('alert').length;
+                    if (dangerCount === 0)
+                        $osf.growl("Error", "You can only upload a maximum of 10 files at once. " +
+                            "<br> To upload more files, refresh the page or click X on the top right", "danger", 5000);
 
-        accept: function(file, done) {
-            if(this.files.length < 10){
-                this.options.url = waterbutler.buildUploadUrl(false,'osfstorage',window.contextVars['shareWindowId'], file,{});
-                this.processFile(file);
-            }else if(this.files.length == 11){
-                $osf.growl("Error", "Maximum of 10 files per upload")
-            }else{}
-        },
-        sending: function(file, xhr) {
-            //Hack to remove webkitheaders
-            var _send = xhr.send;
-            xhr.send = function() {
-               _send.call(xhr, file);
-           };
-        },
-        success: function(file, xhr) {
-            var fileJson = JSON.parse((file.xhr.response));
-            filePath = fileJson.path
-            var url=(window.location.host+'/'+window.contextVars['shareWindowId']+'/files/osfstorage'+ filePath);
-            fileURL = url;
-            fileURLArray.push(url);
+                    return this.emit("error", file);
+                }
+            },
 
-            clip =  new ZeroClipboard( document.getElementsByClassName('copy') );
+            sending: function (file, xhr) {
+                //Hack to remove webkitheaders
+                var _send = xhr.send;
+                xhr.send = function () {
+                    _send.call(xhr, file);
+                };
+                $('.drop-zone-format').css({'padding-bottom': '10px'});
+            },
+
+            success: function (file, xhr) {
+                var fileJson = JSON.parse((file.xhr.response));
+                filePath = fileJson.path
+                var url=(window.location.host+'/'+window.contextVars['shareWindowId']+'/files/osfstorage'+ filePath);
+                fileURL = url;
+                fileURLArray.push(url);
+                clip = new ZeroClipboard( document.getElementsByClassName('copy') );
+
+                this.processQueue();
+                file.previewElement.classList.add("dz-success");
+                file.previewElement.classList.add("dz-preview-background-success");
+                if (this.getQueuedFiles().length === 0 && this.getUploadingFiles().length === 0) {
+                    if (this.files.length === 1)
+                        $osf.growl("Success", this.files.length + " file was successfully uploaded to your public files project.", "success", 5000);
+                    else
+                        $osf.growl("Success", this.files.length + " files were successfully uploaded to your public files project.", "success", 5000);
+
+                }
+            },
 
 
-            this.processQueue();
-            file.previewElement.classList.add("dz-success");
-            file.previewElement.classList.add("dz-preview-background-success")
-        },
+            error: function (file, message) {
+                this.files.length--;
+                file.previewElement.classList.add("dz-error");
+                file.previewElement.classList.add("dz-preview-background-error");
+                // Need the padding change twice because the padding doesn't resize when there is an error
+                $('.drop-zone-format').css({'padding-bottom': '10px'});
+                // get file size in MB, rounded to 1 decimal place
+                var fileSizeMB = Math.round(file.size / (1000 * 1000) * 10) / 10;
+                if (fileSizeMB > this.options.maxFilesize) {
+                    $osf.growl("Error", file.name + " could not be uploaded. <br> The file is " + fileSizeMB + " MB," +
+                        " which exceeds the max file size of " + this.options.maxFilesize + " MB", "danger", 5000);
+                }
+            },
 
-        error: function(file, message) {
-            file.previewElement.classList.add("dz-error");
-            file.previewElement.classList.add("dz-preview-background-error")
-        },
-    };
+        };
 
 
 
@@ -86,72 +127,100 @@ var ShareWindowDropzone = {
                $(e.target).parent().siblings('.alertbubble').finish().show().delay(1000).fadeOut("slow");
         });
 
-    function newUploadTemplet(){
-        return "<div class='dz-preview dz-processing dz-file-preview'>"+
-                "<div class='dz-details'><div class='dz-filename'><span data-dz-name></span></div>"+
-                "<div class='dz-size' data-dz-size></div><img data-dz-thumbnail /></div><div class='dz-progress'><span class='dz-upload' data-dz-uploadprogress></span></div>"+
 
+        var template = m('div.dz-preview.dz-processing.dz-file-preview',
+                            m('div.dz-details',
+                                m('div.dz-filename',
+                                    m('span[data-dz-name]')
+                                ),
+                                m('div[data-dz-size].dz-size'),
+                                m('img[data-dz-thumbnail]')
+                            ),
+                            m('div.dz-progress',
+                                m('span[data-dz-uploadprogress].dz-upload')
+                            ),
+                            m(".dz-share", [" ",m("i.fa.fa-share-alt.copy[aria-hidden='true'][data-clipboard-text='Copy Me!']")," "])," ",m("span.alertbubble.alertbubblepos", [m("i.fa.fa-clipboard[aria-hidden='true']")," Copied"]),
 
-                "<div class='dz-share'> <i class='fa fa-share-alt copy' aria-hidden='true' data-clipboard-text='Copy Me!' ></i> </div> <span class='alertbubble alertbubblepos'><i class='fa fa-clipboard' aria-hidden='true'></i> Copied</span> </div>"+
+                            m('div.dz-success-mark',
+                                m('span.glyphicon.glyphicon-ok-circle')
+                            ),
+                            m('div.dz-error-mark',
+                                m('span.glyphicon.glyphicon-remove-circle')
+                            ),
+                            m('div.dz-error-message',
+                                m('span[data-dz-errormessage]', 'Error: Your file could not be uploaded')
+                            )
+                        );
 
+        $('#shareWindowDropzone').dropzone({
+            url: 'placeholder',
+            previewTemplate: $osf.mithrilToStr(template)
+        });
 
-                "<div class='dz-success-mark'><span class='glyphicon glyphicon-ok-circle'></span></div>"+
-                "<div class='dz-error-mark'><span class='glyphicon glyphicon-remove-circle'></span></div><div class='dz-error-message'>"+
-                "<span data-dz-errormessage>Error: Your file could not be uploaded.</span></div></div>";
-        }  
+        $('#ShareButton').click(function () {
+            document.getElementById("ShareButton").style.cursor = "pointer";
+            $('#shareWindowDropzone').stop().slideToggle();
+            $('#dropzoneBtnGlyphicon').toggleClass('glyphicon glyphicon-chevron-down');
+            $('#dropzoneBtnGlyphicon').toggleClass('glyphicon glyphicon-chevron-up');
+        });
+    },
 
-
-
-    $('#shareWindowDropzone').dropzone({
-        url:'placeholder',
-        previewTemplate: newUploadTemplet(),
-    });
-
-
-      $('#ShareButton').click(function(e) {
-        document.getElementById("ShareButton").style.cursor = "pointer";
-          $('#shareWindowDropzone').slideToggle();
-          $('#glyph').toggleClass('glyphicon glyphicon-chevron-down');
-          $('#glyph').toggleClass('glyphicon glyphicon-chevron-up');
-
-      });
-
-
-
-
-
-  },
-
-  view: function(ctrl, args) {
+    view: function (ctrl, args) {
         function headerTemplate() {
-            return [ m('h2.col-xs-4', 'Dashboard'), m('m-b-lg.col-xs-8.pull-right.drop-zone-disp',
+            return [m('h2.col-xs-4', 'Dashboard'), m('m-b-lg.col-xs-8.pull-right.drop-zone-disp',
+
+
+
+
+
                 m('.pull-right', m('button.btn.btn-primary.m-t-md.f-w-xl #ShareButton',
-                    m('span.glyphicon.glyphicon-chevron-down #glyph'),'Upload Public Files'), m.component(AddProject, {
-                buttonTemplate : m('button.btn.btn-success.btn-success-high-contrast.m-t-md.f-w-xl.pull-right[data-toggle="modal"][data-target="#addProjectFromHome"]',
-                    {onclick: function() {
-                    $osf.trackClick('quickSearch', 'add-project', 'open-add-project-modal');
-                    }}, 'Create new project'),
-                modalID : 'addProjectFromHome',
-                stayCallback : function _stayCallback_inPanel() {
-                                document.location.reload(true);
-                },
-                trackingCategory: 'quickSearch',
-                trackingAction: 'add-project',
-                templatesFetcher: ctrl.templateNodes
-            })))];
+                    m('span.glyphicon.glyphicon-chevron-down #dropzoneBtnGlyphicon'), ' Upload Public Files'), m.component(AddProject, {
+                    buttonTemplate: m('button.btn.btn-success.btn-success-high-contrast.m-t-md.f-w-xl.pull-right[data-toggle="modal"][data-target="#addProjectFromHome"]',
+                        {
+                            onclick: function () {
+                                $osf.trackClick('quickSearch', 'add-project', 'open-add-project-modal');
+                            }
+                        }, 'Create new project'),
+                    modalID: 'addProjectFromHome',
+                    stayCallback: function _stayCallback_inPanel() {
+                        document.location.reload(true);
+                    },
+                    trackingCategory: 'quickSearch',
+                    trackingAction: 'add-project',
+                    templatesFetcher: ctrl.templateNodes
+                })))];
         }
-          return m('.row-bottom-xs', m('.col-xs-12.m-b-sm', headerTemplate()),
-              m('h4.text-center #LinkToShareFiles', 'View your ', m('a', {href: '/share_window/', onclick: function() {}}, 'Public Files Project')),
-              m('div.p-v-xs.drop-zone-format.drop-zone-invis .pointer .panel #shareWindowDropzone',
-              m('button.close[aria-label="Close"]',{ onclick : function() {
-                  $('#shareWindowDropzone').hide();
-                  $('div.dz-preview').remove();
-                  $('#glyph').toggleClass('glyphicon glyphicon-chevron-up');
-                  $('#glyph').toggleClass('glyphicon glyphicon-chevron-down');
-              }}, m('.drop-zone-close', 'x')),
-              m('p.text-center.top#shareWindowDropzone', m('h1.drop-zone-bold',  'Drop files to upload'),
-                  'Click the box to upload files. Files are automatically uploaded to your ',m('a', {href: '/share_window/', onclick: function() {}}, 'Public Files'))));
-  }
+
+        // Activate Public Files tooltip info
+        $('[data-toggle="tooltip"]').tooltip();
+        return m('.row-bottom-xs', m('.col-xs-12.m-b-sm', headerTemplate()),
+            m('h4.text-center #LinkToShareFiles', 'View your ', m('a', {
+                    href: '/share_window/', onclick: function () {
+                    }
+                }, 'Public Files Project '),
+                m('i.fa.fa-question-circle.text-muted', {
+                    'data-toggle': 'tooltip',
+                    'title': 'The Public Files Project allows you to easily collaborate and share your files with anybody.',
+                    'data-placement': 'bottom'
+                }, '')),
+            m('div.p-v-xs.drop-zone-format.drop-zone-invis .pointer .panel #shareWindowDropzone',
+                m('button.close[aria-label="Close"]', {
+                    onclick: function () {
+                        $('#shareWindowDropzone').hide();
+                        $('div.dz-preview').remove();
+                        $('#glyph').toggleClass('glyphicon glyphicon-chevron-up');
+                        $('#glyph').toggleClass('glyphicon glyphicon-chevron-down');
+                        $('.drop-zone-format').css({'padding-bottom': '175px'});
+                    }
+                }, m('.drop-zone-close', '×')),
+                m('.dz-p.text-center.top#shareWindowDropzone', m('h1.drop-zone-bold', 'Drop files to upload'),
+                    'Click the box to upload files. Files are automatically uploaded to your ',
+                    m('a', {
+                        href: '/share_window/', onclick: function (e) {
+                            e.stopImmediatePropagation();
+                        }
+                    }, 'Public Files'))));
+    }
 };
 
 module.exports = ShareWindowDropzone;

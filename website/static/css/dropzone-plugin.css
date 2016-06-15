@@ -1,20 +1,17 @@
 
-/*
-preview -> file-preview -> details -> filename
-*/
-
 .dz-preview {
-    background: rgba(255,255,255,0.8);
-  position: relative;
-  display: inline-block;
-  margin: 10px;
-  width: 120px;
-  height:150px;
-  vertical-align: top;
-  border: 1px solid #acacac;
-  padding: 6px 6px 6px 6px;
-    cursor:default;
+    background: rgba(255, 255, 255, 0.8);
+    position: relative;
+    display: inline-block;
+    margin: 7px 2.3% 7px 2.3%;
+    width: 120px;
+    height: 150px;
+    vertical-align: top;
+    border: 1px solid #acacac;
+    padding: 6px 6px 6px 6px;
+    cursor: default;
 }
+
 .dz-preview-background-success {
     background: #ddf0e2;
 }
@@ -25,20 +22,21 @@ preview -> file-preview -> details -> filename
 
 .dz-preview .dz-details {
 
-  width: 100px;
-  height: 100px;
-  position: relative;
-  background: #ebebeb;
-  padding: 5px;
+    width: 100px;
+    height: 100px;
+    position: relative;
+    background: #ebebeb;
+    padding: 5px;
     left: 3px;
-  margin-bottom: 22px;
+    margin-bottom: 22px;
 }
+
 .dz-preview .dz-details img {
-   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100px;
-  height: 100px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100px;
+    height: 100px;
 }
 
 .dz-preview:hover .dz-details {
@@ -47,45 +45,48 @@ preview -> file-preview -> details -> filename
 }
 
 .dz-preview:hover .dz-details img {
-  display:none;
+    display: none;
 }
 
 .dz-preview .dz-details .dz-size {
     position: absolute;
-  bottom: -40px;
-  left: 3px;
-  height: 28px;
-  line-height: 28px;
+    bottom: -40px;
+    left: 3px;
+    height: 28px;
+    line-height: 28px;
 }
 
 .dz-preview.dz-file-preview [data-dz-thumbnail] {
-  display: none;
+    display: none;
 }
+
 .dz-preview .dz-details .dz-filename {
     overflow: hidden;
-  height: 100%;
+    height: 100%;
 }
+
 .dz-preview .dz-progress {
-  position: absolute;
-  top: 110px;
-  left: 10px;
-  right: 10px;
-  height: 10px;
-  background: #d7d7d7;
-  display: none;
+    position: absolute;
+    top: 110px;
+    left: 10px;
+    right: 10px;
+    height: 10px;
+    background: #d7d7d7;
+    display: none;
 }
+
 .dz-preview .dz-progress .dz-upload {
-  display: block;
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
+    display: block;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
     background-image: -webkit-linear-gradient(top, #337ab7 0%, #286090 100%);
-  background-image:      -o-linear-gradient(top, #337ab7 0%, #286090 100%);
-  background-image: -webkit-gradient(linear, left top, left bottom, from(#337ab7), to(#286090));
-  background-image:         linear-gradient(to bottom, #337ab7 0%, #286090 100%);
-  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ff337ab7', endColorstr='#ff286090', GradientType=0);
-  background-repeat: repeat-x;
+    background-image: -o-linear-gradient(top, #337ab7 0%, #286090 100%);
+    background-image: -webkit-gradient(linear, left top, left bottom, from(#337ab7), to(#286090));
+    background-image: linear-gradient(to bottom, #337ab7 0%, #286090 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ff337ab7', endColorstr='#ff286090', GradientType=0);
+    background-repeat: repeat-x;
 }
 
 .dz-preview.dz-processing .dz-progress {
@@ -94,12 +95,12 @@ preview -> file-preview -> details -> filename
 
 .dz-preview .dz-success-mark, .dz-preview .dz-error-mark {
     display: none;
-  position: absolute;
-  width: 40px;
-  height: 40px;
-  font-size: 20px;
-  right: -15px;
-  top: 0;
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+    right: -15px;
+    top: 0;
 }
 
 .dz-preview .dz-success-mark {
@@ -118,43 +119,48 @@ preview -> file-preview -> details -> filename
     display: block;
 }
 
-.dz-drag-hover {
-  border-color: rgba(0,0,0,0.15);
-  background: rgba(0,0,0,0.04);
-}
-
 .dz-preview .dz-error-message {
     display: none;
-  position: absolute;
-  top: -5px;
-  left: -20px;
-  background: rgba(245,245,245,0.8);
-  padding: 8px 10px;
-  color: #800;
-  min-width: 140px;
-  max-width: 500px;
-  z-index: 500;
+    position: absolute;
+    top: -5px;
+    left: -20px;
+    background: rgba(245, 245, 245, 0.8);
+    padding: 8px 10px;
+    color: #800;
+    min-width: 140px;
+    max-width: 500px;
+    z-index: 500;
 }
 
 .dz-preview:hover.dz-error .dz-error-message {
-    display:block;
+    display: block;
 }
 
 .drop-zone-format {
-     background: rgba(255, 255, 255, .49);
-    padding: 50px;
+    background: rgba(255, 255, 255, .49);
+    padding-bottom: 175px;
+    padding-left: 10px;
+    padding-right: 10px;
     border-radius: 5px;
     margin-top: 0;
-    clear: both;
-
-    border: 2px dashed #999;
+    border: 3px solid #999;
+    -webkit-transition: background .4s ease;
+    -moz-transition: background .4s ease;
+    -o-transition: background .4s ease;
+    transition: background .4s ease, box-shadow 0.4s ease;
 
 }
+
 .drop-zone-format:hover {
     border: 3px solid;
     border-color: #52A452;
-    background: rgba(255,255,255,0.2);
+    background: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
 
+.drop-zone-format::after {
+
+    transition: opacity 0.4s ease-in-out;
 }
 
 .drop-zone-disp {
@@ -166,11 +172,9 @@ preview -> file-preview -> details -> filename
 }
 
 .drop-zone-close {
-    margin-top: -20px;
-    margin-right: -20px;
-    position:relative;
-    top: -20px;
-    right: -20px;
+    font-size: 28px;
+    position: relative;
+
 }
 
 .drop-zone-bold {
@@ -182,8 +186,8 @@ preview -> file-preview -> details -> filename
 }
 
 .row-bottom-xs {
-  margin-right: -15px;
-  margin-left: -15px;
+    margin-right: -15px;
+    margin-left: -15px;
     margin-bottom: -30px;
 }
 
@@ -234,4 +238,9 @@ preview -> file-preview -> details -> filename
     top: 28px;
     right: -48px;
 
+}
+.dz-p {
+    border-bottom: 3px solid #999;
+    margin: auto;
+    width: 100%;
 }
