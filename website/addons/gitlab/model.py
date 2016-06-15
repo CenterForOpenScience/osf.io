@@ -48,9 +48,9 @@ class GitLabProvider(ExternalProvider):
         user_info = client.user()
 
         return {
-            'provider_id': str(user_info.id),
-            'profile_url': user_info.html_url,
-            'display_name': user_info.login
+            'provider_id': user_info['id'],
+            'profile_url': user_info['web_url'],
+            'display_name': user_info['name']
         }
 
 
@@ -176,25 +176,29 @@ class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     # TODO: Delete me and replace with serialize_settings / Knockout
     def to_json(self, user):
+
         ret = super(GitLabNodeSettings, self).to_json(user)
         user_settings = user.get_addon('gitlab')
         ret.update({
             'user_has_auth': user_settings and user_settings.has_auth,
             'is_registration': self.owner.is_registration,
         })
+
         if self.user_settings and self.user_settings.has_auth:
+
             valid_credentials = False
             owner = self.user_settings.owner
             connection = GitLabClient(external_account=self.external_account)
+
             # TODO: Fetch repo list client-side
             # Since /user/repos excludes organization repos to which the
             # current user has push access, we have to make extra requests to
             # find them
             valid_credentials = True
             try:
-                repos = itertools.chain.from_iterable((connection.repos(), connection.my_org_repos()))
+                repos = connection.repos()
                 repo_names = [
-                    '{0} / {1}'.format(repo.owner.login, repo.name)
+                    '{0} / {1}'.format(repo['owner'], repo['name'])
                     for repo in repos
                 ]
             except GitLabError:
