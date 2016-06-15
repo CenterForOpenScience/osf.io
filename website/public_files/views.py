@@ -2,6 +2,7 @@ import httplib as http
 
 from website.project.model import Node
 from modularodm import Q
+from modularodm.exceptions import NoResultsFound
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
 
@@ -9,10 +10,11 @@ from framework.auth.decorators import must_be_logged_in
 def view_public_files(auth, **kwargs):
 
     user = auth.user
-    publicFilesCollection = Node.find_one(Q('is_public_files_collection', 'eq', True) & Q('contributors', 'eq', user._id))
-
-    if not publicFilesCollection:
+    try:
+        publicFilesCollection = Node.find_one(Q('is_public_files_collection', 'eq', True) & Q('contributors', 'eq', user._id))
+    except NoResultsFound:
         raise HTTPError(http.NOT_FOUND)
+
     return {
         'node':
             {
@@ -25,10 +27,11 @@ def view_public_files(auth, **kwargs):
 
 def view_public_files_id(uid, **kwargs):
 
-    publicFilesCollection = Node.find_one(Q('is_public_files_collection', 'eq', True) & Q('contributors', 'eq', uid))
-
-    if not publicFilesCollection:
+    try:
+        publicFilesCollection = Node.find_one(Q('is_public_files_collection', 'eq', True) & Q('contributors', 'eq', uid))
+    except NoResultsFound:
         raise HTTPError(http.NOT_FOUND)
+
     return {
         'node':
             {
