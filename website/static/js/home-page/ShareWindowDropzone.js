@@ -110,21 +110,16 @@ var ShareWindowDropzone = {
         };
 
 
-
+        var shareLink = "";
         $("#shareWindowDropzone").on("click", "div.dz-share", function(e){
-                var shareLink = "";
-                var el = document.getElementsByClassName('dz-preview');
-                    for (var i = 0; i < el.length; i++) {
-                       // console.log(i +" > "+ fileURLArray[i]);
-                        //text(fileURLArray[i]);
-                        if($(".dz-share").index(this) == i){
-                            shareLink = fileURLArray[i];
-                        }
+            var el = document.getElementsByClassName('dz-preview');
+                for (var i = 0; i < el.length; i++) {
+                    if($(".dz-share").index(this) == i){
+                        shareLink = fileURLArray[i];
                     }
-                    clip.setData("text/plain" , shareLink);
-                    console.log(clip.getData());
-
-               $(e.target).parent().siblings('.alertbubble').finish().show().delay(1000).fadeOut("slow");
+                }
+           clip.setData("text/plain" , shareLink);
+           $(e.target).parent().siblings('.alertbubble').finish().show().delay(1000).fadeOut("slow");
         });
 
 
@@ -139,7 +134,7 @@ var ShareWindowDropzone = {
                             m('div.dz-progress',
                                 m('span[data-dz-uploadprogress].dz-upload')
                             ),
-                            m(".dz-share", [" ",m("i.fa.fa-share-alt.copy[aria-hidden='true'][data-clipboard-text='Copy Me!']")," "])," ",m("span.alertbubble.alertbubblepos", [m("i.fa.fa-clipboard[aria-hidden='true']")," Copied"]),
+                            m(".dz-share", [" ",m("i.fa.fa-share-alt.copy[aria-hidden='true'][data-clipboard-text='"+shareLink+"']")," "])," ",m("span.alertbubble.alertbubblepos", [m("i.fa.fa-clipboard[aria-hidden='true']")," Copied"]),
 
                             m('div.dz-success-mark',
                                 m('span.glyphicon.glyphicon-ok-circle')
