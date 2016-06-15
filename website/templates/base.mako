@@ -195,7 +195,8 @@
                 },
                 allInstitutions: ${ all_institutions | sjson, n},
                 popular: ${ popular_links_node | sjson, n },
-                newAndNoteworthy: ${ noteworthy_links_node | sjson, n }
+                newAndNoteworthy: ${ noteworthy_links_node | sjson, n },
+                maintenance: ${ maintenance | sjson, n}
             });
         </script>
 
@@ -289,8 +290,7 @@
                 <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                     <span aria-hidden="true">&times;</span></button>
                 <strong>Notice:</strong> The site will undergo maintenance between
-                <strong>${ maintenance['start'] | sjson, n } and ${ maintenance['end'] | sjson, n }</strong>
-##                 <span id="maintenanceTime"></span>.
+                <span id="maintenanceTime"></span>.
                 Thank you for your patience.
             </div>
             ## End Maintenance alert

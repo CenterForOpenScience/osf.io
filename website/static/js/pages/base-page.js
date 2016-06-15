@@ -231,14 +231,12 @@ $(function() {
         $maintenance.show();
     }
     // Localize maintenance period datetimes
-    var startMaintenanceUTC = moment.utc({year: 2016, month: 3, day: 15, hour: 1});
-    var endMaintenanceUTC = moment.utc({year: 2016, month: 3, day: 15, hour: 3, minute: 59});
-    var startMaintenance = moment(startMaintenanceUTC.toDate());
-    var endMaintenance = moment(endMaintenanceUTC.toDate());
+    var startMaintenance = moment(window.contextVars.maintenance.start);
+    var endMaintenance = moment(window.contextVars.maintenance.end);
     $('#maintenanceTime').html(
         '<strong>' +
         startMaintenance.format('lll') +
-            '-' +
+            ' and ' +
                 endMaintenance.format('lll') + '</strong>' +
                     ' (' + startMaintenance.format('ZZ') + ' UTC)');
     // END Maintenance alert
