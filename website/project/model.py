@@ -1433,9 +1433,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                     if not self.is_public_files_collection:
                         self.set_title(title=value, auth=auth, save=False)
                     else:
-                        raise NodeUpdateError(reason='Public Files Collections cannot be renamed.', key=key)
+                        raise NodeUpdateError(reason='Public Files cannot be renamed.', key=key)
                 else:
-                    raise NodeUpdateError(reason='Bookmark collections and Public Files Collections cannot be renamed.', key=key)
+                    raise NodeUpdateError(reason='Bookmark collections cannot be renamed.', key=key)
             elif key == 'description':
                 self.set_description(description=value, auth=auth, save=False)
             elif key == 'is_public':
@@ -1724,10 +1724,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if node.is_bookmark_collection:
             raise ValueError(
                 'Pointer to bookmark collection ({0}) not allowed.'.format(node._id)
-            )
-        if node.is_public_files_collection:
-            raise ValueError(
-                'Pointer to public files collection ({0}) not allowed'.format(node._id)
             )
 
         # Append pointer
@@ -2075,7 +2071,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             raise NodeStateError("Bookmark collections may not be deleted.")
 
         if self.is_public_files_collection:
-            raise NodeStateError("Public Files collections may not be deleted.")
+            raise NodeStateError("Public Files may not be deleted.")
 
         if not self.can_edit(auth):
             raise PermissionsError('{0!r} does not have permission to modify this {1}'.format(auth.user, self.category or 'node'))
@@ -2496,7 +2492,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if self.is_registration:
             path = '/registrations/{}/'.format(self._id)
             return api_v2_url(path)
-        if self.is_collection and not self.is_public_files_collection:
+        if self.is_collection:
             path = '/collections/{}/'.format(self._id)
             return api_v2_url(path)
             pass

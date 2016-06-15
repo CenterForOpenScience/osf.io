@@ -34,10 +34,6 @@ function _poTitleColumn(item) {
         e.stopImmediatePropagation();
     };
     var node = item.data; // Where actual data of the node is
-    console.log(node.id);
-    //if(window.contextVars['shareWindowId'] == node.id){
-    //return ;
-    //}
     var css = ''; // Keep for future expandability -- Remove: item.data.isSmartFolder ? 'project-smart-folder smart-folder' : '';
     if (item.data.archiving) { // TODO check if this variable will be available
         return  m('span', {'class': 'registration-archiving'}, node.attributes.title + ' [Archiving]');
