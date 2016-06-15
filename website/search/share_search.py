@@ -30,10 +30,16 @@ try:
         request_timeout=settings.ELASTIC_TIMEOUT
     )
 except ConnectionError:
-    sentry.log_exception()
-    sentry.log_message('The SEARCH_ENGINE setting is set to "elastic", but there '
-            'was a problem starting the elasticsearch interface. Is '
-            'elasticsearch running?')
+    message = (
+        'The SEARCH_ENGINE setting is set to "elastic", but there '
+        'was a problem starting the elasticsearch interface. Is '
+        'elasticsearch running?'
+    )
+    try:
+        sentry.log_exception()
+        sentry.log_message(message)
+    except AssertionError:  # App has not yet been initialized
+        logger.exception(message)
     share_es = None
 
 # This is temporary until we update the backend
