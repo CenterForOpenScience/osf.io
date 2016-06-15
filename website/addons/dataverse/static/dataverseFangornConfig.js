@@ -270,8 +270,6 @@ function _fangornColumns(item) {
             filter : false,
             custom : function() {return m('');}
         });
-    }
-    if (tb.options.placement === 'project-files') {
         columns.push(
         {
             data  : 'downloads',
