@@ -17,7 +17,6 @@ from invoke import run, Collection
 
 from website import settings
 from utils import pip_install, bin_prefix
-from website.maintenance import set_maintenance, get_maintenance, unset_maintenance
 
 logging.getLogger('invoke').setLevel(logging.CRITICAL)
 
@@ -965,6 +964,8 @@ def usage():
 
 @task
 def set_maintenance_state(start=None, end=None):
+    from website.maintenance import set_maintenance
+
     """Set the time period for the maintenance notice to be displayed.
     If no start or end values are displayed, default to starting now
     and ending 24 hours from now. If no timezone info is passed along,
@@ -983,6 +984,7 @@ def set_maintenance_state(start=None, end=None):
 
 @task
 def get_maintenance_state():
+    from website.maintenance import get_maintenance
     """Get the current start and end times for the maintenance state.
     Return None for start and end if there is no maintenacne state
     """
@@ -991,4 +993,5 @@ def get_maintenance_state():
 
 @task
 def unset_maintenance_state():
+    from website.maintenance import unset_maintenance
     unset_maintenance()
