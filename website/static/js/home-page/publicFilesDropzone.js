@@ -191,7 +191,7 @@ var PublicFilesDropzone = {
 
         return m('.row-bottom-xs', m('.col-xs-12.m-b-sm', headerTemplate()),
             m('h4.text-center #LinkToShareFiles', 'View your ', m('a', {
-                    href: '/pubic_files/', onclick: function () {
+                    href: '/public_files/', onclick: function () {
                     }
                 }, 'Public Files Project '),
                 m('i.fa.fa-question-circle.text-muted', {

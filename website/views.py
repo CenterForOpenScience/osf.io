@@ -221,7 +221,7 @@ def resolve_guid(guid, suffix=None):
 
     if guid_object:
         # redirect to stop user from visiting unused parts of public files page, (settings, wiki, etc.)
-        if getattr(guid_object, 'is_public_files_collection'):
+        if getattr(guid_object, 'is_public_files_collection', False):
             return redirect("public_files/" + guid_object.creator._id)
 
         # verify that the object implements a GuidStoredObject-like interface. If a model
