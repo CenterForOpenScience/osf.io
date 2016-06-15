@@ -875,7 +875,8 @@ class TestAddonFileViews(OsfTestCase):
         assert_true(TrashedFileNode.load(file_node._id))
         assert_false(StoredFileNode.load(subfolder._id))
 
-    def test_archived_from_url(self):
+    @mock.patch('website.archiver.tasks.archive')
+    def test_archived_from_url(self, mock_archive):
         file_node = self.get_test_file()
         second_file_node = self.get_second_test_file()
         file_node.copied_from = second_file_node
@@ -891,7 +892,8 @@ class TestAddonFileViews(OsfTestCase):
         assert_true(archived_from_url)
         assert_urls_equal(archived_from_url, view_url)
 
-    def test_archived_from_url_without_copied_from(self):
+    @mock.patch('website.archiver.tasks.archive')
+    def test_archived_from_url_without_copied_from(self, mock_archive):
         file_node = self.get_test_file()
 
         registered_node = self.project.register_node(
@@ -902,7 +904,8 @@ class TestAddonFileViews(OsfTestCase):
         archived_from_url = views.get_archived_from_url(registered_node, file_node)
         assert_false(archived_from_url)
 
-    def test_copied_from_id_trashed(self):
+    @mock.patch('website.archiver.tasks.archive')
+    def test_copied_from_id_trashed(self, mock_archive):
         file_node = self.get_test_file()
         second_file_node = self.get_second_test_file()
         file_node.copied_from = second_file_node
