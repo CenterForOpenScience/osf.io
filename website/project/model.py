@@ -1430,7 +1430,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             # Title and description have special methods for logging purposes
             if key == 'title':
                 if not self.is_bookmark_collection:
-                    self.set_title(title=value, auth=auth, save=False)
+                    if not self.is_public_files_collection:
+                        self.set_title(title=value, auth=auth, save=False)
+                    else:
+                        raise NodeUpdateError(reason='Public Files cannot be renamed.', key=key)
                 else:
                     raise NodeUpdateError(reason='Bookmark collections cannot be renamed.', key=key)
             elif key == 'description':
@@ -1508,17 +1511,23 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             if existing_bookmark_collections.count() > 0:
                 raise NodeStateError("Only one bookmark collection allowed per user.")
 
-        # Bookmark collections are always named 'Bookmarks'
-        if self.is_bookmark_collection and self.title != 'Bookmarks':
-            self.title = 'Bookmarks'
+        if first_save and self.is_public_files_collection:
+            existing_public_files_collections = Node.find(
+                Q('is_public_files_collection', 'eq', True) & Q('contributors', 'eq', self.creator._id)
+            )
+            if existing_public_files_collections.count() > 0:
+                raise NodeStateError("Only one public files collection allowed per user.")
 
         if first_save and self.is_public_files_collection:
             existing_public_files_collections = Node.find(
                 Q('is_public_files_collection', 'eq', True) & Q('contributors', 'eq', self.creator._id)
             )
             if existing_public_files_collections.count() > 0:
-                raise NodeStateError("Only one Public Files collection allowed per user.")
+                raise NodeStateError("Only one bookmark collection allowed per user.")
 
+        # Bookmark collections are always named 'Bookmarks'
+        if self.is_bookmark_collection and self.title != 'Bookmarks':
+            self.title = 'Bookmarks'
         is_original = not self.is_registration and not self.is_fork
         if 'suppress_log' in kwargs.keys():
             suppress_log = kwargs['suppress_log']
@@ -2062,7 +2071,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             raise NodeStateError("Bookmark collections may not be deleted.")
 
         if self.is_public_files_collection:
-            raise NodeStateError("Public Files collections may not be deleted.")
+            raise NodeStateError("Public Files may not be deleted.")
 
         if not self.can_edit(auth):
             raise PermissionsError('{0!r} does not have permission to modify this {1}'.format(auth.user, self.category or 'node'))
@@ -2486,6 +2495,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if self.is_collection:
             path = '/collections/{}/'.format(self._id)
             return api_v2_url(path)
+            pass
         path = '/nodes/{}/'.format(self._id)
         return api_v2_url(path)
 

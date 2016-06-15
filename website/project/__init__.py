@@ -117,6 +117,12 @@ def new_public_files_collection(user):
     :return Node: Created node
 
     """
+    existing_public_files_collections = Node.find(
+        Q('is_public_files_collection', 'eq', True) & Q('contributors', 'eq', user._id)
+    )
+
+    if existing_public_files_collections.count() > 0:
+        raise NodeStateError("Users may only have one public files collection")
 
     title = user.fullname + "'s Public Files"
 
