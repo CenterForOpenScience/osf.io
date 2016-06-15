@@ -54,7 +54,7 @@ def notify_desk_about_failed_registrations(dry_run=True):
                 mail=mails.ARCHIVE_REGISTRATION_STUCK_DESK,
                 user=f.creator,
                 src=f.registered_from,
-                archive_job=f.archve_job,
+                archive_job=f.archive_job,
             )
 
             count += 1
