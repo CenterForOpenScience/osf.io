@@ -7,11 +7,11 @@ var $osf = require('js/osfHelpers');
 
 var nodeApiUrl = window.contextVars.node.urls.api;
 
-var GithubConfigHelper = (function() {
+var GitLabConfigHelper = (function() {
 
     var connectExistingAccount = function(accountId) {
         $osf.putJSON(
-                nodeApiUrl + 'github/user_auth/',
+                nodeApiUrl + 'gitlab/user_auth/',
                 {'external_account_id': accountId}
             ).done(function() {
                     if($osf.isIE()){
@@ -25,12 +25,12 @@ var GithubConfigHelper = (function() {
 
     var updateHidden = function(val) {
         var repoParts = val.split('/');
-        $('#githubUser').val($.trim(repoParts[0]));
-        $('#githubRepo').val($.trim(repoParts[1]));
+        $('#gitlabUser').val($.trim(repoParts[0]));
+        $('#gitlabRepo').val($.trim(repoParts[1]));
     };
 
     var displayError = function(msg) {
-        $('#addonSettingsGithub').find('.addon-settings-message')
+        $('#addonSettingsGitLab').find('.addon-settings-message')
             .text('Error: ' + msg)
             .removeClass('text-success').addClass('text-danger')
             .fadeOut(100).fadeIn();
@@ -38,7 +38,7 @@ var GithubConfigHelper = (function() {
 
     var createRepo = function() {
 
-        var $elm = $('#addonSettingsGithub');
+        var $elm = $('#addonSettingsGitLab');
         var $select = $elm.find('select');
 
         bootbox.prompt({
@@ -56,7 +56,7 @@ var GithubConfigHelper = (function() {
                 }
 
                 $osf.postJSON(
-                    nodeApiUrl + 'github/repo/create/',
+                    nodeApiUrl + 'gitlab/repo/create/',
                     {name: repoName}
                 ).done(function (response) {
                         var repoName = response.user + ' / ' + response.repo;
@@ -77,7 +77,7 @@ var GithubConfigHelper = (function() {
     };
 
     var askImport = function() {
-        $.get('/api/v1/settings/github/accounts/'
+        $.get('/api/v1/settings/gitlab/accounts/'
         ).done(function(data){
             var accounts = data.accounts.map(function(account) {
                 return {
@@ -87,7 +87,7 @@ var GithubConfigHelper = (function() {
             });
             if (accounts.length > 1) {
                 bootbox.prompt({
-                    title: 'Choose GitHub Account to Import',
+                    title: 'Choose GitLab Account to Import',
                     inputType: 'select',
                     inputOptions: ko.utils.arrayMap(
                         accounts,
@@ -110,8 +110,8 @@ var GithubConfigHelper = (function() {
                 });
             } else {
                 bootbox.confirm({
-                    title: 'Import GitHub Account?',
-                    message: 'Are you sure you want to link your GitHub account with this project?',
+                    title: 'Import GitLab Account?',
+                    message: 'Are you sure you want to link your GitLab account with this project?',
                     callback: function(confirmed) {
                         if (confirmed) {
                             connectExistingAccount(accounts[0].id);
@@ -125,42 +125,42 @@ var GithubConfigHelper = (function() {
                 });
             }
         }).fail(function(xhr, textStatus, error) {
-            displayError('Could not GET GitHub accounts for user.');
+            displayError('Could not GET GitLab accounts for user.');
         });
     };
 
     $(document).ready(function() {
-        $('#githubSelectRepo').on('change', function() {
+        $('#gitlabSelectRepo').on('change', function() {
             var value = $(this).val();
             if (value) {
                 updateHidden(value);
             }
         });
 
-        $('#githubCreateRepo').on('click', function() {
+        $('#gitlabCreateRepo').on('click', function() {
             createRepo();
         });
 
-        $('#githubImportToken').on('click', function() {
+        $('#gitlabImportToken').on('click', function() {
             askImport();
         });
 
-        $('#githubCreateToken').on('click', function() {
+        $('#gitlabCreateToken').on('click', function() {
             window.oauthComplete = function(res) {
                 askImport();
             };
-            window.open('/oauth/connect/github/');
+            window.open('/oauth/connect/gitlab/');
         });
 
-        $('#githubRemoveToken').on('click', function() {
+        $('#gitlabRemoveToken').on('click', function() {
             bootbox.confirm({
-                title: 'Disconnect GitHub Account?',
-                message: 'Are you sure you want to remove this GitHub account?',
+                title: 'Disconnect GitLab Account?',
+                message: 'Are you sure you want to remove this GitLab account?',
                 callback: function(confirm) {
                     if(confirm) {
                         $.ajax({
                         type: 'DELETE',
-                        url: nodeApiUrl + 'github/user_auth/'
+                        url: nodeApiUrl + 'gitlab/user_auth/'
                     }).done(function() {
                         window.location.reload();
                     }).fail(
@@ -177,8 +177,8 @@ var GithubConfigHelper = (function() {
             });
         });
 
-        $('#addonSettingsGithub .addon-settings-submit').on('click', function() {
-            if (!$('#githubRepo').val()) {
+        $('#addonSettingsGitLab .addon-settings-submit').on('click', function() {
+            if (!$('#gitlabRepo').val()) {
                 return false;
             }
         });
@@ -187,4 +187,4 @@ var GithubConfigHelper = (function() {
 
 })();
 
-module.exports = GithubConfigHelper;
+module.exports = GitLabConfigHelper;
