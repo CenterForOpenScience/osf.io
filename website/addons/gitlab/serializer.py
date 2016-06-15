@@ -2,20 +2,20 @@ from website.addons.base.serializer import StorageAddonSerializer
 
 from website.util import api_url_for
 
-from website.addons.github.api import GitHubClient
-from website.addons.github.exceptions import GitHubError
+from website.addons.gitlab.api import GitLabClient
+from website.addons.gitlab.exceptions import GitLabError
 
 
-class GitHubSerializer(StorageAddonSerializer):
+class GitLabSerializer(StorageAddonSerializer):
 
-    addon_short_name = 'github'
+    addon_short_name = 'gitlab'
 
     def credentials_are_valid(self, user_settings, client):
         if user_settings:
-            client = client or GitHubClient(external_account=user_settings.external_accounts[0])
+            client = client or GitLabClient(external_account=user_settings.external_accounts[0])
             try:
                 client.user()
-            except (GitHubError, IndexError):
+            except (GitLabError, IndexError):
                 return False
         return True
 
@@ -31,11 +31,11 @@ class GitHubSerializer(StorageAddonSerializer):
 
         return {
             'auth': api_url_for('oauth_connect',
-                                service_name='github'),
-            'importAuth': node.api_url_for('github_import_auth'),
+                                service_name='gitlab'),
+            'importAuth': node.api_url_for('gitlab_import_auth'),
             'files': node.web_url_for('collect_file_trees'),
-            'folders': node.api_url_for('github_root_folder'),
-            'config': node.api_url_for('github_set_config'),
-            'deauthorize': node.api_url_for('github_deauthorize_node'),
-            'accounts': node.api_url_for('github_account_list'),
+            'folders': node.api_url_for('gitlab_root_folder'),
+            'config': node.api_url_for('gitlab_set_config'),
+            'deauthorize': node.api_url_for('gitlab_deauthorize_node'),
+            'accounts': node.api_url_for('gitlab_account_list'),
         }

@@ -9,10 +9,10 @@ from flask import request, make_response
 from framework.exceptions import HTTPError
 
 from website.addons.base import generic_views
-from website.addons.github.api import GitHubClient, ref_to_params
-from website.addons.github.exceptions import NotFoundError, GitHubError
-from website.addons.github.serializer import GitHubSerializer
-from website.addons.github.utils import (
+from website.addons.gitlab.api import GitLabClient, ref_to_params
+from website.addons.gitlab.exceptions import NotFoundError, GitLabError
+from website.addons.gitlab.serializer import GitLabSerializer
+from website.addons.gitlab.utils import (
     get_refs, check_permissions,
     verify_hook_signature, MESSAGES
 )
@@ -30,42 +30,42 @@ logger = logging.getLogger(__name__)
 logging.getLogger('github3').setLevel(logging.WARNING)
 logging.getLogger('requests.packages.urllib3.connectionpool').setLevel(logging.WARNING)
 
-SHORT_NAME = 'github'
-FULL_NAME = 'GitHub'
+SHORT_NAME = 'gitlab'
+FULL_NAME = 'GitLab'
 
 ############
 # Generics #
 ############
 
-github_account_list = generic_views.account_list(
+gitlab_account_list = generic_views.account_list(
     SHORT_NAME,
-    GitHubSerializer
+    GitLabSerializer
 )
 
-github_import_auth = generic_views.import_auth(
+gitlab_import_auth = generic_views.import_auth(
     SHORT_NAME,
-    GitHubSerializer
+    GitLabSerializer
 )
 
 def _get_folders(node_addon, folder_id):
     pass
 
-github_folder_list = generic_views.folder_list(
+gitlab_folder_list = generic_views.folder_list(
     SHORT_NAME,
     FULL_NAME,
     _get_folders
 )
 
-github_get_config = generic_views.get_config(
+gitlab_get_config = generic_views.get_config(
     SHORT_NAME,
-    GitHubSerializer
+    GitLabSerializer
 )
 
-github_deauthorize_node = generic_views.deauthorize_node(
+gitlab_deauthorize_node = generic_views.deauthorize_node(
     SHORT_NAME
 )
 
-github_root_folder = generic_views.root_folder(
+gitlab_root_folder = generic_views.root_folder(
     SHORT_NAME
 )
 
@@ -78,7 +78,7 @@ github_root_folder = generic_views.root_folder(
 @must_have_addon(SHORT_NAME, 'node')
 @must_be_addon_authorizer(SHORT_NAME)
 @must_have_permission('write')
-def github_set_config(auth, **kwargs):
+def gitlab_set_config(auth, **kwargs):
     node_settings = kwargs.get('node_addon', None)
     node = kwargs.get('node', None)
     user_settings = kwargs.get('user_addon', None)
@@ -92,15 +92,15 @@ def github_set_config(auth, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     # Parse request
-    github_user_name = request.json.get('github_user', '')
-    github_repo_name = request.json.get('github_repo', '')
+    gitlab_user_name = request.json.get('gitlab_user', '')
+    gitlab_repo_name = request.json.get('gitlab_repo', '')
 
-    if not github_user_name or not github_repo_name:
+    if not gitlab_user_name or not gitlab_repo_name:
         raise HTTPError(http.BAD_REQUEST)
 
     # Verify that repo exists and that user can access
-    connection = GitHubClient(external_account=node_settings.external_account)
-    repo = connection.repo(github_user_name, github_repo_name)
+    connection = GitLabClient(external_account=node_settings.external_account)
+    repo = connection.repo(gitlab_user_name, gitlab_repo_name)
     if repo is None:
         if user_settings:
             message = (
@@ -114,8 +114,8 @@ def github_set_config(auth, **kwargs):
         return {'message': message}, http.BAD_REQUEST
 
     changed = (
-        github_user_name != node_settings.user or
-        github_repo_name != node_settings.repo
+        gitlab_user_name != node_settings.user or
+        gitlab_repo_name != node_settings.repo
     )
 
     # Update hooks
@@ -125,18 +125,18 @@ def github_set_config(auth, **kwargs):
         node_settings.delete_hook()
 
         # Update node settings
-        node_settings.user = github_user_name
-        node_settings.repo = github_repo_name
+        node_settings.user = gitlab_user_name
+        node_settings.repo = gitlab_repo_name
 
         # Log repo select
         node.add_log(
-            action='github_repo_linked',
+            action='gitlab_repo_linked',
             params={
                 'project': node.parent_id,
                 'node': node._id,
-                'github': {
-                    'user': github_user_name,
-                    'repo': github_repo_name,
+                'gitlab': {
+                    'user': gitlab_user_name,
+                    'repo': gitlab_repo_name,
                 }
             },
             auth=auth,
@@ -151,13 +151,13 @@ def github_set_config(auth, **kwargs):
     return {}
 
 @must_be_contributor_or_public
-@must_have_addon('github', 'node')
-def github_download_starball(node_addon, **kwargs):
+@must_have_addon('gitlab', 'node')
+def gitlab_download_starball(node_addon, **kwargs):
 
     archive = kwargs.get('archive', 'tar')
     ref = request.args.get('sha', 'master')
 
-    connection = GitHubClient(external_account=node_addon.external_account)
+    connection = GitLabClient(external_account=node_addon.external_account)
     headers, data = connection.starball(
         node_addon.user, node_addon.repo, archive, ref
     )
@@ -173,10 +173,10 @@ def github_download_starball(node_addon, **kwargs):
 #########
 
 @must_be_contributor_or_public
-@must_have_addon('github', 'node')
-def github_root_folder(*args, **kwargs):
-    """View function returning the root container for a GitHub repo. In
-    contrast to other add-ons, this is exposed via the API for GitHub to
+@must_have_addon('gitlab', 'node')
+def gitlab_root_folder(*args, **kwargs):
+    """View function returning the root container for a GitLab repo. In
+    contrast to other add-ons, this is exposed via the API for GitLab to
     accommodate switching between branches and commits.
 
     """
@@ -184,15 +184,15 @@ def github_root_folder(*args, **kwargs):
     auth = kwargs['auth']
     data = request.args.to_dict()
 
-    return github_hgrid_data(node_settings, auth=auth, **data)
+    return gitlab_hgrid_data(node_settings, auth=auth, **data)
 
-def github_hgrid_data(node_settings, auth, **kwargs):
+def gitlab_hgrid_data(node_settings, auth, **kwargs):
 
     # Quit if no repo linked
     if not node_settings.complete:
         return
 
-    connection = GitHubClient(external_account=node_settings.external_account)
+    connection = GitLabClient(external_account=node_settings.external_account)
 
     # Initialize repo here in the event that it is set in the privacy check
     # below. This potentially saves an API call in _check_permissions, below.
@@ -206,7 +206,7 @@ def github_hgrid_data(node_settings, auth, **kwargs):
         except NotFoundError:
             # TODO: Test me @jmcarp
             # TODO: Add warning message
-            logger.error('Could not access GitHub repo')
+            logger.error('Could not access GitLab repo')
             return None
         if repo.private:
             return None
@@ -218,9 +218,9 @@ def github_hgrid_data(node_settings, auth, **kwargs):
             sha=kwargs.get('sha'),
             connection=connection,
         )
-    except (NotFoundError, GitHubError):
-        # TODO: Show an alert or change GitHub configuration?
-        logger.error('GitHub repo not found')
+    except (NotFoundError, GitLabError):
+        # TODO: Show an alert or change GitLab configuration?
+        logger.error('GitLab repo not found')
         return
 
     if branch is not None:
@@ -242,11 +242,11 @@ def github_hgrid_data(node_settings, auth, **kwargs):
         'private': node_settings.is_private
     }
     urls = {
-        'upload': node_settings.owner.api_url + 'github/file/' + (ref or ''),
-        'fetch': node_settings.owner.api_url + 'github/hgrid/' + (ref or ''),
-        'branch': node_settings.owner.api_url + 'github/hgrid/root/',
-        'zip': node_settings.owner.api_url + 'github/zipball/' + (ref or ''),
-        'repo': 'https://github.com/{0}/{1}/tree/{2}'.format(node_settings.user, node_settings.repo, branch)
+        'upload': node_settings.owner.api_url + 'gitlab/file/' + (ref or ''),
+        'fetch': node_settings.owner.api_url + 'gitlab/hgrid/' + (ref or ''),
+        'branch': node_settings.owner.api_url + 'gitlab/hgrid/root/',
+        'zip': node_settings.owner.api_url + 'gitlab/zipball/' + (ref or ''),
+        'repo': 'https://gitlab.com/{0}/{1}/tree/{2}'.format(node_settings.user, node_settings.repo, branch)
     }
 
     branch_names = [each.name for each in branches]
@@ -271,17 +271,17 @@ def github_hgrid_data(node_settings, auth, **kwargs):
 @must_have_addon(SHORT_NAME, 'node')
 @must_be_addon_authorizer(SHORT_NAME)
 @must_have_permission('write')
-def github_create_repo(**kwargs):
+def gitlab_create_repo(**kwargs):
     repo_name = request.json.get('name')
     if not repo_name:
         raise HTTPError(http.BAD_REQUEST)
 
     node_settings = kwargs['node_addon']
-    connection = GitHubClient(external_account=node_settings.external_account)
+    connection = GitLabClient(external_account=node_settings.external_account)
 
     try:
         repo = connection.create_repo(repo_name, auto_init=True)
-    except GitHubError:
+    except GitLabError:
         # TODO: Check status code
         raise HTTPError(http.BAD_REQUEST)
 
@@ -295,12 +295,12 @@ def github_create_repo(**kwargs):
 #########
 
 # TODO: Refactor using NodeLogger
-def add_hook_log(node, github, action, path, date, committer, include_urls=False,
+def add_hook_log(node, gitlab, action, path, date, committer, include_urls=False,
                  sha=None, save=False):
     """Add log event for commit from webhook payload.
 
     :param node: Node to add logs to
-    :param github: GitHub node settings record
+    :param gitlab: GitLab node settings record
     :param path: Path to file
     :param date: Date of commit
     :param committer: Committer name
@@ -309,9 +309,9 @@ def add_hook_log(node, github, action, path, date, committer, include_urls=False
     :param save: Save changes
 
     """
-    github_data = {
-        'user': github.user,
-        'repo': github.repo,
+    gitlab_data = {
+        'user': gitlab.user,
+        'repo': gitlab.repo,
     }
 
     urls = {}
@@ -331,7 +331,7 @@ def add_hook_log(node, github, action, path, date, committer, include_urls=False
             'project': node.parent_id,
             'node': node._id,
             'path': path,
-            'github': github_data,
+            'gitlab': gitlab_data,
             'urls': urls,
         },
         auth=None,
@@ -343,8 +343,8 @@ def add_hook_log(node, github, action, path, date, committer, include_urls=False
 
 @must_be_valid_project
 @must_not_be_registration
-@must_have_addon('github', 'node')
-def github_hook_callback(node_addon, **kwargs):
+@must_have_addon('gitlab', 'node')
+def gitlab_hook_callback(node_addon, **kwargs):
     """Add logs for commits from outside OSF.
 
     """
@@ -377,17 +377,17 @@ def github_hook_callback(node_addon, **kwargs):
         # Add logs
         for path in commit.get('added', []):
             add_hook_log(
-                node, node_addon, 'github_' + NodeLog.FILE_ADDED,
+                node, node_addon, 'gitlab_' + NodeLog.FILE_ADDED,
                 path, date, committer, include_urls=True, sha=_id,
             )
         for path in commit.get('modified', []):
             add_hook_log(
-                node, node_addon, 'github_' + NodeLog.FILE_UPDATED,
+                node, node_addon, 'gitlab_' + NodeLog.FILE_UPDATED,
                 path, date, committer, include_urls=True, sha=_id,
             )
         for path in commit.get('removed', []):
             add_hook_log(
-                node, node_addon, 'github_' + NodeLog.FILE_REMOVED,
+                node, node_addon, 'gitlab_' + NodeLog.FILE_REMOVED,
                 path, date, committer,
             )
 

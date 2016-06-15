@@ -16,33 +16,33 @@ from website.addons.base import exceptions
 from website.addons.base import AddonOAuthUserSettingsBase, AddonOAuthNodeSettingsBase
 from website.addons.base import StorageAddonBase
 
-from website.addons.github import utils
-from website.addons.github.api import GitHubClient
-from website.addons.github.serializer import GitHubSerializer
-from website.addons.github import settings as github_settings
-from website.addons.github.exceptions import ApiError, NotFoundError
+from website.addons.gitlab import utils
+from website.addons.gitlab.api import GitLabClient
+from website.addons.gitlab.serializer import GitLabSerializer
+from website.addons.gitlab import settings as gitlab_settings
+from website.addons.gitlab.exceptions import ApiError, NotFoundError
 from website.oauth.models import ExternalProvider
 
 
-hook_domain = github_settings.HOOK_DOMAIN or settings.DOMAIN
+hook_domain = gitlab_settings.HOOK_DOMAIN or settings.DOMAIN
 
 
-class GitHubProvider(ExternalProvider):
-    name = 'GitHub'
-    short_name = 'github'
+class GitLabProvider(ExternalProvider):
+    name = 'GitLab'
+    short_name = 'gitlab'
 
-    client_id = github_settings.CLIENT_ID
-    client_secret = github_settings.CLIENT_SECRET
+    client_id = gitlab_settings.CLIENT_ID
+    client_secret = gitlab_settings.CLIENT_SECRET
 
-    auth_url_base = github_settings.OAUTH_AUTHORIZE_URL
-    callback_url = github_settings.OAUTH_ACCESS_TOKEN_URL
-    default_scopes = github_settings.SCOPE
+    auth_url_base = gitlab_settings.OAUTH_AUTHORIZE_URL
+    callback_url = gitlab_settings.OAUTH_ACCESS_TOKEN_URL
+    default_scopes = gitlab_settings.SCOPE
 
     def handle_callback(self, response):
-        """View called when the OAuth flow is completed. Adds a new GitHubUserSettings
+        """View called when the OAuth flow is completed. Adds a new GitLabUserSettings
         record to the user and saves the account info.
         """
-        client = GitHubClient(
+        client = GitLabClient(
             access_token=response['access_token']
         )
 
@@ -55,21 +55,21 @@ class GitHubProvider(ExternalProvider):
         }
 
 
-class GitHubUserSettings(AddonOAuthUserSettingsBase):
-    """Stores user-specific github information
+class GitLabUserSettings(AddonOAuthUserSettingsBase):
+    """Stores user-specific gitlab information
     """
-    oauth_provider = GitHubProvider
-    serializer = GitHubSerializer
+    oauth_provider = GitLabProvider
+    serializer = GitLabSerializer
 
     def revoke_remote_oauth_access(self, external_account):
         """Overrides default behavior during external_account deactivation.
 
-        Tells GitHub to remove the grant for the OSF associated with this account.
+        Tells GitLab to remove the grant for the OSF associated with this account.
         """
-        connection = GitHubClient(external_account=external_account)
+        connection = GitLabClient(external_account=external_account)
         try:
             connection.revoke_token()
-        except GitHubError:
+        except GitLabError:
             pass
 
     # Required for importing username from social profile configuration page
@@ -85,9 +85,9 @@ class GitHubUserSettings(AddonOAuthUserSettingsBase):
         return None
 
 
-class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
-    oauth_provider = GitHubProvider
-    serializer = GitHubSerializer
+class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
+    oauth_provider = GitLabProvider
+    serializer = GitLabSerializer
 
     user = fields.StringField()
     repo = fields.StringField()
@@ -120,7 +120,7 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     def authorize(self, user_settings, save=False):
         self.user_settings = user_settings
         self.owner.add_log(
-            action='github_node_authorized',
+            action='gitlab_node_authorized',
             params={
                 'project': self.owner.parent_id,
                 'node': self.owner._id,
@@ -142,7 +142,7 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         self.clear_settings()
         if log:
             self.owner.add_log(
-                action='github_node_deauthorized',
+                action='gitlab_node_deauthorized',
                 params={
                     'project': self.owner.parent_id,
                     'node': self.owner._id,
@@ -153,7 +153,7 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         self.clear_auth()
 
     def delete(self, save=False):
-        super(GitHubNodeSettings, self).delete(save=False)
+        super(GitLabNodeSettings, self).delete(save=False)
         self.deauthorize(log=False)
         if save:
             self.save()
@@ -161,7 +161,7 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     @property
     def repo_url(self):
         if self.user and self.repo:
-            return 'https://github.com/{0}/{1}/'.format(
+            return 'https://gitlab.com/{0}/{1}/'.format(
                 self.user, self.repo
             )
 
@@ -172,13 +172,13 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     @property
     def is_private(self):
-        connection = GitHubClient(external_account=self.external_account)
+        connection = GitLabClient(external_account=self.external_account)
         return connection.repo(user=self.user, repo=self.repo).private
 
     # TODO: Delete me and replace with serialize_settings / Knockout
     def to_json(self, user):
-        ret = super(GitHubNodeSettings, self).to_json(user)
-        user_settings = user.get_addon('github')
+        ret = super(GitLabNodeSettings, self).to_json(user)
+        user_settings = user.get_addon('gitlab')
         ret.update({
             'user_has_auth': user_settings and user_settings.has_auth,
             'is_registration': self.owner.is_registration,
@@ -186,7 +186,7 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         if self.user_settings and self.user_settings.has_auth:
             valid_credentials = False
             owner = self.user_settings.owner
-            connection = GitHubClient(external_account=self.external_account)
+            connection = GitLabClient(external_account=self.external_account)
             # TODO: Fetch repo list client-side
             # Since /user/repos excludes organization repos to which the
             # current user has push access, we have to make extra requests to
@@ -198,21 +198,21 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                     '{0} / {1}'.format(repo.owner.login, repo.name)
                     for repo in repos
                 ]
-            except GitHubError:
+            except GitLabError:
                 repo_names = []
                 valid_credentials = False
             if owner == user:
                 ret.update({'repo_names': repo_names})
             ret.update({
                 'node_has_auth': True,
-                'github_user': self.user or '',
-                'github_repo': self.repo or '',
-                'github_repo_full_name': '{0} / {1}'.format(self.user, self.repo) if (self.user and self.repo) else '',
+                'gitlab_user': self.user or '',
+                'gitlab_repo': self.repo or '',
+                'gitlab_repo_full_name': '{0} / {1}'.format(self.user, self.repo) if (self.user and self.repo) else '',
                 'auth_osf_name': owner.fullname,
                 'auth_osf_url': owner.url,
                 'auth_osf_id': owner._id,
-                'github_user_name': self.external_account.display_name,
-                'github_user_url': self.external_account.profile_url,
+                'gitlab_user_name': self.external_account.display_name,
+                'gitlab_user_url': self.external_account.profile_url,
                 'is_owner': owner == user,
                 'valid_credentials': valid_credentials,
                 'addons_url': web_url_for('user_addons'),
@@ -236,7 +236,7 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     def create_waterbutler_log(self, auth, action, metadata):
         path = metadata['path']
 
-        url = self.owner.web_url_for('addon_view_or_download_file', path=path, provider='github')
+        url = self.owner.web_url_for('addon_view_or_download_file', path=path, provider='gitlab')
 
         if not metadata.get('extra'):
             sha = None
@@ -249,14 +249,14 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             }
 
         self.owner.add_log(
-            'github_{0}'.format(action),
+            'gitlab_{0}'.format(action),
             auth=auth,
             params={
                 'project': self.owner.parent_id,
                 'node': self.owner._id,
                 'path': path,
                 'urls': urls,
-                'github': {
+                'gitlab': {
                     'user': self.user,
                     'repo': self.repo,
                     'sha': sha,
@@ -289,18 +289,18 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         if self.user_settings is None:
             return messages
 
-        connect = GitHubClient(external_account=self.external_account)
+        connect = GitLabClient(external_account=self.external_account)
 
         try:
             repo = connect.repo(self.user, self.repo)
-        except (ApiError, GitHubError):
+        except (ApiError, GitLabError):
             return
 
         node_permissions = 'public' if node.is_public else 'private'
         repo_permissions = 'private' if repo.private else 'public'
         if repo_permissions != node_permissions:
             message = (
-                'Warning: This OSF {category} is {node_perm}, but the GitHub '
+                'Warning: This OSF {category} is {node_perm}, but the GitLab '
                 'repo {user} / {repo} is {repo_perm}.'.format(
                     category=markupsafe.escape(node.project_or_component),
                     node_perm=markupsafe.escape(node_permissions),
@@ -311,13 +311,13 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             )
             if repo_permissions == 'private':
                 message += (
-                    ' Users can view the contents of this private GitHub '
+                    ' Users can view the contents of this private GitLab '
                     'repository through this public project.'
                 )
             else:
                 message += (
-                    ' The files in this GitHub repo can be viewed on GitHub '
-                    '<u><a href="https://github.com/{user}/{repo}/">here</a></u>.'
+                    ' The files in this GitLab repo can be viewed on GitLab '
+                    '<u><a href="https://gitlab.com/{user}/{repo}/">here</a></u>.'
                 ).format(
                     user=self.user,
                     repo=self.repo,
@@ -334,10 +334,10 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
         """
         try:
-            message = (super(GitHubNodeSettings, self).before_remove_contributor_message(node, removed) +
+            message = (super(GitLabNodeSettings, self).before_remove_contributor_message(node, removed) +
             'You can download the contents of this repository before removing '
             'this contributor <u><a href="{url}">here</a></u>.'.format(
-                url=node.api_url + 'github/tarball/'
+                url=node.api_url + 'gitlab/tarball/'
             ))
         except TypeError:
             # super call returned None due to lack of user auth
@@ -360,7 +360,7 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             self.user_settings = None
             self.save()
             message = (
-                u'Because the GitHub add-on for {category} "{title}" was authenticated '
+                u'Because the GitLab add-on for {category} "{title}" was authenticated '
                 u'by {user}, authentication information has been deleted.'
             ).format(
                 category=markupsafe.escape(node.category_display),
@@ -384,7 +384,7 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         :param bool save: Save settings after callback
         :return tuple: Tuple of cloned settings and alert message
         """
-        clone, _ = super(GitHubNodeSettings, self).after_fork(
+        clone, _ = super(GitLabNodeSettings, self).after_fork(
             node, fork, user, save=False
         )
 
@@ -392,13 +392,13 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         if self.user_settings and self.user_settings.owner == user:
             clone.user_settings = self.user_settings
             message = (
-                'GitHub authorization copied to forked {cat}.'
+                'GitLab authorization copied to forked {cat}.'
             ).format(
                 cat=markupsafe.escape(fork.project_or_component),
             )
         else:
             message = (
-                'GitHub authorization not copied to forked {cat}. You may '
+                'GitLab authorization not copied to forked {cat}. You may '
                 'authorize this fork on the <u><a href={url}>Settings</a></u> '
                 'page.'
             ).format(
@@ -418,9 +418,9 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             return None
         if is_private:
             return (
-                'This {cat} is connected to a private GitHub repository. Users '
+                'This {cat} is connected to a private GitLab repository. Users '
                 '(other than contributors) will not be able to see the '
-                'contents of this repo unless it is made public on GitHub.'
+                'contents of this repo unless it is made public on GitLab.'
             ).format(
                 cat=node.project_or_component,
             )
@@ -437,7 +437,7 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     def add_hook(self, save=True):
 
         if self.user_settings:
-            connect = GitHubClient(external_account=self.external_account)
+            connect = GitLabClient(external_account=self.external_account)
             secret = utils.make_hook_secret()
             hook = connect.add_hook(
                 self.user, self.repo,
@@ -446,13 +446,13 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                     'url': urlparse.urljoin(
                         hook_domain,
                         os.path.join(
-                            self.owner.api_url, 'github', 'hook/'
+                            self.owner.api_url, 'gitlab', 'hook/'
                         )
                     ),
-                    'content_type': github_settings.HOOK_CONTENT_TYPE,
+                    'content_type': gitlab_settings.HOOK_CONTENT_TYPE,
                     'secret': secret,
                 },
-                events=github_settings.HOOK_EVENTS,
+                events=gitlab_settings.HOOK_EVENTS,
             )
 
             if hook:
@@ -466,10 +466,10 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         :return bool: Hook was deleted
         """
         if self.user_settings and self.hook_id:
-            connection = GitHubClient(external_account=self.external_account)
+            connection = GitLabClient(external_account=self.external_account)
             try:
                 response = connection.delete_hook(self.user, self.repo, self.hook_id)
-            except (GitHubError, NotFoundError):
+            except (GitLabError, NotFoundError):
                 return False
             if response:
                 self.hook_id = None

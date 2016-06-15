@@ -2,78 +2,78 @@
 
 from framework.routing import Rule, json_renderer
 
-from website.addons.github import views
+from website.addons.gitlab import views
 
 api_routes = {
     'rules': [
 
         Rule(
             [
-                '/settings/github/accounts/',
+                '/settings/gitlab/accounts/',
             ],
             'get',
-            views.github_account_list,
+            views.gitlab_account_list,
             json_renderer,
         ),
 
         Rule(
             [
-                '/project/<pid>/github/settings/',
-                '/project/<pid>/node/<nid>/github/settings/'
+                '/project/<pid>/gitlab/settings/',
+                '/project/<pid>/node/<nid>/gitlab/settings/'
             ],
             'get',
-            views.github_get_config,
+            views.gitlab_get_config,
             json_renderer,
         ),
 
         Rule(
             [
-                '/project/<pid>/github/settings/',
-                '/project/<pid>/node/<nid>/github/settings/',
+                '/project/<pid>/gitlab/settings/',
+                '/project/<pid>/node/<nid>/gitlab/settings/',
             ],
             'post',
-            views.github_set_config,
+            views.gitlab_set_config,
             json_renderer,
         ),
 
         Rule(
             [
-                '/project/<pid>/github/user_auth/',
-                '/project/<pid>/node/<nid>/github/user_auth/'
+                '/project/<pid>/gitlab/user_auth/',
+                '/project/<pid>/node/<nid>/gitlab/user_auth/'
             ],
             'put',
-            views.github_import_auth,
+            views.gitlab_import_auth,
             json_renderer,
         ),
 
         Rule(
             [
-                '/project/<pid>/github/user_auth/',
-                '/project/<pid>/node/<nid>/github/user_auth/'
+                '/project/<pid>/gitlab/user_auth/',
+                '/project/<pid>/node/<nid>/gitlab/user_auth/'
             ],
             'delete',
-            views.github_deauthorize_node,
+            views.gitlab_deauthorize_node,
             json_renderer,
         ),
 
         Rule(
             [
-                '/project/<pid>/github/tarball/',
-                '/project/<pid>/node/<nid>/github/tarball/',
+                '/project/<pid>/gitlab/tarball/',
+                '/project/<pid>/node/<nid>/gitlab/tarball/',
             ],
             'get',
-            views.github_download_starball,
+            views.gitlab_download_starball,
             json_renderer,
             {'archive': 'tar'},
             endpoint_suffix='__tar',
         ),
         Rule(
             [
-                '/project/<pid>/github/zipball/',
-                '/project/<pid>/node/<nid>/github/zipball/',
+                '/project/<pid>/gitlab/zipball/',
+                '/project/<pid>/node/<nid>/gitlab/zipball/',
             ],
             'get',
-            views.github_download_starball,
+            views.gitlab_download_starball,
             json_renderer,
             {'archive': 'zip'},
             endpoint_suffix='__zip',
@@ -81,32 +81,32 @@ api_routes = {
 
         Rule(
             [
-                '/project/<pid>/github/hook/',
-                '/project/<pid>/node/<nid>/github/hook/',
+                '/project/<pid>/gitlab/hook/',
+                '/project/<pid>/node/<nid>/gitlab/hook/',
             ],
             'post',
-            views.github_hook_callback,
+            views.gitlab_hook_callback,
             json_renderer,
         ),
 
         Rule(
             [
-                '/project/<pid>/github/repo/create/',
-                '/project/<pid>/node/<nid>/github/repo/create/',
+                '/project/<pid>/gitlab/repo/create/',
+                '/project/<pid>/node/<nid>/gitlab/repo/create/',
 
             ],
             'post',
-            views.github_create_repo,
+            views.gitlab_create_repo,
             json_renderer,
         ),
 
         Rule(
             [
-                '/project/<pid>/github/hgrid/root/',
-                '/project/<pid>/node/<nid>/github/hgrid/root/',
+                '/project/<pid>/gitlab/hgrid/root/',
+                '/project/<pid>/node/<nid>/gitlab/hgrid/root/',
             ],
             'get',
-            views.github_root_folder,
+            views.gitlab_root_folder,
             json_renderer,
         ),
 
