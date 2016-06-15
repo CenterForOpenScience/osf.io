@@ -1,6 +1,8 @@
 import os
 import json
 
+LATEST_SCHEMA_VERSION = 2
+
 def _id_to_name(id):
     return ' '.join(id.split('_'))
 
@@ -35,10 +37,10 @@ OSF_META_SCHEMAS = [
 ]
 
 ACTIVE_META_SCHEMAS = (
+    'Prereg Challenge',
     'Open-Ended Registration',
     'OSF-Standard Pre-Data Collection Registration',
     'Replication Recipe (Brandt et al., 2013): Pre-Registration',
     'Replication Recipe (Brandt et al., 2013): Post-Completion',
-    'Prereg Challenge',
     "Pre-Registration in Social Psychology (van 't Veer & Giner-Sorolla, 2016): Pre-Registration",
 )

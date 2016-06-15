@@ -5,6 +5,7 @@ import logging
 from modularodm import Q
 
 from framework.transactions.context import TokuTransaction
+from framework.mongo import database as db
 from website import models
 from website.app import init_app
 from scripts import utils as script_utils
@@ -25,8 +26,10 @@ def migrate():
     for fork in models.Node.find(Q('is_fork', 'eq', True)):
         logger.info('Migrating fork: {}'.format(fork._id))
         try:
+            log_ids = db['node'].find_one({'_id': fork._id})['logs']
+            logs = [models.NodeLog.load(e) for e in log_ids]
             forked_log = next(
-                e for e in fork.logs if
+                e for e in logs if
                 e and e.action == models.NodeLog.NODE_FORKED and
                 e.date == fork.forked_date
             )

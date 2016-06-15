@@ -11,7 +11,7 @@ approved embargoed registration of
 </script>
 
 <script type="text/html" id="embargo_approved_no_user">
-Embargo for
+Embargo of registration of
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a> approved
 </script>
 
@@ -20,13 +20,8 @@ cancelled embargoed registration of
 <span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
 </script>
 
-<script type="text/html" id="embargo_completed">
-completed embargo of
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
-</script>
-
 <script type="text/html" id="embargo_completed_no_user">
-Embargo for
+Embargo of registration of
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a> completed
 </script>
 
@@ -39,6 +34,12 @@ initiated an embargoed registration of
 <!-- ko if: registrationCancelled -->
 <span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
 <!-- /ko -->
+</script>
+
+<script type="text/html" id="embargo_terminated_no_user">
+Embargo for
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+ended
 </script>
 
 ## Retraction related logs
@@ -195,8 +196,13 @@ to
 </script>
 
 <script type="text/html" id="project_registered">
-registered
-<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+        registered
+        <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="prereg_registration_initiated">
+    submitted for review to the Preregistration Challenge a registration of
+    <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>.
 </script>
 
 <script type="text/html" id="project_registered_no_user">
@@ -273,7 +279,7 @@ on
 <a data-bind="attr: {href: params.file.url}, text: params.file.name"></a>
 in
 <!-- /ko -->
-<!-- ko: params.wiki -->
+<!-- ko if: params.wiki -->
 wiki page
 <a data-bind="attr: {href: params.wiki.url}, text: params.wiki.name"></a>
 in
@@ -410,15 +416,12 @@ from
 <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
 </script>
 
-<script type="text/html" id="primary_institution_changed">
-changed primary institution of <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
-<!-- ko if: params.previous_institution.name != 'None' --><!-- TODO: Check datatypes here -->
- from <a class="log-node-title-link overflow" data-bind="attr: {href: '/institutions/' + params.previous_institution.id}, text: params.previous_institution.name"></a>
-<!-- /ko -->
- to <a class="log-node-title-link overflow" data-bind="attr: {href: '/institutions/' + params.institution.id}, text: params.institution.name"></a>.
+<script type="text/html" id="affiliated_institution_added">
+added <a class="log-node-title-link overflow" data-bind="attr: {href: '/institutions/' + params.institution.id}, text: params.institution.name"></a>
+ affiliation to <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>.
 </script>
 
-<script type="text/html" id="primary_institution_removed">
+<script type="text/html" id="affiliated_institution_removed">
 removed <a class="log-node-title-link overflow" data-bind="attr: {href: '/institutions/' + params.institution.id}, text: params.institution.name"></a>
-as the primary institution of <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>.
+ affiliation from <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>.
 </script>

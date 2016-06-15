@@ -43,12 +43,17 @@ var NewAndNoteworthy = {
         var newAndNoteworthyUrl = $osf.apiV2Url('nodes/' + window.contextVars.newAndNoteworthy + '/node_links/', {});
         var newAndNoteworthyPromise = m.request({method: 'GET', url: newAndNoteworthyUrl, config: xhrconfig, background: true});
         newAndNoteworthyPromise.then(function(result){
-            var numNew = Math.min(result.data.length, self.SHOW_TOTAL);
+            var numNew = result.data.length;
             for (var l = 0; l < numNew; l++) {
                 var data = result.data[l];
                 if (lodashGet(data, 'embeds.target_node.data', null)) {
-                    self.newAndNoteworthyNodes().push(result.data[l]);
-                    self.fetchContributors(result.data[l]);
+                    if (data.embeds.target_node.data.attributes.public === true) {
+                        self.newAndNoteworthyNodes().push(result.data[l]);
+                        self.fetchContributors(result.data[l]);
+                    }
+                }
+                if (self.newAndNoteworthyNodes().length === self.SHOW_TOTAL){
+                    break;
                 }
             }
             self.someDataLoaded(true);
@@ -61,12 +66,17 @@ var NewAndNoteworthy = {
         var popularUrl = $osf.apiV2Url('nodes/' + window.contextVars.popular + '/node_links/', {});
         var popularPromise = m.request({method: 'GET', url: popularUrl, config: xhrconfig, background: true});
         popularPromise.then(function(result){
-            var numPopular = Math.min(result.data.length, self.SHOW_TOTAL);
+            var numPopular = result.data.length;
             for (var l = 0; l < numPopular; l++) {
                 var data = result.data[l];
                 if (lodashGet(data, 'embeds.target_node.data', null)) {
-                    self.popularNodes().push(result.data[l]);
-                    self.fetchContributors(result.data[l]);
+                    if (data.embeds.target_node.data.attributes.public === true) {
+                        self.popularNodes().push(result.data[l]);
+                        self.fetchContributors(result.data[l]);
+                    }
+                }
+                if (self.popularNodes().length === self.SHOW_TOTAL){
+                    break;
                 }
             }
             self.someDataLoaded(true);
@@ -82,16 +92,19 @@ var NewAndNoteworthy = {
             promise.then(function(result){
                 var contribNames = [];
                 result.data.forEach(function (contrib){
-                    if (contrib.embeds.users.data){
+                    if (lodashGet(contrib, 'attributes.unregistered_contributor', false) && lodashGet(contrib, 'attributes.bibliographic', false)) {
+                        contribNames.push(contrib.attributes.unregistered_contributor);
+                    }
+                    else if (lodashGet(contrib, 'embeds.users.data', false) && lodashGet(contrib, 'attributes.bibliographic', false)){
                         contribNames.push($osf.findContribName(contrib.embeds.users.data.attributes));
                     }
-                    else if (contrib.embeds.users.errors) {
+                    else if (lodashGet(contrib, 'embeds.users.errors', false)) {
                         contribNames.push($osf.findContribName(contrib.embeds.users.errors[0].meta));
                     }
 
                 });
                 self.someContributorsLoaded(true);
-                var numContrib = result.links.meta.total;
+                var numContrib = result.links.meta.total_bibliographic;
                 var nodeId = nodeLink.id;
                 self.contributorsMapping[nodeId] = {'names': contribNames, 'total': numContrib};
             }, function _error(result){

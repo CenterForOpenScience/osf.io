@@ -1,13 +1,16 @@
 import collections
 
+from framework.postcommit_tasks.handlers import run_postcommit
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
-from framework.auth import signals
 from website.models import Node, User
 from website.notifications import constants
 from website.notifications import model
 from website.notifications.model import NotificationSubscription
+from website.project import signals
+
+from framework.celery_tasks import app
 
 
 class NotificationsDict(dict):
@@ -49,7 +52,7 @@ def to_subscription_key(uid, event):
 
 
 def from_subscription_key(key):
-    parsed_key = key.split("_", 1)
+    parsed_key = key.split('_', 1)
     return {
         'uid': parsed_key[0],
         'event': parsed_key[1]
@@ -57,18 +60,24 @@ def from_subscription_key(key):
 
 
 @signals.contributor_removed.connect
-def remove_contributor_from_subscriptions(contributor, node):
+def remove_contributor_from_subscriptions(node, user):
     """ Remove contributor from node subscriptions unless the user is an
         admin on any of node's parent projects.
     """
-    if contributor._id not in node.admin_contributor_ids:
-        node_subscriptions = get_all_node_subscriptions(contributor, node)
+    if user._id not in node.admin_contributor_ids:
+        node_subscriptions = get_all_node_subscriptions(user, node)
         for subscription in node_subscriptions:
-            subscription.remove_user_from_subscription(contributor)
+            subscription.remove_user_from_subscription(user)
 
 
 @signals.node_deleted.connect
 def remove_subscription(node):
+    remove_subscription_task(node._id)
+
+@run_postcommit(once_per_request=False, celery=True)
+@app.task(max_retries=5, default_retry_delay=60)
+def remove_subscription_task(node_id):
+    node = Node.load(node_id)
     model.NotificationSubscription.remove(Q('owner', 'eq', node))
     parent = node.parent_node
 
@@ -166,7 +175,7 @@ def get_configured_projects(user):
         # If the user has opted out of emails skip
         node = subscription.owner
 
-        if not isinstance(node, Node) or (user in subscription.none and not node.parent_id):
+        if not isinstance(node, Node) or (user in subscription.none and not node.parent_id) or node.is_bookmark_collection:
             continue
 
         while node.parent_id and not node.is_deleted:
@@ -318,6 +327,8 @@ def serialize_event(user, subscription=None, node=None, event_description=None):
         event_type = event_description
     if node and node.node__parent:
         notification_type = 'adopt_parent'
+    elif event_type.startswith('global_'):
+        notification_type = 'email_transactional'
     else:
         notification_type = 'none'
     if subscription:
@@ -362,13 +373,68 @@ def get_parent_notification_type(node, event, user):
         return None
 
 
+def get_global_notification_type(global_subscription, user):
+    """
+    Given a global subscription (e.g. NotificationSubscription object with event_type
+    'global_file_updated'), find the user's notification type.
+    :param obj global_subscription: modular odm NotificationSubscription object
+    :param obj user: modular odm User object
+    :return: str notification type (e.g. 'email_transactional')
+    """
+    for notification_type in constants.NOTIFICATION_TYPES:
+        if user in getattr(global_subscription, notification_type):
+            return notification_type
+
+
+def check_if_all_global_subscriptions_are_none(user):
+    all_global_subscriptions_none = False
+    user_sunscriptions = get_all_user_subscriptions(user)
+    for user_subscription in user_sunscriptions:
+        if user_subscription.event_name.startswith('global_'):
+            all_global_subscriptions_none = True
+            global_notification_type = get_global_notification_type(user_subscription, user)
+            if global_notification_type != 'none':
+                return False
+
+    return all_global_subscriptions_none
+
+
+def subscribe_user_to_notifications(node, user):
+    """ Update the notification settings for the creator or contributors
+
+    :param user: User to subscribe to notifications
+    """
+    events = constants.NODE_SUBSCRIPTIONS_AVAILABLE
+    notification_type = 'email_transactional'
+    target_id = node._id
+
+    if user.is_registered:
+        for event in events:
+            event_id = to_subscription_key(target_id, event)
+            global_event_id = to_subscription_key(user._id, 'global_' + event)
+            global_subscription = NotificationSubscription.load(global_event_id)
+
+            subscription = NotificationSubscription.load(event_id)
+            if not subscription:
+                subscription = NotificationSubscription(_id=event_id, owner=node, event_name=event)
+            if global_subscription:
+                global_notification_type = get_global_notification_type(global_subscription, user)
+                subscription.add_user_to_subscription(user, global_notification_type)
+            else:
+                subscription.add_user_to_subscription(user, notification_type)
+            subscription.save()
+
+
 def format_user_and_project_subscriptions(user):
     """ Format subscriptions data for user settings page. """
     return [
         {
             'node': {
                 'id': user._id,
-                'title': 'User Notifications',
+                'title': 'Default Notification Settings',
+                'help': 'These are default settings for new projects you create ' +
+                        'or are added to. Modifying these settings will not ' +
+                        'modify settings on existing projects.'
             },
             'kind': 'heading',
             'children': format_user_subscriptions(user)
@@ -377,6 +443,8 @@ def format_user_and_project_subscriptions(user):
             'node': {
                 'id': '',
                 'title': 'Project Notifications',
+                'help': 'These are settings for each of your projects. Modifying ' +
+                        'these settings will only modify the settings for the selected project.'
             },
             'kind': 'heading',
             'children': format_data(user, get_configured_projects(user))

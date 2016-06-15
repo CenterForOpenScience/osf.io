@@ -15,11 +15,8 @@ from api.base.exceptions import InvalidQueryStringError, Conflict, JSONAPIExcept
 from api.base.settings import BULK_SETTINGS
 from api.base.utils import extend_querystring_params
 from framework.auth import core as auth_core
-from modularodm import Q
-from modularodm.exceptions import NoResultsFound
 from website import settings
 from website import util as website_utils
-from website.models import PrivateLink
 from website.util.sanitize import strip_html
 
 
@@ -52,16 +49,8 @@ def format_relationship_links(related_link=None, self_link=None, rel_meta=None, 
 
 
 def is_anonymized(request):
-    is_anonymous = False
     private_key = request.query_params.get('view_only', None)
-    if private_key is not None:
-        try:
-            link = PrivateLink.find_one(Q('key', 'eq', private_key))
-        except NoResultsFound:
-            link = None
-        if link is not None:
-            is_anonymous = link.anonymous
-    return is_anonymous
+    return website_utils.check_private_key_for_anonymized_link(private_key)
 
 
 class HideIfRegistration(ser.Field):
@@ -149,9 +138,9 @@ class HideIfDisabled(ser.Field):
         return self.field.to_esi_representation(value, envelope)
 
 
-class HideIfRetraction(HideIfRegistration):
+class HideIfWithdrawal(HideIfRegistration):
     """
-    If node is retracted, this field will return None.
+    If registration is withdrawn, this field will return None.
     """
 
     def get_attribute(self, instance):
@@ -225,7 +214,7 @@ class IDField(ser.CharField):
             if request.method in utils.UPDATE_METHODS and not utils.is_bulk_request(request):
                 id_field = getattr(self.root.instance, self.source, '_id')
                 if id_field != data:
-                    raise Conflict()
+                    raise Conflict(detail=('The id you used in the URL, "{}", does not match the id you used in the json body\'s id field, "{}". The object "{}" exists, otherwise you\'d get a 404, so most likely you need to change the id field to match.'.format(id_field, data, id_field)))
         return super(IDField, self).to_internal_value(data)
 
 
@@ -249,8 +238,7 @@ class TypeField(ser.CharField):
             type_ = self.root.Meta.type_
 
         if type_ != data:
-            raise Conflict()
-
+            raise Conflict(detail=('This resource has a type of "{}", but you set the json body\'s type field to "{}". You probably need to change the type field to match the resource\'s type.'.format(type_, data)))
         return super(TypeField, self).to_internal_value(data)
 
 
@@ -267,7 +255,7 @@ class TargetTypeField(ser.CharField):
 
     def to_internal_value(self, data):
         if self.target_type != data:
-            raise Conflict()
+            raise Conflict(detail=('The target resource has a type of "{}", but you set the json body\'s type field to "{}".  You probably need to change the type field to match the target resource\'s type.'.format(self.target_type, data)))
         return super(TargetTypeField, self).to_internal_value(data)
 
 
@@ -418,10 +406,11 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                             getattr(self.parent.fields[field], 'json_api_link', False) or
                             getattr(getattr(self.parent.fields[field], 'field', None), 'json_api_link', None)}
         for count_field in field_counts_requested:
-            # Some fields will hide relationships, e.g. HideIfRetraction
+            # Some fields will hide relationships, e.g. HideIfWithdrawal
             # Ignore related_counts for these fields
             fetched_field = self.parent.fields.get(count_field)
-            hidden = fetched_field and fetched_field.get_attribute(value) is None
+
+            hidden = fetched_field and isinstance(fetched_field, HideIfWithdrawal) and getattr(value, 'is_retracted', False)
 
             if not hidden and count_field not in countable_fields:
                 raise InvalidQueryStringError(
@@ -556,9 +545,9 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         format = self.context.get('format', None)
 
         assert request is not None, (
-            "`%s` requires the request in the serializer"
+            '`%s` requires the request in the serializer'
             " context. Add `context={'request': request}` when instantiating "
-            "the serializer." % self.__class__.__name__
+            'the serializer.' % self.__class__.__name__
         )
 
         # By default use whatever format is given for the current context
@@ -586,9 +575,9 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             if value in ('', None):
                 value_string = {'': 'the empty string', None: 'None'}[value]
                 msg += (
-                    " WARNING: The value of the field on the model instance "
+                    ' WARNING: The value of the field on the model instance '
                     "was %s, which may be why it didn't match any "
-                    "entries in your URL conf." % value_string
+                    'entries in your URL conf.' % value_string
                 )
             raise ImproperlyConfigured(msg % self.view_name)
 
@@ -1009,7 +998,7 @@ class JSONAPISerializer(ser.Serializer):
                     continue
                 if getattr(field, 'json_api_link', False) or getattr(nested_field, 'json_api_link', False):
                     # If embed=field_name is appended to the query string or 'always_embed' flag is True, directly embed the
-                    # results rather than adding a relationship link
+                    # results in addition to adding a relationship link
                     if embeds and (field.field_name in embeds or getattr(field, 'always_embed', None)):
                         if enable_esi:
                             try:
@@ -1027,14 +1016,13 @@ class JSONAPISerializer(ser.Serializer):
                             data['embeds'][field.field_name] = result
                         else:
                             data['embeds'][field.field_name] = {'error': 'This field is not embeddable.'}
-                    else:
-                        try:
-                            if not (is_anonymous and
-                                        hasattr(field, 'view_name') and
-                                            field.view_name in self.views_to_hide_if_anonymous):
-                                data['relationships'][field.field_name] = representation
-                        except SkipField:
-                            continue
+                    try:
+                        if not (is_anonymous and
+                                    hasattr(field, 'view_name') and
+                                        field.view_name in self.views_to_hide_if_anonymous):
+                            data['relationships'][field.field_name] = representation
+                    except SkipField:
+                        continue
                 elif field.field_name == 'id':
                     data['id'] = representation
                 elif field.field_name == 'links':

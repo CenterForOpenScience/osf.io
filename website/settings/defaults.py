@@ -9,6 +9,7 @@ import os
 import json
 import hashlib
 from datetime import timedelta
+from collections import OrderedDict
 
 os_env = os.environ
 
@@ -35,11 +36,12 @@ EMAIL_TOKEN_EXPIRATION = 24
 CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'static', 'vendor', 'bower_components', 'styles')
 
 # Minimum seconds between forgot password email attempts
-FORGOT_PASSWORD_MINIMUM_TIME = 30
+SEND_EMAIL_THROTTLE = 30
 
 # Hours before pending embargo/retraction/registration automatically becomes active
 RETRACTION_PENDING_TIME = datetime.timedelta(days=2)
 EMBARGO_PENDING_TIME = datetime.timedelta(days=2)
+EMBARGO_TERMINATION_PENDING_TIME = datetime.timedelta(days=2)
 REGISTRATION_APPROVAL_TIME = datetime.timedelta(days=2)
 # Date range for embargo periods
 EMBARGO_END_DATE_MIN = datetime.timedelta(days=2)
@@ -82,6 +84,8 @@ SHARE_ELASTIC_INDEX_TEMPLATE = 'share_v{}'
 # TODO: Override OSF_COOKIE_DOMAIN in local.py in production
 OSF_COOKIE_DOMAIN = None
 COOKIE_NAME = 'osf'
+# server-side verification timeout
+OSF_SESSION_TIMEOUT = 30 * 24 * 60 * 60  # 30 days in seconds
 # TODO: Override SECRET_KEY in local.py in production
 SECRET_KEY = 'CHANGEME'
 
@@ -192,6 +196,23 @@ WIKI_WHITELIST = {
     ]
 }
 
+# Maps category identifier => Human-readable representation for use in
+# titles, menus, etc.
+# Use an OrderedDict so that menu items show in the correct order
+NODE_CATEGORY_MAP = OrderedDict([
+    ('analysis', 'Analysis'),
+    ('communication', 'Communication'),
+    ('data', 'Data'),
+    ('hypothesis', 'Hypothesis'),
+    ('instrumentation', 'Instrumentation'),
+    ('methods and measures', 'Methods and Measures'),
+    ('procedure', 'Procedure'),
+    ('project', 'Project'),
+    ('software', 'Software'),
+    ('other', 'Other'),
+    ('', 'Uncategorized')
+])
+
 # Add-ons
 # Load addons from addons.json
 with open(os.path.join(ROOT, 'addons.json')) as fp:
@@ -225,6 +246,7 @@ PIWIK_SITE_ID = None
 
 KEEN_PROJECT_ID = None
 KEEN_WRITE_KEY = None
+KEEN_READ_KEY = None
 
 SENTRY_DSN = None
 SENTRY_DSN_JS = None
@@ -296,13 +318,68 @@ JWT_ALGORITHM = 'HS256'
 
 ##### CELERY #####
 
+DEFAULT_QUEUE = 'celery'
+LOW_QUEUE = 'low'
+MED_QUEUE = 'med'
+HIGH_QUEUE = 'high'
+
+LOW_PRI_MODULES = {
+    'framework.analytics.tasks',
+    'framework.celery_tasks',
+    'scripts.osfstorage.usage_audit',
+    'scripts.osfstorage.glacier_inventory',
+    'scripts.analytics.tasks',
+    'scripts.osfstorage.files_audit',
+    'scripts.osfstorage.glacier_audit',
+    'scripts.populate_new_and_noteworthy_projects',
+    'website.search.elastic_search',
+}
+
+MED_PRI_MODULES = {
+    'framework.email.tasks',
+    'scripts.send_queued_mails',
+    'scripts.triggered_mails',
+    'website.mailchimp_utils',
+    'website.notifications.tasks',
+}
+
+HIGH_PRI_MODULES = {
+    'scripts.approve_embargo_terminations',
+    'scripts.approve_registrations',
+    'scripts.embargo_registrations',
+    'scripts.refresh_addon_tokens',
+    'scripts.retract_registrations',
+    'website.archiver.tasks',
+}
+
+try:
+    from kombu import Queue, Exchange
+except ImportError:
+    pass
+else:
+    CELERY_QUEUES = (
+        Queue(LOW_QUEUE, Exchange(LOW_QUEUE), routing_key=LOW_QUEUE,
+              consumer_arguments={'x-priority': -1}),
+        Queue(DEFAULT_QUEUE, Exchange(DEFAULT_QUEUE), routing_key=DEFAULT_QUEUE,
+              consumer_arguments={'x-priority': 0}),
+        Queue(MED_QUEUE, Exchange(MED_QUEUE), routing_key=MED_QUEUE,
+              consumer_arguments={'x-priority': 1}),
+        Queue(HIGH_QUEUE, Exchange(HIGH_QUEUE), routing_key=HIGH_QUEUE,
+              consumer_arguments={'x-priority': 10}),
+    )
+
+    CELERY_DEFAULT_EXCHANGE_TYPE = 'direct'
+    CELERY_ROUTES = ('framework.celery_tasks.routers.CeleryRouter', )
+    CELERY_IGNORE_RESULT = True
+    CELERY_STORE_ERRORS_EVEN_IF_IGNORED = True
+
 # Default RabbitMQ broker
 BROKER_URL = 'amqp://'
 
 # Default RabbitMQ backend
 CELERY_RESULT_BACKEND = 'amqp://'
 
-#  Modules to import when celery launches
+# Modules to import when celery launches
 CELERY_IMPORTS = (
     'framework.celery_tasks',
     'framework.celery_tasks.signals',
@@ -312,21 +389,25 @@ CELERY_IMPORTS = (
     'website.notifications.tasks',
     'website.archiver.tasks',
     'website.search.search',
-    'api.caching.tasks',
     'scripts.populate_new_and_noteworthy_projects',
-    'scripts.refresh_box_tokens',
+    'scripts.refresh_addon_tokens',
     'scripts.retract_registrations',
     'scripts.embargo_registrations',
     'scripts.approve_registrations',
-    'scripts.osfstorage.glacier_inventory',
-    'scripts.osfstorage.glacier_audit',
+    'scripts.approve_embargo_terminations',
     'scripts.triggered_mails',
     'scripts.send_queued_mails',
-    'scripts.osfstorage.usage_audit',
-    'scripts.osfstorage.files_audit',
-    'scripts.analytics.tasks',
-    'scripts.analytics.upload'
 )
+
+# Modules that need metrics and release requirements
+# CELERY_IMPORTS += (
+#     'scripts.osfstorage.glacier_inventory',
+#     'scripts.osfstorage.glacier_audit',
+#     'scripts.osfstorage.usage_audit',
+#     'scripts.osfstorage.files_audit',
+#     'scripts.analytics.tasks',
+#     'scripts.analytics.upload',
+# )
 
 # celery.schedule will not be installed when running invoke requirements the first time.
 try:
@@ -337,19 +418,19 @@ else:
     #  Setting up a scheduler, essentially replaces an independent cron job
     CELERYBEAT_SCHEDULE = {
         '5-minute-emails': {
-            'task': 'notify.send_users_email',
+            'task': 'website.notifications.tasks.send_users_email',
             'schedule': crontab(minute='*/5'),
             'args': ('email_transactional',),
         },
         'daily-emails': {
-            'task': 'notify.send_users_email',
+            'task': 'website.notifications.tasks.send_users_email',
             'schedule': crontab(minute=0, hour=0),
             'args': ('email_digest',),
         },
-        'refresh_box': {
-            'task': 'scripts.refresh_box_tokens',
+        'refresh_addons': {
+            'task': 'scripts.refresh_addon_tokens',
             'schedule': crontab(minute=0, hour= 2),  # Daily 2:00 a.m
-            'kwargs': {'dry_run': False},
+            'kwargs': {'dry_run': False, 'addons': {'box': 60, 'googledrive': 14, 'mendeley': 14}},
         },
         'retract_registrations': {
             'task': 'scripts.retract_registrations',
@@ -366,6 +447,11 @@ else:
             'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
             'kwargs': {'dry_run': False},
         },
+        'approve_embargo_terminations': {
+            'task': 'scripts.approve_embargo_terminations',
+            'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+            'kwargs': {'dry_run': False},
+        },
         'triggered_mails': {
             'task': 'scripts.triggered_mails',
             'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
@@ -379,54 +465,58 @@ else:
         'new-and-noteworthy': {
             'task': 'scripts.populate_new_and_noteworthy_projects',
             'schedule': crontab(minute=0, hour=2, day_of_week=6),  # Saturday 2:00 a.m.
-            'kwargs': {'dry_run': True}
+            'kwargs': {'dry_run': False}
         },
-        # 'usage_audit': {
-        #     'task': 'scripts.osfstorage.usage_audit',
-        #     'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
-        #     'kwargs': {'send_mail': True},
-        # },
-        # 'glacier_inventory': {
-        #     'task': 'scripts.osfstorage.glacier_inventory',
-        #     'schedule': crontab(minute=0, hour= 0, day_of_week=0),  # Sunday 12:00 a.m.
-        #     'args': (),
-        # },
-        # 'glacier_audit': {
-        #     'task': 'scripts.osfstorage.glacier_audit',
-        #     'schedule': crontab(minute=0, hour=6, day_of_week=0),  # Sunday 6:00 a.m.
-        #     'kwargs': {'dry_run': False},
-        # },
-        # 'files_audit_0': {
-        #     'task': 'scripts.osfstorage.files_audit_0',
-        #     'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
-        #     'kwargs': {'num_of_workers': 4, 'dry_run': False},
-        # },
-        # 'files_audit_1': {
-        #     'task': 'scripts.osfstorage.files_audit_1',
-        #     'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
-        #     'kwargs': {'num_of_workers': 4, 'dry_run': False},
-        # },
-        # 'files_audit_2': {
-        #     'task': 'scripts.osfstorage.files_audit_2',
-        #     'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
-        #     'kwargs': {'num_of_workers': 4, 'dry_run': False},
-        # },
-        # 'files_audit_3': {
-        #     'task': 'scripts.osfstorage.files_audit_3',
-        #     'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
-        #     'kwargs': {'num_of_workers': 4, 'dry_run': False},
-        # },
-        # 'analytics': {
-        #     'task': 'scripts.analytics.tasks',
-        #     'schedule': crontab(minute=0, hour=2),  # Daily 2:00 a.m.
-        #     'kwargs': {}
-        # },
-        # 'analytics-upload': {
-        #     'task': 'scripts.analytics.upload',
-        #     'schedule': crontab(minute=0, hour=6),  # Daily 6:00 a.m.
-        #     'kwargs': {}
-        # },
     }
+
+    # Tasks that need metrics and release requirements
+    # CELERYBEAT_SCHEDULE.update({
+    #     'usage_audit': {
+    #         'task': 'scripts.osfstorage.usage_audit',
+    #         'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+    #         'kwargs': {'send_mail': True},
+    #     },
+    #     'glacier_inventory': {
+    #         'task': 'scripts.osfstorage.glacier_inventory',
+    #         'schedule': crontab(minute=0, hour= 0, day_of_week=0),  # Sunday 12:00 a.m.
+    #         'args': (),
+    #     },
+    #     'glacier_audit': {
+    #         'task': 'scripts.osfstorage.glacier_audit',
+    #         'schedule': crontab(minute=0, hour=6, day_of_week=0),  # Sunday 6:00 a.m.
+    #         'kwargs': {'dry_run': False},
+    #     },
+    #     'files_audit_0': {
+    #         'task': 'scripts.osfstorage.files_audit.0',
+    #         'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
+    #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
+    #     },
+    #     'files_audit_1': {
+    #         'task': 'scripts.osfstorage.files_audit.1',
+    #         'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
+    #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
+    #     },
+    #     'files_audit_2': {
+    #         'task': 'scripts.osfstorage.files_audit.2',
+    #         'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
+    #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
+    #     },
+    #     'files_audit_3': {
+    #         'task': 'scripts.osfstorage.files_audit.3',
+    #         'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
+    #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
+    #     },
+    #     'analytics': {
+    #         'task': 'scripts.analytics.tasks',
+    #         'schedule': crontab(minute=0, hour=2),  # Daily 2:00 a.m.
+    #         'kwargs': {}
+    #     },
+    #     'analytics-upload': {
+    #         'task': 'scripts.analytics.upload',
+    #         'schedule': crontab(minute=0, hour=6),  # Daily 6:00 a.m.
+    #         'kwargs': {}
+    #     },
+    # })
 
 
 WATERBUTLER_JWE_SALT = 'yusaltydough'
@@ -447,3 +537,6 @@ ENABLE_VARNISH = False
 ENABLE_ESI = False
 VARNISH_SERVERS = []  # This should be set in local.py or cache invalidation won't work
 ESI_MEDIA_TYPES = {'application/vnd.api+json', 'application/json'}
+
+# Used for gathering meta information about the current build
+GITHUB_API_TOKEN = None

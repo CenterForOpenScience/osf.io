@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import httplib as http
-import time
 
 from flask import request
 from modularodm.exceptions import ValidationError, ValidationValueError
@@ -20,16 +19,18 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions import session
 from framework.transactions.handlers import no_auto_transaction
 
+from website.util.time import get_timestamp, throttle_period_expired
 from website import mails
 from website import language
 from website import security
 from website import settings
 from website.models import Node
+from website.notifications.utils import check_if_all_global_subscriptions_are_none
 from website.profile import utils as profile_utils
 from website.project.decorators import (must_have_permission, must_be_valid_project,
         must_not_be_registration, must_be_contributor_or_public, must_be_contributor)
 from website.project.model import has_anonymous_link
-from website.project.signals import unreg_contributor_added, contributor_added
+from website.project.signals import unreg_contributor_added
 from website.util import web_url_for, is_json_request
 from website.util.permissions import expand_permissions, ADMIN
 from website.util import sanitize
@@ -282,8 +283,8 @@ def project_manage_contributors(auth, node, **kwargs):
     except ValueError as error:
         raise HTTPError(http.BAD_REQUEST, data={'message_long': error.message})
 
-    # If user has removed herself from project, alert; redirect to user
-    # dashboard if node is private, else node dashboard
+    # If user has removed herself from project, alert; redirect to
+    # node summary if node is public, else to user's dashboard page
     if not node.is_contributor(auth.user):
         status.push_status_message(
             'You have removed yourself as a contributor from this project',
@@ -344,8 +345,8 @@ def project_remove_contributor(auth, **kwargs):
             raise HTTPError(http.BAD_REQUEST, data={
                 'message_long': 'Could not remove contributor.'})
 
-        # On parent node, if user has removed herself from project, alert; redirect to user
-        # dashboard if node is private, else node dashboard
+        # On parent node, if user has removed herself from project, alert; redirect to
+        # node summary if node is public, else to user's dashboard page
         if not node.is_contributor(auth.user) and node_id == parent_id:
             status.push_status_message(
                 'You have removed yourself as a contributor from this project',
@@ -354,18 +355,9 @@ def project_remove_contributor(auth, **kwargs):
             )
             if node.is_public:
                 redirect_url = {'redirectUrl': node.url}
-            # Else stay on current page
             else:
                 redirect_url = {'redirectUrl': web_url_for('dashboard')}
     return redirect_url
-
-
-def get_timestamp():
-    return int(time.time())
-
-
-def throttle_period_expired(timestamp, throttle):
-    return timestamp is None or (get_timestamp() - timestamp) > throttle
 
 
 def send_claim_registered_email(claimer, unreg_user, node, throttle=24 * 3600):
@@ -470,7 +462,6 @@ def send_claim_email(email, user, node, notify=True, throttle=24 * 3600):
     return to_addr
 
 
-@contributor_added.connect
 def notify_added_contributor(node, contributor, auth=None, throttle=None):
     throttle = throttle or settings.CONTRIBUTOR_ADDED_EMAIL_THROTTLE
 
@@ -494,7 +485,8 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None):
             mails.CONTRIBUTOR_ADDED,
             user=contributor,
             node=node,
-            referrer_name=auth.user.fullname if auth else ''
+            referrer_name=auth.user.fullname if auth else '',
+            all_global_subscriptions_none=check_if_all_global_subscriptions_are_none(contributor)
         )
 
         contributor.contributor_added_email_records[node._id]['last_sent'] = get_timestamp()
@@ -558,10 +550,12 @@ def claim_user_registered(auth, node, **kwargs):
                 node.save()
                 status.push_status_message(
                     'You are now a contributor to this project.',
-                    kind='success')
+                    kind='success',
+                    trust=False
+                )
                 return redirect(node.url)
             else:
-                status.push_status_message(language.LOGIN_FAILED, kind='warning', trust=True)
+                status.push_status_message(language.LOGIN_FAILED, kind='warning', trust=False)
         else:
             forms.push_errors_to_status(form.errors)
     if is_json_request():
@@ -634,8 +628,7 @@ def claim_user_form(auth, **kwargs):
             user.verification_key = security.random_string(20)
             user.save()
             # Authenticate user and redirect to project page
-            node = Node.load(pid)
-            status.push_status_message(language.CLAIMED_CONTRIBUTOR.format(node=node),
+            status.push_status_message(language.CLAIMED_CONTRIBUTOR,
                                        kind='success',
                                        trust=True)
             # Redirect to CAS and authenticate the user with a verification key.

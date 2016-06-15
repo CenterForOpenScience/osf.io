@@ -34,8 +34,7 @@
 	                </div>
                 </span>
                 <p data-bind="if: !logs().length && !loading()" class="help-block">
-                    No logs to show. Click the watch icon (<i class="fa fa-eye"></i>) on a
-                    project's page to get activity updates here.
+                    No logs to show.
                 </p>
                 <span data-bind="if: !loading()">
                     <dl class="dl-horizontal activity-log" data-bind="foreach: {data: logs, as: 'log'}"  >
@@ -44,16 +43,28 @@
                         <!-- ko if: log.hasTemplate() -->
                             <!-- ko if: log.hasUser() -->
                             <span data-bind="if:log.anonymous">
-                                <span class="contributor-anonymous">A user</span>
-                            </span>
-                                <span data-bind="ifnot:log.anonymous">
-                                    <span data-bind="if: log.userURL">
-                                        <a class="overflow" data-bind="text: log.userFullName || log.apiKey, attr: {href: log.userURL}"></a>
-                                    </span>
-                                    <span data-bind="ifnot: log.userURL">
-                                        <span class="overflow" data-bind="text: log.userFullName"></span>
-                                    </span>
+                                <span data-bind="if: log.user.registered" class="contributor-anonymous">
+                                    A user
                                 </span>
+                                <span data-bind="ifnot: log.user.registered">
+                                    A deactivated user
+                                </span>
+                            </span>
+
+                            <span data-bind="ifnot:log.anonymous">
+                                <span data-bind="if: log.user.registered">
+                                <span data-bind="if: log.userURL">
+                                    <a class="overflow" data-bind="text: log.userFullName || log.apiKey, attr: {href: log.userURL}"></a>
+                                </span>
+                                <span data-bind="ifnot: log.userURL">
+                                    <span class="overflow" data-bind="text: log.userFullName"></span>
+                                </span>
+                                </span>
+                                <span data-bind="ifnot: log.user.registered">
+                                    <span data-bind="text: log.userFullName"></span>
+                                </span>
+
+                            </span>
                                 <!-- Log actions are the same as their template name -->
                                     <span data-bind="template: {name: log.action, data: log}"></span>
                                 <!-- /ko -->
@@ -74,7 +85,7 @@
                 </span>
                 <div class='help-block absolute-bottom'>
                     <ul class="pagination pagination-sm" data-bind="foreach: paginators">
-                        <li data-bind="css: style"><a href="#" data-bind="click: handler, html: text"></a></li>
+                        <li data-bind="css: style"><a href="#" data-bind="click: handler, text: text"></a></li>
                     </ul>
                 </div>
 

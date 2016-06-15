@@ -140,7 +140,7 @@
         <!-- /ko -->
     </script>
     <script type="text/html" id="file">
-        <h4><a data-bind="attr: {href: deep_url}, text: name"></a> (<span data-bind="if: is_registration">Registration </span>File)</h4>
+        <h4><a data-bind="attr: {href: deep_url}, text: name"></a> (<span class="text-danger" data-bind="if: is_retracted">Withdrawn </span><span data-bind="if: is_registration">Registration </span>File)</h4>
         <h5>
             <!-- ko if: parent_url --> From: <a data-bind="attr: {href: parent_url}, text: parent_title || '' + ' /'"></a> <!-- /ko -->
             <!-- ko if: !parent_url --> From: <span data-bind="if: parent_title"><span data-bind="text: parent_title"></span> /</span> <!-- /ko -->
@@ -226,6 +226,16 @@
         </div>
 
     </script>
+    <script type="text/html" id="institution">
+        <div class="row">
+            <div class="col-md-2">
+                <img class="img-circle" height="75px" width="75px" data-bind="attr: {src: logo_path}">
+            </div>
+            <div class="col-md-10">
+                <h4><a data-bind="attr: {href: url}, text: name"></a></h4>
+            </div>
+        </div>
+    </script>
     <script type="text/html" id="node">
       <!-- ko if: parent_url -->
       <h4><a data-bind="attr: {href: parent_url}, text: parent_title"></a> / <a data-bind="attr: {href: url}, text: title"></a></h4>
@@ -249,8 +259,17 @@
             </span>
         </p>
         <!-- /ko -->
-      <!-- ko if: primary_institution -->
-        <p><strong>Primary institution:</strong> <span data-bind="text: primary_institution"></span></p>
+      <!-- ko if: affiliated_institutions ? affiliated_institutions.length > 0 : false -->
+        <p><strong>Affiliated institutions:</strong>
+            <!-- ko foreach {data: affiliated_institutions, as: 'item'} -->
+                <!-- ko if: item == $parent.affiliated_institutions[$parent.affiliated_institutions.length -1] -->
+                <span data-bind="text: item"></span>
+                <!-- /ko -->
+                <!-- ko if: item != $parent.affiliated_institutions[$parent.affiliated_institutions.length -1] -->
+                <span data-bind="text: item"></span>,
+                <!-- /ko -->
+            <!-- /ko -->
+        </p>
         <!-- /ko -->
         <!-- ko if: tags.length > 0 -->
         <div data-bind="template: 'tag-cloud'"></div>

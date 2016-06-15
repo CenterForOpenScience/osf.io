@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 
+import datetime
 import logging
 import httplib
 import httplib as http  # TODO: Inconsistent usage of aliased import
 from dateutil.parser import parse as parse_date
 
 from flask import request
+import markupsafe
 from modularodm.exceptions import ValidationError, NoResultsFound, MultipleResultsFound
 from modularodm import Q
 
@@ -24,9 +26,11 @@ from website import mails
 from website import mailchimp_utils
 from website import settings
 from website.project.model import Node
+from website.project.utils import PROJECT_QUERY, TOP_LEVEL_PROJECT_QUERY
 from website.models import ApiOAuth2Application, ApiOAuth2PersonalToken, User
 from website.oauth.utils import get_available_scopes
 from website.profile import utils as profile_utils
+from website.util.time import throttle_period_expired
 from website.util import api_v2_url, web_url_for, paths
 from website.util.sanitize import escape_html
 from website.util.sanitize import strip_html
@@ -38,14 +42,12 @@ logger = logging.getLogger(__name__)
 
 def get_public_projects(uid=None, user=None):
     user = user or User.load(uid)
-
+    # In future redesign, should be limited for users with many projects / components
     nodes = Node.find_for_user(
         user,
         subquery=(
-            Q('category', 'eq', 'project') &
-            Q('is_public', 'eq', True) &
-            Q('is_registration', 'eq', False) &
-            Q('is_deleted', 'eq', False)
+            TOP_LEVEL_PROJECT_QUERY &
+            Q('is_public', 'eq', True)
         )
     )
     return _render_nodes(list(nodes))
@@ -54,15 +56,14 @@ def get_public_projects(uid=None, user=None):
 def get_public_components(uid=None, user=None):
     user = user or User.load(uid)
     # TODO: This should use User.visible_contributor_to?
-
+    # In future redesign, should be limited for users with many projects / components
     nodes = list(
         Node.find_for_user(
             user,
-            (
-                Q('category', 'ne', 'project') &
-                Q('is_public', 'eq', True) &
-                Q('is_registration', 'eq', False) &
-                Q('is_deleted', 'eq', False)
+            subquery=(
+                PROJECT_QUERY &
+                Q('parent_node', 'ne', None) &
+                Q('is_public', 'eq', True)
             )
         )
     )
@@ -102,6 +103,9 @@ def resend_confirmation(auth):
     data = request.get_json()
 
     validate_user(data, user)
+    if not throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
+        raise HTTPError(httplib.BAD_REQUEST,
+                        data={'message_long': 'Too many requests. Please wait a while before sending another confirmation email.'})
 
     try:
         primary = data['email']['primary']
@@ -118,6 +122,7 @@ def resend_confirmation(auth):
     # TODO: This setting is now named incorrectly.
     if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
         send_confirm_email(user, email=address)
+        user.email_last_sent = datetime.datetime.utcnow()
 
     user.save()
 
@@ -180,7 +185,7 @@ def update_user(auth):
                 user.add_unconfirmed_email(address)
             except (ValidationError, ValueError):
                 raise HTTPError(http.BAD_REQUEST, data=dict(
-                    message_long="Invalid Email")
+                    message_long='Invalid Email')
                 )
 
             # TODO: This setting is now named incorrectly.
@@ -338,7 +343,8 @@ def user_account(auth, **kwargs):
         'user_id': user._id,
         'addons': user_addons,
         'addons_js': collect_user_config_js([addon for addon in settings.ADDONS_AVAILABLE if 'user' in addon.configs]),
-        'addons_css': []
+        'addons_css': [],
+        'requested_deactivation': user.requested_deactivation
     }
 
 
@@ -353,9 +359,10 @@ def user_account_password(auth, **kwargs):
         user.change_password(old_password, new_password, confirm_password)
         user.save()
     except ChangePasswordError as error:
-        push_status_message('<br />'.join(error.messages) + '.', kind='warning')
+        for m in error.messages:
+            push_status_message(m, kind='warning', trust=False)
     else:
-        push_status_message('Password updated successfully.', kind='success')
+        push_status_message('Password updated successfully.', kind='success', trust=False)
 
     return redirect(web_url_for('user_account'))
 
@@ -387,17 +394,17 @@ def user_notifications(auth, **kwargs):
 @must_be_logged_in
 def oauth_application_list(auth, **kwargs):
     """Return app creation page with list of known apps. API is responsible for tying list to current user."""
-    app_list_url = api_v2_url("applications/")
+    app_list_url = api_v2_url('applications/')
     return {
-        "app_list_url": app_list_url
+        'app_list_url': app_list_url
     }
 
 @must_be_logged_in
 def oauth_application_register(auth, **kwargs):
     """Register an API application: blank form view"""
-    app_list_url = api_v2_url("applications/")  # POST request to this url
-    return {"app_list_url": app_list_url,
-            "app_detail_url": ''}
+    app_list_url = api_v2_url('applications/')  # POST request to this url
+    return {'app_list_url': app_list_url,
+            'app_detail_url': ''}
 
 @must_be_logged_in
 def oauth_application_detail(auth, **kwargs):
@@ -415,25 +422,25 @@ def oauth_application_detail(auth, **kwargs):
     if record.is_active is False:
         raise HTTPError(http.GONE)
 
-    app_detail_url = api_v2_url("applications/{}/".format(client_id))  # Send request to this URL
-    return {"app_list_url": '',
-            "app_detail_url": app_detail_url}
+    app_detail_url = api_v2_url('applications/{}/'.format(client_id))  # Send request to this URL
+    return {'app_list_url': '',
+            'app_detail_url': app_detail_url}
 
 @must_be_logged_in
 def personal_access_token_list(auth, **kwargs):
     """Return token creation page with list of known tokens. API is responsible for tying list to current user."""
-    token_list_url = api_v2_url("tokens/")
+    token_list_url = api_v2_url('tokens/')
     return {
-        "token_list_url": token_list_url
+        'token_list_url': token_list_url
     }
 
 @must_be_logged_in
 def personal_access_token_register(auth, **kwargs):
     """Register a personal access token: blank form view"""
-    token_list_url = api_v2_url("tokens/")  # POST request to this url
-    return {"token_list_url": token_list_url,
-            "token_detail_url": '',
-            "scope_options": get_available_scopes()}
+    token_list_url = api_v2_url('tokens/')  # POST request to this url
+    return {'token_list_url': token_list_url,
+            'token_detail_url': '',
+            'scope_options': get_available_scopes()}
 
 @must_be_logged_in
 def personal_access_token_detail(auth, **kwargs):
@@ -450,10 +457,10 @@ def personal_access_token_detail(auth, **kwargs):
     if record.is_active is False:
         raise HTTPError(http.GONE)
 
-    token_detail_url = api_v2_url("tokens/{}/".format(_id))  # Send request to this URL
-    return {"token_list_url": '',
-            "token_detail_url": token_detail_url,
-            "scope_options": get_available_scopes()}
+    token_detail_url = api_v2_url('tokens/{}/'.format(_id))  # Send request to this URL
+    return {'token_list_url': '',
+            'token_detail_url': token_detail_url,
+            'scope_options': get_available_scopes()}
 
 
 def collect_user_config_js(addon_configs):
@@ -523,9 +530,9 @@ def update_mailchimp_subscription(user, list_name, subscription, send_goodbye=Tr
             mailchimp_utils.unsubscribe_mailchimp_async(list_name, user._id, username=user.username, send_goodbye=send_goodbye)
         except mailchimp_utils.mailchimp.ListNotSubscribedError:
             raise HTTPError(http.BAD_REQUEST,
-                data=dict(message_short="ListNotSubscribedError",
-                        message_long="The user is already unsubscribed from this mailing list.",
-                        error_type="not_subscribed")
+                data=dict(message_short='ListNotSubscribedError',
+                        message_long='The user is already unsubscribed from this mailing list.',
+                        error_type='not_subscribed')
             )
 
 
@@ -548,7 +555,7 @@ def sync_data_from_mailchimp(**kwargs):
             user = User.find_one(Q('username', 'eq', username))
         except NoResultsFound:
             sentry.log_exception()
-            sentry.log_message("A user with this username does not exist.")
+            sentry.log_message('A user with this username does not exist.')
             raise HTTPError(404, data=dict(message_short='User not found',
                                         message_long='A user with this username does not exist'))
         if action == 'unsubscribe':
@@ -777,21 +784,40 @@ def unserialize_schools(auth, **kwargs):
 
 @must_be_logged_in
 def request_export(auth):
+    user = auth.user
+    if not throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
+        raise HTTPError(httplib.BAD_REQUEST,
+                        data={'message_long': 'Too many requests. Please wait a while before sending another account export request.',
+                              'error_type': 'throttle_error'})
+
     mails.send_mail(
         to_addr=settings.SUPPORT_EMAIL,
         mail=mails.REQUEST_EXPORT,
         user=auth.user,
     )
+    user.email_last_sent = datetime.datetime.utcnow()
+    user.save()
     return {'message': 'Sent account export request'}
 
 
 @must_be_logged_in
 def request_deactivation(auth):
+    user = auth.user
+    if not throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
+        raise HTTPError(http.BAD_REQUEST,
+                        data={
+                            'message_long': 'Too many requests. Please wait a while before sending another account deactivation request.',
+                            'error_type': 'throttle_error'
+                        })
+
     mails.send_mail(
         to_addr=settings.SUPPORT_EMAIL,
         mail=mails.REQUEST_DEACTIVATION,
         user=auth.user,
     )
+    user.email_last_sent = datetime.datetime.utcnow()
+    user.requested_deactivation = True
+    user.save()
     return {'message': 'Sent account deactivation request'}
 
 
@@ -813,9 +839,9 @@ def redirect_to_twitter(twitter_handle):
         users = User.find(Q('social.twitter', 'iexact', twitter_handle))
         message_long = 'There are multiple OSF accounts associated with the ' \
                        'Twitter handle: <strong>{0}</strong>. <br /> Please ' \
-                       'select from the accounts below. <br /><ul>'.format(twitter_handle)
+                       'select from the accounts below. <br /><ul>'.format(markupsafe.escape(twitter_handle))
         for user in users:
-            message_long += '<li><a href="{0}">{1}</a></li>'.format(user.url, user.fullname)
+            message_long += '<li><a href="{0}">{1}</a></li>'.format(user.url, markupsafe.escape(user.fullname))
         message_long += '</ul>'
         raise HTTPError(http.MULTIPLE_CHOICES, data={
             'message_short': 'Multiple Users Found',

@@ -55,12 +55,12 @@ class ApiOAuth2ApplicationSerializer(ApiOAuthApplicationBaseSerializer):
     home_url = ser.CharField(help_text="The full URL to this application's homepage.",
                              required=True,
                              validators=[URLValidator()],
-                             label="Home URL")
+                             label='Home URL')
 
     callback_url = ser.CharField(help_text='The callback URL for this application (refer to OAuth documentation)',
                                  required=True,
                                  validators=[URLValidator()],
-                                 label="Callback URL")
+                                 label='Callback URL')
 
     owner = ser.CharField(help_text='The id of the user who owns this application',
                           read_only=True,  # Don't let user register an application in someone else's name

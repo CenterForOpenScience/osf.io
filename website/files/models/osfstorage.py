@@ -6,6 +6,7 @@ from modularodm import Q
 
 from framework.auth import Auth
 from framework.guid.model import Guid
+from website.exceptions import InvalidTagError, NodeStateError, TagNotFoundError
 from website.files import exceptions
 from website.files.models.base import File, Folder, FileNode, FileVersion, TrashedFileNode
 from website.util import permissions
@@ -122,25 +123,27 @@ class OsfStorageFileNode(FileNode):
             raise exceptions.FileNodeCheckedOutError()
 
         action = NodeLog.CHECKED_OUT if checkout else NodeLog.CHECKED_IN
-        self.checkout = checkout
 
-        self.node.add_log(
-            action=action,
-            params={
-                'kind': self.kind,
-                'project': self.node.parent_id,
-                'node': self.node._id,
-                'urls': {
-                    # web_url_for unavailable -- called from within the API, so no flask app
-                    'download': "/project/{}/files/{}/{}/?action=download".format(self.node._id, self.provider, self._id),
-                    'view': "/project/{}/files/{}/{}".format(self.node._id, self.provider, self._id)},
-                'path': self.materialized_path
-            },
-            auth=Auth(user),
-        )
+        if self.is_checked_out and action == NodeLog.CHECKED_IN or not self.is_checked_out and action == NodeLog.CHECKED_OUT:
+            self.checkout = checkout
 
-        if save:
-            self.save()
+            self.node.add_log(
+                action=action,
+                params={
+                    'kind': self.kind,
+                    'project': self.node.parent_id,
+                    'node': self.node._id,
+                    'urls': {
+                        # web_url_for unavailable -- called from within the API, so no flask app
+                        'download': '/project/{}/files/{}/{}/?action=download'.format(self.node._id, self.provider, self._id),
+                        'view': '/project/{}/files/{}/{}'.format(self.node._id, self.provider, self._id)},
+                    'path': self.materialized_path
+                },
+                auth=Auth(user),
+            )
+
+            if save:
+                self.save()
 
     def save(self):
         self.path = ''
@@ -237,15 +240,22 @@ class OsfStorageFile(OsfStorageFileNode, File):
 
     def remove_tag(self, tag, auth, save=True, log=True):
         from website.models import Tag, NodeLog  # Prevent import error
+        if self.node.is_registration:
+            # Can't perform edits on a registration
+            raise NodeStateError
+
         tag = Tag.load(tag)
-        if tag and tag in self.tags and not self.node.is_registration:
+        if not tag:
+            raise InvalidTagError
+        elif tag not in self.tags:
+            raise TagNotFoundError
+        else:
             self.tags.remove(tag)
             if log:
                 self.add_tag_log(NodeLog.FILE_TAG_REMOVED, tag._id, auth)
             if save:
                 self.save()
             return True
-        return False
 
     def delete(self, user=None, parent=None):
         from website.search import search

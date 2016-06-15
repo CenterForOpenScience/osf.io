@@ -3,9 +3,11 @@
  */
 'use strict';
 
+require('css/add-contributors.css');
+
 var $ = require('jquery');
 var ko = require('knockout');
-var bootbox = require('bootbox');
+var bootbox = require('bootbox');  // TODO: Why is this required? Is it? See [#OSF-6100]
 var Raven = require('raven-js');
 
 var oop = require('js/oop');
@@ -145,7 +147,7 @@ AddContributorViewModel = oop.extend(Paginator, {
         for (var key in nodesState) {
             var i;
             var node = nodesState[key];
-            var enabled = nodesState[key].canWrite;
+            var enabled = nodesState[key].isAdmin;
             var checked = nodesState[key].checked;
             if (enabled) {
                 var nodeContributors = [];
@@ -250,6 +252,7 @@ AddContributorViewModel = oop.extend(Paginator, {
                     return updatedUser;
                 });
                 self.results(contributors);
+                self.doneSearching(true);
             }
         );
     },
@@ -463,7 +466,7 @@ AddContributorViewModel = oop.extend(Paginator, {
             //parent node is changed by default
             nodesState[nodeParent].checked = true;
             //parent node cannot be changed
-            nodesState[nodeParent].canWrite = false;
+            nodesState[nodeParent].isAdmin = false;
             self.nodesState(nodesState);
         }).fail(function (xhr, status, error) {
             $osf.growl('Error', 'Unable to retrieve project settings');

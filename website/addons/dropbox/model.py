@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
-import os
 import httplib as http
 import logging
+import os
 
-from flask import request
-from modularodm import fields
 from dropbox.client import DropboxOAuth2Flow, DropboxClient
 from dropbox.rest import ErrorResponse
+from flask import request
+import markupsafe
+
+from modularodm import fields
 
 from framework.auth import Auth
 from framework.exceptions import HTTPError
@@ -154,7 +156,7 @@ class DropboxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     def set_folder(self, folder, auth):
         self.folder = folder
         # Add log to node
-        self.nodelogger.log(action="folder_selected", save=True)
+        self.nodelogger.log(action='folder_selected', save=True)
 
     # TODO: Is this used? If not, remove this and perhaps remove the 'deleted' field
     def delete(self, save=True):
@@ -168,7 +170,7 @@ class DropboxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
         if add_log:
             extra = {'folder': folder}
-            self.nodelogger.log(action="node_deauthorized", extra=extra, save=True)
+            self.nodelogger.log(action='node_deauthorized', extra=extra, save=True)
 
         self.clear_auth()
 
@@ -214,7 +216,7 @@ class DropboxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                 u'The contents of Dropbox add-ons cannot be registered at this time; '
                 u'the Dropbox folder linked to this {category} will not be included '
                 u'as part of this registration.'
-            ).format(**locals())
+            ).format(category=markupsafe.escape(category))
 
     # backwards compatibility
     before_register = before_register_message
@@ -227,9 +229,10 @@ class DropboxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             category = node.project_or_component
             name = removed.fullname
             return (u'The Dropbox add-on for this {category} is authenticated by {name}. '
-                    'Removing this user will also remove write access to Dropbox '
-                    'unless another contributor re-authenticates the add-on.'
-                    ).format(**locals())
+                    u'Removing this user will also remove write access to Dropbox '
+                    u'unless another contributor re-authenticates the add-on.'
+                    ).format(category=markupsafe.escape(category),
+                             name=markupsafe.escape(name))
 
     # backwards compatibility
     before_remove_contributor = before_remove_contributor_message
@@ -269,16 +272,16 @@ class DropboxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             message = (
                 'Dropbox authorization copied to forked {cat}.'
             ).format(
-                cat=fork.project_or_component
+                cat=markupsafe.escape(fork.project_or_component)
             )
         else:
             message = (
                 u'Dropbox authorization not copied to forked {cat}. You may '
-                'authorize this fork on the <u><a href="{url}">Settings</a></u> '
-                'page.'
+                u'authorize this fork on the <u><a href="{url}">Settings</a></u> '
+                u'page.'
             ).format(
                 url=fork.web_url_for('node_setting'),
-                cat=fork.project_or_component
+                cat=markupsafe.escape(fork.project_or_component)
             )
         if save:
             clone.save()
@@ -297,9 +300,9 @@ class DropboxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                 u'Because the Dropbox add-on for {category} "{title}" was authenticated '
                 u'by {user}, authentication information has been deleted.'
             ).format(
-                category=node.category_display,
-                title=node.title,
-                user=removed.fullname
+                category=markupsafe.escape(node.category_display),
+                title=markupsafe.escape(node.title),
+                user=markupsafe.escape(removed.fullname)
             )
 
             if not auth or auth.user != removed:

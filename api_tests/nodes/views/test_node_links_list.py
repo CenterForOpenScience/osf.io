@@ -11,8 +11,7 @@ from tests.base import ApiTestCase
 from tests.factories import (
     ProjectFactory,
     RegistrationFactory,
-    AuthUserFactory,
-    RetractedRegistrationFactory
+    AuthUserFactory
 )
 from tests.utils import assert_logs
 
@@ -85,13 +84,6 @@ class TestNodeLinksList(ApiTestCase):
         res = self.app.get(self.public_url)
         res_json = res.json['data']
         assert_equal(len(res_json), original_length - 1)
-
-    def test_cannot_access_retracted_node_links_list(self):
-        registration = RegistrationFactory(creator=self.user, project=self.public_project)
-        url = '/{}nodes/{}/node_links/'.format(API_BASE, registration._id)
-        retraction = RetractedRegistrationFactory(registration=registration, user=registration.creator)
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
 
 
 class TestNodeLinkCreate(ApiTestCase):
@@ -481,7 +473,7 @@ class TestNodeLinkCreate(ApiTestCase):
         }
         res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
-        assert_equal(res.json['errors'][0]['detail'], 'Resource identifier does not match server endpoint.')
+        assert_equal(res.json['errors'][0]['detail'], 'This resource has a type of "node_links", but you set the json body\'s type field to "Wrong type.". You probably need to change the type field to match the resource\'s type.')
 
 
 class TestNodeLinksBulkCreate(ApiTestCase):
@@ -750,7 +742,7 @@ class TestNodeLinksBulkCreate(ApiTestCase):
         payload = {'data': [{'type': 'Wrong type.', 'relationships': {'nodes': {'data': {'type': 'nodes', 'id': self.user_two_project._id}}}}]}
         res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True, bulk=True)
         assert_equal(res.status_code, 409)
-        assert_equal(res.json['errors'][0]['detail'], 'Resource identifier does not match server endpoint.')
+        assert_equal(res.json['errors'][0]['detail'], 'This resource has a type of "node_links", but you set the json body\'s type field to "Wrong type.". You probably need to change the type field to match the resource\'s type.')
 
 
 class TestBulkDeleteNodeLinks(ApiTestCase):

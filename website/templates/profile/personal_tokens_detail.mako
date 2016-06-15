@@ -37,27 +37,14 @@
                             % for scope in scope_options:
                                 <input type="checkbox" id="${scope[0]}" value="${scope[0]}" data-bind="checked: scopes">
                                 <label for="${scope[0]}">${scope[0]} </label>
-                                <i class="fa fa-info-circle text-muted" data-bind="tooltip: {title: '${scope[1]}', placement: 'bottom'}"></i>
+                                <i class="fa fa-info-circle text-muted" data-bind="tooltip: {title: ${scope[1] | sjson, n }, placement: 'bottom'}"></i>
                                 <br>
                             % endfor
                          </div>
                         <p data-bind="validationMessage: scopes, visible: $root.showMessages()" class="text-danger"></p>
                     </div>
 
-                    <br/>
-                    <div id="token-keys" class="border-box text-left"
-                         data-bind="visible: $root.showToken()">
-                        <label>Token ID</label>
-                        <i class="fa fa-info-circle text-muted" data-bind="tooltip: {title:'ID used to authenticate with this token. This will be shown only once.',        placement: 'bottom'}"></i>
-                        <span data-bind="text: token_id"></span>
-                    </div>
-
-                    <!-- Flashed Messages -->
-                    <div class="help-block">
-                        <p data-bind="html: $root.message, attr: {class: $root.messageClass}"></p>
-                    </div>
-
-                    <div class="padded">
+                    <div class="padded action-buttons">
                         <button type="reset" class="btn btn-default"
                                 data-bind="click: $root.cancelChange.bind($root)">Cancel</button>
                         <button type="submit" class="btn btn-success"
@@ -66,6 +53,22 @@
                                 data-bind="visible: !$root.isCreateView(), click: $root.deleteToken.bind($root)">Delete</button>
                         <button type="submit" class="btn btn-success"
                                 data-bind="visible: !$root.isCreateView()">Save</button>
+                    </div>
+
+                    <!-- Flashed Messages -->
+                    <div class="help-block">
+                        <p data-bind="html: $root.message, attr: {class: $root.messageClass}"></p>
+                    </div>
+
+                    <div id="token-keys" class="border-box text-left"
+                         data-bind="visible: $root.showToken()">
+                        <div class="bg-danger f-w-xl token-warning">This is the only time your token will be displayed.</div>
+                        <label class="f-w-xl">Token ID</label>
+                        <i class="fa fa-info-circle text-muted" data-bind="tooltip: {title:'ID used to authenticate with this token. This will be shown only once.',        placement: 'bottom'}"></i>
+                        <samp data-bind="text: token_id"></samp>
+                        <div>
+                            <button type="button" class="btn btn-default" data-bind="clipboard: token_id()" id="copy-button"><i class="fa fa-copy"></i> Copy to clipboard</button>
+                        </div>
                     </div>
                 </form>
 

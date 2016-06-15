@@ -41,7 +41,11 @@
             </div>
             <div class="form-group" style="padding-top: 15px">
                 <div class="text-center m-t-lg">
-                    <p>For non-institutional login, click <a href="/login/">here</a>.</p>
+                    %if redirect_url:
+                        <p>For non-institutional login, click <a href="/login/?redirect_url=${redirect_url}">here</a>.</p>
+                    %else:
+                        <p>For non-institutional login, click <a href="/login/">here</a>.</p>
+                    %endif
                 </div>
             </div>
         </div>
@@ -218,7 +222,7 @@
             </div>
             <div class="form-group">
                 <div class="col-sm-offset-4 col-sm-8">
-                    <button type="submit" class="btn pull-right btn-success ">Create account</button>
+                    <button type="submit" class="btn pull-right btn-success" data-bind="disable: submitted()">Create account</button>
                 </div>
             </div>
         </form>
@@ -237,8 +241,8 @@
     ${parent.javascript_bottom()}
     <script type="text/javascript">
         window.contextVars = $.extend(true, {}, window.contextVars, {
-            'campaign': ${campaign or '' | sjson, n},
-            'institution_redirect': ${institution_redirect or '' | sjson, n}
+            'campaign': ${ campaign or '' | sjson, n },
+            'institution_redirect': ${ institution_redirect or '' | sjson, n }
         });
     </script>
     <script src=${"/static/public/js/login-page.js" | webpack_asset}></script>

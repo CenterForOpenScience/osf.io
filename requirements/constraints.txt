@@ -1,0 +1,14 @@
+## Constraints file for resolving conflicts across addons. In general, the version specified by OSF base requirements "wins"
+## "Constraints files are requirements files that only control which version of a requirement is installed, not whether it is installed or not."
+##     See https://pip-python3.readthedocs.org/en/latest/user_guide.html#constraints-files
+
+lxml==3.4.1
+pytz==2014.9
+python-dateutil==2.5.0
+html5lib==0.999
+bleach==1.4.1
+requests==2.5.3
+urllib3==1.10.4
+requests-oauthlib==0.5.0
+oauthlib>=1.0  # Mendeley pins to a much lower version but OSF overrides
+git+https://github.com/jmcarp/HTTPretty@matcher-priority

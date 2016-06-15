@@ -7,6 +7,7 @@ These classes are registered in event_registry and are callable through the
 FileEvent and ComplexFileEvent are parent classes with shared functionality.
 """
 from furl import furl
+import markupsafe
 
 from website.notifications import emails
 from website.notifications.constants import NOTIFICATION_TYPES
@@ -43,9 +44,9 @@ class FileEvent(Event):
         if self.payload['metadata']['materialized'].endswith('/'):
             f_type = u'folder'
         return u'{action} {f_type} "<b>{name}</b>".'.format(
-            action=action,
-            f_type=f_type,
-            name=self.payload['metadata']['materialized'].lstrip('/')
+            action=markupsafe.escape(action),
+            f_type=markupsafe.escape(f_type),
+            name=markupsafe.escape(self.payload['metadata']['materialized'].lstrip('/'))
         )
 
     @property
@@ -63,7 +64,7 @@ class FileEvent(Event):
     @property
     def event_type(self):
         """Most basic event type."""
-        return "file_updated"
+        return 'file_updated'
 
     @property
     def waterbutler_id(self):
@@ -121,7 +122,7 @@ class ComplexFileEvent(FileEvent):
         self.addon = self.node.get_addon(self.payload['destination']['provider'])
 
     def _build_message(self, html=False):
-        addon, f_type, action = tuple(self.action.split("_"))
+        addon, f_type, action = tuple(self.action.split('_'))
         # f_type is always file for the action
         if self.payload['destination']['kind'] == u'folder':
             f_type = 'folder'
@@ -135,14 +136,14 @@ class ComplexFileEvent(FileEvent):
                 u'from {source_addon} in {source_node_title} '
                 u'to "<b>{dest_name}</b>" in {dest_addon} in {dest_node_title}.'
             ).format(
-                action=action,
-                f_type=f_type,
-                source_name=source_name,
-                source_addon=self.payload['source']['addon'],
-                source_node_title=self.payload['source']['node']['title'],
-                dest_name=destination_name,
-                dest_addon=self.payload['destination']['addon'],
-                dest_node_title=self.payload['destination']['node']['title'],
+                action=markupsafe.escape(action),
+                f_type=markupsafe.escape(f_type),
+                source_name=markupsafe.escape(source_name),
+                source_addon=markupsafe.escape(self.payload['source']['addon']),
+                source_node_title=markupsafe.escape(self.payload['source']['node']['title']),
+                dest_name=markupsafe.escape(destination_name),
+                dest_addon=markupsafe.escape(self.payload['destination']['addon']),
+                dest_node_title=markupsafe.escape(self.payload['destination']['node']['title']),
             )
         return (
             u'{action} {f_type} "{source_name}" '
@@ -193,9 +194,9 @@ class AddonFileRenamed(ComplexFileEvent):
     @property
     def html_message(self):
         return u'renamed {kind} "<b>{source_name}</b>" to "<b>{destination_name}</b>".'.format(
-            kind=self.payload['destination']['kind'],
-            source_name=self.payload['source']['materialized'],
-            destination_name=self.payload['destination']['materialized'],
+            kind=markupsafe.escape(self.payload['destination']['kind']),
+            source_name=markupsafe.escape(self.payload['source']['materialized']),
+            destination_name=markupsafe.escape(self.payload['destination']['materialized']),
         )
 
     @property

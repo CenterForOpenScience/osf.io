@@ -1,14 +1,36 @@
-from django.db.models.functions import Concat
-from django.db.models import Value
 
-from admin.common_auth.models import MyUser
+SORT_BY = {
+    'initiator': 'initiator',
+    'n_initiator': '-initiator',
+    'title': 'title',
+    'n_title': '-title',
+    'date': 'date',
+    'n_date': '-date',
+    'state': 'state',
+    'n_state': '-state',
+}
 
 
-def get_prereg_reviewers():
-    return MyUser.objects.filter(
-        groups__name='prereg_group'
-    ).annotate(
-        fuller_name=Concat('first_name', Value(' '), 'last_name')
-    ).values_list(
-        'email', 'fuller_name'
-    )
+def sort_drafts(query_set, order_by):
+    if order_by == SORT_BY['date']:
+        return sorted(
+            query_set,
+            key=lambda d: d.approval.initiation_date
+        )
+    elif order_by == SORT_BY['state']:
+        return sorted(
+            query_set,
+            key=lambda d: d.approval.state,
+        )
+    elif order_by == SORT_BY['n_state']:
+        return sorted(
+            query_set,
+            key=lambda d: d.approval.state,
+            reverse=True
+        )
+    else:
+        return sorted(
+            query_set,
+            key=lambda d: d.approval.initiation_date,
+            reverse=True
+        )
