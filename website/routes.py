@@ -54,7 +54,7 @@ def get_globals():
 
     try:
         share_window_id = Node.find_one(Q("contributors", "eq", user._id) & Q("is_public_files_collection", "eq", True))._id
-    except (AttributeError, NoResultsFound) as error:
+    except (AttributeError, NoResultsFound):
         share_window_id = None
 
     if request.host_url != settings.DOMAIN:

@@ -1517,8 +1517,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 Q('is_public_files_collection', 'eq', True) & Q('contributors', 'eq', self.creator._id)
             )
             if existing_public_files_collections.count() > 0:
-                raise NodeStateError("Only one bookmark collection allowed per user.")
-
+                raise NodeStateError("Only one Public Files collection allowed per user.")
 
         is_original = not self.is_registration and not self.is_fork
         if 'suppress_log' in kwargs.keys():

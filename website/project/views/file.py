@@ -24,9 +24,5 @@ def grid_data(auth, node, **kwargs):
     """
     data = request.args.to_dict()
 
-    data = {'data': rubeus.to_hgrid(node, auth, **data) }
-
-    if node.is_public_files_collection: # hacks permission so it's viewable but doesn't show up in search
-        data['data'][0]["permissions"]['view'] = True
-
+    data = {'data': rubeus.to_hgrid(node, auth, **data)}
     return data
