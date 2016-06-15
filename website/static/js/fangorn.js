@@ -16,7 +16,7 @@ var waterbutler = require('js/waterbutler');
 
 var iconmap = require('js/iconmap');
 var storageAddons = require('json!storageAddons.json');
-var makeClipboardClient = require('js/clipboard');
+var generateClipboard = require('js/clipboard');
 
 // CSS
 require('css/fangorn.css');
@@ -1204,23 +1204,7 @@ function _fangornTitleColumn(item, col) {
     return m('span', item.data.name);
 }
 
-function generateClipboard(item){
 
-    var url = waterbutler.buildTreeBeardDownload(item);
-    var cb = function(elem) {
-        makeClipboardClient(elem);
-    };
-    return m('div.input-group[style="width: 180px"]',
-                       [
-                           m('span.input-group-btn',
-                               m('button.btn.btn-default.btn-sm[type="button"][data-clipboard-text="'+url+ '"]', {config: cb},
-                                   m('.fa.fa-copy')
-                               )
-                           ),
-                           m('input[value="'+url+'"][readonly="readonly"][style="height: 30px;color:#333333;"]')
-                       ]
-          );
-}
 /**
  * Returns a reusable template for column titles when there is no connection
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
@@ -1298,7 +1282,7 @@ if(window.contextVars.isPublicFilesCol) {
         {
             data : 'Share Link',  // Data field name
             filter : true,
-            custom : function() {return generateClipboard(item);}
+            custom : function() {return generateClipboard(waterbutler.buildTreeBeardDownload(item));}
         });
         default_columns.push(
         {
