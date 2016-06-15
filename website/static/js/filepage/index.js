@@ -140,7 +140,7 @@ var FileViewPage = {
                 dataType: 'json',
                 async: true,
                 url: fileWebViewUrl,
-                beforeSend: $osf.setXHRAuthorization 
+                beforeSend: $osf.setXHRAuthorization
             }).done(function(response) {
                 window.contextVars.file.urls.external = response.data.extra.webView;
             });
@@ -416,9 +416,10 @@ var FileViewPage = {
             }
         };
 
-        var link = $('iframe').attr('src') ? $('iframe').attr('src').substring(0, $('iframe').attr('src').indexOf('download') + 8) +
+        var mfrIframe = $('#mfrIframe iframe');
+        var link = mfrIframe.attr('src') ? mfrIframe.attr('src').substring(0, mfrIframe.attr('src').indexOf('download') + 8) +
                 '%26mode=render' : 'Data not available';
-        var height = $('iframe').attr('height') ? $('iframe').attr('height') : '0px';
+        var height = mfrIframe.attr('height') ? mfrIframe.attr('height') : '0px';
 
         m.render(document.getElementById('toggleBar'), m('.btn-toolbar.m-t-md', [
             // Special case whether or not to show the delete button for published Dataverse files

@@ -540,3 +540,441 @@ ESI_MEDIA_TYPES = {'application/vnd.api+json', 'application/json'}
 
 # Used for gathering meta information about the current build
 GITHUB_API_TOKEN = None
+
+DISCOURSE_SSO_SECRET = 'changeme'
+DISCOURSE_SERVER_URL = 'http://192.168.99.100'
+DISCOURSE_API_KEY = 'changeme'
+DISCOURSE_API_ADMIN_USER = 'changeme'
+
+DISCOURSE_SERVER_SETTINGS = {'title': 'Open Science Framework',
+                             'site_description': 'A scholarly commons to connect the entire research cycle',
+                             'contact_email': 'changeme',
+                             'contact_url': '',
+                             'notification_email': 'noreply@osf.io',
+                             'site_contact_username': 'system',
+                             'logo_url': '',
+                             'logo_small_url': '',
+                             'favicon_url': DOMAIN + 'favicon.ico',
+                             'enable_local_logins': 'false',
+                             'enable_sso': 'true',
+                             'sso_url': API_DOMAIN + 'v2/sso',
+                             'sso_secret': DISCOURSE_SSO_SECRET,
+                             'sso_overrides_email': 'true',
+                             'sso_overrides_username': 'true',
+                             'sso_overrides_name': 'true',
+                             'sso_overrides_avatar': 'true',
+                             'logout_redirect': DOMAIN + 'logout',
+                             'cors_origins': DOMAIN,
+                             'min_topic_title_length': '0',
+                             'title_min_entropy': '0',
+                             'title_prettify': 'false',
+                             'allow_duplicate_topic_titles': 'true',
+                             'tagging_enabled': 'true',
+                             }
+
+DISCOURSE_SERVER_CUSTOMIZATIONS = [{'name': 'MFR',
+                                    'enabled': 'true',
+                                    'head_tag': '<link href="https://mfr.osf.io/static/css/mfr.css" media="all" rel="stylesheet">',
+                                    'body_tag': '''
+<style>
+    #mfrIframe {
+        width: 100%:
+    }
+</style>
+
+<script src="https://mfr.osf.io/static/js/mfr.js"></script>
+<script>
+var observeDOM = (function(){
+    var MutationObserver = window.MutationObserver || window.WebKitMutationObserver,
+        eventListenerSupported = window.addEventListener;
+
+    return function(obj, callback){
+        if( MutationObserver ){
+            // define a new observer
+            var obs = new MutationObserver(function(mutations, observer){
+                if( mutations[0].addedNodes.length || mutations[0].removedNodes.length )
+                    callback();
+            });
+            // have the observer observe foo for changes in children
+            obs.observe( obj, { childList:true, subtree:true });
+        }
+    }
+})();
+
+// Observe a specific DOM element:
+observeDOM(document.body, function() {
+
+    var topic_post = document.querySelector('.topic-post article#post_1 .cooked');
+
+    if (!topic_post) return;
+    if (document.getElementById("mfrIframe")) return;
+
+    var mfr_div = document.createElement('div');
+    mfr_div.id = "mfrIframe";
+    mfr_div.classList.add('mfr', 'mrf-file');
+    var reg = new RegExp('\:\/\/(?:osf|local)[^\/]*\/([a-z0-9]*)\/?');
+    var match = reg.exec(topic_post.textContent)
+    if (match) {
+        var guid = match[1];
+        topic_post.appendChild(mfr_div);
+        window.jQuery || document.write('<script src="//code.jquery.com/jquery-1.11.2.min.js">\\x3C/script>');
+        var mfrRender = new mfr.Render("mfrIframe", "''' + MFR_SERVER_URL + '''/render?url=''' + DOMAIN + '''"+guid+"/?action=download%26mode=render");
+    }
+});
+
+
+</script>
+                                    ''',
+                                    },
+                                   {'name': 'Embedded Comments',
+                                    'enabled': 'true',
+                                    'embedded_css': '''
+body {
+    background: whitesmoke;
+    font-family: 'Open Sans', 'Helvetica Neue', sans-serif;
+	font-style: normal;
+	font-variant: normal;
+	font-weight: 200;
+	    -webkit-font-smoothing: antialiased;
+}
+
+a:hover {
+    color: #204762;
+}
+
+.username .staff {
+    background-color: whitesmoke;
+}
+
+.username a {
+    color: #337ab7 ;
+}
+
+.username a:hover {
+    color: #204762;
+}
+
+footer .button {
+    background-color: whitesmoke ;
+    color: #337ab7 ;
+}
+
+footer a:hover {
+    color: #204762;
+}
+                                    ''',
+                                   },
+                                   {'name': 'Title Manager',
+                                    'enabled': 'true',
+                                    'body_tag': '''
+<script>(function(){
+
+var observeDOM = (function(){
+    var MutationObserver = window.MutationObserver || window.WebKitMutationObserver,
+        eventListenerSupported = window.addEventListener;
+
+    return function(obj, callback){
+        if( MutationObserver ){
+            // define a new observer
+            var obs = new MutationObserver(function(mutations, observer){
+                if( mutations[0].addedNodes.length || mutations[0].removedNodes.length )
+                    callback();
+            });
+            // have the observer observe foo for changes in children
+            obs.observe( obj, { childList:true, subtree:true });
+        }
+    }
+})();
+
+// Observe a specific DOM element:
+observeDOM(document.body, function() {
+    console.log('mutation!')
+
+    var embedded_title = document.querySelector('.topic-post article#post_1 .cooked code');
+    if (!embedded_title) return;
+    console.log('got topic post')
+
+    var topic_title = document.querySelector('#topic-title .title-wrapper .fancy-title')
+    if (!topic_title || topic_title.classList.contains('hacked')) return;
+    console.log('got topic title');
+
+    topic_title.innerHTML = embedded_title.textContent;
+    console.log(embedded_title);
+    console.log(embedded_title.parentNode)
+    embedded_title.parentNode.removeChild(embedded_title)
+    topic_title.classList.add('hacked')
+});
+
+})()</script>
+                                    ''',
+                                   },
+                                  {'name': 'Top Header',
+                                   'enabled': 'true',
+                                   'stylesheet': '''
+/********** Sticky Nav **********/
+
+a {
+
+font-family: 'Helvetica Neue', Helvetica, Arial, Utkal, sans-serif;
+font-weight: 300;
+}
+
+section.ember-application {
+    padding-top: 0;
+}
+
+.desktop-view body .ember-view > header.d-header {
+    position: fixed;
+    top: 0;
+    background-color: #263947;
+
+}
+.title a:after {
+    margin-left: 10px;
+    font-size: 24px;
+    content: "Open Science Framework";
+    font-family: 'Open Sans', 'Helvetica Neue', sans-serif;
+
+    &:hover {
+        color: #e0ebf3;
+      }
+-webkit-font-smoothing: antialiased;
+}
+
+.desktop-view body #main {
+  padding-top: 74px;
+}
+
+#top-navbar {
+  height:60px;
+  background-color:#263947;
+  width:100%;
+  position: fixed;
+  z-index: 1001;
+}
+
+.desktop-view body header.d-header {
+  top: 59px;
+  padding-top: 6px;
+}
+
+div#top-navbar-links {
+  width:100%;
+  margin: 0 auto;
+  padding-top: 0;
+  max-width:1100px;
+  margin-top: 0;
+}
+
+div#top-navbar-links a, div#top-navbar-links span {
+  color:#eee;
+  font-size: 14px;
+}
+
+div.cos-icon--main {
+    float: left;
+    margin-right: 10px;
+
+    > a, > a:visited, > a:active {
+      display: inline-block;
+      padding: 6px 10px;
+      font-size: 14px;
+      color: #eeeeee;
+
+      &:hover {
+        color: #e0ebf3;
+      }
+    }
+  }
+
+.navbar-brand {
+    float: left;
+    padding: 12.5px 15px ;
+    font-size: 18px;
+    line-height: 25px;
+    height: 50px ;
+}
+
+/* js dropdown navs */
+#top-external-nav {
+  float: right;
+  margin-top: 12px;
+  position: right;
+  list-style: none;
+
+  li.top-ext--main {
+    float: left;
+    position: relative;
+    margin-right: 10px;
+    > a, > a:visited, > a:active {
+      display: inline-block;
+      padding: 6px 10px;
+      font-size: 14px;
+      color: #eeeeee;
+      &:hover {
+        color: #e0ebf3;
+      }
+    }
+  }
+
+  #top-discourse-link a.top-discourse-link-main {
+    padding: 6px 10px 20px 10px;
+  }
+
+  ul.top-ext--sub {
+    display: none;
+    position: absolute;
+    top: 40px;
+    left: 0;
+    margin-left: 0;
+    background-color: white;
+    box-shadow: 0 2px 5px rgba(0,0,0, .5);
+    list-style: none;
+
+    li.top-ext--sub-item {
+      float: none;
+      padding: 0;
+      margin: 0;
+      background-color: white;
+      a, a:visited {
+        display: inline-block;
+        width: 190px;
+        padding: 8px 10px;
+        span {
+          font-size: 14px;
+          color: #666;
+        }
+
+        img {
+          width: 20px;
+          margin-right: 6px;
+        }
+      }
+
+      &:hover {
+        background-color: #eef;
+      }
+    }
+  }
+}
+                                ''',
+                                'header': '''
+<!DOCTYPE html>
+
+    <div id="top-navbar" style='display:none;'>
+      <div id="top-navbar-links">
+          <div class="cos-icon--main">
+            <a class="navbar-brand hidden-sm hidden-xs" href="/" >
+                <img src="http://discourse.mechanysm.com/uploads/default/original/1X/0ea2d6e023b73a218200bded19cec4b95c58e667.png" class="cos-icon--main" width="27" alt="COS">
+                "Open Science Framework"
+            </a>
+          </div>
+        <div class="panel clearfix">
+            <ul id="top-external-nav" class="icons clearfix">
+
+              <li class="top-ext--main">
+                <a class="top-ext--link" href="http://osf.io/" target="blank">Dashboard</a>
+              </li>
+
+              <li class="top-ext--main">
+                <a class="top-ext--link" href="https://osf.io/myprojects/" target="blank">My Project</a>
+              </li>
+
+              <li class="top-ext--main" id="top-discourse-link">
+               ; <a class="top-ext--link top-discourse-link-main">Browse</a>
+                <ul class="top-ext--sub" id="top-discourse-sub">
+                  <li class="top-ext--sub-item">
+                    <a class="top-ext--link" href="https://osf.io/explore/activity/" target="blank">
+                      <span>New Project</span>
+                    </a>
+                  </li>
+                  <li class="top-ext--sub-item">
+                    <a class="top-ext--link" href="" target="blank">
+                      <span>Registry</span>
+                    </a>
+                  </li>
+                  <li class="top-ext--sub-item">
+                    <a class="top-ext--link" href="https://osf.io/meetings/" target="blank">
+                      <span>Meetings</span>
+                    </a>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+        </div>
+      </div>
+    </div>
+                                   ''',
+                                   'head_tag': '''
+<!DOCTYPE html>
+<link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300' rel='stylesheet' type='text/css'>
+<script type="text/javascript">
+
+$(function() {
+  var $topDiscourseSub = $('#top-discourse-sub');
+  $('#top-discourse-link').hover(function() {
+    $topDiscourseSub.show();
+  }, function() {
+    $topDiscourseSub.hide();
+  });
+});
+</script>
+                                   ''',
+                                  },
+                                 {'name': 'Topic Header',
+                                  'enabled': 'true',
+                                  'head_tag': '',
+                                  'body_tag': '''
+<style>
+    #project_header {
+        background-color: #eee;
+        box-shadow: 0 3 10px 10px rgba(0,0,0,0.4);
+        overflow: hidden;
+    }
+    #project_header > ul > li {
+        float: left;
+        list-style-type: none;
+        padding: 10px;
+        color: #337ab7;
+    }
+    #project_header > ul > li:hover {
+        background-color: #e1e1e1;
+        color: #337;
+    }
+</style>
+<script>
+// Observe a specific DOM element:
+observeDOM(document.body, function() {
+    var discourse_header = document.querySelector('header.d-header');
+    var topic_post = document.querySelector('.topic-post article#post_1 .cooked');
+
+    if (!discourse_header) return;
+    if (!topic_post) return;
+    if (document.getElementById("project_header")) return;
+
+    var project_header = document.createElement('div');
+    project_header.id = "project_header";
+
+    var ul = document.createElement('ul');
+    ul.classList.add("wrap");
+    ul.style.margin = "0 auto";
+
+    [
+        "Project",
+        "Files",
+        "Wiki",
+        "Analytics",
+        "Registrations",
+        "Forks"
+    ].map(function(x) {
+        var li = document.createElement("li");
+        li.textContent = x
+        ul.appendChild(li);
+    });
+
+    project_header.appendChild(ul);
+    discourse_header.appendChild(project_header);
+});
+</script>
+                                  ''',
+                                 }]
