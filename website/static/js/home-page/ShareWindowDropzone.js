@@ -7,11 +7,10 @@ require('css/dropzone-plugin.css');
 require('css/quick-project-search-plugin.css');
 require('loaders.css/loaders.min.css');
 var Dropzone = require('dropzone');
-
-var ZeroClipboard = require('zeroclipboard');
-var fileURL = "";
+var clipboard = require("clipboard-js");
 var fileURLArray = [];
-var clip = "";
+
+
 
 // Don't show dropped content if user drags outside dropzone
 window.ondragover = function (e) {
@@ -74,12 +73,9 @@ var ShareWindowDropzone = {
 
             success: function (file, xhr) {
                 var fileJson = JSON.parse((file.xhr.response));
-                filePath = fileJson.path
-                var url=(window.location.host+'/'+window.contextVars['shareWindowId']+'/files/osfstorage'+ filePath);
-                fileURL = url;
+                var filePath = fileJson.path
+                var url =(window.location.host+'/'+window.contextVars['shareWindowId']+'/files/osfstorage'+ filePath);
                 fileURLArray.push(url);
-                clip = new ZeroClipboard( document.getElementsByClassName('copy') );
-
                 this.processQueue();
                 file.previewElement.classList.add("dz-success");
                 file.previewElement.classList.add("dz-preview-background-success");
@@ -110,16 +106,16 @@ var ShareWindowDropzone = {
         };
 
 
-        var shareLink = "";
         $("#shareWindowDropzone").on("click", "div.dz-share", function(e){
-            var el = document.getElementsByClassName('dz-preview');
-                for (var i = 0; i < el.length; i++) {
-                    if($(".dz-share").index(this) == i){
-                        shareLink = fileURLArray[i];
+            var shareLink = "";
+                var el = document.getElementsByClassName('dz-preview');
+                    for (var i = 0; i < el.length; i++) {
+                        if($(".dz-share").index(this) == i){
+                            shareLink = fileURLArray[i];
+                        }
                     }
-                }
-           clip.setData("text/plain" , shareLink);
-           $(e.target).parent().siblings('.alertbubble').finish().show().delay(1000).fadeOut("slow");
+               $(e.target).parent().siblings('.alertbubble').finish().show().delay(1000).fadeOut("slow");
+               clipboard.copy(shareLink);
         });
 
 
@@ -134,7 +130,7 @@ var ShareWindowDropzone = {
                             m('div.dz-progress',
                                 m('span[data-dz-uploadprogress].dz-upload')
                             ),
-                            m(".dz-share", [" ",m("i.fa.fa-share-alt.copy[aria-hidden='true'][data-clipboard-text='"+shareLink+"']")," "])," ",m("span.alertbubble.alertbubblepos", [m("i.fa.fa-clipboard[aria-hidden='true']")," Copied"]),
+                            m(".dz-share", [" ",m("i.fa.fa-share-alt.copy[aria-hidden='true']")," "])," ",m("span.alertbubble.alertbubblepos", [m("i.fa.fa-clipboard[aria-hidden='true']")," Copied"]),
 
                             m('div.dz-success-mark',
                                 m('span.glyphicon.glyphicon-ok-circle')
