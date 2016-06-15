@@ -7,6 +7,7 @@ from modularodm.exceptions import NoResultsFound
 from website.models import Node, User
 from website.notifications import constants
 from website.notifications import model
+from website.notifications.exceptions import InvalidSubscriptionError
 from website.notifications.model import NotificationSubscription
 from website.project import signals
 
@@ -404,6 +405,16 @@ def subscribe_user_to_notifications(node, user):
 
     :param user: User to subscribe to notifications
     """
+
+    if node.institution_id:
+        raise InvalidSubscriptionError('Institutions are invalid targets for subscriptions')
+
+    if node.is_bookmark_collection:
+        raise InvalidSubscriptionError('Bookmark Collections are invalid targets for subscriptions')
+
+    if node.is_deleted:
+        raise InvalidSubscriptionError('Deleted Nodes are invalid targets for subscriptions')
+
     events = constants.NODE_SUBSCRIPTIONS_AVAILABLE
     notification_type = 'email_transactional'
     target_id = node._id
