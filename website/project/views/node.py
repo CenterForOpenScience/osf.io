@@ -254,12 +254,6 @@ def node_registrations(auth, node, **kwargs):
 
 @must_be_valid_project
 @must_be_contributor_or_public_but_not_anonymized
-def node_share_window(auth, node, **kwargs):
-    return _view_project(node, auth, primary=True)
-
-
-@must_be_valid_project
-@must_be_contributor_or_public_but_not_anonymized
 def node_forks(auth, node, **kwargs):
     return _view_project(node, auth, primary=True)
 
