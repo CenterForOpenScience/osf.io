@@ -465,6 +465,15 @@ def make_url_map(app):
             notemplate
         ),
 
+
+
+        Rule(
+            '/forgotpassword/',
+            ['get', 'post'],
+            auth_views.forgot_password,
+            OsfWebRenderer('public/forgot_password.mako', trust=False)
+        ),
+
         Rule(
             '/resetpassword/<verification_key>/',
             ['get', 'post'],
@@ -510,20 +519,6 @@ def make_url_map(app):
             'get',
             auth_views.auth_logout,
             notemplate
-        ),
-
-        Rule(
-            '/forgotpassword/',
-            'get',
-            auth_views.forgot_password_get,
-            OsfWebRenderer('public/forgot_password.mako', trust=False)
-        ),
-
-        Rule(
-            '/forgotpassword/',
-            'post',
-            auth_views.forgot_password_post,
-            OsfWebRenderer('public/forgot_password.mako', trust=False)
         ),
 
         Rule(

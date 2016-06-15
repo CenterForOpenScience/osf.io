@@ -30,10 +30,11 @@ from website.util.time import throttle_period_expired
 
 
 @collect_auth
-def forgot_password_get(auth, *args, **kwargs):
+def forgot_password(auth, *args, **kwargs):
     """
-    View for "Forgot Your Password?", let user enter their email on the page.
-    methods: GET
+    View for "Forgot Your Password?". User submits the email on the page and OSF attempts to send user a password reset
+    link or return respective error.
+    Method: GET, POST
 
     :param auth:
     :return:
@@ -42,72 +43,74 @@ def forgot_password_get(auth, *args, **kwargs):
     # If user is already logged in, redirect to dashboard page.
     if auth.logged_in:
         return redirect(web_url_for('dashboard'))
-    return {}
-
-
-def forgot_password_post():
-    """
-    User submit their email and OSF attempt to send user password reset link or return respective error.
-    method: POST
-    """
 
     form = ForgotPasswordForm(request.form, prefix='forgot_password')
 
-    if form.validate():
-        email = form.email.data
-        status_message = ('If there is an OSF account associated with {0}, an email with instructions on how to reset '
-                          'the OSF password has been sent to {0}. If you do not receive an email and believe you '
-                          'should have, please contact OSF Support. ').format(email)
-        user_obj = get_user(email=email)
-        if user_obj:
-            if throttle_period_expired(user_obj.email_last_sent, settings.SEND_EMAIL_THROTTLE):
-                # new random verification key, allows OSF to check is reset_password request is valid, one-time only
-                user_obj.verification_key = generate_verification_key()
-                user_obj.email_last_sent = datetime.datetime.utcnow()
-                user_obj.save()
-                reset_link = furl.urljoin(
-                    settings.DOMAIN,
-                    web_url_for(
-                        'reset_password',
-                        verification_key=user_obj.verification_key
+    if request.method == 'GET':
+        return {}
+
+    if request.method == 'POST':
+        if form.validate():
+            email = form.email.data
+            status_message = ('If there is an OSF account associated with {0}, an email with instructions on how to '
+                              'reset the OSF password has been sent to {0}. If you do not receive an email and believe '
+                              'you should have, please contact OSF Support. ').format(email)
+            # check if the user exists
+            user_obj = get_user(email=email)
+            if user_obj:
+                # check forgot_password rate limit
+                if throttle_period_expired(user_obj.email_last_sent, settings.SEND_EMAIL_THROTTLE):
+                    # new random verification key, allows OSF to check whether the reset_password request is valid,
+                    # this verification key is used twice, one for GET reset_password and one for POST reset_password
+                    # and it will be destroyed when POST reset_password succeeds
+                    user_obj.verification_key = generate_verification_key()
+                    user_obj.email_last_sent = datetime.datetime.utcnow()
+                    user_obj.save()
+                    reset_link = furl.urljoin(
+                        settings.DOMAIN,
+                        web_url_for(
+                            'reset_password',
+                            verification_key=user_obj.verification_key
+                        )
                     )
-                )
-                mails.send_mail(
-                    to_addr=email,
-                    mail=mails.FORGOT_PASSWORD,
-                    reset_link=reset_link
-                )
-                status.push_status_message(status_message, kind='success', trust=False)
+                    mails.send_mail(
+                        to_addr=email,
+                        mail=mails.FORGOT_PASSWORD,
+                        reset_link=reset_link
+                    )
+                    status.push_status_message(status_message, kind='success', trust=False)
+                else:
+                    status.push_status_message('You have recently requested to change your password. Please wait a '
+                                               'little while before trying again.', kind='error', trust=False)
             else:
-                status.push_status_message('You have recently requested to change your password. Please wait a little '
-                                           'while before trying again.',
-                                           kind='error',
-                                           trust=False)
+                status.push_status_message(status_message, kind='success', trust=False)
+            # TODO: disable form upon success
         else:
-            status.push_status_message(status_message, kind='success', trust=False)
-    forms.push_errors_to_status(form.errors)
-    # Don't go anywhere
-    # TODO: disable form after form submission
+            forms.push_errors_to_status(form.errors)
+            # Don't go anywhere
+
     return {}
 
 
 @collect_auth
-def reset_password(auth, **kwargs):
+def reset_password(auth, *args, **kwargs):
     """
-    View for user to reset their password.
-    Check if reset_password request bears a valid verification_key:
-        if so, redirect user to CAS with new verification_key,
-        if not, return HTTPError 400
+    View for user to reset password. User submits new password and OSF attempts to reset it and automatically log the
+    user back in or return respective error.
+    Methods: GET, POST
 
     :param auth:
-    :param kwargs:
     :return:
     """
+
+    # If user is already logged in, redirect to dashboard page.
     if auth.logged_in:
         return auth_logout(redirect_url=request.url)
-    verification_key = kwargs['verification_key']
+
     form = ResetPasswordForm(request.form)
 
+    # Check if request bears a valid verification_key  
+    verification_key = kwargs['verification_key']
     user_obj = get_user(verification_key=verification_key)
     if not user_obj:
         error_data = {
@@ -116,23 +119,33 @@ def reset_password(auth, **kwargs):
         }
         raise HTTPError(400, data=error_data)
 
-    if request.method == 'POST' and form.validate():
-        # new random verification key, allows CAS to authenticate the user w/o password, one-time only.
-        user_obj.verification_key = generate_verification_key()
-        user_obj.set_password(form.password.data)
-        user_obj.save()
-        status.push_status_message('Password reset', kind='success', trust=False)
-        # redirect to CAS and authenticate the user with a verification key.
-        return redirect(cas.get_login_url(
-            web_url_for('user_account', _absolute=True),
-            username=user_obj.username,
-            verification_key=user_obj.verification_key
-        ))
+    if request.method == 'GET':
+        return {
+            'verification_key' : verification_key
+        }
 
-    forms.push_errors_to_status(form.errors)
-    # Don't go anywhere
-    # TODO: disable form after form submission
-    return {}
+    if request.method == 'POST':
+        if form.validate():
+            # new random verification key, allows CAS to authenticate the user w/o password, one-time only.
+            # this overwrite also invalidates the verification key generated by forgot_password_post
+            user_obj.verification_key = generate_verification_key()
+            user_obj.set_password(form.password.data)
+            user_obj.save()
+            status.push_status_message('Password reset', kind='success', trust=False)
+            # redirect to CAS and authenticate the user with the one-time verification key.
+            # TODO: double check in CAS that this verification key is destroyed once used
+            return redirect(cas.get_login_url(
+                web_url_for('user_account', _absolute=True),
+                username=user_obj.username,
+                verification_key=user_obj.verification_key
+            ))
+        else:
+            forms.push_errors_to_status(form.errors)
+            # Don't go anywhere
+
+    return {
+        'verification_key' : verification_key
+    }
 
 
 @collect_auth
@@ -181,11 +194,11 @@ def auth_login(auth, **kwargs):
     :return:
     """
 
-    # TODO: refactor login flow according to the comments above
+    # TODO: discuss the above logic, and refactor login flow accordingly
 
     campaign = request.args.get('campaign')
     next_url = request.args.get('next')
-    logout = request.args.get('logout')
+    log_out = request.args.get('logout')
     must_login_warning = True
 
     if not campaign and not next and not logout:
@@ -207,7 +220,7 @@ def auth_login(auth, **kwargs):
             raise HTTPError(http.InvalidURL)
 
     if auth.logged_in:
-        if not logout:
+        if not log_out:
             if next_url:
                 return redirect(next_url)
             return redirect('dashboard')
