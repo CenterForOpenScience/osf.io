@@ -4,7 +4,6 @@ import mock
 import unittest
 from nose.tools import *  # noqa
 
-from github3 import GitHubError
 from github3.repos import Repository
 
 from tests.base import OsfTestCase, get_default_metaschema
@@ -12,7 +11,7 @@ from tests.factories import ExternalAccountFactory, ProjectFactory, UserFactory
 
 from framework.auth import Auth
 
-from website.addons.gitlab.exceptions import NotFoundError
+from website.addons.gitlab.exceptions import NotFoundError, GitLabError
 from website.addons.gitlab import settings as gitlab_settings
 from website.addons.gitlab.model import GitLabUserSettings
 from website.addons.gitlab.model import GitLabNodeSettings

@@ -15,3 +15,6 @@ class EmptyRepoError(ApiError):
 
 class TooBigError(ApiError):
     pass
+
+class GitLabError(Exception):
+    pass
