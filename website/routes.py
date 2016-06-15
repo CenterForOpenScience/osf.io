@@ -553,20 +553,6 @@ def make_url_map(app):
             OsfWebRenderer('profile.mako', trust=False)
         ),
 
-        Rule(
-            ['/user/merge/'],
-            'get',
-            auth_views.merge_user_get,
-            OsfWebRenderer('merge_accounts.mako', trust=False)
-        ),
-
-        Rule(
-            ['/user/merge/'],
-            'post',
-            auth_views.merge_user_post,
-            OsfWebRenderer('merge_accounts.mako', trust=False)
-        ),
-
         # Route for claiming and setting email and password.
         # Verification token must be querystring argument
         Rule(
@@ -1483,11 +1469,6 @@ def make_url_map(app):
         Rule([
             '/watched/logs/'
         ], 'get', website_views.watched_logs_get, json_renderer),
-
-        ### Accounts ###
-        Rule([
-            '/user/merge/'
-        ], 'post', auth_views.merge_user_post, json_renderer),
 
         # Combined files
         Rule(

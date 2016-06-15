@@ -18,7 +18,7 @@ from framework.auth import logout, get_user
 from framework.auth.exceptions import DuplicateEmailError, ExpiredTokenError, InvalidTokenError
 from framework.auth.core import generate_verification_key
 from framework.auth.decorators import collect_auth, must_be_logged_in
-from framework.auth.forms import MergeAccountForm, ResendConfirmationForm, ResetPasswordForm, ForgotPasswordForm
+from framework.auth.forms import ResendConfirmationForm, ResetPasswordForm, ForgotPasswordForm
 from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions.utils import remove_sessions_for_user
@@ -121,7 +121,7 @@ def reset_password(auth, *args, **kwargs):
 
     if request.method == 'GET':
         return {
-            'verification_key' : verification_key
+            'verification_key': verification_key
         }
 
     if request.method == 'POST':
@@ -144,7 +144,7 @@ def reset_password(auth, *args, **kwargs):
             # Don't go anywhere
 
     return {
-        'verification_key' : verification_key
+        'verification_key': verification_key
     }
 
 
@@ -332,6 +332,7 @@ def register_user(**kwargs):
         return {'message': 'You may now log in.'}
 
 
+# TODO: proof-read logic and improve comments
 def auth_email_logout(token, user):
     """
     When a user is adding an email or merging an account, add the email to the user and log them out.
@@ -368,6 +369,7 @@ def auth_email_logout(token, user):
     return resp
 
 
+# TODO: proof-read logic and improve comments
 @collect_auth
 def confirm_email_get(token, auth=None, **kwargs):
     """
@@ -441,6 +443,7 @@ def confirm_email_get(token, auth=None, **kwargs):
     ))
 
 
+# TODO: proof-read logic and improve comments
 @must_be_logged_in
 def unconfirmed_email_remove(auth=None):
     """
@@ -466,6 +469,7 @@ def unconfirmed_email_remove(auth=None):
     }, 200
 
 
+# TODO: proof-read logic and improve comments
 @must_be_logged_in
 def unconfirmed_email_add(auth=None):
     """
@@ -503,6 +507,7 @@ def unconfirmed_email_add(auth=None):
     }, 200
 
 
+# TODO: proof-read logic and improve comments
 def send_confirm_email(user, email):
     """
     Sends a confirmation email to `user` to a given email.
@@ -570,57 +575,3 @@ def resend_confirmation():
             forms.push_errors_to_status(form.errors)
     # Don't go anywhere
     return {'form': form}
-
-
-# TODO: obsolete, please remove me, and related routes, tests, forms
-def merge_user_get(**kwargs):
-    '''Web view for merging an account. Renders the form for confirmation.
-    '''
-    return forms.utils.jsonify(MergeAccountForm())
-
-
-# TODO: obsolete, please remove me, and related routes, tests, forms
-# TODO: shrink me
-@must_be_logged_in
-def merge_user_post(auth, **kwargs):
-    '''View for merging an account. Takes either JSON or form data.
-
-    Request data should include a "merged_username" and "merged_password" properties
-    for the account to be merged in.
-    '''
-    master = auth.user
-    if request.json:
-        merged_username = request.json.get('merged_username')
-        merged_password = request.json.get('merged_password')
-    else:
-        form = MergeAccountForm(request.form)
-        if not form.validate():
-            forms.push_errors_to_status(form.errors)
-            return merge_user_get(**kwargs)
-        master_password = form.user_password.data
-        if not master.check_password(master_password):
-            status.push_status_message('Could not authenticate. Please check your username and password.', trust=False)
-            return merge_user_get(**kwargs)
-        merged_username = form.merged_username.data
-        merged_password = form.merged_password.data
-    try:
-        merged_user = User.find_one(Q('username', 'eq', merged_username))
-    except NoResultsFound:
-        status.push_status_message('Could not find that user. Please check the username and password.', trust=False)
-        return merge_user_get(**kwargs)
-    if master and merged_user:
-        if merged_user.check_password(merged_password):
-            master.merge_user(merged_user)
-            master.save()
-            if request.form:
-                status.push_status_message('Successfully merged {0} with this account'.format(merged_username),
-                                           kind='success',
-                                           trust=False)
-                return redirect('/settings/')
-            return {'status': 'success'}
-        else:
-            status.push_status_message('Could not find that user. Please check the username and password.',
-                                       trust=False)
-            return merge_user_get(**kwargs)
-    else:
-        raise HTTPError(http.BAD_REQUEST)
