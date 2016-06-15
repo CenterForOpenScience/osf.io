@@ -55,6 +55,8 @@ var AddProject = {
         // Validation
         self.isValid = m.prop(false);
 
+        self.isAdding = m.prop(false);
+
         self.mapTemplates = function() {
             self.userProjects([]);
             options.templatesFetcher._flat.map(function(node){
@@ -72,6 +74,10 @@ var AddProject = {
 
 
         self.add = function _add () {
+            if (self.isAdding()) {
+                return;
+            }
+            self.isAdding(true);
             var url;
             var data;
             self.viewState('processing');
@@ -99,9 +105,11 @@ var AddProject = {
                 self.viewState('success');
                 self.goToProjectLink(result.data.links.html);
                 self.saveResult(result);
+                self.isAdding(false);
             };
             var error = function _error (result) {
                 self.viewState('error');
+                self.isAdding(false);
             };
             var request = m.request({method : 'POST', url : url, data : data, config : xhrconfig});
             if (self.institutions.length > 0) {
