@@ -162,12 +162,7 @@ preview -> file-preview -> details -> filename
 }
 
 .drop-zone-format::after {
-
     transition: opacity 0.4s ease-in-out;
-}
-
-.drop-zone-disp {
-    display: inline-block;
 }
 
 .drop-zone-invis {
@@ -178,10 +173,6 @@ preview -> file-preview -> details -> filename
     font-size: 28px;
     position: relative;
 
-}
-
-.drop-zone-bold {
-    font-weight: bold;
 }
 
 .text-left {
@@ -198,4 +189,6 @@ preview -> file-preview -> details -> filename
     border-bottom: 3px solid #999;
     margin: auto;
     width: 100%;
+    font-weight: bold;
+    margin-top: 10px;
 }
