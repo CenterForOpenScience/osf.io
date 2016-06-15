@@ -22,7 +22,7 @@ window.ondrop = function (e) {
 };
 
 
-var publicFilesDropzone = {
+var PublicFilesDropzone = {
     controller: function () {
         var dangerCount = 0;
         Dropzone.options.publicFilesDropzone = {
@@ -109,7 +109,6 @@ var publicFilesDropzone = {
 
         };
 
-
         var shareLink = "";
         $("#publicFilesDropzone").on("click", "div.dz-share", function(e){
             var el = document.getElementsByClassName('dz-preview');
@@ -121,7 +120,6 @@ var publicFilesDropzone = {
            clip.setData("text/plain" , shareLink);
            $(e.target).parent().siblings('.alertbubble').finish().show().delay(1000).fadeOut("slow");
         });
-
 
         var template = m('div.dz-preview.dz-processing.dz-file-preview',
                             m('div.dz-details',
@@ -155,7 +153,7 @@ var publicFilesDropzone = {
         var $glyph = $('#glyph');
         $('#ShareButton').click(function () {
                 document.getElementById("ShareButton").style.cursor = "pointer";
-                $('#shareWindowDropzone').stop().slideToggle();
+                $('#publicFilesDropzone').stop().slideToggle();
                 $glyph.toggleClass('glyphicon glyphicon-chevron-down');
                 $glyph.toggleClass('glyphicon glyphicon-chevron-up');
             }
@@ -193,7 +191,7 @@ var publicFilesDropzone = {
 
         return m('.row-bottom-xs', m('.col-xs-12.m-b-sm', headerTemplate()),
             m('h4.text-center #LinkToShareFiles', 'View your ', m('a', {
-                    href: '/share_window/', onclick: function () {
+                    href: '/pubic_files/', onclick: function () {
                     }
                 }, 'Public Files Project '),
                 m('i.fa.fa-question-circle.text-muted', {
@@ -213,7 +211,7 @@ var publicFilesDropzone = {
                         }
                     }, m('.drop-zone-close', '×')
                 ),
-                m('h1.dz-p.text-center #shareWindowDropzone', 'Drop files to upload',
+                m('h1.dz-p.text-center #publicFilesDropzone', 'Drop files to upload',
                     m('h5','Click the box to upload files. Files are automatically uploaded to your ',
                     m('a', {
                         href: '/public_files/', onclick: function (e) {
@@ -228,4 +226,4 @@ var publicFilesDropzone = {
     }
 };
 
-module.exports = publicFilesDropzone;
+module.exports = PublicFilesDropzone;

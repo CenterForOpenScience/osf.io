@@ -42,7 +42,7 @@ from website.discovery import views as discovery_views
 from website.conferences import views as conference_views
 from website.preprints import views as preprint_views
 from website.institutions import views as institution_views
-from website.share_window import views as share_window_views
+from website.pubic_files import views as public_files_views
 from website.notifications import views as notification_views
 
 def get_globals():
@@ -53,9 +53,9 @@ def get_globals():
     user = _get_current_user()
 
     try:
-        share_window_id = Node.find_one(Q("contributors", "eq", user._id) & Q("is_public_files_collection", "eq", True))._id
+        public_files_id = Node.find_one(Q("contributors", "eq", user._id) & Q("is_public_files_collection", "eq", True))._id
     except (AttributeError, NoResultsFound):
-        share_window_id = None
+        public_files_id = None
 
     if request.host_url != settings.DOMAIN:
         try:
@@ -105,7 +105,7 @@ def get_globals():
         'enable_institutions': settings.ENABLE_INSTITUTIONS,
         'keen_project_id': settings.KEEN_PROJECT_ID,
         'keen_write_key': settings.KEEN_WRITE_KEY,
-        'share_window_id': share_window_id
+        'public_files_id': public_files_id
     }
 
 def is_private_link_anonymous_view():
@@ -229,19 +229,19 @@ def make_url_map(app):
         ),
         Rule(
             [
-                '/share_window/',
+                '/public_files/',
             ],
             'get',
-            share_window_views.view_share_window,
-            OsfWebRenderer('share_window.mako', trust=False),
+            public_files_views.view_public_files,
+            OsfWebRenderer('public_files.mako', trust=False),
         ),
         Rule(
             [
-                '/share_window/<uid>',
+                '/public_files/<uid>',
             ],
             'get',
-            share_window_views.view_share_window_id,
-            OsfWebRenderer('share_window.mako', trust=False),
+            public_files_views.view_public_files_id,
+            OsfWebRenderer('public_files.mako', trust=False),
         ),
         Rule(
             '/myprojects/',

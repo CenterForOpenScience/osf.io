@@ -3599,8 +3599,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     institution_email_domains = fields.StringField(list=True)
     institution_banner_name = fields.StringField()
 
-    share_window_id = fields.StringField(unique=True, index=True)
-
     @classmethod
     def find(cls, query=None, allow_institution=False, allow_share_windows=False, **kwargs):
         if not allow_institution:
