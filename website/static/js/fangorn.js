@@ -1206,7 +1206,7 @@ function _fangornTitleColumn(item, col) {
 
 function generateClipboard(item){
 
-    var url = window.location.host + item.data.nodeUrl + 'files/' + item.data.provider + item.data.path;
+    var url = waterbutler.buildTreeBeardDownload(item);
     var cb = function(elem) {
         makeClipboardClient(elem);
     };
