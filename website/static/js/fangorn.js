@@ -10,8 +10,9 @@ var m = require('mithril');
 var URI = require('URIjs');
 var Raven = require('raven-js');
 var Treebeard = require('treebeard');
-var Moment = require('moment');
+var moment = require('moment');
 var Dropzone = require('dropzone');
+var lodashGet = require('lodash.get');
 
 var $osf = require('js/osfHelpers');
 var waterbutler = require('js/waterbutler');
@@ -1283,12 +1284,11 @@ function _fangornModifiedColumn(item, col) {
     if (item.data.isAddonRoot && item.connected === false) { // as opposed to undefined, avoids unnecessary setting of this value
         return _connectCheckTemplate.call(this, item);
     }
-    var assert = require('assert');
     if (item.kind === 'file' && item.data.permissions.view && item.data.modified) {
         return m(
             'span',
             // "new Date" required for non-ISO date formats
-            new Moment(new Date(item.data.modified)).format('YYYY-MM-DD hh:mm A')
+            new moment(new Date(item.data.modified)).format('YYYY-MM-DD hh:mm A')
         );
     }
     return m('span', '');
@@ -1376,7 +1376,7 @@ function _fangornResolveRows(item) {
             data : 'downloads',
             sortInclude : false,
             filter : false,
-            custom: function() { return item.data.extra && item.data.extra.downloads ? item.data.extra.downloads.toString() : ''; }
+            custom: function() { return lodashGet(item, 'data.extra.downloads', '').toString(); }
         });
     } else {
         default_columns.push({
