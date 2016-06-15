@@ -501,17 +501,14 @@ def make_url_map(app):
             '/register/',
             'get',
             auth_views.auth_register,
-            OsfWebRenderer('public/register.mako', trust=False)
+            OsfWebRenderer('public/login-and-register.mako', trust=False)
         ),
 
         Rule(
-            [
-                '/login/',
-                '/account/'
-            ],
+            '/login/',
             'get',
             auth_views.auth_login,
-            OsfWebRenderer('public/login.mako', trust=False)
+            OsfWebRenderer('public/login-and-register.mako', trust=False)
         ),
 
         Rule(
