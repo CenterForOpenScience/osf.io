@@ -26,9 +26,7 @@
     height: 100px;
     position: relative;
     background: #ebebeb;
-    padding: 5px;
     left: 3px;
-    margin-bottom: 22px;
 }
 
 .dz-preview .dz-details img {
@@ -142,17 +140,16 @@
     padding-left: 10px;
     padding-right: 10px;
     border-radius: 5px;
-    margin-top: 0;
-    border: 3px solid #999;
+    width: 100%;
+    border: 2px solid #999;
     -webkit-transition: background .4s ease;
     -moz-transition: background .4s ease;
     -o-transition: background .4s ease;
     transition: background .4s ease, box-shadow 0.4s ease;
-
 }
 
 .drop-zone-format:hover {
-    border: 3px solid;
+    border: 2px solid;
     border-color: #52A452;
     background: rgba(255, 255, 255, 0.2);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
@@ -169,69 +166,25 @@
 .drop-zone-close {
     font-size: 28px;
     position: relative;
-
 }
 
-.text-left {
-    text-align: left;
-}
-
-.row-bottom-xs {
-    margin-right: -15px;
-    margin-left: -15px;
-    margin-bottom: -30px;
-}
-
-.dz-share{
+.dz-share {
     position: absolute;
     bottom: 29px;
     right: 11px;
     height: 0px;
     line-height: 28px;
-    cursor:pointer;
-    transition: color 0.5s ease;
-
-}
-.dz-share:hover{
-    color:#337ab7;
-}
-
-.alertbubble:before {
-   content:"";
-   position: absolute;
-   right: 15px;
-   top: -13px;
-   width: 0;
-   height: 0;
-   border-right: 13px solid transparent;
-   border-bottom: 16px solid rgba(131, 165, 200, 0.89);
-   border-left: 13px solid transparent;
-
-}
-.alertbubble {
-   width: 100px;
-   height: 20px;
-   background: rgba(131, 165, 200, 0.89);
-   position: relative;
-   -moz-border-radius:    10px;
-   -webkit-border-radius: 10px;
-   border-radius:         10px;
-   padding:3px;
-   padding-left:7px;
-   padding-right:7px;
-   font-weight: bold;
-   display: none;
-   z-index:40;
+    cursor: pointer;
+    transition: color 0.4s ease;
 
 }
 
-.alertbubblepos{
-    top: 28px;
-    right: -48px;
-
+.dz-share:hover {
+    color: #337ab7;
 }
+
 .dz-p {
-    border-bottom: 3px solid #999;
+    border-bottom: 2px solid #999;
     margin: auto;
     width: 100%;
     font-weight: bold;

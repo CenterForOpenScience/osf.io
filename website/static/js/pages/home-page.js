@@ -21,7 +21,7 @@ $(document).ready(function(){
             return [
                 m('.quickSearch', m('.container.p-t-lg',
                     [
-                        m('.row.m-t-sm', [
+                        m('.m-t-sm', [
                             m(columnSizeClass, m.component(ShareWindowDropzone, {}))
                         ]),
 
