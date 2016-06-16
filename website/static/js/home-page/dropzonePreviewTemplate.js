@@ -9,7 +9,7 @@ function shareButton(link){
     };
 
     return m('div.dz-share',
-        m('button.btn.fa.fa-share-alt.copy[data-clipboard-text="'+link+'"][type="button"]', {config: cb, style : {'background-color' : 'inherit'}})
+        m('i.fa.fa-share-alt.copy[data-clipboard-text="'+link+'"][type="button"]', {config: cb, style : {'background-color' : 'inherit'}})
     );
 
 }
