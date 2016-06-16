@@ -279,14 +279,14 @@ class TestRegistrationRetractions(SearchTestCase):
         ) as registration:
             self.registration = registration
 
-    def test_retraction_is_searchable(self):
+    def test_retraction_is_not_searchable(self):
         self.registration.retract_registration(self.user)
         self.registration.retraction.state = Retraction.APPROVED
         self.registration.retraction.save()
         self.registration.save()
         self.registration.retraction._on_complete(self.user)
         docs = query('category:registration AND ' + self.title)['results']
-        assert_equal(len(docs), 1)
+        assert_equal(len(docs), 0)
 
     @mock.patch('website.project.model.Node.archiving', mock.PropertyMock(return_value=False))
     def test_pending_retraction_wiki_content_is_searchable(self):
@@ -348,9 +348,9 @@ class TestRegistrationRetractions(SearchTestCase):
         docs = query('category:registration AND "{}"'.format(wiki_content['home']))['results']
         assert_equal(len(docs), 0)
 
-        # Query and ensure registration does show up
+        # Query and ensure registration does not show up
         docs = query('category:registration AND ' + self.title)['results']
-        assert_equal(len(docs), 1)
+        assert_equal(len(docs), 0)
 
 
 @requires_search

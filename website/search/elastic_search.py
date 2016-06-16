@@ -295,7 +295,7 @@ def update_node(node, index=None, bulk=False):
     for file_ in paginated(OsfStorageFile, Q('node', 'eq', node)):
         update_file(file_, index=index)
 
-    if node.is_deleted or not node.is_public or node.archiving:
+    if node.is_deleted or not node.is_public or node.archiving or node.is_retracted:
         delete_doc(elastic_document_id, node)
     else:
         try:
@@ -437,7 +437,7 @@ def update_file(file_, index=None, delete=False):
 
     index = index or INDEX
 
-    if not file_.node.is_public or delete or file_.node.is_deleted or file_.node.archiving:
+    if not file_.node.is_public or delete or file_.node.is_deleted or file_.node.archiving or file_.node.is_retracted:
         es.delete(
             index=index,
             doc_type='file',
