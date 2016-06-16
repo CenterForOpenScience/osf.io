@@ -2,7 +2,9 @@
     background: rgba(255, 255, 255, 0.8);
     position: relative;
     display: inline-block;
-    margin: 7px 2.3% 7px 2.3%;
+    /*margin: 7px 2.3% 7px 2.3%;*/
+    margin: 7px;
+    margin-left: 42%;
     width: 120px;
     height: 150px;
     vertical-align: top;
