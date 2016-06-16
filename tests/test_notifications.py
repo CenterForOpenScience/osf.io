@@ -1090,7 +1090,7 @@ class TestMoveSubscription(NotificationTestCase):
         self.user_2 = factories.AuthUserFactory()
         self.user_3 = factories.AuthUserFactory()
         self.user_4 = factories.AuthUserFactory()
-        self.project = factories.ProjectFactory(creator=self.user_1, )
+        self.project = factories.ProjectFactory(creator=self.user_1)
         self.private_node = factories.NodeFactory(parent=self.project, is_public=False, creator=self.user_1)
         self.sub = factories.NotificationSubscriptionFactory(
             _id=self.project._id + '_file_updated',

@@ -90,7 +90,6 @@ def configure_subscription(auth):
 
             # If adopt_parent make sure that this subscription is None for the current User
             subscription = NotificationSubscription.load(event_id)
-
             if not subscription:
                 return {}  # We're done here
 
