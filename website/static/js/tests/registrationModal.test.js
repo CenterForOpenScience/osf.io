@@ -109,23 +109,23 @@ describe('registrationModal', () => {
     });
     describe('#timeValidation', () => {
         it('returns true for date more than 2 days in the future', () => {
-            var validDateTwoDays = new Date(2016, 0, 1);
-            vm.pikaday(new Date (2016, 0, 4));
+            var validDateTwoDays = new Date();
+            vm.pikaday(new Date (validDateTwoDays.getTime() + 259200000)); //+3 Days
             assert.isTrue(vm.minimumTimeValidation(null, null, validDateTwoDays));
         });
         it('returns true for date less than 4 years in the future', () => {
-            var validDateFourYears = new Date(2016, 0, 1);
-            vm.pikaday(new Date (2019, 11, 30));
+            var validDateFourYears = new Date();
+            vm.pikaday(new Date (validDateFourYears.getTime() + 126057600000)); //+1459 Days
             assert.isTrue(vm.maximumTimeValidation(null, null, validDateFourYears));
         });
         it('returns false for date less than 2 days in the future', () => {
-            var invalidDateTwoDays = new Date(2016, 0, 1);
-            vm.pikaday(new Date (2016, 0, 2));
+            var invalidDateTwoDays = new Date();
+            vm.pikaday(new Date (invalidDateTwoDays.getTime() + 86400000)); //+1 Day
             assert.isFalse(vm.minimumTimeValidation(null, null, invalidDateTwoDays));
         });
         it('returns false for date at least 4 years in the future', () => {
-            var invalidDateFourYears = new Date(2016, 0, 1);
-            vm.pikaday(new Date (2020, 0, 1));
+            var invalidDateFourYears = new Date();
+            vm.pikaday(new Date (invalidDateFourYears.getTime() + 126144000000)); //+1460 Days
             assert.isFalse(vm.maximumTimeValidation(null, null, invalidDateFourYears));
         });
         it('returns true for date more than 2 days in the future, in a western timezone', () => {
