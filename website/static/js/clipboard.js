@@ -44,4 +44,7 @@ function generateClipboard(url){
            );
 };
 
-module.exports = generateClipboard;
+module.exports = {
+                    generateClipboard:generateClipboard,
+                    makeClipboardClient:makeClipboardClient
+                 };

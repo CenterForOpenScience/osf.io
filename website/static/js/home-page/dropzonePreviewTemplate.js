@@ -1,11 +1,17 @@
 'use strict';
 
+var clipboard = require('js/clipboard');
 var m = require('mithril');
 
 function shareButton(link){
-           return m('.dz-share[data-clipboard-text='+link+']',
-                m('i.fa.fa-share-alt.copy[aria-hidden="true"]')
-            )
+    var cb = function(elem) {
+        clipboard.makeClipboardClient(elem);
+    };
+
+    return m('div.dz-share',
+        m('button.btn.fa.fa-share-alt.copy[data-clipboard-text="'+link+'"][type="button"]', {config: cb, style : {'background-color' : 'inherit'}})
+    );
+
 }
 
 function dropzonePreviewTemplate(){

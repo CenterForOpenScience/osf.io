@@ -16,7 +16,7 @@ var waterbutler = require('js/waterbutler');
 
 var iconmap = require('js/iconmap');
 var storageAddons = require('json!storageAddons.json');
-var generateClipboard = require('js/clipboard');
+var cb = require('js/clipboard');
 
 // CSS
 require('css/fangorn.css');
@@ -1282,7 +1282,7 @@ if(window.contextVars.isPublicFilesCol) {
         {
             data : 'Share Link',  // Data field name
             filter : true,
-            custom : function() {return generateClipboard(waterbutler.buildTreeBeardDownload(item));}
+            custom : function() {return cb.generateClipboard(waterbutler.buildTreeBeardDownload(item));}
         });
         default_columns.push(
         {

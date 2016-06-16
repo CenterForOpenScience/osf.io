@@ -2,6 +2,7 @@ var m = require('mithril');
 var $osf = require('js/osfHelpers');
 var waterbutler = require('js/waterbutler');
 var AddProject = require('js/addProjectPlugin');
+var dropzonePreviewTemplate = require('js/home-page/dropzonePreviewTemplate');
 
 require('css/dropzone-plugin.css');
 require('css/quick-project-search-plugin.css');
@@ -29,9 +30,7 @@ var PublicFilesDropzone = {
             // Dropzone is setup to upload multiple files in one request this configuration forces it to do upload file-by-
             //file, one request at a time.
             clickable: '#publicFilesDropzone',
-            // number of files to process in parallel
             parallelUploads: 1,
-            // prevents default uploading; call processQueue() to upload
             autoProcessQueue: false,
             withCredentials: true,
             method: 'put',
@@ -73,12 +72,13 @@ var PublicFilesDropzone = {
             },
 
             success: function (file, xhr) {
+
+                buttonContainer = document.createElement("div");
+                file.previewElement.appendChild(buttonContainer);
+
                 var fileJson = JSON.parse((file.xhr.response));
-                filePath = fileJson.path
-                var url=(window.location.host+'/'+window.contextVars.publicFilesId+'/files/osfstorage'+ filePath);
-                fileURL = url;
-                fileURLArray.push(url);
-                clip = new ZeroClipboard( document.getElementsByClassName('copy') );
+                var link = waterbutler.buildDownloadUrl(fileJson.path, 'osfstorage', window.contextVars.publicFilesId, file.name, {});
+                m.render(buttonContainer, dropzonePreviewTemplate.shareButton(link));
 
                 this.processQueue();
                 file.previewElement.classList.add("dz-success");
@@ -109,46 +109,11 @@ var PublicFilesDropzone = {
 
         };
 
-        var shareLink = "";
-        $("#publicFilesDropzone").on("click", "div.dz-share", function(e){
-            var el = document.getElementsByClassName('dz-preview');
-                for (var i = 0; i < el.length; i++) {
-                    if($(".dz-share").index(this) == i){
-                        shareLink = fileURLArray[i];
-                    }
-                }
-           clip.setData("text/plain" , shareLink);
-           $(e.target).parent().siblings('.alertbubble').finish().show().delay(1000).fadeOut("slow");
-        });
-
-        var template = m('div.dz-preview.dz-processing.dz-file-preview',
-                            m('div.dz-details',
-                                m('div.dz-filename',
-                                    m('span[data-dz-name]')
-                                ),
-                                m('div[data-dz-size].dz-size'),
-                                m('img[data-dz-thumbnail]')
-                            ),
-                            m('div.dz-progress',
-                                m('span[data-dz-uploadprogress].dz-upload')
-                            ),
-                            m(".dz-share", [" ",m("i.fa.fa-share-alt.copy[aria-hidden='true'][data-clipboard-text='"+shareLink+"']")," "])," ",m("span.alertbubble.alertbubblepos", [m("i.fa.fa-clipboard[aria-hidden='true']")," Copied"]),
-
-                            m('div.dz-success-mark',
-                                m('span.glyphicon.glyphicon-ok-circle')
-                            ),
-                            m('div.dz-error-mark',
-                                m('span.glyphicon.glyphicon-remove-circle')
-                            ),
-                            m('div.dz-error-message',
-                                m('span[data-dz-errormessage]', 'Error: Your file could not be uploaded')
-                            )
-                        );
-
         $('#publicFilesDropzone').dropzone({
            url: 'placeholder',
-            previewTemplate: $osf.mithrilToStr(template)
+           previewTemplate: $osf.mithrilToStr(dropzonePreviewTemplate.dropzonePreviewTemplate())
         });
+
         // cache the selector to avoid duplicate selector warning
         var $glyph = $('#glyph');
         $('#ShareButton').click(function () {
