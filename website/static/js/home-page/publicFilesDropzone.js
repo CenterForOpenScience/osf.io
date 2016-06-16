@@ -191,7 +191,7 @@ var PublicFilesDropzone = {
                 m('h1.dz-p.text-center #publicFilesDropzone', 'Drop files to upload',
                     m('h5', 'Click the box to upload files. Files are automatically uploaded to your ',
                         m('a', {
-                            href: '/share_window/', onclick: function (e) {
+                            href: '/public_files/', onclick: function (e) {
                                 // Prevent clicking of link from opening file uploader
                                 e.stopImmediatePropagation();
                             }
