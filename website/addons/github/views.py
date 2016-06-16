@@ -246,7 +246,7 @@ def github_hgrid_data(node_settings, auth, **kwargs):
         'fetch': node_settings.owner.api_url + 'github/hgrid/' + (ref or ''),
         'branch': node_settings.owner.api_url + 'github/hgrid/root/',
         'zip': node_settings.owner.api_url + 'github/zipball/' + (ref or ''),
-        'repo': "https://github.com/{0}/{1}/tree/{2}".format(node_settings.user, node_settings.repo, branch)
+        'repo': 'https://github.com/{0}/{1}/tree/{2}'.format(node_settings.user, node_settings.repo, branch)
     }
 
     branch_names = [each.name for each in branches]
@@ -260,6 +260,7 @@ def github_hgrid_data(node_settings, auth, **kwargs):
         permissions=permissions,
         branches=branch_names,
         defaultBranch=branch,
+        private_key=kwargs.get('view_only', None),
     )]
 
 #########

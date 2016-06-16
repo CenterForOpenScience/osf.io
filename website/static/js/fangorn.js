@@ -143,14 +143,16 @@ function cancelAllUploads() {
         tb.deleteNode(parent.id, item.id);
     };
     // Clear all synchronous uploads
-    SYNC_UPLOAD_ADDONS.forEach(function(provider) {
-        if (tb.dropzone.syncFileCache[provider] !== undefined) {
-            // Remove cached provider files from UI
-            tb.dropzone.syncFileCache[provider].forEach(removeFromUI);
-            // Clear provider cache
-            tb.dropzone.syncFileCache[provider].length = 0;
-        }
-    });
+    if (tb.dropzone.syncFileCache !== undefined) {
+        SYNC_UPLOAD_ADDONS.forEach(function(provider) {
+            if (tb.dropzone.syncFileCache[provider] !== undefined) {
+                // Remove cached provider files from UI
+                tb.dropzone.syncFileCache[provider].forEach(removeFromUI);
+                // Clear provider cache
+                tb.dropzone.syncFileCache[provider].length = 0;
+            }
+        });
+    }
     // Clear all ongoing uploads
     filesArr.forEach(function(file, index) {
         // Ignore completed files
@@ -2337,10 +2339,12 @@ tbOptions = {
         tb.select('#tb-tbody').on('click', function(event){
             if(event.target !== this) {
                 var item = tb.multiselected()[0];
-                if (item.data.isAddonRoot || item.data.category === 'project') {
-                    tb.toolbarMode(toolbarModes.DEFAULT);
+                if (item) {
+                    if (item.data.isAddonRoot || item.data.nodeType === 'project' || item.data.nodeType === 'component') {
+                        tb.toolbarMode(toolbarModes.DEFAULT);
+                    }
+                    return;
                 }
-                return;
             }
             tb.clearMultiselect();
             dismissToolbar.call(tb);

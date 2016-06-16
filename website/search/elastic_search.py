@@ -66,10 +66,16 @@ try:
     logging.getLogger('requests').setLevel(logging.WARN)
     es.cluster.health(wait_for_status='yellow')
 except ConnectionError as e:
-    sentry.log_exception()
-    sentry.log_message("The SEARCH_ENGINE setting is set to 'elastic', but there "
-            "was a problem starting the elasticsearch interface. Is "
-            "elasticsearch running?")
+    message = (
+        'The SEARCH_ENGINE setting is set to "elastic", but there '
+        'was a problem starting the elasticsearch interface. Is '
+        'elasticsearch running?'
+    )
+    try:
+        sentry.log_exception()
+        sentry.log_message(message)
+    except AssertionError:  # App has not yet been initialized
+        logger.exception(message)
     es = None
 
 
@@ -91,7 +97,7 @@ def requires_search(func):
                 raise exceptions.SearchException(e.error)
 
         sentry.log_message('Elastic search action failed. Is elasticsearch running?')
-        raise exceptions.SearchUnavailableError("Failed to connect to elasticsearch")
+        raise exceptions.SearchUnavailableError('Failed to connect to elasticsearch')
     return wrapped
 
 
@@ -260,7 +266,7 @@ def load_parent(parent_id):
     return parent_info
 
 
-COMPONENT_CATEGORIES = set(Node.CATEGORY_MAP.keys())
+COMPONENT_CATEGORIES = set(settings.NODE_CATEGORY_MAP.keys())
 
 def get_doctype_from_node(node):
     if node.is_registration:
@@ -325,7 +331,7 @@ def update_node(node, index=None, bulk=False):
             'is_pending_registration': node.is_pending_registration,
             'is_retracted': node.is_retracted,
             'is_pending_retraction': node.is_pending_retraction,
-            'embargo_end_date': node.embargo_end_date.strftime("%A, %b. %d, %Y") if node.embargo_end_date else False,
+            'embargo_end_date': node.embargo_end_date.strftime('%A, %b. %d, %Y') if node.embargo_end_date else False,
             'is_pending_embargo': node.is_pending_embargo,
             'registered_date': node.registered_date,
             'wikis': {},
@@ -589,8 +595,8 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
         normalized_items.append(normalized_item)
     items = normalized_items
 
-    query = "  AND ".join('{}*~'.format(re.escape(item)) for item in items) + \
-            "".join(' NOT id:"{}"'.format(excluded._id) for excluded in exclude)
+    query = '  AND '.join('{}*~'.format(re.escape(item)) for item in items) + \
+            ''.join(' NOT id:"{}"'.format(excluded._id) for excluded in exclude)
 
     results = search(build_query(query, start=start, size=size), index=INDEX, doc_type='user')
     docs = results['results']

@@ -6,6 +6,7 @@ commands, run ``$ invoke --list``.
 import os
 import sys
 import code
+import json
 import platform
 import subprocess
 import logging
@@ -15,9 +16,7 @@ import invoke
 from invoke import run, Collection
 
 from website import settings
-from admin import tasks as admin_tasks
 from utils import pip_install, bin_prefix
-from scripts.meta import gatherer
 
 logging.getLogger('invoke').setLevel(logging.CRITICAL)
 
@@ -34,7 +33,12 @@ else:
     TEST_CMD = 'nosetests --rednose'
 
 ns = Collection()
-ns.add_collection(Collection.from_module(admin_tasks), name='admin')
+
+try:
+    from admin import tasks as admin_tasks
+    ns.add_collection(Collection.from_module(admin_tasks), name='admin')
+except ImportError:
+    pass
 
 
 def task(*args, **kwargs):
@@ -77,6 +81,7 @@ def server(host=None, port=5000, debug=True, live=False, gitlogs=False):
 
 @task
 def git_logs():
+    from scripts.meta import gatherer
     gatherer.main()
 
 
@@ -223,7 +228,7 @@ def make_shell_context(auto_transact=True):
 def format_context(context):
     lines = []
     for name, obj in context.items():
-        line = "{name}: {obj!r}".format(**locals())
+        line = '{name}: {obj!r}'.format(**locals())
         lines.append(line)
     return '\n'.join(lines)
 
@@ -270,7 +275,7 @@ def mongoserver(daemon=False, config=None):
     if config:
         cmd += ' --config {0}'.format(config)
     if daemon:
-        cmd += " --fork"
+        cmd += ' --fork'
     run(cmd, echo=True)
 
 
@@ -279,7 +284,7 @@ def mongoclient():
     """Run the mongo shell for the OSF database."""
     db = settings.DB_NAME
     port = settings.DB_PORT
-    run("mongo {db} --port {port}".format(db=db, port=port), pty=True)
+    run('mongo {db} --port {port}'.format(db=db, port=port), pty=True)
 
 
 @task
@@ -288,7 +293,7 @@ def mongodump(path):
     db = settings.DB_NAME
     port = settings.DB_PORT
 
-    cmd = "mongodump --db {db} --port {port} --out {path}".format(
+    cmd = 'mongodump --db {db} --port {port} --out {path}'.format(
         db=db,
         port=port,
         path=path,
@@ -302,7 +307,7 @@ def mongodump(path):
     run(cmd, echo=True)
 
     print()
-    print("To restore from the dumped database, run `invoke mongorestore {0}`".format(
+    print('To restore from the dumped database, run `invoke mongorestore {0}`'.format(
         os.path.join(path, settings.DB_NAME)))
 
 
@@ -322,7 +327,7 @@ def mongorestore(path, drop=False):
     db = settings.DB_NAME
     port = settings.DB_PORT
 
-    cmd = "mongorestore --db {db} --port {port}".format(
+    cmd = 'mongorestore --db {db} --port {port}'.format(
         db=db,
         port=port,
         pty=True)
@@ -333,9 +338,9 @@ def mongorestore(path, drop=False):
         cmd += ' --password {0}'.format(settings.DB_PASS)
 
     if drop:
-        cmd += " --drop"
+        cmd += ' --drop'
 
-    cmd += " " + path
+    cmd += ' ' + path
     run(cmd, echo=True)
 
 
@@ -355,11 +360,11 @@ def sharejs(host=None, port=None, db_url=None, cors_allow_origin=None):
         os.environ['SHAREJS_SENTRY_DSN'] = settings.SENTRY_DSN
 
     share_server = os.path.join(settings.ADDON_PATH, 'wiki', 'shareServer.js')
-    run("node {0}".format(share_server))
+    run('node {0}'.format(share_server))
 
 
 @task(aliases=['celery'])
-def celery_worker(level="debug", hostname=None, beat=False):
+def celery_worker(level='debug', hostname=None, beat=False):
     """Run the Celery process."""
     cmd = 'celery worker -A framework.celery_tasks -l {0}'.format(level)
     if hostname:
@@ -371,7 +376,7 @@ def celery_worker(level="debug", hostname=None, beat=False):
 
 
 @task(aliases=['beat'])
-def celery_beat(level="debug", schedule=None):
+def celery_beat(level='debug', schedule=None):
     """Run the Celery process."""
     # beat sets up a cron like scheduler, refer to website/settings
     cmd = 'celery beat -A framework.celery_tasks -l {0} --pidfile='.format(level)
@@ -387,7 +392,7 @@ def rabbitmq():
     NOTE: this is for development only. The production environment should start
     the server as a daemon.
     """
-    run("rabbitmq-server", pty=True)
+    run('rabbitmq-server', pty=True)
 
 
 @task(aliases=['elastic'])
@@ -398,11 +403,11 @@ def elasticsearch():
     """
     import platform
     if platform.linux_distribution()[0] == 'Ubuntu':
-        run("sudo service elasticsearch start")
+        run('sudo service elasticsearch start')
     elif platform.system() == 'Darwin':  # Mac OSX
         run('elasticsearch')
     else:
-        print("Your system is not recognized, you will have to start elasticsearch manually")
+        print('Your system is not recognized, you will have to start elasticsearch manually')
 
 @task
 def migrate_search(delete=False, index=settings.ELASTIC_INDEX):
@@ -414,9 +419,9 @@ def migrate_search(delete=False, index=settings.ELASTIC_INDEX):
 @task
 def rebuild_search():
     """Delete and recreate the index for elasticsearch"""
-    run("curl -s -XDELETE {uri}/{index}*".format(uri=settings.ELASTIC_URI,
+    run('curl -s -XDELETE {uri}/{index}*'.format(uri=settings.ELASTIC_URI,
                                              index=settings.ELASTIC_INDEX))
-    run("curl -s -XPUT {uri}/{index}".format(uri=settings.ELASTIC_URI,
+    run('curl -s -XPUT {uri}/{index}'.format(uri=settings.ELASTIC_URI,
                                           index=settings.ELASTIC_INDEX))
     migrate_search()
 
@@ -498,7 +503,7 @@ def test_module(module=None, verbosity=2):
     """
     # Allow selecting specific submodule
     module_fmt = ' '.join(module) if isinstance(module, list) else module
-    args = " --verbosity={0} -s {1}".format(verbosity, module_fmt)
+    args = ' --verbosity={0} -s {1}'.format(verbosity, module_fmt)
     # Use pty so the process buffers "correctly"
     run(bin_prefix(TEST_CMD) + args, pty=True)
 
@@ -506,20 +511,20 @@ def test_module(module=None, verbosity=2):
 @task
 def test_osf():
     """Run the OSF test suite."""
-    test_module(module="tests/")
+    test_module(module='tests/')
 
 
 @task
 def test_api():
     """Run the API test suite."""
-    test_module(module="api_tests/")
+    test_module(module='api_tests/')
 
 
 @task
 def test_admin():
     """Run the Admin test suite."""
     # test_module(module="admin_tests/")
-    module = "admin_tests/"
+    module = 'admin_tests/'
     module_fmt = ' '.join(module) if isinstance(module, list) else module
     admin_tasks.manage('test {}'.format(module_fmt))
 
@@ -529,7 +534,7 @@ def test_varnish():
     """Run the Varnish test suite."""
     proc = apiserver(wait=False)
     sleep(5)
-    test_module(module="api/caching/tests/test_caching.py")
+    test_module(module='api/caching/tests/test_caching.py')
     proc.kill()
 
 
@@ -755,10 +760,8 @@ def setup():
     packages()
     requirements(addons=True, dev=True)
     encryption()
-    from website.app import build_js_config_files
-    from website import settings
     # Build nodeCategories.json before building assets
-    build_js_config_files(settings)
+    build_js_config_files()
     assets(dev=True, watch=False)
 
 
@@ -816,14 +819,14 @@ def latest_tag_info():
 
         # get info about the latest tag in git
         describe_out = subprocess.check_output([
-            "git",
-            "describe",
-            "--dirty",
-            "--tags",
-            "--long",
-            "--abbrev=40"
+            'git',
+            'describe',
+            '--dirty',
+            '--tags',
+            '--long',
+            '--abbrev=40'
         ], stderr=subprocess.STDOUT
-        ).decode().split("-")
+        ).decode().split('-')
     except subprocess.CalledProcessError as err:
         raise err
         # logger.warn("Error when running git describe")
@@ -831,13 +834,13 @@ def latest_tag_info():
 
     info = {}
 
-    if describe_out[-1].strip() == "dirty":
-        info["dirty"] = True
+    if describe_out[-1].strip() == 'dirty':
+        info['dirty'] = True
         describe_out.pop()
 
-    info["commit_sha"] = describe_out.pop().lstrip("g")
-    info["distance_to_latest_tag"] = int(describe_out.pop())
-    info["current_version"] = describe_out.pop().lstrip("v")
+    info['commit_sha'] = describe_out.pop().lstrip('g')
+    info['distance_to_latest_tag'] = int(describe_out.pop())
+    info['current_version'] = describe_out.pop().lstrip('v')
 
     # assert type(info["current_version"]) == str
     assert 0 == len(describe_out)
@@ -934,14 +937,14 @@ def webpack(clean=False, watch=False, dev=False, colors=False):
 @task()
 def build_js_config_files():
     from website import settings
-    from website.app import build_js_config_files as _build_js_config_files
     print('Building JS config files...')
-    _build_js_config_files(settings)
-    print("...Done.")
+    with open(os.path.join(settings.STATIC_FOLDER, 'built', 'nodeCategories.json'), 'wb') as fp:
+        json.dump(settings.NODE_CATEGORY_MAP, fp)
+    print('...Done.')
 
 
 @task()
-def assets(dev=False, watch=False):
+def assets(dev=False, watch=False, colors=False):
     """Install and build static assets."""
     npm = 'npm install'
     if not dev:
@@ -951,7 +954,7 @@ def assets(dev=False, watch=False):
     build_js_config_files()
     # Always set clean=False to prevent possible mistakes
     # on prod
-    webpack(clean=False, watch=watch, dev=dev)
+    webpack(clean=False, watch=watch, dev=dev, colors=colors)
 
 
 @task
@@ -969,7 +972,7 @@ def generate_self_signed(domain):
 def update_citation_styles():
     from scripts import parse_citation_styles
     total = parse_citation_styles.main()
-    print("Parsed {} styles".format(total))
+    print('Parsed {} styles'.format(total))
 
 
 @task
@@ -980,3 +983,34 @@ def clean(verbose=False):
 @task(default=True)
 def usage():
     run('invoke --list')
+
+
+### Maintenance Tasks ###
+
+@task
+def set_maintenance(start=None, end=None):
+    from website.maintenance import set_maintenance, get_maintenance
+    """Set the time period for the maintenance notice to be displayed.
+    If no start or end values are displayed, default to starting now
+    and ending 24 hours from now. If no timezone info is passed along,
+    everything will be converted to UTC.
+
+    If a given end time results in a start that is after the end, start
+    will be changed to be 24 hours before the end time.
+
+    Examples:
+        invoke set_maintenance_state
+        invoke set_maintenance_state --start 2016-03-16T15:41:00-04:00
+        invoke set_maintenance_state --end 2016-03-16T15:41:00-04:00
+    """
+    set_maintenance(start, end)
+    state = get_maintenance()
+    print('Maintenance notice up for {} to {}.'.format(state['start'], state['end']))
+
+
+@task
+def unset_maintenance():
+    from website.maintenance import unset_maintenance
+    print('Taking down maintenance notice...')
+    unset_maintenance()
+    print('...Done.')

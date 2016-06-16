@@ -135,8 +135,8 @@ class OsfStorageFileNode(FileNode):
                     'node': self.node._id,
                     'urls': {
                         # web_url_for unavailable -- called from within the API, so no flask app
-                        'download': "/project/{}/files/{}/{}/?action=download".format(self.node._id, self.provider, self._id),
-                        'view': "/project/{}/files/{}/{}".format(self.node._id, self.provider, self._id)},
+                        'download': '/project/{}/files/{}/{}/?action=download'.format(self.node._id, self.provider, self._id),
+                        'view': '/project/{}/files/{}/{}'.format(self.node._id, self.provider, self._id)},
                     'path': self.materialized_path
                 },
                 auth=Auth(user),
