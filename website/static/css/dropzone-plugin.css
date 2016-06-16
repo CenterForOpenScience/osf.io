@@ -200,3 +200,7 @@
 .dz-font {
     font-size: 22px;
 }
+
+.dz-cursor-default {
+    cursor: default;
+}

@@ -190,8 +190,8 @@ var PublicFilesDropzone = {
 
         function publicFilesHelpButton() {
             return [
-                m('button.btn.fa.fa-question.text-muted.close.dz-font[aria-label="Drag-and-Drop Help"][data-toggle="modal"][data-target="#dropZoneHelpModal"]'),
-                m('.modal.fade #dropZoneHelpModal',
+                m('button.btn.fa.fa-question.close.dz-font[aria-label="Drag-and-Drop Help"][data-toggle="modal"][data-target="#dropZoneHelpModal"]'),
+                m('.modal.fade.dz-cursor-default #dropZoneHelpModal',
                     m('.modal-dialog',
                         m('.modal-content',
                             m('.modal-header',
