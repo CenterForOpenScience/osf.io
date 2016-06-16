@@ -892,6 +892,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
     alternative_citations = fields.ForeignField('alternativecitation', list=True)
 
+    notification_settings_dirty = fields.BooleanField(default=False)
+
     _meta = {
         'optimistic': True,
     }
@@ -3680,6 +3682,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
     def institutions_relationship_url(self):
         return self.absolute_api_v2_url + 'relationships/institutions/'
+
+    def flip_notification_settings_dirty(self):
+        self.notification_settings_dirty = True
+        self.save()
 
 
 @Node.subscribe('before_save')

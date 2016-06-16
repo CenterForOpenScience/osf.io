@@ -90,6 +90,7 @@ def configure_subscription(auth):
 
             # If adopt_parent make sure that this subscription is None for the current User
             subscription = NotificationSubscription.load(event_id)
+
             if not subscription:
                 return {}  # We're done here
 
@@ -100,6 +101,9 @@ def configure_subscription(auth):
 
     if not subscription:
         subscription = NotificationSubscription(_id=event_id, owner=owner, event_name=event)
+
+    if not node.notification_settings_dirty:
+        node.flip_notification_settings_dirty()
 
     subscription.add_user_to_subscription(user, notification_type)
 

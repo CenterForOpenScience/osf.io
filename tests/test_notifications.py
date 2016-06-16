@@ -116,9 +116,9 @@ class TestNotificationsModels(OsfTestCase):
             parent.has_permission_on_children(user,'read')
         )
 
-    def test_new_node_creator_is_subscribed(self):
+    def test_new_project_creator_is_subscribed(self):
         user = factories.UserFactory()
-        factories.NodeFactory(creator=user)
+        factories.ProjectFactory(creator=user)
         user_subscriptions = list(utils.get_all_user_subscriptions(user))
         event_types = [sub.event_name for sub in user_subscriptions]
 
@@ -126,7 +126,47 @@ class TestNotificationsModels(OsfTestCase):
         assert_in('file_updated', event_types)
         assert_in('comments', event_types)
 
-    def test_new_node_creator_is_subscribed_with_global_settings(self):
+    def test_new_node_creator_is_not_subscribed(self):
+        user = factories.UserFactory()
+        factories.NodeFactory(creator=user)
+        user_subscriptions = list(utils.get_all_user_subscriptions(user))
+
+        assert_equal(len(user_subscriptions), 0)
+
+    def test_new_project_creator_is_subscribed_with_global_settings(self):
+        user = factories.UserFactory()
+
+        factories.NotificationSubscriptionFactory(
+            _id=user._id + '_' + 'global_comments',
+            owner=user,
+            event_name='global_comments'
+        ).add_user_to_subscription(user, 'email_digest')
+
+        factories.NotificationSubscriptionFactory(
+            _id=user._id + '_' + 'global_file_updated',
+            owner=user,
+            event_name='global_file_updated'
+        ).add_user_to_subscription(user, 'none')
+
+        node = factories.ProjectFactory(creator=user)
+
+        user_subscriptions = list(utils.get_all_user_subscriptions(user))
+        event_types = [sub.event_name for sub in user_subscriptions]
+
+        file_updated_subscription = NotificationSubscription.find_one(Q('_id', 'eq', node._id + '_file_updated'))
+        comments_subscription = NotificationSubscription.find_one(Q('_id', 'eq', node._id + '_comments'))
+
+        assert_equal(len(user_subscriptions), 4)  # subscribed to both node and user settings
+        assert_in('file_updated', event_types)
+        assert_in('comments', event_types)
+        assert_in('global_file_updated', event_types)
+        assert_in('global_comments', event_types)
+        assert_equal(len(file_updated_subscription.none), 1)
+        assert_equal(len(file_updated_subscription.email_transactional), 0)
+        assert_equal(len(comments_subscription.email_digest), 1)
+        assert_equal(len(comments_subscription.email_transactional), 0)
+
+    def test_new_node_creator_is_not_subscribed_with_global_settings(self):
         user = factories.UserFactory()
 
         factories.NotificationSubscriptionFactory(
@@ -146,6 +186,30 @@ class TestNotificationsModels(OsfTestCase):
         user_subscriptions = list(utils.get_all_user_subscriptions(user))
         event_types = [sub.event_name for sub in user_subscriptions]
 
+        assert_equal(len(user_subscriptions), 2)  # subscribed to only user settings
+        assert_in('global_file_updated', event_types)
+        assert_in('global_comments', event_types)
+
+    def test_new_project_creator_is_subscribed_with_default_global_settings(self):
+        user = factories.UserFactory()
+
+        factories.NotificationSubscriptionFactory(
+            _id=user._id + '_' + 'global_comments',
+            owner=user,
+            event_name='global_comments'
+        ).add_user_to_subscription(user, 'email_transactional')
+
+        factories.NotificationSubscriptionFactory(
+            _id=user._id + '_' + 'global_file_updated',
+            owner=user,
+            event_name='global_file_updated'
+        ).add_user_to_subscription(user, 'email_transactional')
+
+        node = factories.ProjectFactory(creator=user)
+
+        user_subscriptions = list(utils.get_all_user_subscriptions(user))
+        event_types = [sub.event_name for sub in user_subscriptions]
+
         file_updated_subscription = NotificationSubscription.find_one(Q('_id', 'eq', node._id + '_file_updated'))
         comments_subscription = NotificationSubscription.find_one(Q('_id', 'eq', node._id + '_comments'))
 
@@ -154,12 +218,10 @@ class TestNotificationsModels(OsfTestCase):
         assert_in('comments', event_types)
         assert_in('global_file_updated', event_types)
         assert_in('global_comments', event_types)
-        assert_equal(len(file_updated_subscription.none), 1)
-        assert_equal(len(file_updated_subscription.email_transactional), 0)
-        assert_equal(len(comments_subscription.email_digest), 1)
-        assert_equal(len(comments_subscription.email_transactional), 0)
+        assert_equal(len(file_updated_subscription.email_transactional), 1)
+        assert_equal(len(comments_subscription.email_transactional), 1)
 
-    def test_new_node_creator_is_subscribed_with_default_global_settings(self):
+    def test_new_node_creator_is_not_subscribed_with_default_global_settings(self):
         user = factories.UserFactory()
 
         factories.NotificationSubscriptionFactory(
@@ -179,21 +241,14 @@ class TestNotificationsModels(OsfTestCase):
         user_subscriptions = list(utils.get_all_user_subscriptions(user))
         event_types = [sub.event_name for sub in user_subscriptions]
 
-        file_updated_subscription = NotificationSubscription.find_one(Q('_id', 'eq', node._id + '_file_updated'))
-        comments_subscription = NotificationSubscription.find_one(Q('_id', 'eq', node._id + '_comments'))
-
-        assert_equal(len(user_subscriptions), 4)  # subscribed to both node and user settings
-        assert_in('file_updated', event_types)
-        assert_in('comments', event_types)
+        assert_equal(len(user_subscriptions), 2)  # subscribed to only user settings
         assert_in('global_file_updated', event_types)
         assert_in('global_comments', event_types)
-        assert_equal(len(file_updated_subscription.email_transactional), 1)
-        assert_equal(len(comments_subscription.email_transactional), 1)
 
-    def test_contributor_subscribed_when_added(self):
+    def test_contributor_subscribed_when_added_to_project(self):
         user = factories.UserFactory()
         contributor = factories.UserFactory()
-        project = factories.NodeFactory(creator=user)
+        project = factories.ProjectFactory(creator=user)
         project.add_contributor(contributor=contributor)
         contributor_subscriptions = list(utils.get_all_user_subscriptions(contributor))
         event_types = [sub.event_name for sub in contributor_subscriptions]
@@ -202,10 +257,43 @@ class TestNotificationsModels(OsfTestCase):
         assert_in('file_updated', event_types)
         assert_in('comments', event_types)
 
-    def test_unregistered_contributor_not_subscribed(self):
+    def test_contributor_subscribed_when_added_to_component(self):
+        user = factories.UserFactory()
+        contributor = factories.UserFactory()
+
+        factories.NotificationSubscriptionFactory(
+            _id=contributor._id + '_' + 'global_comments',
+            owner=contributor,
+            event_name='global_comments'
+        ).add_user_to_subscription(contributor, 'email_transactional')
+
+        factories.NotificationSubscriptionFactory(
+            _id=contributor._id + '_' + 'global_file_updated',
+            owner=contributor,
+            event_name='global_file_updated'
+        ).add_user_to_subscription(contributor, 'email_transactional')
+
+        node = factories.NodeFactory(creator=user)
+        node.add_contributor(contributor=contributor)
+
+        contributor_subscriptions = list(utils.get_all_user_subscriptions(contributor))
+        event_types = [sub.event_name for sub in contributor_subscriptions]
+
+        file_updated_subscription = NotificationSubscription.find_one(Q('_id', 'eq', node._id + '_file_updated'))
+        comments_subscription = NotificationSubscription.find_one(Q('_id', 'eq', node._id + '_comments'))
+
+        assert_equal(len(contributor_subscriptions), 4)  # subscribed to both node and user settings
+        assert_in('file_updated', event_types)
+        assert_in('comments', event_types)
+        assert_in('global_file_updated', event_types)
+        assert_in('global_comments', event_types)
+        assert_equal(len(file_updated_subscription.email_transactional), 1)
+        assert_equal(len(comments_subscription.email_transactional), 1)
+
+    def test_unregistered_contributor_not_subscribed_when_added_to_project(self):
         user = factories.UserFactory()
         unregistered_contributor = factories.UnregUserFactory()
-        project = factories.NodeFactory(creator=user)
+        project = factories.ProjectFactory(creator=user)
         project.add_contributor(contributor=unregistered_contributor)
         contributor_subscriptions = list(utils.get_all_user_subscriptions(unregistered_contributor))
         assert_equal(len(contributor_subscriptions), 0)
@@ -258,8 +346,8 @@ class TestSubscriptionView(OsfTestCase):
         self.app.post_json(url, payload, auth=self.node.creator.auth)
         event_id = self.node._id + '_' + 'comments'
         # confirm subscription was created because parent had default subscription
-        s = NotificationSubscription.find_one(Q('_id', 'eq', event_id))
-        assert_equal(payload['event'], s.event_name)
+        s = NotificationSubscription.find(Q('_id', 'eq', event_id)).count()
+        assert_equal(0, s)
 
     def test_change_subscription_to_adopt_parent_subscription_removes_user(self):
         payload = {
@@ -310,6 +398,7 @@ class TestRemoveContributor(OsfTestCase):
         self.node_subscription = NotificationSubscription.find_one(Q(
                 '_id', 'eq', self.node._id + '_comments') & Q('owner', 'eq', self.node)
         )
+        self.node_subscription.add_user_to_subscription(self.node.creator, 'email_transactional')
 
     def test_removed_non_admin_contributor_is_removed_from_subscriptions(self):
         assert_in(self.contributor, self.subscription.email_transactional)
@@ -441,7 +530,7 @@ class TestNotificationUtils(OsfTestCase):
     def setUp(self):
         super(TestNotificationUtils, self).setUp()
         self.user = factories.UserFactory()
-        self.project = factories.ProjectFactory(creator=self.user)
+        self.project = factories.ProjectFactory(creator=self.user, notification_settings_dirty=True)
 
         self.project_subscription = NotificationSubscription.find_one(
             Q('owner', 'eq', self.project) &
@@ -451,11 +540,20 @@ class TestNotificationUtils(OsfTestCase):
 
         self.node = factories.NodeFactory(parent=self.project, creator=self.user)
 
-        self.node_comments_subscription = NotificationSubscription.find_one(
-            Q('owner', 'eq', self.node) &
-            Q('_id', 'eq', self.node._id + '_comments') &
-            Q('event_name', 'eq', 'comments')
+        self.node_comments_subscription = factories.NotificationSubscriptionFactory(
+            _id=self.node._id + '_' + 'comments',
+            owner=self.node,
+            event_name='comments'
         )
+        self.node_comments_subscription.save()
+        self.node_comments_subscription.email_transactional.append(self.user)
+        self.node_comments_subscription.save()
+
+        # self.node_comments_subscription = NotificationSubscription.find_one(
+        #     Q('owner', 'eq', self.node) &
+        #     Q('_id', 'eq', self.node._id + '_comments') &
+        #     Q('event_name', 'eq', 'comments')
+        # )
 
         self.node_subscription = list(NotificationSubscription.find(Q('owner', 'eq', self.node)))
 
@@ -499,7 +597,7 @@ class TestNotificationUtils(OsfTestCase):
         assert_in(self.node_comments_subscription, user_subscriptions)
         for x in self.user_subscription:
             assert_in(x, user_subscriptions)
-        assert_equal(len(user_subscriptions), 7)
+        assert_equal(len(user_subscriptions), 6)
 
     def test_get_all_node_subscriptions_given_user_subscriptions(self):
         user_subscriptions = utils.get_all_user_subscriptions(self.user)
@@ -536,6 +634,16 @@ class TestNotificationUtils(OsfTestCase):
     def test_get_configured_project_ids_includes_top_level_private_projects_if_subscriptions_on_node(self):
         private_project = factories.ProjectFactory()
         node = factories.NodeFactory(parent=private_project)
+        node_comments_subscription = factories.NotificationSubscriptionFactory(
+            _id=node._id + '_' + 'comments',
+            owner=node,
+            event_name='comments'
+        )
+        node_comments_subscription.save()
+        node_comments_subscription.email_transactional.append(node.creator)
+        node_comments_subscription.save()
+
+        node.flip_notification_settings_dirty()
         configured_project_ids = utils.get_configured_projects(node.creator)
         assert_in(private_project._id, configured_project_ids)
 
@@ -636,6 +744,7 @@ class TestNotificationUtils(OsfTestCase):
         project = factories.ProjectFactory()
         pointed = factories.ProjectFactory()
         project.add_pointer(pointed, Auth(project.creator))
+        project.flip_notification_settings_dirty()
         project.save()
         configured_project_ids = utils.get_configured_projects(project.creator)
         data = utils.format_data(project.creator, configured_project_ids)
@@ -656,6 +765,17 @@ class TestNotificationUtils(OsfTestCase):
     def test_format_data_user_subscriptions_includes_private_parent_if_configured_children(self):
         private_project = factories.ProjectFactory()
         node = factories.NodeFactory(parent=private_project)
+
+        node_comments_subscription = factories.NotificationSubscriptionFactory(
+            _id=node._id + '_' + 'comments',
+            owner=node,
+            event_name='comments'
+        )
+        node_comments_subscription.save()
+        node_comments_subscription.email_transactional.append(node.creator)
+        node_comments_subscription.save()
+
+        node.flip_notification_settings_dirty()
         configured_project_ids = utils.get_configured_projects(node.creator)
         data = utils.format_data(node.creator, configured_project_ids)
         event = {
@@ -970,7 +1090,7 @@ class TestMoveSubscription(NotificationTestCase):
         self.user_2 = factories.AuthUserFactory()
         self.user_3 = factories.AuthUserFactory()
         self.user_4 = factories.AuthUserFactory()
-        self.project = factories.ProjectFactory(creator=self.user_1)
+        self.project = factories.ProjectFactory(creator=self.user_1, )
         self.private_node = factories.NodeFactory(parent=self.project, is_public=False, creator=self.user_1)
         self.sub = factories.NotificationSubscriptionFactory(
             _id=self.project._id + '_file_updated',
@@ -1109,8 +1229,9 @@ class TestSendEmails(NotificationTestCase):
 
     @mock.patch('website.notifications.emails.store_emails')
     def test_notify_no_subscription(self, mock_store):
-        node = factories.NodeFactory()
-        emails.notify('comments', user=self.user, node=node, timestamp=datetime.datetime.utcnow())
+        node = factories.ProjectFactory()
+        user = factories.AuthUserFactory()
+        emails.notify('comments', user=user, node=node, timestamp=datetime.datetime.utcnow())
         assert_false(mock_store.called)
 
     @mock.patch('website.notifications.emails.store_emails')
