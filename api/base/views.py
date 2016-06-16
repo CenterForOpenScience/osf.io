@@ -8,6 +8,7 @@ from rest_framework.mixins import ListModelMixin
 
 from api.users.serializers import UserSerializer
 
+from website import settings
 from django.conf import settings as django_settings
 from .utils import absolute_reverse, is_truthy
 
@@ -467,9 +468,10 @@ def root(request, format=None):
             'registrations': absolute_reverse('registrations:registration-list'),
             'institutions': absolute_reverse('institutions:institution-list'),
             'licenses': absolute_reverse('licenses:license-list'),
-            'metaschemas': absolute_reverse('metaschemas:metaschema-list'),
         }
     }
+    if settings.DEV_MODE:
+        return_val['links']['metaschemas'] = absolute_reverse('metaschemas:metaschema-list')
 
     return Response(return_val)
 
