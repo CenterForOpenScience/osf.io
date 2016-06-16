@@ -4,12 +4,14 @@ var $ = require('jquery');
 var m = require('mithril');
 var LogFeed = require('js/logFeed.js');
 
-var component = window.contextVars.component;
+var node = window.contextVars.node;
+var id = window.contextVars.id;
 var canView = window.contextVars.user.canView;
 
 $(document).ready(function() {
-    if (canView) {
-        var nodeLogFeed = 'logFeed-' + component.id;
-        m.mount(document.getElementById(nodeLogFeed), m.component(LogFeed.LogFeed, {node: component, limitLogs: true}));
+    if (canView && !node.archiving) {
+        node.id = id;
+        var nodeLogFeed = 'logFeed-' + node.id;
+        m.mount(document.getElementById(nodeLogFeed), m.component(LogFeed.LogFeed, {node: node, limitLogs: true}));
     }
 });

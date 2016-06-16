@@ -22,8 +22,8 @@ var xhrconfig = function (xhr) {
 };
 
 var _buildLogUrl = function(node, page, limitLogs) {
-    if (!node.is_retracted) {
-        var urlPrefix = node.is_registration ? 'registrations' : 'nodes';
+    if (!node.isRetracted || !node.is_retracted) {
+        var urlPrefix = (node.isRegistration || node.is_registration) ? 'registrations' : 'nodes';
         var size = limitLogs ? LOG_PAGE_SIZE_LIMITED : LOG_PAGE_SIZE;
         var query = { 'page[size]': size, 'page': page, 'embed': ['original_node', 'user', 'linked_node', 'template_node']};
         if (node.link) {
