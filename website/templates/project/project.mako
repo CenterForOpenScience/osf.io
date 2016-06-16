@@ -57,11 +57,13 @@
                     <div class="btn-group" style="display: none;" data-bind="visible: true">
 
                         <!-- ko ifnot: inDashboard -->
-                           <a id="addDashboardFolder" data-bind="click: addToDashboard, tooltip: {title: 'Add to bookmarks',
-                            placement: 'bottom', container : 'body'}" class="btn btn-default">
-                               <i class="fa fa-bookmark"></i>
-                               <i class="fa fa-plus"></i>
-                           </a>
+                            %if not private_link:
+                               <a id="addDashboardFolder" data-bind="click: addToDashboard, tooltip: {title: 'Add to bookmarks',
+                                placement: 'bottom', container : 'body'}" class="btn btn-default">
+                                   <i class="fa fa-bookmark"></i>
+                                   <i class="fa fa-plus"></i>
+                               </a>
+                               %endif
                         <!-- /ko -->
                         <!-- ko if: inDashboard -->
                            <a id="removeDashboardFolder" data-bind="click: removeFromDashboard, tooltip: {title: 'Remove from bookmarks',
@@ -74,6 +76,7 @@
                     </div>
                     <!-- /ko -->
                     <div class="btn-group">
+                        % if not private_link:
                         <a
                         % if user_name:
                             class="btn btn-default"
@@ -85,6 +88,7 @@
                             href="#">
                             <span class="glyphicon glyphicon-share"></span>&nbsp; ${ node['templated_count'] + node['fork_count'] + node['points'] }
                         </a>
+                        % endif
                     </div>
                     % if 'badges' in addons_enabled and badges and badges['can_award']:
                         <div class="btn-group">

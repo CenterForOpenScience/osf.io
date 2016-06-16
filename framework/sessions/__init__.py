@@ -16,6 +16,9 @@ from weakref import WeakKeyDictionary
 from framework.flask import redirect
 from framework.mongo import database
 
+from modularodm import Q
+from modularodm.exceptions import QueryException
+
 from website import settings
 
 from .model import Session
@@ -45,6 +48,27 @@ def add_key_to_url(url, scheme, key):
     parsed_redirect_url = parsed_url._replace(**replacements)
     return urlparse.urlunparse(parsed_redirect_url)
 
+def get_node_id(url):
+    try:
+        # Avoid circular import
+        from website.models import Node
+        for seg in furl.furl(url).path.segments:
+            if len(seg) == 5:  # this will need to change if guids == 5 or 6
+                if Node.find(Q('_id', 'eq', seg)).count() == 1:
+                    return seg
+    except IndexError:
+        return None
+    return None
+
+def get_private_link(key):
+    try:
+        # Avoid circular import
+        from website.project.model import PrivateLink
+        return PrivateLink.find_one(
+            Q('key', 'eq', key)
+        )
+    except QueryException:
+        return None
 
 def prepare_private_key():
     """`before_request` handler that checks the Referer header to see if the user
@@ -59,13 +83,27 @@ def prepare_private_key():
     if request.method != 'GET':
         return
 
-    # Done if private_key in args
     key_from_args = request.args.get('view_only', '')
-    if key_from_args:
-        return
+
+    if key_from_args != '':  # This is intentially '' and not None
+        # Do not disrupt waterbutler and other api services
+        if 'api' in furl.furl(request.url).path.segments:
+            return
+        private_link = get_private_link(key_from_args)
+
+        # Must be a valid private link
+        if private_link:
+            node_id = get_node_id(request.url)
+            # Must be a valid node
+            if node_id:
+                # Must be a valid node for the private link
+                if node_id in private_link.nodes:
+                    return
+        # If key isn't valid for context, strip it from the url
+        return redirect(request.base_url, code=http.TEMPORARY_REDIRECT, strip_view_only=True)
 
     # grab query key from previous request for not login user
-    if request.referrer:
+    if request.referrer and not session.is_authenticated:
         referrer_parsed = urlparse.urlparse(request.referrer)
         scheme = referrer_parsed.scheme
         key = urlparse.parse_qs(
@@ -73,14 +111,28 @@ def prepare_private_key():
         ).get('view_only')
         if key:
             key = key[0]
-    else:
-        scheme = None
-        key = None
+            private_link = get_private_link(key)
 
-    # Update URL and redirect
-    if key and not session.is_authenticated:
-        new_url = add_key_to_url(request.url, scheme, key)
-        return redirect(new_url, code=http.TEMPORARY_REDIRECT)
+            # Do not disrupt waterbutler and other api services
+            if 'api' in furl.furl(request.url).path.segments:
+                new_url = add_key_to_url(request.url, scheme, key)
+                return redirect(new_url, code=http.TEMPORARY_REDIRECT)
+
+            # Must be a valid private link
+            if private_link:
+                node_id = get_node_id(request.url)
+                # Must be a valid node
+                if node_id:
+                    # Must be a valid node for the private link
+                    if node_id in private_link.nodes:
+                        new_url = add_key_to_url(request.url, scheme, key)
+                        return redirect(new_url, code=http.TEMPORARY_REDIRECT)
+                else:
+                    # No redirect if not on a valid node to prevent infinite redirects
+                    return
+            # If not a valid private link replace it with 'None' to prevent infinite redirects
+            new_url = add_key_to_url(request.url, scheme, 'None')
+            return redirect(new_url, code=http.TEMPORARY_REDIRECT)
 
 
 def get_session():

@@ -110,9 +110,9 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         assert_in('Invalid link name.', res.body)
 
     @mock.patch('framework.auth.core.Auth.private_link')
-    def test_can_be_anonymous_for_public_project(self, mock_property):
-        mock_property.return_value(mock.MagicMock())
-        mock_property.anonymous = True
+    def test_can_be_anonymous_for_public_project(self, mock_private_link):
+        mock_private_link.return_value(mock.MagicMock())
+        mock_private_link.anonymous = True
         anonymous_link = PrivateLinkFactory(anonymous=True)
         anonymous_link.nodes.append(self.project)
         anonymous_link.save()
@@ -122,12 +122,44 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         auth = Auth(user=self.user, private_key=anonymous_link.key)
         assert_true(has_anonymous_link(self.project, auth))
 
-    def test_has_private_link_key(self):
+    @mock.patch('framework.sessions.get_node_id')
+    def test_has_private_link_key(self, mock_get_node_id):
+        mock_get_node_id.return_value = self.project
         res = self.app.get(self.project_url, {'view_only': self.link.key})
         assert_equal(res.status_code, 200)
 
+    def test_has_bad_private_link_key_redirects_properly(self):
+        res = self.app.get(self.project_url, {'view_only': 'not_valid_link'})
+        assert_is_redirect(res)
+        res = res.follow(expect_errors=True)
+        assert_equal(res.status_code, 302)
+        res = res.follow(expect_errors=True)
+        assert_equal(res.status_code, 301)
+        res = res.follow(expect_errors=True)
+        assert_equal(res.status_code, 200)
+
+    def test_has_wrong_private_link_for_project(self):
+
+        project2 = ProjectFactory(is_public=False)
+        project_url2 = project2.web_url_for('view_project')
+
+        res = self.app.get(project_url2, {'view_only': 'not_valid_link'})
+        assert_is_redirect(res)
+        res = res.follow(expect_errors=True)
+        assert_equal(res.status_code, 302)
+        res = res.follow(expect_errors=True)
+        assert_equal(res.status_code, 301)
+        res = res.follow(expect_errors=True)
+        assert_equal(res.status_code, 200)
+
+    def test_private_link_not_on_node_redirects_properly(self):
+        res = self.app.get("/", {'view_only': self.link.key})
+        assert_is_redirect(res)
+        res = res.follow(expect_errors=True)
+        assert_equal(res.status_code, 200)
+
     def test_not_logged_in_no_key(self):
-        res = self.app.get(self.project_url, {'view_only': None})
+        res = self.app.get(self.project_url)
         assert_is_redirect(res)
         res = res.follow(expect_errors=True)
         assert_equal(res.status_code, 301)
@@ -137,13 +169,15 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         )
 
     def test_logged_in_no_private_key(self):
-        res = self.app.get(self.project_url, {'view_only': None}, auth=self.user.auth,
-                           expect_errors=True)
+        res = self.app.get(self.project_url, auth=self.user.auth,
+            expect_errors=True)
         assert_equal(res.status_code, http.FORBIDDEN)
 
-    def test_logged_in_has_key(self):
+    @mock.patch('framework.sessions.get_node_id')
+    def test_logged_in_has_key(self, mock_get_node_id):
+        mock_get_node_id.return_value = self.project
         res = self.app.get(
-            self.project_url, {'view_only': self.link.key}, auth=self.user.auth)
+            self.project_url, {'view_only': self.link.key}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 200)
 
     @unittest.skip('Skipping for now until we find a way to mock/set the referrer')
@@ -158,37 +192,40 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.request.GET['key'], self.link.key)
 
-    def test_cannot_access_registrations_or_forks_with_anon_key(self):
+    @mock.patch('framework.sessions.get_node_id')
+    def test_cannot_access_registrations_or_forks_with_anon_key(self, mock_get_node_id):
+        mock_get_node_id.return_value = self.project
+
         anonymous_link = PrivateLinkFactory(anonymous=True)
         anonymous_link.nodes.append(self.project)
         anonymous_link.save()
         self.project.is_public = False
         self.project.save()
+
         url = self.project_url + 'registrations/?view_only={}'.format(anonymous_link.key)
         res = self.app.get(url, expect_errors=True)
-
         assert_equal(res.status_code, 401)
 
         url = self.project_url + 'forks/?view_only={}'.format(anonymous_link.key)
-
         res = self.app.get(url, expect_errors=True)
-
         assert_equal(res.status_code, 401)
 
-    def test_can_access_registrations_and_forks_with_not_anon_key(self):
+    @mock.patch('framework.sessions.get_node_id')
+    def test_can_access_registrations_and_forks_with_not_anon_key(self, mock_get_node_id):
+        mock_get_node_id.return_value = self.project
+
         link = PrivateLinkFactory(anonymous=False)
         link.nodes.append(self.project)
         link.save()
         self.project.is_public = False
         self.project.save()
-        url = self.project_url + 'registrations/?view_only={}'.format(self.link.key)
-        res = self.app.get(url)
 
+        url = self.project_url + 'registrations/?view_only={}'.format(self.link.key)
+        res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, 200)
 
         url = self.project_url + 'forks/?view_only={}'.format(self.link.key)
-        res = self.app.get(url)
-
+        res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, 200)
 
     def test_check_can_access_valid(self):

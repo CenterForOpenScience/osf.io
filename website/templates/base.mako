@@ -88,15 +88,23 @@
     %else:
         <div id="devModeControls"></div>
     % endif
+    % if private_link:
+        <%namespace name="view_only_nav_file" file="view_only_nav.mako"/>
+            <%block name="view_only_nav">
+                ${view_only_nav_file.view_only_nav()}
+            </%block>        
+    % else:
+        <%namespace name="nav_file" file="nav.mako"/>
+        <%block name="nav">
+            ${nav_file.nav()}
+        </%block>        
+    % endif
 
-    <%namespace name="nav_file" file="nav.mako"/>
-    <%block name="nav">
-        ${nav_file.nav()}
-    </%block>
+
      ## TODO: shouldn't always have the watermark class
     ${self.content_wrap()}
 
-% if not user_id:
+% if not user_id and not private_link:
 <div id="footerSlideIn">
     <div class="container">
         <div class="row">

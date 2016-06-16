@@ -61,7 +61,7 @@ def add_handlers(app, handlers, key=None):
     for handler_name, func in handlers.iteritems():
         add_handler(app, handler_name, func, key=key)
 
-def redirect(location, code=302):
+def redirect(location, code=302, strip_view_only=False):
     """Redirect the client to a desired location. Behaves the same
     as Flask's :func:`flask.redirect` function with an awareness of
     OSF view-only links.
@@ -71,7 +71,7 @@ def redirect(location, code=302):
     links.
     """
     view_only = request.args.get('view_only', '')
-    if view_only:
+    if view_only and not strip_view_only:
         url = furl.furl(location)
         url.args['view_only'] = view_only
         location = url.url
