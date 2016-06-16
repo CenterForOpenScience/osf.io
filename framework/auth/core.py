@@ -29,7 +29,6 @@ from framework.sessions import session
 from framework.sessions.model import Session
 from framework.sessions.utils import remove_sessions_for_user
 
-
 from website import mails, settings, filters, security
 
 name_formatters = {

@@ -894,6 +894,7 @@ class TestUser(OsfTestCase):
         )
         assert_equal(None, User.from_cookie(cookie))
 
+
 class TestUserParse(unittest.TestCase):
 
     def test_parse_first_last(self):

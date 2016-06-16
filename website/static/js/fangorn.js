@@ -1208,7 +1208,6 @@ function _fangornTitleColumn(item, col) {
     return m('span', item.data.name);
 }
 
-
 /**
  * Returns a reusable template for column titles when there is no connection
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
@@ -1294,7 +1293,6 @@ if(window.contextVars.isPublicFilesCol) {
             filter : true,
             custom : function() {return item.data.size ? $osf.humanFileSize(item.data.size, true) : '';}
         });
-
         if (item.data.provider === 'osfstorage') {
             default_columns.push({
                 data : 'downloads',
@@ -1543,7 +1541,6 @@ var FGButton = {
         return m('div', opts, childrenElements);
     }
 };
-
 
 var FGInput = {
     view : function(ctrl, args, helpText) {

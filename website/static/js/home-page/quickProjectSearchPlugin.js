@@ -468,9 +468,7 @@ var QuickSearchProject = {
             }
         }
 
-
         function headerTemplate ( ){
-
             return [ m('h2.col-xs-9', 'Dashboard'), m('m-b-lg.col-xs-3', m('.pull-right', m.component(AddProject, {
                 buttonTemplate : m('button.btn.btn-success.btn-success-high-contrast.m-t-md.f-w-xl[data-toggle="modal"][data-target="#addProjectFromHome"]', {onclick: function() {
                     $osf.trackClick('quickSearch', 'add-project', 'open-add-project-modal');
@@ -488,8 +486,6 @@ var QuickSearchProject = {
         if (ctrl.eligibleNodes().length === 0 && ctrl.filter() == null) {
             return m('.row',
                 m('.col-xs-12',[
-                    // remove double instance of header
-                  //  headerTemplate(),
                     m('.row.quick-project',
                         m('.col-sm-12.text-center', [
                             m('p','You have no projects yet. Create a project with the button on the top right.'),
@@ -502,7 +498,6 @@ var QuickSearchProject = {
         }
         else {
             return m('.row',
-                //m('.col-xs-12', headerTemplate()),
                 m('.col-xs-12',[
                     m('.row.quick-project', m('.col-xs-12',
                     m('.m-b-sm.text-center', [
@@ -543,7 +538,6 @@ var QuickSearchProject = {
 
 
 var QuickSearchNodeDisplay = {
-
     view: function(ctrl, args) {
         if (args.eligibleNodes().length === 0 && args.filter() != null && args.loadingComplete() === true) {
             return m('.row.m-v-sm', m('.col-sm-12',
