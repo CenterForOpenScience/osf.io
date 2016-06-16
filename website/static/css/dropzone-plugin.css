@@ -54,10 +54,6 @@
     line-height: 28px;
 }
 
-.dz-preview.dz-file-preview [data-dz-thumbnail] {
-    display: none;
-}
-
 .dz-preview .dz-details .dz-filename {
     overflow: hidden;
     height: 100%;
@@ -189,4 +185,11 @@
     width: 100%;
     font-weight: bold;
     margin-top: 10px;
+}
+
+.dz-drag-hover {
+    border-color: #52A452;
+    background: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+
 }

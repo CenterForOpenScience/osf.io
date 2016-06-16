@@ -11,7 +11,6 @@ var clipboard = require("clipboard-js");
 var fileURLArray = [];
 
 
-
 // Don't show dropped content if user drags outside dropzone
 window.ondragover = function (e) {
     e.preventDefault();
@@ -19,7 +18,6 @@ window.ondragover = function (e) {
 window.ondrop = function (e) {
     e.preventDefault();
 };
-
 
 var ShareWindowDropzone = {
     controller: function () {
@@ -47,16 +45,16 @@ var ShareWindowDropzone = {
 
             },
             accept: function (file, done) {
-                if (this.files.length <= 1) {
+                if (this.files.length <= this.options.maxFiles) {
                     this.options.url = waterbutler.buildUploadUrl(false, 'osfstorage', window.contextVars['shareWindowId'], file, {});
                     this.processFile(file);
                 }
                 else {
                     dangerCount = document.getElementsByClassName('alert-danger').length;
                     if (dangerCount === 0)
-                        $osf.growl("Error", "You can only upload a maximum of " + this.options.maxFiles + " files at once. " +
+                        $osf.growl("Error", "You can upload a maximum of " + this.options.maxFiles + " files at once. " +
                             "<br> To upload more files, refresh the page or click X on the top right. " +
-                            "<br> Want to share more files? Create a new project.", "danger", 10000);
+                            "<br> Want to share more files? Create a new project.", "danger", 5000);
 
                     return this.emit("error", file);
                 }
@@ -74,16 +72,16 @@ var ShareWindowDropzone = {
             success: function (file, xhr) {
                 var fileJson = JSON.parse((file.xhr.response));
                 var filePath = fileJson.path;
-                var url =(window.location.host+'/'+window.contextVars['shareWindowId']+'/files/osfstorage'+ filePath);
+                var url = (window.location.host + '/' + window.contextVars['shareWindowId'] + '/files/osfstorage' + filePath);
                 fileURLArray.push(url);
                 this.processQueue();
                 file.previewElement.classList.add("dz-success");
                 file.previewElement.classList.add("dz-preview-background-success");
                 if (this.getQueuedFiles().length === 0 && this.getUploadingFiles().length === 0) {
                     if (this.files.length === 1)
-                        $osf.growl("Upload Successful", this.files.length + " file was successfully uploaded to your public files project.", "success", 10000);
+                        $osf.growl("Upload Successful", this.files.length + " file was successfully uploaded to your public files project.", "success", 5000);
                     else
-                        $osf.growl("Upload Successful", this.files.length + " files were successfully uploaded to your public files project.", "success", 10000);
+                        $osf.growl("Upload Successful", this.files.length + " files were successfully uploaded to your public files project.", "success", 5000);
 
                 }
             },
@@ -116,19 +114,25 @@ var ShareWindowDropzone = {
                     shareLink = fileURLArray[i];
                 }
             }
-            $(e.target).parent().siblings('.alertbubble').finish().show().delay(1000).fadeOut("slow");
-            $.growl({
-                icon: 'fa fa-clipboard',
-                message: ' Link copied to clipboard'
-            }, {
-                type: 'info',
-                allow_dismiss: false,
-                mouse_over: 'pause',
-                placement: {
-                    from: "top",
-                    align: "center"
-                }
-            });
+            var infoCount = document.getElementsByClassName('alert-info').length;
+            if (infoCount === 0) {
+                $.growl({
+                    icon: 'fa fa-clipboard',
+                    message: ' Link copied to clipboard'
+                }, {
+                    type: 'info',
+                    allow_dismiss: false,
+                    mouse_over: 'pause',
+                    placement: {
+                        from: "top",
+                        align: "center"
+                    },
+                    animate: {
+                        enter: 'animated fadeInDown',
+                        exit: 'animated fadeOut'
+                    }
+                });
+            }
         });
 
 
@@ -157,15 +161,11 @@ var ShareWindowDropzone = {
             url: 'placeholder',
             previewTemplate: $osf.mithrilToStr(template)
         });
-        // cache the selector to avoid duplicate selector warning
-        var $chevron = $('#glyphchevron');
 
         $('#ShareButton').click(function () {
-                document.getElementById("ShareButton").style.cursor = "pointer";
                 $('#shareWindowDropzone').stop().slideToggle();
                 $('#shareWindowDropzone').css('display', 'inline-block');
-                $chevron.toggleClass('glyphicon glyphicon-chevron-down');
-                $chevron.toggleClass('glyphicon glyphicon-chevron-up');
+                $('#glyphchevron').toggleClass('glyphicon glyphicon-chevron-down glyphicon glyphicon-chevron-up');
             }
         );
 
@@ -207,8 +207,7 @@ var ShareWindowDropzone = {
                             var $chevron = $('#glyphchevron');
                             $('#shareWindowDropzone').hide();
                             $('div.dz-preview').remove();
-                            $chevron.toggleClass('glyphicon glyphicon-chevron-up');
-                            $chevron.toggleClass('glyphicon glyphicon-chevron-down');
+                            $('#glyphchevron').toggleClass('glyphicon glyphicon-chevron-up glyphicon glyphicon-chevron-down');
                             $('.drop-zone-format').css({'padding-bottom': '175px'});
                         }
                     }, m('.drop-zone-close', '×')
