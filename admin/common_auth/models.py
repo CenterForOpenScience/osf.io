@@ -55,7 +55,7 @@ class MyUser(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = 'email'
 
     def get_full_name(self):
-        return ("{0} {1}".format(self.first_name, self.last_name)).strip() or self.email
+        return ('{0} {1}'.format(self.first_name, self.last_name)).strip() or self.email
 
     def get_short_name(self):
         # The user is identified by their email address

@@ -522,7 +522,7 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
     if isinstance(file_node, TrashedFileNode):
         deleted_by = file_node.deleted_by
         deleted_by_guid = file_node.deleted_by._id if deleted_by else None
-        deleted_on = file_node.deleted_on.strftime("%c") + ' UTC'
+        deleted_on = file_node.deleted_on.strftime('%c') + ' UTC'
         if file_node.suspended:
             error_type = 'FILE_SUSPENDED'
         elif file_node.deleted_by is None:
@@ -662,12 +662,12 @@ def addon_view_file(auth, node, file_node, version):
 
     ret = serialize_node(node, auth, primary=True)
 
-    if file_node._id not in node.file_guid_to_share_uuids:
-        node.file_guid_to_share_uuids[file_node._id] = uuid.uuid4()
+    if file_node._id + '-' + version._id not in node.file_guid_to_share_uuids:
+        node.file_guid_to_share_uuids[file_node._id + '-' + version._id] = uuid.uuid4()
         node.save()
 
     if ret['user']['can_edit']:
-        sharejs_uuid = str(node.file_guid_to_share_uuids[file_node._id])
+        sharejs_uuid = str(node.file_guid_to_share_uuids[file_node._id + '-' + version._id])
     else:
         sharejs_uuid = None
 

@@ -154,10 +154,10 @@ def watched_logs_get(**kwargs):
     logs = (model.NodeLog.load(id) for id in paginated_logs)
 
     return {
-        "logs": [serialize_log(log) for log in logs],
-        "total": total,
-        "pages": pages,
-        "page": page
+        'logs': [serialize_log(log) for log in logs],
+        'total': total,
+        'pages': pages,
+        'page': page
     }
 
 
@@ -168,7 +168,7 @@ def serialize_log(node_log, auth=None, anonymous=False):
         'user': node_log.user.serialize()
         if isinstance(node_log.user, User)
         else {'fullname': node_log.foreign_user},
-        'contributors': [node_log._render_log_contributor(c) for c in node_log.params.get("contributors", [])],
+        'contributors': [node_log._render_log_contributor(c) for c in node_log.params.get('contributors', [])],
         'action': node_log.action,
         'params': sanitize.unescape_entities(node_log.params),
         'date': utils.iso8601format(node_log.date),
@@ -257,6 +257,9 @@ def resolve_guid(guid, suffix=None):
 # redirect osf.io/about/ to OSF wiki page osf.io/4znzp/wiki/home/
 def redirect_about(**kwargs):
     return redirect('https://osf.io/4znzp/wiki/home/')
+
+def redirect_help(**kwargs):
+    return redirect('/faq/')
 
 
 # redirect osf.io/howosfworks to osf.io/getting-started/
