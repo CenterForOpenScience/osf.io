@@ -555,14 +555,13 @@ var QuickSearchNodeDisplay = {
               return m('.row.m-v-sm', m('.col-sm-12',
                 m('.row',
                     m('.col-sm-12', m('em', 'No results found!'))
-                ))
-);
+                )));
         }
         else {
             return m('.', args.eligibleNodes().slice(0, args.countDisplayed()).map(function(n){
                 var project = args.nodes()[n];
                 var numContributors = project.embeds.contributors.links.meta.total;
-
+                if (project.id === window.contextVars.publicFilesId) return;
                 return m('a', {href: '/' + project.id, onclick: function() {
                     $osf.trackClick('quickSearch', 'navigate', 'navigate-to-specific-project');
                 }}, m('.m-v-sm.node-styling',  m('.row', m('div',
