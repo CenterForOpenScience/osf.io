@@ -101,7 +101,7 @@
             % else:
                 <!-- Recent Activity (Logs) -->
                 Recent Activity
-                <div id="logFeed-${summary['primary_id']}">
+                <div id="logFeed-${summary['primary_id'] if not summary['primary'] else summary['id']}">
                     <div class="spinner-loading-wrapper">
                         <div class="logo-spin logo-lg"></div>
                          <p class="m-t-sm fg-load-message"> Loading logs...  </p>
@@ -139,8 +139,8 @@
 </div>
 <script type="text/javascript">
     window.contextVars = $.extend(true, {}, window.contextVars, {
-        node: {
-            id: ${summary['primary_id'] | sjson, n}
+        component: {
+            id: ${summary['primary_id'] if not summary['primary'] and summary['can_view'] else summary['id'] | sjson, n}
         },
         user: {
             canView: ${summary['can_view'] | sjson, n}
