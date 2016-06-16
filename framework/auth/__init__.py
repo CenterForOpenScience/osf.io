@@ -35,7 +35,7 @@ def get_display_name(username):
 check_password = bcrypt.check_password_hash
 
 
-def authenticate(user, access_token, response):
+def authenticate(user, access_token, response, user_agent=None):
     data = session.data if session._get_current_object() else {}
     data.update({
         'auth_user_username': user.username,
@@ -47,7 +47,7 @@ def authenticate(user, access_token, response):
     user.clean_email_verifications()
     user.update_affiliated_institutions_by_email_domain()
     user.save()
-    response = create_session(response, data=data)
+    response = create_session(response, data=data, user_agent=user_agent)
     return response
 
 

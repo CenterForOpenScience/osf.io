@@ -173,6 +173,7 @@ class CasClient(object):
         else:
             self._handle_error(resp)
 
+
 def parse_auth_header(header):
     """Given a Authorization header string, e.g. 'Bearer abc123xyz', return a token
     or raise an error if the header is invalid.
@@ -186,8 +187,10 @@ def parse_auth_header(header):
         raise CasTokenError('Token contains spaces')
     return parts[1]  # the token
 
+
 def get_client():
     return CasClient(settings.CAS_SERVER_URL)
+
 
 def get_login_url(*args, **kwargs):
     """Convenience function for getting a login URL for a service.
@@ -197,8 +200,10 @@ def get_login_url(*args, **kwargs):
     """
     return get_client().get_login_url(*args, **kwargs)
 
+
 def get_institution_target(redirect_url):
     return '/login?service={}&auto=true'.format(urllib.quote(redirect_url, safe='~()*!.\''))
+
 
 def get_logout_url(*args, **kwargs):
     """Convenience function for getting a logout URL for a service.
@@ -208,15 +213,23 @@ def get_logout_url(*args, **kwargs):
     """
     return get_client().get_logout_url(*args, **kwargs)
 
+
 def get_profile_url():
     """Convenience function for getting a profile URL for a user.
     """
     return get_client().get_profile_url()
 
-def make_response_from_ticket(ticket, service_url):
-    """Given a CAS ticket and service URL, attempt to the user and return a proper
-    redirect response.
+
+def make_response_from_ticket(ticket, service_url, user_agent=None):
     """
+    Given a CAS ticket and service URL, attempt to the user and return a proper redirect response.
+
+    :param ticket:
+    :param service_url:
+    :param user_agent:
+    :return:
+    """
+
     service_furl = furl.furl(service_url)
     if 'ticket' in service_furl.args:
         service_furl.args.pop('ticket')
@@ -228,6 +241,6 @@ def make_response_from_ticket(ticket, service_url):
         if user.verification_key:
             user.verification_key = None
             user.save()
-        return authenticate(user, access_token=cas_resp.attributes['accessToken'], response=redirect(service_furl.url))
+        return authenticate(user, access_token=cas_resp.attributes['accessToken'], response=redirect(service_furl.url), user_agent=user_agent)
     # Ticket could not be validated, unauthorized.
     return redirect(service_furl.url)

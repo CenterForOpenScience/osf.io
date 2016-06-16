@@ -92,8 +92,7 @@ OSF_SESSION_TIMEOUT = 30 * 24 * 60 * 60  # 30 days in seconds
 # TODO: Override SECRET_KEY in local.py in production
 SECRET_KEY = 'CHANGEME'
 SESSION_COOKIE_SECURE = SECURE_MODE
-# TODO: Change to SECURE_MODE after ticket #OSF-6339 has been resolved
-SESSION_COOKIE_HTTPONLY = False
+SESSION_COOKIE_HTTPONLY = True
 
 # local path to private key and cert for local development using https, overwrite in local.py
 OSF_SERVER_KEY = None
