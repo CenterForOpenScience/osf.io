@@ -111,7 +111,9 @@ var PublicFilesDropzone = {
 
         };
 
-        $("#publicFilesDropzone").on("click", "div.dz-share", function (e) {
+        var $publicFiles = $('#publicFilesDropzone');
+
+        $publicFiles.on("click", "div.dz-share", function (e) {
             var infoCount = document.getElementsByClassName('alert-info').length;
             if (infoCount === 0) {
                 $.growl({
@@ -133,15 +135,14 @@ var PublicFilesDropzone = {
             }
         });
 
-
-        $('#publicFilesDropzone').dropzone({
-           url: 'placeholder',
-           previewTemplate: $osf.mithrilToStr(dropzonePreviewTemplate.dropzonePreviewTemplate())
+        $publicFiles.dropzone({
+            url: 'placeholder',
+            previewTemplate: $osf.mithrilToStr(dropzonePreviewTemplate.dropzonePreviewTemplate())
         });
 
         $('#ShareButton').click(function () {
-                $('#publicFilesDropzone').stop().slideToggle();
-                $('#publicFilesDropzone').css('display', 'inline-block');
+                $publicFiles.stop().slideToggle();
+                $publicFiles.css('display', 'inline-block');
                 $('#glyphchevron').toggleClass('glyphicon glyphicon-chevron-down glyphicon glyphicon-chevron-up');
             }
         );
@@ -173,13 +174,9 @@ var PublicFilesDropzone = {
             ];
         }
 
-        // Activate Public Files tooltip info
-        $('[data-toggle="tooltip"]').tooltip();
-
-        // unexplainable large margin between dashboard and quick search projects
-        return m('.row', m('.col-xs-12.m-b-sm', headerTemplate()),
-            m('div.p-v-xs.drop-zone-format.drop-zone-invis .pointer .panel #publicFilesDropzone',
-                m('button.close[aria-label="Close"]', {
+        function closeButton() {
+            return [
+                m('button.close[aria-label="Close"].pull-right', {
                         onclick: function () {
                             $('#publicFilesDropzone').hide();
                             $('div.dz-preview').remove();
@@ -187,7 +184,40 @@ var PublicFilesDropzone = {
                             $('.drop-zone-format').css({'padding-bottom': '175px'});
                         }
                     }, m('.drop-zone-close', '×')
-                ),
+                )
+            ]
+        }
+
+        function publicFilesHelpButton() {
+            return [
+                m('button.btn.fa.fa-question.text-muted.close.dz-font[aria-label="Drag-and-Drop Help"][data-toggle="modal"][data-target="#dropZoneHelpModal"]'),
+                m('.modal.fade #dropZoneHelpModal',
+                    m('.modal-dialog',
+                        m('.modal-content',
+                            m('.modal-header',
+                                m('button.close[data-dismiss="modal"]', '×'),
+                                m('h4.modal-title', 'Public Files Drag-and-Drop Help')),
+                            m('.modal-body', m('p', 'Files uploaded here will be automatically added to your public files. Additionally: '),
+                                m('ul',
+                                    m('li', 'You may upload one file at a time.'),
+                                    m('li', 'File uploads may be up to 256 MB.'),
+                                    m('li','To upload more files, refresh the page or click the close button.'),
+                                    m('li','Click ', m('span.i.fa.fa-share-alt'), ' to copy a download link for that file to your clipboard. Share this link with others!'))
+                            ),
+                            m('.modal-footer', m('button.btn.btn-default[data-dismiss="modal"]', 'Close'))
+                        )
+                    )
+                )
+            ]
+        }
+
+
+        // Activate Public Files tooltip info
+        $('[data-toggle="tooltip"]').tooltip();
+        // unexplainable large margin between dashboard and quick search projects
+        return m('.row', m('.col-xs-12.m-b-sm', headerTemplate()),
+            m('div.p-v-xs.drop-zone-format.drop-zone-invis .pointer .panel #publicFilesDropzone', closeButton(),
+                publicFilesHelpButton(),
                 m('h1.dz-p.text-center #publicFilesDropzone', 'Drop files to upload',
                     m('h5', 'Click the box to upload files. Files are automatically uploaded to your ',
                         m('a', {

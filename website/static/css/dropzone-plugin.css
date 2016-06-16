@@ -170,6 +170,9 @@
     height: 0px;
     line-height: 28px;
     cursor: pointer;
+     -webkit-transition: color .4s ease;
+    -moz-transition: color .4s ease;
+    -o-transition: color .4s ease;
     transition: color 0.4s ease;
  
 }
@@ -190,4 +193,8 @@
     border-color: #52A452;
     background: rgba(255, 255, 255, 0.2);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.dz-font {
+    font-size: 22px;
 }
