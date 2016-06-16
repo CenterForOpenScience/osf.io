@@ -3,18 +3,18 @@ var $osf = require('js/osfHelpers');
 var waterbutler = require('js/waterbutler');
 var AddProject = require('js/addProjectPlugin');
 var dropzonePreviewTemplate = require('js/home-page/dropzonePreviewTemplate');
-
+ 
 require('css/dropzone-plugin.css');
 require('css/quick-project-search-plugin.css');
 require('loaders.css/loaders.min.css');
-
+ 
 var Dropzone = require('dropzone');
-
+ 
 var ZeroClipboard = require('zeroclipboard');
 var fileURL = '';
 var fileURLArray = [];
 var clip = '';
-
+ 
 // Don't show dropped content if user drags outside dropzone
 window.ondragover = function (e) {
     e.preventDefault();
@@ -22,7 +22,7 @@ window.ondragover = function (e) {
 window.ondrop = function (e) {
     e.preventDefault();
 };
-
+ 
 var PublicFilesDropzone = {
     controller: function () {
         var dangerCount = 0;
@@ -46,7 +46,7 @@ var PublicFilesDropzone = {
                 $('button.close').on('click', function () {
                     _this.files.length = 0;
                 });
-
+ 
             },
             accept: function (file, done) {
                 if (this.files.length <= this.options.maxFiles) {
@@ -59,11 +59,11 @@ var PublicFilesDropzone = {
                         $osf.growl("Error", "You can upload a maximum of " + this.options.maxFiles + " files at once. " +
                             "<br> To upload more files, refresh the page or click X on the top right. " +
                             "<br> Want to share more files? Create a new project.", "danger", 5000);
-
+ 
                     return this.emit("error", file);
                 }
             },
-
+ 
             sending: function (file, xhr) {
                 //Hack to remove webkitheaders
                 var _send = xhr.send;
@@ -72,15 +72,15 @@ var PublicFilesDropzone = {
                 };
                 $('.drop-zone-format').css({'padding-bottom': '10px'});
             },
-
+ 
             success: function (file, xhr) {
                 buttonContainer = document.createElement('div');
                 file.previewElement.appendChild(buttonContainer);
-
+ 
                 var fileJson = JSON.parse((file.xhr.response));
                 var link = waterbutler.buildDownloadUrl(fileJson.path, 'osfstorage', window.contextVars.publicFilesId, file.name, {});
                 m.render(buttonContainer, dropzonePreviewTemplate.shareButton(link));
-
+ 
                 this.processQueue();
                 file.previewElement.classList.add("dz-success");
                 file.previewElement.classList.add("dz-preview-background-success");
@@ -89,11 +89,11 @@ var PublicFilesDropzone = {
                         $osf.growl("Upload Successful", this.files.length + " file was successfully uploaded to your public files project.", "success", 5000);
                     else
                         $osf.growl("Upload Successful", this.files.length + " files were successfully uploaded to your public files project.", "success", 5000);
-
+ 
                 }
             },
-
-
+ 
+ 
             error: function (file, message) {
                 this.files.length--;
                 // Keeping the old behavior in case we want to revert it some time
@@ -108,11 +108,11 @@ var PublicFilesDropzone = {
                         " which exceeds the max file size of " + this.options.maxFilesize + " MB", "danger", 5000);
                 }
             },
-
+ 
         };
-
+ 
         var $publicFiles = $('#publicFilesDropzone');
-
+ 
         $publicFiles.on("click", "div.dz-share", function (e) {
             var infoCount = document.getElementsByClassName('alert-info').length;
             if (infoCount === 0) {
@@ -134,21 +134,21 @@ var PublicFilesDropzone = {
                 });
             }
         });
-
+ 
         $publicFiles.dropzone({
             url: 'placeholder',
             previewTemplate: $osf.mithrilToStr(dropzonePreviewTemplate.dropzonePreviewTemplate())
         });
-
+ 
         $('#ShareButton').click(function () {
                 $publicFiles.stop().slideToggle();
                 $publicFiles.css('display', 'inline-block');
                 $('#glyphchevron').toggleClass('glyphicon glyphicon-chevron-down glyphicon glyphicon-chevron-up');
             }
         );
-
+ 
     },
-
+ 
     view: function (ctrl, args) {
         function headerTemplate() {
             return [
@@ -173,7 +173,7 @@ var PublicFilesDropzone = {
                 )
             ];
         }
-
+ 
         function closeButton() {
             return [
                 m('button.close[aria-label="Close"].pull-right', {
@@ -187,7 +187,7 @@ var PublicFilesDropzone = {
                 )
             ]
         }
-
+ 
         function publicFilesHelpButton() {
             return [
                 m('button.btn.fa.fa-question.text-muted.close.dz-font[aria-label="Drag-and-Drop Help"][data-toggle="modal"][data-target="#dropZoneHelpModal"]'),
@@ -210,8 +210,8 @@ var PublicFilesDropzone = {
                 )
             ]
         }
-
-
+ 
+ 
         // Activate Public Files tooltip info
         $('[data-toggle="tooltip"]').tooltip();
         // unexplainable large margin between dashboard and quick search projects
@@ -236,6 +236,6 @@ var PublicFilesDropzone = {
         );
     }
 };
-
-
+ 
+ 
 module.exports = PublicFilesDropzone;
