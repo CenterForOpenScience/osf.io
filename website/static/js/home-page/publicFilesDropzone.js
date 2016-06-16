@@ -139,13 +139,22 @@ var PublicFilesDropzone = {
            previewTemplate: $osf.mithrilToStr(dropzonePreviewTemplate.dropzonePreviewTemplate())
         });
 
+        var isSliderOpen = false;
         $('#ShareButton').click(function () {
                 $('#publicFilesDropzone').stop().slideToggle();
-                $('#publicFilesDropzone').css('display', 'inline-block');
+                $('#publicFilesDropzone').css('display', 'flex');
+                if(isSliderOpen){
+                    $('.drop-zone-close').hide().slideUp( 300 ).fadeOut( "slow" );
+                    isSliderOpen = false;
+                }else{
+                    $('.drop-zone-close').show("fast");
+                    //$( ".drop-zone-close" ).slideDown( "slow" );
+                    isSliderOpen = true;
+                }
+
                 $('#glyphchevron').toggleClass('glyphicon glyphicon-chevron-down glyphicon glyphicon-chevron-up');
             }
         );
-
     },
 
     view: function (ctrl, args) {
