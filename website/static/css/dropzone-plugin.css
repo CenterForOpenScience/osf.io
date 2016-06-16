@@ -168,7 +168,7 @@
 .dz-share {
     position: absolute;
     bottom: 29px;
-    right: 0px;
+    right: 11px;
     height: 0px;
     line-height: 28px;
     cursor: pointer;
@@ -196,33 +196,7 @@
     background: rgba(255, 255, 255, 0.2);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
-
-
-#publicFilesDropzone {
-   -webkit-align-items: center;
-   align-items: center;
-   -webkit-justify-content: center;
-   justify-content: center;
-   /* You can set flex-wrap and flex-direction individually */
-   -webkit-flex-direction: row;
-   flex-direction: row;
-   -webkit-flex-wrap: wrap;
-   flex-wrap: wrap;
-   /* Or do it all in one line with flex flow */
-   -webkit-flex-flow: row wrap;
-   flex-flow: row wrap;
-   /* tweak the where items line up on the row */
-   /* valid values are: flex-start, flex-end, space-between, space-around, stretch */
-   -webkit-align-content: flex-end;
-   align-content: flex-end;
-}
-
-.drop-zone-close {
-    position: absolute;
-    right: 15px;
-    top: 85px;
-}
-
+ 
 .dz-font {
     font-size: 22px;
 }
