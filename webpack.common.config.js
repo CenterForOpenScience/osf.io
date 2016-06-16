@@ -92,8 +92,9 @@ var entry = {
 
 // Collect log text from addons
 var mainLogs = require(staticPath('js/logActionsList.json'));
-var anonymousLogs = require(staticPath('js/_anonymousLogTexts.js'));
+var anonymousLogs = require(staticPath('js/anonymousLogActionsList.json'));
 var addonLog;
+var anonymousAddonLog;
 
 // Collect addons endpoints. If an addon's static folder has
 // any of the following files, it will be added as an entry point
@@ -114,6 +115,12 @@ addons.addons.forEach(function(addonName) {
     if(fs.existsSync(logTextPath)){
         addonLog = require(logTextPath);
         for (var attrname in addonLog) { mainLogs[attrname] = addonLog[attrname]; }
+    }
+    var anonymousLogTextPath = path.join(__dirname, 'website', 'addons',
+        addonName, 'static', addonName + 'AnonymousLogActionList.json');
+    if(fs.existsSync(anonymousLogTextPath)) {
+        anonymousAddonLog = require(anonymousLogTextPath);
+        for (var log in anonymousAddonLog) { anonymousLogs[log] = anonymousAddonLog[log]; }
     }
 });
 

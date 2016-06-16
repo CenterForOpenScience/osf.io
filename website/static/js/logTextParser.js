@@ -148,8 +148,9 @@ var LogText = {
             ]);
         } else {
             message = 'The log viewer has encountered an unexpected log action: ' + logObject.attributes.action +
-                '. Please add a new log entry for this action to logActionsList.js, ' +
-                'or the appropriate addon log file, and _anonymousLogTexts.js';
+                '. Please add a new log entry for this action to logActionsList.json' +
+                ' and anonymousLogActionsList.json, or, if this log relates to an addon, ' +
+                'to {addonName}LogActionList.json and {addonName}AnonymousLogActionList.json';
             ravenMessage(message, logObject);
             return m('em', 'Unable to retrieve log details');
         }
