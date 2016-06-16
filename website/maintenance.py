@@ -27,6 +27,7 @@ def set_maintenance(start=None, end=None):
         start = end - timedelta(1)
 
     database.drop_collection('maintenance')
+    # NOTE: We store isoformatted dates in order to preserve timezone information (pymongo retrieves naive datetimes)
     database.maintenance.insert({'maintenance': True, 'start': start.isoformat(), 'end': end.isoformat()})
 
 

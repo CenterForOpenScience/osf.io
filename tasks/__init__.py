@@ -963,9 +963,8 @@ def usage():
 ### Maintenance Tasks ###
 
 @task
-def set_maintenance_state(start=None, end=None):
-    from website.maintenance import set_maintenance
-
+def set_maintenance(start=None, end=None):
+    from website.maintenance import set_maintenance, get_maintenance
     """Set the time period for the maintenance notice to be displayed.
     If no start or end values are displayed, default to starting now
     and ending 24 hours from now. If no timezone info is passed along,
@@ -980,18 +979,13 @@ def set_maintenance_state(start=None, end=None):
         invoke set_maintenance_state --end 2016-03-16T15:41:00-04:00
     """
     set_maintenance(start, end)
+    state = get_maintenance()
+    print('Maintenance notice up for {} to {}.'.format(state['start'], state['end']))
 
 
 @task
-def get_maintenance_state():
-    from website.maintenance import get_maintenance
-    """Get the current start and end times for the maintenance state.
-    Return None for start and end if there is no maintenacne state
-    """
-    get_maintenance()
-
-
-@task
-def unset_maintenance_state():
+def unset_maintenance():
     from website.maintenance import unset_maintenance
+    print('Taking down maintenance notice...')
     unset_maintenance()
+    print('...Done.')
