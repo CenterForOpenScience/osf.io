@@ -56,11 +56,11 @@ var PublicFilesDropzone = {
                 else {
                     dangerCount = document.getElementsByClassName('alert-danger').length;
                     if (dangerCount === 0)
-                        $osf.growl("Error", "You can upload a maximum of " + this.options.maxFiles + " files at once. " +
-                            "<br> To upload more files, refresh the page or click X on the top right. " +
-                            "<br> Want to share more files? Create a new project.", "danger", 5000);
+                        $osf.growl('Error', 'You can upload a maximum of ' + this.options.maxFiles + ' files at once. ' +
+                            '<br> To upload more files, refresh the page or click X on the top right. ' +
+                            '<br> Want to share more files? Create a new project.', 'danger', 5000);
 
-                    return this.emit("error", file);
+                    return this.emit('error', file);
                 }
             },
 
@@ -82,13 +82,13 @@ var PublicFilesDropzone = {
                 m.render(buttonContainer, dropzonePreviewTemplate.shareButton(link));
 
                 this.processQueue();
-                file.previewElement.classList.add("dz-success");
-                file.previewElement.classList.add("dz-preview-background-success");
+                file.previewElement.classList.add('dz-success');
+                file.previewElement.classList.add('dz-preview-background-success');
                 if (this.getQueuedFiles().length === 0 && this.getUploadingFiles().length === 0) {
                     if (this.files.length === 1)
-                        $osf.growl("Upload Successful", this.files.length + " file was successfully uploaded to your public files project.", "success", 5000);
+                        $osf.growl('Upload Successful', this.files.length + ' file was successfully uploaded to your public files project.', 'success', 5000);
                     else
-                        $osf.growl("Upload Successful", this.files.length + " files were successfully uploaded to your public files project.", "success", 5000);
+                        $osf.growl('Upload Successful', this.files.length + ' files were successfully uploaded to your public files project.', 'success', 5000);
 
                 }
             },
@@ -97,21 +97,21 @@ var PublicFilesDropzone = {
             error: function (file, message) {
                 this.files.length--;
                 // Keeping the old behavior in case we want to revert it some time
-                file.previewElement.classList.add("dz-error");
-                file.previewElement.classList.add("dz-preview-background-error");
+                file.previewElement.classList.add('dz-error');
+                file.previewElement.classList.add('dz-preview-background-error');
                 file.previewElement.remove(); // Doesn't show the preview
                 // Need the padding change twice because the padding doesn't resize when there is an error
                 // get file size in MB, rounded to 1 decimal place
                 var fileSizeMB = Math.round(file.size / (1000 * 1000) * 10) / 10;
                 if (fileSizeMB > this.options.maxFilesize) {
-                    $osf.growl("Upload Failed", file.name + " could not be uploaded. <br> The file is " + fileSizeMB + " MB," +
-                        " which exceeds the max file size of " + this.options.maxFilesize + " MB", "danger", 5000);
+                    $osf.growl('Upload Failed', file.name + ' could not be uploaded. <br> The file is ' + fileSizeMB + ' MB,' +
+                        ' which exceeds the max file size of ' + this.options.maxFilesize + ' MB', 'danger', 5000);
                 }
             },
 
         };
 
-        $("#publicFilesDropzone").on("click", "div.dz-share", function (e) {
+        $('#publicFilesDropzone').on('click', 'div.dz-share', function (e) {
             var infoCount = document.getElementsByClassName('alert-info').length;
             if (infoCount === 0) {
                 $.growl({
@@ -122,8 +122,8 @@ var PublicFilesDropzone = {
                     allow_dismiss: false,
                     mouse_over: 'pause',
                     placement: {
-                        from: "top",
-                        align: "center"
+                        from: 'top',
+                        align: 'center'
                     },
                     animate: {
                         enter: 'animated fadeInDown',
@@ -144,10 +144,10 @@ var PublicFilesDropzone = {
                 $('#publicFilesDropzone').stop().slideToggle();
                 $('#publicFilesDropzone').css('display', 'flex');
                 if(isSliderOpen){
-                    $('.drop-zone-close').hide().slideUp( 300 ).fadeOut( "slow" );
+                    $('.drop-zone-close').hide().slideUp( 300 ).fadeOut( 'slow' );
                     isSliderOpen = false;
                 }else{
-                    $('.drop-zone-close').show("fast");
+                    $('.drop-zone-close').show('fast');
                     //$( ".drop-zone-close" ).slideDown( "slow" );
                     isSliderOpen = true;
                 }
