@@ -386,7 +386,6 @@ def view_project(auth, node, **kwargs):
     ))
     ret.update(rubeus.collect_addon_assets(node))
 
-    ret['discourse_url'] = settings.DISCOURSE_SERVER_URL
     ret['discourse_topic_id'] = discourse.get_or_create_topic_id(node)
 
     return ret
@@ -788,7 +787,8 @@ def _view_project(node, auth, primary=False,
         'node_categories': [
             {'value': key, 'display_name': value}
             for key, value in settings.NODE_CATEGORY_MAP.iteritems()
-        ]
+        ],
+        'discourse_url': settings.DISCOURSE_SERVER_URL,
     }
     if embed_contributors and not anonymous:
         data['node']['contributors'] = utils.serialize_contributors(node.visible_contributors, node=node)

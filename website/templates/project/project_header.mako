@@ -40,8 +40,11 @@
                                 Files
                             </a>
                         </li>
-
-                        <li><a href="${node['url']}forum/">Forum</a></li>
+                    % if node['is_public']:
+                        <li><a href="${discourse_url}tags/${node['id']}">Forum</a></li>
+                    % else:
+                        <li><a href="${discourse_url}users/${user['id']}/messages/group/${node['id']}">Forum</a></li>
+                    % endif
 
                         <!-- Add-on tabs -->
                         % for addon in addons_enabled:

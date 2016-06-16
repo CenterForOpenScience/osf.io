@@ -299,7 +299,24 @@ def _get_project_node(node):
         return node
 
 def sync_project(project_node):
+    from website.addons.wiki.model import NodeWikiPage
+    from website.files.models import StoredFileNode
+    from modularodm import Q
+
     sync_group(project_node)
+    update_topic_content(project_node)
+    update_topic_privacy(project_node)
+
+    for key, wiki_id in project_node.wiki_pages_current.items():
+        wiki = NodeWikiPage.load(wiki_id)
+        update_topic_privacy(wiki)
+
+    file_nodes = StoredFileNode.find(Q('node', 'eq', project_node) &
+                                     Q('discourse_topic_id', 'ne', None) &
+                                     Q('discourse_topic_public', 'ne', project_node.is_public))
+
+    for file_node in file_nodes:
+        update_topic_privacy(file_node)
 
 def delete_project(project_node):
     delete_group(project_node)
@@ -354,10 +371,10 @@ def _create_or_update_topic_base_url(node):
     url.args['tags[]'] = node_guid
     parent_node = project_node
     if parent_node is node:
-        parent_node = node.parent
+        parent_node = node.parent_node
     while parent_node:
         url.query.add('tags[]=' + str(parent_node._id))
-        parent_node = parent_node.parent
+        parent_node = parent_node.parent_node
 
     if node_type == 'file':
         file_url = furl(settings.DOMAIN).join(node_guid).url
@@ -369,11 +386,10 @@ def create_topic(node):
     url = _create_or_update_topic_base_url(node)
     url.path.add('/posts')
 
-    project_node = _get_project_node(node)
-    if project_node.is_public:
-        url.args['archetype'] = 'regular'
-    else:
-        url.args['archetype'] = 'private_message'
+    # topics must be made private at first in order to correctly
+    # address the project group. This can't be added in later.
+    # But we can immediately convert to a private conversation after creation.
+    url.args['archetype'] = 'private_message'
 
     result = requests.post(url.url)
     if result.status_code != 200:
@@ -383,12 +399,19 @@ def create_topic(node):
     result_json = result.json()
 
     node.discourse_topic_id = result_json['topic_id']
+    node.discourse_topic_public = False
     node.discourse_post_id = result_json['id']
     node.save()
+
+    if _get_project_node(node).is_public:
+        update_topic_privacy(node)
 
     return result_json
 
 def update_topic_content(node):
+    if node.discourse_post_id is None:
+        return
+
     url = furl(settings.DISCOURSE_SERVER_URL).join('/posts/' + str(node.discourse_post_id))
     url.args['api_key'] = settings.DISCOURSE_API_KEY
     url.args['api_username'] = settings.DISCOURSE_API_ADMIN_USER
@@ -401,8 +424,14 @@ def update_topic_content(node):
                                  + str(result.status_code) + ' ' + result.text[:500])
 
 def update_topic_privacy(node):
-    url = furl(settings.DISCOURSE_SERVER_URL).join('/t/' + str(node.discourse_topic_id) + '/convert-topic')
+    if node.discourse_topic_id is None:
+        return
+
     project_node = _get_project_node(node)
+    if project_node.is_public == node.discourse_topic_public:
+        return
+
+    url = furl(settings.DISCOURSE_SERVER_URL).join('/t/' + str(node.discourse_topic_id) + '/convert-topic')
     url.path.add('/public' if project_node.is_public else '/private')
 
     url.args['api_key'] = settings.DISCOURSE_API_KEY
@@ -412,6 +441,9 @@ def update_topic_privacy(node):
     if result.status_code != 200:
         raise DiscourseException('Discourse server responded to topic privacy update request ' + result.url + ' with '
                                  + str(result.status_code) + ' ' + result.text[:500])
+
+    node.discourse_topic_public = project_node.is_public
+    node.save()
 
 def update_topic_title_tags(node):
     url = _create_or_update_topic_base_url(node)
