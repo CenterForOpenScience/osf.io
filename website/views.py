@@ -222,7 +222,7 @@ def resolve_guid(guid, suffix=None):
     if guid_object:
 
         # redirect if user tries to visit public files wiki or add contributors ect.
-        if Node.find_one(Q('_id', 'eq', guid_object._storage_key) & Q('is_public_files_collection', 'eq', True)):
+        if Node.find(Q('_id', 'eq', guid_object._storage_key) & Q('is_public_files_collection', 'eq', True)):
             return redirect('public_files/' + Node.load(guid_object._storage_key).creator._id)
 
         # verify that the object implements a GuidStoredObject-like interface. If a model
