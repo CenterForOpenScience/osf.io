@@ -6,6 +6,7 @@ commands, run ``$ invoke --list``.
 import os
 import sys
 import code
+import json
 import platform
 import subprocess
 import logging
@@ -15,9 +16,7 @@ import invoke
 from invoke import run, Collection
 
 from website import settings
-from admin import tasks as admin_tasks
 from utils import pip_install, bin_prefix
-from scripts.meta import gatherer
 
 logging.getLogger('invoke').setLevel(logging.CRITICAL)
 
@@ -34,7 +33,12 @@ else:
     TEST_CMD = 'nosetests --rednose'
 
 ns = Collection()
-ns.add_collection(Collection.from_module(admin_tasks), name='admin')
+
+try:
+    from admin import tasks as admin_tasks
+    ns.add_collection(Collection.from_module(admin_tasks), name='admin')
+except ImportError:
+    pass
 
 
 def task(*args, **kwargs):
@@ -72,6 +76,7 @@ def server(host=None, port=5000, debug=True, live=False, gitlogs=False):
 
 @task
 def git_logs():
+    from scripts.meta import gatherer
     gatherer.main()
 
 
@@ -732,10 +737,8 @@ def setup():
     packages()
     requirements(addons=True, dev=True)
     encryption()
-    from website.app import build_js_config_files
-    from website import settings
     # Build nodeCategories.json before building assets
-    build_js_config_files(settings)
+    build_js_config_files()
     assets(dev=True, watch=False)
 
 
@@ -911,14 +914,14 @@ def webpack(clean=False, watch=False, dev=False, colors=False):
 @task()
 def build_js_config_files():
     from website import settings
-    from website.app import build_js_config_files as _build_js_config_files
     print('Building JS config files...')
-    _build_js_config_files(settings)
+    with open(os.path.join(settings.STATIC_FOLDER, 'built', 'nodeCategories.json'), 'wb') as fp:
+        json.dump(settings.NODE_CATEGORY_MAP, fp)
     print('...Done.')
 
 
 @task()
-def assets(dev=False, watch=False):
+def assets(dev=False, watch=False, colors=False):
     """Install and build static assets."""
     npm = 'npm install'
     if not dev:
@@ -928,7 +931,7 @@ def assets(dev=False, watch=False):
     build_js_config_files()
     # Always set clean=False to prevent possible mistakes
     # on prod
-    webpack(clean=False, watch=watch, dev=dev)
+    webpack(clean=False, watch=watch, dev=dev, colors=colors)
 
 @task
 def generate_self_signed(domain):

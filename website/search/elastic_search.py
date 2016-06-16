@@ -66,10 +66,16 @@ try:
     logging.getLogger('requests').setLevel(logging.WARN)
     es.cluster.health(wait_for_status='yellow')
 except ConnectionError as e:
-    sentry.log_exception()
-    sentry.log_message('The SEARCH_ENGINE setting is set to "elastic", but there '
-            'was a problem starting the elasticsearch interface. Is '
-            'elasticsearch running?')
+    message = (
+        'The SEARCH_ENGINE setting is set to "elastic", but there '
+        'was a problem starting the elasticsearch interface. Is '
+        'elasticsearch running?'
+    )
+    try:
+        sentry.log_exception()
+        sentry.log_message(message)
+    except AssertionError:  # App has not yet been initialized
+        logger.exception(message)
     es = None
 
 
@@ -260,7 +266,7 @@ def load_parent(parent_id):
     return parent_info
 
 
-COMPONENT_CATEGORIES = set(Node.CATEGORY_MAP.keys())
+COMPONENT_CATEGORIES = set(settings.NODE_CATEGORY_MAP.keys())
 
 def get_doctype_from_node(node):
     if node.is_registration:

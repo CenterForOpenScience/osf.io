@@ -369,20 +369,22 @@
                     <div class="panel-heading clearfix">
                         <h3 class="panel-title">Email Notifications</h3>
                     </div>
-                    <div class="help-block" style="padding-left: 15px">
-                        <p class="text-info">These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>
-                    </div>
-                    <form id="notificationSettings" class="osf-treebeard-minimal">
-                        <div id="grid">
-                            <div class="spinner-loading-wrapper">
-                                <div class="logo-spin logo-lg"></div>
-                                <p class="m-t-sm fg-load-message"> Loading notification settings...  </p>
+                    <div class="panel-body">
+                        <div class="help-block">
+                            <p class="text-muted">These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>
+                        </div>
+                        <form id="notificationSettings" class="osf-treebeard-minimal">
+                            <div id="grid">
+                                <div class="spinner-loading-wrapper">
+                                    <div class="logo-spin logo-lg"></div>
+                                    <p class="m-t-sm fg-load-message"> Loading notification settings...  </p>
+                                </div>
                             </div>
-                        </div>
-                        <div class="help-block" style="padding-left: 15px">
-                            <p id="configureNotificationsMessage"></p>
-                        </div>
-                    </form>
+                            <div class="help-block" style="padding-left: 15px">
+                                <p id="configureNotificationsMessage"></p>
+                            </div>
+                        </form>
+                    </div>
                 </div>
 
             %endif

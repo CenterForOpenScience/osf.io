@@ -131,7 +131,7 @@ def send_comment_added_notification(comment, auth):
     if is_reply(target):
         if target.referent.user and target.referent.user not in sent_subscribers:
             notify(
-                event='comment_replies',
+                event='global_comment_replies',
                 user=auth.user,
                 node=node,
                 timestamp=time_now,
@@ -145,11 +145,11 @@ def is_reply(target):
 
 def _update_comments_timestamp(auth, node, page=Comment.OVERVIEW, root_id=None):
     if node.is_contributor(auth.user):
-        enqueue_postcommit_task(ban_url, (node, ), {})
+        enqueue_postcommit_task(ban_url, (node, ), {}, celery=False, once_per_request=True)
         if root_id is not None:
             guid_obj = Guid.load(root_id)
             if guid_obj is not None:
-                enqueue_postcommit_task(ban_url, (guid_obj.referent, ), {})
+                enqueue_postcommit_task(ban_url, (guid_obj.referent, ), {}, celery=False, once_per_request=True)
 
         # update node timestamp
         if page == Comment.OVERVIEW:

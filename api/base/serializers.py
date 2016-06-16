@@ -15,11 +15,8 @@ from api.base.exceptions import InvalidQueryStringError, Conflict, JSONAPIExcept
 from api.base.settings import BULK_SETTINGS
 from api.base.utils import extend_querystring_params
 from framework.auth import core as auth_core
-from modularodm import Q
-from modularodm.exceptions import NoResultsFound
 from website import settings
 from website import util as website_utils
-from website.models import PrivateLink
 from website.util.sanitize import strip_html
 
 
@@ -52,16 +49,8 @@ def format_relationship_links(related_link=None, self_link=None, rel_meta=None, 
 
 
 def is_anonymized(request):
-    is_anonymous = False
     private_key = request.query_params.get('view_only', None)
-    if private_key is not None:
-        try:
-            link = PrivateLink.find_one(Q('key', 'eq', private_key))
-        except NoResultsFound:
-            link = None
-        if link is not None:
-            is_anonymous = link.anonymous
-    return is_anonymous
+    return website_utils.check_private_key_for_anonymized_link(private_key)
 
 
 class HideIfRegistration(ser.Field):
