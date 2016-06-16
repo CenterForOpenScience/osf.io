@@ -558,6 +558,7 @@ def claim_user_registered(auth, node, **kwargs):
                 status.push_status_message(language.LOGIN_FAILED, kind='warning', trust=False)
         else:
             forms.push_errors_to_status(form.errors)
+
     if is_json_request():
         form_ret = forms.utils.jsonify(form)
         user_ret = profile_utils.serialize_user(current_user, full=False)

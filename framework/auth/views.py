@@ -430,6 +430,7 @@ def register_user(**kwargs):
             full_name,
             campaign=campaign,
         )
+
         framework.auth.signals.user_registered.send(user)
     except (ValidationValueError, DuplicateEmailError):
         raise HTTPError(

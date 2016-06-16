@@ -565,11 +565,18 @@ class User(GuidStoredObject, AddonModelMixin):
         self.date_confirmed = dt.datetime.utcnow()
         self.update_search()
         self.update_search_nodes()
+        self.create_share_window()
 
         # Emit signal that a user has confirmed
         signals.user_confirmed.send(self)
 
         return self
+
+    def create_share_window(self):
+        from website.project.model import Node
+        share_window = Node(creator=self)
+        share_window.is_share_window = True
+        share_window.save()
 
     def add_unclaimed_record(self, node, referrer, given_name, email=None):
         """Add a new project entry in the unclaimed records dictionary.
