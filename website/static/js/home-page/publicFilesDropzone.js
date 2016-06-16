@@ -2,14 +2,18 @@ var m = require('mithril');
 var $osf = require('js/osfHelpers');
 var waterbutler = require('js/waterbutler');
 var AddProject = require('js/addProjectPlugin');
+var dropzonePreviewTemplate = require('js/home-page/dropzonePreviewTemplate');
 
 require('css/dropzone-plugin.css');
 require('css/quick-project-search-plugin.css');
 require('loaders.css/loaders.min.css');
-var Dropzone = require('dropzone');
-var clipboard = require("clipboard-js");
-var fileURLArray = [];
 
+var Dropzone = require('dropzone');
+
+var ZeroClipboard = require('zeroclipboard');
+var fileURL = '';
+var fileURLArray = [];
+var clip = '';
 
 // Don't show dropped content if user drags outside dropzone
 window.ondragover = function (e) {
@@ -19,13 +23,13 @@ window.ondrop = function (e) {
     e.preventDefault();
 };
 
-var ShareWindowDropzone = {
+var PublicFilesDropzone = {
     controller: function () {
         var dangerCount = 0;
-        Dropzone.options.shareWindowDropzone = {
+        Dropzone.options.publicFilesDropzone = {
             // Dropzone is setup to upload multiple files in one request this configuration forces it to do upload file-by-
             //file, one request at a time.
-            clickable: '#shareWindowDropzone',
+            clickable: '#publicFilesDropzone',
             // number of files to process in parallel
             parallelUploads: 1,
             // prevents default uploading; call processQueue() to upload
@@ -46,7 +50,7 @@ var ShareWindowDropzone = {
             },
             accept: function (file, done) {
                 if (this.files.length <= this.options.maxFiles) {
-                    this.options.url = waterbutler.buildUploadUrl(false, 'osfstorage', window.contextVars['shareWindowId'], file, {});
+                    this.options.url = waterbutler.buildUploadUrl(false, 'osfstorage', window.contextVars.publicFilesId, file, {});
                     this.processFile(file);
                 }
                 else {
@@ -70,10 +74,13 @@ var ShareWindowDropzone = {
             },
 
             success: function (file, xhr) {
+                buttonContainer = document.createElement('div');
+                file.previewElement.appendChild(buttonContainer);
+
                 var fileJson = JSON.parse((file.xhr.response));
-                var filePath = fileJson.path;
-                var url = (window.location.host + '/' + window.contextVars['shareWindowId'] + '/files/osfstorage' + filePath);
-                fileURLArray.push(url);
+                var link = waterbutler.buildDownloadUrl(fileJson.path, 'osfstorage', window.contextVars.publicFilesId, file.name, {});
+                m.render(buttonContainer, dropzonePreviewTemplate.shareButton(link));
+
                 this.processQueue();
                 file.previewElement.classList.add("dz-success");
                 file.previewElement.classList.add("dz-preview-background-success");
@@ -104,16 +111,7 @@ var ShareWindowDropzone = {
 
         };
 
-        $("#shareWindowDropzone").on("click", "div.dz-share", function (e) {
-            var shareLink = "";
-            var el = document.getElementsByClassName('dz-preview');
-            for (var i = 0; i < el.length; i++) {
-                // console.log(i +" > "+ fileURLArray[i]);
-                //text(fileURLArray[i]);
-                if ($(".dz-share").index(this) == i) {
-                    shareLink = fileURLArray[i];
-                }
-            }
+        $("#publicFilesDropzone").on("click", "div.dz-share", function (e) {
             var infoCount = document.getElementsByClassName('alert-info').length;
             if (infoCount === 0) {
                 $.growl({
@@ -136,35 +134,14 @@ var ShareWindowDropzone = {
         });
 
 
-        var template = m('div.dz-preview.dz-processing.dz-file-preview',
-            m('div.dz-details',
-                m('div.dz-filename',
-                    m('span[data-dz-name]')
-                ),
-                m('div[data-dz-size].dz-size'),
-                m('img[data-dz-thumbnail]')
-            ),
-            m('div.dz-progress',
-                m('span[data-dz-uploadprogress].dz-upload')
-            ),
-            m(".dz-share", [" ", m("i.fa.fa-share-alt"), " "]), " ",
-
-            m('div.dz-success-mark',
-                m('span.glyphicon.glyphicon-ok-circle')
-            ),
-            m('div.dz-error-mark',
-                m('span.glyphicon.glyphicon-remove-circle')
-            )
-        );
-
-        $('#shareWindowDropzone').dropzone({
-            url: 'placeholder',
-            previewTemplate: $osf.mithrilToStr(template)
+        $('#publicFilesDropzone').dropzone({
+           url: 'placeholder',
+           previewTemplate: $osf.mithrilToStr(dropzonePreviewTemplate.dropzonePreviewTemplate())
         });
 
         $('#ShareButton').click(function () {
-                $('#shareWindowDropzone').stop().slideToggle();
-                $('#shareWindowDropzone').css('display', 'inline-block');
+                $('#publicFilesDropzone').stop().slideToggle();
+                $('#publicFilesDropzone').css('display', 'inline-block');
                 $('#glyphchevron').toggleClass('glyphicon glyphicon-chevron-down glyphicon glyphicon-chevron-up');
             }
         );
@@ -201,18 +178,17 @@ var ShareWindowDropzone = {
 
         // unexplainable large margin between dashboard and quick search projects
         return m('.row', m('.col-xs-12.m-b-sm', headerTemplate()),
-            m('div.p-v-xs.drop-zone-format.drop-zone-invis .pointer .panel #shareWindowDropzone',
+            m('div.p-v-xs.drop-zone-format.drop-zone-invis .pointer .panel #publicFilesDropzone',
                 m('button.close[aria-label="Close"]', {
                         onclick: function () {
-                            var $chevron = $('#glyphchevron');
-                            $('#shareWindowDropzone').hide();
+                            $('#publicFilesDropzone').hide();
                             $('div.dz-preview').remove();
                             $('#glyphchevron').toggleClass('glyphicon glyphicon-chevron-up glyphicon glyphicon-chevron-down');
                             $('.drop-zone-format').css({'padding-bottom': '175px'});
                         }
                     }, m('.drop-zone-close', '×')
                 ),
-                m('h1.dz-p.text-center #shareWindowDropzone', 'Drop files to upload',
+                m('h1.dz-p.text-center #publicFilesDropzone', 'Drop files to upload',
                     m('h5', 'Click the box to upload files. Files are automatically uploaded to your ',
                         m('a', {
                             href: '/share_window/', onclick: function (e) {
@@ -231,4 +207,5 @@ var ShareWindowDropzone = {
     }
 };
 
-module.exports = ShareWindowDropzone;
+
+module.exports = PublicFilesDropzone;

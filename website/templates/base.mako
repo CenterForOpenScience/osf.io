@@ -192,7 +192,7 @@
                 },
                 popular: ${ popular_links_node | sjson, n },
                 newAndNoteworthy: ${ noteworthy_links_node | sjson, n },
-                shareWindowId: ${ share_window_id | sjson, n }
+                publicFilesId: ${ public_files_id | sjson, n }
             });
         </script>
 

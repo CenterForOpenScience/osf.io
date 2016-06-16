@@ -7,7 +7,6 @@ var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
 var AddProject = require('js/addProjectPlugin');
 var NodeFetcher = require('js/myProjects').NodeFetcher;
-var ShareWindowDropzone = require('js/home-page/ShareWindowDropzone');
 
 // CSS
 require('css/quick-project-search-plugin.css');
@@ -564,8 +563,6 @@ var QuickSearchNodeDisplay = {
                 var project = args.nodes()[n];
                 var numContributors = project.embeds.contributors.links.meta.total;
 
-                if(window.contextVars['shareWindowId'] !== project.id ){
-
                 return m('a', {href: '/' + project.id, onclick: function() {
                     $osf.trackClick('quickSearch', 'navigate', 'navigate-to-specific-project');
                 }}, m('.m-v-sm.node-styling',  m('.row', m('div',
@@ -575,7 +572,6 @@ var QuickSearchNodeDisplay = {
                         m('.col-sm-4.col-md-3.p-v-xs', m('.quick-search-col', args.formatDate(project)))
                     ]
                 ))));
-                }
             }));
         }
     }
