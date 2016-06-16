@@ -26,7 +26,7 @@ class TestDiscourse(DbTestCase):
         self.project_node = literal(title='The Test Project', _id='test1234',
                                contributors=[self.user1, self.user2], is_public=False,
                                discourse_group_id=None, discourse_topic_id=None,
-                               parent=None)
+                               parent_node=None)
         self.project_node.save = lambda *args: None
         self.file_node = literal(_id='573cb78e96f6d02370c991a9', name='superRickyRobot.jpg', node=self.project_node,
                                 discourse_topic_id=None)
