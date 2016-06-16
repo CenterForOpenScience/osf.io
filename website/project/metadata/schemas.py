@@ -34,9 +34,11 @@ OSF_META_SCHEMAS = [
     ensure_schema_structure(from_json('confirmatory-general-2.json')),
     ensure_schema_structure(from_json('egap-project-2.json')),
     ensure_schema_structure(from_json('veer-1.json')),
+    ensure_schema_structure(from_json('aspredicted.json')),
 ]
 
 ACTIVE_META_SCHEMAS = (
+    'AsPredicted Preregistration',
     'Prereg Challenge',
     'Open-Ended Registration',
     'OSF-Standard Pre-Data Collection Registration',
