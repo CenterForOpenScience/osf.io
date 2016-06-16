@@ -112,7 +112,6 @@ def reset_password(auth, verification_key=None):
     form = ResetPasswordForm(request.form)
 
     # Check if request bears a valid verification_key
-    verification_key = kwargs['verification_key']
     user_obj = get_user(verification_key=verification_key)
     if not user_obj:
         error_data = {

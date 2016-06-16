@@ -476,7 +476,7 @@ def make_url_map(app):
             '/register/',
             'get',
             auth_views.auth_register,
-            OsfWebRenderer('public/login-and-register.mako', trust=False)
+            OsfWebRenderer('public/login.mako', trust=False)
         ),
 
         # create user account via api
@@ -492,7 +492,7 @@ def make_url_map(app):
             '/login/',
             'get',
             auth_views.auth_login,
-            OsfWebRenderer('public/login-and-register.mako', trust=False)
+            OsfWebRenderer('public/login.mako', trust=False)
         ),
 
         # osf logout and cas logout
