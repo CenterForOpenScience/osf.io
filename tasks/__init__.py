@@ -6,6 +6,7 @@ commands, run ``$ invoke --list``.
 import os
 import sys
 import code
+import json
 import platform
 import subprocess
 import logging
@@ -15,9 +16,7 @@ import invoke
 from invoke import run, Collection
 
 from website import settings
-from admin import tasks as admin_tasks
 from utils import pip_install, bin_prefix
-from scripts.meta import gatherer
 
 logging.getLogger('invoke').setLevel(logging.CRITICAL)
 
@@ -34,7 +33,12 @@ else:
     TEST_CMD = 'nosetests --rednose'
 
 ns = Collection()
-ns.add_collection(Collection.from_module(admin_tasks), name='admin')
+
+try:
+    from admin import tasks as admin_tasks
+    ns.add_collection(Collection.from_module(admin_tasks), name='admin')
+except ImportError:
+    pass
 
 
 def task(*args, **kwargs):
@@ -72,6 +76,7 @@ def server(host=None, port=5000, debug=True, live=False, gitlogs=False):
 
 @task
 def git_logs():
+    from scripts.meta import gatherer
     gatherer.main()
 
 
@@ -732,10 +737,8 @@ def setup():
     packages()
     requirements(addons=True, dev=True)
     encryption()
-    from website.app import build_js_config_files
-    from website import settings
     # Build nodeCategories.json before building assets
-    build_js_config_files(settings)
+    build_js_config_files()
     assets(dev=True, watch=False)
 
 
@@ -911,14 +914,14 @@ def webpack(clean=False, watch=False, dev=False, colors=False):
 @task()
 def build_js_config_files():
     from website import settings
-    from website.app import build_js_config_files as _build_js_config_files
     print('Building JS config files...')
-    _build_js_config_files(settings)
+    with open(os.path.join(settings.STATIC_FOLDER, 'built', 'nodeCategories.json'), 'wb') as fp:
+        json.dump(settings.NODE_CATEGORY_MAP, fp)
     print('...Done.')
 
 
 @task()
-def assets(dev=False, watch=False):
+def assets(dev=False, watch=False, colors=False):
     """Install and build static assets."""
     npm = 'npm install'
     if not dev:
@@ -928,7 +931,7 @@ def assets(dev=False, watch=False):
     build_js_config_files()
     # Always set clean=False to prevent possible mistakes
     # on prod
-    webpack(clean=False, watch=watch, dev=dev)
+    webpack(clean=False, watch=watch, dev=dev, colors=colors)
 
 @task
 def generate_self_signed(domain):
@@ -955,3 +958,34 @@ def clean(verbose=False):
 @task(default=True)
 def usage():
     run('invoke --list')
+
+
+### Maintenance Tasks ###
+
+@task
+def set_maintenance(start=None, end=None):
+    from website.maintenance import set_maintenance, get_maintenance
+    """Set the time period for the maintenance notice to be displayed.
+    If no start or end values are displayed, default to starting now
+    and ending 24 hours from now. If no timezone info is passed along,
+    everything will be converted to UTC.
+
+    If a given end time results in a start that is after the end, start
+    will be changed to be 24 hours before the end time.
+
+    Examples:
+        invoke set_maintenance_state
+        invoke set_maintenance_state --start 2016-03-16T15:41:00-04:00
+        invoke set_maintenance_state --end 2016-03-16T15:41:00-04:00
+    """
+    set_maintenance(start, end)
+    state = get_maintenance()
+    print('Maintenance notice up for {} to {}.'.format(state['start'], state['end']))
+
+
+@task
+def unset_maintenance():
+    from website.maintenance import unset_maintenance
+    print('Taking down maintenance notice...')
+    unset_maintenance()
+    print('...Done.')
