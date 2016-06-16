@@ -22,6 +22,8 @@ var MAKE_EMBARGO = {
 };
 var utcOffset = moment().utcOffset();
 var today = new Date();
+var todayMinimum = moment().add(2, 'days');
+var todayMaximum = moment().add(4, 'years');
 
 var RegistrationViewModel = function(confirm, prompts, validator) {
 
@@ -51,13 +53,13 @@ var RegistrationViewModel = function(confirm, prompts, validator) {
     self.minimumTimeValidation = function (x, y, embargoLocalDateTime) {
         var minEmbargoMoment = getMinimumDate(embargoLocalDateTime),
             endEmbargoMoment = self.embargoEndDate();
-        return minEmbargoMoment.isBefore(endEmbargoMoment);
+        return minEmbargoMoment.isBefore(endEmbargoMoment) && endEmbargoMoment.isSameOrAfter(todayMinimum);
     };
 
     self.maximumTimeValidation = function (x, y, embargoLocalDateTime) {
         var maxEmbargoMoment = getMaximumDate(embargoLocalDateTime),
             endEmbargoMoment = self.embargoEndDate();
-        return maxEmbargoMoment.isAfter(endEmbargoMoment);
+        return maxEmbargoMoment.isAfter(endEmbargoMoment) && endEmbargoMoment.isSameOrBefore(todayMaximum);
     };
 
     var validation = [{
