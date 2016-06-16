@@ -22,6 +22,7 @@ def figshare_hgrid_data(node_settings, auth, parent=None, **kwargs):
             nodeUrl=node.url, nodeApiUrl=node.api_url,
             extra={
                 'status': (item.get('articles') or item['items'])[0]['status'].lower()
-            }
+            },
+            private_key=kwargs.get('view_only', None),
         )
     ]
