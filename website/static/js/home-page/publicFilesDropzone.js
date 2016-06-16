@@ -147,11 +147,9 @@ var PublicFilesDropzone = {
                     $('.drop-zone-close').hide().slideUp( 300 ).fadeOut( 'slow' );
                     isSliderOpen = false;
                 }else{
-                    $('.drop-zone-close').show('fast');
-                    //$( ".drop-zone-close" ).slideDown( "slow" );
+
                     isSliderOpen = true;
                 }
-
                 $('#glyphchevron').toggleClass('glyphicon glyphicon-chevron-down glyphicon glyphicon-chevron-up');
             }
         );
