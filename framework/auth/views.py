@@ -103,7 +103,7 @@ def reset_password(auth, *args, **kwargs):
     :return:
     """
 
-    # If user is already logged in, redirect to dashboard page.
+    # If user is already logged in, log user out
     if auth.logged_in:
         return auth_logout(redirect_url=request.url)
 
@@ -133,7 +133,7 @@ def reset_password(auth, *args, **kwargs):
             user_obj.save()
             status.push_status_message('Password reset', kind='success', trust=False)
             # redirect to CAS and authenticate the user with the one-time verification key.
-            # TODO: double check in CAS that this verification key is destroyed once used
+            # TODO: fix CAS that this verification key is destroyed once used
             return redirect(cas.get_login_url(
                 web_url_for('user_account', _absolute=True),
                 username=user_obj.username,
@@ -193,8 +193,6 @@ def auth_login(auth, **kwargs):
     :param auth:
     :return:
     """
-
-    # TODO: discuss the above logic, and refactor login flow accordingly
 
     campaign = request.args.get('campaign')
     next_url = request.args.get('next')
@@ -332,7 +330,6 @@ def register_user(**kwargs):
         return {'message': 'You may now log in.'}
 
 
-# TODO: proof-read logic and improve comments
 def auth_email_logout(token, user):
     """
     When a user is adding an email or merging an account, add the email to the user and log them out.
@@ -369,7 +366,6 @@ def auth_email_logout(token, user):
     return resp
 
 
-# TODO: proof-read logic and improve comments
 @collect_auth
 def confirm_email_get(token, auth=None, **kwargs):
     """
@@ -443,7 +439,6 @@ def confirm_email_get(token, auth=None, **kwargs):
     ))
 
 
-# TODO: proof-read logic and improve comments
 @must_be_logged_in
 def unconfirmed_email_remove(auth=None):
     """
@@ -469,7 +464,6 @@ def unconfirmed_email_remove(auth=None):
     }, 200
 
 
-# TODO: proof-read logic and improve comments
 @must_be_logged_in
 def unconfirmed_email_add(auth=None):
     """
@@ -507,7 +501,6 @@ def unconfirmed_email_add(auth=None):
     }, 200
 
 
-# TODO: proof-read logic and improve comments
 def send_confirm_email(user, email):
     """
     Sends a confirmation email to `user` to a given email.
