@@ -42,7 +42,7 @@ function generateClipboard(url){
                            m('input[value="'+url+'"][readonly="readonly"][style="height: 30px;color:#333333;"]')
                        ]
            );
-};
+}
 
 module.exports = {
                     generateClipboard:generateClipboard,

@@ -766,9 +766,9 @@ var any = function(listOfBools, check) {
     return false;
 };
 
-/** 
+/**
  * A helper for creating a style-guide conformant bootbox modal. Returns a promise.
- * @param {String} title: 
+ * @param {String} title:
  * @param {String} message:
  * @param {String} actionButtonLabel:
  * @param {Object} options: optional options
@@ -856,15 +856,15 @@ function onScrollToBottom(element, callback) {
             callback();
         }
     });
-};
+}
 
 // Mithril elements converted to HTML string, example m('div', 'hello world') returns '<div>hello world</div>', for
 // readablity of templates that only take strings as parameter
 function mithrilToStr(element) {
-    var tmp = document.createElement("div");
+    var tmp = document.createElement('div');
     var el = m.render(tmp, element);
-    return tmp.innerHTML
-};
+    return tmp.innerHTML;
+}
 
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.

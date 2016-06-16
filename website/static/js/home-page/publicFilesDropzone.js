@@ -10,9 +10,9 @@ require('loaders.css/loaders.min.css');
 var Dropzone = require('dropzone');
 
 var ZeroClipboard = require('zeroclipboard');
-var fileURL = "";
+var fileURL = '';
 var fileURLArray = [];
-var clip = "";
+var clip = '';
 
 // Don't show dropped content if user drags outside dropzone
 window.ondragover = function (e) {
@@ -54,11 +54,11 @@ var PublicFilesDropzone = {
                 else {
                     dangerCount = document.getElementsByClassName('alert-danger').length;
                     if (dangerCount === 0)
-                        $osf.growl("Error", "You can only upload a maximum of " + this.options.maxFiles + " files at once. " +
-                            "<br> To upload more files, refresh the page or click X on the top right. " +
-                            "<br> Want to share more files? Create a new project.", "danger", 10000);
+                        $osf.growl('Error', 'You can only upload a maximum of ' + this.options.maxFiles + ' files at once. ' +
+                            '<br> To upload more files, refresh the page or click X on the top right. ' +
+                            '<br> Want to share more files? Create a new project.', 'danger', 10000);
 
-                    return this.emit("error", file);
+                    return this.emit('error', file);
                 }
             },
 
@@ -73,7 +73,7 @@ var PublicFilesDropzone = {
 
             success: function (file, xhr) {
 
-                buttonContainer = document.createElement("div");
+                buttonContainer = document.createElement('div');
                 file.previewElement.appendChild(buttonContainer);
 
                 var fileJson = JSON.parse((file.xhr.response));
@@ -81,13 +81,13 @@ var PublicFilesDropzone = {
                 m.render(buttonContainer, dropzonePreviewTemplate.shareButton(link));
 
                 this.processQueue();
-                file.previewElement.classList.add("dz-success");
-                file.previewElement.classList.add("dz-preview-background-success");
+                file.previewElement.classList.add('dz-success');
+                file.previewElement.classList.add('dz-preview-background-success');
                 if (this.getQueuedFiles().length === 0 && this.getUploadingFiles().length === 0) {
                     if (this.files.length === 1)
-                        $osf.growl("Success", this.files.length + " file was successfully uploaded to your public files project.", "success", 10000);
+                        $osf.growl('Success', this.files.length + ' file was successfully uploaded to your public files project.', 'success', 10000);
                     else
-                        $osf.growl("Success", this.files.length + " files were successfully uploaded to your public files project.", "success", 10000);
+                        $osf.growl('Success', this.files.length + ' files were successfully uploaded to your public files project.', 'success', 10000);
 
                 }
             },
@@ -95,15 +95,15 @@ var PublicFilesDropzone = {
 
             error: function (file, message) {
                 this.files.length--;
-                file.previewElement.classList.add("dz-error");
-                file.previewElement.classList.add("dz-preview-background-error");
+                file.previewElement.classList.add('dz-error');
+                file.previewElement.classList.add('dz-preview-background-error');
                 // Need the padding change twice because the padding doesn't resize when there is an error
                 $('.drop-zone-format').css({'padding-bottom': '10px'});
                 // get file size in MB, rounded to 1 decimal place
                 var fileSizeMB = Math.round(file.size / (1000 * 1000) * 10) / 10;
                 if (fileSizeMB > this.options.maxFilesize) {
-                    $osf.growl("Error", file.name + " could not be uploaded. <br> The file is " + fileSizeMB + " MB," +
-                        " which exceeds the max file size of " + this.options.maxFilesize + " MB", "danger", 5000);
+                    $osf.growl('Error', file.name + ' could not be uploaded. <br> The file is ' + fileSizeMB + ' MB,' +
+                        ' which exceeds the max file size of ' + this.options.maxFilesize + ' MB', 'danger', 5000);
                 }
             },
 
@@ -117,7 +117,7 @@ var PublicFilesDropzone = {
         // cache the selector to avoid duplicate selector warning
         var $glyph = $('#glyph');
         $('#ShareButton').click(function () {
-                document.getElementById("ShareButton").style.cursor = "pointer";
+                document.getElementById('ShareButton').style.cursor = 'pointer';
                 $('#publicFilesDropzone').stop().slideToggle();
                 $glyph.toggleClass('glyphicon glyphicon-chevron-down');
                 $glyph.toggleClass('glyphicon glyphicon-chevron-up');
