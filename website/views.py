@@ -218,7 +218,6 @@ def resolve_guid(guid, suffix=None):
     """
     # Look up GUID
     guid_object = Guid.load(guid)
-
     if guid_object:
 
         # redirect if user tries to visit public files wiki or add contributors ect.

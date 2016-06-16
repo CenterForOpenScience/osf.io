@@ -49,14 +49,11 @@ def get_globals():
     """Context variables that are available for every template rendered by
     OSFWebRenderer.
     """
-
     user = _get_current_user()
-
     try:
         public_files_id = Node.find_one(Q("contributors", "eq", user._id) & Q("is_public_files_collection", "eq", True))._id
     except (AttributeError, NoResultsFound):
         public_files_id = None
-
     if request.host_url != settings.DOMAIN:
         try:
             inst_id = (Institution.find_one(Q('domains', 'eq', request.host.lower())))._id
