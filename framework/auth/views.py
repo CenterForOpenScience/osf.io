@@ -30,7 +30,7 @@ from website.util.time import throttle_period_expired
 
 
 @collect_auth
-def forgot_password(auth, *args, **kwargs):
+def forgot_password(auth):
     """
     View for "Forgot Your Password?". User submits the email on the page and OSF attempts to send user a password reset
     link or return respective error.
@@ -93,14 +93,16 @@ def forgot_password(auth, *args, **kwargs):
 
 
 @collect_auth
-def reset_password(auth, *args, **kwargs):
+def reset_password(auth, verification_key=None):
     """
     View for user to reset password. User submits new password and OSF attempts to reset it and automatically log the
     user back in or return respective error.
     HTTP Method: GET, POST
 
     :param auth:
+    :param verification_key:
     :return:
+    :raises: HTTPError(http.BAD_REQUEST) if verification_key is invalid
     """
 
     # If user is already logged in, log user out
@@ -149,13 +151,12 @@ def reset_password(auth, *args, **kwargs):
 
 
 @collect_auth
-def auth_register(auth, **kwargs):
+def auth_register(auth):
     """
     View for sign-up page.
     HTTP Method: GET
 
     :param auth:
-    :param kwargs:
     :return:
     """
 
@@ -167,7 +168,7 @@ def auth_register(auth, **kwargs):
 
 
 @collect_auth
-def auth_login(auth, **kwargs):
+def auth_login(auth):
     """
     This view serves as the entry point for OSF login and campaign login.
     HTTP Method: GET
@@ -278,15 +279,15 @@ def auth_logout(redirect_url=None):
 def register_user(**kwargs):
     """
     Register new user account.
-    Method: POST
+    HTTP Method: POST
 
     :param-json str email1:
     :param-json str email2:
     :param-json str password:
     :param-json str fullName:
     :param-json str campaign:
-    :raises: HTTPError(http.BAD_REQUEST) if validation fails or user already
-        exists
+
+    :raises: HTTPError(http.BAD_REQUEST) if validation fails or user already exists
 
     """
 
@@ -338,6 +339,7 @@ def auth_email_logout(token, user):
     :param user:
     :return:
     """
+
     redirect_url = cas.get_logout_url(service_url=cas.get_login_url(service_url=web_url_for('index', _absolute=True)))
     try:
         unconfirmed_email = user.get_unconfirmed_email_for_token(token)
@@ -369,26 +371,26 @@ def auth_email_logout(token, user):
 @collect_auth
 def confirm_email_get(token, auth=None, **kwargs):
     """
-    View for email confirmation links.
-    Authenticates and redirects to user settings page if confirmation is
-    successful, otherwise shows an "Expired Link" error.
-    methods: GET
+    View for email confirmation links. Authenticates and redirects to user settings page if confirmation is successful,
+    otherwise shows an "Expired Link" error.
+    HTTP Method: GET
 
     :param token:
     :param auth:
     :param kwargs:
     :return:
     """
+
     user = User.load(kwargs['uid'])
     is_merge = 'confirm_merge' in request.args
     is_initial_confirmation = not user.date_confirmed
-    logout = request.args.get('logout', None)
+    log_out = request.args.get('logout', None)
 
     if user is None:
         raise HTTPError(http.NOT_FOUND)
 
     # if the user is merging or adding an email (they already are an osf user)
-    if logout:
+    if log_out:
         return auth_email_logout(token, user)
 
     if auth and auth.user and (auth.user._id == user._id or auth.user._id == user.merged_by._id):
@@ -443,10 +445,12 @@ def confirm_email_get(token, auth=None, **kwargs):
 def unconfirmed_email_remove(auth=None):
     """
     Called at login if user cancels their merge or email add.
-    methods: DELETE
+    HTTP Method: DELETE
+
     :param auth:
     :return:
     """
+
     user = auth.user
     json_body = request.get_json()
     try:
@@ -468,7 +472,8 @@ def unconfirmed_email_remove(auth=None):
 def unconfirmed_email_add(auth=None):
     """
     Called at login if user confirms their merge or email add.
-    methods: PUT
+    HTTP Method: PUT
+
     :param auth:
     :return:
     """
@@ -510,6 +515,7 @@ def send_confirm_email(user, email):
     :return:
     :raises: KeyError if user does not have a confirmation token for the given email.
     """
+
     confirmation_url = user.get_confirmation_url(
         email,
         external=True,
@@ -520,18 +526,18 @@ def send_confirm_email(user, email):
         merge_target = User.find_one(Q('emails', 'eq', email))
     except NoResultsFound:
         merge_target = None
-
     campaign = campaigns.campaign_for_user(user)
+
     # Choose the appropriate email template to use and add existing_user flag if a merge or adding an email.
-    if merge_target:
+    if merge_target:  # merge account
         mail_template = mails.CONFIRM_MERGE
         confirmation_url = '{}?logout=1'.format(confirmation_url)
-    elif campaign:
-        mail_template = campaigns.email_template_for_campaign(campaign)
-    elif user.is_active:
+    elif user.is_active:  # add email
         mail_template = mails.CONFIRM_EMAIL
         confirmation_url = '{}?logout=1'.format(confirmation_url)
-    else:
+    elif campaign:  # campaign
+        mail_template = campaigns.email_template_for_campaign(campaign)
+    else:   # account creation
         mail_template = mails.INITIAL_CONFIRM_EMAIL
 
     mails.send_mail(
@@ -546,25 +552,34 @@ def send_confirm_email(user, email):
 
 
 def resend_confirmation():
-    """View for resending an email confirmation email.
     """
+    View for resending an email confirmation email.
+    HTTP Method: GET, POST
+    """
+
     form = ResendConfirmationForm(request.form)
+
+    if request.method == 'GET':
+        return {'form': form}
+
     if request.method == 'POST':
         if form.validate():
             clean_email = form.email.data
             user = get_user(email=clean_email)
-            if not user:
-                return {'form': form}
-            try:
-                send_confirm_email(user, clean_email)
-            except KeyError:  # already confirmed, redirect to dashboard
-                status_message = 'Email has already been confirmed.'
-                kind = 'warning'
-            else:
-                status_message = 'Resent email to {0}'.format(clean_email)
-                kind = 'success'
+            status_message = ('If there is an OSF account associated with this unconfirmed email {0}, '
+                              'an confirmation email has been resent to it. If you do not receive an email and believe '
+                              'you should have, please contact OSF Support.').format(clean_email)
+            kind = 'success'
+            if user:
+                try:
+                    send_confirm_email(user, clean_email)
+                except KeyError:
+                    # already confirmed, redirect to dashboard
+                    status_message = 'This email {0} has already been confirmed.'.format(clean_email)
+                    kind = 'warning'
             status.push_status_message(status_message, kind=kind, trust=False)
         else:
             forms.push_errors_to_status(form.errors)
+
     # Don't go anywhere
     return {'form': form}
