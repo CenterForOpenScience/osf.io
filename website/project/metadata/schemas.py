@@ -38,8 +38,8 @@ OSF_META_SCHEMAS = [
 ]
 
 ACTIVE_META_SCHEMAS = (
-    'AsPredicted Preregistration',
     'Prereg Challenge',
+    'AsPredicted Preregistration',
     'Open-Ended Registration',
     'OSF-Standard Pre-Data Collection Registration',
     'Replication Recipe (Brandt et al., 2013): Pre-Registration',
