@@ -1154,14 +1154,18 @@ function _fangornUploadMethod(item) {
 }
 
 function gotoFileEvent (item) {
-    var tb = this;
-    var redir = new URI(item.data.nodeUrl);
-    redir.segment('files').segment(item.data.provider).segmentCoded(item.data.path.substring(1));
-    var fileurl  = redir.toString() + '/';
-    if(COMMAND_KEYS.indexOf(tb.pressedKey) !== -1) {
-        window.open(fileurl, '_blank');
-    } else {
-        window.open(fileurl, '_self');
+    if(!window.contextVars.isPublicFilesCol){
+        var tb = this;
+        var redir = new URI(item.data.nodeUrl);
+        redir.segment('files').segment(item.data.provider).segmentCoded(item.data.path.substring(1));
+        var fileurl  = redir.toString() + '/';
+        if(COMMAND_KEYS.indexOf(tb.pressedKey) !== -1) {
+            window.open(fileurl, '_blank');
+        } else {
+            window.open(fileurl, '_self');
+        }
+    }else{
+         window.location = waterbutler.buildTreeBeardDownload(item);
     }
 }
 /**
