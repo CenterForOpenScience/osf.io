@@ -376,6 +376,21 @@ class TestSubscriptionView(OsfTestCase):
         for n in constants.NOTIFICATION_TYPES:
             assert_false(self.node.creator in getattr(s, n))
 
+    def test_configure_subscription_flips_notification_settings_dirty(self):
+        project = factories.ProjectFactory()
+        assert_false(project.notification_settings_dirty)
+        payload = {
+            'id': project._id,
+            'event': 'comments',
+            'notification_type': 'email_digest'
+        }
+        url = api_url_for('configure_subscription')
+        self.app.post_json(url, payload, auth=project.creator.auth)
+
+        project.reload()
+
+        assert_true(project.notification_settings_dirty)
+
 
 class TestRemoveContributor(OsfTestCase):
 
@@ -548,12 +563,6 @@ class TestNotificationUtils(OsfTestCase):
         self.node_comments_subscription.save()
         self.node_comments_subscription.email_transactional.append(self.user)
         self.node_comments_subscription.save()
-
-        # self.node_comments_subscription = NotificationSubscription.find_one(
-        #     Q('owner', 'eq', self.node) &
-        #     Q('_id', 'eq', self.node._id + '_comments') &
-        #     Q('event_name', 'eq', 'comments')
-        # )
 
         self.node_subscription = list(NotificationSubscription.find(Q('owner', 'eq', self.node)))
 

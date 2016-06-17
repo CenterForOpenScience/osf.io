@@ -2056,6 +2056,16 @@ class TestNode(OsfTestCase):
             assert_equal(r.registered_meta[meta_schema._id], data)
             assert_equal(r.registered_schema[0], meta_schema)
 
+    def test_notification_settings_not_dirty_on_new_project(self):
+        project = ProjectFactory()
+        assert_false(project.notification_settings_dirty)
+
+    def test_flip_notification_settings_dirty(self):
+        project = ProjectFactory()
+        assert_false(project.notification_settings_dirty)
+        project.flip_notification_settings_dirty()
+        assert_true(project.notification_settings_dirty)
+
 class TestNodeUpdate(OsfTestCase):
 
     def setUp(self):
