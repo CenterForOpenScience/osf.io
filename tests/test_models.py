@@ -62,7 +62,8 @@ from tests.factories import (
     NodeWikiFactory, RegistrationFactory, UnregUserFactory,
     ProjectWithAddonFactory, UnconfirmedUserFactory, PrivateLinkFactory,
     AuthUserFactory, BookmarkCollectionFactory, CollectionFactory,
-    NodeLicenseRecordFactory, InstitutionFactory, CommentFactory
+    NodeLicenseRecordFactory, InstitutionFactory, CommentFactory,
+    PublicFilesFactory
 )
 from tests.test_features import requires_piwik
 from tests.utils import mock_archive
@@ -4650,6 +4651,49 @@ class TestPrivateLink(OsfTestCase):
         assert_equal(data, draft.registration_metadata)
         assert_equal(proj, draft.branched_from)
 
+class TestPublicFiles(OsfTestCase):
+    def setUp(self):
+        super(TestPublicFiles, self).setUp()
+        self.user = UserFactory()
+        self.auth = Auth(user=self.user)
+        self.project = PublicFilesFactory(creator=self.user)
+
+    def test_file_upload(self):
+        pass
+
+    def test_cannot_delete_public_files_collection(self):
+        with assert_raises(NodeStateError):
+            self.project.remove_node(self.auth)
+
+    def test_public_files_is_right_type(self):
+        assert_equal(self.project.is_public_files_collection, True)
+
+    def test_cannot_have_two_public_files_collections(self):
+        with assert_raises(NodeStateError):
+            PublicFilesFactory(creator=self.user)
+
+    def test_cannot_link_to_public_files_collection(self):
+        new_node = ProjectFactory(creator=self.user)
+        with assert_raises(ValueError):
+            new_node.add_pointer(self.project, auth=self.auth)
+
+    def test_for_search(self):
+        from website.search.search import search
+        from website.search.util import build_query
+        results = search(build_query('is_public_files_collection'))['results']
+        assert_equal(len(results), 0)
+
+    def test_no_name_change(self):
+        with assert_raises(NodeStateError):
+            self.project.set_title('Look at me: I\'m the title now',auth=self.auth)
+
+    def tearDown(self):
+        super(TestPublicFiles, self).tearDown()
+        self.project.remove()
+
+    def test_forking(self):
+        with assert_raises(NodeStateError):
+            fork = self.project.fork_node(auth=self.auth)
 
 if __name__ == '__main__':
     unittest.main()

@@ -1718,6 +1718,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             raise ValueError(
                 'Pointer to bookmark collection ({0}) not allowed.'.format(node._id)
             )
+        if node.is_public_files_collection:
+            raise ValueError(
+                'Pointer to public files collection ({0}) not allowed'.format(node._id)
+            )
 
         # Append pointer
         pointer = Pointer(node=node)
@@ -1964,6 +1968,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         #Called so validation does not have to wait until save.
         validate_title(title)
 
+        if self.is_public_files_collection:
+            raise NodeStateError('Cannot rename Public Files Collections')
+
         original_title = self.title
         new_title = sanitize.strip_html(title)
         # Title hasn't changed after sanitzation, bail out
@@ -2135,6 +2142,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
         if original.is_deleted:
             raise NodeStateError('Cannot fork deleted node.')
+
+        if original.is_public_files_collection:
+            raise NodeStateError('Cannot fork public files Nodes')
 
         # Note: Cloning a node will clone each node wiki page version and add it to
         # `registered.wiki_pages_current` and `registered.wiki_pages_versions`.
