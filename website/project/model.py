@@ -1518,13 +1518,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             if existing_public_files_collections.count() > 0:
                 raise NodeStateError("Only one public files collection allowed per user.")
 
-        if first_save and self.is_public_files_collection:
-            existing_public_files_collections = Node.find(
-                Q('is_public_files_collection', 'eq', True) & Q('contributors', 'eq', self.creator._id)
-            )
-            if existing_public_files_collections.count() > 0:
-                raise NodeStateError("Only one bookmark collection allowed per user.")
-
         # Bookmark collections are always named 'Bookmarks'
         if self.is_bookmark_collection and self.title != 'Bookmarks':
             self.title = 'Bookmarks'
