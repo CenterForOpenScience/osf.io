@@ -221,6 +221,42 @@ class TestNotificationsModels(OsfTestCase):
         assert_equal(len(file_updated_subscription.email_transactional), 1)
         assert_equal(len(comments_subscription.email_transactional), 1)
 
+    def test_new_fork_creator_is_subscribed_with_default_global_settings(self):
+        user = factories.UserFactory()
+        project = factories.ProjectFactory(creator=user)
+
+        factories.NotificationSubscriptionFactory(
+            _id=user._id + '_' + 'global_comments',
+            owner=user,
+            event_name='global_comments'
+        ).add_user_to_subscription(user, 'email_transactional')
+
+        factories.NotificationSubscriptionFactory(
+            _id=user._id + '_' + 'global_file_updated',
+            owner=user,
+            event_name='global_file_updated'
+        ).add_user_to_subscription(user, 'email_transactional')
+
+        node = factories.ForkFactory(project=project)
+
+        user_subscriptions = list(utils.get_all_user_subscriptions(user))
+        event_types = [sub.event_name for sub in user_subscriptions]
+
+        node_file_updated_subscription = NotificationSubscription.find_one(Q('_id', 'eq', node._id + '_file_updated'))
+        node_comments_subscription = NotificationSubscription.find_one(Q('_id', 'eq', node._id + '_comments'))
+        project_file_updated_subscription = NotificationSubscription.find_one(Q('_id', 'eq', project._id + '_file_updated'))
+        project_comments_subscription = NotificationSubscription.find_one(Q('_id', 'eq', project._id + '_comments'))
+
+        assert_equal(len(user_subscriptions), 6)  # subscribed to project, fork, and user settings
+        assert_in('file_updated', event_types)
+        assert_in('comments', event_types)
+        assert_in('global_file_updated', event_types)
+        assert_in('global_comments', event_types)
+        assert_equal(len(node_file_updated_subscription.email_transactional), 1)
+        assert_equal(len(node_comments_subscription.email_transactional), 1)
+        assert_equal(len(project_file_updated_subscription.email_transactional), 1)
+        assert_equal(len(project_comments_subscription.email_transactional), 1)
+
     def test_new_node_creator_is_not_subscribed_with_default_global_settings(self):
         user = factories.UserFactory()
 

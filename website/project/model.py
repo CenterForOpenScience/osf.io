@@ -2182,15 +2182,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 save=False
             )
 
+        # Need this save in order to access _primary_key
+        forked.save()
+
         forked.add_contributor(
             contributor=user,
             permissions=CREATOR_PERMISSIONS,
             log=False,
             save=False
         )
-
-        # Need this save in order to access _primary_key
-        forked.save()
 
         forked.add_log(
             action=NodeLog.NODE_FORKED,
