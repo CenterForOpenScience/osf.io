@@ -101,8 +101,8 @@ def configure_subscription(auth):
     if not subscription:
         subscription = NotificationSubscription(_id=event_id, owner=owner, event_name=event)
 
-    if node and node._id not in user.dirty_dict:
-        user.dirty_dict[node._id] = True
+    if node and node._id not in user.notifications_configured:
+        user.notifications_configured[node._id] = True
         user.save()
 
     subscription.add_user_to_subscription(user, notification_type)

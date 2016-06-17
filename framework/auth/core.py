@@ -412,7 +412,7 @@ class User(GuidStoredObject, AddonModelMixin):
     requested_deactivation = fields.BooleanField(default=False)
 
     # dictionary of projects a user has changed the setting on
-    dirty_dict = fields.DictionaryField()
+    notifications_configured = fields.DictionaryField()
     # Format: {
     #   <node.id>: True
     #   ...
