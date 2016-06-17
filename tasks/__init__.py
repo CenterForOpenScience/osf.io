@@ -737,10 +737,8 @@ def setup():
     packages()
     requirements(addons=True, dev=True)
     encryption()
-    from website.app import build_js_config_files
-    from website import settings
     # Build nodeCategories.json before building assets
-    build_js_config_files(settings)
+    build_js_config_files()
     assets(dev=True, watch=False)
 
 
@@ -923,7 +921,7 @@ def build_js_config_files():
 
 
 @task()
-def assets(dev=False, watch=False):
+def assets(dev=False, watch=False, colors=False):
     """Install and build static assets."""
     npm = 'npm install'
     if not dev:
@@ -933,7 +931,7 @@ def assets(dev=False, watch=False):
     build_js_config_files()
     # Always set clean=False to prevent possible mistakes
     # on prod
-    webpack(clean=False, watch=watch, dev=dev)
+    webpack(clean=False, watch=watch, dev=dev, colors=colors)
 
 @task
 def generate_self_signed(domain):
@@ -960,3 +958,34 @@ def clean(verbose=False):
 @task(default=True)
 def usage():
     run('invoke --list')
+
+
+### Maintenance Tasks ###
+
+@task
+def set_maintenance(start=None, end=None):
+    from website.maintenance import set_maintenance, get_maintenance
+    """Set the time period for the maintenance notice to be displayed.
+    If no start or end values are displayed, default to starting now
+    and ending 24 hours from now. If no timezone info is passed along,
+    everything will be converted to UTC.
+
+    If a given end time results in a start that is after the end, start
+    will be changed to be 24 hours before the end time.
+
+    Examples:
+        invoke set_maintenance_state
+        invoke set_maintenance_state --start 2016-03-16T15:41:00-04:00
+        invoke set_maintenance_state --end 2016-03-16T15:41:00-04:00
+    """
+    set_maintenance(start, end)
+    state = get_maintenance()
+    print('Maintenance notice up for {} to {}.'.format(state['start'], state['end']))
+
+
+@task
+def unset_maintenance():
+    from website.maintenance import unset_maintenance
+    print('Taking down maintenance notice...')
+    unset_maintenance()
+    print('...Done.')
