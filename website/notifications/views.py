@@ -101,7 +101,7 @@ def configure_subscription(auth):
     if not subscription:
         subscription = NotificationSubscription(_id=event_id, owner=owner, event_name=event)
 
-    if not node.notification_settings_dirty:
+    if node and not node.notification_settings_dirty:
         node.notification_settings_dirty = True
         node.save()
 
