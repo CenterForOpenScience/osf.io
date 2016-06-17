@@ -652,7 +652,8 @@ class TestNotificationUtils(OsfTestCase):
         node_comments_subscription.email_transactional.append(node.creator)
         node_comments_subscription.save()
 
-        node.flip_notification_settings_dirty()
+        node.notification_settings_dirty = True
+        node.save()
         configured_project_ids = utils.get_configured_projects(node.creator)
         assert_in(private_project._id, configured_project_ids)
 
@@ -753,7 +754,7 @@ class TestNotificationUtils(OsfTestCase):
         project = factories.ProjectFactory()
         pointed = factories.ProjectFactory()
         project.add_pointer(pointed, Auth(project.creator))
-        project.flip_notification_settings_dirty()
+        project.notification_settings_dirty = True
         project.save()
         configured_project_ids = utils.get_configured_projects(project.creator)
         data = utils.format_data(project.creator, configured_project_ids)
@@ -784,7 +785,8 @@ class TestNotificationUtils(OsfTestCase):
         node_comments_subscription.email_transactional.append(node.creator)
         node_comments_subscription.save()
 
-        node.flip_notification_settings_dirty()
+        node.notification_settings_dirty = True
+        node.save()
         configured_project_ids = utils.get_configured_projects(node.creator)
         data = utils.format_data(node.creator, configured_project_ids)
         event = {

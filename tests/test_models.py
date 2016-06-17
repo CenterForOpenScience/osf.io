@@ -2060,12 +2060,6 @@ class TestNode(OsfTestCase):
         project = ProjectFactory()
         assert_false(project.notification_settings_dirty)
 
-    def test_flip_notification_settings_dirty(self):
-        project = ProjectFactory()
-        assert_false(project.notification_settings_dirty)
-        project.flip_notification_settings_dirty()
-        assert_true(project.notification_settings_dirty)
-
 class TestNodeUpdate(OsfTestCase):
 
     def setUp(self):

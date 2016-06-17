@@ -176,11 +176,13 @@ def get_configured_projects(user):
         # If the user has opted out of emails skip
         node = subscription.owner
 
-        if (not isinstance(node, Node) or
-                (user in subscription.none and not node.parent_id) or not
-                node.notification_settings_dirty or
-                node.is_bookmark_collection):
-                    continue
+        if (
+            not isinstance(node, Node) or
+            (user in subscription.none and not node.parent_id) or
+            not node.notification_settings_dirty or
+            node.is_collection
+        ):
+            continue
 
         while node.parent_id and not node.is_deleted:
             node = Node.load(node.parent_id)
@@ -430,7 +432,9 @@ def subscribe_user_to_notifications(node, user):
 
             subscription = NotificationSubscription.load(event_id)
 
-            # if no subscription for component and creator is the user, do not create subscription
+            # If no subscription for component and creator is the user, do not create subscription
+            # If no subscription exists for the component, this means that it should adopt its
+            # parent's settings
             if not(node and node.parent_node and not subscription and node.creator == user):
                 if not subscription:
                     subscription = NotificationSubscription(_id=event_id, owner=node, event_name=event)

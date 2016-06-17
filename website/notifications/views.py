@@ -102,7 +102,8 @@ def configure_subscription(auth):
         subscription = NotificationSubscription(_id=event_id, owner=owner, event_name=event)
 
     if not node.notification_settings_dirty:
-        node.flip_notification_settings_dirty()
+        node.notification_settings_dirty = True
+        node.save()
 
     subscription.add_user_to_subscription(user, notification_type)
 

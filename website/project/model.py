@@ -3683,10 +3683,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     def institutions_relationship_url(self):
         return self.absolute_api_v2_url + 'relationships/institutions/'
 
-    def flip_notification_settings_dirty(self):
-        self.notification_settings_dirty = True
-        self.save()
-
 
 @Node.subscribe('before_save')
 def validate_permissions(schema, instance):
