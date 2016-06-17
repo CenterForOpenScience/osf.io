@@ -12,7 +12,7 @@ var makeClient = require('js/clipboard');
 var FileRevisionsTable = require('./revisions.js');
 var storageAddons = require('json!storageAddons.json');
 var CommentModel = require('js/comment');
-var URI = require('URIjs');
+var History = require('exports?History!history');
 
 // Sanity
 var Panel = utils.Panel;
@@ -374,23 +374,29 @@ var FileViewPage = {
                 self.editor.selected = false;
             }
             self.revisions.selected = true;
+
+            var state = {
+                scrollTop: $(window).scrollTop(),
+            };
+
+            var url = '?show=revision';
+            //Indicate that we've just pushed a state so the
+            //Call back does not process this push as a state change
+            self.stateJustPushed = true;
+            History.pushState(state, 'OSF | ' + window.contextVars.file.name, url);
         }
 
         function changeVersionHeader(){
-            m.render(document.getElementById('version-link'), m('a', {onclick: goToRevisions}, document.getElementById('version-link').innerHTML));
+            m.render(document.getElementById('versionLink'), m('a', {onclick: goToRevisions}, document.getElementById('versionLink').innerHTML));
         }
 
-        //anchor checking hack that will select if true
-        var idx = window.location.href.indexOf('?');
-        var idx_uri = (idx > 0) ? URI.parseQuery(window.location.href.slice(idx)) : '';
-        if (idx_uri !== '') {
-            // The parser found a query so lets check what we need to do
-            if ('show' in idx_uri){
-                if(idx_uri.show === 'revision'){
-                    self.mfrIframeParent.toggle();
-                    self.revisions.selected = true;
-               }
-            }
+        var urlParams = $osf.urlParams();
+        // The parser found a query so lets check what we need to do
+        if ('show' in urlParams){
+            if(urlParams.show === 'revision'){
+                self.mfrIframeParent.toggle();
+                self.revisions.selected = true;
+           }
         }
 
         changeVersionHeader();
@@ -400,6 +406,7 @@ var FileViewPage = {
         //This code was abstracted into a panel toggler at one point
         //it was removed and shoved here due to issues with mithrils caching and interacting
         //With other non-mithril components on the page
+        //anchor checking hack that will select if true
         var panelsShown = (
             ((ctrl.editor && ctrl.editor.selected) ? 1 : 0) + // Editor panel is active
             (ctrl.mfrIframeParent.is(':visible') ? 1 : 0)    // View panel is active
