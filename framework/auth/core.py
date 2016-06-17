@@ -411,6 +411,13 @@ class User(GuidStoredObject, AddonModelMixin):
     # whether the user has requested to deactivate their account
     requested_deactivation = fields.BooleanField(default=False)
 
+    # dictionary of projects a user has changed the setting on
+    dirty_dict = fields.DictionaryField()
+    # Format: {
+    #   <node.id>: True
+    #   ...
+    # }
+
     _meta = {'optimistic': True}
 
     def __repr__(self):

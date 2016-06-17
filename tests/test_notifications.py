@@ -412,9 +412,9 @@ class TestSubscriptionView(OsfTestCase):
         for n in constants.NOTIFICATION_TYPES:
             assert_false(self.node.creator in getattr(s, n))
 
-    def test_configure_subscription_flips_notification_settings_dirty(self):
-        project = factories.ProjectFactory()
-        assert_false(project.notification_settings_dirty)
+    def test_configure_subscription_adds_node_id_to_dirty_dict(self):
+        project = factories.ProjectFactory(creator=self.user)
+        assert_false(project._id in self.user.dirty_dict)
         payload = {
             'id': project._id,
             'event': 'comments',
@@ -423,9 +423,9 @@ class TestSubscriptionView(OsfTestCase):
         url = api_url_for('configure_subscription')
         self.app.post_json(url, payload, auth=project.creator.auth)
 
-        project.reload()
+        self.user.reload()
 
-        assert_true(project.notification_settings_dirty)
+        assert_true(project._id in self.user.dirty_dict)
 
 
 class TestRemoveContributor(OsfTestCase):
@@ -581,13 +581,16 @@ class TestNotificationUtils(OsfTestCase):
     def setUp(self):
         super(TestNotificationUtils, self).setUp()
         self.user = factories.UserFactory()
-        self.project = factories.ProjectFactory(creator=self.user, notification_settings_dirty=True)
+        self.project = factories.ProjectFactory(creator=self.user)
 
         self.project_subscription = NotificationSubscription.find_one(
             Q('owner', 'eq', self.project) &
             Q('_id', 'eq', self.project._id + '_comments') &
             Q('event_name', 'eq', 'comments')
         )
+
+        self.user.dirty_dict[self.project._id] = True
+        self.user.save()
 
         self.node = factories.NodeFactory(parent=self.project, creator=self.user)
 
@@ -688,8 +691,8 @@ class TestNotificationUtils(OsfTestCase):
         node_comments_subscription.email_transactional.append(node.creator)
         node_comments_subscription.save()
 
-        node.notification_settings_dirty = True
-        node.save()
+        node.creator.dirty_dict[node._id] = True
+        node.creator.save()
         configured_project_ids = utils.get_configured_projects(node.creator)
         assert_in(private_project._id, configured_project_ids)
 
@@ -790,8 +793,8 @@ class TestNotificationUtils(OsfTestCase):
         project = factories.ProjectFactory()
         pointed = factories.ProjectFactory()
         project.add_pointer(pointed, Auth(project.creator))
-        project.notification_settings_dirty = True
-        project.save()
+        project.creator.dirty_dict[project._id] = True
+        project.creator.save()
         configured_project_ids = utils.get_configured_projects(project.creator)
         data = utils.format_data(project.creator, configured_project_ids)
         event = {
@@ -821,8 +824,8 @@ class TestNotificationUtils(OsfTestCase):
         node_comments_subscription.email_transactional.append(node.creator)
         node_comments_subscription.save()
 
-        node.notification_settings_dirty = True
-        node.save()
+        node.creator.dirty_dict[node._id] = True
+        node.creator.save()
         configured_project_ids = utils.get_configured_projects(node.creator)
         data = utils.format_data(node.creator, configured_project_ids)
         event = {
