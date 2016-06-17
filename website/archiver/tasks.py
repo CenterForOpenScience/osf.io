@@ -25,10 +25,9 @@ from website.archiver.model import ArchiveJob
 from website.archiver import signals as archiver_signals
 
 from website.project import signals as project_signals
-from website.project.model import Node, MetaSchema, DraftRegistration
+from website.project.model import Node, DraftRegistration
 from website import settings
 from website.app import init_addons, do_set_backends
-
 
 def create_app_context():
     try:
@@ -42,21 +41,18 @@ logger = get_task_logger(__name__)
 
 
 class ArchiverSizeExceeded(Exception):
-
     def __init__(self, result, *args, **kwargs):
         super(ArchiverSizeExceeded, self).__init__(*args, **kwargs)
         self.result = result
 
 
 class ArchiverStateError(Exception):
-
     def __init__(self, info, *args, **kwargs):
         super(ArchiverStateError, self).__init__(*args, **kwargs)
         self.info = info
 
 
 class ArchivedFileNotFound(Exception):
-
     def __init__(self, registration, missing_files, *args, **kwargs):
         super(ArchivedFileNotFound, self).__init__(*args, **kwargs)
 
@@ -69,6 +65,7 @@ class ArchivedFileNotFound(Exception):
 class ArchiverTask(celery.Task):
     abstract = True
     max_retries = 0
+    ignore_result = False
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
         job = ArchiveJob.load(kwargs.get('job_pk'))
@@ -107,7 +104,7 @@ class ArchiverTask(celery.Task):
         archiver_signals.archive_fail.send(dst, errors=errors)
 
 
-@celery_app.task(base=ArchiverTask, name="archiver.stat_addon")
+@celery_app.task(base=ArchiverTask, ignore_result=False)
 @logged('stat_addon')
 def stat_addon(addon_short_name, job_pk):
     """Collect metadata about the file tree of a given addon
@@ -144,7 +141,7 @@ def stat_addon(addon_short_name, job_pk):
     return result
 
 
-@celery_app.task(base=ArchiverTask, name="archiver.make_copy_request")
+@celery_app.task(base=ArchiverTask, ignore_result=False)
 @logged('make_copy_request')
 def make_copy_request(job_pk, url, data):
     """Make the copy request to the WaterBulter API and handle
@@ -186,7 +183,7 @@ def make_waterbutler_payload(src, dst, addon_short_name, rename, cookie, revisio
     return ret
 
 
-@celery_app.task(base=ArchiverTask, name="archiver.archive_addon")
+@celery_app.task(base=ArchiverTask, ignore_result=False)
 @logged('archive_addon')
 def archive_addon(addon_short_name, job_pk, stat_result):
     """Archive the contents of an addon by making a copy request to the
@@ -201,6 +198,8 @@ def archive_addon(addon_short_name, job_pk, stat_result):
     addon_name = addon_short_name
     if 'dataverse' in addon_short_name:
         addon_name = 'dataverse'
+        revision = 'latest' if addon_short_name.split('-')[-1] == 'draft' else 'latest-published'
+        folder_name_suffix = 'draft' if addon_short_name.split('-')[-1] == 'draft' else 'published'
     create_app_context()
     job = ArchiveJob.load(job_pk)
     src, dst, user = job.info()
@@ -216,16 +215,15 @@ def archive_addon(addon_short_name, job_pk, stat_result):
         #
         # Additionally trying to run the archive without this distinction creates a race
         # condition that non-deterministically caused archive jobs to fail.
-        data = make_waterbutler_payload(src, dst, addon_name, '{0} (published)'.format(folder_name), cookie, revision='latest-published')
-        make_copy_request.delay(job_pk=job_pk, url=copy_url, data=data)
-        data = make_waterbutler_payload(src, dst, addon_name, '{0} (draft)'.format(folder_name), cookie, revision='latest')
+        data = make_waterbutler_payload(src, dst, addon_name, '{0} ({1})'.format(folder_name, folder_name_suffix),
+                                        cookie, revision=revision)
         make_copy_request.delay(job_pk=job_pk, url=copy_url, data=data)
     else:
         data = make_waterbutler_payload(src, dst, addon_name, folder_name, cookie)
         make_copy_request.delay(job_pk=job_pk, url=copy_url, data=data)
 
 
-@celery_app.task(base=ArchiverTask, name="archiver.archive_node")
+@celery_app.task(base=ArchiverTask, ignore_result=False)
 @logged('archive_node')
 def archive_node(stat_results, job_pk):
     """First use the results of #stat_node to check disk usage of the
@@ -294,29 +292,8 @@ def archive(job_pk):
         ]
     )
 
-def find_registration_file(value, node):
-    orig_sha256 = value['extra']['sha256']
-    orig_name = value['extra']['selectedFileName']
-    orig_node = value['extra']['nodeId']
-    file_map = utils.get_file_map(node)
-    for sha256, value, node_id in file_map:
-        registered_from_id = Node.load(node_id).registered_from._id
-        if sha256 == orig_sha256 and registered_from_id == orig_node and orig_name == value['name']:
-            return value, node_id
-    return None, None
 
-def find_question(schema, qid):
-    for page in schema['pages']:
-        questions = {
-            q['qid']: q
-            for q in page['questions']
-        }
-        if qid in questions:
-            return questions[qid]
-
-VIEW_FILE_URL_TEMPLATE = '/project/{node_id}/files/osfstorage/{path}/'
-
-@celery_app.task(base=ArchiverTask, name="archiver.archive_success")
+@celery_app.task(base=ArchiverTask, ignore_result=False)
 @logged('archive_success')
 def archive_success(dst_pk, job_pk):
     """Archiver's final callback. For the time being the use case for this task
@@ -342,54 +319,9 @@ def archive_success(dst_pk, job_pk):
     # questions. These files are references to files on the unregistered Node, and
     # consequently we must migrate those file paths after archiver has run. Using
     # sha256 hashes is a convenient way to identify files post-archival.
-    prereg_schema = MetaSchema.find_one(
-        Q('name', 'eq', 'Prereg Challenge') &
-        Q('schema_version', 'eq', 2)
-    )
-    missing_files = []
-    if prereg_schema in dst.registered_schema:
-        prereg_metadata = dst.registered_meta[prereg_schema._id]
-        updated_metadata = {}
-        for key, question in prereg_metadata.items():
-            if isinstance(question['value'], dict):
-                for subkey, subvalue in question['value'].items():
-                    registration_file = None
-                    if subvalue.get('extra', {}).get('sha256'):
-                        registration_file, node_id = find_registration_file(subvalue, dst)
-                        if not registration_file:
-                            missing_files.append({
-                                'file_name': subvalue['extra']['selectedFileName'],
-                                'question_title': find_question(prereg_schema.schema, key)['title']
-                            })
-                            continue
-                        subvalue['extra'].update({
-                            'viewUrl': VIEW_FILE_URL_TEMPLATE.format(node_id=node_id, path=registration_file['path'].lstrip('/'))
-                        })
-                    question['value'][subkey] = subvalue
-            else:
-                if question.get('extra', {}).get('sha256'):
-                    registration_file, node_id = find_registration_file(question, dst)
-                    if not registration_file:
-                        missing_files.append({
-                            'file_name': question['extra']['selectedFileName'],
-                            'question_title': find_question(prereg_schema.schema, key)['title']
-                        })
-                        continue
-                    question['extra'].update({
-                        'viewUrl': VIEW_FILE_URL_TEMPLATE.format(node_id=node_id, path=registration_file['path'].lstrip('/'))
-                    })
-            updated_metadata[key] = question
-
-        if missing_files:
-            raise ArchivedFileNotFound(
-                registration=dst,
-                missing_files=missing_files
-            )
-
-        prereg_metadata.update(updated_metadata)
-        dst.registered_meta[prereg_schema._id] = prereg_metadata
-        dst.save()
-
+    for schema in dst.registered_schema:
+        if schema.has_files:
+            utils.migrate_file_metadata(dst, schema)
     job = ArchiveJob.load(job_pk)
     if not job.sent:
         job.sent = True

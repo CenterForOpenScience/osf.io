@@ -5,8 +5,6 @@ var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
 require('knockout.validation');
-require('knockout.punches');
-ko.punches.enableAll();
 require('knockout-sortable');
 
 var $osf = require('./osfHelpers');
@@ -220,7 +218,7 @@ var BaseViewModel = function(urls, modes, preventUnsaved) {
     self.editAllowed = $.inArray('edit', self.modes) >= 0;
     self.editable = ko.observable(self.editAllowed);
     self.mode = ko.observable(self.editable() ? 'edit' : 'view');
-
+    self.saving = ko.observable(false);
     self.original = ko.observable();
     self.tracked = [];  // Define for each view model that inherits
 
@@ -270,6 +268,7 @@ BaseViewModel.prototype.changeMessage = function(text, css, timeout) {
 };
 
 BaseViewModel.prototype.handleSuccess = function() {
+    this.saving(false);
     if ($.inArray('view', this.modes) >= 0) {
         this.mode('view');
     } else {
@@ -282,6 +281,7 @@ BaseViewModel.prototype.handleSuccess = function() {
 };
 
 BaseViewModel.prototype.handleError = function(response) {
+    this.saving(false);
     var defaultMsg = 'Could not update settings';
     var msg = response.message_long || defaultMsg;
     this.changeMessage(
@@ -346,6 +346,7 @@ BaseViewModel.prototype.cancel = function(data, event) {
 
 BaseViewModel.prototype.submit = function() {
     if (this.hasValidProperty() && this.isValid()) {
+        this.saving(true);
         $osf.putJSON(
             this.urls.crud,
             this.serialize()
@@ -713,6 +714,7 @@ SocialViewModel.prototype.submit = function() {
         );
     }
     else if (this.hasValidProperty() && this.isValid()) {
+        this.saving(true);
         $osf.putJSON(
             this.urls.crud,
             this.serialize()
@@ -722,6 +724,8 @@ SocialViewModel.prototype.submit = function() {
             this.setOriginal.bind(this)
         ).fail(
             this.handleError.bind(this)
+        ).always(
+            function() { this.saving(false); }
         );
     } else {
         this.showMessages(true);
@@ -824,13 +828,10 @@ ListViewModel.prototype = Object.create(BaseViewModel.prototype);
 ListViewModel.prototype.addContent = function() {
     if (!this.institutionObjectsEmpty() && this.isValid()) {
         this.contents.push(new this.ContentModel(this));
+        this.showMessages(false);
     }
     else {
-        this.changeMessage(
-            'Institution field is required.',
-            'text-danger',
-            5000
-        );
+        this.showMessages(true);
     }
 };
 
@@ -857,10 +858,10 @@ ListViewModel.prototype.removeContent = function(content) {
                 );
             }
         },
-        buttons:{
-            confirm:{
-                label:'Remove',
-                className:'btn-danger'
+        buttons: {
+            confirm: {
+                label: 'Remove',
+                className: 'btn-danger'
             }
         }
     });
@@ -919,7 +920,7 @@ var JobViewModel = function() {
         trimmed: true,
         required: {
             onlyIf: function() {
-               return !!self.department() || !!self.title();
+               return !!self.department() || !!self.title() || !!self.startYear() || !!self.endYear();
             },
             message: 'Institution/Employer required'
         }
@@ -973,7 +974,7 @@ var SchoolViewModel = function() {
         trimmed: true,
         required: {
             onlyIf: function() {
-                return !!self.department() || !!self.degree();
+                return !!self.department() || !!self.degree() || !!self.startYear() || !!self.endYear();
             },
             message: 'Institution required'
         }

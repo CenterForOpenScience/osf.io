@@ -123,36 +123,41 @@ var uploadRowTemplate = function(item){
     var columns = [{
         data : '',  // Data field name
         css : '',
-        custom : function(){ return m('row.text-muted', [
-            m('.col-xs-7', {style: 'overflow: hidden;text-overflow: ellipsis;'}, [
-                m('span', { style : 'padding-left:' + padding + 'px;'}, tb.options.resolveIcon.call(tb, item)),
-                m('span',{ style : 'margin-left: 9px;'}, item.data.name)
-            ]),
-            m('.col-xs-3',
-                m('.progress', [
-                    m('.progress-bar.progress-bar-info.progress-bar-striped.active', {
-                        role : 'progressbar',
-                        'aria-valuenow' : item.data.progress,
-                        'aria-valuemin' : '0',
-                        'aria-valuemax': '100',
-                        'style':'width: ' + item.data.progress + '%' }, m('span.sr-only', item.data.progress + '% Complete'))
-                ])
-            ),
-            m('.col-xs-2', [
-                m('span', m('.fangorn-toolbar-icon.m-l-sm', {
-                        style : 'padding: 0px 6px 2px 2px;font-size: 16px;display: inline;',
-                        config : function() {
-                            reapplyTooltips();
-                        },
-                        'onclick' : function (e) {
-                            e.stopImmediatePropagation();
-                            cancelUploads.call(tb, item);
-                        }},
-                     m('span.text-muted','×')
-                )),
-            ]),
-
-        ]); }
+        custom : function(){
+            var uploadColumns = [
+                m('.col-xs-7', {style: 'overflow: hidden;text-overflow: ellipsis;'}, [
+                    m('span', { style : 'padding-left:' + padding + 'px;'}, tb.options.resolveIcon.call(tb, item)),
+                    m('span',{ style : 'margin-left: 9px;'}, item.data.name)
+                ]),
+                m('.col-xs-3',
+                    m('.progress', [
+                        m('.progress-bar.progress-bar-info.progress-bar-striped.active', {
+                            role : 'progressbar',
+                            'aria-valuenow' : item.data.progress,
+                            'aria-valuemin' : '0',
+                            'aria-valuemax': '100',
+                            'style':'width: ' + item.data.progress + '%' }, m('span.sr-only', item.data.progress + '% Complete'))
+                    ])
+                )
+            ];
+            if (item.data.progress < 100) {
+                uploadColumns.push(m('.col-xs-2', [
+                    m('span', m('.fangorn-toolbar-icon.m-l-sm', {
+                            style : 'padding: 0px 6px 2px 2px;font-size: 16px;display: inline;',
+                            config : function() {
+                                reapplyTooltips();
+                            },
+                            'onclick' : function (e) {
+                                console.log(item.data.progress);
+                                e.stopImmediatePropagation();
+                                cancelUploads.call(tb, item);
+                            }},
+                         m('span.text-muted','×')
+                    ))
+                ]));
+            }
+            return m('row.text-muted', uploadColumns);
+        }
     }];
     if(tb.options.placement === 'files'){
         columns.push({
@@ -749,6 +754,11 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
     }
     var url = item.data.nodeUrl + 'files/' + item.data.provider + item.data.path;
     addFileStatus(treebeard, file, true, '', url);
+
+    if (item.data.provider === 'dataverse') {
+        item.parent().data.datasetDraftModified = true;
+    }
+
     treebeard.redraw();
 }
 
@@ -924,6 +934,10 @@ function _removeEvent (event, items, col) {
             tb.deleteNode(item.parentID, item.id);
             tb.modal.dismiss();
             tb.clearMultiselect();
+
+            if (item.data.provider === 'dataverse') {
+                item.parent().data.datasetDraftModified = true;
+            }
         })
         .fail(function(data){
             tb.modal.dismiss();
@@ -1163,6 +1177,7 @@ function gotoFileEvent (item) {
         window.open(fileurl, '_self');
     }
 }
+
 /**
  * Defines the contents of the title column (does not include the toggle and folder sections
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
@@ -1649,7 +1664,7 @@ var FGItemButtons = {
                         onclick: function () {
                             mode(toolbarModes.RENAME);
                         },
-                        icon: 'fa fa-font',
+                        icon: 'fa fa-pencil',
                         className: 'text-info'
                     }, 'Rename')
                 );
@@ -1723,7 +1738,7 @@ var FGToolbar = {
                                 onclick: ctrl.createFolder,
                                 icon: 'fa fa-plus',
                                 className: 'text-success'
-                            }, 'Create'),
+                            }),
                             dismissIcon
                         ]
                     )
@@ -1753,7 +1768,7 @@ var FGToolbar = {
                                 },
                                 icon: 'fa fa-pencil',
                                 className: 'text-info'
-                            }, 'Rename'),
+                            }),
                             dismissIcon
                         ]
                     )
@@ -2385,7 +2400,7 @@ tbOptions = {
         var item = tb.find(row.id);
         _fangornMultiselect.call(tb,null,item);
     },
-    hScroll : 400,
+    hScroll : null,
     naturalScrollLimit : 0
 };
 

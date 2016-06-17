@@ -20,10 +20,10 @@ UPDATE_METHODS = ['PUT', 'PATCH']
 
 def decompose_field(field):
     from api.base.serializers import (
-        HideIfRetraction, HideIfRegistration,
+        HideIfWithdrawal, HideIfRegistration,
         HideIfDisabled, AllowMissing
     )
-    WRAPPER_FIELDS = (HideIfRetraction, HideIfRegistration, HideIfDisabled, AllowMissing)
+    WRAPPER_FIELDS = (HideIfWithdrawal, HideIfRegistration, HideIfDisabled, AllowMissing)
 
     while isinstance(field, WRAPPER_FIELDS):
         try:

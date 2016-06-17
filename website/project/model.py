@@ -6,7 +6,6 @@ import re
 import logging
 import pymongo
 import datetime
-from dateutil.parser import parse as parse_date
 import urlparse
 from collections import OrderedDict
 import warnings
@@ -27,7 +26,6 @@ from framework.mongo import StoredObject
 from framework.mongo import validators
 from framework.addons import AddonModelMixin
 from framework.auth import get_user, User, Auth
-from framework.auth import signals as auth_signals
 from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject, Guid
 from framework.auth.utils import privacy_info_handle
@@ -40,22 +38,22 @@ from framework.sentry import log_exception
 from framework.transactions.context import TokuTransaction
 from framework.utils import iso8601format
 
-from website import language, mails, settings, tokens
+from website import language, settings
 from website.util import web_url_for
 from website.util import api_url_for
 from website.util import api_v2_url
 from website.util import sanitize
 from website.exceptions import (
     NodeStateError,
-    InvalidSanctionApprovalToken, InvalidSanctionRejectionToken,
+    InvalidTagError, TagNotFoundError,
     UserNotAffiliatedError,
 )
 from website.institutions.model import Institution, AffiliatedInstitutionsList
 from website.citations.utils import datetime_to_csl
 from website.identifiers.model import IdentifierMixin
-from website.files.models.base import StoredFileNode
 from website.util.permissions import expand_permissions
 from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS, ADMIN
+from website.project.commentable import Commentable
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.project.licenses import (
     NodeLicense,
@@ -63,11 +61,16 @@ from website.project.licenses import (
 )
 from website.project import signals as project_signals
 from website.project.spam.model import SpamMixin
-from website.prereg import utils as prereg_utils
+from website.project.sanctions import (
+    DraftRegistrationApproval,
+    EmbargoTerminationApproval,
+    Embargo,
+    RegistrationApproval,
+    Retraction,
+)
 
 logger = logging.getLogger(__name__)
 
-VIEW_PROJECT_URL_TEMPLATE = settings.DOMAIN + '{node_id}/'
 
 def has_anonymous_link(node, auth):
     """check if the node is anonymous to the user
@@ -111,6 +114,10 @@ class MetaSchema(StoredObject):
     def requires_consent(self):
         return self._config.get('requiresConsent', False)
 
+    @property
+    def has_files(self):
+        return self._config.get('hasFiles', False)
+
 def ensure_schema(schema, name, version=1):
     schema_obj = None
     try:
@@ -149,12 +156,13 @@ class MetaData(GuidStoredObject):
     date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
 
 
-class Comment(GuidStoredObject, SpamMixin):
+class Comment(GuidStoredObject, SpamMixin, Commentable):
 
     __guid_min_length__ = 12
 
     OVERVIEW = "node"
     FILES = "files"
+    WIKI = 'wiki'
 
     _id = fields.StringField(primary=True)
 
@@ -189,16 +197,28 @@ class Comment(GuidStoredObject, SpamMixin):
         path = '/comments/{}/'.format(self._id)
         return api_v2_url(path)
 
+    @property
+    def target_type(self):
+        """The object "type" used in the OSF v2 API."""
+        return 'comments'
+
+    @property
+    def root_target_page(self):
+        """The page type associated with the object/Comment.root_target."""
+        return None
+
+    def belongs_to_node(self, node_id):
+        """Check whether the comment is attached to the specified node."""
+        return self.node._id == node_id
+
     # used by django and DRF
     def get_absolute_url(self):
         return self.absolute_api_v2_url
 
     def get_comment_page_url(self):
-        if isinstance(self.root_target.referent, StoredFileNode):
-            file_guid = self.root_target._id
-            return settings.DOMAIN + str(file_guid) + '/'
-        else:
+        if isinstance(self.root_target.referent, Node):
             return self.node.absolute_url
+        return settings.DOMAIN + str(self.root_target._id) + '/'
 
     def get_content(self, auth):
         """ Returns the comment content if the user is allowed to see it. Deleted comments
@@ -212,13 +232,27 @@ class Comment(GuidStoredObject, SpamMixin):
 
         return self.content
 
+    def get_comment_page_title(self):
+        if self.page == Comment.FILES:
+            return self.root_target.referent.name
+        elif self.page == Comment.WIKI:
+            return self.root_target.referent.page_name
+        return ''
+
+    def get_comment_page_type(self):
+        if self.page == Comment.FILES:
+            return 'file'
+        elif self.page == Comment.WIKI:
+            return 'wiki'
+        return self.node.project_or_component
+
     @classmethod
     def find_n_unread(cls, user, node, page, root_id=None):
         if node.is_contributor(user):
             if page == Comment.OVERVIEW:
                 view_timestamp = user.get_node_comment_timestamps(target_id=node._id)
                 root_target = Guid.load(node._id)
-            elif page == Comment.FILES:
+            elif page == Comment.FILES or page == Comment.WIKI:
                 view_timestamp = user.get_node_comment_timestamps(target_id=root_id)
                 root_target = Guid.load(root_id)
             else:
@@ -248,13 +282,13 @@ class Comment(GuidStoredObject, SpamMixin):
         else:
             comment.root_target = comment.target
 
-        if isinstance(comment.root_target.referent, Node):
-            comment.page = Comment.OVERVIEW
-        elif isinstance(comment.root_target.referent, StoredFileNode):
-            log_dict['file'] = {'name': comment.root_target.referent.name, 'url': comment.get_comment_page_url()}
-            comment.page = Comment.FILES
-        else:
+        page = getattr(comment.root_target.referent, 'root_target_page', None)
+        if not page:
             raise ValueError('Invalid root target.')
+        comment.page = page
+
+        log_dict.update(comment.root_target.referent.get_extra_log_params(comment))
+
         comment.save()
 
         comment.node.add_log(
@@ -278,8 +312,7 @@ class Comment(GuidStoredObject, SpamMixin):
             'user': self.user._id,
             'comment': self._id,
         }
-        if isinstance(self.root_target.referent, StoredFileNode):
-            log_dict['file'] = {'name': self.root_target.referent.name, 'url': self.get_comment_page_url()}
+        log_dict.update(self.root_target.referent.get_extra_log_params(self))
         self.content = content
         self.modified = True
         self.date_modified = datetime.datetime.utcnow()
@@ -303,8 +336,7 @@ class Comment(GuidStoredObject, SpamMixin):
             'comment': self._id,
         }
         self.is_deleted = True
-        if isinstance(self.root_target.referent, StoredFileNode):
-            log_dict['file'] = {'name': self.root_target.referent.name, 'url': self.get_comment_page_url()}
+        log_dict.update(self.root_target.referent.get_extra_log_params(self))
         self.date_modified = datetime.datetime.utcnow()
         if save:
             self.save()
@@ -326,8 +358,7 @@ class Comment(GuidStoredObject, SpamMixin):
             'user': self.user._id,
             'comment': self._id,
         }
-        if isinstance(self.root_target.referent, StoredFileNode):
-            log_dict['file'] = {'name': self.root_target.referent.name, 'url': self.get_comment_page_url()}
+        log_dict.update(self.root_target.referent.get_extra_log_params(self))
         self.date_modified = datetime.datetime.utcnow()
         if save:
             self.save()
@@ -448,6 +479,8 @@ class NodeLog(StoredObject):
     EMBARGO_CANCELLED = 'embargo_cancelled'
     EMBARGO_COMPLETED = 'embargo_completed'
     EMBARGO_INITIATED = 'embargo_initiated'
+    EMBARGO_TERMINATED = 'embargo_terminated'
+
     RETRACTION_APPROVED = 'retraction_approved'
     RETRACTION_CANCELLED = 'retraction_cancelled'
     RETRACTION_INITIATED = 'retraction_initiated'
@@ -455,11 +488,12 @@ class NodeLog(StoredObject):
     REGISTRATION_APPROVAL_CANCELLED = 'registration_cancelled'
     REGISTRATION_APPROVAL_INITIATED = 'registration_initiated'
     REGISTRATION_APPROVAL_APPROVED = 'registration_approved'
+    PREREG_REGISTRATION_INITIATED = 'prereg_registration_initiated'
 
-    PRIMARY_INSTITUTION_CHANGED = 'primary_institution_changed'
-    PRIMARY_INSTITUTION_REMOVED = 'primary_institution_removed'
+    AFFILIATED_INSTITUTION_ADDED = 'affiliated_institution_added'
+    AFFILIATED_INSTITUTION_REMOVED = 'affiliated_institution_removed'
 
-    actions = [CHECKED_IN, CHECKED_OUT, FILE_TAG_REMOVED, FILE_TAG_ADDED, CREATED_FROM, PROJECT_CREATED, PROJECT_REGISTERED, PROJECT_DELETED, NODE_CREATED, NODE_FORKED, NODE_REMOVED, POINTER_CREATED, POINTER_FORKED, POINTER_REMOVED, WIKI_UPDATED, WIKI_DELETED, WIKI_RENAMED, MADE_WIKI_PUBLIC, MADE_WIKI_PRIVATE, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED, PERMISSIONS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, TAG_ADDED, TAG_REMOVED, EDITED_TITLE, EDITED_DESCRIPTION, UPDATED_FIELDS, FILE_MOVED, FILE_COPIED, FOLDER_CREATED, FILE_ADDED, FILE_UPDATED, FILE_REMOVED, FILE_RESTORED, ADDON_ADDED, ADDON_REMOVED, COMMENT_ADDED, COMMENT_REMOVED, COMMENT_UPDATED, MADE_CONTRIBUTOR_VISIBLE, MADE_CONTRIBUTOR_INVISIBLE, EXTERNAL_IDS_ADDED, EMBARGO_APPROVED, EMBARGO_CANCELLED, EMBARGO_COMPLETED, EMBARGO_INITIATED, RETRACTION_APPROVED, RETRACTION_CANCELLED, RETRACTION_INITIATED, REGISTRATION_APPROVAL_CANCELLED, REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED, CITATION_ADDED, CITATION_EDITED, CITATION_REMOVED, PRIMARY_INSTITUTION_CHANGED, PRIMARY_INSTITUTION_REMOVED]
+    actions = [CHECKED_IN, CHECKED_OUT, FILE_TAG_REMOVED, FILE_TAG_ADDED, CREATED_FROM, PROJECT_CREATED, PROJECT_REGISTERED, PROJECT_DELETED, NODE_CREATED, NODE_FORKED, NODE_REMOVED, POINTER_CREATED, POINTER_FORKED, POINTER_REMOVED, WIKI_UPDATED, WIKI_DELETED, WIKI_RENAMED, MADE_WIKI_PUBLIC, MADE_WIKI_PRIVATE, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED, PERMISSIONS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, TAG_ADDED, TAG_REMOVED, EDITED_TITLE, EDITED_DESCRIPTION, UPDATED_FIELDS, FILE_MOVED, FILE_COPIED, FOLDER_CREATED, FILE_ADDED, FILE_UPDATED, FILE_REMOVED, FILE_RESTORED, ADDON_ADDED, ADDON_REMOVED, COMMENT_ADDED, COMMENT_REMOVED, COMMENT_UPDATED, MADE_CONTRIBUTOR_VISIBLE, MADE_CONTRIBUTOR_INVISIBLE, EXTERNAL_IDS_ADDED, EMBARGO_APPROVED, EMBARGO_CANCELLED, EMBARGO_COMPLETED, EMBARGO_INITIATED, RETRACTION_APPROVED, RETRACTION_CANCELLED, RETRACTION_INITIATED, REGISTRATION_APPROVAL_CANCELLED, REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED, PREREG_REGISTRATION_INITIATED, CITATION_ADDED, CITATION_EDITED, CITATION_REMOVED, AFFILIATED_INSTITUTION_ADDED, AFFILIATED_INSTITUTION_REMOVED]
 
     def __repr__(self):
         return ('<NodeLog({self.action!r}, params={self.params!r}) '
@@ -658,7 +692,7 @@ class NodeUpdateError(Exception):
         self.reason = reason
 
 
-class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
+class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
     #: Whether this is a pointer or not
     primary = True
@@ -731,7 +765,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         'wiki_pages_current',
         'is_retracted',
         'node_license',
-        'primary_institution'
+        '_affiliated_institutions',
     }
 
     # Maps category identifier => Human-readable representation for use in
@@ -782,6 +816,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     is_deleted = fields.BooleanField(default=False, index=True)
     deleted_date = fields.DateTimeField(index=True)
+    suspended = fields.BooleanField(default=False)
 
     is_registration = fields.BooleanField(default=False, index=True)
     registered_date = fields.DateTimeField(index=True)
@@ -803,6 +838,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     registration_approval = fields.ForeignField('registrationapproval')
     retraction = fields.ForeignField('retraction')
     embargo = fields.ForeignField('embargo')
+    embargo_termination_approval = fields.ForeignField('embargoterminationapproval')
 
     is_fork = fields.BooleanField(default=False, index=True)
     forked_date = fields.DateTimeField(index=True)
@@ -885,6 +921,21 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def pk(self):
         return self._id
 
+    # For Comment API compatibility
+    @property
+    def target_type(self):
+        """The object "type" used in the OSF v2 API."""
+        return 'nodes'
+
+    @property
+    def root_target_page(self):
+        """The comment page type associated with Nodes."""
+        return Comment.OVERVIEW
+
+    def belongs_to_node(self, node_id):
+        """Check whether this node matches the specified node."""
+        return self._id == node_id
+
     @property
     def logs(self):
         """ List of logs associated with this node"""
@@ -921,7 +972,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     @property
     def sanction(self):
-        sanction = self.registration_approval or self.embargo or self.retraction
+        sanction = self.embargo_termination_approval or self.retraction or self.embargo or self.registration_approval
         if sanction:
             return sanction
         elif self.parent_node:
@@ -969,7 +1020,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if self.parent_node:
                 return self.parent_node.embargo_end_date
             return False
-        return self.embargo.embargo_end_date
+        return self.embargo.end_date
 
     @property
     def is_pending_embargo(self):
@@ -991,6 +1042,18 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 return self.parent_node.is_pending_embargo_for_existing_registration
             return False
         return self.embargo.pending_registration
+
+    @property
+    def is_embargoed(self):
+        """A Node is embargoed if:
+        - it has an associated Embargo record
+        - that record has been approved
+        - the node is not public (embargo not yet lifted)
+        """
+        if self.embargo is None:
+            if self.parent_node:
+                return self.parent_node.is_embargoed
+        return self.embargo and self.embargo.is_approved and not self.is_public
 
     @property
     def private_links(self):
@@ -1606,7 +1669,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         new.nodes = [
             x.use_as_template(auth, changes, top_level=False)
             for x in self.nodes
-            if x.can_view(auth)
+            if x.can_view(auth) and not x.is_deleted
         ]
 
         new.save()
@@ -2036,7 +2099,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         self.deleted_date = date
         self.save()
 
-        auth_signals.node_deleted.send(self)
+        project_signals.node_deleted.send(self)
 
         return True
 
@@ -2060,11 +2123,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if original.is_deleted:
             raise NodeStateError('Cannot fork deleted node.')
 
-        # Note: Cloning a node copies its `wiki_pages_current` and
-        # `wiki_pages_versions` fields, but does not clone the underlying
-        # database objects to which these dictionaries refer. This means that
-        # the cloned node must pass itself to its wiki objects to build the
-        # correct URLs to that content.
+        # Note: Cloning a node will clone each node wiki page version and add it to
+        # `registered.wiki_pages_current` and `registered.wiki_pages_versions`.
         forked = original.clone()
 
         forked.tags = self.tags
@@ -2080,7 +2140,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 if forked_node is not None:
                     forked.nodes.append(forked_node)
 
-        forked.title = title + forked.title
+        if title == 'Fork of ' or title == '':
+            forked.title = title + forked.title
+        else:
+            forked.title = title
+
         forked.is_fork = True
         forked.is_registration = False
         forked.forked_date = when
@@ -2088,6 +2152,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         forked.creator = user
         forked.piwik_site_id = None
         forked.node_license = original.license.copy() if original.license else None
+        forked.wiki_private_uuids = {}
 
         # Forks default to private status
         forked.is_public = False
@@ -2165,11 +2230,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         original = self.load(self._primary_key)
 
-        # Note: Cloning a node copies its `wiki_pages_current` and
-        # `wiki_pages_versions` fields, but does not clone the underlying
-        # database objects to which these dictionaries refer. This means that
-        # the cloned node must pass itself to its wiki objects to build the
-        # correct URLs to that content.
+        # Note: Cloning a node will clone each node wiki page version and add it to
+        # `registered.wiki_pages_current` and `registered.wiki_pages_versions`.
         if original.is_deleted:
             raise NodeStateError('Cannot register deleted node.')
 
@@ -2189,10 +2251,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.creator = self.creator
         registered.tags = self.tags
         registered.piwik_site_id = None
-        registered.primary_institution = self.primary_institution
         registered._affiliated_institutions = self._affiliated_institutions
         registered.alternative_citations = self.alternative_citations
         registered.node_license = original.license.copy() if original.license else None
+        registered.wiki_private_uuids = {}
 
         registered.save()
 
@@ -2235,7 +2297,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return registered
 
     def remove_tag(self, tag, auth, save=True):
-        if tag in self.tags:
+        if not tag:
+            raise InvalidTagError
+        elif tag not in self.tags:
+            raise TagNotFoundError
+        else:
             self.tags.remove(tag)
             self.add_log(
                 action=NodeLog.TAG_REMOVED,
@@ -2249,6 +2315,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             )
             if save:
                 self.save()
+            return True
 
     def add_tag(self, tag, auth, save=True, log=True):
         if not isinstance(tag, Tag):
@@ -2545,7 +2612,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     @property
     def project_or_component(self):
-        return 'project' if self.category == 'project' else 'component'
+        # The distinction is drawn based on whether something has a parent node, rather than by category
+        return 'project' if not self.parent_node else 'component'
 
     def is_contributor(self, user):
         return (
@@ -2681,6 +2749,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         for addon in self.get_addons():
             message = addon.after_remove_contributor(self, contributor, auth)
             if message:
+                # Because addons can return HTML strings, addons are responsible for markupsafe-escaping any messages returned
                 status.push_status_message(message, kind='info', trust=True)
 
         if log:
@@ -2698,7 +2767,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         self.save()
 
         #send signal to remove this user from project subscriptions
-        auth_signals.contributor_removed.send(contributor, node=self)
+        project_signals.contributor_removed.send(self, user=contributor)
 
         return True
 
@@ -2712,8 +2781,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 contributor=contrib, auth=auth, log=False,
             )
             results.append(outcome)
-            if outcome:
-                project_signals.contributor_removed.send(self, user=contrib)
             removed.append(contrib._id)
         if log:
             self.add_log(
@@ -2730,10 +2797,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if save:
             self.save()
 
-        if False in results:
-            return False
-
-        return True
+        return all(results)
 
     def update_contributor(self, user, permission, visible, auth, save=False):
         """ TODO: this method should be updated as a replacement for the main loop of
@@ -3016,7 +3080,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param permissions: A string, either 'public' or 'private'
         :param auth: All the auth information including user, API key.
         :param bool log: Whether to add a NodeLog for the privacy change.
-        :param bool meeting_creation: Whther this was creayed due to a meetings email.
+        :param bool meeting_creation: Whether this was created due to a meetings email.
         """
         if auth and not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Must be an admin to change privacy settings.')
@@ -3026,8 +3090,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                     raise NodeStateError("A registration with an unapproved embargo cannot be made public.")
                 elif self.is_pending_registration:
                     raise NodeStateError("An unapproved registration cannot be made public.")
-                elif self.embargo_end_date:
-                    raise NodeStateError("An embargoed registration cannot be made public.")
+                elif self.is_pending_embargo:
+                    raise NodeStateError("An unapproved embargoed registration cannot be made public.")
+                elif self.is_embargoed:
+                    # Embargoed registrations can be made public early
+                    self.request_embargo_termination(auth=auth)
+                    return False
             self.is_public = True
         elif permissions == 'private' and self.is_public:
             if self.is_registration and not self.is_pending_embargo:
@@ -3109,6 +3177,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         name = (name or '').strip()
         key = to_mongo_key(name)
+        has_comments = False
+        current = None
 
         if key not in self.wiki_pages_current:
             if key in self.wiki_pages_versions:
@@ -3117,19 +3187,30 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 version = 1
         else:
             current = NodeWikiPage.load(self.wiki_pages_current[key])
-            current.is_current = False
             version = current.version + 1
             current.save()
+            if Comment.find(Q('root_target', 'eq', current._id)).count() > 0:
+                has_comments = True
 
         new_page = NodeWikiPage(
             page_name=name,
             version=version,
             user=auth.user,
-            is_current=True,
             node=self,
             content=content
         )
         new_page.save()
+
+        if has_comments:
+            Comment.update(Q('root_target', 'eq', current._id), data={'root_target': Guid.load(new_page._id)})
+            Comment.update(Q('target', 'eq', current._id), data={'target': Guid.load(new_page._id)})
+
+        if current:
+            for contrib in self.contributors:
+                if contrib.comments_viewed_timestamp.get(current._id, None):
+                    contrib.comments_viewed_timestamp[new_page._id] = contrib.comments_viewed_timestamp[current._id]
+                    contrib.save()
+                    del contrib.comments_viewed_timestamp[current._id]
 
         # check if the wiki page already exists in versions (existed once and is now deleted)
         if key not in self.wiki_pages_versions:
@@ -3307,6 +3388,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         self.retraction = retraction
         if save:
             self.save()
+        return retraction
 
     def _is_embargo_date_valid(self, end_date):
         today = datetime.datetime.utcnow()
@@ -3366,6 +3448,54 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         )
         if self.is_public:
             self.set_privacy('private', Auth(user))
+
+    def request_embargo_termination(self, auth):
+        """Initiates an EmbargoTerminationApproval to lift this Embargoed Registration's
+        embargo early."""
+        if not self.is_embargoed:
+            raise NodeStateError("This node is not under active embargo")
+        if not self.root == self:
+            raise NodeStateError("Only the root of an embargoed registration can request termination")
+
+        approval = EmbargoTerminationApproval(
+            initiated_by=auth.user,
+            embargoed_registration=self,
+        )
+        admins = [admin for admin in self.root.get_admin_contributors_recursive(unique_users=True)]
+        for (admin, node) in admins:
+            approval.add_authorizer(admin, node=node)
+        approval.save()
+        approval.ask(admins)
+        self.embargo_termination_approval = approval
+        self.save()
+        return approval
+
+    def terminate_embargo(self, auth):
+        """Handles the actual early termination of an Embargoed registration.
+        Adds a log to the registered_from Node.
+        """
+        if not self.is_embargoed:
+            raise NodeStateError("This node is not under active embargo")
+
+        self.registered_from.add_log(
+            action=NodeLog.EMBARGO_TERMINATED,
+            params={
+                'project': self._id,
+                'node': self.registered_from_id,
+                'registration': self._id,
+            },
+            auth=None,
+            save=True
+        )
+        self.embargo.mark_as_completed()
+        for node in self.node_and_primary_descendants():
+            node.set_privacy(
+                Node.PUBLIC,
+                auth=None,
+                log=False,
+                save=True
+            )
+        return True
 
     def get_active_contributors_recursive(self, unique_users=False, *args, **kwargs):
         """Yield (admin, node) tuples for this node and
@@ -3470,25 +3600,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return super(Node, cls).find_one(query, **kwargs)
 
     @classmethod
-    def find_by_institution(cls, inst, query=None):
+    def find_by_institutions(cls, inst, query=None):
         inst_node = inst.node
-        query = query & Q('_primary_institution', 'eq', inst_node)
+        query = query & Q('_affiliated_institutions', 'eq', inst_node) if query else Q('_affiliated_institutions', 'eq', inst_node)
         return cls.find(query, allow_institution=True)
-
-    # Primary institution node is attached to
-    _primary_institution = fields.ForeignField('node')
-
-    @property
-    def primary_institution(self):
-        '''
-        Should behave as if this was a foreign field pointing to Institution
-        :return: this node's _primary_institution wrapped with Institution.
-        '''
-        return Institution(self._primary_institution) if self._primary_institution else None
-
-    @primary_institution.setter
-    def primary_institution(self, institution):
-        self._primary_institution = institution.node if institution else None
 
     _affiliated_institutions = fields.ForeignField('node', list=True)
 
@@ -3500,61 +3615,52 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         '''
         return AffiliatedInstitutionsList([Institution(node) for node in self._affiliated_institutions], obj=self, private_target='_affiliated_institutions')
 
-    def add_primary_institution(self, user, inst, log=True):
-        if not isinstance(inst, Institution):
-            raise TypeError
+    def add_affiliated_institution(self, inst, user, save=False, log=True):
         if not user.is_affiliated_with_institution(inst):
             raise UserNotAffiliatedError('User is not affiliated with {}'.format(inst.name))
-        if inst == self.primary_institution:
-            return False
-        previous = self.primary_institution if self.primary_institution else None
-        self.primary_institution = inst
         if inst not in self.affiliated_institutions:
             self.affiliated_institutions.append(inst)
         if log:
             self.add_log(
-                action=NodeLog.PRIMARY_INSTITUTION_CHANGED,
+                action=NodeLog.AFFILIATED_INSTITUTION_ADDED,
                 params={
                     'node': self._primary_key,
                     'institution': {
                         'id': inst._id,
                         'name': inst.name
-                    },
-                    'previous_institution': {
-                        'id': previous._id if previous else None,
-                        'name': previous.name if previous else 'None'
                     }
                 },
                 auth=Auth(user)
             )
+        if save:
+            self.save()
         return True
 
-    def remove_primary_institution(self, user, log=True):
-        inst = self.primary_institution
-        if not inst:
-            return False
-        self.primary_institution = None
+    def remove_affiliated_institution(self, inst, user, save=False, log=True):
         if inst in self.affiliated_institutions:
             self.affiliated_institutions.remove(inst)
-        if log:
-            self.add_log(
-                action=NodeLog.PRIMARY_INSTITUTION_REMOVED,
-                params={
-                    'node': self._primary_key,
-                    'institution': {
-                        'id': inst._id,
-                        'name': inst.name
-                    }
-                },
-                auth=Auth(user)
-            )
-        return True
+            if log:
+                self.add_log(
+                    action=NodeLog.AFFILIATED_INSTITUTION_REMOVED,
+                    params={
+                        'node': self._primary_key,
+                        'institution': {
+                            'id': inst._id,
+                            'name': inst.name
+                        }
+                    },
+                    auth=Auth(user)
+                )
+            if save:
+                self.save()
+            return True
+        return False
 
-    def institution_url(self):
-        return self.absolute_api_v2_url + 'institution/'
+    def institutions_url(self):
+        return self.absolute_api_v2_url + 'institutions/'
 
-    def institution_relationship_url(self):
-        return self.absolute_api_v2_url + 'relationships/institution/'
+    def institutions_relationship_url(self):
+        return self.absolute_api_v2_url + 'relationships/institutions/'
 
 
 @Node.subscribe('before_save')
@@ -3650,764 +3756,6 @@ class PrivateLink(StoredObject):
         }
 
 
-class Sanction(StoredObject):
-    """Sanction class is a generic way to track approval states"""
-    # Tell modularodm not to attach backends
-    _meta = {
-        'abstract': True,
-    }
-
-    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
-
-    # Neither approved not cancelled
-    UNAPPROVED = 'unapproved'
-    # Has approval
-    APPROVED = 'approved'
-    # Rejected by at least one person
-    REJECTED = 'rejected'
-    # Embargo has been completed
-    COMPLETED = 'completed'
-
-    state = fields.StringField(
-        default=UNAPPROVED,
-        validate=validators.choice_in((
-            UNAPPROVED,
-            APPROVED,
-            REJECTED,
-            COMPLETED,
-        ))
-    )
-
-    DISPLAY_NAME = 'Sanction'
-    # SHORT_NAME must correspond with the associated foreign field to query against,
-    # e.g. Node.find_one(Q(sanction.SHORT_NAME, 'eq', sanction))
-    SHORT_NAME = 'sanction'
-
-    APPROVAL_NOT_AUTHORIZED_MESSAGE = 'This user is not authorized to approve this {DISPLAY_NAME}'
-    APPROVAL_INVALID_TOKEN_MESSAGE = 'Invalid approval token provided for this {DISPLAY_NAME}.'
-    REJECTION_NOT_AUTHORIZED_MESSAEGE = 'This user is not authorized to reject this {DISPLAY_NAME}'
-    REJECTION_INVALID_TOKEN_MESSAGE = 'Invalid rejection token provided for this {DISPLAY_NAME}.'
-
-    # Controls whether or not the Sanction needs unanimous approval or just a single approval
-    ANY = 'any'
-    UNANIMOUS = 'unanimous'
-    mode = UNANIMOUS
-
-    initiation_date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
-    # Expiration date-- Sanctions in the UNAPPROVED state that are older than their end_date
-    # are automatically made ACTIVE by a daily cron job
-    # Use end_date=None for a non-expiring Sanction
-    end_date = fields.DateTimeField(default=None)
-
-    # Sanction subclasses must have an initiated_by field
-    # initiated_by = fields.ForeignField('user', backref='initiated')
-
-    approval_state = fields.DictionaryField()
-
-    def __repr__(self):
-        return '<Sanction(end_date={self.end_date!r}) with _id {self._id!r}>'.format(self=self)
-
-    @property
-    def is_pending_approval(self):
-        return self.state == Sanction.UNAPPROVED
-
-    @property
-    def is_approved(self):
-        return self.state == Sanction.APPROVED
-
-    @property
-    def is_rejected(self):
-        return self.state == Sanction.REJECTED
-
-    def approve(self, user):
-        raise NotImplementedError("Sanction subclasses must implement an approve method.")
-
-    def reject(self, user):
-        raise NotImplementedError("Sanction subclasses must implement an approve method.")
-
-    def _on_reject(self, user):
-        """Callback for rejection of a Sanction
-
-        :param User user:
-        """
-        raise NotImplementedError('Sanction subclasses must implement an #_on_reject method')
-
-    def _on_complete(self, user):
-        """Callback for when a Sanction has approval and enters the ACTIVE state
-
-        :param User user:
-        """
-        raise NotImplementedError('Sanction subclasses must implement an #_on_complete method')
-
-    def forcibly_reject(self):
-        self.state = Sanction.REJECTED
-
-
-class TokenApprovableSanction(Sanction):
-
-    # Tell modularodm not to attach backends
-    _meta = {
-        'abstract': True,
-    }
-
-    def _validate_authorizer(self, user):
-        """Subclasses may choose to provide extra restrictions on who can be an authorizer
-
-        :return Boolean: True if user is allowed to be an authorizer else False
-        """
-        return True
-    def add_authorizer(self, user, node, approved=False, save=False):
-
-        """Add an admin user to this Sanction's approval state.
-
-        :param User user: User to add.
-        :param Node registration: The pending registration node.
-        :param bool approved: Whether `user` has approved.
-        :param bool save: Whether to save this object.
-        """
-        valid = self._validate_authorizer(user)
-        if valid and user._id not in self.approval_state:
-            self.approval_state[user._id] = {
-                'has_approved': approved,
-                'node_id': node._id,
-                'approval_token': tokens.encode(
-                    {
-                        'user_id': user._id,
-                        'sanction_id': self._id,
-                        'action': 'approve_{}'.format(self.SHORT_NAME)
-                    }
-                ),
-                'rejection_token': tokens.encode(
-                    {
-                        'user_id': user._id,
-                        'sanction_id': self._id,
-                        'action': 'reject_{}'.format(self.SHORT_NAME)
-                    }
-                ),
-            }
-            if save:
-                self.save()
-            return True
-        return False
-
-    def remove_authorizer(self, user, save=False):
-        """Remove a user as an authorizer
-
-        :param User user:
-        :return Boolean: True if user is removed else False
-        """
-        if user._id not in self.approval_state:
-            return False
-
-        del self.approval_state[user._id]
-        if save:
-            self.save()
-        return True
-
-    def _on_approve(self, user, token):
-        """Callback for when a single user approves a Sanction. Calls #_on_complete under two conditions:
-        - mode is ANY and the Sanction has not already been cancelled
-        - mode is UNANIMOUS and all users have given approval
-
-        :param User user:
-        :param str token: user's approval token
-        """
-        if self.mode == self.ANY or all(authorizer['has_approved'] for authorizer in self.approval_state.values()):
-            self.state = Sanction.APPROVED
-            self._on_complete(user)
-
-    def token_for_user(self, user, method):
-        """
-        :param str method: 'approval' | 'rejection'
-        """
-        try:
-            user_state = self.approval_state[user._id]
-        except KeyError:
-            raise PermissionsError(self.APPROVAL_NOT_AUTHORIZED_MESSAGE.format(DISPLAY_NAME=self.DISPLAY_NAME))
-        return user_state['{0}_token'.format(method)]
-
-    def approve(self, user, token):
-        """Add user to approval list if user is admin and token verifies."""
-        try:
-            if self.approval_state[user._id]['approval_token'] != token:
-                raise InvalidSanctionApprovalToken(self.APPROVAL_INVALID_TOKEN_MESSAGE.format(DISPLAY_NAME=self.DISPLAY_NAME))
-        except KeyError:
-            raise PermissionsError(self.APPROVAL_NOT_AUTHORIZED_MESSAGE.format(DISPLAY_NAME=self.DISPLAY_NAME))
-        self.approval_state[user._id]['has_approved'] = True
-        self._on_approve(user, token)
-
-    def reject(self, user, token):
-        """Cancels sanction if user is admin and token verifies."""
-        try:
-            if self.approval_state[user._id]['rejection_token'] != token:
-                raise InvalidSanctionRejectionToken(self.REJECTION_INVALID_TOKEN_MESSAGE.format(DISPLAY_NAME=self.DISPLAY_NAME))
-        except KeyError:
-            raise PermissionsError(self.REJECTION_NOT_AUTHORIZED_MESSAEGE.format(DISPLAY_NAME=self.DISPLAY_NAME))
-        self.state = Sanction.REJECTED
-        self._on_reject(user)
-
-    def _notify_authorizer(self, user, node):
-        pass
-
-    def _notify_non_authorizer(self, user, node):
-        pass
-
-    def ask(self, group):
-        """
-        :param list group: List of (user, node) tuples containing contributors to notify about the
-        sanction.
-        """
-        for contrib, node in group:
-            if contrib._id in self.approval_state:
-                self._notify_authorizer(contrib, node)
-            else:
-                self._notify_non_authorizer(contrib, node)
-
-
-class EmailApprovableSanction(TokenApprovableSanction):
-
-    # Tell modularodm not to attach backends
-    _meta = {
-        'abstract': True,
-    }
-
-    AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = None
-    NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = None
-
-    VIEW_URL_TEMPLATE = ''
-    APPROVE_URL_TEMPLATE = ''
-    REJECT_URL_TEMPLATE = ''
-
-    # A flag to conditionally run a callback on complete
-    notify_initiator_on_complete = fields.BooleanField(default=False)
-    # Store a persistant copy of urls for use when needed outside of a request context.
-    # This field gets automagically updated whenever models approval_state is modified
-    # and the model is saved
-    # {
-    #   'abcde': {
-    #     'approve': [APPROVAL_URL],
-    #     'reject': [REJECT_URL],
-    #   }
-    # }
-    stashed_urls = fields.DictionaryField(default=dict)
-
-    @staticmethod
-    def _format_or_empty(template, context):
-        if context:
-            return template.format(**context)
-        return ''
-
-    def _view_url(self, user_id, node):
-        return self._format_or_empty(self.VIEW_URL_TEMPLATE, self._view_url_context(user_id, node))
-
-    def _view_url_context(self, user_id, node):
-        return None
-
-    def _approval_url(self, user_id):
-        return self._format_or_empty(self.APPROVE_URL_TEMPLATE, self._approval_url_context(user_id))
-
-    def _approval_url_context(self, user_id):
-        return None
-
-    def _rejection_url(self, user_id):
-        return self._format_or_empty(self.REJECT_URL_TEMPLATE, self._rejection_url_context(user_id))
-
-    def _rejection_url_context(self, user_id):
-        return None
-
-    def _send_approval_request_email(self, user, template, context):
-        mails.send_mail(
-            user.username,
-            template,
-            user=user,
-            **context
-        )
-
-    def _email_template_context(self, user, node, is_authorizer=False):
-        return {}
-
-    def _notify_authorizer(self, authorizer, node):
-        context = self._email_template_context(authorizer, node, is_authorizer=True)
-        if self.AUTHORIZER_NOTIFY_EMAIL_TEMPLATE:
-            self._send_approval_request_email(authorizer, self.AUTHORIZER_NOTIFY_EMAIL_TEMPLATE, context)
-        else:
-            raise NotImplementedError
-
-    def _notify_non_authorizer(self, user, node):
-        context = self._email_template_context(user, node)
-        if self.NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE:
-            self._send_approval_request_email(user, self.NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE, context)
-        else:
-            raise NotImplementedError
-
-    def add_authorizer(self, user, node, **kwargs):
-        super(EmailApprovableSanction, self).add_authorizer(user, node, **kwargs)
-        self.stashed_urls[user._id] = {
-            'view': self._view_url(user._id, node),
-            'approve': self._approval_url(user._id),
-            'reject': self._rejection_url(user._id)
-        }
-        self.save()
-
-    def _notify_initiator(self):
-        raise NotImplementedError
-
-    def _on_complete(self, *args):
-        if self.notify_initiator_on_complete:
-            self._notify_initiator()
-
-
-class PreregCallbackMixin(object):
-
-    def _notify_initiator(self):
-        registration = self._get_registration()
-        prereg_schema = prereg_utils.get_prereg_schema()
-
-        draft = DraftRegistration.find_one(
-            Q('registered_node', 'eq', registration)
-        )
-
-        if prereg_schema in registration.registered_schema:
-            mails.send_mail(
-                draft.initiator.username,
-                mails.PREREG_CHALLENGE_ACCEPTED,
-                user=draft.initiator,
-                registration_url=registration.absolute_url,
-                mimetype='html'
-            )
-
-    def _email_template_context(self, user, node, is_authorizer=False, urls=None):
-        registration = self._get_registration()
-        prereg_schema = prereg_utils.get_prereg_schema()
-        if prereg_schema in registration.registered_schema:
-            return {
-                'custom_message': ' as part of the Preregistration Challenge (https://cos.io/prereg)'
-            }
-        else:
-            return {}
-
-class Embargo(PreregCallbackMixin, EmailApprovableSanction):
-    """Embargo object for registrations waiting to go public."""
-
-    DISPLAY_NAME = 'Embargo'
-    SHORT_NAME = 'embargo'
-
-    AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_EMBARGO_ADMIN
-    NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_EMBARGO_NON_ADMIN
-
-    VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
-    APPROVE_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
-    REJECT_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
-
-    initiated_by = fields.ForeignField('user')
-    for_existing_registration = fields.BooleanField(default=False)
-
-    @property
-    def is_completed(self):
-        return self.state == self.COMPLETED
-
-    @property
-    def embargo_end_date(self):
-        if self.state == self.APPROVED:
-            return self.end_date
-        return False
-
-    # NOTE(hrybacki): Old, private registrations are grandfathered and do not
-    # require to be made public or embargoed. This field differentiates them
-    # from new registrations entering into an embargo field which should not
-    # show up in any search related fields.
-    @property
-    def pending_registration(self):
-        return not self.for_existing_registration and self.is_pending_approval
-
-    def __repr__(self):
-        parent_registration = None
-        try:
-            parent_registration = Node.find_one(Q('embargo', 'eq', self))
-        except NoResultsFound:
-            pass
-        return ('<Embargo(parent_registration={0}, initiated_by={1}, '
-                'end_date={2}) with _id {3}>').format(
-            parent_registration,
-            self.initiated_by,
-            self.end_date,
-            self._id
-        )
-
-    def _get_registration(self):
-        return Node.find_one(Q('embargo', 'eq', self))
-
-    def _view_url_context(self, user_id, node):
-        registration = node or self._get_registration()
-        return {
-            'node_id': registration._id
-        }
-
-    def _approval_url_context(self, user_id):
-        user_approval_state = self.approval_state.get(user_id, {})
-        approval_token = user_approval_state.get('approval_token')
-        if approval_token:
-            registration = self._get_registration()
-            node_id = user_approval_state.get('node_id', registration._id)
-            return {
-                'node_id': node_id,
-                'token': approval_token,
-            }
-
-    def _rejection_url_context(self, user_id):
-        user_approval_state = self.approval_state.get(user_id, {})
-        rejection_token = user_approval_state.get('rejection_token')
-        if rejection_token:
-            root_registration = self._get_registration()
-            node_id = user_approval_state.get('node_id', root_registration._id)
-            registration = Node.load(node_id)
-            return {
-                'node_id': registration.registered_from,
-                'token': rejection_token,
-            }
-
-    def _email_template_context(self, user, node, is_authorizer=False, urls=None):
-        context = super(Embargo, self)._email_template_context(user, node, is_authorizer, urls)
-        urls = urls or self.stashed_urls.get(user._id, {})
-        registration_link = urls.get('view', self._view_url(user._id, node))
-        if is_authorizer:
-            approval_link = urls.get('approve', '')
-            disapproval_link = urls.get('reject', '')
-            approval_time_span = settings.EMBARGO_PENDING_TIME.days * 24
-
-            registration = self._get_registration()
-
-            context.update({
-                'is_initiator': self.initiated_by == user,
-                'initiated_by': self.initiated_by.fullname,
-                'approval_link': approval_link,
-                'project_name': registration.title,
-                'disapproval_link': disapproval_link,
-                'registration_link': registration_link,
-                'embargo_end_date': self.end_date,
-                'approval_time_span': approval_time_span,
-            })
-        else:
-            context.update({
-                'initiated_by': self.initiated_by.fullname,
-                'registration_link': registration_link,
-                'embargo_end_date': self.end_date,
-            })
-        return context
-
-    def _on_reject(self, user):
-        parent_registration = self._get_registration()
-        parent_registration.registered_from.add_log(
-            action=NodeLog.EMBARGO_CANCELLED,
-            params={
-                'node': parent_registration.registered_from_id,
-                'registration': parent_registration._id,
-                'embargo_id': self._id,
-            },
-            auth=Auth(user),
-        )
-        # Remove backref to parent project if embargo was for a new registration
-        if not self.for_existing_registration:
-            parent_registration.delete_registration_tree(save=True)
-            parent_registration.registered_from = None
-        # Delete parent registration if it was created at the time the embargo was initiated
-        if not self.for_existing_registration:
-            parent_registration.is_deleted = True
-            parent_registration.save()
-
-    def disapprove_embargo(self, user, token):
-        """Cancels retraction if user is admin and token verifies."""
-        self.reject(user, token)
-
-    def _on_complete(self, user):
-        super(Embargo, self)._on_complete(user)
-        parent_registration = self._get_registration()
-        parent_registration.registered_from.add_log(
-            action=NodeLog.EMBARGO_APPROVED,
-            params={
-                'node': parent_registration.registered_from_id,
-                'registration': parent_registration._id,
-                'embargo_id': self._id,
-            },
-            auth=Auth(self.initiated_by),
-        )
-        self.save()
-
-    def approve_embargo(self, user, token):
-        """Add user to approval list if user is admin and token verifies."""
-        self.approve(user, token)
-
-
-class Retraction(EmailApprovableSanction):
-    """
-    Retraction object for public registrations.
-    Externally (specifically in user-facing language) retractions should be referred to as "Withdrawals", i.e.
-    "Retract Registration" -> "Withdraw Registration", "Retracted" -> "Withdrawn", etc.
-    """
-
-    DISPLAY_NAME = 'Retraction'
-    SHORT_NAME = 'retraction'
-
-    AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_RETRACTION_ADMIN
-    NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_RETRACTION_NON_ADMIN
-
-    VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
-    APPROVE_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
-    REJECT_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
-
-    initiated_by = fields.ForeignField('user')
-    justification = fields.StringField(default=None, validate=MaxLengthValidator(2048))
-
-    def __repr__(self):
-        parent_registration = None
-        try:
-            parent_registration = Node.find_one(Q('retraction', 'eq', self))
-        except NoResultsFound:
-            pass
-        return ('<Retraction(parent_registration={0}, initiated_by={1}) '
-                'with _id {2}>').format(
-            parent_registration,
-            self.initiated_by,
-            self._id
-        )
-
-    def _view_url_context(self, user_id, node):
-        registration = Node.find_one(Q('retraction', 'eq', self))
-        return {
-            'node_id': registration._id
-        }
-
-    def _approval_url_context(self, user_id):
-        user_approval_state = self.approval_state.get(user_id, {})
-        approval_token = user_approval_state.get('approval_token')
-        if approval_token:
-            root_registration = Node.find_one(Q('retraction', 'eq', self))
-            node_id = user_approval_state.get('node_id', root_registration._id)
-            return {
-                'node_id': node_id,
-                'token': approval_token,
-            }
-
-    def _rejection_url_context(self, user_id):
-        user_approval_state = self.approval_state.get(user_id, {})
-        rejection_token = user_approval_state.get('rejection_token')
-        if rejection_token:
-            root_registration = Node.find_one(Q('retraction', 'eq', self))
-            node_id = user_approval_state.get('node_id', root_registration._id)
-            registration = Node.load(node_id)
-            return {
-                'node_id': registration.registered_from._id,
-                'token': rejection_token,
-            }
-
-    def _email_template_context(self, user, node, is_authorizer=False, urls=None):
-        urls = urls or self.stashed_urls.get(user._id, {})
-        registration_link = urls.get('view', self._view_url(user._id, node))
-        if is_authorizer:
-            approval_link = urls.get('approve', '')
-            disapproval_link = urls.get('reject', '')
-            approval_time_span = settings.RETRACTION_PENDING_TIME.days * 24
-
-            registration = Node.find_one(Q('retraction', 'eq', self))
-
-            return {
-                'is_initiator': self.initiated_by == user,
-                'initiated_by': self.initiated_by.fullname,
-                'project_name': registration.title,
-                'registration_link': registration_link,
-                'approval_link': approval_link,
-                'disapproval_link': disapproval_link,
-                'approval_time_span': approval_time_span,
-            }
-        else:
-            return {
-                'initiated_by': self.initiated_by.fullname,
-                'registration_link': registration_link,
-            }
-
-    def _on_reject(self, user):
-        parent_registration = Node.find_one(Q('retraction', 'eq', self))
-        parent_registration.registered_from.add_log(
-            action=NodeLog.RETRACTION_CANCELLED,
-            params={
-                'node': parent_registration.registered_from_id,
-                'registration': parent_registration._id,
-                'retraction_id': self._id,
-            },
-            auth=Auth(user),
-            save=True,
-        )
-
-    def _on_complete(self, user):
-        parent_registration = Node.find_one(Q('retraction', 'eq', self))
-        parent_registration.registered_from.add_log(
-            action=NodeLog.RETRACTION_APPROVED,
-            params={
-                'node': parent_registration.registered_from_id,
-                'retraction_id': self._id,
-                'registration': parent_registration._id
-            },
-            auth=Auth(self.initiated_by),
-        )
-        # Remove any embargoes associated with the registration
-        if parent_registration.embargo_end_date or parent_registration.is_pending_embargo:
-            parent_registration.embargo.state = self.REJECTED
-            parent_registration.registered_from.add_log(
-                action=NodeLog.EMBARGO_CANCELLED,
-                params={
-                    'node': parent_registration.registered_from_id,
-                    'registration': parent_registration._id,
-                    'embargo_id': parent_registration.embargo._id,
-                },
-                auth=Auth(self.initiated_by),
-            )
-            parent_registration.embargo.save()
-        # Ensure retracted registration is public
-        # Pass auth=None because the registration initiator may not be
-        # an admin on components (component admins had the opportunity
-        # to disapprove the retraction by this point)
-        for node in parent_registration.node_and_primary_descendants():
-            node.set_privacy('public', auth=None, save=True, log=False)
-            node.update_search()
-
-    def approve_retraction(self, user, token):
-        self.approve(user, token)
-
-    def disapprove_retraction(self, user, token):
-        self.reject(user, token)
-
-
-class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
-
-    DISPLAY_NAME = 'Approval'
-    SHORT_NAME = 'registration_approval'
-
-    AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_REGISTRATION_ADMIN
-    NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_REGISTRATION_NON_ADMIN
-
-    VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
-    APPROVE_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
-    REJECT_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
-
-    initiated_by = fields.ForeignField('user')
-
-    def _get_registration(self):
-        return Node.find_one(Q('registration_approval', 'eq', self))
-
-    def _view_url_context(self, user_id, node):
-        user_approval_state = self.approval_state.get(user_id, {})
-        node_id = user_approval_state.get('node_id', node._id)
-        return {
-            'node_id': node_id
-        }
-
-    def _approval_url_context(self, user_id):
-        user_approval_state = self.approval_state.get(user_id, {})
-        approval_token = user_approval_state.get('approval_token')
-        if approval_token:
-            registration = self._get_registration()
-            node_id = user_approval_state.get('node_id', registration._id)
-            return {
-                'node_id': node_id,
-                'token': approval_token,
-            }
-
-    def _rejection_url_context(self, user_id):
-        user_approval_state = self.approval_state.get(user_id, {})
-        rejection_token = self.approval_state.get(user_id, {}).get('rejection_token')
-        if rejection_token:
-            root_registration = self._get_registration()
-            node_id = user_approval_state.get('node_id', root_registration._id)
-            registration = Node.load(node_id)
-            return {
-                'node_id': registration.registered_from._id,
-                'token': rejection_token,
-            }
-
-    def _email_template_context(self, user, node, is_authorizer=False, urls=None):
-        context = super(RegistrationApproval, self)._email_template_context(user, node, is_authorizer, urls)
-        urls = urls or self.stashed_urls.get(user._id, {})
-        registration_link = urls.get('view', self._view_url(user._id, node))
-        if is_authorizer:
-            approval_link = urls.get('approve', '')
-            disapproval_link = urls.get('reject', '')
-
-            approval_time_span = settings.REGISTRATION_APPROVAL_TIME.days * 24
-
-            registration = self._get_registration()
-
-            context.update({
-                'is_initiator': self.initiated_by == user,
-                'initiated_by': self.initiated_by.fullname,
-                'registration_link': registration_link,
-                'approval_link': approval_link,
-                'disapproval_link': disapproval_link,
-                'approval_time_span': approval_time_span,
-                'project_name': registration.title,
-            })
-        else:
-            context.update({
-                'initiated_by': self.initiated_by.fullname,
-                'registration_link': registration_link,
-            })
-        return context
-
-    def _add_success_logs(self, node, user):
-        src = node.registered_from
-        src.add_log(
-            action=NodeLog.PROJECT_REGISTERED,
-            params={
-                'parent_node': src.parent_id,
-                'node': src._primary_key,
-                'registration': node._primary_key,
-            },
-            auth=Auth(user),
-            save=False
-        )
-        src.save()
-
-    def _on_complete(self, user):
-        super(RegistrationApproval, self)._on_complete(user)
-        self.state = Sanction.APPROVED
-        register = self._get_registration()
-        registered_from = register.registered_from
-        # Pass auth=None because the registration initiator may not be
-        # an admin on components (component admins had the opportunity
-        # to disapprove the registration by this point)
-        register.set_privacy('public', auth=None, log=False)
-        for child in register.get_descendants_recursive(lambda n: n.primary):
-            child.set_privacy('public', auth=None, log=False)
-        # Accounts for system actions where no `User` performs the final approval
-        auth = Auth(user) if user else None
-        registered_from.add_log(
-            action=NodeLog.REGISTRATION_APPROVAL_APPROVED,
-            params={
-                'node': registered_from._id,
-                'registration': register._id,
-                'registration_approval_id': self._id,
-            },
-            auth=auth,
-        )
-        for node in register.root.node_and_primary_descendants():
-            self._add_success_logs(node, user)
-            node.update_search()  # update search if public
-
-        self.save()
-
-    def _on_reject(self, user):
-        register = self._get_registration()
-        registered_from = register.registered_from
-        register.delete_registration_tree(save=True)
-        registered_from.add_log(
-            action=NodeLog.REGISTRATION_APPROVAL_CANCELLED,
-            params={
-                'node': registered_from._id,
-                'registration': register._id,
-                'registration_approval_id': self._id,
-            },
-            auth=Auth(user),
-        )
-
 class AlternativeCitation(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
     name = fields.StringField(required=True, validate=MaxLengthValidator(256))
@@ -4420,74 +3768,30 @@ class AlternativeCitation(StoredObject):
             "text": self.text
         }
 
-class DraftRegistrationApproval(Sanction):
 
-    mode = Sanction.ANY
+class DraftRegistrationLog(StoredObject):
+    """ Simple log to show status changes for DraftRegistrations
 
-    # Since draft registrations that require approval are not immediately registered,
-    # meta stores registration_choice and embargo_end_date (when applicable)
-    meta = fields.DictionaryField(default=dict)
+    field - _id - primary key
+    field - date - date of the action took place
+    field - action - simple action to track what happened
+    field - user - user who did the action
+    """
+    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+    date = fields.DateTimeField(default=datetime.datetime.utcnow)
+    action = fields.StringField()
+    draft = fields.ForeignField('draftregistration', index=True)
+    user = fields.ForeignField('user')
 
-    def _send_rejection_email(self, user, draft):
-        schema = draft.registration_schema
-        prereg_schema = prereg_utils.get_prereg_schema()
+    SUBMITTED = 'submitted'
+    REGISTERED = 'registered'
+    APPROVED = 'approved'
+    REJECTED = 'rejected'
 
-        if schema._id == prereg_schema._id:
-            mails.send_mail(
-                user.username,
-                mails.PREREG_CHALLENGE_REJECTED,
-                user=user,
-                draft_url=draft.absolute_url
-            )
-        else:
-            raise NotImplementedError(
-                'TODO: add a generic email template for registration approvals'
-            )
-
-    def approve(self, user):
-        if settings.PREREG_ADMIN_TAG not in user.system_tags:
-            raise PermissionsError("This user does not have permission to approve this draft.")
-        self.state = Sanction.APPROVED
-        self._on_complete(user)
-
-    def reject(self, user):
-        if settings.PREREG_ADMIN_TAG not in user.system_tags:
-            raise PermissionsError("This user does not have permission to approve this draft.")
-        self.state = Sanction.REJECTED
-        self._on_reject(user)
-
-    def _on_complete(self, user):
-        draft = DraftRegistration.find_one(
-            Q('approval', 'eq', self)
-        )
-        auth = Auth(draft.initiator)
-        registration = draft.register(
-            auth=auth,
-            save=True
-        )
-        registration_choice = self.meta['registration_choice']
-
-        if registration_choice == 'immediate':
-            sanction = functools.partial(registration.require_approval, draft.initiator)
-        elif registration_choice == 'embargo':
-            sanction = functools.partial(
-                registration.embargo_registration,
-                draft.initiator,
-                parse_date(self.meta.get('embargo_end_date'), ignoretz=True)
-            )
-        else:
-            raise ValueError("'registration_choice' must be either 'embargo' or 'immediate'")
-        sanction(notify_initiator_on_complete=True)
-
-    def _on_reject(self, user, *args, **kwargs):
-        # clear out previous registration options
-        self.meta = {}
-        self.save()
-
-        draft = DraftRegistration.find_one(
-            Q('approval', 'eq', self)
-        )
-        self._send_rejection_email(draft.initiator, draft)
+    def __repr__(self):
+        return ('<DraftRegistrationLog({self.action!r}, date={self.date!r}), '
+                'user={self.user!r} '
+                'with id {self._id!r}>').format(self=self)
 
 
 class DraftRegistration(StoredObject):
@@ -4527,6 +3831,10 @@ class DraftRegistration(StoredObject):
     # values. Defaults should be provided in the schema (e.g. 'paymentSent': false),
     # and these values are added to the DraftRegistration
     _metaschema_flags = fields.DictionaryField(default=None)
+
+    def __repr__(self):
+        return '<DraftRegistration(branched_from={self.branched_from!r}) with id {self._id!r}>'.format(self=self)
+
     # lazily set flags
     @property
     def flags(self):
@@ -4536,10 +3844,13 @@ class DraftRegistration(StoredObject):
         if meta_schema:
             schema = meta_schema.schema
             flags = schema.get('flags', {})
+            dirty = False
             for flag, value in flags.iteritems():
                 if flag not in self._metaschema_flags:
                     self._metaschema_flags[flag] = value
-            self.save()
+                    dirty = True
+            if dirty:
+                self.save()
         return self._metaschema_flags
 
     @flags.setter
@@ -4587,6 +3898,11 @@ class DraftRegistration(StoredObject):
         else:
             return False
 
+    @property
+    def status_logs(self):
+        """ List of logs associated with this node"""
+        return DraftRegistrationLog.find(Q('draft', 'eq', self._id)).sort('date')
+
     @classmethod
     def create_from_node(cls, node, user, schema, data=None):
         draft = cls(
@@ -4599,30 +3915,29 @@ class DraftRegistration(StoredObject):
         return draft
 
     def update_metadata(self, metadata):
-        if self.is_approved:
-            return []
-
         changes = []
-        for question_id, value in metadata.iteritems():
-            old_value = self.registration_metadata.get(question_id)
-            if old_value:
-                old_comments = {
-                    comment['created']: comment
-                    for comment in old_value.get('comments', [])
-                }
-                new_comments = {
-                    comment['created']: comment
-                    for comment in value.get('comments', [])
-                }
-                old_comments.update(new_comments)
-                metadata[question_id]['comments'] = sorted(
-                    old_comments.values(),
-                    key=lambda c: c['created']
-                )
-                if old_value.get('value') != value.get('value'):
+        # Prevent comments on approved drafts
+        if not self.is_approved:
+            for question_id, value in metadata.iteritems():
+                old_value = self.registration_metadata.get(question_id)
+                if old_value:
+                    old_comments = {
+                        comment['created']: comment
+                        for comment in old_value.get('comments', [])
+                    }
+                    new_comments = {
+                        comment['created']: comment
+                        for comment in value.get('comments', [])
+                    }
+                    old_comments.update(new_comments)
+                    metadata[question_id]['comments'] = sorted(
+                        old_comments.values(),
+                        key=lambda c: c['created']
+                    )
+                    if old_value.get('value') != value.get('value'):
+                        changes.append(question_id)
+                else:
                     changes.append(question_id)
-            else:
-                changes.append(question_id)
         self.registration_metadata.update(metadata)
         return changes
 
@@ -4633,6 +3948,7 @@ class DraftRegistration(StoredObject):
         )
         approval.save()
         self.approval = approval
+        self.add_status_log(initiated_by, DraftRegistrationLog.SUBMITTED)
         if save:
             self.save()
 
@@ -4646,14 +3962,21 @@ class DraftRegistration(StoredObject):
             data=self.registration_metadata
         )
         self.registered_node = register
+        self.add_status_log(auth.user, DraftRegistrationLog.REGISTERED)
         if save:
             self.save()
         return register
 
     def approve(self, user):
         self.approval.approve(user)
+        self.add_status_log(user, DraftRegistrationLog.APPROVED)
         self.approval.save()
 
     def reject(self, user):
         self.approval.reject(user)
+        self.add_status_log(user, DraftRegistrationLog.REJECTED)
         self.approval.save()
+
+    def add_status_log(self, user, action):
+        log = DraftRegistrationLog(action=action, user=user, draft=self)
+        log.save()

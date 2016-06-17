@@ -6,7 +6,7 @@ from itertools import islice
 
 from flask import request
 from modularodm import Q
-from modularodm.exceptions import ModularOdmException, ValidationValueError, NoResultsFound
+from modularodm.exceptions import ModularOdmException, ValidationValueError
 
 from framework import status
 from framework.utils import iso8601format
@@ -24,7 +24,6 @@ from website.project import new_node, new_private_link
 from website.project.decorators import (
     must_be_contributor_or_public_but_not_anonymized,
     must_be_contributor_or_public,
-    must_be_contributor,
     must_be_valid_project,
     must_have_permission,
     must_not_be_registration,
@@ -33,7 +32,7 @@ from website.project.decorators import (
 from website.tokens import process_token_or_pass
 from website.util.permissions import ADMIN, READ, WRITE, CREATOR_PERMISSIONS
 from website.util.rubeus import collect_addon_js
-from website.project.model import has_anonymous_link, get_pointer_parent, NodeUpdateError, validate_title, Institution
+from website.project.model import has_anonymous_link, get_pointer_parent, NodeUpdateError, validate_title
 from website.project.forms import NewNodeForm
 from website.project.metadata.utils import serialize_meta_schemas
 from website.models import Node, Pointer, WatchConfig, PrivateLink, Comment
@@ -43,6 +42,7 @@ from website.profile import utils
 from website.project.licenses import serialize_node_license_record
 from website.util.sanitize import strip_html
 from website.util import rapply
+
 
 r_strip_html = lambda collection: rapply(collection, strip_html)
 logger = logging.getLogger(__name__)
@@ -55,6 +55,7 @@ def edit_node(auth, node, **kwargs):
     edited_field = post_data.get('name')
     value = post_data.get('value', '')
 
+    new_val = None
     if edited_field == 'title':
         try:
             node.set_title(value, auth=auth)
@@ -63,10 +64,24 @@ def edit_node(auth, node, **kwargs):
                 http.BAD_REQUEST,
                 data=dict(message_long=e.message)
             )
+        new_val = node.title
     elif edited_field == 'description':
         node.set_description(value, auth=auth)
-    node.save()
-    return {'status': 'success'}
+        new_val = node.description
+    elif edited_field == 'category':
+        node.category = new_val = value
+
+    try:
+        node.save()
+    except ValidationValueError as e:
+        raise HTTPError(
+            http.BAD_REQUEST,
+            data=dict(message_long=e.message)
+        )
+    return {
+        'status': 'success',
+        'newValue': new_val  # Used by x-editable  widget to reflect changes made by sanitizer
+    }
 
 
 ##############################################################################
@@ -246,19 +261,11 @@ def node_forks(auth, node, **kwargs):
 
 @must_be_valid_project
 @must_be_logged_in
-@must_be_contributor
+@must_have_permission(READ)
 def node_setting(auth, node, **kwargs):
 
-    #check institutions:
-    try:
-        email_domains = [email.split('@')[1] for email in auth.user.emails]
-        inst = Institution.find_one(Q('email_domains', 'in', email_domains))
-        if inst not in auth.user.affiliated_institutions:
-            auth.user.affiliated_institutions.append(inst)
-            auth.user.save()
-    except (IndexError, NoResultsFound):
-        pass
-
+    auth.user.update_affiliated_institutions_by_email_domain()
+    auth.user.save()
     ret = _view_project(node, auth, primary=True)
 
     addons_enabled = []
@@ -537,7 +544,7 @@ def togglewatch_post(auth, node, **kwargs):
 @must_have_permission(WRITE)
 def update_node(auth, node, **kwargs):
     # in node.update() method there is a key list node.WRITABLE_WHITELIST only allow user to modify
-    # category, title, and discription which can be edited by write permission contributor
+    # category, title, and description which can be edited by write permission contributor
     data = r_strip_html(request.get_json())
     try:
         updated_field_names = node.update(data, auth=auth)
@@ -652,6 +659,13 @@ def _view_project(node, auth, primary=False):
     widgets, configs, js, css = _render_addon(node)
     redirect_url = node.url + '?view_only=None'
 
+    disapproval_link = ''
+    if (node.is_pending_registration and node.has_permission(user, ADMIN)):
+        disapproval_link = node.root.registration_approval.stashed_urls.get(user._id, {}).get('reject', '')
+
+    if (node.is_pending_embargo and node.has_permission(user, ADMIN)):
+        disapproval_link = node.root.embargo.stashed_urls.get(user._id, {}).get('reject', '')
+
     # Before page load callback; skip if not primary call
     if primary:
         for addon in node.get_addons():
@@ -660,6 +674,7 @@ def _view_project(node, auth, primary=False):
                 status.push_status_message(message, kind='info', dismissible=False, trust=True)
     data = {
         'node': {
+            'disapproval_link': disapproval_link,
             'id': node._primary_key,
             'title': node.title,
             'category': node.category_display,
@@ -687,6 +702,11 @@ def _view_project(node, auth, primary=False):
             'retracted_justification': getattr(node.retraction, 'justification', None),
             'embargo_end_date': node.embargo_end_date.strftime("%A, %b. %d, %Y") if node.embargo_end_date else False,
             'is_pending_embargo': node.is_pending_embargo,
+            'is_embargoed': node.is_embargoed,
+            'is_pending_embargo_termination': node.is_embargoed and (
+                node.embargo_termination_approval and
+                node.embargo_termination_approval.is_pending_approval
+            ),
             'registered_from_url': node.registered_from.url if node.is_registration else '',
             'registered_date': iso8601format(node.registered_date) if node.is_registration else '',
             'root_id': node.root._id if node.root else None,
@@ -712,11 +732,7 @@ def _view_project(node, auth, primary=False):
                 'doi': node.get_identifier_value('doi'),
                 'ark': node.get_identifier_value('ark'),
             },
-            'institution': {
-                'name': node.primary_institution.name if node.primary_institution else None,
-                'logo_path': node.primary_institution.logo_path if node.primary_institution else None,
-                'id': node.primary_institution._id if node.primary_institution else None
-            },
+            'institutions': get_affiliated_institutions(node) if node else [],
             'alternative_citations': [citation.to_json() for citation in node.alternative_citations],
             'has_draft_registrations': node.has_active_draft_registrations,
             'contributors': [contributor._id for contributor in node.contributors]
@@ -750,6 +766,7 @@ def _view_project(node, auth, primary=False):
             'can_comment': node.can_comment(auth),
             'show_wiki_widget': _should_show_wiki_widget(node, user),
             'dashboard_id': bookmark_collection_id,
+            'institutions': get_affiliated_institutions(user) if user else [],
         },
         'badges': _get_badge(user),
         # TODO: Namespace with nested dicts
@@ -762,6 +779,15 @@ def _view_project(node, auth, primary=False):
     }
     return data
 
+def get_affiliated_institutions(obj):
+    ret = []
+    for institution in obj.affiliated_institutions:
+        ret.append({
+            'name': institution.name,
+            'logo_path': institution.logo_path,
+            'id': institution._id,
+        })
+    return ret
 
 def _get_badge(user):
     if user:
@@ -835,6 +861,7 @@ def _get_summary(node, auth, primary=True, link_id=None, show_path=False):
         'is_pending_retraction': node.is_pending_retraction,
         'embargo_end_date': node.embargo_end_date.strftime("%A, %b. %d, %Y") if node.embargo_end_date else False,
         'is_pending_embargo': node.is_pending_embargo,
+        'is_embargoed': node.is_embargoed,
         'archiving': node.archiving,
     }
 
@@ -912,11 +939,12 @@ def node_child_tree(user, node_ids):
     """ Format data to test for node privacy settings for use in treebeard.
     """
     items = []
+
     for node_id in node_ids:
         node = Node.load(node_id)
         assert node, '{} is not a valid Node.'.format(node_id)
 
-        can_read = node.has_permission(user, 'read')
+        can_read = node.has_permission(user, READ)
         can_read_children = node.has_permission_on_children(user, 'read')
         if not can_read and not can_read_children:
             continue
@@ -929,10 +957,14 @@ def node_child_tree(user, node_ids):
                 'is_confirmed': contributor.is_confirmed
             })
 
+        affiliated_institutions = [{
+            'id': affiliated_institution.pk,
+            'name': affiliated_institution.name
+        } for affiliated_institution in node.affiliated_institutions]
+
         children = []
         # List project/node if user has at least 'read' permissions (contributor or admin viewer) or if
         # user is contributor on a component of the project/node
-        can_write = node.has_permission(user, 'admin')
         children.extend(node_child_tree(
             user,
             [
@@ -948,10 +980,10 @@ def node_child_tree(user, node_ids):
                 'url': node.url if can_read else '',
                 'title': node.title if can_read else 'Private Project',
                 'is_public': node.is_public,
-                'can_write': can_write,
                 'contributors': contributors,
                 'visible_contributors': node.visible_contributor_ids,
-                'is_admin': node.has_permission(user, ADMIN)
+                'is_admin': node.has_permission(user, ADMIN),
+                'affiliated_institutions': affiliated_institutions
             },
             'user_id': user._id,
             'children': children,
@@ -960,6 +992,7 @@ def node_child_tree(user, node_ids):
             'category': node.category,
             'permissions': {
                 'view': can_read,
+                'is_admin': node.has_permission(user, 'read')
             }
         }
 
@@ -983,8 +1016,10 @@ def get_forks(auth, node, **kwargs):
 
 @must_be_contributor_or_public
 def get_registrations(auth, node, **kwargs):
-    registrations = [n for n in reversed(node.registrations_all) if not n.is_deleted]  # get all registrations, including archiving
-    return _render_nodes(registrations, auth)
+    # get all undeleted registrations, including archiving
+    sorted_registrations = node.registrations_all.sort('-registered_date')
+    undeleted_registrations = [n for n in sorted_registrations if not n.is_deleted]
+    return _render_nodes(undeleted_registrations, auth)
 
 
 @must_be_valid_project

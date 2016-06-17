@@ -1,7 +1,7 @@
 var $ = require('jquery');
 var ko = require('knockout');
 var m = require('mithril');
-var bootbox = require('bootbox');
+var bootbox = require('bootbox');  // TODO: Why is this required? Is it? See [#OSF-6100]
 
 var FilesWidget = require('js/filesWidget');
 var Fangorn = require('js/fangorn');
@@ -33,6 +33,7 @@ var limitContents = function(item) {
 };
 
 var filePicker;
+var filesWidgetCleanUp = [];
 var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindingContext) {
     viewModel.showUploader(true);
     viewModel.toggleUploader = function() {
@@ -50,7 +51,10 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
             // their bound settings) are persisting and being reused. This call
             // explicity removes the old controller.
             // see: http://lhorie.github.io/mithril/mithril.component.html#unloading-components
-            m.mount(document.getElementById(filePicker.fangornOpts.divID), null);
+            $.each(filesWidgetCleanUp, function( index, value ) {
+                m.mount(document.getElementById(value), null);
+            });
+            filesWidgetCleanUp = [];
 
             filePicker.destroy();
             filePicker = null;
@@ -60,10 +64,8 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
 
     var onSelectRow = function(item) {
         if (item.kind === 'file') {
-            viewModel.selectedFile(item);
+            viewModel.addFile(item);
             item.css = 'fangorn-selected';
-        } else {
-            viewModel.selectedFile(null);
         }
     };
     var fw = new FilesWidget(
@@ -136,7 +138,7 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
                         if (item.data.path === viewModel.value()) {
                             item.css = 'fangorn-selected';
                             item.data.nodeId = tree.data.nodeId;
-                            viewModel.selectedFile(item);
+                            viewModel.addFile(item);
                         }
                     }
                     Fangorn.Utils.inheritFromParent(item, tree);
@@ -154,6 +156,7 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
     fw.init().then(function() {
         viewModel.showUploader(false);
     });
+    filesWidgetCleanUp.push(filePicker.fangornOpts.divID);
 };
 
 ko.bindingHandlers.osfUploader = {
@@ -167,47 +170,99 @@ var Uploader = function(question) {
     var self = this;
 
     question.showUploader = ko.observable(false);
+    self.toggleUploader = function() {
+        question.showUploader(!question.showUploader());
+    };
     question.uid = 'uploader_' + uploaderCount;
     uploaderCount++;
-    self.selectedFile = ko.observable({});
-    self.selectedFile.subscribe(function(file) {
-        if (file) {
-            question.extra({
-                selectedFileName: file.data.name,
-                nodeId: file.data.nodeId,
-                viewUrl: '/project/' + file.data.nodeId + '/files/osfstorage' + file.data.path,
-                sha256: file.data.extra.hashes.sha256,
-                hasSelectedFile: true
-            });
-            question.value(file.data.name);
-        }
-        else {
-            question.extra({
-                selectedFileName: NO_FILE
-            });
-            question.value(NO_FILE);
-        }
-    });
-    self.hasSelectedFile = ko.computed(function() {
-        return !!(question.extra().viewUrl);
-    });
-    self.unselectFile = function() {
-        self.selectedFile(null);
-        question.extra({
-            selectedFileName: NO_FILE
+    self.selectedFiles = ko.observableArray(question.extra() || []);
+    self.selectedFiles.subscribe(function(fileList) {
+        $.each(fileList, function(idx, file) {
+            if (file && !self.fileAlreadySelected(file)) {
+                question.extra().push(file);
+            }
         });
+        question.value(question.formattedFileList());
+    });
+    self.fileWarn = ko.observable(true);
+
+    self.UPLOAD_LANGUAGE = 'You may attach up to 5 files to this question. You may attach files that you already have ' +
+        'in this OSF project, or upload a new file from your computer. Uploaded files will automatically be added to this project ' +
+        'so that they can be registered.';
+
+    self.addFile = function(file) {
+        if(self.selectedFiles().length >= 5 && self.fileWarn()) {
+            self.fileWarn(false);
+            bootbox.alert({
+                title: 'Too many files',
+                message: 'You cannot attach more than 5 files to a question.',
+                buttons: {
+                    ok: {
+                        label: 'Close',
+                        className: 'btn-default'
+                    }
+                }
+            }).css({ 'top': '35%' });
+            return false;
+        } else if(self.selectedFiles().length >= 5 && !self.fileWarn()) {
+            return false;
+        }
+        if(self.fileAlreadySelected(file))
+            return false;
+
+        self.selectedFiles.push({
+            data: file.data,
+            selectedFileName: file.data.name,
+            nodeId: file.data.nodeId,
+            viewUrl: '/project/' + file.data.nodeId + '/files/osfstorage' + file.data.path,
+            sha256: file.data.extra.hashes.sha256
+        });
+        return true;
+    };
+
+
+    self.fileAlreadySelected = function(file) {
+        var selected = false;
+        $.each(question.extra(), function(idx, alreadyFile) {
+            if(alreadyFile.selectedFileName === file.data.name && alreadyFile.sha256 === file.data.extra.hashes.sha256){
+                selected = true;
+                return;
+            }
+        });
+        return selected;
+    };
+
+    self.hasSelectedFile = ko.computed(function() {
+        return question.extra().length !== 0;
+    });
+    self.unselectFile = function(fileToRemove) {
+
+        var files = question.extra();
+
+        for (var i = 0; i < files.length; i++) {
+            var file = files[i];
+            if(file.sha256 === fileToRemove.sha256) {
+                self.selectedFiles.splice(i, 1);
+                question.value(question.formattedFileList());
+                break;
+            }
+        }
     };
 
     self.filePicker = null;
 
     self.preview = function() {
         var value = question.value();
-        if (!value || value === NO_FILE) {
+        if (!value || value === NO_FILE || question.extra().length === 0) {
             return 'no file selected';
         }
         else {
-            var extra = question.extra();
-            return $('<a target="_blank" href="' + extra.viewUrl + '">' + $osf.htmlEscape(extra.selectedFileName) + '</a>');
+            var files = question.extra();
+            var elem = '';
+            $.each(files, function(_, file) {
+                elem += '<a target="_blank" href="' + file.viewUrl + '">' + $osf.htmlEscape(file.selectedFileName) + ' </a>' + '</br>';
+            });
+            return $(elem);
         }
     };
 
@@ -261,7 +316,7 @@ var AuthorImport = function(data, $root, preview) {
     }
 
     self.preview = function() {
-        return self.value();
+        return $osf.htmlEscape(self.value());
     };
     var callback = function(data) {
         self.question.value(self.serializeContributors(data.contributors));

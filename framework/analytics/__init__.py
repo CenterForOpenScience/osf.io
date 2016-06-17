@@ -5,14 +5,16 @@ import functools
 from datetime import datetime
 
 from framework.mongo import database
+from framework.postcommit_tasks.handlers import run_postcommit
 from framework.sessions import session
+from framework.celery_tasks import app
 
 from flask import request
 
-
 collection = database['pagecounters']
 
-
+@run_postcommit(once_per_request=False, celery=True)
+@app.task(max_retries=5, default_retry_delay=60)
 def increment_user_activity_counters(user_id, action, date, db=None):
     db = db or database  # default to local proxy
     collection = database['useractivitycounters']
@@ -70,7 +72,6 @@ def build_page(rex, kwargs):
         return rex.format(**data)
     except KeyError:
         return None
-
 
 def update_counter(page, db=None):
     """Update counters for page.

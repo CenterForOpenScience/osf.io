@@ -24,6 +24,7 @@ logging.getLogger('invoke').setLevel(logging.CRITICAL)
 # gets the root path for all the scripts that rely on it
 HERE = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 WHEELHOUSE_PATH = os.environ.get('WHEELHOUSE')
+CONSTRAINTS_PATH = os.path.join(HERE, 'requirements', 'constraints.txt')
 
 try:
     __import__('rednose')
@@ -75,10 +76,10 @@ def git_logs():
 
 
 @task
-def apiserver(port=8000, wait=True):
+def apiserver(port=8000, wait=True, host='127.0.0.1'):
     """Run the API server."""
     env = os.environ.copy()
-    cmd = 'DJANGO_SETTINGS_MODULE=api.base.settings {} manage.py runserver {} --nothreading'.format(sys.executable, port)
+    cmd = 'DJANGO_SETTINGS_MODULE=api.base.settings {} manage.py runserver {}:{} --nothreading'.format(sys.executable, host, port)
     if wait:
         return run(cmd, echo=True, pty=True)
     from subprocess import Popen
@@ -87,10 +88,10 @@ def apiserver(port=8000, wait=True):
 
 
 @task
-def adminserver(port=8001):
+def adminserver(port=8001, host='127.0.0.1'):
     """Run the Admin server."""
     env = 'DJANGO_SETTINGS_MODULE="admin.base.settings"'
-    cmd = '{} python manage.py runserver {} --nothreading'.format(env, port)
+    cmd = '{} python manage.py runserver {}:{} --nothreading'.format(env, host, port)
     run(cmd, echo=True, pty=True)
 
 
@@ -359,7 +360,7 @@ def celery_worker(level="debug", hostname=None, beat=False):
 def celery_beat(level="debug", schedule=None):
     """Run the Celery process."""
     # beat sets up a cron like scheduler, refer to website/settings
-    cmd = 'celery beat -A framework.celery_tasks -l {0}'.format(level)
+    cmd = 'celery beat -A framework.celery_tasks -l {0} --pidfile='.format(level)
     if schedule:
         cmd = cmd + ' --schedule={}'.format(schedule)
     run(bin_prefix(cmd), pty=True)
@@ -451,17 +452,29 @@ def requirements(base=False, addons=False, release=False, dev=False, metrics=Fal
     # "release" takes precedence
     if release:
         req_file = os.path.join(HERE, 'requirements', 'release.txt')
-        run(pip_install(req_file), echo=True)
+        run(
+            pip_install(req_file, constraints_file=CONSTRAINTS_PATH),
+            echo=True
+        )
     else:
         if dev:  # then dev requirements
             req_file = os.path.join(HERE, 'requirements', 'dev.txt')
-            run(pip_install(req_file), echo=True)
+            run(
+                pip_install(req_file, constraints_file=CONSTRAINTS_PATH),
+                echo=True
+            )
         if metrics:  # then dev requirements
             req_file = os.path.join(HERE, 'requirements', 'metrics.txt')
-            run(pip_install(req_file), echo=True)
+            run(
+                pip_install(req_file, constraints_file=CONSTRAINTS_PATH),
+                echo=True
+            )
         if base:  # then base requirements
             req_file = os.path.join(HERE, 'requirements.txt')
-            run(pip_install(req_file), echo=True)
+            run(
+                pip_install(req_file, constraints_file=CONSTRAINTS_PATH),
+                echo=True
+            )
 
 
 @task
@@ -573,7 +586,7 @@ def karma(single=False, sauce=False, browsers=None):
 
 @task
 def wheelhouse(addons=False, release=False, dev=False, metrics=False):
-    """Install python dependencies.
+    """Build wheels for python dependencies.
 
     Examples:
 
@@ -607,18 +620,16 @@ def addon_requirements():
     """Install all addon requirements."""
     for directory in os.listdir(settings.ADDON_PATH):
         path = os.path.join(settings.ADDON_PATH, directory)
-        if os.path.isdir(path):
-            try:
-                requirements_file = os.path.join(path, 'requirements.txt')
-                open(requirements_file)
-                print('Installing requirements for {0}'.format(directory))
-                cmd = 'pip install --exists-action w --upgrade -r {0}'.format(requirements_file)
-                if WHEELHOUSE_PATH:
-                    cmd += ' --no-index --find-links={}'.format(WHEELHOUSE_PATH)
-                run(bin_prefix(cmd))
-            except IOError:
-                pass
-    print('Finished')
+
+        requirements_file = os.path.join(path, 'requirements.txt')
+        if os.path.isdir(path) and os.path.isfile(requirements_file):
+            print('Installing requirements for {0}'.format(directory))
+            run(
+                pip_install(requirements_file, constraints_file=CONSTRAINTS_PATH),
+                echo=True
+            )
+
+    print('Finished installing addon requirements')
 
 
 @task
@@ -880,18 +891,17 @@ def clean_assets():
 
 
 @task(aliases=['pack'])
-def webpack(clean=False, watch=False, dev=False):
+def webpack(clean=False, watch=False, dev=False, colors=False):
     """Build static assets with webpack."""
     if clean:
         clean_assets()
     webpack_bin = os.path.join(HERE, 'node_modules', 'webpack', 'bin', 'webpack.js')
     args = [webpack_bin]
-    if settings.DEBUG_MODE and dev:
-        args += ['--colors']
-    else:
-        args += ['--progress']
+    args += ['--progress']
     if watch:
         args += ['--watch']
+    if colors:
+        args += ['--colors']
     config_file = 'webpack.dev.config.js' if dev else 'webpack.prod.config.js'
     args += ['--config {0}'.format(config_file)]
     command = ' '.join(args)

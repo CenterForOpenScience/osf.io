@@ -8,15 +8,16 @@ from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 
 from website.models import Node, User, Comment, Institution
-from website.exceptions import NodeStateError, UserNotAffiliatedError
+from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
 from website.project.model import NodeUpdateError
 
 from api.base.utils import get_user_auth, get_object_or_error, absolute_reverse
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
                                   TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly,
-                                  HideIfRegistration)
-from api.base.exceptions import InvalidModelValueError
+                                  HideIfRegistration, RestrictedDictSerializer,
+                                  JSONAPIRelationshipSerializer, relationship_diff)
+from api.base.exceptions import InvalidModelValueError, RelationshipPostMakesNoChanges
 
 
 class NodeTagField(ser.Field):
@@ -27,6 +28,12 @@ class NodeTagField(ser.Field):
 
     def to_internal_value(self, data):
         return data
+
+
+class NodeLicenseSerializer(RestrictedDictSerializer):
+
+    copyright_holders = ser.ListField(allow_empty=True, read_only=True)
+    year = ser.CharField(allow_blank=True, read_only=True)
 
 
 class NodeSerializer(JSONAPISerializer):
@@ -57,6 +64,7 @@ class NodeSerializer(JSONAPISerializer):
         'registration',
         'tags',
         'public',
+        'license',
         'links',
         'children',
         'comments',
@@ -66,6 +74,7 @@ class NodeSerializer(JSONAPISerializer):
         'parent',
         'root',
         'logs',
+        'wikis'
     ]
 
     id = IDField(source='_id', read_only=True)
@@ -83,6 +92,7 @@ class NodeSerializer(JSONAPISerializer):
     fork = ser.BooleanField(read_only=True, source='is_fork')
     collection = ser.BooleanField(read_only=True, source='is_collection')
     tags = JSONAPIListField(child=NodeTagField(), required=False)
+    node_license = NodeLicenseSerializer(read_only=True, required=False)
     template_from = ser.CharField(required=False, allow_blank=False, allow_null=False,
                                   help_text='Specify a node id for a node you would like to use as a template for the '
                                             'new node. Templating is like forking, except that you do not copy the '
@@ -103,6 +113,11 @@ class NodeSerializer(JSONAPISerializer):
 
     links = LinksField({'html': 'get_absolute_html_url'})
     # TODO: When we have osf_permissions.ADMIN permissions, make this writable for admins
+
+    license = RelationshipField(
+        related_view='licenses:license-detail',
+        related_view_kwargs={'license_id': '<node_license.node_license._id>'},
+    )
 
     children = RelationshipField(
         related_view='nodes:node-children',
@@ -126,9 +141,19 @@ class NodeSerializer(JSONAPISerializer):
         related_view_kwargs={'node_id': '<pk>'}
     )
 
+    wikis = RelationshipField(
+        related_view='nodes:node-wikis',
+        related_view_kwargs={'node_id': '<pk>'}
+    )
+
     forked_from = RelationshipField(
-        related_view='nodes:node-detail',
+        related_view=lambda n: 'registrations:registration-detail' if getattr(n, 'is_registration', False) else 'nodes:node-detail',
         related_view_kwargs={'node_id': '<forked_from_id>'}
+    )
+
+    forks = RelationshipField(
+        related_view='nodes:node-forks',
+        related_view_kwargs={'node_id': '<pk>'}
     )
 
     node_links = RelationshipField(
@@ -149,10 +174,10 @@ class NodeSerializer(JSONAPISerializer):
         related_meta={'count': 'get_registration_count'}
     )))
 
-    primary_institution = RelationshipField(
-        related_view='nodes:node-institution-detail',
+    affiliated_institutions = RelationshipField(
+        related_view='nodes:node-institutions',
         related_view_kwargs={'node_id': '<pk>'},
-        self_view='nodes:node-relationships-institution',
+        self_view='nodes:node-relationships-institutions',
         self_view_kwargs={'node_id': '<pk>'}
     )
 
@@ -241,8 +266,7 @@ class NodeSerializer(JSONAPISerializer):
         auth = get_user_auth(self.context['request'])
         old_tags = set([tag._id for tag in node.tags])
         if 'tags' in validated_data:
-            current_tags = set(validated_data.get('tags'))
-            del validated_data['tags']
+            current_tags = set(validated_data.pop('tags', []))
         elif self.partial:
             current_tags = set(old_tags)
         else:
@@ -262,6 +286,8 @@ class NodeSerializer(JSONAPISerializer):
                 raise exceptions.PermissionDenied
             except NodeUpdateError as e:
                 raise exceptions.ValidationError(detail=e.reason)
+            except NodeStateError as e:
+                raise InvalidModelValueError(detail=e.message)
 
         return node
 
@@ -271,6 +297,30 @@ class NodeDetailSerializer(NodeSerializer):
     Overrides NodeSerializer to make id required.
     """
     id = IDField(source='_id', required=True)
+
+
+class NodeForksSerializer(NodeSerializer):
+
+    category_choices = Node.CATEGORY_MAP.items()
+    category_choices_string = ', '.join(["'{}'".format(choice[0]) for choice in category_choices])
+
+    title = ser.CharField(required=False)
+    category = ser.ChoiceField(read_only=True, choices=category_choices, help_text="Choices: " + category_choices_string)
+    forked_date = ser.DateTimeField(read_only=True)
+
+    def create(self, validated_data):
+        node = validated_data.pop('node')
+        fork_title = validated_data.pop('title', 'Fork of ')
+        request = self.context['request']
+        auth = get_user_auth(request)
+        fork = node.fork_node(auth, title=fork_title)
+
+        try:
+            fork.save()
+        except ValidationValueError as e:
+            raise InvalidModelValueError(detail=e.message)
+
+        return fork
 
 
 class NodeContributorsSerializer(JSONAPISerializer):
@@ -291,6 +341,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
     permission = ser.ChoiceField(choices=osf_permissions.PERMISSIONS, required=False, allow_null=True,
                                  default=osf_permissions.reduce_permissions(osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS),
                                  help_text='User permission level. Must be "read", "write", or "admin". Defaults to "write".')
+    unregistered_contributor = ser.SerializerMethodField()
 
     links = LinksField({
         'self': 'get_absolute_url'
@@ -315,6 +366,10 @@ class NodeContributorsSerializer(JSONAPISerializer):
             }
         )
 
+    def get_unregistered_contributor(self, obj):
+        unclaimed_records = obj.unclaimed_records.get(obj.node_id, None)
+        if unclaimed_records:
+            return unclaimed_records.get('name', None)
 
 class NodeContributorsCreateSerializer(NodeContributorsSerializer):
     """
@@ -354,6 +409,8 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
         try:
             node.update_contributor(contributor, permission, visible, auth, save=True)
         except NodeStateError as e:
+            raise exceptions.ValidationError(detail=e.message)
+        except ValueError as e:
             raise exceptions.ValidationError(detail=e.message)
         contributor.permission = osf_permissions.reduce_permissions(node.get_permissions(contributor))
         contributor.bibliographic = node.get_visible(contributor)
@@ -454,58 +511,88 @@ class NodeProviderSerializer(JSONAPISerializer):
             }
         )
 
+class InstitutionRelated(JSONAPIRelationshipSerializer):
+    id = ser.CharField(source='_id', required=False, allow_null=True)
+    class Meta:
+        type_ = 'institutions'
 
-class NodeInstitutionRelationshipSerializer(ser.Serializer):
-    id = ser.CharField(source='institution_id', required=False, allow_null=True)
-    type = TypeField(required=False, allow_null=True)
+class NodeInstitutionsRelationshipSerializer(ser.Serializer):
+    data = ser.ListField(child=InstitutionRelated())
+    links = LinksField({'self': 'get_self_url',
+                        'html': 'get_related_url'})
 
-    links = LinksField({
-        'self': 'get_self_link',
-        'related': 'get_related_link',
-    })
+    def get_self_url(self, obj):
+        return obj['self'].institutions_relationship_url()
+
+    def get_related_url(self, obj):
+        return obj['self'].institutions_url()
 
     class Meta:
         type_ = 'institutions'
 
-    def get_self_link(self, obj):
-        return obj.institution_relationship_url()
+    def get_institutions_to_add_remove(self, institutions, new_institutions):
+        diff = relationship_diff(
+            current_items={inst._id: inst for inst in institutions},
+            new_items={inst['_id']: inst for inst in new_institutions}
+        )
 
-    def get_related_link(self, obj):
-        return obj.institution_url()
+        insts_to_add = []
+        for inst_id in diff['add']:
+            inst = Institution.load(inst_id)
+            if not inst:
+                raise exceptions.NotFound(detail='Institution with id "{}" was not found'.format(inst_id))
+            insts_to_add.append(inst)
+
+        return insts_to_add, diff['remove'].values()
+
+    def make_instance_obj(self, obj):
+        return {
+            'data': obj.affiliated_institutions,
+            'self': obj
+        }
 
     def update(self, instance, validated_data):
-        node = instance
+        node = instance['self']
         user = self.context['request'].user
 
-        inst = validated_data.get('institution_id', None)
-        if inst:
-            inst = Institution.load(inst)
-            if not inst:
-                raise exceptions.NotFound
-            try:
-                node.add_primary_institution(inst=inst, user=user)
-            except UserNotAffiliatedError:
-                raise exceptions.ValidationError(detail='User not affiliated with institution')
-            node.save()
-            return node
-        node.remove_primary_institution(user)
+        add, remove = self.get_institutions_to_add_remove(
+            institutions=instance['data'],
+            new_institutions=validated_data['data']
+        )
+
+        for inst in add:
+            if inst not in user.affiliated_institutions:
+                raise exceptions.PermissionDenied(detail='User needs to be affiliated with {}'.format(inst.name))
+
+        for inst in remove:
+            node.remove_affiliated_institution(inst, user)
+        for inst in add:
+            node.add_affiliated_institution(inst, user)
         node.save()
-        return node
 
-    def to_representation(self, obj):
-        data = {}
-        meta = getattr(self, 'Meta', None)
-        type_ = getattr(meta, 'type_', None)
-        assert type_ is not None, 'Must define Meta.type_'
-        relation_id_field = self.fields['id']
-        data['data'] = None
-        if obj.primary_institution:
-            attribute = obj.primary_institution._id
-            relationship = relation_id_field.to_representation(attribute)
-            data['data'] = {'type': type_, 'id': relationship}
-        data['links'] = {key: val for key, val in self.fields.get('links').to_representation(obj).iteritems()}
+        return self.make_instance_obj(node)
 
-        return data
+    def create(self, validated_data):
+        instance = self.context['view'].get_object()
+        user = self.context['request'].user
+        node = instance['self']
+
+        add, remove = self.get_institutions_to_add_remove(
+            institutions=instance['data'],
+            new_institutions=validated_data['data']
+        )
+        if not len(add):
+            raise RelationshipPostMakesNoChanges
+
+        for inst in add:
+            if inst not in user.affiliated_institutions:
+                raise exceptions.PermissionDenied(detail='User needs to be affiliated with {}'.format(inst.name))
+
+        for inst in add:
+            node.add_affiliated_institution(inst, user)
+        node.save()
+
+        return self.make_instance_obj(node)
 
 
 class NodeAlternativeCitationSerializer(JSONAPISerializer):

@@ -6,11 +6,12 @@ from website.project.model import Q, Node
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
 
-from api.base.serializers import HideIfRetraction
+from api.base.serializers import HideIfWithdrawal
 from api.registrations.serializers import (
     RegistrationSerializer,
     RegistrationDetailSerializer,
     RegistrationContributorsSerializer,
+    RegistrationProviderSerializer
 )
 
 from api.nodes.views import (
@@ -18,7 +19,7 @@ from api.nodes.views import (
     NodeChildrenList, NodeCommentsList, NodeProvidersList, NodeLinksList,
     NodeContributorDetail, NodeFilesList, NodeLinksDetail, NodeFileDetail,
     NodeAlternativeCitationsList, NodeAlternativeCitationDetail, NodeLogList,
-    NodeInstitutionDetail, WaterButlerMixin)
+    NodeInstitutionsList, WaterButlerMixin, NodeForksList, NodeWikiList)
 
 from api.registrations.serializers import RegistrationNodeLinksSerializer, RegistrationFileSerializer
 
@@ -56,10 +57,10 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     """Node Registrations.
 
     Registrations are read-only snapshots of a project. This view is a list of all current registrations for which a user
-    has access.  A retracted registration will display a limited subset of information, namely, title, description,
-    date_created, registration, retracted, date_registered, retraction_justification, and registration supplement. All
-    other fields will be displayed as null. Additionally, the only relationships permitted to be accessed for a retraction
-    are the contributors.
+    has access.  A withdrawn registration will display a limited subset of information, namely, title, description,
+    date_created, registration, withdrawn, date_registered, withdrawal_justification, and registration supplement. All
+    other fields will be displayed as null. Additionally, the only relationships permitted to be accessed for a withdrawn
+    registration are the contributors - other relationships will return a 403.
 
     Each resource contains the full representation of the registration, meaning additional requests to an individual
     registrations's detail view are not necessary.  Unregistered nodes cannot be accessed through this endpoint.
@@ -70,24 +71,27 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
 
         name                            type               description
         =======================================================================================================
-        title                           string             Title of the registered project or component
-        description                     string             Description of the registered node
-        category                        string             Node category, must be one of the allowed values
-        date_created                    iso8601 timestamp  Timestamp that the node was created
-        date_modified                   iso8601 timestamp  Timestamp when the node was last updated
-        tags                            array of strings   List of tags that describe the registered node
-        current_user_permissions        array of strings   List of strings representing the permissions for the current user on this node
-        fork                            boolean            Is this project a fork?
-        registration                    boolean            Has this project been registered?
-        dashboard                       boolean            Is this registered node visible on the user dashboard?
-        public                          boolean            Has this registration been made publicly-visible?
-        retracted                       boolean            Has this registration been retracted?
-        date_registered                 iso8601 timestamp  Timestamp that the registration was created
-        embargo_end_date                iso8601 timestamp  When the embargo on this registration will be lifted (if applicable)
-        retraction_justification        string             Reasons for retracting the registration
-        pending_retraction              boolean            Is this registration pending retraction?
-        pending_registration_approval   boolean            Is this registration pending approval?
-        pending_embargo_approval        boolean            Is the associated Embargo awaiting approval by project admins?
+        title                           string             title of the registered project or component
+        description                     string             description of the registered node
+        category                        string             bode category, must be one of the allowed values
+        date_created                    iso8601 timestamp  timestamp that the node was created
+        date_modified                   iso8601 timestamp  timestamp when the node was last updated
+        tags                            array of strings   list of tags that describe the registered node
+        current_user_permissions        array of strings   list of strings representing the permissions for the current user on this node
+        fork                            boolean            is this project a fork?
+        registration                    boolean            has this project been registered? (always true - may be deprecated in future versions)
+        collection                      boolean            is this registered node a collection? (always false - may be deprecated in future versions)
+        node_license                    object             details of the license applied to the node
+            year                        string             date range of the license
+            copyright_holders           array of strings   holders of the applied license
+        public                          boolean            has this registration been made publicly-visible?
+        withdrawn                       boolean            has this registration been withdrawn?
+        date_registered                 iso8601 timestamp  timestamp that the registration was created
+        embargo_end_date                iso8601 timestamp  when the embargo on this registration will be lifted (if applicable)
+        withdrawal_justification        string             reasons for withdrawing the registration
+        pending_withdrawal              boolean            is this registration pending withdrawal?
+        pending_withdrawal_approval     boolean            is this registration pending approval?
+        pending_embargo_approval        boolean            is the associated Embargo awaiting approval by project admins?
         registered_meta                 dictionary         registration supplementary information
         registration_supplement         string             registration template
 
@@ -144,7 +148,7 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
             if not field_name:
                 continue
             field = self.serializer_class._declared_fields.get(field_name)
-            if isinstance(field, HideIfRetraction):
+            if isinstance(field, HideIfWithdrawal):
                 return True
         return False
 
@@ -153,11 +157,11 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
         query = self.get_query_from_request()
         blacklisted = self.is_blacklisted(query)
         nodes = Node.find(query)
-        # If attempting to filter on a blacklisted field, exclude retractions.
+        # If attempting to filter on a blacklisted field, exclude withdrawals.
         if blacklisted:
-            non_retracted_list = [node._id for node in nodes if not node.is_retracted]
-            non_retracted_nodes = Node.find(Q('_id', 'in', non_retracted_list))
-            return non_retracted_nodes
+            non_withdrawn_list = [node._id for node in nodes if not node.is_retracted]
+            non_withdrawn_nodes = Node.find(Q('_id', 'in', non_withdrawn_list))
+            return non_withdrawn_nodes
         return nodes
 
 
@@ -167,10 +171,10 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveAPIView, Registration
     Registrations are read-only snapshots of a project. This view shows details about the given registration.
 
     Each resource contains the full representation of the registration, meaning additional requests to an individual
-    registration's detail view are not necessary. A retracted registration will display a limited subset of information,
-    namely, title, description, date_created, registration, retracted, date_registered, retraction_justification, and registration
-    supplement. All other fields will be displayed as null. Additionally, the only relationships permitted to be accessed
-    for a retracted registration are the contributors.
+    registration's detail view are not necessary. A withdrawn registration will display a limited subset of information, namely, title, description,
+    date_created, registration, withdrawn, date_registered, withdrawal_justification, and registration supplement. All
+    other fields will be displayed as null. Additionally, the only relationships permitted to be accessed for a withdrawn
+    registration are the contributors - other relationships will return a 403.
 
     ##Registration Attributes
 
@@ -178,24 +182,27 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveAPIView, Registration
 
         name                            type               description
         =======================================================================================================
-        title                           string             Title of the registered project or component
-        description                     string             Description of the registered node
-        category                        string             Node category, must be one of the allowed values
-        date_created                    iso8601 timestamp  Timestamp that the node was created
-        date_modified                   iso8601 timestamp  Timestamp when the node was last updated
-        tags                            array of strings   List of tags that describe the registered node
-        current_user_permissions        array of strings   List of strings representing the permissions for the current user on this node
-        fork                            boolean            Is this project a fork?
-        registration                    boolean            Has this project been registered?
-        dashboard                       boolean            Is this registered node visible on the user dashboard?
-        public                          boolean            Has this registration been made publicly-visible?
-        retracted                       boolean            Has this registration been retracted?
-        date_registered                 iso8601 timestamp  Timestamp that the registration was created
-        embargo_end_date                iso8601 timestamp  When the embargo on this registration will be lifted (if applicable)
-        retraction_justification        string             Reasons for retracting the registration
-        pending_retraction              boolean            Is this registration pending retraction?
-        pending_registration_approval   boolean            Is this registration pending approval?
-        pending_embargo_approval        boolean            Is the associated Embargo awaiting approval by project admins?
+        title                           string             title of the registered project or component
+        description                     string             description of the registered node
+        category                        string             bode category, must be one of the allowed values
+        date_created                    iso8601 timestamp  timestamp that the node was created
+        date_modified                   iso8601 timestamp  timestamp when the node was last updated
+        tags                            array of strings   list of tags that describe the registered node
+        current_user_permissions        array of strings   list of strings representing the permissions for the current user on this node
+        fork                            boolean            is this project a fork?
+        registration                    boolean            has this project been registered? (always true - may be deprecated in future versions)
+        collection                      boolean            is this registered node a collection? (always false - may be deprecated in future versions)
+        node_license                    object             details of the license applied to the node
+            year                        string             date range of the license
+            copyright_holders           array of strings   holders of the applied license
+        public                          boolean            has this registration been made publicly-visible?
+        withdrawn                       boolean            has this registration been withdrawn?
+        date_registered                 iso8601 timestamp  timestamp that the registration was created
+        embargo_end_date                iso8601 timestamp  when the embargo on this registration will be lifted (if applicable)
+        withdrawal_justification        string             reasons for withdrawing the registration
+        pending_withdrawal              boolean            is this registration pending withdrawal?
+        pending_withdrawal_approval     boolean            is this registration pending approval?
+        pending_embargo_approval        boolean            is the associated Embargo awaiting approval by project admins?
         registered_meta                 dictionary         registration supplementary information
         registration_supplement         string             registration template
 
@@ -275,6 +282,9 @@ class RegistrationChildrenList(NodeChildrenList, RegistrationMixin):
         query = base_query & permission_query
         return query
 
+class RegistrationForksList(NodeForksList, RegistrationMixin):
+    view_category = 'registrations'
+    view_name = 'registration-forks'
 
 class RegistrationCommentsList(NodeCommentsList, RegistrationMixin):
     view_category = 'registrations'
@@ -287,6 +297,8 @@ class RegistrationLogList(NodeLogList, RegistrationMixin):
 
 
 class RegistrationProvidersList(NodeProvidersList, RegistrationMixin):
+    serializer_class = RegistrationProviderSerializer
+
     view_category = 'registrations'
     view_name = 'registration-providers'
 
@@ -330,6 +342,11 @@ class RegistrationAlternativeCitationDetail(NodeAlternativeCitationDetail, Regis
     view_name = 'registration-alternative-citation-detail'
 
 
-class RegistrationInstitutionDetail(NodeInstitutionDetail, RegistrationMixin):
+class RegistrationInstitutionsList(NodeInstitutionsList, RegistrationMixin):
     view_category = 'registrations'
-    view_name = 'registration-institution-detail'
+    view_name = 'registration-institutions'
+
+
+class RegistrationWikiList(NodeWikiList, RegistrationMixin):
+    view_category = 'registrations'
+    view_name = 'registration-wikis'

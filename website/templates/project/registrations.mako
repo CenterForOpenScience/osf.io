@@ -71,7 +71,7 @@
               <h4 class="list-group-item-heading">
                 <div data-bind="visible: hasRequiredQuestions" class="progress progress-bar-md">
                   <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100"
-                       data-bind="attr.aria-completion: completion,
+                       data-bind="attr: {'aria-completion': completion},
                                   style: {width: completion() + '%'}">
                     <span class="sr-only"></span>
                   </div>
@@ -102,7 +102,7 @@
                       <i style="margin-right: 5px;" class="fa fa-pencil"></i>Preview
                     </a>
                     <button class="btn btn-danger"
-                            data-bind="click: $root.deleteDraft">
+                            data-bind="click: $root.deleteDraft.bind($root)">
                       <i style="margin-right: 5px;" class="fa fa-times"></i>Delete
                     </button>
                   </div>
@@ -113,8 +113,7 @@
                     </span>
                     -->
                     <span data-bind="ifnot: requiresApproval">
-                     <a class="btn btn-success" data-bind="attr.href: urls.register_page,
-                                                           css: {'disabled': !isApproved}">Register</a>
+                     <a class="btn btn-success" data-bind="attr: {href: urls.register_page}">Register</a>
                     </span>
                   </div>
                 </div>
@@ -142,7 +141,7 @@
         <label>
           <input type="radio" name="selectedDraftSchema"
                  data-bind="attr {value: id}, checked: $root.selectedSchemaId" />
-          {{ schema.title }}
+          <span data-bind="text: schema.title"></span>
           <!-- ko if: schema.description -->
           <i data-bind="tooltip: {title: schema.description}" class="fa fa-info-circle"> </i>
           <!-- /ko -->

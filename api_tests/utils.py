@@ -1,10 +1,10 @@
 from website.addons.osfstorage import settings as osfstorage_settings
 
 
-def create_test_file(node, user):
+def create_test_file(node, user, filename='test_file'):
     osfstorage = node.get_addon('osfstorage')
     root_node = osfstorage.get_root()
-    test_file = root_node.append_file('test_file')
+    test_file = root_node.append_file(filename)
     test_file.get_guid(create=True)
     test_file.create_version(user, {
         'object': '06d80e',
