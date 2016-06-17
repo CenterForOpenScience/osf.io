@@ -80,7 +80,6 @@ var PublicFilesDropzone = {
                 var fileJson = JSON.parse((file.xhr.response));
                 var link = waterbutler.buildDownloadUrl(fileJson.path, 'osfstorage', window.contextVars.publicFilesId, file.name, {});
                 m.render(buttonContainer, dropzonePreviewTemplate.shareButton(link));
-
                 this.processQueue();
                 file.previewElement.classList.add("dz-success");
                 file.previewElement.classList.add("dz-preview-background-success");
@@ -176,21 +175,21 @@ var PublicFilesDropzone = {
 
         function closeButton() {
             return [
-                m('button.close[aria-label="Close"].pull-right', {
+                m('button.close.fa.fa-times.dz-font[aria-label="Close"].pull-right', {
                         onclick: function () {
                             $('#publicFilesDropzone').hide();
                             $('div.dz-preview').remove();
                             $('#glyphchevron').toggleClass('glyphicon glyphicon-chevron-up glyphicon glyphicon-chevron-down');
                             $('.drop-zone-format').css({'padding-bottom': '175px'});
                         }
-                    }, m('.drop-zone-close', '×')
+                    }
                 )
             ]
         }
 
         function publicFilesHelpButton() {
             return [
-                m('button.btn.fa.fa-question.close.dz-font[aria-label="Drag-and-Drop Help"][data-toggle="modal"][data-target="#dropZoneHelpModal"]'),
+                m('button.btn.fa.fa-info.close.dz-font[aria-label="Drag-and-Drop Help"][data-toggle="modal"][data-target="#dropZoneHelpModal"]'),
                 m('.modal.fade.dz-cursor-default #dropZoneHelpModal',
                     m('.modal-dialog',
                         m('.modal-content',
@@ -202,6 +201,7 @@ var PublicFilesDropzone = {
                                     m('li', 'You may upload one file at a time.'),
                                     m('li', 'File uploads may be up to 256 MB.'),
                                     m('li','To upload more files, refresh the page or click the close button.'),
+                                    m('li', 'To show and hide your uploads, toggle the "Upload Public Files" button.'),
                                     m('li','Click ', m('span.i.fa.fa-share-alt'), ' to copy a download link for that file to your clipboard. Share this link with others!'))
                             ),
                             m('.modal-footer', m('button.btn.btn-default[data-dismiss="modal"]', 'Close'))
