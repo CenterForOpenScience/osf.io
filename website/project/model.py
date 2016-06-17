@@ -995,7 +995,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         return 'nodes'
 
     # For Discourse API compatibility
-    def get_guid(self):
+    def get_guid_id(self):
         return self._id
 
     @property

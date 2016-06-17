@@ -184,7 +184,7 @@ class NodeWikiPage(GuidStoredObject, Commentable):
         return self._id
 
     # For Discourse API compatibility
-    def get_guid(self):
+    def get_guid_id(self):
         return self._id
 
     @property

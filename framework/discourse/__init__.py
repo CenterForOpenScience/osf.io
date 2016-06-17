@@ -1,12 +1,10 @@
 from comments import *
+from common import *
 from groups import *
 from topics import *
 from users import *
 
 import ipdb
-
-class DiscourseException(Exception):
-    pass
 
 def sync_project(project_node):
     from website.addons.wiki.model import NodeWikiPage

@@ -1,11 +1,10 @@
-from . import *
+from .common import *
 from .groups import *
 
 from website import settings
 
 import re
-import requests
-from furl import furl
+import requests.compat
 
 # returns containing project OR component node
 def _get_project_node(node):
@@ -15,106 +14,87 @@ def _get_project_node(node):
         return node
 
 def get_topics(project_node):
-    url = furl(settings.DISCOURSE_SERVER_URL).join('/tags/' + project_node._id + '.json')
-    url.args['api_key'] = settings.DISCOURSE_API_KEY
-    url.args['api_username'] = settings.DISCOURSE_API_ADMIN_USER
-
-    result = requests.get(url.url)
-    if result.status_code != 200:
-        raise DiscourseException('Discourse server responded to project topics get request ' + result.url + ' with '
-                                 + str(result.status_code) + ' ' + result.text)
-
-    return result.json()
+    if project_node.is_public:
+        return request('get', '/tags/' + project_node._id + '.json')
+    else:
+        username = get_username()
+        return request('get', '/topics/private-messages-group/' + username + '/' + project_node._id + '.json')
 
 def _escape_markdown(text):
     r = re.compile(r'([\\`*_{}[\]()#+.!-])')
     return r.sub(r'\\\1', text)
 
-def _create_or_update_topic_base_url(node):
-    url = furl(settings.DISCOURSE_SERVER_URL)
-    url.args['api_key'] = settings.DISCOURSE_API_KEY
-    url.args['api_username'] = settings.DISCOURSE_API_ADMIN_USER
-
-    # we can't do a more elegant isinstance check because that
-    # causes import errors with circular referencing.
-    try:
-        node_type = 'wiki'
-        node_guid = node._id
+def _make_topic_content(node):
+    if node.target_type() == 'wiki':
         node_title = 'Wiki page: ' + node.page_name
         node_description = 'the wiki page ' + _escape_markdown(node.page_name)
-    except AttributeError:
-        try:
-            node_type = 'file'
-            node_guid = node.get_guid()._id
-            node_title = 'File: ' + node.name
-            node_description = 'the file ' + _escape_markdown(node.name)
-        except AttributeError:
-                node_type = 'project'
-                node_guid = node._id
-                node_title = node.title
-                node_description = _escape_markdown(node.title)
+    elif node.target_type() == 'files':
+        node_title = 'File: ' + node.name
+        node_description = 'the file ' + _escape_markdown(node.name)
+    else:
+        node_title = node.title
+        node_description = _escape_markdown(node.title)
 
     project_node = _get_project_node(node)
-    get_or_create_group_id(project_node) # insure existance of the group
-    url.args['target_usernames'] = project_node._id
 
-    url.args['title'] = node_guid
-    url.args['raw'] = '`' + node_title + '` This is the discussion topic for ' + node_description + '. What do you think about it?'
+    topic_content = '`' + node_title + '`'
+    topic_content += '\nThis is the discussion topic for ' + node_description + '.\n'
+    topic_content += '\nContributors: ' + ', '.join(map(lambda c: c.display_full_name(), project_node.contributors))
+    topic_content += '\nDate Created: ' + node.date_created.strftime("%Y-%m-%d %H:%M:%S")
+    topic_content += '\nCategory: ' + project_node.category
+    topic_content += '\nDescription: ' + project_node.description if project_node.description else "No Description"
+    topic_content += '\nLicense: ' + project_node.license if project_node.license else "No License"
 
-    url.args['tags[]'] = node_guid
-    parent_node = project_node
+    if node.target_type() == 'files':
+        file_url = requests.compat.urljoin(settings.DOMAIN, node.get_guid_id())
+        topic_content += '\nFile url: ' + file_url + '/'
+
+    return topic_content
+
+def _get_topic_tags(node):
+    tags = [node.get_guid_id()]
+    parent_node = _get_project_node(node)
     if parent_node is node:
         parent_node = node.parent_node
     while parent_node:
-        url.query.add('tags[]=' + str(parent_node._id))
+        tags.append(parent_node._id)
         parent_node = parent_node.parent_node
 
-    if node_type == 'file':
-        file_url = furl(settings.DOMAIN).join(node_guid).url
-        url.args['raw'] += '\nFile url: ' + file_url + '/'
-
-    return url
+    return tags
 
 def create_topic(node):
-    url = _create_or_update_topic_base_url(node)
-    url.path.add('/posts')
-
+    data = {}
     # topics must be made private at first in order to correctly
     # address the project group. This can't be added in later.
-    # But we can immediately convert to a private conversation after creation.
-    url.args['archetype'] = 'private_message'
+    # But we can immediately convert to a public conversation after creation.
+    data['archetype'] = 'private_message'
 
-    result = requests.post(url.url)
-    if result.status_code != 200:
-        raise DiscourseException('Discourse server responded to topic create request ' + result.url + ' with '
-                                 + str(result.status_code) + ' ' + result.text)
+    project_node = _get_project_node(node)
+    get_or_create_group_id(project_node) # insure existance of the group
+    data['target_usernames'] = project_node._id
+    data['title'] = node.get_guid_id()
+    data['raw'] = _make_topic_content(node)
+    data['tags[]'] = _get_topic_tags(node)
 
-    result_json = result.json()
+    result = request('post', '/posts', data)
 
-    node.discourse_topic_id = result_json['topic_id']
+    node.discourse_topic_id = result['topic_id']
     node.discourse_topic_public = False
-    node.discourse_post_id = result_json['id']
+    node.discourse_post_id = result['id']
     node.save()
 
-    if _get_project_node(node).is_public:
+    if project_node.is_public:
         update_topic_privacy(node)
 
-    return result_json
+    return result
 
 def update_topic_content(node):
     if node.discourse_post_id is None:
         return
 
-    url = furl(settings.DISCOURSE_SERVER_URL).join('/posts/' + str(node.discourse_post_id))
-    url.args['api_key'] = settings.DISCOURSE_API_KEY
-    url.args['api_username'] = settings.DISCOURSE_API_ADMIN_USER
-
-    url.args['post[raw]'] = _create_or_update_topic_base_url(node).args['raw']
-
-    result = requests.put(url.url)
-    if result.status_code != 200:
-        raise DiscourseException('Discourse server responded to topic content update request ' + result.url + ' with '
-                                 + str(result.status_code) + ' ' + result.text[:500])
+    data = {}
+    data['post[raw]'] = _make_topic_content(node)
+    return request('put', '/posts/' + str(node.discourse_post_id), data)
 
 def update_topic_privacy(node):
     if node.discourse_topic_id is None:
@@ -124,30 +104,20 @@ def update_topic_privacy(node):
     if project_node.is_public == node.discourse_topic_public:
         return
 
-    url = furl(settings.DISCOURSE_SERVER_URL).join('/t/' + str(node.discourse_topic_id) + '/convert-topic')
-    url.path.add('/public' if project_node.is_public else '/private')
-
-    url.args['api_key'] = settings.DISCOURSE_API_KEY
-    url.args['api_username'] = settings.DISCOURSE_API_ADMIN_USER
-
-    result = requests.put(url.url)
-    if result.status_code != 200:
-        raise DiscourseException('Discourse server responded to topic privacy update request ' + result.url + ' with '
-                                 + str(result.status_code) + ' ' + result.text[:500])
+    path = '/t/' + str(node.discourse_topic_id) + '/convert-topic'
+    path += '/public' if project_node.is_public else '/private'
+    result = request('put', path)
 
     node.discourse_topic_public = project_node.is_public
     node.save()
 
+    return result
+
 def update_topic_title_tags(node):
-    url = _create_or_update_topic_base_url(node)
-    url.path.add('/t/' + url.args['title'] + '/' + str(node.discourse_topic_id))
-
-    result = requests.put(url.url)
-    if result.status_code != 200:
-        raise DiscourseException('Discourse server responded to topic update request ' + result.url + ' with '
-                                 + str(result.status_code) + ' ' + result.text)
-
-    return result.json()
+    data = {}
+    data['title'] = node.get_guid_id()
+    data['tags[]'] = _get_topic_tags(node)
+    return request('put', '/t/' + url.args['title'] + '/' + str(node.discourse_topic_id), data)
 
 def get_or_create_topic_id(node):
     if node is None:
@@ -157,32 +127,16 @@ def get_or_create_topic_id(node):
     return node.discourse_topic_id
 
 def get_topic(node):
-    topic_id = node.discourse_topic_id
-
-    url = furl(settings.DISCOURSE_SERVER_URL).join('/t/' + str(topic_id) + '.json')
-    url.args['api_key'] = settings.DISCOURSE_API_KEY
-    url.args['api_username'] = settings.DISCOURSE_API_ADMIN_USER
-
-    result = requests.get(url.url)
-    if result.status_code != 200:
-        raise DiscourseException('Discourse server responded to topic get request ' + result.url + ' with '
-                                 + str(result.status_code) + ' ' + result.text)
-    return result.json()
+    return request('get', '/t/' + str(node.discourse_topic_id) + '.json')
 
 def delete_topic(node):
-    topic_id = node.discourse_topic_id
-
-    if topic_id is None:
+    if node.discourse_topic_id is None:
         return
 
-    url = furl(settings.DISCOURSE_SERVER_URL).join('/t/' + str(topic_id))
-    url.args['api_key'] = settings.DISCOURSE_API_KEY
-    url.args['api_username'] = settings.DISCOURSE_API_ADMIN_USER
-
-    result = requests.delete(url.url)
-    if result.status_code != 200:
-        raise DiscourseException('Discourse server responded to topic delete request ' + result.url + ' with '
-                                 + str(result.status_code) + ' ' + result.text[:500])
+    result = request('delete', '/t/' + str(node.discourse_topic_id) + '.json')
 
     node.discourse_topic_id = None
     node.discourse_post_id = None
+    node.save()
+
+    return result

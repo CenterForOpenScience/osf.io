@@ -283,6 +283,10 @@ class StoredFileNode(StoredObject, Commentable):
                 return None
         return Guid.generate(self)
 
+    # for Discourse compatibility
+    def get_guid_id(self):
+        return get_guid()._id
+
 
 class FileNodeMeta(type):
     """Keeps track of subclasses of the ``FileNode`` object

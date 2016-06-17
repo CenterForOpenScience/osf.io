@@ -1,5 +1,6 @@
 from . import *
 import time
+from datetime import datetime
 import unittest
 import random
 
@@ -26,11 +27,19 @@ class TestDiscourse(DbTestCase):
         self.project_node = literal(title='The Test Project', _id='test1234',
                                contributors=[self.user1, self.user2], is_public=False,
                                discourse_group_id=None, discourse_topic_id=None,
-                               parent_node=None)
+                               discourse_post_id=None, category='Project',
+                               description=None, license=None,
+                               parent_node=None, date_created=datetime.today())
+        self.project_node.target_type = lambda *args: 'nodes'
+        self.project_node.get_guid_id = lambda *args: self.project_node._id
         self.project_node.save = lambda *args: None
+
         self.file_node = literal(_id='573cb78e96f6d02370c991a9', name='superRickyRobot.jpg', node=self.project_node,
-                                discourse_topic_id=None)
-        self.file_node.get_guid = lambda *args: literal(_id=str(random.randint(0, 99999)), referent=self.file_node)
+                                discourse_topic_id=None, discourse_post_id=None,
+                                date_created=datetime.today())
+        self.file_node.target_type = lambda *args: 'files'
+        self.file_node.guid = str(random.randint(0, 99999))
+        self.file_node.get_guid_id = lambda *args: self.file_node.guid
         self.file_node.save = lambda *args: None
 
     def tearDown(self):
