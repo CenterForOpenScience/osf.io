@@ -380,9 +380,6 @@ var FileViewPage = {
             };
 
             var url = '?show=revision';
-            //Indicate that we've just pushed a state so the
-            //Call back does not process this push as a state change
-            self.stateJustPushed = true;
             History.pushState(state, 'OSF | ' + window.contextVars.file.name, url);
         }
 
@@ -407,6 +404,10 @@ var FileViewPage = {
         //it was removed and shoved here due to issues with mithrils caching and interacting
         //With other non-mithril components on the page
         //anchor checking hack that will select if true
+        var state = {
+            scrollTop: $(window).scrollTop(),
+        };
+        
         var panelsShown = (
             ((ctrl.editor && ctrl.editor.selected) ? 1 : 0) + // Editor panel is active
             (ctrl.mfrIframeParent.is(':visible') ? 1 : 0)    // View panel is active
@@ -489,9 +490,11 @@ var FileViewPage = {
                         if (!ctrl.mfrIframeParent.is(':visible') || panelsShown > 1) {
                             ctrl.mfrIframeParent.toggle();
                             ctrl.revisions.selected = false;
+                            History.pushState(state, 'OSF | ' + window.contextVars.file.name, '?show=view');
                         } else if (ctrl.mfrIframeParent.is(':visible') && !ctrl.editor){
                             ctrl.mfrIframeParent.toggle();
                             ctrl.revisions.selected = true;
+                            History.pushState(state, 'OSF | ' + window.contextVars.file.name, '?show=revision');
                         }
                     }
                 }, 'View'), editButton())
@@ -508,12 +511,14 @@ var FileViewPage = {
                             ctrl.editor.selected = false;
                         }
                         ctrl.revisions.selected = true;
+                        History.pushState(state, 'OSF | ' + window.contextVars.file.name, '?show=revision');
                     } else {
                         ctrl.mfrIframeParent.toggle();
                         if (ctrl.editor) {
                             ctrl.editor.selected = false;
                         }
                         ctrl.revisions.selected = false;
+                        History.pushState(state, 'OSF | ' + window.contextVars.file.name, '?show=view');
                     }
                 }}, 'Revisions')
             ])
