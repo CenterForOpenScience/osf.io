@@ -31,7 +31,7 @@ class TestDiscourse(DbTestCase):
                                description=None, license=None,
                                parent_node=None, date_created=datetime.today())
         self.project_node.target_type = lambda *args: 'nodes'
-        self.project_node.get_guid_id = lambda *args: self.project_node._id
+        self.project_node.guid_id = self.project_node._id
         self.project_node.save = lambda *args: None
 
         self.file_node = literal(_id='573cb78e96f6d02370c991a9', name='superRickyRobot.jpg', node=self.project_node,
@@ -39,7 +39,7 @@ class TestDiscourse(DbTestCase):
                                 date_created=datetime.today())
         self.file_node.target_type = lambda *args: 'files'
         self.file_node.guid = str(random.randint(0, 99999))
-        self.file_node.get_guid_id = lambda *args: self.file_node.guid
+        self.file_node.guid_id = self.file_node.guid
         self.file_node.save = lambda *args: None
 
     def tearDown(self):

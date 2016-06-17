@@ -1834,6 +1834,9 @@ DISCOURSE_SERVER_SETTINGS = {'title': 'Open Science Framework',
                              'title_prettify': 'false',
                              'allow_duplicate_topic_titles': 'true',
                              'tagging_enabled': 'true',
+                             'max_tag_length': '100',
+                             'max_tags_per_topic': '20',
+                             'min_trust_level_to_tag_topics': '4',
                              }
 
 DISCOURSE_SERVER_CUSTOMIZATIONS = [{'name': 'MFR',

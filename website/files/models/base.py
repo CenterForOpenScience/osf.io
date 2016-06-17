@@ -284,8 +284,14 @@ class StoredFileNode(StoredObject, Commentable):
         return Guid.generate(self)
 
     # for Discourse compatibility
-    def get_guid_id(self):
+    @property
+    def guid_id(self):
         return get_guid()._id
+
+    # For Discourse API compatibility
+    @property
+    def label(self):
+        return self.name
 
 
 class FileNodeMeta(type):

@@ -25,15 +25,10 @@ def _escape_markdown(text):
     return r.sub(r'\\\1', text)
 
 def _make_topic_content(node):
-    if node.target_type == 'wiki':
-        node_title = 'Wiki page: ' + node.page_name
-        node_description = 'the wiki page ' + _escape_markdown(node.page_name)
-    elif node.target_type == 'files':
-        node_title = 'File: ' + node.name
-        node_description = 'the file ' + _escape_markdown(node.name)
-    else:
-        node_title = node.title
-        node_description = _escape_markdown(node.title)
+    node_title = {'wiki': 'Wiki page:', 'files': 'File: ', 'nodes': ''}[node.target_type]
+    node_title += node.label
+    node_description = {'wiki': 'the wiki page ', 'files': 'the file ', 'nodes': ''}[node.target_type]
+    node_description += _escape_markdown(node.label)
 
     project_node = _get_project_node(node)
 
@@ -46,18 +41,19 @@ def _make_topic_content(node):
     topic_content += '\nLicense: ' + (project_node.license if project_node.license else "No License")
 
     if node.target_type == 'files':
-        file_url = requests.compat.urljoin(settings.DOMAIN, node.get_guid_id())
+        file_url = requests.compat.urljoin(settings.DOMAIN, node.guid_id)
         topic_content += '\nFile url: ' + file_url + '/'
 
     return topic_content
 
 def _get_topic_tags(node):
-    tags = [node.get_guid_id()]
+    tags = [node.guid_id]#, node.guid_id + ':' + node.label]
     parent_node = _get_project_node(node)
     if parent_node is node:
         parent_node = node.parent_node
     while parent_node:
         tags.append(parent_node._id)
+        #tags.append(parent_node._id + ':' + parent_node.label)
         parent_node = parent_node.parent_node
 
     return tags
@@ -72,7 +68,7 @@ def create_topic(node):
     project_node = _get_project_node(node)
     get_or_create_group_id(project_node) # insure existance of the group
     data['target_usernames'] = project_node._id
-    data['title'] = node.get_guid_id()
+    data['title'] = node.guid_id
     data['raw'] = _make_topic_content(node)
     data['tags[]'] = _get_topic_tags(node)
 
@@ -115,7 +111,7 @@ def update_topic_privacy(node):
 
 def update_topic_title_tags(node):
     data = {}
-    data['title'] = node.get_guid_id()
+    data['title'] = node.guid_id
     data['tags[]'] = _get_topic_tags(node)
     return request('put', '/t/' + url.args['title'] + '/' + str(node.discourse_topic_id), data)
 
