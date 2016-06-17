@@ -25,10 +25,10 @@ def _escape_markdown(text):
     return r.sub(r'\\\1', text)
 
 def _make_topic_content(node):
-    if node.target_type() == 'wiki':
+    if node.target_type == 'wiki':
         node_title = 'Wiki page: ' + node.page_name
         node_description = 'the wiki page ' + _escape_markdown(node.page_name)
-    elif node.target_type() == 'files':
+    elif node.target_type == 'files':
         node_title = 'File: ' + node.name
         node_description = 'the file ' + _escape_markdown(node.name)
     else:
@@ -42,10 +42,10 @@ def _make_topic_content(node):
     topic_content += '\nContributors: ' + ', '.join(map(lambda c: c.display_full_name(), project_node.contributors))
     topic_content += '\nDate Created: ' + node.date_created.strftime("%Y-%m-%d %H:%M:%S")
     topic_content += '\nCategory: ' + project_node.category
-    topic_content += '\nDescription: ' + project_node.description if project_node.description else "No Description"
-    topic_content += '\nLicense: ' + project_node.license if project_node.license else "No License"
+    topic_content += '\nDescription: ' + (project_node.description if project_node.description else "No Description")
+    topic_content += '\nLicense: ' + (project_node.license if project_node.license else "No License")
 
-    if node.target_type() == 'files':
+    if node.target_type == 'files':
         file_url = requests.compat.urljoin(settings.DOMAIN, node.get_guid_id())
         topic_content += '\nFile url: ' + file_url + '/'
 
