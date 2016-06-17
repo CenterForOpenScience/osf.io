@@ -70,6 +70,7 @@ from website.project.sanctions import (
     Retraction,
 )
 from website.files.models.osfstorage import OsfStorageFileNode
+from website.prereg.utils import get_prereg_schema
 
 logger = logging.getLogger(__name__)
 
@@ -3979,8 +3980,7 @@ class DraftRegistration(StoredObject):
         approval.save()
         self.approval = approval
         self.add_status_log(initiated_by, DraftRegistrationLog.SUBMITTED)
-        prereg_user = User.load(settings.PREREG_FILE_CHECKOUT_USER)
-        self.checkout_files(prereg_user, save=save)
+        self.checkout_files(save=save)
         if save:
             self.save()
 
@@ -4023,8 +4023,11 @@ class DraftRegistration(StoredObject):
                 fid = file_info['data']['path'].split('/')[1]
                 yield OsfStorageFileNode.load(fid)
 
-    def checkout_files(self, user, save=False):
-        """Check out all metadata files"""
+    def checkout_files(self, save=False):
+        """Check out all metadata files for prereg challenge"""
+        if self.registration_schema != get_prereg_schema():
+            return
+        user = User.load(settings.PREREG_FILE_CHECKOUT_USER)
         for item in self.get_metadata_files():
             try:
                 item.checkout = user
@@ -4035,6 +4038,8 @@ class DraftRegistration(StoredObject):
 
     def checkin_files(self):
         """Check in all metadata files"""
+        if self.registration_schema != get_prereg_schema():
+            return
         for item in self.get_metadata_files():
             try:
                 item.checkout = None
