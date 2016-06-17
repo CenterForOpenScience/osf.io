@@ -1267,6 +1267,36 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
         return False
 
+    def find_readable_antecedent(self, user):
+        """ Returns first antecendant node readable by <user>.
+        """
+
+        next_parent = self.parent_node
+        while next_parent:
+            if next_parent.has_permission(user, 'read'):
+                return next_parent
+            next_parent = next_parent.parent_node
+
+    def find_readable_descendants(self, user):
+        """ Returns list of first descendant node readable by <user> in
+        each descendant branch.
+        """
+        ret = []
+        for node in self.nodes:
+            new_branches = []
+            if not node.primary or node.is_deleted:
+                continue
+
+            if node.has_permission(user, 'read'):
+                ret.append(node)
+            else:
+                new_branches.append(node)
+
+        for node in new_branches:
+            ret.extend(node.find_readable_descendants(user))
+
+        return ret
+
     def has_addon_on_children(self, addon):
         """Checks if a given node has a specific addon on child nodes
             that are not registrations or deleted
