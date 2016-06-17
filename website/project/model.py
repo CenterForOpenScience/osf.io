@@ -892,8 +892,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
     alternative_citations = fields.ForeignField('alternativecitation', list=True)
 
-    notification_settings_dirty = fields.BooleanField(default=False)
-
     _meta = {
         'optimistic': True,
     }
@@ -2192,6 +2190,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         # Need this save in order to access _primary_key
         forked.save()
 
+        project_signals.contributor_added.send(forked, contributor=user, auth=auth)
+
         forked.add_log(
             action=NodeLog.NODE_FORKED,
             params={
@@ -3009,7 +3009,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             if save:
                 self.save()
 
-            project_signals.contributor_added.send(self, contributor=contributor, auth=auth)
+            if self._id:
+                project_signals.contributor_added.send(self, contributor=contributor, auth=auth)
 
             return True
 
