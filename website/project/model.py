@@ -933,6 +933,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
     alternative_citations = fields.ForeignField('alternativecitation', list=True)
 
+    notification_settings_dirty = fields.BooleanField(default=False)
+
     _meta = {
         'optimistic': True,
     }

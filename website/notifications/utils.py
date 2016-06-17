@@ -7,6 +7,7 @@ from modularodm.exceptions import NoResultsFound
 from website.models import Node, User
 from website.notifications import constants
 from website.notifications import model
+from website.notifications.exceptions import InvalidSubscriptionError
 from website.notifications.model import NotificationSubscription
 from website.project import signals
 
@@ -175,7 +176,12 @@ def get_configured_projects(user):
         # If the user has opted out of emails skip
         node = subscription.owner
 
-        if not isinstance(node, Node) or (user in subscription.none and not node.parent_id) or node.is_bookmark_collection:
+        if (
+            not isinstance(node, Node) or
+            (user in subscription.none and not node.parent_id) or
+            not node.notification_settings_dirty or
+            node.is_collection
+        ):
             continue
 
         while node.parent_id and not node.is_deleted:
@@ -404,6 +410,16 @@ def subscribe_user_to_notifications(node, user):
 
     :param user: User to subscribe to notifications
     """
+
+    if node.institution_id:
+        raise InvalidSubscriptionError('Institutions are invalid targets for subscriptions')
+
+    if node.is_collection:
+        raise InvalidSubscriptionError('Collections are invalid targets for subscriptions')
+
+    if node.is_deleted:
+        raise InvalidSubscriptionError('Deleted Nodes are invalid targets for subscriptions')
+
     events = constants.NODE_SUBSCRIPTIONS_AVAILABLE
     notification_type = 'email_transactional'
     target_id = node._id
@@ -415,14 +431,19 @@ def subscribe_user_to_notifications(node, user):
             global_subscription = NotificationSubscription.load(global_event_id)
 
             subscription = NotificationSubscription.load(event_id)
-            if not subscription:
-                subscription = NotificationSubscription(_id=event_id, owner=node, event_name=event)
-            if global_subscription:
-                global_notification_type = get_global_notification_type(global_subscription, user)
-                subscription.add_user_to_subscription(user, global_notification_type)
-            else:
-                subscription.add_user_to_subscription(user, notification_type)
-            subscription.save()
+
+            # If no subscription for component and creator is the user, do not create subscription
+            # If no subscription exists for the component, this means that it should adopt its
+            # parent's settings
+            if not(node and node.parent_node and not subscription and node.creator == user):
+                if not subscription:
+                    subscription = NotificationSubscription(_id=event_id, owner=node, event_name=event)
+                if global_subscription:
+                    global_notification_type = get_global_notification_type(global_subscription, user)
+                    subscription.add_user_to_subscription(user, global_notification_type)
+                else:
+                    subscription.add_user_to_subscription(user, notification_type)
+                subscription.save()
 
 
 def format_user_and_project_subscriptions(user):

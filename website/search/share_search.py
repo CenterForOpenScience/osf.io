@@ -9,7 +9,11 @@ import pytz
 from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
 
+from framework import sentry
 from elasticsearch import Elasticsearch
+from elasticsearch import (
+    ConnectionError,
+)
 
 from website import settings
 from website.search.elastic_search import requires_search
@@ -20,10 +24,23 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-share_es = Elasticsearch(
-    settings.SHARE_ELASTIC_URI,
-    request_timeout=settings.ELASTIC_TIMEOUT
-)
+try:
+    share_es = Elasticsearch(
+        settings.SHARE_ELASTIC_URI,
+        request_timeout=settings.ELASTIC_TIMEOUT
+    )
+except ConnectionError:
+    message = (
+        'The SEARCH_ENGINE setting is set to "elastic", but there '
+        'was a problem starting the elasticsearch interface. Is '
+        'elasticsearch running?'
+    )
+    try:
+        sentry.log_exception()
+        sentry.log_message(message)
+    except AssertionError:  # App has not yet been initialized
+        logger.exception(message)
+    share_es = None
 
 # This is temporary until we update the backend
 FRONTEND_VERSION = 1
