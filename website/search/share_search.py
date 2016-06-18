@@ -9,7 +9,11 @@ import pytz
 from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
 
+from framework import sentry
 from elasticsearch import Elasticsearch
+from elasticsearch import (
+    ConnectionError,
+)
 
 from website import settings
 from website.search.elastic_search import requires_search
@@ -20,10 +24,23 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-share_es = Elasticsearch(
-    settings.SHARE_ELASTIC_URI,
-    request_timeout=settings.ELASTIC_TIMEOUT
-)
+try:
+    share_es = Elasticsearch(
+        settings.SHARE_ELASTIC_URI,
+        request_timeout=settings.ELASTIC_TIMEOUT
+    )
+except ConnectionError:
+    message = (
+        'The SEARCH_ENGINE setting is set to "elastic", but there '
+        'was a problem starting the elasticsearch interface. Is '
+        'elasticsearch running?'
+    )
+    try:
+        sentry.log_exception()
+        sentry.log_message(message)
+    except AssertionError:  # App has not yet been initialized
+        logger.exception(message)
+    share_es = None
 
 # This is temporary until we update the backend
 FRONTEND_VERSION = 1
@@ -36,6 +53,9 @@ def search(query, raw=False, index='share'):
 
     for hit in results['hits']['hits']:
         hit['_source']['highlight'] = hit.get('highlight', {})
+        if hit['_source'].get('shareProperties'):
+            hit['_source']['shareProperties']['docID'] = hit['_source']['shareProperties'].get('docID') or hit['_id']
+            hit['_source']['shareProperties']['source'] = hit['_source']['shareProperties'].get('source') or hit['_type']
     return results if raw else {
         'results': [hit['_source'] for hit in results['hits']['hits']],
         'count': results['hits']['total'],
@@ -90,63 +110,63 @@ def providers():
 
 @requires_search
 def stats(query=None):
-    query = query or {"query": {"match_all": {}}}
+    query = query or {'query': {'match_all': {}}}
 
     index = settings.SHARE_ELASTIC_INDEX_TEMPLATE.format(FRONTEND_VERSION)
 
     three_months_ago = timegm((datetime.now() + relativedelta(months=-3)).timetuple()) * 1000
     query['aggs'] = {
-        "sources": {
-            "terms": {
-                "field": "_type",
-                "size": 0,
-                "min_doc_count": 0,
+        'sources': {
+            'terms': {
+                'field': '_type',
+                'size': 0,
+                'min_doc_count': 0,
             }
         },
-        "doisMissing": {
-            "filter": {
-                "missing": {
-                    "field": "id.doi"
+        'doisMissing': {
+            'filter': {
+                'missing': {
+                    'field': 'id.doi'
                 }
             },
-            "aggs": {
-                "sources": {
-                    "terms": {
-                        "field": "_type",
-                        "size": 0
+            'aggs': {
+                'sources': {
+                    'terms': {
+                        'field': '_type',
+                        'size': 0
                     }
                 }
             }
         },
-        "dois": {
-            "filter": {
-                "exists": {
-                    "field": "id.doi"
+        'dois': {
+            'filter': {
+                'exists': {
+                    'field': 'id.doi'
                 }
             },
-            "aggs": {
-                "sources": {
-                    "terms": {
-                        "field": "_type",
-                        "size": 0
+            'aggs': {
+                'sources': {
+                    'terms': {
+                        'field': '_type',
+                        'size': 0
                     }
                 }
             }
         },
-        "earlier_documents": {
-            "filter": {
-                "range": {
-                    "providerUpdatedDateTime": {
-                        "lt": three_months_ago
+        'earlier_documents': {
+            'filter': {
+                'range': {
+                    'providerUpdatedDateTime': {
+                        'lt': three_months_ago
                     }
                 }
             },
-            "aggs": {
-                "sources": {
-                    "terms": {
-                        "field": "_type",
-                        "size": 0,
-                        "min_doc_count": 0
+            'aggs': {
+                'sources': {
+                    'terms': {
+                        'field': '_type',
+                        'size': 0,
+                        'min_doc_count': 0
                     }
                 }
             }
@@ -167,21 +187,21 @@ def stats(query=None):
         }
     }
     date_histogram_query['aggs'] = {
-        "date_chunks": {
-            "terms": {
-                "field": "_type",
-                "size": 0,
-                "exclude": "of|and|or"
+        'date_chunks': {
+            'terms': {
+                'field': '_type',
+                'size': 0,
+                'exclude': 'of|and|or'
             },
-            "aggs": {
-                "articles_over_time": {
-                    "date_histogram": {
-                        "field": "providerUpdatedDateTime",
-                        "interval": "week",
-                        "min_doc_count": 0,
-                        "extended_bounds": {
-                            "min": three_months_ago,
-                            "max": timegm(gmtime()) * 1000
+            'aggs': {
+                'articles_over_time': {
+                    'date_histogram': {
+                        'field': 'providerUpdatedDateTime',
+                        'interval': 'week',
+                        'min_doc_count': 0,
+                        'extended_bounds': {
+                            'min': three_months_ago,
+                            'max': timegm(gmtime()) * 1000
                         }
                     }
                 }
@@ -298,7 +318,7 @@ def to_atom(result):
             {'href': result['uris']['canonicalUri'], 'rel': 'alternate'}
         ],
         'author': format_contributors_for_atom(result['contributors']),
-        'categories': [{"term": html_and_illegal_unicode_replace(tag)} for tag in (result.get('tags', []) + result.get('subjects', []))],
+        'categories': [{'term': html_and_illegal_unicode_replace(tag)} for tag in (result.get('tags', []) + result.get('subjects', []))],
         'published': parse(result.get('providerUpdatedDateTime'))
     }
 

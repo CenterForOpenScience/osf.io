@@ -5,10 +5,11 @@
 'use strict';
 require('css/addon_folderpicker.css');
 var ko = require('knockout');
-require('knockout.punches');
 var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
+var m = require('mithril');
+
 
 var FolderPicker = require('js/folderpicker');
 var ZeroClipboard = require('zeroclipboard');
@@ -17,7 +18,6 @@ var $osf = require('js/osfHelpers');
 
 var oop = require('js/oop');
 
-ko.punches.enableAll();
 
 /**
  * @class FolderPickerViewModel
@@ -78,37 +78,41 @@ var FolderPickerViewModel = oop.defclass({
         // Whether the folders have been loaded from the API
         self.loadedFolders = ko.observable(false);
 
+        var addonSafeName = $osf.htmlEscape(self.addonName);
         self.messages = {
             invalidCredOwner: ko.pureComputed(function() {
-                return 'Could not retrieve ' + self.addonName + ' settings at ' +
-                    'this time. The credentials associated with this ' + self.addonName + ' account may no longer be valid.' +
-                    ' Try disconnecting and reconnecting the ' + self.addonName + ' account on your <a href="' +
+                return 'Could not retrieve ' + addonSafeName + ' settings at ' +
+                    'this time. The credentials associated with this ' + addonSafeName + ' account may no longer be valid.' +
+                    ' Try disconnecting and reconnecting the ' + addonSafeName + ' account on your <a href="' +
                     self.urls().settings + '">account settings page</a>.';
             }),
             invalidCredNotOwner: ko.pureComputed(function() {
-                return 'Could not retrieve ' + self.addonName + ' settings at ' +
-                    'this time. The credentials' + self.addonName + ' addon credentials may no longer be valid.' +
-                    ' Contact ' + self.ownerName() + ' to verify.';
+                return 'Could not retrieve ' + addonSafeName + ' settings at ' +
+                    'this time. The ' + addonSafeName + ' addon credentials may no longer be valid.' +
+                    ' Contact ' + $osf.htmlEscape(self.ownerName()) + ' to verify.';
             }),
             cantRetrieveSettings: ko.pureComputed(function() {
-                return 'Could not retrieve ' + self.addonName + ' settings at ' +
+                return 'Could not retrieve ' + addonSafeName + ' settings at ' +
                     'this time. Please refresh ' +
                     'the page. If the problem persists, email ' +
                     '<a href="mailto:support@osf.io">support@osf.io</a>.';
             }),
             updateAccountsError: ko.pureComputed(function() {
-                return 'Could not retrieve ' + self.addonName + ' account list at ' +
+                return 'Could not retrieve ' + addonSafeName + ' account list at ' +
                     'this time. Please refresh the page. If the problem persists, email ' +
                     '<a href="mailto:support@osf.io">support@osf.io</a>.';
             }),
             deauthorizeSuccess: ko.pureComputed(function() {
-                return 'Disconnected ' + self.addonName + '.';
+                return 'Disconnected ' + addonSafeName + '.';
             }),
             deauthorizeFail: ko.pureComputed(function() {
-                return 'Could not disconnect ' + self.addonName + ' account because of an error. Please try again later.';
+                return 'Could not disconnect ' + addonSafeName + ' account because of an error. Please try again later.';
             }),
             connectAccountSuccess: ko.pureComputed(function() {
-                return 'Successfully connected a ' + self.addonName + ' account';
+                return 'Successfully connected a ' + addonSafeName + ' account';
+            }),
+            connectAccountDenied: ko.pureComputed(function() {
+                return 'Error while authorizing addon. Please log in to your ' + addonSafeName + ' account and grant access to the OSF to enable this addon.';
             }),
             submitSettingsSuccess: ko.pureComputed(function() {
                 throw new Error('Subclasses of FolderPickerViewModel must provide a message for successful settings updates. ' +
@@ -116,22 +120,22 @@ var FolderPickerViewModel = oop.defclass({
                                 '{PAGE_NAME} to view your {CONTENT_TYPE}.');
             }),
             submitSettingsError: ko.pureComputed(function() {
-                return 'Could not change ' + self.addonName + ' settings. Please try again later.';
+                return 'Could not change ' + addonSafeName + ' settings. Please try again later.';
             }),
             confirmDeauth: ko.pureComputed(function() {
-                return 'Are you sure you want to remove this ' + self.addonName + ' account?';
+                return 'Are you sure you want to remove this ' + addonSafeName + ' account?';
             }),
             confirmAuth: ko.pureComputed(function() {
-                return 'Are you sure you want to link your ' + self.addonName + ' account with this project?';
+                return 'Are you sure you want to link your ' + addonSafeName + ' account with this project?';
             }),
             tokenImportSuccess: ko.pureComputed(function() {
-                return 'Successfully imported ' + self.addonName + ' account from profile.';
+                return 'Successfully imported ' + addonSafeName + ' account from profile.';
             }),
             tokenImportError: ko.pureComputed(function() {
-                return 'Error occurred while importing ' + self.addonName + ' account.';
+                return 'Error occurred while importing ' + addonSafeName + ' account.';
             }),
             connectError: ko.pureComputed(function() {
-                return 'Could not connect to ' + self.addonName + ' at this time. Please try again later.';
+                return 'Could not connect to ' + addonSafeName + ' at this time. Please try again later.';
             })
         };
 
@@ -174,13 +178,14 @@ var FolderPickerViewModel = oop.defclass({
         self.folderName = ko.pureComputed(function() {
             var nodeHasAuth = self.nodeHasAuth();
             var folder = self.folder();
-            return (nodeHasAuth && folder && folder.name) ? folder.name.trim() : '';
+            return (nodeHasAuth && folder && folder.name) ? decodeURIComponent(folder.name.trim()) : '';
         });
 
         self.selectedFolderName = ko.pureComputed(function() {
             var userIsOwner = self.userIsOwner();
             var selected = self.selected();
-            var name = selected.name || 'None';
+            var name = selected.name ? decodeURIComponent(selected.name) : 'None';
+            name = name.replace('All Files', 'Full ' + addonName);
             return userIsOwner ? name : '';
         });
 
@@ -279,9 +284,11 @@ var FolderPickerViewModel = oop.defclass({
         request.fail(function(xhr, textStatus, error) {
             self.changeMessage(self.messages.cantRetrieveSettings(), 'text-danger');
             Raven.captureMessage('Could not GET ' + self.addonName + 'settings', {
-                url: self.url,
-                textStatus: textStatus,
-                error: error
+                extra: {
+                    url: self.url,
+                    textStatus: textStatus,
+                    error: error
+                }
             });
             ret.reject(xhr, textStatus, error);
         });
@@ -305,9 +312,11 @@ var FolderPickerViewModel = oop.defclass({
         function onSubmitError(xhr, status, error) {
             self.changeMessage(self.messages.submitSettingsError(), 'text-danger');
             Raven.captureMessage('Failed to update ' + self.addonName + ' settings.', {
-                xhr: xhr,
-                status: status,
-                error: error
+                extra: {
+                    xhr: xhr,
+                    status: status,
+                    error: error
+                }
             });
         }
         return $osf.putJSON(self.urls().config, self._serializeSettings())
@@ -315,20 +324,23 @@ var FolderPickerViewModel = oop.defclass({
             .fail(onSubmitError);
     },
     onImportSuccess: function(response) {
-        var self = this;
+        var self = this;       
         var msg = response.message || self.messages.tokenImportSuccess();
         // Update view model based on response
         self.changeMessage(msg, 'text-success', 3000);
         self.updateFromData(response.result);
+        self.loadedFolders(false);
         self.activatePicker();
     },
     onImportError: function(xhr, status, error) {
         var self = this;
         self.changeMessage(self.messages.tokenImportError(), 'text-danger');
         Raven.captureMessage('Failed to import ' + self.addonName + ' access token.', {
-            xhr: xhr,
-            status: status,
-            error: error
+            extra: {
+                xhr: xhr,
+                status: status,
+                error: error
+            }
         });
     },
     _importAuthPayload: function() {
@@ -346,7 +358,7 @@ var FolderPickerViewModel = oop.defclass({
     importAuth: function() {
         var self = this;
         bootbox.confirm({
-            title: 'Import ' + self.addonName + ' Account?',
+            title: 'Import ' + $osf.htmlEscape(self.addonName) + ' Account?',
             message: self.messages.confirmAuth(),
             callback: function(confirmed) {
                 if (confirmed) {
@@ -382,9 +394,11 @@ var FolderPickerViewModel = oop.defclass({
         request.fail(function(xhr, textStatus, error) {
             self.changeMessage(self.messages.deauthorizeFail(), 'text-danger');
             Raven.captureMessage('Could not deauthorize ' + self.addonName + ' account from node', {
-                url: self.urls().deauthorize,
-                textStatus: textStatus,
-                error: error
+                extra: {
+                    url: self.urls().deauthorize,
+                    textStatus: textStatus,
+                    error: error
+                }
             });
         });
         return request;
@@ -395,7 +409,7 @@ var FolderPickerViewModel = oop.defclass({
     deauthorize: function() {
         var self = this;
         bootbox.confirm({
-            title: 'Disconnect ' + self.addonName + ' Account?',
+            title: 'Disconnect ' + $osf.htmlEscape(self.addonName) + ' Account?',
             message: self.messages.confirmDeauth(),
             callback: function(confirmed) {
                 if (confirmed) {
@@ -464,8 +478,10 @@ var FolderPickerViewModel = oop.defclass({
                     self.loading(false);
                     self.changeMessage(self.messages.connectError(), 'text-danger');
                     Raven.captureMessage('Could not GET get ' + self.addonName + ' contents.', {
-                        textStatus: textStatus,
-                        error: error
+                        extra: {
+                            textStatus: textStatus,
+                            error: error
+                        }
                     });
                 }
             },
@@ -474,6 +490,25 @@ var FolderPickerViewModel = oop.defclass({
                 self.loading(false);
                 // Set flag to prevent repeated requests
                 self.loadedFolders(true);
+            },
+            resolveRows: function(item) {
+                item.css = '';
+                return [
+                {
+                    data : 'name',  // Data field name
+                    folderIcons : true,
+                    filter : false,
+                    custom : function(item, col) {
+                        //This is bad, but probably necessary. GoogleDrive returns URI encoded folder names, but (most/all?) others don't
+                        return m('span', decodeURIComponent(item.data.name));
+                    }
+                },
+                {
+                    css : 'p-l-xs',
+                    sortInclude : false,
+                    custom : FolderPicker.selectView
+                }
+            ];
             }
         }, self.treebeardOptions);
         self.currentDisplay(self.PICKER);

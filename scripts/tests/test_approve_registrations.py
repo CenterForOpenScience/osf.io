@@ -20,7 +20,7 @@ class TestApproveRegistrations(OsfTestCase):
         self.registration.require_approval(self.user)
 
     def test_new_registration_should_not_be_approved(self):
-        assert_true(self.registration.pending_registration)
+        assert_true(self.registration.is_pending_registration)
 
         main(dry_run=False)
         assert_false(self.registration.is_registration_approved)
@@ -39,6 +39,7 @@ class TestApproveRegistrations(OsfTestCase):
         assert_false(self.registration.is_registration_approved)
 
     def test_should_approve_pending_registration_that_is_48_hours_old(self):
+        assert_true(self.registration.registration_approval.pending_approval)  # sanity check
         # RegistrationApproval#iniation_date is read only
         self.registration.registration_approval._fields['initiation_date'].__set__(
             self.registration.registration_approval,
@@ -50,6 +51,7 @@ class TestApproveRegistrations(OsfTestCase):
 
         main(dry_run=False)
         assert_true(self.registration.is_registration_approved)
+        assert_false(self.registration.registration_approval.pending_approval)
 
     def test_should_approve_pending_registration_more_than_48_hours_old(self):
         # RegistrationApproval#iniation_date is read only

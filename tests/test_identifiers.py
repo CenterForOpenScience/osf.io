@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 
 import httpretty
-from factory import SubFactory
 from nose.tools import *  # noqa
 
 from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory
-from tests.factories import ModularOdmFactory
+from tests.factories import IdentifierFactory
 from tests.factories import RegistrationFactory
 from tests.test_addons import assert_urls_equal
 
@@ -19,14 +18,6 @@ from website.identifiers.utils import to_anvl
 from website.identifiers.model import Identifier
 from website.identifiers.metadata import datacite_metadata_for_node
 from website.identifiers import metadata
-
-
-class IdentifierFactory(ModularOdmFactory):
-    FACTORY_FOR = Identifier
-
-    referent = SubFactory(RegistrationFactory)
-    category = 'carpid'
-    value = 'carp:/24601'
 
 
 class TestMetadataGeneration(OsfTestCase):

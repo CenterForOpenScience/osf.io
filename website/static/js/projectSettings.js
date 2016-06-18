@@ -1,89 +1,117 @@
 'use strict';
 
 var $ = require('jquery');
-var bootbox = require('bootbox');
+var bootbox = require('bootbox');  // TODO: Why is this required? Is it? See [#OSF-6100]
 var Raven = require('raven-js');
 var ko = require('knockout');
 var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
 var ChangeMessageMixin = require('js/changeMessage');
+var language = require('js/osfLanguage').projectSettings;
 
-var NodeCategorySettings = oop.extend(
+var ProjectSettings = oop.extend(
     ChangeMessageMixin,
     {
-        constructor: function(category, categories, updateUrl, disabled) {
+        constructor: function(params) {
             this.super.constructor.call(this);
-
             var self = this;
 
-            self.disabled = disabled || false;
-            self.UPDATE_SUCCESS_MESSAGE = 'Category updated successfully';
-            self.UPDATE_ERROR_MESSAGE = 'Error updating category, please try again. If the problem persists, email ' +
-                '<a href="mailto:support@osf.io">support@osf.io</a>.';
-            self.UPDATE_ERROR_MESSAGE_RAVEN = 'Error updating Node.category';
+            self.title = ko.observable(params.currentTitle).extend({
+                required: {
+                    params: true,
+                    message: 'Title cannot be blank.'
+                }});
+            self.description = ko.observable(params.currentDescription);
+            self.titlePlaceholder = params.currentTitle;
+            self.descriptionPlaceholder = params.currentDescription;
 
-            self.INSTANTIATION_ERROR_MESSAGE = 'Trying to instantiate NodeCategorySettings view model without an update URL';
-
-            self.MESSAGE_SUCCESS_CLASS = 'text-success';
-            self.MESSAGE_ERROR_CLASS = 'text-danger';
-
-            if (!updateUrl) {
-                throw new Error(self.INSTANTIATION_ERROR_MESSAGE);
+            self.categoryOptions = params.categoryOptions;
+            self.categoryPlaceholder = params.category;
+            self.selectedCategory = ko.observable(params.category);
+            
+            if (!params.updateUrl) {
+                throw new Error(language.instantiationErrorMessage);
             }
 
-            self.categories = categories;
-            self.category = ko.observable(category);
-            self.updateUrl = updateUrl;
+            self.updateUrl = params.updateUrl;
+            self.node_id = params.node_id;
 
-            self.selectedCategory = ko.observable(category);
-            self.dirty = ko.observable(false);
-            self.selectedCategory.subscribe(function(value) {
-                if (value !== self.category()) {
-                    self.dirty(true);
+            self.originalProjectSettings = ko.observable(self.serialize());
+            self.dirty = ko.pureComputed(function(){
+                return JSON.stringify(self.originalProjectSettings()) !== JSON.stringify(self.serialize());
+            });
+        },
+        /*error handler*/
+        updateError: function(xhr, status, error) {
+            var self = this;
+            var errorMessage;
+            if (error === 'BAD REQUEST') {
+                self.changeMessage(language.updateErrorMessage400, 'text-danger');
+                errorMessage = language.updateErrorMessage400;
+            }
+            else {
+                self.changeMessage(language.updateErrorMessage, 'text-danger');
+                errorMessage = language.updateErrorMessage;
+            }
+            Raven.captureMessage(errorMessage, {
+                extra: {
+                    url: self.updateUrl,
+                    textStatus: status,
+                    err: error
                 }
             });
         },
-        updateSuccess: function(newcategory) {
+        /*update handler*/
+        updateAll: function() {
             var self = this;
-            self.changeMessage(self.UPDATE_SUCCESS_MESSAGE, self.MESSAGE_SUCCESS_CLASS);
-            self.category(newcategory);
-            self.dirty(false);
-        },
-        updateError: function(xhr, status, error) {
-            var self = this;
-            self.changeMessage(self.UPDATE_ERROR_MESSAGE, self.MESSAGE_ERROR_CLASS);
-            Raven.captureMessage(self.UPDATE_ERROR_MESSAGE_RAVEN, {
-                url: self.updateUrl,
-                textStatus: status,
-                err: error
+            if (!self.dirty()){
+                self.changeMessage(language.updateSuccessMessage, 'text-success');
+                return;
+            }
+            var requestPayload = self.serialize();
+            var request = $osf.ajaxJSON('patch',
+                self.updateUrl,
+                { data: requestPayload,
+                isCors: true });
+            request.done(function(response) {
+                self.categoryPlaceholder = response.data.attributes.category;
+                self.titlePlaceholder = response.data.attributes.title;
+                self.descriptionPlaceholder = response.data.attributes.description;
+                self.selectedCategory(self.categoryPlaceholder);
+                self.title(self.titlePlaceholder);
+                self.description(self.descriptionPlaceholder);
+                self.originalProjectSettings(self.serialize());
+                self.changeMessage(language.updateSuccessMessage, 'text-success');
             });
+            request.fail(self.updateError.bind(self));
+            return request;
         },
-        updateCategory: function() {
+        /*cancel handler*/
+        cancelAll: function() {
             var self = this;
-            return $osf.putJSON(self.updateUrl, {
-                    category: self.selectedCategory()
-                })
-                .then(function(response) {
-                    return response.updated_fields.category;
-                })
-                .done(self.updateSuccess.bind(self))
-                .fail(self.updateError.bind(self));
-        },
-        cancelUpdateCategory: function() {
-            var self = this;
-            self.selectedCategory(self.category());
-            self.dirty(false);
+            self.selectedCategory(self.categoryPlaceholder);
+            self.title(self.titlePlaceholder);
+            self.description(self.descriptionPlaceholder);
             self.resetMessage();
+        },
+        serialize: function() {
+            var self = this;
+            return {
+                data: {
+                    type: 'nodes',
+                    id:   self.node_id,
+                    attributes: {
+                        title: self.title(),
+                        category: self.selectedCategory(),
+                        description: self.description(),
+                    }
+                }
+            };
         }
     });
 
-var ProjectSettings = {
-    NodeCategorySettings: NodeCategorySettings
-};
-
 // TODO: Pass this in as an argument rather than relying on global contextVars
 var nodeApiUrl = window.contextVars.node.urls.api;
-
 
 // Request the first 5 contributors, for display in the deletion modal
 var contribs = [];
@@ -105,18 +133,19 @@ request.done(function(response) {
 });
 request.fail(function(xhr, textStatus, err) {
     Raven.captureMessage('Error requesting contributors', {
-        url: contribURL,
-        textStatus: textStatus,
-        err: err,
+        extra: {
+            url: contribURL,
+            textStatus: textStatus,
+            err: err,
+        }
     });
 });
-
 
 /**
  * Pulls a random name from the scientist list to use as confirmation string
  *  Ignores case and whitespace
  */
-ProjectSettings.getConfirmationCode = function(nodeType) {
+var getConfirmationCode = function(nodeType) {
 
     // It's possible that the XHR request for contributors has not finished before getting to this
     // point; only construct the HTML for the list of contributors if the contribs list is populated
@@ -145,4 +174,7 @@ ProjectSettings.getConfirmationCode = function(nodeType) {
     });
 };
 
-module.exports = ProjectSettings;
+module.exports = {
+    ProjectSettings: ProjectSettings,
+    getConfirmationCode: getConfirmationCode
+};

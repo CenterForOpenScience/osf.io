@@ -13,30 +13,54 @@ Example usage: ::
 Factory boy docs: http://factoryboy.readthedocs.org/
 
 """
+import mock
 import datetime
+import functools
 from factory import base, Sequence, SubFactory, post_generation, LazyAttribute
+from random import randint
 
 from mock import patch, Mock
+from modularodm import Q
+from modularodm.exceptions import NoResultsFound
 
 from framework.mongo import StoredObject
 from framework.auth import User, Auth
-from framework.auth.utils import impute_names_model
+from framework.auth.utils import impute_names_model, impute_names
+from framework.guid.model import Guid
 from framework.sessions.model import Session
+from website import security
 from website.addons import base as addons_base
-from website.oauth.models import ExternalAccount
-from website.oauth.models import ExternalProvider
+from website.files.models import StoredFileNode
+from website.oauth.models import (
+    ApiOAuth2Application,
+    ApiOAuth2PersonalToken,
+    ExternalAccount,
+    ExternalProvider
+)
 from website.project.model import (
-    Node, NodeLog, WatchConfig, Tag, Pointer, Comment, PrivateLink,
-    Retraction, Embargo, Sanction
+    Comment, DraftRegistration, MetaSchema, Node, NodeLog, Pointer,
+    PrivateLink, Tag, WatchConfig, AlternativeCitation,
+    ensure_schemas, Institution
+)
+from website.project.sanctions import (
+    Embargo,
+    EmbargoTerminationApproval,
+    RegistrationApproval,
+    Retraction,
+    Sanction,
 )
 from website.notifications.model import NotificationSubscription, NotificationDigest
-from website.archiver import listeners as archiver_listeners
 from website.archiver.model import ArchiveTarget, ArchiveJob
+from website.identifiers.model import Identifier
 from website.archiver import ARCHIVER_SUCCESS
+from website.project.licenses import NodeLicense, NodeLicenseRecord, ensure_licenses
+ensure_licenses = functools.partial(ensure_licenses, warn=False)
 
 from website.addons.wiki.model import NodeWikiPage
-from tests.base import fake
+from website.util import permissions
 
+from tests.base import fake
+from tests.base import get_default_metaschema
 
 # TODO: This is a hack. Check whether FactoryBoy can do this better
 def save_kwargs(**kwargs):
@@ -61,8 +85,8 @@ def FakerAttribute(provider, **kwargs):
 class ModularOdmFactory(base.Factory):
     """Base factory for modular-odm objects.
     """
-
-    ABSTRACT_FACTORY = True
+    class Meta:
+        abstract = True
 
     @classmethod
     def _build(cls, target_class, *args, **kwargs):
@@ -79,7 +103,9 @@ class ModularOdmFactory(base.Factory):
 
 
 class UserFactory(ModularOdmFactory):
-    FACTORY_FOR = User
+    class Meta:
+        model = User
+        abstract = False
 
     username = Sequence(lambda n: "fred{0}@example.com".format(n))
     # Don't use post generation call to set_password because
@@ -118,27 +144,54 @@ class AuthUserFactory(UserFactory):
 
     @post_generation
     def add_auth(self, create, extracted):
-        self.set_password('password')
+        self.set_password('password', notify=False)
         self.save()
         self.auth = (self.username, 'password')
 
 
 class TagFactory(ModularOdmFactory):
-    FACTORY_FOR = Tag
+    class Meta:
+        model = Tag
 
     _id = Sequence(lambda n: "scientastic-{}".format(n))
 
 
+class ApiOAuth2ApplicationFactory(ModularOdmFactory):
+    class Meta:
+        model = ApiOAuth2Application
+
+    owner = SubFactory(UserFactory)
+
+    name = Sequence(lambda n: 'Example OAuth2 Application #{}'.format(n))
+
+    home_url = 'ftp://ftp.ncbi.nlm.nimh.gov/'
+    callback_url = 'http://example.uk'
+
+
+class ApiOAuth2PersonalTokenFactory(ModularOdmFactory):
+    class Meta:
+        model = ApiOAuth2PersonalToken
+
+    owner = SubFactory(UserFactory)
+
+    scopes = 'osf.full_write osf.full_read'
+
+    name = Sequence(lambda n: 'Example OAuth2 Personal Token #{}'.format(n))
+
+
 class PrivateLinkFactory(ModularOdmFactory):
-    FACTORY_FOR = PrivateLink
+    class Meta:
+        model = PrivateLink
 
     name = "link"
-    key = "foobarblaz"
+    key = Sequence(lambda n: 'foobar{}'.format(n))
     anonymous = False
     creator = SubFactory(AuthUserFactory)
 
+
 class AbstractNodeFactory(ModularOdmFactory):
-    FACTORY_FOR = Node
+    class Meta:
+        model = Node
 
     title = 'The meaning of life'
     description = 'The meaning of life is 42.'
@@ -149,12 +202,12 @@ class ProjectFactory(AbstractNodeFactory):
     category = 'project'
 
 
-class FolderFactory(ProjectFactory):
-    is_folder = True
+class CollectionFactory(ProjectFactory):
+    is_collection = True
 
 
-class DashboardFactory(FolderFactory):
-    is_dashboard = True
+class BookmarkCollectionFactory(CollectionFactory):
+    is_bookmark_collection = True
 
 
 class NodeFactory(AbstractNodeFactory):
@@ -164,6 +217,7 @@ class NodeFactory(AbstractNodeFactory):
 
 class RegistrationFactory(AbstractNodeFactory):
 
+    creator = None
     # Default project is created if not provided
     category = 'project'
 
@@ -172,50 +226,54 @@ class RegistrationFactory(AbstractNodeFactory):
         raise Exception("Cannot build registration without saving.")
 
     @classmethod
-    def _create(cls, target_class, project=None, schema=None, user=None,
-                template=None, data=None, archive=False, embargo=None, approval=None, *args, **kwargs):
+    def _create(cls, target_class, project=None, is_public=False,
+                schema=None, data=None,
+                archive=False, embargo=None, registration_approval=None, retraction=None,
+                *args, **kwargs):
         save_kwargs(**kwargs)
-
+        user = None
+        if project:
+            user = project.creator
+        user = kwargs.get('user') or kwargs.get('creator') or user or UserFactory()
+        kwargs['creator'] = user
         # Original project to be registered
         project = project or target_class(*args, **kwargs)
+        if user._id not in project.permissions:
+            project.add_contributor(
+                contributor=user,
+                permissions=permissions.CREATOR_PERMISSIONS,
+                log=False,
+                save=False
+            )
         project.save()
 
         # Default registration parameters
-        #schema = schema or MetaSchema.find_one(
-        #    Q('name', 'eq', 'Open-Ended_Registration')
-        #)
-        schema = None
-        user = user or project.creator
-        template = template or "Template1"
-        data = data or "Some words"
+        schema = schema or get_default_metaschema()
+        data = data or {'some': 'data'}
         auth = Auth(user=user)
         register = lambda: project.register_node(
             schema=schema,
             auth=auth,
-            template=template,
-            data=data,
+            data=data
         )
 
         def add_approval_step(reg):
-            target = None
             if embargo:
                 reg.embargo = embargo
-                target = embargo
-            if approval:
-                reg.registration_approval = approval
+            elif registration_approval:
+                reg.registration_approval = registration_approval
+            elif retraction:
+                reg.retraction = retraction
             else:
                 reg.require_approval(reg.creator)
-            if not embargo:
-                target = reg.registration_approval
-            target.save()
+            reg.save()
+            reg.sanction.add_authorizer(reg.creator, reg)
+            reg.sanction.save()
 
-        if archive:
+        with patch('framework.celery_tasks.handlers.enqueue_task'):
             reg = register()
             add_approval_step(reg)
-        else:
-            with patch('framework.tasks.handlers.enqueue_task'):
-                reg = register()
-                add_approval_step(reg)
+        if not archive:
             with patch.object(reg.archive_job, 'archive_tree_finished', Mock(return_value=True)):
                 reg.archive_job.status = ARCHIVER_SUCCESS
                 reg.archive_job.save()
@@ -226,38 +284,125 @@ class RegistrationFactory(AbstractNodeFactory):
             dst_node=reg,
             initiator=user,
         )
+        if is_public:
+            reg.is_public = True
         reg.save()
         return reg
 
+
+class WithdrawnRegistrationFactory(AbstractNodeFactory):
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+
+        registration = kwargs.pop('registration', None)
+        registration.is_public = True
+        user = kwargs.pop('user', registration.creator)
+
+        registration.retract_registration(user)
+        withdrawal = registration.retraction
+        token = withdrawal.approval_state.values()[0]['approval_token']
+        withdrawal.approve_retraction(user, token)
+        withdrawal.save()
+
+        return withdrawal
+
+
+class ForkFactory(ModularOdmFactory):
+    class Meta:
+        model = Node
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+
+        project = kwargs.pop('project', None)
+        user = kwargs.pop('user', project.creator)
+        title = kwargs.pop('title', None)
+
+        fork = project.fork_node(auth=Auth(user), title=title)
+        fork.save()
+        return fork
+
+
 class PointerFactory(ModularOdmFactory):
-    FACTORY_FOR = Pointer
+    class Meta:
+        model = Pointer
     node = SubFactory(NodeFactory)
 
 
 class NodeLogFactory(ModularOdmFactory):
-    FACTORY_FOR = NodeLog
+    class Meta:
+        model = NodeLog
     action = 'file_added'
     user = SubFactory(UserFactory)
 
 
 class WatchConfigFactory(ModularOdmFactory):
-    FACTORY_FOR = WatchConfig
+    class Meta:
+        model = WatchConfig
     node = SubFactory(NodeFactory)
 
 
-class RetractionFactory(ModularOdmFactory):
-    FACTORY_FOR = Retraction
+class SanctionFactory(ModularOdmFactory):
+    class Meta:
+        abstract = True
+
+    @classmethod
+    def _create(cls, target_class, initiated_by=None, approve=False, *args, **kwargs):
+        user = kwargs.get('user') or UserFactory()
+        kwargs['initiated_by'] = initiated_by or user
+        sanction = ModularOdmFactory._create(target_class, *args, **kwargs)
+        reg_kwargs = {
+            'creator': user,
+            'user': user,
+            sanction.SHORT_NAME: sanction
+        }
+        RegistrationFactory(**reg_kwargs)
+        if not approve:
+            sanction.state = Sanction.UNAPPROVED
+            sanction.save()
+        return sanction
+
+class RetractionFactory(SanctionFactory):
+    class Meta:
+        model = Retraction
     user = SubFactory(UserFactory)
 
-
-class EmbargoFactory(ModularOdmFactory):
-    FACTORY_FOR = Embargo
+class EmbargoFactory(SanctionFactory):
+    class Meta:
+        model = Embargo
     user = SubFactory(UserFactory)
 
+class RegistrationApprovalFactory(SanctionFactory):
+    class Meta:
+        model = RegistrationApproval
+    user = SubFactory(UserFactory)
+
+class EmbargoTerminationApprovalFactory(ModularOdmFactory):
+
+    FACTORY_STRATEGY = base.CREATE_STRATEGY
+
+    @classmethod
+    def create(cls, registration=None, user=None, embargo=None, *args, **kwargs):
+        if registration:
+            if not user:
+                user = registration.creator
+        else:
+            user = user or AuthUserFactory()
+            if not embargo:
+                embargo = EmbargoFactory(initiated_by=user)
+                registration = embargo._get_registration()
+            else:
+                registration = RegistrationFactory(creator=user, user=user, embargo=embargo)
+        with mock.patch('website.project.sanctions.Sanction.is_approved', mock.Mock(return_value=True)):
+            with mock.patch('website.project.sanctions.TokenApprovableSanction.ask', mock.Mock()):
+                approval = registration.request_embargo_termination(Auth(user))
+                return approval
 
 
 class NodeWikiFactory(ModularOdmFactory):
-    FACTORY_FOR = NodeWikiPage
+    class Meta:
+        model = NodeWikiPage
 
     page_name = 'home'
     content = 'Some content'
@@ -268,7 +413,10 @@ class NodeWikiFactory(ModularOdmFactory):
     @post_generation
     def set_node_keys(self, create, extracted):
         self.node.wiki_pages_current[self.page_name] = self._id
-        self.node.wiki_pages_versions[self.page_name] = [self._id]
+        if self.node.wiki_pages_versions.get(self.page_name, None):
+            self.node.wiki_pages_versions[self.page_name].append(self._id)
+        else:
+            self.node.wiki_pages_versions[self.page_name] = [self._id]
         self.node.save()
 
 
@@ -277,7 +425,9 @@ class UnregUserFactory(ModularOdmFactory):
     to create an instance.
 
     """
-    FACTORY_FOR = User
+    class Meta:
+        model = User
+        abstract = False
     email = Sequence(lambda n: "brian{0}@queen.com".format(n))
     fullname = Sequence(lambda n: "Brian May{0}".format(n))
 
@@ -296,8 +446,8 @@ class UnconfirmedUserFactory(ModularOdmFactory):
     """Factory for a user that has not yet confirmed their primary email
     address (username).
     """
-
-    FACTORY_FOR = User
+    class Meta:
+        model = User
     username = Sequence(lambda n: 'roger{0}@queen.com'.format(n))
     fullname = Sequence(lambda n: 'Roger Taylor{0}'.format(n))
     password = 'killerqueen'
@@ -319,7 +469,8 @@ class UnconfirmedUserFactory(ModularOdmFactory):
 
 
 class AuthFactory(base.Factory):
-    FACTORY_FOR = Auth
+    class Meta:
+        model = Auth
     user = SubFactory(UserFactory)
 
 
@@ -375,7 +526,8 @@ class DeprecatedUnregUserFactory(base.Factory):
         >>> UnregUserFactory()
         {'nr_name': 'Tom Jones1', 'nr_email': 'tom1@example.com'}
     """
-    FACTORY_FOR = DeprecatedUnregUser
+    class Meta:
+        model = DeprecatedUnregUser
 
     nr_name = Sequence(lambda n: "Tom Jones{0}".format(n))
     nr_email = Sequence(lambda n: "tom{0}@example.com".format(n))
@@ -388,8 +540,8 @@ class DeprecatedUnregUserFactory(base.Factory):
 
 
 class CommentFactory(ModularOdmFactory):
-
-    FACTORY_FOR = Comment
+    class Meta:
+        model = Comment
     content = Sequence(lambda n: 'Comment {0}'.format(n))
     is_public = True
 
@@ -397,40 +549,90 @@ class CommentFactory(ModularOdmFactory):
     def _build(cls, target_class, *args, **kwargs):
         node = kwargs.pop('node', None) or NodeFactory()
         user = kwargs.pop('user', None) or node.creator
-        target = kwargs.pop('target', None) or node
+        target = kwargs.pop('target', None) or Guid.load(node._id)
+        content = kwargs.pop('content', None) or 'Test comment.'
         instance = target_class(
             node=node,
             user=user,
             target=target,
+            content=content,
             *args, **kwargs
         )
+        if isinstance(target.referent, target_class):
+            instance.root_target = target.referent.root_target
+        else:
+            instance.root_target = target
         return instance
 
     @classmethod
     def _create(cls, target_class, *args, **kwargs):
         node = kwargs.pop('node', None) or NodeFactory()
         user = kwargs.pop('user', None) or node.creator
-        target = kwargs.pop('target', None) or node
+        target = kwargs.pop('target', None) or Guid.load(node._id)
+        content = kwargs.pop('content', None) or 'Test comment.'
         instance = target_class(
             node=node,
             user=user,
             target=target,
+            content=content,
             *args, **kwargs
         )
+        if isinstance(target.referent, target_class):
+            instance.root_target = target.referent.root_target
+        else:
+            instance.root_target = target
         instance.save()
         return instance
 
 
+class InstitutionFactory(ProjectFactory):
+
+    default_institution_attributes = {
+        '_id': fake.md5,
+        'name': fake.company,
+        'logo_name': fake.file_name,
+        'auth_url': fake.url,
+        'domains': lambda: [fake.url()],
+        'email_domains': lambda: [fake.domain_name()],
+    }
+
+    def _build(cls, target_class, *args, **kwargs):
+        inst = ProjectFactory._build(target_class)
+        for inst_attr, node_attr in Institution.attribute_map.items():
+            default = cls.default_institution_attributes.get(inst_attr)
+            if callable(default):
+                default = default()
+            setattr(inst, node_attr, kwargs.pop(inst_attr, default))
+        for key, val in kwargs.items():
+            setattr(inst, key, val)
+        return Institution(inst)
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        inst = ProjectFactory._build(target_class)
+        for inst_attr, node_attr in Institution.attribute_map.items():
+            default = cls.default_institution_attributes.get(inst_attr)
+            if callable(default):
+                default = default()
+            setattr(inst, node_attr, kwargs.pop(inst_attr, default))
+        for key, val in kwargs.items():
+            setattr(inst, key, val)
+        inst.save()
+        return Institution(inst)
+
 class NotificationSubscriptionFactory(ModularOdmFactory):
-    FACTORY_FOR = NotificationSubscription
+    class Meta:
+        model = NotificationSubscription
 
 
 class NotificationDigestFactory(ModularOdmFactory):
-    FACTORY_FOR = NotificationDigest
+    class Meta:
+        model = NotificationDigest
 
 
 class ExternalAccountFactory(ModularOdmFactory):
-    FACTORY_FOR = ExternalAccount
+    class Meta:
+        model = ExternalAccount
 
     provider = 'mock2'
     provider_id = Sequence(lambda n: 'user-{0}'.format(n))
@@ -439,7 +641,8 @@ class ExternalAccountFactory(ModularOdmFactory):
 
 
 class SessionFactory(ModularOdmFactory):
-    FACTORY_FOR = Session
+    class Meta:
+        model = Session
 
     @classmethod
     def _build(cls, target_class, *args, **kwargs):
@@ -469,6 +672,8 @@ class MockOAuth2Provider(ExternalProvider):
 
     auth_url_base = "https://mock2.com/auth"
     callback_url = "https://mock2.com/callback"
+    auto_refresh_url = "https://mock2.com/callback"
+    refresh_time = 300
 
     def handle_callback(self, response):
         return {
@@ -496,10 +701,176 @@ class MockOAuthAddonUserSettings(addons_base.AddonOAuthUserSettingsBase):
 class MockOAuthAddonNodeSettings(addons_base.AddonOAuthNodeSettingsBase):
     oauth_provider = MockOAuth2Provider
 
+    folder_id = 'foo'
+    folder_name = 'Foo'
+    folder_path = '/Foo'
+
+
 
 class ArchiveTargetFactory(ModularOdmFactory):
-    FACTORY_FOR = ArchiveTarget
+    class Meta:
+        model = ArchiveTarget
 
 
 class ArchiveJobFactory(ModularOdmFactory):
-    FACTORY_FOR = ArchiveJob
+    class Meta:
+        model = ArchiveJob
+
+class AlternativeCitationFactory(ModularOdmFactory):
+    class Meta:
+        model = AlternativeCitation
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        name = kwargs.get('name')
+        text = kwargs.get('text')
+        instance = target_class(
+            name=name,
+            text=text
+        )
+        instance.save()
+        return instance
+
+class DraftRegistrationFactory(ModularOdmFactory):
+    class Meta:
+        model = DraftRegistration
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        branched_from = kwargs.get('branched_from')
+        initiator = kwargs.get('initiator')
+        registration_schema = kwargs.get('registration_schema')
+        registration_metadata = kwargs.get('registration_metadata')
+        if not branched_from:
+            project_params = {}
+            if initiator:
+                project_params['creator'] = initiator
+            branched_from = ProjectFactory(**project_params)
+        initiator = branched_from.creator
+        try:
+            registration_schema = registration_schema or MetaSchema.find()[0]
+        except IndexError:
+            ensure_schemas()
+        registration_metadata = registration_metadata or {}
+        draft = DraftRegistration.create_from_node(
+            branched_from,
+            user=initiator,
+            schema=registration_schema,
+            data=registration_metadata,
+        )
+        return draft
+
+class NodeLicenseRecordFactory(ModularOdmFactory):
+    class Meta:
+        model = NodeLicenseRecord
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        try:
+            NodeLicense.find_one(
+                Q('name', 'eq', 'No license')
+            )
+        except NoResultsFound:
+            ensure_licenses()
+        kwargs['node_license'] = kwargs.get(
+            'node_license',
+            NodeLicense.find_one(
+                Q('name', 'eq', 'No license')
+            )
+        )
+        return super(NodeLicenseRecordFactory, cls)._create(*args, **kwargs)
+
+
+class IdentifierFactory(ModularOdmFactory):
+    class Meta:
+        model = Identifier
+
+    referent = SubFactory(RegistrationFactory)
+    value = Sequence(lambda n: 'carp:/2460{}'.format(n))
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        kwargs['category'] = kwargs.get('category', 'carpid')
+
+        return super(IdentifierFactory, cls)._create(*args, **kwargs)
+
+
+def render_generations_from_parent(parent, creator, num_generations):
+    current_gen = parent
+    for generation in xrange(0, num_generations):
+        next_gen = NodeFactory(
+            parent=current_gen,
+            creator=creator,
+            title=fake.sentence(),
+            description=fake.paragraph()
+        )
+        current_gen = next_gen
+    return current_gen
+
+
+def render_generations_from_node_structure_list(parent, creator, node_structure_list):
+    new_parent = None
+    for node_number in node_structure_list:
+        if isinstance(node_number, list):
+            render_generations_from_node_structure_list(new_parent or parent, creator, node_number)
+        else:
+            new_parent = render_generations_from_parent(parent, creator, node_number)
+    return new_parent
+
+
+def create_fake_user():
+    email = fake.email()
+    name = fake.name()
+    parsed = impute_names(name)
+    user = UserFactory(
+        username=email,
+        fullname=name,
+        is_registered=True,
+        is_claimed=True,
+        verification_key=security.random_string(15),
+        date_registered=fake.date_time(),
+        emails=[email],
+        **parsed
+    )
+    user.set_password('faker123')
+    user.save()
+    return user
+
+
+def create_fake_project(creator, n_users, privacy, n_components, name, n_tags, presentation_name, is_registration):
+    auth = Auth(user=creator)
+    project_title = name if name else fake.sentence()
+    if not is_registration:
+        project = ProjectFactory(
+            title=project_title,
+            description=fake.paragraph(),
+            creator=creator
+        )
+    else:
+        project = RegistrationFactory(
+            title=project_title,
+            description=fake.paragraph(),
+            creator=creator
+        )
+    project.set_privacy(privacy)
+    for _ in range(n_users):
+        contrib = create_fake_user()
+        project.add_contributor(contrib, auth=auth)
+    if isinstance(n_components, int):
+        for _ in range(n_components):
+            NodeFactory(
+                project=project,
+                title=fake.sentence(),
+                description=fake.paragraph(),
+                creator=creator
+            )
+    elif isinstance(n_components, list):
+        render_generations_from_node_structure_list(project, creator, n_components)
+    for _ in range(n_tags):
+        project.add_tag(fake.word(), auth=auth)
+    if presentation_name is not None:
+        project.add_tag(presentation_name, auth=auth)
+        project.add_tag('poster', auth=auth)
+
+    project.save()
+    return project

@@ -15,7 +15,6 @@
 
     % if sentry_dsn_js:
     <script src="/static/vendor/bower_components/raven-js/dist/raven.min.js"></script>
-    <script src="/static/vendor/bower_components/raven-js/plugins/jquery.js"></script>
     <script>
         Raven.config(${ sentry_dsn_js | sjson, n }, {}).install();
     </script>
@@ -47,25 +46,53 @@
     ${self.javascript()}
 
     <link href='//fonts.googleapis.com/css?family=Carrois+Gothic|Inika|Patua+One' rel='stylesheet' type='text/css'>
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,600,300,700' rel='stylesheet' type='text/css'>
 
 </head>
 <body data-spy="scroll" data-target=".scrollspy">
+
     % if dev_mode:
-    <style>
-        #devmode {
-            position:fixed;
-            bottom:0;
-            left:0;
-            border-top-right-radius:8px;
-            background-color:red;
-            color:white;
-            padding:.5em;
-        }
-    </style>
-    <div id='devmode'><strong>WARNING</strong>: This site is running in development mode.</div>
+        <div class="dev-mode-helper scripted" id="devModeControls">
+        <div id="metaInfo" data-bind="visible: showMetaInfo">
+            <h2>Current branch: <span data-bind="text: branch"></span></h2>
+            <table>
+                <thead>
+                <tr>
+                    <th>PR</th>
+                    <th>Title</th>
+                    <th>Date Merged</th>
+                </tr>
+                </thead>
+                <tbody data-bind="foreach: pullRequests">
+                    <tr>
+                        <td>#<a data-bind="attr: {href: url}, text: number"></a></td>
+                        <td data-bind="text: title"></td>
+                        <td data-bind="text: mergedAt"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <style>
+            #devmode {
+                position:fixed;
+                bottom:0;
+                left:0;
+                border-top-right-radius:8px;
+                background-color:red;
+                color:white;
+                padding:.5em;
+            }
+        </style>
+        <div id='devmode' data-bind='click: showHideMetaInfo'><strong>WARNING</strong>: This site is running in development mode.</div>
+    </div>
+    %else:
+        <div id="devModeControls"></div>
     % endif
 
-    <%include file="nav.mako"/>
+    <%namespace name="nav_file" file="nav.mako"/>
+    <%block name="nav">
+        ${nav_file.nav()}
+    </%block>
      ## TODO: shouldn't always have the watermark class
     ${self.content_wrap()}
 
@@ -83,7 +110,7 @@
                 <div>
                     <a data-bind="click: trackClick.bind($data, 'Create Account')" class="btn btn-primary" href="${web_url_for('index')}#signUp">Create an Account</a>
 
-                    <a data-bind="click: trackClick.bind($data, 'Learn More')" class="btn btn-primary" href="/getting-started/">Learn More</a>
+                    <a data-bind="click: trackClick.bind($data, 'Learn More')" class="btn btn-primary" href="http://help.osf.io" target="_blank" rel="noreferrer">Learn More</a>
                     <a data-bind="click: dismiss">Hide this message</a>
                 </div>
             </div>
@@ -109,6 +136,21 @@
             </script>
         % endif
 
+        <%!
+            import hashlib
+
+            def user_hash(user_id):
+                token = hashlib.md5()
+                token.update(user_id)
+                return token.hexdigest()
+        %>
+
+        <%!
+            import datetime
+            def create_timestamp():
+                return str(datetime.datetime.utcnow())
+        %>
+
         % if settings.GOOGLE_ANALYTICS_ID:
             <script>
             (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
@@ -119,19 +161,14 @@
             ga('create', ${ settings.GOOGLE_ANALYTICS_ID | sjson, n }, 'auto', {'allowLinker': true});
             ga('require', 'linker');
             ga('linker:autoLink', ['centerforopenscience.org'] );
+            ga('set', 'dimension1', ${user_hash(user_id) | sjson, n});
+            ga('set', 'dimension2', ${create_timestamp() | sjson, n});
             ga('send', 'pageview');
             </script>
+
         % else:
             <script>
-                window.ga = function(source) {
-                        console.error('=== Mock ga event called: ===');
-                        console.log('event: ga(' +
-                                    arguments[0] + ', ' +
-                                    arguments[1] + ', ' +
-                                    arguments[2] + ', ' +
-                                    arguments[3] + ')'
-                        );
-                };
+                window.ga = function() {};
           </script>
         % endif
 
@@ -143,14 +180,23 @@
             // Mako variables accessible globally
             window.contextVars = $.extend(true, {}, window.contextVars, {
                 waterbutlerURL: ${ waterbutler_url if waterbutler_url.endswith('/') else waterbutler_url + '/' | sjson, n },
-            % if access_token:
-                accessToken: ${ access_token | sjson, n },
-                userId: ${user_id | sjson, n},
-                authUrl: ${auth_url | sjson, n},
-                profileUrl: ${profile_url | sjson, n},
-            % endif
+                // Whether or not this page is loaded under osf.io or another domain IE: institutions
+                isOnRootDomain: ${domain | sjson, n } === window.location.origin + '/',
                 cookieName: ${ cookie_name | sjson, n },
-                apiV2Prefix: ${ api_v2_base | sjson, n }
+                apiV2Prefix: ${ api_v2_base | sjson, n },
+                registerUrl: ${ api_url_for('register_user') | sjson, n },
+                currentUser: {
+                    id: ${ user_id | sjson, n },
+                    locale: ${ user_locale | sjson, n },
+                    timezone: ${ user_timezone | sjson, n },
+                    entryPoint: ${ user_entry_point | sjson, n },
+                    institutions: ${ user_institutions | sjson, n},
+                    emailsToAdd: ${ user_email_verifications | sjson, n }
+                },
+                allInstitutions: ${ all_institutions | sjson, n},
+                popular: ${ popular_links_node | sjson, n },
+                newAndNoteworthy: ${ noteworthy_links_node | sjson, n },
+                maintenance: ${ maintenance | sjson, n}
             });
         </script>
 
@@ -177,6 +223,15 @@
                 });
             </script>
         % endif
+
+        %if keen_project_id:
+            <script>
+                window.contextVars = $.extend(true, {}, window.contextVars, {
+                    keenProjectId: ${keen_project_id | sjson, n},
+                    keenWriteKey: ${keen_write_key | sjson, n}
+                })
+            </script>
+        %endif
 
 
         ${self.javascript_bottom()}
@@ -222,12 +277,29 @@
     <%include file="footer.mako"/>
 </%def>
 
+<%def name="alert()">
+    <%include file="alert.mako"/>
+</%def>
+
 <%def name="content_wrap()">
     <div class="watermarked">
         <div class="container ${self.container_class()}">
-            % if status:
-                <%include file="alert.mako"/>
+            % if maintenance:
+            ## Maintenance alert
+            <div id="maintenance" class="scripted alert alert-info alert-dismissible" role="alert">
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span></button>
+                <strong>Notice:</strong> The site will undergo maintenance between
+                <span id="maintenanceTime"></span>.
+                Thank you for your patience.
+            </div>
+            ## End Maintenance alert
             % endif
+
+            % if status:
+                ${self.alert()}
+            % endif
+
             ${self.content()}
         </div><!-- end container -->
     </div><!-- end watermarked -->
@@ -245,7 +317,8 @@
       <script src="//cdnjs.cloudflare.com/ajax/libs/es5-shim/4.0.3/es5-sham.min.js"></script>
     <![endif]-->
 
-    <!-- Le styles -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/es6-shim/0.35.0/es6-shim.min.js"></script>
+
     ## TODO: Get fontawesome and select2 to play nicely with webpack
     <link rel="stylesheet" href="/static/vendor/bower_components/bootstrap/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="/static/vendor/bower_components/select2/select2.css">
@@ -253,18 +326,21 @@
     <link rel="stylesheet" href="/static/css/style.css">
 
     % if settings.USE_CDN_FOR_CLIENT_LIBS:
-        <script src="//code.jquery.com/jquery-1.11.2.min.js"></script>
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
         <script>window.jQuery || document.write('<script src="/static/vendor/bower_components/jquery/dist/jquery.min.js">\x3C/script>')</script>
-        <script src="//code.jquery.com/ui/1.10.3/jquery-ui.min.js"></script>
+        <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
         <script>window.jQuery.ui || document.write('<script src="/static/vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js">\x3C/script>')</script>
     % else:
         <script src="/static/vendor/bower_components/jquery/dist/jquery.min.js"></script>
         <script src="/static/vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js"></script>
     % endif
-
+    <!-- JQuery 3 for IE Patching -->
+    <script type="text/javascript" src="/static/vendor/jquery-compat-git/jquery-compat-git.js"></script>
+    <script type="text/javascript">
+        var $3 = jQuery.noConflict(true);
+    </script>
     ## NOTE: We load vendor bundle  at the top of the page because contains
     ## the webpack runtime and a number of necessary stylesheets which should be loaded before the user sees
     ## content.
     <script src="${'/static/public/js/vendor.js' | webpack_asset}"></script>
-
 </%def>

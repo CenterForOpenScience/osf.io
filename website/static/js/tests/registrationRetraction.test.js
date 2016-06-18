@@ -14,6 +14,7 @@ var registrationRetraction = require('js/registrationRetraction');
 sinon.assert.expose(assert, {prefix: ''});
 
 describe('registrationRetraction', () => {
+    sinon.collection.restore();
     describe('ViewModels', () => {
 
         describe('RegistrationRetractionViewModel', () => {
@@ -22,7 +23,7 @@ describe('registrationRetraction', () => {
             var truncatedTitle = registrationTitle.slice(0, 50).split(' ').slice(0, -1).join(' ');
             var invalidJustification = faker.lorem.paragraphs(50);
             var invalidConfirmationText = 'abcd';
-            var submitUrl = '/project/abcdef/retraction/';
+            var submitUrl = '/project/abcdef/withdraw/';
             var invalidSubmitUrl = '/notAnEndpoint/';
             var redirectUrl = '/project/abdef/';
             var response = {redirectUrl: redirectUrl};
@@ -96,7 +97,10 @@ describe('registrationRetraction', () => {
                     assert.notCalled(postSpy);
                 });
                 it('submits successfully with valid confirmation text', (done) => {
-                    var onSubmitSuccessStub = new sinon.stub(vm, 'onSubmitSuccess');
+                    var onSubmitSuccessStub;
+                    if (!vm.onSubmitSuccess.restore) {
+                        onSubmitSuccessStub = sinon.stub(vm, 'onSubmitSuccess');
+                    }
 
                     vm.confirmationText(truncatedTitle);
                     vm.submit().always(() => {
@@ -110,6 +114,7 @@ describe('registrationRetraction', () => {
                 });
 
                 it('logs error with Raven if submit fails', (done) => {
+                    sinon.collection.restore();
                     vm = new registrationRetraction.ViewModel(invalidSubmitUrl, registrationTitle);
                     var onSubmitErrorSpy = new sinon.spy(vm, 'onSubmitError');
                     var ravenStub = new sinon.stub(Raven, 'captureMessage');
@@ -130,4 +135,3 @@ describe('registrationRetraction', () => {
         });
     });
 });
-

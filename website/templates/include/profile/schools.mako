@@ -16,22 +16,21 @@
                 <div>
 
                     <div class="well well-sm sort-handle">
-                        <span>Position {{ $index() + 1 }}</span>
-                        <span data-bind="visible: $parent.hasMultiple()">
+                        <span>Position <span data-bind="text: $index() + 1"></span></span>
+                        <span data-bind="visible: $parent.contentsLength() > 1">
                             [ drag to reorder ]
                         </span>
                         <a
                                 class="text-danger pull-right"
-                                data-bind="click: $parent.removeContent,
-                                           visible: $parent.canRemove"
-                            >Remove</a>
+                                data-bind="click: $parent.removeContent.bind($parent)"
+                                >Remove</a>
                     </div>
 
                     <div class="form-group">
                         <label>Institution</label>
-                       <input class="form-control" data-bind="value: institution"
-                            required="required" placeholder="Required"/>
-                         <div data-bind="visible: $parent.showMessages, css:'text-danger'">
+                        <input class="form-control" data-bind="value: institution" 
+                            placeholder="Required" />
+                        <div data-bind="visible: $parent.showMessages, css:'text-danger'">
                             <p data-bind="validationMessage: institution"></p>
                         </div>
                     </div>
@@ -47,7 +46,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Start Date</label>
+                        <label>Start date</label>
                         <div class="row">
                             <div class ="col-md-3">
                                 <select class="form-control" data-bind="options: months,
@@ -62,7 +61,7 @@
                     </div>
 
                     <div class="form-group" data-bind="ifnot: ongoing">
-                        <label>End Date</label>
+                        <label>End date</label>
                             <div class="row">
                                 <div class ="col-md-3">
                                     <select class="form-control" data-bind="options: months,
@@ -96,7 +95,7 @@
             </div>
 
             <div>
-                <a class="btn btn-success" data-bind="click: addContent">
+                <a class="btn btn-default" data-bind="click: addContent">
                     Add another
                 </a>
             </div>
@@ -110,6 +109,7 @@
                     >Discard changes</button>
 
                 <button
+                        data-bind="disable: saving(), text: saving() ? 'Saving' : 'Save'"
                         type="submit"
                         class="btn btn-success"
                     >Save</button>
@@ -118,7 +118,7 @@
 
             <!-- Flashed Messages -->
             <div class="help-block">
-                <p data-bind="html: message, attr.class: messageClass"></p>
+                <p data-bind="html: message, attr: {class: messageClass}"></p>
             </div>
 
         </form>
@@ -131,35 +131,42 @@
             <div class="well well-sm">Not provided</div>
         </div>
 
-        <div data-bind="if: contents().length">
-
-            <table class="table">
-
-                <thead>
-                    <tr>
-                        <th>Institution</th>
-                        <th>Department</th>
-                        <th>Degree</th>
-                        <th>Start&nbsp;Date</th>
-                        <th>End&nbsp;Date</th>
-                    </tr>
-                </thead>
-
-                <tbody data-bind="foreach: contents">
-
-                    <tr>
-
-                        <td>{{ institution }}</td>
-                        <td>{{ department }}</td>
-                        <td>{{ degree }}</td>
-                        <td>{{ startMonth }} {{ startYear }}</td>
-                        <td>{{ endView }}</td>
-
-                    </tr>
-
-                </tbody>
-
-            </table>
+        <div class="row" data-bind="if: contents().length">
+            <div data-bind="foreach: contents">
+                <div class="col-xs-12">
+                    <!-- ko if: expandable() -->
+                        <div class="panel panel-default">
+                            <div class="panel-heading card-heading" data-bind="click: toggle(), attr: {id: 'schoolHeading' + $index(), href: '#schoolCard' + $index()}" role="button" data-toggle="collapse" aria-controls="card" aria-expanded="false">
+                                <div class="header-content">
+                                    <h5 class="institution" data-bind="text: institution"></h5>
+                                    <span data-bind="if: startYear()" class="subheading">
+                                        <span data-bind="text: startMonth"></span> <span data-bind="text: startYear"></span> - <span data-bind="text: endView"></span>
+                                    </span>
+                                </div>
+                                <span data-bind="attr: {class: expanded() ? 'fa toggle-icon fa-angle-down' : 'fa toggle-icon fa-angle-up'}"></span>
+                            </div>
+                            <div data-bind="attr: {id: 'schoolCard' + $index(), 'aria-labelledby': 'schoolHeading' + $index()}" class="panel-collapse collapse">
+                                <div class="panel-body card-body">
+                                    <span data-bind="if: department().length"><h5>Department:</h5> <span data-bind="text: department"></span></span>
+                                    <span data-bind="if: degree().length"><h5>Degree:</h5> <span data-bind="text: degree"></span></span>
+                                    <span data-bind="if: startYear()"><h5>Dates:</h5>
+                                        <span data-bind="text: startMonth"></span> <span data-bind="text: startYear"></span> - <span data-bind="text: endView"></span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    <!-- /ko -->
+                    <!-- ko ifnot: expandable() -->
+                        <div class="panel panel-default">
+                            <div class="panel-heading no-bottom-border">
+                                <div>
+                                    <h5 data-bind="text: institution"></h5>
+                                </div>
+                            </div>
+                        </div>
+                    <!-- /ko -->
+                </div>
+            </div>
 
         </div>
 

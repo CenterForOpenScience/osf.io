@@ -1,9 +1,15 @@
 from modularodm import fields
 
 from framework.mongo import StoredObject, ObjectId
+from modularodm.exceptions import ValidationValueError
 
 from website.project.model import Node
 from website.notifications.constants import NOTIFICATION_TYPES
+
+
+def validate_subscription_type(value):
+    if value not in NOTIFICATION_TYPES:
+        raise ValidationValueError
 
 
 class NotificationSubscription(StoredObject):
@@ -13,9 +19,9 @@ class NotificationSubscription(StoredObject):
     owner = fields.AbstractForeignField()
 
     # Notification types
-    none = fields.ForeignField('user', list=True, backref='none')
-    email_digest = fields.ForeignField('user', list=True, backref='email_digest')
-    email_transactional = fields.ForeignField('user', list=True, backref='email_transactional')
+    none = fields.ForeignField('user', list=True)
+    email_digest = fields.ForeignField('user', list=True)
+    email_transactional = fields.ForeignField('user', list=True)
 
     def add_user_to_subscription(self, user, notification_type, save=True):
         for nt in NOTIFICATION_TYPES:
@@ -55,8 +61,9 @@ class NotificationSubscription(StoredObject):
 
 class NotificationDigest(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
-    user_id = fields.StringField()
+    user_id = fields.StringField(index=True)
     timestamp = fields.DateTimeField()
+    send_type = fields.StringField(index=True, validate=validate_subscription_type)
     event = fields.StringField()
     message = fields.StringField()
     node_lineage = fields.StringField(list=True)

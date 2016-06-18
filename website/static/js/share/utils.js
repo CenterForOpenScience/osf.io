@@ -166,23 +166,30 @@ utils.buildURLParams = function(vm){
 utils.buildQuery = function (vm) {
     var must = $.map(vm.requiredFilters, utils.parseFilter);
     var should = $.map(vm.optionalFilters, utils.parseFilter);
+    var from = (vm.page - 1) * 10;
     var sort = {};
+    var query = (vm.query().length > 0 && (vm.query() !== '*')) ? utils.commonQuery(vm.query()) : utils.matchAllQuery();
+    var builtQuery = {};
+    var filters = utils.boolQuery(must, null, should);
+    if (Object.keys(filters).length === 0) {
+        builtQuery = query;
+    } else {
+        builtQuery.filtered = {
+            query: query,
+            filter: filters
+        };
+    }
 
     if (vm.sortMap[vm.sort()]) {
         sort[vm.sortMap[vm.sort()]] = 'desc';
+    } else {
+        sort = null;
     }
 
-    return {
-        'query' : {
-            'filtered': {
-                'query': (vm.query().length > 0 && (vm.query() !== '*')) ? utils.commonQuery(vm.query()) : utils.matchAllQuery(),
-                'filter': utils.boolQuery(must, null, should)
-            }
-        },
+    // size defaults to 10, left out intentionally
+    var ret = {
+        'query' : builtQuery,
         'aggregations': vm.loadStats ? utils.buildStatsAggs(vm) : {},
-        'from': (vm.page - 1) * 10,
-        'size': 10,
-        'sort': [sort],
         'highlight': {
             'fields': {
                 'title': {'fragment_size': 2000},
@@ -192,6 +199,13 @@ utils.buildQuery = function (vm) {
         }
     };
 
+    if (sort) {
+        ret.sort = sort;
+    }
+    if (from !== 0) {
+        ret.from = from;
+    }
+    return ret;
 };
 
 utils.maybeQuashEvent = function (event) {
@@ -207,13 +221,20 @@ utils.maybeQuashEvent = function (event) {
 
 /* Adds a filter to the list of filters if it doesn't already exist */
 utils.updateFilter = function (vm, filter, required) {
-    if (required && vm.requiredFilters.indexOf(filter) === -1) {
-        vm.requiredFilters.push(filter);
-    } else if (vm.optionalFilters.indexOf(filter) === -1 && !required) {
-        vm.optionalFilters.push(filter);
-    }
+    var filters = ensureArray(filter);
+    filters.forEach(function(f){
+        if (required && vm.requiredFilters.indexOf(f) === -1) {
+            vm.requiredFilters.push(f);
+        } else if (vm.optionalFilters.indexOf(f) === -1 && !required) {
+            vm.optionalFilters.push(f);
+        }
+    });
     utils.search(vm);
 };
+
+function ensureArray(value) {
+    return Array.isArray(value) ? value : [value];
+}
 
 /* Removes a filter from the list of filters */
 utils.removeFilter = function (vm, filter) {
@@ -239,15 +260,12 @@ utils.loadRawNormalized = function(result){
     var docID = encodeURIComponent(result.shareProperties.docID);
     return m.request({
         method: 'GET',
-        url: 'api/v1/share/documents/' + source + '/' + docID + '/',
+        url: '/api/v1/share/documents/' + source + '/' + docID + '/',
         unwrapSuccess: function(data) {
             var unwrapped = {};
-            var normed = JSON.parse(data.normalized);
-            var allRaw = JSON.parse(data.raw);
-            unwrapped.normalized = JSON.parse(data.normalized);
-            unwrapped.raw = allRaw.doc;
-            unwrapped.rawfiletype = allRaw.filetype;
-            unwrapped.normalized = normed;
+            unwrapped.raw = data.raw.doc;
+            unwrapped.rawfiletype = data.raw.filetype;
+            unwrapped.normalized = data.normalized;
 
             return unwrapped;
         },
@@ -258,7 +276,7 @@ utils.loadRawNormalized = function(result){
             error.raw = '"Raw data not found."';
             if (xhr.status >= 500) {
                 Raven.captureMessage('SHARE Raw and Normalized API Internal Server Error.', {
-                    textStatus: status
+                    extra: {textStatus: xhr.status}
                 });
             }
 
@@ -312,13 +330,26 @@ utils.rangeFilter = function (fieldName, gte, lte) {
 
 /* Creates a bool query */
 utils.boolQuery = function (must, mustNot, should, minimum) {
-    var ret = {
-        'bool': {
-            'must': (must || []),
-            'must_not': (mustNot || []),
-            'should': (should || [])
-        }
-    };
+    var ret = {};
+    var mustProvided = must && (must.length > 0);
+    var mustNotProvided = mustNot && (mustNot.length > 0);
+    var shouldProvided = should && (should.length > 0);
+
+    if (!mustProvided && !mustNotProvided && !shouldProvided) {
+        return ret;
+    } else {
+        ret.bool = {};
+    }
+
+    if (mustProvided) {
+        ret.bool.must = must;
+    }
+    if (mustNotProvided) {
+        ret.bool.must_not = mustNot;
+    }
+    if (shouldProvided) {
+        ret.bool.should = should;
+    }
     if (minimum) {
         ret.bool.minimum_should_match = minimum;
     }
@@ -464,7 +495,6 @@ utils.generateColors = function (numColors) {
         color = colorsToGenerate.shift();
         if (typeof color === 'undefined') {
             colorsToGenerate = utils.getNewColors(colorsUsed);
-            colorsUsed = [];
         } else {
             colorsUsed.push(color);
             colorsOut.push(rgbToHex(color));

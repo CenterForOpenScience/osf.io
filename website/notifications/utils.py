@@ -1,12 +1,17 @@
 import collections
 
+from framework.postcommit_tasks.handlers import run_postcommit
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
-from framework.auth import signals
-from website.models import Node
+from website.models import Node, User
 from website.notifications import constants
 from website.notifications import model
+from website.notifications.exceptions import InvalidSubscriptionError
+from website.notifications.model import NotificationSubscription
+from website.project import signals
+
+from framework.celery_tasks import app
 
 
 class NotificationsDict(dict):
@@ -31,13 +36,24 @@ class NotificationsDict(dict):
         d_to_use['messages'].extend(messages)
 
 
+def find_subscription_type(subscription):
+    """Find subscription type string within specific subscription.
+     Essentially removes extraneous parts of the string to get the type.
+    """
+    subs_available = list(constants.USER_SUBSCRIPTIONS_AVAILABLE.keys())
+    subs_available.extend(list(constants.NODE_SUBSCRIPTIONS_AVAILABLE.keys()))
+    for available in subs_available:
+        if available in subscription:
+            return available
+
+
 def to_subscription_key(uid, event):
     """Build the Subscription primary key for the given guid and event"""
-    return str(uid + '_' + event)
+    return u'{}_{}'.format(uid, event)
 
 
 def from_subscription_key(key):
-    parsed_key = key.split("_", 1)
+    parsed_key = key.split('_', 1)
     return {
         'uid': parsed_key[0],
         'event': parsed_key[1]
@@ -45,18 +61,24 @@ def from_subscription_key(key):
 
 
 @signals.contributor_removed.connect
-def remove_contributor_from_subscriptions(contributor, node):
+def remove_contributor_from_subscriptions(node, user):
     """ Remove contributor from node subscriptions unless the user is an
         admin on any of node's parent projects.
     """
-    if contributor._id not in node.admin_contributor_ids:
-        node_subscriptions = get_all_node_subscriptions(contributor, node)
+    if user._id not in node.admin_contributor_ids:
+        node_subscriptions = get_all_node_subscriptions(user, node)
         for subscription in node_subscriptions:
-            subscription.remove_user_from_subscription(contributor)
+            subscription.remove_user_from_subscription(user)
 
 
 @signals.node_deleted.connect
 def remove_subscription(node):
+    remove_subscription_task(node._id)
+
+@run_postcommit(once_per_request=False, celery=True)
+@app.task(max_retries=5, default_retry_delay=60)
+def remove_subscription_task(node_id):
+    node = Node.load(node_id)
     model.NotificationSubscription.remove(Q('owner', 'eq', node))
     parent = node.parent_node
 
@@ -67,8 +89,81 @@ def remove_subscription(node):
         parent.save()
 
 
+def separate_users(node, user_ids):
+    """Separates users into ones with permissions and ones without given a list.
+
+    :param node: Node to separate based on permissions
+    :param user_ids: List of ids, will also take and return User instances
+    :return: list of subbed, list of removed user ids
+    """
+    removed = []
+    subbed = []
+    for user_id in user_ids:
+        try:
+            user = User.load(user_id)
+        except TypeError:
+            user = user_id
+        if node.has_permission(user, 'read'):
+            subbed.append(user_id)
+        else:
+            removed.append(user_id)
+    return subbed, removed
+
+
+def users_to_remove(source_event, source_node, new_node):
+    """Find users that do not have permissions on new_node.
+
+    :param source_event: such as _file_updated
+    :param source_node: Node instance where a subscription currently resides
+    :param new_node: Node instance where a sub or new sub will be.
+    :return: Dict of notification type lists with user_ids
+    """
+    removed_users = {key: [] for key in constants.NOTIFICATION_TYPES}
+    if source_node == new_node:
+        return removed_users
+    old_sub = NotificationSubscription.load(to_subscription_key(source_node._id, source_event))
+    old_node_sub = NotificationSubscription.load(to_subscription_key(source_node._id,
+                                                                     '_'.join(source_event.split('_')[-2:])))
+    if not old_sub and not old_node_sub:
+        return removed_users
+    for notification_type in constants.NOTIFICATION_TYPES:
+        users = getattr(old_sub, notification_type, []) + getattr(old_node_sub, notification_type, [])
+        subbed, removed_users[notification_type] = separate_users(new_node, users)
+    return removed_users
+
+
+def move_subscription(remove_users, source_event, source_node, new_event, new_node):
+    """Moves subscription from old_node to new_node
+
+    :param remove_users: dictionary of lists of users to remove from the subscription
+    :param source_event: A specific guid event <guid>_file_updated
+    :param source_node: Instance of Node
+    :param new_event: A specific guid event
+    :param new_node: Instance of Node
+    :return: Returns a NOTIFICATION_TYPES list of removed users without permissions
+    """
+    if source_node == new_node:
+        return
+    old_sub = NotificationSubscription.load(to_subscription_key(source_node._id, source_event))
+    if not old_sub:
+        return
+    elif old_sub:
+        old_sub.update_fields(_id=to_subscription_key(new_node._id, new_event), event_name=new_event,
+                              owner=new_node)
+    new_sub = old_sub
+    # Remove users that don't have permission on the new node.
+    for notification_type in constants.NOTIFICATION_TYPES:
+        if new_sub:
+            for user_id in remove_users[notification_type]:
+                if user_id in getattr(new_sub, notification_type, []):
+                    user = User.load(user_id)
+                    new_sub.remove_user_from_subscription(user)
+
+
 def get_configured_projects(user):
-    """ Filter all user subscriptions for ones that are on parent projects and return the project ids
+    """Filter all user subscriptions for ones that are on parent projects
+     and return the project ids.
+
     :param user: modular odm User object
     :return: list of project ids for projects with no parent
     """
@@ -76,10 +171,17 @@ def get_configured_projects(user):
     user_subscriptions = get_all_user_subscriptions(user)
 
     for subscription in user_subscriptions:
+        if subscription is None:
+            continue
         # If the user has opted out of emails skip
         node = subscription.owner
 
-        if not isinstance(node, Node) or (user in subscription.none and not node.parent_id):
+        if (
+            not isinstance(node, Node) or
+            (user in subscription.none and not node.parent_id) or
+            node._id not in user.notifications_configured or
+            node.is_collection
+        ):
             continue
 
         while node.parent_id and not node.is_deleted:
@@ -101,14 +203,10 @@ def check_project_subscriptions_are_all_none(user, node):
 
 def get_all_user_subscriptions(user):
     """ Get all Subscription objects that the user is subscribed to"""
-    user_subscriptions = []
     for notification_type in constants.NOTIFICATION_TYPES:
-        if getattr(user, notification_type, []):
-            for subscription in getattr(user, notification_type, []):
-                if subscription:
-                    user_subscriptions.append(subscription)
-
-    return user_subscriptions
+        query = NotificationSubscription.find(Q(notification_type, 'eq', user._id))
+        for subscription in query:
+            yield subscription
 
 
 def get_all_node_subscriptions(user, node, user_subscriptions=None):
@@ -121,30 +219,25 @@ def get_all_node_subscriptions(user, node, user_subscriptions=None):
     """
     if not user_subscriptions:
         user_subscriptions = get_all_user_subscriptions(user)
-    node_subscriptions = []
-    for s in user_subscriptions:
-        if s.owner == node:
-            node_subscriptions.append(s)
-
-    return node_subscriptions
+    for subscription in user_subscriptions:
+        if subscription and subscription.owner == node:
+            yield subscription
 
 
 def format_data(user, node_ids):
     """ Format subscriptions data for project settings page
     :param user: modular odm User object
     :param node_ids: list of parent project ids
-    :param data: the formatted data
     :return: treebeard-formatted data
     """
     items = []
-    user_subscriptions = get_all_user_subscriptions(user)
 
     for node_id in node_ids:
         node = Node.load(node_id)
         assert node, '{} is not a valid Node.'.format(node_id)
 
         can_read = node.has_permission(user, 'read')
-        can_read_children = node.can_read_children(user)
+        can_read_children = node.has_permission_on_children(user, 'read')
 
         if not can_read and not can_read_children:
             continue
@@ -154,9 +247,16 @@ def format_data(user, node_ids):
         # user is contributor on a component of the project/node
 
         if can_read:
-            node_subscriptions = get_all_node_subscriptions(user, node, user_subscriptions=user_subscriptions)
-            for subscription in constants.NODE_SUBSCRIPTIONS_AVAILABLE:
-                children.append(serialize_event(user, subscription, constants.NODE_SUBSCRIPTIONS_AVAILABLE, node_subscriptions, node))
+            node_sub_available = list(constants.NODE_SUBSCRIPTIONS_AVAILABLE.keys())
+            subscriptions = [subscription for subscription in get_all_node_subscriptions(user, node)
+                             if getattr(subscription, 'event_name') in node_sub_available]
+            for subscription in subscriptions:
+                index = node_sub_available.index(getattr(subscription, 'event_name'))
+                children.append(serialize_event(user, subscription=subscription,
+                                                node=node, event_description=node_sub_available.pop(index)))
+            for node_sub in node_sub_available:
+                    children.append(serialize_event(user, node=node, event_description=node_sub))
+            children.sort(key=lambda s: s['event']['title'])
 
         children.extend(format_data(
             user,
@@ -188,72 +288,162 @@ def format_data(user, node_ids):
     return items
 
 
-def format_user_subscriptions(user, data):
+def format_user_subscriptions(user):
     """ Format user-level subscriptions (e.g. comment replies across the OSF) for user settings page"""
-    user_subscriptions = [s for s in model.NotificationSubscription.find(Q('owner', 'eq', user))]
-    for subscription in constants.USER_SUBSCRIPTIONS_AVAILABLE:
-        event = serialize_event(user, subscription, constants.USER_SUBSCRIPTIONS_AVAILABLE, user_subscriptions)
-        data.append(event)
+    user_subs_available = list(constants.USER_SUBSCRIPTIONS_AVAILABLE.keys())
+    subscriptions = [
+        serialize_event(
+            user, subscription,
+            event_description=user_subs_available.pop(user_subs_available.index(getattr(subscription, 'event_name')))
+        )
+        for subscription in get_all_user_subscriptions(user)
+        if subscription is not None and getattr(subscription, 'event_name') in user_subs_available
+    ]
+    subscriptions.extend([serialize_event(user, event_description=sub) for sub in user_subs_available])
+    return subscriptions
 
-    return data
+
+def format_file_subscription(user, node_id, path, provider):
+    """Format a single file event"""
+    node = Node.load(node_id)
+    wb_path = path.lstrip('/')
+    for subscription in get_all_node_subscriptions(user, node):
+        if wb_path in getattr(subscription, 'event_name'):
+            return serialize_event(user, subscription, node)
+    return serialize_event(user, node=node, event_description='file_updated')
 
 
-def serialize_event(user, subscription, subscriptions_available, user_subscriptions, node=None):
+def serialize_event(user, subscription=None, node=None, event_description=None):
     """
     :param user: modular odm User object
-    :param subscription: modular odm Subscription object
-    :param subscriptions_available: dict of available notification events for a project or user
-    :param user_subscriptions: all user subscriptions
-    :param node: modular odm Node object
-    :return: treebeard-formatted subscription events
+    :param subscription: modular odm Subscription object, use if parsing particular subscription
+    :param node: modular odm Node object, use if node is known
+    :param event_description: use if specific subscription is known
+    :return: treebeard-formatted subscription event
     """
-    event = {
+    all_subs = constants.NODE_SUBSCRIPTIONS_AVAILABLE.copy()
+    all_subs.update(constants.USER_SUBSCRIPTIONS_AVAILABLE)
+    if not event_description:
+        event_description = getattr(subscription, 'event_name')
+    # Looks at only the types available. Deals with pre-pending file names.
+        for sub_type in all_subs:
+            if sub_type in event_description:
+                event_type = sub_type
+    else:
+        event_type = event_description
+    if node and node.node__parent:
+        notification_type = 'adopt_parent'
+    elif event_type.startswith('global_'):
+        notification_type = 'email_transactional'
+    else:
+        notification_type = 'none'
+    if subscription:
+        for n_type in constants.NOTIFICATION_TYPES:
+            if user in getattr(subscription, n_type):
+                notification_type = n_type
+    return {
         'event': {
-            'title': subscription,
-            'description': subscriptions_available[subscription],
-            'notificationType': 'adopt_parent' if node and node.node__parent else 'none',
+            'title': event_description,
+            'description': all_subs[event_type],
+            'notificationType': notification_type,
+            'parent_notification_type': get_parent_notification_type(node, event_type, user)
         },
         'kind': 'event',
         'children': []
     }
-    for s in user_subscriptions:
-        if s.event_name == subscription:
-            for notification_type in constants.NOTIFICATION_TYPES:
-                if user in getattr(s, notification_type):
-                    event['event']['notificationType'] = notification_type
-
-    if node and node.parent_node and node.parent_node.has_permission(user, 'read'):
-        parent_nt = get_parent_notification_type(node._id, subscription, user)
-        event['event']['parent_notification_type'] = parent_nt if parent_nt else 'none'
-    else:
-        event['event']['parent_notification_type'] = None
-
-    return event
 
 
-def get_parent_notification_type(uid, event, user):
+def get_parent_notification_type(node, event, user):
     """
     Given an event on a node (e.g. comment on node 'xyz'), find the user's notification
     type on the parent project for the same event.
-    :param str uid: id of event owner (Node or User object)
+    :param obj node: event owner (Node or User object)
     :param str event: notification event (e.g. 'comment_replies')
     :param obj user: modular odm User object
     :return: str notification type (e.g. 'email_transactional')
     """
-    node = Node.load(uid)
-    if node and node.node__parent:
-        for p in node.node__parent:
-            key = to_subscription_key(p._id, event)
+    if node and isinstance(node, Node) and node.node__parent and node.parent_node.has_permission(user, 'read'):
+        for parent in node.node__parent:
+            key = to_subscription_key(parent._id, event)
             try:
                 subscription = model.NotificationSubscription.find_one(Q('_id', 'eq', key))
             except NoResultsFound:
-                return get_parent_notification_type(p._id, event, user)
+                return get_parent_notification_type(parent, event, user)
 
             for notification_type in constants.NOTIFICATION_TYPES:
                 if user in getattr(subscription, notification_type):
                     return notification_type
             else:
-                return get_parent_notification_type(p._id, event, user)
+                return get_parent_notification_type(parent, event, user)
+    else:
+        return None
+
+
+def get_global_notification_type(global_subscription, user):
+    """
+    Given a global subscription (e.g. NotificationSubscription object with event_type
+    'global_file_updated'), find the user's notification type.
+    :param obj global_subscription: modular odm NotificationSubscription object
+    :param obj user: modular odm User object
+    :return: str notification type (e.g. 'email_transactional')
+    """
+    for notification_type in constants.NOTIFICATION_TYPES:
+        if user in getattr(global_subscription, notification_type):
+            return notification_type
+
+
+def check_if_all_global_subscriptions_are_none(user):
+    all_global_subscriptions_none = False
+    user_sunscriptions = get_all_user_subscriptions(user)
+    for user_subscription in user_sunscriptions:
+        if user_subscription.event_name.startswith('global_'):
+            all_global_subscriptions_none = True
+            global_notification_type = get_global_notification_type(user_subscription, user)
+            if global_notification_type != 'none':
+                return False
+
+    return all_global_subscriptions_none
+
+
+def subscribe_user_to_notifications(node, user):
+    """ Update the notification settings for the creator or contributors
+
+    :param user: User to subscribe to notifications
+    """
+
+    if node.institution_id:
+        raise InvalidSubscriptionError('Institutions are invalid targets for subscriptions')
+
+    if node.is_collection:
+        raise InvalidSubscriptionError('Collections are invalid targets for subscriptions')
+
+    if node.is_deleted:
+        raise InvalidSubscriptionError('Deleted Nodes are invalid targets for subscriptions')
+
+    events = constants.NODE_SUBSCRIPTIONS_AVAILABLE
+    notification_type = 'email_transactional'
+    target_id = node._id
+
+    if user.is_registered:
+        for event in events:
+            event_id = to_subscription_key(target_id, event)
+            global_event_id = to_subscription_key(user._id, 'global_' + event)
+            global_subscription = NotificationSubscription.load(global_event_id)
+
+            subscription = NotificationSubscription.load(event_id)
+
+            # If no subscription for component and creator is the user, do not create subscription
+            # If no subscription exists for the component, this means that it should adopt its
+            # parent's settings
+            if not(node and node.parent_node and not subscription and node.creator == user):
+                if not subscription:
+                    subscription = NotificationSubscription(_id=event_id, owner=node, event_name=event)
+                if global_subscription:
+                    global_notification_type = get_global_notification_type(global_subscription, user)
+                    subscription.add_user_to_subscription(user, global_notification_type)
+                else:
+                    subscription.add_user_to_subscription(user, notification_type)
+                subscription.save()
 
 
 def format_user_and_project_subscriptions(user):
@@ -262,15 +452,20 @@ def format_user_and_project_subscriptions(user):
         {
             'node': {
                 'id': user._id,
-                'title': 'User Notifications',
+                'title': 'Default Notification Settings',
+                'help': 'These are default settings for new projects you create ' +
+                        'or are added to. Modifying these settings will not ' +
+                        'modify settings on existing projects.'
             },
             'kind': 'heading',
-            'children': format_user_subscriptions(user, [])
+            'children': format_user_subscriptions(user)
         },
         {
             'node': {
                 'id': '',
                 'title': 'Project Notifications',
+                'help': 'These are settings for each of your projects. Modifying ' +
+                        'these settings will only modify the settings for the selected project.'
             },
             'kind': 'heading',
             'children': format_data(user, get_configured_projects(user))

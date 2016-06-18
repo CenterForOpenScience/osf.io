@@ -4,8 +4,10 @@ These settings override what's in website/settings/defaults.py
 
 NOTE: local.py will not be added to source control.
 '''
+import inspect
 
 from . import defaults
+import os
 
 DB_PORT = 27017
 
@@ -31,9 +33,17 @@ SECRET_KEY = "CHANGEME"
 ## Default RabbitMQ broker
 BROKER_URL = 'amqp://'
 
-# Default RabbitMQ backend
-CELERY_RESULT_BACKEND = 'amqp://'
+# In-memory result backend
+CELERY_RESULT_BACKEND = 'cache'
+CELERY_CACHE_BACKEND = 'memory'
 
 USE_CDN_FOR_CLIENT_LIBS = False
 
 SENTRY_DSN = None
+
+TEST_DB_NAME = DB_NAME = 'osf_test'
+
+VARNISH_SERVERS = ['http://localhost:8080']
+
+# if ENABLE_VARNISH isn't set in python read it from the env var and set it
+locals().setdefault('ENABLE_VARNISH', os.environ.get('ENABLE_VARNISH') == 'True')

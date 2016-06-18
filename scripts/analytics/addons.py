@@ -89,7 +89,6 @@ def analyze_addon(name):
 
 
 def main():
-    init_app(routes=False)
     for addon in ADDONS:
         if addon in settings.ADDONS_AVAILABLE_DICT:
             analyze_addon(addon)

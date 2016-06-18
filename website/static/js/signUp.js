@@ -2,14 +2,12 @@
 
 var ko = require('knockout');
 require('knockout.validation');
-require('knockout.punches');
 var $ = require('jquery');
 
 var $osf = require('./osfHelpers');
 
-ko.punches.enableAll();
 
-var ViewModel = function(submitUrl) {
+var ViewModel = function(submitUrl, campaign) {
 
     var self = this;
 
@@ -37,6 +35,7 @@ var ViewModel = function(submitUrl) {
         minLength: 6,
         maxLength: 256
     });
+    self.campaign = ko.observable(campaign);
 
     // Preserve object of validated fields for use in `submit`
     var validatedFields = {
@@ -71,7 +70,7 @@ var ViewModel = function(submitUrl) {
             self.timeout = setTimeout(
                 function() {
                     message('');
-                    messageClass('text-info');
+                    messageClass('');
                 },
                 timeout
             );
@@ -87,7 +86,7 @@ var ViewModel = function(submitUrl) {
             self.flashMessage,
             self.flashMessageClass,
             response.message,
-            'text-info'
+            'text-info p-xs'
         );
         self.submitted(true);
     };
@@ -97,13 +96,17 @@ var ViewModel = function(submitUrl) {
             self.flashMessage,
             self.flashMessageClass,
             xhr.responseJSON.message_long,
-            'text-danger',
+            'text-danger p-xs',
             5000,
             self.flashTimeout
         );
     };
 
     self.submit = function() {
+        if (self.submitted()) {
+            self.changeMessage(self.flashMessage, self.flashMessageClass, 'You have already submitted. You cannot sign up more than once.', 'text-danger p-xs');
+            return false;
+        }
         // Show errors if invalid
         if (!self.isValid()) {
             // Ensure validation errors are displayed
@@ -128,8 +131,8 @@ var ViewModel = function(submitUrl) {
 
 };
 
-var SignUp = function(selector, submitUrl) {
-    this.viewModel = new ViewModel(submitUrl);
+var SignUp = function(selector, submitUrl, campaign) {
+    this.viewModel = new ViewModel(submitUrl, campaign);
     $osf.applyBindings(this.viewModel, selector);
 };
 

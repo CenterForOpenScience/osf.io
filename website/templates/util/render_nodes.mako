@@ -1,12 +1,11 @@
 % if len(nodes):
-    <ul class="list-group m-md ${'sortable' if sortable and 'write' in user['permissions'] else ''}">
+    <ul data-bind="stopBinding: true" class="list-group m-md ${'sortable' if sortable and 'write' in user['permissions'] else ''}">
         <span id='${pluralized_node_type if pluralized_node_type is not UNDEFINED else 'osfNodeList'}' class="render-nodes-list scripted">
         % for each in nodes:
             <div mod-meta='{
                     "tpl": "util/render_node.mako",
                     "uri": "${each['api_url']}get_summary/",
                     "view_kwargs": {
-                        "rescale_ratio": ${rescale_ratio},
                         "primary": ${int(each['primary'])},
                         "link_id": "${each['id']}",
                         "uid": "${user_id}",
@@ -25,7 +24,7 @@
               $('.sortable').sortable({
                   containment: '#containment',
                   tolerance: 'pointer',
-                  items: '#components > li',
+                  items: '#render-node > li',
                   stop: function(event, ui){
                       var sortListElm = this;
                       var idList = $(sortListElm).sortable(

@@ -139,23 +139,23 @@ describe('share/utils', () => {
             var built;
             query = '';
             built = utils.buildQuery(vm);
-            assert.equal('match_all', Object.keys(built.query.filtered.query)[0]);
+            assert.equal('match_all', Object.keys(built.query)[0]);
 
             query = '*';
             built = utils.buildQuery(vm);
-            assert.equal('match_all', Object.keys(built.query.filtered.query)[0]);
+            assert.equal('match_all', Object.keys(built.query)[0]);
 
             query = 'toast';
         });
 
         it('creates a common terms query otherwise', () => {
             var built = utils.buildQuery(vm);
-            assert.equal('common', Object.keys(built.query.filtered.query)[0]);
+            assert.equal('common', Object.keys(built.query)[0]);
         });
 
         it('creates match query filters for required filters', () => {
-            vm.requiredFilters.push('_all:1');
-            vm.requiredFilters.push('_all:2');
+            vm.requiredFilters.push('match:_all:1');
+            vm.requiredFilters.push('match:_all:2');
             var built = utils.buildQuery(vm);
 
             assert.equal('bool', Object.keys(built.query.filtered.filter)[0]);
@@ -166,8 +166,8 @@ describe('share/utils', () => {
         });
 
         it('creates a list of should filters for the optional filters', () => {
-            vm.requiredFilters.push('_all:1');
-            vm.requiredFilters.push('_all:2');
+            vm.optionalFilters.push('match:_all:1');
+            vm.optionalFilters.push('match:_all:2');
             var built = utils.buildQuery(vm);
 
             $.map(built.query.filtered.filter.bool.should, function (item) {

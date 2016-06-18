@@ -1,4 +1,3 @@
-
 # -*- coding: utf-8 -*-
 """Various text used throughout the website, e.g. status messages, errors, etc.
 """
@@ -12,22 +11,23 @@
 
 # Status message shown at settings page on first login
 # (upon clicking primary email confirmation link)
-WELCOME_MESSAGE = ('Welcome to the OSF! Please update the following settings. If you need assistance '
-                   'in getting started, please visit the <a href="/getting-started/">Getting Started</a> page.')
+WELCOME_MESSAGE = '''
+<h1>Welcome to the OSF!</h1>
+<p>Visit our <a href="http://help.osf.io/" target="_blank" rel="noreferrer">Guides</a> to learn about creating a project, or get inspiration from <a href="https://osf.io/explore/activity/#popularPublicProjects">popular public projects</a>.</p>
+'''
 
 REGISTRATION_SUCCESS = '''Registration successful. Please check {email} to confirm your email address.'''
 
 # Shown if registration is turned off in website.settings
 REGISTRATION_UNAVAILABLE = 'Registration currently unavailable.'
 
-ALREADY_REGISTERED = '''The email <em>{email}</em> has already been registered.'''
+ALREADY_REGISTERED = u'The email {email} has already been registered.'
+
+AFTER_SUBMIT_FOR_REVIEW = 'Your submission has been received. You will be notified within ten business days regarding the status of your submission. If you have questions you may contact us at prereg@cos.io.'
 
 # Shown if user tries to login with an email that is not yet confirmed
 UNCONFIRMED = ('This login email has been registered but not confirmed. Please check your email (and spam folder).'
                ' <a href="/resend/">Click here</a> to resend your confirmation email.')
-
-# Shown upon successful email address confirmation
-CONFIRMED_EMAIL = 'Email address confirmation successful.'
 
 # Shown if the user's account is disabled
 DISABLED = '''
@@ -49,8 +49,8 @@ LOGOUT = '''
 You have successfully logged out.
 '''
 
-EMAIL_NOT_FOUND = '''
-<strong>{email}</strong> was not found in our records.
+EMAIL_NOT_FOUND = u'''
+{email} was not found in our records.
 '''
 
 # Shown after an unregistered user claims an account and is redirected to the
@@ -62,6 +62,10 @@ CLAIMED_CONTRIBUTOR = ('<strong>Welcome to the OSF!</strong> Edit your display n
 # Error Pages
 # ###########
 
+# Search-related errors
+SEARCH_QUERY_HELP = ('Please check our help (the question mark beside the search box) for more information '
+                     'on advanced search queries.')
+
 # Shown at error page if an expired/revokes email confirmation link is clicked
 EXPIRED_EMAIL_CONFIRM_TOKEN = 'This confirmation link has expired. Please <a href="/login/">log in</a> to continue.'
 
@@ -69,17 +73,21 @@ INVALID_EMAIL_CONFIRM_TOKEN = 'This confirmation link is invalid. Please <a href
 
 CANNOT_MERGE_ACCOUNTS_SHORT = 'Cannot Merge Accounts'
 
-CANNOT_MERGE_ACCOUNTS_LONG = 'Accounts cannot be merged due to a possible conflict with add-ons. Please deactivate any add-ons authorized on the account to be merged and try again.'
+CANNOT_MERGE_ACCOUNTS_LONG = (
+    'Accounts cannot be merged due to a possible conflict with add-ons.  '
+    'Before you continue, please <a href="/settings/addons/"> deactivate '
+    'any add-ons</a> to be merged into your primary account.'
+)
 
 MERGE_COMPLETE = 'Accounts successfully merged.'
 
 MERGE_CONFIRMATION_REQUIRED_SHORT = 'Confirmation Required: Merge Accounts'
 
 MERGE_CONFIRMATION_REQUIRED_LONG = (
-    '<p>This email is confirmed to another account. '
-    'Would you like to merge <em>{user_to_merge.username}</em> with the account '
-    '<em>{user.username}</em>?<p>'
-    '<a class="btn btn-primary" href="?confirm_merge">Confirm merge</a> '
+    u'<p>This email is confirmed to another account. '
+    u'Would you like to merge <em>{src_user}</em> with the account '
+    u'<em>{dest_user}</em>?<p>'
+    u'<a class="btn btn-primary" href="?confirm_merge">Confirm merge</a> '
 )
 
 # Node Actions
@@ -90,28 +98,27 @@ AFTER_REGISTER_ARCHIVING = (
 )
 
 BEFORE_REGISTER_HAS_POINTERS = (
-    'This {category} contains links to other projects. Links will be copied '
-    'into your registration, but the projects that they link to will not be '
-    'registered. If you wish to register the linked projects, you must fork '
-    'them from the original project before registering.'
+    u'This {category} contains links to other projects. Links will be copied '
+    u'into your registration, but the projects that they link to will not be '
+    u'registered. If you wish to register the linked projects, you must fork '
+    u'them from the original project before registering.'
 )
 
 BEFORE_FORK_HAS_POINTERS = (
-    'This {category} contains links to other projects. Links will be copied '
-    'into your fork, but the projects that they link to will not be forked. '
-    'If you wish to fork the linked projects, they need to be forked from the '
-    'original project.'
+    u'This {category} contains links to other projects. Links will be copied '
+    u'into your fork, but the projects that they link to will not be forked. '
+    u'If you wish to fork the linked projects, they need to be forked from the '
+    u'original project.'
 )
 
 REGISTRATION_INFO = '''
-
 <p>Registration creates a frozen version of the project that can never be
-edited or deleted but can be retracted. You can register your project by
+edited or deleted but can be withdrawn. You can register your project by
 selecting a registration form, entering information about your project, and
 then confirming. You will be able to continue editing the original project,
 however, and the frozen version with timestamps will always be linked to
-the original. Retracting a registration will leave behind metadata about
-when the registration was created and retracted but removes the contents
+the original. Withdrawing a registration will leave behind metadata about
+when the registration was created and withdrawn but removes the contents
 of the registration.</p>
 
 <ul>
@@ -130,18 +137,18 @@ of the registration.</p>
 '''
 
 REGISTRATION_EMBARGO_INFO = '''
-<p>You can choose whether to make your registration public immediately or
+You can choose whether to make your registration public immediately or
 embargo it for up to four years. At the end of the embargo period the registration
 is automatically made public. After becoming public, the only way to remove a
-registration is to retract it. Retractions show only the registration title,
+registration is to withdraw it. Withdrawn registrations show only the registration title,
 contributors, and description to indicate that a registration was made and
-later retracted.</p>
-
-<p>If you choose to embargo your registration, a notification will be sent to
+later withdrawn.
+<br /><br />
+If you choose to embargo your registration, a notification will be sent to
 all other project contributors. Other administrators will have 48 hours to
 approve or cancel creating the registration. If any other administrator rejects the
 registration, it will be canceled. If all other administrators approve or do
-nothing, the registration will be confirmed and enter its embargo period.</p>
+nothing, the registration will be confirmed and enter its embargo period.
 '''
 
 BEFORE_REGISTRATION_INFO = '''
@@ -175,15 +182,18 @@ TEMPLATE_DROPDOWN_HELP = """Start typing to search. Selecting project as
 template will duplicate its structure in the new project without importing the
 content of that project."""
 
-TEMPLATED_FROM_PREFIX = "Templated from "
+TEMPLATED_FROM_PREFIX = 'Templated from '
 
 # MFR Error handling
 ERROR_PREFIX = "Unable to render. <a href='?action=download'>Download</a> file to view it."
-SUPPORT = "Contact support@osf.io for further assistance."
+SUPPORT = u"Contact support@osf.io for further assistance."
 
-# Custom Error Messages w/ support
-STATA_VERSION_ERROR = 'Version of given Stata file is not 104, 105, 108, 113 (Stata 8/9), 114 (Stata 10/11) or 115 (Stata 12)<p>{0}</p>'.format(SUPPORT)
-BLANK_OR_CORRUPT_TABLE_ERROR = 'Is this a valid instance of this file type?<p>{0}</p>'.format(SUPPORT)
+# Custom Error Messages w/ support  # TODO: Where are these used? See [#OSF-6101]
+STATA_VERSION_ERROR = u'Version of given Stata file is not 104, 105, 108, 113 (Stata 8/9), 114 (Stata 10/11) or 115 (Stata 12)<p>{0}</p>'.format(SUPPORT)
+BLANK_OR_CORRUPT_TABLE_ERROR = u'Is this a valid instance of this file type?<p>{0}</p>'.format(SUPPORT)
 
 #disk saving mode
 DISK_SAVING_MODE = 'Forks, registrations, and uploads to OSF Storage uploads are temporarily disabled while we are undergoing a server upgrade. These features will return shortly.'
+
+#log out and revisit the link to confirm emails
+CONFIRM_ALTERNATE_EMAIL_ERROR = 'The email address has <b>NOT</b> been added to your account. Please log out and revisit the link in your email. Thank you.'

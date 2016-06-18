@@ -1,32 +1,30 @@
 # -*- coding: utf-8 -*-
-import os
 import glob
 import importlib
 import mimetypes
-from bson import ObjectId
-from flask import request
-from modularodm import fields
-from mako.lookup import TemplateLookup
+import os
 from time import sleep
 
-import furl
+from bson import ObjectId
+from mako.lookup import TemplateLookup
+import markupsafe
 import requests
-from modularodm import Q
-from modularodm.storage.base import KeyExistsException
 
-from framework.sessions import session
-from framework.mongo import StoredObject
-from framework.routing import process_rules
-from framework.guid.model import GuidStoredObject
+from modularodm import fields
+from modularodm import Q
+
+from framework.auth import Auth
+from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import (
     PermissionsError,
     HTTPError,
 )
+from framework.mongo import StoredObject
+from framework.routing import process_rules
 
 from website import settings
-from website.addons.base import exceptions
-from website.addons.base import serializer
-from website.project.model import Node
+from website.addons.base import serializer, logger
+from website.project.model import Node, User
 from website.util import waterbutler_url_for
 
 from website.oauth.signals import oauth_complete
@@ -47,13 +45,17 @@ USER_SETTINGS_TEMPLATE_DEFAULT = os.path.join(
 lookup = TemplateLookup(
     directories=[
         settings.TEMPLATES_PATH
+    ],
+    default_filters=[
+        'unicode',  # default filter; must set explicitly when overriding
+        'temp_ampersand_fixer',  # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe. See [#OSF-4432]
+        'h',
+    ],
+    imports=[
+        'from website.util.sanitize import temp_ampersand_fixer',  # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe. See [#OSF-4432]
     ]
 )
 
-STATUS_EXCEPTIONS = {
-    410: exceptions.FileDeletedError,
-    404: exceptions.FileDoesntExistError
-}
 
 def _is_image(filename):
     mtype, _ = mimetypes.guess_type(filename)
@@ -131,7 +133,17 @@ class AddonConfig(object):
         )
         if template_dirs:
             self.template_lookup = TemplateLookup(
-                directories=template_dirs
+                directories=template_dirs,
+                default_filters=[
+                    'unicode',  # default filter; must set explicitly when overriding
+                    'temp_ampersand_fixer',
+                    # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe. See [#OSF-4432]
+                    'h',
+                ],
+                imports=[
+                    'from website.util.sanitize import temp_ampersand_fixer',
+                    # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe. See [#OSF-4432]
+                ]
             )
         else:
             self.template_lookup = None
@@ -205,177 +217,6 @@ class AddonConfig(object):
         return os.path.join(settings.BASE_PATH, self.short_name)
 
 
-class GuidFile(GuidStoredObject):
-
-    _metadata_cache = None
-    _id = fields.StringField(primary=True)
-    node = fields.ForeignField('node', required=True, index=True)
-
-    _meta = {
-        'abstract': True,
-    }
-
-    @classmethod
-    def get_or_create(cls, **kwargs):
-        try:
-            obj = cls(**kwargs)
-            obj.save()
-            return obj, True
-        except KeyExistsException:
-            obj = cls.find_one(
-                reduce(
-                    lambda acc, query: acc & query,
-                    (Q(key, 'eq', value) for key, value in kwargs.iteritems())
-                )
-            )
-            return obj, False
-
-    @property
-    def provider(self):
-        raise NotImplementedError
-
-    @property
-    def waterbutler_path(self):
-        '''The waterbutler formatted path of the specified file.
-        Must being with a /
-        '''
-        raise NotImplementedError
-
-    @property
-    def guid_url(self):
-        return '/{0}/'.format(self._id)
-
-    @property
-    def name(self):
-        try:
-            return self._metadata_cache['name']
-        except (TypeError, KeyError):
-            # If name is not in _metadata_cache or metadata_cache is None
-            raise AttributeError('No attribute name')
-
-    @property
-    def size(self):
-        try:
-            return self._metadata_cache['size']
-        except (TypeError, KeyError):
-            raise AttributeError('No attribute size')
-
-    @property
-    def materialized(self):
-        try:
-            return self._metadata_cache['materialized']
-        except (TypeError, KeyError):
-            # If materialized is not in _metadata_cache or metadata_cache is None
-            raise AttributeError('No attribute materialized')
-
-    @property
-    def joinable_path(self):
-        return self.waterbutler_path.lstrip('/')
-
-    @property
-    def _base_butler_url(self):
-        url = furl.furl(settings.WATERBUTLER_URL)
-        url.args.update({
-            'nid': self.node._id,
-            'provider': self.provider,
-            'path': self.waterbutler_path,
-        })
-
-        if session and 'auth_user_access_token' in session.data:
-            url.args.add('token', session.data.get('auth_user_access_token'))
-
-        if request.args.get('view_only'):
-            url.args['view_only'] = request.args['view_only']
-
-        if self.revision:
-            url.args[self.version_identifier] = self.revision
-
-        return url
-
-    @property
-    def download_url(self):
-        url = self._base_butler_url
-        url.path.add('file')
-        return url.url
-
-    @property
-    def mfr_render_url(self):
-        url = furl.furl(settings.MFR_SERVER_URL)
-        url.path.add('render')
-        url.args['url'] = self.mfr_public_download_url
-        return url.url
-
-    @property
-    def mfr_public_download_url(self):
-        url = furl.furl(settings.DOMAIN)
-
-        url.path.add(self._id + '/')
-        url.args['mode'] = 'render'
-        url.args['action'] = 'download'
-        url.args['accept_url'] = 'false'
-
-        if self.revision:
-            url.args[self.version_identifier] = self.revision
-
-        if request.args.get('view_only'):
-            url.args['view_only'] = request.args['view_only']
-
-        return url.url
-
-    @property
-    def metadata_url(self):
-        url = self._base_butler_url
-        url.path.add('data')
-
-        return url.url
-
-    @property
-    def deep_url(self):
-        if self.node is None:
-            raise ValueError('Node field must be defined.')
-
-        url = os.path.join(
-            self.node.deep_url,
-            'files',
-            self.provider,
-            self.joinable_path
-        )
-
-        if url.endswith('/'):
-            return url
-        else:
-            return url + '/'
-
-    @property
-    def revision(self):
-        return getattr(self, '_revision', None)
-
-    def maybe_set_version(self, **kwargs):
-        self._revision = kwargs.get(self.version_identifier)
-
-    # TODO: why save?, should_raise or an exception try/except?
-    def enrich(self, save=True):
-        self._fetch_metadata(should_raise=True)
-
-    def _exception_from_response(self, response):
-        if response.ok:
-            return
-
-        if response.status_code in STATUS_EXCEPTIONS:
-            raise STATUS_EXCEPTIONS[response.status_code]
-
-        raise exceptions.AddonEnrichmentError(response.status_code)
-
-    def _fetch_metadata(self, should_raise=False):
-        # Note: We should look into caching this at some point
-        # Some attributes may change however.
-        resp = requests.get(self.metadata_url)
-
-        if should_raise:
-            self._exception_from_response(resp)
-        self._metadata_cache = resp.json()['data']
-
-
 class AddonSettingsBase(StoredObject):
 
     _id = fields.StringField(default=lambda: str(ObjectId()))
@@ -418,7 +259,7 @@ class AddonSettingsBase(StoredObject):
 
 class AddonUserSettingsBase(AddonSettingsBase):
 
-    owner = fields.ForeignField('user', backref='addons')
+    owner = fields.ForeignField('user', index=True)
 
     _meta = {
         'abstract': True,
@@ -439,9 +280,6 @@ class AddonUserSettingsBase(AddonSettingsBase):
         """Whether the user has added credentials for this addon."""
         return False
 
-    def get_backref_key(self, schema, backref_name):
-        return schema._name + '__' + backref_name
-
     # TODO: Test me @asmacdo
     @property
     def nodes_authorized(self):
@@ -453,10 +291,9 @@ class AddonUserSettingsBase(AddonSettingsBase):
             schema = self.config.settings_models['node']
         except KeyError:
             return []
-        nodes_backref = self.get_backref_key(schema, 'authorized')
         return [
             node_addon.owner
-            for node_addon in getattr(self, nodes_backref)
+            for node_addon in schema.find(Q('user_settings', 'eq', self))
             if node_addon.owner and not node_addon.owner.is_deleted
         ]
 
@@ -528,6 +365,11 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
             if x.provider == self.oauth_provider.short_name
         ]
 
+    def delete(self, save=True):
+        for account in self.external_accounts:
+            self.revoke_oauth_access(account, save=False)
+        super(AddonOAuthUserSettingsBase, self).delete(save=save)
+
     def grant_oauth_access(self, node, external_account, metadata=None):
         """Give a node permission to use an ``ExternalAccount`` instance."""
         # ensure the user owns the external_account
@@ -550,17 +392,43 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
 
         self.save()
 
-    def revoke_oauth_access(self, external_account):
+    @must_be_logged_in
+    def revoke_oauth_access(self, external_account, auth, save=True):
         """Revoke all access to an ``ExternalAccount``.
 
         TODO: This should accept node and metadata params in the future, to
             allow fine-grained revocation of grants. That's not yet been needed,
             so it's not yet been implemented.
         """
+        for node in self.get_nodes_with_oauth_grants(external_account):
+            try:
+                addon_settings = node.get_addon(external_account.provider, deleted=True)
+            except AttributeError:
+                # No associated addon settings despite oauth grant
+                pass
+            else:
+                addon_settings.deauthorize(auth=auth)
+
+        if User.find(Q('external_accounts', 'eq', external_account._id)).count() == 1:
+            # Only this user is using the account, so revoke remote access as well.
+            self.revoke_remote_oauth_access(external_account)
+
         for key in self.oauth_grants:
             self.oauth_grants[key].pop(external_account._id, None)
+        if save:
+            self.save()
 
-        self.save()
+    def revoke_remote_oauth_access(self, external_account):
+        """ Makes outgoing request to remove the remote oauth grant
+        stored by third-party provider.
+
+        Individual addons must override this method, as it is addon-specific behavior.
+        Not all addon providers support this through their API, but those that do
+        should also handle the case where this is called with an external_account
+        with invalid credentials, to prevent a user from being unable to disconnect
+        an account.
+        """
+        pass
 
     def verify_oauth_access(self, node, external_account, metadata=None):
         """Verify that access has been previously granted.
@@ -669,7 +537,8 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
                 node_addon.clear_auth()
 
 class AddonNodeSettingsBase(AddonSettingsBase):
-    owner = fields.ForeignField('node', backref='addons')
+
+    owner = fields.ForeignField('node', index=True)
 
     _meta = {
         'abstract': True,
@@ -681,6 +550,13 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         :rtype bool:
         """
         raise NotImplementedError()
+
+    @property
+    def configured(self):
+        """Whether or not this addon has had a folder connected.
+        :rtype bool:
+        """
+        return self.complete
 
     @property
     def has_auth(self):
@@ -777,7 +653,7 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         :returns Alert message
         """
 
-        if hasattr(self, "user_settings"):
+        if hasattr(self, 'user_settings'):
             if self.user_settings is None:
                 return (
                     u'Because you have not configured the authorization for this {addon} add-on, this '
@@ -872,10 +748,10 @@ class StorageAddonBase(object):
 
     @property
     def archive_folder_name(self):
-        name = "Archive of {addon}".format(addon=self.config.full_name)
+        name = 'Archive of {addon}'.format(addon=self.config.full_name)
         folder_name = getattr(self, 'folder_name', '').lstrip('/').strip()
         if folder_name:
-            name = name + ": {folder}".format(folder=folder_name)
+            name = name + ': {folder}'.format(folder=folder_name)
         return name
 
     def _get_fileobj_child_metadata(self, filenode, user, cookie=None, version=None):
@@ -933,8 +809,7 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
 
     # TODO: Validate this field to be sure it matches the provider's short_name
     # NOTE: Do not set this field directly. Use ``set_auth()``
-    external_account = fields.ForeignField('externalaccount',
-                                           backref='connected')
+    external_account = fields.ForeignField('externalaccount')
 
     # NOTE: Do not set this field directly. Use ``set_auth()``
     user_settings = fields.AbstractForeignField()
@@ -945,17 +820,78 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
     oauth_provider = None
 
     @property
-    def has_auth(self):
-        """Instance has an external account and *active* permission to use it"""
-        if not (self.user_settings and self.external_account):
-            return False
-
-        return self.user_settings.verify_oauth_access(
-            node=self.owner,
-            external_account=self.external_account
+    def folder_id(self):
+        raise NotImplementedError(
+            "AddonOAuthNodeSettingsBase subclasses must expose a 'folder_id' property."
         )
 
-    def set_auth(self, external_account, user):
+    @property
+    def folder_name(self):
+        raise NotImplementedError(
+            "AddonOAuthNodeSettingsBase subclasses must expose a 'folder_name' property."
+        )
+
+    @property
+    def folder_path(self):
+        raise NotImplementedError(
+            "AddonOAuthNodeSettingsBase subclasses must expose a 'folder_path' property."
+        )
+
+    @property
+    def nodelogger(self):
+        auth = None
+        if self.user_settings:
+            auth = Auth(self.user_settings.owner)
+        self._logger_class = getattr(
+            self,
+            '_logger_class',
+            type(
+                '{0}NodeLogger'.format(self.config.short_name.capitalize()),
+                (logger.AddonNodeLogger, ),
+                {'addon_short_name': self.config.short_name}
+            )
+        )
+        return self._logger_class(
+            node=self.owner,
+            auth=auth
+        )
+
+    @property
+    def complete(self):
+        return bool(
+            self.has_auth and
+            self.external_account and
+            self.user_settings.verify_oauth_access(
+                node=self.owner,
+                external_account=self.external_account,
+            )
+        )
+
+    @property
+    def configured(self):
+        return bool(
+            self.complete and
+            (self.folder_id or self.folder_name or self.folder_path)
+        )
+
+    @property
+    def has_auth(self):
+        """Instance has an external account and *active* permission to use it"""
+        return bool(
+            self.user_settings and self.user_settings.has_auth
+        ) and bool(
+            self.external_account and self.user_settings.verify_oauth_access(
+                node=self.owner,
+                external_account=self.external_account
+            )
+        )
+
+    def clear_settings(self):
+        raise NotImplementedError(
+            "AddonOAuthNodeSettingsBase subclasses must expose a 'clear_settings' method."
+        )
+
+    def set_auth(self, external_account, user, metadata=None, log=True):
         """Connect the node addon to a user's external account.
 
         This method also adds the permission to use the account in the user's
@@ -965,8 +901,8 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
         user_settings = user.get_or_add_addon(self.oauth_provider.short_name)
         user_settings.grant_oauth_access(
             node=self.owner,
-            external_account=external_account
-            # no metadata, because the node has access to no folders
+            external_account=external_account,
+            metadata=metadata  # metadata can be passed in when forking
         )
         user_settings.save()
 
@@ -974,7 +910,17 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
         self.user_settings = user_settings
         self.external_account = external_account
 
+        if log:
+            self.nodelogger.log(action='node_authorized', save=True)
         self.save()
+
+    def deauthorize(self, auth=None, add_log=False):
+        """Remove authorization from this node.
+
+        This method should be overridden for addon-specific behavior,
+        such as logging and clearing non-generalizable settings.
+        """
+        self.clear_auth()
 
     def clear_auth(self):
         """Disconnect the node settings from the user settings.
@@ -1008,7 +954,7 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
         """If removed contributor authorized this addon, remove addon authorization
         from owner.
         """
-        if self.has_auth and self.user_settings.owner == removed:
+        if self.user_settings and self.user_settings.owner == removed:
 
             # Delete OAuth tokens
             self.user_settings.oauth_grants[self.owner._id].pop(self.external_account._id)
@@ -1018,9 +964,9 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
                 u'by {user}, authentication information has been deleted.'
             ).format(
                 addon=self.config.full_name,
-                category=node.category_display,
-                title=node.title,
-                user=removed.fullname
+                category=markupsafe.escape(node.category_display),
+                title=markupsafe.escape(node.title),
+                user=markupsafe.escape(removed.fullname)
             )
 
             if not auth or auth.user != removed:
@@ -1044,7 +990,13 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
             save=False,
         )
         if self.has_auth and self.user_settings.owner == user:
-            clone.set_auth(self.external_account, user)
+            metadata = None
+            if self.complete:
+                try:
+                    metadata = self.user_settings.oauth_grants[node._id][self.external_account._id]
+                except (KeyError, AttributeError):
+                    pass
+            clone.set_auth(self.external_account, user, metadata=metadata, log=False)
             message = '{addon} authorization copied to forked {category}.'.format(
                 addon=self.config.full_name,
                 category=fork.project_or_component,
@@ -1079,6 +1031,16 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
 
     # backwards compatibility
     before_register = before_register_message
+
+    def serialize_waterbutler_credentials(self):
+        raise NotImplementedError(
+            "AddonOAuthNodeSettingsBase subclasses must implement a 'serialize_waterbutler_credentials' method."
+        )
+
+    def serialize_waterbutler_settings(self):
+        raise NotImplementedError(
+            "AddonOAuthNodeSettingsBase subclasses must implement a 'serialize_waterbutler_settings' method."
+        )
 
 
 # TODO: No more magicks

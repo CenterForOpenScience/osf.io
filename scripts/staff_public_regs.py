@@ -27,7 +27,7 @@ def main():
     users = [User.load(each) for each in STAFF_GUIDS]
     for registration in Node.find(Q('is_registration', 'eq', True) & Q('is_public', 'eq', True)):
         for user in users:
-            if registration in user.node__contributed:
+            if registration in user.contributed:
                 staff_registrations[user._id].append(registration)
 
     for uid in staff_registrations:

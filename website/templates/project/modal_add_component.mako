@@ -22,6 +22,14 @@
                             %endfor
                         </select>
                     </div>
+                    %if (len(node['contributors']) > 1) and user['can_edit']:
+                        <div class="form-group">
+                            <label class="f-w-md"><input id="inherit_contributors"
+                                          name="inherit_contributors"
+                                          value="True"
+                                          type="checkbox"/> Add contributors from <b>${node['title']}</b></label>
+                        </div>
+                    %endif
                 </div><!-- end modal-body -->
                 <div class="modal-footer">
                     <a id="confirm" href="#" class="btn btn-default" data-dismiss="modal">Cancel</a>

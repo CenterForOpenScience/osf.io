@@ -72,8 +72,11 @@ SearchBar.controller = function(vm) {
 
     /* Dumps the json query for elasticsearch to a URI formatted string */
     self.atomParams = function(){
+        var query = utils.buildQuery(vm);
+        delete query.aggregations;
+        delete query.highlight;
         return $.param({
-            jsonQuery: encodeURIComponent(JSON.stringify(utils.buildQuery(vm)))
+            jsonQuery: encodeURIComponent(JSON.stringify(query))
         });
     };
 

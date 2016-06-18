@@ -1,7 +1,3 @@
-#filesSearch {
-    width: 95%;
-}
-
 /* Modular File Renderer */
 .mfr-slickgrid {
     width: 750px;
@@ -70,11 +66,21 @@
     border: 1px solid DarkGray;
 }
 
-#toggleIcon {
-    margin-top: 5px;
-}
-
 #file-navigation #tb-tbody {
     max-height: 500px;
     height: inherit;
+}
+
+#file-navigation .tb-header-row {
+    margin:0px;
+}
+
+#file-navigation .tb-table[style] {
+    width: auto !important;
+}
+
+/* Style for file name */
+#file-ext {
+	white-space: nowrap;
+	display: inline-block;
 }

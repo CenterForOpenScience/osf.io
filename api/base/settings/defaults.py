@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 """
 
 import os
+from urlparse import urlparse
 from website import settings as osf_settings
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -26,6 +27,7 @@ AUTHENTICATION_BACKENDS = (
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = osf_settings.DEBUG_MODE
+DEBUG_PROPAGATE_EXCEPTIONS = True
 
 ALLOWED_HOSTS = [
     '.osf.io'
@@ -42,25 +44,41 @@ INSTALLED_APPS = (
     # 3rd party
     'rest_framework',
     'rest_framework_swagger',
+    'corsheaders',
     'raven.contrib.django.raven_compat',
 )
 
 # TODO: Are there more granular ways to configure reporting specifically related to the API?
 RAVEN_CONFIG = {
-    'dsn': osf_settings.SENTRY_DSN
+    'tags': {'App': 'api'},
+    'dsn': osf_settings.SENTRY_DSN,
+    'release': osf_settings.VERSION,
 }
+
+BULK_SETTINGS = {
+    'DEFAULT_BULK_LIMIT': 100
+}
+
+MAX_PAGE_SIZE = 100
 
 REST_FRAMEWORK = {
     'PAGE_SIZE': 10,
-
     # Order is important here because of a bug in rest_framework_swagger. For now,
     # rest_framework.renderers.JSONRenderer needs to be first, at least until
     # https://github.com/marcgibbons/django-rest-swagger/issues/271 is resolved.
     'DEFAULT_RENDERER_CLASSES': (
-        'rest_framework.renderers.JSONRenderer',
         'api.base.renderers.JSONAPIRenderer',
-        'rest_framework.renderers.BrowsableAPIRenderer',
+        'api.base.renderers.JSONRendererWithESISupport',
+        'api.base.renderers.BrowsableAPIRendererNoForms',
     ),
+    'DEFAULT_PARSER_CLASSES': (
+        'api.base.parsers.JSONAPIParser',
+        'api.base.parsers.JSONAPIParserForRegularJSON',
+        'rest_framework.parsers.FormParser',
+        'rest_framework.parsers.MultiPartParser'
+    ),
+    'EXCEPTION_HANDLER': 'api.base.exceptions.json_api_exception_handler',
+    'DEFAULT_CONTENT_NEGOTIATION_CLASS': 'api.base.content_negotiation.JSONAPIContentNegotiation',
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.AcceptHeaderVersioning',
     'DEFAULT_VERSION': '2.0',
     'DEFAULT_FILTER_BACKENDS': ('api.base.filters.ODMOrderingFilter',),
@@ -74,15 +92,35 @@ REST_FRAMEWORK = {
     ),
 }
 
+# Settings related to CORS Headers addon: allow API to receive authenticated requests from OSF
+# CORS plugin only matches based on "netloc" part of URL, so as workaround we add that to the list
+CORS_ORIGIN_ALLOW_ALL = False
+CORS_ORIGIN_WHITELIST = (urlparse(osf_settings.DOMAIN).netloc,
+                         osf_settings.DOMAIN,
+                         )
+# This needs to remain True to allow cross origin requests that are in CORS_ORIGIN_WHITELIST to
+# use cookies.
+CORS_ALLOW_CREDENTIALS = True
+# Set dynamically on app init
+INSTITUTION_ORIGINS_WHITELIST = ()
+
 MIDDLEWARE_CLASSES = (
     # TokuMX transaction support
     # Needs to go before CommonMiddleware, so that transactions are always started,
     # even in the event of a redirect. CommonMiddleware may cause other middlewares'
     # process_request to be skipped, e.g. when a trailing slash is omitted
     'api.base.middleware.DjangoGlobalMiddleware',
-    'api.base.middleware.TokuTransactionsMiddleware',
+    'api.base.middleware.MongoConnectionMiddleware',
+    'api.base.middleware.CeleryTaskMiddleware',
+    'api.base.middleware.TokuTransactionMiddleware',
+    'api.base.middleware.PostcommitTaskMiddleware',
+
+    # A profiling middleware. ONLY FOR DEV USE
+    # Uncomment and add "prof" to url params to recieve a profile for that url
+    # 'api.base.middleware.ProfileMiddleware',
 
     # 'django.contrib.sessions.middleware.SessionMiddleware',
+    'api.base.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     # 'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -130,47 +168,31 @@ STATICFILES_DIRS = (
     ('rest_framework_swagger/images', os.path.join(BASE_DIR, 'static/images')),
 )
 
+# TODO: Revisit methods for excluding private routes from swagger docs
 SWAGGER_SETTINGS = {
+    'api_path': '/',
     'info': {
-        'api_path': '/',
         'description':
         """
-        <p>Welcome to the V2 Open Science Framework API. With this API you can programatically access users,
-        projects, components, and files from the <a href="https://osf.io/">Open Science Framework</a>. The Open Science
-        Framework is a website that
-         integrates with the scientist's daily workflow. OSF helps document and archive study designs, materials, and data.
-         OSF facilitates sharing of materials and data within a research group or between groups. OSF also facilitates
-         transparency of research and provides a network design that details and credits individual
-         contributions for all aspects of the research process.</p>
-         <p>NOTE: This API is currently in beta. The beta period should be fairly short, but until then, details about
-         the api could change. Once this notice disappears, it will be replaced with a description of how long we will
-         support the current api and under what circumstances it might change.</p>
-         <h2>General API Usage</h2>
-        <p>Each endpoint will have its own documentation, but there are some general things that should work pretty much everywhere.</p>
-        <h3>Filtering</h3>
-        <p>Collections can be filtered by adding a query parameter in the form:</p>
-        <pre>filter[&lt;fieldname&gt;]=&lt;matching information&gt;</pre>
-        <p>For example, if you were trying to find <a href="http://en.wikipedia.org/wiki/Lise_Meitner">Lise Meitner</a>:</p>
-        <pre>/users?filter[fullname]=meitn</pre>
-        <p>You can filter on multiple fields, or the same field in different ways, by &-ing the query parameters together.</p>
-        <pre>/users?filter[fullname]=lise&filter[family_name]=mei</pre>
-        <h3>Links</h3>
-        <p>Responses will generally have associated links. These are helpers to keep you from having to construct
-        URLs in your code or by hand. If you know the route to a high-level resource, then feel free to just go to that
-        route. For example, going to:</p>
-        <pre>/nodes/&lt;node_id&gt;</pre>
-        <p>is a perfectly good route to create rather than going to /nodes/ and navigating from there by filtering by id
-        (which would be ridiculous). However, if you are creating something that crawls the structure of a node
-        going to child node or gathering children, contributors, and similar related resources, then grab the link from
-        the object you\'re crawling rather than constructing the link yourself.
-        In general, links include:</p>
-        <ol>
-        <li>1. "Related" links, which will give you detail information on individual items or a collection of related resources;</li>
-        <li>2. "Self" links, which is what you use for general REST operations (POST, DELETE, and so on);</li>
-        <li>3. Pagination links such as "next", "prev", "first", and "last". These are great for navigating long lists of information.</li></ol>
-        <p>Some routes may have extra rules for links, especially if those links work with external services. Collections
-        may have counts with them to indicate how many items are in that collection.</p>""",
-        'title': 'OSF API Documentation',
+        Welcome to the fine documentation for the Open Science Framework's API!  Please click
+        on the <strong>GET /v2/</strong> link below to get started.
+
+        For the most recent docs, please check out our <a href="/v2/">Browsable API</a>.
+        """,
+        'title': 'OSF APIv2 Documentation',
     },
     'doc_expansion': 'list',
+    'exclude_namespaces': ['applications', 'tokens'],
 }
+
+NODE_CATEGORY_MAP = osf_settings.NODE_CATEGORY_MAP
+
+DEBUG_TRANSACTIONS = DEBUG
+
+JWT_SECRET = 'osf_api_cas_login_jwt_secret_32b'
+JWE_SECRET = 'osf_api_cas_login_jwe_secret_32b'
+
+ENABLE_VARNISH = osf_settings.ENABLE_VARNISH
+ENABLE_ESI = osf_settings.ENABLE_ESI
+VARNISH_SERVERS = osf_settings.VARNISH_SERVERS
+ESI_MEDIA_TYPES = osf_settings.ESI_MEDIA_TYPES

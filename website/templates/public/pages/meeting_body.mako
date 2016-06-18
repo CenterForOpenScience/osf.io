@@ -1,4 +1,6 @@
-<h2 style="padding-bottom: 30px;">${ meeting['name'] } Posters & Talks</h2>
+<h2 style="padding-bottom: 30px;">${ meeting['name'] }
+    ${meeting['field_names']['meeting_title_type'] if meeting['poster'] and meeting['talk'] else meeting['field_names']['submission1_plural'].capitalize() if meeting['poster'] else meeting['field_names']['submission2_plural'].capitalize()}
+</h2>
 
 % if meeting['logo_url']:
     <img src="${ meeting['logo_url'] }" class="img-responsive" />
@@ -7,31 +9,36 @@
 
 % if meeting['active']:
     <div>
-        <a id="addLink" onclick="" href="#">Add your poster or talk</a>
+        <a id="addLink" onclick="" href="#">${('Add your ' + meeting['field_names']['add_submission']) if meeting['poster'] and meeting['talk'] else ('Add your ' + meeting['field_names']['submission1_plural']) if meeting['poster'] else ('Add your ' + meeting['field_names']['submission2_plural'])}</a>
+
         % if meeting['info_url']:
-          | <a href="${ meeting['info_url'] }" target="_blank">Conference homepage <i class="fa fa-sm fa fa-external-link"></i></a>
+          | <a href="${ meeting['info_url'] }">Conference homepage <i class="fa fa-sm fa fa-external-link"></i></a>
         % endif
     </div>
 
     <div style="display: none" id="submit">
-        <h3>Add your poster or talk</h3>
+        <h3>${('Add your ' + meeting['field_names']['add_submission']) if meeting['poster'] and meeting['talk'] else ('Add your ' + meeting['field_names']['submission1_plural']) if meeting['poster'] else ('Add your ' + meeting['field_names']['submission2_plural'])}</h3>
         <p>
-            Send an email to one of the following addresses from the email
+            Send an email to the following address(es) from the email
             account you would like used on the OSF:
         </p>
         <ul>
-            <li>For posters, email <a href="mailto:${ label }-poster@osf.io">${ label }-poster@osf.io</a></li>
-            <li>For talks, email <a href="mailto:${ label }-talk@osf.io">${ label }-talk@osf.io</a></li>
+            % if meeting['poster']:
+                <li>For ${meeting['field_names']['submission1_plural']}, email <a href="mailto:${ label }-${meeting['field_names']['submission1']}@osf.io">${ label }-${meeting['field_names']['submission1']}@osf.io</a></li>
+            % endif
+            % if meeting['talk']:
+                <li>For ${meeting['field_names']['submission2_plural']}, email <a href="mailto:${ label }-${meeting['field_names']['submission2']}@osf.io">${ label }-${meeting['field_names']['submission2']}@osf.io</a></li>
+            % endif
         </ul>
         <p>The format of the email should be as follows:</p>
         <div>
             <dl style="padding-left: 25px">
                 <dt>Subject</dt>
-                <dd>Presentation title</dd>
+                <dd>${meeting['field_names']['mail_subject']}</dd>
                 <dt>Message body</dt>
-                <dd>Presentation abstract (if any)</dd>
+                <dd>${meeting['field_names']['mail_message_body']}</dd>
                 <dt>Attachment</dt>
-                <dd>Your presentation file (e.g., PowerPoint, PDF, etc.)</dd>
+                <dd>${meeting['field_names']['mail_attachment']}</dd>
             </dl>
         </div>
         <p>
@@ -40,7 +47,12 @@
             such as uploading additional files, to your project at that URL. If you
             didn't have an OSF account, one will be created automatically and a link
             to set your password will be emailed to you; if you do, we will simply create
-            a new project in your account.
+            a new project in your account. By creating an account you agree to our
+            <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md">Terms</a>
+            and that you have read our
+            <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>,
+            including our information on
+            <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md#f-cookies">Cookie Use</a>.
         </p>
     </div>
 % endif

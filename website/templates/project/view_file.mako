@@ -1,13 +1,20 @@
 <%inherit file="project/project_base.mako"/>
+<div id="alertBar"></div>
 
 ## Use full page width
 <%def name="container_class()">container-xxl</%def>
 
 <%def name="title()">${file_name | h}</%def>
+
+% if (user['can_comment'] or node['has_comments']) and allow_comments:
+    <%include file="include/comment_pane_template.mako"/>
+% endif
+
 <div class="row">
   <div class="col-sm-5">
     <h2 class="break-word">
-      ${file_name | h}
+      ## Split file name into two parts: with and without extension
+      ${file_name_title | h}<span id="file-ext">${file_name_ext | h}</span>
       % if file_revision:
         <small>&nbsp;${file_revision | h}</small>
       % endif
@@ -22,13 +29,6 @@
 
   <div id="file-navigation" class="panel-toggle col-sm-3 file-tree">
     <div class="osf-panel panel panel-default osf-panel-hide osf-panel-flex reset-height">
-      <div class="panel-heading clearfix osf-panel-header-flex" style="display:none">
-        <div id="filesSearch"></div>
-        <div id="toggleIcon" class="pull-right">
-          <div class="panel-collapse"><i class="fa fa-angle-left"></i></div>
-        </div>
-      </div>
-
       <div class="osf-panel-body-flex file-page reset-height">
         <div id="grid">
           <div class="spinner-loading-wrapper">
@@ -39,12 +39,27 @@
       </div>
     </div>
 
-    <!-- Menu toggle closed -->
-    <div class="panel panel-default osf-panel-show text-center reset-height pointer"  style="display: none">
-      <div class="panel-heading">
-        <i class="fa fa-angle-right"></i>
+      <!-- Menu toggle closed -->
+      <div class="panel panel-default osf-panel-show text-center reset-height pointer"  style="display: none">
+          <div class="row tb-header-row">
+              <i class="fa fa-file p-l-xs p-r-xs"></i>
+              <div class="fangorn-toolbar-icon">
+                  <i class="fa fa-angle-down"></i>
+              </div>
+          </div>
       </div>
-    </div>
+      %if (file_tags or 'write' in user['permissions']) and provider == 'osfstorage' and not error:
+       <div class="panel panel-default">
+        <div class="panel-heading clearfix">
+            <h3 class="panel-title">Tags</h3>
+            <div class="pull-right">
+            </div>
+        </div>
+        <div class="panel-body">
+            <input id="fileTags" value="${','.join(file_tags) if file_tags else ''}" />
+        </div>
+        </div>
+       %endif
   </div>
 
 <!-- The osf-logo spinner here is from mfr code base -->
@@ -52,16 +67,14 @@
     <div class="row">
         <div id="externalView" class="col-sm-9"></div>
         <div id="mfrIframeParent" class="col-sm-9">
-        <div id="mfrIframe" class="mfr mfr-file"></div>
-      </div>
+            <div id="mfrIframe" class="mfr mfr-file"></div>
+        </div>
 
     <!-- This section is built by mithril in revisions.js -->
       <div class="file-view-panels col-sm-3"></div>
     </div>
   </div>
-
 </div>
-
 
 ## Begin Modals
 <div class="modal fade" id="connectedModal" tabindex="-1">
@@ -170,8 +183,10 @@
             provider: ${ provider | sjson, n },
             safeName: ${ file_name | h, sjson},
             materializedPath: ${ materialized_path | sjson, n },
+            file_tags: ${file_tags if file_tags else False| sjson, n},
+            guid: ${file_guid | sjson, n},
+            id: ${file_id | sjson, n},
           urls: {
-              external: ${ (urls['external'] or '') | sjson, n },
         %if error is None:
               render: ${ urls['render'] | sjson, n },
         %endif
@@ -196,6 +211,7 @@
           canEdit: ${ int(user['can_edit']) | sjson, n }
         }
       });
+      window.contextVars.file.urls.external = window.contextVars.file.extra.webView;
     </script>
 
     <link href="/static/css/pages/file-view-page.css" rel="stylesheet">

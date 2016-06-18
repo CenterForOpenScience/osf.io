@@ -5,7 +5,7 @@ import tabulate
 from modularodm import Q
 
 from website.app import init_app
-from website.models import User
+from website.models import User, NodeLog
 
 
 LOG_THRESHOLD = 11
@@ -17,7 +17,7 @@ def get_active_users(extra=None):
         Q('password', 'ne', None) &
         Q('merged_by', 'eq', None) &
         Q('date_confirmed', 'ne', None) &
-        Q('date_disabled', ' eq', None)
+        Q('date_disabled', 'eq', None)
     )
     query = query & extra if extra else query
     return User.find(query)
@@ -25,8 +25,16 @@ def get_active_users(extra=None):
 
 def count_user_logs(user, query=None):
     if query:
-        return len(user.nodelog__created.find(query))
-    return len(user.nodelog__created)
+        query &= Q('user', 'eq', user._id)
+    else:
+        query = Q('user', 'eq', user._id)
+    logs = NodeLog.find(query)
+    length = logs.count()
+    if length > 0:
+        item = logs[0]
+        if item.action == 'project_created' and item.node.is_bookmark_collection:
+            length -= 1
+    return length
 
 
 def get_depth_users(users):

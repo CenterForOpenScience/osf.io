@@ -54,13 +54,19 @@ def must_be_signed(func):
             payload = signing.unserialize_payload(data['payload'])
             exp_time = payload['time']
         except (KeyError, ValueError):
-            raise HTTPError(httplib.BAD_REQUEST)
+            raise HTTPError(httplib.BAD_REQUEST, data={
+                'message_short': 'Invalid payload',
+                'message_long': 'The request payload could not be deserialized.'
+            })
 
         if not signing.default_signer.verify_payload(sig, payload):
             raise HTTPError(httplib.UNAUTHORIZED)
 
         if time.time() > exp_time:
-            raise HTTPError(httplib.BAD_REQUEST)
+            raise HTTPError(httplib.BAD_REQUEST, data={
+                'message_short': 'Expired',
+                'message_long': 'Signature has expired.'
+            })
 
         kwargs['payload'] = payload
         return func(*args, **kwargs)

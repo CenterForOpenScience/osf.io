@@ -28,7 +28,7 @@
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td>{{ profile().primaryEmail().address }}</td>
+                                    <td><span data-bind="text: profile().primaryEmail().address"></span></td>
                                     <td></td>
                                 </tr>
                             </tbody>
@@ -42,13 +42,12 @@
                             </thead>
                             <tbody data-bind="foreach: profile().alternateEmails()">
                                 <tr>
-                                    <td style="word-break: break-all;">{{ $data.address }}</td>
-                                    <td style="width:150px;"><a data-bind="click: $parent.makeEmailPrimary">make&nbsp;primary</a></td>
-                                    <td style="width:50px;"><a data-bind="click: $parent.removeEmail"><i class="fa fa-times text-danger"></i></a></td>
+                                    <td style="word-break: break-all;"><span data-bind="text: $data.address"></span></td>
+                                    <td style="width:150px;"><a data-bind="click: $parent.makeEmailPrimary.bind($parent)">make&nbsp;primary</a></td>
+                                    <td style="width:50px;"><a data-bind="click: $parent.removeEmail.bind($parent)"><i class="fa fa-times text-danger"></i></a></td>
                                 </tr>
                             </tbody>
                         </table>
-
                         <table class="table">
                             <thead>
                                 <tr>
@@ -58,20 +57,27 @@
                             <tbody>
                                 <!-- ko foreach: profile().unconfirmedEmails() -->
                                 <tr>
-                                    <td style="word-break: break-all;">{{ $data.address }}</td>
-                                    <td style="width:150px;"><a data-bind="click: $parent.resendConfirmation">resend&nbsp;confirmation</a></td>
-                                    <td style="width:50px;" ><a data-bind="click: $parent.removeEmail"><i class="fa fa-times text-danger"></i></a></td>
+                                    <td style="word-break: break-all;"><span data-bind="text: $data.address"></span></td>
+                                    <td style="width:150px;"><a data-bind="click: $parent.resendConfirmation.bind($parent)">resend&nbsp;confirmation</a></td>
+                                    <td style="width:50px;" ><a data-bind="click: $parent.removeEmail.bind($parent)"><i class="fa fa-times text-danger"></i></a></td>
                                 </tr>
                                 <!-- /ko -->
                                 <tr>
                                     <td colspan="3">
                                         <form data-bind="submit: addEmail">
+                                            <p>
+                                            To merge an existing account with this one or to log in with multiple email addresses, add an alternate email address below.
+                                            <span class="fa fa-info-circle" data-bind="tooltip: {title: 'Merging accounts will move all projects and components associated with two emails into one account. All projects and components will be displayed under the email address listed as primary.',
+                                             placement: 'bottom', container : 'body'}"></span>
+                                            </p>
+                  
                                             <div class="form-group">
                                                 ## email input verification is not supported on safari
                                               <input placeholder="Email address" type="email" data-bind="value: emailInput" class="form-control" required maxlength="254">
                                             </div>
-                                            <input type="submit" value="Add Email" class="btn btn-success">
+                                            <input type="submit" value="Add email" class="btn btn-success">
                                         </form>
+
                                         <div class="help-block">
                                             <p data-bind="html: message, attr: {class: messageClass}"></p>
                                         </div>
@@ -102,7 +108,7 @@
                         </form>
                     </div>
                 </div>
-				<div class="panel panel-default">
+                <div class="panel panel-default">
                   <div class="panel-heading clearfix"><h3 class="panel-title">Security Settings</h3></div>
                   <div class="panel-body">
                     % for addon in addons:
@@ -117,15 +123,21 @@
                     <div class="panel-heading clearfix"><h3 class="panel-title">Export Account Data</h3></div>
                     <div class="panel-body">
                         <p>Exporting your account data allows you to keep a permanent copy of the current state of your account. Keeping a copy of your account data can provide peace of mind or assist in transferring your information to another provider.</p>
-                        <a class="btn btn-primary" data-bind="click: submit, css: success() === true ? 'disabled' : ''">Request Export</a>
+                        <a class="btn btn-primary" data-bind="click: submit, css: success() === true ? 'disabled' : ''">Request export</a>
                     </div>
                 </div>
                 <div id="deactivateAccount" class="panel panel-default">
                     <div class="panel-heading clearfix"><h3 class="panel-title">Deactivate Account</h3></div>
                     <div class="panel-body">
-                        <p class="alert alert-warning"><strong>Warning:</strong> This action is irreversible.</p>
+                        %if not requested_deactivation:
+                            <p class="alert alert-warning"><strong>Warning:</strong> This action is irreversible.</p>
+                        %endif
                         <p>Deactivating your account will remove you from all public projects to which you are a contributor. Your account will no longer be associated with OSF projects, and your work on the OSF will be inaccessible.</p>
-                        <a class="btn btn-danger" data-bind="click: submit, css: success() === true ? 'disabled' : ''">Request Deactivation</a>
+                        %if not requested_deactivation:
+                             <a class="btn btn-danger" data-bind="click: submit, css: success() === true ? 'disabled' : ''">Request deactivation</a>
+                        %else:
+                             <p><b>Your account is currently pending deactivation.</b></p>
+                        %endif
                     </div>
                 </div>
             </div>

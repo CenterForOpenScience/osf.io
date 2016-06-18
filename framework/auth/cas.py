@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import furl
 import json
+import urllib
 import requests
 import httplib as http
 from lxml import etree
@@ -81,6 +82,11 @@ class CasClient(object):
         url.path.segments.extend(('oauth2', 'profile',))
         return url.url
 
+    def get_auth_token_revocation_url(self):
+        url = furl.furl(self.BASE_URL)
+        url.path.segments.extend(('oauth2', 'revoke'))
+        return url.url
+
     def service_validate(self, ticket, service_url):
         """Send request to validate ticket.
 
@@ -114,7 +120,7 @@ class CasClient(object):
         }
         resp = requests.get(url, headers=headers)
         if resp.status_code == 200:
-            return self._parse_profile(resp.content)
+            return self._parse_profile(resp.content, access_token)
         else:
             self._handle_error(resp)
 
@@ -138,17 +144,34 @@ class CasClient(object):
             attributes = auth_doc.xpath('./cas:attributes/*', namespaces=doc.nsmap)
             for attribute in attributes:
                 resp.attributes[unicode(attribute.xpath('local-name()'))] = unicode(attribute.text)
+            scopes = resp.attributes.get('accessTokenScope')
+            resp.attributes['accessTokenScope'] = set(scopes.split(' ') if scopes else [])
         else:
             resp.authenticated = False
         return resp
 
-    def _parse_profile(self, raw):
+    def _parse_profile(self, raw, access_token):
         data = json.loads(raw)
         resp = CasResponse(authenticated=True, user=data['id'])
-        for attribute in data['attributes'].keys():
-            resp.attributes[attribute] = data['attributes'][attribute]
+        if data.get('attributes'):
+            resp.attributes.update(data['attributes'])
+        resp.attributes['accessToken'] = access_token
+        resp.attributes['accessTokenScope'] = set(data.get('scope', []))
         return resp
 
+    def revoke_application_tokens(self, client_id, client_secret):
+        """Revoke all tokens associated with a given CAS client_id"""
+        return self.revoke_tokens(payload={'client_id': client_id, 'client_secret': client_secret})
+
+    def revoke_tokens(self, payload):
+        """Revoke a tokens based on payload"""
+        url = self.get_auth_token_revocation_url()
+
+        resp = requests.post(url, data=payload)
+        if resp.status_code == 204:
+            return True
+        else:
+            self._handle_error(resp)
 
 def parse_auth_header(header):
     """Given a Authorization header string, e.g. 'Bearer abc123xyz', return a token
@@ -173,6 +196,9 @@ def get_login_url(*args, **kwargs):
     :param kwargs: Same kwargs that `CasClient.get_login_url` receives
     """
     return get_client().get_login_url(*args, **kwargs)
+
+def get_institution_target(redirect_url):
+    return '/login?service={}&auto=true'.format(urllib.quote(redirect_url, safe='~()*!.\''))
 
 def get_logout_url(*args, **kwargs):
     """Convenience function for getting a logout URL for a service.
@@ -202,6 +228,6 @@ def make_response_from_ticket(ticket, service_url):
         if user.verification_key:
             user.verification_key = None
             user.save()
-        return authenticate(user, response=redirect(service_furl.url), access_token=cas_resp.attributes['accessToken'])
+        return authenticate(user, access_token=cas_resp.attributes['accessToken'], response=redirect(service_furl.url))
     # Ticket could not be validated, unauthorized.
     return redirect(service_furl.url)

@@ -1,0 +1,10 @@
+{
+  "googledrive_file_added" : "${user} added file ${googledrive_path} to Google Drive in ${node}",
+  "googledrive_file_removed" : "${user} removed ${path_type} ${googledrive_path} from Google Drive in ${node}",
+  "googledrive_file_updated" : "${user} updated file ${googledrive_path} in Google Drive in ${node}",
+  "googledrive_folder_created" : "${user} created folder ${googledrive_path} in Google Drive in ${node}",
+  "googledrive_folder_selected" : "${user} linked Google Drive folder ${googledrive_folder} to ${node}",
+  "googledrive_node_authorized" : "${user} authorized the Google Drive addon for ${node}",
+  "googledrive_node_deauthorized" : "${user} deauthorized the Google Drive addon for ${node}",
+  "googledrive_node_deauthorized_no_user" : "Google Drive addon for ${node} deauthorized"
+}

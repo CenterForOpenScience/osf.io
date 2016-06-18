@@ -1,12 +1,13 @@
+
 <div class="col-sm-12">
     <span id="organizer" class="anchor"></span>
-    <h4 class="m-t-lg f-w-lg">Project Organizer</h4>
+    <h4 class="m-t-lg f-w-lg">Project organizer</h4>
     <p>The Project Organizer displays your projects, components, and registrations and makes it easy for
         you to arrange your projects and components into collections that make sense for your application. Your
         projects and registrations will be all be shown in Smart Collections called "All My Projects" and "All My
         Registrations." These Smart Collections are included by default and cannot be removed. Other collections can be created to
         help you organize projects or components you might like to see grouped in a different way. For example, you
-        may have many projects and find the list overwhelming. It might be helpful for you to create a collection of projects or components you work with most often. 
+        may have many projects and find the list overwhelming. It might be helpful for you to create a collection of projects or components you work with most often.
         Alternatively, you might want to be able to easily access all of your analysis scripts from all of your
         projects. You can create a collection of only analysis script components.</p>
     <p>To create a collection, click the "New Collection" button above the Project Organizer and give the collection a name.

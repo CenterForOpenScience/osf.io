@@ -41,30 +41,35 @@ var RegistrationRetractionViewModel = oop.extend(
                 required: true,
                 mustEqual: self.truncatedTitle
             });
-            self.valid = ko.pureComputed(function(){
-                return self.confirmationText.isValid();
+            self.disableSave = ko.observable(false);
+            self.valid = ko.computed(function(){
+                return !self.disableSave() && self.confirmationText.isValid();
             });
         },
-        SUBMIT_ERROR_MESSAGE: 'Error submitting your retraction request, please try again. If the problem ' +
+        SUBMIT_ERROR_MESSAGE: 'Error submitting your withdrawal request, please try again. If the problem ' +
                 'persists, email <a href="mailto:support@osf.iop">support@osf.io</a>',
-        CONFIRMATION_ERROR_MESSAGE: 'Please enter the registration title before clicking Retract Registration',
+        CONFIRMATION_ERROR_MESSAGE: 'Please enter the registration title before clicking Withdraw Registration',
         JUSTIFICATON_ERROR_MESSAGE: 'Your justification is too long, please enter a justification with no more ' +
             'than 2048 characters long.',
         MESSAGE_ERROR_CLASS: 'text-danger',
-        onSubmitSuccess: function(response) {
+        onSubmitSuccess: function(response) {            
             window.location = response.redirectUrl;
         },
         onSubmitError: function(xhr, status, errorThrown) {
             var self = this;
+            self.disableSave(false);
             self.changeMessage(self.SUBMIT_ERROR_MESSAGE, self.MESSAGE_ERROR_CLASS);
-            Raven.captureMessage('Could not submit registration retraction.', {
-                xhr: xhr,
-                status: status,
-                error: errorThrown
+            Raven.captureMessage('Could not submit registration withdrawal.', {
+                extra: {
+                    xhr: xhr,
+                    status: status,
+                    error: errorThrown
+                }
             });
         },
         submit: function() {
             var self = this;
+            self.disableSave(true);
             // Show errors if invalid
             if (!self.confirmationText.isValid()) {
                 self.changeMessage(self.CONFIRMATION_ERROR_MESSAGE, self.MESSAGE_ERROR_CLASS);

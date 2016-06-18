@@ -1,5 +1,4 @@
 from babel import dates, core, Locale
-from mako.lookup import Template
 
 from website import mails
 from website import models as website_models
@@ -9,152 +8,127 @@ from website.notifications.model import NotificationDigest
 from website.notifications.model import NotificationSubscription
 from website.util import web_url_for
 
-LOCALTIME_FORMAT = '%H:%M on %A, %B %d %Z'
-EMAIL_SUBJECT_MAP = {
-    'comments': '${user.fullname} commented on "${title}".',
-    'comment_replies': '${user.fullname} replied to your comment on "${title}".'
-}
 
+def notify(event, user, node, timestamp, **context):
+    """Retrieve appropriate ***subscription*** and passe user list
 
-def email_transactional(recipient_ids, uid, event, user, node, timestamp, **context):
+    :param event: event that triggered the notification
+    :param user: user who triggered notification
+    :param node: instance of Node
+    :param timestamp: time event happened
+    :param context: optional variables specific to templates
+        target_user: used with comment_replies
+    :return: List of user ids notifications were sent to
     """
-    :param recipient_ids: mod-odm User object ids
-    :param uid: id of the event owner (Node or User)
-    :param event: name of notification event (e.g. 'comments')
-    :param context: context variables for email template
-        See notify for specifics
-    :return:
+    event_type = utils.find_subscription_type(event)
+    subscriptions = compile_subscriptions(node, event_type, event)
+    sent_users = []
+    target_user = context.get('target_user', None)
+    if target_user:
+        target_user_id = target_user._id
+        if event_type in constants.USER_SUBSCRIPTIONS_AVAILABLE:
+            subscriptions = get_user_subscriptions(target_user, event_type)
+    for notification_type in subscriptions:
+        if notification_type != 'none' and subscriptions[notification_type]:
+            if user in subscriptions[notification_type]:
+                subscriptions[notification_type].pop(subscriptions[notification_type].index(user))
+            if target_user and target_user_id in subscriptions[notification_type]:
+                subscriptions[notification_type].pop(subscriptions[notification_type].index(target_user_id))
+                if target_user_id != user._id:
+                    store_emails([target_user_id], notification_type, 'comment_replies', user, node,
+                                 timestamp, **context)
+                    sent_users.append(target_user_id)
+            if subscriptions[notification_type]:
+                store_emails(subscriptions[notification_type], notification_type, event_type, user, node,
+                             timestamp, **context)
+                sent_users.extend(subscriptions[notification_type])
+    return sent_users
+
+
+def store_emails(recipient_ids, notification_type, event, user, node, timestamp, **context):
+    """Store notification emails
+
+    Emails are sent via celery beat as digests
+    :param recipient_ids: List of user ids to send mail to.
+    :param notification_type: from constants.Notification_types
+    :param event: event that triggered notification
+    :param user: user who triggered the notification
+    :param node: instance of Node
+    :param timestamp: time event happened
+    :param context:
+    :return: --
     """
-    template = event + '.html.mako'
-    context['title'] = node.title
-    context['user'] = user
-    subject = Template(EMAIL_SUBJECT_MAP[event]).render(**context)
+    if notification_type == 'none':
+        return
 
-    for user_id in recipient_ids:
-        recipient = website_models.User.load(user_id)
-        email = recipient.username
-        context['localized_timestamp'] = localize_timestamp(timestamp, recipient)
-        message = mails.render_message(template, **context)
-
-        if user._id != recipient._id:
-            mails.send_mail(
-                to_addr=email,
-                mail=mails.TRANSACTIONAL,
-                mimetype='html',
-                name=recipient.fullname,
-                node_id=node._id,
-                node_title=node.title,
-                subject=subject,
-                message=message,
-                url=get_settings_url(uid, recipient)
-            )
-
-
-def email_digest(recipient_ids, uid, event, user, node, timestamp, **context):
-    """ Render the email message from context vars and store in the
-        NotificationDigest objects created for each subscribed user.
-    """
     template = event + '.html.mako'
     context['user'] = user
     node_lineage_ids = get_node_lineage(node) if node else []
 
     for user_id in recipient_ids:
+        if user_id == user._id:
+            continue
         recipient = website_models.User.load(user_id)
         context['localized_timestamp'] = localize_timestamp(timestamp, recipient)
         message = mails.render_message(template, **context)
 
-        if user._id != recipient._id:
-            digest = NotificationDigest(
-                timestamp=timestamp,
-                event=event,
-                user_id=recipient._id,
-                message=message,
-                node_lineage=node_lineage_ids
-            )
-            digest.save()
-
-
-EMAIL_FUNCTION_MAP = {
-    'email_transactional': email_transactional,
-    'email_digest': email_digest,
-}
-
-
-def notify(uid, event, user, node, timestamp, **context):
-    """
-    :param uid: node's id
-    :param event: type of notification
-    :param user: user "sending" notification
-    :param node: the node
-    :param timestamp: time
-    :param context: optional variables specific to templates
-        target_user: used with comment_replies
-    :return:
-    """
-    node_subscribers = []
-    subscription = NotificationSubscription.load(utils.to_subscription_key(uid, event))
-
-    if subscription:
-        for notification_type in constants.NOTIFICATION_TYPES:
-            subscribed_users = getattr(subscription, notification_type, [])
-
-            node_subscribers.extend(subscribed_users)
-
-            if subscribed_users and notification_type != 'none':
-                for recipient in subscribed_users:
-                    event = 'comment_replies' if context.get('target_user') == recipient else event
-                    send([recipient._id], notification_type, uid, event, user, node, timestamp, **context)
-
-    return check_parent(uid, event, node_subscribers, user, node, timestamp, **context)
-
-
-def check_parent(uid, event, node_subscribers, user, orig_node, timestamp, **context):
-    """ Check subscription object for the event on the parent project
-        and send transactional email to indirect subscribers.
-    """
-    node = website_models.Node.load(uid)
-    target_user = context.get('target_user', None)
-
-    if node and node.parent_id:
-        key = utils.to_subscription_key(node.parent_id, event)
-        subscription = NotificationSubscription.load(key)
-
-        if not subscription:
-            return check_parent(node.parent_id, event, node_subscribers, user, orig_node, timestamp, **context)
-
-        for notification_type in constants.NOTIFICATION_TYPES:
-            subscribed_users = getattr(subscription, notification_type, [])
-
-            for u in subscribed_users:
-                if u not in node_subscribers and node.has_permission(u, 'read'):
-                    if notification_type != 'none':
-                        event = 'comment_replies' if target_user == u else event
-                        send([u._id], notification_type, uid, event, user, orig_node, timestamp, **context)
-                    node_subscribers.append(u)
-
-        return check_parent(node.parent_id, event, node_subscribers, user, orig_node, timestamp, **context)
-
-    return node_subscribers
-
-
-def send(recipient_ids, notification_type, uid, event, user, node, timestamp, **context):
-    """Dispatch to the handler for the provided notification_type"""
-
-    if notification_type == 'none':
-        return
-
-    try:
-        EMAIL_FUNCTION_MAP[notification_type](
-            recipient_ids=recipient_ids,
-            uid=uid,
-            event=event,
-            user=user,
-            node=node,
+        digest = NotificationDigest(
             timestamp=timestamp,
-            **context
+            send_type=notification_type,
+            event=event,
+            user_id=user_id,
+            message=message,
+            node_lineage=node_lineage_ids
         )
-    except KeyError:
-        raise ValueError('Unrecognized notification_type')
+        digest.save()
+
+
+def compile_subscriptions(node, event_type, event=None, level=0):
+    """Recurse through node and parents for subscriptions.
+
+    :param node: current node
+    :param event_type: Generally node_subscriptions_available
+    :param event: Particular event such a file_updated that has specific file subs
+    :param level: How deep the recursion is
+    :return: a dict of notification types with lists of users.
+    """
+    subscriptions = check_node(node, event_type)
+    if event:
+        subscriptions = check_node(node, event)  # Gets particular event subscriptions
+        parent_subscriptions = compile_subscriptions(node, event_type, level=level + 1)  # get node and parent subs
+    elif node.parent_id:
+        parent_subscriptions = \
+            compile_subscriptions(website_models.Node.load(node.parent_id), event_type, level=level + 1)
+    else:
+        parent_subscriptions = check_node(None, event_type)
+    for notification_type in parent_subscriptions:
+        p_sub_n = parent_subscriptions[notification_type]
+        p_sub_n.extend(subscriptions[notification_type])
+        for nt in subscriptions:
+            if notification_type != nt:
+                p_sub_n = list(set(p_sub_n).difference(set(subscriptions[nt])))
+        if level == 0:
+            p_sub_n, removed = utils.separate_users(node, p_sub_n)
+        parent_subscriptions[notification_type] = p_sub_n
+    return parent_subscriptions
+
+
+def check_node(node, event):
+    """Return subscription for a particular node and event."""
+    node_subscriptions = {key: [] for key in constants.NOTIFICATION_TYPES}
+    if node:
+        subscription = NotificationSubscription.load(utils.to_subscription_key(node._id, event))
+        for notification_type in node_subscriptions:
+            users = getattr(subscription, notification_type, [])
+            for user in users:
+                if node.has_permission(user, 'read'):
+                    node_subscriptions[notification_type].append(user._id)
+    return node_subscriptions
+
+
+def get_user_subscriptions(user, event):
+    user_subscription = NotificationSubscription.load(utils.to_subscription_key(user._id, event))
+    return {key: getattr(user_subscription, key, []) for key in constants.NOTIFICATION_TYPES}
 
 
 def get_node_lineage(node):

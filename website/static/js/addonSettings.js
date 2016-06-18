@@ -6,6 +6,9 @@ var bootbox = require('bootbox');
 var Raven = require('raven-js');
 var oop = require('js/oop');
 
+var $osf = require('js/osfHelpers');
+
+
 var ConnectedProject = function(data) {
     var self = this;
     self.title = data.title;
@@ -39,9 +42,11 @@ var ExternalAccount = oop.defclass({
             })
             .fail(function(xhr, status, error) {
                 Raven.captureMessage('Error deauthorizing node: ' + node.id, {
-                    url: url,
-                    status: status,
-                    error: error
+                    extra: {
+                        url: url,
+                        status: status,
+                        error: error
+                    }
                 });
             });
     },
@@ -49,7 +54,7 @@ var ExternalAccount = oop.defclass({
         var self = this;
         bootbox.confirm({
             title: 'Remove addon?',
-            message: 'Are you sure you want to remove the ' + self.providerName + ' authorization from this project?',
+            message: 'Are you sure you want to remove the ' + $osf.htmlEscape(self.providerName) + ' authorization from this project?',
             callback: function(confirm) {
                 if (confirm) {
                     self._deauthorizeNodeConfirm(node);
@@ -82,8 +87,13 @@ var OAuthAddonSettingsViewModel = oop.defclass({
     connectAccount: function() {
         var self = this;
         window.oauthComplete = function() {
-            self.updateAccounts();
-            self.setMessage('Add-on successfully authorized. To link this add-on to an OSF project, go to the settings page of the project, enable ' + self.properName + ', and choose content to connect.', 'text-success');
+            self.setMessage('');
+            var accountCount = self.accounts().length;
+            self.updateAccounts().done( function() {
+                (self.accounts().length > accountCount) ?
+                    self.setMessage('Add-on successfully authorized. To link this add-on to an OSF project, go to the settings page of the project, enable ' + self.properName + ', and choose content to connect.', 'text-success') :
+                    self.setMessage('Error while authorizing addon. Please log in to your ' + self.properName + ' account and grant access to the OSF to enable this addon.', 'text-danger');
+                });
         };
         window.open('/oauth/connect/' + self.name + '/');
     },
@@ -92,17 +102,18 @@ var OAuthAddonSettingsViewModel = oop.defclass({
         bootbox.confirm({
             title: 'Disconnect Account?',
             message: '<p class="overflow">' +
-                'Are you sure you want to disconnect the ' + self.properName + ' account <strong>' +
-                account.name + '</strong>? This will revoke access to ' + self.properName + ' for all projects you have authorized.' +
+                'Are you sure you want to disconnect the ' + $osf.htmlEscape(self.properName) + ' account <strong>' +
+                $osf.htmlEscape(account.name) + '</strong>? This will revoke access to ' + $osf.htmlEscape(self.properName) + ' for all projects you have authorized.' +
                 '</p>',
             callback: function(confirm) {
                 if (confirm) {
                     self.disconnectAccount(account);
+                    self.setMessage('');
                 }
             },
             buttons:{
                 confirm:{
-                    label:'Delete',
+                    label:'Disconnect',
                     className:'btn-danger'
                 }
             }
@@ -120,9 +131,11 @@ var OAuthAddonSettingsViewModel = oop.defclass({
         });
         request.fail(function(xhr, status, error) {
             Raven.captureMessage('Error while removing addon authorization for ' + account.id, {
-                url: url,
-                status: status,
-                error: error
+                extra: {
+                    url: url,
+                    status: status,
+                    error: error
+                }
             });
         });
         return request;
@@ -138,9 +151,11 @@ var OAuthAddonSettingsViewModel = oop.defclass({
         });
         request.fail(function(xhr, status, error) {
             Raven.captureMessage('Error while updating addon account', {
-                url: url,
-                status: status,
-                error: error
+                extra: {
+                    url: url,
+                    status: status,
+                    error: error
+                }
             });
         });
         return request;

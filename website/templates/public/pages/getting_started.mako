@@ -16,17 +16,17 @@
                     <li>
                         <a  class="active" href="#start">Getting Started</a>
                         <ul class="nav">
-                            <li><a href="#start-one"><i class="fa fa-chevron-right"></i> Creating a Project</a></li>
+                            <li><a href="#start-one"><i class="fa fa-chevron-right"></i> Creating a project</a></li>
                             <li><a href="#start-two"><i class="fa fa-chevron-right"></i> Collaboration</a></li>
-                            <li><a href="#start-three"><i class="fa fa-chevron-right"></i> Version Control</a></li>
+                            <li><a href="#start-three"><i class="fa fa-chevron-right"></i> Version control</a></li>
                         </ul>
                     </li>
                     <li>
                         <a href="#structure">Structure</a>
                         <ul class="nav">
-                            <li><a href="#organizer"><i class="fa fa-chevron-right"></i> Project Organizer</a></li>
+                            <li><a href="#organizer"><i class="fa fa-chevron-right"></i> Project organizer</a></li>
                             <li><a href="#dashboards"><i class="fa fa-chevron-right"></i> Dashboard</a></li>
-                            <li><a href="#userprofile"><i class="fa fa-chevron-right"></i> User Profile</a></li>
+                            <li><a href="#userprofile"><i class="fa fa-chevron-right"></i> User profile</a></li>
                             <li><a href="#projects"><i class="fa fa-chevron-right"></i> Projects</a></li>
                             <li><a href="#components"><i class="fa fa-chevron-right"></i> Components</a></li>
                             <li><a href="#files"><i class="fa fa-chevron-right"></i> Files</a></li>
@@ -41,8 +41,9 @@
                         <ul class="nav">
                             <li><a href="#contributors"><i class="fa fa-chevron-right"></i> Contributors</a></li>
                             <li><a href="#privacy"><i class="fa fa-chevron-right"></i> Privacy</a></li>
+                            <li><a href="#licenses"><i class="fa fa-chevron-right"></i> Licenses</a></li>
                             <li><a href="#citations"><i class="fa fa-chevron-right"></i> Citations</a></li>
-                            <li><a href="#viewonly"><i class="fa fa-chevron-right"></i> View-only Links</a></li>
+                            <li><a href="#viewonly"><i class="fa fa-chevron-right"></i> View-only links</a></li>
                             <li><a href="#comments"><i class="fa fa-chevron-right"></i> Comments</a></li>
                         </ul>
                     </li>
@@ -58,20 +59,21 @@
                             <li><a href="#drive"><i class="fa fa-chevron-right"></i> Google Drive</a></li>
                             <li><a href="#mendeley"><i class="fa fa-chevron-right"></i> Mendeley</a></li>
                             <li><a href="#zotero"><i class="fa fa-chevron-right"></i> Zotero</a></li>
-                            <li><a href="#twofactor"><i class="fa fa-chevron-right"></i> Two-factor Authentication</a></li>
+                            <li><a href="#twofactor"><i class="fa fa-chevron-right"></i> Two-factor authentication</a></li>
                         </ul>
                     </li>
                     <li>
                         <a href="#metrics">Metrics</a>
                         <ul class="nav">
 
-                            <li><a href="#statistics"><i class="fa fa-chevron-right"></i> Statistics</a></li>
+                            <li><a href="#statistics"><i class="fa fa-chevron-right"></i> Analytics</a></li>
                             <li><a href="#notifications"><i class="fa fa-chevron-right"></i> Notifications</a></li>
                         </ul>
                     </li>
                 </ul>
             </div>
         </div>
+    </div>
     <div class="col-sm-8 col-md-9">
 
         <div  id="start" class="p-t-xl">
@@ -122,7 +124,7 @@
                 </div>
             </div>
         <div  id="structure" class="row p-t-xl">
-            <h2 class="text-center">Structuring Your Work</h2>
+            <h2 class="text-center">Structuring your work</h2>
             <div class="col-md-12">
                 <%include file="/public/pages/help/organizer.mako"/>
                 <%include file="/public/pages/help/dashboards.mako"/>
@@ -138,10 +140,11 @@
         </div>
 
         <div id="sharing" class="row p-t-xl">
-            <h2 class="text-center">Sharing Your Work</h2>
+            <h2 class="text-center">Sharing your work</h2>
             <div class="col-md-12">
                 <%include file="/public/pages/help/contributors.mako"/>
                 <%include file="/public/pages/help/privacy.mako"/>
+                <%include file="/public/pages/help/licenses.mako"/>
                 <%include file="/public/pages/help/citations.mako"/>
                 <%include file="/public/pages/help/view_only.mako"/>
                 <%include file="/public/pages/help/comments.mako"/>
@@ -149,10 +152,31 @@
         </div>
 
         <div id="addons" class="row p-t-xl">
-            <h2 class="text-center m-b-lg">OSF Add-ons</h2>
-            <div class="col-md-12">
-                <%include file="/public/pages/help/addons.mako"/>
+            <h3 class="m-t-lg">OSF Add-ons</h3>
+            <div class="support-item">
+                <h5 class="support-head f-w-xl">About Add-ons </h5>
+                <div class="support-body">
+                    <p>An add-on is a connection between the OSF to another tool such as Google Drive or GitHub.</p>
+                    <p>You can connect an add-on from a project's "Settings" page.  Select the add-on to connect to your project.
+                        In the "Configure Add-ons" section of the page, click "Connect Account" and log in to the third-party service,
+                        if necessary. Once connected, you will be sent back to the "Settings" page, where you can choose what
+                        you want to share.</p>
+                </div>
             </div>
+
+            <h4 class="m-t-lg">Storage add-ons</h4>
+            <%include file="/public/pages/help/addons/dropbox.mako"/>
+            <%include file="/public/pages/help/addons/github.mako"/>
+            <%include file="/public/pages/help/addons/amazons3.mako"/>
+            <%include file="/public/pages/help/addons/figshare.mako"/>
+            <%include file="/public/pages/help/addons/dataverse.mako"/>
+            <%include file="/public/pages/help/addons/box.mako"/>
+            <%include file="/public/pages/help/addons/drive.mako"/>
+            <h4 class="m-t-lg">Citation manager add-ons</h4>
+            <%include file="/public/pages/help/addons/mendeley.mako"/>
+            <%include file="/public/pages/help/addons/zotero.mako"/>
+            <h4 class="m-t-lg">Security add-ons</h4>
+            <%include file="/public/pages/help/addons/two-factor.mako"/>
         </div>
 
         <div id="metrics" class="row p-t-xl">

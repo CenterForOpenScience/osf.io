@@ -31,12 +31,6 @@
     margin: 0;
 }
 
-/* Project Navigation */
-#projectSubnav .navbar-collapse {
-    padding-left: 0;
-    padding-right: 0;
-}
-
 .node-title {
     line-height: 44px;
     border-bottom: none;
@@ -64,15 +58,34 @@
         padding-left: 30px;
         padding-right: 30px;
     }
+    .osf-project-navbar li #commentsLink {
+        font-size: 15px;
+        padding: 12px 30px;
+    }
+    .osf-project-navbar li #commentsLink:hover {
+        background-color: #DADADA;
+        text-decoration: none;
+    }
     .osf-project-navbar a.project-title {
     }
     .project-nav {
         overflow: hidden;
     }
+
+    /* Allow project nav to move the content on small screen */
+    #projectBanner .osf-project-navbar {
+        position: relative;
+        top: 0;
+        margin-top: -55px;
+    }
+    #projectBanner {
+        margin-right: -15px;
+        margin-left: -15px;
+    }
 }
 
 @media (min-width: 768px) {
-   .osf-project-navbar li>a {
+    .osf-project-navbar li>a {
         padding-left: 7px;
         padding-right: 7px;
     }
@@ -82,7 +95,7 @@
 }
 
 @media (min-width: 992px) {
-   .osf-project-navbar li>a {
+    .osf-project-navbar li>a {
         padding-left: 10px;
         padding-right: 10px;
     }
@@ -122,4 +135,20 @@
 /* Disable word-break in project addon-settings table */
 .table-addon-terms td:first-child {
     word-break: normal;
+}
+
+/* Project Description */
+
+span#nodeDescriptionEditable{
+    white-space:pre-line;
+}
+
+.panel-body-with-instructions {
+    padding-top: 0px;
+}
+
+.license-text {
+    white-space: pre-wrap;       /* CSS 3 */
+    white-space: -pre-wrap;      /* Opera 4-6 */
+    white-space: -o-pre-wrap;    /* Opera 7 */
 }

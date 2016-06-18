@@ -107,10 +107,7 @@ ViewModel.prototype.disableTwofactorConfirm = function() {
             self.isEnabled(false);
             self.isConfirmed(false);
             $(self.qrCodeSelector).html('');
-            self.changeMessage(
-                'Successfully disabled two-factor authentication.',
-                'text-success',
-                5000);
+            self.tfaCode('');
         })
         .fail(function(xhr, status, error) {
             Raven.captureMessage('Failed to disable two-factor.', {
@@ -149,10 +146,6 @@ ViewModel.prototype.enableTwofactorConfirm = function() {
     var self = this;
     return osfHelpers.postJSON(self.urls.enable, {})
         .done(function(response) {
-            self.changeMessage(
-                'Successfully enabled two-factor authentication.',
-                'text-success',
-                5000);
             self.updateFromData(response.result);
         })
         .fail(function(xhr, status, error) {

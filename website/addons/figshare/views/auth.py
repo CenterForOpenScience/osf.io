@@ -147,4 +147,7 @@ def figshare_add_user_auth(auth, **kwargs):
 @must_have_addon('figshare', 'user')
 def figshare_oauth_delete_user(user_addon, **kwargs):
     user_addon.remove_auth(save=True)
+    user_addon.delete()
+    user_addon.save()
+
     return {}

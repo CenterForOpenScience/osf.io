@@ -3,27 +3,28 @@
  */
 'use strict';
 
+require('css/add-contributors.css');
+
 var $ = require('jquery');
 var ko = require('knockout');
-var bootbox = require('bootbox');
+var bootbox = require('bootbox');  // TODO: Why is this required? Is it? See [#OSF-6100]
 var Raven = require('raven-js');
 
-var oop = require('./oop');
-var $osf = require('./osfHelpers');
-var Paginator = require('./paginator');
+var oop = require('js/oop');
+var $osf = require('js/osfHelpers');
+var osfLanguage = require('js/osfLanguage');
+var Paginator = require('js/paginator');
+var NodeSelectTreebeard = require('js/nodeSelectTreebeard');
+var m = require('mithril');
+var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 
-var NODE_OFFSET = 25;
-// Max number of recent/common contributors to show
-var MAX_RECENT = 5;
-
-// TODO: Remove dependency on contextVars
-var nodeApiUrl = window.contextVars.node.urls.api;
-var nodeId = window.contextVars.node.id;
 
 function Contributor(data) {
     $.extend(this, data);
     if (data.n_projects_in_common === 1) {
         this.displayProjectsInCommon = data.n_projects_in_common + ' project in common';
+    } else if (data.n_projects_in_common === -1) {
+        this.displayProjectsInCommon = 'Yourself';
     } else if (data.n_projects_in_common !== 0) {
         this.displayProjectsInCommon = data.n_projects_in_common + ' projects in common';
     } else {
@@ -31,14 +32,37 @@ function Contributor(data) {
     }
 }
 
-var AddContributorViewModel = oop.extend(Paginator, {
-    constructor: function(title, parentId, parentTitle) {
+var AddContributorViewModel;
+AddContributorViewModel = oop.extend(Paginator, {
+    constructor: function (title, nodeId, parentId, parentTitle, options) {
         this.super.constructor.call(this);
         var self = this;
 
         self.title = title;
+        self.nodeId = nodeId;
+        self.nodeApiUrl = '/api/v1/project/' + self.nodeId + '/';
         self.parentId = parentId;
         self.parentTitle = parentTitle;
+        self.async = options.async || false;
+        self.callback = options.callback || function () {
+            };
+        self.nodesOriginal = {};
+        //state of current nodes
+        self.childrenToChange = ko.observableArray();
+        self.nodesState = ko.observable();
+        //nodesState is passed to nodesSelectTreebeard which can update it and key off needed action.
+        self.nodesState.subscribe(function (newValue) {
+            //The subscribe causes treebeard changes to change which nodes will be affected
+            var childrenToChange = [];
+            for (var key in newValue) {
+                newValue[key].changed = newValue[key].checked !== self.nodesOriginal[key].checked;
+                if (newValue[key].changed && key !== self.nodeId) {
+                    childrenToChange.push(key);
+                }
+            }
+            self.childrenToChange(childrenToChange);
+            m.redraw(true);
+        });
 
         //list of permission objects for select.
         self.permissionList = [
@@ -48,7 +72,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         ];
 
         self.page = ko.observable('whom');
-        self.pageTitle = ko.computed(function() {
+        self.pageTitle = ko.computed(function () {
             return {
                 whom: 'Add Contributors',
                 which: 'Select Components',
@@ -57,79 +81,132 @@ var AddContributorViewModel = oop.extend(Paginator, {
         });
         self.query = ko.observable();
         self.results = ko.observableArray([]);
+        self.contributors = ko.observableArray([]);
         self.selection = ko.observableArray();
+
+        self.contributorIDsToAdd = ko.pureComputed(function () {
+            return self.selection().map(function (user) {
+                return user.id;
+            });
+        });
+
         self.notification = ko.observable('');
         self.inviteError = ko.observable('');
+        self.doneSearching = ko.observable(false);
         self.totalPages = ko.observable(0);
-        self.nodes = ko.observableArray([]);
-        self.nodesToChange = ko.observableArray();
-        $.getJSON(
-            nodeApiUrl + 'get_editable_children/', {},
-            function(result) {
-                $.each(result.children || [], function(idx, child) {
-                    child.margin = NODE_OFFSET + child.indent * NODE_OFFSET + 'px';
-                });
-                self.nodes(result.children);
-            }
-        );
-        self.foundResults = ko.pureComputed(function() {
+        self.childrenToChange = ko.observableArray();
+
+        self.foundResults = ko.pureComputed(function () {
             return self.query() && self.results().length;
         });
 
-        self.noResults = ko.pureComputed(function() {
-            return self.query() && !self.results().length;
+        self.noResults = ko.pureComputed(function () {
+            return self.query() && !self.results().length && self.doneSearching();
+        });
+
+        self.showLoading = ko.pureComputed(function () {
+            return !self.doneSearching() && !!self.query();
+        });
+
+        self.addAllVisible = ko.pureComputed(function () {
+            var selected_ids = self.selection().map(function (user) {
+                return user.id;
+            });
+            var contributors = self.contributors();
+            return ($osf.any(
+                $.map(self.results(), function (result) {
+                    return contributors.indexOf(result.id) === -1 && selected_ids.indexOf(result.id) === -1;
+                })
+            ));
+        });
+
+        self.removeAllVisible = ko.pureComputed(function () {
+            return self.selection().length > 0;
         });
 
         self.inviteName = ko.observable();
         self.inviteEmail = ko.observable();
 
-        self.addingSummary = ko.computed(function() {
-            var names = $.map(self.selection(), function(result) {
+        self.addingSummary = ko.computed(function () {
+            var names = $.map(self.selection(), function (result) {
                 return result.fullname;
             });
             return names.join(', ');
         });
     },
-    selectWhom: function() {
+    hide: function () {
+        $('.modal').modal('hide');
+    },
+    selectWhom: function () {
         this.page('whom');
     },
-    selectWhich: function() {
+    selectWhich: function () {
+        //when the next button is hit by the user, the nodes to change and disable are decided
+        var self = this;
+        var nodesState = self.nodesState();
+        for (var key in nodesState) {
+            var i;
+            var node = nodesState[key];
+            var enabled = nodesState[key].isAdmin;
+            var checked = nodesState[key].checked;
+            if (enabled) {
+                var nodeContributors = [];
+                for (i = 0; i < node.contributors.length; i++) {
+                    nodeContributors.push(node.contributors[i].id);
+                }
+                for (i = 0; i < self.contributorIDsToAdd().length; i++) {
+                    if (nodeContributors.indexOf(self.contributorIDsToAdd()[i]) < 0) {
+                        enabled = true;
+                        break;
+                    }
+                    else {
+                        checked = true;
+                        enabled = false;
+                    }
+                }
+            }
+            nodesState[key].enabled = enabled;
+            nodesState[key].checked = checked;
+        }
+        self.nodesState(nodesState);
         this.page('which');
     },
-    gotoInvite: function() {
+    gotoInvite: function () {
         var self = this;
         self.inviteName(self.query());
         self.inviteError('');
         self.inviteEmail('');
         self.page('invite');
     },
-    goToPage: function(page) {
+    goToPage: function (page) {
         this.page(page);
     },
     /**
      * A simple Contributor model that receives data from the
-     * contributor search endpoint. Adds an addiitonal displayProjectsinCommon
+     * contributor search endpoint. Adds an additional displayProjectsinCommon
      * attribute which is the human-readable display of the number of projects the
      * currently logged-in user has in common with the contributor.
      */
-    startSearch: function() {
+    startSearch: function () {
         this.pageToGet(0);
         this.fetchResults();
     },
-    fetchResults: function() {
+    fetchResults: function () {
         var self = this;
+        self.doneSearching(false);
         self.notification(false);
         if (self.query()) {
             return $.getJSON(
                 '/api/v1/user/search/', {
                     query: self.query(),
-                    excludeNode: nodeId,
                     page: self.pageToGet
                 },
-                function(result) {
-                    var contributors = result.users.map(function(userData) {
+                function (result) {
+                    var contributors = result.users.map(function (userData) {
+                        userData.added = (self.contributors().indexOf(userData.id) !== -1);
                         return new Contributor(userData);
                     });
+                    self.doneSearching(true);
                     self.results(contributors);
                     self.currentPage(result.page);
                     self.numberOfPages(result.pages);
@@ -140,111 +217,64 @@ var AddContributorViewModel = oop.extend(Paginator, {
             self.results([]);
             self.currentPage(0);
             self.totalPages(0);
+            self.doneSearching(true);
         }
     },
-    importFromParent: function() {
+    getContributors: function () {
+        var self = this;
+        self.notification(false);
+        var url = $osf.apiV2Url('nodes/' + window.contextVars.node.id + '/contributors/');
+
+        return $.ajax({
+            url: url,
+            type: 'GET',
+            dataType: 'json',
+            contentType: 'application/vnd.api+json;',
+            crossOrigin: true,
+            xhrFields: {withCredentials: true},
+            processData: false
+        }).done(function (response) {
+            var contributors = response.data.map(function (user) {
+                return user.id;
+            });
+            self.contributors(contributors);
+        });
+    },
+    importFromParent: function () {
         var self = this;
         self.notification(false);
         $.getJSON(
-            nodeApiUrl + 'get_contributors_from_parent/', {},
-            function(result) {
-                if (!result.contributors.length) {
-                    self.notification({
-                        'message': 'All contributors from parent already included.',
-                        'level': 'info'
-                    });
-                }
-                self.results(result.contributors);
+            self.nodeApiUrl + 'get_contributors_from_parent/', {},
+            function (result) {
+                var contributors = result.contributors.map(function (user) {
+                    var added = (self.contributors().indexOf(user.id) !== -1);
+                    var updatedUser = $.extend({}, user, {added: added});
+                    return updatedUser;
+                });
+                self.results(contributors);
+                self.doneSearching(true);
             }
         );
     },
-    recentlyAdded: function() {
-        var self = this;
-        self.notification(false);
-        var url = nodeApiUrl + 'get_recently_added_contributors/?max=' + MAX_RECENT.toString();
-        return $.getJSON(
-            url, {},
-            function(result) {
-                if (!result.contributors.length) {
-                    self.notification({
-                        'message': 'All recent collaborators already included.',
-                        'level': 'info'
-                    });
-                }
-                var contribs = [];
-                var numToDisplay = result.contributors.length;
-                for (var i = 0; i < numToDisplay; i++) {
-                    contribs.push(new Contributor(result.contributors[i]));
-                }
-                self.results(contribs);
-                self.numberOfPages(1);
-            }
-        ).fail(function(xhr, textStatus, error) {
-            self.notification({
-                'message': 'OSF was unable to resolve your request. If this issue persists, ' +
-                    'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.',
-                'level': 'warning'
-            });
-            Raven.captureMessage('Could not GET recentlyAdded contributors.', {
-                url: url,
-                textStatus: textStatus,
-                error: error
-            });
-        });
-    },
-    mostInCommon: function() {
-        var self = this;
-        self.notification(false);
-        var url = nodeApiUrl + 'get_most_in_common_contributors/?max=' + MAX_RECENT.toString();
-        return $.getJSON(
-            url, {},
-            function(result) {
-                if (!result.contributors.length) {
-                    self.notification({
-                        'message': 'All frequent collaborators already included.',
-                        'level': 'info'
-                    });
-                }
-                var contribs = [];
-                var numToDisplay = result.contributors.length;
-                for (var i = 0; i < numToDisplay; i++) {
-                    contribs.push(new Contributor(result.contributors[i]));
-                }
-                self.results(contribs);
-                self.numberOfPages(1);
-            }
-        ).fail(function(xhr, textStatus, error) {
-            self.notification({
-                'message': 'OSF was unable to resolve your request. If this issue persists, ' +
-                    'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.',
-                'level': 'warning'
-            });
-            Raven.captureMessage('Could not GET mostInCommon contributors.', {
-                url: url,
-                textStatus: textStatus,
-                error: error
-            });
-        });
-    },
-    addTips: function(elements) {
-        elements.forEach(function(element) {
+    addTips: function (elements) {
+        elements.forEach(function (element) {
             $(element).find('.contrib-button').tooltip();
         });
     },
-    afterRender: function(elm, data) {
+    afterRender: function (elm, data) {
         var self = this;
         self.addTips(elm, data);
     },
-    makeAfterRender: function() {
+    makeAfterRender: function () {
         var self = this;
-        return function(elm, data) {
+        return function (elm, data) {
             return self.afterRender(elm, data);
         };
     },
     /** Validate the invite form. Returns a string error message or
      *   true if validation succeeds.
      */
-    validateInviteForm: function() {
+    validateInviteForm: function () {
         var self = this;
         // Make sure Full Name is not blank
         if (!self.inviteName().trim().length) {
@@ -264,7 +294,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         }
         return true;
     },
-    postInvite: function() {
+    postInvite: function () {
         var self = this;
         self.inviteError('');
         var validated = self.validateInviteForm();
@@ -274,7 +304,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         }
         return self.postInviteRequest(self.inviteName(), self.inviteEmail());
     },
-    add: function(data) {
+    add: function (data) {
         var self = this;
         data.permission = ko.observable(self.permissionList[1]); //default permission write
         // All manually added contributors are visible
@@ -284,7 +314,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         $('.tooltip').hide();
         $('.contrib-button').tooltip();
     },
-    remove: function(data) {
+    remove: function (data) {
         this.selection.splice(
             this.selection.indexOf(data), 1
         );
@@ -292,33 +322,24 @@ var AddContributorViewModel = oop.extend(Paginator, {
         $('.tooltip').hide();
         $('.contrib-button').tooltip();
     },
-    addAll: function() {
+    addAll: function () {
         var self = this;
-        $.each(self.results(), function(idx, result) {
-            if (self.selection().indexOf(result) === -1) {
+        var selected_ids = self.selection().map(function (user) {
+            return user.id;
+        });
+        $.each(self.results(), function (idx, result) {
+            if (selected_ids.indexOf(result.id) === -1 && self.contributors().indexOf(result.id) === -1) {
                 self.add(result);
             }
         });
     },
-    removeAll: function() {
+    removeAll: function () {
         var self = this;
-        $.each(self.selection(), function(idx, selected) {
+        $.each(self.selection(), function (idx, selected) {
             self.remove(selected);
         });
     },
-    cantSelectNodes: function() {
-        return this.nodesToChange().length === this.nodes().length;
-    },
-    cantDeselectNodes: function() {
-        return this.nodesToChange().length === 0;
-    },
-    selectNodes: function() {
-        this.nodesToChange($osf.mapByProperty(this.nodes(), 'id'));
-    },
-    deselectNodes: function() {
-        this.nodesToChange([]);
-    },
-    selected: function(data) {
+    selected: function (data) {
         var self = this;
         for (var idx = 0; idx < self.selection().length; idx++) {
             if (data.id === self.selection()[idx].id) {
@@ -327,40 +348,83 @@ var AddContributorViewModel = oop.extend(Paginator, {
         }
         return false;
     },
-    submit: function() {
+    selectAllNodes: function () {
+        //select all nodes to add a contributor to.  THe changed variable is set here for timing between
+        // treebeard and knockout
+        var self = this;
+        var nodesState = ko.toJS(self.nodesState());
+        for (var key in nodesState) {
+            if (nodesState[key].enabled) {
+                nodesState[key].checked = true;
+            }
+        }
+        self.nodesState(nodesState);
+    },
+    selectNoNodes: function () {
+        //select no nodes to add a contributor to.  THe changed variable is set here for timing between
+        // treebeard and knockout
+        var self = this;
+        var nodesState = ko.toJS(self.nodesState());
+        for (var key in nodesState) {
+            if (nodesState[key].enabled && nodesState[key].checked) {
+                nodesState[key].checked = false;
+            }
+        }
+        self.nodesState(nodesState);
+    },
+    submit: function () {
         var self = this;
         $osf.block();
+        var url = self.nodeApiUrl + 'contributors/';
         return $osf.postJSON(
-            nodeApiUrl + 'contributors/', {
-                users: ko.utils.arrayMap(self.selection(), function(user) {
+            url, {
+                users: ko.utils.arrayMap(self.selection(), function (user) {
                     var permission = user.permission().value; //removes the value from the object
                     var tUser = JSON.parse(ko.toJSON(user)); //The serialized user minus functions
                     tUser.permission = permission; //shoving the permission value into permission
                     return tUser; //user with simplified permissions
                 }),
-                node_ids: self.nodesToChange()
+                node_ids: self.childrenToChange()
             }
-        ).done(function() {
-            window.location.reload();
-        }).fail(function() {
-            $('.modal').modal('hide');
+        ).done(function (response) {
+            if (self.async) {
+                self.contributors($.map(response.contributors, function (contrib) {
+                    return contrib.id;
+                }));
+                self.hide();
+                $osf.unblock();
+                if (self.callback) {
+                    self.callback(response);
+                }
+            } else {
+                window.location.reload();
+            }
+        }).fail(function (xhr, status, error) {
+            self.hide();
             $osf.unblock();
-            $osf.growl('Error', 'Add contributor failed.');
+            $osf.growl('Could not add contributors', 'There was a problem trying to add contributors. ' + osfLanguage.REFRESH_OR_SUPPORT);
+            Raven.captureMessage('Error adding contributors', {
+                extra: {
+                    url: url,
+                    status: status,
+                    error: error
+                }
+            });
         });
     },
-    clear: function() {
+    clear: function () {
         var self = this;
         self.page('whom');
         self.query('');
         self.results([]);
         self.selection([]);
-        self.nodesToChange([]);
+        self.childrenToChange([]);
         self.notification(false);
     },
-    postInviteRequest: function(fullname, email) {
+    postInviteRequest: function (fullname, email) {
         var self = this;
         return $osf.postJSON(
-            nodeApiUrl + 'invite_contributor/', {
+            self.nodeApiUrl + 'invite_contributor/', {
                 'fullname': fullname,
                 'email': email
             }
@@ -370,17 +434,46 @@ var AddContributorViewModel = oop.extend(Paginator, {
             self.onInviteError.bind(self)
         );
     },
-    onInviteSuccess: function(result) {
+    onInviteSuccess: function (result) {
         var self = this;
         self.query('');
         self.results([]);
         self.page('whom');
         self.add(result.contributor);
     },
-    onInviteError: function(xhr) {
+    onInviteError: function (xhr) {
         var response = JSON.parse(xhr.responseText);
         // Update error message
         this.inviteError(response.message);
+    },
+    hasChildren: function() {
+        var self = this;
+        return (Object.keys(self.nodesOriginal).length > 1);
+    },
+    /**
+     * get node tree for treebeard from API V1
+     */
+    fetchNodeTree: function (treebeardUrl) {
+        var self = this;
+        return $.ajax({
+            url: treebeardUrl,
+            type: 'GET',
+            dataType: 'json'
+        }).done(function (response) {
+            self.nodesOriginal = projectSettingsTreebeardBase.getNodesOriginal(response[0], self.nodesOriginal);
+            var nodesState = $.extend(true, {}, self.nodesOriginal);
+            var nodeParent = response[0].node.id;
+            //parent node is changed by default
+            nodesState[nodeParent].checked = true;
+            //parent node cannot be changed
+            nodesState[nodeParent].isAdmin = false;
+            self.nodesState(nodesState);
+        }).fail(function (xhr, status, error) {
+            $osf.growl('Error', 'Unable to retrieve project settings');
+            Raven.captureMessage('Could not GET project settings.', {
+                url: treebeardUrl, status: status, error: error
+            });
+        });
     }
 });
 
@@ -389,20 +482,32 @@ var AddContributorViewModel = oop.extend(Paginator, {
 // Public API //
 ////////////////
 
-function ContribAdder(selector, nodeTitle, nodeId, parentTitle) {
+function ContribAdder(selector, nodeTitle, nodeId, parentId, parentTitle, options) {
     var self = this;
     self.selector = selector;
     self.$element = $(selector);
     self.nodeTitle = nodeTitle;
     self.nodeId = nodeId;
+    self.parentId = parentId;
     self.parentTitle = parentTitle;
-    self.viewModel = new AddContributorViewModel(self.nodeTitle,
-        self.nodeId, self.parentTitle);
+    self.options = options || {};
+    self.viewModel = new AddContributorViewModel(
+        self.nodeTitle,
+        self.nodeId,
+        self.parentId,
+        self.parentTitle,
+        self.options
+    );
     self.init();
 }
 
 ContribAdder.prototype.init = function() {
     var self = this;
+    var treebeardUrl = window.contextVars.node.urls.api + 'tree/';
+    self.viewModel.getContributors();
+    self.viewModel.fetchNodeTree(treebeardUrl).done(function(response) {
+        new NodeSelectTreebeard('addContributorsTreebeard', response, self.viewModel.nodesState);
+    });
     ko.applyBindings(self.viewModel, self.$element[0]);
     // Clear popovers on dismiss start
     self.$element.on('hide.bs.modal', function() {
@@ -412,10 +517,6 @@ ContribAdder.prototype.init = function() {
     // or cancel button.
     self.$element.on('hidden.bs.modal', function() {
         self.viewModel.clear();
-    });
-    // Load recently added contributors every time the modal is activated.
-    self.$element.on('shown.bs.modal', function() {
-        self.viewModel.recentlyAdded();
     });
 };
 

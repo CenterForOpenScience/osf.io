@@ -18,9 +18,7 @@ var settings = {
     port: process.env.SHAREJS_SERVER_PORT || 7007,
     corsAllowOrigin: process.env.SHAREJS_CORS_ALLOW_ORIGIN || 'http://localhost:5000',
     // Mongo options
-    dbHost: process.env.SHAREJS_DB_HOST || 'localhost',
-    dbPort: process.env.SHAREJS_DB_PORT || 27017,
-    dbName: process.env.SHAREJS_DB_NAME || 'sharejs',
+    dbUrl: process.env.SHAREJS_DB_URL || 'mongodb://localhost:27017/sharejs',
     // Raven client
     sentryDSN: process.env.SHAREJS_SENTRY_DSN
 };
@@ -41,10 +39,7 @@ if (!settings.debug) {
 }
 
 // Server setup
-var mongo = require('livedb-mongo')(
-    util.format('mongodb://%s:%s/%s', settings.dbHost, settings.dbPort, settings.dbName),
-    {safe:true}
-);
+var mongo = require('livedb-mongo')(settings.dbUrl, {safe:true});
 var backend = livedb.client(mongo);
 var share = sharejs.server.createClient({backend: backend});
 var app = express();
@@ -200,6 +195,16 @@ wss.on('connection', function(client) {
 
     // Give the stream to sharejs
     return share.listen(stream);
+});
+
+// Update a document from storage
+app.post('/reload/:id', jsonParser, function (req, res, next) {
+    wss.broadcast(req.params.id, JSON.stringify({
+        type: 'reload',
+        contributors: req.body // All contributors to be updated
+    }));
+    console.info('[Document reloaded from storage] docId: %s', req.params.id);
+    res.send(util.format('%s was reloaded.', req.params.id));
 });
 
 // Lock a document

@@ -23,8 +23,7 @@ function FileViewTreebeard(data) {
         showFilter: false,
         title: undefined,
         hideColumnTitles: true,
-        multiselect : false,
-        toolbarComponent : null,
+        multiselect : true,
         placement : 'fileview',
         allowMove : false,
         filterTemplate: function () {
@@ -39,9 +38,6 @@ function FileViewTreebeard(data) {
         onload: function(tree) {
             var tb = this;
             Fangorn.DefaultOptions.onload.call(tb, tree);
-            $('.panel-heading.osf-panel-header-flex').show();
-            tb.select('.tb-header-row').hide();
-
         },
         ondataload: function () {
             var tb = this;
@@ -54,7 +50,6 @@ function FileViewTreebeard(data) {
                     tb.fangornFolderArray.splice(0, 1);
                 }
             }
-            m.render($('#filesSearch').get(0), tb.options.filterTemplate.call(tb));
         },
         columnTitles: function () {
             return [{
@@ -74,19 +69,28 @@ function FileViewTreebeard(data) {
             var tb = this;
             Fangorn.DefaultOptions.lazyLoadOnLoad.call(tb, tree, event);
             Fangorn.Utils.setCurrentFileID.call(tb, tree, window.contextVars.node.id, window.contextVars.file);
-            if(!event) {
+            if(!event && tb.isMultiselected(tb.currentFileID)) {
                 Fangorn.Utils.scrollToFile.call(tb, tb.currentFileID);
             }
             if (tree.depth > 1) {
                 Fangorn.Utils.orderFolder.call(this, tree);
             }
+            // if any of the children is the selected add a certain class.
+            for (var i = 0; i < tree.children.length; i++){
+                var item = tree.children[i];
+                if (item.data.kind === 'file' && tb.currentFileID === item.id) {
+                    item.css = 'fangorn-selected';
+                    tb.multiselected([item]);
+                }
+            }
         },
         resolveRows: function (item) {
             var tb = this;
             var node = item.parent().parent();
-            if (item.data.kind === 'file' && tb.currentFileID === item.id) {
+            if(tb.isMultiselected(item.id)) {
                 item.css = 'fangorn-selected';
-                tb.multiselected([item]);
+            } else {
+                item.css = '';
             }
             if(item.data.permissions && !item.data.permissions.view){
                 item.css += ' tb-private-row';

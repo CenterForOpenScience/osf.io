@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from framework.tasks import app
-from framework.tasks.handlers import queued_task
+from framework.celery_tasks import app
+from framework.celery_tasks.handlers import queued_task
+from framework.postcommit_tasks.handlers import run_postcommit
 from framework.transactions.context import transaction
 
 from . import piwik
@@ -19,9 +20,8 @@ def update_user(self, user_id):
         raise self.retry(exc=error)
 
 
-@queued_task
+@run_postcommit(once_per_request=False, celery=True)
 @app.task(bind=True, max_retries=5, default_retry_delay=60)
-@transaction()
 def update_node(self, node_id, updated_fields=None):
     # Avoid circular imports
     from website import models

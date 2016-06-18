@@ -5,17 +5,21 @@ import urllib
 import urlparse
 import bson.objectid
 import httplib as http
+from datetime import datetime
 
 import itsdangerous
 
+from flask import request
 from werkzeug.local import LocalProxy
 from weakref import WeakKeyDictionary
-from flask import request, make_response
+
 from framework.flask import redirect
+from framework.mongo import database
 
 from website import settings
 
 from .model import Session
+from .utils import remove_session
 
 
 def add_key_to_url(url, scheme, key):
@@ -111,16 +115,12 @@ def create_session(response, data=None):
 sessions = WeakKeyDictionary()
 session = LocalProxy(get_session)
 
-# Request callbacks
 
-# NOTE: This gets attached in website.app.init_app to ensure correct callback
-# order
+# Request callbacks
+# NOTE: This gets attached in website.app.init_app to ensure correct callback order
 def before_request():
-    from framework import sentry
     from framework.auth import cas
-    from framework.auth.core import User
-    from framework.auth import authenticate
-    from framework.routing import json_renderer
+    from website.util import time as util_time
 
     # Central Authentication Server Ticket Validation and Authentication
     ticket = request.args.get('ticket')
@@ -129,22 +129,6 @@ def before_request():
         service_url.args.pop('ticket')
         # Attempt autn wih CAS, and return a proper redirect response
         return cas.make_response_from_ticket(ticket=ticket, service_url=service_url.url)
-
-    # Central Authentication Server OAuth Bearer Token
-    authorization = request.headers.get('Authorization')
-    if authorization and authorization.startswith('Bearer '):
-        client = cas.get_client()
-        try:
-            access_token = cas.parse_auth_header(authorization)
-            cas_resp = client.profile(access_token)
-        except cas.CasError as err:
-            sentry.log_exception()
-            # NOTE: We assume that the request is an AJAX request
-            return json_renderer(err)
-        if cas_resp.authenticated:
-            user = User.load(cas_resp.user)
-            return authenticate(user, access_token=access_token, response=None)
-        return make_response('', http.UNAUTHORIZED)
 
     if request.authorization:
         # TODO: Fix circular import
@@ -156,16 +140,24 @@ def before_request():
         # Create empty session
         # TODO: Shoudn't need to create a session for Basic Auth
         session = Session()
+        set_session(session)
 
         if user:
+            user_addon = user.get_addon('twofactor')
+            if user_addon and user_addon.is_confirmed:
+                otp = request.headers.get('X-OSF-OTP')
+                if otp is None or not user_addon.verify_code(otp):
+                    # Must specify two-factor authentication OTP code or invalid two-factor
+                    # authentication OTP code.
+                    session.data['auth_error_code'] = http.UNAUTHORIZED
+                    return
+
             session.data['auth_user_username'] = user.username
             session.data['auth_user_id'] = user._primary_key
             session.data['auth_user_fullname'] = user.fullname
         else:
             # Invalid key: Not found in database
-            session.data['auth_error_code'] = http.FORBIDDEN
-
-        set_session(session)
+            session.data['auth_error_code'] = http.UNAUTHORIZED
         return
 
     cookie = request.cookies.get(settings.COOKIE_NAME)
@@ -173,14 +165,22 @@ def before_request():
         try:
             session_id = itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie)
             session = Session.load(session_id) or Session(_id=session_id)
-            set_session(session)
+        except itsdangerous.BadData:
             return
-        except:
-            pass
+
+        if not util_time.throttle_period_expired(session.date_created, settings.OSF_SESSION_TIMEOUT):
+            if session.data.get('auth_user_id') and 'api' not in request.url:
+                database['user'].update({'_id': session.data.get('auth_user_id')}, {'$set': {'date_last_login': datetime.utcnow()}}, w=0)
+            set_session(session)
+        else:
+            remove_session(session)
 
 
 def after_request(response):
     if session.data.get('auth_user_id'):
         session.save()
+
+    # Disallow embeding in frames
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
 
     return response

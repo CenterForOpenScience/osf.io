@@ -1,17 +1,23 @@
-﻿// OSF Note: This file has been changed for UI reasons and to prevent
-// automatic rendering. This is only here for the toolbar
+// OSF Note: This file has been changed for UI reasons, to prevent
+// automatic rendering, and to add a checkbox for toggling snippet
+// autocompletion. This is only here for the toolbar
 
 // needs Markdown.Converter.js at the moment
 
+var $ = require('jquery');
+var $osf = require('js/osfHelpers');
+var Range = ace.require('ace/range').Range;
+
 (function () {
 
-    
+
     var util = {},
         position = {},
         ui = {},
         doc = window.document,
         re = window.RegExp,
         nav = window.navigator,
+        ctx = window.contextVars,
         SETTINGS = { lineLength: 72 },
 
     // Used to work around some browser bugs where we can't use feature testing.
@@ -24,20 +30,20 @@
     var defaultsStrings = {
         bold: "Strong <strong>",
         boldexample: "strong text",
-        
+
         italic: "Emphasis <em>",
         italicexample: "emphasized text",
-        
+
         link: "Hyperlink <a>",
         linkdescription: "enter link description here",
         linkdialog: "<div class='modal-header'> <h4 class='modal-title f-w-lg'>Add hyperlink</h4></div><div class='modal-body'> <p><b>Example:</b><br>http://example.com/ \"optional title\"</p></div>",
-        
+
         quote: "Blockquote <blockquote>",
         quoteexample: "Blockquote",
-        
+
         code: "Code Sample <pre><code>",
         codeexample: "enter code here",
-        
+
         image: "Image <img>",
         imagedescription: "enter image description here",
         imagedialog: "<div class='modal-header'> <h4 class='modal-title f-w-lg'>Add image</h4></div><div class='modal-body'><p><b>Example:</b><br>http://example.com/images/diagram.jpg \"optional title\"</p></div>",
@@ -45,18 +51,18 @@
         olist: "Numbered List <ol>",
         ulist: "Bulleted List <ul>",
         litem: "List item",
-        
+
         heading: "Heading <h1>/<h2>",
         headingexample: "Heading",
-        
+
         hr: "Horizontal Rule <hr>",
-        
+
         undo: "Undo -",
         redo: "Redo -",
-        
-        help: "Markdown Editing Help"
+
+        help: "Wiki Syntax Help"
     };
-    
+
     var keyStrokes = {
         bold: {
             win: 'Ctrl-B',
@@ -105,7 +111,7 @@
         redo: {
             win: 'Ctrl-Y|Ctrl-Shift-Z',
             mac: 'Command-Y|Command-Shift-Z',
-        },
+        }
     };
 
 
@@ -152,7 +158,7 @@
     // - run() actually starts the editor; should be called after all necessary plugins are registered. Calling this more than once is a no-op.
     // - refreshPreview() forces the preview to be updated. This method is only available after run() was called.
     Markdown.Editor = function (markdownConverter, idPostfix, options) {
-        
+
         options = options || {};
 
         if (typeof options.handler === "function") { //backwards compatible behavior
@@ -210,7 +216,7 @@
             that.uiManager = uiManager;
         };
 
-    }
+    };
 
     // before: contains all the text in the input box BEFORE the selection.
     // after: contains all the text in the input box AFTER the selection.
@@ -739,7 +745,7 @@
             //Not necessary
             //saveState();
         };
-        
+
         this.reinit = function(content, start, end, scrollTop) {
             undoStack = [];
             stackPtr = 0;
@@ -779,7 +785,6 @@
             }
             */
 
-            var Range = ace.require('ace/range').Range;
             (function(range) {
                 stateObj.before = inputArea.session.getTextRange(new Range(0,0,range.start.row, range.start.column));
                 stateObj.selection = inputArea.session.getTextRange();
@@ -806,7 +811,7 @@
             })(inputArea.session.doc.indexToPosition(stateObj.start), inputArea.session.doc.indexToPosition(stateObj.end)));
             inputArea.renderer.scrollToY(stateObj.scrollTop);
             focusNoScroll(inputArea);
-            
+
             /*benweet
             if (!util.isVisible(inputArea)) {
                 return;
@@ -837,10 +842,10 @@
         };
 
         this.setInputAreaSelectionStartEnd = function () {
-            
+
             stateObj.start = stateObj.before.length;
             stateObj.end = stateObj.after.length;
-            
+
             /*benweet
             if (!panels.ieCachedRange && (inputArea.selectionStart || inputArea.selectionStart === 0)) {
 
@@ -892,10 +897,10 @@
         // Restore this state into the input area.
         this.restore = function () {
             // Here we could do editor.setValue but we want to update the less we can for undo management
-            
+
             // Find the first modified char
             var startIndex = 0;
-            var startIndexMax = stateObj.before.length; 
+            var startIndexMax = stateObj.before.length;
             while(startIndex < startIndexMax) {
                 if(stateObj.before.charCodeAt(startIndex) !== stateObj.text.charCodeAt(startIndex))
                     break;
@@ -911,7 +916,7 @@
                     break;
                 endIndex++;
             }
-            
+
             var Range = ace.require('ace/range').Range;
             var range = (function(posStart, posEnd) {
                 return new Range(posStart.row, posStart.column, posEnd.row, posEnd.column);
@@ -1167,9 +1172,9 @@
 
         var background = doc.createElement("div"),
             style = background.style;
-        
+
         background.className = "wmd-prompt-background";
-        
+
         style.position = "absolute";
         style.top = "0";
 
@@ -1398,7 +1403,7 @@
             addKeyCmd(identifierList);
         }
         addKeyCmd(['bold', 'italic', 'link', 'quote', 'code', 'image', 'olist', 'ulist', 'heading', 'hr']);
-        
+
         /*benweet
         util.addEvent(inputBox, keyEvent, function (key) {
 
@@ -1645,13 +1650,50 @@
                 buttonRow.appendChild(button);
                 return button;
             };
+            var makeHelpButton = function(id,title,XShift){
+              var button = document.createElement("li");
+              button.className = "wmd-button";
+              button.setAttribute('data-toggle','modal');
+              button.setAttribute('data-target','#wiki-help-modal');
+              button.style.left = xPosition + "px";
+              xPosition += 25;
+              var buttonImage = document.createElement("span");
+              button.id = id + postfix;
+              button.appendChild(buttonImage);
+              button.title = title;
+              button.XShift = XShift;
+              setupButton(button, true);
+              buttonRow.appendChild(button);
+              return button;
+            }
+            var makeCheckBox = function (div_id, cb_id, XShift, text) {
+                var li = document.createElement("li");
+                li.id = div_id;
+                li.style.left = xPosition + "px";
+                xPosition += 25;
+                li.XShift = XShift;
+                var label = document.createElement("label");
+                label.style.fontWeight = "normal";
+                label.style.position =  "relative";
+                label.style.top = "-5px";
+                var cb = document.createElement("input");
+                cb.id = cb_id;
+                cb.type = "checkbox";
+                cb.checked = "";
+                var sp = document.createElement("small");
+                sp.innerHTML = " " + text.trim();
+                label.appendChild(cb);
+                label.appendChild(sp);
+                li.appendChild(label);
+                buttonRow.appendChild(li);
+            };
             var makeSpacer = function (num) {
                 var spacer = document.createElement("li");
                 spacer.className = "wmd-spacer wmd-spacer" + num;
                 spacer.id = "wmd-spacer" + num + postfix;
                 buttonRow.appendChild(spacer);
                 xPosition += 25;
-            }
+            };
 
             buttons.bold = makeButton("wmd-bold-button", getStringAndKey("bold"), "0px", bindCommand("doBold"));
             buttons.italic = makeButton("wmd-italic-button", getStringAndKey("italic"), "-20px", bindCommand("doItalic"));
@@ -1679,6 +1721,12 @@
 
             buttons.redo = makeButton("wmd-redo-button", getStringAndKey("redo"), "-220px", null);
             buttons.redo.execute = function (manager) { inputBox.session.getUndoManager().redo(); };
+
+            makeSpacer(4);
+            makeCheckBox("wmd-autocom-toggle", "autocom", "-240px", "Autocomplete");
+
+            makeSpacer(5);
+            buttons.help = makeHelpButton("wmd-help-button",getString("help"),"-240px");
 
             if (helpOptions) {
                 var helpButton = document.createElement("li");
@@ -1817,7 +1865,6 @@
         chunk.before = this.stripLinkDefs(chunk.before, defsToAdd);
         chunk.selection = this.stripLinkDefs(chunk.selection, defsToAdd);
         chunk.after = this.stripLinkDefs(chunk.after, defsToAdd);
-
         var defs = "";
         var regex = /(\[)((?:\[[^\]]*\]|[^\[\]])*)(\][ ]?(?:\n[ ]*)?\[)(\d+)(\])/g;
 
@@ -1826,7 +1873,6 @@
             def = def.replace(/^[ ]{0,3}\[(\d+)\]:/, "  [" + refNumber + "]:");
             defs += "\n" + def;
         };
-
         // note that
         // a) the recursive call to getLink cannot go infinite, because by definition
         //    of regex, inner is always a proper substring of wholeMatch, and
@@ -1853,16 +1899,20 @@
         var refOut = refNumber;
 
         chunk.after = chunk.after.replace(regex, getLink);
-
         if (chunk.after) {
+            if (chunk.selection) {
+                chunk.selection = '[' + chunk.selection + '][' + refOut + ']';
+            }
             chunk.after = chunk.after.replace(/\n*$/, "");
         }
-        if (!chunk.after) {
+        else if (!chunk.after) {
+            if (chunk.selection) {
+                chunk.selection = '[' + chunk.selection + '][' + refOut + ']';
+            }
             chunk.selection = chunk.selection.replace(/\n*$/, "");
         }
 
         chunk.after += "\n\n" + defs;
-
         return refOut;
     };
 
@@ -1886,8 +1936,7 @@
         });
     }
 
-    commandProto.doLinkOrImage = function (chunk, postProcessing, isImage) {
-
+    commandProto.doLinkOrImage = function (chunk, postProcessing, isImage, link, multiple, num) {
         chunk.trimWhitespace();
         chunk.findTags(/\s*!?\[/, /\][ ]?(?:\n[ ]*)?(\[.*?\])?/);
         var background;
@@ -1900,13 +1949,12 @@
 
         }
         else {
-            
+
             // We're moving start and end tag back into the selection, since (as we're in the else block) we're not
             // *removing* a link, but *adding* one, so whatever findTags() found is now back to being part of the
             // link text. linkEnteredCallback takes care of escaping any brackets.
             chunk.selection = chunk.startTag + chunk.selection + chunk.endTag;
             chunk.startTag = chunk.endTag = "";
-
             if (/\n\n/.test(chunk.selection)) {
                 this.addLinkDef(chunk, null);
                 return;
@@ -1915,8 +1963,9 @@
             // The function to be executed when you enter a link and press OK or Cancel.
             // Marks up the link and adds the ref.
             var linkEnteredCallback = function (link) {
-
-                background.parentNode.removeChild(background);
+                if (!!background) {
+                    background.parentNode.removeChild(background);
+                }
 
                 if (link !== null) {
                     // (                          $1
@@ -1937,15 +1986,25 @@
                     // this by anchoring with ^, because in the case that the selection starts with two brackets, this
                     // would mean a zero-width match at the start. Since zero-width matches advance the string position,
                     // the first bracket could then not act as the "not a backslash" for the second.
+
                     chunk.selection = (" " + chunk.selection).replace(/([^\\](?:\\\\)*)(?=[[\]])/g, "$1\\").substr(1);
-                    
-                    var linkDef = " [999]: " + properlyEncoded(link);
 
-                    var num = that.addLinkDef(chunk, linkDef);
-                    chunk.startTag = isImage ? "![" : "[";
-                    chunk.endTag = "][" + num + "]";
+                    var linkDef;
+                    if (!num) {
+                        linkDef = "  [999]: " + properlyEncoded(link);
+                        num = that.addLinkDef(chunk, linkDef);
+                    }
+                    else {
+                        linkDef = "  [" + num + "]: " + properlyEncoded(link);
+                        that.addLinkDef(chunk, linkDef);
+                        if (!!multiple) {
+                            chunk.before += "![" + that.getString("imagedescription") + "][" + num + "]\n";
+                        }
+                    }
+                    if (!chunk.selection && !multiple) {
 
-                    if (!chunk.selection) {
+                        chunk.startTag = isImage ? "![" : "[";
+                        chunk.endTag = "][" + num + "]";
                         if (isImage) {
                             chunk.selection = that.getString("imagedescription");
                         }
@@ -1954,20 +2013,27 @@
                         }
                     }
                 }
-                postProcessing();
+                if (!!postProcessing) {
+                    postProcessing();
+                }
             };
 
-            background = ui.createBackground();
+            if (!link) {
+                background = ui.createBackground();
 
-            if (isImage) {
-                if (!this.hooks.insertImageDialog(linkEnteredCallback))
-                    ui.prompt(this.getString("imagedialog"), imageDefaultText, linkEnteredCallback);
+                if (isImage) {
+                    if (!this.hooks.insertImageDialog(linkEnteredCallback))
+                        ui.prompt(this.getString("imagedialog"), imageDefaultText, linkEnteredCallback);
+                }
+                else {
+                    if (!this.hooks.insertLinkDialog(linkEnteredCallback))
+                        ui.prompt(this.getString("linkdialog"), linkDefaultText, linkEnteredCallback);
+                }
+                return true;
             }
             else {
-                if (!this.hooks.insertLinkDialog(linkEnteredCallback))
-                    ui.prompt(this.getString("linkdialog"), linkDefaultText, linkEnteredCallback);
+                linkEnteredCallback(link);
             }
-            return true;
         }
     };
 
@@ -1981,7 +2047,7 @@
         chunk.before = chunk.before.replace(/(\n|^)[ ]{0,3}([*+-]|\d+[.])[ \t]*\n$/, "\n\n");
         chunk.before = chunk.before.replace(/(\n|^)[ ]{0,3}>[ \t]*\n$/, "\n\n");
         chunk.before = chunk.before.replace(/(\n|^)[ \t]+\n$/, "\n\n");
-        
+
         // There's no selection, end the cursor wasn't at the end of the line:
         // The user wants to split the current list item / code line / blockquote line
         // (for the latter it doesn't really matter) in two. Temporarily select the
@@ -2009,7 +2075,7 @@
                 commandMgr.doCode(chunk);
             }
         }
-        
+
         if (fakeSelection) {
             chunk.after = chunk.selection + chunk.after;
             chunk.selection = "";
@@ -2102,7 +2168,7 @@
         // end of change
 
         /*benweet Don't really know the purpose of it but it is destructive
-        
+
         if (chunk.after) {
             chunk.after = chunk.after.replace(/^\n?/, "\n");
         }
@@ -2395,6 +2461,5 @@
         chunk.selection = "";
         chunk.skipLines(2, 1, true);
     }
-
 
 })();

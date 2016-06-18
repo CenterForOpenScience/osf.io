@@ -15,9 +15,14 @@ def gravatar(user, use_ssl=False, d=None, r=None, size=None):
 
     url = base_url + '?'
 
-    _locals = locals()
-    params = {param: _locals[param] for param in ['r', 'size'] if _locals[param] is not None}
-    params['d'] = 'identicon'
+    # Order of query params matters, due to a quirk with gravatar
+    params = [
+        ('d', 'identicon')
+    ]
+    if size:
+        params.append(('s', size))
+    if r:
+        params.append(('r', r))
     url = base_url + hash_code + '?' + urllib.urlencode(params)
 
     return url

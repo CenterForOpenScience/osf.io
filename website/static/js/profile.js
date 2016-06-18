@@ -1,11 +1,10 @@
 'use strict';
 
+/*global require */
 var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
 require('knockout.validation');
-require('knockout.punches');
-ko.punches.enableAll();
 require('knockout-sortable');
 
 var $osf = require('./osfHelpers');
@@ -19,7 +18,16 @@ var socialRules = {
     twitter: /twitter\.com\/(\w+)/i,
     linkedIn: /.*\/?(in\/.*|profile\/.*|pub\/.*)/i,
     impactStory: /impactstory\.org\/([\w\.-]+)/i,
-    github: /github\.com\/(\w+)/i
+    github: /github\.com\/(\w+)/i,
+    researchGate: /researchgate\.net\/profile\/(\w+)/i,
+    academia: /(\w+)\.academia\.edu\/(\w+)/i,
+    baiduScholar: /xueshu\.baidu\.com\/scholarID\/(\w+)/i,
+    url: '^(https?:\\/\\/)?'+ // protocol
+            '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|'+ // domain name
+            '((\\d{1,3}\\.){3}\\d{1,3}))'+ // OR ip (v4) address
+            '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*'+ // port and path
+            '(\\?[;&a-z\\d%_.~+=-]*)?'+ // query string
+            '(\\#[-a-z\\d_]*)?$'
 };
 
 var cleanByRule = function(rule) {
@@ -61,38 +69,17 @@ SerializeMixin.prototype.unserialize = function(data) {
     */
 var DateMixin = function() {
     var self = this;
+    self.ongoing = ko.observable(false);
     self.months = ['January', 'February', 'March', 'April', 'May', 'June',
         'July', 'August', 'September', 'October', 'November', 'December'];
     self.endMonth = ko.observable();
-    self.endYear = ko.observable().extend({
-        required: {
-            onlyIf: function() {
-                return !!self.endMonth();
-            },
-            message: 'Please enter a year for the end date.'
-        },
-        year: true,
-        pyDate: true
-    });
-    self.ongoing = ko.observable(false);
+    self.endYear = ko.observable();
     self.displayDate = ko.observable(' ');
     self.endView = ko.computed(function() {
         return (self.ongoing() ? 'ongoing' : self.displayDate());
     }, self);
     self.startMonth = ko.observable();
-    self.startYear = ko.observable().extend({
-        required: {
-            onlyIf: function() {
-                if (!!self.endMonth() || !!self.endYear() || self.ongoing() === true) {
-                    return true;
-                }
-            },
-            message: 'Please enter a year for the start date.'
-        },
-        year: true,
-        pyDate: true
-    });
-
+    self.startYear = ko.observable();
     self.start = ko.computed(function () {
         if (self.startMonth() && self.startYear()) {
             return new Date(self.startYear(),
@@ -110,7 +97,9 @@ var DateMixin = function() {
                     (self.monthToInt(self.endMonth()) - 1).toString());
         } else if (!self.endMonth() && self.endYear()) {
             self.displayDate(self.endYear());
-            return new Date(self.endYear(), '0', '1');
+            var today = new Date();
+            var date = new Date(self.endYear(), '11', '31');
+            return today > date ? date : today;
         }
     }, self).extend({
         notInFuture:true,
@@ -121,6 +110,35 @@ var DateMixin = function() {
         self.endYear('');
         return true;
     };
+
+    self.startYear.extend({
+        required: {
+            onlyIf: function() {
+                return !!self.endMonth() || !!self.endYear() || self.ongoing() || !!self.startMonth();
+            },
+            message: 'Please enter a year for the start date.'
+        },
+        year: true,
+        pyDate: true
+    });
+
+    self.endYear.extend({
+        required: {
+            onlyIf: function() {
+                return !!self.endMonth() || ((!!self.startYear() || !!self.startMonth()) && !self.ongoing());
+            },
+            message: function() {
+                if (!self.endMonth()) {
+                    return 'Please enter an end date or mark as ongoing.';
+                }
+                else {
+                    return 'Please enter a year for the end date.';
+                }
+            }
+        },
+        year: true,
+        pyDate: true
+    });
 };
 
 DateMixin.prototype.monthToInt = function(value) {
@@ -171,7 +189,7 @@ var TrackedMixin = function() {
     self.originalValues = ko.observable();
 };
 
-/** Determine is the model has changed from its original state */
+/** Determine if the model has changed from its original state */
 TrackedMixin.prototype.dirty = function() {
     var self = this;
     return ko.toJSON(self.trackedProperties) !== ko.toJSON(self.originalValues());
@@ -200,7 +218,7 @@ var BaseViewModel = function(urls, modes, preventUnsaved) {
     self.editAllowed = $.inArray('edit', self.modes) >= 0;
     self.editable = ko.observable(self.editAllowed);
     self.mode = ko.observable(self.editable() ? 'edit' : 'view');
-
+    self.saving = ko.observable(false);
     self.original = ko.observable();
     self.tracked = [];  // Define for each view model that inherits
 
@@ -250,6 +268,7 @@ BaseViewModel.prototype.changeMessage = function(text, css, timeout) {
 };
 
 BaseViewModel.prototype.handleSuccess = function() {
+    this.saving(false);
     if ($.inArray('view', this.modes) >= 0) {
         this.mode('view');
     } else {
@@ -262,11 +281,9 @@ BaseViewModel.prototype.handleSuccess = function() {
 };
 
 BaseViewModel.prototype.handleError = function(response) {
+    this.saving(false);
     var defaultMsg = 'Could not update settings';
     var msg = response.message_long || defaultMsg;
-
- 
-
     this.changeMessage(
         msg,
         'text-danger',
@@ -329,6 +346,7 @@ BaseViewModel.prototype.cancel = function(data, event) {
 
 BaseViewModel.prototype.submit = function() {
     if (this.hasValidProperty() && this.isValid()) {
+        this.saving(true);
         $osf.putJSON(
             this.urls.crud,
             this.serialize()
@@ -342,7 +360,6 @@ BaseViewModel.prototype.submit = function() {
     } else {
         this.showMessages(true);
     }
-
 };
 
 var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
@@ -351,7 +368,11 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
     fetchCallback = fetchCallback || noop;
     TrackedMixin.call(self);
 
-    self.full = koHelpers.sanitizedObservable().extend({required: true, trimmed: true});
+    self.full = koHelpers.sanitizedObservable().extend({
+        trimmed: true,
+        required: true
+    });
+
     self.given = koHelpers.sanitizedObservable().extend({trimmed: true});
     self.middle = koHelpers.sanitizedObservable().extend({trimmed: true});
     self.family = koHelpers.sanitizedObservable().extend({trimmed: true});
@@ -482,16 +503,36 @@ var SocialViewModel = function(urls, modes) {
 
     self.addons = ko.observableArray();
 
-    self.personal = extendLink(
-        // Note: Apply extenders in reverse order so that `ensureHttp` is
-        // applied before `url`.
-        ko.observable().extend({
-            trimmed: true,
-            url: true,
-            ensureHttp: true
-        }),
-        self, 'personal'
-    );
+    self.profileWebsite = ko.observable('').extend({
+        ensureHttp: true
+    });
+
+    // Start with blank profileWebsite for new users without a profile.
+    self.profileWebsites = ko.observableArray([self.profileWebsite]);
+
+    self.hasProfileWebsites = ko.pureComputed(function() {
+        //Check to see if any valid profileWebsites exist
+        var profileWebsites = ko.toJS(self.profileWebsites());
+        for (var i=0; i<profileWebsites.length; i++) {
+            if (profileWebsites[i]) {
+                return true;
+            }
+        }
+        return false;
+    });
+
+    self.hasValidWebsites = ko.pureComputed(function() {
+        //Check to see if there are bad profile websites
+        var profileWebsites = ko.toJS(self.profileWebsites());
+        var urlexp = new RegExp(socialRules.url,'i'); // fragment locator
+        for (var i=0; i<profileWebsites.length; i++) {
+            if (profileWebsites[i] && !urlexp.test(profileWebsites[i])) {
+                return false;
+            }
+        }
+        return true;
+    });
+
     self.orcid = extendLink(
         ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.orcid)}),
         self, 'orcid', 'http://orcid.org/'
@@ -520,16 +561,37 @@ var SocialViewModel = function(urls, modes) {
         ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.github)}),
         self, 'github', 'https://github.com/'
     );
+    self.researchGate = extendLink(
+        ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.researchGate)}),
+        self, 'researchGate', 'https://researchgate.net/profile/'
+    );
+
+    self.academiaInstitution = extendLink(
+        ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.academia)}),
+        self, 'academiaInstitution', 'https://'
+    );
+    self.academiaProfileID = extendLink(
+        ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.academia)}),
+        self, 'academiaProfileID', '.academia.edu/'
+    );
+    self.baiduScholar = extendLink(
+        ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.baiduScholar)}),
+        self, 'baiduScholar', 'http://xueshu.baidu.com/scholarID/'
+    );
 
     self.trackedProperties = [
-        self.personal,
+        self.profileWebsites,
         self.orcid,
         self.researcherId,
         self.twitter,
         self.scholar,
         self.linkedIn,
         self.impactStory,
-        self.github
+        self.github,
+        self.researchGate,
+        self.academiaInstitution,
+        self.academiaProfileID,
+        self.baiduScholar
     ];
 
     var validated = ko.validatedObservable(self);
@@ -540,19 +602,24 @@ var SocialViewModel = function(urls, modes) {
 
     self.values = ko.computed(function() {
         return [
-            {label: 'Personal Site', text: self.personal(), value: self.personal.url()},
             {label: 'ORCID', text: self.orcid(), value: self.orcid.url()},
             {label: 'ResearcherID', text: self.researcherId(), value: self.researcherId.url()},
             {label: 'Twitter', text: self.twitter(), value: self.twitter.url()},
             {label: 'GitHub', text: self.github(), value: self.github.url()},
             {label: 'LinkedIn', text: self.linkedIn(), value: self.linkedIn.url()},
             {label: 'ImpactStory', text: self.impactStory(), value: self.impactStory.url()},
-            {label: 'Google Scholar', text: self.scholar(), value: self.scholar.url()}
+            {label: 'Google Scholar', text: self.scholar(), value: self.scholar.url()},
+            {label: 'ResearchGate', text: self.researchGate(), value: self.researchGate.url()},
+            {label: 'Academia', text: self.academiaInstitution() + '.academia.edu/' + self.academiaProfileID(), value: self.academiaInstitution.url() + self.academiaProfileID.url()},
+            {label: 'Baidu Scholar', text: self.baiduScholar(), value: self.baiduScholar.url()}
         ];
     });
 
     self.hasValues = ko.computed(function() {
         var values = self.values();
+        if (self.hasProfileWebsites()) {
+            return true;
+        }
         for (var i=0; i<self.values().length; i++) {
             if (values[i].value) {
                 return true;
@@ -561,13 +628,111 @@ var SocialViewModel = function(urls, modes) {
         return false;
     });
 
+    self.addWebsiteInput = function() {
+        this.profileWebsites.push(ko.observable().extend({
+            ensureHttp: true
+        }));
+    };
+
+    self.removeWebsite = function(profileWebsite) {
+        var profileWebsites = ko.toJS(self.profileWebsites());
+            bootbox.confirm({
+                title: 'Remove website?',
+                message: 'Are you sure you want to remove this website from your profile?',
+                callback: function(confirmed) {
+                    if (confirmed) {
+                        var idx = profileWebsites.indexOf(profileWebsite);
+                        self.profileWebsites.splice(idx, 1);
+                        self.submit();
+                        self.changeMessage(
+                            'Website removed',
+                            'text-danger',
+                            5000
+                        );
+                        if (self.profileWebsites().length === 0) {
+                            self.addWebsiteInput();
+                        }
+                    }
+                },
+                buttons:{
+                    confirm:{
+                        label:'Remove',
+                        className:'btn-danger'
+                    }
+                }
+            });
+    };
+
     self.fetch();
 };
 SocialViewModel.prototype = Object.create(BaseViewModel.prototype);
 $.extend(SocialViewModel.prototype, SerializeMixin.prototype, TrackedMixin.prototype);
 
-var ListViewModel = function(ContentModel, urls, modes) {
+SocialViewModel.prototype.serialize = function() {
+    var serializedData = ko.toJS(this);
+    var profileWebsites = serializedData.profileWebsites;
+    serializedData.profileWebsites = profileWebsites.filter(
+        function (value) {
+            return value;
+        }
+    );
+    return serializedData;
+};
 
+SocialViewModel.prototype.unserialize = function(data) {
+    var self = this;
+    var websiteValue = [];
+    $.each(data || {}, function(key, value) {
+        if (ko.isObservable(self[key]) && key === 'profileWebsites') {
+            if (value && value.length === 0) {
+                value.push(ko.observable('').extend({
+                    ensureHttp: true
+                }));
+            }
+            for (var i = 0; i < value.length; i++) {
+                websiteValue[i] = ko.observable(value[i]).extend({
+                        ensureHttp: true
+                });
+            }
+            self[key](websiteValue);
+        }
+        else if (ko.isObservable(self[key])) {
+            self[key](value);
+            // Ensure that validation errors are displayed
+            self[key].notifySubscribers();
+        }
+    });
+    return self;
+};
+
+SocialViewModel.prototype.submit = function() {
+    if (!this.hasValidWebsites()) {
+        this.changeMessage(
+            'Please update your website',
+            'text-danger',
+            5000
+        );
+    }
+    else if (this.hasValidProperty() && this.isValid()) {
+        this.saving(true);
+        $osf.putJSON(
+            this.urls.crud,
+            this.serialize()
+        ).done(
+            this.handleSuccess.bind(this)
+        ).done(
+            this.setOriginal.bind(this)
+        ).fail(
+            this.handleError.bind(this)
+        ).always(
+            function() { this.saving(false); }
+        );
+    } else {
+        this.showMessages(true);
+    }
+};
+
+var ListViewModel = function(ContentModel, urls, modes) {
     var self = this;
     BaseViewModel.call(self, urls, modes);
 
@@ -580,6 +745,15 @@ var ListViewModel = function(ContentModel, urls, modes) {
         return self.contents().length > 1;
     });
 
+    self.institutionObjectsEmpty = ko.pureComputed(function(){
+        for (var i=0; i<self.contents().length; i++) {
+            if (self.contents()[i].institutionObjectEmpty()) {
+                return true;
+            }
+        }
+        return false;
+    }, this);
+
     self.isValid = ko.computed(function() {
         for (var i=0; i<self.contents().length; i++) {
             if (! self.contents()[i].isValid()) {
@@ -588,9 +762,11 @@ var ListViewModel = function(ContentModel, urls, modes) {
         }
         return true;
     });
-    self.hasMultiple = ko.computed(function() {
-        return self.contents().length > 1;
+
+    self.contentsLength = ko.computed(function() {
+        return self.contents().length;
     });
+
     self.hasValidProperty(true);
 
     /** Determine if any of the models in the list are dirty
@@ -599,6 +775,9 @@ var ListViewModel = function(ContentModel, urls, modes) {
     * */
     self.dirty = function() {
         // if the length of the list has changed
+        if (self.originalItems === undefined) {
+            return false;
+        }
         if (self.originalItems.length !== self.contents().length) {
             return true;
         }
@@ -647,17 +826,50 @@ var ListViewModel = function(ContentModel, urls, modes) {
 ListViewModel.prototype = Object.create(BaseViewModel.prototype);
 
 ListViewModel.prototype.addContent = function() {
-    this.contents.push(new this.ContentModel(this));
+    if (!this.institutionObjectsEmpty() && this.isValid()) {
+        this.contents.push(new this.ContentModel(this));
+        this.showMessages(false);
+    }
+    else {
+        this.showMessages(true);
+    }
 };
 
 ListViewModel.prototype.removeContent = function(content) {
+    // If there is more then one model, then delete it.  If there is only one, then delete it and add another
+    // to preserve the fields in the view.
     var idx = this.contents().indexOf(content);
-    this.contents.splice(idx, 1);
+    var self = this;
+
+    bootbox.confirm({
+        title: 'Remove Institution?',
+        message: 'Are you sure you want to remove this institution?',
+        callback: function(confirmed) {
+            if (confirmed) {
+                self.contents.splice(idx, 1);
+                if (!self.contentsLength()) {
+                    self.contents.push(new self.ContentModel(self));
+                }
+                self.submit();
+                self.changeMessage(
+                    'Institution Removed',
+                    'text-danger',
+                    5000
+                );
+            }
+        },
+        buttons: {
+            confirm: {
+                label: 'Remove',
+                className: 'btn-danger'
+            }
+        }
+    });
 };
 
 ListViewModel.prototype.unserialize = function(data) {
     var self = this;
-    if(self.editAllowed) {
+    if (self.editAllowed) {
         self.editable(data.editable);
     } else {
         self.editable(false);
@@ -667,8 +879,10 @@ ListViewModel.prototype.unserialize = function(data) {
     }));
 
     // Ensure at least one item is visible
-    if (self.contents().length === 0) {
-        self.addContent();
+    if (self.mode() === 'edit') {
+        if (self.contents().length === 0) {
+            self.addContent();
+        }
     }
 
     self.setOriginal();
@@ -678,13 +892,19 @@ ListViewModel.prototype.serialize = function() {
     var contents = [];
     if (this.contents().length !== 0 && typeof(this.contents()[0].serialize() !== undefined)) {
         for (var i=0; i < this.contents().length; i++) {
-            contents.push(this.contents()[i].serialize());
+            // If the requiredField is empty, it will not save it and will delete the blank structure from the database.
+            if (!this.contents()[i].institutionObjectEmpty()) {
+                contents.push(this.contents()[i].serialize());
+            }
+            //Remove empty contents object unless there is only one
+            else if (this.contents().length === 0) {
+                this.contents.splice(i, 1);
+            }
         }
     }
     else {
         contents = ko.toJS(this.contents);
     }
-
     return {contents: contents};
 };
 
@@ -693,9 +913,30 @@ var JobViewModel = function() {
     DateMixin.call(self);
     TrackedMixin.call(self);
 
-    self.institution = ko.observable('').extend({required: true, trimmed: true});
     self.department = ko.observable('').extend({trimmed: true});
     self.title = ko.observable('').extend({trimmed: true});
+
+    self.institution = ko.observable('').extend({
+        trimmed: true,
+        required: {
+            onlyIf: function() {
+               return !!self.department() || !!self.title() || !!self.startYear() || !!self.endYear();
+            },
+            message: 'Institution/Employer required'
+        }
+    });
+
+    self.expandable = ko.computed(function() {
+        return self.department().length > 1 ||
+                self.title().length > 1 ||
+                self.startYear() !== null;
+    });
+
+    self.expanded = ko.observable(false);
+
+    self.toggle = function() {
+        self.expanded(!self.expanded());
+    };
 
     self.trackedProperties = [
         self.institution,
@@ -708,9 +949,16 @@ var JobViewModel = function() {
     ];
 
     var validated = ko.validatedObservable(self);
+
+    //In addition to normal knockout field checks, check to see if institution is not filled out when other fields are
+    self.institutionObjectEmpty = ko.pureComputed(function() {
+        return !self.institution() && !self.department() && !self.title();
+    }, self);
+
     self.isValid = ko.computed(function() {
         return validated.isValid();
     });
+
 };
 $.extend(JobViewModel.prototype, DateMixin.prototype, TrackedMixin.prototype);
 
@@ -719,9 +967,30 @@ var SchoolViewModel = function() {
     DateMixin.call(self);
     TrackedMixin.call(self);
 
-    self.institution = ko.observable('').extend({required: true, trimmed: true});
     self.department = ko.observable('').extend({trimmed: true});
     self.degree = ko.observable('').extend({trimmed: true});
+
+    self.institution = ko.observable('').extend({
+        trimmed: true,
+        required: {
+            onlyIf: function() {
+                return !!self.department() || !!self.degree() || !!self.startYear() || !!self.endYear();
+            },
+            message: 'Institution required'
+        }
+    });
+
+    self.expandable = ko.computed(function() {
+        return self.department().length > 1 ||
+                self.degree().length > 1 ||
+                self.startYear() !== null;
+    });
+
+    self.expanded = ko.observable(false);
+
+    self.toggle = function() {
+        self.expanded(!self.expanded());
+    };
 
     self.trackedProperties = [
         self.institution,
@@ -734,9 +1003,16 @@ var SchoolViewModel = function() {
     ];
 
     var validated = ko.validatedObservable(self);
+
+    //In addition to normal knockout field checks, check to see if institution is not filled out when other fields are
+    self.institutionObjectEmpty = ko.pureComputed(function() {
+        return !self.institution() && !self.department() && !self.degree();
+     });
+
     self.isValid = ko.computed(function() {
         return validated.isValid();
     });
+
 };
 $.extend(SchoolViewModel.prototype, DateMixin.prototype, TrackedMixin.prototype);
 
@@ -779,11 +1055,15 @@ var Schools = function(selector, urls, modes) {
     $osf.applyBindings(this.viewModel, selector);
 };
 
+/*global module */
 module.exports = {
     Names: Names,
     Social: Social,
     Jobs: Jobs,
     Schools: Schools,
     // Expose private viewmodels
-    _NameViewModel: NameViewModel
+    _NameViewModel: NameViewModel,
+    SocialViewModel: SocialViewModel,
+    BaseViewModel: BaseViewModel
 };
+
