@@ -1,0 +1,4 @@
+
+
+class TestClient(OwncloudAddonTestCase):
+    pass
