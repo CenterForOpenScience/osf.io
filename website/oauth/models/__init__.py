@@ -27,7 +27,7 @@ from framework.mongo.validators import string_required
 from framework.sessions import session
 from website import settings
 from website.oauth.utils import PROVIDER_LOOKUP
-from website.security import random_string
+from website.security import random_string, encrypt, decrypt
 from website.util import web_url_for, api_v2_url
 
 logger = logging.getLogger(__name__)
@@ -609,3 +609,42 @@ class ApiOAuth2PersonalToken(StoredObject):
     # used by django and DRF
     def get_absolute_url(self):
         return self.absolute_api_v2_url
+
+
+class BasicAuthProviderMixin(object):
+    """
+        Providers utilizing BasicAuth can utilize this class to implement the
+        storage providers framework by subclassing this mixin. This provides
+        a translation between the oauth parameters and the BasicAuth parameters.
+
+        The password here is kept decrypted by default.
+    """
+
+    def __init__(self, account=None, host=None, username=None, password=None):
+        super(BasicAuthProviderMixin, self).__init__()
+        if account:
+            self.account = account
+        elif not account and host and password and username:
+            self.account = ExternalAccount(
+                display_name=username,
+                oauth_key=encrypt(password),
+                oauth_secret=host,
+                provider_id=username,
+                profile_url=host,
+                provider=self.short_name,
+                provider_name=self.name
+            )
+        else:
+            self.account = None
+
+    @property
+    def host(self):
+        return self.account.profile_url
+
+    @property
+    def username(self):
+        return self.account.display_name
+
+    @property
+    def password(self):
+        return decrypt(self.account.oauth_key)
