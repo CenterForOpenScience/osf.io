@@ -52,16 +52,7 @@ class GitLabClient(object):
         return self.gitlab.getprojects()
 
     def user_repos(self, user):
-        return self.__parse_repos_api_response(self.gitlab.getprojectsowned())
-
-    # TODO: move to utils
-    def __parse_repos_api_response(self, response):
-        repos = []
-
-        for repo in response:
-            repos.append({'owner': repo['owner']['username'], 'name': repo['name']})
-
-        return repos
+        return self.gitlab.getprojectsowned()
 
     def my_org_repos(self, permissions=None):
         return []
