@@ -23,7 +23,7 @@ class GitLabClient(object):
         if self.access_token:
             self.gitlab = gitlab.Gitlab(gitlab_settings.GITLAB_BASE_URL, oauth_token=self.access_token)
         else:
-            self.gitlab = gitlab.Gitlab()
+            self.gitlab = gitlab.Gitlab(gitlab_settings.GITLAB_BASE_URL)
 
     def user(self, user=None):
         """Fetch a user or the authenticated user.
