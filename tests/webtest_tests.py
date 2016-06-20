@@ -11,6 +11,7 @@ from nose.tools import *  # flake8: noqa (PEP8 asserts)
 import re
 
 from framework.mongo.utils import to_mongo_key
+from framework.auth import cas
 from framework.auth import exceptions as auth_exc
 from framework.auth.core import Auth
 from framework.auth.core import generate_verification_key
@@ -941,7 +942,8 @@ class TestResetPassword(OsfTestCase):
         assert_equal(res.status_code, 400)
 
     # successfully reset password if osf verification_key(OSF) is valid and form is valid
-    def test_can_reset_password_if_form_success(self):
+    @mock.patch('framework.auth.cas.CasClient.service_validate')
+    def test_can_reset_password_if_form_success(self, mock_service_validate):
         # load reset password page and submit email
         res = self.app.get(self.url)
         form = res.forms['resetPasswordForm']
@@ -970,9 +972,16 @@ class TestResetPassword(OsfTestCase):
         self.user.reload()
         assert_true(self.user.check_password('newpassword'))
 
-        # TODO: fix CAS and enable this check
-        # check verification_key(CAS) is destroyed
-        # assert_not_equal(self.user.verification_key, self.cas_key)
+        # check if verification_key(CAS) is destroyed
+        mock_service_validate.return_value = cas.CasResponse(
+            authenticated=True,
+            user=self.user._primary_key,
+            attributes={'accessToken': fake.md5()}
+        )
+        ticket = fake.md5()
+        service_url = 'http://accounts.osf.io/?ticket=' + ticket
+        resp = cas.make_response_from_ticket(ticket, service_url)
+        assert_not_equal(self.user.verification_key, self.cas_key)
 
     #  logged-in user should be automatically logged out upon before reset password
     def test_reset_password_logs_out_user(self):

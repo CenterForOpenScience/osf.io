@@ -71,7 +71,6 @@ def reset_password(auth, verification_key=None):
             user_obj.save()
             status.push_status_message('Password reset', kind='success', trust=False)
             # redirect to CAS and authenticate the user with the one-time verification key.
-            # TODO: fix CAS that this verification key is destroyed once used
             return redirect(cas.get_login_url(
                 web_url_for('user_account', _absolute=True),
                 username=user_obj.username,
@@ -182,7 +181,7 @@ def auth_login(auth):
     log_out = request.args.get('logout')
     must_login_warning = True
 
-    if not campaign and not next and not logout:
+    if not campaign and not next_url and not log_out:
         return redirect(cas.get_login_url(web_url_for('dashboard', _absolute=True)))
 
     if campaign:
