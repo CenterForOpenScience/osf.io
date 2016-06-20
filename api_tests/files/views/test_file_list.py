@@ -82,3 +82,54 @@ class TestFileFiltering(ApiTestCase):
             auth=self.user.auth
         )
         nt.assert_equal(len(res.json.get('data')), 1)
+
+
+class TestFileLists(ApiTestCase):
+    def setUp(self):
+        super(TestFileLists, self).setUp()
+        self.user = AuthUserFactory()
+        self.node = ProjectFactory(creator=self.user)
+
+        self.file_one = api_utils.create_test_file(self.node, self.user, filename="Man I'm the Macho")
+        self.file_two = api_utils.create_test_file(self.node, self.user, filename="Like Randy")
+
+    def test_bulk_checkout(self):
+        nt.assert_equal(self.file_one.checkout, None)
+        nt.assert_equal(self.file_two.checkout, None)
+
+        bulk_file_payload = {
+            'data': [
+                {
+                    'id': self.file_one._id,
+                    'type': 'files',
+                    'attributes': {
+                        'checkout': self.user._id,
+                    }
+                },
+                {
+                    'id': self.file_two._id,
+                    'type': 'files',
+                    'attributes': {
+                        'checkout': self.user._id,
+                    }
+                }
+            ]
+        }
+
+        res = self.app.put_json_api(
+            '/{}files/{}/list/osfstorage/'.format(
+                API_BASE, self.node.pk
+            ),
+            bulk_file_payload,
+            auth=self.user.auth,
+            bulk=True
+        )
+
+        nt.assert_equal(res.status_code, 200)
+
+        self.file_one.reload()
+        self.file_two.reload()
+
+        nt.assert_equal(self.file_one.checkout, self.user)
+        nt.assert_equal(self.file_two.checkout, self.user)
+
