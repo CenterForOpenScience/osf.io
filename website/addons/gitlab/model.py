@@ -90,6 +90,7 @@ class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     user = fields.StringField()
     repo = fields.StringField()
+    repo_id = fields.StringField()
     hook_id = fields.StringField()
     hook_secret = fields.StringField()
     registration_data = fields.DictionaryField()
@@ -132,6 +133,7 @@ class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     def clear_settings(self):
         self.user = None
         self.repo = None
+        self.repo_id = None
         self.hook_id = None
         self.hook_secret = None
         self.registration_data = None
@@ -159,6 +161,7 @@ class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     @property
     def repo_url(self):
+        #TODO: fix URL
         if self.user and self.repo:
             return 'https://gitlab.com/{0}/{1}/'.format(
                 self.user, self.repo
@@ -201,6 +204,7 @@ class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                     '{0} / {1}'.format(repo['owner'], repo['name'])
                     for repo in repos
                 ]
+
             except GitLabError:
                 repo_names = []
                 valid_credentials = False
@@ -210,6 +214,7 @@ class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                 'node_has_auth': True,
                 'gitlab_user': self.user or '',
                 'gitlab_repo': self.repo or '',
+                'gitlab_repo_id': self.repo_id or '',
                 'gitlab_repo_full_name': '{0} / {1}'.format(self.user, self.repo) if (self.user and self.repo) else '',
                 'auth_osf_name': owner.fullname,
                 'auth_osf_url': owner.url,
@@ -295,7 +300,7 @@ class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         connect = GitLabClient(external_account=self.external_account)
 
         try:
-            repo = connect.repo(self.user, self.repo)
+            repo = connect.repo(self.repo_id)
         except (ApiError, GitLabError):
             return
 

@@ -34,6 +34,7 @@
 
         <input type="hidden" id="gitlabUser" name="gitlab_user" value="${gitlab_user}" />
         <input type="hidden" id="gitlabRepo" name="gitlab_repo" value="${gitlab_repo}" />
+        <input type="hidden" id="gitlabRepoId" name="gitlab_repo_id" value="${gitlab_repo_id}" />
 
         <p><strong>Current Repo: </strong>
 
@@ -44,8 +45,8 @@
                 <select id="gitlabSelectRepo" class="form-control" ${'disabled' if not is_owner or is_registration else ''}>
                     <option>-----</option>
                         % if is_owner:
-                            % for repo_name in repo_names:
-                                <option value="${repo_name}" ${'selected' if repo_name == gitlab_repo_full_name else ''}>${repo_name}</option>
+                            % for repo in repo_names:
+                                <option value="${repo["id"]}">${repo["name"]}</option>
                             % endfor
                         % else:
                             <option selected>${gitlab_repo_full_name}</option>
