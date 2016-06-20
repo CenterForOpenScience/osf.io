@@ -61,6 +61,16 @@ class TestDraftRegistrations(RegistrationsTestBase):
             data=self.draft.registration_metadata,
         )
 
+    @mock.patch('website.project.model.DraftRegistration.get_metadata_files')
+    def test_checkout_files_returns_early(self, mock_files):
+        self.draft.checkout_files()
+        assert_equal(0, mock_files.called)
+
+    @mock.patch('website.project.model.DraftRegistration.get_metadata_files')
+    def test_checkin_files_returns_early(self, mock_files):
+        self.draft.checkin_files()
+        assert_equal(0, mock_files.called)
+
     def test_update_metadata_tracks_changes(self):
         self.draft.registration_metadata = {
             'foo': {
@@ -148,7 +158,8 @@ class TestDraftRegistrationApprovals(RegistrationsTestBase):
         self.draft.save()
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
-    def test_on_complete_immediate_creates_registration_for_draft_initiator(self, mock_enquque):
+    @mock.patch('website.project.model.DraftRegistration.get_metadata_files')
+    def test_on_complete_immediate_creates_registration_for_draft_initiator(self, mock_files, mock_enquque):
         self.approval._on_complete(self.user)
 
         registered_node = self.draft.registered_node
@@ -157,7 +168,8 @@ class TestDraftRegistrationApprovals(RegistrationsTestBase):
         assert_equal(registered_node.registered_user, self.draft.initiator)
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
-    def test_on_complete_embargo_creates_registration_for_draft_initiator(self, mock_enquque):
+    @mock.patch('website.project.model.DraftRegistration.get_metadata_files')
+    def test_on_complete_embargo_creates_registration_for_draft_initiator(self, mock_files, mock_enquque):
         end_date = dt.datetime.now() + dt.timedelta(days=366)  # <- leap year
         self.approval = DraftRegistrationApproval(
             initiated_by=self.user,
