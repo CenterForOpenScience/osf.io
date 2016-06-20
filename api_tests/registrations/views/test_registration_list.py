@@ -708,7 +708,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
 
         res = self.app.post_json_api(self.url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Embargo end date must be more than one day in the future')
+        assert_equal(res.json['errors'][0]['detail'], 'Embargo end date must be at least three days in the future.')
 
     def test_invalid_embargo_end_date_format(self):
         today = datetime.datetime.utcnow().isoformat()

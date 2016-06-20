@@ -3455,7 +3455,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if not self._is_embargo_date_valid(end_date):
             if (end_date - datetime.datetime.utcnow()) >= settings.EMBARGO_END_DATE_MIN:
                 raise ValidationValueError('Registrations can only be embargoed for up to four years.')
-            raise ValidationValueError('Embargo end date must be more than one day in the future')
+            raise ValidationValueError('Embargo end date must be at least three days in the future.')
 
         embargo = self._initiate_embargo(user, end_date, for_existing_registration=for_existing_registration, notify_initiator_on_complete=notify_initiator_on_complete)
 
