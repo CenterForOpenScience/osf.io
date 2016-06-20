@@ -45,8 +45,8 @@
                 <select id="gitlabSelectRepo" class="form-control" ${'disabled' if not is_owner or is_registration else ''}>
                     <option>-----</option>
                         % if is_owner:
-                            % for repo in repo_names:
-                                <option value="${repo["id"]}">${repo["name"]}</option>
+                            % for repo in repos:
+                                <option value="${repo['id']}">${repo['owner']['username']} / ${repo['name']}</option>
                             % endfor
                         % else:
                             <option selected>${gitlab_repo_full_name}</option>

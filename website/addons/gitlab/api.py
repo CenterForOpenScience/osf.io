@@ -34,7 +34,7 @@ class GitLabClient(object):
         """
         return self.gitlab.currentuser()
 
-    def repo(self, user, repo):
+    def repo(self, repo_id):
         """Get a single Github repo's info.
 
         :param str user: GitLab user name
@@ -42,13 +42,14 @@ class GitLabClient(object):
         :return: Dict of repo information
             See #TODO: link gitlab docs
         """
-        rv = self.gitlab.getprojects(user + '/' + repo)
+        rv = self.gitlab.getproject(repo_id)
+
         if rv:
             return rv
         raise NotFoundError
 
     def repos(self):
-        return self.__parse_repos_api_response(self.gitlab.getprojects())
+        return self.gitlab.getprojects()
 
     def user_repos(self, user):
         return self.__parse_repos_api_response(self.gitlab.getprojectsowned())

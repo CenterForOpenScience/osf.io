@@ -175,7 +175,7 @@ class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     @property
     def is_private(self):
         connection = GitLabClient(external_account=self.external_account)
-        return connection.repo(user=self.user, repo=self.repo).private
+        return connection.repo(repo_id=self.repo_id).private
 
     # TODO: Delete me and replace with serialize_settings / Knockout
     def to_json(self, user):
@@ -200,16 +200,12 @@ class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             valid_credentials = True
             try:
                 repos = connection.repos()
-                repo_names = [
-                    '{0} / {1}'.format(repo['owner'], repo['name'])
-                    for repo in repos
-                ]
 
             except GitLabError:
                 repo_names = []
                 valid_credentials = False
             if owner == user:
-                ret.update({'repo_names': repo_names})
+                ret.update({'repos': repos})
             ret.update({
                 'node_has_auth': True,
                 'gitlab_user': self.user or '',
