@@ -388,7 +388,7 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         self.node_settings.save()
         assert_is_none(self.node_settings.user_settings)
         assert_true(message)
-        assert_in("You can re-authenticate", message)
+        assert_in('You can re-authenticate', message)
 
     def test_after_remove_authorized_user_self(self):
         auth = Auth(user=self.user_settings.owner)
@@ -397,7 +397,7 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         self.node_settings.save()
         assert_is_none(self.node_settings.user_settings)
         assert_true(message)
-        assert_not_in("You can re-authenticate", message)
+        assert_not_in('You can re-authenticate', message)
 
     def test_after_delete(self):
         self.node.remove_node(Auth(user=self.node.creator))
@@ -433,7 +433,7 @@ class OAuthCitationsNodeSettingsTestSuiteMixin(OAuthAddonNodeSettingsTestSuiteMi
 
         assert_equal(
             self.node_settings.fetch_folder_name,
-            "All Documents"
+            'All Documents'
         )
 
     def test_selected_folder_name_empty(self):

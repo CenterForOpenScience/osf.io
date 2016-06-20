@@ -523,8 +523,8 @@ def merge_user_post(auth, **kwargs):
     '''
     master = auth.user
     if request.json:
-        merged_username = request.json.get("merged_username")
-        merged_password = request.json.get("merged_password")
+        merged_username = request.json.get('merged_username')
+        merged_password = request.json.get('merged_password')
     else:
         form = MergeAccountForm(request.form)
         if not form.validate():
@@ -532,27 +532,27 @@ def merge_user_post(auth, **kwargs):
             return merge_user_get(**kwargs)
         master_password = form.user_password.data
         if not master.check_password(master_password):
-            status.push_status_message("Could not authenticate. Please check your username and password.", trust=False)
+            status.push_status_message('Could not authenticate. Please check your username and password.', trust=False)
             return merge_user_get(**kwargs)
         merged_username = form.merged_username.data
         merged_password = form.merged_password.data
     try:
-        merged_user = User.find_one(Q("username", "eq", merged_username))
+        merged_user = User.find_one(Q('username', 'eq', merged_username))
     except NoResultsFound:
-        status.push_status_message("Could not find that user. Please check the username and password.", trust=False)
+        status.push_status_message('Could not find that user. Please check the username and password.', trust=False)
         return merge_user_get(**kwargs)
     if master and merged_user:
         if merged_user.check_password(merged_password):
             master.merge_user(merged_user)
             master.save()
             if request.form:
-                status.push_status_message("Successfully merged {0} with this account".format(merged_username),
+                status.push_status_message('Successfully merged {0} with this account'.format(merged_username),
                                            kind='success',
                                            trust=False)
-                return redirect("/settings/")
-            return {"status": "success"}
+                return redirect('/settings/')
+            return {'status': 'success'}
         else:
-            status.push_status_message("Could not find that user. Please check the username and password.",
+            status.push_status_message('Could not find that user. Please check the username and password.',
                                        trust=False)
             return merge_user_get(**kwargs)
     else:

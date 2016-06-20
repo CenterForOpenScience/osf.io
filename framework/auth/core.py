@@ -112,8 +112,8 @@ def get_user(email=None, password=None, verification_key=None):
     """
     # tag: database
     if password and not email:
-        raise AssertionError("If a password is provided, an email must also "
-                             "be provided.")
+        raise AssertionError('If a password is provided, an email must also '
+                             'be provided.')
 
     query_list = []
     if email:
@@ -334,13 +334,13 @@ class User(GuidStoredObject, AddonModelMixin):
                                            index=True)
 
     # watched nodes are stored via a list of WatchConfigs
-    watched = fields.ForeignField("WatchConfig", list=True)
+    watched = fields.ForeignField('WatchConfig', list=True)
 
     # list of collaborators that this user recently added to nodes as a contributor
-    recently_added = fields.ForeignField("user", list=True)
+    recently_added = fields.ForeignField('user', list=True)
 
     # Attached external accounts (OAuth)
-    external_accounts = fields.ForeignField("externalaccount", list=True)
+    external_accounts = fields.ForeignField('externalaccount', list=True)
 
     # CSL names
     given_name = fields.StringField()
@@ -410,6 +410,13 @@ class User(GuidStoredObject, AddonModelMixin):
 
     # whether the user has requested to deactivate their account
     requested_deactivation = fields.BooleanField(default=False)
+
+    # dictionary of projects a user has changed the setting on
+    notifications_configured = fields.DictionaryField()
+    # Format: {
+    #   <node.id>: True
+    #   ...
+    # }
 
     _meta = {'optimistic': True}
 
@@ -748,7 +755,7 @@ class User(GuidStoredObject, AddonModelMixin):
         email = email.lower().strip()
 
         if email in self.emails:
-            raise ValueError("Email already confirmed to this user.")
+            raise ValueError('Email already confirmed to this user.')
 
         utils.validate_email(email)
 
@@ -832,7 +839,7 @@ class User(GuidStoredObject, AddonModelMixin):
         """
         base = settings.DOMAIN if external else '/'
         token = self.get_confirmation_token(email, force=force)
-        return "{0}confirm/{1}/{2}/".format(base, self._primary_key, token)
+        return '{0}confirm/{1}/{2}/'.format(base, self._primary_key, token)
 
     def get_unconfirmed_email_for_token(self, token):
         """Return email if valid.
@@ -1295,7 +1302,7 @@ class User(GuidStoredObject, AddonModelMixin):
         """
         # Fail if the other user has conflicts.
         if not user.can_be_merged:
-            raise MergeConflictError("Users cannot be merged")
+            raise MergeConflictError('Users cannot be merged')
         # Move over the other user's attributes
         # TODO: confirm
         for system_tag in user.system_tags:

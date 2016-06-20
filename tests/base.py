@@ -43,8 +43,9 @@ from website import settings
 from website.addons.wiki.model import NodeWikiPage
 
 import website.models
+from website.notifications.listeners import subscribe_contributor, subscribe_creator
 from website.signals import ALL_SIGNALS
-from website.project.signals import contributor_added
+from website.project.signals import contributor_added, project_created
 from website.app import init_app
 from website.addons.base import AddonConfig
 from website.project.views.contributor import notify_added_contributor
@@ -333,6 +334,24 @@ class ApiTestCase(DbTestCase, ApiAppTestCase, UploadTestCase, MockRequestTestCas
 
 class AdminTestCase(DbTestCase, DjangoTestCase, UploadTestCase, MockRequestTestCase):
     pass
+
+
+class NotificationTestCase(OsfTestCase):
+    """An `OsfTestCase` to use when testing specific subscription behavior.
+    Use when you'd like to manually create all Node subscriptions and subscriptions
+    for added contributors yourself, and not rely on automatically added ones.
+    """
+    DISCONNECTED_SIGNALS = {
+        # disconnect signals so that add_contributor does not send "fake" emails in tests
+        contributor_added: [notify_added_contributor, subscribe_contributor],
+        project_created: [subscribe_creator]
+    }
+
+    def setUp(self):
+        super(NotificationTestCase, self).setUp()
+
+    def tearDown(self):
+        super(NotificationTestCase, self).tearDown()
 
 
 class ApiWikiTestCase(ApiTestCase):

@@ -100,6 +100,11 @@ class CommentSerializer(JSONAPISerializer):
                     comment.undelete(auth, save=True)
                 except PermissionsError:
                     raise PermissionDenied('Not authorized to undelete this comment.')
+            elif validated_data.get('is_deleted', None) is True and not comment.is_deleted:
+                try:
+                    comment.delete(auth, save=True)
+                except PermissionsError:
+                    raise PermissionDenied('Not authorized to delete this comment.')
             elif 'get_content' in validated_data:
                 content = validated_data.pop('get_content')
                 try:
