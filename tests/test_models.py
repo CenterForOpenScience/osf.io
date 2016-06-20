@@ -4703,5 +4703,13 @@ class TestPublicFiles(OsfTestCase):
         with assert_raises(NodeStateError):
             fork = self.project.remove_permission(self.unauthorized_user,'write')
 
+    def test_cannot_register_public_node(self):
+        with assert_raises(NodeStateError):
+            self.project.register_node(
+                schema=None,
+                auth=self.auth,
+                data=None
+            )
+
 if __name__ == '__main__':
     unittest.main()
