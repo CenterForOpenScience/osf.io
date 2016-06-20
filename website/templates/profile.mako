@@ -3,7 +3,6 @@
 <%def name="stylesheets()">
    ${parent.stylesheets()}
    <link rel="stylesheet" href='/static/css/pages/profile-page.css'>
-    <link rel="stylesheet" href="/static/css/my-projects.css">
 </%def>
 
 <%def name="javascript_bottom()">

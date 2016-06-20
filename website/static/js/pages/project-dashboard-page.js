@@ -12,7 +12,7 @@ var Raven = require('raven-js');
 require('truncate');
 
 var $osf = require('js/osfHelpers');
-var LogFeed = require('js/logFeed');
+var LogFeed = require('js/components/logFeed');
 var pointers = require('js/pointers');
 var Comment = require('js/comment'); //jshint ignore:line
 var NodeControl = require('js/nodeControl');
@@ -100,9 +100,10 @@ $(document).ready(function () {
     }
     $('#contributorsList').osfToggleHeight();
 
-    m.mount(document.getElementById('logFeed'), m.component(LogFeed.LogFeed, {node: node}));
-
     if (!ctx.node.isRetracted) {
+        // Recent Activity widget
+        m.mount(document.getElementById('logFeed'), m.component(LogFeed.LogFeed, {node: node}));
+
         // Treebeard Files view
         $.ajax({
             url:  nodeApiUrl + 'files/grid/'

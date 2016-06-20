@@ -442,7 +442,6 @@
     % endfor
 
     <link rel="stylesheet" href="/static/css/pages/project-page.css">
-    <link rel="stylesheet" href="/static/css/my-projects.css">
 </%def>
 
 <%def name="javascript_bottom()">

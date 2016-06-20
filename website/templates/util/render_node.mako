@@ -137,14 +137,13 @@
 
 % endif
 </div>
-<link rel="stylesheet" href="/static/css/my-projects.css">
 <script type="text/javascript">
-            window.contextVars = $.extend(true, {}, window.contextVars, {
-            id: ${summary['primary_id'] if not summary['primary'] and summary['can_view'] else summary['id'] | sjson, n},
-            node: ${summary | sjson, n},
-            user: {
-            canView: ${summary['can_view'] | sjson, n}
-    }
+    var nodes = window.contextVars.nodes || [];
+    nodes.push({
+        node : ${summary | sjson, n},
+        id: ${summary['primary_id'] if not summary['primary'] and summary['can_view'] else summary['id'] | sjson, n}
+    });
+    window.contextVars = $.extend(true, {}, window.contextVars, {
+        nodes : nodes
     });
 </script>
-<script src=${"/static/public/js/render-node.js" | webpack_asset}></script>

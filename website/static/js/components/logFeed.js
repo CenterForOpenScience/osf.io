@@ -1,36 +1,30 @@
 'use strict';
 
+require('css/log-feed.css');
 var $ = require('jquery');  // jQuery
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
 var oop = require('js/oop');
 var $osf = require('js/osfHelpers');
+var mHelpers = require('js/mithrilHelpers');
 var Raven = require('raven-js');
 var LogText = require('js/logTextParser');
 var Paginator = require('js/paginator');
 
 var MAX_PAGES_ON_PAGINATOR = 7;
 var MAX_PAGES_ON_PAGINATOR_SIDE = 5;
-
 var LOG_PAGE_SIZE_LIMITED = 3;
 var LOG_PAGE_SIZE = 6;
-
-/* Send with ajax calls to work with api2 */
-var xhrconfig = function (xhr) {
-    xhr.withCredentials = window.contextVars.isOnRootDomain;
-    xhr.setRequestHeader('Content-Type', 'application/vnd.api+json;');
-    xhr.setRequestHeader('Accept', 'application/vnd.api+json; ext=bulk');
-};
+var PROFILE_IMAGE_SIZE = 16;
 
 var _buildLogUrl = function(node, page, limitLogs) {
-    if (!node.isRetracted || !node.is_retracted) {
-        var urlPrefix = (node.isRegistration || node.is_registration) ? 'registrations' : 'nodes';
-        var size = limitLogs ? LOG_PAGE_SIZE_LIMITED : LOG_PAGE_SIZE;
-        var query = { 'page[size]': size, 'page': page, 'embed': ['original_node', 'user', 'linked_node', 'template_node']};
-        if (node.link) {
-            query.view_only = node.link;
-        }
-        return $osf.apiV2Url(urlPrefix + '/' + node.id + '/logs/', { query: query});
+    var logPage = page || 1;
+    var urlPrefix = (node.isRegistration || node.is_registration) ? 'registrations' : 'nodes';
+    var size = limitLogs ? LOG_PAGE_SIZE_LIMITED : LOG_PAGE_SIZE;
+    var query = { 'page[size]': size, 'page': logPage, 'embed': ['original_node', 'user', 'linked_node', 'template_node'], 'profile_image_size': PROFILE_IMAGE_SIZE};
+    if (node.link) {
+        query.view_only = node.link;
     }
+    return $osf.apiV2Url(urlPrefix + '/' + node.id + '/logs/', { query: query});
 };
 
 var LogFeed = {
@@ -45,9 +39,9 @@ var LogFeed = {
         self.paginators = m.prop([]);
         self.nextPage = m.prop();
         self.prevPage = m.prop();
-        self.firstPage = m.prop();
-        self.lastPage = m.prop();
-        self.totalPages = m.prop();
+        self.firstPage = 0;
+        self.lastPage = 0;
+        self.totalPages = 0;
         self.currentPage = m.prop();
         self.pageToGet = m.prop();
 
@@ -59,18 +53,18 @@ var LogFeed = {
                 });
 
                 self.activityLogs(result.data);  // Set activity log data
-                self.nextPage = result.links.next;
-                self.prevPage = result.links.prev;
+                self.nextPage(result.links.next);
+                self.prevPage(result.links.prev);
                 self.firstPage = result.links.first;
                 self.lastPage = result.links.last;
 
                 var params = $osf.urlParams(url);
-                var page = params.page ? params.page : 1;
+                var page = params.page || 1;
                 self.currentPage(parseInt(page));
                 self.totalPages = Math.ceil(result.links.meta.total / result.links.meta.per_page);
             }
             self.logRequestPending(true);
-            var promise = m.request({method : 'GET', url : url, config : xhrconfig});
+            var promise = m.request({method : 'GET', url : url, config : mHelpers.apiV2Config});
             promise.then(
                 function(result) {
                     _processResults(result);
@@ -100,7 +94,7 @@ var LogFeed = {
         if (ctrl.totalPages > 1 && !ctrl.limitLogs) {
             // previous page
             ctrl.paginators().push({
-                url: function() { return ctrl.prevPage; },
+                url: function() { return ctrl.prevPage(); },
                 text: '<'
             });
             // first page
@@ -201,20 +195,24 @@ var LogFeed = {
             });
             // next page
             ctrl.paginators().push({
-                url: function() { return ctrl.nextPage; },
+                url: function() { return ctrl.nextPage(); },
                 text: '>'
             });
         }
 
         return m('.db-activity-list.m-t-md', [
-
-            ctrl.failed ? m('p', 'Unable to retrieve logs at this time.') :
-
+            // Error message if the log request fails
+            ctrl.failed ? m('p', [
+                'Unable to retrieve logs at this time. Please refresh the page or contact ',
+                m('a', {'href': 'mailto:support@osf.io'}, 'support@osf.io'),
+                ' if the problem persists.'
+            ]) :
+            // Show OSF spinner while there is a pending log request
             ctrl.logRequestPending() ?  m('.spinner-loading-wrapper', [
                 m('.logo-spin.logo-lg'),
                 m('p.m-t-sm.fg-load-message', 'Loading logs...')
             ]) :
-
+            // Display each log item (text and user image)
             [ctrl.activityLogs() ? ctrl.activityLogs().map(function(item) {
                 var image = m('i.fa.fa-desktop');
                 if (ctrl.node.anonymous) { item.anonymous = true; }
@@ -228,7 +226,7 @@ var LogFeed = {
                     m('.text-right', m('span.text-muted.m-r-xs', item.attributes.formattableDate.local))
                 ]);
             }) : '',
-
+            // Log pagination
             m('.db-activity-nav.text-center', [
                 ctrl.paginators() && !ctrl.limitLogs ? ctrl.paginators().map(function(page) {
                     return page.url() ? m('.btn.btn-sm.btn-link', { onclick : function() {
