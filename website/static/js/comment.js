@@ -52,19 +52,6 @@ var getContributorList = function(input, nodeId) {
     return request;
 };
 
-getContributorList(input, nodeId);
-input
-    .atwho(atjsConfig.at_config)
-    .atwho(atjsConfig.plus_config)
-    .bind('paste', atjsConfig.onPaste)
-    .on('focusin keyup', atjsConfig.lastElementBr)
-    .on('focusout', atjsConfig.onlyElementBr)
-    .keydown(function(e) {
-        if(e.which === 13 && !e.isDefaultPrevented()) {
-            atjsConfig.onReturn(e);
-        }
-    });
-
 // Maximum length for comments, in characters
 var MAXLENGTH = 500;
 
@@ -833,6 +820,18 @@ var onOpen = function(page, rootId, nodeApiUrl, currentUserId) {
  * }
  */
 var init = function(commentLinkSelector, commentPaneSelector, options) {
+    getContributorList(input, nodeId);
+    input
+        .atwho(atjsConfig.at_config)
+        .atwho(atjsConfig.plus_config)
+        .bind('paste', atjsConfig.onPaste)
+        .on('focusin keyup', atjsConfig.lastElementBr)
+        .on('focusout', atjsConfig.onlyElementBr)
+        .keydown(function(e) {
+            if(e.which === 13 && !e.isDefaultPrevented()) {
+                atjsConfig.onReturn(e);
+            }
+        });
     var cp = new CommentPane(commentPaneSelector, {
         onOpen: function(){
             return onOpen(options.page, options.rootId, options.nodeApiUrl, options.currentUser.id);

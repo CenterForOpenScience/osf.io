@@ -180,15 +180,14 @@ class MetaData(GuidStoredObject):
 
 
 def validate_contributor(guid, contributors):
-    if guid:
-        user = User.find(
-            Q('_id', 'eq', guid) &
-            Q('is_claimed', 'eq', True)
-        )
-        if user.count() != 1:
-            raise ValidationValueError('User does not exist or is not active.')
-        elif guid not in contributors:
-            raise ValidationValueError('Mentioned user is not a contributor.')
+    user = User.find(
+        Q('_id', 'eq', guid) &
+        Q('is_claimed', 'eq', True)
+    )
+    if user.count() != 1:
+        raise ValidationValueError('User does not exist or is not active.')
+    elif guid not in contributors:
+        raise ValidationValueError('Mentioned user is not a contributor.')
     return True
 
 def get_valid_mentioned_users_guids(comment, contributors):
@@ -341,6 +340,12 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
 
         log_dict.update(comment.root_target.referent.get_extra_log_params(comment))
 
+        if comment.content:
+            new_mentions = get_valid_mentioned_users_guids(comment, comment.node.contributors)
+            if new_mentions:
+                project_signals.mention_added.send(comment, new_mentions=new_mentions, auth=auth)
+                comment.ever_mentioned.extend(new_mentions)
+
         comment.save()
 
         comment.node.add_log(
@@ -349,13 +354,6 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
             auth=auth,
             save=False,
         )
-
-        new_mentions = get_valid_mentioned_users_guids(comment, comment.node.contributors)
-
-        if new_mentions:
-            project_signals.mention_added.send(comment, new_mentions=new_mentions, auth=auth)
-            comment.ever_mentioned.extend(new_mentions)
-            comment.save()
 
         comment.node.save()
         project_signals.comment_added.send(comment, auth=auth)

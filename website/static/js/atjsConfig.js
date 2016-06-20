@@ -89,6 +89,7 @@ var callbacks = {
         return value;
     },
     highlighter: function(li, query) {
+    /* Override upstream to support names with spaces */
         var regexp;
         if (!query) {
             return li;
@@ -100,6 +101,7 @@ var callbacks = {
         });
     },
     matcher: function(flag, subtext, should_startWithSpace, acceptSpaceBar) {
+    /* Override upsream to support that names spaces */
         acceptSpaceBar = true;
         var _a, _y, match, regexp, space;
         flag = flag.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, '\\$&');
