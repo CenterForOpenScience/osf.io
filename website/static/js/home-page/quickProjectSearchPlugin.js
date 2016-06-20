@@ -550,23 +550,23 @@ function getAncestorDescriptor(node, nodeTitle, ancestor) {
     var ancestorDescriptor;
     var ancestorTitleRequest = lodashGet(node, 'embeds.' + ancestor + '.data.attributes.title', '');
     var errorRequest = lodashGet(node, 'embeds.' + ancestor + '.errors[0].detail', '');
-        switch(errorRequest) {
-            case '':
-                if (ancestorTitleRequest === nodeTitle | ancestorTitleRequest === '') {
-                    ancestorDescriptor = '';
-                }
-                else {
-                    ancestorDescriptor = ancestorTitleRequest.replace('.', '') + ' / ';
-                }
-                break;
+    switch(errorRequest) {
+        case '':
+            if (ancestorTitleRequest === nodeTitle || ancestorTitleRequest === '') {
+                ancestorDescriptor = '';
+            }
+            else {
+                ancestorDescriptor = ancestorTitleRequest.replace('.', '') + ' / ';
+            }
+            break;
 
-            case 'You do not have permission to perform this action.':
-                ancestorDescriptor = m('em', 'Private ' + ancestor + ' / ');
-                break;
+        case 'You do not have permission to perform this action.':
+            ancestorDescriptor = m('em', 'Private ' + ancestor + ' / ');
+            break;
 
-            default:
-                ancestorDescriptor = m('em', 'Name Unavailable / ');
-        }
+        default:
+            ancestorDescriptor = m('em', 'Name Unavailable / ');
+    }
     return ancestorDescriptor;
 }
 
