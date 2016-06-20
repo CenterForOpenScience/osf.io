@@ -1182,6 +1182,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         :param bool save: Save changes
         :raises: ValueError if user already has permission
         """
+        if self.is_public_files_collection:
+            raise NodeStateError('Cannot edit permissions on Public Files Collection')
         if user._id not in self.permissions:
             self.permissions[user._id] = [permission]
         else:
@@ -1199,6 +1201,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         :param bool save: Save changes
         :raises: ValueError if user does not have permission
         """
+        if self.is_public_files_collection:
+            raise NodeStateError('Cannot edit permissions on Public Files Collection')
         try:
             self.permissions[user._id].remove(permission)
         except (KeyError, ValueError):
@@ -2124,113 +2128,111 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         return True
 
     def fork_node(self, auth, title='Fork of '):
+        """Recursively fork a node.
 
-        if not self.is_public_files_collection:
-            """Recursively fork a node.
+        :param Auth auth: Consolidated authorization
+        :param str title: Optional text to prepend to forked title
+        :return: Forked node
+        """
+        user = auth.user
 
-            :param Auth auth: Consolidated authorization
-            :param str title: Optional text to prepend to forked title
-            :return: Forked node
-            """
-            user = auth.user
+        # Non-contributors can't fork private nodes
+        if not (self.is_public or self.has_permission(user, 'read')):
+            raise PermissionsError('{0!r} does not have permission to fork node {1!r}'.format(user, self._id))
 
-            # Non-contributors can't fork private nodes
-            if not (self.is_public or self.has_permission(user, 'read')):
-                raise PermissionsError('{0!r} does not have permission to fork node {1!r}'.format(user, self._id))
+        when = datetime.datetime.utcnow()
 
-            when = datetime.datetime.utcnow()
+        original = self.load(self._primary_key)
 
-            original = self.load(self._primary_key)
+        if original.is_public_files_collection:
+            raise NodeStateError('Cannot fork public files Nodes')
 
-            if original.is_public_files_collection:
-                raise NodeStateError('Cannot fork public files Nodes')
+        if original.is_deleted:
+            raise NodeStateError('Cannot fork deleted node.')
 
-            if original.is_deleted:
-                raise NodeStateError('Cannot fork deleted node.')
+        # Note: Cloning a node will clone each node wiki page version and add it to
+        # `registered.wiki_pages_current` and `registered.wiki_pages_versions`.
+        forked = original.clone()
 
-            # Note: Cloning a node will clone each node wiki page version and add it to
-            # `registered.wiki_pages_current` and `registered.wiki_pages_versions`.
-            forked = original.clone()
+        forked.tags = self.tags
 
-            forked.tags = self.tags
+        # Recursively fork child nodes
+        for node_contained in original.nodes:
+            if not node_contained.is_deleted:
+                forked_node = None
+                try:  # Catch the potential PermissionsError above
+                    forked_node = node_contained.fork_node(auth=auth, title='')
+                except PermissionsError:
+                    pass  # If this exception is thrown omit the node from the result set
+                if forked_node is not None:
+                    forked.nodes.append(forked_node)
 
-            # Recursively fork child nodes
-            for node_contained in original.nodes:
-                if not node_contained.is_deleted:
-                    forked_node = None
-                    try:  # Catch the potential PermissionsError above
-                        forked_node = node_contained.fork_node(auth=auth, title='')
-                    except PermissionsError:
-                        pass  # If this exception is thrown omit the node from the result set
-                    if forked_node is not None:
-                        forked.nodes.append(forked_node)
+        if title == 'Fork of ' or title == '':
+            forked.title = title + forked.title
+        else:
+            forked.title = title
 
-            if title == 'Fork of ' or title == '':
-                forked.title = title + forked.title
-            else:
-                forked.title = title
+        forked.is_fork = True
+        forked.is_registration = False
+        forked.forked_date = when
+        forked.forked_from = original
+        forked.creator = user
+        forked.piwik_site_id = None
+        forked.node_license = original.license.copy() if original.license else None
+        forked.wiki_private_uuids = {}
 
-            forked.is_fork = True
-            forked.is_registration = False
-            forked.forked_date = when
-            forked.forked_from = original
-            forked.creator = user
-            forked.piwik_site_id = None
-            forked.node_license = original.license.copy() if original.license else None
-            forked.wiki_private_uuids = {}
+        # Forks default to private status
+        forked.is_public = False
 
-            # Forks default to private status
-            forked.is_public = False
+        # Clear permissions before adding users
+        forked.permissions = {}
+        forked.visible_contributor_ids = []
 
-            # Clear permissions before adding users
-            forked.permissions = {}
-            forked.visible_contributor_ids = []
-
-            for citation in self.alternative_citations:
-                forked.add_citation(
-                    auth=auth,
-                    citation=citation.clone(),
-                    log=False,
-                    save=False
-                )
-
-            forked.add_contributor(
-                contributor=user,
-                permissions=CREATOR_PERMISSIONS,
+        for citation in self.alternative_citations:
+            forked.add_citation(
+                auth=auth,
+                citation=citation.clone(),
                 log=False,
                 save=False
             )
 
-            # Need this save in order to access _primary_key
-            forked.save()
+        forked.add_contributor(
+            contributor=user,
+            permissions=CREATOR_PERMISSIONS,
+            log=False,
+            save=False
+        )
 
-            forked.add_log(
-                action=NodeLog.NODE_FORKED,
-                params={
-                    'parent_node': original.parent_id,
-                    'node': original._primary_key,
-                    'registration': forked._primary_key,  # TODO: Remove this in favor of 'fork'
-                    'fork': forked._primary_key,
-                },
-                auth=auth,
-                log_date=when,
-                save=False,
-            )
+        # Need this save in order to access _primary_key
+        forked.save()
 
-            # Clone each log from the original node for this fork.
-            logs = original.logs
-            for log in logs:
-                log.clone_node_log(forked._id)
+        forked.add_log(
+            action=NodeLog.NODE_FORKED,
+            params={
+                'parent_node': original.parent_id,
+                'node': original._primary_key,
+                'registration': forked._primary_key,  # TODO: Remove this in favor of 'fork'
+                'fork': forked._primary_key,
+            },
+            auth=auth,
+            log_date=when,
+            save=False,
+        )
 
-            forked.reload()
+        # Clone each log from the original node for this fork.
+        logs = original.logs
+        for log in logs:
+            log.clone_node_log(forked._id)
 
-            # After fork callback
-            for addon in original.get_addons():
-                _, message = addon.after_fork(original, forked, user)
-                if message:
-                    status.push_status_message(message, kind='info', trust=True)
+        forked.reload()
 
-            return forked
+        # After fork callback
+        for addon in original.get_addons():
+            _, message = addon.after_fork(original, forked, user)
+            if message:
+                status.push_status_message(message, kind='info', trust=True)
+
+        return forked
 
     def register_node(self, schema, auth, data, parent=None):
         if not self.is_public_files_collection:

@@ -4658,6 +4658,10 @@ class TestPublicFiles(OsfTestCase):
         self.auth = Auth(user=self.user)
         self.project = PublicFilesFactory(creator=self.user)
 
+    def tearDown(self):
+        super(TestPublicFiles, self).tearDown()
+        self.project.remove()
+
     def test_file_upload(self):
         pass
 
@@ -4687,13 +4691,17 @@ class TestPublicFiles(OsfTestCase):
         with assert_raises(NodeStateError):
             self.project.set_title('Look at me: I\'m the title now',auth=self.auth)
 
-    def tearDown(self):
-        super(TestPublicFiles, self).tearDown()
-        self.project.remove()
-
     def test_forking(self):
         with assert_raises(NodeStateError):
             fork = self.project.fork_node(auth=self.auth)
+
+    def test_add_remove_permissions(self):
+        self.unauthorized_user = UserFactory()
+        with assert_raises(NodeStateError):
+            fork = self.project.add_permission(self.unauthorized_user,'write')
+
+        with assert_raises(NodeStateError):
+            fork = self.project.remove_permission(self.unauthorized_user,'write')
 
 if __name__ == '__main__':
     unittest.main()
