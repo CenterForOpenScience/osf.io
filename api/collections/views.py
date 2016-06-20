@@ -20,6 +20,7 @@ from api.collections.serializers import (
     CollectionLinkedNodesRelationshipSerializer
 )
 from api.nodes.serializers import NodeSerializer
+from api.registrations.serializers import RegistrationSerializer
 
 from api.nodes.permissions import (
     ContributorOrPublic,
@@ -368,8 +369,8 @@ class LinkedNodesList(JSONAPIBaseView, generics.ListAPIView, CollectionMixin):
         return sorted([
             pointer.node for pointer in
             self.get_node().nodes_pointer
-            if not pointer.node.is_deleted and not pointer.node.is_collection and
-            pointer.node.can_view(auth)
+            if not pointer.node.is_deleted and not pointer.node.is_collection
+            and not pointer.node.is_registration and pointer.node.can_view(auth)
         ], key=lambda n: n.date_modified, reverse=True)
 
     # overrides APIView
@@ -380,6 +381,43 @@ class LinkedNodesList(JSONAPIBaseView, generics.ListAPIView, CollectionMixin):
         res = super(LinkedNodesList, self).get_parser_context(http_request)
         res['is_relationship'] = True
         return res
+
+
+class LinkedRegistrationsList(JSONAPIBaseView, generics.ListAPIView, CollectionMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        ContributorOrPublic,
+        ReadOnlyIfRegistration,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_LINKS_READ]
+    required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
+
+    serializer_class = RegistrationSerializer
+    view_category = 'collections'
+    view_name = 'linked-registrations'
+
+    model_class = Pointer
+
+    def get_queryset(self):
+        auth = get_user_auth(self.request)
+        return sorted([
+            pointer.node for pointer in
+            self.get_node().nodes_pointer
+            if not pointer.node.is_deleted and not pointer.node.is_collection
+            and pointer.node.is_registration and pointer.node.can_view(auth)
+        ], key=lambda n: n.date_modified, reverse=True)
+
+    # overrides APIView
+    def get_parser_context(self, http_request):
+        """
+        Tells parser that we are creating a relationship
+        """
+        res = super(LinkedRegistrationsList, self).get_parser_context(http_request)
+        res['is_relationship'] = True
+        return res
+
 
 
 class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, CollectionMixin):
