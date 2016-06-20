@@ -145,6 +145,9 @@ RUN mkdir -p /code/website/static/built/ \
 # Copy the rest of the code over
 COPY ./ /code/
 
+RUN export DJANGO_SETTINGS_MODULE=api.base.settings && python manage.py collectstatic --noinput --no-init-app \
+    && export DJANGO_SETTINGS_MODULE=admin.base.settings && python manage.py collectstatic --noinput --no-init-app
+
 RUN touch /code/website/templates/_log_templates.mako \
     && chmod o+w /code/website/templates/_log_templates.mako \
     && touch /code/website/static/built/nodeCategories.json \

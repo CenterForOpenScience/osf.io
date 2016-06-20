@@ -9,6 +9,7 @@ from framework import status
 from framework import sentry
 from framework.auth import cas
 from framework.routing import Rule
+from framework.mongo import database
 from framework.flask import redirect
 from framework.routing import WebRenderer
 from framework.exceptions import HTTPError
@@ -52,6 +53,9 @@ def get_globals():
     user = _get_current_user()
     user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path} for inst in user.affiliated_institutions] if user else []
     all_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path} for inst in Institution.find().sort('name')]
+    maintenance = database.maintenance.find_one({'maintenance': True})
+    if maintenance:
+        del maintenance['_id']
     if request.host_url != settings.DOMAIN:
         try:
             inst_id = (Institution.find_one(Q('domains', 'eq', request.host.lower())))._id
@@ -103,6 +107,7 @@ def get_globals():
         'enable_institutions': settings.ENABLE_INSTITUTIONS,
         'keen_project_id': settings.KEEN_PROJECT_ID,
         'keen_write_key': settings.KEEN_WRITE_KEY,
+        'maintenance': maintenance,
     }
 
 def is_private_link_anonymous_view():

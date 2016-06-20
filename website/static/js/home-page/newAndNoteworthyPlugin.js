@@ -92,13 +92,13 @@ var NewAndNoteworthy = {
             promise.then(function(result){
                 var contribNames = [];
                 result.data.forEach(function (contrib){
-                    if (contrib.attributes.unregistered_contributor && contrib.attributes.bibliographic) {
+                    if (lodashGet(contrib, 'attributes.unregistered_contributor', false) && lodashGet(contrib, 'attributes.bibliographic', false)) {
                         contribNames.push(contrib.attributes.unregistered_contributor);
                     }
-                    else if (contrib.embeds.users.data && contrib.attributes.bibliographic){
+                    else if (lodashGet(contrib, 'embeds.users.data', false) && lodashGet(contrib, 'attributes.bibliographic', false)){
                         contribNames.push($osf.findContribName(contrib.embeds.users.data.attributes));
                     }
-                    else if (contrib.embeds.users.errors) {
+                    else if (lodashGet(contrib, 'embeds.users.errors', false)) {
                         contribNames.push($osf.findContribName(contrib.embeds.users.errors[0].meta));
                     }
 
