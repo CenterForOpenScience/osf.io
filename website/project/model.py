@@ -490,10 +490,10 @@ class NodeLog(StoredObject):
     REGISTRATION_APPROVAL_APPROVED = 'registration_approved'
     PREREG_REGISTRATION_INITIATED = 'prereg_registration_initiated'
 
-    PRIMARY_INSTITUTION_CHANGED = 'primary_institution_changed'
-    PRIMARY_INSTITUTION_REMOVED = 'primary_institution_removed'
+    AFFILIATED_INSTITUTION_ADDED = 'affiliated_institution_added'
+    AFFILIATED_INSTITUTION_REMOVED = 'affiliated_institution_removed'
 
-    actions = [CHECKED_IN, CHECKED_OUT, FILE_TAG_REMOVED, FILE_TAG_ADDED, CREATED_FROM, PROJECT_CREATED, PROJECT_REGISTERED, PROJECT_DELETED, NODE_CREATED, NODE_FORKED, NODE_REMOVED, POINTER_CREATED, POINTER_FORKED, POINTER_REMOVED, WIKI_UPDATED, WIKI_DELETED, WIKI_RENAMED, MADE_WIKI_PUBLIC, MADE_WIKI_PRIVATE, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED, PERMISSIONS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, TAG_ADDED, TAG_REMOVED, EDITED_TITLE, EDITED_DESCRIPTION, UPDATED_FIELDS, FILE_MOVED, FILE_COPIED, FOLDER_CREATED, FILE_ADDED, FILE_UPDATED, FILE_REMOVED, FILE_RESTORED, ADDON_ADDED, ADDON_REMOVED, COMMENT_ADDED, COMMENT_REMOVED, COMMENT_UPDATED, MADE_CONTRIBUTOR_VISIBLE, MADE_CONTRIBUTOR_INVISIBLE, EXTERNAL_IDS_ADDED, EMBARGO_APPROVED, EMBARGO_CANCELLED, EMBARGO_COMPLETED, EMBARGO_INITIATED, RETRACTION_APPROVED, RETRACTION_CANCELLED, RETRACTION_INITIATED, REGISTRATION_APPROVAL_CANCELLED, REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED, PREREG_REGISTRATION_INITIATED, CITATION_ADDED, CITATION_EDITED, CITATION_REMOVED, PRIMARY_INSTITUTION_CHANGED, PRIMARY_INSTITUTION_REMOVED]
+    actions = [CHECKED_IN, CHECKED_OUT, FILE_TAG_REMOVED, FILE_TAG_ADDED, CREATED_FROM, PROJECT_CREATED, PROJECT_REGISTERED, PROJECT_DELETED, NODE_CREATED, NODE_FORKED, NODE_REMOVED, POINTER_CREATED, POINTER_FORKED, POINTER_REMOVED, WIKI_UPDATED, WIKI_DELETED, WIKI_RENAMED, MADE_WIKI_PUBLIC, MADE_WIKI_PRIVATE, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED, PERMISSIONS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, TAG_ADDED, TAG_REMOVED, EDITED_TITLE, EDITED_DESCRIPTION, UPDATED_FIELDS, FILE_MOVED, FILE_COPIED, FOLDER_CREATED, FILE_ADDED, FILE_UPDATED, FILE_REMOVED, FILE_RESTORED, ADDON_ADDED, ADDON_REMOVED, COMMENT_ADDED, COMMENT_REMOVED, COMMENT_UPDATED, MADE_CONTRIBUTOR_VISIBLE, MADE_CONTRIBUTOR_INVISIBLE, EXTERNAL_IDS_ADDED, EMBARGO_APPROVED, EMBARGO_CANCELLED, EMBARGO_COMPLETED, EMBARGO_INITIATED, RETRACTION_APPROVED, RETRACTION_CANCELLED, RETRACTION_INITIATED, REGISTRATION_APPROVAL_CANCELLED, REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED, PREREG_REGISTRATION_INITIATED, CITATION_ADDED, CITATION_EDITED, CITATION_REMOVED, AFFILIATED_INSTITUTION_ADDED, AFFILIATED_INSTITUTION_REMOVED]
 
     def __repr__(self):
         return ('<NodeLog({self.action!r}, params={self.params!r}) '
@@ -765,7 +765,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         'wiki_pages_current',
         'is_retracted',
         'node_license',
-        'primary_institution'
+        '_affiliated_institutions',
     }
 
     # Maps category identifier => Human-readable representation for use in
@@ -2251,7 +2251,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         registered.creator = self.creator
         registered.tags = self.tags
         registered.piwik_site_id = None
-        registered.primary_institution = self.primary_institution
         registered._affiliated_institutions = self._affiliated_institutions
         registered.alternative_citations = self.alternative_citations
         registered.node_license = original.license.copy() if original.license else None
@@ -3081,7 +3080,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         :param permissions: A string, either 'public' or 'private'
         :param auth: All the auth information including user, API key.
         :param bool log: Whether to add a NodeLog for the privacy change.
-        :param bool meeting_creation: Whther this was creayed due to a meetings email.
+        :param bool meeting_creation: Whether this was created due to a meetings email.
         """
         if auth and not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Must be an admin to change privacy settings.')
@@ -3188,7 +3187,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 version = 1
         else:
             current = NodeWikiPage.load(self.wiki_pages_current[key])
-            current.is_current = False
             version = current.version + 1
             current.save()
             if Comment.find(Q('root_target', 'eq', current._id)).count() > 0:
@@ -3198,7 +3196,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             page_name=name,
             version=version,
             user=auth.user,
-            is_current=True,
             node=self,
             content=content
         )
@@ -3484,7 +3481,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             action=NodeLog.EMBARGO_TERMINATED,
             params={
                 'project': self._id,
-                'node': self._id,
+                'node': self.registered_from_id,
+                'registration': self._id,
             },
             auth=None,
             save=True
@@ -3602,25 +3600,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         return super(Node, cls).find_one(query, **kwargs)
 
     @classmethod
-    def find_by_institution(cls, inst, query=None):
+    def find_by_institutions(cls, inst, query=None):
         inst_node = inst.node
-        query = query & Q('_primary_institution', 'eq', inst_node) if query else Q('_primary_institution', 'eq', inst_node)
+        query = query & Q('_affiliated_institutions', 'eq', inst_node) if query else Q('_affiliated_institutions', 'eq', inst_node)
         return cls.find(query, allow_institution=True)
-
-    # Primary institution node is attached to
-    _primary_institution = fields.ForeignField('node')
-
-    @property
-    def primary_institution(self):
-        '''
-        Should behave as if this was a foreign field pointing to Institution
-        :return: this node's _primary_institution wrapped with Institution.
-        '''
-        return Institution(self._primary_institution) if self._primary_institution else None
-
-    @primary_institution.setter
-    def primary_institution(self, institution):
-        self._primary_institution = institution.node if institution else None
 
     _affiliated_institutions = fields.ForeignField('node', list=True)
 
@@ -3632,61 +3615,52 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         '''
         return AffiliatedInstitutionsList([Institution(node) for node in self._affiliated_institutions], obj=self, private_target='_affiliated_institutions')
 
-    def add_primary_institution(self, user, inst, log=True):
-        if not isinstance(inst, Institution):
-            raise TypeError
+    def add_affiliated_institution(self, inst, user, save=False, log=True):
         if not user.is_affiliated_with_institution(inst):
             raise UserNotAffiliatedError('User is not affiliated with {}'.format(inst.name))
-        if inst == self.primary_institution:
-            return False
-        previous = self.primary_institution if self.primary_institution else None
-        self.primary_institution = inst
         if inst not in self.affiliated_institutions:
             self.affiliated_institutions.append(inst)
         if log:
             self.add_log(
-                action=NodeLog.PRIMARY_INSTITUTION_CHANGED,
+                action=NodeLog.AFFILIATED_INSTITUTION_ADDED,
                 params={
                     'node': self._primary_key,
                     'institution': {
                         'id': inst._id,
                         'name': inst.name
-                    },
-                    'previous_institution': {
-                        'id': previous._id if previous else None,
-                        'name': previous.name if previous else 'None'
                     }
                 },
                 auth=Auth(user)
             )
+        if save:
+            self.save()
         return True
 
-    def remove_primary_institution(self, user, log=True):
-        inst = self.primary_institution
-        if not inst:
-            return False
-        self.primary_institution = None
+    def remove_affiliated_institution(self, inst, user, save=False, log=True):
         if inst in self.affiliated_institutions:
             self.affiliated_institutions.remove(inst)
-        if log:
-            self.add_log(
-                action=NodeLog.PRIMARY_INSTITUTION_REMOVED,
-                params={
-                    'node': self._primary_key,
-                    'institution': {
-                        'id': inst._id,
-                        'name': inst.name
-                    }
-                },
-                auth=Auth(user)
-            )
-        return True
+            if log:
+                self.add_log(
+                    action=NodeLog.AFFILIATED_INSTITUTION_REMOVED,
+                    params={
+                        'node': self._primary_key,
+                        'institution': {
+                            'id': inst._id,
+                            'name': inst.name
+                        }
+                    },
+                    auth=Auth(user)
+                )
+            if save:
+                self.save()
+            return True
+        return False
 
-    def institution_url(self):
-        return self.absolute_api_v2_url + 'institution/'
+    def institutions_url(self):
+        return self.absolute_api_v2_url + 'institutions/'
 
-    def institution_relationship_url(self):
-        return self.absolute_api_v2_url + 'relationships/institution/'
+    def institutions_relationship_url(self):
+        return self.absolute_api_v2_url + 'relationships/institutions/'
 
 
 @Node.subscribe('before_save')
@@ -3781,6 +3755,7 @@ class PrivateLink(StoredObject):
             "anonymous": self.anonymous
         }
 
+
 class AlternativeCitation(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
     name = fields.StringField(required=True, validate=MaxLengthValidator(256))
@@ -3792,6 +3767,32 @@ class AlternativeCitation(StoredObject):
             "name": self.name,
             "text": self.text
         }
+
+
+class DraftRegistrationLog(StoredObject):
+    """ Simple log to show status changes for DraftRegistrations
+
+    field - _id - primary key
+    field - date - date of the action took place
+    field - action - simple action to track what happened
+    field - user - user who did the action
+    """
+    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+    date = fields.DateTimeField(default=datetime.datetime.utcnow)
+    action = fields.StringField()
+    draft = fields.ForeignField('draftregistration', index=True)
+    user = fields.ForeignField('user')
+
+    SUBMITTED = 'submitted'
+    REGISTERED = 'registered'
+    APPROVED = 'approved'
+    REJECTED = 'rejected'
+
+    def __repr__(self):
+        return ('<DraftRegistrationLog({self.action!r}, date={self.date!r}), '
+                'user={self.user!r} '
+                'with id {self._id!r}>').format(self=self)
+
 
 class DraftRegistration(StoredObject):
 
@@ -3843,10 +3844,13 @@ class DraftRegistration(StoredObject):
         if meta_schema:
             schema = meta_schema.schema
             flags = schema.get('flags', {})
+            dirty = False
             for flag, value in flags.iteritems():
                 if flag not in self._metaschema_flags:
                     self._metaschema_flags[flag] = value
-            self.save()
+                    dirty = True
+            if dirty:
+                self.save()
         return self._metaschema_flags
 
     @flags.setter
@@ -3894,6 +3898,11 @@ class DraftRegistration(StoredObject):
         else:
             return False
 
+    @property
+    def status_logs(self):
+        """ List of logs associated with this node"""
+        return DraftRegistrationLog.find(Q('draft', 'eq', self._id)).sort('date')
+
     @classmethod
     def create_from_node(cls, node, user, schema, data=None):
         draft = cls(
@@ -3906,30 +3915,29 @@ class DraftRegistration(StoredObject):
         return draft
 
     def update_metadata(self, metadata):
-        if self.is_approved:
-            return []
-
         changes = []
-        for question_id, value in metadata.iteritems():
-            old_value = self.registration_metadata.get(question_id)
-            if old_value:
-                old_comments = {
-                    comment['created']: comment
-                    for comment in old_value.get('comments', [])
-                }
-                new_comments = {
-                    comment['created']: comment
-                    for comment in value.get('comments', [])
-                }
-                old_comments.update(new_comments)
-                metadata[question_id]['comments'] = sorted(
-                    old_comments.values(),
-                    key=lambda c: c['created']
-                )
-                if old_value.get('value') != value.get('value'):
+        # Prevent comments on approved drafts
+        if not self.is_approved:
+            for question_id, value in metadata.iteritems():
+                old_value = self.registration_metadata.get(question_id)
+                if old_value:
+                    old_comments = {
+                        comment['created']: comment
+                        for comment in old_value.get('comments', [])
+                    }
+                    new_comments = {
+                        comment['created']: comment
+                        for comment in value.get('comments', [])
+                    }
+                    old_comments.update(new_comments)
+                    metadata[question_id]['comments'] = sorted(
+                        old_comments.values(),
+                        key=lambda c: c['created']
+                    )
+                    if old_value.get('value') != value.get('value'):
+                        changes.append(question_id)
+                else:
                     changes.append(question_id)
-            else:
-                changes.append(question_id)
         self.registration_metadata.update(metadata)
         return changes
 
@@ -3940,6 +3948,7 @@ class DraftRegistration(StoredObject):
         )
         approval.save()
         self.approval = approval
+        self.add_status_log(initiated_by, DraftRegistrationLog.SUBMITTED)
         if save:
             self.save()
 
@@ -3953,14 +3962,21 @@ class DraftRegistration(StoredObject):
             data=self.registration_metadata
         )
         self.registered_node = register
+        self.add_status_log(auth.user, DraftRegistrationLog.REGISTERED)
         if save:
             self.save()
         return register
 
     def approve(self, user):
         self.approval.approve(user)
+        self.add_status_log(user, DraftRegistrationLog.APPROVED)
         self.approval.save()
 
     def reject(self, user):
         self.approval.reject(user)
+        self.add_status_log(user, DraftRegistrationLog.REJECTED)
         self.approval.save()
+
+    def add_status_log(self, user, action):
+        log = DraftRegistrationLog(action=action, user=user, draft=self)
+        log.save()

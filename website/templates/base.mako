@@ -54,6 +54,7 @@
     % if dev_mode:
         <div class="dev-mode-helper scripted" id="devModeControls">
         <div id="metaInfo" data-bind="visible: showMetaInfo">
+            <h2>Current branch: <span data-bind="text: branch"></span></h2>
             <table>
                 <thead>
                 <tr>
@@ -188,8 +189,11 @@
                     id: ${ user_id | sjson, n },
                     locale: ${ user_locale | sjson, n },
                     timezone: ${ user_timezone | sjson, n },
-                    entryPoint: ${ user_entry_point | sjson, n }
+                    entryPoint: ${ user_entry_point | sjson, n },
+                    institutions: ${ user_institutions | sjson, n},
+                    emailsToAdd: ${ user_email_verifications | sjson, n }
                 },
+                allInstitutions: ${ all_institutions | sjson, n},
                 popular: ${ popular_links_node | sjson, n },
                 newAndNoteworthy: ${ noteworthy_links_node | sjson, n }
             });

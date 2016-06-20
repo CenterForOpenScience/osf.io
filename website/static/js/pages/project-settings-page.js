@@ -59,7 +59,7 @@ if ($('#wgrid').length) {
 $(document).ready(function() {
     // Apply KO bindings for Project Settings
     if ($('#institutionSettings').length) {
-        new InstitutionProjectSettings('#institutionSettings', window.contextVars);
+        new InstitutionProjectSettings.InstitutionProjectSettings('#institutionSettings', window.contextVars);
     }
     var categoryOptions = [];
     var keys = Object.keys(window.contextVars.nodeCategories);
@@ -181,7 +181,7 @@ $(document).ready(function() {
             var uncheckedText = $.map(unchecked, function(el){
                 return ['<li>', $(el).closest('label').text().trim(), '</li>'].join('');
             }).join('');
-            uncheckedText = ['<ul>', $osf.htmlEscape(uncheckedText), '</ul>'].join('');
+            uncheckedText = ['<ul>', uncheckedText, '</ul>'].join('');
             bootbox.confirm({
                 title: 'Are you sure you want to remove the add-ons you have deselected? ',
                 message: uncheckedText,

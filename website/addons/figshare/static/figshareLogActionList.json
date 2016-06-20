@@ -1,5 +1,5 @@
 {
-  "figshare_content_linked" : "${user} linked content from figshare in ${node}",
+  "figshare_content_linked" : "${user} linked figshare project ${figshare_title} to ${node}",
   "figshare_content_unlinked": "${user} unlinked content from figshare in ${node}",
   "figshare_file_added" : "${user} added file ${path} to figshare in ${node}",
   "figshare_file_removed" : "${user} removed file ${path} from figshare in ${node}",

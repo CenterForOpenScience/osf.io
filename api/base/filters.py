@@ -21,6 +21,12 @@ from api.base.exceptions import (
 from api.base import utils
 from api.base.serializers import RelationshipField, TargetField
 
+def lowercase(lower):
+    if hasattr(lower, '__call__'):
+        return lower()
+    return lower
+
+
 def sort_multiple(fields):
     fields = list(fields)
     def sort_fn(a, b):
@@ -291,8 +297,10 @@ class ODMFilterMixin(FilterMixin):
             param_query = self.query_params_to_odm_query(self.request.query_params)
         default_query = self.get_default_odm_query()
 
-        if param_query:
+        if param_query and default_query:
             query = param_query & default_query
+        elif param_query:
+            query = param_query
         else:
             query = default_query
 
@@ -374,6 +382,13 @@ class ListFilterMixin(FilterMixin):
             return_val = [
                 item for item in default_queryset
                 if params['value'].lower() in getattr(item, field_name, {}).lower()
+            ]
+        elif isinstance(field, ser.ListField):
+            return_val = [
+                item for item in default_queryset
+                if params['value'].lower() in [
+                    lowercase(i.lower) for i in getattr(item, field_name, [])
+                ]
             ]
         else:
             try:

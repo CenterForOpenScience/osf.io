@@ -44,25 +44,31 @@ from website.notifications.events.files import FileEvent  # noqa
 
 ERROR_MESSAGES = {'FILE_GONE': u'''
 <style>
-.file-download{{display: none;}}
-.file-share{{display: none;}}
-.file-delete{{display: none;}}
+#toggleBar{{display: none;}}
 </style>
 <div class="alert alert-info" role="alert">
 <p>
 The file "{file_name}" stored on {provider} was deleted via the OSF.
 </p>
 <p>
-
 It was deleted by <a href="/{deleted_by_guid}">{deleted_by}</a> on {deleted_on}.
-
+</p>
+</div>''',
+                  'FILE_GONE_ACTOR_UNKNOWN': u'''
+<style>
+#toggleBar{{display: none;}}
+</style>
+<div class="alert alert-info" role="alert">
+<p>
+The file "{file_name}" stored on {provider} was deleted via the OSF.
+</p>
+<p>
+It was deleted on {deleted_on}.
 </p>
 </div>''',
                   'DONT_KNOW': u'''
 <style>
-.file-download{{display: none;}}
-.file-share{{display: none;}}
-.file-delete{{display: none;}}
+#toggleBar{{display: none;}}
 </style>
 <div class="alert alert-info" role="alert">
 <p>
@@ -71,9 +77,7 @@ File not found at {provider}.
 </div>''',
                   'BLAME_PROVIDER': u'''
 <style>
-.file-download{{display: none;}}
-.file-share{{display: none;}}
-.file-delete{{display: none;}}
+#toggleBar{{display: none;}}
 </style>
 <div class="alert alert-info" role="alert">
 <p>
@@ -84,15 +88,13 @@ The provider ({provider}) may currently be unavailable or "{file_name}" may have
 You may wish to verify this through {provider}'s website.
 </p>
 </div>''',
-'FILE_SUSPENDED': u'''
+                  'FILE_SUSPENDED': u'''
 <style>
-.file-download{{display: none;}}
-.file-share{{display: none;}}
-.file-delete{{display: none;}}
+#toggleBar{{display: none;}}
 </style>
 <div class="alert alert-info" role="alert">
-Access to this file has been suspended.
-'''}
+This content has been removed.
+</div>'''}
 
 WATERBUTLER_JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
 
@@ -511,11 +513,11 @@ def addon_view_or_download_file_legacy(**kwargs):
 @must_be_valid_project
 @must_be_contributor_or_public
 def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
-    """Shows a nice error message to users when they try to view
-    a deleted file
+    """Shows a nice error message to users when they try to view a deleted file
     """
     # Allow file_node to be passed in so other views can delegate to this one
     file_node = kwargs.get('file_node') or TrashedFileNode.load(kwargs.get('trashed_id'))
+
     deleted_by, deleted_on = None, None
     if isinstance(file_node, TrashedFileNode):
         deleted_by = file_node.deleted_by
@@ -524,17 +526,24 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
         if file_node.suspended:
             error_type = 'FILE_SUSPENDED'
         elif file_node.deleted_by is None:
-            error_type = 'BLAME_PROVIDER'
+            if file_node.provider == 'osfstorage':
+                error_type = 'FILE_GONE_ACTOR_UNKNOWN'
+            else:
+                error_type = 'BLAME_PROVIDER'
         else:
             error_type = 'FILE_GONE'
     else:
         error_type = 'DONT_KNOW'
+
     file_path = kwargs.get('path', file_node.path)
     file_name = file_node.name or os.path.basename(file_path)
     file_name_title, file_name_ext = os.path.splitext(file_name)
     provider_full = settings.ADDONS_AVAILABLE_DICT[file_node.provider].full_name
-    ret = serialize_node(node, auth, primary=True)
-    ret.update(rubeus.collect_addon_assets(node))
+    try:
+        file_guid = file_node.get_guid()._id
+    except AttributeError:
+        file_guid = None
+
     format_params = dict(
         file_name=markupsafe.escape(file_name),
         deleted_by=markupsafe.escape(deleted_by),
@@ -543,12 +552,11 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
     )
     if deleted_by:
         format_params['deleted_by_guid'] = markupsafe.escape(deleted_by_guid)
-    retError = ERROR_MESSAGES[error_type].format(**format_params)
-    try:
-        file_guid = file_node.get_guid()._id
-    except AttributeError:
-        file_guid = None
+
+    ret = serialize_node(node, auth, primary=True)
+    ret.update(rubeus.collect_addon_assets(node))
     ret.update({
+        'error': ERROR_MESSAGES[error_type].format(**format_params),
         'urls': {
             'render': None,
             'sharejs': None,
@@ -567,7 +575,6 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
         'file_id': file_node._id,
         'provider': file_node.provider,
         'materialized_path': file_node.materialized_path or file_path,
-        'error': retError,
         'private': getattr(node.get_addon(file_node.provider), 'is_private', False),
         'file_tags': [tag._id for tag in file_node.tags],
         'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE,

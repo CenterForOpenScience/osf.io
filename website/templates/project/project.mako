@@ -20,10 +20,12 @@
                         </h2>
                     % endif
                 % endif
-                <h2 class="node-title">
-                    % if node['institution']['name'] and enable_institutions and not node['anonymous']:
-                        <a href="/institutions/${node['institution']['id']}"><img class="img-circle" height="75" width="75" id="instLogo" src="${node['institution']['logo_path']}"></a>
-                    % endif
+
+                % if node['institutions'] != [] and enable_institutions and not node['anonymous']:
+                    <div id="instLogo"></div>
+                % endif
+
+                <h2 class="node-title" style="float: left;">
                     <span id="nodeTitleEditable" class="overflow">${node['title']}</span>
                 </h2>
             </div>
@@ -116,16 +118,29 @@
                 % endif
                 </div>
                 % if enable_institutions and not node['anonymous']:
-                    % if ('admin' in user['permissions'] and not node['is_registration']) and (node['institution']['id'] or len(user['institutions']) != 0):
-                        <a class="link-dashed" href="${node['url']}settings/#configureInstitutionAnchor" id="institution">Affiliated Institution:</a>
-                        % if node['institution']['id']:
-                            <a href="/institutions/${node['institution']['id']}">${node['institution']['name']}</a>
+                    % if ('admin' in user['permissions'] and not node['is_registration']) and (len(node['institutions']) != 0 or len(user['institutions']) != 0):
+                        <a class="link-dashed" href="${node['url']}settings/#configureInstitutionAnchor" id="institution">Affiliated Institutions:</a>
+                        % if node['institutions'] != []:
+                            % for inst in node['institutions']:
+                                % if inst != node['institutions'][-1]:
+                                    <span><a href="/institutions/${inst['id']}">${inst['name']}</a>, </span>
+                                % else:
+                                    <a href="/institutions/${inst['id']}">${inst['name']}</a>
+                                % endif
+                            % endfor
                         % else:
                             <span> None </span>
                         % endif
                     % endif
-                    % if not ('admin' in user['permissions'] and not node['is_registration']) and node['institution']['id']:
-                        Affiliated institution: <a href="/institutions/${node['institution']['id']}">${node['institution']['name']}</a>
+                    % if not ('admin' in user['permissions'] and not node['is_registration']) and node['institutions'] != []:
+                        Affiliated institutions:
+                        % for inst in node['institutions']:
+                            % if inst != node['institutions'][-1]:
+                                <span><a href="/institutions/${inst['id']}">${inst['name']}</a>, </span>
+                            % else:
+                                <a href="/institutions/${inst['id']}">${inst['name']}</a>
+                            % endif
+                        % endfor
                     % endif
                 % endif
                 % if node['is_fork']:
@@ -180,13 +195,14 @@
                   <!-- /ko -->
                 </span>
                 <p>
-                    Category: <span id="nodeCategoryEditable"></span>
+                    Category: <span id="nodeCategoryEditable">${node['category']}</span>
                     <span data-bind="css: icon"></span>
                 </p>
 
                 % if (node['description']) or (not node['description'] and 'write' in user['permissions'] and not node['is_registration']):
                     <p>
-                    <span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea"></span>
+                    <span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">
+                        ${node['description']}</span>
                     </p>
                 % endif
                 % if ('admin' in user['permissions'] or node['license'].get('name', 'No license') != 'No license'):
@@ -238,14 +254,25 @@
                    <a href="${node['url']}files/"> <i class="fa fa-external-link"></i> </a>
                 </div>
             </div>
-            <div class="panel-body">
-                <div id="treeGrid">
-                    <div class="spinner-loading-wrapper">
-                        <div class="logo-spin logo-lg"></div>
-                         <p class="m-t-sm fg-load-message"> Loading files...  </p>
+            % if not node['is_registration'] and not node['anonymous'] and 'write' in user['permissions']:
+                <div class="row">
+                    <div class="col-sm-12 m-t-sm m-l-md">
+                        <span class="f-w-xl">Click on a storage provider or drag and drop to upload</span>
                     </div>
                 </div>
-            </div>
+               <div class="panel-body panel-body-with-instructions">
+            %else:
+               <div class="panel-body">
+            %endif
+                    <div id="treeGrid">
+                        <div class="spinner-loading-wrapper">
+                            <div class="logo-spin logo-lg"></div>
+                             <p class="m-t-sm fg-load-message"> Loading files...  </p>
+                        </div>
+                    </div>
+                </div><!-- end .panel-body -->
+
+
         </div>
 
         % if addons:
@@ -418,12 +445,13 @@ ${parent.javascript_bottom()}
     window.contextVars = $.extend(true, {}, window.contextVars, {
         currentUser: {
             canComment: ${ user['can_comment'] | sjson, n },
-            canEdit: ${ user['can_edit'] | sjson, n }
+            canEdit: ${ user['can_edit'] | sjson, n },
         },
         node: {
             hasChildren: ${ node['has_children'] | sjson, n },
             isRegistration: ${ node['is_registration'] | sjson, n },
-            tags: ${ node['tags'] | sjson, n }
+            tags: ${ node['tags'] | sjson, n },
+            institutions: ${node['institutions'] | sjson, n},
         },
         nodeCategories: ${ node_categories | sjson, n }
     });

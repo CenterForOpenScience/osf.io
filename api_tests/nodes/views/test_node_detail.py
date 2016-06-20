@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 from urlparse import urlparse
 from nose.tools import *  # flake8: noqa
+import functools
 
 from framework.auth.core import Auth
+from modularodm import Q
 
 from website.models import NodeLog
 from website.views import find_bookmark_collection
@@ -19,7 +21,13 @@ from tests.factories import (
     AuthUserFactory,
     CollectionFactory,
     CommentFactory,
+    NodeLicenseRecordFactory,
 )
+
+from website.project.licenses import ensure_licenses
+from website.project.licenses import NodeLicense
+
+ensure_licenses = functools.partial(ensure_licenses, warn=False)
 
 from tests.utils import assert_logs, assert_not_logs
 
@@ -1026,3 +1034,59 @@ class TestNodeTags(ApiTestCase):
         res = self.app.patch_json_api(self.public_url, self.one_new_tag_json, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'Expected a list of items but got type "dict".')
+
+
+class TestNodeLicense(ApiTestCase):
+    def setUp(self):
+        super(TestNodeLicense, self).setUp()
+        self.user = AuthUserFactory()
+        self.admin = AuthUserFactory()
+        self.user_two = AuthUserFactory()
+        self.read_only_contributor = AuthUserFactory()
+
+        self.public_project = ProjectFactory(title="Project One", is_public=True, creator=self.user)
+        self.public_project.add_contributor(self.user, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
+        self.private_project = ProjectFactory(title="Project Two", is_public=False, creator=self.user)
+        self.private_project.add_contributor(self.user, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
+        self.private_project.add_contributor(self.admin, permissions=permissions.CREATOR_PERMISSIONS, save=True)
+        self.public_url = '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
+        self.private_url = '/{}nodes/{}/'.format(API_BASE, self.private_project._id)
+        ensure_licenses()
+        self.LICENSE_NAME = 'MIT License'
+        self.node_license = NodeLicense.find_one(
+            Q('name', 'eq', self.LICENSE_NAME)
+        )
+        self.YEAR = '2105'
+        self.COPYRIGHT_HOLDERS = ['Foo', 'Bar']
+        self.public_project.node_license = NodeLicenseRecordFactory(
+            node_license=self.node_license,
+            year=self.YEAR,
+            copyright_holders=self.COPYRIGHT_HOLDERS
+        )
+        self.public_project.save()
+        self.private_project.node_license = NodeLicenseRecordFactory(
+            node_license=self.node_license,
+            year=self.YEAR,
+            copyright_holders=self.COPYRIGHT_HOLDERS
+        )
+        self.private_project.save()
+
+    def test_public_node_has_node_license(self):
+        res = self.app.get(self.public_url)
+        assert_equal(self.public_project.node_license.year, res.json['data']['attributes']['node_license']['year'])
+
+    def test_public_node_has_license_relationship(self):
+        res = self.app.get(self.public_url)
+        expected_license_url = '/{}licenses/{}'.format(API_BASE, self.node_license._id)
+        actual_license_url = res.json['data']['relationships']['license']['links']['related']['href']
+        assert_in(expected_license_url, actual_license_url)
+
+    def test_private_node_has_node_license(self):
+        res = self.app.get(self.private_url, auth=self.user.auth)
+        assert_equal(self.private_project.node_license.year, res.json['data']['attributes']['node_license']['year'])
+
+    def test_private_node_has_license_relationship(self):
+        res = self.app.get(self.private_url, auth=self.user.auth)
+        expected_license_url = '/{}licenses/{}'.format(API_BASE, self.node_license._id)
+        actual_license_url = res.json['data']['relationships']['license']['links']['related']['href']
+        assert_in(expected_license_url, actual_license_url)
