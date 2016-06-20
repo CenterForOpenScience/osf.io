@@ -33,7 +33,9 @@ class SSOView(JSONAPIBaseView):
 
         if not auth.logged_in:
             #sso_url = furl(settings.DISCOURSE_SERVER_URL).join('/session/sso')
-            return HttpResponseRedirect(cas.get_login_url(settings.HOST, auto=True))
+            return HttpResponseRedirect(cas.get_login_url(settings.DOMAIN, auto=True))
+        
+        #import ipdb;ipdb.set_trace()
 
         encoded_payload = request.GET.get('sso', '')
         payload = base64.b64decode(encoded_payload)
@@ -62,4 +64,8 @@ class SSOView(JSONAPIBaseView):
         return_url = furl(settings.DISCOURSE_SERVER_URL).join('/session/sso_login')
         return_url.args = sign_payload(return_payload)
 
-        return HttpResponseRedirect(return_url.url)
+        res = HttpResponseRedirect(return_url.url)
+        res['Access-Control-Allow-Credentials'] = 'true'
+        res['Access-Control-Allow-Headers'] = 'X-Requested-With, X-CSRF-Token'
+        res['Access-Control-Allow-Origin'] = 'http://discourse.mechanysm.com'
+        return res 

@@ -322,6 +322,7 @@ def auth_login(auth):
     if data['status_code'] == http.FOUND:
         return redirect(data['next_url'])
 
+<<<<<<< HEAD
 
 @collect_auth
 def auth_register(auth):

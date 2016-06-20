@@ -113,6 +113,7 @@ session = LocalProxy(get_session)
 def before_request():
     # TODO: Fix circular import
     from framework.auth.core import get_user
+    #import ipdb; ipdb.set_trace()
     from framework.auth import cas
     from website.util import time as util_time
 
@@ -122,7 +123,9 @@ def before_request():
         service_url = furl.furl(request.url)
         service_url.args.pop('ticket')
         # Attempt to authenticate wih CAS, and return a proper redirect response
+        #import ipdb; ipdb.set_trace()
         return cas.make_response_from_ticket(ticket=ticket, service_url=service_url.url)
+        #'http://discourse.mechanysm.com/session/sso?return_path='+
 
     if request.authorization:
         user = get_user(
