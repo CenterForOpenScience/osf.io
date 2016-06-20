@@ -64,8 +64,4 @@ class SSOView(JSONAPIBaseView):
         return_url = furl(settings.DISCOURSE_SERVER_URL).join('/session/sso_login')
         return_url.args = sign_payload(return_payload)
 
-        res = HttpResponseRedirect(return_url.url)
-        res['Access-Control-Allow-Credentials'] = 'true'
-        res['Access-Control-Allow-Headers'] = 'X-Requested-With, X-CSRF-Token'
-        res['Access-Control-Allow-Origin'] = 'http://discourse.mechanysm.com'
-        return res 
+        return HttpResponseRedirect(return_url.url)

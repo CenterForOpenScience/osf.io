@@ -1,4 +1,5 @@
 <%block name="nav">
+<% from website import settings %>
 <link rel="stylesheet" href='/static/css/nav.css'>
 <div class="osf-nav-wrapper">
 
@@ -69,26 +70,26 @@
 
         
           </ul>
-          <script>
-              //doesnt block the load event
-              function createIframe(){
-                  var i = document.createElement("iframe");
-                  i.style.display = 'none'
-                  i.src = 'http://discourse.mechanysm.com/session/sso?return_path=%2F';
-                  i.addEventListener('load', function(e) {
-                  this.parentNode.removeChild(this);
-                  })
-                  document.body.appendChild(i);
-              };
-                     
-              // Check for browser support of event handling capability
-              if (window.addEventListener)
-                  window.addEventListener("load", createIframe, false);
-              else if (window.attachEvent)
-                  window.attachEvent("onload", createIframe);
-              else window.onload = createIframe;
+              <script>
+                  //doesnt block the load event
+                  function createIframe(){
+                      var i = document.createElement("iframe");
+                      i.style.display = 'none'
+                      i.src = '${settings.DISCOURSE_SERVER_URL}/session/sso?return_path=%2F';
+                      i.addEventListener('load', function(e) {
+                      this.parentNode.removeChild(this);
+                      })
+                      document.body.appendChild(i);
+                  };
+                         
+                  // Check for browser support of event handling capability
+                  if (window.addEventListener)
+                      window.addEventListener("load", createIframe, false);
+                  else if (window.attachEvent)
+                      window.attachEvent("onload", createIframe);
+                  else window.onload = createIframe;
 
-          </script>
+              </script>
 
         </li>
         % elif allow_login:
