@@ -23,10 +23,12 @@ var GitLabConfigHelper = (function() {
             );
     };
 
-    var updateHidden = function(val) {
-        var repoParts = val.split('/');
+    var updateHidden = function(element) {
+        var repoParts = $("option:selected", element).text().split('/');
+
         $('#gitlabUser').val($.trim(repoParts[0]));
         $('#gitlabRepo').val($.trim(repoParts[1]));
+        $('#gitlabRepoId').val(element.val());
     };
 
     var displayError = function(msg) {
@@ -62,7 +64,7 @@ var GitLabConfigHelper = (function() {
                         var repoName = response.user + ' / ' + response.repo;
                         $select.append('<option value="' + repoName + '">' + $osf.htmlEscape(repoName) + '</option>');
                         $select.val(repoName);
-                        updateHidden(repoName);
+                        updateHidden($select);
                     }).fail(function () {
                         displayError('Could not create repository');
                     });
@@ -131,9 +133,9 @@ var GitLabConfigHelper = (function() {
 
     $(document).ready(function() {
         $('#gitlabSelectRepo').on('change', function() {
-            var value = $(this).val();
-            if (value) {
-                updateHidden(value);
+            var el = $(this);
+            if (el.val()) {
+                updateHidden(el);
             }
         });
 

@@ -94,13 +94,14 @@ def gitlab_set_config(auth, **kwargs):
     # Parse request
     gitlab_user_name = request.json.get('gitlab_user', '')
     gitlab_repo_name = request.json.get('gitlab_repo', '')
+    gitlab_repo_id = request.json.get('gitlab_repo_id', '')
 
-    if not gitlab_user_name or not gitlab_repo_name:
+    if not gitlab_user_name or not gitlab_repo_name or not gitlab_repo_id:
         raise HTTPError(http.BAD_REQUEST)
 
     # Verify that repo exists and that user can access
     connection = GitLabClient(external_account=node_settings.external_account)
-    repo = connection.repo(gitlab_user_name, gitlab_repo_name)
+    repo = connection.repo(gitlab_repo_id)
     if repo is None:
         if user_settings:
             message = (
@@ -115,7 +116,8 @@ def gitlab_set_config(auth, **kwargs):
 
     changed = (
         gitlab_user_name != node_settings.user or
-        gitlab_repo_name != node_settings.repo
+        gitlab_repo_name != node_settings.repo or
+        gitlab_repo_id != node_settings.repo_id
     )
 
     # Update hooks
@@ -127,6 +129,7 @@ def gitlab_set_config(auth, **kwargs):
         # Update node settings
         node_settings.user = gitlab_user_name
         node_settings.repo = gitlab_repo_name
+        node_settings.repo_id = gitlab_repo_id
 
         # Log repo select
         node.add_log(
@@ -137,6 +140,7 @@ def gitlab_set_config(auth, **kwargs):
                 'gitlab': {
                     'user': gitlab_user_name,
                     'repo': gitlab_repo_name,
+                    'repo_id': gitlab_repo_id,
                 }
             },
             auth=auth,
@@ -202,7 +206,7 @@ def gitlab_hgrid_data(node_settings, auth, **kwargs):
     node = node_settings.owner
     if node.is_public and not node.is_contributor(auth.user):
         try:
-            repo = connection.repo(node_settings.user, node_settings.repo)
+            repo = connection.repo(node_settings.repo_id)
         except NotFoundError:
             # TODO: Test me @jmcarp
             # TODO: Add warning message
