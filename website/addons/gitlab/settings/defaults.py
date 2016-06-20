@@ -3,7 +3,7 @@ CLIENT_ID = None
 CLIENT_SECRET = None
 
 # GitLab access scope
-SCOPE = ['repo']
+SCOPE = ['api']
 
 # GitLab hook domain
 HOOK_DOMAIN = None
