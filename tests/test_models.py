@@ -4696,12 +4696,12 @@ class TestPublicFiles(OsfTestCase):
             fork = self.project.fork_node(auth=self.auth)
 
     def test_add_remove_permissions(self):
-        self.unauthorized_user = UserFactory()
+        unauthorized_user = UserFactory()
         with assert_raises(NodeStateError):
-            fork = self.project.add_permission(self.unauthorized_user,'write')
+            fork = self.project.add_permission(unauthorized_user,'write')
 
         with assert_raises(NodeStateError):
-            fork = self.project.remove_permission(self.unauthorized_user,'write')
+            fork = self.project.remove_permission(unauthorized_user,'write')
 
     def test_cannot_register_public_node(self):
         with assert_raises(NodeStateError):
@@ -4710,6 +4710,42 @@ class TestPublicFiles(OsfTestCase):
                 auth=self.auth,
                 data=None
             )
+
+    def test_remove_creator_as_public_collections_owner(self):
+        print self.project.contributors
+        self.project.add_log(
+            action=NodeLog.CONTRIB_REMOVED,
+            params={
+                'node': self.project._primary_key,
+                'contributors': self.project.contributors,
+            },
+            auth=self.auth,
+            save=False,
+        )
+        with assert_raises(NodeStateError):
+            self.project.remove_contributor(self.user,auth=self.auth)
+        print self.project.contributors
+        self.project.add_log(
+            action=NodeLog.CONTRIB_REMOVED,
+            params={
+                'node': self.project._primary_key,
+                'contributors': self.project.contributors,
+            },
+            auth=self.auth,
+            save=False,
+        )
+        assert_false(True)
+
+        def test_update_contributor_public_files_collection(self):
+            new_contrib = AuthUserFactory()
+
+            with assert_raises(NodeStateError):
+                self.project.update_contributor(
+                    new_contrib,
+                    READ,
+                    False,
+                    auth=self.auth
+                )
 
 if __name__ == '__main__':
     unittest.main()

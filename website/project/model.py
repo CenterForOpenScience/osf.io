@@ -2757,6 +2757,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         :param contributor: User object, the contributor to be removed
         :param auth: All the auth information including user, API key.
         """
+
+        if self.is_public_files_collection:
+            raise NodeStateError('Cannot remove self from Public Files Collection')
         # remove unclaimed record if necessary
         if self._primary_key in contributor.unclaimed_records:
             del contributor.unclaimed_records[self._primary_key]
@@ -2843,6 +2846,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             raise PermissionsError("Only admins can modify contributor permissions")
         permissions = expand_permissions(permission) or DEFAULT_CONTRIBUTOR_PERMISSIONS
         admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin') and contrib.is_active]
+        if self.is_public_files_collection:
+            raise NodeStateError('Cannot change contributors for Public Files Collection')
         if not len(admins) > 1:
             # has only one admin
             admin = admins[0]
@@ -3037,6 +3042,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 return False
             else:
                 return False
+        else:
+            raise NodeStateError('Cannot add pointer to public files collection')
 
     def add_contributors(self, contributors, auth=None, log=True, save=False):
         """Add multiple contributors
