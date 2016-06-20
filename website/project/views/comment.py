@@ -15,7 +15,7 @@ from website.addons.base.signals import file_updated
 from website.files.models import FileNode, TrashedFileNode
 from website.models import Comment
 from website.notifications.constants import PROVIDERS
-from website.notifications.emails import notify
+from website.notifications.emails import notify, notify_mentions
 from website.project.decorators import must_be_contributor_or_public
 from website.project.model import Node
 from website.project.signals import comment_added, mention_added
@@ -156,7 +156,7 @@ def send_mention_added_notification(comment, new_mentions, auth):
         url=comment.get_comment_page_url()
     )
     time_now = datetime.utcnow().replace(tzinfo=pytz.utc)
-    notify(
+    notify_mentions(
         event='mentions',
         user=auth.user,
         node=node,
