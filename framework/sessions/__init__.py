@@ -19,7 +19,7 @@ from framework.mongo import database
 from website import settings
 
 from .model import Session
-from .utils import remove_session, check_cors_compatibility
+from .utils import remove_session
 
 
 def add_key_to_url(url, scheme, key):

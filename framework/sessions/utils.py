@@ -19,8 +19,3 @@ def remove_session(session):
     """
 
     Session.remove(Q('_id', 'eq', session._id))
-
-
-def check_cors_compatibility(user_agent):
-    return 'MSIE 9' in user_agent;
-    pass
