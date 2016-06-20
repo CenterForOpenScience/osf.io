@@ -1282,8 +1282,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         each descendant branch.
         """
         ret = []
+        new_branches = []
         for node in self.nodes:
-            new_branches = []
             if not node.primary or node.is_deleted:
                 continue
 

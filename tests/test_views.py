@@ -2848,25 +2848,6 @@ class TestPointerViews(OsfTestCase):
         node = ProjectFactory(creator=user)
         project.add_pointer(node, auth=Auth(user=user), save=save)
 
-    def test_pointer_list_write_contributor_can_remove_private_component_entry(self):
-        """Ensure that write contributors see the button to delete a pointer,
-            even if they cannot see what it is pointing at"""
-        url = web_url_for('view_project', pid=self.project._id)
-        user2 = AuthUserFactory()
-        self.project.add_contributor(user2,
-                                     auth=Auth(self.project.creator),
-                                     permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS)
-
-        self._make_pointer_only_user_can_see(user2, self.project)
-        self.project.save()
-
-        res = self.app.get(url, auth=self.user.auth).maybe_follow()
-        assert_equal(res.status_code, 200)
-
-        has_controls = res.lxml.xpath('//li[@node_reference]/p[starts-with(normalize-space(text()), "Private Link")]//i[contains(@class, "remove-pointer")]')
-        assert_true(has_controls)
-
-
     def test_pointer_list_write_contributor_can_remove_public_component_entry(self):
         url = web_url_for('view_project', pid=self.project._id)
 
@@ -2903,8 +2884,9 @@ class TestPointerViews(OsfTestCase):
     def test_pointer_list_read_contributor_cannot_remove_public_component_entry(self):
         url = web_url_for('view_project', pid=self.project._id)
 
-        self.project.add_pointer(ProjectFactory(creator=self.user),
-                                 auth=Auth(user=self.user))
+        linked_to = ProjectFactory(creator=self.user)
+        linked_to.update(fields={'is_public':1})
+        self.project.add_pointer(linked_to, auth=Auth(user=self.user))
 
         user2 = AuthUserFactory()
         self.project.add_contributor(user2,
