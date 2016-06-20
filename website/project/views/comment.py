@@ -35,7 +35,6 @@ def update_file_guid_referent(self, node, event_type, payload, user=None):
 
         if event_type == 'addon_file_renamed':
             for guid in file_guids:
-                ipdb.set_trace()
                 obj = Guid.load(guid)
                 old_file_name = obj.referent.name
                 obj.referent.name = destination['name']
