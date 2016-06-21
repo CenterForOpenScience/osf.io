@@ -509,16 +509,17 @@ def verify_claim_token(user, token, pid):
 @collect_auth
 @must_be_valid_project
 def claim_user_registered(auth, node, **kwargs):
-    """View that prompts user to enter their password in order to claim
-    contributorship on a project.
-
+    """
+    View that prompts user to enter their password in order to claim being a contributor on a project.
     A user must be logged in.
     """
+
     current_user = auth.user
 
     sign_out_url = web_url_for('auth_login', logout=True, next=request.url)
     if not current_user:
         return redirect(sign_out_url)
+
     # Logged in user should not be a contributor the project
     if node.is_contributor(current_user):
         logout_url = web_url_for('auth_logout', redirect_url=request.url)
@@ -528,10 +529,15 @@ def claim_user_registered(auth, node, **kwargs):
                 'project. Would you like to <a href="{}">log out</a>?').format(logout_url)
         }
         raise HTTPError(http.BAD_REQUEST, data=data)
+
     uid, pid, token = kwargs['uid'], kwargs['pid'], kwargs['token']
     unreg_user = User.load(uid)
     if not verify_claim_token(unreg_user, token, pid=node._primary_key):
-        raise HTTPError(http.BAD_REQUEST)
+        error_data = {
+            'message_short': 'Invalid url.',
+            'message_long': 'The token in the URL is invalid or has expired.'
+        }
+        raise HTTPError(http.BAD_REQUEST, data=error_data)
 
     # Store the unreg_user data on the session in case the user registers
     # a new account
@@ -589,33 +595,37 @@ def replace_unclaimed_user_with_registered(user):
 
 @collect_auth
 def claim_user_form(auth, **kwargs):
-    """View for rendering the set password page for a claimed user.
-
-    Must have ``token`` as a querystring argument.
-
-    Renders the set password form, validates it, and sets the user's password.
     """
+    View for rendering the set password page for a claimed user.
+    Must have ``token`` as a querystring argument.
+    Renders the set password form, validates it, and sets the user's password.
+    HTTP Method: GET, POST
+    """
+
     uid, pid = kwargs['uid'], kwargs['pid']
     token = request.form.get('token') or request.args.get('token')
+    user = User.load(uid)
+
+    # If unregistered user is not in database, or url bears an invalid token raise HTTP 400 error
+    if not user or not verify_claim_token(user, token, pid):
+        error_data = {
+            'message_short': 'Invalid url.',
+            'message_long': 'Claim user does not exists, the token in the URL is invalid or has expired.'
+        }
+        raise HTTPError(http.BAD_REQUEST, data=error_data)
 
     # If user is logged in, redirect to 're-enter password' page
     if auth.logged_in:
         return redirect(web_url_for('claim_user_registered',
             uid=uid, pid=pid, token=token))
 
-    user = User.load(uid)  # The unregistered user
-    # user ID is invalid. Unregistered user is not in database
-    if not user:
-        raise HTTPError(http.BAD_REQUEST)
-    # If claim token not valid, redirect to registration page
-    if not verify_claim_token(user, token, pid):
-        return redirect(web_url_for('auth_login'))
     unclaimed_record = user.unclaimed_records[pid]
     user.fullname = unclaimed_record['name']
     user.update_guessed_names()
     # The email can be the original referrer email if no claimer email has been specified.
     claimer_email = unclaimed_record.get('claimer_email') or unclaimed_record.get('email')
     form = SetEmailAndPasswordForm(request.form, token=token)
+
     if request.method == 'POST':
         if form.validate():
             username, password = claimer_email, form.password.data
@@ -625,9 +635,7 @@ def claim_user_form(auth, **kwargs):
             user.verification_key = generate_verification_key()
             user.save()
             # Authenticate user and redirect to project page
-            status.push_status_message(language.CLAIMED_CONTRIBUTOR,
-                                       kind='success',
-                                       trust=True)
+            status.push_status_message(language.CLAIMED_CONTRIBUTOR, kind='success', trust=True)
             # Redirect to CAS and authenticate the user with a verification key.
             return redirect(cas.get_login_url(
                 web_url_for('user_profile', _absolute=True),
@@ -636,6 +644,7 @@ def claim_user_form(auth, **kwargs):
             ))
         else:
             forms.push_errors_to_status(form.errors)
+
     return {
         'firstname': user.given_name,
         'email': claimer_email if claimer_email else '',

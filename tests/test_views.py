@@ -2553,13 +2553,12 @@ class TestClaimViews(OsfTestCase):
         res = self.app.get(url).maybe_follow()
         assert_equal(res.status_code, 200)
 
-    def test_invalid_claim_form_redirects_to_register_page(self):
+    def test_invalid_claim_form_raise_400(self):
         uid = self.user._primary_key
         pid = self.project._primary_key
         url = '/user/{uid}/{pid}/claim/?token=badtoken'.format(**locals())
         res = self.app.get(url, expect_errors=True).maybe_follow()
-        assert_equal(res.status_code, 200)
-        assert_equal(res.request.path, web_url_for('auth_login'))
+        assert_equal(res.status_code, 400)
 
     def test_posting_to_claim_form_with_valid_data(self):
         url = self.user.get_claim_url(self.project._primary_key)
@@ -2567,8 +2566,14 @@ class TestClaimViews(OsfTestCase):
             'username': self.user.username,
             'password': 'killerqueen',
             'password2': 'killerqueen'
-        }).maybe_follow()
-        assert_equal(res.status_code, 200)
+        })
+
+        assert_equal(res.status_code, 302)
+        location = res.headers.get('Location')
+        assert_in('login?service=', location)
+        assert_in('username', location)
+        assert_in('verification_key', location)
+
         self.user.reload()
         assert_true(self.user.is_registered)
         assert_true(self.user.is_active)

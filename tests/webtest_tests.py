@@ -79,11 +79,27 @@ class TestAUser(OsfTestCase):
         res = self.app.get('/').maybe_follow()  # Redirects
         assert_equal(res.status_code, 200)
 
-    def test_is_redirected_to_dashboard_already_logged_in_at_login_page(self):
+    def test_is_redirected_to_cas_if_not_logged_in_at_login_page(self):
+        res = self.app.get('/login/')
+        assert_equal(res.status_code, 302)
+        location = res.headers.get('Location')
+        assert_in('login?service=', location)
+
+    def test_is_redirected_to_dashboard_if_already_logged_in_at_login_page(self):
         res = self.app.get('/login/', auth=self.user.auth)
         assert_equal(res.status_code, 302)
         res = res.follow(auth=self.user.auth)
-        assert_equal(res.request.path, '/dashboard')
+        assert_equal(res.request.path, '/dashboard/')
+
+    def test_register_page(self):
+        res = self.app.get('/register/')
+        assert_equal(res.status_code, 200)
+
+    def test_is_redirected_to_dashboard_if_already_logged_in_at_register_page(self):
+        res = self.app.get('/register/', auth=self.user.auth)
+        assert_equal(res.status_code, 302)
+        res = res.follow(auth=self.user.auth)
+        assert_equal(res.request.path, '/dashboard/')
 
     def test_sees_projects_in_her_dashboard(self):
         # the user already has a project

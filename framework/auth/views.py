@@ -182,6 +182,8 @@ def auth_login(auth):
     must_login_warning = True
 
     if not campaign and not next_url and not log_out:
+        if auth.logged_in:
+            return redirect(web_url_for('dashboard'))
         return redirect(cas.get_login_url(web_url_for('dashboard', _absolute=True)))
 
     if campaign:
