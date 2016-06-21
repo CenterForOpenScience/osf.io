@@ -3,131 +3,46 @@
 var assert = require('chai').assert;
 
 var comment = require('js/comment');
-var BaseComment = comment.BaseComment;
-var CommentModel = comment.CommentModel;
+var convertMentionHtmlToMarkdown = comment.convertMentionHtmlToMarkdown;
+var convertMentionMarkdownToHtml = comment.convertMentionMarkdownToHtml;
 
 describe('@Mentions', () => {
+    var atMentionHTML = 'Hello, <span class="atwho-inserted" contenteditable="false" data-atwho-guid="12345" data-atwho-at-query="@">@Test User</span>';
+    var atMentionMarkdown = 'Hello, [@Test User](/12345/)';
+    var plusMentionHTML = 'Hello, <span class="atwho-inserted" contenteditable="false" data-atwho-guid="12345" data-atwho-at-query="+">+Test User</span>';
+    var plusMentionMarkdown = 'Hello, [+Test User](/12345/)';
+    var returnHTML = 'Test.<br>';
+    var returnMarkdown = 'Test.&#13;&#10;';
+    var returnMarkdown2 = 'Test.\r\n';
 
-    describe('convertHtmlToMarkdown', () => {
-        describe('BaseComment', () => {
-            it('convert <br> to &#13;&#10;', () => {
-                var comment = new BaseComment();
-                comment.replyContent('Test.<br>');
-                assert.equal(comment.saveContent(), 'Test.&#13;&#10;');
-            });
-            it('convert @ mention to markdown link', () => {
-                var comment = new BaseComment();
-                comment.replyContent('Hello, <span class="atwho-inserted" contenteditable="false" data-atwho-guid="12345" data-atwho-at-query="@">@Test User</span>');
-                assert.equal(comment.saveContent(), 'Hello, [@Test User](/12345/)');
-            });
-            it('convert + mention to markdown link', () => {
-                var comment = new BaseComment();
-                comment.replyContent('Hello, <span class="atwho-inserted" contenteditable="false" data-atwho-guid="12345" data-atwho-at-query="+">+Test User</span>');
-                assert.equal(comment.saveContent(), 'Hello, [+Test User](/12345/)');
-            });
+
+    describe('convertMentionHtmlToMarkdown', () => {
+        it('convert <br> to &#13;&#10;', () => {
+            var converted = convertMentionHtmlToMarkdown(returnHTML);
+            assert.equal(converted, returnMarkdown);
         });
-        describe('CommentModel', () => {
-            it('convert <br> to &#13;&#10;', () => {
-                var $parent = {};
-                var $root = {
-                    author: 'George Ant',
-                    nodeId: function() {
-                        return '56789';
-                    }
-                };
-                var data = {
-                    id: 4,
-                    attributes: {}
-                };
-                var comment = new CommentModel(data, $parent, $root);
-                comment.content('Test.<br>');
-                assert.equal(comment.editedContent(), 'Test.&#13;&#10;');
-            });
-            it('convert @ mention to markdown link', () => {
-                var $parent = {};
-                var $root = {
-                    author: 'George Ant',
-                    nodeId: function() {
-                        return '56789';
-                    }
-                };
-                var data = {
-                    id: 4,
-                    attributes: {}
-                };
-                var comment = new CommentModel(data, $parent, $root);
-                comment.content('Hello, <span class="atwho-inserted" contenteditable="false" data-atwho-guid="12345" data-atwho-at-query="@">@Test User</span>');
-                assert.equal(comment.editedContent(), 'Hello, [@Test User](/12345/)');
-            });
-            it('convert + mention to markdown link', () => {
-                var $parent = {};
-                var $root = {
-                    author: 'George Ant',
-                    nodeId: function() {
-                        return '56789';
-                    }
-                };
-                var data = {
-                    id: 4,
-                    attributes: {}
-                };
-                var comment = new CommentModel(data, $parent, $root);
-                comment.content('Hello, <span class="atwho-inserted" contenteditable="false" data-atwho-guid="12345" data-atwho-at-query="+">+Test User</span>');
-                assert.equal(comment.editedContent(), 'Hello, [+Test User](/12345/)');
-            });
+        it('convert @ mention to markdown link', () => {
+            var converted = convertMentionHtmlToMarkdown(atMentionHTML);
+            assert.equal(converted, atMentionMarkdown);
+        });
+        it('convert + mention to markdown link', () => {
+            var converted = convertMentionHtmlToMarkdown(plusMentionHTML);
+            assert.equal(converted, plusMentionMarkdown);
         });
     });
-    describe('convertMarkdownToHtml', () => {
-        describe('CommentModel', () => {
+    describe('convertMentionMarkdownToHtml', () => {
             it('convert \\r\\n; to <br>', () => {
-                var $parent = {};
-                var $root = {
-                    author: 'George Ant',
-                    nodeId: function() {
-                        return '56789';
-                    }
-                };
-                var data = {
-                    id: 4,
-                    attributes: {}
-                };
-                var comment = new CommentModel(data, $parent, $root);
-                comment.content('Test.\r\n');
-                assert.equal(comment.editableContent(), 'Test.<br>');
+                var converted = convertMentionMarkdownToHtml(returnMarkdown2);
+                assert.equal(converted, returnHTML);
             });
             it('convert @ mention markdown link to span', () => {
-                var $parent = {};
-                var $root = {
-                    author: 'George Ant',
-                    nodeId: function() {
-                        return '56789';
-                    }
-                };
-                var data = {
-                    id: 4,
-                    attributes: {}
-                };
-                var comment = new CommentModel(data, $parent, $root);
-                comment.content('Hello, [@Test User](/12345/)');
-                assert.equal(comment.editableContent(), 'Hello, <span class="atwho-inserted" contenteditable="false" data-atwho-guid="12345" data-atwho-at-query="@">@Test User</span>');
+                var converted = convertMentionMarkdownToHtml(atMentionMarkdown);
+                assert.equal(converted, atMentionHTML);
             });
             it('convert + mention markdown link to span', () => {
-                var $parent = {};
-                var $root = {
-                    author: 'George Ant',
-                    nodeId: function() {
-                        return '56789';
-                    }
-                };
-                var data = {
-                    id: 4,
-                    attributes: {}
-                };
-                var comment = new CommentModel(data, $parent, $root);
-                comment.content('Hello, [+Test User](/12345/)');
-                assert.equal(comment.editableContent(), 'Hello, <span class="atwho-inserted" contenteditable="false" data-atwho-guid="12345" data-atwho-at-query="+">+Test User</span>');
+                var converted = convertMentionMarkdownToHtml(plusMentionMarkdown);
+                assert.equal(converted, plusMentionHTML);
             });
-        });
     });
 
 });

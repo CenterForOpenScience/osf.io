@@ -103,56 +103,52 @@ var exclusifyGroup = function() {
     }
 };
 
-ko.subscribable.fn.convertHtmlToMarkdown = function(commentContent) {
-    return ko.computed(function() {
-        var content = commentContent() || '';
-        var pattern = '<span[^>]*?data-atwho-guid="([a-z\\d]{5})"[^>]*?>((@|\\+)[\\w\\s]+)<\/span>',
-            regex = new RegExp(pattern),
-            regexG = new RegExp(pattern, 'g');
-        var matches = content.match(regexG);
-        if (matches) {
-            for (var i = 0; i < matches.length; i++) {
-                var match = regex.exec(matches[i]);
-                var guid = match[1];
-                var mention = match[2];
-                var url = '/' + guid + '/';
-                content = content.replace(match[0], '['+ mention + '](' + url + ')');
-            }
+var convertMentionHtmlToMarkdown = function(commentContent) {
+    var content = commentContent || '';
+    var pattern = '<span[^>]*?data-atwho-guid="([a-z\\d]{5})"[^>]*?>((@|\\+)[\\w\\s]+)<\/span>',
+        regex = new RegExp(pattern),
+        regexG = new RegExp(pattern, 'g');
+    var matches = content.match(regexG);
+    if (matches) {
+        for (var i = 0; i < matches.length; i++) {
+            var match = regex.exec(matches[i]);
+            var guid = match[1];
+            var mention = match[2];
+            var url = '/' + guid + '/';
+            content = content.replace(match[0], '['+ mention + '](' + url + ')');
         }
-        // '&#13;&#10;' is the character entity reference for '\r\n'
-        // '\r\n' is treated differently and breaks conversion from markdown to html
-        content = content.replace(/<span[^>]*?>/g, '')
-            .replace(/<\/span>/g, '')
-            .replace(/&nbsp;/g, ' ')
-            .replace(/<br>/g, '&#13;&#10;');
-        return content;
-    }, this);
+    }
+    // '&#13;&#10;' is the character entity reference for '\r\n'
+    // '\r\n' is treated differently and breaks conversion from markdown to html
+    content = content.replace(/<span[^>]*?>/g, '')
+        .replace(/<\/span>/g, '')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/<br>/g, '&#13;&#10;');
+    return content;
 };
 
-ko.subscribable.fn.convertMarkdownToHtml = function(commentContent) {
-    return ko.computed(function() {
-        var content = commentContent();
-        var pattern = '\\[(@|\\+)(.*?)\\]\\(\\/([a-z\\d]{5})\\/\\)',
-            regex = new RegExp(pattern),
-            regexG = new RegExp(pattern, 'g');
-        var matches = content.match(regexG);
-        if (matches) {
-            for (var i = 0; i < matches.length; i++) {
-                var match = regex.exec(matches[i]);
-                var atwho = match[1];
-                var guid = match[3];
-                var mention = match[2];
+var convertMentionMarkdownToHtml = function(commentContent) {
+    var content = commentContent ||'';
+    var pattern = '\\[(@|\\+)(.*?)\\]\\(\\/([a-z\\d]{5})\\/\\)',
+        regex = new RegExp(pattern),
+        regexG = new RegExp(pattern, 'g');
+    var matches = content.match(regexG);
+    if (matches) {
+        for (var i = 0; i < matches.length; i++) {
+            var match = regex.exec(matches[i]);
+            var atwho = match[1];
+            var guid = match[3];
+            var mention = match[2];
 
-                content = content.replace(
-                    match[0],
-                    '<span class="atwho-inserted" contenteditable="false" data-atwho-guid="' +
-                        guid + '" data-atwho-at-query="' + atwho + '">' +
-                        atwho + mention + '</span>'
-                );
-            }
+            content = content.replace(
+                match[0],
+                '<span class="atwho-inserted" contenteditable="false" data-atwho-guid="' +
+                    guid + '" data-atwho-at-query="' + atwho + '">' +
+                    atwho + mention + '</span>'
+            );
         }
-        return content.replace(/\r\n/g, '<br>');
-    }, this);
+    }
+    return content.replace(/\r\n/g, '<br>');
 };
 
 var BaseComment = function() {
@@ -173,7 +169,9 @@ var BaseComment = function() {
 
     self.urlForNext = ko.observable();
 
-    self.saveContent = ko.observable().convertHtmlToMarkdown(self.replyContent);
+    self.saveContent = ko.pureComputed(function() {
+        return convertMentionHtmlToMarkdown(self.replyContent());
+    });
 
     self.submittingReply = ko.observable(false);
 
@@ -428,9 +426,13 @@ var CommentModel = function(data, $parent, $root) {
         self.author = self.$root.author;
     }
 
-    self.editableContent = ko.observable().convertMarkdownToHtml(self.content);
+    self.editableContent = ko.pureComputed(function() {
+        return convertMentionMarkdownToHtml(self.content());
+    });
 
-    self.editedContent = ko.observable().convertHtmlToMarkdown(self.content);
+    self.editedContent = ko.pureComputed(function() {
+        return convertMentionHtmlToMarkdown(self.content());
+    });
 
     var linkifyOpts = { target: function (href, type) { return type === 'url' ? '_top' : null; } };
     self.contentDisplay = ko.observable(linkifyHtml(markdown.full.render(self.content()), linkifyOpts));
@@ -850,6 +852,6 @@ var init = function(commentLinkSelector, commentPaneSelector, options) {
 
 module.exports = {
     init: init,
-    BaseComment: BaseComment,
-    CommentModel: CommentModel
+    convertMentionHtmlToMarkdown: convertMentionHtmlToMarkdown,
+    convertMentionMarkdownToHtml: convertMentionMarkdownToHtml
 };
