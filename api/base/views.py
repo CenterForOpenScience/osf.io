@@ -464,11 +464,13 @@ def root(request, format=None):
         'links': {
             'nodes': absolute_reverse('nodes:node-list'),
             'users': absolute_reverse('users:user-list'),
+            'collections': absolute_reverse('collections:collection-list'),
+            'registrations': absolute_reverse('registrations:registration-list'),
+            'institutions': absolute_reverse('institutions:institution-list'),
+            'licenses': absolute_reverse('licenses:license-list'),
+            'metaschemas': absolute_reverse('metaschemas:metaschema-list'),
         }
     }
-    if settings.DEV_MODE:
-        return_val['links']['collections'] = absolute_reverse('collections:collection-list')
-        return_val['links']['registrations'] = absolute_reverse('registrations:registration-list')
 
     return Response(return_val)
 
