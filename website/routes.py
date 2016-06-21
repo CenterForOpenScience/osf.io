@@ -9,7 +9,6 @@ from framework import status
 from framework import sentry
 from framework.auth import cas
 from framework.routing import Rule
-from framework.mongo import database
 from framework.flask import redirect
 from framework.routing import WebRenderer
 from framework.exceptions import HTTPError
