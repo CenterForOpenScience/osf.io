@@ -26,6 +26,22 @@ window.ondrop = function (e) {
 var PublicFilesDropzone = {
     controller: function () {
         var dangerCount = 0;
+
+        var checkIfSameName = function(file){
+            var files;
+            var url = $osf.apiV2Url('nodes/' + window.contextVars.publicFilesId + '/files/osfstorage/');
+            return $osf.ajaxJSON('GET', url, { isCors: true}).done(function (response) {
+                var files = response;
+
+                files.forEach(function(nodeFile){
+                    if(nodeFile.attributes['name'] == file.name) return true;
+                });
+
+                return false;
+
+            });
+        };
+
         Dropzone.options.publicFilesDropzone = {
             // Dropzone is setup to upload multiple files in one request this configuration forces it to do upload file-by-
             //file, one request at a time.
@@ -49,6 +65,10 @@ var PublicFilesDropzone = {
  
             },
             accept: function (file, done) {
+                if(checkIfSameName(file)){
+                    alert("file has same name.")
+                }
+
                 if (this.files.length <= this.options.maxFiles) {
                     this.options.url = waterbutler.buildUploadUrl(false, 'osfstorage', window.contextVars.publicFilesId, file, {});
                     this.processFile(file);
