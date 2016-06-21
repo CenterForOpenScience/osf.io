@@ -30,15 +30,12 @@ from website.util.time import throttle_period_expired
 
 
 @collect_auth
-def reset_password(auth, verification_key=None):
+def reset_password(auth, verification_key=None, **kwargs):
     """
     View for user to reset password. User submits new password and OSF attempts to reset it and automatically log the
     user back in or return respective error.
     HTTP Method: GET, POST
 
-    :param auth:
-    :param verification_key:
-    :return:
     :raises: HTTPError(http.BAD_REQUEST) if verification_key is invalid
     """
 
@@ -58,9 +55,7 @@ def reset_password(auth, verification_key=None):
         raise HTTPError(400, data=error_data)
 
     if request.method == 'GET':
-        return {
-            'verification_key': verification_key
-        }
+        pass
 
     if request.method == 'POST':
         if form.validate():
@@ -86,14 +81,11 @@ def reset_password(auth, verification_key=None):
 
 
 @collect_auth
-def forgot_password(auth):
+def forgot_password(auth, **kwargs):
     """
     View for "Forgot Your Password?". User submits the email on the page and OSF attempts to send user a password reset
     link or return respective error.
     HTTP Method: GET, POST
-
-    :param auth:
-    :return:
     """
 
     # If user is already logged in, redirect to dashboard page.
@@ -103,7 +95,7 @@ def forgot_password(auth):
     form = ForgotPasswordForm(request.form, prefix='forgot_password')
 
     if request.method == 'GET':
-        return {}
+        pass
 
     if request.method == 'POST':
         if form.validate():
@@ -140,7 +132,6 @@ def forgot_password(auth):
                                                'little while before trying again.', kind='error', trust=False)
             else:
                 status.push_status_message(status_message, kind='success', trust=False)
-            # TODO: disable form upon success
         else:
             forms.push_errors_to_status(form.errors)
             # Don't go anywhere
@@ -149,7 +140,7 @@ def forgot_password(auth):
 
 
 @collect_auth
-def auth_login(auth):
+def auth_login(auth, **kwargs):
     """
     This view serves as the entry point for OSF login and campaign login.
     HTTP Method: GET
@@ -171,9 +162,6 @@ def auth_login(auth):
         GET '/login/?next=next_url:
             if user is logged in, redirect to next_url
             else redirect to CAS login page with next_url as target service
-
-    :param auth:
-    :return:
     """
 
     campaign = request.args.get('campaign')
@@ -235,13 +223,10 @@ def auth_login(auth):
     return data, http.OK
 
 
-def auth_logout(redirect_url=None):
+def auth_logout(redirect_url=None, **kwargs):
     """
     Log out, delete current session, delete CAS cookie and delete OSF cookie.
     HTTP Method: GET
-
-    :param redirect_url:
-    :return:
     """
 
     redirect_url = redirect_url or request.args.get('redirect_url') or web_url_for('goodbye', _absolute=True)
@@ -262,10 +247,6 @@ def auth_logout(redirect_url=None):
 def auth_email_logout(token, user):
     """
     When a user is adding an email or merging an account, add the email to the user and log them out.
-
-    :param token:
-    :param user:
-    :return:
     """
 
     redirect_url = cas.get_logout_url(service_url=cas.get_login_url(service_url=web_url_for('index', _absolute=True)))
@@ -302,11 +283,6 @@ def confirm_email_get(token, auth=None, **kwargs):
     View for email confirmation links. Authenticates and redirects to user settings page if confirmation is successful,
     otherwise shows an "Expired Link" error.
     HTTP Method: GET
-
-    :param token:
-    :param auth:
-    :param kwargs:
-    :return:
     """
 
     user = User.load(kwargs['uid'])
@@ -374,9 +350,6 @@ def unconfirmed_email_remove(auth=None):
     """
     Called at login if user cancels their merge or email add.
     HTTP Method: DELETE
-
-    :param auth:
-    :return:
     """
 
     user = auth.user
@@ -401,9 +374,6 @@ def unconfirmed_email_add(auth=None):
     """
     Called at login if user confirms their merge or email add.
     HTTP Method: PUT
-
-    :param auth:
-    :return:
     """
     user = auth.user
     json_body = request.get_json()
@@ -438,9 +408,6 @@ def send_confirm_email(user, email):
     """
     Sends a confirmation email to `user` to a given email.
 
-    :param user:
-    :param email:
-    :return:
     :raises: KeyError if user does not have a confirmation token for the given email.
     """
 
@@ -480,13 +447,10 @@ def send_confirm_email(user, email):
 
 
 @collect_auth
-def auth_register(auth):
+def auth_register(auth, **kwargs):
     """
     View for sign-up page.
     HTTP Method: GET
-
-    :param auth:
-    :return:
     """
 
     # If user is already logged in, redirect to dashboard page.
@@ -560,7 +524,7 @@ def resend_confirmation():
     form = ResendConfirmationForm(request.form)
 
     if request.method == 'GET':
-        return {'form': form}
+        pass
 
     if request.method == 'POST':
         if form.validate():

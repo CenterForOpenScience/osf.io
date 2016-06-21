@@ -1010,9 +1010,6 @@ class TestResetPassword(OsfTestCase):
         assert_in('logout?service=', location)
         assert_in('resetpassword', location)
 
-        # TODO: remove this redundant check given CAS logout already tested
-        # assert_not_in(self.another_user.fullname, res)
-
 
 class TestAUserProfile(OsfTestCase):
 

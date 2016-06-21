@@ -9,7 +9,6 @@ from framework import status
 from framework import sentry
 from framework.auth import cas
 from framework.routing import Rule
-from framework.mongo import database
 from framework.flask import redirect
 from framework.routing import WebRenderer
 from framework.exceptions import HTTPError
@@ -456,6 +455,7 @@ def make_url_map(app):
 
     process_rules(app, [
 
+        # confirm email
         Rule(
             '/confirm/<uid>/<token>/',
             'get',
@@ -471,6 +471,7 @@ def make_url_map(app):
             OsfWebRenderer('public/resetpassword.mako', render_mako_string, trust=False)
         ),
 
+        # resend confirmation
         Rule(
             '/resend/',
             ['get', 'post'],
@@ -496,7 +497,10 @@ def make_url_map(app):
 
         # osf login and campaign login
         Rule(
-            '/login/',
+            [
+                '/login/',
+                '/account/'
+            ],
             'get',
             auth_views.auth_login,
             OsfWebRenderer('public/login.mako', trust=False)
