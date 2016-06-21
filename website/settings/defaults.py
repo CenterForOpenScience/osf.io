@@ -53,7 +53,7 @@ PROXY_ADDRS = []
 # May set these to True in local.py for development
 DEV_MODE = False
 DEBUG_MODE = False
-SECURE_MODE = not DEBUG_MODE  # Set secure and httponly cookie
+SECURE_MODE = not DEBUG_MODE  # Set secure cookie
 
 PROTOCOL = 'https://' if SECURE_MODE else 'http://'
 DOMAIN = PROTOCOL + 'localhost:5000/'
