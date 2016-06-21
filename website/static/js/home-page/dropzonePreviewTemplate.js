@@ -8,9 +8,16 @@ function shareButton(link){
         clipboard.makeClipboardClient(elem);
     };
 
-    return m('div.dz-share',
-        m('i.fa.fa-share-alt.copy[data-clipboard-text="'+link+'"][type="button"]', {config: cb, style : {'background-color' : 'inherit'}})
-    );
+    return m('div.dz-share.input-group[style="width: 180px"]',
+                       [
+                           m('span.input-group-btn',
+                               m('button.btn.btn-default.btn-sm.copy[type="button"][data-clipboard-text="'+link+ '"]', {config: cb},
+                                   m('.fa.fa-clipboard')
+                               )
+                           ),
+                           m('input[value="'+link+'"][readonly="readonly"][style="height: 30px;color:#333333;background-color:#ddf0e2;border: 1px solid  #acacac;"]')
+                       ]
+           );
 
 }
 
@@ -19,12 +26,13 @@ function dropzonePreviewTemplate(){
         m('div.dz-preview.dz-processing.dz-file-preview',
             m('div.dz-details',
                 m('div.dz-filename',
+                    m('i.fa.fa-file-text.fileicon'),
                     m('span[data-dz-name]')
                 ),
-                m('div[data-dz-size].dz-size'),
-                m('img[data-dz-thumbnail]')
+                m('span[data-dz-size].dz-size')
+                //m('img[data-dz-thumbnail]')
             ),
-            m('div.dz-progress',
+            m('div.dz-progress.dz-progress-upload',
                 m('span[data-dz-uploadprogress].dz-upload')
             ),
             m('div.dz-success-mark',

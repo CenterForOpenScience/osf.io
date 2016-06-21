@@ -2,74 +2,75 @@
     background: rgba(255, 255, 255, 0.8);
     position: relative;
     display: inline-block;
-    /*margin: 7px 2.3% 7px 2.3%;*/
-    margin: 7px;
-    margin-left: 42%;
-    width: 120px;
-    height: 150px;
+    margin: 7px 2.3% 7px 2.3%;
+    width: 95%;
+    height: 50px;
     vertical-align: top;
     border: 1px solid #acacac;
     padding: 6px 6px 6px 6px;
     cursor: default;
 }
- 
+
 .dz-preview-background-success {
     background: #ddf0e2;
+    border-left: 7px solid #52A452;
 }
- 
+
 .dz-preview-background-error {
     background: #f2dede;
 }
- 
+
 .dz-preview .dz-details {
- 
-    width: 100px;
-    height: 100px;
+    width: 100%;
+    height: 100%;
     position: relative;
-    background: #ebebeb;
+    /*background: #ebebeb;*/
     left: 3px;
 }
- 
+
 .dz-preview .dz-details img {
     position: absolute;
     top: 0;
     left: 0;
-    width: 100px;
-    height: 100px;
+    width: 80px;
+    height: 80px;
 }
- 
-.dz-preview:hover .dz-details {
-    opacity: 1;
-    cursor: default;
-}
- 
-.dz-preview:hover .dz-details img {
-    display: none;
-}
- 
+
+/*.dz-preview:hover .dz-details {*/
+    /*opacity: 1;*/
+    /*cursor: default;*/
+/*}*/
+
+/*.dz-preview:hover .dz-details img {*/
+    /*display: none;*/
+/*}*/
+
 .dz-preview .dz-details .dz-size {
     position: absolute;
-    bottom: -40px;
-    left: 3px;
-    height: 28px;
+    top: -4px;
+    left: 190px;
     line-height: 28px;
 }
- 
+
 .dz-preview .dz-details .dz-filename {
     overflow: hidden;
     height: 100%;
+    width: 180px;
+    overflow:hidden;
+    white-space: nowrap;
+    margin: 9px 0 0 0;
 }
- 
+
 .dz-preview .dz-progress {
     position: absolute;
-    top: 110px;
-    left: 10px;
+    top: 80px;
+    left: 55%;
     right: 10px;
-    height: 10px;
+    height: 12px;
     background: #d7d7d7;
     display: none;
 }
- 
+
 .dz-preview .dz-progress .dz-upload {
     display: block;
     position: absolute;
@@ -83,37 +84,37 @@
     filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ff337ab7', endColorstr='#ff286090', GradientType=0);
     background-repeat: repeat-x;
 }
- 
+
 .dz-preview.dz-processing .dz-progress {
     display: block;
 }
- 
+
 .dz-preview .dz-success-mark, .dz-preview .dz-error-mark {
     display: none;
     position: absolute;
     width: 40px;
     height: 40px;
     font-size: 20px;
-    right: -15px;
-    top: 0;
+    top: 12px;
+    right: 0;
 }
- 
+
 .dz-preview .dz-success-mark {
     color: #449d44;
 }
- 
+
 .dz-preview .dz-error-mark {
     color: #ee162d;
 }
- 
+
 .dz-preview.dz-error .dz-error-mark {
     display: block;
 }
- 
+
 .dz-preview.dz-success .dz-success-mark {
     display: block;
 }
- 
+
 .dz-preview .dz-error-message {
     display: none;
     position: absolute;
@@ -126,16 +127,16 @@
     max-width: 500px;
     z-index: 500;
 }
- 
+
 .dz-preview:hover.dz-error .dz-error-message {
     display: block;
 }
- 
+
 .drop-zone-format {
     background: rgba(255, 255, 255, .49);
-    padding-bottom: 175px;
-    padding-left: 10px;
-    padding-right: 10px;
+    padding-bottom: 0;
+    padding-left: 0;
+    padding-right: 0;
     border-radius: 5px;
     width: 100%;
     border: 2px solid #999;
@@ -144,27 +145,28 @@
     -o-transition: background .4s ease;
     transition: background .4s ease, box-shadow 0.4s ease;
 }
- 
+
 .drop-zone-format:hover {
     border: 2px solid;
     border-color: #52A452;
-    background: rgba(255, 255, 255, 0.2);
+    background: #E0EBF3;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
- 
+
 .drop-zone-format::after {
     transition: opacity 0.4s ease-in-out;
 }
- 
+
 .drop-zone-invis {
     display: none;
 }
- 
-.drop-zone-close {
-    font-size: 28px;
-    position: relative;
-}
- 
+
+/*.drop-zone-btns {*/
+    /*right: 8px;*/
+    /*top: 2px;*/
+    /*position: relative;*/
+/*}*/
+
 .dz-share {
     position: absolute;
     bottom: 29px;
@@ -176,27 +178,93 @@
     -moz-transition: color .4s ease;
     -o-transition: color .4s ease;
     transition: color 0.4s ease;
- 
+
 }
- 
+
 .dz-share:hover {
     color: #337ab7;
 }
- 
+
 .dz-p {
     border-bottom: 2px solid #999;
     margin: auto;
     width: 100%;
-    font-weight: bold;
     margin-top: 10px;
+    text-align:center;
+    padding-left: 15px;
+    color: rgba(51, 51, 51, 0.68);
 }
- 
-.dz-drag-hover {
-    border-color: #52A452;
-    background: rgba(255, 255, 255, 0.2);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-}
- 
+
 .dz-font {
     font-size: 22px;
+}
+
+.dz-cursor-default {
+    cursor: default;
+}
+
+.dz-body-height {
+    min-height: 175px;
+}
+
+.dz-share {
+    position: absolute;
+    top: 9px;
+    left: 300px;
+    height: 0px;
+    line-height: 30px;
+    cursor: pointer;
+     -webkit-transition: color .4s ease;
+    -moz-transition: color .4s ease;
+    -o-transition: color .4s ease;
+    transition: color 0.4s ease;
+
+}
+
+.dz-share:hover {
+    color: #337ab7;
+}
+.fileicon{
+  margin-right:5px;
+  font-size:12px;
+}
+
+.share-url{
+    width:150px;
+    overflow:hidden;
+    white-space: nowrap;
+}
+
+.copy{
+    background-color: rgba(82, 164, 82, 0.29);
+}
+
+.panel-footer {
+    margin:10px;
+    border-top: 0px;
+    background-color: transparent;
+}
+
+.quick-search-table {
+    margin-bottom: 50px;
+    }
+
+#ShareButton{
+margin-right:5px;
+}
+
+.glyphicon {
+    margin-left: 4px;
+    margin-right:2px;
+}
+
+.panel-heading{
+   cursor:pointer;
+}
+
+.dz-progress-upload{
+    position:absolute!important;
+    left: 330px!important;
+    top:18px!important;
+    width:50%!important;
 }
