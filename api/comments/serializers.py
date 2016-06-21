@@ -174,6 +174,8 @@ class CommentCreateSerializer(CommentSerializer):
             comment = Comment.create(auth=auth, **validated_data)
         except PermissionsError:
             raise PermissionDenied('Not authorized to comment on this project.')
+        except ValidationValueError:
+            raise ValidationError('Ensure this field has no more than 500 characters.')
         return comment
 
 
