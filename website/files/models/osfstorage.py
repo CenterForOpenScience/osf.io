@@ -38,8 +38,8 @@ class OsfStorageFileNode(FileNode):
         return cls.create(node=node, path=path)
 
     @classmethod
-    def get_file_guids(cls, materialized_path, provider, node=None, guids=None):
-        guids = guids or []
+    def get_file_guids(cls, materialized_path, provider, node=None):
+        guids = []
         path = materialized_path.strip('/')
         file_obj = cls.load(path)
         if not file_obj:
@@ -47,7 +47,7 @@ class OsfStorageFileNode(FileNode):
 
         if not file_obj.is_file:
             for item in file_obj.children:
-                cls.get_file_guids(item.path, provider, node=node, guids=guids)
+                guids.extend(cls.get_file_guids(item.path, provider, node=node))
         else:
             try:
                 guid = Guid.find(Q('referent', 'eq', file_obj))[0]
@@ -55,6 +55,7 @@ class OsfStorageFileNode(FileNode):
                 guid = None
             if guid:
                 guids.append(guid._id)
+
         return guids
 
     @property
