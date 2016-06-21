@@ -468,10 +468,9 @@ def root(request, format=None):
             'registrations': absolute_reverse('registrations:registration-list'),
             'institutions': absolute_reverse('institutions:institution-list'),
             'licenses': absolute_reverse('licenses:license-list'),
+            'metaschemas': absolute_reverse('metaschemas:metaschema-list'),
         }
     }
-    if settings.DEV_MODE:
-        return_val['links']['metaschemas'] = absolute_reverse('metaschemas:metaschema-list')
 
     return Response(return_val)
 
