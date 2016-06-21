@@ -230,7 +230,7 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
     # The type of root_target: node/files
     page = fields.StringField()
     content = fields.StringField(required=True,
-                                 validate=[MaxLengthValidator(settings.COMMENT_MAXLENGTH), validators.string_required])
+                                 validate=[validators.comment_maxlength(settings.COMMENT_MAXLENGTH), validators.string_required])
     # The mentioned users
     ever_mentioned = fields.ListField(fields.StringField())
 

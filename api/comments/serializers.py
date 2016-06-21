@@ -2,6 +2,7 @@ import bleach
 
 from rest_framework import serializers as ser
 from modularodm import Q
+from modularodm.exceptions import ValidationValueError
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 from framework.guid.model import Guid
@@ -37,7 +38,7 @@ class CommentSerializer(JSONAPISerializer):
 
     id = IDField(source='_id', read_only=True)
     type = TypeField()
-    content = AuthorizedCharField(source='get_content', required=True, max_length=osf_settings.COMMENT_MAXLENGTH)
+    content = AuthorizedCharField(source='get_content', required=True)
     page = ser.CharField(read_only=True)
 
     target = TargetField(link_type='related', meta={'type': 'get_target_type'})
@@ -94,6 +95,7 @@ class CommentSerializer(JSONAPISerializer):
     def update(self, comment, validated_data):
         assert isinstance(comment, Comment), 'comment must be a Comment'
         auth = Auth(self.context['request'].user)
+
         if validated_data:
             if validated_data.get('is_deleted', None) is False and comment.is_deleted:
                 try:
@@ -111,6 +113,8 @@ class CommentSerializer(JSONAPISerializer):
                     comment.edit(content, auth=auth, save=True)
                 except PermissionsError:
                     raise PermissionDenied('Not authorized to edit this comment.')
+                except ValidationValueError:
+                    raise ValidationError('Ensure this field has no more than 500 characters.')
         return comment
 
     def get_target_type(self, obj):
