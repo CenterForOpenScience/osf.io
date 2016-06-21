@@ -13,7 +13,7 @@ from website.files.models import (
 
 from api.base.exceptions import Gone
 from api.base.permissions import PermissionWithGetter
-from api.base.utils import get_object_or_error
+from api.base.utils import get_object_or_error, is_bulk_request
 from api.base.views import JSONAPIBaseView
 from api.base.filters import ListFilterMixin
 from api.base import generic_bulk_views as bulk_views
@@ -377,7 +377,14 @@ class FileList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMixin
         return list(files_list.children)
 
     def get_queryset(self):
-        return self.get_queryset_from_request()
+        queryset = self.get_queryset_from_request()
+
+        # If bulk request, queryset only contains contributors in request
+        if is_bulk_request(self.request):
+            file_ids = [item['id'] for item in self.request.data]
+            queryset[:] = [file for file in queryset if file._id in file_ids]
+
+        return queryset
 
 
 class FileVersionsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
