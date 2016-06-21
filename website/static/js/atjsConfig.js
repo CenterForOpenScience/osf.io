@@ -10,21 +10,37 @@ require('Caret.js');
 require('At.js');
 
 // preventing unexpected contenteditable behavior
-var onPaste = function(e){
+
+// prevent pasting HTML
+var onPaste = function(e) {
     e.preventDefault();
     var pasteText = e.originalEvent.clipboardData.getData('text/plain');
     document.execCommand('insertHTML', false, pasteText);
 };
 
-// remove br if no text
+// prevent bold, italic, underline
+var preventKeyboardShortcuts = function(e) {
+    var k = e.keyCode;
+    var c = e.ctrlKey || e.metaKey;
+
+    // bold, italic, underline
+    if ((k === 66 && c) || (k === 73 && c) || (k === 85 && c)){
+        e.preventDefault();
+    } else {
+        return;
+    }
+
+};
+
+// remove <br> if no text
 var onlyElementBr = function() {
     if (this.innerText.trim() === '') {
         this.innerHTML = '';
     }
 };
 
-// make sure br is always the lastChild of contenteditable so return works properly
-var lastElementBr = function(){
+// ensure <br> is the lastChild of contenteditable so return works on first enter
+var lastElementBr = function() {
     if (!this.lastChild || this.lastChild.nodeName.toLowerCase() !== 'br') {
         this.appendChild(document.createElement('br'));
     }
@@ -151,5 +167,6 @@ module.exports = {
     onPaste: onPaste,
     lastElementBr: lastElementBr,
     onlyElementBr: onlyElementBr,
-    onReturn: onReturn
+    onReturn: onReturn,
+    preventKeyboardShortcuts: preventKeyboardShortcuts
 };
