@@ -9,7 +9,7 @@ from . import defaults
 
 DEV_MODE = True
 DEBUG_MODE = True  # Sets app to debug mode, turns off template caching, etc.
-SECURE_MODE = not DEBUG_MODE  # Disable osf cookie secure and httponly
+SECURE_MODE = not DEBUG_MODE  # Disable osf cookie secure
 
 PROTOCOL = 'https://' if SECURE_MODE else 'http://'
 DOMAIN = PROTOCOL + 'localhost:5000/'

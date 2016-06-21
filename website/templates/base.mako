@@ -195,8 +195,7 @@
                 },
                 allInstitutions: ${ all_institutions | sjson, n},
                 popular: ${ popular_links_node | sjson, n },
-                newAndNoteworthy: ${ noteworthy_links_node | sjson, n },
-                maintenance: ${ maintenance | sjson, n}
+                newAndNoteworthy: ${ noteworthy_links_node | sjson, n }
             });
         </script>
 
@@ -284,18 +283,6 @@
 <%def name="content_wrap()">
     <div class="watermarked">
         <div class="container ${self.container_class()}">
-            % if maintenance:
-            ## Maintenance alert
-            <div id="maintenance" class="scripted alert alert-info alert-dismissible" role="alert">
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                    <span aria-hidden="true">&times;</span></button>
-                <strong>Notice:</strong> The site will undergo maintenance between
-                <span id="maintenanceTime"></span>.
-                Thank you for your patience.
-            </div>
-            ## End Maintenance alert
-            % endif
-
             % if status:
                 ${self.alert()}
             % endif

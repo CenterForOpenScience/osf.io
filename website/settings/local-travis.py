@@ -13,7 +13,7 @@ DB_PORT = 27017
 
 DEV_MODE = True
 DEBUG_MODE = True  # Sets app to debug mode, turns off template caching, etc.
-SECURE_MODE = not DEBUG_MODE  # Disable secure and httponly cookie
+SECURE_MODE = not DEBUG_MODE  # Disable osf secure cookie
 
 PROTOCOL = 'https://' if SECURE_MODE else 'http://'
 DOMAIN = PROTOCOL + 'localhost:5000/'
