@@ -32,7 +32,7 @@ def _make_topic_content(node):
 
     project_node = _get_project_node(node)
 
-    topic_content = '`' + node_title + '`'
+    topic_content = ''#'`' + node_title + '`'
     topic_content += '\nThis is the discussion topic for ' + node_description + '.\n'
     topic_content += '\nContributors: ' + ', '.join(map(lambda c: c.display_full_name(), project_node.contributors))
     topic_content += '\nDate Created: ' + node.date_created.strftime("%Y-%m-%d %H:%M:%S")
@@ -68,9 +68,11 @@ def create_topic(node):
     project_node = _get_project_node(node)
     get_or_create_group_id(project_node) # insure existance of the group
     data['target_usernames'] = project_node._id
-    data['title'] = node.guid_id
+    data['title'] = node.label
     data['raw'] = _make_topic_content(node)
-    data['tags[]'] = _get_topic_tags(node)
+    #data['tags[]'] = _get_topic_tags(node)
+    data['project_guid'] = project_node._id
+    data['topic_guid'] = node.guid_id
 
     result = request('post', '/posts', data)
 
@@ -109,11 +111,10 @@ def update_topic_privacy(node):
 
     return result
 
-def update_topic_title_tags(node):
+def update_topic_title(node):
     data = {}
-    data['title'] = node.guid_id
-    data['tags[]'] = _get_topic_tags(node)
-    return request('put', '/t/' + url.args['title'] + '/' + str(node.discourse_topic_id), data)
+    data['title'] = node.label
+    return request('put', '/t/' + node.guid_id + '/' + str(node.discourse_topic_id), data)
 
 def get_or_create_topic_id(node):
     if node is None:

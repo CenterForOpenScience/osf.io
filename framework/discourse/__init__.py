@@ -12,6 +12,7 @@ def sync_project(project_node):
     from modularodm import Q
 
     sync_group(project_node)
+    update_topic_title(project_node)
     update_topic_content(project_node)
     update_topic_privacy(project_node)
 

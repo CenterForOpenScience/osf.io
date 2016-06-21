@@ -1,7 +1,7 @@
 from .common import *
 from .users import *
 
-def create_group(project_node):
+def _create_group(project_node):
     data = {}
     data['name'] = project_node._id
     data['visible'] = 'true' if project_node.is_public else 'false'
@@ -11,11 +11,20 @@ def create_group(project_node):
     group_id = result['basic_group']['id']
     project_node.discourse_group_id = group_id
     project_node.save()
+
+    return result
+
+def create_group(project_node):
+    result = _create_group(project_node)
+
+    users = [get_username(user) for user in project_node.contributors if user.username]
+    add_group_users(project_node, users)
+
     return result
 
 def get_or_create_group_id(project_node):
     if project_node.discourse_group_id is None:
-        sync_group(project_node)
+        create_group(project_node)
     return project_node.discourse_group_id
 
 def update_group_visibility(project_node):

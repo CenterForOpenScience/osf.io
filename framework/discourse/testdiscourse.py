@@ -25,7 +25,7 @@ class TestDiscourse(DbTestCase):
         self.user2 = UserFactory()
         self.user2.discourse_user_created = False
         self.project_node = literal(label='The Test Project', _id='test1234',
-                               contributors=[self.user1, self.user2], is_public=False,
+                               contributors=[self.user1], is_public=False,
                                discourse_group_id=None, discourse_topic_id=None,
                                discourse_post_id=None, category='Project',
                                description=None, license=None,
@@ -53,6 +53,7 @@ class TestDiscourse(DbTestCase):
         delete_group(self.project_node)
         time.sleep(0.125)
 
+        self.project_node.contributors = [self.user1, self.user2]
         sync_group(self.project_node)
         self.assertEquals(len(get_group_users(self.project_node)), 2)
         time.sleep(0.125)
@@ -117,6 +118,14 @@ class TestDiscourse(DbTestCase):
         self.assertEquals(topic_json['archetype'], 'private_message')
         self.assertEquals(topic_json['details']['allowed_groups'][0]['name'], self.project_node._id)
         self.assertEquals(topic_json['tags'], [self.project_node._id])
+
+    def test_custom_fields(self):
+        create_topic(self.project_node)
+        topic_json = get_topic(self.project_node)
+        self.assertEquals(topic_json['project_guid'], self.project_node._id)
+        self.assertEquals(topic_json['topic_guid'], self.project_node._id)
+        self.assertEquals(topic_json['slug'], self.project_node._id)
+        self.assertEquals(topic_json['title'], self.project_node.label)
 
 if __name__ == '__main__':
     unittest.main()
