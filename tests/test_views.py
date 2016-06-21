@@ -2884,9 +2884,9 @@ class TestPointerViews(OsfTestCase):
     def test_pointer_list_read_contributor_cannot_remove_public_component_entry(self):
         url = web_url_for('view_project', pid=self.project._id)
 
-        linked_to = ProjectFactory(creator=self.user)
-        linked_to.update(fields={'is_public':1})
-        self.project.add_pointer(linked_to, auth=Auth(user=self.user))
+        self.project.add_pointer(ProjectFactory(creator=self.user,
+                                                is_public=True),
+                                 auth=Auth(user=self.user))
 
         user2 = AuthUserFactory()
         self.project.add_contributor(user2,
