@@ -511,6 +511,8 @@ CommentModel.prototype.autosizeText = function(elm) {
         .keydown(function(e) {
             if(e.which === 13 && !e.isDefaultPrevented()) {
                 atjsConfig.onReturn(e);
+            } else {
+                atjsConfig.preventKeyboardShortcuts(e);
             }
         });
 };
@@ -834,6 +836,8 @@ var init = function(commentLinkSelector, commentPaneSelector, options) {
         .keydown(function(e) {
             if(e.which === 13 && !e.isDefaultPrevented()) {
                 atjsConfig.onReturn(e);
+            } else {
+                atjsConfig.preventKeyboardShortcuts(e);
             }
         });
     var cp = new CommentPane(commentPaneSelector, {
