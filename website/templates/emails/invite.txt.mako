@@ -12,6 +12,11 @@ Once you have set a password, you will be able to make contributions to ${node.t
 
 If you are not ${fullname} or you are erroneously being associated with ${node.title} then email contact@osf.io with the subject line "Claiming Error" to report the problem.
 
+To preview ${node.title} click the following link: ${node.absolute_url}
+
+(NOTE: if this project is private, you will not be able to view it until you have confirmed your account)
+
+
 Sincerely,
 
 Open Science Framework Robot

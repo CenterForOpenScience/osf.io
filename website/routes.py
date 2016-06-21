@@ -9,7 +9,6 @@ from framework import status
 from framework import sentry
 from framework.auth import cas
 from framework.routing import Rule
-from framework.mongo import database
 from framework.flask import redirect
 from framework.routing import WebRenderer
 from framework.exceptions import HTTPError
@@ -31,6 +30,7 @@ from website import language
 from website.util import metrics
 from website.util import paths
 from website.util import sanitize
+from website import maintenance
 from website.models import Institution
 from website import landing_pages as landing_page_views
 from website import views as website_views
@@ -104,6 +104,7 @@ def get_globals():
         'enable_institutions': settings.ENABLE_INSTITUTIONS,
         'keen_project_id': settings.KEEN_PROJECT_ID,
         'keen_write_key': settings.KEEN_WRITE_KEY,
+        'maintenance': maintenance.get_maintenance(),
     }
 
 def is_private_link_anonymous_view():
