@@ -1,7 +1,7 @@
 {
     "name": "AsPredicted Preregistration",
     "version": 2,
-    "description": "You will be asked to answer 8 questions about your study. This preregistration uses the content recommend on the website AsPredicted.org.",
+    "description": "You will be asked to answer 8 questions about your study. This preregistration uses the content recommended on the website AsPredicted.org.",
     "pages": [{
         "title": "AsPredicted Preregistration",
         "id": "page1",
