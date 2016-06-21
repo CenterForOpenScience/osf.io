@@ -931,8 +931,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
     alternative_citations = fields.ForeignField('alternativecitation', list=True)
 
-    notification_settings_dirty = fields.BooleanField(default=False)
-
     _meta = {
         'optimistic': True,
     }
@@ -2231,6 +2229,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         # Need this save in order to access _primary_key
         forked.save()
 
+        # Need to call this after save for the notifications to be created with the _primary_key
+        project_signals.contributor_added.send(forked, contributor=user, auth=auth)
+
         forked.add_log(
             action=NodeLog.NODE_FORKED,
             params={
@@ -3048,7 +3049,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             if save:
                 self.save()
 
-            project_signals.contributor_added.send(self, contributor=contributor, auth=auth)
+            if self._id:
+                project_signals.contributor_added.send(self, contributor=contributor, auth=auth)
 
             return True
 
@@ -3360,6 +3362,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         page = self.get_wiki_page(key)
 
         del self.wiki_pages_current[key]
+        if key != 'home':
+            del self.wiki_pages_versions[key]
 
         self.add_log(
             action=NodeLog.WIKI_DELETED,
@@ -3492,7 +3496,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if not self._is_embargo_date_valid(end_date):
             if (end_date - datetime.datetime.utcnow()) >= settings.EMBARGO_END_DATE_MIN:
                 raise ValidationValueError('Registrations can only be embargoed for up to four years.')
-            raise ValidationValueError('Embargo end date must be more than one day in the future')
+            raise ValidationValueError('Embargo end date must be at least three days in the future.')
 
         embargo = self._initiate_embargo(user, end_date, for_existing_registration=for_existing_registration, notify_initiator_on_complete=notify_initiator_on_complete)
 

@@ -179,7 +179,7 @@ def get_configured_projects(user):
         if (
             not isinstance(node, Node) or
             (user in subscription.none and not node.parent_id) or
-            not node.notification_settings_dirty or
+            node._id not in user.notifications_configured or
             node.is_collection
         ):
             continue

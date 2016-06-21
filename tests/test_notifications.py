@@ -264,6 +264,42 @@ class TestNotificationsModels(OsfTestCase):
         assert_equal(len(comments_subscription.email_transactional), 1)
         assert_equal(len(mentions_subscription.email_transactional), 1)
 
+    def test_new_fork_creator_is_subscribed_with_default_global_settings(self):
+        user = factories.UserFactory()
+        project = factories.ProjectFactory(creator=user)
+
+        factories.NotificationSubscriptionFactory(
+            _id=user._id + '_' + 'global_comments',
+            owner=user,
+            event_name='global_comments'
+        ).add_user_to_subscription(user, 'email_transactional')
+
+        factories.NotificationSubscriptionFactory(
+            _id=user._id + '_' + 'global_file_updated',
+            owner=user,
+            event_name='global_file_updated'
+        ).add_user_to_subscription(user, 'email_transactional')
+
+        node = factories.ForkFactory(project=project)
+
+        user_subscriptions = list(utils.get_all_user_subscriptions(user))
+        event_types = [sub.event_name for sub in user_subscriptions]
+
+        node_file_updated_subscription = NotificationSubscription.find_one(Q('_id', 'eq', node._id + '_file_updated'))
+        node_comments_subscription = NotificationSubscription.find_one(Q('_id', 'eq', node._id + '_comments'))
+        project_file_updated_subscription = NotificationSubscription.find_one(Q('_id', 'eq', project._id + '_file_updated'))
+        project_comments_subscription = NotificationSubscription.find_one(Q('_id', 'eq', project._id + '_comments'))
+
+        assert_equal(len(user_subscriptions), 6)  # subscribed to project, fork, and user settings
+        assert_in('file_updated', event_types)
+        assert_in('comments', event_types)
+        assert_in('global_file_updated', event_types)
+        assert_in('global_comments', event_types)
+        assert_equal(len(node_file_updated_subscription.email_transactional), 1)
+        assert_equal(len(node_comments_subscription.email_transactional), 1)
+        assert_equal(len(project_file_updated_subscription.email_transactional), 1)
+        assert_equal(len(project_comments_subscription.email_transactional), 1)
+
     def test_new_node_creator_is_not_subscribed_with_default_global_settings(self):
         user = factories.UserFactory()
 
@@ -436,9 +472,9 @@ class TestSubscriptionView(OsfTestCase):
         for n in constants.NOTIFICATION_TYPES:
             assert_false(self.node.creator in getattr(s, n))
 
-    def test_configure_subscription_flips_notification_settings_dirty(self):
-        project = factories.ProjectFactory()
-        assert_false(project.notification_settings_dirty)
+    def test_configure_subscription_adds_node_id_to_notifications_configured(self):
+        project = factories.ProjectFactory(creator=self.user)
+        assert_false(project._id in self.user.notifications_configured)
         payload = {
             'id': project._id,
             'event': 'comments',
@@ -447,9 +483,9 @@ class TestSubscriptionView(OsfTestCase):
         url = api_url_for('configure_subscription')
         self.app.post_json(url, payload, auth=project.creator.auth)
 
-        project.reload()
+        self.user.reload()
 
-        assert_true(project.notification_settings_dirty)
+        assert_true(project._id in self.user.notifications_configured)
 
 
 class TestRemoveContributor(OsfTestCase):
@@ -471,7 +507,7 @@ class TestRemoveContributor(OsfTestCase):
         self.node.save()
 
         self.node_subscription = NotificationSubscription.find_one(Q(
-                '_id', 'eq', self.node._id + '_comments') & Q('owner', 'eq', self.node)
+            '_id', 'eq', self.node._id + '_comments') & Q('owner', 'eq', self.node)
         )
         self.node_subscription.add_user_to_subscription(self.node.creator, 'email_transactional')
 
@@ -605,13 +641,16 @@ class TestNotificationUtils(OsfTestCase):
     def setUp(self):
         super(TestNotificationUtils, self).setUp()
         self.user = factories.UserFactory()
-        self.project = factories.ProjectFactory(creator=self.user, notification_settings_dirty=True)
+        self.project = factories.ProjectFactory(creator=self.user)
 
         self.project_subscription = NotificationSubscription.find_one(
             Q('owner', 'eq', self.project) &
             Q('_id', 'eq', self.project._id + '_comments') &
             Q('event_name', 'eq', 'comments')
         )
+
+        self.user.notifications_configured[self.project._id] = True
+        self.user.save()
 
         self.node = factories.NodeFactory(parent=self.project, creator=self.user)
 
@@ -712,8 +751,8 @@ class TestNotificationUtils(OsfTestCase):
         node_comments_subscription.email_transactional.append(node.creator)
         node_comments_subscription.save()
 
-        node.notification_settings_dirty = True
-        node.save()
+        node.creator.notifications_configured[node._id] = True
+        node.creator.save()
         configured_project_ids = utils.get_configured_projects(node.creator)
         assert_in(private_project._id, configured_project_ids)
 
@@ -814,8 +853,8 @@ class TestNotificationUtils(OsfTestCase):
         project = factories.ProjectFactory()
         pointed = factories.ProjectFactory()
         project.add_pointer(pointed, Auth(project.creator))
-        project.notification_settings_dirty = True
-        project.save()
+        project.creator.notifications_configured[project._id] = True
+        project.creator.save()
         configured_project_ids = utils.get_configured_projects(project.creator)
         data = utils.format_data(project.creator, configured_project_ids)
         event = {
@@ -845,8 +884,8 @@ class TestNotificationUtils(OsfTestCase):
         node_comments_subscription.email_transactional.append(node.creator)
         node_comments_subscription.save()
 
-        node.notification_settings_dirty = True
-        node.save()
+        node.creator.notifications_configured[node._id] = True
+        node.creator.save()
         configured_project_ids = utils.get_configured_projects(node.creator)
         data = utils.format_data(node.creator, configured_project_ids)
         event = {

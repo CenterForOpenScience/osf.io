@@ -301,10 +301,8 @@ function _fangornGithubTitle(item, col)  {
     if (item.data.addonFullname) {
         var urlParams = $osf.urlParams();
         
-        if (!item.data.branch) {
-            if (urlParams.branch && urlParams.branch != item.data.branch) {
-                item.data.branch = urlParams.branch;
-            }
+        if (!item.data.branch && urlParams.branch) {
+            item.data.branch = urlParams.branch;
         }
         var branch = item.data.branch || item.data.defaultBranch;
         
@@ -327,7 +325,6 @@ function _fangornGithubTitle(item, col)  {
 
 function _fangornColumns (item) {
     var tb = this;
-    var selectClass = '';
     var node = item.parent().parent();
     var columns = [];
     columns.push({
@@ -340,11 +337,27 @@ function _fangornColumns (item) {
     if(tb.options.placement === 'project-files') {
         columns.push(
         {
-            data  : 'downloads',
+            data  : 'size',
+            sortInclude : false,
             filter : false,
-            css : ''
+            custom : function() {return item.data.size ? $osf.humanFileSize(item.data.size, true) : '';}
         });
     }
+
+    if(tb.options.placement === 'project-files') {
+        columns.push(
+        {
+            data  : 'downloads',
+            sortInclude : false,
+            filter : false,
+            custom : function() {return m('');}
+        });
+    }
+    columns.push({
+        data : 'modified',
+        filter: false,
+        custom : function() {return m('');}
+    });
     return columns;
 }
 
