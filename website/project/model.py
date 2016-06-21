@@ -2376,26 +2376,30 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 self.save()
 
     def add_citation(self, auth, save=False, log=True, citation=None, **kwargs):
-        if not citation:
-            citation = AlternativeCitation(**kwargs)
-        citation.save()
-        self.alternative_citations.append(citation)
-        citation_dict = {'name': citation.name, 'text': citation.text}
-        if log:
-            self.add_log(
-                action=NodeLog.CITATION_ADDED,
-                params={
-                    'node': self._primary_key,
-                    'citation': citation_dict
-                },
-                auth=auth,
-                save=False
-            )
-            if save:
-                self.save()
-        return citation
-
+        if not self.is_public_files_collection:
+            if not citation:
+                citation = AlternativeCitation(**kwargs)
+            citation.save()
+            self.alternative_citations.append(citation)
+            citation_dict = {'name': citation.name, 'text': citation.text}
+            if log:
+                self.add_log(
+                    action=NodeLog.CITATION_ADDED,
+                    params={
+                        'node': self._primary_key,
+                        'citation': citation_dict
+                    },
+                    auth=auth,
+                    save=False
+                )
+                if save:
+                    self.save()
+            return citation
+        else:
+            raise NodeStateError('Public Files collections cannot have citations')
     def edit_citation(self, auth, instance, save=False, log=True, **kwargs):
+        if self.is_public_files_collection:
+            return False
         citation = {'name': instance.name, 'text': instance.text}
         new_name = kwargs.get('name', instance.name)
         new_text = kwargs.get('text', instance.text)
@@ -2421,6 +2425,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         return instance
 
     def remove_citation(self, auth, instance, save=False, log=True):
+        if self.is_public_files_collection:
+            return False
         citation = {'name': instance.name, 'text': instance.text}
         self.alternative_citations.remove(instance)
         if log:

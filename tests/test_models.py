@@ -4730,5 +4730,11 @@ class TestPublicFiles(OsfTestCase):
         self.project.set_privacy('private', self.auth)
         assert_equal(self.project.is_public,True)
 
+    def test_citations_for_public_files(self):
+        with assert_raises(NodeStateError):
+            self.project.add_citation(self.auth)
+        assert_equal(self.project.edit_citation(self.auth,{})  , False)
+        assert_equal(self.project.remove_citation(self.auth,{}), False)
+
 if __name__ == '__main__':
     unittest.main()

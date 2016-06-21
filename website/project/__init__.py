@@ -124,7 +124,7 @@ def new_public_files_collection(user):
     if existing_public_files_collections.count() > 0:
         raise NodeStateError("Users may only have one public files collection")
 
-    title = user.fullname + "'s Public Files"
+    title = "Public Files"
 
     node = Node(
         title=title,
