@@ -64,7 +64,7 @@ var LogFeed = {
                 self.totalPages = Math.ceil(result.links.meta.total / result.links.meta.per_page);
             }
             self.logRequestPending(true);
-            var promise = m.request({method : 'GET', url : url, config : mHelpers.apiV2Config});
+            var promise = m.request({method : 'GET', url : url, config: mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain})});
             promise.then(
                 function(result) {
                     _processResults(result);

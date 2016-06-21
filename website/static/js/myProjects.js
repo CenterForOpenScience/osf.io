@@ -93,7 +93,7 @@ NodeFetcher.prototype = {
     this._continue = true;
     if (!this.nextLink) return this._promise = null;
     if (this._promise) return this._promise;
-    return this._promise = m.request({method: 'GET', url: this.nextLink, config: mHelpers.apiV2Config, background: true})
+    return this._promise = m.request({method: 'GET', url: this.nextLink, config: mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain}), background: true})
       .then(function(results) {this._promise = null; return results;}.bind(this))
       .then(this._success.bind(this), this._fail.bind(this))
       .then((function() {
@@ -150,7 +150,7 @@ NodeFetcher.prototype = {
   fetch: function(id) {
     // TODO This method is currently untested
     var url =  $osf.apiV2Url(this.type + '/' + id + '/', {query: {related_counts: 'children', embed: 'contributors' }});
-    return m.request({method: 'GET', url: url, config: mHelpers.apiV2Config, background: true})
+    return m.request({method: 'GET', url: url, config: mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain}), background: true})
       .then((function(result) {
         this.add(result.data);
         return result.data;
@@ -158,7 +158,7 @@ NodeFetcher.prototype = {
   },
   fetchChildren: function(parent, link) {
     //TODO Allow suspending of children
-    return m.request({method: 'GET', url: link || parent.relationships.children.links.related.href + '?embed=contributors&related_counts=children', config: mHelpers.apiV2Config, background: true})
+    return m.request({method: 'GET', url: link || parent.relationships.children.links.related.href + '?embed=contributors&related_counts=children', config: mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain}), background: true})
       .then(this._childrenSuccess.bind(this, parent), this._fail.bind(this));
   },
   _success: function(results) {
@@ -375,7 +375,7 @@ var MyProjects = {
 
         // Load categories to pass in to create project
         self.loadCategories = function _loadCategories () {
-            var promise = m.request({method : 'OPTIONS', url : $osf.apiV2Url('nodes/', { query : {}}), config : mHelpers.apiV2Config});
+            var promise = m.request({method : 'OPTIONS', url : $osf.apiV2Url('nodes/', { query : {}}), config : mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain})});
             promise.then(function _success(results){
                 if(results.actions && results.actions.POST.category){
                     self.categoryList = results.actions.POST.category.choices;
@@ -422,7 +422,7 @@ var MyProjects = {
                 _processResults(cachedResults);
             } else {
                 self.logRequestPending = true;
-                var promise = m.request({method : 'GET', url : url, config : mHelpers.apiV2Config});
+                var promise = m.request({method : 'GET', url : url, config : mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain})});
                 promise.then(_processResults);
                 promise.then(function(){
                     self.logRequestPending = false;
@@ -514,7 +514,7 @@ var MyProjects = {
             m.request({
                 method : 'DELETE',
                 url : collectionNode.links.self + 'relationships/' + 'linked_nodes/',  //collection.links.self + 'node_links/' + item.data.id + '/', //collection.links.self + relationship/ + linked_nodes/
-                config : mHelpers.apiV2Config,
+                config : mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain}),
                 data : data
             }).then(function(result) {
               data.data.forEach(function(item) {
@@ -793,7 +793,7 @@ var MyProjects = {
         self.collectionsPageSize = m.prop(5);
         // Load collection list
         self.loadCollections = function _loadCollections (url){
-            var promise = m.request({method : 'GET', url : url, config : mHelpers.apiV2Config});
+            var promise = m.request({method : 'GET', url : url, config : mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain})});
             promise.then(function(result){
                 result.data.forEach(function(node){
                     var count = node.relationships.linked_nodes.links.related.meta.count;
@@ -1082,7 +1082,7 @@ var Collections = {
                     }
                 }
             };
-            var promise = m.request({method : 'POST', url : url, config : mHelpers.apiV2Config, data : data});
+            var promise = m.request({method : 'POST', url : url, config : mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain}), data : data});
             promise.then(function(result){
                 var node = result.data;
                 var count = node.relationships.linked_nodes.links.related.meta.count || 0;
@@ -1114,7 +1114,7 @@ var Collections = {
         },
         self.deleteCollection = function _deleteCollection(){
             var url = self.collectionMenuObject().item.data.node.links.self;
-            var promise = m.request({method : 'DELETE', url : url, config : mHelpers.apiV2Config});
+            var promise = m.request({method : 'DELETE', url : url, config : mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain})});
             promise.then(function(result){
                 for ( var i = 0; i < self.collections().length; i++) {
                     var item = self.collections()[i];
@@ -1149,7 +1149,7 @@ var Collections = {
                     }
                 }
             };
-            var promise = m.request({method : 'PATCH', url : url, config : mHelpers.apiV2Config, data : data});
+            var promise = m.request({method : 'PATCH', url : url, config : mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain}), data : data});
             promise.then(function(result){
                 self.collectionMenuObject().item.label = title;
             }, function(){
@@ -1188,7 +1188,7 @@ var Collections = {
                       m.request({
                           method : 'POST',
                           url : collection.data.node.links.self + 'relationships/linked_nodes/',
-                          config : mHelpers.apiV2Config,
+                          config : mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain}),
                           data : data[index]
                       }).then(function(result){
                           if (result){
