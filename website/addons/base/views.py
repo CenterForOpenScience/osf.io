@@ -689,6 +689,7 @@ def addon_view_file(auth, node, file_node, version):
             'sharejs': wiki_settings.SHAREJS_URL,
             'gravatar': get_gravatar(auth.user, 25),
             'files': node.web_url_for('collect_file_trees'),
+            'archived_from': get_archived_from_url(node, file_node) if node.is_registration else None,
         },
         'error': error,
         'file_name': file_node.name,
@@ -709,3 +710,11 @@ def addon_view_file(auth, node, file_node, version):
 
     ret.update(rubeus.collect_addon_assets(node))
     return ret
+
+
+def get_archived_from_url(node, file_node):
+    if file_node.copied_from:
+        trashed = TrashedFileNode.load(file_node.copied_from._id)
+        if not trashed:
+            return node.registered_from.web_url_for('addon_view_or_download_file', provider=file_node.provider, path=file_node.copied_from._id)
+    return None
