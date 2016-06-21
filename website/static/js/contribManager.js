@@ -460,7 +460,7 @@ function ContribManager(selector, contributors, adminContributors, user, isRegis
 }
 
 ContribManager.prototype.init = function() {
-    ko.applyBindings(this.viewModel, this.$element[0]);
+    $osf.applyBindings(this.viewModel, this.$element[0]);
     this.$element.show();
 };
 
