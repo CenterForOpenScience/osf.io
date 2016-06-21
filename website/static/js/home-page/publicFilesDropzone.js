@@ -74,13 +74,9 @@ var PublicFilesDropzone = {
             },
  
             success: function (file, xhr) {
-                buttonContainer = document.createElement('div');
-                file.previewElement.appendChild(buttonContainer);
- 
-                var fileJson = JSON.parse((file.xhr.response));
-                var link = waterbutler.buildDownloadUrl(fileJson.path, 'osfstorage', window.contextVars.publicFilesId, file.name, {});
-                m.render(buttonContainer, dropzonePreviewTemplate.shareButton(link));
- 
+                var link = waterbutler.buildDownloadUrl(file.xhr.response['path'], 'osfstorage', window.contextVars.publicFilesId, file.name, {});
+                $osf.mergeMithrilwithDOM(file.previewElement, dropzonePreviewTemplate.shareButton(link));
+
                 this.processQueue();
                 file.previewElement.classList.add("dz-success");
                 file.previewElement.classList.add("dz-preview-background-success");
