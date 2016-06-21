@@ -646,7 +646,7 @@ def _view_project(node, auth, primary=False):
     """
     user = auth.user
 
-    parent = node.find_readable_antecedent(auth.user)
+    parent = node.find_readable_antecedent(auth)
     if user:
         bookmark_collection = find_bookmark_collection(user)
         bookmark_collection_id = bookmark_collection._id
@@ -917,7 +917,6 @@ def get_summary(auth, node, **kwargs):
 
 @must_be_contributor_or_public
 def get_readable_descendants(auth, node, **kwargs):
-    user = auth.user
     descendants = []
     for child in node.nodes:
         if child.is_deleted:
@@ -925,7 +924,7 @@ def get_readable_descendants(auth, node, **kwargs):
         elif child.can_view(auth):
             descendants.append(child)
         else:
-            descendants.extend(child.find_readable_descendants(user))
+            descendants.extend(child.find_readable_descendants(auth))
     return _render_nodes(descendants, auth)
 
 @must_be_contributor_or_public

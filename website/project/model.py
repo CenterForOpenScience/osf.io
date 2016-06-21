@@ -1267,17 +1267,17 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
         return False
 
-    def find_readable_antecedent(self, user):
+    def find_readable_antecedent(self, auth):
         """ Returns first antecendant node readable by <user>.
         """
 
         next_parent = self.parent_node
         while next_parent:
-            if next_parent.has_permission(user, 'read'):
+            if next_parent.can_view(auth):
                 return next_parent
             next_parent = next_parent.parent_node
 
-    def find_readable_descendants(self, user):
+    def find_readable_descendants(self, auth):
         """ Returns list of first descendant node readable by <user> in
         each descendant branch.
         """
@@ -1287,13 +1287,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             if not node.primary or node.is_deleted:
                 continue
 
-            if node.has_permission(user, 'read'):
+            if node.can_view(auth):
                 ret.append(node)
             else:
                 new_branches.append(node)
 
         for node in new_branches:
-            ret.extend(node.find_readable_descendants(user))
+            ret.extend(node.find_readable_descendants(auth))
 
         return ret
 

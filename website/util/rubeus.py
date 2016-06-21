@@ -167,7 +167,7 @@ class NodeFileCollector(object):
         rv = []
         for child in node.nodes:
             if not child.can_view(self.auth):
-                readable_descendants = child.find_readable_descendants(self.auth.user)
+                readable_descendants = child.find_readable_descendants(self.auth)
                 for desc in readable_descendants:
                     visited.append(desc.resolve()._id)
                     rv.append(self._serialize_node(desc, visited=visited))
