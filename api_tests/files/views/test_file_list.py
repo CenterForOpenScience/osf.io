@@ -92,6 +92,7 @@ class TestFileLists(ApiTestCase):
 
         self.file_one = api_utils.create_test_file(self.node, self.user, filename="Man I'm the Macho")
         self.file_two = api_utils.create_test_file(self.node, self.user, filename="Like Randy")
+        self.file_three = api_utils.create_test_file(self.node, self.user, filename="The choppa go Oscar for Grammy")
 
     def test_bulk_checkout(self):
         nt.assert_equal(self.file_one.checkout, None)
