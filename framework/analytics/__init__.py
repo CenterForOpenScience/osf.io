@@ -133,7 +133,7 @@ def update_counters(rex, db=None):
         def wrapped(*args, **kwargs):
             ret = func(*args, **kwargs)
             page = build_page(rex, kwargs)
-            update_counter(page, db or database)
+            update_counter(page, db)
             return ret
         return wrapped
     return wrapper

@@ -112,7 +112,7 @@ class Figshare(object):
         if not project:
             return
         articles = self._send(
-            os.path.join(node_settings.api_url, 'projects', "{0}".format(project_id), 'articles'))
+            os.path.join(node_settings.api_url, 'projects', '{0}'.format(project_id), 'articles'))
         project['articles'] = []
         if(articles):
             project['articles'] = []
@@ -142,13 +142,13 @@ class Figshare(object):
 
     def article(self, node_settings, article_id):
         res = self._send(
-            os.path.join(node_settings.api_url, 'articles', "{0}".format(article_id)))
+            os.path.join(node_settings.api_url, 'articles', '{0}'.format(article_id)))
         return res
 
     # OTHER HELPERS
     def get_options(self):
-        projects = self._send("http://api.figshare.com/v1/my_data/projects")
-        articles = self._send("http://api.figshare.com/v1/my_data/articles")
+        projects = self._send('http://api.figshare.com/v1/my_data/projects')
+        articles = self._send('http://api.figshare.com/v1/my_data/articles')
         if projects is False or articles is False:
             return self._get_last_error()
 
@@ -158,7 +158,7 @@ class Figshare(object):
              for article in articles['items'] if article['defined_type'] == 'fileset']
 
     def categories(self):
-        return self._send("http://api.figshare.com/v1/categories")
+        return self._send('http://api.figshare.com/v1/categories')
 
     def handle_error(self, request):
         # TODO handle errors nicely

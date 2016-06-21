@@ -64,7 +64,7 @@ class FileEvent(Event):
     @property
     def event_type(self):
         """Most basic event type."""
-        return "file_updated"
+        return 'file_updated'
 
     @property
     def waterbutler_id(self):
@@ -122,7 +122,7 @@ class ComplexFileEvent(FileEvent):
         self.addon = self.node.get_addon(self.payload['destination']['provider'])
 
     def _build_message(self, html=False):
-        addon, f_type, action = tuple(self.action.split("_"))
+        addon, f_type, action = tuple(self.action.split('_'))
         # f_type is always file for the action
         if self.payload['destination']['kind'] == u'folder':
             f_type = 'folder'
