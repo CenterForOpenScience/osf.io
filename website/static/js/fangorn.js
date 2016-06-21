@@ -1132,6 +1132,38 @@ function doCheckout(item, checkout, showError) {
     });
 }
 
+function doMultipleCheckout(items, checkout, showError) {
+
+    var checkoutData = [];
+    items.forEach( function(item) {
+        checkoutData.push({
+            id: item.data.path.replace('/', ''),
+            type: 'files',
+            attributes: {
+                checkout: checkout
+            }
+        });
+    });
+
+    return $osf.ajaxJSON(
+        'PUT',
+        window.contextVars.apiV2Prefix + 'files' + items[0].data.nodeUrl + 'list/osfstorage/',
+        {
+            isCors: true,
+            data: {data: checkoutData},
+            bulk: true
+        }
+    ).done(function(xhr) {
+        if (showError) {
+            window.location.reload();
+        }
+    }).fail(function(xhr) {
+        if (showError) {
+            $osf.growl('Error', 'Unable to check out file. This is most likely due to the file being already checked-out' +
+                ' by another user.');
+        }
+    });
+}
 
 /**
  * Resolves lazy load url for fetching children
@@ -1819,17 +1851,17 @@ var FGToolbar = {
         var items = ctrl.items();
         var item = items[0];
         var dismissIcon = m.component(FGButton, {
-                onclick: ctrl.dismissToolbar,
-                icon : 'fa fa-times'
-            }, '');
-        templates[toolbarModes.FILTER] =  [
+            onclick: ctrl.dismissToolbar,
+            icon: 'fa fa-times'
+        }, '');
+        templates[toolbarModes.FILTER] = [
             m('.col-xs-9', [
                 ctrl.tb.options.filterTemplate.call(ctrl.tb)
-                ]),
-                m('.col-xs-3.tb-buttons-col',
-                    m('.fangorn-toolbar.pull-right', [dismissIcon])
-                )
-            ];
+            ]),
+            m('.col-xs-3.tb-buttons-col',
+                m('.fangorn-toolbar.pull-right', [dismissIcon])
+            )
+        ];
         if (ctrl.tb.options.placement !== 'fileview') {
             templates[toolbarModes.ADDFOLDER] = [
                 m('.col-xs-9', [
@@ -1890,29 +1922,31 @@ var FGToolbar = {
         }
         // Bar mode
         // Which buttons should show?
-        if(items.length === 1){
+        if (items.length === 1) {
             var addonButtons = resolveconfigOption.call(ctrl.tb, item, 'itemButtons', [item]);
             if (addonButtons) {
-                finalRowButtons = m.component(addonButtons, { treebeard : ctrl.tb, item : item }); // jshint ignore:line
+                finalRowButtons = m.component(addonButtons, {treebeard: ctrl.tb, item: item}); // jshint ignore:line
             } else if (ctrl.tb.options.placement !== 'fileview') {
-                finalRowButtons = m.component(FGItemButtons, {treebeard : ctrl.tb, mode : ctrl.mode, item : item }); // jshint ignore:line
+                finalRowButtons = m.component(FGItemButtons, {treebeard: ctrl.tb, mode: ctrl.mode, item: item}); // jshint ignore:line
             }
         }
-        if(ctrl.isUploading() && ctrl.tb.options.placement !== 'fileview') {
+        if (ctrl.isUploading() && ctrl.tb.options.placement !== 'fileview') {
             generalButtons.push(
                 m.component(FGButton, {
-                    onclick: function() {
+                    onclick: function () {
                         cancelAllUploads.call(ctrl.tb);
                     },
                     icon: 'fa fa-time-circle',
-                    className : 'text-danger'
+                    className: 'text-danger'
                 }, 'Cancel Pending Uploads')
             );
         }
         //multiple selection icons
-        if(items.length > 1 && ctrl.tb.multiselected()[0].data.provider !== 'github' && ctrl.tb.options.placement !== 'fileview' && !(ctrl.tb.multiselected()[0].data.provider === 'dataverse' && ctrl.tb.multiselected()[0].parent().data.version === 'latest-published') ) {
+        if (items.length > 1 && ctrl.tb.multiselected()[0].data.provider !== 'github' && ctrl.tb.options.placement !== 'fileview' && !(ctrl.tb.multiselected()[0].data.provider === 'dataverse' && ctrl.tb.multiselected()[0].parent().data.version === 'latest-published')) {
             // Special cased to not show 'delete multiple' for github or published dataverses
             var showDelete = false;
+            var showCheckout = true;
+            var showCheckin = true;
             var each, i, len;
             // Only show delete button if user has edit permissions on at least one selected file
             for (i = 0, len = items.length; i < len; i++) {
@@ -1922,16 +1956,68 @@ var FGToolbar = {
                     break;
                 }
             }
-            if(showDelete){
+            for (i = 0, len = items.length; i < len; i++) {
+                each = items[i];
+                if (!(each.data.permissions.edit && each.data.provider === 'osfstorage' && each.kind === 'file' && (!each.data.extra.checkout || each.data.extra.checkout === window.contextVars.currentUser.id))) {
+                    showCheckout = false;
+                    break;
+                }
+            }
+            //Additional check to not show the button if all the files are already checkedout by user
+            if (showCheckout) {
+                var allChecked = true;
+                for (i = 0, len = items.length; i < len; i++) {
+                    each = items[i];
+                    if (!each.data.extra.checkout) {
+                        allChecked = false;
+                        break;
+                    }
+                }
+                if (allChecked) {
+                    showCheckout = false;
+                }
+            }
+            for (i = 0, len = items.length; i < len; i++) {
+                each = items[i];
+                if (!(each.data.permissions.edit && each.data.provider === 'osfstorage' && each.kind === 'file' && each.data.extra.checkout === window.contextVars.currentUser.id)) {
+                    showCheckin = false;
+                    break;
+                }
+            }
+            if (showDelete) {
                 generalButtons.push(
                     m.component(FGButton, {
-                        onclick: function(event) {
+                        onclick: function (event) {
                             var configOption = resolveconfigOption.call(ctrl.tb, item, 'removeEvent', [event, items]); // jshint ignore:line
-                            if(!configOption){ _removeEvent.call(ctrl.tb, null, items); }
+                            if (!configOption) {
+                                _removeEvent.call(ctrl.tb, null, items);
+                            }
                         },
                         icon: 'fa fa-trash',
-                        className : 'text-danger'
-                    }, 'Delete Multiple')
+                        className: 'text-danger'
+                    }, 'Delete multiple')
+                );
+            }
+            if (showCheckout) {
+                generalButtons.push(
+                    m.component(FGButton, {
+                        onclick: function () {
+                            doMultipleCheckout(items, window.contextVars.currentUser.id, false);
+                        },
+                        icon: 'fa fa-sign-out',
+                        className: 'text-warning'
+                    }, 'Check out multiple')
+                );
+            }
+            if (showCheckin) {
+                generalButtons.push(
+                    m.component(FGButton, {
+                        onclick: function () {
+                            doMultipleCheckout(items, null, false);
+                        },
+                        icon: 'fa fa-sign-in',
+                        className: 'text-warning'
+                    }, 'Check in multiple')
                 );
             }
         }
