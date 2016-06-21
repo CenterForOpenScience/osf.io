@@ -118,7 +118,7 @@ class TestCommentModel(OsfTestCase):
         assert_equal(comment.node.logs[-1].action, NodeLog.COMMENT_ADDED)
         assert_equal([], self.comment.ever_mentioned)
 
-    def test_create_comment_content_cannot_exceed_max_length(self):
+    def test_create_comment_content_cannot_exceed_max_length_simple(self):
         with assert_raises(ValidationValueError):
             comment = Comment.create(
                 auth=self.auth,
@@ -126,8 +126,29 @@ class TestCommentModel(OsfTestCase):
                 node=self.comment.node,
                 target=self.comment.target,
                 is_public=True,
-                content=''.join(['c' for c in range(settings.COMMENT_MAXLENGTH + 1)])
+                content=''.join(['c' for c in range(settings.COMMENT_MAXLENGTH + 3)])
             )
+
+    def test_create_comment_content_cannot_exceed_max_length_complex(self):
+        with assert_raises(ValidationValueError):
+            comment = Comment.create(
+                auth=self.auth,
+                user=self.comment.user,
+                node=self.comment.node,
+                target=self.comment.target,
+                is_public=True,
+                content=''.join(['c' for c in range(settings.COMMENT_MAXLENGTH - 8)]) + '[@George Ant](/' + self.comment.user._id + '/)'
+            )
+
+    def test_create_comment_content_does_not_exceed_max_length_complex(self):
+        comment = Comment.create(
+            auth=self.auth,
+            user=self.comment.user,
+            node=self.comment.node,
+            target=self.comment.target,
+            is_public=True,
+            content=''.join(['c' for c in range(settings.COMMENT_MAXLENGTH - 12)]) + '[@George Ant](/' + self.comment.user._id + '/)'
+        )
 
     def test_create_comment_content_cannot_be_none(self):
         with assert_raises(ValidationError) as error:
