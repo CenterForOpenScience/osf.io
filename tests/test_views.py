@@ -2573,6 +2573,7 @@ class TestClaimViews(OsfTestCase):
         assert_in('login?service=', location)
         assert_in('username', location)
         assert_in('verification_key', location)
+        assert_in(self.project._primary_key, location)
 
         self.user.reload()
         assert_true(self.user.is_registered)
