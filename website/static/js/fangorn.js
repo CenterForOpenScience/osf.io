@@ -1303,7 +1303,7 @@ function _connectCheckTemplate(item){
  */
 function _fangornResolveRows(item) {
     var tb = this;
-    var default_columns = [];
+    var defaultColumns = [];
     var configOption;
     item.css = '';
     if(tb.isMultiselected(item.id)){
@@ -1334,7 +1334,7 @@ function _fangornResolveRows(item) {
             item.data.accept = item.data.accept || item.parent().data.accept;
         }
     }
-    default_columns.push(
+    defaultColumns.push(
     {
         data : 'name',  // Data field name
         folderIcons : true,
@@ -1343,21 +1343,21 @@ function _fangornResolveRows(item) {
     });
 
     if (item.data.kind === 'file') {
-        default_columns.push(
+        defaultColumns.push(
         {
             data : 'size',  // Data field name
             filter : true,
             custom : function() {return item.data.size ? $osf.humanFileSize(item.data.size, true) : '';}
         });
         if (item.data.provider === 'osfstorage') {
-            default_columns.push({
+            defaultColumns.push({
                 data : 'downloads',
                 sortInclude : false,
                 filter : false,
                 custom: function() { return item.data.extra ? item.data.extra.downloads.toString() : ''; }
             });
         } else {
-            default_columns.push({
+            defaultColumns.push({
                 data : 'downloads',
                 sortInclude : false,
                 filter : false,
@@ -1366,7 +1366,7 @@ function _fangornResolveRows(item) {
         }
     }
     configOption = resolveconfigOption.call(this, item, 'resolveRows', [item]);
-    return configOption || default_columns;
+    return configOption || defaultColumns;
 }
 
 /**
