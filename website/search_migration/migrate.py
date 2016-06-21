@@ -24,7 +24,7 @@ def migrate_nodes(index):
     logger.info('Migrating nodes to index: {}'.format(index))
     query = Q('is_public', 'eq', True) & Q('is_deleted', 'eq', False)
     total = Node.find(query).count()
-    increment = 1000
+    increment = 200
     total_pages = (total // increment) + 1
     pages = paginated(Node, query=query, increment=increment, each=False)
     for page_number, page in enumerate(pages):
