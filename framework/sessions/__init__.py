@@ -108,9 +108,8 @@ def create_session(response, data=None, user_agent=None):
         cookie_value = itsdangerous.Signer(settings.SECRET_KEY).sign(session_id)
         set_session(session)
     if response is not None:
-        httponly = settings.SESSION_COOKIE_HTTPONLY and 'MSIE 9' not in user_agent
         response.set_cookie(settings.COOKIE_NAME, value=cookie_value, domain=settings.OSF_COOKIE_DOMAIN,
-                            secure=settings.SESSION_COOKIE_SECURE, httponly=httponly)
+                            secure=settings.SESSION_COOKIE_SECURE, httponly=settings.SESSION_COOKIE_HTTPONLY)
         return response
 
 
@@ -127,11 +126,10 @@ def before_request():
     # Central Authentication Server Ticket Validation and Authentication
     ticket = request.args.get('ticket')
     if ticket:
-        user_agent = request.headers.get('User-Agent')
         service_url = furl.furl(request.url)
         service_url.args.pop('ticket')
         # Attempt autn wih CAS, and return a proper redirect response
-        return cas.make_response_from_ticket(ticket=ticket, service_url=service_url.url, user_agent=user_agent)
+        return cas.make_response_from_ticket(ticket=ticket, service_url=service_url.url)
 
     if request.authorization:
         # TODO: Fix circular import

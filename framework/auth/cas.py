@@ -220,7 +220,7 @@ def get_profile_url():
     return get_client().get_profile_url()
 
 
-def make_response_from_ticket(ticket, service_url, user_agent=None):
+def make_response_from_ticket(ticket, service_url):
     """
     Given a CAS ticket and service URL, attempt to the user and return a proper redirect response.
 
@@ -241,6 +241,6 @@ def make_response_from_ticket(ticket, service_url, user_agent=None):
         if user.verification_key:
             user.verification_key = None
             user.save()
-        return authenticate(user, access_token=cas_resp.attributes['accessToken'], response=redirect(service_furl.url), user_agent=user_agent)
+        return authenticate(user, access_token=cas_resp.attributes['accessToken'], response=redirect(service_furl.url))
     # Ticket could not be validated, unauthorized.
     return redirect(service_furl.url)
