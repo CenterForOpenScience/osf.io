@@ -1159,8 +1159,16 @@ function doMultipleCheckout(items, checkout, showError) {
         }
     }).fail(function(xhr) {
         if (showError) {
-            $osf.growl('Error', 'Unable to check out file. This is most likely due to the file being already checked-out' +
-                ' by another user.');
+            if (xhr.responseJSON.errors[0].meta) {
+                var error_object = xhr.responseJSON.errors[0].meta;
+                if (error_object.type === "api_limit") {
+                    $osf.growl('Error', 'You have reached the check out selection limit of ' + error_object.bulk_limit +
+                    '. Please select fewer items to check out at once.');
+                }
+            } else {
+                $osf.growl('Error', 'Unable to check out one of the selected files. This is most likely due to one of the files being already checked-out' +
+                    ' by another user.');
+            }
         }
     });
 }
@@ -2000,8 +2008,7 @@ var FGToolbar = {
                 generalButtons.push(
                     m.component(FGButton, {
                         onclick: function () {
-                            doMultipleCheckout(items, window.contextVars.currentUser.id, false);
-                            window.location.reload();
+                            doMultipleCheckout(items, window.contextVars.currentUser.id, true);
                         },
                         icon: 'fa fa-sign-out',
                         className: 'text-warning'
@@ -2012,8 +2019,7 @@ var FGToolbar = {
                 generalButtons.push(
                     m.component(FGButton, {
                         onclick: function () {
-                            doMultipleCheckout(items, null, false);
-                            window.location.reload();
+                            doMultipleCheckout(items, null, true);
                         },
                         icon: 'fa fa-sign-in',
                         className: 'text-warning'
