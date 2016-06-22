@@ -275,6 +275,21 @@ describe('osfHelpers', () => {
                         {withCredentials: false}
                 });
             });
+            it('calls $.ajax as PUT bulk request, and the content type is correct', () => {
+                var url = '/foo';
+                var payload = {'data':[{'bar': 42}, {'foo': 42}]};
+
+                $osf.ajaxJSON('PUT', url,
+                    {data: payload, bulk: true});
+                assert.calledOnce(stub);
+                assert.calledWith(stub, {
+                    url: url,
+                    type: 'PUT',
+                    data: JSON.stringify(payload),
+                    contentType: 'application/vnd.api+json; ext=bulk',
+                    dataType: 'json'
+                });
+            });
         });
 
         describe('postJSON', () => {
