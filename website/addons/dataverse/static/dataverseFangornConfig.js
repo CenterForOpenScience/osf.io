@@ -278,11 +278,13 @@ function _fangornColumns(item) {
             custom : function() {return m('');}
         });
     }
-    columns.push({
-        data : 'modified',
-        filter: false,
-        custom : function() {return m('');}
-    });
+    if(tb.options.placement !== 'fileview') {
+        columns.push({
+            data : 'modified',
+            filter: false,
+            custom : function() {return m('');}
+        });
+    }
     return columns;
 }
 

@@ -342,9 +342,6 @@ function _fangornColumns (item) {
             filter : false,
             custom : function() {return item.data.size ? $osf.humanFileSize(item.data.size, true) : '';}
         });
-    }
-
-    if(tb.options.placement === 'project-files') {
         columns.push(
         {
             data  : 'downloads',
@@ -353,11 +350,13 @@ function _fangornColumns (item) {
             custom : function() {return m('');}
         });
     }
-    columns.push({
-        data : 'modified',
-        filter: false,
-        custom : function() {return m('');}
-    });
+    if(tb.options.placement !== 'fileview') {
+        columns.push({
+            data : 'modified',
+            filter: false,
+            custom : function() {return m('');}
+        });
+    }
     return columns;
 }
 
