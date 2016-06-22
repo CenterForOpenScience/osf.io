@@ -302,7 +302,7 @@ def update_node(node, index=None, bulk=False):
         update_file(file_, index=index)
 
     if node.is_deleted or not node.is_public or node.archiving:
-        delete_doc(elastic_document_id, node)
+        delete_doc(elastic_document_id, node, index=index)
     else:
         try:
             normalized_title = six.u(node.title)
