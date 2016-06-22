@@ -94,6 +94,13 @@ class TestFileLists(ApiTestCase):
         self.file_two = api_utils.create_test_file(self.node, self.user, filename="Like Randy")
         self.file_three = api_utils.create_test_file(self.node, self.user, filename="The choppa go Oscar for Grammy")
 
+        self.checked_in_one = api_utils.create_test_file(self.node, self.user, filename="Hey neighbor its kinda sandy")
+        self.checked_in_two = api_utils.create_test_file(self.node, self.user, filename="I hope yall understand me")
+        self.checked_in_one.checkout = self.user
+        self.checked_in_two.checkout = self.user
+        self.checked_in_one.save()
+        self.checked_in_two.save()
+
     def test_bulk_checkout(self):
         nt.assert_equal(self.file_one.checkout, None)
         nt.assert_equal(self.file_two.checkout, None)
@@ -134,3 +141,42 @@ class TestFileLists(ApiTestCase):
         nt.assert_equal(self.file_one.checkout, self.user)
         nt.assert_equal(self.file_two.checkout, self.user)
 
+    def test_bulk_checkin(self):
+        nt.assert_equal(self.checked_in_one.checkout, self.user)
+        nt.assert_equal(self.checked_in_two.checkout, self.user)
+
+        bulk_file_payload = {
+            'data': [
+                {
+                    'id': self.checked_in_one._id,
+                    'type': 'files',
+                    'attributes': {
+                        'checkout': None,
+                    }
+                },
+                {
+                    'id': self.checked_in_two._id,
+                    'type': 'files',
+                    'attributes': {
+                        'checkout': None,
+                    }
+                }
+            ]
+        }
+
+        res = self.app.put_json_api(
+            '/{}files/{}/list/osfstorage/'.format(
+                API_BASE, self.node.pk
+            ),
+            bulk_file_payload,
+            auth=self.user.auth,
+            bulk=True
+        )
+
+        nt.assert_equal(res.status_code, 200)
+
+        self.checked_in_one.reload()
+        self.checked_in_two.reload()
+
+        nt.assert_equal(self.checked_in_one.checkout, None)
+        nt.assert_equal(self.checked_in_two.checkout, None)
