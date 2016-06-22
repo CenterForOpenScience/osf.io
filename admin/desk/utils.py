@@ -9,7 +9,10 @@ from requests_oauthlib import OAuth1Session
 
 
 class DeskError(Exception):
-    pass
+    def __init__(self, message, status_code=None, content=None):
+        super(DeskError, self).__init__(message)
+        self.status_code = status_code
+        self.content = content
 
 
 class DeskClient(object):
@@ -37,7 +40,7 @@ class DeskClient(object):
         url = self.build_url(service)
         r = self.oauth.get(url, params=params)
         if r.status_code != requests.codes.ok:
-            raise DeskError('{}: {}'.format(r.status_code, r.reason))
+            raise DeskError('Desk error', r.status_code, r.content)
         return r.json()  # json.loads(r.content)
 
     def call_post(self, service, data=None):
@@ -45,7 +48,7 @@ class DeskClient(object):
         url = self.build_url(service)
         r = self.oauth.post(url, data=json.dumps(data))
         if r.status_code >= 400:
-            raise DeskError(str(r.status_code))
+            raise DeskError('Desk error', r.status_code, r.content)
         return json.loads(r.content)
 
     def find_customer(self, params):

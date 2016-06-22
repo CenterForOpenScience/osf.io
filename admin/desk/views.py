@@ -19,7 +19,11 @@ class DeskCaseList(OSFAdmin, ListView):
             return super(DeskCaseList, self).dispatch(request, *args, **kwargs)
         except DeskError as e:
             return render(request, 'desk/desk_error.html',
-                          context={'error': e.message})
+                          context={
+                              'error': e.message,
+                              'status': e.status_code,
+                              'content': e.content,
+                          })
 
     def get_queryset(self):
         customer_id = self.kwargs.get('user_id', None)
@@ -55,7 +59,11 @@ class DeskCustomer(OSFAdmin, DetailView):
                           })
         except DeskError as e:
             return render(request, 'desk/desk_error.html',
-                          context={'error': e.message})
+                          context={
+                              'error': e.message,
+                              'status': e.status_code,
+                              'content': e.content,
+                          })
 
     def get_object(self, queryset=None):
         customer_id = self.kwargs.get('user_id', None)

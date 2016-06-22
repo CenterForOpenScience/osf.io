@@ -1,10 +1,10 @@
 <div class="modal-header">
     <button type="button" class="close" data-dismiss="modal">x</button>
-    <h3>You do not have Desk permissions</h3>
+    <h3>{{ error }}</h3>
 </div>
 <div class="modal-body">
-    <p>{{ error }}</p>
-    You will need to speak with a Desk Admin in order to get the necessary information. Then fill out the form in Desk Settings.
+    <p>{{ status }}</p>
+    <p>{{ content }}</p>
 </div>
 <div class="modal-footer">
     <a href="{% url 'auth:desk' %}" class="btn btn-primary">
