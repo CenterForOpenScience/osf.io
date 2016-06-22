@@ -405,7 +405,7 @@ class NodeLog(StoredObject):
         ],
     }, {
         'key_or_list': [
-            ('node', 1),
+            ('node', 1), 
             ('should_hide', 1),
             ('date', -1)
         ]
