@@ -67,7 +67,8 @@ var ajaxJSON = function(method, url, options) {
     var defaults = {
         data: {},  // Request body (required for PUT, PATCH, POST, etc)
         isCors: false,  // Is this sending a cross-domain request? (if true, will also send any login credentials)
-        fields: {}  // Additional fields (settings) for the JQuery AJAX call; overrides any defaults set by function
+        fields: {},  // Additional fields (settings) for the JQuery AJAX call; overrides any defaults set by function
+        bulk: false  // Is this sending a bulk request? If so, update the content type later on
     };
     var opts = $.extend({}, defaults, options);
 
@@ -78,7 +79,7 @@ var ajaxJSON = function(method, url, options) {
         dataType: 'json'
     };
 
-    if (options.bulk) {
+    if (opts.bulk) {
         ajaxFields.contentType = 'application/vnd.api+json; ext=bulk';
     }
     // Add JSON payload if not a GET request
