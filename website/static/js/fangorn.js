@@ -1161,7 +1161,7 @@ function doMultipleCheckout(items, checkout, showError) {
         if (showError) {
             if (xhr.responseJSON.errors[0].meta) {
                 var error_object = xhr.responseJSON.errors[0].meta;
-                if (error_object.type === "api_limit") {
+                if (error_object.type === 'api_limit') {
                     $osf.growl('Error', 'You have reached the check out selection limit of ' + error_object.bulk_limit +
                     '. Please select fewer items to check out at once.');
                 }
