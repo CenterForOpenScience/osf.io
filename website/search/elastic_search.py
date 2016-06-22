@@ -371,7 +371,8 @@ def bulk_update_nodes(serialize, nodes, index=None):
                 '_index': index,
                 '_id': node._id,
                 '_type': get_doctype_from_node(node),
-                'doc': serialized
+                'doc': serialized,
+                'doc_as_upsert': True,
             })
     if actions:
         return helpers.bulk(es, actions)
