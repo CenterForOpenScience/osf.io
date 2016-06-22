@@ -235,6 +235,7 @@ class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         return {
             'owner': self.user,
             'repo': self.repo,
+            'repo_id': self.repo_id
         }
 
     def create_waterbutler_log(self, auth, action, metadata):
